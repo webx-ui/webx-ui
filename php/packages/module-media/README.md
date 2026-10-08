@@ -72,11 +72,15 @@ Everything lives under the panel's API path, behind the panel session and a perm
 | -------------------------------------------- | ------------------------------------------------------------------------------- |
 | `GET directories`                            | the whole tree with file counts                                                 |
 | `POST/PATCH directories`, `PATCH …/move`     | create, rename, move                                                            |
+| `GET directories/{id}/contents`              | what deleting it would take: counts through the subtree and `in_use`            |
 | `DELETE directories/{id}`                    | refuses a folder that holds anything (409 with counts) until `?force=1`         |
 | `GET files`                                  | paginated, `q`, `type`, `sort`, `per_page`                                      |
 | `POST files`                                 | multi-file upload; the same bytes in the same folder answer `duplicate`         |
+| `POST files/chunked`                         | `{ directory_id, upload }` — a finished chunked upload into the library         |
 | `PATCH files/{id}`                           | rename — the key on the disk never changes                                      |
-| `POST files/move`, `DELETE files`            | in batches                                                                      |
+| `POST files/move`                            | in batches                                                                      |
+| `POST files/usage`                           | `{ ids }` — which of them the site uses, where, with a readable `label` per row |
+| `DELETE files/{id}`, `POST files/delete`     | refuse a file the site uses (409 `files_in_use` with where) until `force`       |
 | `GET files/{id}/thumb?w=&h=&fit=`            | cuts the variant once, then redirects to it                                     |
 | `POST files/{id}/edit`                       | crop, rotate, flip, resize — applied to the original, written over the same key |
 | `POST files/{id}/copy`, `…/restore-original` | a second file; the picture as it arrived                                        |
@@ -92,6 +96,41 @@ runs the pictures already there through the same steps, over the same key and in
 The steps are `webx-media.optimize.steps` — add a class implementing
 `WebxUi\Media\Images\Optimizing\OptimizeStep` to add your own.
 
+### Convert to WebP
+
+Off unless asked for — the checkbox in the **Optimize** dialog, `convert: true` of
+`media_optimize_images` (honours `dry_run`), or `php artisan webx:media:webp [--dry-run]
+[--directory=] [--id=]`. A still JPEG or PNG (and a HEIC, where Imagick is built with libheif)
+becomes a WebP when that is smaller; transparency is kept, GIF, SVG and animated pictures are left
+alone. Per file, so that a failure leaves the site as it was:
+
+1. the WebP is written beside the old file under the same uuid — `media/9f/2a/<uuid>.webp`;
+2. in one transaction: the row takes the new key (path, extension, MIME, file name, hash, size,
+   dimensions), the old key is kept in `media_aliases`, and every reference to the old basename
+   is rewritten — every text and JSON column of every table, **without** the caps the delete
+   check uses, history and versions included (`usage.rewrite_ignore` names what is skipped);
+3. then the old bytes and old previews go, and the rendered caches (settings, block regions,
+   menus) are let go of by those modules themselves, on module-admin's `StoredContentRewritten`
+   event — the library does not know whose caches there are.
+
+Why history is rewritten: restoring an old version must not bring back a key whose bytes are
+gone. The alias covers what no rewrite reaches — search engines, CDNs, e-mails, links on other
+sites: the old public address (`/storage/media/…/<uuid>.jpg`, any `?v=`) answers **301** to the
+new one for a disk the site serves itself, and `files/by-path` and the field lookups find the file
+by either key. The old bytes are not kept for a grace period: a 301 serves every old link, and the
+space is the point.
+
+The editor's kept original (`original_path`) stays as it arrived, in its own format — it is the
+picture before anything was done to it. **Restore original** re-encodes it into the file's
+current format, so the key never lies about what it holds.
+
+Each file is reported as `converted`, `unchanged` (WebP would not be smaller), `skipped` or
+`missing`, with bytes before and after and the number of references rewritten.
+
+A module that keeps keys where the schema cannot show them implements
+`WebxUi\Media\Usage\UsageRewriter` beside `UsageSource` on its tagged source; it is called inside
+the same transaction.
+
 ## MCP
 
 `list_directories`, `list_files`, `search_files`, `get_file`, `create_directory`, `delete_directory`,
@@ -101,7 +140,9 @@ The steps are `webx-media.optimize.steps` — add a class implementing
 - `delete_directory` deletes an **empty** folder only: recursive deletion is the one operation
   here that a mistaken call cannot take back, and an agent cannot ask the question the panel asks
   first.
-- `delete_files` refuses a file the site still uses and says where, unless `force: true`.
+- `delete_files` refuses a file the site still uses and says where, unless `force: true`. The
+  panel keeps the same rule: it asks `files/usage` (or a folder's `contents`) first and shows the
+  places in one question with «delete anyway», and the delete endpoints refuse without `force`.
   `WebxUi\Media\Usage\MediaUsage` asks every source tagged `MediaUsage::TAG`; the one that ships,
   `DatabaseUsage`, reads the schema — foreign keys into `media_files`, and the last segment of
   the file's key (a uuid) inside text and JSON columns. History, logs and queues are skipped
@@ -141,6 +182,18 @@ rather than the missing package.
 
 Uploads are limited by size and by a white list of types, and images are refused above
 `image.max_pixels` before they are decoded — a small file can still be a very large picture.
+
+## Chunked uploads
+
+The panel uploads into Files a piece at a time through module-admin's protocol (`POST uploads`,
+`PATCH uploads/{id}`, …), under the purpose `media.library` (`FileStore::UPLOAD_PURPOSE`):
+`media.upload` or `media.manage` may start one, the extensions are `upload.extensions` (checked
+against the file name, so a HEIC a browser declares no type for still goes) and the size is
+`upload.max_size` — both refused when the session is created. `POST files/chunked` then claims the
+finished file and runs it through exactly what `POST files` does: the same rules on the content,
+now read from the bytes, the same pipeline, the same deduplication, the same answer. PHP's
+`upload_max_filesize` and `post_max_size` only bound a piece (`webx-admin.uploads.chunk_mb`), not
+the file; pieces of abandoned uploads are swept by `webx:prune-uploads`.
 
 ## Permissions
 

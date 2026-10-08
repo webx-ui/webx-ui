@@ -18,6 +18,7 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\OptionType;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Catalog\Audit\CatalogChecks;
@@ -110,6 +111,13 @@ class CatalogServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('catalog_products', 'catalog_categories', 'catalog_category_product', 'catalog_category_facets', 'catalog_product_images', 'catalog_filter_aliases', 'catalog_exchange_profiles');
+            // Runs, their errors, the index queue and the view counts are what happened on this stand.
+            $tables->stand('catalog_bulk_runs', 'catalog_bulk_run_items', 'catalog_exchange_runs', 'catalog_exchange_run_items', 'catalog_exchange_errors', 'catalog_index_queue', 'catalog_product_popularity');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog.php', 'webx-catalog');
 
         // The registries satellites fill from their own providers; the core fills them first.

@@ -10,11 +10,13 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\StringType;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Blog\Handlers\ArticleHandler;
 use WebxUi\Blog\Handlers\RubricHandler;
 use WebxUi\Blog\Handlers\TagHandler;
@@ -28,6 +30,7 @@ use WebxUi\Blog\Models\Tag;
 use WebxUi\Blog\Panel\ArticleForm;
 use WebxUi\Blog\Panel\ArticlesModule;
 use WebxUi\Blog\Panel\BlogModule;
+use WebxUi\Blog\Panel\Revision;
 use WebxUi\Blog\Panel\RubricsModule;
 use WebxUi\Blog\Panel\TagsModule;
 use WebxUi\Blog\Screens\AuthorType;
@@ -52,6 +55,11 @@ class BlogServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('blog_articles', 'blog_rubrics', 'blog_tags', 'blog_article_rubric', 'blog_article_tag', 'blog_article_related');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-blog.php', 'webx-blog');
     }
 
@@ -70,6 +78,7 @@ class BlogServiceProvider extends ServiceProvider
         $this->registerLinkSources();
         $this->registerScreens();
         $this->registerPanel();
+        $this->registerEditedRecord();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -306,6 +315,26 @@ class BlogServiceProvider extends ServiceProvider
             210,
         ));
         $links->register($this->app->make(TagLinkSource::class));
+    }
+
+    /**
+     * The editor's heartbeat asks after an article by this name: whether it moved under the
+     * editor, who moved it, who else has it open.
+     */
+    private function registerEditedRecord(): void
+    {
+        $this->app->make(EditedRecords::class)->register(
+            'articles',
+            ['blog.articles.view', 'blog.articles.manage'],
+            static function (string $id): ?array {
+                // An article in the bin too: the editor open on it hears that it went there.
+                $article = ctype_digit($id) ? Article::withTrashed()->find((int) $id) : null;
+
+                return $article instanceof Article ? ['revision' => Revision::of($article), 'model' => $article] : null;
+            },
+            'blog.articles.manage',
+            model: Article::class,
+        );
     }
 
     private function prefix(): string

@@ -21,6 +21,9 @@ use Intervention\Image\ImageManager;
  *
  * Only what can be re-encoded without losing anything a person meant: JPEG, PNG and still WebP.
  * A GIF or an animated WebP would come out as its first frame, and an SVG is not pixels at all.
+ *
+ * HEIC and HEIF as well, where Imagick is built with libheif: read only, and always converted —
+ * no browser but Safari draws one, and GD reads none. Without Imagick they stay as they came.
  */
 final class ImageOptimizer
 {
@@ -30,6 +33,11 @@ final class ImageOptimizer
         'png' => 'image/png',
         'webp' => 'image/webp',
     ];
+
+    /** Read, never written: what an iPhone takes photographs in. */
+    private const HEIC = ['heic' => 'image/heic', 'heif' => 'image/heif'];
+
+    private ?bool $readsHeic = null;
 
     public function __construct(
         private readonly Config $config,
@@ -44,9 +52,54 @@ final class ImageOptimizer
     /** Whether a file of this kind is one the pipeline takes at all. */
     public function handles(string $extension, string $mime): bool
     {
+        $extension = strtolower($extension);
+        $mime = strtolower($mime);
+
+        if (isset(self::HEIC[$extension])) {
+            return $this->enabled() && $this->readsHeic() && in_array($mime, [...array_values(self::HEIC), 'image/heic-sequence', 'application/octet-stream'], true);
+        }
+
         return $this->enabled()
-            && isset(self::FORMATS[strtolower($extension)])
-            && in_array(strtolower($mime), [...array_values(self::FORMATS), 'image/jpg', 'image/pjpeg'], true);
+            && isset(self::FORMATS[$extension])
+            && in_array($mime, [...array_values(self::FORMATS), 'image/jpg', 'image/pjpeg'], true);
+    }
+
+    /**
+     * The format pictures are converted into — on the way in, and by «Convert to WebP» — or null
+     * when `format` names none the pipeline writes.
+     */
+    public function format(): ?string
+    {
+        $format = strtolower((string) ($this->settings()['format'] ?? ''));
+
+        return isset(self::FORMATS[$format]) ? $format : null;
+    }
+
+    /**
+     * The extensions a picture already in the library can be converted from: JPEG and PNG, and
+     * HEIC where it can be read. Not WebP — that is what they become — nor GIF or SVG.
+     *
+     * @return list<string>
+     */
+    public function convertible(): array
+    {
+        $from = array_values(array_diff(['jpg', 'jpeg', 'png', 'webp'], [$this->format()]));
+
+        return [...$from, ...($this->readsHeic() ? array_keys(self::HEIC) : [])];
+    }
+
+    /** Imagick with a HEIC decoder in it, which is what libheif makes. */
+    public function readsHeic(): bool
+    {
+        if ($this->readsHeic === null) {
+            try {
+                $this->readsHeic = class_exists(\Imagick::class) && \Imagick::queryFormats('HEI*') !== [];
+            } catch (\Throwable) {
+                $this->readsHeic = false;
+            }
+        }
+
+        return $this->readsHeic;
     }
 
     /**
@@ -71,15 +124,16 @@ final class ImageOptimizer
     public function optimize(string $contents, string $extension, bool $convert): ?Optimized
     {
         $extension = strtolower($extension);
+        $heic = isset(self::HEIC[$extension]);
 
-        if (! isset(self::FORMATS[$extension])) {
+        if (! isset(self::FORMATS[$extension]) && ! ($heic && $this->readsHeic())) {
             return null;
         }
 
         // Measured from the header before anything is decoded: the upload form refuses a picture
         // over the budget, but an agent's download or an import never met that form, and decoding
         // is where a server runs out of memory. Kept as it came, rather than refused here.
-        $size = @getimagesizefromstring($contents);
+        $size = $heic ? $this->heicSize($contents) : @getimagesizefromstring($contents);
         $budget = (int) $this->config->get('webx-media.image.max_pixels', 50_000_000);
 
         if ($size === false || $budget < $size[0] * $size[1]) {
@@ -87,7 +141,7 @@ final class ImageOptimizer
         }
 
         try {
-            $image = $this->manager()->read($contents);
+            $image = $this->manager($heic)->read($contents);
         } catch (ImageException) {
             return null;
         }
@@ -104,11 +158,16 @@ final class ImageOptimizer
             $image = $this->step((string) $step)->apply($image, $config);
         }
 
-        $format = $convert ? strtolower((string) ($config['format'] ?? '')) : '';
-        $target = isset(self::FORMATS[$format]) ? $format : $extension;
+        // A HEIC is always converted: it cannot be written back, and nothing draws it anyway.
+        $format = $convert || $heic ? (string) $this->format() : '';
+        $target = isset(self::FORMATS[$format]) ? $format : ($heic ? 'jpg' : $extension);
 
         $encoded = (string) $image->encodeByExtension($target, quality: (int) ($config['quality'] ?? 82));
         $resized = $image->width() !== $width || $image->height() !== $height;
+
+        if ($heic) {
+            return new Optimized($encoded, $target, self::FORMATS[$target], $image->width(), $image->height(), smaller: true);
+        }
 
         if (strlen($encoded) >= strlen($contents) && ! $resized) {
             return new Optimized($contents, $extension, self::FORMATS[$extension], $width, $height, smaller: false);
@@ -136,9 +195,26 @@ final class ImageOptimizer
         return $step;
     }
 
-    private function manager(): ImageManager
+    /**
+     * Width and height of a HEIC from its header, without decoding it.
+     *
+     * @return array{0: int, 1: int}|false
+     */
+    private function heicSize(string $contents): array|false
     {
-        $driver = $this->config->get('webx-media.image.driver') === 'imagick' ? new ImagickDriver : new GdDriver;
+        try {
+            $image = new \Imagick;
+            $image->pingImageBlob($contents);
+
+            return [$image->getImageWidth(), $image->getImageHeight()];
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function manager(bool $imagick = false): ImageManager
+    {
+        $driver = $imagick || $this->config->get('webx-media.image.driver') === 'imagick' ? new ImagickDriver : new GdDriver;
 
         return new ImageManager($driver, autoOrientation: true, strip: true);
     }

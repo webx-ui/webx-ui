@@ -165,6 +165,7 @@ stops mattering.
 | `size`      | `'sm' \| 'md' \| 'lg'`         | `'md'`    | Size for actions that set none                                            |
 | `collapse`  | `boolean \| 'always'`          | `false`   | Fold into a dropdown when it does not fit; `'always'` never draws the row |
 | `ariaLabel` | `string`                       | —         | Accessible name of the group                                              |
+| `moreLabel` | `string`                       | `'More'`  | Name and tip of the button the folded-up menu opens from                  |
 
 **Models:** `v-model:menuOpen` — whether the folded-up menu is showing.
 

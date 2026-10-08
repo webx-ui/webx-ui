@@ -8,20 +8,27 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
+use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Editing\EditedRecords;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Audit\Fixes\AuditFixes;
+use WebxUi\Blocks\Audit\HardcodedValuesCheck;
 use WebxUi\Blocks\Audit\PruneStrayValuesFix;
 use WebxUi\Blocks\Audit\RegionContentSource;
 use WebxUi\Blocks\Audit\StrayValuesCheck;
+use WebxUi\Blocks\Audit\UnknownShortcodesCheck;
 use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
 use WebxUi\Blocks\Console\ExportCommand;
@@ -55,6 +62,14 @@ class BlocksServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('blocks', 'block_versions', 'block_regions');
+            // Glued from the versions that were current here; glued again on the first request.
+            $tables->derived('block_bundles');
+            $tables->afterRestore('webx:blocks:clear');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-blocks.php', 'webx-blocks');
 
         $this->app->singleton(BlockTypes::class);
@@ -122,6 +137,13 @@ class BlocksServiceProvider extends ServiceProvider
         $router = $this->app->make('router');
         $router->aliasMiddleware('webx.blocks-editing', EnsureEditing::class);
 
+        // An imported file is compared with what is stored, whitespace included: trimmed on the
+        // way in, every template that ends with a newline would read as changed.
+        $import = static fn (Request $request): bool => $request->isMethod('POST')
+            && $request->is(trim((string) config('webx-admin.api_path'), '/').'/blocks/import');
+        TrimStrings::skipWhen($import);
+        ConvertEmptyStringsToNull::skipWhen($import);
+
         $this->app->make(ModuleRegistry::class)->register($this->app->make(BlocksModule::class));
 
         // The regions are a section of their own: edited by whoever edits the pages, not by
@@ -129,12 +151,36 @@ class BlocksServiceProvider extends ServiceProvider
         $this->app->make(ModuleRegistry::class)->register($this->app->make(RegionsModule::class));
         $this->app->make(ScreenRegistry::class)->register(RegionForm::SCREEN, __DIR__.'/../resources/screens/regions.form.json');
 
+        // The region editor's heartbeat asks after a region by its name. One nobody has saved
+        // yet has no row and nothing to have moved under anybody: the heartbeat hears 404.
+        $this->app->make(EditedRecords::class)->register('regions', 'blocks.regions', function (string $name): ?array {
+            $region = $this->app->make(Regions::class)->find($name);
+
+            return $region === null ? null : ['revision' => Content::revision($region->editingTree()), 'model' => $region];
+        });
+
         $this->registerGateOpenings();
         $this->registerAuditSource();
 
         // What a response printed is what its bundle is glued from, and no more than that: in a
         // process that serves many requests the list would otherwise grow across them.
         $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (): void {
+            $this->app->make(Renderer::class)->flush();
+        });
+
+        // Content rewritten around the models — the library moving pictures to new keys: the
+        // cached registry, its thumbnails and the published trees of the regions all hold the
+        // old values, and nothing else would tell them until their TTL.
+        $this->app->make(Dispatcher::class)->listen(StoredContentRewritten::class, function (): void {
+            $this->app->make(BlockTypes::class)->forget();
+            $this->app->make(Thumbnails::class)->forget();
+
+            $regions = $this->app->make(Regions::class);
+
+            foreach (array_keys($regions->declared()) as $name) {
+                $regions->forget($name);
+            }
+
             $this->app->make(Renderer::class)->flush();
         });
 
@@ -173,6 +219,10 @@ class BlocksServiceProvider extends ServiceProvider
             // Values for fields a block type does not define: found, and taken out per entity.
             $this->app->make(AuditChecks::class)->register($this->app->make(StrayValuesCheck::class));
             $this->app->make(AuditFixes::class)->register($this->app->make(PruneStrayValuesFix::class));
+            // Shortcodes: a bracket that was meant as one and prints as typed, and a value typed
+            // by hand where a data shortcode holds it.
+            $this->app->make(AuditChecks::class)->register($this->app->make(UnknownShortcodesCheck::class));
+            $this->app->make(AuditChecks::class)->register($this->app->make(HardcodedValuesCheck::class));
         }
     }
 

@@ -7,6 +7,7 @@ namespace WebxUi\Banners;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Panel\BannersModule;
 
@@ -19,6 +20,11 @@ class BannersServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('banners', 'banner_places');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-banners.php', 'webx-banners');
     }
 

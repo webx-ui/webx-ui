@@ -6,6 +6,7 @@ namespace WebxUi\Vacancies\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use WebxUi\Admin\Editing\HeldRevision;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Vacancies\Http\Resources\VacancyResource;
@@ -23,6 +24,13 @@ final class VacancyPublicationController
 {
     public function publish(Request $request, Vacancy $vacancy): JsonResponse
     {
+        // The editor sends the revision it held: an edit it has not seen is not published under it.
+        $stale = HeldRevision::conflict($request, 'vacancies', (string) $vacancy->getKey());
+
+        if ($stale !== null) {
+            return $stale;
+        }
+
         $vacancy->publish($this->author($request), EntityVersion::SOURCE_PANEL);
 
         return ApiResponse::data(new VacancyResource($this->loaded($vacancy->refresh())));

@@ -10,6 +10,7 @@ use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Tariffs\Collections\TariffsSource;
 use WebxUi\Tariffs\Models\Tariff;
@@ -28,6 +29,11 @@ class TariffsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('tariffs', 'tariff_categories', 'tariff_category_tariff');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-tariffs.php', 'webx-tariffs');
     }
 

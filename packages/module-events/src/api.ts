@@ -29,7 +29,8 @@ export interface EventsApi {
    * copy's form, so the editor can open it straight away.
    */
   duplicate(id: number): Promise<EventDetail>
-  publish(id: number): Promise<EventRow>
+  /** `revision` is what the editor held: a draft that moved on since is answered 409, not published. */
+  publish(id: number, revision?: string): Promise<EventRow>
   unpublish(id: number): Promise<EventRow>
   remove(id: number): Promise<void>
   restore(id: number): Promise<EventRow>
@@ -81,7 +82,10 @@ export function createEventsApi(admin: AdminContext): EventsApi {
     discard: (id) => admin.http.post<{ data: EventDetail }>(`${base}/${id}/discard`, {}).then(data),
     duplicate: (id) =>
       admin.http.post<{ data: EventDetail }>(`${base}/${id}/duplicate`, {}).then(data),
-    publish: (id) => admin.http.post<{ data: EventRow }>(`${base}/${id}/publish`, {}).then(data),
+    publish: (id, revision) =>
+      admin.http
+        .post<{ data: EventRow }>(`${base}/${id}/publish`, revision ? { revision } : {})
+        .then(data),
     unpublish: (id) =>
       admin.http.post<{ data: EventRow }>(`${base}/${id}/unpublish`, {}).then(data),
     remove: (id) => admin.http.delete<void>(`${base}/${id}`).then(() => undefined),

@@ -49,7 +49,7 @@ final class CollectionTest extends TestCase
         // Through the tool rather than the walk: the question is whether this door runs the
         // type at all. A source without categories keeps none; a limit that came as a string is
         // a number; a key the value does not have is not kept.
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'set', 'key' => 'k-quotes', 'values' => [

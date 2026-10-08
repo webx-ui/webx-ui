@@ -10,10 +10,12 @@ use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Events\Audit\EventContentSource;
 use WebxUi\Events\Handlers\CategoryHandler;
@@ -26,6 +28,7 @@ use WebxUi\Events\Models\EventCategory;
 use WebxUi\Events\Panel\CategoriesModule;
 use WebxUi\Events\Panel\EventsGroup;
 use WebxUi\Events\Panel\EventsModule;
+use WebxUi\Events\Panel\Revision;
 use WebxUi\Events\Relations\EventTarget;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
@@ -52,6 +55,11 @@ class EventsServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('events', 'event_categories', 'event_category_event');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-events.php', 'webx-events');
     }
 
@@ -73,6 +81,7 @@ class EventsServiceProvider extends ServiceProvider
         $this->registerLinkSources();
         $this->app->make(RelationTargets::class)->register(new EventTarget);
         $this->registerPanel();
+        $this->registerEditedRecord();
 
         if ((bool) $this->config()->get('webx-events.index', true)) {
             $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
@@ -248,6 +257,26 @@ class EventsServiceProvider extends ServiceProvider
         foreach ([EventsModule::class, CategoriesModule::class] as $module) {
             $modules->register($this->app->make($module));
         }
+    }
+
+    /**
+     * The editor's heartbeat asks after an event by this name: whether it moved under the
+     * editor, who moved it, who else has it open.
+     */
+    private function registerEditedRecord(): void
+    {
+        $this->app->make(EditedRecords::class)->register(
+            'events',
+            ['events.view', 'events.manage'],
+            static function (string $id): ?array {
+                // An event in the bin too: the editor open on it hears that it went there.
+                $event = ctype_digit($id) ? Event::withTrashed()->find((int) $id) : null;
+
+                return $event instanceof Event ? ['revision' => Revision::of($event), 'model' => $event] : null;
+            },
+            'events.manage',
+            model: Event::class,
+        );
     }
 
     private function config(): Config

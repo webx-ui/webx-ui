@@ -30,11 +30,14 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   thumbnail: undefined,
   type: undefined,
   icon: undefined,
+  extension: undefined,
+  showExtension: false,
   selected: false,
   size: 'md',
   disabled: false,
   renamable: false,
   editable: false,
+  viewable: false,
   removable: false,
   confirmRemove: true,
   copyable: false,
@@ -43,12 +46,15 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   saveLabel: 'Save',
   cancelLabel: 'Cancel',
   editLabel: 'Edit picture',
+  viewLabel: 'View',
   removeLabel: 'Delete',
   removeConfirmText: undefined,
   copyLabel: 'Copy link',
   downloadUrl: undefined,
   downloadLabel: 'Download',
   copiedLabel: 'Copied',
+  moreLabel: 'More',
+  actionsLabel: undefined,
 })
 
 const emit = defineEmits<FileCardEmits>()
@@ -64,8 +70,10 @@ defineSlots<{
 
 const picture = computed(() => isPicture(props.name, props.type))
 const source = computed(() => props.thumbnail ?? props.url)
-const extension = computed(() => extensionOf(props.name))
-const glyph = computed(() => props.icon ?? fileIconName(props.name))
+const extension = computed(() => props.extension?.toLowerCase() || extensionOf(props.name))
+const glyph = computed(
+  () => props.icon ?? fileIconName(props.extension ? `file.${extension.value}` : props.name),
+)
 
 /* ------------------------------------------------------------------ renaming --- */
 
@@ -276,6 +284,7 @@ watch(
 /* -------------------------------------------------------------------- render --- */
 
 const shows = computed(() => ({
+  view: props.viewable && picture.value && !props.disabled,
   rename: props.renamable && !props.disabled,
   /* Nothing to open for a `.zip`: the editor this asks for is an image editor. */
   edit: props.editable && picture.value && !props.disabled,
@@ -334,6 +343,14 @@ const classes = computed(() => [
           <span v-if="extension" class="wx-file-card__extension">{{ extension }}</span>
         </span>
       </slot>
+
+      <!-- Under a glyph the extension is already written out; over a picture it is a badge. -->
+      <span
+        v-if="showExtension && extension && picture && source"
+        class="wx-file-card__badge"
+        aria-hidden="true"
+        >{{ extension }}</span
+      >
 
       <!--
         Over the preview, and on a pointer that can hover they stay out of the way until
@@ -408,8 +425,10 @@ const classes = computed(() => [
           size="sm"
           align="end"
           :collapse="actionsMenu ? 'always' : true"
-          :aria-label="`Actions for ${name}`"
+          :aria-label="actionsLabel ?? `Actions for ${name}`"
+          :more-label="moreLabel"
         >
+          <wx-action v-if="shows.view" type="view" :title="viewLabel" @click="emit('view')" />
           <wx-action
             v-if="shows.edit"
             type="edit"
@@ -442,6 +461,9 @@ const classes = computed(() => [
           in the panel, which is exactly those four icons.
         -->
           <template #collapsed>
+            <wx-dropdown-item v-if="shows.view" icon="eye" @click="emit('view')">
+              {{ viewLabel }}
+            </wx-dropdown-item>
             <wx-dropdown-item v-if="shows.edit" icon="crop" @click="emit('edit')">
               {{ editLabel }}
             </wx-dropdown-item>
@@ -555,10 +577,32 @@ const classes = computed(() => [
   overflow: hidden;
   color: var(--wx-text-muted);
   font-size: var(--wx-font-size-xs);
+  font-weight: var(--wx-font-weight-semibold);
   letter-spacing: 0.04em;
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/*
+ * The same word over a picture, where it has to be readable on any of them: a near-opaque
+ * surface with a border of its own, the pill the actions sit in. Bottom left, out of their way.
+ */
+.wx-file-card__badge {
+  position: absolute;
+  bottom: var(--wx-space-4);
+  left: var(--wx-space-4);
+  padding: 0 var(--wx-space-4);
+  background: color-mix(in srgb, var(--wx-bg-surface) 88%, transparent);
+  border: 1px solid var(--wx-border-muted);
+  border-radius: var(--wx-radius-xs);
+  color: var(--wx-text-default);
+  font-size: var(--wx-font-size-xs);
+  font-weight: var(--wx-font-weight-semibold);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 
 /*

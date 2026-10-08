@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Gras',
     'italic' => 'Italique',
+    'accent' => 'Accent',
     'strike' => 'Barré',
     'code' => 'Code en ligne',
     'h2' => 'Titre 2',
@@ -34,4 +35,8 @@ return [
     'apply' => 'Appliquer',
     'cancel' => 'Annuler',
     'uploading' => 'Envoi en cours…',
+    'source' => 'Source HTML',
+    'source-loss' => 'L’éditeur ne conserve pas ce balisage et va le supprimer :',
+    'source-drop' => 'Supprimer',
+    'source-keep' => 'Continuer à modifier',
 ];

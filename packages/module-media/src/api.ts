@@ -1,6 +1,8 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type {
+  DirectoryContents,
   EditOperations,
+  FileInUse,
   FileQuery,
   MediaDirectory,
   MediaFile,
@@ -15,6 +17,13 @@ export interface MediaApi {
   moveDirectory(id: number, parentId: number): Promise<MediaDirectory>
   /** Without `force` the server refuses a folder that holds anything, and says what it holds. */
   deleteDirectory(id: number, force?: boolean): Promise<void>
+  /** What deleting the folder would take — counts and the files the site still uses. */
+  directoryContents(id: number): Promise<DirectoryContents>
+  /**
+   * «Delete only the unused»: the unused files of the subtree go, and every folder left empty;
+   * the folders that still hold a used file stay.
+   */
+  deleteUnused(id: number): Promise<{ deleted: number; kept: number; directory_kept: boolean }>
 
   files(query?: FileQuery): Promise<MediaPage>
   file(id: number): Promise<MediaFile>
@@ -25,15 +34,27 @@ export interface MediaApi {
    * saved last time. `null` when the file is gone from the library.
    */
   fileByPath(path: string): Promise<MediaFile | null>
+  /**
+   * Files in one multipart request. The library's own screens send a piece at a time instead
+   * (`useMediaUploads`); this stays for a caller that wants one request and no session.
+   */
   upload(
     directoryId: number,
     files: File[],
     onProgress?: (percent: number) => void,
   ): Promise<MediaFile[]>
+  /** A file that arrived a piece at a time, by its session's id, into a folder. */
+  finishUpload(directoryId: number, uploadId: string): Promise<MediaFile>
   rename(id: number, name: string): Promise<MediaFile>
   move(ids: number[], directoryId: number): Promise<number>
-  remove(ids: number[]): Promise<number>
-  removeOne(id: number): Promise<void>
+  /** Which of these files the site still uses, and where — asked before a delete. */
+  usage(ids: number[]): Promise<FileInUse[]>
+  /**
+   * Without `force` the server refuses files the site still uses (409, `files_in_use`), the way
+   * `media_delete_files` does for an agent; `force` is the answer to «delete anyway».
+   */
+  remove(ids: number[], force?: boolean): Promise<number>
+  removeOne(id: number, force?: boolean): Promise<void>
 
   edit(id: number, operations: EditOperations): Promise<MediaFile>
   copy(id: number): Promise<MediaFile>
@@ -43,12 +64,20 @@ export interface MediaApi {
    * The pictures of a selection — or else of a folder — that the current optimize settings have
    * not been through, and what they weigh now.
    */
-  optimizePending(query: { ids?: number[]; directoryId?: number | null }): Promise<{
+  optimizePending(query: {
+    ids?: number[]
+    directoryId?: number | null
+    /** The JPEG, PNG and HEIC pictures «Convert to WebP» would take instead. */
+    convert?: boolean
+  }): Promise<{
     ids: number[]
     size: number
   }>
-  /** Up to ten of them through the pipeline again, each over its own key. */
-  optimize(ids: number[]): Promise<OptimizeResult[]>
+  /**
+   * Up to ten of them through the pipeline again, each over its own key — or, with `convert`,
+   * into WebP under a new key with every reference on the site rewritten.
+   */
+  optimize(ids: number[], convert?: boolean): Promise<OptimizeResult[]>
 
   /** The address of a preview at a size the server allows. */
   thumb(file: MediaFile, width: number, height?: number, fit?: 'cover' | 'contain'): string | null
@@ -79,6 +108,16 @@ export function createMediaApi(admin: AdminContext): MediaApi {
         query: { force: force ? 1 : undefined },
       }),
 
+    directoryContents: (id) =>
+      admin.http.get<{ data: DirectoryContents }>(`${base}/directories/${id}/contents`).then(data),
+
+    deleteUnused: (id) =>
+      admin.http
+        .post<{
+          data: { deleted: number; kept: number; directory_kept: boolean }
+        }>(`${base}/directories/${id}/delete-unused`)
+        .then(data),
+
     files: (query = {}) =>
       admin.http.get<MediaPage>(`${base}/files`, {
         query: {
@@ -98,6 +137,13 @@ export function createMediaApi(admin: AdminContext): MediaApi {
         .get<{ data: MediaFile }>(`${base}/files/by-path?path=${encodeURIComponent(path)}`)
         .then(data)
         .catch(() => null),
+
+    finishUpload: (directoryId, uploadId) =>
+      admin.http
+        .post<{
+          data: MediaFile
+        }>(`${base}/files/chunked`, { directory_id: directoryId, upload: uploadId })
+        .then(data),
 
     async upload(directoryId, files, onProgress) {
       const body = new FormData()
@@ -161,12 +207,18 @@ export function createMediaApi(admin: AdminContext): MediaApi {
 
     // A POST for the batch, not a DELETE: the panel's own client sends no body on DELETE, and
     // a list of ids in a query string is a worse answer than an honest verb.
-    remove: (ids) =>
+    usage: (ids) =>
+      admin.http.post<{ data: FileInUse[] }>(`${base}/files/usage`, { ids }).then(data),
+
+    remove: (ids, force = false) =>
       admin.http
-        .post<{ data: { deleted: number } }>(`${base}/files/delete`, { ids })
+        .post<{
+          data: { deleted: number }
+        }>(`${base}/files/delete`, { ids, force: force || undefined })
         .then((body) => body.data.deleted),
 
-    removeOne: (id) => admin.http.delete<void>(`${base}/files/${id}`),
+    removeOne: (id, force = false) =>
+      admin.http.delete<void>(`${base}/files/${id}`, { query: { force: force ? 1 : undefined } }),
 
     edit: (id, operations) =>
       admin.http.post<{ data: MediaFile }>(`${base}/files/${id}/edit`, operations).then(data),
@@ -176,16 +228,21 @@ export function createMediaApi(admin: AdminContext): MediaApi {
     restoreOriginal: (id) =>
       admin.http.post<{ data: MediaFile }>(`${base}/files/${id}/restore-original`).then(data),
 
-    optimizePending: ({ ids, directoryId }) =>
+    optimizePending: ({ ids, directoryId, convert }) =>
       admin.http
         .post<{ data: { ids: number[]; size: number } }>(`${base}/files/optimize/pending`, {
           ids: ids?.length ? ids : undefined,
           directory_id: ids?.length ? undefined : (directoryId ?? undefined),
+          convert: convert || undefined,
         })
         .then(data),
 
-    optimize: (ids) =>
-      admin.http.post<{ data: OptimizeResult[] }>(`${base}/files/optimize`, { ids }).then(data),
+    optimize: (ids, convert = false) =>
+      admin.http
+        .post<{
+          data: OptimizeResult[]
+        }>(`${base}/files/optimize`, { ids, convert: convert || undefined })
+        .then(data),
 
     thumb(file, width, height, fit = 'cover') {
       if (!file.thumb) {

@@ -230,6 +230,38 @@ describe('WxSelectionArea', () => {
     expect(chosen(wrapper)).toEqual(['a', 'c', 'd'])
   })
 
+  it('keeps the ctrl or shift held at the press when it is gone by the release', async () => {
+    const wrapper = area()
+
+    await click(item(wrapper, 0), 10, 10)
+
+    await down(item(wrapper, 2), 10, 60, { ctrlKey: true })
+    await up(item(wrapper, 2), 10, 60)
+    expect(chosen(wrapper)).toEqual(['a', 'c'])
+
+    await down(item(wrapper, 3), 110, 60, { shiftKey: true })
+    await up(item(wrapper, 3), 110, 60)
+    expect(chosen(wrapper)).toEqual(['a', 'c', 'd'])
+  })
+
+  it('leaves a press on an item to the browser to drag, with dragItems', async () => {
+    const wrapper = area({ dragItems: true })
+    /* What makes an item draggable is the item's own business; the area must not mistake it
+       for a control that keeps its press. */
+    wrapper.findAll('.item').forEach((one) => one.element.setAttribute('draggable', 'true'))
+
+    await down(item(wrapper, 0), 10, 10)
+    await move(item(wrapper, 0), 160, 90)
+    await up(item(wrapper, 0), 160, 90)
+
+    expect(wrapper.emitted('start')).toBeUndefined()
+    expect(chosen(wrapper)).toBeUndefined()
+
+    /* A click is still a click. */
+    await click(item(wrapper, 1), 120, 20)
+    expect(chosen(wrapper)).toEqual(['b'])
+  })
+
   it('adds to the selection when a drag is held with a modifier', async () => {
     const wrapper = area({ modelValue: ['a'] })
     const el = wrapper.element

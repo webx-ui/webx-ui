@@ -66,6 +66,22 @@ final class Html
     ];
 
     /**
+     * What a line keeps — `wx-rich-text` with `props.inline`: the marks its editor writes and
+     * nothing that would make it more than a line. The accent is a bare `<span>`; attributes go,
+     * so a pasted `style` or `class` cannot dress the heading in somebody else's colours.
+     */
+    private const INLINE = [
+        'strong' => [],
+        'b' => [],
+        'em' => [],
+        'i' => [],
+        'span' => [],
+    ];
+
+    /** Tags that end a line where they end — a space is left in their place when flattened. */
+    private const BREAKS = ['p', 'div', 'br', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'tr', 'td', 'th'];
+
+    /**
      * The library key a picture is filed under, kept beside its address.
      *
      * The address is not the picture. It may be signed and about to expire, it carries a
@@ -85,7 +101,7 @@ final class Html
     /**
      * The fragment, cleaned. An empty string for anything that had nothing in it.
      */
-    public static function clean(string $html): string
+    public static function clean(string $html, bool $inline = false): string
     {
         if (trim($html) === '') {
             return '';
@@ -99,9 +115,13 @@ final class Html
 
         [$dom, $body] = $document;
 
-        self::walk($body);
+        self::walk($body, $inline ? self::INLINE : self::ALLOWED, $inline);
 
-        return self::serialise($dom, $body);
+        $clean = self::serialise($dom, $body);
+
+        // A line is one line: what the unwrapped blocks left between them, and any run of
+        // spaces, is one space — the browser would print it as one anyway.
+        return $inline ? trim((string) preg_replace('/\s+/u', ' ', $clean)) : $clean;
     }
 
     /**
@@ -209,8 +229,10 @@ final class Html
     /**
      * Depth first, over a copy of the child list: the walk removes nodes as it goes, and a live
      * `DOMNodeList` reindexes underneath it — every second child would be skipped.
+     *
+     * @param  array<string, list<string>>  $allowed
      */
-    private static function walk(DOMNode $node): void
+    private static function walk(DOMNode $node, array $allowed, bool $inline): void
     {
         foreach (iterator_to_array($node->childNodes) as $child) {
             if (! $child instanceof DOMElement) {
@@ -230,17 +252,25 @@ final class Html
                 continue;
             }
 
-            if (! array_key_exists($tag, self::ALLOWED)) {
+            if (! array_key_exists($tag, $allowed)) {
+                // A block flattened into a line leaves a space where it ended, or the last word
+                // of one paragraph runs into the first of the next.
+                $space = $inline && in_array($tag, self::BREAKS, true) ? $child->ownerDocument?->createTextNode(' ') : null;
+
+                if ($space !== null) {
+                    $node->insertBefore($space, $child->nextSibling);
+                }
+
                 // Unwrapped rather than dropped: an unknown wrapper around a paragraph is
                 // somebody's markup, and the paragraph inside it is their text.
-                self::walk($child);
+                self::walk($child, $allowed, $inline);
                 self::unwrap($child);
 
                 continue;
             }
 
-            self::attributes($child, $tag);
-            self::walk($child);
+            self::attributes($child, $allowed[$tag]);
+            self::walk($child, $allowed, $inline);
         }
     }
 
@@ -259,9 +289,12 @@ final class Html
         return is_string($host) && (bool) preg_match('/(^|\.)(youtube\.com|youtube-nocookie\.com|youtu\.be)$/i', $host);
     }
 
-    private static function attributes(DOMElement $element, string $tag): void
+    /**
+     * @param  list<string>  $allowed
+     */
+    private static function attributes(DOMElement $element, array $allowed): void
     {
-        $allowed = self::ALLOWED[$tag];
+        $tag = strtolower($element->tagName);
 
         foreach (iterator_to_array($element->attributes) as $attribute) {
             $name = strtolower($attribute->nodeName);

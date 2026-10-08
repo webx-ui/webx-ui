@@ -16,5 +16,11 @@ return [
             'why' => 'Une page qui en affiche une se charge lentement sur un téléphone, et les moteurs de recherche classent plus bas les pages lentes.',
             'fix' => 'Remplacez-les par des versions plus petites : une photo pour une page a rarement besoin de dépasser 2000 pixels de large ou quelques centaines de kilo-octets.',
         ],
+        'orphan_thumbs' => [
+            'title' => 'Aperçus de fichiers supprimés',
+            'found' => 'Le disque garde des dossiers d’aperçus de fichiers que la médiathèque n’a plus.',
+            'why' => 'Ils prennent de la place, et rien ne les affichera jamais.',
+            'fix' => 'Supprimez-les avec le bouton ici ou avec php artisan webx:media:prune-thumbs.',
+        ],
     ],
 ];

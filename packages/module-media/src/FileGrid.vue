@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { toast, WxEmpty, WxFileCard, WxSelectionArea } from '@webx-ui/core'
 import type { MediaApi } from './api'
+import { startDrag } from './dragging'
+import { details, usePanelLocale } from './format'
 import type { MediaFile } from './types'
 
 /**
@@ -18,6 +20,11 @@ const props = defineProps<{
   query?: string
   /** A picker takes one file; the manager selects to act on a batch. */
   single?: boolean
+  /**
+   * Cards can be dragged onto a folder of the tree — the selection, when the card is in it.
+   * A rubber band then starts from the gaps between cards, not from a card.
+   */
+  draggable?: boolean
 }>()
 
 const selected = defineModel<number[]>('selected', { default: () => [] })
@@ -26,14 +33,36 @@ const emit = defineEmits<{
   open: [file: MediaFile]
   rename: [file: MediaFile, name: string]
   edit: [file: MediaFile]
+  view: [file: MediaFile]
   remove: [file: MediaFile]
 }>()
 
 const t = useTranslate('webx-media')
+const locale = usePanelLocale()
 
 const empty = computed(() =>
   props.query ? t('manager.empty-search', { query: props.query }) : t('manager.empty'),
 )
+
+/**
+ * The selection goes when the card is in it; a card outside it goes alone, and becomes the
+ * selection — what is moving is then what is highlighted.
+ *
+ * The highlight follows a moment later, not inside `dragstart`: a card restyled while the
+ * browser is still taking its picture is a drag Chrome cancels on the spot — which is how one
+ * file, never selected first, would not drag at all while a selection of two did.
+ */
+function dragStart(file: MediaFile, event: DragEvent): void {
+  const alone = !selected.value.includes(file.id)
+
+  startDrag(event, alone ? [file.id] : [...selected.value])
+
+  if (alone) {
+    setTimeout(() => {
+      selected.value = [file.id]
+    })
+  }
+}
 
 function copied(): void {
   toast.success(t('manager.link-copied'))
@@ -80,6 +109,7 @@ function copyFailed(file: MediaFile): void {
     v-model="selected"
     class="wx-media-grid"
     :multiple="!single"
+    :drag-items="draggable"
   >
     <wx-file-card
       v-for="file in files"
@@ -87,19 +117,27 @@ function copyFailed(file: MediaFile): void {
       v-wx-select="file.id"
       class="wx-media-grid__card"
       :name="file.name"
+      :extension="file.extension"
+      show-extension
+      :title="details(file, locale())"
       :url="file.url"
       :thumbnail="api.thumb(file, 320, 320) ?? undefined"
       :type="file.mime"
       :selected="isSelected(file.id)"
       renamable
       :editable="file.editable"
+      viewable
       removable
       copyable
       actions-menu
       :rename-label="t('manager.rename')"
       :edit-label="t('manager.edit')"
+      :view-label="t('manager.view')"
       :remove-label="t('manager.delete')"
-      :remove-confirm-text="t('dialogs.delete-file', { name: file.name })"
+      :confirm-remove="false"
+      :more-label="t('manager.more')"
+      :actions-label="t('manager.actions-for', { name: file.name })"
+      :draggable="draggable ? 'true' : undefined"
       :cancel-label="t('manager.cancel')"
       :save-label="t('manager.save')"
       :download-url="file.source ?? file.url"
@@ -108,10 +146,12 @@ function copyFailed(file: MediaFile): void {
       :copied-label="t('manager.link-copied')"
       @rename="(name) => emit('rename', file, name)"
       @edit="emit('edit', file)"
+      @view="emit('view', file)"
       @remove="emit('remove', file)"
       @copy="copied"
       @copy-error="copyFailed(file)"
       @dblclick="emit('open', file)"
+      @dragstart="dragStart(file, $event)"
     />
   </wx-selection-area>
 
@@ -134,5 +174,45 @@ function copyFailed(file: MediaFile): void {
 .wx-media--compact .wx-media-grid {
   grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   gap: var(--wx-space-8);
+}
+
+/*
+ * A touch screen shows a card's actions without a hover, and on a phone-sized card they sit
+ * right over the glyph — and over the extension under it, which for a PDF or a HEIC is the one
+ * thing that says what the file is. Smaller and in the bottom corner — where a picture carries
+ * its badge — it clears them.
+ */
+@media (hover: none) {
+  .wx-media--compact .wx-media-grid .wx-file-card {
+    --wx-file-card-glyph: 20px;
+  }
+
+  .wx-media--compact .wx-media-grid .wx-file-card__preview {
+    align-items: flex-end;
+    justify-content: flex-start;
+  }
+
+  .wx-media--compact .wx-media-grid .wx-file-card__file {
+    align-items: flex-start;
+  }
+}
+
+/*
+ * On a touch screen the card's menu button is grown to 44 px, the size a finger needs — on a
+ * tile a hundred pixels wide that is half the picture. Here it is drawn small and the 44 px stay
+ * as an invisible margin around it: as easy to hit, and the photo is visible again.
+ */
+@media (pointer: coarse) {
+  .wx-media-grid .wx-file-card__actions .wx-actions__menu .wx-action {
+    --wx-action-size: 28px;
+
+    position: relative;
+  }
+
+  .wx-media-grid .wx-file-card__actions .wx-actions__menu .wx-action::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
 }
 </style>

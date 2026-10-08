@@ -1,16 +1,48 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import {
+  Extension,
+  Mark,
+  Node,
+  createDocument,
+  getHTMLFromFragment,
+  type Extensions,
+} from '@tiptap/core'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import { TableKit } from '@tiptap/extension-table'
 import Image from '@tiptap/extension-image'
 import Youtube from '@tiptap/extension-youtube'
 import FileHandler from '@tiptap/extension-file-handler'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
+import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { useFormField } from '../../composables/useFormField'
 import { useLocalized } from '../../composables/useLocalized'
 import LocalePicker from '../Locales/LocalePicker.vue'
+import WxTokenMenu from '../../internal/TokenMenu.vue'
+import {
+  fieldAnchor,
+  rectOf,
+  tokenAnchor,
+  tokenSpans,
+  tokenText,
+  useTokenMenu,
+  type TokenAnchor,
+  type TokenOption,
+  type TokenRange,
+} from '../../composables/useTokens'
+import WxButton from '../Button/Button.vue'
+import WxCodeEditor from '../CodeEditor/CodeEditor.vue'
 import WxRichTextToolbarButton from './ToolbarButton.vue'
-import { DEFAULT_ACCEPT, DEFAULT_TOOLS, TABLE_TOOLS, TOOL_META, type TableToolKey } from './tools'
+import { formatHtml, lostMarkup } from './source'
+import {
+  DEFAULT_ACCEPT,
+  DEFAULT_TOOLS,
+  INLINE_TOOLS,
+  TABLE_TOOLS,
+  TOOL_META,
+  type TableToolKey,
+} from './tools'
 import type {
   RichTextEmits,
   RichTextImage,
@@ -31,13 +63,19 @@ const props = withDefaults(defineProps<RichTextProps>(), {
   status: undefined,
   id: undefined,
   ariaLabel: undefined,
-  minHeight: '220px',
-  tools: () => DEFAULT_TOOLS,
+  inline: false,
+  // Both left unset rather than defaulted: what they default to depends on `inline`, and
+  // `withDefaults` cannot see the other props.
+  minHeight: undefined,
+  tools: undefined,
   upload: undefined,
   pickImage: undefined,
   accept: () => DEFAULT_ACCEPT,
   labels: undefined,
   localized: false,
+  tokens: undefined,
+  tokensTitle: 'Placeholders',
+  tokensLabel: 'Insert a placeholder',
 })
 
 /**
@@ -52,6 +90,9 @@ const DEFAULT_LABELS: RichTextLabels = {
   apply: 'Apply',
   cancel: 'Cancel',
   uploading: 'Uploading…',
+  sourceLoss: 'The editor does not keep this markup and will remove it:',
+  sourceDrop: 'Remove it',
+  sourceKeep: 'Keep editing',
 }
 
 function label(key: RichTextLabelKey): string {
@@ -88,6 +129,135 @@ const LibraryImage = Image.extend({
   },
 })
 
+/**
+ * The accent of a line: a bare `<span>`, because that is what a heading written by hand already
+ * holds — `Deeply heard<span>.</span>` — and what a site's styles colour. No class: a class would
+ * be one more thing to agree on between the panel and every theme.
+ */
+const Accent = Mark.create({
+  name: 'accent',
+  parseHTML: () => [{ tag: 'span' }],
+  renderHTML: () => ['span', 0],
+})
+
+/**
+ * The document of an inline field is the line itself — text and its marks, no paragraph around
+ * it — so `getHTML()` answers with exactly what a template prints inside its `<h1>`.
+ */
+const LineDocument = Node.create({ name: 'doc', topNode: true, content: 'text*' })
+
+/**
+ * Enter has nowhere to go in a line. Swallowed rather than left to ProseMirror, which would try
+ * to split a block the schema does not have.
+ */
+const OneLine = Extension.create({
+  name: 'wxOneLine',
+  addKeyboardShortcuts: () => ({
+    Enter: () => true,
+    'Shift-Enter': () => true,
+    'Mod-Enter': () => true,
+  }),
+})
+
+const tokens = useTokenMenu(() => props.tokens)
+const hasTokens = computed(() => tokens.all.value.length > 0)
+
+const tokenChipsKey = new PluginKey('wxTokenChips')
+
+/**
+ * The known placeholders drawn as chips: a decoration over the text `[name]`, not a node.
+ *
+ * A node would have to be written back as something, and what the site reads is the brackets
+ * typed as text — so the document keeps them as text, `getHTML()` answers with them as text,
+ * and the chip exists only on screen. A name nobody registered stays plain, which is the hint
+ * that it will print as typed.
+ */
+const TokenChips = Extension.create({
+  name: 'wxTokenChips',
+  addProseMirrorPlugins: () => [
+    new Plugin({
+      key: tokenChipsKey,
+      props: {
+        decorations: (state) => {
+          const known = tokens.known.value
+          if (known.size === 0) return DecorationSet.empty
+
+          const chips: Decoration[] = []
+
+          state.doc.descendants((node, pos) => {
+            if (!node.isText || !node.text) return
+
+            for (const span of tokenSpans(node.text, known)) {
+              chips.push(
+                Decoration.inline(pos + span.from, pos + span.to, {
+                  class: 'wx-token',
+                  'data-token': span.name,
+                }),
+              )
+            }
+          })
+
+          return DecorationSet.create(state.doc, chips)
+        },
+      },
+    }),
+  ],
+})
+
+function inlineExtensions(): Extensions {
+  return [
+    StarterKit.configure({
+      document: false,
+      paragraph: false,
+      heading: false,
+      blockquote: false,
+      bulletList: false,
+      orderedList: false,
+      listItem: false,
+      listKeymap: false,
+      codeBlock: false,
+      code: false,
+      horizontalRule: false,
+      hardBreak: false,
+      strike: false,
+      underline: false,
+      link: false,
+      trailingNode: false,
+      gapcursor: false,
+    }),
+    LineDocument,
+    Accent,
+    OneLine,
+    TokenChips,
+  ]
+}
+
+function documentExtensions(): Extensions {
+  return [
+    StarterKit.configure({
+      link: {
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
+      },
+    }),
+    TableKit.configure({ table: { resizable: true } }),
+    LibraryImage.configure({ HTMLAttributes: { class: 'wx-rich-text__image' } }),
+    Youtube.configure({ nocookie: true, width: 640, height: 360 }),
+    FileHandler.configure({
+      allowedMimeTypes: props.accept,
+      onDrop: (_editor, files, pos) => void uploadFiles(files, pos),
+      onPaste: (_editor, files) => void uploadFiles(files),
+    }),
+    TokenChips,
+  ]
+}
+
+const toolList = computed(() => props.tools ?? (props.inline ? INLINE_TOOLS : DEFAULT_TOOLS))
+
+/** A line is as tall as a line; a document starts tall enough to look like one. */
+const bodyHeight = computed(() => props.minHeight ?? (props.inline ? undefined : '220px'))
+
 const model = defineModel<RichTextModelValue>({ default: '' })
 
 const field = useFormField(props)
@@ -112,6 +282,15 @@ const prompt = ref<{ kind: 'link' | 'youtube'; value: string } | null>(null)
 
 const editable = computed(() => !field.disabled.value && !props.readonly)
 
+/** The HTML on screen while the source view is open; `null` while the editor is. */
+const source = ref<string | null>(null)
+
+/** What leaving the source would cost, while the editor waits to hear whether that is fine. */
+const losing = ref<string[] | null>(null)
+
+/** The source as it was opened: leaving it untouched has nothing to check and nothing to apply. */
+let opened = ''
+
 /** Tiptap renders `<p></p>` for an empty document; a backend wants an empty string. */
 function readHtml(): string {
   const instance = editor.value
@@ -122,23 +301,18 @@ function readHtml(): string {
 const editor = useEditor({
   content: currentValue.value,
   editable: editable.value,
-  extensions: [
-    StarterKit.configure({
-      link: {
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
-      },
-    }),
-    TableKit.configure({ table: { resizable: true } }),
-    LibraryImage.configure({ HTMLAttributes: { class: 'wx-rich-text__image' } }),
-    Youtube.configure({ nocookie: true, width: 640, height: 360 }),
-    FileHandler.configure({
-      allowedMimeTypes: props.accept,
-      onDrop: (_editor, files, pos) => void uploadFiles(files, pos),
-      onPaste: (_editor, files) => void uploadFiles(files),
-    }),
-  ],
+  extensions: props.inline ? inlineExtensions() : documentExtensions(),
+  editorProps: {
+    // The list's keys first: Enter picks a placeholder rather than splitting the paragraph.
+    handleKeyDown: (_view, event) => tokens.keydown(event, insertToken),
+    ...(props.inline
+      ? {
+          // Pasted lines become one line: the breaks would otherwise vanish between the words
+          // and glue the last of one line to the first of the next.
+          transformPastedText: (text: string) => text.replace(/\s*[\r\n]+\s*/g, ' '),
+        }
+      : {}),
+  },
   onUpdate: () => {
     const html = readHtml()
     // Tiptap raises an update for things that are not edits too. Writing the same words back
@@ -147,6 +321,11 @@ const editor = useEditor({
     if (html === currentValue.value) return
     locales.write(editing.value, html)
     emit('change', html)
+    suggestTokens()
+  },
+  onSelectionUpdate: () => {
+    // A caret moved by hand: an open list follows it, or goes.
+    if (tokens.open.value) suggestTokens()
   },
   onFocus: () => {
     focused.value = true
@@ -154,6 +333,7 @@ const editor = useEditor({
   },
   onBlur: () => {
     focused.value = false
+    tokens.close()
     emit('blur')
   },
 })
@@ -166,6 +346,11 @@ const editor = useEditor({
 watch(currentValue, (value) => {
   const instance = editor.value
   if (!instance) return
+  // The source view owns the value while it is open; another language brings its own source.
+  if (source.value !== null) {
+    if (value !== source.value) openSource(value)
+    return
+  }
   if (value === readHtml()) return
   instance.commands.setContent(value, { emitUpdate: false })
 })
@@ -175,6 +360,73 @@ watch(currentValue, (value) => {
  * unlocked after it would otherwise hear every editor on it "change" at once.
  */
 watch(editable, (value) => editor.value?.setEditable(value, false))
+
+/*
+ * Placeholders arrive after the editor — a panel fetches them — and decorations are only drawn
+ * again on a transaction, so the arrival is one: empty, and changing nothing in the document.
+ */
+watch(tokens.known, () => {
+  const instance = editor.value
+  if (instance) instance.view.dispatch(instance.state.tr.setMeta(tokenChipsKey, true))
+})
+
+const rootRef = ref<HTMLElement | null>(null)
+const tokenListId = computed(() => `${field.id.value}-tokens`)
+
+/** Under the line at a position of the document; under the field where nothing is measured. */
+function caretAnchor(pos: number): TokenAnchor | undefined {
+  try {
+    const at = editor.value?.view.coordsAtPos(pos)
+    if (at && at.bottom > at.top) {
+      return tokenAnchor(rectOf(at.left, at.top, 0, at.bottom - at.top), rootRef.value)
+    }
+  } catch {
+    // No layout to ask (a test), or a position the view has not drawn yet.
+  }
+  return fieldAnchor(rootRef.value, null)
+}
+
+/** After a keystroke or a caret move: open, narrow or close the list by what is before it. */
+function suggestTokens(): void {
+  const instance = editor.value
+  if (!instance || !hasTokens.value || !editable.value) return
+
+  const { selection } = instance.state
+  const { $from } = selection
+
+  if (!selection.empty || !$from.parent.isTextblock) return tokens.close()
+
+  // Every leaf inline node counts as one character, so offsets stay document positions.
+  const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '￼')
+  tokens.suggest(before, $from.pos, () =>
+    caretAnchor($from.pos - before.length + before.lastIndexOf('[')),
+  )
+}
+
+function insertToken(token: TokenOption, at: TokenRange): void {
+  const instance = editor.value
+  if (!instance) return
+
+  instance
+    .chain()
+    .focus()
+    .command(({ tr }) => {
+      tr.insertText(tokenText(token), at.from, at.to)
+      return true
+    })
+    .run()
+}
+
+/** The toolbar's button: every placeholder, going where the caret is or over the selection. */
+function browseTokens(): void {
+  const instance = editor.value
+  if (!instance) return
+  if (tokens.open.value && tokens.browsing.value) return tokens.close()
+
+  const { from, to } = instance.state.selection
+  instance.commands.focus()
+  tokens.browse({ from, to }, caretAnchor(from))
+}
 
 const isEmpty = computed(() => editor.value?.isEmpty ?? true)
 const inTable = computed(() => editor.value?.isActive('table') ?? false)
@@ -188,6 +440,7 @@ const classes = computed(() => [
     'is-disabled': field.disabled.value,
     'is-readonly': props.readonly,
     'is-localized': locales.on.value,
+    'is-inline': props.inline,
   },
 ])
 
@@ -268,15 +521,93 @@ function applyPrompt() {
   prompt.value = null
 }
 
+function openSource(html = readHtml()) {
+  prompt.value = null
+  losing.value = null
+  opened = formatHtml(html)
+  source.value = opened
+}
+
+/**
+ * The source goes to the model as it is typed, not when the view closes: a form saved with the
+ * source still open saves what is on screen. The server's allowlist still applies to it.
+ */
+function onSourceInput(html: string) {
+  source.value = html
+  losing.value = null
+  if (html === currentValue.value) return
+  locales.write(editing.value, html)
+  emit('change', html)
+}
+
+/**
+ * Back to the editor, which parses the source against its schema. Markup the schema does not
+ * know would vanish without a word, so when a hand edit is about to lose some the view stays
+ * open and says what, until it is told to go ahead.
+ */
+function closeSource(force = false) {
+  const instance = editor.value
+  const html = source.value
+  if (!instance || html === null) return
+
+  const edited = html !== opened
+
+  if (edited && !force) {
+    const parsed = createDocument(html, instance.schema)
+    const lost = lostMarkup(html, getHTMLFromFragment(parsed.content, instance.schema))
+
+    if (lost.length > 0) {
+      losing.value = lost
+      return
+    }
+  }
+
+  losing.value = null
+  source.value = null
+
+  if (edited) instance.commands.setContent(html, { emitUpdate: false })
+
+  // Written here rather than left to `onUpdate`: a source typed and typed back changes no node,
+  // raises no update, and would leave the model holding the indented copy.
+  const normalised = readHtml()
+  if (normalised !== currentValue.value) {
+    locales.write(editing.value, normalised)
+    emit('change', normalised)
+  }
+
+  void nextTick(() => instance.commands.focus())
+}
+
+function onSourceFocus(on: boolean) {
+  focused.value = on
+  if (on) emit('focus')
+  else emit('blur')
+}
+
+function toggleSource() {
+  if (source.value === null) openSource()
+  else closeSource()
+}
+
+/**
+ * The source button stays usable on a read-only field — reading the markup is half of what it
+ * is for — while every other button waits for the editor to come back.
+ */
+function toolDisabled(tool: RichTextTool): boolean {
+  if (tool === 'source') return field.disabled.value
+  return !editable.value || source.value !== null
+}
+
 /** Whether a tool should render at all — the image button needs somewhere to get a file. */
 function toolVisible(tool: RichTextTool): boolean {
   if (tool === 'image') return Boolean(props.upload || props.pickImage)
   return true
 }
 
-const visibleTools = computed(() => props.tools.filter(toolVisible))
+const visibleTools = computed(() => toolList.value.filter(toolVisible))
 
 function isActive(tool: RichTextTool): boolean {
+  if (tool === 'source') return source.value !== null
   const instance = editor.value
   if (!instance) return false
   switch (tool) {
@@ -292,6 +623,7 @@ function isActive(tool: RichTextTool): boolean {
 }
 
 function run(tool: RichTextTool) {
+  if (tool === 'source') return toggleSource()
   const instance = editor.value
   if (!instance) return
   const chain = instance.chain().focus()
@@ -302,6 +634,9 @@ function run(tool: RichTextTool) {
       break
     case 'italic':
       chain.toggleItalic().run()
+      break
+    case 'accent':
+      chain.toggleMark('accent').run()
       break
     case 'strike':
       chain.toggleStrike().run()
@@ -366,7 +701,7 @@ defineExpose({
 </script>
 
 <template>
-  <div :class="classes">
+  <div ref="rootRef" :class="classes">
     <div class="wx-rich-text__toolbar" role="toolbar" :aria-label="ariaLabel ?? label('toolbar')">
       <template v-for="(tool, index) in visibleTools" :key="`${tool}-${index}`">
         <span v-if="tool === 'divider'" class="wx-rich-text__divider" aria-hidden="true" />
@@ -376,13 +711,38 @@ defineExpose({
           :text="TOOL_META[tool].text"
           :label="label(tool)"
           :active="isActive(tool)"
-          :disabled="!editable"
+          :disabled="toolDisabled(tool)"
           @click="run(tool)"
         />
       </template>
 
+      <wx-rich-text-toolbar-button
+        v-if="hasTokens"
+        class="wx-rich-text__tokens"
+        icon="token"
+        :label="tokensLabel"
+        :active="tokens.open.value && tokens.browsing.value"
+        :disabled="!editable || source !== null"
+        @mousedown.prevent
+        @click="browseTokens"
+      />
+
       <span v-if="uploading > 0" class="wx-rich-text__uploading">{{ label('uploading') }}</span>
     </div>
+
+    <wx-token-menu
+      v-if="hasTokens"
+      :open="tokens.open.value"
+      :items="tokens.items.value"
+      :active="tokens.active.value"
+      :anchor="tokens.anchor.value"
+      :list-id="tokenListId"
+      :title="tokens.browsing.value ? tokensTitle : undefined"
+      :owner="rootRef"
+      @choose="(token) => tokens.choose(token, insertToken)"
+      @hover="(index) => (tokens.active.value = index)"
+      @close="tokens.close()"
+    />
 
     <locale-picker
       v-if="locales.on.value"
@@ -391,7 +751,10 @@ defineExpose({
       @choose="chooseLocale"
     />
 
-    <div v-if="inTable && editable" class="wx-rich-text__toolbar wx-rich-text__toolbar--table">
+    <div
+      v-if="inTable && editable && source === null"
+      class="wx-rich-text__toolbar wx-rich-text__toolbar--table"
+    >
       <wx-rich-text-toolbar-button
         v-for="tool in TABLE_TOOLS"
         :key="tool.key"
@@ -417,7 +780,39 @@ defineExpose({
       <wx-rich-text-toolbar-button icon="close" :label="label('cancel')" @click="prompt = null" />
     </form>
 
-    <div class="wx-rich-text__body" :style="{ minHeight }">
+    <div v-if="losing" class="wx-rich-text__prompt wx-rich-text__loss" role="alert">
+      <p class="wx-rich-text__loss-text">
+        {{ label('sourceLoss') }}
+        <template v-for="(item, index) in losing" :key="item">
+          <code>{{ item }}</code
+          ><template v-if="index < losing.length - 1">, </template>
+        </template>
+      </p>
+      <wx-button size="sm" type="danger" variant="outline" @click="closeSource(true)">
+        {{ label('sourceDrop') }}
+      </wx-button>
+      <wx-button size="sm" variant="text" @click="losing = null">{{
+        label('sourceKeep')
+      }}</wx-button>
+    </div>
+
+    <div v-if="source !== null" class="wx-rich-text__source">
+      <wx-code-editor
+        :model-value="source"
+        language="html"
+        line-wrapping
+        :min-height="bodyHeight"
+        :readonly="readonly"
+        :disabled="field.disabled.value"
+        :aria-label="label('source')"
+        @update:model-value="onSourceInput"
+        @focus="onSourceFocus(true)"
+        @blur="onSourceFocus(false)"
+      />
+    </div>
+
+    <!-- Hidden rather than unmounted: ProseMirror keeps its view, history and selection. -->
+    <div v-show="source === null" class="wx-rich-text__body" :style="{ minHeight: bodyHeight }">
       <span v-if="placeholder && isEmpty" class="wx-rich-text__placeholder">{{ placeholder }}</span>
       <editor-content
         :editor="editor"
@@ -549,6 +944,32 @@ defineExpose({
   border-color: var(--wx-border-focus);
 }
 
+.wx-rich-text__loss {
+  flex-wrap: wrap;
+  background: var(--wx-color-danger-soft);
+}
+
+.wx-rich-text__loss-text {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: var(--wx-font-size-sm);
+}
+
+.wx-rich-text__loss-text code {
+  font-family: var(--wx-font-family-mono);
+  white-space: nowrap;
+}
+
+/* The field draws the frame; the code editor inside it is only the surface. */
+.wx-rich-text__source {
+  flex: 1 1 auto;
+}
+
+.wx-rich-text__source :deep(.wx-code-editor) {
+  border: 0;
+  border-radius: 0 0 var(--wx-radius-control) var(--wx-radius-control);
+}
+
 .wx-rich-text__body {
   position: relative;
   flex: 1 1 auto;
@@ -561,6 +982,28 @@ defineExpose({
   left: var(--wx-space-16);
   color: var(--wx-text-placeholder);
   pointer-events: none;
+}
+
+/*
+ * A line: the toolbar shrinks to a strip of three buttons and the text sits where an input's
+ * would, so a form mixing the two does not jump between them.
+ */
+.wx-rich-text.is-inline .wx-rich-text__toolbar {
+  padding: var(--wx-space-2) var(--wx-space-4);
+}
+
+.wx-rich-text.is-inline .wx-rich-text__body {
+  padding: var(--wx-space-6) var(--wx-space-12);
+}
+
+.wx-rich-text.is-inline .wx-rich-text__placeholder {
+  top: var(--wx-space-6);
+  left: var(--wx-space-12);
+}
+
+/* The accent shows as one: the editor sees which words a site will colour. */
+.wx-rich-text.is-inline .wx-rich-text__content :deep(span) {
+  color: var(--wx-color-primary);
 }
 
 .wx-rich-text__file {

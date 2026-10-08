@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use WebxUi\Admin\Editing\AgentRevision;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
@@ -127,15 +129,17 @@ final class ArticleTools
             Tool::mutating(
                 'update',
                 'Change the values of an article — title, address, lead, rubrics, tags, cover, the SEO card — '
-                .'into its draft. A field left out keeps what it had. Send the revision articles_get gave you '
-                .'and the write is refused if somebody saved in between, instead of quietly overwriting them. '
+                .'into its draft. A field left out keeps what it had. Send the revision articles_get gave you: '
+                .'the write is refused if somebody saved in between, instead of quietly overwriting them, and '
+                .'refused without one — articles_get also says who has the article open in the panel '
+                .'(being_edited_by), which is worth telling your user before writing. '
                 .'The body is not written here: blocks go through blocks_edit_content. Rubrics, tags, the pin '
                 .'and the related list are not drafted — they are on the site the moment they are saved.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'article' => $article,
                     'values' => ['type' => 'object', 'description' => 'Field name → value, as articles_get returns them. Localized fields take { "en": "…" }.'],
-                    'revision' => ['type' => 'string', 'description' => 'The revision articles_get returned. Left out, the write goes in over whatever happened since.'],
+                    ...AgentRevision::properties('articles_get'),
                 ], 'required' => ['article', 'values']],
                 permission: 'blog.articles.manage',
             ),
@@ -145,11 +149,15 @@ final class ArticleTools
                 'Put the draft on the site under a date: its values become the article, a version is written, '
                 .'and the date decides everything else. A day ahead means the article waits and answers 404 '
                 .'until its morning; a day behind moves it down the feed. Omit `at` and it goes out now, or on '
-                .'the day the editor already chose for it. Ask a person first unless they asked you to publish.',
+                .'the day the editor already chose for it. Ask a person first unless they asked you to publish. '
+                .'It publishes whatever the draft holds now: send the revision articles_get gave you, so that an '
+                .'edit you have not read is not what goes on the site. While somebody has the article open in the '
+                .'panel the revision is required.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->publish($arguments, $user)),
                 ['properties' => [
                     'article' => $article,
                     'at' => ['type' => 'string', 'description' => 'The day and hour it goes out, with an offset: "2026-10-01T09:00:00+03:00". Now, or the day already chosen, when omitted.'],
+                    ...AgentRevision::stateProperties('articles_get'),
                 ], 'required' => ['article']],
                 permission: 'blog.articles.manage',
             ),
@@ -159,7 +167,7 @@ final class ArticleTools
                 'Take an article off the site. It answers 404 from then on and drops out of the feed; its '
                 .'address stays reserved and whatever was being prepared is still being prepared.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
-                ['properties' => ['article' => $article], 'required' => ['article']],
+                ['properties' => ['article' => $article, ...AgentRevision::stateProperties('articles_get')], 'required' => ['article']],
                 permission: 'blog.articles.manage',
             ),
 
@@ -168,7 +176,7 @@ final class ArticleTools
                 'Throw away the draft of an article that is on the site and go back to what the site shows. The draft '
                 .'is all that changes. dry_run names the fields that differ from the published ones.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
-                ['properties' => ['article' => $article], 'required' => ['article']],
+                ['properties' => ['article' => $article, ...AgentRevision::stateProperties('articles_get')], 'required' => ['article']],
                 permission: 'blog.articles.manage',
             ),
 
@@ -179,7 +187,7 @@ final class ArticleTools
                 .'named by its id afterwards. Nothing is destroyed: the bin in the panel puts it back, as long '
                 .'as nobody has taken its address in the meantime.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
-                ['properties' => ['article' => $article], 'required' => ['article']],
+                ['properties' => ['article' => $article, ...AgentRevision::stateProperties('articles_get')], 'required' => ['article']],
                 permission: 'blog.articles.manage',
             ),
         ];
@@ -298,6 +306,8 @@ final class ArticleTools
             // The article as you read it: send it back with articles_update and a write that
             // would land on top of somebody else's is refused instead.
             'revision' => Revision::of($article),
+            // Who has the article open in the panel right now: tell your user before writing.
+            'being_edited_by' => $this->presence()->of($article),
             'preview_url' => $this->preview($article, $user),
         ];
     }
@@ -363,7 +373,7 @@ final class ArticleTools
         $values = $this->container->make(ScreenValues::class)->patch(ArticleForm::SCREEN, $this->form()->values($article), $values);
 
         $this->refuseBlocks($values);
-        $this->sameRevision($arguments, $article);
+        AgentRevision::check($arguments, Revision::of($article), 'article', 'articles_get');
 
         if ($this->dryRun($arguments)) {
             return [
@@ -386,6 +396,7 @@ final class ArticleTools
     private function publish(array $arguments, ?Authenticatable $user): array
     {
         $article = $this->article($arguments['article'] ?? null);
+        $this->guard($arguments, $article);
         $at = Instant::from($arguments['at'] ?? null);
 
         if ($this->dryRun($arguments)) {
@@ -418,6 +429,7 @@ final class ArticleTools
     private function unpublish(array $arguments): array
     {
         $article = $this->article($arguments['article'] ?? null);
+        $this->guard($arguments, $article);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_unpublish' => $this->reference($article), 'status' => $article->status()];
@@ -435,6 +447,7 @@ final class ArticleTools
     private function discard(array $arguments): array
     {
         $article = $this->article($arguments['article'] ?? null);
+        $this->guard($arguments, $article);
 
         if (! $article->hasDraft()) {
             throw new ToolFailure("Article [{$article->getKey()}] has no draft: the site already shows what it holds.");
@@ -456,6 +469,7 @@ final class ArticleTools
     private function delete(array $arguments): array
     {
         $article = $this->article($arguments['article'] ?? null);
+        $this->guard($arguments, $article);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_trash' => $this->reference($article), 'status' => $article->status()];
@@ -633,27 +647,6 @@ final class ArticleTools
     }
 
     /**
-     * @param  array<string, mixed>  $arguments
-     */
-    private function sameRevision(array $arguments, Article $article): void
-    {
-        $sent = $arguments['revision'] ?? null;
-
-        if (! is_string($sent) || $sent === '') {
-            return;
-        }
-
-        $current = Revision::of($article);
-
-        if ($sent !== $current) {
-            throw new ToolFailure(
-                "The article changed since you read it: revision is [{$current}], you sent [{$sent}]. "
-                .'Read it again with articles_get and redo the edit on what is there now.'
-            );
-        }
-    }
-
-    /**
      * An article by id or by address.
      *
      * The address is what a blog is talked about in — "the piece about belts", which is
@@ -787,6 +780,22 @@ final class ArticleTools
     private function form(): ArticleForm
     {
         return $this->container->make(ArticleForm::class);
+    }
+
+    /**
+     * The rule for a change of state (AgentRevision::guard): the revision this agent read, and
+     * one has to be sent while somebody has the article open.
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private function guard(array $arguments, Article $article): void
+    {
+        AgentRevision::guard($arguments, Revision::of($article), $article, 'article', 'articles_get');
+    }
+
+    private function presence(): Presence
+    {
+        return $this->container->make(Presence::class);
     }
 
     private function locales(): Locales

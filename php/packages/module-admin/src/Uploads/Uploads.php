@@ -91,8 +91,8 @@ final class Uploads
             throw UploadRefused::forbidden();
         }
 
-        if (! $rules->accepts($type)) {
-            throw UploadRefused::wrongType();
+        if (! $rules->accepts($type, $name)) {
+            throw UploadRefused::wrongType($rules->extensions);
         }
 
         if ($rules->maxBytes !== null && $size > $rules->maxBytes) {

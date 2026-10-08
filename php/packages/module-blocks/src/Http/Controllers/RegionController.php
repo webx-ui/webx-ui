@@ -9,6 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\HeldRevision;
+use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Exceptions\RegionRefused;
@@ -67,6 +69,13 @@ final class RegionController
     public function publish(Request $request, string $name): JsonResponse
     {
         $this->declared($name);
+
+        // The editor sends the revision it held: an edit it has not seen is not published under it.
+        $stale = HeldRevision::conflict($request, 'regions', $name);
+
+        if ($stale !== null) {
+            return $stale;
+        }
 
         return $this->attempt(fn (): mixed => $this->writer->publish($name, $this->author($request)), $request, $name);
     }
@@ -144,7 +153,7 @@ final class RegionController
         try {
             [, $block] = $this->writer->adopt($name, $this->author($request));
         } catch (RegionRefused $refused) {
-            return $this->refused($refused);
+            return $this->refused($refused, $request, $name);
         }
 
         return new JsonResponse([
@@ -161,13 +170,13 @@ final class RegionController
         try {
             $write();
         } catch (RegionRefused $refused) {
-            return $this->refused($refused);
+            return $this->refused($refused, $request, $name);
         }
 
         return $this->detail($request, $name);
     }
 
-    private function refused(RegionRefused $refused): JsonResponse
+    private function refused(RegionRefused $refused, Request $request, string $name): JsonResponse
     {
         $body = ['message' => $refused->getMessage()];
 
@@ -177,6 +186,15 @@ final class RegionController
 
         if ($refused->revision !== null) {
             $body['revision'] = $refused->revision;
+        }
+
+        // A stale save answers with the region as it now is and who changed it, the way a page's
+        // does: the editor merges the two trees block by block and asks only about a block both
+        // sides changed.
+        if ($refused->status === 409) {
+            $region = $this->regions->find($name);
+            $body['data'] = $this->form->describe($name, $request->user(), $region);
+            $body['changed'] = $region === null ? null : LastChange::of($region, $request->user());
         }
 
         return new JsonResponse($body, $refused->status);

@@ -6,6 +6,7 @@
 export const richTextIcons: Record<string, string> = {
   bold: 'M7 5h6a3.5 3.5 0 0 1 0 7H7zm0 7h7a3.5 3.5 0 0 1 0 7H7z',
   italic: 'M15 5h-5M14 19H9M13.5 5 10.5 19',
+  accent: 'M5 19 12 5l7 14M8 13h8M18 4.5h.01',
   strike:
     'M5 12h14M8 8.5A3 3 0 0 1 11 6h2a3 3 0 0 1 3 2.5M16 15.5A3 3 0 0 1 13 18h-2a3 3 0 0 1-3-2.5',
   code: 'm9 8-5 4 5 4M15 8l5 4-5 4',
@@ -20,6 +21,7 @@ export const richTextIcons: Record<string, string> = {
     'M3 8.5A2.5 2.5 0 0 1 5.5 6h13A2.5 2.5 0 0 1 21 8.5v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 15.5zM10.5 9.5l4 2.5-4 2.5z',
   undo: 'M4 9h11a4.5 4.5 0 0 1 0 9h-4M4 9l4-4M4 9l4 4',
   redo: 'M20 9H9a4.5 4.5 0 0 0 0 9h4M20 9l-4-4M20 9l-4 4',
+  source: 'm8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14',
   rowAfter: 'M4 5h16M4 11h16M8 15v6M5 18h6',
   rowBefore: 'M4 19h16M4 13h16M8 3v6M5 6h6',
   columnAfter: 'M5 4v16M11 4v16M15 8h6M18 5v6',
@@ -28,6 +30,7 @@ export const richTextIcons: Record<string, string> = {
   deleteColumn: 'M8 4v16M16 4v16M12 9v6',
   deleteTable: 'M5 7h14M9 7V5h6v2M7 7l1 12h8l1-12M10 11v4M14 11v4',
   mergeCells: 'M4 6h16v12H4zM12 6v3M12 15v3M9 12h6M9 12l2-2M9 12l2 2',
+  token: 'M9 4H6v16h3M15 4h3v16h-3',
   check: 'm5 13 4 4L19 7',
   close: 'M6 6l12 12M18 6 6 18',
 }

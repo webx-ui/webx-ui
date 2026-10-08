@@ -145,7 +145,19 @@ final class SiteClient
             $method === 'HEAD' ? '' : substr($response->body(), 0, $limit),
             is_numeric($total) ? (int) round((float) $total * 1000) : $this->since($started),
             ttfb: is_numeric($ttfb) && (float) $ttfb > 0 ? (int) round((float) $ttfb * 1000) : null,
+            protocol: $stats !== [] && self::http2() && str_starts_with($url, 'https:') ? $response->toPsrResponse()->getProtocolVersion() : null,
         );
+    }
+
+    /**
+     * Whether this curl speaks HTTP/2. Guzzle pins every request to HTTP/1.1 unless told
+     * otherwise, so a site's HTTP/2 is only seen when it is asked for — and only asked for when
+     * curl can, or the request would fail rather than fall back.
+     */
+    public static function http2(): bool
+    {
+        return function_exists('curl_version') && defined('CURL_VERSION_HTTP2')
+            && ((int) (curl_version()['features'] ?? 0) & CURL_VERSION_HTTP2) !== 0;
     }
 
     /**
@@ -156,6 +168,12 @@ final class SiteClient
         // Asked for and decoded by curl; Guzzle then moves the original header to
         // `x-encoded-content-encoding`, which is where the compression check looks too.
         $options = ['decode_content' => 'gzip, deflate', 'http_errors' => false];
+
+        // Over TLS curl offers HTTP/2 and falls back to 1.1 when the server has no h2 — what a
+        // browser does, and the only way `host.http2` learns what the server can.
+        if (str_starts_with($url, 'https:') && self::http2()) {
+            $options['version'] = 2.0;
+        }
 
         $host = parse_url($url, PHP_URL_HOST);
         $address = $this->address();

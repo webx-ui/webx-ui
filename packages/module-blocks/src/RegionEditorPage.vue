@@ -3,8 +3,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
+  useEditing,
   useErrorText,
   useTranslate,
+  WxEditingAlerts,
   WxSaveState,
   WxScreen,
   WxScreenHead,
@@ -67,7 +69,6 @@ const loading = ref(true)
 const saving = ref(false)
 const working = ref(false)
 const errors = ref<Record<string, string[]>>({})
-const conflict = ref<RegionConflict | null>(null)
 
 const snapshot = ref('')
 const reloadToken = ref(0)
@@ -75,6 +76,35 @@ const screenKey = ref(0)
 
 /* `can()` answers a plain boolean; wrapped here so the template and the guards read one thing. */
 const canManage = computed(() => context.can('blocks.regions'))
+
+/*
+ * Other people on the same region: a refused save is merged with theirs block by block and saved
+ * again, and only a block both sides changed is asked about. The form is `{ blocks }` — the shape
+ * the screen edits — so the merge walks the tree the same way it walks a page's.
+ */
+const editing = useEditing<ScreenModel>({
+  entity: 'regions',
+  id: () => region.value?.name,
+  values,
+  revision,
+  read: async () => {
+    const detail = await api.get(name.value)
+
+    return { values: { blocks: detail.blocks }, revision: detail.revision }
+  },
+  adopt: (theirs) => {
+    snapshot.value = JSON.stringify(theirs.values)
+    reloadToken.value += 1
+  },
+  // Published or taken off by somebody else: the badge follows, and the form stays as it is.
+  // No `restore`: a region is declared by the code, so there is no bin to take it out of.
+  refresh: () => refresh(),
+  canWrite: () => canManage.value,
+  busy: () => saving.value || flight !== undefined,
+  screen: 'regions.form',
+})
+
+const conflict = editing.conflict
 
 const current = computed(() => JSON.stringify(values.value))
 const dirty = computed(() => snapshot.value !== '' && current.value !== snapshot.value)
@@ -142,6 +172,7 @@ function take(detail: RegionDetail): void {
   values.value = { blocks: detail.blocks }
   revision.value = detail.revision
   snapshot.value = JSON.stringify(values.value)
+  editing.opened(values.value)
   conflict.value = null
 }
 
@@ -159,18 +190,31 @@ async function load(silent = false): Promise<void> {
   }
 }
 
+/**
+ * What surrounds the form, read again: the region with its status. Not the blocks — the form is
+ * somebody's work in progress, and a change of its content is the notice's to offer.
+ */
+async function refresh(): Promise<void> {
+  try {
+    region.value = await api.get(name.value)
+  } catch {
+    // The heartbeat says what happened; a region that could not be read again stays as it was.
+  }
+}
+
 /* One pending save at a time, and one pending pause. */
 let timer: ReturnType<typeof setTimeout> | undefined
 
 function schedule(): void {
-  if (!canManage.value || conflict.value || !dirty.value) return
+  if (!canManage.value || conflict.value || !dirty.value || editing.stopped.value) return
 
   clearTimeout(timer)
   timer = setTimeout(() => void save(), PAUSE)
 }
 
 function onFocusOut(): void {
-  if (!canManage.value || conflict.value || !dirty.value || saving.value) return
+  if (!canManage.value || conflict.value || !dirty.value || saving.value || editing.stopped.value)
+    return
 
   clearTimeout(timer)
   void save()
@@ -208,6 +252,7 @@ async function write(): Promise<void> {
 
   // What is being sent, so that anything changed while the request is out stays dirty.
   const sending = current.value
+  const sent = values.value
   const blocks = tree.value
 
   saving.value = true
@@ -222,6 +267,9 @@ async function write(): Promise<void> {
 
     if (current.value === sending) snapshot.value = sending
 
+    // What the server holds now is what was sent: the base of the next merge.
+    editing.opened(sent)
+
     // The preview draws the draft, and the draft is what was just written.
     reloadToken.value += 1
   } catch (error) {
@@ -230,15 +278,23 @@ async function write(): Promise<void> {
       body?: Partial<RegionConflict> & { errors?: Record<string, string[]> }
     }
 
-    if (failure.status === 409 && failure.body?.revision) {
-      conflict.value = {
-        message: failure.body.message ?? t('region.conflict-title'),
-        revision: failure.body.revision,
+    if (failure.status === 409 && failure.body?.data) {
+      const theirs = failure.body.data
+      const merged = editing.refused({
+        values: { blocks: theirs.blocks },
+        revision: theirs.revision,
+        changed: failure.body.changed,
+      })
+
+      // Nothing overlapping: both edits are in the form now, and they go to the server again.
+      if (merged) {
+        region.value = theirs
+        void save()
       }
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
       toast.danger(t('region.save-failed'))
-    } else {
+    } else if (!(await editing.failed(error))) {
       toast.danger(message(error))
     }
   } finally {
@@ -246,28 +302,9 @@ async function write(): Promise<void> {
   }
 }
 
+/** Give up what was written and take the region as it now is; the component asked first. */
 async function takeTheirs(): Promise<void> {
-  const agreed = await confirm({
-    title: t('region.conflict-theirs-title'),
-    message: t('region.conflict-theirs-text'),
-    confirmText: t('region.conflict-theirs'),
-    cancelText: t('region.cancel'),
-    tone: 'danger',
-  })
-
-  if (agreed) await load(true)
-}
-
-/** Keep what was written, over the other version: that one is in the autosave ring anyway. */
-async function keepMine(): Promise<void> {
-  const theirs = conflict.value
-
-  if (!theirs) return
-
-  revision.value = theirs.revision
-  conflict.value = null
-
-  await save()
+  await load(true)
 }
 
 /**
@@ -277,28 +314,52 @@ async function keepMine(): Promise<void> {
  * with the last second of edits still in the pause would publish without them.
  */
 async function act(
-  words: { title: string; text: string; confirm: string; done: string; danger?: boolean },
-  call: (name: string) => Promise<RegionDetail>,
+  words: {
+    title: string
+    text: string
+    confirm: string
+    done: string
+    danger?: boolean
+    publishing?: boolean
+  },
+  call: (name: string, revision?: string) => Promise<RegionDetail>,
 ): Promise<void> {
   if (!region.value) return
 
-  const agreed = await confirm({
-    title: words.title,
-    message: words.text,
-    confirmText: words.confirm,
-    cancelText: t('region.cancel'),
-    tone: words.danger ? 'danger' : undefined,
-  })
+  // Publishing saves before the question rather than after: the draft on the server may hold
+  // somebody else's edit this editor never pulled in, and that is said before it goes on the
+  // site — with whose it is and where — rather than published unseen.
+  let held: { revision: string; asked: boolean } | null = null
+
+  if (words.publishing) {
+    if (dirty.value) await save()
+    if (conflict.value || dirty.value) return
+
+    held = await editing.beforePublish()
+
+    if (!held) return
+  }
+
+  // One question is enough: whoever just agreed to publish somebody else's changes has said yes.
+  const agreed =
+    held?.asked ||
+    (await confirm({
+      title: words.title,
+      message: words.text,
+      confirmText: words.confirm,
+      cancelText: t('region.cancel'),
+      tone: words.danger ? 'danger' : undefined,
+    }))
 
   if (!agreed) return
 
   if (dirty.value) await save()
-  if (conflict.value || dirty.value) return
+  if (conflict.value || dirty.value || !region.value) return
 
   working.value = true
 
   try {
-    take(await call(region.value.name))
+    take(await call(region.value.name, held?.revision))
     reloadToken.value += 1
     toast.success(words.done)
   } catch (error) {
@@ -307,7 +368,8 @@ async function act(
     const refused = (error as { body?: { errors?: Record<string, string[]> } }).body?.errors
       ?.blocks?.[0]
 
-    toast.danger(refused ?? message(error))
+    if (refused) toast.danger(refused)
+    else if (!(await editing.failed(error))) toast.danger(message(error))
   } finally {
     working.value = false
   }
@@ -322,8 +384,9 @@ function publish(): Promise<void> {
       text: t('region.publish-text'),
       confirm: t('region.publish'),
       done: t('region.published'),
+      publishing: true,
     },
-    (region) => api.publish(region),
+    (region, revision) => api.publish(region, revision),
   )
 }
 
@@ -473,21 +536,9 @@ onBeforeRouteLeave(async () => {
         </template>
       </wx-screen-head>
 
-      <wx-alert
-        v-if="conflict"
-        type="warning"
-        :title="t('region.conflict-title')"
-        :description="conflict.message"
-      >
-        <template #actions>
-          <wx-button size="sm" variant="outline" @click="takeTheirs">
-            {{ t('region.conflict-theirs') }}
-          </wx-button>
-          <wx-button size="sm" type="primary" @click="keepMine">
-            {{ t('region.conflict-mine') }}
-          </wx-button>
-        </template>
-      </wx-alert>
+      <!-- Somebody else wrote while this editor was open. What does not overlap is merged
+           without a word; what does is listed block by block. -->
+      <wx-editing-alerts :editing="editing" @save="save" @theirs="takeTheirs" />
 
       <!--
         While the tree is empty the site prints the view from the code, and the preview shows
@@ -525,7 +576,7 @@ onBeforeRouteLeave(async () => {
 
       <wx-action-bar v-if="canManage">
         <template #state>
-          <wx-save-state :state="state" />
+          <wx-save-state v-if="!editing.stopped.value" :state="state" />
         </template>
 
         <wx-button v-if="region.published" variant="text" :disabled="working" @click="unpublish">
@@ -541,14 +592,21 @@ onBeforeRouteLeave(async () => {
           {{ t('region.discard') }}
         </wx-button>
 
-        <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
+        <wx-button
+          variant="outline"
+          :loading="saving"
+          :disabled="!dirty || editing.stopped.value"
+          :title="editing.blocked.value"
+          @click="save"
+        >
           {{ t('region.save') }}
         </wx-button>
 
         <wx-button
           type="primary"
           :loading="working"
-          :disabled="region.published && !region.has_draft && !dirty"
+          :disabled="editing.stopped.value || (region.published && !region.has_draft && !dirty)"
+          :title="editing.blocked.value"
           @click="publish"
         >
           {{ t('region.publish') }}

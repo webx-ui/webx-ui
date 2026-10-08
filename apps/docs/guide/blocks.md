@@ -175,6 +175,28 @@ itself, null for anywhere), `max_per_entity`, `is_enabled`.
 nodes (`wx-card`, `wx-tabs`, `wx-row`) group fields; the values stay flat. Translatable labels
 work with the same `trans::` marker as everywhere on a screen.
 
+**A line with markup in it is `wx-rich-text` with `inline`, not `wx-input`.** A heading like
+`Deeply heard<span>.</span> Gently guided` — an accent the site's styles colour — in a plain
+input is shown to the editor raw, tags and all. The inline field shows the words with the
+accent drawn, offers bold, italic and accent, and stores the same string, cleaned on the server
+to those few tags. The template prints it unescaped, `{!! $heading !!}`, as it would any rich
+text:
+
+```json
+{ "id": "heading", "type": "wx-rich-text", "label": "Heading", "props": { "inline": true } }
+```
+
+Switching a field from `wx-input` is safe for what pages already hold: the values are strings
+either way, and the first save runs them through the allowlist — which takes every attribute
+off, so a theme that styles `span.dot` should style the heading's `span` instead. Until a type is switched, the
+editor warns under a plain field whose value holds tags, and the value is kept exactly as stored.
+
+**A value the site keeps in one place is a shortcode.** `Call us on [phone]` in any text, textarea
+or rich text field prints the number from «Settings» → «Shortcodes» as a link that dials, and a
+changed number changes every page. The template needs nothing: the field arrives resolved, with
+the editor's text escaped. See [Shortcodes](/guide/shortcodes) — also for when to use one rather
+than the inline accent mark.
+
 **The template is Blade** with the fields as variables, plus `$block` (`key`, `type`, `version`,
 `depth`, `value('name', default)`) and `$entity`, the record the block stands on. The root element
 carries `data-wx-block="{slug}"`: the runtime finds the block by it and the panel highlights it by
@@ -188,6 +210,32 @@ A variable holds what the field type makes of the stored value, the same way
 a library that moves to another disk rewrites no page. A value whose type nobody registered on the
 server — `wx-blocks`, a field of the project's own — arrives as it is stored. `$block->values`
 holds the same map, which is what a template hands its script in `data-wx-values`.
+
+::: v-pre
+
+**A text field the template changes goes through `wx_text()`.** A text or textarea field arrives
+as a plain string, or — once an editor types a [shortcode](/guide/shortcodes) into it — as HTML
+that `{{ }}` prints without escaping again. A string function or a cast turns the second kind into
+a string, and `{{ }}` escapes it a second time: `{{ rtrim($heading, '.') }}` prints
+`Call &lt;a href=…` for `Call [phone].`. `wx_text()` takes either kind and returns one whose
+changes stay HTML:
+
+:::
+
+```blade
+<h2>{{ wx_text($heading)->trimEnd('.') }}</h2>
+<q>{{ wx_text($item['quote'])->trim('“”"') }}</q>
+<p>{{ wx_text($lead)->map(fn ($text) => Str::limit($text, 120)) }}</p>
+```
+
+::: v-pre
+
+`trim`, `trimStart`, `trimEnd`, `stripPrefix`, `stripSuffix`, `map` and `isEmpty` work on what the
+editor typed — the brackets, not what they print — so trimming a full stop never cuts into a phone
+number, and a `[dot]` at the end stays. Saving warns about a string function applied to a text
+field inside `{{ }}`, naming the field.
+
+:::
 
 The way in is the same walk. What a save keeps is what the field type makes of what was sent —
 the editor's save and `blocks_edit_content` alike — so a type that cleans what it is given cleans
@@ -221,7 +269,8 @@ the page.
 **The styles start with `.b-{slug}`**, in BEM: `.b-hero__title`, `.b-hero--wide`. Width decisions
 are container queries, because the block does not know whether it is the page or a third of it.
 Saving reports what leaks — a selector outside the prefix, a bare element selector, `@media`, a
-missing `data-wx-block` — as warnings under the editor, never as a refusal. (A marker that names
+missing `data-wx-block`, a text field changed by a string function without `wx_text()` — as
+warnings under the editor, never as a refusal. (A marker that names
 another slug is the one exception: it is refused on publishing.)
 
 **The script is a body**, not a program:
@@ -448,6 +497,20 @@ nothing — and, with `--publish`, runs the publish checks and publishes what pa
 fails is left as a draft and the command says so with its exit code. Keep the export in the
 repository as a seed for a fresh install and as the thing that gets reviewed; moving types from a
 local site to a production one becomes two commands.
+
+The same files move through the section too, for whoever has no shell on the site. **Export** at
+the top of «Blocks» — and on a type's editor, with that type ticked — takes the ticked types and
+every component they call, so the file works on a site that has none of them, and saves one
+`.json`: a pack, the command's documents in a list under `"format": "webx-blocks"`, what is called
+first. **Import** reads such a pack, or a single file the command wrote, and asks the server twice:
+first without writing, to show what each type would become — new, updated, unchanged or refused,
+and why — then for real. Types come in as drafts, an existing one gets a new draft version, and
+the switch beside the button publishes what passes the checks — switched on, the plan runs those
+checks as well, so a type they would hold back says so before anything is written. The command reads packs as well,
+so a file from the panel can go into `resources/blocks` as it is.
+
+Export needs only to see the section; import is `blocks.manage` and a site with editing on, like
+making a type by hand.
 
 The two drift apart quietly, so export on the day you edit. A type changed in the panel and not
 written back leaves the file describing the release before: the site is fine, because the site

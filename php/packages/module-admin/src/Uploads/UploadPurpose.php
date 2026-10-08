@@ -14,6 +14,10 @@ use WebxUi\Admin\Contracts\HasPermissions;
  * file is refused before a gigabyte of it has crossed the wire. It is a courtesy and not a
  * guarantee: the consumer checks the content once the file is whole, because a declared type is
  * whatever the sender wrote.
+ *
+ * A purpose may name extensions instead, or as well — a library whose white list is written in
+ * extensions, and a browser that declares no type at all for a HEIC. Either list letting the
+ * file through is enough.
  */
 final readonly class UploadPurpose
 {
@@ -21,12 +25,14 @@ final readonly class UploadPurpose
      * @param  list<string>  $permissions  any of them lets an administrator start an upload
      * @param  list<string>  $types  MIME types, `video/*` for a family; empty takes anything
      * @param  int|null  $maxBytes  null leaves the size to the disk
+     * @param  list<string>  $extensions  without the dot; matched against the file's name
      */
     public function __construct(
         public string $purpose,
         public array $permissions,
         public array $types = [],
         public ?int $maxBytes = null,
+        public array $extensions = [],
     ) {}
 
     public function allows(mixed $admin): bool
@@ -44,9 +50,15 @@ final readonly class UploadPurpose
         return false;
     }
 
-    public function accepts(string $type): bool
+    public function accepts(string $type, string $name = ''): bool
     {
-        if ($this->types === []) {
+        if ($this->types === [] && $this->extensions === []) {
+            return true;
+        }
+
+        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+        if ($extension !== '' && in_array($extension, array_map('strtolower', $this->extensions), true)) {
             return true;
         }
 

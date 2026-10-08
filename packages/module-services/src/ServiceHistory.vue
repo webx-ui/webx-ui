@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxDate, WxDrafts } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxEmpty, WxSkeleton, WxText } from '@webx-ui/core'
 import { createServicesApi } from './api'
 import { useServiceEditor } from './editor'
@@ -8,8 +8,8 @@ import { useServicesMessages } from './i18n'
 import type { ServiceVersion } from './types'
 
 /**
- * What was published, when, by whom and from where — publications only; the autosaves are
- * insurance, not history.
+ * What was published, when, by whom and from where — and under it, in a list of its own, the
+ * copies of the draft: the autosaves, and a draft somebody else's save wrote over.
  *
  * Restoring makes the old version the draft. Publishing it is the same separate step it always
  * is, so nothing here changes the site by itself.
@@ -90,43 +90,60 @@ watch(
 </script>
 
 <template>
-  <div class="wx-service-history">
-    <wx-skeleton v-if="versions === null" class="wx-service-history__ghost" :rows="3" />
-    <wx-empty v-else-if="versions.length === 0" :description="t('service.history-empty')" />
-    <div
-      v-for="version in versions"
-      v-else
-      :key="version.number"
-      class="wx-service-history__row"
-      :class="{ 'is-live': version.number === live }"
-    >
-      <code class="wx-service-history__number">{{
-        t('service.version', { number: version.number })
-      }}</code>
-      <div class="wx-service-history__who">
-        <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
-        <wx-text size="sm" tone="muted">
-          {{ version.author ?? t(`service.source-${version.source}`) }}
-          <template v-if="version.comment"> · {{ version.comment }}</template>
-        </wx-text>
-      </div>
-      <wx-badge v-if="version.number === live" type="success" dot>{{
-        t('service.version-live')
-      }}</wx-badge>
-      <wx-button
-        v-if="canManage && version.number !== live"
-        size="sm"
-        variant="outline"
-        :loading="working"
-        @click="restore(version)"
+  <div class="wx-service-history-tab">
+    <div class="wx-service-history">
+      <wx-skeleton v-if="versions === null" class="wx-service-history__ghost" :rows="3" />
+      <wx-empty v-else-if="versions.length === 0" :description="t('service.history-empty')" />
+      <div
+        v-for="version in versions"
+        v-else
+        :key="version.number"
+        class="wx-service-history__row"
+        :class="{ 'is-live': version.number === live }"
       >
-        {{ t('service.restore-version') }}
-      </wx-button>
+        <code class="wx-service-history__number">{{
+          t('service.version', { number: version.number })
+        }}</code>
+        <div class="wx-service-history__who">
+          <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
+          <wx-text size="sm" tone="muted">
+            {{ version.author ?? t(`service.source-${version.source}`) }}
+            <template v-if="version.comment"> · {{ version.comment }}</template>
+          </wx-text>
+        </div>
+        <wx-badge v-if="version.number === live" type="success" dot>{{
+          t('service.version-live')
+        }}</wx-badge>
+        <wx-button
+          v-if="canManage && version.number !== live"
+          size="sm"
+          variant="outline"
+          :loading="working"
+          @click="restore(version)"
+        >
+          {{ t('service.restore-version') }}
+        </wx-button>
+      </div>
     </div>
+
+    <wx-drafts
+      :id="service?.id"
+      entity="services"
+      screen="services.form"
+      :can-restore="canManage"
+      :stamp="[service?.published_at, service?.updated_at]"
+      @restored="editor?.reload()"
+    />
   </div>
 </template>
 
 <style scoped>
+.wx-service-history-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-24);
+}
+
 .wx-service-history {
   display: flex;
   flex-direction: column;

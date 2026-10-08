@@ -161,7 +161,9 @@ return [
     |
     | An entity with `HasVersions` keeps this many publications; the oldest go
     | as new ones are written, pinned ones excepted. `autosaves` is the ring of
-    | draft copies kept beside the history as insurance, not as part of it.
+    | draft copies kept beside the history as insurance, not as part of it;
+    | `overwritten` keeps the drafts a save by somebody else replaced — an
+    | agent's edit under an editor's — so that neither side's work is lost.
     | Lowering a limit after the fact is what `webx:versions:prune` is for.
     |
     */
@@ -169,6 +171,7 @@ return [
     'versions' => [
         'limit' => 30,
         'autosaves' => 5,
+        'overwritten' => 10,
     ],
 
     /*
@@ -282,6 +285,33 @@ return [
             'jobs',
             'job_batches',
             'failed_jobs',
+        ],
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Snapshots
+    |---------------------------------------------------------------------------
+    |
+    | `webx:snapshot` packs the content into an archive and
+    | `webx:snapshot:restore` puts it into another stand. Which tables are
+    | content and which are the stand's own is declared by the packages; a site
+    | names its own tables here, under `content`, `admins`, `stand`, `derived`
+    | or `transient` (a trailing `*` is a prefix), and these win over what the
+    | packages say. A table nobody names travels only with `--all`.
+    |
+    | `disk` is the uploaded files that travel — a local disk — and
+    | `skip_folders` the folders of previews inside it, which are cut again on
+    | demand and so are neither carried nor kept after a restore.
+    |
+    */
+
+    'snapshot' => [
+        'disk' => env('WEBX_SNAPSHOT_DISK', 'public'),
+        'skip_folders' => ['thumbs'],
+        'tables' => [
+            // 'content' => ['shop_banners'],
+            // 'stand' => ['newsletter_subscribers'],
         ],
     ],
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Screens;
 
+use WebxUi\Media\Models\MediaAlias;
 use WebxUi\Media\Models\MediaFile;
 
 /**
@@ -50,6 +51,15 @@ final class MediaFiles
 
         foreach (MediaFile::query()->whereIn('path', array_values($missing))->get() as $file) {
             $this->found[$file->path] = $file;
+            unset($missing[$file->path]);
+        }
+
+        // A key a file had before it was converted: everything the site keeps was rewritten, so
+        // this is for a value it could not reach — and drawing the picture beats a gap.
+        if ($missing !== []) {
+            foreach (MediaAlias::query()->whereIn('path', array_values($missing))->with('file')->get() as $alias) {
+                $this->found[$alias->path] = $alias->file;
+            }
         }
     }
 

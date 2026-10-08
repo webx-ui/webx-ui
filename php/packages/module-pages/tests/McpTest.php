@@ -311,13 +311,13 @@ final class McpTest extends TestCase
 
         $this->assertFalse($about->refresh()->hasDraft());
 
-        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['de' => 'ueber-uns']]], $this->editor())
+        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['de' => 'ueber-uns']], 'force' => true], $this->editor())
             ->assertOk();
 
         $this->assertSame(['en' => 'about', 'de' => 'ueber-uns'], $about->refresh()->draftValues()['slug']);
 
         // Null is how one language is emptied, and a plain string is the main one.
-        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['de' => null], 'title' => 'About us']], $this->editor())
+        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['de' => null], 'title' => 'About us'], 'force' => true], $this->editor())
             ->assertOk();
 
         $draft = $about->refresh()->draftValues();
@@ -667,7 +667,7 @@ final class McpTest extends TestCase
         $this->assertFalse($about->refresh()->hasDraft());
 
         // What pages_get answers can be sent back as it came: `is_home` is read, never written.
-        $this->agent('update', ['page' => '/about', 'values' => ['title' => ['en' => 'About us'], 'is_home' => false]], $this->editor())
+        $this->agent('update', ['page' => '/about', 'values' => ['title' => ['en' => 'About us'], 'is_home' => false], 'force' => true], $this->editor())
             ->assertOk();
     }
 

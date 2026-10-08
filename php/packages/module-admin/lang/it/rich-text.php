@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Grassetto',
     'italic' => 'Corsivo',
+    'accent' => 'Accento',
     'strike' => 'Barrato',
     'code' => 'Codice in linea',
     'h2' => 'Titolo 2',
@@ -34,4 +35,8 @@ return [
     'apply' => 'Applica',
     'cancel' => 'Annulla',
     'uploading' => 'Caricamento…',
+    'source' => 'Sorgente HTML',
+    'source-loss' => 'L’editor non conserva questo markup e lo rimuoverà:',
+    'source-drop' => 'Rimuovi',
+    'source-keep' => 'Continua a modificare',
 ];

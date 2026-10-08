@@ -23,6 +23,12 @@ use WebxUi\Media\Models\MediaFile;
  */
 final class FileStore
 {
+    /**
+     * What the library's chunked uploads are registered as with the panel's protocol: every
+     * upload into Files — the page, the picker, a field — goes a piece at a time under it.
+     */
+    public const UPLOAD_PURPOSE = 'media.library';
+
     public function __construct(
         private readonly FilesystemFactory $filesystems,
         private readonly Config $config,

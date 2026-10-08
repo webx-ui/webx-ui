@@ -20,4 +20,8 @@ if ((bool) config('webx-seo.sitemap.enabled', true)) {
     Route::get('sitemap-{file}.xml', [SitemapController::class, 'file'])
         ->where('file', '[a-z0-9._-]+')
         ->name('webx.seo.sitemap.file');
+
+    if ((bool) config('webx-seo.sitemap.stylesheet', true)) {
+        Route::get('sitemap.xsl', [SitemapController::class, 'stylesheet'])->name('webx.seo.sitemap.stylesheet');
+    }
 }

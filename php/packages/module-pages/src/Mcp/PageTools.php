@@ -12,6 +12,9 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use stdClass;
 use Throwable;
+use WebxUi\Admin\Editing\AgentRevision;
+use WebxUi\Admin\Editing\DraftCopies;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
@@ -122,14 +125,15 @@ final class PageTools
             Tool::mutating(
                 'update',
                 'Change the values of a page — title, address, the SEO card — into its draft. A field left out '
-                .'keeps what it had. Send the revision pages_get gave you and the write is refused if somebody '
-                .'saved in between, instead of quietly overwriting them. Content is not written here: blocks go '
+                .'keeps what it had. Send the revision pages_get gave you: the write is refused if somebody '
+                .'saved in between, instead of quietly overwriting them, and refused without one — pages_get also says '
+                .'who has the page open in the panel (being_edited_by), which is worth telling your user before writing. Content is not written here: blocks go '
                 .'through blocks_edit_content. The SEO card is the exception: it is not drafted and is on the site the moment it is saved — the answer says so with seo_live: true.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'page' => $page,
                     'values' => ['type' => 'object', 'description' => 'Field name → value, as pages_get returns them. Localized fields take { "en": "…" }.'],
-                    'revision' => ['type' => 'string', 'description' => 'The revision pages_get returned. Left out, the write goes in over whatever happened since.'],
+                    ...AgentRevision::properties('pages_get'),
                 ], 'required' => ['page', 'values']],
             ),
 
@@ -144,15 +148,18 @@ final class PageTools
                     'page' => $page,
                     'target' => ['type' => ['integer', 'string'], 'description' => 'The page it moves relative to.'],
                     'zone' => ['type' => 'string', 'enum' => Placement::ZONES, 'description' => 'inside makes it a child of the target; before and after make it a sibling.'],
+                    ...AgentRevision::stateProperties('pages_get'),
                 ], 'required' => ['page', 'target', 'zone']],
             ),
 
             Tool::mutating(
                 'publish',
                 'Put the draft on the site: its values become the page, the date is stamped and a version is '
-                .'written. Ask a person first unless they asked you to publish.',
+                .'written. Ask a person first unless they asked you to publish. It publishes whatever the draft '
+                .'holds now: send the revision pages_get gave you, so that an edit you have not read is not what '
+                .'goes on the site. While somebody has the page open in the panel the revision is required.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->publish($arguments, $user)),
-                ['properties' => ['page' => $page], 'required' => ['page']],
+                ['properties' => ['page' => $page, ...AgentRevision::stateProperties('pages_get')], 'required' => ['page']],
             ),
 
             Tool::mutating(
@@ -162,7 +169,8 @@ final class PageTools
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
                 ['properties' => [
                     'page' => $page,
-                    'force' => ['type' => 'boolean', 'description' => 'Take the home page off too — the root of the site then answers 404.'],
+                    'revision' => AgentRevision::stateProperties('pages_get')['revision'],
+                    'force' => ['type' => 'boolean', 'description' => 'Take the home page off too — the root of the site then answers 404 — and go ahead without a revision while somebody has the page open.'],
                 ], 'required' => ['page']],
             ),
 
@@ -172,7 +180,7 @@ final class PageTools
                 .'addresses are released. The answer says how many pages that was. Nothing is destroyed: '
                 .'pages_restore brings the branch back as long as nobody has taken its addresses.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
-                ['properties' => ['page' => $page], 'required' => ['page']],
+                ['properties' => ['page' => $page, ...AgentRevision::stateProperties('pages_get')], 'required' => ['page']],
             ),
 
             Tool::mutating(
@@ -192,28 +200,32 @@ final class PageTools
                 .'that changes; the page stays on the site as it is. dry_run says whether there is a draft and '
                 .'which fields it changes.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->discard($arguments, $user)),
-                ['properties' => ['page' => $page], 'required' => ['page']],
+                ['properties' => ['page' => $page, ...AgentRevision::stateProperties('pages_get')], 'required' => ['page']],
             ),
 
             Tool::read(
                 'versions',
                 'The history of a page: every publication, newest first — number, date, who (or which agent), '
                 .'the comment — and which one the site shows now. What the panel\'s «History» tab lists. The way '
-                .'to undo a bad edit: find the version before it, then pages_version_restore.',
-                fn (array $arguments): array => $this->attempt(fn (): array => $this->versions($arguments)),
+                .'to undo a bad edit: find the version before it, then pages_version_restore. Under drafts, the '
+                .'copies of the draft between publications — the autosaves and the drafts somebody else\'s save '
+                .'wrote over (kind: overwritten) — each by id, for pages_version_restore with draft.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->versions($arguments, $user)),
                 ['properties' => ['page' => $page], 'required' => ['page']],
             ),
 
             Tool::mutating(
                 'version_restore',
                 'Put an old publication of a page back into its draft — its title, address and blocks as they '
-                .'were. The SEO card is not part of a version: it is saved live, so it stays as it is now. The '
+                .'were — or, with draft instead of number, a copy of the draft that pages_versions lists. The SEO card is not part of a version: it is saved live, so it stays as it is now. The '
                 .'site does not change until somebody publishes; dry_run says which fields would change.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->versionRestore($arguments, $user)),
                 ['properties' => [
                     'page' => $page,
                     'number' => ['type' => 'integer', 'description' => 'A version number, as pages_versions lists it.'],
-                ], 'required' => ['page', 'number']],
+                    'draft' => ['type' => 'integer', 'description' => 'Instead of number: the id of a draft copy, as pages_versions lists it under drafts.'],
+                    ...AgentRevision::stateProperties('pages_get'),
+                ], 'required' => ['page']],
             ),
 
             Tool::mutating(
@@ -385,6 +397,10 @@ final class PageTools
             // The page as you read it: send it back with pages_update and a write that would
             // land on top of somebody else's is refused instead.
             'revision' => $form->revision($page),
+            // Who has the page open in the panel right now. An editor here is typing into the same
+            // draft: tell your user before writing, and expect a merge on their side rather than
+            // a silent overwrite.
+            'being_edited_by' => $this->presence()->of($page),
             'preview_url' => $this->preview($page, $user),
         ];
     }
@@ -481,7 +497,7 @@ final class PageTools
         $values = $this->container->make(ScreenValues::class)->patch(PageForm::SCREEN, $this->form()->values($page), $values);
 
         $this->refuseBlocks($values);
-        $this->sameRevision($arguments, $page);
+        AgentRevision::check($arguments, $this->form()->revision($page), 'page', 'pages_get');
 
         if ($this->dryRun($arguments)) {
             // Through the same save, rolled back, so that what the model refuses is refused in
@@ -517,6 +533,8 @@ final class PageTools
             throw new ToolFailure('`zone` is one of '.implode(', ', Placement::ZONES).'.');
         }
 
+        $this->guard($arguments, $page);
+
         if ($this->dryRun($arguments)) {
             Placement::assert($page, $target, $zone);
 
@@ -547,6 +565,7 @@ final class PageTools
     private function publish(array $arguments, ?Authenticatable $user): array
     {
         $page = $this->page($arguments['page'] ?? null);
+        $this->guard($arguments, $page);
 
         // On the site already, with nothing waiting: `publish()` does nothing then, and an answer
         // that looked like a publication sent the agent looking for a change that never happened.
@@ -597,6 +616,8 @@ final class PageTools
             throw new ToolFailure('This is the home page: taking it off the site makes the root of the site answer 404. Send force: true if that is really what is wanted.');
         }
 
+        $this->guard($arguments, $page);
+
         // A published page under a draft is reachable by design (§7): taking this one off the site
         // leaves those on it, and whoever asked may have meant the whole branch.
         $below = $page->descendants()->whereNotNull($page->publishedAtColumn())->count();
@@ -621,6 +642,7 @@ final class PageTools
     private function delete(array $arguments): array
     {
         $page = $this->page($arguments['page'] ?? null);
+        $this->guard($arguments, $page);
         $count = $page->descendants()->count() + 1;
 
         if ($this->dryRun($arguments)) {
@@ -651,6 +673,8 @@ final class PageTools
             throw new ToolFailure("Page [{$page->getKey()}] has no draft: the site already shows what it holds.");
         }
 
+        $this->guard($arguments, $page);
+
         if ($this->dryRun($arguments)) {
             return [
                 'dry_run' => true,
@@ -672,7 +696,7 @@ final class PageTools
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
-    private function versions(array $arguments): array
+    private function versions(array $arguments, ?Authenticatable $user = null): array
     {
         $page = $this->page($arguments['page'] ?? null);
         $versions = $page->publishedVersions()->get();
@@ -691,6 +715,7 @@ final class PageTools
                 'is_pinned' => $version->is_pinned,
                 'on_site' => $version->number === $live,
             ])->values()->all(),
+            'drafts' => $this->drafts($page, $user),
         ];
     }
 
@@ -705,21 +730,32 @@ final class PageTools
     {
         $page = $this->page($arguments['page'] ?? null);
         $number = $arguments['number'] ?? null;
+        $draft = $arguments['draft'] ?? null;
 
-        if (! is_int($number) && ! (is_string($number) && ctype_digit($number))) {
-            throw new ToolFailure('`number` is required: a version number from pages_versions.');
-        }
+        $this->guard($arguments, $page);
 
-        $version = $page->publishedVersions()->where('number', (int) $number)->first();
+        if (is_int($draft) || (is_string($draft) && ctype_digit($draft))) {
+            $version = $page->draftVersions()->whereKey((int) $draft)->first();
 
-        if (! $version instanceof EntityVersion) {
-            throw new ToolFailure("Page [{$page->getKey()}] has no version {$number}. pages_versions lists them.");
+            if (! $version instanceof EntityVersion) {
+                throw new ToolFailure("Page [{$page->getKey()}] has no draft copy {$draft}. pages_versions lists them under drafts.");
+            }
+        } else {
+            if (! is_int($number) && ! (is_string($number) && ctype_digit($number))) {
+                throw new ToolFailure('`number` or `draft` is required: a version number or a draft id from pages_versions.');
+            }
+
+            $version = $page->publishedVersions()->where('number', (int) $number)->first();
+
+            if (! $version instanceof EntityVersion) {
+                throw new ToolFailure("Page [{$page->getKey()}] has no version {$number}. pages_versions lists them.");
+            }
         }
 
         if ($this->dryRun($arguments)) {
             return [
                 'dry_run' => true,
-                'would_restore' => $version->number,
+                'would_restore' => $version->number ?? ['draft' => $version->id],
                 'into' => 'draft',
                 'changes' => $page->changedFields(is_array($version->payload) ? $version->payload : []),
                 'blocks' => $page->restoreReport(is_array($version->payload) ? $version->payload : []),
@@ -730,7 +766,7 @@ final class PageTools
         $report = $page->restoreReport(is_array($version->payload) ? $version->payload : []);
         $page->restoreVersion($version);
 
-        return ['restored' => $version->number, 'into' => 'draft', 'blocks' => $report] + $this->get(['page' => $page->refresh()->getKey(), 'blocks' => false], $user);
+        return ['restored' => $version->number ?? ['draft' => $version->id], 'into' => 'draft', 'blocks' => $report] + $this->get(['page' => $page->refresh()->getKey(), 'blocks' => false], $user);
     }
 
     /**
@@ -1013,24 +1049,36 @@ final class PageTools
     }
 
     /**
+     * The copies of the draft between publications, newest first.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function drafts(Page $page, ?Authenticatable $user = null): array
+    {
+        // `draft` rather than `id`: it is what pages_version_restore takes. `paths` is what the copy
+        // changed against the one before it — the block and field, not just «blocks».
+        return array_map(static function (array $copy): array {
+            $copy = ['draft' => $copy['id']] + $copy;
+            unset($copy['id']);
+
+            return $copy;
+        }, DraftCopies::of($page, $user));
+    }
+
+    /**
+     * The rule for a change of state (AgentRevision::guard): the revision this agent read, and
+     * one has to be sent while somebody has the page open.
+     *
      * @param  array<string, mixed>  $arguments
      */
-    private function sameRevision(array $arguments, Page $page): void
+    private function guard(array $arguments, Page $page): void
     {
-        $sent = $arguments['revision'] ?? null;
+        AgentRevision::guard($arguments, $this->form()->revision($page), $page, 'page', 'pages_get');
+    }
 
-        if (! is_string($sent) || $sent === '') {
-            return;
-        }
-
-        $current = $this->form()->revision($page);
-
-        if ($sent !== $current) {
-            throw new ToolFailure(
-                "The page changed since you read it: revision is [{$current}], you sent [{$sent}]. "
-                .'Read it again with pages_get and redo the edit on what is there now.'
-            );
-        }
+    private function presence(): Presence
+    {
+        return $this->container->make(Presence::class);
     }
 
     /**

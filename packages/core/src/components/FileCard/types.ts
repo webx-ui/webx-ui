@@ -19,6 +19,17 @@ export interface FileCardProps {
   type?: string
   /** Icon to draw instead of the one the extension picks. */
   icon?: IconName
+  /**
+   * The extension, for a `name` that does not carry one — a library that shows titles rather
+   * than file names. Given, it picks the glyph and the word under it instead of the name.
+   */
+  extension?: string
+  /**
+   * Puts the extension in a corner of a picture too, not only under a glyph. A grid of
+   * thumbnails looks alike whether the files are JPEGs or PNGs, and the format is often
+   * exactly what somebody is looking for.
+   */
+  showExtension?: boolean
   /** Draws the card as chosen. The choosing itself belongs to whatever holds the cards. */
   selected?: boolean
   size?: FileCardSize
@@ -33,6 +44,12 @@ export interface FileCardProps {
    * nothing to open for a `.zip`.
    */
   editable?: boolean
+  /**
+   * Offers the view action — "show this picture large" — which the card only reports: a
+   * lightbox over one file is a poorer thing than one over the grid it is in, and only whoever
+   * holds the cards knows the grid. Pictures only.
+   */
+  viewable?: boolean
   removable?: boolean
   /**
    * Asks before deleting. On, because a file deleted from a grid of thumbnails is a file
@@ -65,6 +82,7 @@ export interface FileCardProps {
   saveLabel?: string
   cancelLabel?: string
   editLabel?: string
+  viewLabel?: string
   removeLabel?: string
   /** The question `confirmRemove` asks. The file name is worth putting in it. */
   removeConfirmText?: string
@@ -72,6 +90,10 @@ export interface FileCardProps {
   downloadLabel?: string
   /** Shown on the copy action for a moment after it worked. */
   copiedLabel?: string
+  /** The button the folded-up actions open from. */
+  moreLabel?: string
+  /** The accessible name of the actions, said with the file's name in it. */
+  actionsLabel?: string
 }
 
 export interface FileCardEmits {
@@ -79,6 +101,8 @@ export interface FileCardEmits {
   rename: [name: string]
   /** Open this picture in an editor. */
   edit: []
+  /** Show this picture large. */
+  view: []
   remove: []
   /** The URL reached the clipboard. */
   copy: [url: string]

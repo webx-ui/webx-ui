@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxDate, WxDrafts } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxEmpty, WxSkeleton, WxText } from '@webx-ui/core'
 import { createPagesApi } from './api'
 import { usePageEditor } from './editor'
@@ -10,9 +10,10 @@ import type { PageVersion } from './types'
 /**
  * What was published, when, by whom and from where.
  *
- * Publications only. The autosaves a save writes are insurance rather than history — a ring of
- * the last few copies of the draft, replaced every couple of minutes — and a list with them in
- * it would be a list nobody can read.
+ * Publications first, and the copies of the draft under them in a list of their own: the autosave
+ * ring, and a draft somebody else's save wrote over — an agent's edit under an editor's «Keep
+ * mine». Mixed into one line they would be a list nobody can read; left out, an edit written over
+ * would have nowhere to be found.
  *
  * Restoring makes the old version the draft. Publishing it is the same separate step it always
  * is, which is what keeps the history a line: nothing here changes the site by itself.
@@ -96,46 +97,63 @@ watch(
 </script>
 
 <template>
-  <div class="wx-page-history">
-    <!-- Where a row would stand, not against the border: a skeleton flush with a rounded
+  <div class="wx-page-history-tab">
+    <div class="wx-page-history">
+      <!-- Where a row would stand, not against the border: a skeleton flush with a rounded
          corner has its ends clipped by it, which reads as a drawing fault rather than as
          something loading. -->
-    <wx-skeleton v-if="versions === null" class="wx-page-history__ghost" :rows="3" />
-    <wx-empty v-else-if="versions.length === 0" :description="t('page.history-empty')" />
-    <div
-      v-for="version in versions"
-      v-else
-      :key="version.number"
-      class="wx-page-history__row"
-      :class="{ 'is-live': version.number === live }"
-    >
-      <code class="wx-page-history__number">{{
-        t('page.version', { number: version.number })
-      }}</code>
-      <div class="wx-page-history__who">
-        <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
-        <wx-text size="sm" tone="muted">
-          {{ version.author ?? t(`page.source-${version.source}`) }}
-          <template v-if="version.comment"> · {{ version.comment }}</template>
-        </wx-text>
-      </div>
-      <wx-badge v-if="version.number === live" type="success" dot>{{
-        t('page.version-live')
-      }}</wx-badge>
-      <wx-button
-        v-if="canManage && version.number !== live"
-        size="sm"
-        variant="outline"
-        :loading="working"
-        @click="restore(version)"
+      <wx-skeleton v-if="versions === null" class="wx-page-history__ghost" :rows="3" />
+      <wx-empty v-else-if="versions.length === 0" :description="t('page.history-empty')" />
+      <div
+        v-for="version in versions"
+        v-else
+        :key="version.number"
+        class="wx-page-history__row"
+        :class="{ 'is-live': version.number === live }"
       >
-        {{ t('page.restore') }}
-      </wx-button>
+        <code class="wx-page-history__number">{{
+          t('page.version', { number: version.number })
+        }}</code>
+        <div class="wx-page-history__who">
+          <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
+          <wx-text size="sm" tone="muted">
+            {{ version.author ?? t(`page.source-${version.source}`) }}
+            <template v-if="version.comment"> · {{ version.comment }}</template>
+          </wx-text>
+        </div>
+        <wx-badge v-if="version.number === live" type="success" dot>{{
+          t('page.version-live')
+        }}</wx-badge>
+        <wx-button
+          v-if="canManage && version.number !== live"
+          size="sm"
+          variant="outline"
+          :loading="working"
+          @click="restore(version)"
+        >
+          {{ t('page.restore') }}
+        </wx-button>
+      </div>
     </div>
+
+    <wx-drafts
+      :id="page?.id"
+      entity="pages"
+      screen="pages.form"
+      :can-restore="canManage"
+      :stamp="[page?.published_at, page?.updated_at]"
+      @restored="editor?.reload()"
+    />
   </div>
 </template>
 
 <style scoped>
+.wx-page-history-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-24);
+}
+
 .wx-page-history {
   display: flex;
   flex-direction: column;

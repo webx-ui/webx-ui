@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
+  pluralForm,
   rowMenuWidth,
   useAdmin,
   useErrorText,
@@ -32,7 +33,6 @@ import PageCreateDialog from './PageCreateDialog.vue'
 import PageMoveDialog from './PageMoveDialog.vue'
 import { createPagesApi } from './api'
 import { usePagesMessages } from './i18n'
-import { pluralForm } from './plural'
 import type { PageRow, PageStatus } from './types'
 
 /**

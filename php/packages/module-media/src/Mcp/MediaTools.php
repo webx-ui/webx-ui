@@ -254,10 +254,11 @@ final class MediaTools
 
             Tool::mutating(
                 'optimize_images',
-                'Run pictures already in the library through the upload pipeline again: no side longer than the configured limit, metadata stripped, re-encoded at the configured quality. Each keeps its format and its address. Without ids, the pictures of the folder (or of the whole library) that the current settings have not been through. At most '.OptimizeController::BATCH.' per call; `remaining` says how many are left.',
+                'Run pictures already in the library through the upload pipeline again: no side longer than the configured limit, metadata stripped, re-encoded at the configured quality. Each keeps its format and its address. With `convert: true` (off by default) JPEG and PNG pictures become WebP instead: a new key with the same uuid, every reference on the site rewritten to it (history included), the old public address redirecting to the new one; a picture is left alone when WebP is not smaller. Without ids, the pictures of the folder (or of the whole library) still to do. At most '.OptimizeController::BATCH.' per call; `remaining` says how many are left. `dry_run` reports per file what would happen, references included, and changes nothing.',
                 static function (array $arguments): array {
                     $optimizing = app(LibraryOptimizing::class);
-                    $query = $optimizing->pending()->orderBy('id');
+                    $convert = (bool) ($arguments['convert'] ?? false);
+                    $query = ($convert ? $optimizing->convertible() : $optimizing->pending())->orderBy('id');
 
                     if (! empty($arguments['ids'])) {
                         $query->whereIn('id', array_map('intval', (array) $arguments['ids']));
@@ -268,11 +269,22 @@ final class MediaTools
                     $total = (clone $query)->count();
 
                     if ($arguments['dry_run'] ?? false) {
-                        return ['ok' => true, 'would' => "optimize {$total} picture(s)"];
+                        if (! $convert) {
+                            return ['ok' => true, 'would' => "optimize {$total} picture(s)"];
+                        }
+
+                        $results = $query->limit(OptimizeController::BATCH)->get()
+                            ->map(static fn (MediaFile $file): array => $optimizing->convert($file, dryRun: true))->values()->all();
+
+                        return [
+                            'ok' => true,
+                            'would' => "convert {$total} picture(s); the first ".count($results).' below',
+                            'results' => $results,
+                        ];
                     }
 
                     $results = $query->limit(OptimizeController::BATCH)->get()
-                        ->map(static fn (MediaFile $file): array => $optimizing->run($file))->values()->all();
+                        ->map(static fn (MediaFile $file): array => $convert ? $optimizing->convert($file) : $optimizing->run($file))->values()->all();
 
                     return [
                         'ok' => true,
@@ -285,6 +297,7 @@ final class MediaTools
                     'properties' => [
                         'ids' => ['type' => 'array', 'items' => ['type' => 'integer']],
                         'directory_id' => ['type' => 'integer'],
+                        'convert' => ['type' => 'boolean', 'description' => 'Convert JPEG and PNG to WebP and rewrite every reference; false by default'],
                     ],
                 ],
                 scope: 'media:write',

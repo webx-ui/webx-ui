@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Press\Audit\PressContentSource;
@@ -38,6 +39,11 @@ class PressServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('press_outlets', 'press_articles');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-press.php', 'webx-press');
     }
 

@@ -22,7 +22,7 @@
         @foreach ($articles as $article)
             @php($rubric = $article->mainRubric())
             <item>
-                <title>{{ $article->title }}</title>
+                <title>@shortcodesPlain($article->title)</title>
                 <link>{{ $article->url() }}</link>
                 {{-- The address as the identifier: it is permanent, and a renamed article keeps
                      the old one as an alias, so a reader's client does not see it twice. --}}
@@ -31,10 +31,10 @@
                     <pubDate>{{ $article->published_at->toRfc2822String() }}</pubDate>
                 @endif
                 @if ($rubric)
-                    <category>{{ $rubric->title }}</category>
+                    <category>@shortcodesPlain($rubric->title)</category>
                 @endif
                 @if ($article->lead)
-                    <description>{{ $article->lead }}</description>
+                    <description>@shortcodesPlain($article->lead)</description>
                 @endif
             </item>
         @endforeach

@@ -1,4 +1,5 @@
 import type { Paginated } from '@webx-ui/core'
+import type { EditingChange } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 
 /**
@@ -105,6 +106,8 @@ export interface EventDetail {
 export interface EventConflict {
   message: string
   data: EventDetail
+  /** Who wrote it last and through which door — the panel, an agent, an import. */
+  changed?: EditingChange | null
 }
 
 /** One publication in the history. */

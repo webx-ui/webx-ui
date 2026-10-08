@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Negrita',
     'italic' => 'Cursiva',
+    'accent' => 'Acento',
     'strike' => 'Tachado',
     'code' => 'Código en línea',
     'h2' => 'Título 2',
@@ -34,4 +35,8 @@ return [
     'apply' => 'Aplicar',
     'cancel' => 'Cancelar',
     'uploading' => 'Subiendo…',
+    'source' => 'Código HTML',
+    'source-loss' => 'El editor no conserva este marcado y lo eliminará:',
+    'source-drop' => 'Eliminar',
+    'source-keep' => 'Seguir editando',
 ];

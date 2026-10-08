@@ -16,5 +16,11 @@ return [
             'why' => 'Eine Seite, die eines zeigt, lädt auf dem Handy langsam, und Suchmaschinen ranken langsame Seiten niedriger.',
             'fix' => 'Ersetzen Sie sie durch kleinere Versionen: Ein Foto für eine Seite muss selten breiter als 2000 Pixel oder schwerer als einige hundert Kilobyte sein.',
         ],
+        'orphan_thumbs' => [
+            'title' => 'Vorschauen gelöschter Dateien',
+            'found' => 'Auf dem Datenträger liegen Vorschauordner von Dateien, die die Mediathek nicht mehr hat.',
+            'why' => 'Sie belegen Platz, und nichts wird sie je anzeigen.',
+            'fix' => 'Löschen Sie sie mit der Schaltfläche hier oder mit php artisan webx:media:prune-thumbs.',
+        ],
     ],
 ];

@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Pogrubienie',
     'italic' => 'Kursywa',
+    'accent' => 'Akcent',
     'strike' => 'Przekreślenie',
     'code' => 'Kod w wierszu',
     'h2' => 'Nagłówek 2',
@@ -34,4 +35,8 @@ return [
     'apply' => 'Zastosuj',
     'cancel' => 'Anuluj',
     'uploading' => 'Wysyłanie…',
+    'source' => 'Kod HTML',
+    'source-loss' => 'Edytor nie zachowuje tych znaczników i je usunie:',
+    'source-drop' => 'Usuń',
+    'source-keep' => 'Edytuj dalej',
 ];

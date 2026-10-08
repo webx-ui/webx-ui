@@ -14,6 +14,8 @@ use Throwable;
 use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\AgentRevision;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
@@ -127,14 +129,16 @@ final class ServiceTools
                 'update',
                 'Change the values of a service — title, address, lead, categories, cover, the SEO card and the '
                 .'fields the project added — into its draft. A field left out keeps what it had. Send the '
-                .'revision services_get gave you and the write is refused if somebody saved in between. The '
+                .'revision services_get gave you: the write is refused if somebody saved in between, and refused '
+                .'without one — services_get also says who has the service open in the panel (being_edited_by), '
+                .'which is worth telling your user before writing. The '
                 .'body is not written here: blocks go through blocks_edit_content. The categories are not '
                 .'drafted — they are on the site the moment they are saved, and so is the SEO card — the answer says so with seo_live: true.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'service' => $service,
                     'values' => ['type' => 'object', 'description' => 'Field name → value, as services_get returns them. Localized fields take { "en": "…" }.'],
-                    'revision' => ['type' => 'string', 'description' => 'The revision services_get returned. Left out, the write goes in over whatever happened since.'],
+                    ...AgentRevision::properties('services_get'),
                 ], 'required' => ['service', 'values']],
                 permission: 'services.manage',
             ),
@@ -142,9 +146,11 @@ final class ServiceTools
             Tool::mutating(
                 'publish',
                 'Put the draft on the site: its values become the service and a version is written. Ask a '
-                .'person first unless they asked you to publish.',
+                .'person first unless they asked you to publish. It publishes whatever the draft holds now: '
+                .'send the revision services_get gave you, so that an edit you have not read is not what goes '
+                .'on the site. While somebody has the service open in the panel the revision is required.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->publish($arguments, $user)),
-                ['properties' => ['service' => $service], 'required' => ['service']],
+                ['properties' => ['service' => $service, ...AgentRevision::stateProperties('services_get')], 'required' => ['service']],
                 permission: 'services.manage',
             ),
 
@@ -153,7 +159,7 @@ final class ServiceTools
                 'Take a service off the site. It answers 404 from then on and leaves the index and its '
                 .'categories; its address stays reserved and whatever was being prepared is still there.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
-                ['properties' => ['service' => $service], 'required' => ['service']],
+                ['properties' => ['service' => $service, ...AgentRevision::stateProperties('services_get')], 'required' => ['service']],
                 permission: 'services.manage',
             ),
 
@@ -162,7 +168,7 @@ final class ServiceTools
                 'Throw away the draft of a service that is on the site and go back to what the site shows. The draft '
                 .'is all that changes. dry_run names the fields that differ from the published ones.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
-                ['properties' => ['service' => $service], 'required' => ['service']],
+                ['properties' => ['service' => $service, ...AgentRevision::stateProperties('services_get')], 'required' => ['service']],
                 permission: 'services.manage',
             ),
 
@@ -184,6 +190,7 @@ final class ServiceTools
                 ['properties' => [
                     'service' => $service,
                     'number' => ['type' => 'integer', 'description' => 'A version number, as services_versions lists it.'],
+                    ...AgentRevision::stateProperties('services_get'),
                 ], 'required' => ['service', 'number']],
                 permission: 'services.manage',
             ),
@@ -194,7 +201,7 @@ final class ServiceTools
                 .'id. Nothing is destroyed: the bin in the panel puts it back, as long as nobody has taken its '
                 .'address in the meantime.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
-                ['properties' => ['service' => $service], 'required' => ['service']],
+                ['properties' => ['service' => $service, ...AgentRevision::stateProperties('services_get')], 'required' => ['service']],
                 permission: 'services.manage',
             ),
 
@@ -285,6 +292,8 @@ final class ServiceTools
             'values' => $values,
             // Send it back with services_update, and a write over somebody else's is refused.
             'revision' => Revision::of($service),
+            // Who has the service open in the panel right now: tell your user before writing.
+            'being_edited_by' => $this->presence()->of($service),
             'preview_url' => $this->preview($service, $user),
         ];
     }
@@ -357,7 +366,7 @@ final class ServiceTools
         // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
         $values = $this->container->make(ScreenValues::class)->patch(Service::SCREEN, $this->form()->values($service), $values);
 
-        $this->sameRevision($arguments, $service);
+        AgentRevision::check($arguments, Revision::of($service), 'service', 'services_get');
 
         $work = function () use ($service, $values, $user): array {
             $this->form()->save($service, $values, $this->can($user), $this->authorId($user));
@@ -382,6 +391,7 @@ final class ServiceTools
     private function publish(array $arguments, ?Authenticatable $user): array
     {
         $service = $this->service($arguments['service'] ?? null);
+        $this->guard($arguments, $service);
 
         if ($this->dryRun($arguments)) {
             return [
@@ -406,6 +416,7 @@ final class ServiceTools
     private function unpublish(array $arguments): array
     {
         $service = $this->service($arguments['service'] ?? null);
+        $this->guard($arguments, $service);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_unpublish' => $this->reference($service), 'status' => $service->status()];
@@ -428,6 +439,8 @@ final class ServiceTools
             throw new ToolFailure("Service [{$service->getKey()}] has no draft: the site already shows what it holds.");
         }
 
+        $this->guard($arguments, $service);
+
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_discard' => $service->changedFields(), 'service' => $this->reference($service)];
         }
@@ -444,6 +457,7 @@ final class ServiceTools
     private function delete(array $arguments): array
     {
         $service = $this->service($arguments['service'] ?? null);
+        $this->guard($arguments, $service);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_trash' => $this->reference($service), 'status' => $service->status()];
@@ -694,6 +708,7 @@ final class ServiceTools
     private function versionRestore(array $arguments, ?Authenticatable $user): array
     {
         $service = $this->service($arguments['service'] ?? null);
+        $this->guard($arguments, $service);
         $number = $arguments['number'] ?? null;
 
         if (! is_int($number) && ! (is_string($number) && ctype_digit($number))) {
@@ -822,27 +837,6 @@ final class ServiceTools
     }
 
     /**
-     * @param  array<string, mixed>  $arguments
-     */
-    private function sameRevision(array $arguments, Service $service): void
-    {
-        $sent = $arguments['revision'] ?? null;
-
-        if (! is_string($sent) || $sent === '') {
-            return;
-        }
-
-        $current = Revision::of($service);
-
-        if ($sent !== $current) {
-            throw new ToolFailure(
-                "The service changed since you read it: revision is [{$current}], you sent [{$sent}]. "
-                .'Read it again with services_get and redo the edit on what is there now.'
-            );
-        }
-    }
-
-    /**
      * @return array<string, string>
      */
     private function text(mixed $value, string $field): array
@@ -924,6 +918,22 @@ final class ServiceTools
     private function form(): ServiceForm
     {
         return $this->container->make(ServiceForm::class);
+    }
+
+    /**
+     * The rule for a change of state (AgentRevision::guard): the revision this agent read, and
+     * one has to be sent while somebody has the service open.
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private function guard(array $arguments, Service $service): void
+    {
+        AgentRevision::guard($arguments, Revision::of($service), $service, 'service', 'services_get');
+    }
+
+    private function presence(): Presence
+    {
+        return $this->container->make(Presence::class);
     }
 
     private function locales(): Locales

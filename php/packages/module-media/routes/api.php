@@ -22,12 +22,18 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
             // Before `files/{file}`, or the word would be read as an id.
             Route::get('files/by-path', [FileController::class, 'byPath'])->name('files.by-path');
             Route::get('files/{file}', [FileController::class, 'show'])->name('files.show');
+            // Where files are in use, asked before a delete: a question, but a list of ids is
+            // a body, so a POST — before `files/{file}` matters only for GET.
+            Route::post('files/usage', [FileController::class, 'usage'])->name('files.usage');
+            Route::get('directories/{directory}/contents', [DirectoryController::class, 'contents'])->name('directories.contents');
             Route::get('files/{file}/thumb', ThumbController::class)->name('files.thumb');
             Route::get('files/{file}/source', SourceController::class)->name('files.source');
         });
 
         Route::middleware('cms.can:media.upload,media.manage')->group(function (): void {
             Route::post('files', [FileController::class, 'store'])->name('files.store');
+            // A file that arrived a piece at a time through `uploads`, handed to the library.
+            Route::post('files/chunked', [FileController::class, 'storeChunked'])->name('files.store-chunked');
         });
 
         Route::middleware('cms.can:media.manage')->group(function (): void {
@@ -48,5 +54,6 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
             Route::patch('directories/{directory}', [DirectoryController::class, 'update'])->name('directories.update');
             Route::patch('directories/{directory}/move', [DirectoryController::class, 'move'])->name('directories.move');
             Route::delete('directories/{directory}', [DirectoryController::class, 'destroy'])->name('directories.destroy');
+            Route::post('directories/{directory}/delete-unused', [DirectoryController::class, 'destroyUnused'])->name('directories.destroy-unused');
         });
     });

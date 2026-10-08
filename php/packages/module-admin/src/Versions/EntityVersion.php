@@ -13,10 +13,15 @@ use Illuminate\Support\Carbon;
  * One snapshot of an entity: what its columns held the moment it was published, or what its
  * draft held the moment it was saved.
  *
- * Two kinds. A `published` version is the site's past — numbered, listed in the history, kept
+ * Three kinds. A `published` version is the site's past — numbered, listed in the history, kept
  * up to a limit. An `autosave` is insurance, not history: the last few copies of the draft, so
- * that a block deleted by mistake and saved over can be had back. Neither is ever changed after
- * it is written; pinning is the one exception, and it only says "do not prune this".
+ * that a block deleted by mistake and saved over can be had back. An `overwritten` one is the
+ * draft somebody else had written, kept at the moment a save replaced it — an agent's edit
+ * under an editor's, an editor's under an agent's. It has a ring of its own, because the
+ * autosaves of the one still typing would push it out of theirs within a minute, and a
+ * publication does not drop it: it is what the publication may have lost. None is ever
+ * changed after it is written; pinning is the one exception, and it only says "do not prune
+ * this".
  *
  * @property int $id
  * @property string $versionable_type
@@ -35,6 +40,8 @@ class EntityVersion extends Model
     public const KIND_PUBLISHED = 'published';
 
     public const KIND_AUTOSAVE = 'autosave';
+
+    public const KIND_OVERWRITTEN = 'overwritten';
 
     public const SOURCE_PANEL = 'panel';
 
@@ -87,6 +94,18 @@ class EntityVersion extends Model
     public function scopeAutosaves(Builder $query): Builder
     {
         return $query->where('kind', self::KIND_AUTOSAVE);
+    }
+
+    /**
+     * The copies of the draft rather than the publications: the autosave ring and the drafts
+     * that were written over.
+     *
+     * @param  Builder<EntityVersion>  $query
+     * @return Builder<EntityVersion>
+     */
+    public function scopeDrafts(Builder $query): Builder
+    {
+        return $query->whereIn('kind', [self::KIND_AUTOSAVE, self::KIND_OVERWRITTEN]);
     }
 
     public function isPublished(): bool

@@ -178,6 +178,43 @@ final class VersionsTest extends TestCase
     }
 
     #[Test]
+    public function a_draft_somebody_else_wrote_is_kept_when_a_save_replaces_it(): void
+    {
+        $this->app['config']->set('webx-admin.versions.overwritten', 2);
+
+        $article = Article::query()->create(['slug' => 'two-hands']);
+
+        // The agent's draft, then the editor's next keystrokes over it.
+        $article->saveDraft(['body' => ['by' => 'agent']], 1, EntityVersion::SOURCE_MCP);
+        $article->saveDraft(['body' => ['by' => 'editor']], 2, EntityVersion::SOURCE_PANEL);
+        $article->saveDraft(['body' => ['by' => 'editor, again']], 2, EntityVersion::SOURCE_PANEL);
+
+        $kept = $article->versions()->where('kind', EntityVersion::KIND_OVERWRITTEN)->get();
+
+        $this->assertCount(1, $kept, 'the editor writing over their own draft is the ring, not a loss');
+        $this->assertSame(['by' => 'agent'], $kept[0]->payload['body']);
+        $this->assertSame(1, $kept[0]->author_id);
+        $this->assertSame(EntityVersion::SOURCE_MCP, $kept[0]->source);
+
+        // The same person through another door is somebody else's draft too.
+        $article->saveDraft(['body' => ['by' => 'editor, as agent']], 2, EntityVersion::SOURCE_MCP);
+        $article->saveDraft(['body' => ['by' => 'editor, panel']], 2, EntityVersion::SOURCE_PANEL);
+
+        // Its own ring, trimmed to its own size, and the drafts list carries both kinds.
+        $this->assertSame(2, $article->versions()->where('kind', EntityVersion::KIND_OVERWRITTEN)->count());
+        $this->assertSame(
+            [EntityVersion::KIND_AUTOSAVE, EntityVersion::KIND_OVERWRITTEN],
+            $article->draftVersions()->get()->pluck('kind')->unique()->sort()->values()->all(),
+        );
+
+        // A publication drops the autosaves it insured and keeps what was written over.
+        $article->publish();
+
+        $this->assertSame(0, $article->versions()->autosaves()->count());
+        $this->assertSame(2, $article->versions()->where('kind', EntityVersion::KIND_OVERWRITTEN)->count());
+    }
+
+    #[Test]
     public function the_history_is_trimmed_to_the_limit_and_a_pinned_version_stays(): void
     {
         $this->app['config']->set('webx-admin.versions.limit', 3);

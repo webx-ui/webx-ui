@@ -6,6 +6,7 @@ namespace WebxUi\Settings;
 
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Tree;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Localization\Locales;
 use WebxUi\Localization\Models\Locale;
 use WebxUi\Mcp\McpResource;
@@ -32,6 +33,7 @@ final class ContentRules
         private readonly Settings $settings,
         private readonly ScreenRegistry $screens,
         private readonly Locales $locales,
+        private readonly Shortcodes $shortcodes,
     ) {}
 
     /**
@@ -43,13 +45,13 @@ final class ContentRules
         return new McpResource(
             self::URI,
             'Content rules',
-            'The house rules of this site for writing content: its languages and which one is primary, the tone of voice, what never to say, notes. Read before writing or editing anything a visitor will read.',
+            'The house rules of this site for writing content: its languages and which one is primary, the tone of voice, what never to say, notes, and the shortcodes to write instead of a phone number or an e-mail. Read before writing or editing anything a visitor will read.',
             static fn (): array => app(self::class)->toArray(),
         );
     }
 
     /**
-     * @return array{languages: list<array{code: string, name: string, native_name: string, primary: bool}>, primary: string, tone: string|null, donts: list<string>, notes: string|null, more: list<array{key: string, label: string, value: mixed}>, empty: bool}
+     * @return array{languages: list<array{code: string, name: string, native_name: string, primary: bool}>, primary: string, tone: string|null, donts: list<string>, notes: string|null, more: list<array{key: string, label: string, value: mixed}>, shortcodes: array{rule: string, list: list<array{name: string, plain: string, description: string|null}>}, empty: bool}
      */
     public function toArray(): array
     {
@@ -93,6 +95,12 @@ final class ContentRules
             'donts' => $donts,
             'notes' => $notes,
             'more' => $more,
+            // A number typed by hand goes stale; `[phone]` does not. The full list, with what each
+            // prints in a page, is `blocks://shortcodes` where blocks are installed.
+            'shortcodes' => [
+                'rule' => 'Write the shortcode, never the value it holds: [phone], not the number. Keep every shortcode a text already has, such as [dot], exactly as it is. [[name]] prints a literal [name].',
+                'list' => array_map(static fn (array $code): array => ['name' => $code['name'], 'plain' => $code['plain'], 'description' => $code['description']], $this->shortcodes->list()),
+            ],
             'empty' => $tone === null && $notes === null && $donts === [] && $more === [],
         ];
     }

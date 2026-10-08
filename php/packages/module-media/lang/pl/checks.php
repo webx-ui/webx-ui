@@ -16,5 +16,11 @@ return [
             'why' => 'Strona, która taki pokazuje, wolno się ładuje na telefonie, a wyszukiwarki oceniają wolne strony niżej.',
             'fix' => 'Zamień je na mniejsze wersje: zdjęcie na stronę rzadko musi być szersze niż 2000 pikseli ani cięższe niż kilkaset kilobajtów.',
         ],
+        'orphan_thumbs' => [
+            'title' => 'Podglądy usuniętych plików',
+            'found' => 'Na dysku są foldery podglądów plików, których biblioteka mediów już nie ma.',
+            'why' => 'Zajmują miejsce i nic ich nigdy nie pokaże.',
+            'fix' => 'Usuń je przyciskiem tutaj lub poleceniem php artisan webx:media:prune-thumbs.',
+        ],
     ],
 ];

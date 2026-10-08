@@ -16,5 +16,11 @@ return [
             'why' => 'Una página que muestra una carga despacio en el móvil, y los buscadores posicionan peor las páginas lentas.',
             'fix' => 'Sustitúyelas por versiones más pequeñas: una foto para una página rara vez necesita más de 2000 píxeles de ancho ni pesar más de unos cientos de kilobytes.',
         ],
+        'orphan_thumbs' => [
+            'title' => 'Vistas previas de archivos eliminados',
+            'found' => 'El disco guarda carpetas de vistas previas de archivos que la biblioteca de medios ya no tiene.',
+            'why' => 'Ocupan espacio y nada las mostrará nunca.',
+            'fix' => 'Elimínelas con el botón de aquí o con php artisan webx:media:prune-thumbs.',
+        ],
     ],
 ];

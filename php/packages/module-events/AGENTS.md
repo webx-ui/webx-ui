@@ -76,8 +76,16 @@ A screen patch addresses nodes by `id`. Event editor: `event`, `when`, `all-day`
   Write its fields; `events_get` lists them.
 - Do not send dates without thinking about the zone: ISO 8601, and one without an offset is read
   in the site's timezone. An all-day event takes days (`"2026-10-12"`), not times.
-- Do not save without the `revision` you read: a stale one is answered `409` with the event as
-  it now is. Read again and redo the change.
+- Do not write without the `revision` events_get gave you: `events_update` refuses a write
+  with none and refuses a stale one. Read again and redo the change; do not retry blindly.
+  `force: true` writes without one and is for a script that means to overwrite, not for an
+  agent working beside people. `events_get` names in `being_edited_by` who has the event open
+  in the panel right now — tell your user before writing under them. Their editor merges your
+  write with theirs field by field, and a draft written over by somebody else is kept: the
+  panel's History lists it under Drafts, and «Restore» puts it back.
+- `events_publish`, `events_unpublish`, `events_discard`, `events_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
+  one is refused, and while somebody has the event open in the panel (`being_edited_by`) one is
+  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
 - Do not delete rows with SQL: deleting puts the event in the bin and releases its address
   through the registry. A raw delete leaves the address and the links behind.
 - Do not print `<title>` in a site's copy of a view: with an empty SEO card the event and the

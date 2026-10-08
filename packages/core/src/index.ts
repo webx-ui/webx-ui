@@ -17,6 +17,13 @@ export {
   type LocalizedFieldProps,
 } from './composables/useLocalized'
 export {
+  tokenSpans,
+  tokenQuery,
+  type TokenFieldProps,
+  type TokenOption,
+  type TokenSpan,
+} from './composables/useTokens'
+export {
   provideDateLocale,
   useDateLocale,
   dateLocaleKey,

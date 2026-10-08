@@ -16,5 +16,11 @@ return [
             'why' => 'Una pagina che ne mostra una si carica lentamente su un telefono, e i motori di ricerca posizionano più in basso le pagine lente.',
             'fix' => 'Sostituiscile con versioni più piccole: una foto per una pagina raramente deve superare i 2000 pixel di larghezza o qualche centinaio di kilobyte.',
         ],
+        'orphan_thumbs' => [
+            'title' => 'Anteprime di file eliminati',
+            'found' => 'Il disco conserva cartelle di anteprime di file che la libreria media non ha più.',
+            'why' => 'Occupano spazio e niente le mostrerà mai.',
+            'fix' => 'Eliminale con il pulsante qui o con php artisan webx:media:prune-thumbs.',
+        ],
     ],
 ];

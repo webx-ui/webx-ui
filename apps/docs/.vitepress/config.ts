@@ -41,6 +41,7 @@ export default defineConfig({
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Extending', link: '/guide/extending' },
             { text: 'Large uploads', link: '/guide/uploads' },
+            { text: 'Editing together', link: '/guide/editing-together' },
           ],
         },
         {
@@ -61,12 +62,14 @@ export default defineConfig({
             { text: 'Pages', link: '/guide/pages' },
             { text: 'Blocks', link: '/guide/blocks' },
             { text: 'Layout regions', link: '/guide/layout-regions' },
+            { text: 'Shortcodes', link: '/guide/shortcodes' },
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },
             { text: 'Site audit', link: '/guide/audit' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Database backups', link: '/guide/backups' },
+            { text: 'Moving content between stands', link: '/guide/snapshots' },
           ],
         },
         {

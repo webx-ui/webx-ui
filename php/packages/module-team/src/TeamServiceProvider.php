@@ -9,6 +9,7 @@ use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Team\Collections\TeamSource;
 use WebxUi\Team\Models\Member;
@@ -25,6 +26,11 @@ class TeamServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('team_members');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-team.php', 'webx-team');
     }
 

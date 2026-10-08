@@ -148,35 +148,37 @@ cannot tell "not loaded yet" from "nothing there".
 
 ## Props
 
-| Prop               | Type                            | Default              | Description                                    |
-| ------------------ | ------------------------------- | -------------------- | ---------------------------------------------- |
-| `modelValue`       | `T[]`                           | `[]`                 | The tree itself                                |
-| `expanded`         | `(string \| number)[]`          | `[]`                 | Keys of the open branches                      |
-| `selected`         | `string \| number \| null`      | `null`               | Key of the selected node                       |
-| `checked`          | `(string \| number)[]`          | `[]`                 | Keys of the ticked nodes                       |
-| `nodeKey`          | `string`                        | `'id'`               | Field holding the identity                     |
-| `labelKey`         | `string`                        | `'label'`            | Field holding the text                         |
-| `childrenKey`      | `string`                        | `'children'`         | Field holding the children                     |
-| `disabledKey`      | `string`                        | `'disabled'`         | Field that makes a node inert                  |
-| `leafKey`          | `string`                        | `'leaf'`             | Field saying there is nothing to fetch         |
-| `defaultExpandAll` | `boolean`                       | `false`              | Open every branch once                         |
-| `accordion`        | `boolean`                       | `false`              | One open branch per level                      |
-| `expandOnClick`    | `boolean`                       | `false`              | A click opens as well as selects               |
-| `checkable`        | `boolean`                       | `false`              | A checkbox per node                            |
-| `checkStrictly`    | `boolean`                       | `false`              | A tick stays where it was made                 |
-| `draggable`        | `boolean`                       | `false`              | Rows can be picked up                          |
-| `allowDrag`        | `(node) => boolean`             | —                    | Which nodes can be picked up                   |
-| `allowDrop`        | `(drag, drop, zone) => boolean` | —                    | Which landings are allowed                     |
-| `springDelay`      | `number`                        | `600`                | Hovering a closed branch opens it; `0` never   |
-| `lazy`             | `boolean`                       | `false`              | Children arrive when a branch opens            |
-| `load`             | `(node) => T[] \| Promise<T[]>` | —                    | Fetches one branch                             |
-| `filter`           | `string`                        | —                    | Shows matches and the branches leading to them |
-| `showLines`        | `boolean`                       | `true`               | Guide lines down the indentation               |
-| `indent`           | `number`                        | `16`                 | Pixels per level, guide line included          |
-| `size`             | `'sm' \| 'md'`                  | `'md'`               | Row height and text size                       |
-| `emptyText`        | `string`                        | `'Nothing here yet'` | Shown when there is nothing to draw            |
-| `dragLabel`        | `string`                        | `'Move'`             | What the grip is called                        |
-| `ariaLabel`        | `string`                        | —                    | Accessible name for the tree                   |
+| Prop               | Type                            | Default              | Description                                          |
+| ------------------ | ------------------------------- | -------------------- | ---------------------------------------------------- |
+| `modelValue`       | `T[]`                           | `[]`                 | The tree itself                                      |
+| `expanded`         | `(string \| number)[]`          | `[]`                 | Keys of the open branches                            |
+| `selected`         | `string \| number \| null`      | `null`               | Key of the selected node                             |
+| `checked`          | `(string \| number)[]`          | `[]`                 | Keys of the ticked nodes                             |
+| `nodeKey`          | `string`                        | `'id'`               | Field holding the identity                           |
+| `labelKey`         | `string`                        | `'label'`            | Field holding the text                               |
+| `childrenKey`      | `string`                        | `'children'`         | Field holding the children                           |
+| `disabledKey`      | `string`                        | `'disabled'`         | Field that makes a node inert                        |
+| `leafKey`          | `string`                        | `'leaf'`             | Field saying there is nothing to fetch               |
+| `defaultExpandAll` | `boolean`                       | `false`              | Open every branch once                               |
+| `accordion`        | `boolean`                       | `false`              | One open branch per level                            |
+| `expandOnClick`    | `boolean`                       | `false`              | A click opens as well as selects                     |
+| `checkable`        | `boolean`                       | `false`              | A checkbox per node                                  |
+| `checkStrictly`    | `boolean`                       | `false`              | A tick stays where it was made                       |
+| `draggable`        | `boolean`                       | `false`              | Rows can be picked up                                |
+| `allowDrag`        | `(node) => boolean`             | —                    | Which nodes can be picked up                         |
+| `allowDrop`        | `(drag, drop, zone) => boolean` | —                    | Which landings are allowed                           |
+| `springDelay`      | `number`                        | `600`                | Hovering a closed branch opens it; `0` never         |
+| `lazy`             | `boolean`                       | `false`              | Children arrive when a branch opens                  |
+| `load`             | `(node) => T[] \| Promise<T[]>` | —                    | Fetches one branch                                   |
+| `filter`           | `string`                        | —                    | Shows matches and the branches leading to them       |
+| `showLines`        | `boolean`                       | `true`               | Guide lines down the indentation                     |
+| `indent`           | `number`                        | `16`                 | Pixels per level, guide line included                |
+| `size`             | `'sm' \| 'md'`                  | `'md'`               | Row height and text size                             |
+| `emptyText`        | `string`                        | `'Nothing here yet'` | Shown when there is nothing to draw                  |
+| `dragLabel`        | `string`                        | `'Move'`             | What the grip is called                              |
+| `expandLabel`      | `string`                        | `'Expand'`           | The button that opens a branch, before the node name |
+| `collapseLabel`    | `string`                        | `'Collapse'`         | The same button while the branch is open             |
+| `ariaLabel`        | `string`                        | —                    | Accessible name for the tree                         |
 
 **Events:** `update:modelValue`, `update:expanded`, `update:selected`, `update:checked`;
 `node-click` (`node, event`); `select` (`node, key`); `check` (`keys, { node, checked }`);

@@ -2,9 +2,10 @@
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
-  confirm,
   createModal,
   openImageEditor,
+  openLightbox,
+  type OpenLightboxOptions,
   toast,
   useElementWidth,
   WxAction,
@@ -12,16 +13,28 @@ import {
   WxDrawer,
   WxPagination,
 } from '@webx-ui/core'
+import DeleteDialog from './DeleteDialog.vue'
 import DirectoryTree from './DirectoryTree.vue'
 import FileGrid from './FileGrid.vue'
 import MediaToolbar from './MediaToolbar.vue'
 import MoveDialog from './MoveDialog.vue'
 import NameDialog from './NameDialog.vue'
 import OptimizeDialog from './OptimizeDialog.vue'
+import UploadQueue from './UploadQueue.vue'
 import { createMediaApi } from './api'
-import { readable } from './format'
+import { byFolder, counted } from './deleting'
+import { carriesLibraryFiles } from './dragging'
+import { readable, usePanelLocale } from './format'
 import { useMediaMessages } from './i18n'
-import type { MediaDirectory, MediaFile, MediaKind, MediaPage } from './types'
+import type {
+  FileInUse,
+  MediaDirectory,
+  MediaFile,
+  MediaKind,
+  MediaPage,
+  OptimizePending,
+} from './types'
+import { useMediaUploads } from './uploading'
 
 /**
  * The library: folders on the left, files on the right, a row of icons over both.
@@ -68,6 +81,7 @@ const api = createMediaApi(admin)
 useMediaMessages()
 
 const t = useTranslate('webx-media')
+const locale = usePanelLocale()
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
@@ -77,6 +91,20 @@ const message = useErrorText()
  * Read when the editor is opened rather than kept in a computed: the dialog is mounted outside
  * the app, so it is handed plain strings once and nothing re-renders it afterwards.
  */
+/** The same, for the lightbox. */
+function lightboxLabels(): OpenLightboxOptions {
+  return {
+    ariaLabel: t('lightbox.gallery'),
+    prevLabel: t('lightbox.previous'),
+    nextLabel: t('lightbox.next'),
+    closeLabel: t('lightbox.close'),
+    zoomInLabel: t('lightbox.zoom-in'),
+    zoomOutLabel: t('lightbox.zoom-out'),
+    originalLabel: t('lightbox.original'),
+    counterText: (index: number, total: number) => t('lightbox.counter', { index, total }),
+  }
+}
+
 function editorLabels(): Record<string, string> {
   return {
     title: t('editor.title'),
@@ -104,6 +132,8 @@ const width = useElementWidth(root)
 const compact = computed(() => width.value > 0 && width.value < 640)
 
 const directories = ref<MediaDirectory[]>([])
+/* Until the first answer the tree is loading, not empty — and says so with a placeholder. */
+const foldersLoaded = ref(false)
 const current = ref<number | null>(null)
 const page = ref<MediaPage | null>(null)
 const selected = ref<number[]>([])
@@ -190,6 +220,7 @@ watch(compact, (narrow) => {
  */
 async function load(to = 1): Promise<void> {
   directories.value = await api.directories()
+  foldersLoaded.value = true
 
   if (current.value === null && directories.value[0] !== undefined) {
     current.value = directories.value[0].id
@@ -222,38 +253,93 @@ function choose(): void {
 }
 
 /**
- * Uploading says what happened in a toast and nowhere else.
+ * Every upload goes a piece at a time (`useMediaUploads`), whatever its size, so that one way of
+ * sending behaves one way: a bar per file while it goes, a dropped connection that costs a piece,
+ * and the same file chosen after a reload carrying on where it stopped.
  *
- * A list of what was just added under the toolbar is a second place to look and a thing to
- * dismiss; the files themselves appear in the grid a moment later, which is the answer.
+ * The list of uploads is only there while something is on its way or has failed. What arrived
+ * is in the grid a moment later, which is the answer, and a toast says how many.
  */
-async function upload(event: Event): Promise<void> {
+const uploads = useMediaUploads({ admin, api, onSettled: uploaded })
+
+async function uploaded(stored: MediaFile[]): Promise<void> {
+  const duplicates = stored.filter((file) => file.duplicate).length
+
+  if (stored.length > duplicates) {
+    toast.success(t('manager.uploaded', { count: stored.length - duplicates }))
+  }
+
+  if (duplicates > 0) {
+    toast.info(t('manager.duplicate-added'))
+  }
+
+  await load(1)
+}
+
+function enqueue(files: File[]): void {
+  if (files.length > 0 && current.value !== null) {
+    uploads.add(files, current.value)
+  }
+}
+
+function upload(event: Event): void {
   const input = event.target as HTMLInputElement
   const chosen = Array.from(input.files ?? [])
 
   // Cleared straight away, so choosing the same file twice in a row still counts as a change.
   input.value = ''
 
-  if (chosen.length === 0 || current.value === null) {
-    return
+  enqueue(chosen)
+}
+
+/*
+ * Files dropped from the desktop onto the list. Only files: a picture dragged from another tab
+ * is a link, and a card dragged inside the grid is the rubber band's business.
+ */
+const dropping = ref(false)
+let dragDepth = 0
+
+function carriesFiles(event: DragEvent): boolean {
+  // A card of the grid dragged in Chrome says `Files` too; it is on its way to a folder.
+  return (
+    canUpload.value &&
+    !carriesLibraryFiles(event) &&
+    (event.dataTransfer?.types ?? []).includes('Files')
+  )
+}
+
+function dragEnter(event: DragEvent): void {
+  if (!carriesFiles(event)) return
+
+  event.preventDefault()
+  dragDepth += 1
+  dropping.value = true
+}
+
+function dragOver(event: DragEvent): void {
+  if (!carriesFiles(event)) return
+
+  event.preventDefault()
+
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'copy'
   }
+}
 
-  try {
-    const stored = await api.upload(current.value, chosen)
-    const duplicates = stored.filter((file) => file.duplicate).length
+// Counted, because leaving a card for the grid under it is a `dragleave` as well.
+function dragLeave(): void {
+  dragDepth = Math.max(0, dragDepth - 1)
+  dropping.value = dragDepth > 0
+}
 
-    if (stored.length > duplicates) {
-      toast.success(t('manager.uploaded', { count: stored.length - duplicates }))
-    }
+function drop(event: DragEvent): void {
+  dragDepth = 0
+  dropping.value = false
 
-    if (duplicates > 0) {
-      toast.info(t('manager.duplicate-added'))
-    }
+  if (!carriesFiles(event)) return
 
-    await load(1)
-  } catch (error) {
-    toast.danger(message(error, t('errors.upload')))
-  }
+  event.preventDefault()
+  enqueue(Array.from(event.dataTransfer?.files ?? []))
 }
 
 const askName = createModal<
@@ -294,6 +380,17 @@ async function renameFolder(): Promise<void> {
   }
 }
 
+const askToDelete = createModal<
+  'all' | 'unused',
+  { title: string; message?: string; inUse?: FileInUse[]; mixed?: boolean; basePath?: string }
+>(DeleteDialog)
+
+/**
+ * A folder is asked about once, with everything in the question: what is inside it through the
+ * whole subtree, and which of those files the site still uses and where (§14.2). The answer is
+ * fetched before the dialog opens rather than discovered from a refusal after it closes — that
+ * was a second dialog, asking the same thing again with numbers in it.
+ */
 async function deleteFolder(): Promise<void> {
   const target = folder.value
 
@@ -301,45 +398,56 @@ async function deleteFolder(): Promise<void> {
     return
   }
 
-  // Asked before anything is tried, because a folder is a folder whether or not it holds
-  // anything (§14.2) — and asked a second time, with the counts the server sent back, when it
-  // turns out that what goes with it is somebody's article illustrations.
-  const first = await confirm({
+  let contents
+
+  try {
+    contents = await api.directoryContents(target.id)
+  } catch (error) {
+    toast.danger(message(error))
+
+    return
+  }
+
+  const empty = contents.files === 0 && contents.directories === 0
+
+  const answer = await askToDelete({
     title: t('dialogs.delete-folder-title', { title: target.title }),
-    message: t('dialogs.delete-folder-text'),
-    confirmText: t('dialogs.confirm'),
-    cancelText: t('manager.cancel'),
-    tone: 'danger',
+    message: empty
+      ? t('dialogs.delete-folder-text')
+      : `${t('dialogs.delete-folder-contents', { what: counted(t, locale(), contents.files, contents.directories) })} ${t('dialogs.delete-folder-warning')}`,
+    inUse: contents.in_use,
+    mixed: contents.in_use.length > 0 && contents.files > contents.in_use.length,
+    basePath: admin.basePath,
   })
 
-  if (!first) {
+  if (answer === undefined) {
+    return
+  }
+
+  if (answer === 'unused') {
+    try {
+      const result = await api.deleteUnused(target.id)
+
+      toast.success(t('manager.deleted-unused', { deleted: result.deleted, kept: result.kept }))
+
+      if (!result.directory_kept) current.value = null
+    } catch (error) {
+      toast.danger(message(error))
+    }
+
+    await load()
+
     return
   }
 
   try {
-    await api.deleteDirectory(target.id)
+    await api.deleteDirectory(target.id, !empty)
   } catch (error) {
-    const counts = countsOf(error)
+    // Something landed in it between the question and the answer: said, and nothing went.
+    toast.danger(message(error))
+    await load()
 
-    if (!counts) {
-      toast.danger(message(error))
-
-      return
-    }
-
-    const agreed = await confirm({
-      title: t('dialogs.delete-folder-title', { title: target.title }),
-      message: `${t('dialogs.delete-folder-contents', counts)} ${t('dialogs.delete-folder-warning')}`,
-      confirmText: t('dialogs.confirm'),
-      cancelText: t('manager.cancel'),
-      tone: 'danger',
-    })
-
-    if (!agreed) {
-      return
-    }
-
-    await api.deleteDirectory(target.id, true)
+    return
   }
 
   current.value = null
@@ -372,25 +480,119 @@ async function moveSelected(): Promise<void> {
     return
   }
 
-  await api.move([...selected.value], to)
+  await moveFiles([...selected.value], to)
+}
+
+/**
+ * Files into a folder — from the dialog or dropped on the tree — and a toast that says where
+ * they went, with the way back: each file returns to the folder it was taken from, which is
+ * not always one folder when the list was a search.
+ */
+async function moveFiles(ids: number[], to: number): Promise<void> {
+  const from = new Map(
+    rows.value.filter((file) => ids.includes(file.id)).map((file) => [file.id, file.directory_id]),
+  )
+  const staying = [...from].filter(([, directory]) => directory === to).map(([id]) => id)
+  const moving = ids.filter((id) => !staying.includes(id))
+
+  if (moving.length === 0) {
+    return
+  }
+
+  try {
+    await api.move(moving, to)
+  } catch (error) {
+    toast.danger(message(error))
+
+    return
+  }
+
+  const target = find(to)
+
+  toast.success(
+    t('manager.moved', {
+      count: moving.length,
+      folder: target ? (target.is_root ? t('manager.root') : target.title) : '',
+    }),
+    {
+      // Longer than a toast that only reports: there is a button in this one to reach for.
+      duration: 10000,
+      action: {
+        label: t('manager.undo'),
+        onClick: () => void moveBack(from),
+      },
+    },
+  )
+
+  await load(page.value?.meta.current_page ?? 1)
+}
+
+async function moveBack(from: Map<number, number>): Promise<void> {
+  try {
+    for (const [directory, ids] of byFolder(from)) {
+      await api.move(ids, directory)
+    }
+  } catch (error) {
+    toast.danger(message(error))
+  }
+
   await load(page.value?.meta.current_page ?? 1)
 }
 
 async function removeSelected(): Promise<void> {
   const ids = [...selected.value]
 
-  const agreed = await confirm({
-    title: t('dialogs.delete-files-title', { count: ids.length }),
-    message: t('dialogs.delete-files-text'),
-    confirmText: t('dialogs.confirm'),
-    cancelText: t('manager.cancel'),
-    tone: 'danger',
+  await removeFiles(ids, t('dialogs.delete-files-title', { count: ids.length }))
+}
+
+/**
+ * The same rule as `media_delete_files` for an agent: before anything goes, the server is asked
+ * which of the files the site still uses, and the question says where. «Delete anyway» is the
+ * `force` the server otherwise refuses without.
+ */
+async function removeFiles(ids: number[], title: string): Promise<void> {
+  let inUse: FileInUse[]
+
+  try {
+    inUse = await api.usage(ids)
+  } catch (error) {
+    toast.danger(message(error))
+
+    return
+  }
+
+  const answer = await askToDelete({
+    title,
+    inUse,
+    mixed: inUse.length > 0 && ids.length > inUse.length,
+    basePath: admin.basePath,
   })
 
-  if (agreed) {
-    await api.remove(ids)
-    await load(page.value?.meta.current_page ?? 1)
+  if (answer === undefined) {
+    return
   }
+
+  // «Only the unused» is the same delete without the files in use — and so without `force`.
+  const used = new Set(inUse.map((file) => file.id))
+  const going = answer === 'unused' ? ids.filter((id) => !used.has(id)) : ids
+  const force = answer === 'all' && inUse.length > 0
+
+  try {
+    if (going.length === 1) {
+      await api.removeOne(going[0]!, force)
+    } else {
+      await api.remove(going, force)
+    }
+
+    if (answer === 'unused') {
+      toast.success(t('manager.deleted-unused', { deleted: going.length, kept: used.size }))
+    }
+  } catch (error) {
+    // Put to use between the question and the answer: refused, and said why.
+    toast.danger(message(error))
+  }
+
+  await load(page.value?.meta.current_page ?? 1)
 }
 
 async function rename(file: MediaFile, name: string): Promise<void> {
@@ -399,8 +601,7 @@ async function rename(file: MediaFile, name: string): Promise<void> {
 }
 
 async function remove(file: MediaFile): Promise<void> {
-  await api.removeOne(file.id)
-  await load(page.value?.meta.current_page ?? 1)
+  await removeFiles([file.id], t('dialogs.delete-file', { name: file.name }))
 }
 
 /**
@@ -445,15 +646,43 @@ async function edit(file: MediaFile): Promise<void> {
 }
 
 /**
- * A double-click means "this one, now".
+ * A double-click means "this one, now": in the library, show it; in a picker, take it — there a
+ * look is one item down the card's menu instead.
  *
  * While several are being picked it means nothing extra: the first click of it has already put
  * the file in the selection, and the dialog ends on its own button instead.
  */
 function open(file: MediaFile): void {
-  if (!props.multiple) {
+  if (!props.picking) {
+    view(file)
+  } else if (!props.multiple) {
     emit('pick', file)
   }
+}
+
+/**
+ * A picture, large, with the other pictures of the page on either side of it — what somebody
+ * looking for the right photo does next is look at the one beside it.
+ *
+ * `url` and not `source`: this only looks at the picture, and the CDN is the faster of the two.
+ */
+function view(file: MediaFile): void {
+  const pictures = rows.value.filter((row) => row.type === 'image')
+  const start = pictures.findIndex((row) => row.id === file.id)
+
+  if (start < 0) {
+    return
+  }
+
+  openLightbox(
+    pictures.map((row) => ({
+      src: row.url,
+      thumb: api.thumb(row, 160, 160) ?? undefined,
+      alt: row.name,
+      caption: row.name,
+    })),
+    { start, ...lightboxLabels() },
+  )
 }
 
 function find(id: number | null): MediaDirectory | null {
@@ -476,15 +705,9 @@ function find(id: number | null): MediaDirectory | null {
   return id === null ? null : walk(directories.value)
 }
 
-function countsOf(error: unknown): { files: number; directories: number } | null {
-  const body = (
-    error as { body?: { code?: string; counts?: { files: number; directories: number } } }
-  )?.body
-
-  return body?.code === 'directory_not_empty' ? (body.counts ?? null) : null
-}
-
-const askToOptimize = createModal<true, { ids: number[]; size: number }>(OptimizeDialog)
+const askToOptimize = createModal<true, { plain: OptimizePending; convertible: OptimizePending }>(
+  OptimizeDialog,
+)
 
 /**
  * «Optimize» for what is selected, or else for the folder that is open — the same thing every
@@ -492,18 +715,19 @@ const askToOptimize = createModal<true, { ids: number[]; size: number }>(Optimiz
  */
 async function optimize(): Promise<void> {
   try {
-    const pending = await api.optimizePending({
-      ids: [...selected.value],
-      directoryId: current.value,
-    })
+    const scope = { ids: [...selected.value], directoryId: current.value }
+    const [plain, convertible] = await Promise.all([
+      api.optimizePending(scope),
+      api.optimizePending({ ...scope, convert: true }),
+    ])
 
-    if (pending.ids.length === 0) {
+    if (plain.ids.length === 0 && convertible.ids.length === 0) {
       toast.info(t('manager.optimize-none'))
 
       return
     }
 
-    await askToOptimize(pending)
+    await askToOptimize({ plain, convertible })
     await loadFiles()
   } catch (error) {
     toast.danger(message(error))
@@ -526,7 +750,13 @@ function debounce(run: () => void, wait: number): () => void {
 <template>
   <div ref="root" class="wx-media" :class="{ 'wx-media--compact': compact }">
     <aside v-if="!compact" class="wx-media__folders">
-      <directory-tree v-model:selected="current" :directories="directories" @move="moveFolder" />
+      <directory-tree
+        v-model:selected="current"
+        :directories="directories"
+        :loading="!foldersLoaded"
+        @move="moveFolder"
+        @move-files="moveFiles"
+      />
 
       <wx-actions v-if="canManage" size="sm" align="start">
         <wx-action type="add" :title="t('manager.new-folder')" @click="createFolder" />
@@ -545,7 +775,15 @@ function debounce(run: () => void, wait: number): () => void {
       </wx-actions>
     </aside>
 
-    <section class="wx-media__files">
+    <section
+      class="wx-media__files"
+      :class="{ 'is-dropping': dropping }"
+      :data-drop-label="t('manager.drop-here')"
+      @dragenter="dragEnter"
+      @dragover="dragOver"
+      @dragleave="dragLeave"
+      @drop="drop"
+    >
       <!--
         Uploading is offered while picking too. Most of the time the picture somebody is looking
         for is the one on their desk, and a picker that can only choose from what is already
@@ -580,14 +818,24 @@ function debounce(run: () => void, wait: number): () => void {
         @change="upload"
       />
 
+      <upload-queue
+        :jobs="uploads.jobs.value"
+        :unfinished="uploads.unfinished.value"
+        @cancel="uploads.cancel"
+        @retry="uploads.retry"
+        @forget="uploads.forget"
+      />
+
       <file-grid
         v-model:selected="selected"
         :files="rows"
         :api="api"
         :query="search"
         :single="picksOne"
+        :draggable="canManage && !picking && !compact"
         @rename="rename"
         @edit="edit"
+        @view="view"
         @remove="remove"
         @open="open"
       />
@@ -597,7 +845,7 @@ function debounce(run: () => void, wait: number): () => void {
         <span v-if="selected.length > 0">
           {{ t('manager.status-selected', { count: selected.length }) }}
         </span>
-        <span>{{ t('manager.status-size', { size: readable(shownSize) }) }}</span>
+        <span>{{ t('manager.status-size', { size: readable(shownSize, locale()) }) }}</span>
       </footer>
 
       <wx-pagination
@@ -609,7 +857,16 @@ function debounce(run: () => void, wait: number): () => void {
         :disabled="busy"
         size="sm"
         @change="({ page: to }) => loadFiles(to)"
-      />
+      >
+        <!-- The pager's own line is English; the panel is read in whatever the person reads. -->
+        <template #total="{ from, to, total }">
+          {{
+            from === null
+              ? t('manager.range-empty')
+              : t('manager.range', { first: from ?? 0, last: to ?? 0, count: total })
+          }}
+        </template>
+      </wx-pagination>
     </section>
 
     <!-- On a narrow screen the folders are a drawer: a tree beside a grid leaves room for
@@ -619,7 +876,9 @@ function debounce(run: () => void, wait: number): () => void {
         <directory-tree
           v-model:selected="current"
           :directories="directories"
+          :loading="!foldersLoaded"
           @move="moveFolder"
+          @move-files="moveFiles"
           @update:selected="foldersOpen = false"
         />
 
@@ -685,9 +944,28 @@ function debounce(run: () => void, wait: number): () => void {
 }
 
 .wx-media__files {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-10);
   min-height: 0;
+}
+
+/* Over the whole list while files are dragged across it, saying where they will go. */
+.wx-media__files.is-dropping::after {
+  content: attr(data-drop-label);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--wx-color-primary-soft) 85%, transparent);
+  border: 2px dashed var(--wx-color-primary);
+  border-radius: var(--wx-radius-md);
+  color: var(--wx-color-primary);
+  font-size: var(--wx-font-size-md);
+  font-weight: var(--wx-font-weight-semibold);
+  pointer-events: none;
 }
 </style>

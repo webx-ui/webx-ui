@@ -32,6 +32,11 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   languages (from `webx-ui/localization`), served as the MCP resource `settings://content-rules`
   (`languages`, `primary`, `tone`, `donts`, `notes`, `more`, `empty`); the MCP server's
   instructions point every agent at it.
+- **Data shortcodes** `WebxUi\Settings\DataShortcodes`: the tab `shortcodes` of `settings.index`
+  (repeater `shortcodes-data`, key `shortcodes.data`, rows of `name`, `key`, `value`) feeds the
+  shortcode registry of `webx-ui/module-admin` — `[phone]` reads a setting or its own value, a
+  phone prints as a `tel:` link, an e-mail as `mailto:`. Listed in `settings://content-rules`
+  under `shortcodes`.
 - Demo content (`resources/demo`), the content rules included.
 
 ## Change it without forking
@@ -42,6 +47,7 @@ picture fields `webx-ui/module-media`, the languages of a localized value
 | Read it on the site                   | `settings('<tab>.<field>', 'fallback')` (e.g. `settings('branding.logo')`) — current language, media resolved to its address                    |
 | A setting per language                | `"localized": true` on the field in the patch                                                                                                   |
 | A content rule of the site's own      | a patch on `settings.content` adding a field under `content-card` named `content.<name>`; it comes out in `more`                                |
+| A phone, an e-mail typed once         | «Settings» → «Shortcodes»: a row `phone` reading `contacts.phone` (or holding the value); content says `[phone]`                                |
 | React when settings change            | listen to `WebxUi\Settings\Events\SettingsSaved`                                                                                                |
 | The panel's brand from somewhere else | bind your own `WebxUi\Admin\Contracts\BrandingSource`                                                                                           |
 | No cache while debugging              | `WEBX_SETTINGS_CACHE=false`                                                                                                                     |

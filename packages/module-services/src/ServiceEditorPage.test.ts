@@ -167,25 +167,50 @@ describe('WxServiceEditorPage', () => {
     })
   })
 
-  it('puts a conflict on the screen instead of one version over the other', async () => {
+  it('merges a save refused over a change elsewhere, and saves both', async () => {
     const { wrapper, put } = await panel()
+    const theirs = detail('r9')
+
+    // An agent wrote the lead while this editor was typing the title.
+    theirs.values = { ...theirs.values, lead: { en: 'Written by an agent' } }
 
     put.mockRejectedValueOnce({
       status: 409,
-      body: { message: 'Somebody changed this service.', data: detail('r9') },
+      body: { message: 'Somebody changed this service.', data: theirs },
     })
 
     await wrapper.find('input').setValue('Mine')
     await wrapper.find('.wx-service-editor').trigger('focusout')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Somebody changed this service.')
+    expect(put).toHaveBeenCalledTimes(2)
+    expect(put.mock.calls[1]?.[1]).toMatchObject({
+      revision: 'r9',
+      values: { title: { en: 'Mine' }, lead: { en: 'Written by an agent' } },
+    })
+    expect(wrapper.find('.wx-editing-alerts').exists()).toBe(false)
+  })
 
-    // Keeping mine writes over theirs with their revision.
-    await wrapper.findAll('.wx-alert button').at(-1)?.trigger('click')
+  it('asks only about the place both sides changed, and writes nothing until it is settled', async () => {
+    const { wrapper, put } = await panel()
+
+    put.mockRejectedValueOnce({
+      status: 409,
+      body: { message: 'Somebody changed this service.', data: detail('r9', { title: 'Theirs' }) },
+    })
+
+    await wrapper.find('input').setValue('Mine')
+    await wrapper.find('.wx-service-editor').trigger('focusout')
     await flushPromises()
 
-    expect(put.mock.calls[1]?.[1]).toMatchObject({ revision: 'r9' })
+    expect(put).toHaveBeenCalledTimes(1)
+
+    const alert = wrapper.find('.wx-editing-alerts')
+
+    expect(alert.exists()).toBe(true)
+    expect(alert.findAll('.wx-editing-alerts__item')).toHaveLength(1)
+    expect(alert.text()).toContain('Mine')
+    expect(alert.text()).toContain('Theirs')
   })
 
   it('prints the prefix of the catalogue in front of the slug, and warns before it moves', async () => {
@@ -241,8 +266,8 @@ describe('WxServiceEditorPage', () => {
     confirm?.click()
     await flushPromises()
 
-    expect(post).toHaveBeenCalledWith('/api/cms/services/7/publish', {})
-    expect(get.mock.calls.filter(([url]) => url === '/api/cms/services/7')).toHaveLength(2)
+    expect(post).toHaveBeenCalledWith('/api/cms/services/7/publish', { revision: 'r1' })
+    expect(get.mock.calls.filter(([url]) => url === '/api/cms/services/7')).toHaveLength(3)
   })
 
   it('leaves without asking when the save is already on its way', async () => {

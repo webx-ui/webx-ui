@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace WebxUi\Menu;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\SiteUrls;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Menu\Audit\MenuLinks;
@@ -29,6 +32,11 @@ class MenuServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('menus', 'menu_items');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-menu.php', 'webx-menu');
 
         $this->app->singleton(MenuCache::class);
@@ -59,6 +67,12 @@ class MenuServiceProvider extends ServiceProvider
         }
 
         Blade::componentNamespace('WebxUi\\Menu\\View\\Components', 'webx-menu');
+
+        // Links rewritten around the models (a picture moved to a new key): every cached menu
+        // may hold the old one.
+        $this->app->make(Dispatcher::class)->listen(StoredContentRewritten::class, function (): void {
+            $this->app->make(MenuCache::class)->flush();
+        });
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(MenuModule::class));
 

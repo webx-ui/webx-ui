@@ -26,7 +26,12 @@ export const DEFAULT_TOOLS: RichTextTool[] = [
   'divider',
   'undo',
   'redo',
+  'divider',
+  'source',
 ]
+
+/** What an inline field offers: the marks a line of a heading is ever given. */
+export const INLINE_TOOLS: RichTextTool[] = ['bold', 'italic', 'accent']
 
 export const DEFAULT_ACCEPT = [
   'image/png',
@@ -45,6 +50,7 @@ export interface ToolMeta {
 export const TOOL_META: Record<Exclude<RichTextTool, 'divider'>, ToolMeta> = {
   bold: { label: 'Bold', icon: 'bold' },
   italic: { label: 'Italic', icon: 'italic' },
+  accent: { label: 'Accent', icon: 'accent' },
   strike: { label: 'Strikethrough', icon: 'strike' },
   code: { label: 'Inline code', icon: 'code' },
   h2: { label: 'Heading 2', text: 'H2' },
@@ -60,6 +66,7 @@ export const TOOL_META: Record<Exclude<RichTextTool, 'divider'>, ToolMeta> = {
   youtube: { label: 'YouTube video', icon: 'youtube' },
   undo: { label: 'Undo', icon: 'undo' },
   redo: { label: 'Redo', icon: 'redo' },
+  source: { label: 'HTML source', icon: 'source' },
 }
 
 /** Shown as a second row while the caret sits inside a table. */

@@ -176,6 +176,18 @@ export interface AdminModule {
    * written on another host does not open with pictures pointing there.
    */
   assetUrls?: (paths: string[], admin: AdminContext) => Promise<Record<string, string | null>>
+  /**
+   * What the blocks of a record and their fields are called, for a notice that names the place
+   * somebody else changed — «Hero › Text below the button» rather than `below_cta`. The panel
+   * cannot depend on the module that has the block library, so that module supplies this.
+   */
+  blockLabels?: (admin: AdminContext) => Promise<BlockLabels>
+}
+
+/** Names of block types and of their fields, as the block library has them. */
+export interface BlockLabels {
+  type(slug: string): string | undefined
+  field(slug: string, name: string): string | undefined
 }
 
 /**

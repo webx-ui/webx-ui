@@ -58,6 +58,65 @@
               ]
             }
           ]
+        },
+        {
+          "id": "shortcodes",
+          "type": "wx-tab",
+          "label": "trans::webx-settings::screen.shortcodes",
+          "children": [
+            {
+              "id": "shortcodes-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "shortcodes-data",
+                  "type": "wx-repeater",
+                  "name": "shortcodes.data",
+                  "label": "trans::webx-settings::screen.shortcodes",
+                  "help": "trans::webx-settings::screen.shortcodes-help",
+                  "props": {
+                    "sortable": true,
+                    "itemLabel": "name",
+                    "addLabel": "trans::webx-settings::screen.shortcodes-add",
+                    "emptyText": "trans::webx-settings::screen.shortcodes-empty"
+                  },
+                  "children": [
+                    {
+                      "id": "shortcode-name",
+                      "type": "wx-input",
+                      "name": "name",
+                      "label": "trans::webx-settings::screen.shortcode-name",
+                      "help": "trans::webx-settings::screen.shortcode-name-help",
+                      "props": {
+                        "maxlength": 64
+                      }
+                    },
+                    {
+                      "id": "shortcode-key",
+                      "type": "wx-input",
+                      "name": "key",
+                      "label": "trans::webx-settings::screen.shortcode-key",
+                      "help": "trans::webx-settings::screen.shortcode-key-help",
+                      "props": {
+                        "maxlength": 120
+                      }
+                    },
+                    {
+                      "id": "shortcode-value",
+                      "type": "wx-input",
+                      "name": "value",
+                      "label": "trans::webx-settings::screen.shortcode-value",
+                      "help": "trans::webx-settings::screen.shortcode-value-help",
+                      "localized": true,
+                      "props": {
+                        "maxlength": 500
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     }

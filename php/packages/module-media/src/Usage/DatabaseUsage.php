@@ -8,6 +8,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Illuminate\Support\Str;
 use Throwable;
 use WebxUi\Media\Models\MediaFile;
@@ -29,7 +30,7 @@ use WebxUi\Media\Models\MediaFile;
  * old version mentioned is not a file in use. A table that cannot be read is reported and passed
  * over rather than failing the whole question.
  */
-final class DatabaseUsage implements UsageSource
+final class DatabaseUsage implements UsageRewriter, UsageSource
 {
     private const TEXT_TYPES = [
         'char', 'varchar', 'nchar', 'nvarchar', 'character', 'character varying',
@@ -39,6 +40,20 @@ final class DatabaseUsage implements UsageSource
     private const NAMES_PER_QUERY = 20;
 
     private const ROWS_PER_QUERY = 50;
+
+    /** The models of history, named by class so a renamed table follows them. */
+    private const TRAILS = [
+        'WebxUi\Admin\Versions\EntityVersion',
+        'WebxUi\Admin\History\HistoryEntry',
+        'WebxUi\Admin\Uploads\Upload',
+        'WebxUi\Admin\Notes\Note',
+        'WebxUi\Auth\Models\LoginRecord',
+        'WebxUi\Blocks\Models\BlockVersion',
+        'WebxUi\Mcp\Calls\Call',
+    ];
+
+    /** @var list<string>|null */
+    private ?array $trails = null;
 
     public function __construct(private readonly Config $config) {}
 
@@ -63,11 +78,14 @@ final class DatabaseUsage implements UsageSource
             }
         }
 
-        foreach ($schema->getTables($schema->getCurrentSchemaName()) as $table) {
+        $tables = $schema->getTables($schema->getCurrentSchemaName());
+        $keys = $this->keysIntoLibrary($connection, $model->getTable(), $prefix);
+
+        foreach ($tables as $table) {
             $name = (string) $table['name'];
             $bare = $prefix !== '' && str_starts_with($name, $prefix) ? substr($name, strlen($prefix)) : $name;
 
-            if ($this->ignored($bare)) {
+            if ($this->ignored($bare, 'webx-media.usage.ignore')) {
                 continue;
             }
 
@@ -75,14 +93,7 @@ final class DatabaseUsage implements UsageSource
                 $columns = $schema->getColumns($bare);
                 $hasId = in_array('id', array_column($columns, 'name'), true);
 
-                foreach ($schema->getForeignKeys($bare) as $key) {
-                    $target = (string) $key['foreign_table'];
-
-                    if (count($key['columns']) !== 1 || ($target !== $model->getTable() && $target !== $prefix.$model->getTable())) {
-                        continue;
-                    }
-
-                    $column = (string) $key['columns'][0];
+                foreach ($keys === null ? $this->keysOf($schema, $bare, $model->getTable(), $prefix) : ($keys[$name] ?? []) as $column) {
                     $rows = $connection->table($bare)
                         ->whereIn($column, $ids)
                         ->limit(self::ROWS_PER_QUERY)
@@ -131,6 +142,152 @@ final class DatabaseUsage implements UsageSource
     }
 
     /**
+     * Every text and JSON column of every table but the ones `usage.rewrite_ignore` names, with
+     * no limit: one `UPDATE … SET column = REPLACE(column, old, new) WHERE column LIKE %old%` per
+     * column and file, so a row is never read into PHP and nothing is missed.
+     *
+     * History is rewritten as well (versions, the journal): restoring a version must not bring
+     * back a key whose bytes are gone. Failing is loud on purpose — the caller's transaction
+     * undoes the whole file rather than leave half of the site on the old key.
+     */
+    public function rewrite(array $renames, bool $dryRun = false): array
+    {
+        $connection = (new MediaFile)->getConnection();
+        $schema = $connection->getSchemaBuilder();
+        $prefix = $connection->getTablePrefix();
+        $counts = [];
+
+        foreach ($renames as [$from, $to]) {
+            // Spliced into SQL as literals below, so held to what a key's basename is.
+            if (preg_match('/^[A-Za-z0-9._-]+$/', $from.$to) !== 1) {
+                throw new \InvalidArgumentException("[{$from}] → [{$to}] is not a rename of a library key.");
+            }
+        }
+
+        foreach ($schema->getTables($schema->getCurrentSchemaName()) as $table) {
+            $name = (string) $table['name'];
+            $bare = $prefix !== '' && str_starts_with($name, $prefix) ? substr($name, strlen($prefix)) : $name;
+
+            if ($this->ignored($bare, 'webx-media.usage.rewrite_ignore')) {
+                continue;
+            }
+
+            foreach ($schema->getColumns($bare) as $column) {
+                $type = strtolower((string) $column['type_name']);
+
+                if (! in_array($type, self::TEXT_TYPES, true)) {
+                    continue;
+                }
+
+                $column = (string) $column['name'];
+
+                foreach ($renames as $fileId => [$from, $to]) {
+                    $query = $connection->table($bare);
+                    $this->contains($connection, $query, $column, $type, $from);
+
+                    $count = $dryRun
+                        ? $query->count()
+                        : $query->update([$column => $connection->raw($this->replaced($connection, $column, $type, $from, $to))]);
+
+                    if ($count > 0) {
+                        $counts[$fileId] = ($counts[$fileId] ?? 0) + $count;
+                    }
+                }
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Every single-column foreign key into the library, by table, in one question to
+     * `information_schema` — where the database has one to ask. Asked table by table instead,
+     * MariaDB took two and a half seconds over eighty tables, and the panel asks before every
+     * delete. `null` means: ask each table ({@see keysOf()}).
+     *
+     * @return array<string, list<string>>|null
+     */
+    private function keysIntoLibrary(Connection $connection, string $library, string $prefix): ?array
+    {
+        if (! in_array($connection->getDriverName(), ['mysql', 'mariadb'], true)) {
+            return null;
+        }
+
+        try {
+            $rows = $connection->select(
+                'select TABLE_NAME as table_name, COLUMN_NAME as column_name, CONSTRAINT_NAME as name
+                 from information_schema.KEY_COLUMN_USAGE
+                 where TABLE_SCHEMA = database() and REFERENCED_TABLE_NAME = ?',
+                [$prefix.$library],
+            );
+        } catch (Throwable $error) {
+            report($error);
+
+            return null;
+        }
+
+        /** @var array<string, array<string, list<string>>> $constraints table → constraint → columns */
+        $constraints = [];
+
+        foreach ($rows as $row) {
+            $constraints[(string) $row->table_name][(string) $row->name][] = (string) $row->column_name;
+        }
+
+        $keys = [];
+
+        foreach ($constraints as $table => $named) {
+            foreach ($named as $columns) {
+                if (count($columns) === 1) {
+                    $keys[$table][] = $columns[0];
+                }
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function keysOf(SchemaBuilder $schema, string $table, string $library, string $prefix): array
+    {
+        $columns = [];
+
+        foreach ($schema->getForeignKeys($table) as $key) {
+            $target = (string) $key['foreign_table'];
+
+            if (count($key['columns']) === 1 && ($target === $library || $target === $prefix.$library)) {
+                $columns[] = (string) $key['columns'][0];
+            }
+        }
+
+        return $columns;
+    }
+
+    private function contains(Connection $connection, Builder $query, string $column, string $type, string $needle): void
+    {
+        if ($connection->getDriverName() === 'pgsql' && in_array($type, ['json', 'jsonb'], true)) {
+            $query->whereRaw($query->getGrammar()->wrap($column).'::text like ?', ['%'.$needle.'%']);
+
+            return;
+        }
+
+        $query->where($column, 'like', '%'.$needle.'%');
+    }
+
+    private function replaced(Connection $connection, string $column, string $type, string $from, string $to): string
+    {
+        $wrapped = $connection->getQueryGrammar()->wrap($column);
+        $replace = "replace(%s, {$connection->escape($from)}, {$connection->escape($to)})";
+
+        if ($connection->getDriverName() === 'pgsql' && in_array($type, ['json', 'jsonb'], true)) {
+            return sprintf($replace, $wrapped.'::text').'::'.$type;
+        }
+
+        return sprintf($replace, $wrapped);
+    }
+
+    /**
      * @param  list<string>  $columns
      * @param  array<int, string>  $needles
      */
@@ -150,11 +307,43 @@ final class DatabaseUsage implements UsageSource
         }
     }
 
-    private function ignored(string $table): bool
+    private function ignored(string $table, string $key): bool
     {
         /** @var list<string> $patterns */
-        $patterns = (array) $this->config->get('webx-media.usage.ignore', []);
+        $patterns = (array) $this->config->get($key, []);
+
+        if ($key === 'webx-media.usage.ignore') {
+            $patterns = [...$patterns, ...$this->trails()];
+        }
 
         return Str::is($patterns, $table);
+    }
+
+    /**
+     * The tables of the panel's own trails — versions, the journal, uploads in progress, notes,
+     * sign-ins, agents' calls — as their models name them. A mention there is the past, not a
+     * use: eight old versions of a page listed before the page itself crowded the page off the
+     * list ({@see MediaUsage::LIMIT}), and the tables had been renamed (`entity_versions` →
+     * `cms_versions`) under a config that still named them the old way.
+     *
+     * A rewrite of keys does not ask this: history is rewritten on purpose.
+     *
+     * @return list<string>
+     */
+    private function trails(): array
+    {
+        if ($this->trails !== null) {
+            return $this->trails;
+        }
+
+        $tables = [];
+
+        foreach (self::TRAILS as $class) {
+            if (class_exists($class)) {
+                $tables[] = (new $class)->getTable();
+            }
+        }
+
+        return $this->trails = $tables;
     }
 }

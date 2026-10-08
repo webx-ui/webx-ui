@@ -1,9 +1,12 @@
 import type { ControlSize, ControlStatus } from '../../composables/useFormField'
 import type { LocalizedFieldProps, LocalizedValue } from '../../composables/useLocalized'
+import type { TokenFieldProps } from '../../composables/useTokens'
 
 export type RichTextTool =
   | 'bold'
   | 'italic'
+  /** The accent of an inline field: a bare `<span>` the site's styles colour. */
+  | 'accent'
   | 'strike'
   | 'code'
   | 'h2'
@@ -19,6 +22,8 @@ export type RichTextTool =
   | 'youtube'
   | 'undo'
   | 'redo'
+  /** Shows the document as HTML to read and edit by hand. */
+  | 'source'
   /** A vertical rule between groups. */
   | 'divider'
 
@@ -35,7 +40,7 @@ export type RichTextTableTool =
 
 /**
  * Everything this editor says out loud: a tooltip on every button, the two lines of the link
- * bar, and the word shown while a file is going up.
+ * bar, the word shown while a file is going up, and the warning the source view gives.
  */
 export type RichTextLabelKey =
   | Exclude<RichTextTool, 'divider'>
@@ -47,6 +52,10 @@ export type RichTextLabelKey =
   | 'apply'
   | 'cancel'
   | 'uploading'
+  /** The warning before the editor drops markup typed in the source, and its two answers. */
+  | 'sourceLoss'
+  | 'sourceDrop'
+  | 'sourceKeep'
 
 /**
  * What the editor calls its own buttons. It knows nothing about the panel it is opened in, so
@@ -84,7 +93,7 @@ export type RichTextImagePicker = () => Promise<RichTextImage | string | null>
 /** One language's HTML, or every language's when the field is localized. */
 export type RichTextModelValue = string | LocalizedValue
 
-export interface RichTextProps extends LocalizedFieldProps {
+export interface RichTextProps extends LocalizedFieldProps, TokenFieldProps {
   placeholder?: string
   disabled?: boolean
   readonly?: boolean
@@ -93,6 +102,12 @@ export interface RichTextProps extends LocalizedFieldProps {
   id?: string
   /** Accessible label used when there is no visible `<label>`. */
   ariaLabel?: string
+  /**
+   * One line of text with a few marks instead of a document: no paragraphs, no Enter, and the
+   * value is the bare line — `Deeply heard<span>.</span> Gently guided` — for a heading or a
+   * caption that carries a touch of markup. The toolbar defaults to bold, italic and accent.
+   */
+  inline?: boolean
   /** Height of the editing area before it starts growing. */
   minHeight?: string
   /** Which buttons the toolbar shows, in order. */

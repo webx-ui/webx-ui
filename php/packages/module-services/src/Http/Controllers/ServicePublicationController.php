@@ -6,6 +6,7 @@ namespace WebxUi\Services\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use WebxUi\Admin\Editing\HeldRevision;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Services\Http\Resources\ServiceResource;
@@ -19,6 +20,13 @@ final class ServicePublicationController
 {
     public function publish(Request $request, Service $service): JsonResponse
     {
+        // The editor sends the revision it held: an edit it has not seen is not published under it.
+        $stale = HeldRevision::conflict($request, 'services', (string) $service->getKey());
+
+        if ($stale !== null) {
+            return $stale;
+        }
+
         $id = $request->user()?->getAuthIdentifier();
 
         $service->publish(

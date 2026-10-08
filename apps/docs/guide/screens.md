@@ -322,6 +322,11 @@ field takes a POST that never opened one, and an agent writing through a tool ne
 all. An emptied editor leaves `<p></p>` behind, which is stored as `null`, so "did anybody
 write anything" stays a check rather than a parse.
 
+`"props": { "inline": true }` makes the field [one line](/components/rich-text#inline) — a
+heading with an accent in it — and the server holds it to that: `<strong>`, `<b>`, `<em>`, `<i>`
+and a bare `<span>` survive, every attribute goes, blocks are flattened into the line with a
+space where each ended, and the limit is 2000 characters rather than an article's.
+
 That happens on every save that goes through the type: a described screen (`ScreenValues`) and,
 since `module-blocks` puts block values through their types as well, a rich text field inside a
 block — whether the editor saved it or an agent wrote it through a tool.

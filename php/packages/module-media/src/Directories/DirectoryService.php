@@ -10,6 +10,7 @@ use WebxUi\Media\Exceptions\RootIsImmutable;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileStore;
+use WebxUi\Media\Usage\MediaUsage;
 
 /**
  * Folder operations that are more than one line of Eloquent.
@@ -19,6 +20,7 @@ final class DirectoryService
     public function __construct(
         private readonly FileStore $files,
         private readonly ConnectionResolverInterface $connection,
+        private readonly MediaUsage $usage,
     ) {}
 
     /**
@@ -52,6 +54,51 @@ final class DirectoryService
         });
     }
 
+    /**
+     * «Delete only the unused»: the files of the subtree the site does not use go, and so does
+     * every folder that is left empty — the folder itself included. A folder that still holds a
+     * used file stays, with the folders above it, so nothing on the site loses its picture.
+     *
+     * @return array{deleted: int, kept: int, directory_kept: bool}
+     */
+    public function deleteUnused(MediaDirectory $directory): array
+    {
+        if ($directory->isLibraryRoot()) {
+            throw new RootIsImmutable;
+        }
+
+        /** @var list<int> $used */
+        $used = array_column($this->usage($directory), 'id');
+        $subtree = $this->subtreeIds($directory);
+
+        return $this->connection->connection()->transaction(function () use ($directory, $subtree, $used): array {
+            $deleted = $this->files->deleteAll(
+                MediaFile::query()->whereIn('directory_id', $subtree)->whereNotIn('id', $used)->cursor(),
+            );
+
+            // Deepest first, so a folder whose children have just gone is seen empty in turn.
+            $folders = MediaDirectory::query()
+                ->whereIn($directory->getKeyName(), $subtree)
+                ->orderByDesc($directory->getDepthName())
+                ->get();
+
+            foreach ($folders as $folder) {
+                $empty = ! MediaFile::query()->where('directory_id', $folder->getKey())->exists()
+                    && ! MediaDirectory::query()->where('parent_id', $folder->getKey())->exists();
+
+                if ($empty) {
+                    $folder->refresh()->delete();
+                }
+            }
+
+            return [
+                'deleted' => $deleted,
+                'kept' => count($used),
+                'directory_kept' => MediaDirectory::query()->whereKey($directory->getKey())->exists(),
+            ];
+        });
+    }
+
     /** What is inside, so the panel can say it before asking whether to go ahead. */
     public function contents(MediaDirectory $directory): DirectoryContents
     {
@@ -61,6 +108,26 @@ final class DirectoryService
             files: MediaFile::query()->whereIn('directory_id', $subtree)->count(),
             directories: count($subtree) - 1,
         );
+    }
+
+    /**
+     * The files of the whole subtree the site still uses, and where: what deleting the folder
+     * would break, said in the one question the panel asks before it does.
+     *
+     * @return list<array{id: int, name: string, used_in: list<array<string, mixed>>}>
+     */
+    public function usage(MediaDirectory $directory): array
+    {
+        $report = [];
+
+        MediaFile::query()
+            ->whereIn('directory_id', $this->subtreeIds($directory))
+            ->orderBy('id')
+            ->chunkById(200, function ($files) use (&$report): void {
+                array_push($report, ...$this->usage->report($files));
+            });
+
+        return $report;
     }
 
     /**

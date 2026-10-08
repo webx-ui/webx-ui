@@ -31,9 +31,11 @@ final class OptimizeController
             'directory_id' => ['nullable', 'integer', 'exists:media_directories,id'],
             'ids' => ['nullable', 'array'],
             'ids.*' => ['integer'],
+            'convert' => ['sometimes', 'boolean'],
         ]);
 
-        $query = $this->optimizing->pending()->orderBy('id');
+        // Off unless asked for: converting rewrites every place the site names a picture.
+        $query = ($request->boolean('convert') ? $this->optimizing->convertible() : $this->optimizing->pending())->orderBy('id');
 
         if ($request->filled('ids')) {
             $query->whereIn('id', array_map('intval', (array) $request->input('ids')));
@@ -54,10 +56,15 @@ final class OptimizeController
         $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:'.self::BATCH],
             'ids.*' => ['integer'],
+            'convert' => ['sometimes', 'boolean'],
         ]);
 
+        $convert = $request->boolean('convert');
         $files = MediaFile::query()->whereIn('id', array_map('intval', (array) $request->input('ids')))->get();
 
-        return ApiResponse::data($files->map(fn (MediaFile $file): array => $this->optimizing->run($file))->values()->all());
+        return ApiResponse::data($files->map(fn (MediaFile $file): array => $convert
+            ? $this->optimizing->convert($file)
+            : $this->optimizing->run($file)
+        )->values()->all());
     }
 }

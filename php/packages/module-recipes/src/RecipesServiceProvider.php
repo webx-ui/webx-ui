@@ -11,10 +11,12 @@ use InvalidArgumentException;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
@@ -31,6 +33,7 @@ use WebxUi\Recipes\Panel\CategoriesModule;
 use WebxUi\Recipes\Panel\NutrientsModule;
 use WebxUi\Recipes\Panel\RecipesGroup;
 use WebxUi\Recipes\Panel\RecipesModule;
+use WebxUi\Recipes\Panel\Revision;
 use WebxUi\Recipes\Relations\RecipeTarget;
 use WebxUi\Recipes\Rendering\RecipeCard;
 use WebxUi\Recipes\Seo\FilteredCatalogSource;
@@ -56,6 +59,11 @@ class RecipesServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('recipes', 'recipe_categories', 'recipe_category_recipe', 'recipe_nutrients', 'recipe_nutrient_recipe');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-recipes.php', 'webx-recipes');
     }
 
@@ -79,6 +87,7 @@ class RecipesServiceProvider extends ServiceProvider
         $this->app->make(RelationTargets::class)->register(new RecipeTarget);
         $this->app->make(SeoSources::class)->register(new FilteredCatalogSource);
         $this->registerPanel();
+        $this->registerEditedRecord();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
 
@@ -259,6 +268,26 @@ class RecipesServiceProvider extends ServiceProvider
         foreach ([RecipesModule::class, CategoriesModule::class, NutrientsModule::class] as $module) {
             $modules->register($this->app->make($module));
         }
+    }
+
+    /**
+     * The editor's heartbeat asks after a recipe by this name: whether it moved under the
+     * editor, who moved it, who else has it open.
+     */
+    private function registerEditedRecord(): void
+    {
+        $this->app->make(EditedRecords::class)->register(
+            'recipes',
+            ['recipes.view', 'recipes.manage'],
+            static function (string $id): ?array {
+                // A recipe in the bin too: the editor open on it hears that it went there.
+                $recipe = ctype_digit($id) ? Recipe::withTrashed()->find((int) $id) : null;
+
+                return $recipe instanceof Recipe ? ['revision' => Revision::of($recipe), 'model' => $recipe] : null;
+            },
+            'recipes.manage',
+            model: Recipe::class,
+        );
     }
 
     private function config(): Config

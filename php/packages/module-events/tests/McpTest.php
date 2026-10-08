@@ -159,6 +159,7 @@ final class McpTest extends TestCase
         $got = $this->content($this->agent('events_update', [
             'event' => '/events/class',
             'values' => ['services' => [(string) $plan->id], 'date_note' => 'Every Saturday'],
+            'force' => true,
         ]));
 
         $this->assertSame([$plan->id], $got['values']['services']);
@@ -175,6 +176,21 @@ final class McpTest extends TestCase
         $this->agent('events_update', ['event' => $event->id, 'values' => ['lead' => 'First.'], 'revision' => $revision])->assertOk();
         $this->agent('events_update', ['event' => $event->id, 'values' => ['lead' => 'Second.'], 'revision' => $revision])
             ->assertHasErrors(['changed since you read it']);
+    }
+
+    #[Test]
+    public function an_agent_writes_what_it_read_or_says_force(): void
+    {
+        $event = $this->event('class', '2026-10-12 10:00:00');
+
+        $this->agent('events_update', ['event' => $event->id, 'values' => ['lead' => 'Unread.']])
+            ->assertHasErrors(['Read the event first']);
+        $this->assertFalse($event->refresh()->hasDraft());
+
+        $this->assertSame([], $this->content($this->agent('events_get', ['event' => $event->id]))['being_edited_by']);
+
+        $this->agent('events_update', ['event' => $event->id, 'values' => ['lead' => 'Forced.'], 'force' => true])->assertOk();
+        $this->assertTrue($event->refresh()->hasDraft());
     }
 
     #[Test]
@@ -282,14 +298,15 @@ final class McpTest extends TestCase
         // A timed event: `all_day` false in the form, 0 in the column — and a start the form sends
         // as ISO with an offset, the column keeps as a datetime string.
         $event = $this->event('class', '2026-10-12 10:00:00');
-        $values = $this->content($this->agent('events_get', ['event' => $event->id]))['values'];
+        $read = $this->content($this->agent('events_get', ['event' => $event->id]));
+        $values = $read['values'];
         unset($values['blocks']);
 
         // Everything sent back as it was read: nothing changes, so nothing waits.
-        $this->agent('events_update', ['event' => $event->id, 'values' => $values])->assertOk();
+        $this->agent('events_update', ['event' => $event->id, 'values' => $values, 'revision' => $read['revision']])->assertOk();
         $this->assertFalse($event->refresh()->hasDraft(), 'an update that changes nothing leaves no draft');
 
-        $this->agent('events_update', ['event' => $event->id, 'values' => ['title' => ['en' => 'Class (draft)']]])->assertOk();
+        $this->agent('events_update', ['event' => $event->id, 'values' => ['title' => ['en' => 'Class (draft)']], 'force' => true])->assertOk();
 
         $dry = $this->content($this->agent('events_discard', ['event' => $event->id, 'dry_run' => true]));
         $this->assertSame(['title'], $dry['would_discard']);

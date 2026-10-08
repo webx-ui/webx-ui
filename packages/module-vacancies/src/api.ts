@@ -29,7 +29,8 @@ export interface VacanciesApi {
    * The answer is the copy's form, so the editor can open it straight away.
    */
   duplicate(id: number): Promise<VacancyDetail>
-  publish(id: number): Promise<VacancyRow>
+  /** `revision` is what the editor held: a draft that moved on since is answered 409, not published. */
+  publish(id: number, revision?: string): Promise<VacancyRow>
   unpublish(id: number): Promise<VacancyRow>
   /**
    * The hiring is over, before its last day — or it is on again. A publication of its own on the
@@ -58,8 +59,8 @@ export const VACANCIES_API = 'vacancies'
 export function createVacanciesApi(admin: AdminContext): VacanciesApi {
   const base = `${admin.apiPath}/${VACANCIES_API}`
   const data = <T>(body: { data: T }): T => body.data
-  const row = (id: number, action: string) =>
-    admin.http.post<{ data: VacancyRow }>(`${base}/${id}/${action}`, {}).then(data)
+  const row = (id: number, action: string, body: object = {}) =>
+    admin.http.post<{ data: VacancyRow }>(`${base}/${id}/${action}`, body).then(data)
 
   return {
     list: (query = {}) => {
@@ -86,7 +87,7 @@ export function createVacanciesApi(admin: AdminContext): VacanciesApi {
       admin.http.post<{ data: VacancyDetail }>(`${base}/${id}/discard`, {}).then(data),
     duplicate: (id) =>
       admin.http.post<{ data: VacancyDetail }>(`${base}/${id}/duplicate`, {}).then(data),
-    publish: (id) => row(id, 'publish'),
+    publish: (id, revision) => row(id, 'publish', revision ? { revision } : {}),
     unpublish: (id) => row(id, 'unpublish'),
     close: (id) => row(id, 'close'),
     reopen: (id) => row(id, 'reopen'),

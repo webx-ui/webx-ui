@@ -112,7 +112,7 @@ final class RelationsTest extends TestCase
         $yoga->blocks = [['key' => 'k-pairings', 'type' => 'pairings', 'values' => []]];
         $yoga->save();
 
-        $this->agent('blocks_edit_content', [
+        $this->agent('blocks_edit_content', ['force' => true,
             'entity' => 'service',
             'id' => $yoga->id,
             'ops' => [['op' => 'set', 'key' => 'k-pairings', 'values' => [

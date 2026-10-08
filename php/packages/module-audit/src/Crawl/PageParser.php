@@ -38,6 +38,15 @@ final class PageParser
     /** Characters of a JSON-LD block kept for the card — enough to see what is wrong. */
     private const JSON_LD_SOURCE = 4000;
 
+    /** Meta tags a page should have once: a second copy makes search engines pick one. */
+    private const SINGLE_META = ['description', 'robots', 'viewport', 'keywords', 'og:title', 'og:description', 'og:image', 'og:url', 'og:type'];
+
+    /** Tags dropped from HTML — what a text pasted from an old editor or Word brings along. */
+    private const OBSOLETE = 'font, center, marquee, blink, big, strike, tt, acronym, applet, basefont, dir, frame, frameset, noframes, nobr, spacer, xmp, listing, plaintext';
+
+    /** Flash: dead in every browser since 2021, still in old content. */
+    private const FLASH = 'embed[src$=".swf" i], object[data$=".swf" i], object[type="application/x-shockwave-flash"], embed[type="application/x-shockwave-flash"]';
+
     public function __construct(private readonly UrlFinder $finder) {}
 
     /**
@@ -74,12 +83,17 @@ final class PageParser
         $facts['viewport'] = isset($meta['viewport']);
         $facts['favicon'] = $head['favicon'];
         $facts['canonicals'] = $head['canonicals'];
+        $facts['meta_repeated'] = $meta['repeated'];
+        $facts['meta_refresh'] = $meta['refresh'];
+        $facts['charset_meta'] = $meta['charset'];
+        $facts['doctype'] = $document->doctype !== null;
+        $facts['obsolete_tags'] = $this->obsolete($document);
 
         [$headings, $h1, $skipped, $outline] = $this->headings($document);
         $facts['headings_skipped'] = $skipped;
         $facts['outline'] = $outline;
 
-        $facts['links_empty'] = $this->anchors($document, $links);
+        [$facts['links_empty'], $facts['links_unfollowable']] = $this->anchors($document, $links);
         $facts += $this->images($document, $links);
         $facts += $this->controls($document);
 
@@ -111,6 +125,7 @@ final class PageParser
         $text = $this->text($document);
         $words = $text === '' ? 0 : (int) preg_match_all('/[\p{L}\p{N}][\p{L}\p{N}\'’-]*/u', $text);
         $facts['text_ratio'] = strlen($html) === 0 ? 0.0 : round(100 * strlen($text) / strlen($html), 1);
+        $facts['placeholder'] = preg_match('~\b(lorem ipsum|dolor sit amet|consectetur adipiscing)\b~i', $text) === 1;
 
         $canonical = $head['canonicals'][0] ?? null;
 
@@ -137,19 +152,34 @@ final class PageParser
      * The meta tags that matter: description, robots, viewport, Open Graph and Twitter — and the
      * addresses among them.
      *
-     * @return array{og: array<string, string>, twitter: array<string, string>, description?: string, robots?: string, viewport?: string}
+     * Also what is wrong with them as a set: the ones written twice, a `refresh` that moves the
+     * visitor on, and the charset the page declares.
+     *
+     * @return array{og: array<string, string>, twitter: array<string, string>, repeated: array<string, int>, refresh: string|null, charset: string|null, description?: string, robots?: string, viewport?: string}
      */
     private function meta(HTMLDocument $document, LinkList $links): array
     {
-        $found = ['og' => [], 'twitter' => []];
+        $found = ['og' => [], 'twitter' => [], 'refresh' => null, 'charset' => null];
+        $counts = [];
 
         foreach ($document->querySelectorAll('meta') as $element) {
             $name = strtolower(trim((string) ($element->getAttribute('property') ?? $element->getAttribute('name') ?? '')));
             $content = self::clean($element->getAttribute('content'));
+            $equiv = strtolower(self::clean($element->getAttribute('http-equiv')));
+
+            if ($element->hasAttribute('charset')) {
+                $found['charset'] ??= self::cut(self::clean($element->getAttribute('charset')), 32);
+            } elseif ($equiv === 'content-type' && preg_match('~charset=["\']?([\w-]+)~i', $content, $match) === 1) {
+                $found['charset'] ??= self::cut($match[1], 32);
+            } elseif ($equiv === 'refresh') {
+                $found['refresh'] ??= self::cut($content, 500);
+            }
 
             if ($name === '') {
                 continue;
             }
+
+            $counts[$name] = ($counts[$name] ?? 0) + 1;
 
             if (in_array($name, ['description', 'robots', 'viewport'], true)) {
                 $found[$name] ??= $content;
@@ -163,6 +193,11 @@ final class PageParser
                 $links->add($content, AuditLink::META, rel: $name);
             }
         }
+
+        $found['repeated'] = array_filter(
+            array_intersect_key($counts, array_flip(self::SINGLE_META)),
+            static fn (int $count): bool => $count > 1,
+        );
 
         return $found;
     }
@@ -243,16 +278,28 @@ final class PageParser
     }
 
     /**
-     * Links, with what a screen reader would call them — and how many have no name at all.
+     * Links, with what a screen reader would call them — how many have no name at all, and the
+     * ones nobody can follow (`links.unfollowable`), as the page wrote them.
      *
-     * @return array{text: int, images: int}
+     * @return array{0: array{text: int, images: int}, 1: array{count: int, broken: int, hrefs: list<string>}}
      */
     private function anchors(HTMLDocument $document, LinkList $links): array
     {
         $empty = ['text' => 0, 'images' => 0];
+        $unfollowable = ['count' => 0, 'broken' => 0, 'hrefs' => []];
 
         foreach ($document->querySelectorAll('a[href], area[href]') as $element) {
             $name = self::name($element);
+            $problem = self::unfollowable((string) $element->getAttribute('href'));
+
+            if ($problem !== null) {
+                $unfollowable['count']++;
+                $unfollowable['broken'] += $problem ? 1 : 0;
+
+                if (count($unfollowable['hrefs']) < self::EXCERPTS) {
+                    $unfollowable['hrefs'][] = self::cut(trim((string) $element->getAttribute('href')), self::EXCERPT_LENGTH);
+                }
+            }
 
             if ($name === '' && $element->localName === 'a') {
                 $element->querySelector('img') !== null ? $empty['images']++ : $empty['text']++;
@@ -267,7 +314,48 @@ final class PageParser
             );
         }
 
-        return $empty;
+        return [$empty, $unfollowable];
+    }
+
+    /**
+     * Whether a link's address leads nowhere a crawler can go: null when it is fine, false for a
+     * link that is a button in disguise (`#`, `javascript:`), true for one that is plainly broken —
+     * a `mailto:` without an address, a scheme glued into a path, a host without its scheme.
+     */
+    private static function unfollowable(string $href): ?bool
+    {
+        $value = strtolower(trim(html_entity_decode($href, ENT_QUOTES | ENT_HTML5)));
+
+        return match (true) {
+            $value === '', $value === '#', str_starts_with($value, 'javascript:') => false,
+            str_starts_with($value, 'mailto:') => ! str_contains($value, '@') ? true : null,
+            str_starts_with($value, 'tel:') => preg_match('~\d~', $value) !== 1 ? true : null,
+            preg_match('~^[a-z][a-z0-9+.-]*:~', $value) !== 1 && preg_match('~(mailto|tel|javascript):~', $value) === 1 => true,
+            str_starts_with($value, 'www.'), preg_match('~^https?:/[^/]|^https?//|^https?:\\\\~', $value) === 1 => true,
+            default => null,
+        };
+    }
+
+    /**
+     * Obsolete tags by name, Flash among them.
+     *
+     * @return array<string, int>
+     */
+    private function obsolete(HTMLDocument $document): array
+    {
+        $found = [];
+
+        foreach ($document->querySelectorAll(self::OBSOLETE) as $element) {
+            $found[$element->localName] = ($found[$element->localName] ?? 0) + 1;
+        }
+
+        $flash = $document->querySelectorAll(self::FLASH)->length;
+
+        if ($flash > 0) {
+            $found['flash'] = $flash;
+        }
+
+        return $found;
     }
 
     /**

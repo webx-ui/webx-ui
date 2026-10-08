@@ -56,6 +56,15 @@ final class Sitemap
 
     private const CHUNK = 500;
 
+    /** Where the attributes of an `xhtml:link` line up, as in Google's example. */
+    private const COLUMN = '               ';
+
+    /**
+     * The layout of the files, in the cache key: a build kept from before a change of layout is
+     * never read again, rather than served until its time runs out.
+     */
+    private const FORMAT = 'v2';
+
     /**
      * Visible addresses the resolver closed, by why — counted while building, for the panel.
      *
@@ -587,24 +596,31 @@ final class Sitemap
      * Written by hand rather than through a view: the document opens with `<?xml`, which Blade
      * compiles as PHP (CLAUDE.md §4), and there is nothing here a template would make clearer.
      *
+     * Laid out as Google's example of a multilingual sitemap is: an element a line, the
+     * attributes of an `xhtml:link` in a column. Crawlers ignore the whitespace; the people who
+     * open the map to check an address or an `hreflang` pair do not, and one line per `<url>`
+     * with five links in it is unreadable.
+     *
      * @param  list<Entry>  $entries
      * @param  array<string, array<string, string>>  $alternates
      */
     private function urlset(array $entries, array $alternates): string
     {
         $xml = $this->prologue().'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
-            .($alternates === [] ? '' : ' xmlns:xhtml="http://www.w3.org/1999/xhtml"')
+            .($alternates === [] ? '' : "\n".'  xmlns:xhtml="http://www.w3.org/1999/xhtml"')
             .'>'."\n";
 
         foreach ($entries as $entry) {
-            $xml .= '<url><loc>'.$this->escape($entry['loc']).'</loc>'
-                .($entry['lastmod'] === null ? '' : '<lastmod>'.$entry['lastmod']->toAtomString().'</lastmod>');
+            $xml .= "  <url>\n".$this->dated($entry['loc'], $entry['lastmod']);
 
             foreach ($alternates[$entry['group']] ?? [] as $hreflang => $href) {
-                $xml .= '<xhtml:link rel="alternate" hreflang="'.$this->escape($hreflang).'" href="'.$this->escape($href).'"/>';
+                $xml .= "    <xhtml:link\n"
+                    .self::COLUMN.'rel="alternate"'."\n"
+                    .self::COLUMN.'hreflang="'.$this->escape($hreflang).'"'."\n"
+                    .self::COLUMN.'href="'.$this->escape($href).'"/>'."\n";
             }
 
-            $xml .= "</url>\n";
+            $xml .= "  </url>\n";
         }
 
         return $xml.'</urlset>'."\n";
@@ -618,17 +634,43 @@ final class Sitemap
         $xml = $this->prologue().'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
 
         foreach ($files as $name => $modified) {
-            $xml .= '<sitemap><loc>'.$this->escape(URL::to('sitemap-'.$name.'.xml')).'</loc>'
-                .($modified === null ? '' : '<lastmod>'.$modified->toAtomString().'</lastmod>')
-                ."</sitemap>\n";
+            $xml .= "  <sitemap>\n".$this->dated(URL::to('sitemap-'.$name.'.xml'), $modified)."  </sitemap>\n";
         }
 
         return $xml.'</sitemapindex>'."\n";
     }
 
+    /** The `<loc>` and, when there is one, the `<lastmod>` of a `<url>` or a `<sitemap>`. */
+    private function dated(string $loc, ?CarbonInterface $modified): string
+    {
+        return '    <loc>'.$this->escape($loc).'</loc>'."\n"
+            .($modified === null ? '' : '    <lastmod>'.$modified->toAtomString().'</lastmod>'."\n");
+    }
+
+    /**
+     * The declaration, and the stylesheet that shows a browser the same text with the addresses
+     * clickable. Root-relative on purpose: a browser applies a stylesheet only from the map's
+     * own origin, and behind a proxy `URL::to()` can name the other scheme.
+     */
     private function prologue(): string
     {
-        return '<?xml version="1.0" encoding="UTF-8"?>'."\n";
+        $prologue = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
+
+        if ($this->stylesheet() !== null) {
+            $prologue .= '<?xml-stylesheet type="text/xsl" href="'.$this->escape($this->stylesheet()).'"?>'."\n";
+        }
+
+        return $prologue;
+    }
+
+    /** The path of `/sitemap.xsl`, or null when the site turned it off. */
+    private function stylesheet(): ?string
+    {
+        if (! (bool) $this->config->get('webx-seo.sitemap.stylesheet', true)) {
+            return null;
+        }
+
+        return '/'.ltrim((string) parse_url(URL::to('sitemap.xsl'), PHP_URL_PATH), '/');
     }
 
     private function escape(string $value): string
@@ -678,7 +720,10 @@ final class Sitemap
 
         $skipped = $skipped === [] ? '' : '.'.substr(sha1(implode(',', $skipped)), 0, 8);
 
-        return $this->prefix().'.'.$generation.$skipped.'.'.$what;
+        // The stylesheet is in every file's prologue and is switched by config, which no save announces.
+        $format = self::FORMAT.($this->stylesheet() === null ? '' : 'x');
+
+        return $this->prefix().'.'.$format.'.'.$generation.$skipped.'.'.$what;
     }
 
     private function generationKey(): string

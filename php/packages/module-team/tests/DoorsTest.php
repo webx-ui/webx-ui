@@ -78,7 +78,7 @@ final class DoorsTest extends TestCase
         $this->page->blocks = [['key' => 'k-team', 'type' => 'team', 'values' => []]];
         $this->page->save();
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'page',
             'id' => $this->page->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-team', 'values' => [
@@ -86,7 +86,7 @@ final class DoorsTest extends TestCase
             ]]],
         ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertHasErrors(['field [team]']);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'page',
             'id' => $this->page->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-team', 'values' => [
@@ -119,7 +119,7 @@ final class DoorsTest extends TestCase
 
         $this->assertSame($current, $this->draftOf($service)['blocks'][0]['values']['team']['related'] ?? null);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'service',
             'id' => $service->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k1', 'values' => ['team' => ['related' => $current, 'limit' => 3]]]],

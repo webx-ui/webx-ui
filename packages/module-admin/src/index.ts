@@ -40,8 +40,39 @@ export {
 export { adminMessages } from './messages'
 export { renderMarkdown } from './markdown'
 export { createDates, useDates, type DateLike, type Dates } from './dates'
+export { pluralForm, type PluralForm } from './plural'
 export { errorText, useErrorText } from './errors'
 export { useBodyKeys } from './keys'
+export {
+  changedPaths,
+  conflictId,
+  mergeThreeWay,
+  sameValue,
+  type MergeChoice,
+  type MergeConflict,
+  type MergeResult,
+  type MergeSegment,
+} from './merge'
+export {
+  preview as previewValue,
+  useEditing,
+  type DraftCopy,
+  type Editing,
+  type EditingChange,
+  type EditingConflict,
+  type EditingEditor,
+  type EditingIncoming,
+  type EditingOptions,
+  type EditingEvent,
+  type EditingState,
+  type EditingVersion,
+} from './editing'
+export {
+  screenLabels,
+  useEditingLabels,
+  type EditingLabels,
+  type EditingLabelsOptions,
+} from './editingLabels'
 export { createNotesApi, type EntityNote, type NoteAuthor, type NotesApi } from './notes'
 export {
   createHistoryApi,
@@ -69,6 +100,14 @@ export {
   type LinksApi,
   type ResolvedLink,
 } from './links'
+export {
+  forgetShortcodes,
+  loadShortcodes,
+  shortcodeToken,
+  useShortcodes,
+  type Shortcode,
+  type ShortcodeToken,
+} from './shortcodes'
 export {
   createHttp,
   readCookie,
@@ -135,6 +174,7 @@ export type {
   AdminModule,
   AdminStatus,
   AdminUser,
+  BlockLabels,
   Manifest,
   ManifestModule,
   NavEntry,
@@ -161,6 +201,8 @@ export { default as WxHelpButton } from './HelpButton.vue'
 export { default as WxDate } from './DateText.vue'
 export { default as WxNotes } from './NotesFeed.vue'
 export { default as WxHistory } from './HistoryFeed.vue'
+export { default as WxEditingAlerts } from './EditingAlerts.vue'
+export { default as WxDrafts } from './DraftsList.vue'
 export { default as WxBackupNote } from './BackupNote.vue'
 export { default as WxRichTextField } from './RichTextField.vue'
 export { default as WxLinkPicker } from './LinkPicker.vue'

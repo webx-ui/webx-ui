@@ -9,6 +9,8 @@ use Carbon\CarbonInterface;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\App;
+use WebxUi\Admin\Editing\RecordEvents;
 
 /**
  * An entity that is edited in a draft and published on purpose.
@@ -39,6 +41,49 @@ use Illuminate\Support\Carbon;
  */
 trait HasDraft
 {
+    /**
+     * What an open editor of this record has to hear about besides its content (RecordEvents):
+     * a move in the tree, the bin and the way out of it, and a delete for good. Publishing, unpublishing and the draft
+     * thrown away are noted where they happen, below.
+     */
+    public static function bootHasDraft(): void
+    {
+        // `nested-set` moves a node with queries rather than a save, and says so with this event.
+        static::registerModelEvent('moved', static function (Model $model): void {
+            /** @var Model&self $model */
+            $model->noteEvent(RecordEvents::MOVED);
+        });
+
+        // A purge fires `deleted` too, on a model that is still `trashed()` — it was in the bin.
+        // Only the flag tells the two apart; a model without the bin is gone on any delete.
+        static::deleted(static function (Model $model): void {
+            /** @var Model&self $model */
+            if (method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting()) {
+                if (method_exists($model, 'trashed') && $model->trashed()) {
+                    $model->noteEvent(RecordEvents::TRASHED);
+                }
+
+                return;
+            }
+
+            $model->noteEvent(RecordEvents::PURGED);
+        });
+
+        // Only a model with `SoftDeletes` ever fires it; registering it for the rest is harmless.
+        static::registerModelEvent('restored', static function (Model $model): void {
+            /** @var Model&self $model */
+            $model->noteEvent(RecordEvents::RESTORED);
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $detail
+     */
+    public function noteEvent(string $kind, array $detail = []): void
+    {
+        App::make(RecordEvents::class)->note($this, $kind, $detail);
+    }
+
     public function initializeHasDraft(): void
     {
         $this->mergeCasts([
@@ -97,6 +142,10 @@ trait HasDraft
             $values = [];
         }
 
+        if ($this->hasVersions()) {
+            $this->keepOverwritten($values, $authorId, $source);
+        }
+
         $this->setAttribute($this->draftColumn(), $values === [] ? null : $values);
         $this->save();
 
@@ -107,10 +156,48 @@ trait HasDraft
         return $this;
     }
 
+    /**
+     * Keep the draft that is about to be replaced when somebody else wrote it.
+     *
+     * Who wrote the draft is who wrote the newest autosave, which is the copy of it. A save by
+     * the same person through the same door is the next keystroke of one edit and is what the
+     * ring is for; a save by anybody else replaces work that is not theirs, and that work is put
+     * aside as an `overwritten` version before it goes — an agent's edit that an editor's
+     * «Keep mine» wrote over, or the other way round, can be put back from the history.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    protected function keepOverwritten(array $values, ?int $authorId, string $source): void
+    {
+        $previous = $this->draftValues();
+
+        if ($previous === [] || $previous == $values) {
+            return;
+        }
+
+        $last = $this->versions()->autosaves()->first();
+
+        if (! $last instanceof EntityVersion) {
+            return;
+        }
+
+        if ($last->author_id === $authorId && $last->source === $source) {
+            return;
+        }
+
+        $this->writeVersion(EntityVersion::KIND_OVERWRITTEN, $last->author_id, $last->source, null, $previous);
+    }
+
     public function discardDraft(): static
     {
+        $had = $this->hasDraft();
+
         $this->setAttribute($this->draftColumn(), null);
         $this->save();
+
+        if ($had) {
+            $this->noteEvent(RecordEvents::DISCARDED);
+        }
 
         return $this;
     }
@@ -173,6 +260,8 @@ trait HasDraft
             }
         });
 
+        $this->noteEvent(RecordEvents::PUBLISHED);
+
         return $this;
     }
 
@@ -181,6 +270,8 @@ trait HasDraft
     {
         $this->setAttribute($this->publishedAtColumn(), null);
         $this->save();
+
+        $this->noteEvent(RecordEvents::UNPUBLISHED);
 
         return $this;
     }

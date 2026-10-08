@@ -315,6 +315,29 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function an_agent_writes_what_it_read_or_says_force(): void
+    {
+        $article = $this->article('how-to-choose');
+
+        $this->agent('articles_update', [
+            'article' => '/blog/how-to-choose',
+            'values' => ['title' => ['en' => 'Unread']],
+        ])
+            ->assertHasErrors(['Read the article first', 'articles_get']);
+
+        $this->assertFalse($article->refresh()->hasDraft());
+        $this->assertSame([], $this->content($this->agent('articles_get', ['article' => '/blog/how-to-choose']))['being_edited_by']);
+
+        $this->agent('articles_update', [
+            'article' => '/blog/how-to-choose',
+            'values' => ['title' => ['en' => 'Forced']],
+            'force' => true,
+        ], $this->editor())->assertOk();
+
+        $this->assertSame(['en' => 'Forced'], $article->refresh()->draftValues()['title']);
+    }
+
+    #[Test]
     public function the_body_is_not_written_through_the_article_tools(): void
     {
         $this->article('how-to-choose');

@@ -14,6 +14,7 @@ use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Exchange\ExchangeColumns;
@@ -59,6 +60,11 @@ class BrandsServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('catalog_brands', 'catalog_product_brand');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog-brands.php', 'webx-catalog-brands');
     }
 

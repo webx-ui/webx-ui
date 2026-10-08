@@ -72,8 +72,16 @@ patch whose target is gone throws when the screen is first built.
   Write its fields.
 - Do not type ingredients or steps as loose text: the `Recipe` markup reads one `<li>` per
   ingredient and per step. Use lists.
-- Do not save without the `revision` you read: a stale one is refused. Read again with
-  `recipes_get` and redo the change.
+- Do not write without the `revision` recipes_get gave you: `recipes_update` refuses a write
+  with none and refuses a stale one. Read again and redo the change; do not retry blindly.
+  `force: true` writes without one and is for a script that means to overwrite, not for an
+  agent working beside people. `recipes_get` names in `being_edited_by` who has the recipe open
+  in the panel right now — tell your user before writing under them. Their editor merges your
+  write with theirs field by field, and a draft written over by somebody else is kept: the
+  panel's History lists it under Drafts, and «Restore» puts it back.
+- `recipes_publish`, `recipes_unpublish`, `recipes_discard`, `recipes_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
+  one is refused, and while somebody has the recipe open in the panel (`being_edited_by`) one is
+  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
 - Do not expect a saved change on the site: categories, nutrients, services and similar recipes
   wait in the draft with the text until `recipes_publish`.
 - Do not delete rows with SQL: deleting bins a recipe and releases its address; a raw delete

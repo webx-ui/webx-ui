@@ -27,12 +27,20 @@ function keysOf(group: string): string[] {
  * a missing key is not there to be compared.
  */
 describe('the English here matches the English the server ships', () => {
-  it.each(['module', 'manager', 'field', 'editor', 'dialogs', 'errors', 'files', 'validation'])(
-    '%s',
-    (group) => {
-      const ours = Object.keys(mediaMessages[group] ?? {}).sort()
+  it.each([
+    'module',
+    'manager',
+    'field',
+    'editor',
+    'lightbox',
+    'dialogs',
+    'errors',
+    'files',
+    'validation',
+    'places',
+  ])('%s', (group) => {
+    const ours = Object.keys(mediaMessages[group] ?? {}).sort()
 
-      expect(ours).toEqual(keysOf(group))
-    },
-  )
+    expect(ours).toEqual(keysOf(group))
+  })
 })

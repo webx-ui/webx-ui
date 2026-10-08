@@ -23,6 +23,8 @@ final readonly class ProbeResponse
         public ?string $error = null,
         /** Until the first byte, when the transport says; null under a fake. */
         public ?int $ttfb = null,
+        /** `1.1`, `2` — what was spoken, when curl says; null under a fake or without HTTP/2 in curl. */
+        public ?string $protocol = null,
     ) {}
 
     public function ok(): bool

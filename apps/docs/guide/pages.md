@@ -158,7 +158,9 @@ The panel sends back the `revision` it read the page at — a short hash of the 
 draft has no version number of its own — and a save whose revision is no longer the current one is
 answered with a `409` carrying the page as it now is, instead of being written over whoever saved
 in between. Two writers who saved the same thing did not conflict, and the check says so. The same
-guard covers an agent, which is the case it was really written for.
+guard covers an agent, which is the case it was really written for. The editor merges such a save
+with the other side field by field and block by block, and asks only about a place both changed —
+see [Editing together](/guide/editing-together).
 
 ```
 GET    /api/cms/pages                            a level of the tree, search, filters, the bin

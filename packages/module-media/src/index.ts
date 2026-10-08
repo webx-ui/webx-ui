@@ -73,6 +73,14 @@ export function media(options: MediaOptions = {}): AdminModule {
 export { mediaMessages }
 export { createMediaApi, type MediaApi } from './api'
 export {
+  MEDIA_UPLOAD_PURPOSE,
+  useMediaUploads,
+  type MediaUploadJob,
+  type MediaUploads,
+  type MediaUploadsOptions,
+  type MediaUploadStage,
+} from './uploading'
+export {
   openMediaFiles,
   openMediaLibrary,
   openMediaPicker,

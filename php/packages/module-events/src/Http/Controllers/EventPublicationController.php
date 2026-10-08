@@ -6,6 +6,7 @@ namespace WebxUi\Events\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use WebxUi\Admin\Editing\HeldRevision;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Events\Http\Resources\EventResource;
@@ -19,6 +20,13 @@ final class EventPublicationController
 {
     public function publish(Request $request, Event $event): JsonResponse
     {
+        // The editor sends the revision it held: an edit it has not seen is not published under it.
+        $stale = HeldRevision::conflict($request, 'events', (string) $event->getKey());
+
+        if ($stale !== null) {
+            return $stale;
+        }
+
         $id = $request->user()?->getAuthIdentifier();
 
         $event->publish(

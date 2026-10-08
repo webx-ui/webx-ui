@@ -32,6 +32,12 @@ final class Lints
     /** Variables Blade or the renderer hand a template on their own — `GIVEN` in `lint.ts`. */
     private const GIVEN = ['block', 'entity', 'loop', 'slot', '__env', 'errors', 'app', 'region', 'attributes', 'this'];
 
+    /**
+     * Calls that make a string of what they are given — a ShortcodeText becomes its HTML, which
+     * `{{ }}` then escapes again. `STRING_CALLS` in `lint.ts`.
+     */
+    private const STRING_CALLS = 'trim|rtrim|ltrim|chop|strtoupper|strtolower|ucfirst|lcfirst|ucwords|mb_strtoupper|mb_strtolower|mb_convert_case|mb_substr|mb_strimwidth|substr|str_replace|str_ireplace|preg_replace|preg_replace_callback|sprintf|vsprintf|strip_tags|nl2br|wordwrap|str_pad|strrev|html_entity_decode|htmlspecialchars|e|str|Str::\w+';
+
     /** What a field id may be: a key of the values, and a variable when it is a valid PHP name. */
     public const FIELD_ID = '/^[A-Za-z_][A-Za-z0-9_-]*$/';
 
@@ -69,6 +75,10 @@ final class Lints
             }
 
             $lints = [...$lints, ...self::schema($schema)];
+
+            foreach (self::stringOnText($template, $schema) as [$field, $line]) {
+                $lints[] = self::lint('template', 'string-on-text', $line, ['field' => $field]);
+            }
         }
 
         $lints = [...$lints, ...self::calls($template)];
@@ -170,6 +180,106 @@ final class Lints
         }
 
         return $used;
+    }
+
+    /**
+     * Text fields a template turns into a string and prints with `{{ }}`: `{{ rtrim($heading, '.') }}`.
+     *
+     * A text field with a shortcode in it arrives as a ShortcodeText, which `{{ }}` prints as the
+     * HTML it is; a string function hands back that HTML as a string, and `{{ }}` escapes it a
+     * second time — `Call &lt;a href=…` on the page. A field without one arrives as a plain string
+     * and prints fine, so the block looks right until somebody types `[phone]`. Read: top-level
+     * text fields as `$id`, a repeater's as `$item['id']`; `$heading->plain()` is text and is not
+     * counted, nor is an echo that goes through `wx_text()`, which is the fix.
+     *
+     * @param  list<array<string, mixed>>  $schema
+     * @return list<array{string, int}> The field as the template writes it, and its line.
+     */
+    public static function stringOnText(string $template, array $schema): array
+    {
+        $references = [];
+
+        foreach (self::textFields($schema) as [$name, $inItem]) {
+            $quoted = preg_quote($name, '/');
+            $references[] = $inItem
+                ? '/\$\w+\[\s*[\'"]'.$quoted.'[\'"]\s*\](?!\s*->)/'
+                : '/\$'.$quoted.'\b(?!\s*(?:->|\[|\())/';
+        }
+
+        if ($references === []) {
+            return [];
+        }
+
+        preg_match_all('/(?<!@)\{\{(?!--)(.*?)\}\}/s', $template, $echoes, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+        $found = [];
+
+        foreach ($echoes as $echo) {
+            [$expression, $offset] = $echo[1];
+
+            if (str_contains($expression, 'wx_text(')) {
+                continue;
+            }
+
+            $call = preg_match('/(?<![\w$>:])(?:'.self::STRING_CALLS.')\s*\(|\(\s*string\s*\)/i', $expression, $start, PREG_OFFSET_CAPTURE) === 1
+                ? (int) $start[0][1]
+                : null;
+
+            foreach ($references as $pattern) {
+                preg_match_all($pattern, $expression, $uses, PREG_OFFSET_CAPTURE);
+
+                foreach ($uses[0] as [$use, $at]) {
+                    // Joined with `.` is the same string as a cast.
+                    $joined = preg_match('/(?<!\.)\.\s*$/', substr($expression, 0, $at)) === 1
+                        || preg_match('/^\s*\.(?![.=\d])/', substr($expression, $at + strlen($use))) === 1;
+
+                    if (($call !== null && $at > $call) || $joined) {
+                        $found[$use] ??= self::lineAt($template, $offset + $at);
+                    }
+                }
+            }
+        }
+
+        $list = [];
+
+        foreach ($found as $field => $line) {
+            $list[] = [(string) $field, $line];
+        }
+
+        return $list;
+    }
+
+    /**
+     * The text fields of a schema the renderer resolves shortcodes in — `wx-input` of kind text or
+     * search, `wx-textarea` — through layout, and inside a repeater as fields of its items.
+     *
+     * @param  list<array<string, mixed>>  $nodes
+     * @return list<array{string, bool}> The field's key, and whether it belongs to a repeater's item.
+     */
+    private static function textFields(array $nodes, bool $inItem = false): array
+    {
+        $fields = [];
+
+        foreach ($nodes as $node) {
+            if (! is_array($node)) {
+                continue;
+            }
+
+            $type = (string) ($node['type'] ?? '');
+            $key = $node['id'] ?? $node['name'] ?? null;
+            $props = is_array($node['props'] ?? null) ? $node['props'] : [];
+            $text = $type === 'wx-textarea'
+                || ($type === 'wx-input' && in_array($props['type'] ?? 'text', ['text', 'search'], true));
+
+            if ($text && is_string($key) && preg_match('/^[A-Za-z_]\w*$/', $key) === 1) {
+                $fields[] = [$key, $inItem];
+
+                continue;
+            }
+
+            $fields = [...$fields, ...self::textFields(Tree::children($node), $inItem || $type === 'wx-repeater')];
+        }
+
+        return $fields;
     }
 
     /**

@@ -7,6 +7,7 @@ namespace WebxUi\Blog\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Blog\Http\Requests\ArticleRequest;
 use WebxUi\Blog\Http\Resources\ArticleResource;
@@ -130,13 +131,16 @@ final class ArticleController
      *
      * 409 with the article as it now is, so the panel can offer to re-read rather than quietly
      * keeping one of the two edits. The same answer covers two editors and an agent: what is
-     * stale is the request, not whoever made it.
+     * stale is the request, not whoever made it — but `changed` says which it was, because
+     * «Administrator» is also the name an agent writes under, and an editor who reads it as a
+     * colleague asks the wrong person.
      */
     private function conflict(Request $request, Article $article, ArticleForm $form): JsonResponse
     {
         return new JsonResponse([
             'message' => (string) __('webx-blog::errors.conflict'),
             'data' => $form->describe($this->loaded($article), $this->author($request)),
+            'changed' => LastChange::of($article, $request->user()),
         ], 409);
     }
 

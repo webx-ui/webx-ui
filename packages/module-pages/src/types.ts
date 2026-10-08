@@ -1,4 +1,5 @@
 import type { TreeDropZone } from '@webx-ui/core'
+import type { EditingChange } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 
 /** Never published · on the site · on the site with edits waiting. */
@@ -111,10 +112,14 @@ export interface PageSave {
   revision?: string
 }
 
-/** A 409: somebody wrote while this editor was typing. The page comes back as it now is. */
+/**
+ * A 409: somebody wrote while this editor was typing. The page comes back as it now is, with
+ * who changed it last and through which door — the panel or an agent.
+ */
 export interface PageConflict {
   message: string
   data: PageDetail
+  changed?: EditingChange | null
 }
 
 /** One publication in the history. */

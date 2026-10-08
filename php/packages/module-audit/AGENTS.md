@@ -32,7 +32,8 @@ bring. The panel shell, screens and permissions are `webx-ui/module-admin`, the 
   `WebxUi\Audit\Content\AuditContentSources`, `WebxUi\Audit\Fixes\AuditFixes`. Its own fix is
   `audit.replace-host` (a stand's host in the content replaced by the site's). Other modules
   register theirs: `webx-ui/module-blocks` brings `blocks.stray_values` (block values for fields
-  the type does not define) with the fix `blocks.prune-stray`.
+  the type does not define) with the fix `blocks.prune-stray`, and the shortcode checks
+  `blocks.unknown_shortcodes` and `blocks.hardcoded_values`.
 
 ## Change it without forking
 

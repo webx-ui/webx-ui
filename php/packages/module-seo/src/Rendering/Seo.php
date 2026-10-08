@@ -9,6 +9,7 @@ use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Resolution;
 use WebxUi\Routing\UrlNormaliser;
@@ -423,7 +424,8 @@ final class Seo
 
         // One `FAQPage` a page (§18.5): the rule's questions and the ones `module-faq` put are
         // folded together, a question repeated by its text kept once.
-        return PageFaq::fold(array_values(array_filter($blocks, static fn (array $block): bool => $block !== [])));
+        // JSON-LD is text to whoever reads it: a shortcode in a lead is its plain rendering there.
+        return self::plainDeep(PageFaq::fold(array_values(array_filter($blocks, static fn (array $block): bool => $block !== []))));
     }
 
     private function pointsElsewhere(?string $canonical, string $path): bool
@@ -463,6 +465,17 @@ final class Seo
      */
     private function finish(SeoData $data, string $url, ?object $subject, ?string $locale, bool $fallbackTitle = false): SeoData
     {
+        // A title and a description are text: `[phone]` in them is the number, `[dot]` a full
+        // stop, never the span the page body prints. Before the template, so that the site's name
+        // is compared with what the title says rather than with its brackets.
+        $data = $data->with(
+            title: self::plain($data->title),
+            h1: self::plain($data->h1),
+            description: self::plain($data->description),
+            keywords: self::plain($data->keywords),
+            og: array_map(static fn (mixed $value): mixed => is_string($value) ? self::plain($value) : $value, $data->og),
+        );
+
         $site = $this->setting('general.project-name', $locale);
 
         // The home page called by its own name is "Home — Site"; what it is called is the site.
@@ -548,6 +561,30 @@ final class Seo
         $replaced = trim($replaced);
 
         return $replaced === '' ? $title : $replaced;
+    }
+
+    private static function plain(?string $text): ?string
+    {
+        return $text === null || ! str_contains($text, '[') ? $text : app(Shortcodes::class)->plain($text);
+    }
+
+    /**
+     * @template T
+     *
+     * @param  T  $value
+     * @return T
+     */
+    private static function plainDeep(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            return self::plain($value);
+        }
+
+        if (is_array($value)) {
+            return array_map(self::plainDeep(...), $value);
+        }
+
+        return $value;
     }
 
     /** Whether `$title` already says `$site`, spaces, case and punctuation aside. */

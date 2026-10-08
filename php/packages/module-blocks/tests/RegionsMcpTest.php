@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Tests;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Tests\Fixtures\Page;
@@ -50,7 +51,7 @@ final class RegionsMcpTest extends RegionTestCase
 
         $revision = null;
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bar', 'values' => ['text' => 'First']]]], $editor)
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bar', 'values' => ['text' => 'First']]]], $editor)
             ->assertOk()
             ->assertStructuredContent(static function (AssertableJson $json) use (&$revision): void {
                 $content = $json->etc()->toArray();
@@ -71,7 +72,7 @@ final class RegionsMcpTest extends RegionTestCase
         $this->assertCount(2, $region->refresh()->editingTree());
 
         // The footer holds two at most.
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'footer', 'blocks' => [['type' => 'bar'], ['type' => 'bar'], ['type' => 'bar']]], $editor)
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'footer', 'blocks' => [['type' => 'bar'], ['type' => 'bar'], ['type' => 'bar']]], $editor)
             ->assertHasErrors(['at most 2']);
     }
 
@@ -85,10 +86,10 @@ final class RegionsMcpTest extends RegionTestCase
         $regionsOnly = $this->editor(['blocks.regions']);
         $blocksOnly = $this->editor(['blocks.view', 'blocks.manage']);
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => []], $blocksOnly)->assertHasErrors(['blocks.regions']);
-        $this->agent('set_content', ['entity' => 'note', 'id' => $page->id, 'blocks' => []], $regionsOnly)->assertHasErrors(['blocks.manage']);
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => []], $blocksOnly)->assertHasErrors(['blocks.regions']);
+        $this->agent('set_content', ['force' => true, 'entity' => 'note', 'id' => $page->id, 'blocks' => []], $regionsOnly)->assertHasErrors(['blocks.manage']);
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => []], $regionsOnly)->assertOk();
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => []], $regionsOnly)->assertOk();
     }
 
     #[Test]
@@ -100,11 +101,11 @@ final class RegionsMcpTest extends RegionTestCase
 
         $this->agent('region_publish', ['name' => 'header'], $editor)->assertHasErrors(['never saved']);
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bomb', 'values' => ['boom' => 'yes']]]], $editor)->assertOk();
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bomb', 'values' => ['boom' => 'yes']]]], $editor)->assertOk();
         $this->agent('region_publish', ['name' => 'header'], $editor)->assertHasErrors(['Not published', 'Boom']);
         $this->agent('region_publish', ['name' => 'header', 'dry_run' => true], $editor)->assertHasErrors(['Would not publish']);
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bar', 'values' => ['text' => 'Live']]]], $editor)->assertOk();
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bar', 'values' => ['text' => 'Live']]]], $editor)->assertOk();
 
         $this->tag();
 
@@ -133,6 +134,49 @@ final class RegionsMcpTest extends RegionTestCase
 
         $this->agent('region_unpublish', ['name' => 'header'], $editor)->assertOk();
         $this->assertStringContainsString('Header from code', $this->tag());
+    }
+
+    #[Test]
+    public function publishing_a_region_somebody_has_open_asks_for_the_revision(): void
+    {
+        $this->publish('bar', '<div>{{ $text }}</div>');
+        $region = $this->region('header', [['type' => 'bar', 'values' => ['text' => 'Draft']]], published: false);
+        $editor = $this->editor(['blocks.regions']);
+
+        // Nobody in the editor: a script's publication goes through as it always did.
+        $this->agent('region_publish', ['name' => 'header'], $editor)->assertOk();
+        $this->agent('region_unpublish', ['name' => 'header'], $editor)->assertOk();
+
+        $this->app->make(Presence::class)->touch($region, (int) $editor->getKey(), 'Owner');
+
+        $this->agent('region_publish', ['name' => 'header'], $editor)
+            ->assertHasErrors(['Owner', 'blocks_get_content', 'force: true']);
+        $this->agent('region_publish', ['name' => 'header', 'revision' => 'stale'], $editor)
+            ->assertHasErrors(['changed since you read it']);
+        $this->assertFalse($region->refresh()->isPublished());
+
+        $revision = null;
+        $this->agent('get_content', ['entity' => 'region', 'id' => 'header'], $editor)
+            ->assertOk()
+            ->assertStructuredContent(static function (AssertableJson $json) use (&$revision): void {
+                $revision = $json->etc()->toArray()['revision'];
+            });
+
+        $this->agent('region_publish', ['name' => 'header', 'revision' => $revision], $editor)->assertOk();
+        $this->assertTrue($region->refresh()->isPublished());
+    }
+
+    #[Test]
+    public function the_panel_does_not_publish_a_region_under_a_revision_that_is_gone(): void
+    {
+        $this->publish('bar', '<div>{{ $text }}</div>');
+        $region = $this->region('header', [['type' => 'bar', 'values' => ['text' => 'Draft']]], published: false);
+
+        $this->actingAs($this->editor(['blocks.regions']), 'cms')
+            ->postJson('/api/cms/regions/header/publish', ['revision' => 'stale'])
+            ->assertStatus(409);
+
+        $this->assertFalse($region->refresh()->isPublished());
     }
 
     #[Test]

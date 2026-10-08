@@ -19,6 +19,9 @@ final class MediaUsage
 {
     public const TAG = 'webx-media.usage-sources';
 
+    /** Modules that say their own rows ({@see PlaceDescriber}) are tagged with this. */
+    public const DESCRIBERS = 'webx-media.usage-describers';
+
     /** How many places are kept per file. */
     public const LIMIT = 10;
 
@@ -54,5 +57,69 @@ final class MediaUsage
         }
 
         return $found;
+    }
+
+    /**
+     * The files of `$files` that are in use, each with where, and every place with a label an
+     * editor reads ({@see PlaceLabels}) — what the panel shows before it deletes anything.
+     *
+     * @param  Collection<int, MediaFile>  $files
+     * @return list<array{id: int, name: string, used_in: list<array{table: string, column: string, id: int|string|null, kind: string|null, label: string|null, edit_url: string|null}>}>
+     */
+    public function report(Collection $files): array
+    {
+        $usage = $this->of($files);
+
+        if ($usage === []) {
+            return [];
+        }
+
+        $labels = new PlaceLabels($this->container, $this->container->make('config'));
+        $report = [];
+
+        foreach ($files as $file) {
+            if (! isset($usage[$file->id])) {
+                continue;
+            }
+
+            $report[] = [
+                'id' => (int) $file->id,
+                'name' => (string) $file->name,
+                'used_in' => array_map(
+                    static fn (array $place): array => [...$place, ...$labels->of($place['table'], $place['column'], $place['id'])],
+                    $usage[$file->id],
+                ),
+            ];
+        }
+
+        return $report;
+    }
+
+    /**
+     * Move every reference from each file's old basename to its new one, through every source
+     * that can ({@see UsageRewriter}).
+     *
+     * @param  array<int, array{0: string, 1: string}>  $renames  file id → [old basename, new basename]
+     * @return array<int, int> file id → places rewritten, or that would be on a dry run
+     */
+    public function rewrite(array $renames, bool $dryRun = false): array
+    {
+        $total = [];
+
+        if ($renames === []) {
+            return $total;
+        }
+
+        foreach ($this->container->tagged(self::TAG) as $source) {
+            if (! $source instanceof UsageRewriter) {
+                continue;
+            }
+
+            foreach ($source->rewrite($renames, $dryRun) as $fileId => $count) {
+                $total[$fileId] = ($total[$fileId] ?? 0) + $count;
+            }
+        }
+
+        return $total;
     }
 }

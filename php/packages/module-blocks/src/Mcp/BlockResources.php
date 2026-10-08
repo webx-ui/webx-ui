@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Mcp;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Regions;
 use WebxUi\Mcp\McpResource;
@@ -119,6 +120,31 @@ final class BlockResources
                 'What this site provides to blocks: picker groups, what webx.provide() offers to scripts, the nesting limit, the entities that hold blocks.',
                 fn (): array => $this->site(),
             ),
+
+            new McpResource(
+                'blocks://shortcodes',
+                'Shortcodes',
+                'The shortcodes this site has — [phone], [email] and the site\'s own like [dot] — with what each prints in a page and in plain text. Write [phone] instead of the number, and keep every shortcode already in a text intact.',
+                fn (): array => $this->shortcodes(),
+            ),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function shortcodes(): array
+    {
+        return [
+            'rules' => [
+                'Write a shortcode in any text, textarea or rich text field of a block: "Call us on [phone]". The content keeps the bracket; the page prints the value, so a changed number changes every page.',
+                'Never type a value a data shortcode holds — the phone, the e-mail, the address — by hand: use its shortcode.',
+                'Keep the shortcodes a text already has, [dot] above all: it is the site\'s styling, and replacing it with a full stop or with markup loses it.',
+                'Only the names listed here are shortcodes; anything else in brackets is printed as typed. [[name]] prints a literal [name].',
+                'Arguments are key=value after the name: [phone format=intl] prints +digits, [phone link=no] the number without a link.',
+                'blocks_render and the preview show what a page prints with them resolved.',
+            ],
+            'shortcodes' => $this->container->make(Shortcodes::class)->list(),
         ];
     }
 

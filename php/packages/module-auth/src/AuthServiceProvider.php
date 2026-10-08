@@ -10,6 +10,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Auth\Consent\ConsentScreen;
 use WebxUi\Auth\Console\CreateAdminCommand;
 use WebxUi\Auth\Console\McpTokenCommand;
@@ -24,6 +25,12 @@ class AuthServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->admins('cms_users', 'cms_roles', 'cms_role_user');
+            $tables->stand('cms_login_records');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-auth.php', 'webx-auth');
 
         $this->registerGuard();

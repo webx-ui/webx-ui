@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { callerWords, callTag, kindOf, usageWords } from './schema'
+import type { ScreenNode } from '@webx-ui/schema'
+import {
+  callerWords,
+  callTag,
+  holdsMarkup,
+  kindOf,
+  markupFields,
+  usageWords,
+  withPlaceholders,
+  withShortcodes,
+} from './schema'
 
 const t = (key: string, params: Record<string, string | number> = {}) =>
   `${key} ${Object.values(params).join(' ')}`.trim()
@@ -74,5 +84,109 @@ describe('the tag that calls a type', () => {
     ).toBe(
       '<x-webx-block type="recipe-card" :cta-label="$ctaLabel" fallback="webx-recipes::partials.card" />',
     )
+  })
+})
+
+describe('a plain field that holds markup', () => {
+  const schema: ScreenNode[] = [
+    {
+      id: 'card',
+      type: 'wx-card',
+      children: [
+        { id: 'heading', type: 'wx-input', name: 'heading' },
+        { id: 'lead', type: 'wx-textarea', name: 'lead', help: 'Two lines at most' },
+        { id: 'title', type: 'wx-input', name: 'title' },
+        { id: 'body', type: 'wx-rich-text', name: 'body' },
+      ],
+    },
+  ]
+
+  it('tells a tag from a sentence with a less-than sign in it', () => {
+    expect(holdsMarkup('Deeply heard<span>.</span> Gently guided')).toBe(true)
+    expect(holdsMarkup({ en: 'Plain', de: 'Mit <em>Akzent</em>' })).toBe(true)
+    expect(holdsMarkup('3 < 5 and 7 > 2')).toBe(false)
+    expect(holdsMarkup(null)).toBe(false)
+  })
+
+  it('finds the plain fields whose value holds tags, and only those', () => {
+    const values = {
+      heading: 'Deeply heard<span>.</span>',
+      lead: 'A <strong>bold</strong> lead',
+      title: 'Plain',
+      body: '<p>A document</p>',
+    }
+
+    expect(markupFields(schema, values)).toEqual(['heading', 'lead'])
+  })
+
+  it('says so under the field, unless the type already says something there', () => {
+    const form = withPlaceholders(schema, {}, ['heading', 'lead'], 'Holds tags')
+    const fields = form[0]!.children!
+
+    expect(fields[0]!.help).toBe('Holds tags')
+    expect(fields[1]!.help).toBe('Two lines at most')
+    expect(fields[2]!.help).toBeUndefined()
+  })
+
+  it('gives an inline rich field the words of its sample, without the markup', () => {
+    const form = withPlaceholders(
+      [{ id: 'heading', type: 'wx-rich-text', name: 'heading', props: { inline: true } }],
+      { heading: 'Deeply heard<span>.</span> Gently guided' },
+    )
+
+    expect(form[0]!.props?.placeholder).toBe('Deeply heard. Gently guided')
+  })
+})
+
+describe('withShortcodes', () => {
+  const tokens = [{ name: 'phone', value: '+1 555 0100' }]
+  const tokensOf = (node: ScreenNode | undefined) => node?.props?.tokens
+
+  it('hands the shortcodes to the fields the site reads them in, through layout and repeaters', () => {
+    const form = withShortcodes(
+      [
+        { id: 'title', type: 'wx-input' },
+        { id: 'plain', type: 'wx-input', props: { type: 'text' } },
+        { id: 'mail', type: 'wx-input', props: { type: 'email' } },
+        { id: 'site', type: 'wx-input', props: { type: 'url' } },
+        { id: 'tel', type: 'wx-input', props: { type: 'tel' } },
+        { id: 'lead', type: 'wx-textarea' },
+        { id: 'heading', type: 'wx-rich-text', props: { inline: true } },
+        { id: 'count', type: 'wx-input-number' },
+        {
+          id: 'card',
+          type: 'wx-card',
+          children: [{ id: 'body', type: 'wx-rich-text' }],
+        },
+        {
+          id: 'items',
+          type: 'wx-repeater',
+          children: [
+            { id: 'caption', type: 'wx-input' },
+            { id: 'link', type: 'wx-input', props: { type: 'url' } },
+          ],
+        },
+      ],
+      tokens,
+    )
+
+    expect(form.filter((node) => tokensOf(node) === tokens).map((node) => node.id)).toEqual([
+      'title',
+      'plain',
+      'lead',
+      'heading',
+    ])
+    expect(form[6]!.props?.inline).toBe(true)
+    expect(tokensOf(form[8]!.children![0])).toBe(tokens)
+    expect(tokensOf(form[9]!.children![0])).toBe(tokens)
+    expect(tokensOf(form[9]!.children![1])).toBeUndefined()
+    expect(tokensOf(form[9])).toBeUndefined()
+  })
+
+  it('leaves the form as it is without shortcodes, and a field that set its own', () => {
+    const schema: ScreenNode[] = [{ id: 'title', type: 'wx-input', props: { tokens: [] } }]
+
+    expect(withShortcodes(schema, [])).toBe(schema)
+    expect(tokensOf(withShortcodes(schema, tokens)[0])).toEqual([])
   })
 })

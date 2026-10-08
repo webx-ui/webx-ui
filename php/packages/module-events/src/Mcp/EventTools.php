@@ -15,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\AgentRevision;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -157,14 +159,16 @@ final class EventTools
             Tool::mutating(
                 'update',
                 'Change the values of an event into its draft. A field left out keeps what it had; a localized '
-                .'field sent as { "en": "…" } changes that language only. Send the revision events_get gave you '
-                .'and the write is refused if somebody saved in between. Everything — the categories and the '
+                .'field sent as { "en": "…" } changes that language only. Send the revision events_get gave you: '
+                .'the write is refused if somebody saved in between, and refused without one — events_get also '
+                .'says who has the event open in the panel (being_edited_by), which is worth telling your user '
+                .'before writing. Everything — the categories and the '
                 .'services included — reaches the site when the event is published. The SEO card is the exception: it is not drafted and is on the site the moment it is saved — the answer says so with seo_live: true. '.$dates,
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'event' => $event,
                     'values' => ['type' => 'object', 'description' => 'Field name → value, as events_get returns them. '.$fields],
-                    'revision' => ['type' => 'string', 'description' => 'The revision events_get returned. Left out, the write goes in over whatever happened since.'],
+                    ...AgentRevision::properties('events_get'),
                 ], 'required' => ['event', 'values']],
                 permission: 'events.manage',
             ),
@@ -183,9 +187,11 @@ final class EventTools
             Tool::mutating(
                 'publish',
                 'Put the draft on the site: its values, categories and services become the event and a version is '
-                .'written. Ask a person first unless they asked you to publish.',
+                .'written. Ask a person first unless they asked you to publish. It publishes whatever the draft '
+                .'holds now: send the revision events_get gave you, so that an edit you have not read is not what '
+                .'goes on the site. While somebody has the event open in the panel the revision is required.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->publish($arguments, $user)),
-                ['properties' => ['event' => $event], 'required' => ['event']],
+                ['properties' => ['event' => $event, ...AgentRevision::stateProperties('events_get')], 'required' => ['event']],
                 permission: 'events.manage',
             ),
 
@@ -195,7 +201,7 @@ final class EventTools
                 .'reserved and whatever was being prepared is still there. An event that is simply over does not '
                 .'need this: it leaves the lists of events to come by itself and its page stays as a report.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
-                ['properties' => ['event' => $event], 'required' => ['event']],
+                ['properties' => ['event' => $event, ...AgentRevision::stateProperties('events_get')], 'required' => ['event']],
                 permission: 'events.manage',
             ),
 
@@ -204,7 +210,7 @@ final class EventTools
                 'Throw away the draft of an event that is on the site and go back to what the site shows. The draft '
                 .'is all that changes. dry_run names the fields that differ from the published ones.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
-                ['properties' => ['event' => $event], 'required' => ['event']],
+                ['properties' => ['event' => $event, ...AgentRevision::stateProperties('events_get')], 'required' => ['event']],
                 permission: 'events.manage',
             ),
 
@@ -214,7 +220,7 @@ final class EventTools
                 .'Nothing is destroyed: events_restore puts it back, as long as nobody has taken its address '
                 .'in the meantime.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
-                ['properties' => ['event' => $event], 'required' => ['event']],
+                ['properties' => ['event' => $event, ...AgentRevision::stateProperties('events_get')], 'required' => ['event']],
                 permission: 'events.manage',
             ),
 
@@ -304,6 +310,8 @@ final class EventTools
             'values' => $this->withEveryField($this->form()->values($event)),
             // Send it back with events_update, and a write over somebody else's is refused.
             'revision' => Revision::of($event),
+            // Who has the event open in the panel right now: tell your user before writing.
+            'being_edited_by' => $this->presence()->of($event),
             'preview_url' => $this->preview($event, $user),
         ];
     }
@@ -383,7 +391,7 @@ final class EventTools
         // What events_get handed out is always good to send back — a project's field the screen
         // has since dropped included.
         Arguments::refuseUnknown($values, array_values(array_unique([...$this->fields(), ...array_keys($this->form()->values($event))])), 'events_update');
-        $this->sameRevision($arguments, $event);
+        AgentRevision::check($arguments, Revision::of($event), 'event', 'events_get');
 
         $work = function () use ($event, $values, $user): array {
             $event->getConnection()->transaction(
@@ -449,6 +457,7 @@ final class EventTools
     private function publish(array $arguments, ?Authenticatable $user): array
     {
         $event = $this->event($arguments['event'] ?? null);
+        $this->guard($arguments, $event);
 
         if ($event->trashed()) {
             throw new ToolFailure("Event #{$event->getKey()} is in the bin. Bring it back in the panel before publishing it.");
@@ -486,6 +495,7 @@ final class EventTools
     private function unpublish(array $arguments): array
     {
         $event = $this->event($arguments['event'] ?? null);
+        $this->guard($arguments, $event);
 
         if ($event->trashed()) {
             throw new ToolFailure("Event #{$event->getKey()} is in the bin, and so already off the site.");
@@ -511,6 +521,7 @@ final class EventTools
     private function discard(array $arguments): array
     {
         $event = $this->event($arguments['event'] ?? null);
+        $this->guard($arguments, $event);
 
         if (! $event->hasDraft()) {
             throw new ToolFailure("Event [{$event->getKey()}] has no draft: the site already shows what it holds.");
@@ -532,6 +543,7 @@ final class EventTools
     private function delete(array $arguments): array
     {
         $event = $this->event($arguments['event'] ?? null);
+        $this->guard($arguments, $event);
 
         if ($event->trashed()) {
             throw new ToolFailure("Event #{$event->getKey()} is already in the bin. events_purge deletes it for good.");
@@ -908,27 +920,6 @@ final class EventTools
     }
 
     /**
-     * @param  array<string, mixed>  $arguments
-     */
-    private function sameRevision(array $arguments, Event $event): void
-    {
-        $sent = $arguments['revision'] ?? null;
-
-        if (! is_string($sent) || $sent === '') {
-            return;
-        }
-
-        $current = Revision::of($event);
-
-        if ($sent !== $current) {
-            throw new ToolFailure(
-                "The event changed since you read it: revision is [{$current}], you sent [{$sent}]. "
-                .'Read it again with events_get and redo the edit on what is there now.'
-            );
-        }
-    }
-
-    /**
      * @return array<string, string>
      */
     private function text(mixed $value, string $field): array
@@ -1014,6 +1005,22 @@ final class EventTools
     private function form(): EventForm
     {
         return $this->container->make(EventForm::class);
+    }
+
+    /**
+     * The rule for a change of state (AgentRevision::guard): the revision this agent read, and
+     * one has to be sent while somebody has the event open.
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private function guard(array $arguments, Event $event): void
+    {
+        AgentRevision::guard($arguments, Revision::of($event), $event, 'event', 'events_get');
+    }
+
+    private function presence(): Presence
+    {
+        return $this->container->make(Presence::class);
     }
 
     private function locales(): Locales

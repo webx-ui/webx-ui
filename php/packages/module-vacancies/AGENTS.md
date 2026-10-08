@@ -73,8 +73,16 @@ whose target is gone throws when the screen is first built.
   none at all while the SEO settings have no organisation. Fill those in instead.
 - Do not send `blocks` to `vacancies_update`: a vacancy has no blocks, its page is the module's
   view. Write its fields.
-- Do not save without the `revision` you read: a stale one is refused. Read again with
-  `vacancies_get` and redo the change.
+- Do not write without the `revision` vacancies_get gave you: `vacancies_update` refuses a write
+  with none and refuses a stale one. Read again and redo the change; do not retry blindly.
+  `force: true` writes without one and is for a script that means to overwrite, not for an
+  agent working beside people. `vacancies_get` names in `being_edited_by` who has the vacancy open
+  in the panel right now — tell your user before writing under them. Their editor merges your
+  write with theirs field by field, and a draft written over by somebody else is kept: the
+  panel's History lists it under Drafts, and «Restore» puts it back.
+- `vacancies_publish`, `vacancies_unpublish`, `vacancies_discard`, `vacancies_close`, `vacancies_reopen`, `vacancies_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
+  one is refused, and while somebody has the vacancy open in the panel (`being_edited_by`) one is
+  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
 - Do not choose a currency outside `webx-vacancies.currencies`: it is refused with the list. Add
   it to the config first.
 - Do not delete rows with SQL: deleting bins a vacancy; a raw delete leaves its address in the

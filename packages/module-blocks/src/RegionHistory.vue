@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxDate, WxDrafts } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxEmpty, WxSkeleton, WxText } from '@webx-ui/core'
 import { createRegionsApi } from './api'
 import { useBlocksMessages } from './i18n'
@@ -11,9 +11,10 @@ import type { RegionVersion } from './types'
  * What was published in the region, when and by whom — the `wx-region-history` node of
  * `regions.form`.
  *
- * Publications only, as with pages: the autosave ring is insurance, not history. Restoring makes
- * an old version the draft, and publishing it is the usual separate step — so nothing here
- * changes the site by itself, and a header cannot be swapped by one slip in a list.
+ * Publications first, and the copies of the draft — autosaves, a draft somebody else's save wrote
+ * over — in a list of their own under them, as with pages. Restoring makes an old version the
+ * draft, and publishing it is the usual separate step — so nothing here changes the site by
+ * itself, and a header cannot be swapped by one slip in a list.
  */
 defineOptions({ name: 'WxRegionHistory' })
 
@@ -93,43 +94,60 @@ watch(
 </script>
 
 <template>
-  <div class="wx-region-history">
-    <wx-skeleton v-if="versions === null" class="wx-region-history__ghost" :rows="3" />
-    <wx-empty v-else-if="versions.length === 0" :description="t('region.history-empty')" />
-    <div
-      v-for="version in versions"
-      v-else
-      :key="version.number"
-      class="wx-region-history__row"
-      :class="{ 'is-live': version.number === live }"
-    >
-      <code class="wx-region-history__number">{{
-        t('region.version', { number: version.number })
-      }}</code>
-      <div class="wx-region-history__who">
-        <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
-        <wx-text size="sm" tone="muted">
-          {{ version.author?.name ?? t(`region.source-${version.source}`) }}
-          <template v-if="version.comment"> · {{ version.comment }}</template>
-        </wx-text>
-      </div>
-      <wx-badge v-if="version.number === live" type="success" dot>{{
-        t('region.version-live')
-      }}</wx-badge>
-      <wx-button
-        v-if="canManage && version.number !== live"
-        size="sm"
-        variant="outline"
-        :loading="working"
-        @click="restore(version)"
+  <div class="wx-region-history-tab">
+    <div class="wx-region-history">
+      <wx-skeleton v-if="versions === null" class="wx-region-history__ghost" :rows="3" />
+      <wx-empty v-else-if="versions.length === 0" :description="t('region.history-empty')" />
+      <div
+        v-for="version in versions"
+        v-else
+        :key="version.number"
+        class="wx-region-history__row"
+        :class="{ 'is-live': version.number === live }"
       >
-        {{ t('region.restore') }}
-      </wx-button>
+        <code class="wx-region-history__number">{{
+          t('region.version', { number: version.number })
+        }}</code>
+        <div class="wx-region-history__who">
+          <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
+          <wx-text size="sm" tone="muted">
+            {{ version.author?.name ?? t(`region.source-${version.source}`) }}
+            <template v-if="version.comment"> · {{ version.comment }}</template>
+          </wx-text>
+        </div>
+        <wx-badge v-if="version.number === live" type="success" dot>{{
+          t('region.version-live')
+        }}</wx-badge>
+        <wx-button
+          v-if="canManage && version.number !== live"
+          size="sm"
+          variant="outline"
+          :loading="working"
+          @click="restore(version)"
+        >
+          {{ t('region.restore') }}
+        </wx-button>
+      </div>
     </div>
+
+    <wx-drafts
+      :id="region?.name"
+      entity="regions"
+      screen="regions.form"
+      :can-restore="canManage"
+      :stamp="[region?.published_at, region?.updated_at]"
+      @restored="editor?.reload()"
+    />
   </div>
 </template>
 
 <style scoped>
+.wx-region-history-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-24);
+}
+
 .wx-region-history {
   display: flex;
   flex-direction: column;

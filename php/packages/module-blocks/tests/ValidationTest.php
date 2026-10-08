@@ -68,7 +68,7 @@ final class ValidationTest extends TestCase
     {
         $page = Page::query()->create(['title' => 'Test']);
 
-        $this->agent('set_content', [
+        $this->agent('set_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'blocks' => [['key' => 'k-one', 'type' => 'every', 'values' => [$field => $value]]],
@@ -105,7 +105,7 @@ final class ValidationTest extends TestCase
     {
         $page = Page::query()->create(['title' => 'Test']);
 
-        $this->agent('set_content', [
+        $this->agent('set_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'blocks' => [['key' => 'k-one', 'type' => 'every', 'values' => [
@@ -128,7 +128,7 @@ final class ValidationTest extends TestCase
     {
         $page = Page::query()->create(['title' => 'Test', 'blocks' => [$this->node('every', ['count' => 1], 'k-one')]]);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'set', 'key' => 'k-one', 'values' => ['stars' => 9]]],
@@ -180,7 +180,7 @@ final class ValidationTest extends TestCase
 
         $page = Page::query()->create(['title' => 'Test']);
 
-        $this->agent('set_content', [
+        $this->agent('set_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'blocks' => [['key' => 's1', 'type' => 'section', 'values' => ['inner' => [
@@ -188,7 +188,7 @@ final class ValidationTest extends TestCase
             ]]]],
         ])->assertHasErrors(['hero [h1]']);
 
-        $this->agent('set_content', [
+        $this->agent('set_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'blocks' => [['key' => 's1', 'type' => 'section', 'values' => ['inner' => [
@@ -225,14 +225,14 @@ final class ValidationTest extends TestCase
 
         $page = Page::query()->create(['title' => 'Test', 'blocks' => [$this->node('section', [], 's1')]]);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'add', 'type' => 'quote', 'parent' => 's1', 'field' => 'content']],
         ])->assertHasErrors(['no wx-blocks field [content]']);
 
         // Without `field`, the one container field is the place.
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'add', 'type' => 'quote', 'parent' => 's1']],
@@ -273,7 +273,7 @@ final class ValidationTest extends TestCase
             ['key' => 'q9', 'type' => 'quote', 'values' => ['words' => 'Last']],
         ]]);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'duplicate', 'key' => 's1']],
@@ -296,7 +296,7 @@ final class ValidationTest extends TestCase
     {
         $page = Page::query()->create(['title' => 'Test']);
 
-        $this->agent('set_content', [
+        $this->agent('set_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'blocks' => [['key' => 'k-one', 'type' => 'every', 'values' => ['note' => 'x']]],

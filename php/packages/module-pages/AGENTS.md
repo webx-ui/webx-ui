@@ -56,8 +56,20 @@ boot instead of failing quietly. Values the screen does not name are dropped on 
   refused. `$page->capabilities()` says what a node allows.
 - Do not write blocks through `pages_update`: content goes through `blocks_edit_content`, which
   changes one node and leaves the rest of the page alone. A `blocks` key there is refused.
-- Do not save without the `revision` you read: a stale one is answered `409` with the page as it
-  now is. Read again and redo the change; do not retry blindly.
+- Do not write without the `revision` pages_get gave you: `pages_update` refuses a write
+  with none and refuses a stale one. Read again and redo the change; do not retry blindly.
+  `force: true` writes without one and is for a script that means to overwrite, not for an
+  agent working beside people. `pages_get` names in `being_edited_by` who has the page open
+  in the panel right now — tell your user before writing under them. Their editor merges your
+  write with theirs field by field, and a draft written over by somebody else is kept: the
+  panel's History lists it under Drafts, `pages_versions` under `drafts` (kind `overwritten`),
+  and `pages_version_restore` with `draft` puts it back into the draft.
+- Do not publish, unpublish, discard, restore a version, move or delete a page somebody has
+  open without the `revision`: those tools act on whatever the draft holds now, which may be an
+  edit you never read. While `being_edited_by` is not empty they refuse a call without one and
+  name who has it open; a stale one is always refused. `force: true` goes ahead regardless.
+- A page has one revision: the one `pages_get` returns is the one `blocks_get_content` returns,
+  and either may be sent to `pages_update` or `blocks_edit_content`.
 - Do not delete rows with SQL: deleting a page bins its whole branch and releases its addresses,
   and `restoreBranch()` brings back exactly that branch. A raw delete leaves orphans in the tree
   and in the routing registry.

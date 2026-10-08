@@ -8,6 +8,7 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use LogicException;
+use WebxUi\Admin\Editing\RecordEvents;
 
 /**
  * An entity with a history.
@@ -65,6 +66,17 @@ trait HasVersions
     public function publishedVersions(): MorphMany
     {
         return $this->versions()->published()->reorder()->orderByDesc('number');
+    }
+
+    /**
+     * The copies of the draft, newest first: the autosave ring and the drafts somebody else's
+     * save wrote over. What the history's «Drafts» lists and what an agent restores from.
+     *
+     * @return MorphMany<EntityVersion, $this>
+     */
+    public function draftVersions(): MorphMany
+    {
+        return $this->versions()->drafts();
     }
 
     /**
@@ -174,6 +186,13 @@ trait HasVersions
             : $found->payload;
 
         $this->saveDraft($payload, $found->author_id, EntityVersion::SOURCE_PANEL);
+
+        // An open editor hears «restored version 21» rather than a list of every field it changed.
+        Container::getInstance()->make(RecordEvents::class)->note(
+            $this,
+            RecordEvents::RESTORED_VERSION,
+            $found->number !== null ? ['number' => $found->number] : ['draft' => $found->id, 'kind' => $found->kind],
+        );
 
         return $found;
     }

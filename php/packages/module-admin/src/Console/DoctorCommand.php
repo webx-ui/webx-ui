@@ -20,6 +20,7 @@ use WebxUi\Admin\Doctor\Checks\Queue;
 use WebxUi\Admin\Doctor\Checks\Regions;
 use WebxUi\Admin\Doctor\Checks\Relations;
 use WebxUi\Admin\Doctor\Checks\SiteGate;
+use WebxUi\Admin\Doctor\Checks\Snapshots;
 use WebxUi\Admin\Doctor\Checks\Storage;
 use WebxUi\Admin\Doctor\Checks\UploadSpace;
 use WebxUi\Admin\Doctor\Diagnosis;
@@ -58,6 +59,7 @@ final class DoctorCommand extends Command
         Migrations::class,
         Storage::class,
         UploadSpace::class,
+        Snapshots::class,
         Layouts::class,
         Regions::class,
         Helpers::class,

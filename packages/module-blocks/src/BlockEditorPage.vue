@@ -12,6 +12,7 @@ import {
 } from '@webx-ui/module-admin'
 import {
   confirm,
+  createModal,
   toast,
   WxActionBar,
   WxAlert,
@@ -36,6 +37,7 @@ import {
 import { coreTypes, WxScreenRenderer, type ScreenModel } from '@webx-ui/schema'
 import { createBlocksApi } from './api'
 import BlockChecks from './BlockChecks.vue'
+import BlockExportDialog from './BlockExportDialog.vue'
 import BlockHistory from './BlockHistory.vue'
 import BlockStage from './BlockStage.vue'
 import { clone } from './content'
@@ -818,8 +820,24 @@ const kindOptions = computed(() => [
   { value: 'component', label: t('components.kind-component') },
 ])
 
-const actions = computed<ScreenAction[]>(() =>
-  canManage.value
+const exportType = createModal<true, { selected?: string[] }>(BlockExportDialog)
+
+/*
+ * Export stands here as well as on the list: a block for the catalogue of ready blocks is made
+ * and taken one at a time, from the screen it was made on. What is saved goes, not the edits.
+ */
+const actions = computed<ScreenAction[]>(() => [
+  ...(block.value
+    ? [
+        {
+          key: 'export',
+          label: t('exchange.export'),
+          icon: 'download',
+          run: () => void exportType({ selected: [block.value!.slug] }),
+        },
+      ]
+    : []),
+  ...(canManage.value
     ? [
         { key: 'save', label: t('page.save'), loading: saving.value, run: () => void save() },
         {
@@ -831,8 +849,8 @@ const actions = computed<ScreenAction[]>(() =>
           run: () => void publish(),
         },
       ]
-    : [],
-)
+    : []),
+])
 </script>
 
 <template>

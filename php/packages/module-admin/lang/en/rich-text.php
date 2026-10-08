@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Bold',
     'italic' => 'Italic',
+    'accent' => 'Accent',
     'strike' => 'Strikethrough',
     'code' => 'Inline code',
     'h2' => 'Heading 2',
@@ -34,4 +35,8 @@ return [
     'apply' => 'Apply',
     'cancel' => 'Cancel',
     'uploading' => 'Uploading…',
+    'source' => 'HTML source',
+    'source-loss' => 'The editor does not keep this markup and will remove it:',
+    'source-drop' => 'Remove it',
+    'source-keep' => 'Keep editing',
 ];

@@ -121,11 +121,15 @@ final class Thumbnails
         }
     }
 
+    /** Where the library's variants live, one folder per key under it: `media/thumbs`. */
+    public function libraryRoot(): string
+    {
+        return trim((string) $this->config->get('webx-media.prefix', 'media'), '/').'/thumbs';
+    }
+
     private function libraryDirectory(MediaFile $file): string
     {
-        $prefix = trim((string) $this->config->get('webx-media.prefix', 'media'), '/');
-
-        return "{$prefix}/thumbs/".pathinfo($file->path, PATHINFO_FILENAME);
+        return $this->libraryRoot().'/'.pathinfo($file->path, PATHINFO_FILENAME);
     }
 
     /** `catalog/0/42/ab12….jpg` → `catalog/0/42/thumbs/ab12…`. */

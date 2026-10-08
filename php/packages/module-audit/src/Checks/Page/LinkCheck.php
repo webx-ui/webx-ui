@@ -43,6 +43,10 @@ abstract class LinkCheck extends Check
             ->orderBy('id');
 
         foreach ($links->lazy(500) as $link) {
+            if (! $this->keep($link, $context)) {
+                continue;
+            }
+
             if ($page !== null && $page->id !== $link->from_page_id) {
                 yield $this->finding($page, $rows, $count);
                 $page = null;
@@ -72,6 +76,15 @@ abstract class LinkCheck extends Check
      * @return Builder<AuditLink>
      */
     abstract protected function links(AuditContext $context): Builder;
+
+    /**
+     * What SQL cannot say the same way on every database — a length in characters, a word in
+     * any letter case — decided link by link over what `links()` narrowed down.
+     */
+    protected function keep(AuditLink $link, AuditContext $context): bool
+    {
+        return true;
+    }
 
     /**
      * @return Builder<AuditLink>

@@ -10,6 +10,7 @@ use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Reviews\Audit\ReviewContentSource;
@@ -30,6 +31,11 @@ class ReviewsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('reviews', 'review_categories', 'review_category_review');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-reviews.php', 'webx-reviews');
     }
 

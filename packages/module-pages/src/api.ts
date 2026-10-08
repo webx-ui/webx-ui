@@ -30,7 +30,8 @@ export interface PagesApi {
   save(id: number, input: PageSave): Promise<PageDetail>
   move(id: number, target: number, zone: PageDropZone): Promise<PageMoveResult>
   duplicate(id: number): Promise<PageRow>
-  publish(id: number): Promise<PageRow>
+  /** `revision` is what the editor held: a draft that moved on since is answered 409, not published. */
+  publish(id: number, revision?: string): Promise<PageRow>
   unpublish(id: number): Promise<PageRow>
   /** Drops the draft and answers the page as the site shows it. */
   discard(id: number): Promise<PageDetail>
@@ -80,7 +81,10 @@ export function createPagesApi(admin: AdminContext): PagesApi {
     move: (id, target, zone) =>
       admin.http.post<{ data: PageMoveResult }>(`${base}/${id}/move`, { target, zone }).then(data),
     duplicate: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/duplicate`, {}).then(data),
-    publish: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/publish`, {}).then(data),
+    publish: (id, revision) =>
+      admin.http
+        .post<{ data: PageRow }>(`${base}/${id}/publish`, revision ? { revision } : {})
+        .then(data),
     unpublish: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/unpublish`, {}).then(data),
     discard: (id) => admin.http.post<{ data: PageDetail }>(`${base}/${id}/discard`, {}).then(data),
     remove: (id) =>

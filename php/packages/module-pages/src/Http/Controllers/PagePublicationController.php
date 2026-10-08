@@ -6,6 +6,7 @@ namespace WebxUi\Pages\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use WebxUi\Admin\Editing\HeldRevision;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Pages\Http\Resources\PageResource;
@@ -27,6 +28,13 @@ final class PagePublicationController
 {
     public function publish(Request $request, Page $page): JsonResponse
     {
+        // The editor sends the revision it held: an edit it has not seen is not published under it.
+        $stale = HeldRevision::conflict($request, 'pages', (string) $page->getKey());
+
+        if ($stale !== null) {
+            return $stale;
+        }
+
         $page->publish($this->author($request), EntityVersion::SOURCE_PANEL);
         $page->refresh()->loadMissing('routes')->loadCount('children');
 

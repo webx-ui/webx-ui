@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use Throwable;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Checks\Config;
 use WebxUi\Audit\Checks\Host;
@@ -62,6 +63,9 @@ class AuditServiceProvider extends ServiceProvider
         Host\SecurityHeaders::class,
         Host\ServerLeak::class,
         Host\StaticCache::class,
+        Host\DirectoryListing::class,
+        Host\ByIp::class,
+        Host\Http2::class,
         Indexing\RobotsMissing::class,
         Indexing\RobotsDisallowAll::class,
         Indexing\RobotsNoSitemap::class,
@@ -70,26 +74,36 @@ class AuditServiceProvider extends ServiceProvider
         Indexing\SitemapMissing::class,
         Indexing\SitemapLimits::class,
         Indexing\SitemapLastmod::class,
+        Indexing\SitemapDuplicate::class,
         Hosts\DevContent::class,
         Page\HomeNoindex::class,
         Page\Noindex::class,
+        Page\IndexingNofollow::class,
         Indexing\SitemapBadUrl::class,
         Indexing\SitemapMissingPage::class,
         Redirects\Chain::class,
         Redirects\Loop::class,
         Redirects\ToError::class,
         Redirects\Temporary::class,
+        Page\MetaRefresh::class,
         Page\LinksToRedirect::class,
+        Page\LinksToNonCanonical::class,
+        Page\LinksToNoindex::class,
+        Page\LinksUtm::class,
         Page\TitleMissing::class,
         Page\TitleDuplicate::class,
         Page\TitleLength::class,
         Page\TitleMultiple::class,
+        Page\TitleWidth::class,
+        Page\MetaMultiple::class,
         Page\DescriptionMissing::class,
         Page\DescriptionDuplicate::class,
         Page\DescriptionLength::class,
         Page\H1Missing::class,
         Page\H1Multiple::class,
         Page\H1EqualsTitle::class,
+        Page\H1Duplicate::class,
+        Page\H1Length::class,
         Page\HeadingsSkipped::class,
         Page\H1NotFirst::class,
         Page\HeadingsEmpty::class,
@@ -98,12 +112,24 @@ class AuditServiceProvider extends ServiceProvider
         Page\CanonicalMultiple::class,
         Page\CanonicalBroken::class,
         Page\CanonicalOther::class,
+        Page\CanonicalChain::class,
+        Page\CanonicalLoop::class,
+        Page\CanonicalForeign::class,
+        Page\CanonicalFragment::class,
+        Page\CanonicalPagination::class,
         Hreflang\NotReciprocal::class,
         Hreflang\NoXDefault::class,
         Hreflang\Broken::class,
+        Hreflang\SelfMissing::class,
+        Hreflang\DuplicateLang::class,
+        Hreflang\NotIndexable::class,
+        Hreflang\LangMismatch::class,
         Page\HtmlLang::class,
         Page\Viewport::class,
         Page\Favicon::class,
+        Page\HtmlDoctype::class,
+        Page\HtmlCharset::class,
+        Page\HtmlObsolete::class,
         Page\OpenGraph::class,
         Resources\OgImage::class,
         Resources\OgImageSmall::class,
@@ -113,6 +139,8 @@ class AuditServiceProvider extends ServiceProvider
         Page\Thin::class,
         Page\TextRatio::class,
         Page\ContentDuplicate::class,
+        Page\Placeholder::class,
+        Page\SoftNotFound::class,
         Page\UrlLength::class,
         Page\UrlFormat::class,
         Page\UrlParams::class,
@@ -121,6 +149,8 @@ class AuditServiceProvider extends ServiceProvider
         Page\BrokenLinks::class,
         Resources\ExternalBroken::class,
         Page\EmptyLinks::class,
+        Page\Unfollowable::class,
+        Page\VagueAnchors::class,
         Page\NofollowInternal::class,
         Page\MixedContent::class,
         Page\InsecureForms::class,
@@ -128,6 +158,10 @@ class AuditServiceProvider extends ServiceProvider
         Resources\ImagesBroken::class,
         Resources\ImagesHeavy::class,
         Resources\ImagesFormat::class,
+        Resources\ImagesRedirect::class,
+        Resources\ImagesAltLong::class,
+        Resources\AssetsBroken::class,
+        Resources\AssetsHeavy::class,
         Page\ImagesDimensions::class,
         Page\ButtonName::class,
         Page\FormLabel::class,
@@ -135,6 +169,10 @@ class AuditServiceProvider extends ServiceProvider
         Page\Depth::class,
         Page\Orphan::class,
         Page\DeadEnd::class,
+        Page\IncomingNoindexOnly::class,
+        Page\IncomingNofollowOnly::class,
+        Page\IncomingSingle::class,
+        Page\InternalMany::class,
         Hosts\DevPage::class,
         Hosts\WrongMirror::class,
         Hosts\Similar::class,
@@ -147,6 +185,12 @@ class AuditServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            // Every result belongs to the stand it was found on.
+            $tables->stand('audit_runs', 'audit_pages', 'audit_issues', 'audit_ignores', 'audit_links', 'audit_resources', 'audit_content_urls');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-audit.php', 'webx-audit');
 
         $this->app->singleton(AuditChecks::class);

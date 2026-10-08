@@ -64,9 +64,17 @@ export interface FileQuery {
 /** What «Optimize» did to one file; `before` and `after` are its size in bytes. */
 export interface OptimizeResult {
   id: number
-  status: 'optimized' | 'unchanged' | 'skipped' | 'missing'
+  status: 'optimized' | 'converted' | 'unchanged' | 'skipped' | 'missing'
   before: number
   after: number
+  /** «Convert to WebP» only: the places on the site moved over to the new key. */
+  references?: number
+}
+
+/** What «Optimize» would take, either way. */
+export interface OptimizePending {
+  ids: number[]
+  size: number
 }
 
 export interface EditOperations {
@@ -96,4 +104,31 @@ export interface DirectoryNotEmpty {
   code: 'directory_not_empty'
   message: string
   counts: { files: number; directories: number }
+}
+
+/** One row of the site that uses a library file. */
+export interface UsagePlace {
+  table: string
+  column: string
+  id: number | string | null
+  /** What the row is, in the panel's language — «Страница», «Редирект». */
+  kind?: string | null
+  /** The row's title, name or key, when it has one — what an editor knows it by. */
+  label: string | null
+  /** Where the panel edits it, relative to the panel: `/pages/12`. */
+  edit_url?: string | null
+}
+
+/** A file the site still uses, and where. */
+export interface FileInUse {
+  id: number
+  name: string
+  used_in: UsagePlace[]
+}
+
+/** What deleting a folder would take with it, through its whole subtree. */
+export interface DirectoryContents {
+  files: number
+  directories: number
+  in_use: FileInUse[]
 }

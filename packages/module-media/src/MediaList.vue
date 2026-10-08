@@ -13,7 +13,7 @@ import {
   type LocalizedValue,
 } from '@webx-ui/core'
 import { createMediaApi, type MediaApi } from './api'
-import { nameFromPath, readable } from './format'
+import { details, nameFromPath, usePanelLocale } from './format'
 import { openMediaFiles, openMediaLibrary } from './openMediaPicker'
 import { useMediaMessages } from './i18n'
 import type { MediaAspect, MediaFile, MediaKind, MediaValue } from './types'
@@ -68,6 +68,7 @@ const model = defineModel<MediaValue[]>({ default: () => [] })
 useMediaMessages()
 
 const t = useTranslate('webx-media')
+const locale = usePanelLocale()
 
 /*
  * The panel, when there is one. A field has to draw itself without it — a demo page or a test
@@ -163,9 +164,8 @@ function metaOf(item: MediaValue): string {
 
   if (!file) return ''
 
-  const size = readable(file.size)
-
-  return file.width && file.height ? `${file.width}×${file.height} · ${size}` : size
+  // The MIME type is the details panel's business; under a card it is one word too many.
+  return details({ ...file, mime: undefined }, locale())
 }
 
 /* ------------------------------------------------------------------ editing --- */
@@ -291,6 +291,8 @@ const hint = computed(() => {
         >
           <wx-file-card
             :name="nameOf(item)"
+            :extension="fileOf(item)?.extension"
+            :show-extension="layout !== 'rows'"
             :thumbnail="thumbOf(item)"
             :type="fileOf(item)?.mime"
             :size="layout === 'rows' ? 'sm' : 'md'"

@@ -14,6 +14,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Media\MediaServiceProvider;
@@ -69,6 +70,12 @@ class SeoServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('seo_meta', 'seo_urls', 'seo_redirects', 'seo_link_blocks', 'seo_link_items', 'seo_faq_items');
+            $tables->afterRestore('webx:seo:sitemap');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-seo.php', 'webx-seo');
 
         $this->app->singleton(SeoSources::class);

@@ -41,8 +41,11 @@ export interface BlogApi {
    * and from the tags screen, which is the other place somebody spells a new word.
    */
   createTag(input: TagInput): Promise<TagRow>
-  /** On the site. `at` in the future schedules it; left out, it goes on now (§7). */
-  publish(id: number, at?: string | null): Promise<ArticleRow>
+  /**
+   * On the site. `at` in the future schedules it; left out, it goes on now (§7). `revision` is
+   * what the editor held: a draft that moved on since is answered 409, not published.
+   */
+  publish(id: number, at?: string | null, revision?: string): Promise<ArticleRow>
   unpublish(id: number): Promise<ArticleRow>
   remove(id: number): Promise<void>
   restore(id: number): Promise<ArticleRow>
@@ -110,9 +113,12 @@ export function createBlogApi(admin: AdminContext): BlogApi {
       return admin.http.get<{ data: BlogTag[] }>(`${tagsBase}${suffix}`).then(data)
     },
     createTag: (input) => admin.http.post<{ data: TagRow }>(tagsBase, input).then(data),
-    publish: (id, at) =>
+    publish: (id, at, revision) =>
       admin.http
-        .post<{ data: ArticleRow }>(`${base}/${id}/publish`, at == null ? {} : { at })
+        .post<{ data: ArticleRow }>(`${base}/${id}/publish`, {
+          ...(at == null ? {} : { at }),
+          ...(revision ? { revision } : {}),
+        })
         .then(data),
     unpublish: (id) =>
       admin.http.post<{ data: ArticleRow }>(`${base}/${id}/unpublish`, {}).then(data),

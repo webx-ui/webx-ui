@@ -36,9 +36,14 @@ final class UploadRefused extends RuntimeException
         return new self((string) __('webx-admin::uploads.forbidden'), 403);
     }
 
-    public static function wrongType(): self
+    /** @param  list<string>  $extensions  what may be sent instead, when the purpose says it in extensions */
+    public static function wrongType(array $extensions = []): self
     {
-        return new self((string) __('webx-admin::uploads.type'), 422, 'type');
+        $message = $extensions === []
+            ? __('webx-admin::uploads.type')
+            : __('webx-admin::uploads.type-list', ['types' => implode(', ', $extensions)]);
+
+        return new self((string) $message, 422, 'type');
     }
 
     public static function tooLarge(int $maxBytes): self
@@ -96,6 +101,7 @@ final class UploadRefused extends RuntimeException
 
     private static function megabytes(int $bytes): string
     {
-        return number_format($bytes / 1048576, 0, '.', ' ').' MB';
+        // The unit is a word like any other: «50 МБ» in a Russian panel, «50 Mo» in a French one.
+        return (string) __('webx-admin::uploads.megabytes', ['count' => number_format($bytes / 1048576, 0, '.', ' ')]);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Fett',
     'italic' => 'Kursiv',
+    'accent' => 'Akzent',
     'strike' => 'Durchgestrichen',
     'code' => 'Code im Text',
     'h2' => 'Überschrift 2',
@@ -34,4 +35,8 @@ return [
     'apply' => 'Übernehmen',
     'cancel' => 'Abbrechen',
     'uploading' => 'Wird hochgeladen…',
+    'source' => 'HTML-Quelltext',
+    'source-loss' => 'Der Editor behält dieses Markup nicht und entfernt es:',
+    'source-drop' => 'Entfernen',
+    'source-keep' => 'Weiter bearbeiten',
 ];

@@ -19,6 +19,11 @@ export interface ActionsProps {
   collapse?: boolean | 'always'
   /** Accessible name of the group, e.g. "Row actions". */
   ariaLabel?: string
+  /**
+   * The name of the button the folded-up menu opens from — its tip and its accessible name.
+   * English by default, like every word of a component: whoever places it knows the language.
+   */
+  moreLabel?: string
 }
 
 export interface ActionsEmits {

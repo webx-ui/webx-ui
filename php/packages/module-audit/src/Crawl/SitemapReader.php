@@ -78,6 +78,10 @@ final class SitemapReader
             $entry['bytes'] = strlen($xml);
             $parsed = self::parse(substr($xml, 0, self::BYTES));
             $entry = [...$entry, 'kind' => $parsed['kind'], 'error' => $parsed['error'], 'urls' => count($parsed['locations']), 'lastmod' => $parsed['lastmod']];
+            // The same address twice in one file, and an address an earlier file already listed —
+            // harmless to search engines, but a sign the generator walks something twice.
+            $entry['duplicates'] = $parsed['duplicates'];
+            $entry['repeated'] = $parsed['kind'] === 'index' ? 0 : count(array_filter($parsed['locations'], static fn (string $location): bool => isset($urls[$location])));
             $files[] = $entry;
 
             foreach ($parsed['locations'] as $location) {
@@ -102,11 +106,11 @@ final class SitemapReader
     /**
      * Every `<loc>` of a `urlset` or a `sitemapindex`, normalised, and how the `lastmod` look.
      *
-     * @return array{kind: string|null, error: string|null, locations: list<string>, lastmod: array{count: int, future: int, distinct: int, first: string|null}}
+     * @return array{kind: string|null, error: string|null, locations: list<string>, duplicates: int, lastmod: array{count: int, future: int, distinct: int, first: string|null}}
      */
     public static function parse(string $xml): array
     {
-        $result = ['kind' => null, 'error' => null, 'locations' => [], 'lastmod' => ['count' => 0, 'future' => 0, 'distinct' => 0, 'first' => null]];
+        $result = ['kind' => null, 'error' => null, 'locations' => [], 'duplicates' => 0, 'lastmod' => ['count' => 0, 'future' => 0, 'distinct' => 0, 'first' => null]];
 
         if (trim($xml) === '') {
             return [...$result, 'error' => 'The file is empty.'];
@@ -118,6 +122,7 @@ final class SitemapReader
         $locations = [];
         $dates = [];
         $count = 0;
+        $repeated = 0;
         $future = 0;
         $first = null;
         $tomorrow = Carbon::now()->addDay();
@@ -152,6 +157,7 @@ final class SitemapReader
                     $url = Urls::normalise(trim($reader->readString()));
 
                     if ($url !== null) {
+                        $repeated += isset($locations[$url]) ? 1 : 0;
                         $locations[$url] = true;
                     }
                 } elseif ($name === 'lastmod') {
@@ -185,6 +191,7 @@ final class SitemapReader
         }
 
         $result['locations'] = array_keys($locations);
+        $result['duplicates'] = $repeated;
         $result['lastmod'] = ['count' => $count, 'future' => $future, 'distinct' => count($dates), 'first' => $first];
 
         return $result;

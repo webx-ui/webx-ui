@@ -127,7 +127,8 @@ Still open: Carousel, Anchor, Splitter, Watermark, Marquee.
 RichText (Tiptap) ✅ — see [RichText](/components/rich-text). It edits one language at a time
 under `localized`, its toolbar takes its words as props, and a picture it takes from a library
 carries that library's key into the document rather than an address that will not survive the
-next deployment. On a screen it is `wx-rich-text`, from `module-admin` — see
+next deployment. Its `</>` button opens the HTML source and says what the editor would drop
+before it drops it. On a screen it is `wx-rich-text`, from `module-admin` — see
 [Screens](/guide/screens).
 CodeEditor (CodeMirror 6) ✅ — the same field for code: JSON with a linter, HTML, CSS, PHP, YAML
 and the rest, see [CodeEditor](/components/code-editor). The screens mechanism needs its patches

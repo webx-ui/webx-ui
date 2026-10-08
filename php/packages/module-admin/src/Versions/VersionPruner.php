@@ -30,6 +30,12 @@ final class VersionPruner
         return max(0, (int) $this->config->get('webx-admin.versions.autosaves', 5));
     }
 
+    /** How many drafts written over by somebody else an entity keeps. */
+    public function overwritten(): int
+    {
+        return max(0, (int) $this->config->get('webx-admin.versions.overwritten', 10));
+    }
+
     /**
      * Trim one entity's history and ring.
      *
@@ -38,7 +44,8 @@ final class VersionPruner
     public function prune(string $type, mixed $id): int
     {
         return $this->trim($type, $id, EntityVersion::KIND_PUBLISHED, $this->limit())
-            + $this->trim($type, $id, EntityVersion::KIND_AUTOSAVE, $this->autosaves());
+            + $this->trim($type, $id, EntityVersion::KIND_AUTOSAVE, $this->autosaves())
+            + $this->trim($type, $id, EntityVersion::KIND_OVERWRITTEN, $this->overwritten());
     }
 
     /**

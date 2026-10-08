@@ -6,6 +6,7 @@ namespace WebxUi\Recipes\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use WebxUi\Admin\Editing\HeldRevision;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Recipes\Http\Resources\RecipeResource;
@@ -19,6 +20,13 @@ final class RecipePublicationController
 {
     public function publish(Request $request, Recipe $recipe): JsonResponse
     {
+        // The editor sends the revision it held: an edit it has not seen is not published under it.
+        $stale = HeldRevision::conflict($request, 'recipes', (string) $recipe->getKey());
+
+        if ($stale !== null) {
+            return $stale;
+        }
+
         $id = $request->user()?->getAuthIdentifier();
 
         $recipe->publish(

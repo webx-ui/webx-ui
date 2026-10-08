@@ -185,10 +185,14 @@ return [
     | the TTL is for what changes without a save, like an article whose date has
     | come. `php artisan webx:seo:sitemap` builds it ahead of the first crawler.
     |
+    | `stylesheet` serves `/sitemap.xsl` and names it in every file, so a browser
+    | shows the map as its own text with the addresses clickable. Crawlers ignore it.
+    |
     */
 
     'sitemap' => [
         'enabled' => env('WEBX_SEO_SITEMAP', true),
+        'stylesheet' => env('WEBX_SEO_SITEMAP_XSL', true),
         'per_file' => 45000,
         'cache' => [
             'enabled' => true,

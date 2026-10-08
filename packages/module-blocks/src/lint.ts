@@ -54,6 +54,15 @@ export function lintBlock(
     })
   }
 
+  for (const [field, line] of stringOnText(content.template, content.schema)) {
+    lints.push({
+      file: 'template',
+      code: 'string-on-text',
+      line,
+      message: t('checks.string-on-text', { field }),
+    })
+  }
+
   const stray: [string, number][] = []
   const bare: [string, number][] = []
   const prefix = `.b-${slug}`
@@ -126,6 +135,11 @@ export function undeclared(template: string, schema: ScreenNode[]): string[] {
     declared.add(match[1]!)
   }
 
+  // A closure's parameters and what it `use`s are its own: `wx_text($lead)->map(fn ($text) => …)`.
+  for (const closure of template.matchAll(/(?:fn|function)\s*\(([^)]*)\)/g)) {
+    for (const name of closure[1]!.matchAll(/\$([a-zA-Z_]\w*)/g)) declared.add(name[1]!)
+  }
+
   const used: string[] = []
 
   for (const match of template.matchAll(/\$([a-zA-Z_]\w*)/g)) {
@@ -134,6 +148,82 @@ export function undeclared(template: string, schema: ScreenNode[]): string[] {
   }
 
   return used
+}
+
+/**
+ * Calls that make a string of what they are given — a field with a shortcode becomes its HTML,
+ * which `{{ }}` then escapes again. `STRING_CALLS` in `Panel\Lints`.
+ */
+const STRING_CALLS =
+  'trim|rtrim|ltrim|chop|strtoupper|strtolower|ucfirst|lcfirst|ucwords|mb_strtoupper|mb_strtolower|mb_convert_case|mb_substr|mb_strimwidth|substr|str_replace|str_ireplace|preg_replace|preg_replace_callback|sprintf|vsprintf|strip_tags|nl2br|wordwrap|str_pad|strrev|html_entity_decode|htmlspecialchars|e|str|Str::\\w+'
+
+/**
+ * Text fields a template turns into a string and prints with `{{ }}`: `{{ rtrim($heading, '.') }}`
+ * prints `Call &lt;a href=…` once the heading holds `[phone]`. `wx_text()` is the fix, and an
+ * echo that goes through it is not counted; nor is `$heading->plain()`, which is text.
+ */
+export function stringOnText(template: string, schema: ScreenNode[]): [string, number][] {
+  const references = textFields(schema).map(([name, inItem]) => {
+    const quoted = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    return inItem
+      ? new RegExp(`\\$\\w+\\[\\s*['"]${quoted}['"]\\s*\\](?!\\s*->)`, 'g')
+      : new RegExp(`\\$${quoted}\\b(?!\\s*(?:->|\\[|\\())`, 'g')
+  })
+
+  if (references.length === 0) return []
+
+  const found = new Map<string, number>()
+  const call = new RegExp(`(?<![\\w$>:])(?:${STRING_CALLS})\\s*\\(|\\(\\s*string\\s*\\)`, 'i')
+
+  for (const echo of template.matchAll(/(?<!@)\{\{(?!--)([\s\S]*?)\}\}/g)) {
+    const expression = echo[1]!
+    const offset = echo.index + 2
+
+    if (expression.includes('wx_text(')) continue
+
+    const start = call.exec(expression)?.index ?? null
+
+    for (const pattern of references) {
+      for (const use of expression.matchAll(pattern)) {
+        const at = use.index
+        // Joined with `.` is the same string as a cast.
+        const joined =
+          /(?<!\.)\.\s*$/.test(expression.slice(0, at)) ||
+          /^\s*\.(?![.=\d])/.test(expression.slice(at + use[0].length))
+
+        if (((start !== null && at > start) || joined) && !found.has(use[0])) {
+          found.set(use[0], lineAt(template, offset + at))
+        }
+      }
+    }
+  }
+
+  return [...found]
+}
+
+/** The text fields the renderer resolves shortcodes in, and whether each is a repeater item's. */
+function textFields(nodes: ScreenNode[], inItem = false): [string, boolean][] {
+  const fields: [string, boolean][] = []
+
+  for (const node of nodes) {
+    const key = node.id ?? node.name
+    const kind = node.props?.type ?? 'text'
+    const text =
+      node.type === 'wx-textarea' ||
+      (node.type === 'wx-input' && (kind === 'text' || kind === 'search'))
+
+    if (text && typeof key === 'string' && /^[A-Za-z_]\w*$/.test(key)) {
+      fields.push([key, inItem])
+      continue
+    }
+
+    if (node.children) {
+      fields.push(...textFields(node.children, inItem || node.type === 'wx-repeater'))
+    }
+  }
+
+  return fields
 }
 
 function selectors(styles: string): [string, number][] {

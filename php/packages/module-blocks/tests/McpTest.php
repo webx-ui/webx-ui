@@ -50,7 +50,7 @@ final class McpTest extends TestCase
         $this->assertContains('blocks:write', $registry->scopes());
 
         $this->assertSame(
-            ['blocks://guidelines', 'blocks://schema', 'blocks://catalog', 'blocks://fields', 'blocks://site'],
+            ['blocks://guidelines', 'blocks://schema', 'blocks://catalog', 'blocks://fields', 'blocks://site', 'blocks://shortcodes'],
             array_map(static fn ($resource): string => $resource->uri, $registry->resources()),
         );
 
@@ -369,7 +369,7 @@ final class McpTest extends TestCase
 
         $this->assertNull($page->refresh()->draft);
 
-        $this->agent('set_content', ['entity' => 'note', 'id' => $page->id, 'blocks' => $tree], $this->editor())
+        $this->agent('set_content', ['force' => true, 'entity' => 'note', 'id' => $page->id, 'blocks' => $tree], $this->editor())
             ->assertOk()
             ->assertStructuredContent(static function (AssertableJson $json) use ($page): void {
                 $content = $json->etc()->toArray();
@@ -385,10 +385,10 @@ final class McpTest extends TestCase
         $this->assertMatchesRegularExpression('/^[0-9a-f]{12}$/', $page->draft['blocks'][0]['key']);
         $this->assertSame('mcp', $page->versions()->first()?->source);
 
-        $this->agent('set_content', ['entity' => 'note', 'id' => $page->id, 'blocks' => [['type' => 'ghost', 'values' => []]]])
+        $this->agent('set_content', ['force' => true, 'entity' => 'note', 'id' => $page->id, 'blocks' => [['type' => 'ghost', 'values' => []]]])
             ->assertHasErrors(['Unknown block type(s): ghost']);
 
-        $this->agent('set_content', ['entity' => 'article', 'id' => 1, 'blocks' => []])
+        $this->agent('set_content', ['force' => true, 'entity' => 'article', 'id' => 1, 'blocks' => []])
             ->assertHasErrors(['No entity is called [article]', 'note']);
 
         $this->agent('get_content', ['entity' => 'note', 'id' => 999])
@@ -470,13 +470,21 @@ final class McpTest extends TestCase
             'ops' => [['op' => 'set', 'key' => 'k-one', 'values' => ['body' => 'Again'], 'locale' => 'ru']],
         ], $this->editor())->assertHasErrors(['changed since you read it']);
 
+        // And with no revision at all: an agent that did not read first is told to, because
+        // somebody may have the page open and be typing into the same draft.
         $this->agent('edit_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'ops' => [['op' => 'set', 'key' => 'k-one', 'values' => ['body' => 'Again'], 'locale' => 'ru']],
+        ], $this->editor())->assertHasErrors(['Read the entity first', 'being_edited_by', 'force: true']);
+
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'set', 'key' => 'ghost', 'values' => []]],
         ], $this->editor())->assertHasErrors(['Operation 1 (set)', 'key [ghost]']);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'set', 'key' => 'k-one', 'values' => ['body' => 'One language only']]],
@@ -485,7 +493,7 @@ final class McpTest extends TestCase
         // Switching a block off goes through the same door as everything else, and the outline
         // says so — otherwise an agent has no way of telling that a block it can read is not on
         // the site.
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'hide', 'key' => 'k-one']],
@@ -503,7 +511,7 @@ final class McpTest extends TestCase
                 self::assertTrue(($content['outline'][0]['hidden'] ?? null) === true, (string) json_encode($content));
             });
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'show', 'key' => 'k-one']],
@@ -539,13 +547,13 @@ final class McpTest extends TestCase
             'values' => ['gone' => '<p>A field the schema no longer names<script>steal()</script></p>'],
         ]]]);
 
-        $this->agent('set_content', [
+        $this->agent('set_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'blocks' => [['key' => 'k-one', 'type' => 'article', 'values' => ['fresh' => 'x']]],
         ], $this->editor())->assertHasErrors(['article has no field [fresh]']);
 
-        $this->agent('set_content', [
+        $this->agent('set_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'blocks' => [[
@@ -600,7 +608,7 @@ final class McpTest extends TestCase
 
         $page = Page::query()->create(['title' => 'Events', 'slug' => 'events']);
 
-        $this->agent('set_content', [
+        $this->agent('set_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'blocks' => [[

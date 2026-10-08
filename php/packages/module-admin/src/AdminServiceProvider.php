@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace WebxUi\Admin;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Http\Kernel;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Categories\CategoriesType;
 use WebxUi\Admin\Categories\CategorySources;
@@ -31,11 +36,17 @@ use WebxUi\Admin\Console\PruneHistoryCommand;
 use WebxUi\Admin\Console\PruneUploadsCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Console\SetupCommand;
+use WebxUi\Admin\Console\SnapshotCommand;
+use WebxUi\Admin\Console\SnapshotRestoreCommand;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\Editing\EditedRecords;
+use WebxUi\Admin\Editing\Presence;
+use WebxUi\Admin\Editing\Purged;
+use WebxUi\Admin\Editing\RecordEvents;
 use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\History\HistoryContext;
@@ -73,6 +84,8 @@ use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Admin\Screens\Types\TagsType;
 use WebxUi\Admin\Screens\Types\TimeType;
 use WebxUi\Admin\Screens\Types\TreeSelectType;
+use WebxUi\Admin\Shortcodes\Shortcodes;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Support\Parts;
 use WebxUi\Admin\Uploads\FreeSpace;
 use WebxUi\Admin\Uploads\UploadPurposes;
@@ -94,6 +107,10 @@ class AdminServiceProvider extends ServiceProvider
         // Same for screens and the field types they are written in: modules and the project
         // add theirs from `boot()`, and the endpoints read the sum.
         $this->app->singleton(ScreenRegistry::class);
+
+        // The drafted records an open editor keeps watch over, and who has them open.
+        $this->app->singleton(EditedRecords::class);
+        $this->app->singleton(Presence::class);
 
         // Which records have notes. A register rather than the morph map alone, because the
         // type comes out of an address and must not be able to name anything else.
@@ -120,6 +137,11 @@ class AdminServiceProvider extends ServiceProvider
 
         // What modules add to `webx:doctor` after the frame's own checks.
         $this->app->singleton(DoctorChecks::class);
+
+        // The shortcodes content may hold: the site registers its own from its provider, the
+        // settings section adds the ones the panel defines, and every module that prints text
+        // reads the same registry.
+        $this->app->singleton(Shortcodes::class);
 
         // The language prefix, when there is an address registry to ask. Behind `class_exists`
         // because the frame does not require `webx-ui/routing` — a panel of settings and
@@ -226,6 +248,10 @@ class AdminServiceProvider extends ServiceProvider
         // is a singleton to be injectable by name, not because it remembers anything.
         $this->app->singleton(Backups::class);
 
+        // Which table travels between stands: filled by every package from its own provider,
+        // the way the notes' and the history's registers are.
+        $this->app->singleton(SnapshotTables::class);
+
         // One journal for the run, shared by every module that seeds into it. The path is
         // fixed rather than configurable: it is a file two commands pass between them, and a
         // site that moved it would gain nothing and lose the answer to "where is it".
@@ -260,10 +286,12 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerDraftMacro();
         $this->registerCategoryMacros();
         $this->registerPartDirective();
+        $this->registerShortcodeDirectives();
         $this->registerBackupSchedule();
         $this->registerHistorySchedule();
         $this->registerUploadsSchedule();
         $this->registerGate();
+        $this->registerPurgedAnswer();
         SystemSections::register($this->app->make('config'));
 
         $router = $this->app->make('router');
@@ -307,7 +335,45 @@ class AdminServiceProvider extends ServiceProvider
             PruneUploadsCommand::class,
             PruneVersionsCommand::class,
             SetupCommand::class,
+            SnapshotCommand::class,
+            SnapshotRestoreCommand::class,
         ]);
+    }
+
+    /**
+     * A save or a publication of a record somebody deleted for good answers 410 with who did it,
+     * the same as the heartbeat, instead of a 404 the editor cannot tell from a typo in an id.
+     *
+     * Every module's endpoint finds its record by route binding or `findOrFail`, and both end in
+     * a `ModelNotFoundException` that still names the model and the key — enough to look the
+     * purge up without each module learning to. Only for JSON: a site's page stays a 404.
+     */
+    private function registerPurgedAnswer(): void
+    {
+        $this->callAfterResolving(ExceptionHandler::class, function (ExceptionHandler $handler): void {
+            if (! method_exists($handler, 'renderable')) {
+                return;
+            }
+
+            $handler->renderable(function (NotFoundHttpException $e, Request $request): ?JsonResponse {
+                $missing = $e->getPrevious();
+
+                if (! $missing instanceof ModelNotFoundException || ! $request->expectsJson()) {
+                    return null;
+                }
+
+                $ids = $missing->getIds();
+                $id = is_array($ids) && count($ids) === 1 ? reset($ids) : null;
+
+                if (! is_int($id) && ! is_string($id)) {
+                    return null;
+                }
+
+                $purged = $this->app->make(RecordEvents::class)->purged($missing->getModel(), $id);
+
+                return $purged === null ? null : Purged::answer($purged);
+            });
+        });
     }
 
     /**
@@ -450,6 +516,20 @@ class AdminServiceProvider extends ServiceProvider
         Blade::directive('webxPartAssets', static function (): string {
             return sprintf('<?php echo \%s::assets(); ?>', Parts::class);
         });
+    }
+
+    /**
+     * Shortcodes in a site's own templates, for the fields a block does not print:
+     * `@shortcodes($text)` prints an editor's text escaped, with the shortcodes as HTML;
+     * `@shortcodesIn($html)` replaces them inside HTML that is already trusted (a rich text
+     * field); `@shortcodesPlain($text)` prints the text, escaped — for an attribute, a `<title>`,
+     * an `alt`.
+     */
+    private function registerShortcodeDirectives(): void
+    {
+        Blade::directive('shortcodes', static fn (string $expression): string => sprintf('<?php echo app(\%s::class)->html(%s); ?>', Shortcodes::class, $expression));
+        Blade::directive('shortcodesIn', static fn (string $expression): string => sprintf('<?php echo app(\%s::class)->htmlIn(%s); ?>', Shortcodes::class, $expression));
+        Blade::directive('shortcodesPlain', static fn (string $expression): string => sprintf('<?php echo e(app(\%s::class)->plain(%s)); ?>', Shortcodes::class, $expression));
     }
 
     /**

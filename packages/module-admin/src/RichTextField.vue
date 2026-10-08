@@ -71,6 +71,7 @@ function remember(value: unknown): void {
 const labels = computed<RichTextLabels>(() => ({
   bold: t('rich-text.bold'),
   italic: t('rich-text.italic'),
+  accent: t('rich-text.accent'),
   strike: t('rich-text.strike'),
   code: t('rich-text.code'),
   h2: t('rich-text.h2'),
@@ -86,6 +87,7 @@ const labels = computed<RichTextLabels>(() => ({
   youtube: t('rich-text.youtube'),
   undo: t('rich-text.undo'),
   redo: t('rich-text.redo'),
+  source: t('rich-text.source'),
   addRowAfter: t('rich-text.row-below'),
   addRowBefore: t('rich-text.row-above'),
   addColumnAfter: t('rich-text.column-after'),
@@ -100,6 +102,9 @@ const labels = computed<RichTextLabels>(() => ({
   apply: t('rich-text.apply'),
   cancel: t('rich-text.cancel'),
   uploading: t('rich-text.uploading'),
+  sourceLoss: t('rich-text.source-loss'),
+  sourceDrop: t('rich-text.source-drop'),
+  sourceKeep: t('rich-text.source-keep'),
 }))
 </script>
 

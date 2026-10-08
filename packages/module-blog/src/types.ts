@@ -1,6 +1,6 @@
 import type { LocalizedValue, Paginated } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
-import type { CategoryRow } from '@webx-ui/module-admin'
+import type { CategoryRow, EditingChange } from '@webx-ui/module-admin'
 
 /**
  * Never published · waiting for its day · on the site · on the site with edits waiting · taken
@@ -185,6 +185,8 @@ export interface ArticleDetail {
 export interface ArticleConflict {
   message: string
   data: ArticleDetail
+  /** Who wrote it last and through which door — the panel, an agent, an import. */
+  changed?: EditingChange | null
 }
 
 /**

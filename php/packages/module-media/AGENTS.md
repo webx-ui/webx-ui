@@ -17,9 +17,15 @@ guides when the question is about one of those. An entity's own attachments are 
   read. `alt` and `title` live in the value, not in the library.
 - **Asset addresses**: binds `WebxUi\Admin\Contracts\AssetUrls` to `LibraryUrls`, which is how
   pictures inside a `wx-rich-text` value find their address.
-- **API** under `{webx-admin.api_path}/media` (`directories`, `files`, `files/by-path`,
-  `files/{file}/thumb`, `files/{file}/source`, `files/{file}/edit`, `…/copy`,
+- **API** under `{webx-admin.api_path}/media` (`directories`, `files`, `files/chunked`,
+  `files/by-path`, `files/{file}/thumb`, `files/{file}/source`, `files/{file}/edit`, `…/copy`,
   `…/restore-original`, `files/move`, `files/delete`); route names `webx.media.*`.
+- **Convert to WebP** (`convert: true` of `media_optimize_images`, `webx:media:webp`): a new key
+  with the same uuid, every reference rewritten (history included, `usage.rewrite_ignore`),
+  the old key kept in `media_aliases` — its public address 301s to the new one. Off by default.
+- **Chunked uploads**: the upload purpose `media.library` with module-admin's `uploads`
+  protocol — the panel sends every file a piece at a time and `files/chunked` hands the finished
+  one to the library through the same rules and pipeline as `POST files`.
 - **Permissions** `media.view`, `media.upload`, `media.manage` — uploading is separate from
   managing on purpose.
 - **MCP** tools `media_list_directories`, `media_list_files`, `media_search_files`,
@@ -32,18 +38,21 @@ guides when the question is about one of those. An entity's own attachments are 
 
 ## Change it without forking
 
-| You want                                  | Do this                                                                                   |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------- |
-| The library on another disk (S3 and such) | `WEBX_MEDIA_DISK=s3`; for S3 also `composer require league/flysystem-aws-s3-v3`           |
-| Share a bucket with something else        | `WEBX_MEDIA_PREFIX=…` — the directory every new key starts with                           |
-| Bigger or smaller uploads                 | `WEBX_MEDIA_MAX_SIZE` (kilobytes); `upload.max_files` in the published config             |
-| Allow another file type                   | add the extension to `upload.extensions` in `config/webx-media.php`                       |
-| Imagick instead of GD, other JPEG quality | `WEBX_MEDIA_IMAGE_DRIVER=imagick`; `image.quality`, `image.max_pixels` in the config      |
-| Other thumbnail sizes                     | `thumbs.widths`, `thumbs.fits` in the config                                              |
-| Signed addresses that live longer         | `temporary_url_ttl` (seconds) — used only for a disk without a `url`                      |
-| Edit the config at all                    | `php artisan vendor:publish --tag=webx-media-config`, keep only the keys you change       |
-| Other words in the panel                  | `php artisan vendor:publish --tag=webx-media-lang`                                        |
-| A picture or file field on a screen       | a field of type `wx-media`, `wx-gallery`, `wx-file` or `wx-files`; `props.accept` narrows |
+| You want                                  | Do this                                                                                           |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| The library on another disk (S3 and such) | `WEBX_MEDIA_DISK=s3`; for S3 also `composer require league/flysystem-aws-s3-v3`                   |
+| Share a bucket with something else        | `WEBX_MEDIA_PREFIX=…` — the directory every new key starts with                                   |
+| Old JPEG and PNG pictures as WebP         | **Optimize** → «Convert to WebP», or `php artisan webx:media:webp --dry-run` first                |
+| Bigger or smaller uploads                 | `WEBX_MEDIA_MAX_SIZE` (kilobytes); `upload.max_files` in the published config                     |
+| Larger pieces of a chunked upload         | `webx-admin.uploads.chunk_mb`; PHP's own limits only have to fit one piece                        |
+| Allow another file type                   | add the extension to `upload.extensions` in `config/webx-media.php`                               |
+| Imagick instead of GD, other JPEG quality | `WEBX_MEDIA_IMAGE_DRIVER=imagick`; `image.quality`, `image.max_pixels` in the config              |
+| Other thumbnail sizes                     | `thumbs.widths`, `thumbs.fits` in the config                                                      |
+| Signed addresses that live longer         | `temporary_url_ttl` (seconds) — used only for a disk without a `url`                              |
+| Previews of files deleted long ago        | audit `media.orphan_thumbs` and its fix, or `php artisan webx:media:prune-thumbs --dry-run` first |
+| Edit the config at all                    | `php artisan vendor:publish --tag=webx-media-config`, keep only the keys you change               |
+| Other words in the panel                  | `php artisan vendor:publish --tag=webx-media-lang`                                                |
+| A picture or file field on a screen       | a field of type `wx-media`, `wx-gallery`, `wx-file` or `wx-files`; `props.accept` narrows         |
 
 The disk and prefix apply to new uploads: every row keeps the disk and key it was written with,
 so switching `WEBX_MEDIA_DISK` does not move or break what is already there — moving old files is
@@ -60,12 +69,15 @@ a migration of your own, bytes and rows together.
 - Do not write files into the disk by hand or insert `media_files` rows with SQL: the row carries
   `hash`, `mime`, `size`, dimensions and `name_lower` that search and duplicates rely on. Upload
   through the panel, the API or `media_upload_from_url`.
-- Do not delete rows with SQL: `media_delete_files` (or the panel) removes the bytes and the
-  edited original with the row. It refuses a file the site still uses and says where (a foreign
+- Do not delete rows with SQL: `media_delete_files` (or the panel) removes the bytes, the
+  edited original and every preview (`media/thumbs/<key>`) with the row. It refuses a file the site still uses and says where (a foreign
   key into `media_files`, or the file's key inside a text or JSON column); `force: true` deletes
   anyway — replace the file in those places first. A module that keeps files where the schema
-  cannot show them tags a `WebxUi\Media\Usage\UsageSource` with `MediaUsage::TAG`. A raw delete leaves orphaned bytes; a deleted file on the disk
-  leaves a row the audit reports as `media.missing_file`.
+  cannot show them tags a `WebxUi\Media\Usage\UsageSource` with `MediaUsage::TAG`. The panel's delete keeps the same rule: `DELETE files/{id}` and
+  `POST files/delete` answer `409 files_in_use` with where unless `force`, and `POST files/usage`
+  and `GET directories/{id}/contents` say it before anything is asked. A raw delete leaves
+  orphaned bytes and previews; a deleted file on the disk leaves a row the audit reports as
+  `media.missing_file`.
 - Do not try to move or delete the root folder — it is refused (`root_immutable`). Deleting a
   non-empty folder answers `409` with counts until `?force=1`; ask the person first, there is no
   bin. `media_delete_directory` deletes only an empty folder, on purpose.

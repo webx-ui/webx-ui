@@ -31,6 +31,11 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 - **Also** — tables `cms_notes` (`HasNotes`), `cms_relations` (`HasRelations`), `cms_uploads`
   (chunked uploads, `UploadPurposes`); Blueprint macros `category()`, `categoryLinks()`; the
   `@webxPart` / `@webxPartAssets` directives; the site password (`CloseSite`, `Openings`).
+- **Shortcodes** — the registry `WebxUi\Admin\Shortcodes\Shortcodes` (facade `Shortcodes`):
+  `register()`, `source()`, `html()`, `htmlIn()`, `plain()`, `text()`; directives `@shortcodes`,
+  `@shortcodesIn`, `@shortcodesPlain`; `GET /api/cms/shortcodes` for the panel's text fields.
+  `wx_text($value)` makes a plain string or a `ShortcodeText` a `ShortcodeText`, whose `trim*`,
+  `strip*` and `map()` change the typed text and stay HTML.
 - **Front end entry** — `resources/js/admin.ts` in the site, written from `stubs/panel.stub` (or
   `panel-auth.stub` when module-auth is installed). Three regions are the installer's:
   `// webx:imports`, `// webx:styles`, `// webx:modules`; everything outside them is the site's.
@@ -48,6 +53,17 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 | `webx:make-module`                                                                  | a module class                                                                                                                                                           |
 | `webx:boot`                                                                         | container start: wait for the database, migrate, cache                                                                                                                   |
 | `webx:db:backup`, `webx:history:prune`, `webx:versions:prune`, `webx:prune-uploads` | scheduled by the package itself; need the system cron behind `schedule:run`                                                                                              |
+| `webx:snapshot`                                                                     | packs content tables + the public disk into `storage/app/snapshots/<site>-<env>-<date>.tar.gz`; `--with-admins`, `--all`, `--no-media`, `--output=`                      |
+| `webx:snapshot:restore <archive>`                                                   | **replaces this stand's content** with the archive's: backup first, stand-own tables untouched, addresses rewritten, files mirrored (`--keep-extra` to only add)         |
+
+### Moving content between stands
+
+`webx:snapshot` on one stand, `scp` the archive, `webx:snapshot:restore` on the other. Every
+package declares its tables in `SnapshotTables` as `content` (travels), `admins`
+(`--with-admins`), `stand` (enquiries, journals, tokens, audit; only `--all`), `derived` (emptied
+on restore) or `transient` (sessions, cache, queues, `migrations`; never). A restore refuses an
+archive with migrations this code lacks, refuses production without `--force`, and asks unless
+`--no-interaction --force`. Its first line of work is a `webx:db:backup` dump — the rollback.
 
 ### The site's root `AGENTS.md`
 
@@ -64,27 +80,30 @@ same address, are kept; a file that is not JSON is left alone with a warning (`A
 
 ## Change it without forking
 
-| You want                               | Do this                                                                                                                   |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| The panel at another address           | `WEBX_ADMIN_PATH` (and `WEBX_ADMIN_API_PATH` for its JSON)                                                                |
-| Another panel name or tab icons        | `WEBX_ADMIN_TITLE`; `WEBX_ADMIN_ICONS` = a directory with the same file names                                             |
-| A field or tab on a module's screen    | a patch: `Screens::extend('<module>.<screen>', [...])` in `AppServiceProvider::boot()`                                    |
-| A field stored without a migration     | the same patch on a model with `HasExtra`; read it with `$model->extra('<name>')`                                         |
-| A field with a value until it is set   | `"default": …` on the node: drawn in the panel and read by the site, never written by itself                              |
-| An email, address or phone field       | `wx-input` with `"props": { "type": "email" }` (or `url`, `tel`); the server holds the format too                         |
-| A screen of your own                   | `Screens::register('<module>.<screen>', $pathOrTree)` from a provider                                                     |
-| A section of your own                  | `php artisan webx:make-module <Name>`, register it in `ModuleRegistry` from a provider                                    |
-| A navigation group or caption          | `groups` in `config/webx-admin.php` (`php artisan vendor:publish --tag=webx-admin-config`)                                |
-| Your own lines in the panel's JS       | anywhere in `resources/js/admin.ts` outside the three `webx:` regions                                                     |
-| Your own assets in the shell           | push onto the `webx-head` / `webx-body` stacks, or `--tag=webx-admin-views`                                               |
-| Other words in the panel               | `php artisan vendor:publish --tag=webx-admin-lang`                                                                        |
-| A password over the site while testing | `WEBX_SITE_GATE=true`, `WEBX_SITE_GATE_USERS="user:secret"`; `gate.except` for open paths                                 |
-| Keep more or fewer publications        | `versions.limit` / `versions.autosaves`, then `php artisan webx:versions:prune`                                           |
-| Journal retention                      | `WEBX_HISTORY_RETENTION_DAYS`, `WEBX_HISTORY_PRUNE_AT`; off with `WEBX_HISTORY_ENABLED=false`                             |
-| Backup time, place, tool               | `WEBX_BACKUP_AT`, `WEBX_BACKUP_KEEP`, `WEBX_BACKUP_DISK`, `WEBX_BACKUP_PATH`, `WEBX_BACKUP_BINARY`, `WEBX_BACKUP_OPTIONS` |
-| Larger or longer-lived uploads         | `WEBX_UPLOADS_CHUNK_MB`, `WEBX_UPLOADS_TTL_HOURS`                                                                         |
-| A check of your own in `webx:doctor`   | `$this->app->make(DoctorChecks::class)->register(YourCheck::class)` in a provider                                         |
-| A link source, note type, history type | register into `LinkSources`, `NoteTypes`, `HistoryTypes` from a provider                                                  |
+| You want                                | Do this                                                                                                                   |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| The panel at another address            | `WEBX_ADMIN_PATH` (and `WEBX_ADMIN_API_PATH` for its JSON)                                                                |
+| Another panel name or tab icons         | `WEBX_ADMIN_TITLE`; `WEBX_ADMIN_ICONS` = a directory with the same file names                                             |
+| A shortcode of the site's own (`[dot]`) | `Shortcodes::register('dot', '<span class="accent-dot">.</span>', plain: '.')` in `AppServiceProvider::boot()`            |
+| A field or tab on a module's screen     | a patch: `Screens::extend('<module>.<screen>', [...])` in `AppServiceProvider::boot()`                                    |
+| A field stored without a migration      | the same patch on a model with `HasExtra`; read it with `$model->extra('<name>')`                                         |
+| A field with a value until it is set    | `"default": …` on the node: drawn in the panel and read by the site, never written by itself                              |
+| An email, address or phone field        | `wx-input` with `"props": { "type": "email" }` (or `url`, `tel`); the server holds the format too                         |
+| A screen of your own                    | `Screens::register('<module>.<screen>', $pathOrTree)` from a provider                                                     |
+| A section of your own                   | `php artisan webx:make-module <Name>`, register it in `ModuleRegistry` from a provider                                    |
+| A navigation group or caption           | `groups` in `config/webx-admin.php` (`php artisan vendor:publish --tag=webx-admin-config`)                                |
+| Your own lines in the panel's JS        | anywhere in `resources/js/admin.ts` outside the three `webx:` regions                                                     |
+| Your own assets in the shell            | push onto the `webx-head` / `webx-body` stacks, or `--tag=webx-admin-views`                                               |
+| Other words in the panel                | `php artisan vendor:publish --tag=webx-admin-lang`                                                                        |
+| A password over the site while testing  | `WEBX_SITE_GATE=true`, `WEBX_SITE_GATE_USERS="user:secret"`; `gate.except` for open paths                                 |
+| Keep more or fewer publications         | `versions.limit` / `versions.autosaves`, then `php artisan webx:versions:prune`                                           |
+| Journal retention                       | `WEBX_HISTORY_RETENTION_DAYS`, `WEBX_HISTORY_PRUNE_AT`; off with `WEBX_HISTORY_ENABLED=false`                             |
+| Backup time, place, tool                | `WEBX_BACKUP_AT`, `WEBX_BACKUP_KEEP`, `WEBX_BACKUP_DISK`, `WEBX_BACKUP_PATH`, `WEBX_BACKUP_BINARY`, `WEBX_BACKUP_OPTIONS` |
+| Larger or longer-lived uploads          | `WEBX_UPLOADS_CHUNK_MB`, `WEBX_UPLOADS_TTL_HOURS`                                                                         |
+| A table of the site's own in snapshots  | `webx-admin.snapshot.tables` (`content`, `stand`, … ; `shop_*` is a prefix), or `SnapshotTables` from a provider          |
+| A setting that stays on its stand       | its key in `webx-settings.stand_own`; a restore keeps this stand's value                                                  |
+| A check of your own in `webx:doctor`    | `$this->app->make(DoctorChecks::class)->register(YourCheck::class)` in a provider                                         |
+| A link source, note type, history type  | register into `LinkSources`, `NoteTypes`, `HistoryTypes` from a provider                                                  |
 
 A patch addresses nodes by their `id`; every screen names its own (the module's guide lists them).
 Operations are `add`, `remove`, `replace`, `move`, `set`. A patch whose target is gone throws when
@@ -105,6 +124,8 @@ Patches apply in the order they were registered.
   stores it in `extra`, and the next module release will not fight your migration.
 - Do not put a site live without `webx-ui/module-auth`: without it `webx-admin.middleware` is only
   `web` and the panel is open to anyone.
+- Do not restore a snapshot onto a stand whose content you have not copied first: a restore
+  replaces the content tables and mirrors the files. The rollback is the dump it names.
 - Do not write `cms_versions` or `cms_history` with SQL: use `publish()`, `restoreVersion()`
   then `publish()`, and `History::record()` — a raw row has no number, no author, no source.
 
@@ -124,5 +145,6 @@ Patches apply in the order they were registered.
 - Screens and patches: https://webx-ui.github.io/webx-ui/guide/screens
 - Extending views and services: https://webx-ui.github.io/webx-ui/guide/extending
 - Specification of screens: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_SCREENS.md
+- Moving content between stands: https://webx-ui.github.io/webx-ui/guide/snapshots
 - The journal: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_HISTORY.md
 - Agent guides: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_AGENT_DOCS.md

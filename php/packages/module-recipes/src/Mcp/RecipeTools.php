@@ -15,6 +15,8 @@ use Throwable;
 use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\AgentRevision;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -145,14 +147,16 @@ final class RecipeTools
             Tool::mutating(
                 'update',
                 'Change the values of a recipe into its draft. A field left out keeps what it had; a localized '
-                .'field sent as { "en": "…" } changes that language only. Send the revision recipes_get gave you and '
-                .'the write is refused if somebody saved in between. Everything — the categories and the links '
+                .'field sent as { "en": "…" } changes that language only. Send the revision recipes_get gave you: '
+                .'the write is refused if somebody saved in between, and refused without one — recipes_get also '
+                .'says who has the recipe open in the panel (being_edited_by), which is worth telling your user '
+                .'before writing. Everything — the categories and the links '
                 .'included — reaches the site when the recipe is published. The SEO card is the exception: it is not drafted and is on the site the moment it is saved — the answer says so with seo_live: true. '.$html,
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'recipe' => $recipe,
                     'values' => ['type' => 'object', 'description' => 'Field name → value, as recipes_get returns them. The nutrition may also come as { "nutrition": { "calories": "…" } }. '.$relations],
-                    'revision' => ['type' => 'string', 'description' => 'The revision recipes_get returned. Left out, the write goes in over whatever happened since.'],
+                    ...AgentRevision::properties('recipes_get'),
                 ], 'required' => ['recipe', 'values']],
                 permission: 'recipes.manage',
             ),
@@ -160,9 +164,11 @@ final class RecipeTools
             Tool::mutating(
                 'publish',
                 'Put the draft on the site: its values, categories and links become the recipe and a version is '
-                .'written. Ask a person first unless they asked you to publish.',
+                .'written. Ask a person first unless they asked you to publish. It publishes whatever the draft '
+                .'holds now: send the revision recipes_get gave you, so that an edit you have not read is not what '
+                .'goes on the site. While somebody has the recipe open in the panel the revision is required.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->publish($arguments, $user)),
-                ['properties' => ['recipe' => $recipe], 'required' => ['recipe']],
+                ['properties' => ['recipe' => $recipe, ...AgentRevision::stateProperties('recipes_get')], 'required' => ['recipe']],
                 permission: 'recipes.manage',
             ),
 
@@ -171,7 +177,7 @@ final class RecipeTools
                 'Take a recipe off the site. It answers 404 from then on and leaves the index and its categories; '
                 .'its address stays reserved and whatever was being prepared is still there.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
-                ['properties' => ['recipe' => $recipe], 'required' => ['recipe']],
+                ['properties' => ['recipe' => $recipe, ...AgentRevision::stateProperties('recipes_get')], 'required' => ['recipe']],
                 permission: 'recipes.manage',
             ),
 
@@ -180,7 +186,7 @@ final class RecipeTools
                 'Throw away the draft of a recipe that is on the site and go back to what the site shows. The draft '
                 .'is all that changes. dry_run names the fields that differ from the published ones.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
-                ['properties' => ['recipe' => $recipe], 'required' => ['recipe']],
+                ['properties' => ['recipe' => $recipe, ...AgentRevision::stateProperties('recipes_get')], 'required' => ['recipe']],
                 permission: 'recipes.manage',
             ),
 
@@ -190,7 +196,7 @@ final class RecipeTools
                 .'Nothing is destroyed: the bin in the panel puts it back, as long as nobody has taken its address '
                 .'in the meantime.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
-                ['properties' => ['recipe' => $recipe], 'required' => ['recipe']],
+                ['properties' => ['recipe' => $recipe, ...AgentRevision::stateProperties('recipes_get')], 'required' => ['recipe']],
                 permission: 'recipes.manage',
             ),
 
@@ -282,6 +288,8 @@ final class RecipeTools
             'values' => $this->form()->values($recipe),
             // Send it back with recipes_update, and a write over somebody else's is refused.
             'revision' => Revision::of($recipe),
+            // Who has the recipe open in the panel right now: tell your user before writing.
+            'being_edited_by' => $this->presence()->of($recipe),
             'preview_url' => $this->preview($recipe, $user),
         ];
     }
@@ -356,7 +364,7 @@ final class RecipeTools
 
         $values = $this->prepare($values, $recipe);
         Arguments::refuseUnknown($values, $this->fields(), 'recipes_update');
-        $this->sameRevision($arguments, $recipe);
+        AgentRevision::check($arguments, Revision::of($recipe), 'recipe', 'recipes_get');
 
         $work = function () use ($recipe, $values, $user): array {
             $recipe->getConnection()->transaction(
@@ -383,6 +391,7 @@ final class RecipeTools
     private function publish(array $arguments, ?Authenticatable $user): array
     {
         $recipe = $this->recipe($arguments['recipe'] ?? null);
+        $this->guard($arguments, $recipe);
 
         if ($this->dryRun($arguments)) {
             return [
@@ -405,6 +414,7 @@ final class RecipeTools
     private function unpublish(array $arguments): array
     {
         $recipe = $this->recipe($arguments['recipe'] ?? null);
+        $this->guard($arguments, $recipe);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_unpublish' => $this->reference($recipe), 'status' => $recipe->status()];
@@ -422,6 +432,7 @@ final class RecipeTools
     private function discard(array $arguments): array
     {
         $recipe = $this->recipe($arguments['recipe'] ?? null);
+        $this->guard($arguments, $recipe);
 
         if (! $recipe->hasDraft()) {
             throw new ToolFailure("Recipe [{$recipe->getKey()}] has no draft: the site already shows what it holds.");
@@ -443,6 +454,7 @@ final class RecipeTools
     private function delete(array $arguments): array
     {
         $recipe = $this->recipe($arguments['recipe'] ?? null);
+        $this->guard($arguments, $recipe);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_trash' => $this->reference($recipe), 'status' => $recipe->status()];
@@ -881,27 +893,6 @@ final class RecipeTools
     }
 
     /**
-     * @param  array<string, mixed>  $arguments
-     */
-    private function sameRevision(array $arguments, Recipe $recipe): void
-    {
-        $sent = $arguments['revision'] ?? null;
-
-        if (! is_string($sent) || $sent === '') {
-            return;
-        }
-
-        $current = Revision::of($recipe);
-
-        if ($sent !== $current) {
-            throw new ToolFailure(
-                "The recipe changed since you read it: revision is [{$current}], you sent [{$sent}]. "
-                .'Read it again with recipes_get and redo the edit on what is there now.'
-            );
-        }
-    }
-
-    /**
      * @return array<string, string>
      */
     private function text(mixed $value, string $field): array
@@ -992,6 +983,22 @@ final class RecipeTools
     private function targets(): RelationTargets
     {
         return $this->container->make(RelationTargets::class);
+    }
+
+    /**
+     * The rule for a change of state (AgentRevision::guard): the revision this agent read, and
+     * one has to be sent while somebody has the recipe open.
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private function guard(array $arguments, Recipe $recipe): void
+    {
+        AgentRevision::guard($arguments, Revision::of($recipe), $recipe, 'recipe', 'recipes_get');
+    }
+
+    private function presence(): Presence
+    {
+        return $this->container->make(Presence::class);
     }
 
     private function locales(): Locales

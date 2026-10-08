@@ -10,10 +10,12 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
@@ -33,6 +35,7 @@ use WebxUi\Services\Links\ServiceLinkSource;
 use WebxUi\Services\Models\Service;
 use WebxUi\Services\Models\ServiceCategory;
 use WebxUi\Services\Panel\CategoriesModule;
+use WebxUi\Services\Panel\Revision;
 use WebxUi\Services\Panel\ServicesGroup;
 use WebxUi\Services\Panel\ServicesModule;
 use WebxUi\Services\Relations\ServiceTarget;
@@ -49,6 +52,11 @@ class ServicesServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('services', 'service_categories', 'service_category_service');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-services.php', 'webx-services');
     }
 
@@ -67,6 +75,7 @@ class ServicesServiceProvider extends ServiceProvider
         $this->registerCollection();
         $this->app->make(RelationTargets::class)->register(new ServiceTarget);
         $this->registerPanel();
+        $this->registerEditedRecord();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
 
@@ -265,6 +274,26 @@ class ServicesServiceProvider extends ServiceProvider
         foreach ([ServicesModule::class, CategoriesModule::class] as $module) {
             $modules->register($this->app->make($module));
         }
+    }
+
+    /**
+     * The editor's heartbeat asks after a service by this name: whether it moved under the
+     * editor, who moved it, who else has it open.
+     */
+    private function registerEditedRecord(): void
+    {
+        $this->app->make(EditedRecords::class)->register(
+            'services',
+            ['services.view', 'services.manage'],
+            static function (string $id): ?array {
+                // A service in the bin too: the editor open on it hears that it went there.
+                $service = ctype_digit($id) ? Service::withTrashed()->find((int) $id) : null;
+
+                return $service instanceof Service ? ['revision' => Revision::of($service), 'model' => $service] : null;
+            },
+            'services.manage',
+            model: Service::class,
+        );
     }
 
     private function prefix(): string

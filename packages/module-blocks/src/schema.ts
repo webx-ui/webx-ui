@@ -119,39 +119,132 @@ export function startValues(
   return values
 }
 
+/** Plain text fields — what shows a value as it is stored, tags and all. */
+const PLAIN = new Set(['wx-input', 'wx-textarea'])
+
+/** A tag, opening or closing: `<span>`, `</em>`, `<br/>`. A lone `<` in a sentence is not one. */
+const TAG = /<\/?[a-z][a-z0-9-]*(\s[^<>]*)?\/?>/i
+
+/**
+ * Whether a value — or any language of a translated one — holds markup.
+ *
+ * A heading written with an accent in it (`Deeply heard<span>.</span>`) still sits in a plain
+ * input in types that came before the inline rich field, and the input shows it raw: the editor
+ * sees the tags and is one stray keystroke away from printing them on the site.
+ */
+export function holdsMarkup(value: unknown): boolean {
+  if (typeof value === 'string') return TAG.test(value)
+
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return Object.values(value as Record<string, unknown>).some(
+      (one) => typeof one === 'string' && TAG.test(one),
+    )
+  }
+
+  return false
+}
+
+/** The plain text fields of a block whose values hold markup, by id. */
+export function markupFields(schema: ScreenNode[], values: Record<string, unknown>): string[] {
+  return schemaFields(schema)
+    .filter((node) => PLAIN.has(node.type) && holdsMarkup(values[node.id]))
+    .map((node) => node.id)
+}
+
 /**
  * The form of a block, with the sample's words shown as placeholders in the empty fields that
  * take words: the editor sees what goes where without the example becoming the content.
+ *
+ * `marked` are plain fields whose value holds tags ({@see markupFields}); each gets `markupHelp`
+ * under it unless the type already says something there. Nothing is changed in the value — the
+ * tags are the author's, and the type moving the field to `wx-rich-text` with `inline` is what
+ * takes them out of sight.
  */
 export function withPlaceholders(
   nodes: ScreenNode[],
   sample: Record<string, unknown>,
+  marked: string[] = [],
+  markupHelp = '',
 ): ScreenNode[] {
   return nodes.map((node) => {
     if (LAYOUT.has(node.type)) {
-      return node.children ? { ...node, children: withPlaceholders(node.children, sample) } : node
+      return node.children
+        ? { ...node, children: withPlaceholders(node.children, sample, marked, markupHelp) }
+        : node
     }
 
-    if (node.type !== 'wx-input' && node.type !== 'wx-textarea') return node
-    if (node.props?.placeholder !== undefined) return node
+    const inline = node.type === 'wx-rich-text' && node.props?.inline === true
+    if (!PLAIN.has(node.type) && !inline) return node
 
-    const words = sampleWords(sample[node.id])
+    const helped =
+      markupHelp !== '' && marked.includes(node.id) && node.help === undefined
+        ? { ...node, help: markupHelp }
+        : node
 
-    return words === null ? node : { ...node, props: { ...(node.props ?? {}), placeholder: words } }
+    if (helped.props?.placeholder !== undefined) return helped
+
+    // An inline field's sample is markup itself; its placeholder is the words without it.
+    const words = sampleWords(sample[node.id], inline)
+
+    return words === null
+      ? helped
+      : { ...helped, props: { ...(helped.props ?? {}), placeholder: words } }
+  })
+}
+
+/**
+ * Whether the site reads shortcodes in a field's value: words a person wrote — a line, a
+ * paragraph, a rich text. An input typed as an e-mail, an address or a phone is a value the site
+ * prints into an attribute, and a `[phone]` there would be a broken link rather than a number.
+ */
+function takesShortcodes(node: ScreenNode): boolean {
+  if (node.type === 'wx-textarea' || node.type === 'wx-rich-text') return true
+  if (node.type !== 'wx-input') return false
+
+  const type = node.props?.type
+
+  return type === undefined || type === 'text'
+}
+
+/**
+ * The form of a block, with the site's shortcodes handed to every field the site reads them in —
+ * through layout and into a repeater's items, whose children are the fields of one item. A field
+ * whose type already set `tokens` keeps its own.
+ *
+ * Here and not in the panel's field types: the same `wx-input` is a slug or a search box on
+ * other screens, and only block content is printed through the shortcodes. `words` are the
+ * field's own words for them — core's defaults speak of placeholders, the panel of shortcodes.
+ */
+export function withShortcodes<T>(
+  nodes: ScreenNode[],
+  tokens: readonly T[],
+  words: { tokensTitle?: string; tokensLabel?: string } = {},
+): ScreenNode[] {
+  if (tokens.length === 0) return nodes
+
+  return nodes.map((node) => {
+    const children = node.children ? withShortcodes(node.children, tokens, words) : node.children
+    const next = children === node.children ? node : { ...node, children }
+
+    return takesShortcodes(node) && next.props?.tokens === undefined
+      ? { ...next, props: { ...words, ...(next.props ?? {}), tokens } }
+      : next
   })
 }
 
 /** A sample's text: itself, or the first language of a translated one. */
-function sampleWords(value: unknown): string | null {
-  if (typeof value === 'string') return value.trim() === '' ? null : value.slice(0, 160)
-
+function sampleWords(value: unknown, strip = false): string | null {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
-    for (const one of Object.values(value as Record<string, unknown>)) {
-      if (typeof one === 'string' && one.trim() !== '') return one.slice(0, 160)
-    }
+    value = Object.values(value as Record<string, unknown>).find(
+      (one) => typeof one === 'string' && one.trim() !== '',
+    )
   }
 
-  return null
+  if (typeof value !== 'string') return null
+
+  const words = strip ? value.replace(new RegExp(TAG.source, 'gi'), '') : value
+
+  return words.trim() === '' ? null : words.slice(0, 160)
 }
 
 /** The fields of a schema through its layout, flat — the variables a template gets. */

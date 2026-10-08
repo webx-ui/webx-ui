@@ -4,8 +4,10 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
   useDates,
+  useEditing,
   useErrorText,
   useTranslate,
+  WxEditingAlerts,
   WxSaveState,
   WxScreen,
   WxScreenHead,
@@ -18,7 +20,6 @@ import {
   toast,
   useLocales,
   WxActionBar,
-  WxAlert,
   WxBadge,
   WxBreadcrumb,
   WxBreadcrumbItem,
@@ -82,12 +83,43 @@ const loading = ref(true)
 const saving = ref(false)
 const working = ref(false)
 const errors = ref<Record<string, string[]>>({})
-const conflict = ref<ArticleConflict | null>(null)
 
 const snapshot = ref('')
 const reloadToken = ref(0)
 
 const canManage = computed(() => context.can('blog.articles.manage'))
+
+/*
+ * Other people on the same article: a refused save is merged with theirs field by field and
+ * saved again, only a field both changed is asked about, and a save made meanwhile — by a
+ * colleague or an agent — is offered before this editor writes over it.
+ */
+const editing = useEditing<ScreenModel>({
+  entity: 'articles',
+  id: () => article.value?.id,
+  values,
+  revision,
+  read: async () => {
+    const detail = await api.get(id.value)
+
+    return { values: detail.values, revision: detail.revision }
+  },
+  adopt: (theirs) => {
+    snapshot.value = JSON.stringify(theirs.values)
+    reloadToken.value += 1
+  },
+  // Published or restored by somebody else: the badge and the address follow, and the form
+  // stays as it is.
+  refresh: () => refresh(),
+  restore: async () => {
+    if (article.value) await api.restore(article.value.id)
+  },
+  canWrite: () => canManage.value,
+  busy: () => saving.value || flight !== undefined,
+  screen: 'blog.article-form',
+})
+
+const conflict = editing.conflict
 
 /** Closed for writing: no permission, or a publication in flight. */
 const locked = computed(() => !canManage.value || working.value)
@@ -178,6 +210,7 @@ function take(detail: ArticleDetail): void {
   options.value = detail.options
   related.value = detail.related
   snapshot.value = JSON.stringify(detail.values)
+  editing.opened(detail.values)
   conflict.value = null
 }
 
@@ -201,11 +234,28 @@ async function load(silent = false): Promise<void> {
   }
 }
 
+/**
+ * What surrounds the form, read again: the row with its status, the address, the preview. Not
+ * the values — the form is somebody's work in progress, and a change of its content is the
+ * notice's to offer.
+ */
+async function refresh(): Promise<void> {
+  try {
+    const detail = await api.get(id.value)
+
+    article.value = detail.article
+    prefix.value = detail.prefix
+    previewUrl.value = detail.preview_url
+  } catch {
+    // The heartbeat says what happened; a row that could not be read again stays as it was.
+  }
+}
+
 /* One pending save at a time, and one pending pause. */
 let timer: ReturnType<typeof setTimeout> | undefined
 
 function schedule(): void {
-  if (!canManage.value || conflict.value || !dirty.value) return
+  if (!canManage.value || conflict.value || !dirty.value || editing.stopped.value) return
 
   clearTimeout(timer)
   timer = setTimeout(() => void save(), PAUSE)
@@ -213,7 +263,8 @@ function schedule(): void {
 
 /** A field was left: write now rather than at the end of a pause nobody is waiting through. */
 function onFocusOut(): void {
-  if (!canManage.value || conflict.value || !dirty.value || saving.value) return
+  if (!canManage.value || conflict.value || !dirty.value || saving.value || editing.stopped.value)
+    return
 
   clearTimeout(timer)
   void save()
@@ -274,6 +325,9 @@ async function write(): Promise<void> {
 
     if (current.value === sending) snapshot.value = sending
 
+    // What the server holds now is what was sent: the base of the next merge.
+    editing.opened(sent)
+
     // The preview is rendered from the draft, and the draft is what was just written.
     reloadToken.value += 1
   } catch (error) {
@@ -283,11 +337,24 @@ async function write(): Promise<void> {
     }
 
     if (failure.status === 409 && failure.body?.data) {
-      conflict.value = failure.body
+      const theirs = failure.body.data
+
+      // Nothing overlapping: both edits are in the form now, and they go to the server again.
+      if (
+        editing.refused({
+          values: theirs.values,
+          revision: theirs.revision,
+          changed: failure.body.changed,
+        })
+      ) {
+        article.value = theirs.article
+        void save()
+      }
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
       toast.danger(t('article.save-failed'))
-    } else {
+    } else if (!(await editing.failed(error))) {
+      // In the bin is said by the notice above the form, with the way back; anything else here.
       toast.danger(message(error))
     }
   } finally {
@@ -295,36 +362,9 @@ async function write(): Promise<void> {
   }
 }
 
-/** Give up what was typed and take the article as it now is. */
+/** Give up what was typed and take the article as it now is; the component asked first. */
 async function takeTheirs(): Promise<void> {
-  const agreed = await confirm({
-    title: t('article.conflict-theirs-title'),
-    message: t('article.conflict-theirs-text'),
-    confirmText: t('article.conflict-theirs'),
-    cancelText: t('panel.cancel'),
-    tone: 'danger',
-  })
-
-  if (!agreed) return
-
   await load(true)
-}
-
-/**
- * Keep what was typed and write it over the other version.
- *
- * Nothing is lost by it: the version that is about to be overwritten is in the history if it
- * was published, and in the autosave ring if it was not.
- */
-async function keepMine(): Promise<void> {
-  const theirs = conflict.value
-
-  if (!theirs) return
-
-  revision.value = theirs.data.revision
-  conflict.value = null
-
-  await save()
 }
 
 /**
@@ -375,9 +415,15 @@ async function publish(): Promise<void> {
   if (dirty.value) await save()
   if (conflict.value || dirty.value) return
 
-  const row = article.value
+  if (!article.value) return
 
-  if (!row) return
+  // The draft on the server may hold somebody else's edit this editor never pulled in: said
+  // before it goes on the site, with whose it is and where, rather than published unseen.
+  const held = await editing.beforePublish()
+
+  if (!held) return
+
+  const row = article.value
 
   // Publishing moves a renamed slug, so the question names where the page will be, not where
   // it is — and says the old address will lead there, since that is what happens to it.
@@ -389,27 +435,30 @@ async function publish(): Promise<void> {
   const address = next === null ? null : `/${next}`
   const when = chosen.value === null ? t('article.publish-now') : dates.short(chosen.value)
 
-  const agreed = await confirm({
-    title: t('article.publish-title', { title: row.title }),
-    message: future.value
-      ? t('article.publish-later', { date: when })
-      : address === null
-        ? t('article.publish-nowhere')
-        : t('article.publish-text', { address }) + old,
-    confirmText: future.value ? t('article.schedule') : t('panel.publish'),
-    cancelText: t('panel.cancel'),
-  })
+  // One question is enough: whoever just agreed to publish somebody else's changes has said yes.
+  const agreed =
+    held.asked ||
+    (await confirm({
+      title: t('article.publish-title', { title: row.title }),
+      message: future.value
+        ? t('article.publish-later', { date: when })
+        : address === null
+          ? t('article.publish-nowhere')
+          : t('article.publish-text', { address }) + old,
+      confirmText: future.value ? t('article.schedule') : t('panel.publish'),
+      cancelText: t('panel.cancel'),
+    }))
 
   if (!agreed) return
 
   working.value = true
 
   try {
-    await api.publish(row.id, chosen.value)
+    await api.publish(row.id, chosen.value, held.revision)
     await load(true)
     toast.success(future.value ? t('article.scheduled') : t('panel.published'))
   } catch (error) {
-    toast.danger(message(error))
+    if (!(await editing.failed(error))) toast.danger(message(error))
   } finally {
     working.value = false
   }
@@ -595,24 +644,9 @@ const actions = computed<ScreenAction[]>(() => {
         </template>
       </wx-screen-head>
 
-      <!-- Somebody else wrote while this editor was typing. Both versions still exist, so the
-           question is which one the site gets — and it is a question, not a toast that
-           disappears while the answer is being thought about. -->
-      <wx-alert
-        v-if="conflict"
-        type="warning"
-        :title="t('article.conflict-title')"
-        :description="conflict.message"
-      >
-        <template #actions>
-          <wx-button size="sm" variant="outline" @click="takeTheirs">
-            {{ t('article.conflict-theirs') }}
-          </wx-button>
-          <wx-button size="sm" type="primary" @click="keepMine">
-            {{ t('article.conflict-mine') }}
-          </wx-button>
-        </template>
-      </wx-alert>
+      <!-- Somebody else wrote while this editor was open. What does not overlap is merged
+           without a word; what does is listed place by place. -->
+      <wx-editing-alerts :editing="editing" @save="save" @theirs="takeTheirs" />
 
       <div class="wx-article-editor__screen">
         <wx-screen v-model="values" name="blog.article-form" :errors="errors" :disabled="locked" />
@@ -634,17 +668,24 @@ const actions = computed<ScreenAction[]>(() => {
       -->
       <wx-action-bar v-if="canManage">
         <template #state>
-          <wx-save-state :state="state" />
+          <wx-save-state v-if="!editing.stopped.value" :state="state" />
         </template>
 
-        <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
+        <wx-button
+          variant="outline"
+          :loading="saving"
+          :disabled="!dirty || editing.stopped.value"
+          :title="editing.blocked.value"
+          @click="save"
+        >
           {{ t('article.save') }}
         </wx-button>
 
         <wx-button
           type="primary"
           :loading="working"
-          :disabled="article.status === 'published' && !dirty"
+          :disabled="editing.stopped.value || (article.status === 'published' && !dirty)"
+          :title="editing.blocked.value"
           @click="publish"
         >
           {{ future ? t('article.schedule') : t('panel.publish') }}

@@ -1,5 +1,6 @@
 <script setup>
 import RichTextDemo from '../components/demos/RichTextDemo.vue'
+import RichTextInlineDemo from '../components/demos/RichTextInlineDemo.vue'
 </script>
 
 # RichText
@@ -126,7 +127,8 @@ opened in, so whoever opens it translates it:
 ```
 
 The keys are the tool keys, the table tools (`addRowAfter`, `deleteTable`, …), and
-`toolbar`, `linkAddress`, `youtubeAddress`, `apply`, `cancel` and `uploading`. A key left out
+`toolbar`, `linkAddress`, `youtubeAddress`, `apply`, `cancel`, `uploading`, and the three of the
+[source view](#html-source) — `sourceLoss`, `sourceDrop`, `sourceKeep`. A key left out
 stays English rather than blank. In a WebX panel none of this is written by hand:
 [`wx-rich-text`](/guide/screens) is the same editor with the panel's dictionary already behind
 it.
@@ -139,25 +141,79 @@ Columns are resizable by dragging.
 
 The YouTube button asks for a URL and embeds it through `youtube-nocookie.com`.
 
+## HTML source
+
+The last button, `</>`, turns the field into the HTML behind it — highlighted, one block to a
+line, indented where blocks hold blocks — and back. It is for the jobs the toolbar cannot do:
+seeing what a paste from a word processor really left behind, fixing a link's `rel` by hand,
+pasting a fragment a copywriter prepared. (The `<>` button next to Bold is inline code, a
+different thing.)
+
+What is typed goes to the model as it is typed, so a form saved with the source still open
+saves what is on screen. Leaving the source hands it to the editor, which keeps only what its
+schema knows — paragraphs, headings, lists, quotes, links, tables, pictures, videos. When a
+hand edit holds anything else — a `<div>`, a `<span>`, a `style` or a `class` — the view stays
+open and names it first, with a choice to remove it or keep editing. Nothing goes without a
+word, and a source left untouched leaves the value exactly as it was.
+
+The source is not a way around the server: a WebX panel stores rich text through an allowlist
+whichever way it was typed — see [below](#sanitise-on-the-server-anyway).
+
+A read-only field still opens its source, to be read. A field that should not show it leaves
+`source` out of `tools`.
+
+## Inline
+
+A heading often carries a touch of markup — a coloured full stop, one word in italics — and a
+plain input shows that markup raw, one stray keystroke from printing `</span>` on the site.
+`inline` turns the editor into one line for exactly that:
+
+<RichTextInlineDemo />
+
+```vue
+<template>
+  <wx-rich-text v-model="heading" inline placeholder="Heading" />
+</template>
+```
+
+The value is the line itself, with no paragraph around it —
+`Deeply heard<span>.</span> Gently guided` — so a template prints it inside its own `<h1>`.
+Enter does nothing, pasted lines become one line, and the toolbar is bold, italic and accent.
+The accent is a bare `<span>`: what a heading written by hand already holds and what the site's
+styles colour. Anything else pasted in — a heading, a list, a link — leaves its words and loses
+its tags. `tools` still decides the buttons; `source` works here too.
+
+## Placeholders
+
+The same as [Input](/components/input#placeholders): `tokens` turns on the list on `[` and a
+button at the end of the toolbar that lists them all. The chips are a decoration over the text,
+not a node of the document: `getHTML()` answers with `[phone]` as plain text, so the stored HTML is
+the one the site reads, and a chip cannot be half-deleted into markup nobody can see. The
+[inline](#inline) field has them too.
+
 ## Props
 
-| Prop          | Type                                             | Default                 | Description                                                       |
-| ------------- | ------------------------------------------------ | ----------------------- | ----------------------------------------------------------------- |
-| `modelValue`  | `string                                          | Record<string, string>` | `''`                                                              | HTML content; a map per language under `localized` |
-| `placeholder` | `string`                                         | —                       | Shown while the document is empty                                 |
-| `tools`       | `RichTextTool[]`                                 | all                     | Which buttons appear, in order                                    |
-| `upload`      | `(file: File) => Promise<{ url, alt? }>`         | —                       | Handles pasted, dropped and picked files                          |
-| `pickImage`   | `() => Promise<string \| null>`                  | —                       | Opens a media library; `null` cancels                             |
-| `accept`      | `string[]`                                       | image types             | MIME types accepted for upload                                    |
-| `localized`   | `boolean`                                        | `false`                 | Edits one language at a time; the model becomes a map             |
-| `labels`      | `RichTextLabels`                                 | English                 | What the buttons and the link bar are called                      |
-| `minHeight`   | `string`                                         | `'220px'`               | Height before the editor starts growing                           |
-| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`                  | Control size                                                      |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`             | Validation state                                                  |
-| `disabled`    | `boolean`                                        | `false`                 | Disables the editor and its toolbar                               |
-| `readonly`    | `boolean`                                        | `false`                 | Content stays visible but cannot be edited                        |
-| `id`          | `string`                                         | generated               | Overrides the `id` the label points at; `WxFormItem` supplies one |
-| `ariaLabel`   | `string`                                         | —                       | Label when there is no visible one                                |
+| Prop          | Type                                             | Default                  | Description                                                             |
+| ------------- | ------------------------------------------------ | ------------------------ | ----------------------------------------------------------------------- |
+| `modelValue`  | `string \| Record<string, string>`               | `''`                     | HTML content; a map per language under `localized`                      |
+| `placeholder` | `string`                                         | —                        | Shown while the document is empty                                       |
+| `inline`      | `boolean`                                        | `false`                  | One line with a few marks instead of a document — see [Inline](#inline) |
+| `tools`       | `RichTextTool[]`                                 | all; inline: three       | Which buttons appear, in order                                          |
+| `upload`      | `(file: File) => Promise<{ url, alt? }>`         | —                        | Handles pasted, dropped and picked files                                |
+| `pickImage`   | `() => Promise<string \| null>`                  | —                        | Opens a media library; `null` cancels                                   |
+| `accept`      | `string[]`                                       | image types              | MIME types accepted for upload                                          |
+| `localized`   | `boolean`                                        | `false`                  | Edits one language at a time; the model becomes a map                   |
+| `labels`      | `RichTextLabels`                                 | English                  | What the buttons and the link bar are called                            |
+| `tokens`      | `TokenOption[]`                                  | —                        | Placeholders to suggest on `[`, list from the button and draw as chips  |
+| `tokensTitle` | `string`                                         | `'Placeholders'`         | Heading of the list the button opens                                    |
+| `tokensLabel` | `string`                                         | `'Insert a placeholder'` | Name and tooltip of the button                                          |
+| `minHeight`   | `string`                                         | `'220px'`; inline: none  | Height before the editor starts growing                                 |
+| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`                   | Control size                                                            |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`              | Validation state                                                        |
+| `disabled`    | `boolean`                                        | `false`                  | Disables the editor and its toolbar                                     |
+| `readonly`    | `boolean`                                        | `false`                  | Content stays visible but cannot be edited                              |
+| `id`          | `string`                                         | generated                | Overrides the `id` the label points at; `WxFormItem` supplies one       |
+| `ariaLabel`   | `string`                                         | —                        | Label when there is no visible one                                      |
 
 **Events:** `update:modelValue` (`string`), `change` (`string`), `focus`, `blur`,
 `upload-error` (`error`, `file`).
@@ -167,9 +223,9 @@ The YouTube button asks for a URL and embeds it through `youtube-nocookie.com`.
 **Exposed:** `editor` — the Tiptap instance, for commands this component does not wrap — plus
 `focus()` and `clear()`.
 
-Tool keys: `bold`, `italic`, `strike`, `code`, `h2`, `h3`, `h4`, `bulletList`, `orderedList`,
-`blockquote`, `hr`, `link`, `table`, `image`, `youtube`, `undo`, `redo`, and `divider` for a
-separator.
+Tool keys: `bold`, `italic`, `accent` (a bare `<span>`, meant for `inline`), `strike`, `code`, `h2`, `h3`, `h4`, `bulletList`, `orderedList`,
+`blockquote`, `hr`, `link`, `table`, `image`, `youtube`, `undo`, `redo`, `source`, and `divider`
+for a separator.
 
 ```vue
 <template>

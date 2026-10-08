@@ -94,6 +94,15 @@ final class ImageEditing
 
         $size = $this->manager()->read($contents);
 
+        // Kept as it arrived, and the picture may have been converted since — a JPEG original
+        // of what is now a WebP. Written into what the key says, or the key would lie.
+        if (strtolower(pathinfo((string) $file->original_path, PATHINFO_EXTENSION)) !== strtolower($file->extension)) {
+            $contents = (string) $size->encodeByExtension(
+                $file->extension,
+                quality: (int) $this->config->get('webx-media.image.quality', 85),
+            );
+        }
+
         $this->connection->connection()->transaction(function () use ($contents, $disk, $file, $size): void {
             $file->fill([
                 'hash' => md5($contents),

@@ -8,6 +8,7 @@ use Illuminate\Database\ConnectionInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Localization\Locales;
@@ -103,6 +104,9 @@ final class RecipeController
             return new JsonResponse([
                 'message' => (string) __('webx-recipes::errors.conflict'),
                 'data' => $form->describe($this->loaded($recipe), $this->author($request)),
+                // Who it was and through which door: «Administrator» is also the name an agent
+                // writes under, and an editor who reads it as a colleague asks the wrong person.
+                'changed' => LastChange::of($recipe, $request->user()),
             ], 409);
         }
 

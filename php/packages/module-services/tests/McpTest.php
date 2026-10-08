@@ -147,7 +147,7 @@ final class McpTest extends TestCase
         $this->agent('services_update', ['service' => $id, 'values' => ['seo' => [
             'title' => ['en' => 'Crowns'],
             'description' => ['en' => 'Ceramic crowns.'],
-        ]]])->assertOk();
+        ]], 'force' => true])->assertOk();
 
         $read = $this->content($this->agent('services_get', ['service' => $id]));
 
@@ -190,10 +190,10 @@ final class McpTest extends TestCase
 
         $service = $this->service('crowns');
 
-        $this->agent('services_update', ['service' => $service->getKey(), 'values' => ['price-from' => 'a lot']])
+        $this->agent('services_update', ['service' => $service->getKey(), 'values' => ['price-from' => 'a lot'], 'force' => true])
             ->assertHasErrors(['price-from']);
 
-        $content = $this->content($this->agent('services_update', ['service' => $service->getKey(), 'values' => ['price-from' => 450]]));
+        $content = $this->content($this->agent('services_update', ['service' => $service->getKey(), 'values' => ['price-from' => 450], 'force' => true]));
 
         $this->assertSame(450, $content['values']['price-from']);
 
@@ -242,7 +242,7 @@ final class McpTest extends TestCase
 
         $this->agent('services_discard', ['service' => $crowns->getKey()])->assertHasErrors(['has no draft']);
 
-        $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']]])->assertOk();
+        $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']], 'force' => true])->assertOk();
 
         $dry = $this->content($this->agent('services_discard', ['service' => $crowns->getKey(), 'dry_run' => true]));
         $this->assertSame(['title'], $dry['would_discard']);
@@ -257,7 +257,7 @@ final class McpTest extends TestCase
     public function the_history_of_a_service_is_listed_and_a_publication_comes_back_into_the_draft(): void
     {
         $crowns = $this->service('crowns');
-        $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']]])->assertOk();
+        $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']], 'force' => true])->assertOk();
         $this->agent('services_publish', ['service' => $crowns->getKey()])->assertOk();
 
         $history = $this->content($this->agent('services_versions', ['service' => $crowns->getKey()]));
@@ -268,6 +268,23 @@ final class McpTest extends TestCase
 
         $this->assertSame('Crowns', $crowns->refresh()->draftValues()['title']['en'] ?? null);
         $this->assertSame('Crowns and bridges', $crowns->title, 'the site keeps what it shows');
+    }
+
+    #[Test]
+    public function an_agent_writes_what_it_read_or_says_force(): void
+    {
+        $crowns = $this->service('crowns');
+
+        $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']]])
+            ->assertHasErrors(['Read the service first']);
+        $this->assertFalse($crowns->refresh()->hasDraft());
+
+        $read = $this->content($this->agent('services_get', ['service' => $crowns->getKey()]));
+        $this->assertSame([], $read['being_edited_by']);
+
+        $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']], 'force' => true])
+            ->assertOk();
+        $this->assertSame('Crowns and bridges', $crowns->refresh()->draftValues()['title']['en'] ?? null);
     }
 
     private function resource(string $uri): McpResource

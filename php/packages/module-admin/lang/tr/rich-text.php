@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Kalın',
     'italic' => 'İtalik',
+    'accent' => 'Vurgu',
     'strike' => 'Üstü çizili',
     'code' => 'Satır içi kod',
     'h2' => 'Başlık 2',
@@ -34,4 +35,8 @@ return [
     'apply' => 'Uygula',
     'cancel' => 'İptal',
     'uploading' => 'Yükleniyor…',
+    'source' => 'HTML kaynağı',
+    'source-loss' => 'Düzenleyici bu işaretlemeyi tutmaz ve kaldıracak:',
+    'source-drop' => 'Kaldır',
+    'source-keep' => 'Düzenlemeye devam et',
 ];

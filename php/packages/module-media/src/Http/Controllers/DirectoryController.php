@@ -72,6 +72,27 @@ final class DirectoryController
         return ApiResponse::data(new DirectoryResource($directory->refresh()));
     }
 
+    /**
+     * What deleting a folder would take with it — the counts through the whole subtree, and the
+     * files in it the site still uses — so the panel asks once, with all of it in the question.
+     */
+    public function contents(MediaDirectory $directory): JsonResponse
+    {
+        $contents = $this->directories->contents($directory);
+
+        return ApiResponse::data([
+            'files' => $contents->files,
+            'directories' => $contents->directories,
+            'in_use' => $contents->files > 0 ? $this->directories->usage($directory) : [],
+        ]);
+    }
+
+    /** «Delete only the unused»: what goes and what stays, said back for the toast. */
+    public function destroyUnused(MediaDirectory $directory): JsonResponse
+    {
+        return ApiResponse::data($this->directories->deleteUnused($directory));
+    }
+
     public function destroy(Request $request, MediaDirectory $directory): JsonResponse
     {
         $this->directories->delete($directory, $request->boolean('force'));

@@ -68,8 +68,16 @@ own fields into `project-fields`.
   on the site at once. Leave it empty and call `articles_publish` (with `at` for a later day).
 - Do not write the body through `articles_update`: a `blocks` key is refused. Content goes
   through `blocks_edit_content`, which changes one node and leaves the rest alone.
-- Do not save without the `revision` you read: a stale one is answered `409` with the article as
-  it now is. Read again and redo the change.
+- Do not write without the `revision` articles_get gave you: `articles_update` refuses a write
+  with none and refuses a stale one. Read again and redo the change; do not retry blindly.
+  `force: true` writes without one and is for a script that means to overwrite, not for an
+  agent working beside people. `articles_get` names in `being_edited_by` who has the article open
+  in the panel right now — tell your user before writing under them. Their editor merges your
+  write with theirs field by field, and a draft written over by somebody else is kept: the
+  panel's History lists it under Drafts, and «Restore» puts it back.
+- `articles_publish`, `articles_unpublish`, `articles_discard`, `articles_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
+  one is refused, and while somebody has the article open in the panel (`being_edited_by`) one is
+  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
 - Do not change the prefix by editing rows: run `webx:routes:rebuild` for the three types, which
   recomputes the paths and keeps the old ones as redirecting aliases. A raw update leaves dead
   addresses behind.

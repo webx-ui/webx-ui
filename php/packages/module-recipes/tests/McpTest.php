@@ -151,6 +151,7 @@ final class McpTest extends TestCase
         $got = $this->content($this->agent('recipes_update', [
             'recipe' => '/recipes/porridge',
             'values' => ['services' => [(string) $plan->id], 'related' => ['/recipes/lentil-soup']],
+            'force' => true,
         ]));
 
         $this->assertSame([$plan->id], $got['values']['services']);
@@ -167,6 +168,21 @@ final class McpTest extends TestCase
         $this->agent('recipes_update', ['recipe' => $recipe->id, 'values' => ['lead' => 'First.'], 'revision' => $revision])->assertOk();
         $this->agent('recipes_update', ['recipe' => $recipe->id, 'values' => ['lead' => 'Second.'], 'revision' => $revision])
             ->assertHasErrors(['changed since you read it']);
+    }
+
+    #[Test]
+    public function an_agent_writes_what_it_read_or_says_force(): void
+    {
+        $recipe = $this->recipe('porridge');
+
+        $this->agent('recipes_update', ['recipe' => $recipe->id, 'values' => ['lead' => 'Unread.']])
+            ->assertHasErrors(['Read the recipe first']);
+        $this->assertFalse($recipe->refresh()->hasDraft());
+
+        $this->assertSame([], $this->content($this->agent('recipes_get', ['recipe' => $recipe->id]))['being_edited_by']);
+
+        $this->agent('recipes_update', ['recipe' => $recipe->id, 'values' => ['lead' => 'Forced.'], 'force' => true])->assertOk();
+        $this->assertTrue($recipe->refresh()->hasDraft());
     }
 
     #[Test]

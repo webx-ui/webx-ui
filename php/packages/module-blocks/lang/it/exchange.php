@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'export' => 'Esporta',
+    'import' => 'Importa',
+    'export-title' => 'Esporta blocchi',
+    'import-title' => 'Importa blocchi',
+    'export-help' => 'Scegli i tipi. I componenti che richiamano viaggiano con loro, così il file funziona così com’è su un altro sito.',
+    'select-all' => 'Seleziona tutti',
+    'drafts' => 'Prendi le bozze dove ci sono',
+    'drafts-help' => 'Altrimenti parte la versione pubblicata, e un tipo mai pubblicato viene escluso.',
+    'download' => 'Scarica',
+    'exported' => 'Tipi nel file: :count',
+    'skipped' => 'Mai pubblicati, esclusi: :list',
+    'missing' => 'Richiamati, ma non presenti su questo sito: :list',
+    'nothing' => 'Niente da esportare: nessuno dei tipi scelti è pubblicato.',
+    'export-failed' => 'L’esportazione non è riuscita.',
+    'import-help' => 'Un file esportato da questa sezione o con il comando webx:blocks:export. I tipi arrivano come bozze; un tipo già presente riceve una nuova versione in bozza.',
+    'choose-file' => 'Scegli un file',
+    'other-file' => 'Un altro file',
+    'publish' => 'Pubblica ciò che supera i controlli',
+    'status-created' => 'Nuovo',
+    'status-updated' => 'Da aggiornare',
+    'status-unchanged' => 'Invariato',
+    'status-failed' => 'Rifiutato',
+    'run' => 'Importa',
+    'imported' => 'Tipi scritti: :count',
+    'up-to-date' => 'Tutto ciò che è nel file è già qui; non c’è nulla da scrivere.',
+    'not-json' => 'Questo file non è JSON.',
+    'not-a-pack' => 'Questo file non contiene un tipo di blocco né un pacchetto di tipi.',
+    'cycle' => 'I tipi nel file si richiamano a vicenda in cerchio: :path.',
+    'import-failed' => 'L’importazione non è riuscita.',
+];

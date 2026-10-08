@@ -6,8 +6,10 @@ import {
   provideRelationOwner,
   useAdmin,
   useDates,
+  useEditing,
   useErrorText,
   useTranslate,
+  WxEditingAlerts,
   WxSaveState,
   WxScreen,
   WxScreenHead,
@@ -19,7 +21,6 @@ import {
   toast,
   useLocales,
   WxActionBar,
-  WxAlert,
   WxBadge,
   WxBreadcrumb,
   WxBreadcrumbItem,
@@ -43,8 +44,8 @@ import type { EventConflict, EventDetail, EventRow } from './types'
  * card `module-seo` patches on and the history — so a project adds its own field with a patch
  * rather than a fork of this file. Saving is by autosave into the draft, and the draft carries
  * the categories and the services too: the site changes, all of it at once, only on "Publish".
- * Edits are guarded by a revision: a save over somebody else's is refused with a 409 and the
- * question of which version the site gets.
+ * Edits are guarded by a revision: a save over somebody else's is refused with a 409, merged
+ * with theirs, and asked about only where both changed the same place.
  *
  * The dates are moments with their offset (`valueFormat` on the screen's pickers), so the same
  * event reads the same hour in every browser and the server keeps it in its own zone (decision
@@ -83,11 +84,41 @@ const loading = ref(true)
 const saving = ref(false)
 const working = ref(false)
 const errors = ref<Record<string, string[]>>({})
-const conflict = ref<EventConflict | null>(null)
 
 const snapshot = ref('')
 
 const canManage = computed(() => context.can('events.manage'))
+
+/*
+ * Other people on the same event: a refused save is merged with theirs field by field and
+ * saved again, only a field both changed is asked about, and a save made meanwhile — by a
+ * colleague or an agent — is offered before this editor writes over it.
+ */
+const editing = useEditing<ScreenModel>({
+  entity: 'events',
+  id: () => event.value?.id,
+  values,
+  revision,
+  read: async () => {
+    const detail = await api.get(id.value)
+
+    return { values: detail.values, revision: detail.revision }
+  },
+  adopt: (theirs) => {
+    snapshot.value = JSON.stringify(theirs.values)
+  },
+  // Published or restored by somebody else: the badge and the address follow, and the form
+  // stays as it is.
+  refresh: () => refresh(),
+  restore: async () => {
+    if (event.value) await api.restore(event.value.id)
+  },
+  canWrite: () => canManage.value,
+  busy: () => saving.value,
+  screen: 'events.form',
+})
+
+const conflict = editing.conflict
 
 /** Closed for writing: no permission, or a publication in flight. */
 const locked = computed(() => !canManage.value || working.value)
@@ -151,6 +182,7 @@ function take(detail: EventDetail): void {
   prefix.value = detail.prefix
   previewUrl.value = detail.preview_url
   snapshot.value = JSON.stringify(taken)
+  editing.opened(taken)
   conflict.value = null
 }
 
@@ -171,11 +203,28 @@ async function load(silent = false): Promise<void> {
   }
 }
 
+/**
+ * What surrounds the form, read again: the row with its status, the address, the preview. Not
+ * the values — the form is somebody's work in progress, and a change of its content is the
+ * notice's to offer.
+ */
+async function refresh(): Promise<void> {
+  try {
+    const detail = await api.get(id.value)
+
+    event.value = detail.event
+    prefix.value = detail.prefix
+    previewUrl.value = detail.preview_url
+  } catch {
+    // The heartbeat says what happened; a row that could not be read again stays as it was.
+  }
+}
+
 /* One pending save at a time, and one pending pause. */
 let timer: ReturnType<typeof setTimeout> | undefined
 
 function schedule(): void {
-  if (!canManage.value || conflict.value || !dirty.value) return
+  if (!canManage.value || conflict.value || !dirty.value || editing.stopped.value) return
 
   clearTimeout(timer)
   timer = setTimeout(() => void save(), PAUSE)
@@ -183,7 +232,8 @@ function schedule(): void {
 
 /** A field was left: write now rather than at the end of a pause nobody is waiting through. */
 function onFocusOut(): void {
-  if (!canManage.value || conflict.value || !dirty.value || saving.value) return
+  if (!canManage.value || conflict.value || !dirty.value || saving.value || editing.stopped.value)
+    return
 
   clearTimeout(timer)
   void save()
@@ -202,6 +252,10 @@ async function save(): Promise<void> {
   saving.value = true
   errors.value = {}
 
+  // A refused save merged clean goes out again — after this one, since `save` stays shut while
+  // a request is on its way.
+  let merged = false
+
   try {
     const detail = await api.save(event.value.id, { values: sent, revision: revision.value })
 
@@ -212,6 +266,9 @@ async function save(): Promise<void> {
     conflict.value = null
 
     if (current.value === sending) snapshot.value = sending
+
+    // What the server holds now is what was sent: the base of the next merge.
+    editing.opened(sent)
   } catch (error) {
     const failure = error as {
       status?: number
@@ -219,43 +276,36 @@ async function save(): Promise<void> {
     }
 
     if (failure.status === 409 && failure.body?.data) {
-      conflict.value = failure.body
+      const theirs = failure.body.data
+
+      // Nothing overlapping: both edits are in the form now, and they go to the server again.
+      if (
+        editing.refused({
+          values: theirs.values,
+          revision: theirs.revision,
+          changed: failure.body.changed,
+        })
+      ) {
+        event.value = theirs.event
+        merged = true
+      }
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
       toast.danger(t('event.save-failed'))
-    } else {
+    } else if (!(await editing.failed(error))) {
+      // In the bin is said by the notice above the form, with the way back; anything else here.
       toast.danger(message(error))
     }
   } finally {
     saving.value = false
   }
+
+  if (merged) await save()
 }
 
-/** Give up what was typed and take the event as it now is. */
+/** Give up what was typed and take the event as it now is; the component asked first. */
 async function takeTheirs(): Promise<void> {
-  const agreed = await confirm({
-    title: t('event.conflict-theirs-title'),
-    message: t('event.conflict-theirs-text'),
-    confirmText: t('event.conflict-theirs'),
-    cancelText: t('panel.cancel'),
-    tone: 'danger',
-  })
-
-  if (!agreed) return
-
   await load(true)
-}
-
-/** Keep what was typed and write it over the other version — which is still in the history. */
-async function keepMine(): Promise<void> {
-  const theirs = conflict.value
-
-  if (!theirs) return
-
-  revision.value = theirs.data.revision
-  conflict.value = null
-
-  await save()
 }
 
 /** Throw away what is waiting — asked about, because it is the one button here that loses writing. */
@@ -292,9 +342,15 @@ async function publish(): Promise<void> {
   if (dirty.value) await save()
   if (conflict.value || dirty.value) return
 
-  const row = event.value
+  if (!event.value) return
 
-  if (!row) return
+  // The draft on the server may hold somebody else's edit this editor never pulled in: said
+  // before it goes on the site, with whose it is and where, rather than published unseen.
+  const held = await editing.beforePublish()
+
+  if (!held) return
+
+  const row = event.value
 
   // Publishing moves a renamed slug, so the question names where the page will be, not where
   // it is — and says the old address will lead there, since that is what happens to it.
@@ -304,26 +360,29 @@ async function publish(): Promise<void> {
       ? ` ${panel('editor.publish-moves', { old: `/${row.path}` })}`
       : ''
 
-  const agreed = await confirm({
-    title: t('event.publish-title', { title: title.value || row.title }),
-    message:
-      next === null
-        ? t('event.publish-nowhere')
-        : t('event.publish-text', { address: `/${next}` }) + old,
-    confirmText: t('panel.publish'),
-    cancelText: t('panel.cancel'),
-  })
+  // One question is enough: whoever just agreed to publish somebody else's changes has said yes.
+  const agreed =
+    held.asked ||
+    (await confirm({
+      title: t('event.publish-title', { title: title.value || row.title }),
+      message:
+        next === null
+          ? t('event.publish-nowhere')
+          : t('event.publish-text', { address: `/${next}` }) + old,
+      confirmText: t('panel.publish'),
+      cancelText: t('panel.cancel'),
+    }))
 
   if (!agreed) return
 
   working.value = true
 
   try {
-    await api.publish(row.id)
+    await api.publish(row.id, held.revision)
     await load(true)
     toast.success(t('panel.published'))
   } catch (error) {
-    toast.danger(message(error))
+    if (!(await editing.failed(error))) toast.danger(message(error))
   } finally {
     working.value = false
   }
@@ -515,29 +574,15 @@ const actions = computed<ScreenAction[]>(() => {
         </template>
       </wx-screen-head>
 
-      <!-- Somebody else wrote while this editor was typing. Both versions still exist, so the
-           question is which one the site gets — a question, not a toast that disappears. -->
-      <wx-alert
-        v-if="conflict"
-        type="warning"
-        :title="t('event.conflict-title')"
-        :description="conflict.message"
-      >
-        <template #actions>
-          <wx-button size="sm" variant="outline" @click="takeTheirs">
-            {{ t('event.conflict-theirs') }}
-          </wx-button>
-          <wx-button size="sm" type="primary" @click="keepMine">
-            {{ t('event.conflict-mine') }}
-          </wx-button>
-        </template>
-      </wx-alert>
+      <!-- Somebody else wrote while this editor was open. What does not overlap is merged
+           without a word; what does is listed place by place. -->
+      <wx-editing-alerts :editing="editing" @save="save" @theirs="takeTheirs" />
 
       <wx-screen v-model="values" name="events.form" :errors="errors" :disabled="locked" />
 
       <wx-action-bar v-if="canManage">
         <template #state>
-          <wx-save-state :state="state" />
+          <wx-save-state v-if="!editing.stopped.value" :state="state" />
         </template>
 
         <!-- The way to the next date of the same event: there are no series (decision 9). -->
@@ -551,14 +596,21 @@ const actions = computed<ScreenAction[]>(() => {
           <span class="wx-event-editor__word">{{ t('panel.duplicate') }}</span>
         </wx-button>
 
-        <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
+        <wx-button
+          variant="outline"
+          :loading="saving"
+          :disabled="!dirty || editing.stopped.value"
+          :title="editing.blocked.value"
+          @click="save"
+        >
           {{ t('event.save') }}
         </wx-button>
 
         <wx-button
           type="primary"
           :loading="working"
-          :disabled="event.status === 'published' && !dirty"
+          :disabled="editing.stopped.value || (event.status === 'published' && !dirty)"
+          :title="editing.blocked.value"
           @click="publish"
         >
           {{ t('panel.publish') }}

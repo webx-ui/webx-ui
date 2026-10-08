@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { computed, nextTick, ref } from 'vue'
 import { localesKey } from '../../composables/useLocalized'
 import WxRichText from './RichText.vue'
+import WxCodeEditor from '../CodeEditor/CodeEditor.vue'
 
 type Wrapper = ReturnType<typeof mount>
 
@@ -404,5 +405,254 @@ describe('WxRichText', () => {
       expect(wrapper.classes()).not.toContain('is-localized')
       expect(wrapper.find('.wx-locale-picker').exists()).toBe(false)
     })
+  })
+
+  describe('inline', () => {
+    const heading = 'Deeply heard<span>.</span> Gently guided'
+
+    it('keeps a line with its accent exactly as it came, with no paragraph around it', async () => {
+      const wrapper = await mountEditor({ inline: true, modelValue: heading })
+
+      expect(editorOf(wrapper).getHTML()).toBe(heading)
+      expect(wrapper.find('.wx-rich-text').classes()).toContain('is-inline')
+    })
+
+    it('offers bold, italic and accent, and nothing a document needs', async () => {
+      const wrapper = await mountEditor({ inline: true })
+      const labels = wrapper
+        .findAll('[role="toolbar"] button')
+        .map((b) => b.attributes('aria-label'))
+
+      expect(labels).toEqual(['Bold', 'Italic', 'Accent'])
+    })
+
+    it('wraps the selection in a span from the accent button', async () => {
+      const wrapper = await mountEditor({ inline: true, modelValue: 'Calm' })
+      editorOf(wrapper).commands.selectAll()
+
+      await toolByLabel(wrapper, 'Accent').trigger('click')
+      await nextTick()
+
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['<span>Calm</span>'])
+    })
+
+    it('flattens paragraphs and drops what a line cannot hold', async () => {
+      const wrapper = await mountEditor({ inline: true })
+
+      editorOf(wrapper).commands.setContent('<h2>One <em>two</em></h2><ul><li>three</li></ul>')
+      await nextTick()
+
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['One <em>two</em>three'])
+    })
+
+    it('does not break the line on Enter', async () => {
+      const wrapper = await mountEditor({ inline: true, modelValue: 'One line' })
+      const surface = wrapper.get('.ProseMirror')
+
+      await surface.trigger('keydown', { key: 'Enter' })
+      await nextTick()
+
+      expect(editorOf(wrapper).getHTML()).toBe('One line')
+    })
+
+    it('still takes the tools it is given', async () => {
+      const wrapper = await mountEditor({ inline: true, tools: ['bold', 'source'] })
+
+      expect(wrapper.findAll('[role="toolbar"] button')).toHaveLength(2)
+    })
+  })
+
+  describe('the source view', () => {
+    async function openSource(props: Record<string, unknown>) {
+      const wrapper = await mountEditor(props)
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+      return wrapper
+    }
+
+    function typeSource(wrapper: Wrapper, html: string) {
+      wrapper.findComponent(WxCodeEditor).vm.$emit('update:modelValue', html)
+    }
+
+    it('shows the document as indented HTML and hides the editor', async () => {
+      const wrapper = await openSource({ modelValue: '<ul><li><p>One</p></li></ul>' })
+      const code = wrapper.findComponent(WxCodeEditor)
+
+      expect(code.props('modelValue')).toBe('<ul>\n  <li>\n    <p>One</p>\n  </li>\n</ul>')
+      expect(code.props('language')).toBe('html')
+      expect((wrapper.get('.wx-rich-text__body').element as HTMLElement).style.display).toBe('none')
+      expect(toolByLabel(wrapper, 'Bold').attributes('disabled')).toBeDefined()
+      expect(toolByLabel(wrapper, 'HTML source').attributes('aria-pressed')).toBe('true')
+    })
+
+    it('opened and closed untouched, changes nothing', async () => {
+      const wrapper = await openSource({ modelValue: '<h2>Title</h2><p>Text</p>' })
+
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+
+      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(false)
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+      expect(wrapper.emitted('change')).toBeUndefined()
+    })
+
+    it('sends what is typed to the model at once, and the editor’s HTML on the way out', async () => {
+      const wrapper = await openSource({ modelValue: '<p>Old</p>' })
+
+      typeSource(wrapper, '<p>New <b>bold</b></p>')
+      await flush()
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe('<p>New <b>bold</b></p>')
+
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+
+      expect(editorOf(wrapper).getHTML()).toBe('<p>New <strong>bold</strong></p>')
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(
+        '<p>New <strong>bold</strong></p>',
+      )
+    })
+
+    it('stops before dropping markup and says what would go', async () => {
+      const wrapper = await openSource({ modelValue: '<p>Old</p>' })
+
+      typeSource(wrapper, '<div class="box"><p style="color: red">Kept</p></div>')
+      await flush()
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+
+      const warning = wrapper.get('.wx-rich-text__loss')
+      expect(warning.text()).toContain('<div>')
+      expect(warning.text()).toContain('style on <p>')
+      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(true)
+
+      await warning.findAll('button').at(1)!.trigger('click')
+      await flush()
+      expect(wrapper.find('.wx-rich-text__loss').exists()).toBe(false)
+      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(true)
+
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+      await wrapper.get('.wx-rich-text__loss').findAll('button').at(0)!.trigger('click')
+      await flush()
+
+      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(false)
+      expect(editorOf(wrapper).getHTML()).toBe('<p>Kept</p>')
+    })
+
+    it('lets a read-only field show its source', async () => {
+      const wrapper = await openSource({ modelValue: '<p>Read me</p>', readonly: true })
+      const code = wrapper.findComponent(WxCodeEditor)
+
+      expect(code.exists()).toBe(true)
+      expect(code.props('readonly')).toBe(true)
+    })
+
+    it('is left out like any other tool', async () => {
+      const wrapper = await mountEditor({ tools: ['bold'] })
+
+      expect(wrapper.find('button[aria-label="HTML source"]').exists()).toBe(false)
+    })
+  })
+})
+
+describe('WxRichText placeholders', () => {
+  const tokens = [
+    { name: 'phone', value: '+1 555 0100' },
+    { name: 'email', value: 'hello@example.com' },
+  ]
+
+  function options(): HTMLElement[] {
+    return Array.from(document.querySelectorAll<HTMLElement>('.wx-token-menu__option'))
+  }
+
+  function chips(wrapper: Wrapper): string[] {
+    return wrapper.findAll('.ProseMirror .wx-token').map((chip) => chip.text())
+  }
+
+  it('suggests on a bracket and replaces the typed part on Enter', async () => {
+    const wrapper = await mountEditor({ tokens })
+    const editor = editorOf(wrapper)
+
+    editor.commands.focus()
+    editor.commands.insertContent('Call [ph')
+    await flush()
+    expect(options().map((option) => option.textContent)).toEqual(['[phone]+1 555 0100'])
+
+    await wrapper.get('.ProseMirror').trigger('keydown', { key: 'Enter' })
+    await flush()
+
+    expect(editor.getHTML()).toBe('<p>Call [phone]</p>')
+    expect(options()).toHaveLength(0)
+    wrapper.unmount()
+  })
+
+  it('closes the list on Escape and leaves the text alone', async () => {
+    const wrapper = await mountEditor({ tokens })
+    const editor = editorOf(wrapper)
+
+    editor.commands.focus()
+    editor.commands.insertContent('[')
+    await flush()
+    expect(options()).toHaveLength(2)
+
+    await wrapper.get('.ProseMirror').trigger('keydown', { key: 'Escape' })
+    await flush()
+
+    expect(options()).toHaveLength(0)
+    expect(editor.getHTML()).toBe('<p>[</p>')
+    wrapper.unmount()
+  })
+
+  it('draws known placeholders as chips without putting them in the value', async () => {
+    const html = '<p>Call [phone], [fax] or [[phone]]</p>'
+    const wrapper = await mountEditor({ tokens, modelValue: html })
+
+    expect(chips(wrapper)).toEqual(['[phone]'])
+    expect(editorOf(wrapper).getHTML()).toBe(html)
+    wrapper.unmount()
+  })
+
+  it('draws chips in an inline field too, beside an accent', async () => {
+    const line = 'Call [email]<span>.</span>'
+    const wrapper = await mountEditor({ tokens, inline: true, modelValue: line })
+
+    expect(chips(wrapper)).toEqual(['[email]'])
+    expect(editorOf(wrapper).getHTML()).toBe(line)
+    wrapper.unmount()
+  })
+
+  it('draws chips once the placeholders arrive after the editor', async () => {
+    const wrapper = await mountEditor({ modelValue: '<p>[phone]</p>' })
+    expect(chips(wrapper)).toEqual([])
+
+    await wrapper.setProps({ tokens })
+    await flush()
+
+    expect(chips(wrapper)).toEqual(['[phone]'])
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('inserts from the toolbar button where the caret is', async () => {
+    const wrapper = await mountEditor({ tokens, modelValue: '<p>Call us on</p>' })
+    const editor = editorOf(wrapper)
+    editor.commands.focus('end')
+
+    await toolByLabel(wrapper, 'Insert a placeholder').trigger('click')
+    await flush()
+    expect(options()).toHaveLength(2)
+
+    options()[1]!.click()
+    await flush()
+
+    expect(editor.getHTML()).toBe('<p>Call us on[email]</p>')
+    wrapper.unmount()
+  })
+
+  it('has no button without placeholders', async () => {
+    const wrapper = await mountEditor()
+
+    expect(wrapper.find('button[aria-label="Insert a placeholder"]').exists()).toBe(false)
+    wrapper.unmount()
   })
 })

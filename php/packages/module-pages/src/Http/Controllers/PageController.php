@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Localization\Locales;
 use WebxUi\Pages\Exceptions\PagesException;
@@ -146,9 +147,11 @@ final class PageController
     /**
      * Somebody wrote to this page between the editor reading it and saving it (§6).
      *
-     * 409 with the page as it now is, so the panel can say who changed it and offer to re-read
-     * rather than quietly keeping one of the two edits. The same answer covers two editors and
-     * an agent: what is stale is the request, not whoever made it.
+     * 409 with the page as it now is, so the panel can lay the two edits side by side against
+     * what it opened with and merge them, asking only about a field both sides changed. The same
+     * answer covers two editors and an agent: what is stale is the request, not whoever made it
+     * — but `changed` says which it was, because «Administrator» is also the name an agent
+     * writes under, and an editor who reads it as a colleague asks the wrong person.
      */
     private function conflict(Page $page, Request $request, PageForm $form): JsonResponse
     {
@@ -161,6 +164,7 @@ final class PageController
                 ['name' => $editor ?? ''],
             ),
             'data' => $form->describe($page, $this->author($request)),
+            'changed' => LastChange::of($page, $request->user()),
         ], 409);
     }
 

@@ -334,6 +334,59 @@ final class SitemapTest extends TestCase
         $this->assertStringNotContainsString('Sitemap:', (string) $this->get('/robots.txt')->getContent());
     }
 
+    #[Test]
+    public function a_browser_is_given_a_stylesheet_that_shows_the_maps_own_text(): void
+    {
+        $this->entity('about');
+
+        $index = (string) $this->get('/sitemap.xml')->getContent();
+        $file = (string) $this->get('/sitemap-mapped.xml')->getContent();
+
+        $this->assertStringContainsString('<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>', $index);
+        $this->assertStringContainsString('<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>', $file);
+
+        $xsl = (string) $this->get('/sitemap.xsl')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/xsl; charset=UTF-8')
+            ->getContent();
+
+        if (! extension_loaded('xsl')) {
+            $this->markTestSkipped('ext-xsl is what runs the stylesheet here, the way a browser would.');
+        }
+
+        // What a browser would render, by the same libxslt Chrome uses: the text of the file,
+        // the address a link, and nothing of the map lost on the way.
+        $html = $this->transform($xsl, $file);
+
+        $this->assertStringContainsString('<a href="http://localhost/about">http://localhost/about</a>', $html);
+        $this->assertStringContainsString('&lt;urlset', $html);
+        $this->assertStringContainsString('&lt;/url&gt;', $html);
+        $this->assertStringContainsString('1 address<', $html);
+        $this->assertStringContainsString('&lt;sitemap&gt;', $this->transform($xsl, $index));
+    }
+
+    #[Test]
+    public function a_site_can_turn_the_stylesheet_off_and_the_map_names_none(): void
+    {
+        config()->set('webx-seo.sitemap.stylesheet', false);
+        $this->entity('about');
+
+        $this->assertStringNotContainsString('xml-stylesheet', (string) $this->get('/sitemap.xml')->getContent());
+        $this->assertStringNotContainsString('xml-stylesheet', (string) $this->get('/sitemap-mapped.xml')->getContent());
+    }
+
+    private function transform(string $xsl, string $xml): string
+    {
+        $processor = new \XSLTProcessor;
+        $stylesheet = new \DOMDocument;
+        $stylesheet->loadXML($xsl);
+        $processor->importStylesheet($stylesheet);
+        $document = new \DOMDocument;
+        $document->loadXML($xml);
+
+        return (string) $processor->transformToXml($document);
+    }
+
     /**
      * @param  string|array<string, string>  $slug
      */

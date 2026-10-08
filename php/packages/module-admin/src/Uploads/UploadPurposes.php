@@ -17,23 +17,28 @@ use InvalidArgumentException;
  *     $purposes->register('catalog.video', permission: 'catalog.manage',
  *         types: ['video/mp4', 'video/webm'], maxBytes: 2048 * 1024 * 1024);
  *
+ *     $purposes->register('media.library', permission: ['media.upload', 'media.manage'],
+ *         extensions: fn () => config('webx-media.upload.extensions'));
+ *
  * A panel that registers none has no chunked uploads at all: the endpoint refuses every one.
  */
 final class UploadPurposes
 {
-    /** @var array<string, array{list<string>, list<string>|(Closure(): list<string>), int|(Closure(): ?int)|null}> */
+    /** @var array<string, array{list<string>, list<string>|(Closure(): list<string>), int|(Closure(): ?int)|null, list<string>|(Closure(): list<string>)}> */
     private array $purposes = [];
 
     /**
      * @param  string|list<string>  $permission  the permission, or several of which any will do
      * @param  list<string>|(Closure(): list<string>)  $types  MIME types, `video/*` for a family
      * @param  int|(Closure(): ?int)|null  $maxBytes  a closure reads the config when it is asked
+     * @param  list<string>|(Closure(): list<string>)  $extensions  of the file's name, without the dot
      */
     public function register(
         string $purpose,
         string|array $permission,
         array|Closure $types = [],
         int|Closure|null $maxBytes = null,
+        array|Closure $extensions = [],
     ): void {
         if (preg_match('/^[a-z0-9_-]+(\.[a-z0-9_-]+)*$/', $purpose) !== 1 || strlen($purpose) > 64) {
             throw new InvalidArgumentException("[{$purpose}] is not an upload purpose: lowercase words joined by dots, at most 64 characters.");
@@ -46,7 +51,7 @@ final class UploadPurposes
             throw new InvalidArgumentException("The upload purpose [{$purpose}] needs the permission an upload for it is started behind.");
         }
 
-        $this->purposes[$purpose] = [$permissions, $types, $maxBytes];
+        $this->purposes[$purpose] = [$permissions, $types, $maxBytes, $extensions];
     }
 
     public function find(string $purpose): ?UploadPurpose
@@ -55,7 +60,7 @@ final class UploadPurposes
             return null;
         }
 
-        [$permissions, $types, $maxBytes] = $this->purposes[$purpose];
+        [$permissions, $types, $maxBytes, $extensions] = $this->purposes[$purpose];
 
         // Read when asked rather than when registered: a module's limits live in its config, and
         // a provider runs before a test or a site has had its say about them.
@@ -64,6 +69,7 @@ final class UploadPurposes
             $permissions,
             array_values($types instanceof Closure ? $types() : $types),
             $maxBytes instanceof Closure ? $maxBytes() : $maxBytes,
+            array_values(array_map('strval', $extensions instanceof Closure ? $extensions() : $extensions)),
         );
     }
 

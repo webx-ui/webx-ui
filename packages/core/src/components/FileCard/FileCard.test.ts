@@ -116,6 +116,28 @@ describe('WxFileCard', () => {
     expect(wrapper.get('img').attributes('alt')).toBe('photo.jpg')
   })
 
+  it('takes the extension it is given for a name without one', () => {
+    const wrapper = card({ name: 'Price list', extension: 'PDF' })
+
+    expect(wrapper.get('.wx-file-card__extension').text()).toBe('pdf')
+  })
+
+  it('puts the extension over a picture only when asked to', () => {
+    const plain = card({ name: 'Hero', extension: 'webp', type: 'image/webp', url: '/hero.webp' })
+
+    expect(plain.find('.wx-file-card__badge').exists()).toBe(false)
+
+    const badged = card({
+      name: 'Hero',
+      extension: 'webp',
+      type: 'image/webp',
+      url: '/hero.webp',
+      showExtension: true,
+    })
+
+    expect(badged.get('.wx-file-card__badge').text()).toBe('webp')
+  })
+
   it('has nothing to draw a picture from, so draws the glyph', () => {
     const wrapper = card({ name: 'photo.jpg' })
 
@@ -220,6 +242,16 @@ describe('WxFileCard', () => {
     await nextTick()
 
     expect(document.querySelector('.wx-popconfirm')!.textContent).toContain('Gone for good?')
+  })
+
+  it('asks for a lightbox over pictures, and only over pictures', async () => {
+    expect(action(card({ name: 'sheet.xlsx', viewable: true }), 'View')).toBeUndefined()
+
+    const wrapper = card({ name: 'photo.jpg', viewable: true })
+
+    await action(wrapper, 'View')!.trigger('click')
+
+    expect(wrapper.emitted('view')).toHaveLength(1)
   })
 
   it('asks for an editor rather than being one', async () => {

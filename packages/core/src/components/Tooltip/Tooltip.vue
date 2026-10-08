@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import {
   TooltipArrow,
   TooltipContent,
@@ -61,6 +61,35 @@ const width = computed(() =>
 const hoverable = useHoverPointer()
 
 const shut = computed(() => props.disabled || (!hoverable.value && open.value === undefined))
+
+/*
+ * Focus opens a tip for the keyboard, which has no other way of asking what an icon is. Focus
+ * also comes back on its own: a dialog that closes hands it to the button that opened it, and
+ * the tip then stood over the page until the pointer moved — over the very tree the person was
+ * about to look at. So a focus the browser would not draw a ring for (`:focus-visible` — the
+ * way back from a mouse click) opens nothing, unless the pointer really is over the control.
+ */
+const trigger = useTemplateRef<{ $el?: unknown }>('trigger')
+
+function quietFocus(): boolean {
+  const el = trigger.value?.$el
+
+  if (!(el instanceof HTMLElement) || el !== document.activeElement || el.matches(':hover')) {
+    return false
+  }
+
+  try {
+    return !el.matches(':focus-visible')
+  } catch {
+    /* A browser that does not know the selector: the tip as it always was. */
+    return false
+  }
+}
+
+function request(next: boolean) {
+  if (next && quietFocus()) return
+  open.value = next
+}
 </script>
 
 <template>
@@ -69,13 +98,13 @@ const shut = computed(() => props.disabled || (!hoverable.value && open.value ==
     :skip-delay-duration="300"
     :disable-hoverable-content="true"
   >
-    <tooltip-root v-model:open="open" :disabled="shut">
+    <tooltip-root :open="open ?? false" :disabled="shut" @update:open="request">
       <!--
         `as-child`: the trigger is the control that was passed in. Wrapping it in a
         span of our own would put a box in the layout that nobody asked for, and
         would take the tip off the thing that is actually focused.
       -->
-      <tooltip-trigger as-child>
+      <tooltip-trigger ref="trigger" as-child>
         <slot />
       </tooltip-trigger>
 

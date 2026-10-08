@@ -155,16 +155,17 @@ whole difference.
 
 ## Props
 
-| Prop          | Type                       | Default       | Description                                            |
-| ------------- | -------------------------- | ------------- | ------------------------------------------------------ |
-| `modelValue`  | `(string \| number)[]`     | `[]`          | The selection                                          |
-| `multiple`    | `boolean`                  | `true`        | Off, the model never holds more than one value         |
-| `match`       | `'intersect' \| 'contain'` | `'intersect'` | Whether the box has to cover an item or touch it       |
-| `threshold`   | `number`                   | `5`           | Pixels before a press becomes a drag                   |
-| `clickSelect` | `boolean`                  | `true`        | Clicks pick items; a click beside them clears          |
-| `touch`       | `boolean`                  | `false`       | The box can be drawn with a finger; a tap always picks |
-| `edgeScroll`  | `number`                   | `48`          | How near the edge the drag scrolls; `0` never does     |
-| `disabled`    | `boolean`                  | `false`       | Leaves every pointer alone                             |
+| Prop          | Type                       | Default       | Description                                                                                      |
+| ------------- | -------------------------- | ------------- | ------------------------------------------------------------------------------------------------ |
+| `modelValue`  | `(string \| number)[]`     | `[]`          | The selection                                                                                    |
+| `multiple`    | `boolean`                  | `true`        | Off, the model never holds more than one value                                                   |
+| `match`       | `'intersect' \| 'contain'` | `'intersect'` | Whether the box has to cover an item or touch it                                                 |
+| `threshold`   | `number`                   | `5`           | Pixels before a press becomes a drag                                                             |
+| `clickSelect` | `boolean`                  | `true`        | Clicks pick items; a click beside them clears                                                    |
+| `touch`       | `boolean`                  | `false`       | The box can be drawn with a finger; a tap always picks                                           |
+| `dragItems`   | `boolean`                  | `false`       | A press on an item is left to the browser's drag and drop; a box starts from the background only |
+| `edgeScroll`  | `number`                   | `48`          | How near the edge the drag scrolls; `0` never does                                               |
+| `disabled`    | `boolean`                  | `false`       | Leaves every pointer alone                                                                       |
 
 **Events:** `update:modelValue`; `start`; `end` (`SelectionValue[]`).
 

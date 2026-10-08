@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
-import { useModal, WxButton, WxDialog, WxSelect, WxSpace } from '@webx-ui/core'
+import { useModal, WxButton, WxDialog, WxSpace, WxTree } from '@webx-ui/core'
 import type { MediaDirectory } from './types'
 
 /**
  * Where to put the selected files.
  *
- * A list of folders rather than a box to type in: an editor knows a folder by its name and its
- * place in the tree, and has no reason to ever learn that it also has a number.
+ * The tree itself rather than a list of names: a folder is known by its place as much as by its
+ * name — two folders called «Photos» are two places — and a nested one read without its parent
+ * is a guess. The folder they are in now is there, marked and not to be chosen.
  */
 const props = defineProps<{
   directories: MediaDirectory[]
-  /** The folder they are in now, which is not worth offering. */
+  /** The folder they are in now. */
   from?: number | null
   count: number
 }>()
@@ -21,27 +22,43 @@ const { open, resolve, dismiss } = useModal<number>()
 
 const t = useTranslate('webx-media')
 
-const options = computed(() =>
-  flatten(props.directories).filter((option) => option.value !== props.from),
-)
-const target = ref<number | null>(options.value[0]?.value ?? null)
+type Node = { id: number; label: string; disabled: boolean; children: Node[] }
 
-function flatten(directories: MediaDirectory[]): { value: number; label: string }[] {
-  return directories.flatMap((directory) => [
-    {
-      value: directory.id,
-      // Indented, so the tree is still readable once it is a flat list.
-      label:
-        ' '.repeat(directory.depth * 3) + (directory.is_root ? t('manager.root') : directory.title),
-    },
-    ...flatten(directory.children ?? []),
-  ])
+const nodes = ref<Node[]>(props.directories.map(node))
+const expanded = ref<number[]>(keysOf(props.directories))
+const target = ref<number | null>(null)
+
+function node(directory: MediaDirectory): Node {
+  const title = directory.is_root ? t('manager.root') : directory.title
+  const here = directory.id === props.from
+
+  return {
+    id: directory.id,
+    label: here ? `${title} — ${t('manager.current')}` : title,
+    disabled: here,
+    children: (directory.children ?? []).map(node),
+  }
+}
+
+function keysOf(directories: MediaDirectory[]): number[] {
+  return directories.flatMap((directory) => [directory.id, ...keysOf(directory.children ?? [])])
 }
 </script>
 
 <template>
   <wx-dialog v-model:open="open" :title="t('manager.move-to')" :width="420">
-    <wx-select v-model="target" :options="options" />
+    <div class="wx-media-move">
+      <wx-tree
+        v-model:selected="target"
+        v-model:expanded="expanded"
+        :model-value="nodes"
+        node-key="id"
+        show-lines
+        :aria-label="t('manager.move-to')"
+        :expand-label="t('manager.expand')"
+        :collapse-label="t('manager.collapse')"
+      />
+    </div>
 
     <template #footer>
       <wx-space size="sm">
@@ -53,3 +70,10 @@ function flatten(directories: MediaDirectory[]): { value: number; label: string 
     </template>
   </wx-dialog>
 </template>
+
+<style>
+.wx-media-move {
+  max-height: min(360px, 50vh);
+  overflow: auto;
+}
+</style>

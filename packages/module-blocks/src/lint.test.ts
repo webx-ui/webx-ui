@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lintBlock, undeclared } from './lint'
+import { lintBlock, stringOnText, undeclared } from './lint'
 
 const t = (key: string, params: Record<string, string | number> = {}) =>
   `${key} ${Object.values(params).join(' ')}`.trim()
@@ -70,5 +70,64 @@ describe('what a called type is handed', () => {
     expect(
       undeclared('<span>{{ $slot }} {{ $aside }}</span>', [{ id: 'aside', type: 'wx-slot' }]),
     ).toEqual([])
+  })
+})
+
+describe('a text field changed by a string function', () => {
+  const schema = [
+    {
+      id: 'card',
+      type: 'wx-card',
+      children: [
+        { id: 'heading', type: 'wx-input' },
+        { id: 'lead', type: 'wx-textarea' },
+      ],
+    },
+    { id: 'tel', type: 'wx-input', props: { type: 'tel' } },
+    { id: 'items', type: 'wx-repeater', children: [{ id: 'quote', type: 'wx-textarea' }] },
+  ]
+
+  it('names each field once, on the line it is first changed on', () => {
+    const template = [
+      '<div data-wx-block="cta">',
+      "  <h2>{{ rtrim(trim($heading), '.') }}</h2>",
+      '  <p>{{ (string) $lead }}</p>',
+      "  <p>{{ Str::limit($heading, 10) }} {{ $lead . '!' }}</p>",
+      "  @foreach ($items as $item)<q>{{ trim($item['quote'], '“”\"') }}</q>@endforeach",
+      '</div>',
+    ].join('\n')
+
+    expect(stringOnText(template, schema)).toEqual([
+      ['$heading', 2],
+      ['$lead', 3],
+      ["$item['quote']", 5],
+    ])
+
+    const lints = lintBlock('cta', { template, styles: '', schema }, t)
+    expect(lints.filter((lint) => lint.code === 'string-on-text')).toHaveLength(3)
+  })
+
+  it('says nothing about the fix and the safe ways', () => {
+    const template = [
+      "<h2>{{ wx_text($heading)->trimEnd('.') }}</h2>",
+      "<h3>{{ $heading }} {{ rtrim($heading->plain(), '.') }}</h3>",
+      "<h4>{!! rtrim(trim(e($heading)), '.') !!}</h4>",
+      '<a href="tel:{{ trim($tel) }}">x</a>',
+      "@if (trim($heading) !== '') x @endif",
+      '{{-- trim($heading) --}}',
+      "@foreach ($items as $item)<q>{{ wx_text($item['quote'])->trim('“”') }}</q>@endforeach",
+    ].join('\n')
+
+    expect(stringOnText(template, schema)).toEqual([])
+  })
+})
+
+describe('a closure in a template', () => {
+  it('declares its own parameters', () => {
+    expect(
+      undeclared('{{ wx_text($lead)->map(fn ($text) => Str::limit($text, 9)) }} {{ $x }}', [
+        { id: 'lead', type: 'wx-textarea' },
+      ]),
+    ).toEqual(['x'])
   })
 })
