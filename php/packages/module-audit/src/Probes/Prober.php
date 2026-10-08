@@ -22,6 +22,9 @@ final class Prober
     /** The page's own static files asked for their caching — enough to see the rule. */
     private const ASSETS = 6;
 
+    /** Public folders of a Laravel site without an index file — what a server may list. */
+    private const LISTINGS = ['/storage/', '/build/', '/vendor/'];
+
     public function __construct(
         private readonly CertificateReader $certificates,
         private readonly SitemapReader $sitemaps,
@@ -49,6 +52,16 @@ final class Prober
         }
 
         $answers['random'] = $client->get($base.'/webx-audit-'.Str::lower(Str::random(12)));
+
+        foreach (self::LISTINGS as $folder) {
+            $answers['listing:'.$folder] = $client->get($base.$folder);
+        }
+
+        $ip = $this->ip($host, $client);
+
+        if ($ip !== null) {
+            $answers['ip'] = $client->get('http://'.$ip.'/');
+        }
         $answers['robots'] = $robots = $client->get($base.'/robots.txt');
 
         $inner = $this->innerPath($home->body, $base, $hosts);
@@ -75,6 +88,26 @@ final class Prober
         $sitemaps = $this->sitemaps->read($base, $declared, $client, $hosts);
 
         return new ProbeSet($answers, $certificate, $inner, $assets, $sitemaps);
+    }
+
+    /**
+     * The IP address the site lives at — the "connect to" setting, or what DNS says — for the
+     * probe of `host.ip`. Null for a site already addressed by IP, or a name that does not resolve.
+     */
+    private function ip(string $host, SiteClient $client): ?string
+    {
+        if ($host === '' || filter_var(trim($host, '[]'), FILTER_VALIDATE_IP) !== false) {
+            return null;
+        }
+
+        $address = $client->address();
+
+        if ($address === null) {
+            $resolved = gethostbyname($host);
+            $address = $resolved === $host ? null : $resolved;
+        }
+
+        return $address !== null && filter_var(trim($address, '[]'), FILTER_VALIDATE_IP) !== false ? $address : null;
     }
 
     /** `/blog/post` → `/blog//post`; `/about` → `//about`. */

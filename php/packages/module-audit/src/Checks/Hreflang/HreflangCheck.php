@@ -43,7 +43,7 @@ abstract class HreflangCheck extends PageCheck
         if ($this->snapshot === null) {
             $this->snapshot = [];
 
-            foreach (AuditPage::query()->where('run_id', $context->run->id)->whereNotNull('fetched_at')->get(['id', 'url', 'status', 'content_type', 'hreflang', 'indexable']) as $page) {
+            foreach (AuditPage::query()->where('run_id', $context->run->id)->whereNotNull('fetched_at')->get(['id', 'url', 'status', 'content_type', 'hreflang', 'indexable', 'canonical', 'robots_meta', 'x_robots_tag', 'blocked_by_robots']) as $page) {
                 $this->snapshot[$page->url] = $page;
             }
         }

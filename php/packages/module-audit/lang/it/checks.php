@@ -144,6 +144,24 @@ return [
             'why' => 'Ogni pagina li scarica di nuovo.',
             'fix' => 'Assegna ai file statici versionati un Cache-Control lungo (un anno, immutable) nel web server.',
         ],
+        'directory_listing' => [
+            'title' => 'Una cartella elenca i suoi file',
+            'found' => 'Una cartella pubblica risponde con l’elenco dei file che contiene.',
+            'why' => 'Ogni caricamento, allegato e vecchia esportazione nella cartella è a un clic da chiunque, motori di ricerca compresi.',
+            'fix' => 'Disattiva l’elenco delle cartelle sul server: autoindex off in nginx, Options -Indexes in Apache.',
+        ],
+        'ip' => [
+            'title' => 'Il sito si apre al suo indirizzo IP',
+            'found' => 'La home page risponde all’indirizzo IP nudo del server.',
+            'why' => 'Ogni pagina ha una copia in più a un indirizzo che nessuno voleva pubblicare, e i motori di ricerca possono trovarla.',
+            'fix' => 'Fai reindirizzare l’host predefinito del server al dominio con un 301, oppure rispondi 404 o 444 ai nomi sconosciuti.',
+        ],
+        'http2' => [
+            'title' => 'Nessun HTTP/2',
+            'found' => 'Il sito risponde in HTTPS solo tramite HTTP/1.1.',
+            'why' => 'Il browser carica allora immagini, stili e script sei alla volta invece che tutti insieme, e una pagina che ne ha molti è più lenta.',
+            'fix' => 'Attiva HTTP/2 per l’host HTTPS: http2 on in nginx, il modulo mod_http2 in Apache. La maggior parte dei pannelli di controllo ha un interruttore.',
+        ],
     ],
     'hosts' => [
         'dev_content' => [
@@ -214,6 +232,12 @@ return [
             'why' => 'I motori di ricerca scartano la pagina. Giusto per i risultati di ricerca e le pagine di servizio, sbagliato per contenuti chiusi per errore.',
             'fix' => 'Scorri l’elenco; apri le pagine che devono essere trovate nelle loro impostazioni SEO e rimuovi noindex.',
         ],
+        'nofollow' => [
+            'title' => 'nofollow per l’intera pagina',
+            'found' => 'Il meta tag robots o X-Robots-Tag dice nofollow (o none).',
+            'why' => 'I motori di ricerca non seguono nessun link della pagina, quindi ogni pagina a cui porta perde quel link.',
+            'fix' => 'Rimuovi nofollow dal meta tag robots e dall’header; per chiudere un solo link, metti rel="nofollow" su quel link.',
+        ],
     ],
     'robots' => [
         'missing' => [
@@ -278,6 +302,12 @@ return [
             'why' => 'I motori di ricerca la trovano solo tramite i link, più tardi — e una pagina che perde il suo ultimo link sparisce.',
             'fix' => 'Verifica che il modulo della pagina la aggiunga alla sitemap (con module-seo — tramite il registro degli indirizzi), oppure chiudila con noindex se non deve essere trovata.',
         ],
+        'duplicate' => [
+            'title' => 'Indirizzi elencati due volte nella sitemap',
+            'found' => 'Lo stesso indirizzo compare due volte in un file sitemap, oppure in due file dell’indice.',
+            'why' => 'I motori di ricerca prendono l’indirizzo una volta; i duplicati allungano la sitemap e di solito significano che il generatore percorre una sezione due volte.',
+            'fix' => 'Elenca ogni indirizzo una sola volta: trova quale sezione del sito lo aggiunge due volte.',
+        ],
     ],
     'redirects' => [
         'chain' => [
@@ -304,6 +334,12 @@ return [
             'why' => 'I motori di ricerca tengono il vecchio indirizzo nell’indice e non danno al nuovo nulla del suo peso. Giusto per un reindirizzamento che verrà tolto, sbagliato per un trasferimento.',
             'fix' => 'Scorri l’elenco; rendi 301 i reindirizzamenti degli indirizzi spostati definitivamente.',
         ],
+        'meta_refresh' => [
+            'title' => 'Reindirizzamento tramite meta refresh',
+            'found' => 'La pagina risponde 200 e manda avanti il visitatore con <meta http-equiv="refresh">.',
+            'why' => 'I motori di ricerca possono considerarlo o no un reindirizzamento, e non trasmette nulla; i visitatori vedono per un attimo una pagina vuota.',
+            'fix' => 'Reindirizza sul server con un 301, nei reindirizzamenti della sezione SEO o nel web server, e rimuovi il meta tag.',
+        ],
     ],
     'title' => [
         'missing' => [
@@ -329,6 +365,12 @@ return [
             'found' => 'La pagina ha più di un tag <title>.',
             'why' => 'I motori di ricerca ne prendono uno, non necessariamente quello scritto per la pagina.',
             'fix' => 'Trova quale template o blocco stampa il secondo title e rimuovilo.',
+        ],
+        'width' => [
+            'title' => 'Title troppo largo per i risultati',
+            'found' => 'Il title è più largo di quanto mostrano i risultati di ricerca.',
+            'why' => 'I risultati tagliano un title in pixel, non in caratteri: maiuscole e lettere larghe finiscono prima, e la parte finale — spesso il nome del sito — viene sostituita da puntini di sospensione. La larghezza è stimata nel carattere dei risultati, non in quello del sito.',
+            'fix' => 'Accorcia il title o metti all’inizio le parole importanti.',
         ],
     ],
     'description' => [
@@ -369,6 +411,18 @@ return [
             'found' => 'L’H1 ripete il title parola per parola.',
             'why' => 'Due posti per descrivere la pagina dicono la stessa cosa; uno dei due potrebbe aggiungere una parola che la gente cerca.',
             'fix' => 'Tieni l’H1 breve e leggibile, e lascia che il title porti le parole chiave e il nome del sito.',
+        ],
+        'duplicate' => [
+            'title' => 'Lo stesso H1 su più pagine',
+            'found' => 'Altre pagine indicizzabili hanno lo stesso H1.',
+            'why' => 'Pagine con un solo titolo sembrano una pagina sola ai motori di ricerca, e un visitatore non le distingue nelle schede.',
+            'fix' => 'Dai a ogni pagina un H1 tutto suo — il nome del prodotto, dell’articolo o della sezione.',
+        ],
+        'length' => [
+            'title' => 'H1 troppo lungo',
+            'found' => 'L’H1 è più lungo della soglia.',
+            'why' => 'Un titolo diventato una frase è più difficile da leggere e, su un telefono, riempie la prima schermata.',
+            'fix' => 'Limita l’H1 al nome della pagina e sposta il resto nel testo sotto.',
         ],
     ],
     'headings' => [
@@ -422,6 +476,36 @@ return [
             'why' => 'La pagina chiede di non essere indicizzata a favore di un’altra — giusto per filtri e copie, sbagliato per una pagina che deve essere trovata.',
             'fix' => 'Scorri l’elenco; per le pagine che devono essere trovate, fai del canonical il loro stesso indirizzo.',
         ],
+        'chain' => [
+            'title' => 'Il canonical porta a un altro canonical',
+            'found' => 'Il canonical punta a una pagina il cui canonical punta ancora oltre.',
+            'why' => 'I motori di ricerca seguono un passaggio o due, oppure rinunciano e scelgono l’originale da soli.',
+            'fix' => 'Fai puntare il canonical direttamente all’ultima pagina della catena.',
+        ],
+        'loop' => [
+            'title' => 'Canonical che puntano l’uno all’altro',
+            'found' => 'Due pagine si indicano a vicenda come originale.',
+            'why' => 'Nessuna delle due può essere l’originale, quindi i motori di ricerca ignorano entrambi i canonical e scelgono da soli.',
+            'fix' => 'Decidi quale pagina è l’originale: punta a se stessa, l’altra punta a lei.',
+        ],
+        'foreign' => [
+            'title' => 'Canonical su un altro dominio o tramite http',
+            'found' => 'Il canonical punta a un altro dominio, a un altro mirror o a un indirizzo http semplice.',
+            'why' => 'La pagina cede il suo posto nei risultati a un indirizzo che non è questo sito come lo vedono i visitatori. Di solito la colpa è di APP_URL o di un template copiato.',
+            'fix' => 'Controlla APP_URL e il template: il canonical usa lo schema e l’host del sito stesso.',
+        ],
+        'fragment' => [
+            'title' => 'Canonical con #',
+            'found' => 'L’indirizzo canonical ha un frammento dopo #.',
+            'why' => 'I motori di ricerca scartano il frammento o l’intero canonical, che così non dice ciò che doveva.',
+            'fix' => 'Rimuovi dal canonical la parte dopo #.',
+        ],
+        'pagination' => [
+            'title' => 'Le pagine successive di un elenco puntano alla prima',
+            'found' => 'La pagina 2, 3 o successiva di un elenco ha un canonical verso la prima pagina.',
+            'why' => 'I motori di ricerca la prendono alla lettera e scartano le pagine successive, e con esse gli unici link a ciò che vi è elencato.',
+            'fix' => 'Fai puntare il canonical di ogni pagina dell’elenco a se stessa.',
+        ],
     ],
     'html' => [
         'lang' => [
@@ -441,6 +525,24 @@ return [
             'found' => 'La pagina non collega alcuna icona, oppure l’icona collegata non si apre.',
             'why' => 'Le schede del browser, i segnalibri e i risultati di ricerca sui telefoni mostrano un quadrato vuoto al posto del marchio del sito.',
             'fix' => 'Aggiungi al layout <link rel="icon"> con un indirizzo funzionante.',
+        ],
+        'doctype' => [
+            'title' => 'Nessun doctype',
+            'found' => 'La pagina non inizia con <!doctype html>.',
+            'why' => 'Senza, il browser disegna la pagina in modalità quirks, con le vecchie dimensioni dei box e il vecchio layout delle tabelle.',
+            'fix' => 'Inizia il layout con <!doctype html>.',
+        ],
+        'charset' => [
+            'title' => 'Codifica non dichiarata, o dichiarata due volte in modo diverso',
+            'found' => 'La codifica non è indicata né nell’header Content-Type né in <meta charset>, oppure i due non coincidono.',
+            'why' => 'Il browser deve indovinare, e un’ipotesi sbagliata trasforma il testo in caratteri senza senso.',
+            'fix' => 'Metti <meta charset="utf-8"> per primo in <head> e tieni l’header nella stessa codifica.',
+        ],
+        'obsolete' => [
+            'title' => 'Tag obsoleti',
+            'found' => 'La pagina ha tag che l’HTML ha abbandonato — <font>, <center>, <marquee> — oppure Flash.',
+            'why' => 'Di solito arrivano con un testo incollato da Word o da un vecchio sito e portano con sé caratteri e colori propri; Flash non funziona in nessun browser.',
+            'fix' => 'Pulisci il testo nell’editor: rimuovi la formattazione e lascia lavorare gli stili del sito.',
         ],
     ],
     'og' => [
@@ -482,6 +584,30 @@ return [
             'why' => 'La coppia viene scartata. Errori comuni: en-UK invece di en-GB, jp invece di ja.',
             'fix' => 'Fai puntare hreflang all’indirizzo funzionante di ogni versione e usa i codici di lingua ISO 639-1 e di regione ISO 3166-1.',
         ],
+        'self_missing' => [
+            'title' => 'Versioni linguistiche senza la pagina stessa',
+            'found' => 'La pagina elenca le sue versioni linguistiche ma non il proprio indirizzo.',
+            'why' => 'L’insieme deve essere uguale su ogni sua pagina, indirizzo proprio compreso; altrimenti i motori di ricerca possono non fidarsene.',
+            'fix' => 'Aggiungi all’elenco l’indirizzo della pagina stessa con la sua lingua.',
+        ],
+        'duplicate_lang' => [
+            'title' => 'Una lingua, due indirizzi',
+            'found' => 'Lo stesso codice di lingua porta a indirizzi diversi.',
+            'why' => 'I motori di ricerca non capiscono quale indirizzo sia la versione per quella lingua e possono ignorarli entrambi.',
+            'fix' => 'Lascia un solo indirizzo per codice di lingua.',
+        ],
+        'not_indexable' => [
+            'title' => 'Versione linguistica chiusa alla ricerca',
+            'found' => 'Una versione linguistica è chiusa con noindex o robots.txt, oppure il suo canonical punta altrove.',
+            'why' => 'Una versione chiusa non può essere mostrata, quindi la coppia viene scartata; una versione con il canonical altrove va indicata con il suo indirizzo canonical.',
+            'fix' => 'Apri la versione alla ricerca, oppure indica al suo posto il suo indirizzo canonical.',
+        ],
+        'lang_mismatch' => [
+            'title' => 'Le versioni non concordano sulla lingua',
+            'found' => 'La pagina indica una versione con un codice, e la versione indica se stessa con un altro.',
+            'why' => 'Le due pagine non descrivono lo stesso insieme, e i motori di ricerca possono scartare la coppia.',
+            'fix' => 'Usa lo stesso codice per la versione su ogni pagina dell’insieme.',
+        ],
     ],
     'jsonld' => [
         'invalid' => [
@@ -521,6 +647,18 @@ return [
             'found' => 'Più pagine indicizzabili hanno lo stesso testo visibile.',
             'why' => 'I motori di ricerca scelgono una copia da mostrare e ignorano le altre.',
             'fix' => 'Rendi diverse le pagine, uniscile, oppure fai puntare il canonical delle copie all’originale.',
+        ],
+        'placeholder' => [
+            'title' => 'Lorem ipsum nella pagina',
+            'found' => 'La pagina contiene il testo segnaposto lorem ipsum.',
+            'why' => 'I visitatori vedono un sito incompiuto, e i motori di ricerca indicizzano un testo che non dice nulla.',
+            'fix' => 'Sostituisci il segnaposto con un testo vero, oppure chiudi la pagina finché non è pronta.',
+        ],
+        'soft_404' => [
+            'title' => '«Non trovata» con codice 200',
+            'found' => 'La pagina risponde 200, e il suo title o H1 dice che non è stata trovata.',
+            'why' => 'I motori di ricerca la tengono come pagina, e l’indirizzo che doveva sparire resta nell’indice.',
+            'fix' => 'Rispondi 404 o 410 dove non c’è nulla, oppure reindirizza con un 301 dove il contenuto è stato spostato.',
         ],
     ],
     'url' => [
@@ -588,6 +726,36 @@ return [
             'why' => 'I visitatori finiscono su un errore nel sito di qualcun altro, e la pagina sembra abbandonata. 429 non viene contato — è un server che chiede a un robot di rallentare.',
             'fix' => 'Aggiorna il link al nuovo indirizzo della pagina, oppure rimuovilo.',
         ],
+        'to_non_canonical' => [
+            'title' => 'Link a indirizzi non canonical',
+            'found' => 'I link interni portano a pagine il cui canonical indica un altro indirizzo.',
+            'why' => 'Il sito vota per una copia e dice ai motori di ricerca che l’originale è altrove. Tipico di filtri e ordinamenti finiti nel menu.',
+            'fix' => 'Collega all’indirizzo canonical.',
+        ],
+        'to_noindex' => [
+            'title' => 'Link a pagine chiuse alla ricerca',
+            'found' => 'I link interni portano a pagine con noindex o chiuse in robots.txt.',
+            'why' => 'Va bene per un accesso o un carrello; un prodotto o un articolo in questo elenco è chiuso per errore.',
+            'fix' => 'Scorri l’elenco: apri ciò che deve essere trovato, oppure smetti di collegare ciò che non deve esserlo.',
+        ],
+        'utm' => [
+            'title' => 'Tag UTM nei link interni',
+            'found' => 'I link interni hanno parametri utm_.',
+            'why' => 'Ogni clic avvia nelle statistiche una nuova visita da quella campagna, e ogni indirizzo con i tag è una copia della pagina.',
+            'fix' => 'Rimuovi i parametri utm_ dai link interni; tienili per newsletter e pubblicità.',
+        ],
+        'unfollowable' => [
+            'title' => 'Link che nessuno può seguire',
+            'found' => 'I link portano a #, javascript:, un mailto: senza indirizzo, un tel: senza numero, o un host scritto senza https://.',
+            'why' => 'I motori di ricerca li saltano, e un mailto: rotto o un link «www.» senza schema porta il visitatore a un 404 sul sito stesso.',
+            'fix' => 'Fai dei pulsanti dei <button>, scrivi mailto: e tel: per intero e inizia gli indirizzi esterni con https://.',
+        ],
+        'vague_anchor' => [
+            'title' => 'Link che non dicono nulla',
+            'found' => 'I link si chiamano «qui», «leggi di più» o simili.',
+            'why' => 'Il testo del link è ciò che i motori di ricerca e gli screen reader sanno della pagina a cui porta; questi non dicono nulla.',
+            'fix' => 'Chiama il link con ciò che apre: «Leggi delle rose» invece di «Leggi di più». Aggiungi le tue frasi nelle impostazioni dell’audit.',
+        ],
     ],
     'mixed_content' => [
         'title' => 'Contenuto misto',
@@ -634,6 +802,18 @@ return [
             'why' => 'La stessa immagine in WebP o AVIF di solito pesa da un terzo alla metà.',
             'fix' => 'Servi WebP o AVIF — tramite <picture> con una sorgente moderna, oppure convertendo le immagini al caricamento.',
         ],
+        'redirect' => [
+            'title' => 'Immagini tramite un reindirizzamento',
+            'found' => 'Le immagini della pagina rispondono con un reindirizzamento.',
+            'why' => 'Ogni visitatore fa un passaggio in più prima che l’immagine inizi a caricarsi, e la ricerca per immagini indicizza l’indirizzo finale.',
+            'fix' => 'Metti nella pagina l’indirizzo finale dell’immagine.',
+        ],
+        'alt_long' => [
+            'title' => 'alt troppo lungo',
+            'found' => 'Le immagini hanno un alt più lungo della soglia.',
+            'why' => 'Uno screen reader lo legge tutto, e un paragrafo pieno di parole chiave sembra spam ai motori di ricerca.',
+            'fix' => 'Descrivi l’immagine in una frase; il resto va nel testo.',
+        ],
     ],
     'a11y' => [
         'button_name' => [
@@ -673,6 +853,52 @@ return [
             'found' => 'La pagina non rimanda a nessun’altra pagina del sito.',
             'why' => 'Un visitatore che ci arriva non ha dove andare se non indietro.',
             'fix' => 'Controlla che venga usato il layout con il suo menu, e aggiungi link a pagine correlate.',
+        ],
+        'noindex_only' => [
+            'title' => 'Collegata solo da pagine chiuse',
+            'found' => 'Solo pagine chiuse alla ricerca — noindex, robots.txt, un canonical altrove — rimandano a questa pagina indicizzabile.',
+            'why' => 'Per i motori di ricerca è praticamente orfana.',
+            'fix' => 'Collegala da una pagina aperta: una sezione, un elenco o il menu.',
+        ],
+        'nofollow_only' => [
+            'title' => 'Collegata solo con nofollow',
+            'found' => 'Ogni link interno a questa pagina indicizzabile ha nofollow.',
+            'why' => 'Il sito chiede ai motori di ricerca di non andarci, e poi vuole che la pagina venga trovata.',
+            'fix' => 'Rimuovi nofollow dai link interni che portano a essa.',
+        ],
+        'single_link' => [
+            'title' => 'Collegata da una sola pagina',
+            'found' => 'Solo una pagina del sito rimanda a questa pagina indicizzabile.',
+            'why' => 'Basta un menu cambiato o un elenco rimosso per renderla orfana, e nel frattempo riceve poco peso. Va bene per un articolo in un elenco; merita uno sguardo per una pagina importante.',
+            'fix' => 'Collegala da pagine correlate, dalla sezione o dal menu.',
+        ],
+        'many_internal' => [
+            'title' => 'Troppi link interni',
+            'found' => 'La pagina ha più link interni della soglia.',
+            'why' => 'Ogni link riceve una briciola del peso della pagina, e i motori di ricerca smettono di leggere a un certo punto.',
+            'fix' => 'Dividi gli elenchi lunghi in pagine e limita il menu alle sezioni.',
+        ],
+    ],
+    'meta' => [
+        'multiple' => [
+            'title' => 'Un meta tag scritto due volte',
+            'found' => 'Un meta tag che dovrebbe stare nella pagina una volta — description, robots, viewport, Open Graph — c’è più di una volta.',
+            'why' => 'I motori di ricerca e i social network scelgono una delle copie, non necessariamente quella giusta. Di solito lo stampano sia il layout sia un modulo.',
+            'fix' => 'Stampa il tag in un solo punto: rimuovilo dal layout o dal blocco che lo aggiunge di nuovo.',
+        ],
+    ],
+    'assets' => [
+        'broken' => [
+            'title' => 'Stili o script non si aprono',
+            'found' => 'Un foglio di stile o uno script della pagina risponde 4xx, 5xx o niente.',
+            'why' => 'La pagina appare senza stili, oppure un menu, una galleria o un modulo smettono di funzionare — e anche i motori di ricerca la visualizzano così.',
+            'fix' => 'Correggi l’indirizzo nel layout o rimetti il file; dopo un deploy, ricompila il front end.',
+        ],
+        'heavy' => [
+            'title' => 'Stili o script pesanti',
+            'found' => 'Un foglio di stile o uno script pesa più della soglia così come viene inviato.',
+            'why' => 'La pagina lo aspetta prima di potersi disegnare o rispondere, più a lungo su un telefono.',
+            'fix' => 'Attiva la compressione, dividi il bundle e carica più tardi ciò che non serve subito alla pagina.',
         ],
     ],
 ];

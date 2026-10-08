@@ -86,6 +86,9 @@ return [
         // The page (§5.5): lengths in characters, the share of text in percent.
         'title_min' => 30,
         'title_max' => 60,
+        // Pixels of 20 px Arial — the results' font, not the site's — a title fits in.
+        'title_px' => 600,
+        'h1_max' => 70,
         'description_min' => 70,
         'description_max' => 160,
         'thin_words' => 250,
@@ -95,6 +98,11 @@ return [
         'html_bytes' => 1024 * 1024,
         'depth' => 3,
         'external_links' => 100,
+        'internal_links' => 1000,
+        // An alt longer than this many characters is a paragraph, not a description.
+        'alt_max' => 100,
+        // A stylesheet or a script heavier than this (KB, as sent) holds the page up.
+        'asset_kb' => 1024,
         // Pictures: heavier than this (KB) is a warning; a JPEG or PNG heavier
         // than the second to a browser that takes WebP and AVIF is a notice.
         'image_kb' => 300,
@@ -120,5 +128,18 @@ return [
     'dev_zones' => ['local', 'localhost', 'test', 'example', 'invalid', 'internal'],
 
     'dev_words' => ['dev', 'stage', 'staging', 'test', 'preview', 'demo'],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Anchors that say nothing
+    |---------------------------------------------------------------------------
+    |
+    | "Here", "read more", "подробнее" in every language the panel ships are
+    | built in (`links.vague_anchor`). A site adds its own phrases here or on
+    | the settings screen, one per line — compared whole, in any letter case.
+    |
+    */
+
+    'vague_anchors' => [],
 
 ];

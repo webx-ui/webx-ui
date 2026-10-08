@@ -144,6 +144,24 @@ return [
             'why' => 'Every page downloads them again.',
             'fix' => 'Give versioned static files a long Cache-Control (a year, immutable) in the web server.',
         ],
+        'directory_listing' => [
+            'title' => 'A folder lists its files',
+            'found' => 'A public folder answers with a list of the files in it.',
+            'why' => 'Every upload, attachment and old export in the folder is one click away for anyone, search engines included.',
+            'fix' => 'Turn directory listing off on the server: autoindex off in nginx, Options -Indexes in Apache.',
+        ],
+        'ip' => [
+            'title' => 'The site opens at its IP address',
+            'found' => 'The home page answers at the server’s bare IP address.',
+            'why' => 'Every page has one more copy under an address nobody meant to publish, and search engines may find it.',
+            'fix' => 'Make the server’s default host redirect to the domain with 301, or answer 404 or 444 to unknown names.',
+        ],
+        'http2' => [
+            'title' => 'No HTTP/2',
+            'found' => 'The site answers HTTPS over HTTP/1.1 only.',
+            'why' => 'A browser then loads pictures, styles and scripts six at a time instead of all at once, and a page with many of them is slower.',
+            'fix' => 'Turn HTTP/2 on for the HTTPS host: http2 on in nginx, the mod_http2 module in Apache. Most control panels have a switch.',
+        ],
     ],
     'hosts' => [
         'dev_content' => [
@@ -214,6 +232,12 @@ return [
             'why' => 'Search engines drop the page. Right for search results and service pages, wrong for content that was closed by mistake.',
             'fix' => 'Look through the list; open the pages that should be found in their SEO settings and remove noindex.',
         ],
+        'nofollow' => [
+            'title' => 'nofollow for the whole page',
+            'found' => 'The robots meta tag or X-Robots-Tag says nofollow (or none).',
+            'why' => 'Search engines do not follow a single link of the page, so every page it leads to loses that link.',
+            'fix' => 'Remove nofollow from the robots meta tag and the header; to close one link, put rel="nofollow" on that link.',
+        ],
     ],
     'robots' => [
         'missing' => [
@@ -278,6 +302,12 @@ return [
             'why' => 'Search engines find it only through links, later — and a page that loses its last link drops out.',
             'fix' => 'Make sure the page’s module adds it to the sitemap (with module-seo — through the address registry), or close it with noindex if it should not be found.',
         ],
+        'duplicate' => [
+            'title' => 'Addresses listed twice in the sitemap',
+            'found' => 'The same address appears twice in one sitemap file, or in two files of the index.',
+            'why' => 'Search engines take the address once; the duplicates make the sitemap longer and usually mean the generator walks a section twice.',
+            'fix' => 'List every address once: find which section of the site adds it twice.',
+        ],
     ],
     'redirects' => [
         'chain' => [
@@ -304,6 +334,12 @@ return [
             'why' => 'Search engines keep the old address in the index and give the new one none of its weight. Right for a redirect that will be taken back, wrong for a move.',
             'fix' => 'Look through the list; make the redirects of addresses that moved for good 301.',
         ],
+        'meta_refresh' => [
+            'title' => 'Redirect through meta refresh',
+            'found' => 'The page answers 200 and moves the visitor on with <meta http-equiv="refresh">.',
+            'why' => 'Search engines may or may not treat it as a redirect, and it passes nothing on; visitors see a flash of an empty page.',
+            'fix' => 'Redirect on the server with 301, in the SEO section’s redirects or the web server, and remove the meta tag.',
+        ],
     ],
     'title' => [
         'missing' => [
@@ -329,6 +365,12 @@ return [
             'found' => 'The page has more than one <title> tag.',
             'why' => 'Search engines take one of them, not necessarily the one written for the page.',
             'fix' => 'Find which template or block prints the second title and remove it.',
+        ],
+        'width' => [
+            'title' => 'Title too wide for the results',
+            'found' => 'The title is wider than the search results show.',
+            'why' => 'The results cut a title by pixels, not characters: capitals and wide letters run out sooner, and the end — often the site’s name — is replaced by an ellipsis. The width is estimated in the results’ own font, not the site’s.',
+            'fix' => 'Shorten the title or put the important words first.',
         ],
     ],
     'description' => [
@@ -369,6 +411,18 @@ return [
             'found' => 'The H1 repeats the title word for word.',
             'why' => 'Two places to describe the page say the same thing; one of them could add a word that people search for.',
             'fix' => 'Keep the H1 short and readable, and let the title carry the keywords and the site’s name.',
+        ],
+        'duplicate' => [
+            'title' => 'The same H1 on several pages',
+            'found' => 'Other indexable pages have the same H1.',
+            'why' => 'Pages with one heading look like one page to search engines, and a visitor cannot tell them apart in the tabs.',
+            'fix' => 'Give every page its own H1 — the name of the product, the article or the section.',
+        ],
+        'length' => [
+            'title' => 'H1 too long',
+            'found' => 'The H1 is longer than the threshold.',
+            'why' => 'A heading that turned into a sentence is harder to read and, on a phone, fills the first screen.',
+            'fix' => 'Keep the H1 to the name of the page and move the rest into the text below it.',
         ],
     ],
     'headings' => [
@@ -422,6 +476,36 @@ return [
             'why' => 'The page asks not to be indexed in favour of another — right for filters and copies, wrong for a page meant to be found.',
             'fix' => 'Look through the list; for pages that should be found, make the canonical their own address.',
         ],
+        'chain' => [
+            'title' => 'Canonical leads to another canonical',
+            'found' => 'The canonical points to a page whose own canonical points further on.',
+            'why' => 'Search engines follow a step or two, or give up and choose the original themselves.',
+            'fix' => 'Point the canonical straight at the last page of the chain.',
+        ],
+        'loop' => [
+            'title' => 'Canonicals point at each other',
+            'found' => 'Two pages name each other as the original.',
+            'why' => 'Neither can be the original, so search engines ignore both canonicals and choose for themselves.',
+            'fix' => 'Decide which page is the original: it points to itself, the other points to it.',
+        ],
+        'foreign' => [
+            'title' => 'Canonical on another domain or over http',
+            'found' => 'The canonical points to another domain, another mirror or a plain http address.',
+            'why' => 'The page hands its place in the results to an address that is not this site as visitors see it. Usually APP_URL or a copied template is to blame.',
+            'fix' => 'Check APP_URL and the template: the canonical uses the site’s own scheme and host.',
+        ],
+        'fragment' => [
+            'title' => 'Canonical with #',
+            'found' => 'The canonical address has a fragment after #.',
+            'why' => 'Search engines drop the fragment or the whole canonical, so it does not say what it was meant to.',
+            'fix' => 'Remove the part after # from the canonical.',
+        ],
+        'pagination' => [
+            'title' => 'Later pages of a list point to the first',
+            'found' => 'Page 2, 3 or further of a list has a canonical to the first page.',
+            'why' => 'Search engines take it at its word and drop the later pages, and with them the only links to what is listed there.',
+            'fix' => 'Let every page of a list point its canonical to itself.',
+        ],
     ],
     'html' => [
         'lang' => [
@@ -441,6 +525,24 @@ return [
             'found' => 'The page links no icon, or the icon it links does not open.',
             'why' => 'Browser tabs, bookmarks and search results on phones show an empty square instead of the site’s mark.',
             'fix' => 'Add <link rel="icon"> with a working address to the layout.',
+        ],
+        'doctype' => [
+            'title' => 'No doctype',
+            'found' => 'The page does not start with <!doctype html>.',
+            'why' => 'Without it the browser draws the page in quirks mode, with old box sizes and table layout.',
+            'fix' => 'Start the layout with <!doctype html>.',
+        ],
+        'charset' => [
+            'title' => 'Encoding not declared, or declared twice differently',
+            'found' => 'The encoding is said neither in the Content-Type header nor in <meta charset>, or the two disagree.',
+            'why' => 'The browser has to guess, and a wrong guess turns the text into gibberish.',
+            'fix' => 'Put <meta charset="utf-8"> first in <head> and keep the header in the same encoding.',
+        ],
+        'obsolete' => [
+            'title' => 'Obsolete tags',
+            'found' => 'The page has tags HTML dropped — <font>, <center>, <marquee> — or Flash.',
+            'why' => 'They usually come with a text pasted from Word or an old site and bring their own fonts and colours; Flash does not play in any browser.',
+            'fix' => 'Clean the text in the editor: remove the formatting and leave the site’s own styles to do the work.',
         ],
     ],
     'og' => [
@@ -482,6 +584,30 @@ return [
             'why' => 'The pair is dropped. Common mistakes: en-UK instead of en-GB, jp instead of ja.',
             'fix' => 'Point hreflang at the working address of each version and use ISO 639-1 language and ISO 3166-1 region codes.',
         ],
+        'self_missing' => [
+            'title' => 'Language versions without the page itself',
+            'found' => 'The page lists its language versions but not its own address.',
+            'why' => 'The set has to be the same on every page of it, own address included; otherwise search engines may not trust it.',
+            'fix' => 'Add the page’s own address with its language to the list.',
+        ],
+        'duplicate_lang' => [
+            'title' => 'One language, two addresses',
+            'found' => 'The same language code leads to different addresses.',
+            'why' => 'Search engines cannot tell which address is the version for that language and may ignore both.',
+            'fix' => 'Leave one address per language code.',
+        ],
+        'not_indexable' => [
+            'title' => 'Language version closed from search',
+            'found' => 'A language version is closed with noindex or robots.txt, or its canonical points elsewhere.',
+            'why' => 'A closed version cannot be shown, so the pair is dropped; a version with a canonical elsewhere should be named by its canonical address.',
+            'fix' => 'Open the version for search, or name its canonical address instead.',
+        ],
+        'lang_mismatch' => [
+            'title' => 'The versions disagree on the language',
+            'found' => 'The page calls a version by one code, and the version calls itself by another.',
+            'why' => 'The two pages do not describe the same set, and search engines may drop the pair.',
+            'fix' => 'Use the same code for the version on every page of the set.',
+        ],
     ],
     'jsonld' => [
         'invalid' => [
@@ -521,6 +647,18 @@ return [
             'found' => 'Several indexable pages have the same visible text.',
             'why' => 'Search engines choose one copy to show and ignore the rest.',
             'fix' => 'Make the pages different, merge them, or point the copies’ canonical at the original.',
+        ],
+        'placeholder' => [
+            'title' => 'Lorem ipsum on the page',
+            'found' => 'The page has the filler text lorem ipsum.',
+            'why' => 'Visitors see an unfinished site, and search engines index text that says nothing.',
+            'fix' => 'Replace the filler with real text, or close the page until it is ready.',
+        ],
+        'soft_404' => [
+            'title' => '“Not found” with code 200',
+            'found' => 'The page answers 200, and its title or H1 says it was not found.',
+            'why' => 'Search engines keep it as a page, and the address that should have gone stays in the index.',
+            'fix' => 'Answer 404 or 410 where there is nothing, or redirect with 301 to where the thing moved.',
         ],
     ],
     'url' => [
@@ -588,6 +726,36 @@ return [
             'why' => 'Visitors land on an error on somebody else’s site, and the page looks abandoned. 429 is not counted — that is a server asking a robot to slow down.',
             'fix' => 'Update the link to the page’s new address, or remove it.',
         ],
+        'to_non_canonical' => [
+            'title' => 'Links to non-canonical addresses',
+            'found' => 'Internal links lead to pages whose canonical names another address.',
+            'why' => 'The site votes for a copy and tells search engines the original is elsewhere. Typical of filters and sorting leaking into the menu.',
+            'fix' => 'Link to the canonical address.',
+        ],
+        'to_noindex' => [
+            'title' => 'Links to pages closed from search',
+            'found' => 'Internal links lead to pages with noindex or closed in robots.txt.',
+            'why' => 'Fine for a sign-in or a cart; a product or an article on this list is closed by mistake.',
+            'fix' => 'Look through the list: open what should be found, or stop linking to what should not.',
+        ],
+        'utm' => [
+            'title' => 'UTM tags in internal links',
+            'found' => 'Internal links carry utm_ parameters.',
+            'why' => 'Every click starts a new visit from that campaign in the analytics, and every tagged address is a copy of the page.',
+            'fix' => 'Remove the utm_ parameters from internal links; keep them for newsletters and ads.',
+        ],
+        'unfollowable' => [
+            'title' => 'Links nobody can follow',
+            'found' => 'Links lead to #, javascript:, a mailto: without an address, a tel: without a number, or a host written without https://.',
+            'why' => 'Search engines skip them, and a broken mailto: or a “www.” link without a scheme leads a visitor to a 404 on the site itself.',
+            'fix' => 'Make buttons <button>, write mailto: and tel: in full, and start external addresses with https://.',
+        ],
+        'vague_anchor' => [
+            'title' => 'Links that say nothing',
+            'found' => 'Links are called “here”, “read more” or the like.',
+            'why' => 'The anchor is what search engines and screen readers learn about the page behind it; these say nothing.',
+            'fix' => 'Name the link after what it opens: “Read about roses” instead of “Read more”. Add your own phrases in the audit settings.',
+        ],
     ],
     'mixed_content' => [
         'title' => 'Mixed content',
@@ -634,6 +802,18 @@ return [
             'why' => 'The same picture in WebP or AVIF usually weighs a third to a half as much.',
             'fix' => 'Serve WebP or AVIF — through <picture> with a modern source, or by converting the pictures on upload.',
         ],
+        'redirect' => [
+            'title' => 'Pictures through a redirect',
+            'found' => 'Pictures on the page answer with a redirect.',
+            'why' => 'Every visitor makes the round trip before the picture starts to load, and image search indexes the address it ends at.',
+            'fix' => 'Put the final address of the picture in the page.',
+        ],
+        'alt_long' => [
+            'title' => 'alt too long',
+            'found' => 'Pictures have an alt longer than the threshold.',
+            'why' => 'A screen reader reads all of it, and a paragraph stuffed with words reads as stuffing to search engines.',
+            'fix' => 'Describe the picture in a sentence; the rest belongs in the text.',
+        ],
     ],
     'a11y' => [
         'button_name' => [
@@ -673,6 +853,52 @@ return [
             'found' => 'The page links to no other page of the site.',
             'why' => 'A visitor who lands on it has nowhere to go but back.',
             'fix' => 'Check that the layout with its menu is used, and add links to related pages.',
+        ],
+        'noindex_only' => [
+            'title' => 'Linked only from closed pages',
+            'found' => 'Only pages closed from search — noindex, robots.txt, a canonical elsewhere — link to this indexable page.',
+            'why' => 'To search engines it is as good as an orphan.',
+            'fix' => 'Link to it from an open page: a section, a list or the menu.',
+        ],
+        'nofollow_only' => [
+            'title' => 'Linked only with nofollow',
+            'found' => 'Every internal link to this indexable page has nofollow.',
+            'why' => 'The site asks search engines not to go there, and then wants the page found.',
+            'fix' => 'Remove nofollow from internal links to it.',
+        ],
+        'single_link' => [
+            'title' => 'Linked from one page only',
+            'found' => 'Only one page of the site links to this indexable page.',
+            'why' => 'One changed menu or one removed list makes it an orphan, and it gets little weight meanwhile. Fine for an article in a list; worth a look for a page that matters.',
+            'fix' => 'Link to it from related pages, the section or the menu.',
+        ],
+        'many_internal' => [
+            'title' => 'Too many internal links',
+            'found' => 'The page has more internal links than the threshold.',
+            'why' => 'Each link gets a sliver of the page’s weight, and search engines stop reading somewhere along the way.',
+            'fix' => 'Split long lists into pages and keep the menu to the sections.',
+        ],
+    ],
+    'meta' => [
+        'multiple' => [
+            'title' => 'A meta tag written twice',
+            'found' => 'A meta tag that should be on the page once — description, robots, viewport, Open Graph — is there more than once.',
+            'why' => 'Search engines and social networks pick one of the copies, not necessarily the right one. Usually the layout and a module both print it.',
+            'fix' => 'Print the tag in one place: remove it from the layout or from the block that adds it again.',
+        ],
+    ],
+    'assets' => [
+        'broken' => [
+            'title' => 'Styles or scripts do not open',
+            'found' => 'A stylesheet or a script of the page answers 4xx, 5xx or nothing.',
+            'why' => 'The page comes out unstyled, or a menu, a gallery or a form stops working — and search engines render it that way too.',
+            'fix' => 'Fix the address in the layout or put the file back; after a deploy, rebuild the front end.',
+        ],
+        'heavy' => [
+            'title' => 'Heavy styles or scripts',
+            'found' => 'A stylesheet or a script is heavier than the threshold as sent.',
+            'why' => 'The page waits for it before it can draw or respond, longest on a phone.',
+            'fix' => 'Turn on compression, split the bundle, and load what the page does not need right away later.',
         ],
     ],
 ];

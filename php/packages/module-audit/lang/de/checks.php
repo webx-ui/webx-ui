@@ -144,6 +144,24 @@ return [
             'why' => 'Jede Seite lädt sie erneut herunter.',
             'fix' => 'Geben Sie versionierten statischen Dateien im Webserver ein langes Cache-Control (ein Jahr, immutable).',
         ],
+        'directory_listing' => [
+            'title' => 'Ein Ordner listet seine Dateien auf',
+            'found' => 'Ein öffentlicher Ordner antwortet mit einer Liste der Dateien darin.',
+            'why' => 'Jeder Upload, jeder Anhang und jeder alte Export im Ordner ist für jeden nur einen Klick entfernt, auch für Suchmaschinen.',
+            'fix' => 'Schalten Sie die Verzeichnisauflistung auf dem Server aus: autoindex off in nginx, Options -Indexes in Apache.',
+        ],
+        'ip' => [
+            'title' => 'Die Website öffnet sich unter ihrer IP-Adresse',
+            'found' => 'Die Startseite antwortet unter der bloßen IP-Adresse des Servers.',
+            'why' => 'Jede Seite hat eine weitere Kopie unter einer Adresse, die niemand veröffentlichen wollte, und Suchmaschinen können sie finden.',
+            'fix' => 'Lassen Sie den Standard-Host des Servers mit 301 auf die Domain weiterleiten oder auf unbekannte Namen mit 404 oder 444 antworten.',
+        ],
+        'http2' => [
+            'title' => 'Kein HTTP/2',
+            'found' => 'Die Website antwortet über HTTPS nur mit HTTP/1.1.',
+            'why' => 'Der Browser lädt Bilder, Styles und Skripte dann zu sechst statt alle auf einmal, und eine Seite mit vielen davon ist langsamer.',
+            'fix' => 'Schalten Sie HTTP/2 für den HTTPS-Host ein: http2 on in nginx, das Modul mod_http2 in Apache. Die meisten Control-Panels haben dafür einen Schalter.',
+        ],
     ],
     'hosts' => [
         'dev_content' => [
@@ -214,6 +232,12 @@ return [
             'why' => 'Suchmaschinen entfernen die Seite. Richtig für Suchergebnisse und Dienstseiten, falsch für Inhalte, die versehentlich gesperrt wurden.',
             'fix' => 'Gehen Sie die Liste durch; öffnen Sie Seiten, die gefunden werden sollen, in ihren SEO-Einstellungen und entfernen Sie noindex.',
         ],
+        'nofollow' => [
+            'title' => 'nofollow für die ganze Seite',
+            'found' => 'Das Robots-Meta-Tag oder X-Robots-Tag sagt nofollow (oder none).',
+            'why' => 'Suchmaschinen folgen keinem einzigen Link der Seite, sodass jede Seite, zu der sie führt, diesen Link verliert.',
+            'fix' => 'Entfernen Sie nofollow aus dem Robots-Meta-Tag und dem Header; um einen einzelnen Link zu sperren, setzen Sie rel="nofollow" auf diesen Link.',
+        ],
     ],
     'robots' => [
         'missing' => [
@@ -278,6 +302,12 @@ return [
             'why' => 'Suchmaschinen finden sie nur über Links, später — und eine Seite, die ihren letzten Link verliert, fällt heraus.',
             'fix' => 'Stellen Sie sicher, dass das Modul der Seite sie zur Sitemap hinzufügt (mit module-seo — über das Adressregister), oder sperren Sie sie mit noindex, wenn sie nicht gefunden werden soll.',
         ],
+        'duplicate' => [
+            'title' => 'Doppelt aufgeführte Adressen in der Sitemap',
+            'found' => 'Dieselbe Adresse steht zweimal in einer Sitemap-Datei oder in zwei Dateien des Index.',
+            'why' => 'Suchmaschinen nehmen die Adresse einmal; die Duplikate machen die Sitemap länger und bedeuten meist, dass der Generator einen Bereich zweimal durchläuft.',
+            'fix' => 'Führen Sie jede Adresse einmal auf: finden Sie heraus, welcher Bereich der Website sie doppelt hinzufügt.',
+        ],
     ],
     'redirects' => [
         'chain' => [
@@ -304,6 +334,12 @@ return [
             'why' => 'Suchmaschinen behalten die alte Adresse im Index und geben der neuen nichts von ihrem Gewicht. Richtig für eine Weiterleitung, die zurückgenommen wird, falsch für einen Umzug.',
             'fix' => 'Gehen Sie die Liste durch; machen Sie die Weiterleitungen dauerhaft umgezogener Adressen zu 301.',
         ],
+        'meta_refresh' => [
+            'title' => 'Weiterleitung über meta refresh',
+            'found' => 'Die Seite antwortet mit 200 und schickt den Besucher mit <meta http-equiv="refresh"> weiter.',
+            'why' => 'Suchmaschinen behandeln das vielleicht als Weiterleitung, vielleicht nicht, und es gibt nichts weiter; Besucher sehen kurz eine leere Seite.',
+            'fix' => 'Leiten Sie auf dem Server mit 301 weiter, in den Weiterleitungen des SEO-Bereichs oder im Webserver, und entfernen Sie das Meta-Tag.',
+        ],
     ],
     'title' => [
         'missing' => [
@@ -329,6 +365,12 @@ return [
             'found' => 'Die Seite hat mehr als einen <title>-Tag.',
             'why' => 'Suchmaschinen nehmen einen davon, nicht unbedingt den für die Seite geschriebenen.',
             'fix' => 'Finden Sie heraus, welches Template oder welcher Block den zweiten Title ausgibt, und entfernen Sie ihn.',
+        ],
+        'width' => [
+            'title' => 'Title zu breit für die Suchergebnisse',
+            'found' => 'Der Title ist breiter, als die Suchergebnisse anzeigen.',
+            'why' => 'Die Suchergebnisse kürzen einen Title nach Pixeln, nicht nach Zeichen: Großbuchstaben und breite Buchstaben stoßen früher an die Grenze, und das Ende — oft der Name der Website — wird durch Auslassungspunkte ersetzt. Die Breite wird in der Schrift der Suchergebnisse geschätzt, nicht in der der Website.',
+            'fix' => 'Kürzen Sie den Title oder stellen Sie die wichtigen Wörter nach vorn.',
         ],
     ],
     'description' => [
@@ -369,6 +411,18 @@ return [
             'found' => 'Die H1 wiederholt den Title Wort für Wort.',
             'why' => 'Zwei Stellen, die die Seite beschreiben, sagen dasselbe; eine davon könnte ein Wort ergänzen, nach dem Menschen suchen.',
             'fix' => 'Halten Sie die H1 kurz und gut lesbar und lassen Sie den Title die Schlüsselwörter und den Namen der Website tragen.',
+        ],
+        'duplicate' => [
+            'title' => 'Dieselbe H1 auf mehreren Seiten',
+            'found' => 'Andere indexierbare Seiten haben dieselbe H1.',
+            'why' => 'Seiten mit derselben Überschrift sehen für Suchmaschinen wie eine Seite aus, und ein Besucher kann sie in den Tabs nicht unterscheiden.',
+            'fix' => 'Geben Sie jeder Seite eine eigene H1 — den Namen des Produkts, des Artikels oder des Bereichs.',
+        ],
+        'length' => [
+            'title' => 'H1 zu lang',
+            'found' => 'Die H1 ist länger als der Schwellenwert.',
+            'why' => 'Eine Überschrift, die zu einem Satz geworden ist, liest sich schwerer und füllt auf dem Smartphone den ersten Bildschirm.',
+            'fix' => 'Beschränken Sie die H1 auf den Namen der Seite und verschieben Sie den Rest in den Text darunter.',
         ],
     ],
     'headings' => [
@@ -422,6 +476,36 @@ return [
             'why' => 'Die Seite bittet darum, zugunsten einer anderen nicht indexiert zu werden — richtig für Filter und Kopien, falsch für eine Seite, die gefunden werden soll.',
             'fix' => 'Gehen Sie die Liste durch; bei Seiten, die gefunden werden sollen, machen Sie das Canonical zu ihrer eigenen Adresse.',
         ],
+        'chain' => [
+            'title' => 'Canonical führt zu einem weiteren Canonical',
+            'found' => 'Das Canonical zeigt auf eine Seite, deren eigenes Canonical weiter zeigt.',
+            'why' => 'Suchmaschinen folgen einen oder zwei Schritte oder geben auf und wählen das Original selbst.',
+            'fix' => 'Richten Sie das Canonical direkt auf die letzte Seite der Kette.',
+        ],
+        'loop' => [
+            'title' => 'Canonicals zeigen aufeinander',
+            'found' => 'Zwei Seiten nennen sich gegenseitig als Original.',
+            'why' => 'Keine von beiden kann das Original sein, also ignorieren Suchmaschinen beide Canonicals und wählen selbst.',
+            'fix' => 'Entscheiden Sie, welche Seite das Original ist: Sie zeigt auf sich selbst, die andere zeigt auf sie.',
+        ],
+        'foreign' => [
+            'title' => 'Canonical auf einer anderen Domain oder über http',
+            'found' => 'Das Canonical zeigt auf eine andere Domain, einen anderen Spiegel oder eine unverschlüsselte http-Adresse.',
+            'why' => 'Die Seite gibt ihren Platz in den Suchergebnissen an eine Adresse ab, die nicht die Website ist, wie Besucher sie sehen. Meist sind APP_URL oder ein kopiertes Template schuld.',
+            'fix' => 'Prüfen Sie APP_URL und das Template: Das Canonical verwendet das eigene Schema und den eigenen Host der Website.',
+        ],
+        'fragment' => [
+            'title' => 'Canonical mit #',
+            'found' => 'Die Canonical-Adresse hat ein Fragment nach #.',
+            'why' => 'Suchmaschinen verwerfen das Fragment oder das ganze Canonical, sodass es nicht sagt, was es sagen sollte.',
+            'fix' => 'Entfernen Sie den Teil nach # aus dem Canonical.',
+        ],
+        'pagination' => [
+            'title' => 'Weitere Seiten einer Liste zeigen auf die erste',
+            'found' => 'Seite 2, 3 oder eine spätere Seite einer Liste hat ein Canonical auf die erste Seite.',
+            'why' => 'Suchmaschinen nehmen das beim Wort und verwerfen die weiteren Seiten, und mit ihnen die einzigen Links auf das, was dort aufgeführt ist.',
+            'fix' => 'Lassen Sie jede Seite einer Liste mit ihrem Canonical auf sich selbst zeigen.',
+        ],
     ],
     'html' => [
         'lang' => [
@@ -441,6 +525,24 @@ return [
             'found' => 'Die Seite verlinkt kein Icon, oder das verlinkte Icon öffnet sich nicht.',
             'why' => 'Browser-Tabs, Lesezeichen und Suchergebnisse auf Smartphones zeigen ein leeres Quadrat statt des Zeichens der Website.',
             'fix' => 'Fügen Sie dem Layout <link rel="icon"> mit einer funktionierenden Adresse hinzu.',
+        ],
+        'doctype' => [
+            'title' => 'Kein Doctype',
+            'found' => 'Die Seite beginnt nicht mit <!doctype html>.',
+            'why' => 'Ohne ihn zeichnet der Browser die Seite im Quirks-Modus, mit alten Box-Größen und altem Tabellenlayout.',
+            'fix' => 'Beginnen Sie das Layout mit <!doctype html>.',
+        ],
+        'charset' => [
+            'title' => 'Zeichenkodierung nicht angegeben oder zweimal unterschiedlich angegeben',
+            'found' => 'Die Kodierung steht weder im Content-Type-Header noch in <meta charset>, oder die beiden widersprechen sich.',
+            'why' => 'Der Browser muss raten, und falsch geraten wird der Text zu Zeichensalat.',
+            'fix' => 'Setzen Sie <meta charset="utf-8"> an den Anfang von <head> und halten Sie den Header in derselben Kodierung.',
+        ],
+        'obsolete' => [
+            'title' => 'Veraltete Tags',
+            'found' => 'Die Seite enthält Tags, die HTML abgeschafft hat — <font>, <center>, <marquee> — oder Flash.',
+            'why' => 'Sie kommen meist mit einem aus Word oder einer alten Website eingefügten Text und bringen eigene Schriften und Farben mit; Flash läuft in keinem Browser.',
+            'fix' => 'Bereinigen Sie den Text im Editor: Entfernen Sie die Formatierung und überlassen Sie die Arbeit den Styles der Website.',
         ],
     ],
     'og' => [
@@ -482,6 +584,30 @@ return [
             'why' => 'Das Paar wird verworfen. Häufige Fehler: en-UK statt en-GB, jp statt ja.',
             'fix' => 'Richten Sie hreflang auf die funktionierende Adresse jeder Version und verwenden Sie Sprachcodes nach ISO 639-1 und Regionscodes nach ISO 3166-1.',
         ],
+        'self_missing' => [
+            'title' => 'Sprachversionen ohne die Seite selbst',
+            'found' => 'Die Seite führt ihre Sprachversionen auf, aber nicht ihre eigene Adresse.',
+            'why' => 'Der Satz muss auf jeder seiner Seiten gleich sein, die eigene Adresse eingeschlossen; sonst vertrauen Suchmaschinen ihm möglicherweise nicht.',
+            'fix' => 'Fügen Sie der Liste die eigene Adresse der Seite mit ihrer Sprache hinzu.',
+        ],
+        'duplicate_lang' => [
+            'title' => 'Eine Sprache, zwei Adressen',
+            'found' => 'Derselbe Sprachcode führt zu verschiedenen Adressen.',
+            'why' => 'Suchmaschinen können nicht erkennen, welche Adresse die Version für diese Sprache ist, und ignorieren möglicherweise beide.',
+            'fix' => 'Lassen Sie eine Adresse pro Sprachcode übrig.',
+        ],
+        'not_indexable' => [
+            'title' => 'Sprachversion für Suchmaschinen gesperrt',
+            'found' => 'Eine Sprachversion ist mit noindex oder robots.txt gesperrt, oder ihr Canonical zeigt woandershin.',
+            'why' => 'Eine gesperrte Version kann nicht angezeigt werden, also wird das Paar verworfen; eine Version mit einem Canonical woandershin sollte unter ihrer Canonical-Adresse genannt werden.',
+            'fix' => 'Geben Sie die Version für Suchmaschinen frei oder nennen Sie stattdessen ihre Canonical-Adresse.',
+        ],
+        'lang_mismatch' => [
+            'title' => 'Die Versionen sind sich über die Sprache uneinig',
+            'found' => 'Die Seite nennt eine Version mit einem Code, und die Version nennt sich selbst mit einem anderen.',
+            'why' => 'Die beiden Seiten beschreiben nicht denselben Satz, und Suchmaschinen verwerfen das Paar möglicherweise.',
+            'fix' => 'Verwenden Sie für die Version auf jeder Seite des Satzes denselben Code.',
+        ],
     ],
     'jsonld' => [
         'invalid' => [
@@ -521,6 +647,18 @@ return [
             'found' => 'Mehrere indexierbare Seiten haben denselben sichtbaren Text.',
             'why' => 'Suchmaschinen wählen eine Kopie zur Anzeige aus und ignorieren den Rest.',
             'fix' => 'Machen Sie die Seiten unterschiedlich, führen Sie sie zusammen oder richten Sie das Canonical der Kopien auf das Original.',
+        ],
+        'placeholder' => [
+            'title' => 'Lorem ipsum auf der Seite',
+            'found' => 'Die Seite enthält den Fülltext lorem ipsum.',
+            'why' => 'Besucher sehen eine unfertige Website, und Suchmaschinen indexieren Text, der nichts sagt.',
+            'fix' => 'Ersetzen Sie den Fülltext durch echten Text oder sperren Sie die Seite, bis sie fertig ist.',
+        ],
+        'soft_404' => [
+            'title' => '„Nicht gefunden“ mit Code 200',
+            'found' => 'Die Seite antwortet mit 200, und ihr Title oder ihre H1 sagt, dass sie nicht gefunden wurde.',
+            'why' => 'Suchmaschinen behalten sie als Seite, und die Adresse, die verschwinden sollte, bleibt im Index.',
+            'fix' => 'Antworten Sie mit 404 oder 410, wo nichts ist, oder leiten Sie mit 301 dorthin weiter, wohin der Inhalt umgezogen ist.',
         ],
     ],
     'url' => [
@@ -588,6 +726,36 @@ return [
             'why' => 'Besucher landen auf einem Fehler auf einer fremden Website, und die Seite wirkt verwaist. 429 wird nicht gezählt — damit bittet ein Server einen Robot, langsamer zu werden.',
             'fix' => 'Aktualisieren Sie den Link auf die neue Adresse der Seite oder entfernen Sie ihn.',
         ],
+        'to_non_canonical' => [
+            'title' => 'Links auf nicht-kanonische Adressen',
+            'found' => 'Interne Links führen zu Seiten, deren Canonical eine andere Adresse nennt.',
+            'why' => 'Die Website stimmt für eine Kopie und sagt Suchmaschinen zugleich, das Original sei woanders. Typisch, wenn Filter und Sortierung ins Menü durchsickern.',
+            'fix' => 'Verlinken Sie auf die Canonical-Adresse.',
+        ],
+        'to_noindex' => [
+            'title' => 'Links auf für Suchmaschinen gesperrte Seiten',
+            'found' => 'Interne Links führen zu Seiten mit noindex oder zu in robots.txt gesperrten Seiten.',
+            'why' => 'In Ordnung für eine Anmeldung oder einen Warenkorb; ein Produkt oder ein Artikel in dieser Liste ist versehentlich gesperrt.',
+            'fix' => 'Gehen Sie die Liste durch: Geben Sie frei, was gefunden werden soll, oder verlinken Sie nicht mehr auf das, was nicht gefunden werden soll.',
+        ],
+        'utm' => [
+            'title' => 'UTM-Tags in internen Links',
+            'found' => 'Interne Links tragen utm_-Parameter.',
+            'why' => 'Jeder Klick startet in der Analyse einen neuen Besuch aus dieser Kampagne, und jede markierte Adresse ist eine Kopie der Seite.',
+            'fix' => 'Entfernen Sie die utm_-Parameter aus internen Links; behalten Sie sie für Newsletter und Werbung.',
+        ],
+        'unfollowable' => [
+            'title' => 'Links, denen niemand folgen kann',
+            'found' => 'Links führen zu #, javascript:, einem mailto: ohne Adresse, einem tel: ohne Nummer oder einem Host ohne https://.',
+            'why' => 'Suchmaschinen überspringen sie, und ein defektes mailto: oder ein „www.“-Link ohne Schema führt den Besucher auf eine 404 der Website selbst.',
+            'fix' => 'Machen Sie Buttons zu <button>, schreiben Sie mailto: und tel: vollständig aus und beginnen Sie externe Adressen mit https://.',
+        ],
+        'vague_anchor' => [
+            'title' => 'Links, die nichts sagen',
+            'found' => 'Links heißen „hier“, „mehr lesen“ oder ähnlich.',
+            'why' => 'Der Ankertext ist das, was Suchmaschinen und Screenreader über die Seite dahinter erfahren; diese sagen nichts.',
+            'fix' => 'Benennen Sie den Link nach dem, was er öffnet: „Über Rosen lesen“ statt „Mehr lesen“. Eigene Formulierungen ergänzen Sie in den Audit-Einstellungen.',
+        ],
     ],
     'mixed_content' => [
         'title' => 'Gemischte Inhalte',
@@ -634,6 +802,18 @@ return [
             'why' => 'Dasselbe Bild in WebP oder AVIF wiegt meist ein Drittel bis die Hälfte.',
             'fix' => 'Liefern Sie WebP oder AVIF aus — über <picture> mit einer modernen Quelle oder indem Sie die Bilder beim Hochladen konvertieren.',
         ],
+        'redirect' => [
+            'title' => 'Bilder über eine Weiterleitung',
+            'found' => 'Bilder der Seite antworten mit einer Weiterleitung.',
+            'why' => 'Jeder Besucher macht den Umweg, bevor das Bild zu laden beginnt, und die Bildersuche indexiert die Adresse, bei der es endet.',
+            'fix' => 'Setzen Sie die endgültige Adresse des Bildes in die Seite ein.',
+        ],
+        'alt_long' => [
+            'title' => 'alt zu lang',
+            'found' => 'Bilder haben ein alt, das länger als der Schwellenwert ist.',
+            'why' => 'Ein Screenreader liest alles vor, und ein mit Wörtern vollgestopfter Absatz wirkt auf Suchmaschinen wie Keyword-Stuffing.',
+            'fix' => 'Beschreiben Sie das Bild in einem Satz; der Rest gehört in den Text.',
+        ],
     ],
     'a11y' => [
         'button_name' => [
@@ -673,6 +853,52 @@ return [
             'found' => 'Die Seite verlinkt auf keine andere Seite der Website.',
             'why' => 'Ein Besucher, der dort landet, kann nur zurück.',
             'fix' => 'Prüfen Sie, ob das Layout mit seinem Menü verwendet wird, und ergänzen Sie Links auf verwandte Seiten.',
+        ],
+        'noindex_only' => [
+            'title' => 'Nur von gesperrten Seiten verlinkt',
+            'found' => 'Nur für Suchmaschinen gesperrte Seiten — noindex, robots.txt, ein Canonical woandershin — verlinken auf diese indexierbare Seite.',
+            'why' => 'Für Suchmaschinen ist sie so gut wie verwaist.',
+            'fix' => 'Verlinken Sie sie von einer offenen Seite: einem Bereich, einer Liste oder dem Menü.',
+        ],
+        'nofollow_only' => [
+            'title' => 'Nur mit nofollow verlinkt',
+            'found' => 'Jeder interne Link auf diese indexierbare Seite hat nofollow.',
+            'why' => 'Die Website bittet Suchmaschinen, nicht dorthin zu gehen, und will dann, dass die Seite gefunden wird.',
+            'fix' => 'Entfernen Sie nofollow von den internen Links auf sie.',
+        ],
+        'single_link' => [
+            'title' => 'Nur von einer Seite verlinkt',
+            'found' => 'Nur eine Seite der Website verlinkt auf diese indexierbare Seite.',
+            'why' => 'Ein geändertes Menü oder eine entfernte Liste macht sie zur Waise, und bis dahin erhält sie wenig Gewicht. In Ordnung für einen Artikel in einer Liste; einen Blick wert bei einer wichtigen Seite.',
+            'fix' => 'Verlinken Sie sie von verwandten Seiten, dem Bereich oder dem Menü.',
+        ],
+        'many_internal' => [
+            'title' => 'Zu viele interne Links',
+            'found' => 'Die Seite hat mehr interne Links als der Schwellenwert.',
+            'why' => 'Jeder Link erhält einen Bruchteil des Gewichts der Seite, und Suchmaschinen hören irgendwo unterwegs auf zu lesen.',
+            'fix' => 'Teilen Sie lange Listen auf Seiten auf und beschränken Sie das Menü auf die Bereiche.',
+        ],
+    ],
+    'meta' => [
+        'multiple' => [
+            'title' => 'Ein doppelt ausgegebenes Meta-Tag',
+            'found' => 'Ein Meta-Tag, das nur einmal auf der Seite stehen sollte — description, robots, viewport, Open Graph —, steht mehrfach da.',
+            'why' => 'Suchmaschinen und soziale Netzwerke nehmen eine der Kopien, nicht unbedingt die richtige. Meist geben sowohl das Layout als auch ein Modul es aus.',
+            'fix' => 'Geben Sie das Tag an einer Stelle aus: entfernen Sie es aus dem Layout oder aus dem Block, der es erneut hinzufügt.',
+        ],
+    ],
+    'assets' => [
+        'broken' => [
+            'title' => 'Styles oder Skripte öffnen sich nicht',
+            'found' => 'Ein Stylesheet oder ein Skript der Seite antwortet mit 4xx, 5xx oder gar nicht.',
+            'why' => 'Die Seite erscheint ungestaltet, oder ein Menü, eine Galerie oder ein Formular funktioniert nicht mehr — und Suchmaschinen rendern sie genauso.',
+            'fix' => 'Korrigieren Sie die Adresse im Layout oder stellen Sie die Datei wieder her; bauen Sie nach einem Deployment das Frontend neu.',
+        ],
+        'heavy' => [
+            'title' => 'Schwere Styles oder Skripte',
+            'found' => 'Ein Stylesheet oder ein Skript ist in der gesendeten Form schwerer als der Schwellenwert.',
+            'why' => 'Die Seite wartet darauf, bevor sie sich zeichnen oder reagieren kann, am längsten auf dem Smartphone.',
+            'fix' => 'Schalten Sie die Kompression ein, teilen Sie das Bundle auf und laden Sie, was die Seite nicht sofort braucht, später.',
         ],
     ],
 ];

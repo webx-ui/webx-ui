@@ -29,6 +29,7 @@ final readonly class AuditSettings
         'audit.keep-snapshots' => 'keep_snapshots',
         'audit.title-min' => 'thresholds.title_min',
         'audit.title-max' => 'thresholds.title_max',
+        'audit.title-px' => 'thresholds.title_px',
         'audit.description-min' => 'thresholds.description_min',
         'audit.description-max' => 'thresholds.description_max',
         'audit.thin-words' => 'thresholds.thin_words',
@@ -120,7 +121,30 @@ final readonly class AuditSettings
             ...$this->lines('audit.exclude'),
         ]));
 
+        // The site's own vague anchors (`links.vague_anchor`), on top of the built-in ones: the
+        // config file's and the screen's together, a phrase per line.
+        $values['webx-audit.vague_anchors_all'] = array_values(array_unique([
+            ...array_values(array_filter((array) $this->config->get('webx-audit.vague_anchors', []), 'is_string')),
+            ...$this->phrases('audit.vague-anchors'),
+        ]));
+
         $this->config->set($values);
+    }
+
+    /**
+     * A setting written one phrase per line — spaces belong to the phrase.
+     *
+     * @return list<string>
+     */
+    private function phrases(string $key): array
+    {
+        $value = $this->settings($key);
+        $lines = is_array($value) ? $value : preg_split('/\R/u', is_string($value) ? $value : '');
+
+        return array_values(array_filter(array_map(
+            static fn (mixed $line): string => is_string($line) ? trim($line) : '',
+            $lines ?: [],
+        )));
     }
 
     /**

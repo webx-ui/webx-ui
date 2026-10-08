@@ -5,7 +5,7 @@ and an administrator check every new project by hand: the production config, the
 slashes, robots.txt and the sitemap, titles and headings, broken links, structured data, the
 security headers — and every address in the content that still points at a development stand.
 Its other half, `webx-ui/module-audit` on the server, crawls the site, keeps a snapshot of every
-page and runs about a hundred checks. No external service is involved: everything is a request to
+page and runs about a hundred and forty checks. No external service is involved: everything is a request to
 the site itself, its database or its config.
 
 The specification, with every check and its default threshold, is
@@ -138,13 +138,16 @@ A hidden finding is still found and stored; it stops counting, in that run and i
 | Requests at a time           | 2         | How hard the crawl leans on the server                                     |
 | Paths not to crawl           | —         | Masks the crawl does not ask (`/cart`, `/search/**`)                       |
 | Thresholds                   | §5        | Title and description lengths, words, text share, depth, picture weight, … |
+| Title, pixels at most        | 600       | Width in the results’ own font (20 px Arial), whatever font the site uses  |
+| Anchors that say nothing     | —         | The site’s own phrases on top of the built-in “here” and “read more”       |
 | Run the audit every night    | off       | A run of the chosen scope at the chosen hour, started by `schedule`        |
 | Runs to keep                 | 50        | Older runs go with their findings; the last full run always stays          |
 | Page snapshots to keep       | 5         | Pages and links of this many full runs — the bulk of what the audit stores |
 
 The nightly run needs the Laravel scheduler in cron, like the rest of the site. The settings
 override `config/webx-audit.php`; what is not on the screen (the TLS and cache thresholds, the
-zones and words that make a host a stand) stays in that file.
+zones and words that make a host a stand) stays in that file. Phrases in `vague_anchors` there and
+on the screen add up; the built-in ones cover every language the panel ships.
 
 ## For an agent (MCP)
 

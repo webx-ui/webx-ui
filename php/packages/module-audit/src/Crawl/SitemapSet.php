@@ -8,7 +8,7 @@ namespace WebxUi\Audit\Crawl;
  * What {@see SitemapReader} found: the files with their answers and counts, and the site's own
  * addresses in them. The run keeps the files (in `probes`), never the addresses.
  *
- * @phpstan-type SitemapFile array{url: string, required: bool, status: int|null, error: string|null, kind: string|null, urls: int, bytes: int, lastmod: array{count: int, future: int, distinct: int, first: string|null}}
+ * @phpstan-type SitemapFile array{url: string, required: bool, status: int|null, error: string|null, kind: string|null, urls: int, bytes: int, lastmod: array{count: int, future: int, distinct: int, first: string|null}, duplicates?: int, repeated?: int}
  */
 final readonly class SitemapSet
 {

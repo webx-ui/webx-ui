@@ -220,6 +220,29 @@
             "max": 100000,
             "placeholder": "100"
           }
+        },
+        {
+          "id": "title-px",
+          "type": "wx-input-number",
+          "name": "audit.title-px",
+          "label": "trans::webx-audit::screen.title-px",
+          "help": "trans::webx-audit::screen.title-px-help",
+          "props": {
+            "min": 100,
+            "max": 2000,
+            "placeholder": "600"
+          }
+        },
+        {
+          "id": "vague-anchors",
+          "type": "wx-textarea",
+          "name": "audit.vague-anchors",
+          "label": "trans::webx-audit::screen.vague-anchors",
+          "help": "trans::webx-audit::screen.vague-anchors-help",
+          "props": {
+            "rows": 4,
+            "placeholder": "see the offer"
+          }
         }
       ]
     },

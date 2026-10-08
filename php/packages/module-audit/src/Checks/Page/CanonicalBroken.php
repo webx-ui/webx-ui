@@ -36,6 +36,8 @@ final class CanonicalBroken extends PageCheck
             yield $this->on($page, 'canonical-broken', ['url' => $target, 'status' => $other->status ?? '—']);
         } elseif ($other->noindex()) {
             yield $this->on($page, 'canonical-noindex', ['url' => $target]);
+        } elseif ($other->blocked_by_robots) {
+            yield $this->on($page, 'canonical-robots', ['url' => $target]);
         }
     }
 }

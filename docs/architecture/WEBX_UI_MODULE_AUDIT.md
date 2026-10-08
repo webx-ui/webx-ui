@@ -5,7 +5,7 @@
 сайта, title и H1, битые ссылки, заголовки безопасности, конфиг продакшена. Пара к нему —
 `@webx-ui/module-audit`. Реестр пакетов — [`WEBX_UI_COMPOSER_PACKAGES.md`](WEBX_UI_COMPOSER_PACKAGES.md).
 
-Статус: спецификация написана 01.10.2026; A1–A5 сделаны 02.10.2026 (§14). Порядок — CLAUDE.md §6.
+Статус: спецификация написана 01.10.2026; A1–A5 сделаны 02.10.2026, A6 — 08.10.2026 (§14). Порядок — CLAUDE.md §6.
 
 ## 1. Границы
 
@@ -162,22 +162,25 @@
 
 ### 5.2. Хост и адреса (`host.*`)
 
-| Проверка                | Что                                                                        | Важность |
-| ----------------------- | -------------------------------------------------------------------------- | -------- |
-| `host.mirror`           | `www` и без `www` оба отвечают 200; второе имя не резолвится — N           | E        |
-| `host.https`            | `http` не ведёт на `https` одним 301 (через цепочку — W)                   | E        |
-| `host.tls`              | сертификат истекает (14 дней — E, 30 — W), не тот хост, нет цепочки        | E        |
-| `host.hsts`             | нет `Strict-Transport-Security`                                            | N        |
-| `host.index_files`      | `/index.php`, `/index.html`, `/index.htm` (и внутри разделов) отвечают 200 | E        |
-| `host.slashes`          | `//`, `/a//b` отвечают 200, а не 301 на схлопнутый                         | W        |
-| `host.trailing_slash`   | `/a` и `/a/` оба 200                                                       | W        |
-| `host.case`             | `/About` отвечает 200, а не 301                                            | W        |
-| `host.soft_404`         | случайный адрес — не 404 (200 или 302 на главную)                          | E        |
-| `host.404_page`         | на странице 404 нет ссылки на главную                                      | N        |
-| `host.compression`      | HTML без gzip/brotli                                                       | W        |
-| `host.security_headers` | нет `X-Content-Type-Options`, `Referrer-Policy`, защиты от фреймов         | N        |
-| `host.server_leak`      | `X-Powered-By`, `Server` с версией                                         | N        |
-| `host.static_cache`     | CSS, JS, картинки без `Cache-Control` или с коротким сроком                | W        |
+| Проверка                 | Что                                                                        | Важность |
+| ------------------------ | -------------------------------------------------------------------------- | -------- |
+| `host.mirror`            | `www` и без `www` оба отвечают 200; второе имя не резолвится — N           | E        |
+| `host.https`             | `http` не ведёт на `https` одним 301 (через цепочку — W)                   | E        |
+| `host.tls`               | сертификат истекает (14 дней — E, 30 — W), не тот хост, нет цепочки        | E        |
+| `host.hsts`              | нет `Strict-Transport-Security`                                            | N        |
+| `host.index_files`       | `/index.php`, `/index.html`, `/index.htm` (и внутри разделов) отвечают 200 | E        |
+| `host.slashes`           | `//`, `/a//b` отвечают 200, а не 301 на схлопнутый                         | W        |
+| `host.trailing_slash`    | `/a` и `/a/` оба 200                                                       | W        |
+| `host.case`              | `/About` отвечает 200, а не 301                                            | W        |
+| `host.soft_404`          | случайный адрес — не 404 (200 или 302 на главную)                          | E        |
+| `host.404_page`          | на странице 404 нет ссылки на главную                                      | N        |
+| `host.compression`       | HTML без gzip/brotli                                                       | W        |
+| `host.security_headers`  | нет `X-Content-Type-Options`, `Referrer-Policy`, защиты от фреймов         | N        |
+| `host.server_leak`       | `X-Powered-By`, `Server` с версией                                         | N        |
+| `host.static_cache`      | CSS, JS, картинки без `Cache-Control` или с коротким сроком                | W        |
+| `host.directory_listing` | `/storage/`, `/build/`, `/vendor/` отвечают списком файлов (A6)            | W        |
+| `host.ip`                | сайт открывается по голому IP (та же главная, без редиректа на домен) (A6) | N        |
+| `host.http2`             | HTTPS только по HTTP/1.1; молчит, если curl сам не умеет HTTP/2 (A6)       | N        |
 
 ### 5.3. Индексация (`robots.*`, `sitemap.*`, `indexing.*`)
 
@@ -195,16 +198,19 @@
 | `sitemap.bad_url`       | адрес в карте — не 200, редирект, `noindex` или canonical на другой      | E        |
 | `sitemap.lastmod`       | `lastmod` в будущем или у всех одинаковый                                | N        |
 | `sitemap.missing_page`  | индексируемая страница 200 найдена обходом, но её нет в карте            | W        |
+| `sitemap.duplicate`     | адрес дважды в одном файле или уже был в другом файле индекса (A6)       | N        |
+| `indexing.nofollow`     | `nofollow` или `none` в meta robots или `X-Robots-Tag` (A6)              | W        |
 
 ### 5.4. Редиректы (`redirects.*`)
 
-| Проверка              | Что                                                         | Важность |
-| --------------------- | ----------------------------------------------------------- | -------- |
-| `redirects.chain`     | больше одного шага                                          | W        |
-| `redirects.loop`      | петля                                                       | E        |
-| `redirects.to_error`  | цепочка кончается 4xx/5xx                                   | E        |
-| `redirects.temporary` | 302/307 там, где адрес уехал навсегда                       | N        |
-| `links.to_redirect`   | внутренняя ссылка ведёт на редирект, а не на конечный адрес | W        |
+| Проверка                 | Что                                                           | Важность |
+| ------------------------ | ------------------------------------------------------------- | -------- |
+| `redirects.chain`        | больше одного шага                                            | W        |
+| `redirects.loop`         | петля                                                         | E        |
+| `redirects.to_error`     | цепочка кончается 4xx/5xx                                     | E        |
+| `redirects.temporary`    | 302/307 там, где адрес уехал навсегда                         | N        |
+| `redirects.meta_refresh` | страница 200 уводит дальше `<meta http-equiv="refresh">` (A6) | W        |
+| `links.to_redirect`      | внутренняя ссылка ведёт на редирект, а не на конечный адрес   | W        |
 
 ### 5.5. Страница (`title.*`, `description.*`, `h1.*`, `canonical.*`, …)
 
@@ -265,6 +271,37 @@
 | `structure.depth`         | дальше трёх кликов от главной                                                                                   | N        |
 | `structure.orphan`        | есть в карте или реестре, но на неё нет внутренних ссылок                                                       | W        |
 | `structure.dead_end`      | нет ни одной исходящей внутренней ссылки                                                                        | N        |
+| `title.width`             | шире 600 px шрифтом выдачи (Arial 20 px) — оценка по таблице ширин, не шрифтом сайта (A6)                       | N        |
+| `meta.multiple`           | description, robots, viewport, `og:*` — больше одного раза (A6)                                                 | W        |
+| `h1.duplicate`            | одинаковый первый H1 (регистр и пробелы не в счёт) у нескольких индексируемых (A6)                              | W        |
+| `h1.length`               | первый H1 длиннее 70 символов (A6)                                                                              | N        |
+| `canonical.chain`         | canonical ведёт на страницу, чей canonical ведёт дальше (A6)                                                    | W        |
+| `canonical.loop`          | две страницы называют оригиналом друг друга (A6)                                                                | E        |
+| `canonical.foreign`       | canonical на чужой хост, другое зеркало или `http` (A6)                                                         | E        |
+| `canonical.fragment`      | `#` в адресе canonical (A6)                                                                                     | W        |
+| `canonical.pagination`    | страница списка 2+ (`page`, `p`, `PAGEN_1`, …) с canonical на первую (A6)                                       | W        |
+| `hreflang.self_missing`   | в списке языков нет самой страницы (A6)                                                                         | W        |
+| `hreflang.duplicate_lang` | один код языка на разные адреса (A6)                                                                            | W        |
+| `hreflang.not_indexable`  | версия закрыта (`noindex`, robots.txt) — E; canonical версии на другой адрес — W (A6)                           | E        |
+| `hreflang.lang_mismatch`  | A зовёт B `de`, B зовёт себя `de-AT` (A6)                                                                       | W        |
+| `html.doctype`            | нет `<!doctype html>` — quirks mode (A6)                                                                        | N        |
+| `html.charset`            | кодировки нет ни в заголовке, ни в meta — N; расходятся — W (A6)                                                | W        |
+| `html.obsolete`           | `<font>`, `<center>`, `<marquee>` и прочее выброшенное из HTML, Flash (A6)                                      | N        |
+| `content.placeholder`     | lorem ipsum на открытой странице; черновики в базе не смотрим — там ему место (A6)                              | E        |
+| `content.soft_404`        | 200, а в title или H1 «not found» / «не найдено» на языках панели (A6)                                          | W        |
+| `links.to_non_canonical`  | внутренняя ссылка на страницу с canonical на другой адрес (A6)                                                  | W        |
+| `links.to_noindex`        | внутренняя ссылка на страницу с `noindex` или закрытую robots.txt (A6)                                          | N        |
+| `links.utm`               | `utm_` во внутренних ссылках (A6)                                                                               | W        |
+| `links.unfollowable`      | `#`, `javascript:` — N; `mailto:` без адреса, `tel:` без номера, схема в пути, `www.` без `https://` — W (A6)   | W        |
+| `links.vague_anchor`      | анкор «здесь», «подробнее», «read more» — встроенный список на 10 языков панели плюс свои фразы сайта (A6)      | N        |
+| `images.redirect`         | картинка отвечает 3xx (A6)                                                                                      | W        |
+| `images.alt_long`         | `alt` длиннее 100 символов (A6)                                                                                 | N        |
+| `assets.broken`           | CSS или JS страницы не открывается (A6)                                                                         | E        |
+| `assets.heavy`            | CSS или JS тяжелее 1 МБ как отдан (A6)                                                                          | W        |
+| `structure.noindex_only`  | на индексируемую ссылаются только закрытые страницы (A6)                                                        | W        |
+| `structure.nofollow_only` | все внутренние ссылки на неё с `nofollow` (A6)                                                                  | W        |
+| `structure.single_link`   | ссылается ровно одна страница (A6)                                                                              | N        |
+| `structure.many_internal` | больше 1000 внутренних ссылок на странице (A6)                                                                  | N        |
 
 ### 5.6. Исходящие адреса и чужие хосты (`hosts.*`)
 
@@ -419,6 +456,7 @@ composer.json, регистрация под `class_exists`).
 | A3   | Карта, robots, редиректы, hreflang, JSON-LD, внешние ссылки и картинки                                                                                                                                                                           |
 | A4   | Проверки и исправления модулей (§7), middleware нормализации в `module-seo`, MCP                                                                                                                                                                 |
 | A5   | История и сравнение, скрытия, расписание, проверка на `webx-cms.local` и хомлабе, гайд                                                                                                                                                           |
+| A6   | Сверка с чек-листом техаудита профессионального сеошника (151 пункт): ~37 проверок поверх того же снимка и три пробы хоста                                                                                                                       |
 
 ## 12. Решённые вопросы
 
@@ -778,3 +816,43 @@ schedule`; если прогон уже идёт — пропуск; на `sync`
   состояние «не загрузилась» того же вида, без клика.
 - Плейграунд: логотип и OG-картинка в фикстурах `resourcesOf` — с `/fixtures/media/*` самого
   плейграунда, адреса магазина отсюда не грузятся. Тест — `resources.test.ts`.
+
+### A6 (08.10.2026) — сверка с чек-листом техаудита
+
+Внешний реестр на 151 проверку (14 групп) сверен с нашими; взяли то, что считается по уже
+снятому снимку или одной лишней пробой. Не брали: то, что у них самих выключено (Флеш-Кинкейд,
+орфография, «title не про контент», keywords), полную загрузку и блокирующие ресурсы (нужен
+headless — граница §1).
+
+- **Новые факты парсера** (`facts`, без миграций): `meta_repeated`, `meta_refresh`,
+  `charset_meta`, `doctype`, `obsolete_tags`, `links_unfollowable` (`count`, `broken`, до пяти
+  `hrefs` как написаны), `placeholder`. У старых снимков фактов нет — проверка молчит
+  (`html.doctype` и `html.charset` смотрят именно на `false` / наличие ключа).
+- **Ширина title** — `SerpWidth`: ширины Helvetica (Arial метрически та же) в тысячных кегля,
+  своя таблица кириллицы, латиница с диакритикой — по базовой букве (`Normalizer` FORM_D),
+  CJK — em, прочее — средняя буква. Шрифт выдачи, а не сайта: выдача рисует title своим шрифтом.
+  Порог `title_px` (600) — на экране настроек; `title.length` остался в символах рядом.
+- **Неинформативные анкоры** — `VagueWords::ALL` (10 языков панели) плюс
+  `config('webx-audit.vague_anchors')` и настройка `audit.vague-anchors` (фраза на строку —
+  `AuditSettings::phrases()`, пробелы не режут) → `webx-audit.vague_anchors_all`. Сравнение
+  целиком после `VagueAnchors::normalise()` (регистр, пробелы, пунктуация и стрелки по краям).
+  Ограничение: `LinkList` держит одну ссылку на пару «вид + адрес + rel», анкор второй ссылки на
+  тот же адрес теряется.
+- **`LinkCheck::keep()`** — фильтр по ссылке в PHP для того, что SQL не скажет одинаково на всех
+  базах (длина в символах, регистр не-ASCII); `images.alt_long`, `links.utm`,
+  `links.vague_anchor` на нём.
+- **Входящие** — `IncomingCheck`: один проход по `audit_links` (вид `a`, без ссылок на себя) в
+  начале `run()` считает на каждую страницу источники, индексируемые источники и источники без
+  `nofollow`; страница, ссылающаяся и так и так, вес передаёт. Главные и сироты не судятся.
+- **Карта** — `SitemapReader::parse()` отдаёт `duplicates` (повторы `<loc>` в файле), `read()` —
+  `repeated` (адрес уже был в прошлом файле); оба — в `SitemapFile` необязательными ключами.
+- **Пробы** — `listing:/storage/`, `listing:/build/`, `listing:/vendor/`; `ip` — `http://<IP>/`
+  (настройка «подключаться к» или DNS; хост-IP и нерезолвящееся имя — пропуск), судится
+  совпадением `<title>` с главной, а не кодом 200 — иначе чужой сайт по умолчанию на том же IP
+  стал бы находкой. HTTP/2: `SiteClient` просит `version: 2.0` по https, если curl собран с
+  HTTP/2 (`SiteClient::http2()`), и пишет `ProbeResponse::$protocol`; под фейком и без h2 в
+  curl — `null`, `host.http2` молчит.
+- **`canonical.broken`** теперь говорит и про цель, закрытую robots.txt (`canonical-robots`).
+- **`url.format`** — ещё три ключа: `space`, `double-slash`, `repeated` (сегмент или
+  последовательность сегментов подряд; чисто цифровые — дата, не ошибка).
+- Тест — `MoreChecksTest`: один сайт со всеми ошибками A6 и точные адреса каждой находки.
