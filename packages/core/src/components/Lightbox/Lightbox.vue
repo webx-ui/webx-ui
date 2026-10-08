@@ -588,17 +588,22 @@ function onOpenAutoFocus(event: Event) {
 </template>
 
 <style scoped>
+/*
+ * A layer of its own, above dialogs, for both the dimming and the gallery: a lightbox is most
+ * often opened from a dialog — a file picker, a gallery field — and a dimming on the overlay
+ * layer is drawn under that dialog, which then stands between the photo and its strip.
+ */
 .wx-lightbox__overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--wx-z-index-overlay);
+  z-index: var(--wx-z-index-lightbox);
   background: var(--wx-bg-lightbox);
 }
 
 .wx-lightbox {
   position: fixed;
   inset: 0;
-  z-index: var(--wx-z-index-dialog);
+  z-index: var(--wx-z-index-lightbox);
   outline: none;
 }
 

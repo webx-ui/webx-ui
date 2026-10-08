@@ -130,6 +130,7 @@ export const tokens = {
       "dropdown": "1000",
       "overlay": "1100",
       "dialog": "1200",
+      "lightbox": "1250",
       "popover": "1300",
       "toast": "1400",
       "tooltip": "1500"
@@ -369,6 +370,7 @@ export const lightVars: Record<string, string> = {
   '--wx-z-index-dropdown': "1000",
   '--wx-z-index-overlay': "1100",
   '--wx-z-index-dialog': "1200",
+  '--wx-z-index-lightbox': "1250",
   '--wx-z-index-popover': "1300",
   '--wx-z-index-toast': "1400",
   '--wx-z-index-tooltip': "1500",
