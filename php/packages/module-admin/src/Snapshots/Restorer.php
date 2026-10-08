@@ -212,14 +212,6 @@ final class Restorer
                 $batch = [];
                 $size = 1;
 
-                $flush = static function () use ($connection, &$table, &$batch): void {
-                    if ($batch !== [] && $table !== null) {
-                        $connection->table($table)->insert($batch);
-                    }
-
-                    $batch = [];
-                };
-
                 while (($line = fgets($handle)) !== false) {
                     $line = trim($line);
 
@@ -230,7 +222,7 @@ final class Restorer
                     $decoded = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
 
                     if (! array_is_list($decoded)) {
-                        $flush();
+                        $batch = self::insert($connection, $table, $batch);
                         $table = isset($replace[$decoded['table']]) ? (string) $decoded['table'] : null;
 
                         if ($table === null) {
@@ -290,11 +282,11 @@ final class Restorer
                     $result['rows'][$table]++;
 
                     if (count($batch) >= $size) {
-                        $flush();
+                        $batch = self::insert($connection, $table, $batch);
                     }
                 }
 
-                $flush();
+                self::insert($connection, $table, $batch);
             });
         } finally {
             fclose($handle);
@@ -411,6 +403,19 @@ final class Restorer
     public function afterRestoreCommands(): array
     {
         return $this->tables->afterRestoreCommands();
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $batch
+     * @return list<array<string, mixed>> Always empty: what is left to insert.
+     */
+    private static function insert(Connection $connection, ?string $table, array $batch): array
+    {
+        if ($batch !== [] && $table !== null) {
+            $connection->table($table)->insert($batch);
+        }
+
+        return [];
     }
 
     /**

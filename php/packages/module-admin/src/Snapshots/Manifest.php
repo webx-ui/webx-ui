@@ -29,9 +29,6 @@ final class Manifest
      */
     public function __construct(public readonly array $data) {}
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
     public static function fromJson(string $json, string $path): self
     {
         $data = json_decode($json, true);

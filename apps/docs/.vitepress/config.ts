@@ -67,6 +67,7 @@ export default defineConfig({
             { text: 'Site audit', link: '/guide/audit' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Database backups', link: '/guide/backups' },
+            { text: 'Moving content between stands', link: '/guide/snapshots' },
           ],
         },
         {

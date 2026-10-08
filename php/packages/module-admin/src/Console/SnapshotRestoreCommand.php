@@ -89,7 +89,7 @@ class SnapshotRestoreCommand extends Command
                 return self::FAILURE;
             }
 
-            $this->components->info('Rollback dump: '.($backups->latest()?->path ?? '?'));
+            $this->components->info('Rollback dump: '.($backups->latest()->path ?? '?'));
         }
 
         $staging = $snapshots->directory().DIRECTORY_SEPARATOR.'.restore-'.bin2hex(random_bytes(4));

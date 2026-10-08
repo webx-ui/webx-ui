@@ -9,11 +9,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Testing\PendingCommand;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Doctor\Checks\Snapshots;
+use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Snapshots\Manifest;
 use WebxUi\Admin\Snapshots\MediaDisk;
 use WebxUi\Admin\Snapshots\Restorer;
 use WebxUi\Admin\Snapshots\SnapshotFailed;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Admin\Snapshots\Snapshotter;
 use WebxUi\Admin\Snapshots\Tar;
 use WebxUi\Admin\Snapshots\UrlRewriter;
 
@@ -337,6 +340,25 @@ final class SnapshotsTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame(1, DB::table('demo_enquiries')->count());
+    }
+
+    #[Test]
+    public function the_doctor_mentions_archives_left_lying_in_storage(): void
+    {
+        $directory = $this->app->make(Snapshotter::class)->directory();
+        $check = $this->app->make(Snapshots::class);
+        $this->assertSame([], $check->run());
+
+        $this->write($directory.'/old.tar.gz', 'x');
+
+        try {
+            $this->assertSame(Diagnosis::OK, $check->run()[0]->state);
+
+            touch($directory.'/old.tar.gz', time() - 30 * 86400);
+            $this->assertSame(Diagnosis::WARN, $check->run()[0]->state);
+        } finally {
+            unlink($directory.'/old.tar.gz');
+        }
     }
 
     #[Test]
