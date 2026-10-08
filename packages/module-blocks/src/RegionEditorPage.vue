@@ -576,7 +576,7 @@ onBeforeRouteLeave(async () => {
 
       <wx-action-bar v-if="canManage">
         <template #state>
-          <wx-save-state :state="state" />
+          <wx-save-state v-if="!editing.stopped.value" :state="state" />
         </template>
 
         <wx-button v-if="region.published" variant="text" :disabled="working" @click="unpublish">
@@ -592,14 +592,21 @@ onBeforeRouteLeave(async () => {
           {{ t('region.discard') }}
         </wx-button>
 
-        <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
+        <wx-button
+          variant="outline"
+          :loading="saving"
+          :disabled="!dirty || editing.stopped.value"
+          :title="editing.blocked.value"
+          @click="save"
+        >
           {{ t('region.save') }}
         </wx-button>
 
         <wx-button
           type="primary"
           :loading="working"
-          :disabled="region.published && !region.has_draft && !dirty"
+          :disabled="editing.stopped.value || (region.published && !region.has_draft && !dirty)"
+          :title="editing.blocked.value"
           @click="publish"
         >
           {{ t('region.publish') }}

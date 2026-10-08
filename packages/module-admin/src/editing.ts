@@ -162,6 +162,11 @@ export interface Editing<T> {
   gone: Ref<EditingEvent | null>
   /** In the bin or gone: autosave waits, and a save would only fail. */
   stopped: ComputedRef<boolean>
+  /**
+   * Why Save and Publish are off, for their `title`: «This is in the bin», «This was deleted for
+   * good». `undefined` while they are not — a disabled button with no reason looks frozen.
+   */
+  blocked: ComputedRef<string | undefined>
   /** Whether the form holds something the server does not. */
   unsaved: ComputedRef<boolean>
   /** Whether this editor can take the record out of the bin. */
@@ -265,6 +270,13 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
   const trashed = computed(() => state.value?.trashed === true)
   const gone = ref<EditingEvent | null>(null)
   const stopped = computed(() => trashed.value || gone.value !== null)
+  const blocked = computed(() =>
+    gone.value !== null
+      ? t('editing.blocked-purged')
+      : trashed.value
+        ? t('editing.blocked-trashed')
+        : undefined,
+  )
   const trashedBy = computed(
     () => [...recent.value].reverse().find((event) => event.kind === 'trashed') ?? null,
   )
@@ -777,6 +789,7 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     trashedBy,
     gone,
     stopped,
+    blocked,
     unsaved,
     canRestore,
     opened,

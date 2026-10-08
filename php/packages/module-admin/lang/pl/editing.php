@@ -66,6 +66,8 @@ return [
     'copied' => 'Skopiowano. Wklej tam, gdzie potrzebujesz.',
     'copy-failed' => 'Nie udało się skopiować. Zaznacz tekst w formularzu.',
     'purged-message' => ':who: usunięto na zawsze o :when.',
+    'blocked-trashed' => 'Jest w koszu',
+    'blocked-purged' => 'Usunięto na zawsze',
     'publish-unseen-title' => 'Opublikować zmiany, których nie widziano?',
     'publish-unseen-text' => 'Publikacja umieści je na stronie razem z Twoimi.',
     'publish-with' => 'Opublikuj z nimi',

@@ -631,10 +631,16 @@ const actions = computed<ScreenAction[]>(() => {
       -->
       <wx-action-bar v-if="canManage">
         <template #state>
-          <wx-save-state :state="state" />
+          <wx-save-state v-if="!editing.stopped.value" :state="state" />
         </template>
 
-        <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
+        <wx-button
+          variant="outline"
+          :loading="saving"
+          :disabled="!dirty || editing.stopped.value"
+          :title="editing.blocked.value"
+          @click="save"
+        >
           {{ t('page.save') }}
         </wx-button>
 
@@ -643,7 +649,8 @@ const actions = computed<ScreenAction[]>(() => {
         <wx-button
           type="primary"
           :loading="working"
-          :disabled="page.status === 'published' && !dirty"
+          :disabled="editing.stopped.value || (page.status === 'published' && !dirty)"
+          :title="editing.blocked.value"
           @click="publish"
         >
           {{ t('page.publish') }}

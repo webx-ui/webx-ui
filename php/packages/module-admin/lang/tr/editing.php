@@ -66,6 +66,8 @@ return [
     'copied' => 'Kopyalandı. İstediğiniz yere yapıştırın.',
     'copy-failed' => 'Kopyalanamadı. Metni formda seçin.',
     'purged-message' => ':who: :when saatinde kalıcı olarak silindi.',
+    'blocked-trashed' => 'Çöp kutusunda',
+    'blocked-purged' => 'Kalıcı olarak silindi',
     'publish-unseen-title' => 'Görmediğiniz değişiklikler yayımlansın mı?',
     'publish-unseen-text' => 'Yayımlamak onları sizinkilerle birlikte siteye koyar.',
     'publish-with' => 'Onlarla birlikte yayımla',

@@ -585,7 +585,7 @@ const actions = computed<ScreenAction[]>(() => {
 
       <wx-action-bar v-if="canManage">
         <template #state>
-          <wx-save-state :state="state" />
+          <wx-save-state v-if="!editing.stopped.value" :state="state" />
         </template>
 
         <!-- The same position in another city is a copy, not a vacancy from nothing (decision 20). -->
@@ -599,14 +599,21 @@ const actions = computed<ScreenAction[]>(() => {
           <span class="wx-vacancy-editor__word">{{ t('panel.duplicate') }}</span>
         </wx-button>
 
-        <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
+        <wx-button
+          variant="outline"
+          :loading="saving"
+          :disabled="!dirty || editing.stopped.value"
+          :title="editing.blocked.value"
+          @click="save"
+        >
           {{ t('editor.save') }}
         </wx-button>
 
         <wx-button
           type="primary"
           :loading="working"
-          :disabled="vacancy.status === 'published' && !dirty"
+          :disabled="editing.stopped.value || (vacancy.status === 'published' && !dirty)"
+          :title="editing.blocked.value"
           @click="publish"
         >
           {{ t('panel.publish') }}

@@ -66,6 +66,8 @@ return [
     'copied' => 'Copiato. Incollalo dove ti serve.',
     'copy-failed' => 'Impossibile copiare. Seleziona il testo nel modulo.',
     'purged-message' => ':who: eliminato definitivamente alle :when.',
+    'blocked-trashed' => 'È nel cestino',
+    'blocked-purged' => 'Eliminato definitivamente',
     'publish-unseen-title' => 'Pubblicare modifiche che non hai visto?',
     'publish-unseen-text' => 'La pubblicazione le mette sul sito insieme alle tue.',
     'publish-with' => 'Pubblica con esse',

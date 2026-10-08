@@ -17,4 +17,5 @@ from a model `findOrFail` or route binding could not find). The editor says «Ag
 deleted this for good · 18:01», stops autosaving, keeps the form and offers «Copy my text» — every
 piece of text in the form under the name the form gives it. `EditedRecords::register()` takes
 `model:` for this; `useEditing` gains `gone`, `stopped`, `text()` and `copyText()`. A purge of a
-record in the bin is no longer heard as a second trip to the bin.
+record in the bin is no longer heard as a second trip to the bin. In the bin or gone, Save and Publish are
+disabled with the reason as their title (`blocked`), and the save state is hidden.

@@ -554,17 +554,24 @@ const actions = computed<ScreenAction[]>(() => {
 
       <wx-action-bar v-if="canManage">
         <template #state>
-          <wx-save-state :state="state" />
+          <wx-save-state v-if="!editing.stopped.value" :state="state" />
         </template>
 
-        <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
+        <wx-button
+          variant="outline"
+          :loading="saving"
+          :disabled="!dirty || editing.stopped.value"
+          :title="editing.blocked.value"
+          @click="save"
+        >
           {{ t('recipe.save') }}
         </wx-button>
 
         <wx-button
           type="primary"
           :loading="working"
-          :disabled="recipe.status === 'published' && !dirty"
+          :disabled="editing.stopped.value || (recipe.status === 'published' && !dirty)"
+          :title="editing.blocked.value"
           @click="publish"
         >
           {{ t('panel.publish') }}

@@ -66,6 +66,8 @@ return [
     'copied' => 'Copié. Collez-le où vous voulez.',
     'copy-failed' => 'Copie impossible. Sélectionnez le texte dans le formulaire.',
     'purged-message' => ':who : supprimé définitivement à :when.',
+    'blocked-trashed' => 'Dans la corbeille',
+    'blocked-purged' => 'Supprimé définitivement',
     'publish-unseen-title' => 'Publier des modifications que vous n’avez pas vues ?',
     'publish-unseen-text' => 'La publication les met en ligne avec les vôtres.',
     'publish-with' => 'Publier avec elles',

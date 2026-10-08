@@ -73,6 +73,10 @@ agent deleted this for good · 18:01», stops autosaving and stops asking, keeps
 words. There is no restore, because there is nothing left to restore into. A record that never
 existed is still a plain `404`.
 
+In the bin or gone, Save and Publish are off and say why on hover («This is in the bin», «This was
+deleted for good» — `editing.blocked`), and the save state is hidden: a button that only spins
+looks frozen.
+
 **Where the record sits is never a draft value.** A move is applied at once and on its own; a form
 left open on a page somebody moved meanwhile cannot move it back by saving.
 

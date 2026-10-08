@@ -582,7 +582,7 @@ const actions = computed<ScreenAction[]>(() => {
 
       <wx-action-bar v-if="canManage">
         <template #state>
-          <wx-save-state :state="state" />
+          <wx-save-state v-if="!editing.stopped.value" :state="state" />
         </template>
 
         <!-- The way to the next date of the same event: there are no series (decision 9). -->
@@ -596,14 +596,21 @@ const actions = computed<ScreenAction[]>(() => {
           <span class="wx-event-editor__word">{{ t('panel.duplicate') }}</span>
         </wx-button>
 
-        <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
+        <wx-button
+          variant="outline"
+          :loading="saving"
+          :disabled="!dirty || editing.stopped.value"
+          :title="editing.blocked.value"
+          @click="save"
+        >
           {{ t('event.save') }}
         </wx-button>
 
         <wx-button
           type="primary"
           :loading="working"
-          :disabled="event.status === 'published' && !dirty"
+          :disabled="editing.stopped.value || (event.status === 'published' && !dirty)"
+          :title="editing.blocked.value"
           @click="publish"
         >
           {{ t('panel.publish') }}

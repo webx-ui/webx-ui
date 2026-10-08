@@ -66,6 +66,8 @@ return [
     'copied' => 'Kopiert. Fügen Sie ihn ein, wo Sie ihn brauchen.',
     'copy-failed' => 'Kopieren fehlgeschlagen. Markieren Sie den Text im Formular.',
     'purged-message' => ':who: endgültig gelöscht um :when.',
+    'blocked-trashed' => 'Liegt im Papierkorb',
+    'blocked-purged' => 'Endgültig gelöscht',
     'publish-unseen-title' => 'Änderungen veröffentlichen, die Sie nicht gesehen haben?',
     'publish-unseen-text' => 'Die Veröffentlichung bringt sie zusammen mit Ihren auf die Website.',
     'publish-with' => 'Mit ihnen veröffentlichen',

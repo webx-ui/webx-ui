@@ -320,6 +320,9 @@ describe('useEditing', () => {
     expect(await editor.editing().failed({ status: 404 })).toBe(true)
     expect(editor.editing().trashed.value).toBe(true)
     expect(editor.editing().trashedBy.value?.author).toBe('Owner')
+    // Save and Publish are off, and say why rather than look frozen.
+    expect(editor.editing().stopped.value).toBe(true)
+    expect(editor.editing().blocked.value).toBe('This is in the bin')
     expect(editor.editing().unsaved.value).toBe(true)
     expect(editor.form.value.title.en).toBe('My unsaved title')
 
@@ -327,6 +330,7 @@ describe('useEditing', () => {
     expect(await editor.editing().restoreFromBin()).toBe(true)
     expect(restore).toHaveBeenCalled()
     expect(editor.editing().trashed.value).toBe(false)
+    expect(editor.editing().blocked.value).toBeUndefined()
     // Who put it in the bin is not said again once it is out.
     expect(editor.editing().events.value.map((one) => one.kind)).not.toContain('trashed')
   })
@@ -349,6 +353,7 @@ describe('useEditing', () => {
 
     expect(editor.editing().gone.value).toMatchObject({ kind: 'purged', author: 'Agent' })
     expect(editor.editing().stopped.value).toBe(true)
+    expect(editor.editing().blocked.value).toBe('This was deleted for good')
     expect(editor.editing().who(editor.editing().gone.value)).toBe('Agent, through an agent')
     expect(editor.form.value.title.en).toBe('My unsaved title')
     expect(editor.read).not.toHaveBeenCalled()

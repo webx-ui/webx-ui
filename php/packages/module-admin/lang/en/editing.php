@@ -66,6 +66,8 @@ return [
     'copied' => 'Copied. Paste it wherever you need it.',
     'copy-failed' => 'Could not copy. Select the text in the form instead.',
     'purged-message' => ':who deleted this for good at :when.',
+    'blocked-trashed' => 'This is in the bin',
+    'blocked-purged' => 'This was deleted for good',
     'publish-unseen-title' => 'Publish changes you have not seen?',
     'publish-unseen-text' => 'Publishing puts them on the site together with yours.',
     'publish-with' => 'Publish with them',
