@@ -80,6 +80,9 @@ whose target is gone throws when the screen is first built.
   in the panel right now — tell your user before writing under them. Their editor merges your
   write with theirs field by field, and a draft written over by somebody else is kept: the
   panel's History lists it under Drafts, and «Restore» puts it back.
+- `vacancies_publish`, `vacancies_unpublish`, `vacancies_discard`, `vacancies_close`, `vacancies_reopen`, `vacancies_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
+  one is refused, and while somebody has the vacancy open in the panel (`being_edited_by`) one is
+  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
 - Do not choose a currency outside `webx-vacancies.currencies`: it is refused with the list. Add
   it to the config first.
 - Do not delete rows with SQL: deleting bins a vacancy; a raw delete leaves its address in the

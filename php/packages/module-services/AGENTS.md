@@ -78,6 +78,9 @@ whose target is gone throws when the screen is first built.
   in the panel right now — tell your user before writing under them. Their editor merges your
   write with theirs field by field, and a draft written over by somebody else is kept: the
   panel's History lists it under Drafts, and «Restore» puts it back.
+- `services_publish`, `services_unpublish`, `services_discard`, `services_version_restore`, `services_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
+  one is refused, and while somebody has the service open in the panel (`being_edited_by`) one is
+  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
 - Do not add a migration for a project field: the patch and the `extra` column are the place.
 - Do not bin a category that still has services — it is refused with the count. Move the services
   out first. Do not delete rows with SQL: a raw delete leaves addresses in the routing registry.

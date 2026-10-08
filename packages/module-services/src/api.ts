@@ -22,7 +22,8 @@ export interface ServicesApi {
   save(id: number, input: ServiceSave): Promise<ServiceDetail>
   /** Throw away what is waiting and keep what the site is showing. */
   discard(id: number): Promise<ServiceDetail>
-  publish(id: number): Promise<ServiceRow>
+  /** `revision` is what the editor held: a draft that moved on since is answered 409, not published. */
+  publish(id: number, revision?: string): Promise<ServiceRow>
   unpublish(id: number): Promise<ServiceRow>
   remove(id: number): Promise<void>
   restore(id: number): Promise<ServiceRow>
@@ -62,7 +63,10 @@ export function createServicesApi(admin: AdminContext): ServicesApi {
     save: (id, input) => admin.http.put<{ data: ServiceDetail }>(`${base}/${id}`, input).then(data),
     discard: (id) =>
       admin.http.post<{ data: ServiceDetail }>(`${base}/${id}/discard`, {}).then(data),
-    publish: (id) => admin.http.post<{ data: ServiceRow }>(`${base}/${id}/publish`, {}).then(data),
+    publish: (id, revision) =>
+      admin.http
+        .post<{ data: ServiceRow }>(`${base}/${id}/publish`, revision ? { revision } : {})
+        .then(data),
     unpublish: (id) =>
       admin.http.post<{ data: ServiceRow }>(`${base}/${id}/unpublish`, {}).then(data),
     remove: (id) => admin.http.delete<void>(`${base}/${id}`).then(() => undefined),

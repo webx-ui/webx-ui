@@ -1,6 +1,18 @@
-import { onBeforeUnmount, onMounted, ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
-import { toast, useLocales } from '@webx-ui/core'
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  watch,
+  type ComputedRef,
+  type Ref,
+  type ShallowRef,
+} from 'vue'
+import { confirm, toast } from '@webx-ui/core'
 import { useAdmin } from './admin'
+import { useDates } from './dates'
+import { humanize, useEditingLabels } from './editingLabels'
 import { useTranslate } from './i18n'
 import {
   changedPaths,
@@ -28,6 +40,37 @@ export interface EditingEditor {
   seen_at: string
 }
 
+/** Where the record stands, as the heartbeat reports it. */
+export interface EditingState {
+  status: string
+  has_draft: boolean
+  published_at: string | null
+  trashed: boolean
+  deleted_at: string | null
+}
+
+/**
+ * Something that happened to the record besides its content: published, taken off the site, its
+ * draft thrown away, an old version put back, moved, put in the bin or taken out of it.
+ */
+export interface EditingEvent {
+  id: number
+  kind:
+    | 'published'
+    | 'unpublished'
+    | 'discarded'
+    | 'restored_version'
+    | 'moved'
+    | 'trashed'
+    | 'restored'
+    | string
+  author: string | null
+  author_id: number | null
+  source: string
+  at: string
+  detail: Record<string, unknown> | null
+}
+
 /** One copy of the draft, as `editing/{entity}/{id}/drafts` lists it. */
 export interface DraftCopy {
   id: number
@@ -36,6 +79,8 @@ export interface DraftCopy {
   author: string | null
   source: string
   fields: string[]
+  /** What this copy changed against the one before it. */
+  paths?: MergeSegment[][]
 }
 
 /** The record as the server has it now. */
@@ -74,10 +119,19 @@ export interface EditingOptions<T> {
    * The editor moves its own idea of "saved" there: whatever differs from it now is unsaved.
    */
   adopt?: (theirs: EditingVersion<T>) => void
+  /**
+   * Somebody published, unpublished, moved or restored the record: read what the editor shows
+   * around the form again — the status, the trail, the address — without touching the form.
+   */
+  refresh?: () => void | Promise<void>
+  /** Take the record out of the bin. Without it, the notice of the bin offers no way back. */
+  restore?: () => Promise<void>
   /** Whether this editor writes at all; a reader is not asked about anybody's changes. */
   canWrite?: () => boolean
   /** Whether a save is on its way: a heartbeat answered meanwhile may be reporting it. */
   busy?: () => boolean
+  /** The screen the record is edited on, so its fields are named the way the form names them. */
+  screen?: string
   /** What a top-level field is called on screen, for the conflict list. */
   field?: (name: string) => string | undefined
   /** What a type of block is called. */
@@ -92,6 +146,18 @@ export interface Editing<T> {
   conflict: Ref<EditingConflict<T> | null>
   incoming: Ref<EditingIncoming<T> | null>
   editors: Ref<EditingEditor[]>
+  /** Where the record stands, by the last heartbeat. */
+  state: Ref<EditingState | null>
+  /** What others did to the record since this editor opened it, not yet acknowledged. */
+  events: Ref<EditingEvent[]>
+  /** The record is in the bin. */
+  trashed: ComputedRef<boolean>
+  /** Who put it there and when, when the server knows. */
+  trashedBy: ComputedRef<EditingEvent | null>
+  /** Whether the form holds something the server does not. */
+  unsaved: ComputedRef<boolean>
+  /** Whether this editor can take the record out of the bin. */
+  canRestore: () => boolean
   /** Call with what the form now matches on the server: on opening, and after each save. */
   opened(values: T): void
   /**
@@ -107,8 +173,31 @@ export interface Editing<T> {
   resolve(): void
   /** Settle every conflict their way at once. */
   resolveTheirs(): void
+  /**
+   * Before publishing: whether the draft on the server is still the one this editor holds. When
+   * somebody else changed it, the person is told whose changes, where and when, and chooses to
+   * publish with them or to review them first — which pulls them into the form. Answers the
+   * revision to publish with, and whether the person was already asked; `null` to stop.
+   */
+  beforePublish(): Promise<{ revision: string; asked: boolean } | null>
+  /**
+   * A save or a publication failed. `true` when this was about other people — the record is in
+   * the bin, or a publication found a draft it had not seen — and a notice says so; the editor
+   * then shows nothing of its own.
+   */
+  failed(error: unknown): Promise<boolean>
+  /** Out of the bin. The form keeps what it holds; saving it is the caller's next step. */
+  restoreFromBin(): Promise<boolean>
+  /** The events have been read. */
+  dismissEvents(): void
+  /** Ask the server now rather than at the next heartbeat. */
+  check(): Promise<void>
   /** A place in the record as the person reads it: «Hero › Heading · EN». */
   label(path: MergeSegment[]): string
+  /** What a list of changed places says: «Hero › Heading, Title · EN and more». */
+  places(paths: MergeSegment[][]): string
+  /** What happened, in a sentence: «Owner restored version 21 and published · 16:40». */
+  describe(events: EditingEvent[]): string
   /** A value, short, as text. */
   preview(value: unknown): string
   /** Who changed it: «Anna», «Anna, through an agent». */
@@ -120,32 +209,73 @@ interface Ping {
   revision: string
   changed: EditingChange | null
   editors: EditingEditor[]
+  state?: EditingState | null
+  place?: Record<string, unknown> | null
+  events?: EditingEvent[]
   heartbeat: number
 }
+
+/** Events that change the content: a notice of incoming changes says these instead of fields. */
+const EXPLAINING = new Set(['restored_version', 'discarded'])
 
 /**
  * What every drafted editor does about other people editing the same record (§ «Two editors»):
  * merges a refused save instead of asking, asks only about a field both sides changed, says who
  * the other side was and through which door, and keeps an ear on the server while open — who
- * else has the record, and whether somebody saved in the meantime.
+ * else has the record, whether somebody saved in the meantime, and what they did to it besides
+ * saving: published it, moved it, put it in the bin.
  *
  * The editor keeps its own save loop; this is the part that is the same in all of them.
  */
 export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
   const admin = useAdmin()
   const t = useTranslate('webx-admin')
-  const locales = useLocales()
+  const dates = useDates()
+  const labels = useEditingLabels({
+    screen: options.screen,
+    field: options.field,
+    block: options.block,
+  })
 
   const base = shallowRef<T>(clone(options.values.value))
   const conflict = ref<EditingConflict<T> | null>(null) as Ref<EditingConflict<T> | null>
   const incoming = ref<EditingIncoming<T> | null>(null) as Ref<EditingIncoming<T> | null>
   const editors = ref<EditingEditor[]>([])
+  const state = ref<EditingState | null>(null)
+  const place = ref<Record<string, unknown> | null>(null)
+  const events = ref<EditingEvent[]>([])
+  /** Every event the server still keeps, this editor's own included: who put it in the bin. */
+  const recent = ref<EditingEvent[]>([])
+  let changedLast: EditingChange | null = null
 
   const canWrite = (): boolean => options.canWrite?.() ?? true
+
+  const trashed = computed(() => state.value?.trashed === true)
+  const trashedBy = computed(
+    () => [...recent.value].reverse().find((event) => event.kind === 'trashed') ?? null,
+  )
+  const unsaved = computed(() => !sameValue(options.values.value, base.value))
+
+  /*
+   * Whether the editor has said what it opened. Until it has, its revision and its form are
+   * whatever it started with — empty — and a heartbeat answered in that moment would read the
+   * record and offer all of it as somebody else's change, or, worse, take the record's revision
+   * for one the editor held. A heartbeat before then only says the editor is here.
+   */
+  let ready = false
+  let mounted = false
 
   function opened(values: T): void {
     base.value = clone(values)
     incoming.value = null
+
+    if (!ready) {
+      ready = true
+
+      // The heartbeat that went out before the record was in the form could not compare
+      // anything: ask again now, rather than twenty seconds from now.
+      if (mounted && options.heartbeat !== false) void beat()
+    }
   }
 
   /** Take the server's version in as the base, with the form holding `merged`. */
@@ -155,6 +285,8 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     options.adopt?.(theirs)
     options.values.value = clone(merged)
     incoming.value = null
+    // What explained the change is in the form now.
+    events.value = events.value.filter((event) => !EXPLAINING.has(event.kind))
   }
 
   function settleWith(theirs: EditingVersion<T>): boolean {
@@ -217,42 +349,6 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     resolve()
   }
 
-  function label(path: MergeSegment[]): string {
-    const codes = new Set(locales.list.value.map((locale) => locale.code))
-    const parts: string[] = []
-    let language = ''
-
-    path.forEach((step, index) => {
-      if ('block' in step) {
-        parts.push(options.block?.(step.type) ?? humanize(step.type || t('editing.block')))
-
-        return
-      }
-
-      // A block's fields sit under `values`, which is the shape of a node and not a word anybody
-      // would recognise.
-      if (step.field === 'values' && index > 0 && 'block' in path[index - 1]!) return
-
-      // Nor is the field that holds a list of blocks: «Hero» says where it is, «Blocks › Hero»
-      // only says it twice.
-      const next = path[index + 1]
-
-      if (next !== undefined && 'block' in next) return
-
-      if (index === path.length - 1 && index > 0 && codes.has(step.field)) {
-        language = step.field.toUpperCase()
-
-        return
-      }
-
-      parts.push((index === 0 ? options.field?.(step.field) : undefined) ?? humanize(step.field))
-    })
-
-    const named = parts.length === 0 ? t('editing.order') : parts.join(' › ')
-
-    return language === '' ? named : `${named} · ${language}`
-  }
-
   function who(changed: EditingChange | null | undefined): string {
     const name = changed?.author ?? t('editing.somebody')
 
@@ -262,10 +358,184 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     return name
   }
 
+  function when(at: string | null | undefined): string {
+    return at ? dates.short(at) : ''
+  }
+
+  function places(paths: MergeSegment[][]): string {
+    const named = [...new Set(paths.map((path) => labels.label(path)))]
+    const what = named.slice(0, 3).join(', ') || t('editing.order')
+
+    return named.length > 3 ? t('editing.and-more', { what }) : what
+  }
+
+  /** One thing that happened, as a verb phrase: «restored version 21», «moved it to /contact/». */
+  function deed(event: EditingEvent): string {
+    const detail = event.detail ?? {}
+
+    switch (event.kind) {
+      case 'restored_version':
+        return typeof detail.number === 'number'
+          ? t('editing.event-restored-version', { number: detail.number })
+          : t('editing.event-restored-draft')
+      case 'moved': {
+        const path = mainPath()
+
+        return path === null ? t('editing.event-moved') : t('editing.event-moved-to', { path })
+      }
+      default:
+        return t(`editing.event-${event.kind.replace(/_/g, '-')}`)
+    }
+  }
+
+  function describe(list: EditingEvent[]): string {
+    const lines: string[] = []
+    let i = 0
+
+    // One sentence per person in a row: «Owner restored version 21 and published», not two.
+    while (i < list.length) {
+      const first = list[i]!
+      const deeds: string[] = []
+      let last = first
+
+      while (
+        i < list.length &&
+        list[i]!.author_id === first.author_id &&
+        list[i]!.source === first.source
+      ) {
+        last = list[i]!
+        const phrase = deed(last)
+
+        if (deeds.at(-1) !== phrase) deeds.push(phrase)
+        i++
+      }
+
+      const done =
+        deeds.length === 1
+          ? deeds[0]!
+          : `${deeds.slice(0, -1).join(', ')} ${t('editing.and')} ${deeds.at(-1)}`
+
+      lines.push(timeless(t('editing.event', { who: who(last), what: done, when: when(last.at) })))
+    }
+
+    return lines.join(' · ')
+  }
+
+  /** The address the record answers at now, in the panel's language or the first it has. */
+  function mainPath(): string | null {
+    const paths = place.value?.paths
+
+    if (!paths || typeof paths !== 'object') return null
+
+    const map = paths as Record<string, unknown>
+    const own = map[admin.i18n?.state?.locale ?? ''] ?? Object.values(map)[0]
+
+    return typeof own === 'string' ? own : null
+  }
+
+  async function beforePublish(): Promise<{ revision: string; asked: boolean } | null> {
+    const held = options.revision.value
+    let theirs: EditingVersion<T>
+
+    try {
+      theirs = await options.read()
+    } catch {
+      // Not readable just now: publish what the editor holds, and the server checks the revision.
+      return { revision: held, asked: false }
+    }
+
+    if (theirs.revision === held) return { revision: held, asked: false }
+
+    if (sameValue(theirs.values, options.values.value)) {
+      take(theirs, options.values.value)
+
+      return { revision: theirs.revision, asked: false }
+    }
+
+    theirs.changed ??= changedLast
+
+    const explained = events.value.filter((event) => EXPLAINING.has(event.kind))
+    const what =
+      explained.length > 0
+        ? describe(explained)
+        : timeless(
+            t('editing.incoming', {
+              who: who(theirs.changed),
+              what: places(changedPaths(base.value, theirs.values)),
+              when: when(theirs.changed?.at),
+            }),
+          )
+
+    const agreed = await confirm({
+      title: t('editing.publish-unseen-title'),
+      message: `${what}. ${t('editing.publish-unseen-text')}`,
+      confirmText: t('editing.publish-with'),
+      cancelText: t('editing.review-first'),
+    })
+
+    if (agreed) return { revision: theirs.revision, asked: true }
+
+    // Review first: their changes into the form, beside whatever is there, to be looked at and
+    // published with the next press of the button.
+    if (settleWith(theirs)) toast.info(t('editing.merged', { who: who(theirs.changed) }))
+
+    return null
+  }
+
+  async function failed(error: unknown): Promise<boolean> {
+    const failure = error as { status?: number; body?: { message?: string; revision?: unknown } }
+
+    if (failure?.status === 404 || failure?.status === 410) {
+      await beat()
+
+      return trashed.value
+    }
+
+    // A publication that carried a revision the draft is no longer at: somebody wrote between
+    // the question and the click. The notice of their change follows from the heartbeat.
+    if (failure?.status === 409 && typeof failure.body?.revision === 'string') {
+      toast.warning(failure.body.message || t('editing.publish-moved'))
+      await beat()
+
+      return true
+    }
+
+    return false
+  }
+
+  const canRestore = (): boolean => options.restore !== undefined && canWrite()
+
+  async function restoreFromBin(): Promise<boolean> {
+    if (!options.restore) return false
+
+    try {
+      await options.restore()
+    } catch (error) {
+      toast.danger(
+        (error as { body?: { message?: string } })?.body?.message || t('editing.restore-failed'),
+      )
+
+      return false
+    }
+
+    await beat()
+    await options.refresh?.()
+    toast.success(t('editing.out-of-bin'))
+
+    return true
+  }
+
+  function dismissEvents(): void {
+    events.value = []
+  }
+
   /* The heartbeat. */
   let timer: ReturnType<typeof setInterval> | undefined
   let reading = false
   let stopWatching: (() => void) | undefined
+  /** The newest event this editor has heard of; `null` until the first answer sets the line. */
+  let seen: number | null = null
+  let stateKey: string | null = null
 
   const address = (): string | null => {
     const id = options.id()
@@ -273,6 +543,49 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     return id === null || id === undefined || id === ''
       ? null
       : `${admin.apiPath}/editing/${options.entity}/${encodeURIComponent(String(id))}`
+  }
+
+  const me = (): number | null => {
+    const id = admin.state?.user?.id
+
+    return id === undefined || id === null ? null : Number(id)
+  }
+
+  /** What the heartbeat says besides the revision: the state, the place, what happened. */
+  function absorb(ping: Ping): void {
+    const list = Array.isArray(ping.events) ? ping.events : []
+    const newest = list.reduce((top, event) => Math.max(top, event.id), seen ?? 0)
+    let fresh: EditingEvent[] = []
+
+    recent.value = list
+
+    if (seen === null) {
+      // Whatever happened before this editor opened is not news to it.
+      seen = newest
+    } else {
+      const line = seen
+
+      // This editor's own doing is not news either — but the same person through an agent is.
+      fresh = list.filter(
+        (event) =>
+          event.id > line &&
+          !(event.author_id === me() && event.source === 'panel' && me() !== null),
+      )
+      seen = newest
+    }
+
+    if (fresh.length > 0) events.value = [...events.value, ...fresh]
+
+    state.value = ping.state ?? null
+    place.value = ping.place ?? null
+
+    const key = JSON.stringify([ping.state ?? null, ping.place ?? null])
+    const moved = stateKey !== null && key !== stateKey
+
+    stateKey = key
+
+    // The badge, the trail and the address are the editor's: it reads them again.
+    if ((moved || fresh.length > 0) && !trashed.value) void options.refresh?.()
   }
 
   async function beat(): Promise<void> {
@@ -294,6 +607,11 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     if (typeof ping?.revision !== 'string') return
 
     editors.value = Array.isArray(ping.editors) ? ping.editors : []
+    changedLast = ping.changed ?? null
+    absorb(ping)
+
+    // Nothing to compare with until the editor has its record: see `ready`.
+    if (!ready) return
 
     // Our own save may have landed while the heartbeat was out, and a stale answer would then
     // report it as somebody else's.
@@ -338,6 +656,8 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
   }
 
   onMounted(() => {
+    mounted = true
+
     if (options.heartbeat === false) return
 
     const seconds = options.heartbeat ?? 20
@@ -345,7 +665,17 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     timer = setInterval(() => void beat(), seconds * 1000)
     // The first one as soon as the record is known: an agent asking a second after the page
     // opened should hear about it, and so should the next record the same screen opens.
-    stopWatching = watch(options.id, () => void beat(), { immediate: true })
+    stopWatching = watch(
+      options.id,
+      () => {
+        // Another record: what was heard about the last one is not about this one.
+        seen = null
+        stateKey = null
+        events.value = []
+        void beat()
+      },
+      { immediate: true },
+    )
   })
 
   onBeforeUnmount(() => {
@@ -359,13 +689,26 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     conflict,
     incoming,
     editors,
+    state,
+    events,
+    trashed,
+    trashedBy,
+    unsaved,
+    canRestore,
     opened,
     refused,
     pull,
     choose,
     resolve,
     resolveTheirs,
-    label,
+    beforePublish,
+    failed,
+    restoreFromBin,
+    dismissEvents,
+    check: beat,
+    label: labels.label,
+    places,
+    describe,
     preview,
     who,
   }
@@ -394,14 +737,13 @@ export function preview(value: unknown): string {
   return clip(JSON.stringify(value))
 }
 
-function clip(text: string): string {
-  return text.length > 140 ? `${text.slice(0, 139)}…` : text
+/** A sentence whose time was not known ends where the time would have been, not on a «·». */
+export function timeless(text: string): string {
+  return text.replace(/\s*·\s*$/, '')
 }
 
-function humanize(name: string): string {
-  const words = name.replace(/[_-]+/g, ' ').trim()
-
-  return words.charAt(0).toUpperCase() + words.slice(1)
+function clip(text: string): string {
+  return text.length > 140 ? `${text.slice(0, 139)}…` : text
 }
 
 function clone<T>(value: T): T {

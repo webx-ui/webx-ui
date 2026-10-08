@@ -157,9 +157,11 @@ final class VacancyTools
                 'publish',
                 'Put the draft on the site: its values, categories and application form become the vacancy and a '
                 .'version is written. The first publication sets the day it was put up, when nobody has. Ask a person '
-                .'first unless they asked you to publish.',
+                .'first unless they asked you to publish. It publishes whatever the draft holds now: send the revision '
+                .'vacancies_get gave you, so that an edit you have not read is not what goes on the site. While '
+                .'somebody has the vacancy open in the panel the revision is required.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->publish($arguments, $user)),
-                ['properties' => ['vacancy' => $vacancy], 'required' => ['vacancy']],
+                ['properties' => ['vacancy' => $vacancy, ...AgentRevision::stateProperties('vacancies_get')], 'required' => ['vacancy']],
                 permission: 'vacancies.manage',
             ),
 
@@ -169,7 +171,7 @@ final class VacancyTools
                 .'being prepared is still there. A position that has been filled is not this — that is vacancies_close, '
                 .'which keeps the page for the links that lead to it.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
-                ['properties' => ['vacancy' => $vacancy], 'required' => ['vacancy']],
+                ['properties' => ['vacancy' => $vacancy, ...AgentRevision::stateProperties('vacancies_get')], 'required' => ['vacancy']],
                 permission: 'vacancies.manage',
             ),
 
@@ -178,7 +180,7 @@ final class VacancyTools
                 'Throw away the draft of a vacancy that is on the site and go back to what the site shows. The draft '
                 .'is all that changes. dry_run names the fields that differ from the published ones.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
-                ['properties' => ['vacancy' => $vacancy], 'required' => ['vacancy']],
+                ['properties' => ['vacancy' => $vacancy, ...AgentRevision::stateProperties('vacancies_get')], 'required' => ['vacancy']],
                 permission: 'vacancies.manage',
             ),
 
@@ -188,7 +190,7 @@ final class VacancyTools
                 .'without the markup search engines read and out of their index. A save and a publication in one step, '
                 .'so only for a vacancy on the site with no edits waiting — publish or discard those first.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->close($arguments, $user, reopen: false)),
-                ['properties' => ['vacancy' => $vacancy], 'required' => ['vacancy']],
+                ['properties' => ['vacancy' => $vacancy, ...AgentRevision::stateProperties('vacancies_get')], 'required' => ['vacancy']],
                 permission: 'vacancies.manage',
             ),
 
@@ -198,7 +200,7 @@ final class VacancyTools
                 .'(set a new one with vacancies_update). Like vacancies_close, only for a vacancy on the site with no '
                 .'edits waiting.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->close($arguments, $user, reopen: true)),
-                ['properties' => ['vacancy' => $vacancy], 'required' => ['vacancy']],
+                ['properties' => ['vacancy' => $vacancy, ...AgentRevision::stateProperties('vacancies_get')], 'required' => ['vacancy']],
                 permission: 'vacancies.manage',
             ),
 
@@ -208,7 +210,7 @@ final class VacancyTools
                 .'Nothing is destroyed: the bin in the panel puts it back, as long as nobody has taken its address '
                 .'in the meantime.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
-                ['properties' => ['vacancy' => $vacancy], 'required' => ['vacancy']],
+                ['properties' => ['vacancy' => $vacancy, ...AgentRevision::stateProperties('vacancies_get')], 'required' => ['vacancy']],
                 permission: 'vacancies.manage',
             ),
 
@@ -411,6 +413,7 @@ final class VacancyTools
     private function publish(array $arguments, ?Authenticatable $user): array
     {
         $vacancy = $this->vacancy($arguments['vacancy'] ?? null);
+        $this->guard($arguments, $vacancy);
 
         if ($vacancy->trashed()) {
             throw new ToolFailure("Vacancy #{$vacancy->getKey()} is in the bin. Bring it back in the panel before publishing it.");
@@ -439,6 +442,7 @@ final class VacancyTools
     private function unpublish(array $arguments): array
     {
         $vacancy = $this->vacancy($arguments['vacancy'] ?? null);
+        $this->guard($arguments, $vacancy);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_unpublish' => $this->reference($vacancy), 'status' => $vacancy->status()];
@@ -456,6 +460,7 @@ final class VacancyTools
     private function discard(array $arguments): array
     {
         $vacancy = $this->vacancy($arguments['vacancy'] ?? null);
+        $this->guard($arguments, $vacancy);
 
         if (! $vacancy->hasDraft()) {
             throw new ToolFailure("Vacancy [{$vacancy->getKey()}] has no draft: the site already shows what it holds.");
@@ -479,6 +484,7 @@ final class VacancyTools
     private function close(array $arguments, ?Authenticatable $user, bool $reopen): array
     {
         $vacancy = $this->vacancy($arguments['vacancy'] ?? null);
+        $this->guard($arguments, $vacancy);
         $closing = $this->container->make(Closing::class);
         $refusal = $vacancy->trashed()
             ? "Vacancy #{$vacancy->getKey()} is in the bin."
@@ -511,6 +517,7 @@ final class VacancyTools
     private function delete(array $arguments): array
     {
         $vacancy = $this->vacancy($arguments['vacancy'] ?? null);
+        $this->guard($arguments, $vacancy);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_trash' => $this->reference($vacancy), 'status' => $vacancy->status()];
@@ -988,6 +995,17 @@ final class VacancyTools
     private function formTarget(): ?RelationTarget
     {
         return $this->container->make(RelationTargets::class)->find(Vacancy::FORM_TARGET);
+    }
+
+    /**
+     * The rule for a change of state (AgentRevision::guard): the revision this agent read, and
+     * one has to be sent while somebody has the vacancy open.
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private function guard(array $arguments, Vacancy $vacancy): void
+    {
+        AgentRevision::guard($arguments, Revision::of($vacancy), $vacancy, 'vacancy', 'vacancies_get');
     }
 
     private function presence(): Presence

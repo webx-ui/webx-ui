@@ -8,6 +8,7 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use LogicException;
+use WebxUi\Admin\Editing\RecordEvents;
 
 /**
  * An entity with a history.
@@ -185,6 +186,13 @@ trait HasVersions
             : $found->payload;
 
         $this->saveDraft($payload, $found->author_id, EntityVersion::SOURCE_PANEL);
+
+        // An open editor hears «restored version 21» rather than a list of every field it changed.
+        Container::getInstance()->make(RecordEvents::class)->note(
+            $this,
+            RecordEvents::RESTORED_VERSION,
+            $found->number !== null ? ['number' => $found->number] : ['draft' => $found->id, 'kind' => $found->kind],
+        );
 
         return $found;
     }

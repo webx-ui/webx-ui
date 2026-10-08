@@ -23,7 +23,8 @@ export interface RecipesApi {
   save(id: number, input: RecipeSave): Promise<RecipeDetail>
   /** Throw away what is waiting and keep what the site is showing. */
   discard(id: number): Promise<RecipeDetail>
-  publish(id: number): Promise<RecipeRow>
+  /** `revision` is what the editor held: a draft that moved on since is answered 409, not published. */
+  publish(id: number, revision?: string): Promise<RecipeRow>
   unpublish(id: number): Promise<RecipeRow>
   remove(id: number): Promise<void>
   restore(id: number): Promise<RecipeRow>
@@ -67,7 +68,10 @@ export function createRecipesApi(admin: AdminContext): RecipesApi {
     save: (id, input) => admin.http.put<{ data: RecipeDetail }>(`${base}/${id}`, input).then(data),
     discard: (id) =>
       admin.http.post<{ data: RecipeDetail }>(`${base}/${id}/discard`, {}).then(data),
-    publish: (id) => admin.http.post<{ data: RecipeRow }>(`${base}/${id}/publish`, {}).then(data),
+    publish: (id, revision) =>
+      admin.http
+        .post<{ data: RecipeRow }>(`${base}/${id}/publish`, revision ? { revision } : {})
+        .then(data),
     unpublish: (id) =>
       admin.http.post<{ data: RecipeRow }>(`${base}/${id}/unpublish`, {}).then(data),
     remove: (id) => admin.http.delete<void>(`${base}/${id}`).then(() => undefined),

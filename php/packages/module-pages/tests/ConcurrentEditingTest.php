@@ -184,6 +184,226 @@ final class ConcurrentEditingTest extends TestCase
             ->assertNotFound();
     }
 
+    #[Test]
+    public function what_changes_a_page_takes_the_revision_while_somebody_has_it_open(): void
+    {
+        $about = $this->page('about');
+        $about->saveDraft(['title' => ['en' => 'About, edited'], 'slug' => ['en' => 'about'], 'blocks' => []]);
+        $this->page('contact');
+        $agent = $this->named('Agent');
+
+        // Nobody in the panel: a script may publish without reading first, as before.
+        $this->agent('pages_publish', ['page' => '/about', 'dry_run' => true], $agent)->assertOk();
+
+        $this->actingAs($this->named('Owner'), 'cms')->postJson('/api/cms/editing/pages/'.$about->getKey())->assertOk();
+
+        foreach ([
+            ['pages_publish', []],
+            ['pages_unpublish', []],
+            ['pages_discard', []],
+            ['pages_delete', []],
+            ['pages_move', ['target' => '/contact', 'zone' => 'inside']],
+            ['pages_version_restore', ['number' => 1]],
+        ] as [$tool, $extra]) {
+            $this->agent($tool, ['page' => $about->getKey()] + $extra, $agent)
+                ->assertHasErrors(['Owner has this page open in the panel', 'pages_get', 'force: true']);
+
+            $this->agent($tool, ['page' => $about->getKey(), 'revision' => 'stale'] + $extra, $agent)
+                ->assertHasErrors(['changed since you read it']);
+        }
+
+        $revision = $this->content($this->agent('pages_get', ['page' => '/about'], $agent))['revision'];
+
+        $this->agent('pages_publish', ['page' => '/about', 'revision' => $revision], $agent)->assertOk();
+        $this->assertSame('About, edited', $about->refresh()->getTranslation('title', 'en'));
+    }
+
+    #[Test]
+    public function a_publication_from_the_panel_carrying_a_stale_revision_is_refused(): void
+    {
+        $about = $this->page('about');
+        $about->saveDraft(['title' => ['en' => 'Seen'], 'slug' => ['en' => 'about'], 'blocks' => []]);
+        $owner = $this->named('Owner');
+
+        $held = $this->actingAs($owner, 'cms')->getJson($this->api($about->getKey()))->json('data.revision');
+
+        // Somebody else writes after the editor read the page.
+        $this->agent('pages_update', ['page' => '/about', 'values' => ['title' => ['en' => 'Unseen']], 'force' => true], $this->named('Administrator'));
+
+        $this->actingAs($owner, 'cms')
+            ->postJson($this->api($about->getKey()).'/publish', ['revision' => $held])
+            ->assertStatus(409)
+            ->assertJsonPath('changed.author', 'Administrator')
+            ->assertJsonStructure(['message', 'revision']);
+
+        $this->assertNotSame('Unseen', $about->refresh()->getTranslation('title', 'en'));
+
+        $fresh = $this->actingAs($owner, 'cms')->getJson($this->api($about->getKey()))->json('data.revision');
+
+        $this->actingAs($owner, 'cms')
+            ->postJson($this->api($about->getKey()).'/publish', ['revision' => $fresh])
+            ->assertOk();
+
+        $this->assertSame('Unseen', $about->refresh()->getTranslation('title', 'en'));
+    }
+
+    #[Test]
+    public function the_heartbeat_says_what_the_revision_does_not(): void
+    {
+        $about = $this->page('about');
+        $about->saveDraft(['title' => ['en' => 'About, edited'], 'slug' => ['en' => 'about'], 'blocks' => []]);
+        $contact = $this->page('contact');
+        $owner = $this->named('Owner');
+        $agent = $this->named('Agent');
+        $url = '/api/cms/editing/pages/'.$about->getKey();
+
+        $first = $this->actingAs($owner, 'cms')->postJson($url)->assertOk();
+        $first->assertJsonPath('data.state.status', 'modified')
+            ->assertJsonPath('data.state.has_draft', true)
+            ->assertJsonPath('data.state.trashed', false)
+            ->assertJsonPath('data.place.paths.en', '/about');
+        $revision = $first->json('data.revision');
+
+        // Published by somebody else: the content and so the revision are the same, the state is not.
+        $this->agent('pages_publish', ['page' => '/about', 'revision' => $revision], $agent)->assertOk();
+
+        $after = $this->actingAs($owner, 'cms')->postJson($url)->assertOk();
+        $after->assertJsonPath('data.revision', $revision)
+            ->assertJsonPath('data.state.status', 'published')
+            ->assertJsonPath('data.state.has_draft', false);
+        $this->assertSame(['kind' => 'published', 'source' => 'mcp'], $this->last($after->json('data.events'), ['kind', 'source']));
+
+        // Moved under another page: the place and the address follow, and the move is an event.
+        $this->agent('pages_move', ['page' => '/about', 'target' => '/contact', 'zone' => 'inside', 'revision' => $revision], $agent)->assertOk();
+
+        $moved = $this->actingAs($owner, 'cms')->postJson($url)->assertOk();
+        $moved->assertJsonPath('data.place.parent_id', $contact->getKey())
+            ->assertJsonPath('data.place.paths.en', '/contact/about');
+        $this->assertSame(['kind' => 'moved'], $this->last($moved->json('data.events'), ['kind']));
+
+        // In the bin: still answered, and said so.
+        $this->agent('pages_delete', ['page' => $about->getKey(), 'revision' => $revision], $agent)->assertOk();
+
+        $binned = $this->actingAs($owner, 'cms')->postJson($url)->assertOk();
+        $binned->assertJsonPath('data.state.trashed', true)
+            ->assertJsonPath('data.state.status', 'trashed');
+        $this->assertSame(['kind' => 'trashed', 'author' => 'Agent'], $this->last($binned->json('data.events'), ['kind', 'author']));
+
+        // A save into the bin is not a save: the editor hears 404 and asks the heartbeat why.
+        $this->actingAs($owner, 'cms')
+            ->putJson($this->api($about->getKey()), ['values' => ['title' => ['en' => 'Too late']]])
+            ->assertNotFound();
+    }
+
+    #[Test]
+    public function a_dry_run_leaves_no_event_behind(): void
+    {
+        $about = $this->page('about');
+        $owner = $this->named('Owner');
+
+        $this->agent('pages_delete', ['page' => '/about', 'dry_run' => true], $this->named('Agent'))->assertOk();
+
+        $events = $this->actingAs($owner, 'cms')->postJson('/api/cms/editing/pages/'.$about->getKey())->json('data.events');
+
+        $this->assertNotContains('trashed', array_column($events, 'kind'));
+    }
+
+    #[Test]
+    public function a_version_put_back_is_an_event_with_its_number(): void
+    {
+        $about = $this->page('about');
+        $about->saveDraft(['title' => ['en' => 'Second'], 'slug' => ['en' => 'about'], 'blocks' => []]);
+        $about->publish();
+
+        $this->agent('pages_version_restore', ['page' => '/about', 'number' => 1], $this->named('Agent'))->assertOk();
+
+        $events = $this->actingAs($this->named('Owner'), 'cms')->postJson('/api/cms/editing/pages/'.$about->getKey())->json('data.events');
+
+        $this->assertSame(['kind' => 'restored_version', 'detail' => ['number' => 1]], $this->last($events, ['kind', 'detail']));
+    }
+
+    #[Test]
+    public function a_stale_place_in_a_save_does_not_move_the_page_back(): void
+    {
+        $about = $this->page('about');
+        $contact = $this->page('contact');
+        $home = $about->parent_id;
+        $owner = $this->named('Owner');
+
+        $held = $this->actingAs($owner, 'cms')->getJson($this->api($about->getKey()))->json('data');
+
+        // Moved by somebody else while the form was open…
+        $this->agent('pages_move', ['page' => '/about', 'target' => '/contact', 'zone' => 'inside'], $this->named('Agent'))->assertOk();
+
+        // …and the stale form saved, with where it thought the page was.
+        $this->actingAs($owner, 'cms')
+            ->putJson($this->api($about->getKey()), [
+                'values' => ['title' => ['en' => 'About, saved late']] + ['parent_id' => $home],
+                'parent_id' => $home,
+                'revision' => $held['revision'],
+            ])
+            ->assertOk();
+
+        $this->assertSame($contact->getKey(), $about->refresh()->parent_id);
+
+        // Nor does publishing that draft.
+        $about->publish();
+        $this->assertSame($contact->getKey(), $about->fresh()?->parent_id);
+    }
+
+    #[Test]
+    public function each_copy_of_the_draft_names_what_it_changed(): void
+    {
+        $about = $this->page('about');
+        $agent = $this->named('Agent');
+        $editor = $this->named('Anna');
+
+        $revision = $this->content($this->agent('pages_get', ['page' => '/about'], $agent))['revision'];
+        $this->agent('pages_update', ['page' => '/about', 'values' => ['title' => ['en' => 'Agent title']], 'revision' => $revision], $agent)->assertOk();
+
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api($about->getKey()), ['values' => ['title' => ['en' => 'Agent title'], 'slug' => ['en' => 'about-us']]])
+            ->assertOk();
+
+        $drafts = $this->actingAs($editor, 'cms')->getJson('/api/cms/editing/pages/'.$about->getKey().'/drafts')->assertOk()->json('data');
+
+        // Newest first: Anna's copy changed the address, the agent's the title — not both, each.
+        $this->assertSame([[['field' => 'slug'], ['field' => 'en']]], $drafts[0]['paths']);
+        $this->assertContains([['field' => 'title'], ['field' => 'en']], $drafts[1]['paths']);
+        $this->assertNotContains([['field' => 'slug'], ['field' => 'en']], $drafts[1]['paths']);
+    }
+
+    #[Test]
+    public function a_page_has_one_revision_whichever_tool_reads_it(): void
+    {
+        $about = $this->page('about');
+        $agent = $this->editor(['pages.view', 'pages.manage', 'blocks.view', 'blocks.manage']);
+
+        $fromPages = $this->content($this->agent('pages_get', ['page' => '/about'], $agent))['revision'];
+        $fromBlocks = $this->content($this->agent('blocks_get_content', ['entity' => 'page', 'id' => $about->getKey()], $agent))['revision'];
+
+        $this->assertSame($fromPages, $fromBlocks);
+
+        // Read with one, written with the other, and back.
+        $written = $this->content($this->agent('pages_update', ['page' => '/about', 'values' => ['title' => ['en' => 'About us']], 'revision' => $fromBlocks], $agent));
+
+        $this->agent('blocks_set_content', ['entity' => 'page', 'id' => $about->getKey(), 'blocks' => [], 'revision' => $written['revision']], $agent)->assertOk();
+    }
+
+    /**
+     * The newest event, cut to the keys asked for.
+     *
+     * @param  list<array<string, mixed>>  $events
+     * @param  list<string>  $keys
+     * @return array<string, mixed>
+     */
+    private function last(array $events, array $keys): array
+    {
+        $event = end($events);
+
+        return is_array($event) ? array_intersect_key($event, array_flip($keys)) : [];
+    }
+
     private function named(string $name): CmsUser
     {
         $user = $this->editor();

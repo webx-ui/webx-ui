@@ -83,6 +83,9 @@ A screen patch addresses nodes by `id`. Event editor: `event`, `when`, `all-day`
   in the panel right now — tell your user before writing under them. Their editor merges your
   write with theirs field by field, and a draft written over by somebody else is kept: the
   panel's History lists it under Drafts, and «Restore» puts it back.
+- `events_publish`, `events_unpublish`, `events_discard`, `events_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
+  one is refused, and while somebody has the event open in the panel (`being_edited_by`) one is
+  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
 - Do not delete rows with SQL: deleting puts the event in the bin and releases its address
   through the registry. A raw delete leaves the address and the links behind.
 - Do not print `<title>` in a site's copy of a view: with an empty SEO card the event and the

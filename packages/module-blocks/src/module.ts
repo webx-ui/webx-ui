@@ -1,4 +1,10 @@
-import type { AdminModule } from '@webx-ui/module-admin'
+import {
+  screenLabels,
+  type AdminContext,
+  type AdminModule,
+  type BlockLabels,
+} from '@webx-ui/module-admin'
+import { createBlocksApi } from './api'
 import { WxTextarea } from '@webx-ui/core'
 import BlockDataField from './BlockDataField.vue'
 import BlockEditorPage from './BlockEditorPage.vue'
@@ -26,6 +32,7 @@ export function blocks(options: BlocksOptions = {}): AdminModule {
   return {
     id: 'blocks',
     path,
+    blockLabels,
     routes: [
       { path, name: 'webx.blocks', component: BlocksPage, props: { base: path } },
       {
@@ -78,6 +85,7 @@ export function regions(options: RegionsOptions = {}): AdminModule {
 
   return {
     id: 'regions',
+    blockLabels,
     path,
     routes: [
       { path, name: 'webx.regions', component: RegionsPage, props: { base: path } },
@@ -92,5 +100,22 @@ export function regions(options: RegionsOptions = {}): AdminModule {
     types: {
       'wx-region-history': { component: RegionHistory, kind: 'display' },
     },
+  }
+}
+
+/**
+ * What the published block types and their fields are called, for the panel's notices about
+ * somebody else's edit: «Hero › Text below the button», as the constructor names it.
+ */
+async function blockLabels(admin: AdminContext): Promise<BlockLabels> {
+  const types = await createBlocksApi(admin).catalog()
+  const names = new Map(types.map((type) => [type.slug, type.title]))
+  const fields = new Map(
+    types.map((type) => [type.slug, screenLabels(type.content?.schema ?? [])] as const),
+  )
+
+  return {
+    type: (slug) => names.get(slug) || undefined,
+    field: (slug, name) => fields.get(slug)?.get(name),
   }
 }

@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Tests;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Tests\Fixtures\Page;
@@ -133,6 +134,49 @@ final class RegionsMcpTest extends RegionTestCase
 
         $this->agent('region_unpublish', ['name' => 'header'], $editor)->assertOk();
         $this->assertStringContainsString('Header from code', $this->tag());
+    }
+
+    #[Test]
+    public function publishing_a_region_somebody_has_open_asks_for_the_revision(): void
+    {
+        $this->publish('bar', '<div>{{ $text }}</div>');
+        $region = $this->region('header', [['type' => 'bar', 'values' => ['text' => 'Draft']]], published: false);
+        $editor = $this->editor(['blocks.regions']);
+
+        // Nobody in the editor: a script's publication goes through as it always did.
+        $this->agent('region_publish', ['name' => 'header'], $editor)->assertOk();
+        $this->agent('region_unpublish', ['name' => 'header'], $editor)->assertOk();
+
+        $this->app->make(Presence::class)->touch($region, (int) $editor->getKey(), 'Owner');
+
+        $this->agent('region_publish', ['name' => 'header'], $editor)
+            ->assertHasErrors(['Owner', 'blocks_get_content', 'force: true']);
+        $this->agent('region_publish', ['name' => 'header', 'revision' => 'stale'], $editor)
+            ->assertHasErrors(['changed since you read it']);
+        $this->assertFalse($region->refresh()->isPublished());
+
+        $revision = null;
+        $this->agent('get_content', ['entity' => 'region', 'id' => 'header'], $editor)
+            ->assertOk()
+            ->assertStructuredContent(static function (AssertableJson $json) use (&$revision): void {
+                $revision = $json->etc()->toArray()['revision'];
+            });
+
+        $this->agent('region_publish', ['name' => 'header', 'revision' => $revision], $editor)->assertOk();
+        $this->assertTrue($region->refresh()->isPublished());
+    }
+
+    #[Test]
+    public function the_panel_does_not_publish_a_region_under_a_revision_that_is_gone(): void
+    {
+        $this->publish('bar', '<div>{{ $text }}</div>');
+        $region = $this->region('header', [['type' => 'bar', 'values' => ['text' => 'Draft']]], published: false);
+
+        $this->actingAs($this->editor(['blocks.regions']), 'cms')
+            ->postJson('/api/cms/regions/header/publish', ['revision' => 'stale'])
+            ->assertStatus(409);
+
+        $this->assertFalse($region->refresh()->isPublished());
     }
 
     #[Test]

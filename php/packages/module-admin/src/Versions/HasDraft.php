@@ -9,6 +9,8 @@ use Carbon\CarbonInterface;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\App;
+use WebxUi\Admin\Editing\RecordEvents;
 
 /**
  * An entity that is edited in a draft and published on purpose.
@@ -39,6 +41,41 @@ use Illuminate\Support\Carbon;
  */
 trait HasDraft
 {
+    /**
+     * What an open editor of this record has to hear about besides its content (RecordEvents):
+     * a move in the tree, the bin and the way out of it. Publishing, unpublishing and the draft
+     * thrown away are noted where they happen, below.
+     */
+    public static function bootHasDraft(): void
+    {
+        // `nested-set` moves a node with queries rather than a save, and says so with this event.
+        static::registerModelEvent('moved', static function (Model $model): void {
+            /** @var Model&self $model */
+            $model->noteEvent(RecordEvents::MOVED);
+        });
+
+        static::deleted(static function (Model $model): void {
+            /** @var Model&self $model */
+            if (method_exists($model, 'trashed') && $model->trashed()) {
+                $model->noteEvent(RecordEvents::TRASHED);
+            }
+        });
+
+        // Only a model with `SoftDeletes` ever fires it; registering it for the rest is harmless.
+        static::registerModelEvent('restored', static function (Model $model): void {
+            /** @var Model&self $model */
+            $model->noteEvent(RecordEvents::RESTORED);
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $detail
+     */
+    public function noteEvent(string $kind, array $detail = []): void
+    {
+        App::make(RecordEvents::class)->note($this, $kind, $detail);
+    }
+
     public function initializeHasDraft(): void
     {
         $this->mergeCasts([
@@ -145,8 +182,14 @@ trait HasDraft
 
     public function discardDraft(): static
     {
+        $had = $this->hasDraft();
+
         $this->setAttribute($this->draftColumn(), null);
         $this->save();
+
+        if ($had) {
+            $this->noteEvent(RecordEvents::DISCARDED);
+        }
 
         return $this;
     }
@@ -209,6 +252,8 @@ trait HasDraft
             }
         });
 
+        $this->noteEvent(RecordEvents::PUBLISHED);
+
         return $this;
     }
 
@@ -217,6 +262,8 @@ trait HasDraft
     {
         $this->setAttribute($this->publishedAtColumn(), null);
         $this->save();
+
+        $this->noteEvent(RecordEvents::UNPUBLISHED);
 
         return $this;
     }

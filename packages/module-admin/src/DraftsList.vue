@@ -5,6 +5,7 @@ import { useAdmin } from './admin'
 import DateText from './DateText.vue'
 import { useErrorText } from './errors'
 import type { DraftCopy } from './editing'
+import { useEditingLabels } from './editingLabels'
 import { useTranslate } from './i18n'
 
 /**
@@ -26,8 +27,10 @@ const props = withDefaults(
     canRestore?: boolean
     /** Anything that changes when the record is saved or published: the list is read again. */
     stamp?: unknown
+    /** The screen the record is edited on, so the changed places read as the form names them. */
+    screen?: string
   }>(),
-  { canRestore: false, stamp: undefined },
+  { canRestore: false, stamp: undefined, screen: undefined },
 )
 
 const emit = defineEmits<{
@@ -40,6 +43,21 @@ const t = useTranslate('webx-admin')
 const message = useErrorText()
 
 const drafts = ref<DraftCopy[] | null>(null)
+const labels = useEditingLabels({ screen: props.screen })
+
+/**
+ * What a copy changed against the one before it: «Hero › Eyebrow · EN», so that the edit somebody
+ * lost can be found by the place it was in. Three, and «and more» after them.
+ */
+function changed(copy: DraftCopy): string {
+  const named = [...new Set((copy.paths ?? []).map((path) => labels.label(path)))]
+
+  if (named.length === 0) return ''
+
+  const what = named.slice(0, 3).join(', ')
+
+  return named.length > 3 ? t('editing.and-more', { what }) : what
+}
 const working = ref(false)
 
 const base = (): string | null =>
@@ -110,6 +128,9 @@ watch(
           <wx-text size="sm" tone="muted">
             {{ copy.author ?? t('editing.somebody') }} · {{ t(`editing.source-${copy.source}`) }}
           </wx-text>
+          <wx-text v-if="changed(copy)" size="sm" class="wx-drafts__changed">
+            {{ changed(copy) }}
+          </wx-text>
         </div>
         <wx-badge :type="copy.kind === 'overwritten' ? 'warning' : 'default'" dot>
           {{ t(`editing.${copy.kind}`) }}
@@ -165,6 +186,10 @@ watch(
 
 .wx-drafts__row:last-child {
   border-block-end: 0;
+}
+
+.wx-drafts__changed {
+  overflow-wrap: anywhere;
 }
 
 .wx-drafts__who {

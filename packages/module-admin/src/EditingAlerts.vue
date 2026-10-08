@@ -2,17 +2,18 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { confirm, WxAlert, WxButton } from '@webx-ui/core'
 import { useDates } from './dates'
-import type { Editing } from './editing'
+import { timeless, type Editing } from './editing'
 import { useTranslate } from './i18n'
 import type { MergeChoice, MergeConflict } from './merge'
 
 /**
  * What an editor says about other people editing the same record, above its form.
  *
- * Three things, the loudest first. A conflict: both sides changed the same place, and each such
+ * Five things, the loudest first. The record is in the bin, with the way out of it. A conflict: both sides changed the same place, and each such
  * place is listed with what it was, what this editor wrote and what the other side wrote, to be
  * settled one by one — everything else has already been merged. A save that came in while this
- * editor was open, with what it changed and an offer to pull it in before saving over it. And,
+ * editor was open, with what it changed and an offer to pull it in before saving over it. What
+ * others did besides writing — published it, moved it, put an old version back. And,
  * quietest, who else has the record open right now.
  */
 const props = defineProps<{ editing: Editing<unknown> }>()
@@ -59,21 +60,63 @@ function when(at: string | null | undefined): string {
   return at ? dates.short(at) : ''
 }
 
+/* What others did besides writing: published, moved, restored an old version. */
+const events = computed(() => props.editing.events.value)
+
+/*
+ * An old version put back changes every field it touched, and «changed Hero › Eyebrow, Heading,
+ * Below the button and more» hides the one thing worth saying: which version, and that it went
+ * on the site. When an event explains the change, the notice says the event instead.
+ */
+const explained = computed(() =>
+  events.value.some((event) => event.kind === 'restored_version' || event.kind === 'discarded'),
+)
+
 const incomingText = computed(() => {
   const now = incoming.value
 
   if (!now) return ''
 
-  const labels = [...new Set(now.paths.map((path) => props.editing.label(path)))]
-  const what = labels.slice(0, 3).join(', ')
-  const key = labels.length > 3 ? 'editing.incoming-more' : 'editing.incoming'
+  if (explained.value) return props.editing.describe(events.value)
 
-  return t(key, {
-    who: props.editing.who(now.theirs.changed),
-    what: what || t('editing.order'),
-    when: when(now.theirs.changed?.at),
+  return timeless(
+    t('editing.incoming', {
+      who: props.editing.who(now.theirs.changed),
+      what: props.editing.places(now.paths),
+      when: when(now.theirs.changed?.at),
+    }),
+  )
+})
+
+const eventsText = computed(() => props.editing.describe(events.value))
+
+/* In the bin: who put it there and when, and the way back for whoever may take it. */
+const trashed = computed(() => props.editing.trashed.value)
+
+const trashedTitle = computed(() => {
+  const by = props.editing.trashedBy.value
+
+  if (by) return t('editing.trashed-title', { who: props.editing.who(by), when: when(by.at) })
+
+  return t('editing.trashed-anonymous', {
+    when: when(props.editing.state.value?.deleted_at),
   })
 })
+
+const restoring = ref(false)
+
+/** Out of the bin, and what the form holds saved right after when there is anything. */
+async function restore(): Promise<void> {
+  const keep = props.editing.unsaved.value
+
+  restoring.value = true
+
+  try {
+    if ((await props.editing.restoreFromBin()) && keep) emit('save')
+  } finally {
+    restoring.value = false
+  }
+}
 
 function chosen(one: MergeConflict): MergeChoice {
   return conflict.value?.choices[one.id] ?? 'mine'
@@ -109,8 +152,25 @@ async function pull(): Promise<void> {
 </script>
 
 <template>
+  <!-- In the bin: nothing typed here can be saved until it is out. The form keeps what it holds,
+       so the text can be copied even by somebody who may not restore it. -->
   <wx-alert
-    v-if="conflict"
+    v-if="trashed"
+    class="wx-editing-alerts"
+    type="danger"
+    :title="trashedTitle"
+    :description="t('editing.trashed-text')"
+    live
+  >
+    <template v-if="editing.canRestore()" #actions>
+      <wx-button size="sm" type="primary" :loading="restoring" @click="restore">
+        {{ editing.unsaved.value ? t('editing.restore-save') : t('editing.restore-bin') }}
+      </wx-button>
+    </template>
+  </wx-alert>
+
+  <wx-alert
+    v-else-if="conflict"
     ref="conflictAlert"
     class="wx-editing-alerts"
     type="warning"
@@ -168,6 +228,20 @@ async function pull(): Promise<void> {
   <wx-alert v-else-if="incoming" class="wx-editing-alerts" type="info" :title="incomingText" live>
     <template #actions>
       <wx-button size="sm" type="primary" @click="pull">{{ t('editing.pull') }}</wx-button>
+    </template>
+  </wx-alert>
+
+  <wx-alert
+    v-else-if="events.length > 0"
+    class="wx-editing-alerts"
+    type="info"
+    :title="eventsText"
+    live
+  >
+    <template #actions>
+      <wx-button size="sm" variant="outline" @click="editing.dismissEvents()">
+        {{ t('editing.dismiss') }}
+      </wx-button>
     </template>
   </wx-alert>
 

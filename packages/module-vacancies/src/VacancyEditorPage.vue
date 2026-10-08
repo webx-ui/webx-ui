@@ -105,8 +105,15 @@ const editing = useEditing<ScreenModel>({
   adopt: (theirs) => {
     snapshot.value = JSON.stringify(theirs.values)
   },
+  // Published or restored by somebody else: the badge and the address follow, and the form
+  // stays as it is.
+  refresh: () => refresh(),
+  restore: async () => {
+    if (vacancy.value) await api.restore(vacancy.value.id)
+  },
   canWrite: () => canManage.value,
   busy: () => saving.value,
+  screen: 'vacancies.form',
 })
 
 const conflict = editing.conflict
@@ -197,11 +204,28 @@ async function load(silent = false): Promise<void> {
   }
 }
 
+/**
+ * What surrounds the form, read again: the row with its status, the address, the preview. Not
+ * the values — the form is somebody's work in progress, and a change of its content is the
+ * notice's to offer.
+ */
+async function refresh(): Promise<void> {
+  try {
+    const detail = await api.get(id.value)
+
+    vacancy.value = detail.vacancy
+    prefix.value = detail.prefix
+    previewUrl.value = detail.preview_url
+  } catch {
+    // The heartbeat says what happened; a row that could not be read again stays as it was.
+  }
+}
+
 /* One pending save at a time, and one pending pause. */
 let timer: ReturnType<typeof setTimeout> | undefined
 
 function schedule(): void {
-  if (!canManage.value || conflict.value || !dirty.value) return
+  if (!canManage.value || conflict.value || !dirty.value || editing.trashed.value) return
 
   clearTimeout(timer)
   timer = setTimeout(() => void save(), PAUSE)
@@ -209,7 +233,8 @@ function schedule(): void {
 
 /** A field was left: write now rather than at the end of a pause nobody is waiting through. */
 function onFocusOut(): void {
-  if (!canManage.value || conflict.value || !dirty.value || saving.value) return
+  if (!canManage.value || conflict.value || !dirty.value || saving.value || editing.trashed.value)
+    return
 
   clearTimeout(timer)
   void save()
@@ -268,7 +293,8 @@ async function save(): Promise<void> {
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
       toast.danger(t('editor.save-failed'))
-    } else {
+    } else if (!(await editing.failed(error))) {
+      // In the bin is said by the notice above the form, with the way back; anything else here.
       toast.danger(message(error))
     }
   } finally {
@@ -317,9 +343,15 @@ async function publish(): Promise<void> {
   if (dirty.value) await save()
   if (conflict.value || dirty.value) return
 
-  const row = vacancy.value
+  if (!vacancy.value) return
 
-  if (!row) return
+  // The draft on the server may hold somebody else's edit this editor never pulled in: said
+  // before it goes on the site, with whose it is and where, rather than published unseen.
+  const held = await editing.beforePublish()
+
+  if (!held) return
+
+  const row = vacancy.value
 
   // Publishing moves a renamed slug, so the question names where the page will be, not where
   // it is — and says the old address will lead there, since that is what happens to it.
@@ -329,26 +361,29 @@ async function publish(): Promise<void> {
       ? ` ${panel('editor.publish-moves', { old: `/${row.path}` })}`
       : ''
 
-  const agreed = await confirm({
-    title: t('editor.publish-title', { title: title.value || row.title }),
-    message:
-      next === null
-        ? t('editor.publish-nowhere')
-        : t('editor.publish-text', { address: `/${next}` }) + old,
-    confirmText: t('panel.publish'),
-    cancelText: t('panel.cancel'),
-  })
+  // One question is enough: whoever just agreed to publish somebody else's changes has said yes.
+  const agreed =
+    held.asked ||
+    (await confirm({
+      title: t('editor.publish-title', { title: title.value || row.title }),
+      message:
+        next === null
+          ? t('editor.publish-nowhere')
+          : t('editor.publish-text', { address: `/${next}` }) + old,
+      confirmText: t('panel.publish'),
+      cancelText: t('panel.cancel'),
+    }))
 
   if (!agreed) return
 
   working.value = true
 
   try {
-    await api.publish(row.id)
+    await api.publish(row.id, held.revision)
     await load(true)
     toast.success(t('panel.published'))
   } catch (error) {
-    toast.danger(message(error))
+    if (!(await editing.failed(error))) toast.danger(message(error))
   } finally {
     working.value = false
   }

@@ -64,6 +64,12 @@ boot instead of failing quietly. Values the screen does not name are dropped on 
   write with theirs field by field, and a draft written over by somebody else is kept: the
   panel's History lists it under Drafts, `pages_versions` under `drafts` (kind `overwritten`),
   and `pages_version_restore` with `draft` puts it back into the draft.
+- Do not publish, unpublish, discard, restore a version, move or delete a page somebody has
+  open without the `revision`: those tools act on whatever the draft holds now, which may be an
+  edit you never read. While `being_edited_by` is not empty they refuse a call without one and
+  name who has it open; a stale one is always refused. `force: true` goes ahead regardless.
+- A page has one revision: the one `pages_get` returns is the one `blocks_get_content` returns,
+  and either may be sent to `pages_update` or `blocks_edit_content`.
 - Do not delete rows with SQL: deleting a page bins its whole branch and releases its addresses,
   and `restoreBranch()` brings back exactly that branch. A raw delete leaves orphans in the tree
   and in the routing registry.

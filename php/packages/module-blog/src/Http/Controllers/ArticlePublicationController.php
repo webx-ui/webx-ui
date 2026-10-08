@@ -6,6 +6,7 @@ namespace WebxUi\Blog\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use WebxUi\Admin\Editing\HeldRevision;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blog\Http\Resources\ArticleResource;
@@ -29,6 +30,13 @@ final class ArticlePublicationController
 {
     public function publish(Request $request, Article $article): JsonResponse
     {
+        // The editor sends the revision it held: an edit it has not seen is not published under it.
+        $stale = HeldRevision::conflict($request, 'articles', (string) $article->getKey());
+
+        if ($stale !== null) {
+            return $stale;
+        }
+
         $validated = $request->validate(['at' => ['sometimes', 'nullable', 'date']]);
 
         $article->publish(

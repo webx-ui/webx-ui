@@ -103,8 +103,15 @@ const editing = useEditing<ScreenModel>({
     snapshot.value = JSON.stringify(theirs.values)
     reloadToken.value += 1
   },
+  // Published, moved or restored by somebody else: the badge, the trail, «Inside» and the address
+  // in Settings follow, and the form stays as it is.
+  refresh: () => refresh(),
+  restore: async () => {
+    if (page.value) await api.restore(page.value.id)
+  },
   canWrite: () => canManage.value,
   busy: () => saving.value || flight !== undefined,
+  screen: 'pages.form',
 })
 
 const conflict = editing.conflict
@@ -201,11 +208,30 @@ async function load(silent = false): Promise<void> {
   }
 }
 
+/**
+ * What surrounds the form, read again: the row with its status, the trail, the addresses. Not
+ * the values — the form is somebody's work in progress, and a change of its content is the
+ * notice's to offer.
+ */
+async function refresh(): Promise<void> {
+  try {
+    const detail = await api.get(id.value)
+
+    page.value = detail.page
+    ancestors.value = detail.ancestors
+    previewUrl.value = detail.preview_url
+    prefixes.value = detail.address_prefix
+    addresses.value = detail.addresses ?? {}
+  } catch {
+    // The heartbeat says what happened; a row that could not be read again stays as it was.
+  }
+}
+
 /* One pending save at a time, and one pending pause. */
 let timer: ReturnType<typeof setTimeout> | undefined
 
 function schedule(): void {
-  if (!canManage.value || conflict.value || !dirty.value) return
+  if (!canManage.value || conflict.value || !dirty.value || editing.trashed.value) return
 
   clearTimeout(timer)
   timer = setTimeout(() => void save(), PAUSE)
@@ -213,7 +239,8 @@ function schedule(): void {
 
 /** A field was left: write now rather than at the end of a pause nobody is waiting through. */
 function onFocusOut(): void {
-  if (!canManage.value || conflict.value || !dirty.value || saving.value) return
+  if (!canManage.value || conflict.value || !dirty.value || saving.value || editing.trashed.value)
+    return
 
   clearTimeout(timer)
   void save()
@@ -301,7 +328,8 @@ async function write(): Promise<void> {
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
       toast.danger(t('page.save-failed'))
-    } else {
+    } else if (!(await editing.failed(error))) {
+      // In the bin is said by the notice above the form, with the way back; anything else here.
       toast.danger(message(error))
     }
   } finally {
@@ -327,9 +355,15 @@ async function publish(): Promise<void> {
   if (dirty.value) await save()
   if (conflict.value || dirty.value) return
 
-  const row = page.value
+  if (!page.value) return
 
-  if (!row) return
+  // The draft on the server may hold somebody else's edit this editor never pulled in: said
+  // before it goes on the site, with whose it is and where, rather than published unseen.
+  const held = await editing.beforePublish()
+
+  if (!held) return
+
+  const row = page.value
 
   // Publishing moves a renamed slug, so the question names where the page will be, not where
   // it is — and says the old address will lead there, since that is what happens to it.
@@ -340,26 +374,31 @@ async function publish(): Promise<void> {
       : ''
   const address = next === null ? null : `/${next}`
 
-  const agreed = await confirm({
-    // The name in the field rather than the row's: a page created before its title reached the
-    // site's language has only its number there.
-    title: t('page.publish-title', { title: title.value || row.title }),
-    message:
-      address === null ? t('page.publish-text-nowhere') : t('page.publish-text', { address }) + old,
-    confirmText: t('page.publish'),
-    cancelText: t('page.cancel'),
-  })
+  // One question is enough: whoever just agreed to publish somebody else's changes has said yes.
+  const agreed =
+    held.asked ||
+    (await confirm({
+      // The name in the field rather than the row's: a page created before its title reached
+      // the site's language has only its number there.
+      title: t('page.publish-title', { title: title.value || row.title }),
+      message:
+        address === null
+          ? t('page.publish-text-nowhere')
+          : t('page.publish-text', { address }) + old,
+      confirmText: t('page.publish'),
+      cancelText: t('page.cancel'),
+    }))
 
   if (!agreed) return
 
   working.value = true
 
   try {
-    await api.publish(row.id)
+    await api.publish(row.id, held.revision)
     await load(true)
     toast.success(t('page.published'))
   } catch (error) {
-    toast.danger(message(error))
+    if (!(await editing.failed(error))) toast.danger(message(error))
   } finally {
     working.value = false
   }

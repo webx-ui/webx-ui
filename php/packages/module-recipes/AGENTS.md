@@ -79,6 +79,9 @@ patch whose target is gone throws when the screen is first built.
   in the panel right now — tell your user before writing under them. Their editor merges your
   write with theirs field by field, and a draft written over by somebody else is kept: the
   panel's History lists it under Drafts, and «Restore» puts it back.
+- `recipes_publish`, `recipes_unpublish`, `recipes_discard`, `recipes_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
+  one is refused, and while somebody has the recipe open in the panel (`being_edited_by`) one is
+  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
 - Do not expect a saved change on the site: categories, nutrients, services and similar recipes
   wait in the draft with the text until `recipes_publish`.
 - Do not delete rows with SQL: deleting bins a recipe and releases its address; a raw delete

@@ -327,7 +327,8 @@ class BlogServiceProvider extends ServiceProvider
             'articles',
             ['blog.articles.view', 'blog.articles.manage'],
             static function (string $id): ?array {
-                $article = ctype_digit($id) ? Article::query()->find((int) $id) : null;
+                // An article in the bin too: the editor open on it hears that it went there.
+                $article = ctype_digit($id) ? Article::withTrashed()->find((int) $id) : null;
 
                 return $article instanceof Article ? ['revision' => Revision::of($article), 'model' => $article] : null;
             },

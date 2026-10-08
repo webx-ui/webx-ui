@@ -280,7 +280,8 @@ class RecipesServiceProvider extends ServiceProvider
             'recipes',
             ['recipes.view', 'recipes.manage'],
             static function (string $id): ?array {
-                $recipe = ctype_digit($id) ? Recipe::query()->find((int) $id) : null;
+                // A recipe in the bin too: the editor open on it hears that it went there.
+                $recipe = ctype_digit($id) ? Recipe::withTrashed()->find((int) $id) : null;
 
                 return $recipe instanceof Recipe ? ['revision' => Revision::of($recipe), 'model' => $recipe] : null;
             },

@@ -63,8 +63,16 @@ export {
   type EditingEditor,
   type EditingIncoming,
   type EditingOptions,
+  type EditingEvent,
+  type EditingState,
   type EditingVersion,
 } from './editing'
+export {
+  screenLabels,
+  useEditingLabels,
+  type EditingLabels,
+  type EditingLabelsOptions,
+} from './editingLabels'
 export { createNotesApi, type EntityNote, type NoteAuthor, type NotesApi } from './notes'
 export {
   createHistoryApi,
@@ -166,6 +174,7 @@ export type {
   AdminModule,
   AdminStatus,
   AdminUser,
+  BlockLabels,
   Manifest,
   ManifestModule,
   NavEntry,

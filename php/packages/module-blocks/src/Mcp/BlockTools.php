@@ -13,6 +13,7 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Editing\AgentRevision;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\Tree;
@@ -315,9 +316,11 @@ final class BlockTools
                 'region_publish',
                 'Publish the draft of a region, so the site prints its blocks in place of the markup from code. '
                 .'Refused, naming the block and the line, when any block of the draft fails to render — on the site '
-                .'a failing block would make the whole region fall back. With dry_run the check runs and nothing moves.',
+                .'a failing block would make the whole region fall back. With dry_run the check runs and nothing moves. '
+                .'It publishes whatever the draft holds now: send the revision blocks_get_content gave you; while '
+                .'somebody has the region open in the panel it is required.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->regionPublish($arguments, $user),
-                ['properties' => ['name' => $region], 'required' => ['name']],
+                ['properties' => ['name' => $region, ...AgentRevision::stateProperties('blocks_get_content')], 'required' => ['name']],
                 permission: 'blocks.regions',
             ),
 
@@ -326,7 +329,7 @@ final class BlockTools
                 'Take a region off the site: the layout prints the markup from code again. The blocks and the draft '
                 .'stay, for the next publication.',
                 fn (array $arguments): array => $this->regionUnpublish($arguments),
-                ['properties' => ['name' => $region], 'required' => ['name']],
+                ['properties' => ['name' => $region, ...AgentRevision::stateProperties('blocks_get_content')], 'required' => ['name']],
                 permission: 'blocks.regions',
             ),
 
@@ -335,7 +338,7 @@ final class BlockTools
                 'Throw away the draft of a region: the editor goes back to what the site shows (or to nothing, for a '
                 .'region never published). dry_run says whether there is a draft.',
                 fn (array $arguments): array => $this->regionDiscard($arguments),
-                ['properties' => ['name' => $region], 'required' => ['name']],
+                ['properties' => ['name' => $region, ...AgentRevision::stateProperties('blocks_get_content')], 'required' => ['name']],
                 permission: 'blocks.regions',
             ),
 
@@ -355,6 +358,7 @@ final class BlockTools
                 ['properties' => [
                     'name' => $region,
                     'number' => ['type' => 'integer', 'description' => 'A version number, as blocks_region_versions lists it.'],
+                    ...AgentRevision::stateProperties('blocks_get_content'),
                 ], 'required' => ['name', 'number']],
                 permission: 'blocks.regions',
             ),
@@ -927,6 +931,22 @@ final class BlockTools
     }
 
     /**
+     * The revision an agent reads and sends back: the record's own when it is a drafted record
+     * the panel edits — a page, a service — so that pages_get and blocks_get_content answer the
+     * same one and either can be sent to either; the hash of the tree for anything else.
+     *
+     * @param  array<int, mixed>  $tree
+     */
+    private function revision(Model $entity, array $tree): string
+    {
+        if ($entity instanceof Region) {
+            return Content::revision($tree);
+        }
+
+        return $this->container->make(EditedRecords::class)->revisionOf($entity) ?? Content::revision($tree);
+    }
+
+    /**
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
@@ -948,7 +968,7 @@ final class BlockTools
             // What an edit would change, and the revision of exactly that — the draft when there
             // is one, otherwise what the site shows.
             'editing' => $draftTree === null ? $column : 'draft',
-            'revision' => Content::revision($editing),
+            'revision' => $this->revision($entity, $editing),
             // Who has it open in the panel right now: an editor typing into the same draft. Tell
             // your user before writing; their editor merges a write that touches other fields.
             'being_edited_by' => $this->container->make(Presence::class)->of($entity),
@@ -1016,7 +1036,7 @@ final class BlockTools
         }
 
         $tree = $this->editing($entity);
-        AgentRevision::check($arguments, Content::revision($tree), 'entity', 'blocks_get_content');
+        AgentRevision::check($arguments, $this->revision($entity, $tree), 'entity', 'blocks_get_content');
         $keysBefore = self::keys($tree);
 
         $localized = $this->localized(...);
@@ -1297,12 +1317,16 @@ final class BlockTools
             // The revision is what the entity is now — the one to send with the real write. The
             // tree it would become has one too, under its own name: sent back, it was refused as
             // "the entity changed".
+            // A record the panel edits has its own revision, which a tree alone cannot predict:
+            // there is no «would be» to give for it, only the one to send.
+            $revision = $this->revision($entity, $before);
+            $ofTree = $revision === Content::revision($before);
+
             return [
                 'dry_run' => true,
                 'would_write' => $asDraft ? 'draft' : $column,
-                'revision' => Content::revision($before),
-                'would_be_revision' => $report['revision'],
-            ] + $report;
+                'revision' => $revision,
+            ] + ($ofTree ? ['would_be_revision' => $report['revision']] : []) + $report;
         }
 
         if ($asDraft) {
@@ -1314,6 +1338,9 @@ final class BlockTools
         }
 
         $result = ['written' => $asDraft ? 'draft' : $column] + $report;
+        // The record's own revision after the write: the one its next read answers, and the one
+        // pages_update or a publication of it takes.
+        $result['revision'] = $this->revision($entity->refresh(), $tree);
 
         try {
             $preview = $this->container->make(Preview::class);
@@ -1342,7 +1369,7 @@ final class BlockTools
         }
 
         $editing = $this->editing($entity);
-        AgentRevision::check($arguments, Content::revision($editing), 'entity', 'blocks_get_content');
+        AgentRevision::check($arguments, $this->revision($entity, $editing), 'entity', 'blocks_get_content');
 
         try {
             $held = self::held($editing);
@@ -1725,6 +1752,8 @@ final class BlockTools
             throw new ToolFailure("Region [{$region->name}] was never saved: write its blocks with blocks_set_content or blocks_edit_content first.");
         }
 
+        $this->guardRegion($arguments, $row);
+
         try {
             if ($this->dryRun($arguments)) {
                 $failures = $writer->check($row);
@@ -1759,6 +1788,22 @@ final class BlockTools
     }
 
     /**
+     * The rule for a change of a region's state (AgentRevision::guard): the revision
+     * blocks_get_content gave, and one has to be sent while somebody has the region open. A region
+     * never saved has no row for anybody to have open, and nothing to guard.
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private function guardRegion(array $arguments, ?Region $row): void
+    {
+        if ($row === null) {
+            return;
+        }
+
+        AgentRevision::guard($arguments, Content::revision($row->editingTree()), $row, 'region', 'blocks_get_content');
+    }
+
+    /**
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
@@ -1767,6 +1812,7 @@ final class BlockTools
         $region = $this->declaredRegion($arguments);
         $row = $this->container->make(Regions::class)->find($region->name);
         $was = $row instanceof Region && $row->isPublished();
+        $this->guardRegion($arguments, $row);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would' => $was ? 'print the markup from code in place of the region\'s blocks' : 'nothing: the region is not on the site'];
@@ -1786,6 +1832,7 @@ final class BlockTools
         $region = $this->declaredRegion($arguments);
         $row = $this->container->make(Regions::class)->find($region->name);
         $has = $row instanceof Region && $row->hasDraft();
+        $this->guardRegion($arguments, $row);
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'has_draft' => $has];
@@ -1836,6 +1883,8 @@ final class BlockTools
         if (! is_int($number) && ! (is_string($number) && ctype_digit($number))) {
             throw new ToolFailure('`number` is required: a version number from blocks_region_versions.');
         }
+
+        $this->guardRegion($arguments, $this->container->make(Regions::class)->find($region->name));
 
         if ($this->dryRun($arguments)) {
             $row = $this->container->make(Regions::class)->find($region->name);

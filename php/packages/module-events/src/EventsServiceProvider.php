@@ -269,7 +269,8 @@ class EventsServiceProvider extends ServiceProvider
             'events',
             ['events.view', 'events.manage'],
             static function (string $id): ?array {
-                $event = ctype_digit($id) ? Event::query()->find((int) $id) : null;
+                // An event in the bin too: the editor open on it hears that it went there.
+                $event = ctype_digit($id) ? Event::withTrashed()->find((int) $id) : null;
 
                 return $event instanceof Event ? ['revision' => Revision::of($event), 'model' => $event] : null;
             },

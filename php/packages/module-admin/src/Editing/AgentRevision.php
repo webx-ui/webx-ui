@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Editing;
 
+use Illuminate\Container\Container;
+use Illuminate\Database\Eloquent\Model;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 
 /**
@@ -40,6 +42,25 @@ final class AgentRevision
     }
 
     /**
+     * The same two properties for a tool that changes the state of a record ({@see guard()}).
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function stateProperties(string $readTool): array
+    {
+        return [
+            'revision' => [
+                'type' => 'string',
+                'description' => "The revision {$readTool} returned. Refused when the record changed since; required while somebody has the record open in the panel ({$readTool} says who in being_edited_by).",
+            ],
+            'force' => [
+                'type' => 'boolean',
+                'description' => 'Go ahead without a revision even though somebody has the record open.',
+            ],
+        ];
+    }
+
+    /**
      * @param  array<string, mixed>  $arguments
      * @param  string  $what  The record as the sentence names it: "page", "entity", "service".
      *
@@ -67,5 +88,53 @@ final class AgentRevision
                 ."Read it again with {$readTool} and redo the edit on what is there now."
             );
         }
+    }
+
+    /**
+     * The rule for what changes a record's state rather than its content — publish, unpublish,
+     * discard, a version put back, a move, the bin.
+     *
+     * Each of these acts on whatever the draft holds right now, which may be an edit the agent
+     * never read: publishing put a colleague's half-made change on the site. So a revision that
+     * is sent has to be the current one, as for a write; and while somebody has the record open
+     * in the panel, one has to be sent — or `force: true` — and the refusal names who it is.
+     * With nobody there the call goes through without one, as it always did: there is nobody to
+     * surprise, and a script that publishes a hundred records need not read each first.
+     *
+     * @param  array<string, mixed>  $arguments
+     *
+     * @throws ToolFailure
+     */
+    public static function guard(array $arguments, string $current, Model $record, string $what, string $readTool): void
+    {
+        $sent = $arguments['revision'] ?? null;
+
+        if (is_string($sent) && $sent !== '') {
+            self::check($arguments, $current, $what, $readTool);
+
+            return;
+        }
+
+        if (($arguments['force'] ?? false) === true || ($arguments['dry_run'] ?? false) === true) {
+            return;
+        }
+
+        $editors = Container::getInstance()->make(Presence::class)->of($record);
+
+        if ($editors === []) {
+            return;
+        }
+
+        $names = implode(', ', array_map(
+            static fn (array $editor): string => $editor['name'] !== '' ? $editor['name'] : "administrator #{$editor['id']}",
+            $editors,
+        ));
+
+        throw new ToolFailure(
+            "{$names} ".(count($editors) === 1 ? 'has' : 'have')." this {$what} open in the panel right now. "
+            ."Read it with {$readTool} and send the revision it returns (it is [{$current}] now), so that this "
+            .'acts on what you read and not on an edit you have not seen — and tell your user who is editing. '
+            .'force: true goes ahead regardless.'
+        );
     }
 }

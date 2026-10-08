@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace WebxUi\Pages;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
+use stdClass;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
@@ -18,6 +20,7 @@ use WebxUi\Pages\Models\Page;
 use WebxUi\Pages\Panel\PageForm;
 use WebxUi\Pages\Panel\PagesModule;
 use WebxUi\Routing\Formatters\TreePath;
+use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\OnConflict;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
@@ -130,13 +133,35 @@ class PagesServiceProvider extends ServiceProvider
             'pages',
             ['pages.view', 'pages.manage'],
             function (string $id): ?array {
-                $page = ctype_digit($id) ? Page::query()->find((int) $id) : null;
+                // A page in the bin too: the editor open on it hears that it went there.
+                $page = ctype_digit($id) ? Page::withTrashed()->find((int) $id) : null;
 
                 return $page instanceof Page
                     ? ['revision' => $this->app->make(PageForm::class)->revision($page), 'model' => $page]
                     : null;
             },
             'pages.manage',
+            // Where the page sits and the addresses that follow from it: a move changes neither the
+            // content nor the revision, and an editor open on the page still has to catch up.
+            static function (Model $page): array {
+                $paths = [];
+
+                if ($page instanceof Page) {
+                    foreach ($page->loadMissing('routes')->routes as $route) {
+                        if ($route->kind === Route::CANONICAL) {
+                            $paths[$route->locale] = '/'.$route->path;
+                        }
+                    }
+                }
+
+                ksort($paths);
+
+                return [
+                    'parent_id' => $page->getAttribute('parent_id'),
+                    'position' => $page->getAttribute('lft'),
+                    'paths' => $paths === [] ? new stdClass : $paths,
+                ];
+            },
         );
     }
 

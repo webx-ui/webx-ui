@@ -303,8 +303,8 @@ describe('WxRecipeEditorPage', () => {
     confirm?.click()
     await flushPromises()
 
-    expect(post).toHaveBeenCalledWith('/api/cms/recipes/7/publish', {})
-    expect(get.mock.calls.filter(([url]) => url === '/api/cms/recipes/7')).toHaveLength(2)
+    expect(post).toHaveBeenCalledWith('/api/cms/recipes/7/publish', { revision: 'r1' })
+    expect(get.mock.calls.filter(([url]) => url === '/api/cms/recipes/7')).toHaveLength(3)
   })
 
   it('leaves without asking when the save is already on its way', async () => {

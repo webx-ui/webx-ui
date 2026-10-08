@@ -139,6 +139,7 @@ watch(
     <wx-drafts
       :id="article?.id"
       entity="articles"
+      screen="blog.article-form"
       :can-restore="canManage"
       :stamp="[article?.published_at, article?.updated_at]"
       @restored="editor?.reload()"

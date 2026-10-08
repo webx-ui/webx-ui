@@ -79,8 +79,13 @@ Read `blocks_get_content` (entity and id; for a region, entity `region` and its 
 `duplicate`, `remove`, `hide`, `show`, each by `key`. `set` with null keeps the key; `unset` with `fields` takes it out. A
 value for a field the type does not define is refused in `set`, `add` and `blocks_set_content` (repeater
 items included); one the block already holds may be written back as it was or emptied. Nodes not named stay as they are. The `revision` is required: a write without one is refused, and so is a stale one — `force: true` is for a script that means to overwrite. `blocks_get_content` names in `being_edited_by` who has the entity open in the panel; tell your user before writing under them. Their editor merges your write with theirs block by block and field by field.
+For a record the panel edits — a page, a service — the revision is the record's own: the one
+`pages_get` or `services_get` returns is the same, and either read's revision may be sent here.
 `blocks_set_content` replaces the whole draft tree: anything left out is gone. Both write the
 draft; the site changes when a person publishes the entity (a region: `blocks_region_publish`).
+`blocks_region_publish`, `blocks_region_unpublish`, `blocks_region_discard` and `blocks_region_restore` take
+the `revision` `blocks_get_content` gave for the region: a stale one is refused, and while somebody has the
+region open in the panel (`being_edited_by`) one is required — `force: true` goes ahead regardless.
 
 Every value is checked by its field type's rules — bounds, options, dates, colours, links
 (`http(s)`, `mailto`, `tel`, relative paths and `#anchors` only), library files — and every

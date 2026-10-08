@@ -187,9 +187,11 @@ final class EventTools
             Tool::mutating(
                 'publish',
                 'Put the draft on the site: its values, categories and services become the event and a version is '
-                .'written. Ask a person first unless they asked you to publish.',
+                .'written. Ask a person first unless they asked you to publish. It publishes whatever the draft '
+                .'holds now: send the revision events_get gave you, so that an edit you have not read is not what '
+                .'goes on the site. While somebody has the event open in the panel the revision is required.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->publish($arguments, $user)),
-                ['properties' => ['event' => $event], 'required' => ['event']],
+                ['properties' => ['event' => $event, ...AgentRevision::stateProperties('events_get')], 'required' => ['event']],
                 permission: 'events.manage',
             ),
 
@@ -199,7 +201,7 @@ final class EventTools
                 .'reserved and whatever was being prepared is still there. An event that is simply over does not '
                 .'need this: it leaves the lists of events to come by itself and its page stays as a report.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
-                ['properties' => ['event' => $event], 'required' => ['event']],
+                ['properties' => ['event' => $event, ...AgentRevision::stateProperties('events_get')], 'required' => ['event']],
                 permission: 'events.manage',
             ),
 
@@ -208,7 +210,7 @@ final class EventTools
                 'Throw away the draft of an event that is on the site and go back to what the site shows. The draft '
                 .'is all that changes. dry_run names the fields that differ from the published ones.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
-                ['properties' => ['event' => $event], 'required' => ['event']],
+                ['properties' => ['event' => $event, ...AgentRevision::stateProperties('events_get')], 'required' => ['event']],
                 permission: 'events.manage',
             ),
 
@@ -218,7 +220,7 @@ final class EventTools
                 .'Nothing is destroyed: events_restore puts it back, as long as nobody has taken its address '
                 .'in the meantime.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
-                ['properties' => ['event' => $event], 'required' => ['event']],
+                ['properties' => ['event' => $event, ...AgentRevision::stateProperties('events_get')], 'required' => ['event']],
                 permission: 'events.manage',
             ),
 
@@ -455,6 +457,7 @@ final class EventTools
     private function publish(array $arguments, ?Authenticatable $user): array
     {
         $event = $this->event($arguments['event'] ?? null);
+        $this->guard($arguments, $event);
 
         if ($event->trashed()) {
             throw new ToolFailure("Event #{$event->getKey()} is in the bin. Bring it back in the panel before publishing it.");
@@ -492,6 +495,7 @@ final class EventTools
     private function unpublish(array $arguments): array
     {
         $event = $this->event($arguments['event'] ?? null);
+        $this->guard($arguments, $event);
 
         if ($event->trashed()) {
             throw new ToolFailure("Event #{$event->getKey()} is in the bin, and so already off the site.");
@@ -517,6 +521,7 @@ final class EventTools
     private function discard(array $arguments): array
     {
         $event = $this->event($arguments['event'] ?? null);
+        $this->guard($arguments, $event);
 
         if (! $event->hasDraft()) {
             throw new ToolFailure("Event [{$event->getKey()}] has no draft: the site already shows what it holds.");
@@ -538,6 +543,7 @@ final class EventTools
     private function delete(array $arguments): array
     {
         $event = $this->event($arguments['event'] ?? null);
+        $this->guard($arguments, $event);
 
         if ($event->trashed()) {
             throw new ToolFailure("Event #{$event->getKey()} is already in the bin. events_purge deletes it for good.");
@@ -999,6 +1005,17 @@ final class EventTools
     private function form(): EventForm
     {
         return $this->container->make(EventForm::class);
+    }
+
+    /**
+     * The rule for a change of state (AgentRevision::guard): the revision this agent read, and
+     * one has to be sent while somebody has the event open.
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private function guard(array $arguments, Event $event): void
+    {
+        AgentRevision::guard($arguments, Revision::of($event), $event, 'event', 'events_get');
     }
 
     private function presence(): Presence

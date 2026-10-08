@@ -253,7 +253,7 @@ describe('WxRegionEditorPage', () => {
 
     await button(wrapper, 'Publish').trigger('click')
     await flushPromises()
-    expect(post).toHaveBeenCalledWith('/api/cms/regions/header/publish', {})
+    expect(post).toHaveBeenCalledWith('/api/cms/regions/header/publish', { revision: 'r1' })
 
     await button(wrapper, 'Take off the site').trigger('click')
     await flushPromises()

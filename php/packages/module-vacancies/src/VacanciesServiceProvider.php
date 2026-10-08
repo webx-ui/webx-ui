@@ -225,7 +225,8 @@ class VacanciesServiceProvider extends ServiceProvider
             'vacancies',
             ['vacancies.view', 'vacancies.manage'],
             static function (string $id): ?array {
-                $vacancy = ctype_digit($id) ? Vacancy::query()->find((int) $id) : null;
+                // A vacancy in the bin too: the editor open on it hears that it went there.
+                $vacancy = ctype_digit($id) ? Vacancy::withTrashed()->find((int) $id) : null;
 
                 return $vacancy instanceof Vacancy ? ['revision' => Revision::of($vacancy), 'model' => $vacancy] : null;
             },

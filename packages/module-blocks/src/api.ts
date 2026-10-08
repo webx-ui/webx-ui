@@ -137,7 +137,8 @@ export interface RegionsApi {
    * body is a {@link RegionConflict}: the region as it now is, to merge with.
    */
   save(name: string, input: { blocks: BlockNode[]; revision?: string }): Promise<RegionDetail>
-  publish(name: string): Promise<RegionDetail>
+  /** `revision` is what the editor held: a draft that moved on since is answered 409, not published. */
+  publish(name: string, revision?: string): Promise<RegionDetail>
   /** Off the site: the code's view comes back, the blocks stay as the draft. */
   unpublish(name: string): Promise<RegionDetail>
   discardDraft(name: string): Promise<RegionDetail>
@@ -158,8 +159,10 @@ export function createRegionsApi(admin: AdminContext): RegionsApi {
     list: () => admin.http.get<{ data: RegionRow[] }>(base).then(data),
     get: (name) => admin.http.get<{ data: RegionDetail }>(at(name)).then(data),
     save: (name, input) => admin.http.put<{ data: RegionDetail }>(at(name), input).then(data),
-    publish: (name) =>
-      admin.http.post<{ data: RegionDetail }>(`${at(name)}/publish`, {}).then(data),
+    publish: (name, revision) =>
+      admin.http
+        .post<{ data: RegionDetail }>(`${at(name)}/publish`, revision ? { revision } : {})
+        .then(data),
     unpublish: (name) =>
       admin.http.post<{ data: RegionDetail }>(`${at(name)}/unpublish`, {}).then(data),
     discardDraft: (name) =>

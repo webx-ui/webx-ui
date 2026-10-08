@@ -18,15 +18,19 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class EditedRecords
 {
-    /** @var array<string, array{permissions: list<string>, write: list<string>, find: Closure(string): ?array{revision: string, model: Model}}> */
+    /** @var array<string, array{permissions: list<string>, write: list<string>, find: Closure(string): ?array{revision: string, model: Model}, place: (Closure(Model): array<string, mixed>)|null}> */
     private array $records = [];
 
     /**
      * @param  string|list<string>  $permission  Any of them lets a reader in.
-     * @param  Closure(string): (array{revision: string, model: Model}|null)  $find
+     * @param  Closure(string): (array{revision: string, model: Model}|null)  $find  A record in the bin too, for a model that has one:
+     *                                                                               the editor open on it has to hear that it went there.
      * @param  string|list<string>|null  $write  What putting an old draft back takes; the read permission when left out.
+     * @param  (Closure(Model): array<string, mixed>)|null  $place  Where the record sits, for one that can be moved — a page's
+     *                                                              parent and address. An open editor compares it with what it
+     *                                                              shows and catches up when it moved.
      */
-    public function register(string $entity, string|array $permission, Closure $find, string|array|null $write = null): void
+    public function register(string $entity, string|array $permission, Closure $find, string|array|null $write = null, ?Closure $place = null): void
     {
         $read = is_array($permission) ? array_values($permission) : [$permission];
 
@@ -34,6 +38,7 @@ final class EditedRecords
             'permissions' => $read,
             'write' => $write === null ? $read : (is_array($write) ? array_values($write) : [$write]),
             'find' => $find,
+            'place' => $place,
         ];
     }
 
@@ -62,5 +67,37 @@ final class EditedRecords
         $record = $this->records[$entity] ?? null;
 
         return $record === null ? null : ($record['find'])($id);
+    }
+
+    /**
+     * The revision of a record that is registered here, found from the model — for a tool of
+     * another module that writes into it. `blocks_edit_content` on a page answered with the hash
+     * of the block tree while `pages_get` answered with the page's, and an agent that read with
+     * one and wrote with the other was told the page had changed when nothing had. A record has
+     * one revision, the one its editor holds; `null` for a model nobody registered.
+     */
+    public function revisionOf(Model $model): ?string
+    {
+        foreach (array_keys($this->records) as $entity) {
+            $found = $this->find($entity, (string) $model->getKey());
+
+            if ($found !== null && $model::class === $found['model']::class && $found['model']->getKey() === $model->getKey()) {
+                return $found['revision'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Where the record sits, when its module said how to tell.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function place(string $entity, Model $model): ?array
+    {
+        $place = $this->records[$entity]['place'] ?? null;
+
+        return $place === null ? null : $place($model);
     }
 }

@@ -210,6 +210,10 @@ final class PageForm
     }
 
     /**
+     * What of a save goes into the draft: the page's own fields and nothing else. Where the page
+     * sits is never one of them — a move is applied at once and on its own — so a form left open
+     * on a page that somebody moved meanwhile cannot move it back by saving what it still shows.
+     *
      * @param  array<string, mixed>  $values
      * @return array<string, mixed>
      */

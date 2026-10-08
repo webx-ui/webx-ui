@@ -129,6 +129,7 @@ watch(
     <wx-drafts
       :id="recipe?.id"
       entity="recipes"
+      screen="recipes.form"
       :can-restore="canManage"
       :stamp="[recipe?.published_at, recipe?.updated_at]"
       @restored="editor?.reload()"

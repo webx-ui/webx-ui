@@ -360,10 +360,12 @@ describe('WxPageEditorPage', () => {
   })
 
   it('saves an unsaved edit before asking, so the question names the address it will publish at', async () => {
-    const { wrapper, put } = await panel()
+    const { wrapper, get, put } = await panel()
     const saved = detail('r2', 'About us')
     saved.page = { ...saved.page, status: 'modified', next_path: 'about-us' }
     put.mockResolvedValueOnce({ data: saved })
+    // Publishing reads the page once more to see whether anybody wrote since: the saved draft.
+    get.mockResolvedValue({ data: saved })
 
     await type(wrapper, 'About us')
     await wrapper

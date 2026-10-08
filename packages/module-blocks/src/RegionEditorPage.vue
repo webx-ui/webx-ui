@@ -96,8 +96,12 @@ const editing = useEditing<ScreenModel>({
     snapshot.value = JSON.stringify(theirs.values)
     reloadToken.value += 1
   },
+  // Published or taken off by somebody else: the badge follows, and the form stays as it is.
+  // No `restore`: a region is declared by the code, so there is no bin to take it out of.
+  refresh: () => refresh(),
   canWrite: () => canManage.value,
   busy: () => saving.value || flight !== undefined,
+  screen: 'regions.form',
 })
 
 const conflict = editing.conflict
@@ -186,18 +190,31 @@ async function load(silent = false): Promise<void> {
   }
 }
 
+/**
+ * What surrounds the form, read again: the region with its status. Not the blocks — the form is
+ * somebody's work in progress, and a change of its content is the notice's to offer.
+ */
+async function refresh(): Promise<void> {
+  try {
+    region.value = await api.get(name.value)
+  } catch {
+    // The heartbeat says what happened; a region that could not be read again stays as it was.
+  }
+}
+
 /* One pending save at a time, and one pending pause. */
 let timer: ReturnType<typeof setTimeout> | undefined
 
 function schedule(): void {
-  if (!canManage.value || conflict.value || !dirty.value) return
+  if (!canManage.value || conflict.value || !dirty.value || editing.trashed.value) return
 
   clearTimeout(timer)
   timer = setTimeout(() => void save(), PAUSE)
 }
 
 function onFocusOut(): void {
-  if (!canManage.value || conflict.value || !dirty.value || saving.value) return
+  if (!canManage.value || conflict.value || !dirty.value || saving.value || editing.trashed.value)
+    return
 
   clearTimeout(timer)
   void save()
@@ -277,7 +294,7 @@ async function write(): Promise<void> {
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
       toast.danger(t('region.save-failed'))
-    } else {
+    } else if (!(await editing.failed(error))) {
       toast.danger(message(error))
     }
   } finally {
@@ -297,28 +314,52 @@ async function takeTheirs(): Promise<void> {
  * with the last second of edits still in the pause would publish without them.
  */
 async function act(
-  words: { title: string; text: string; confirm: string; done: string; danger?: boolean },
-  call: (name: string) => Promise<RegionDetail>,
+  words: {
+    title: string
+    text: string
+    confirm: string
+    done: string
+    danger?: boolean
+    publishing?: boolean
+  },
+  call: (name: string, revision?: string) => Promise<RegionDetail>,
 ): Promise<void> {
   if (!region.value) return
 
-  const agreed = await confirm({
-    title: words.title,
-    message: words.text,
-    confirmText: words.confirm,
-    cancelText: t('region.cancel'),
-    tone: words.danger ? 'danger' : undefined,
-  })
+  // Publishing saves before the question rather than after: the draft on the server may hold
+  // somebody else's edit this editor never pulled in, and that is said before it goes on the
+  // site — with whose it is and where — rather than published unseen.
+  let held: { revision: string; asked: boolean } | null = null
+
+  if (words.publishing) {
+    if (dirty.value) await save()
+    if (conflict.value || dirty.value) return
+
+    held = await editing.beforePublish()
+
+    if (!held) return
+  }
+
+  // One question is enough: whoever just agreed to publish somebody else's changes has said yes.
+  const agreed =
+    held?.asked ||
+    (await confirm({
+      title: words.title,
+      message: words.text,
+      confirmText: words.confirm,
+      cancelText: t('region.cancel'),
+      tone: words.danger ? 'danger' : undefined,
+    }))
 
   if (!agreed) return
 
   if (dirty.value) await save()
-  if (conflict.value || dirty.value) return
+  if (conflict.value || dirty.value || !region.value) return
 
   working.value = true
 
   try {
-    take(await call(region.value.name))
+    take(await call(region.value.name, held?.revision))
     reloadToken.value += 1
     toast.success(words.done)
   } catch (error) {
@@ -327,7 +368,8 @@ async function act(
     const refused = (error as { body?: { errors?: Record<string, string[]> } }).body?.errors
       ?.blocks?.[0]
 
-    toast.danger(refused ?? message(error))
+    if (refused) toast.danger(refused)
+    else if (!(await editing.failed(error))) toast.danger(message(error))
   } finally {
     working.value = false
   }
@@ -342,8 +384,9 @@ function publish(): Promise<void> {
       text: t('region.publish-text'),
       confirm: t('region.publish'),
       done: t('region.published'),
+      publishing: true,
     },
-    (region) => api.publish(region),
+    (region, revision) => api.publish(region, revision),
   )
 }
 

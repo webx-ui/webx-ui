@@ -133,6 +133,7 @@ watch(
     <wx-drafts
       :id="region?.name"
       entity="regions"
+      screen="regions.form"
       :can-restore="canManage"
       :stamp="[region?.published_at, region?.updated_at]"
       @restored="editor?.reload()"

@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Http\Controllers;
 
-use Illuminate\Database\Eloquent\Collection;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\DraftCopies;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Editing\Presence;
+use WebxUi\Admin\Editing\RecordEvents;
 use WebxUi\Admin\Http\ApiResponse;
-use WebxUi\Admin\Support\Authors;
 use WebxUi\Admin\Versions\EntityVersion;
 
 /**
@@ -32,6 +33,7 @@ final class EditingController
     public function __construct(
         private readonly EditedRecords $records,
         private readonly Presence $presence,
+        private readonly RecordEvents $events,
     ) {}
 
     public function ping(Request $request, string $entity, string $id): JsonResponse
@@ -48,8 +50,40 @@ final class EditingController
             'revision' => $found['revision'],
             'changed' => LastChange::of($found['model'], $user),
             'editors' => $this->presence->of($found['model'], $adminId),
+            // What the revision does not say: the content is the same after a publication, a
+            // move and a trip to the bin, and the editor still has to catch up with each.
+            'state' => $this->state($found['model']),
+            'place' => $this->records->place($entity, $found['model']),
+            'events' => $this->events->of($found['model']),
             'heartbeat' => Presence::HEARTBEAT,
         ]);
+    }
+
+    /**
+     * Where the record stands: on the site or not, with edits waiting or not, in the bin or not.
+     *
+     * @return array{status: string, has_draft: bool, published_at: string|null, trashed: bool, deleted_at: string|null}
+     */
+    private function state(Model $model): array
+    {
+        $trashed = method_exists($model, 'trashed') && $model->trashed() === true;
+        $hasDraft = method_exists($model, 'hasDraft') && $model->hasDraft() === true;
+        $publishedAt = method_exists($model, 'publishedAtColumn') ? $model->getAttribute($model->publishedAtColumn()) : null;
+        $status = method_exists($model, 'status') ? $model->status() : null;
+
+        if (! is_string($status)) {
+            $status = $publishedAt === null ? 'draft' : ($hasDraft ? 'modified' : 'published');
+        }
+
+        $deletedAt = $trashed && method_exists($model, 'getDeletedAtColumn') ? $model->getAttribute($model->getDeletedAtColumn()) : null;
+
+        return [
+            'status' => $trashed ? 'trashed' : $status,
+            'has_draft' => $hasDraft,
+            'published_at' => $publishedAt instanceof CarbonInterface ? $publishedAt->toAtomString() : null,
+            'trashed' => $trashed,
+            'deleted_at' => $deletedAt instanceof CarbonInterface ? $deletedAt->toAtomString() : null,
+        ];
     }
 
     /** The editor was closed: it stops counting at once rather than a minute later. */
@@ -75,22 +109,7 @@ final class EditingController
     {
         $model = $this->found($request, $entity, $id)['model'];
 
-        if (! method_exists($model, 'draftVersions')) {
-            return ApiResponse::data([]);
-        }
-
-        /** @var Collection<int, EntityVersion> $versions */
-        $versions = $model->draftVersions()->get();
-        $authors = Authors::names($request->user(), $versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
-
-        return ApiResponse::data($versions->map(static fn (EntityVersion $version): array => [
-            'id' => $version->id,
-            'kind' => $version->kind,
-            'created_at' => $version->created_at?->toAtomString(),
-            'author' => $version->author_id === null ? null : ($authors[$version->author_id] ?? null),
-            'source' => $version->source,
-            'fields' => array_keys($version->payload),
-        ])->values()->all());
+        return ApiResponse::data(DraftCopies::of($model, $request->user()));
     }
 
     /**
@@ -100,6 +119,11 @@ final class EditingController
     public function restoreDraft(Request $request, string $entity, string $id, int $version): JsonResponse
     {
         $model = $this->found($request, $entity, $id, write: true)['model'];
+
+        // A record in the bin is restored out of the bin first; its drafts wait for it there.
+        if (method_exists($model, 'trashed') && $model->trashed() === true) {
+            throw new NotFoundHttpException;
+        }
 
         if (! method_exists($model, 'draftVersions') || ! method_exists($model, 'restoreVersion')) {
             throw new NotFoundHttpException;

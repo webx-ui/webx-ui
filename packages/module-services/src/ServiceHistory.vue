@@ -129,6 +129,7 @@ watch(
     <wx-drafts
       :id="service?.id"
       entity="services"
+      screen="services.form"
       :can-restore="canManage"
       :stamp="[service?.published_at, service?.updated_at]"
       @restored="editor?.reload()"

@@ -129,6 +129,7 @@ watch(
     <wx-drafts
       :id="vacancy?.id"
       entity="vacancies"
+      screen="vacancies.form"
       :can-restore="canManage"
       :stamp="[vacancy?.published_at, vacancy?.updated_at]"
       @restored="editor?.reload()"

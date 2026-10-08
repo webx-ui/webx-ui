@@ -8,6 +8,7 @@ import type {
   AdminModule,
   AdminStatus,
   AdminUser,
+  BlockLabels,
   Manifest,
   NavEntry,
   NavGroup,
@@ -42,6 +43,11 @@ export interface AdminContext {
    * does, and a document is then shown with the addresses it was saved with.
    */
   readonly assetUrls: ((paths: string[]) => Promise<Record<string, string | null>>) | null
+  /**
+   * Names of block types and their fields, when a module installed here has a block library;
+   * fetched once for the session. Optional on the context so a hand-made one in a test needs none.
+   */
+  readonly blockLabels?: () => Promise<BlockLabels | null>
   /** Ask the server what the panel is and who is signed in again. */
   reload(): Promise<void>
   /**
@@ -218,6 +224,10 @@ export function createAdminContext(options: {
   // panel with two file managers has a bigger question to answer than which one this opens.
   const pickImage = options.modules.find((module) => module.pickImage !== undefined)?.pickImage
   const assetUrls = options.modules.find((module) => module.assetUrls !== undefined)?.assetUrls
+  const blockLabelsOf = options.modules.find(
+    (module) => module.blockLabels !== undefined,
+  )?.blockLabels
+  let blockLabelsPending: Promise<BlockLabels | null> | null = null
 
   const screens = new Map<string, Promise<ScreenNode[]>>()
 
@@ -390,6 +400,18 @@ export function createAdminContext(options: {
     types,
     pickImage: pickImage ?? null,
     assetUrls: assetUrls ? cachedAssetUrls : null,
+    blockLabels() {
+      // Once for the session, and a failure is not remembered: the next notice asks again.
+      blockLabelsPending ??= blockLabelsOf
+        ? blockLabelsOf(context).catch(() => {
+            blockLabelsPending = null
+
+            return null
+          })
+        : Promise.resolve(null)
+
+      return blockLabelsPending
+    },
     reload,
     refreshManifest,
     setLocale,

@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\HeldRevision;
 use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
@@ -68,6 +69,13 @@ final class RegionController
     public function publish(Request $request, string $name): JsonResponse
     {
         $this->declared($name);
+
+        // The editor sends the revision it held: an edit it has not seen is not published under it.
+        $stale = HeldRevision::conflict($request, 'regions', $name);
+
+        if ($stale !== null) {
+            return $stale;
+        }
 
         return $this->attempt(fn (): mixed => $this->writer->publish($name, $this->author($request)), $request, $name);
     }

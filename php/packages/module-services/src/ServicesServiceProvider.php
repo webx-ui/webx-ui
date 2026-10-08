@@ -286,7 +286,8 @@ class ServicesServiceProvider extends ServiceProvider
             'services',
             ['services.view', 'services.manage'],
             static function (string $id): ?array {
-                $service = ctype_digit($id) ? Service::query()->find((int) $id) : null;
+                // A service in the bin too: the editor open on it hears that it went there.
+                $service = ctype_digit($id) ? Service::withTrashed()->find((int) $id) : null;
 
                 return $service instanceof Service ? ['revision' => Revision::of($service), 'model' => $service] : null;
             },
