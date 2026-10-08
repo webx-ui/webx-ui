@@ -7,9 +7,11 @@ namespace WebxUi\Admin\Tests;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Testing\PendingCommand;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Snapshots\Manifest;
 use WebxUi\Admin\Snapshots\MediaDisk;
+use WebxUi\Admin\Snapshots\Restorer;
 use WebxUi\Admin\Snapshots\SnapshotFailed;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Snapshots\Tar;
@@ -222,13 +224,17 @@ final class SnapshotsTest extends TestCase
 
         $this->app->detectEnvironment(static fn (): string => 'production');
 
-        $this->restore($archive)->expectsOutputToContain('This stand is production')->assertFailed();
+        $this->artisan('webx:snapshot:restore', ['archive' => $archive, '--no-backup' => true, '--no-interaction' => true])
+            ->expectsOutputToContain('This stand is production')
+            ->assertFailed();
 
         $this->artisan('webx:snapshot:restore', ['archive' => $archive, '--force' => true, '--no-backup' => true])
             ->expectsConfirmation('Replace the content of this stand with the archive\'s?', 'no')
             ->assertFailed();
 
+        $this->app->detectEnvironment(static fn (): string => 'local');
         $this->artisan('webx:snapshot:restore', ['archive' => $archive, '--no-backup' => true, '--no-interaction' => true])
+            ->expectsOutputToContain('pass --force')
             ->assertFailed();
 
         $this->assertSame('Changed', DB::table('demo_pages')->value('title'));
@@ -336,11 +342,11 @@ final class SnapshotsTest extends TestCase
     #[Test]
     public function a_path_out_of_the_media_folder_is_not_a_path(): void
     {
-        $this->assertTrue(\WebxUi\Admin\Snapshots\Restorer::safe('media/a b/c.jpg'));
-        $this->assertFalse(\WebxUi\Admin\Snapshots\Restorer::safe('../.env'));
-        $this->assertFalse(\WebxUi\Admin\Snapshots\Restorer::safe('media/../../.env'));
-        $this->assertFalse(\WebxUi\Admin\Snapshots\Restorer::safe('/etc/passwd'));
-        $this->assertFalse(\WebxUi\Admin\Snapshots\Restorer::safe('C:/Windows/x'));
+        $this->assertTrue(Restorer::safe('media/a b/c.jpg'));
+        $this->assertFalse(Restorer::safe('../.env'));
+        $this->assertFalse(Restorer::safe('media/../../.env'));
+        $this->assertFalse(Restorer::safe('/etc/passwd'));
+        $this->assertFalse(Restorer::safe('C:/Windows/x'));
     }
 
     #[Test]
@@ -376,9 +382,9 @@ final class SnapshotsTest extends TestCase
     /**
      * @param  array<string, mixed>  $options
      */
-    private function restore(string $archive, array $options = []): \Illuminate\Testing\PendingCommand
+    private function restore(string $archive, array $options = []): PendingCommand
     {
-        /** @var \Illuminate\Testing\PendingCommand */
+        /** @var PendingCommand */
         return $this->artisan('webx:snapshot:restore', ['archive' => $archive, '--no-backup' => true, '--force' => true, '--no-interaction' => true] + $options);
     }
 

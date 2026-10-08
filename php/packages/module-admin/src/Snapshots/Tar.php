@@ -96,9 +96,11 @@ final class Tar
             $longName = null;
 
             while (true) {
-                $header = self::exactly($gz, self::BLOCK, $path, allowEnd: true);
+                // The end is a block of zeros. Running out of bytes before one is an archive cut
+                // short on the way, and it must not read as a smaller archive.
+                $header = self::exactly($gz, self::BLOCK, $path);
 
-                if ($header === '' || trim($header, "\0") === '') {
+                if (trim($header, "\0") === '') {
                     return;
                 }
 
@@ -150,7 +152,7 @@ final class Tar
     /**
      * @param  resource  $gz
      */
-    public static function exactly($gz, int $length, string $path, bool $allowEnd = false): string
+    public static function exactly($gz, int $length, string $path): string
     {
         $data = '';
 
@@ -158,10 +160,6 @@ final class Tar
             $chunk = gzread($gz, min(1048576, $length - strlen($data)));
 
             if ($chunk === false || $chunk === '') {
-                if ($allowEnd && $data === '') {
-                    return '';
-                }
-
                 throw SnapshotFailed::truncated($path);
             }
 
