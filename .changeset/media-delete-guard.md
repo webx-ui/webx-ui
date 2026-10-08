@@ -24,3 +24,10 @@ in the panel's language («3,5 КБ»), and so is the upload limit.
 In the design system: `WxActions` and `WxFileCard` take `moreLabel` (and the card `actionsLabel`);
 `WxSelectionArea` takes `dragItems` and keeps a ctrl or shift held at the press; `WxTooltip` no
 longer opens on the focus a closing dialog hands back. `pluralForm` moves to `module-admin`.
+
+A place in that question says what it is and links to its edit screen («Страница: How We Can
+Help»), from `webx-media.usage.places` or a module's own `PlaceDescriber`; the panel's history
+(versions, journal, uploads, notes, sign-ins, agents' calls) is no longer counted as a use. When
+only some of the files are used, «Delete only the unused» deletes the rest — for a folder, the
+emptied subfolders too. A single tile drags onto a folder like a selection does, and `WxTree`
+takes `expandLabel` and `collapseLabel`.
