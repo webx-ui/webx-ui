@@ -26,6 +26,8 @@ const props = withDefaults(
     depth?: number
     /** What the last save was refused for, by block key. */
     errors?: Record<string, string[]>
+    /** What "Copy" put aside, for the paste lines; null while there is nothing. */
+    clip?: BlockNode[] | null
   }>(),
   {
     parentKey: null,
@@ -36,6 +38,7 @@ const props = withDefaults(
     disabled: false,
     depth: 0,
     errors: () => ({}),
+    clip: null,
   },
 )
 
@@ -45,6 +48,9 @@ const emit = defineEmits<{
   add: [parentKey: string | null, field: string | null, node: ScreenNode | null, index?: number]
   remove: [key: string]
   duplicate: [key: string]
+  copy: [key: string]
+  /** The clip into this list or a container's field, at `index` or at the end. */
+  paste: [parentKey: string | null, field: string | null, node: ScreenNode | null, index?: number]
   move: [key: string]
   visibility: [key: string, hidden: boolean]
   reorder: [parentKey: string | null, field: string | null, list: BlockNode[]]
@@ -168,6 +174,14 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
       label: t('field.duplicate'),
       run: () => emit('duplicate', node.key),
     },
+    /* Copy is for another page or section; duplicate stays for this one, being one click. */
+    {
+      key: 'copy',
+      icon: 'clipboard',
+      label: t('field.copy'),
+      run: () => emit('copy', node.key),
+    },
+    ...pasteActions(node, index, limit),
     {
       key: 'move',
       icon: 'arrow-right',
@@ -181,6 +195,46 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
       danger: true,
       run: () => emit('remove', node.key),
     },
+  ]
+}
+
+/** What the clip is, in the words of a menu line: the block's name, or how many. */
+function clipLabel(prefix: 'paste-after' | 'paste-inside'): string {
+  const clip = props.clip ?? []
+
+  return clip.length === 1
+    ? t(`field.${prefix}`, { title: titleOf(clip[0]!) })
+    : t(`field.${prefix}-many`, { count: clip.length })
+}
+
+/**
+ * Paste after this row, and — on a container — into each of its fields, which is the only way
+ * into one that is still empty. Only while there is something to paste: a line that can only
+ * say "nothing copied" is a line to read past every time.
+ */
+function pasteActions(node: BlockNode, index: number, limit: number | null): RowAction[] {
+  if (!props.clip?.length) return []
+
+  const slots = fieldsOf(node)
+
+  return [
+    {
+      key: 'paste-after',
+      icon: 'clipboard-paste',
+      label: clipLabel('paste-after'),
+      disabled: limit !== null && props.nodes.length >= limit,
+      run: () => emit('paste', props.parentKey, props.field, props.fieldNode, index + 1),
+    },
+    ...slots.map((slot) => ({
+      key: `paste-inside-${slot.id}`,
+      icon: 'clipboard-paste',
+      label:
+        slots.length > 1
+          ? `${clipLabel('paste-inside')} · ${slot.label ?? slot.id}`
+          : clipLabel('paste-inside'),
+      disabled: isFull(node, slot),
+      run: () => emit('paste', node.key, slot.id, slot),
+    })),
   ]
 }
 </script>
@@ -243,10 +297,13 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
             :disabled="disabled"
             :depth="depth + 1"
             :errors="errors"
+            :clip="clip"
             @select="emit('select', $event)"
             @add="(p, f, n, i) => emit('add', p, f, n, i)"
             @remove="emit('remove', $event)"
             @duplicate="emit('duplicate', $event)"
+            @copy="emit('copy', $event)"
+            @paste="(p, f, n, i) => emit('paste', p, f, n, i)"
             @move="emit('move', $event)"
             @visibility="(key, hidden) => emit('visibility', key, hidden)"
             @reorder="(p, f, list) => emit('reorder', p, f, list)"

@@ -64,6 +64,12 @@ export const builtinIcons = {
   trash:
     '<path d="M4 7h16M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M6.5 7l.8 11.6a2 2 0 0 0 2 1.9h5.4a2 2 0 0 0 2-1.9L17.5 7"/><path d="M10 11v5.5M14 11v5.5"/>',
   copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
+  /* A board with its clip: something kept to be put down elsewhere. */
+  clipboard:
+    '<rect x="8.5" y="2.8" width="7" height="3.6" rx="1"/><path d="M15.5 4.6H17a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6.6a2 2 0 0 1 2-2h1.5"/>',
+  /* The same board with what it holds coming down off it. */
+  'clipboard-paste':
+    '<rect x="8.5" y="2.8" width="7" height="3.6" rx="1"/><path d="M15.5 4.6H17a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6.6a2 2 0 0 1 2-2h1.5"/><path d="M12 10v7M9.2 14.4 12 17.2l2.8-2.8"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   'zoom-in': '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5M8.5 11h5M11 8.5v5"/>',
   'zoom-out': '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5M8.5 11h5"/>',

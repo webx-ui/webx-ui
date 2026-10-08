@@ -9,7 +9,14 @@ import {
   ref,
   watch,
 } from 'vue'
-import { adminKey, useErrorText, useTranslate, type AdminContext } from '@webx-ui/module-admin'
+import {
+  adminKey,
+  useErrorText,
+  useTranslate,
+  WxRowMenu,
+  type AdminContext,
+  type RowAction,
+} from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
@@ -35,6 +42,7 @@ import BlockMoveDialog from './BlockMoveDialog.vue'
 import BlockPicker from './BlockPicker.vue'
 import BlocksPreview from './BlocksPreview.vue'
 import BlocksTree from './BlocksTree.vue'
+import { planPaste, slotRules, useBlocksClipboard, type PastePlan } from './clipboard'
 import {
   cloneNode,
   countInside,
@@ -438,6 +446,121 @@ async function move(key: string): Promise<void> {
   set(insertNode(without, place.parentKey, place.field, Number.MAX_SAFE_INTEGER, found.node))
 }
 
+const { clip, copy: putAside } = useBlocksClipboard()
+
+/** The clip's blocks, for the tree's paste lines. */
+const clipNodes = computed(() => clip.value?.nodes ?? null)
+
+/** One block, or the whole page; the toast names what went, so a click is seen to have worked. */
+function copyNodes(nodes: BlockNode[]): void {
+  if (nodes.length === 0) return
+
+  putAside(nodes)
+  toast.success(
+    nodes.length === 1
+      ? t('field.copied', { title: titleOf(nodes[0]!) })
+      : t('field.copied-many', { count: nodes.length }),
+  )
+}
+
+function copyBlock(key: string): void {
+  const found = locate(tree.value, key)
+  if (found) copyNodes([found.node])
+}
+
+/** What did not go in and why, one name to a reason. */
+function skippedText(skipped: PastePlan['skipped']): string {
+  return skipped
+    .map(({ node, reason }) => `${titleOf(node)} (${t(`field.skip-${reason}`)})`)
+    .join(', ')
+}
+
+/**
+ * The clip into a list: the page, or a container's field, at `index` or at the end.
+ *
+ * Fresh keys all the way down, as for a duplicate: the same block twice on one page would be one
+ * block to the preview's markers and to the refusals of a save. Only what this list may hold
+ * goes in, by the picker's rules; the rest is named rather than dropped in silence. Nothing is
+ * opened afterwards — a paste is often several blocks, and the tree is where they are seen.
+ */
+function paste(
+  parentKey: string | null,
+  field: string | null,
+  slot: ScreenNode | null,
+  index?: number,
+): void {
+  const nodes = clip.value?.nodes
+  if (!nodes?.length) return
+
+  const parent = parentKey ? locate(tree.value, parentKey) : null
+  const list =
+    parentKey === null
+      ? tree.value
+      : parent && field
+        ? ((parent.node.values[field] as BlockNode[] | undefined) ?? [])
+        : []
+  const rules = parentKey === null ? { allow: topAllow.value, max: topMax.value } : slotRules(slot)
+
+  const plan = planPaste(
+    nodes,
+    {
+      tree: tree.value,
+      list,
+      parent: parent
+        ? (catalog.value.find((type) => type.slug === parent.node.type) ?? null)
+        : (owner?.value ?? null),
+      allow: rules.allow,
+      max: rules.max,
+      root: parentKey === null ? topRoot.value : 'root',
+    },
+    catalog.value,
+  )
+
+  let next = tree.value
+  let at = index ?? list.length
+
+  for (const node of plan.accepted) {
+    next = insertNode(next, parentKey, field, at++, node)
+  }
+
+  if (plan.accepted.length) set(next)
+
+  if (plan.skipped.length) {
+    toast.warning(t('field.paste-skipped', { list: skippedText(plan.skipped) }))
+  } else {
+    toast.success(t('field.pasted', { count: plan.accepted.length }))
+  }
+}
+
+/** The list's own lines: the whole page into the clip, and the clip onto the end of the page. */
+const listActions = computed<RowAction[]>(() => {
+  const actions: RowAction[] = [
+    {
+      key: 'copy-all',
+      icon: 'clipboard',
+      label: t('field.copy-all'),
+      disabled: tree.value.length === 0,
+      run: () => copyNodes(tree.value),
+    },
+  ]
+  const nodes = clip.value?.nodes ?? []
+
+  if (!props.disabled && nodes.length) {
+    actions.push({
+      key: 'paste',
+      icon: 'clipboard-paste',
+      label:
+        nodes.length === 1
+          ? t('field.paste', { title: titleOf(nodes[0]!) })
+          : t('field.paste-many', { count: nodes.length }),
+      disabled: topMax.value !== null && tree.value.length >= topMax.value,
+      run: () => paste(null, null, null),
+    })
+  }
+
+  return actions
+})
+
 /*
  * No question asked, unlike removing a container: this is one click, it is visible in the row
  * the moment it happens, and the same click puts it back.
@@ -616,7 +739,10 @@ const formRoot = computed(() =>
         <div v-if="!selected" class="wx-blocks__tree">
           <div class="wx-blocks__panel-head">
             <span class="wx-blocks__panel-title">{{ t('field.blocks') }}</span>
-            <wx-text size="sm" tone="muted">{{ tree.length }}</wx-text>
+            <span class="wx-blocks__panel-extra">
+              <wx-text size="sm" tone="muted">{{ tree.length }}</wx-text>
+              <wx-row-menu :actions="listActions" :label="t('field.blocks')" />
+            </span>
           </div>
           <div v-if="pageRefusals.length" class="wx-blocks__refusals" role="alert">
             <wx-text v-for="(line, index) in pageRefusals" :key="index" size="sm" tone="danger">{{
@@ -631,10 +757,13 @@ const formRoot = computed(() =>
               :selected="selectedKey"
               :disabled="disabled"
               :errors="refusedByKey"
+              :clip="clipNodes"
               @select="select"
               @add="add"
               @remove="remove"
               @duplicate="duplicate"
+              @copy="copyBlock"
+              @paste="paste"
               @move="move"
               @visibility="visibility"
               @reorder="reorder"
