@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-press",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Press for the WebX UI admin panel: the outlets that wrote about a site and their articles — a link or a PDF — ordered by hand, shown on the site by blocks.",
   "license": "MIT",
   "type": "module",

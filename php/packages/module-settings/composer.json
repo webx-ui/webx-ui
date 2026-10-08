@@ -28,10 +28,10 @@
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
-        "webx-ui/localization": "^0.64.0",
-        "webx-ui/mcp": "^0.64.0",
-        "webx-ui/module-admin": "^0.64.0",
-        "webx-ui/module-auth": "^0.64.0"
+        "webx-ui/localization": "^0.65.0",
+        "webx-ui/mcp": "^0.65.0",
+        "webx-ui/module-admin": "^0.65.0",
+        "webx-ui/module-auth": "^0.65.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -59,7 +59,7 @@
         "webx": {
             "module": "settings",
             "npm": {
-                "@webx-ui/module-settings": "^0.3.26"
+                "@webx-ui/module-settings": "^0.3.27"
             },
             "panel": {
                 "import": "import { settings } from '@webx-ui/module-settings'",

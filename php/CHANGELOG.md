@@ -1,5 +1,174 @@
 # @webx-ui/php
 
+## 0.65.0
+
+### Minor Changes
+
+- 0f5ed7a: The audit checks about forty more things, after a professional SEO's technical checklist:
+  canonicals that chain, loop, carry `#`, point to another host or send later pages of a list to the
+  first; language versions without the page itself, with one code for two addresses, closed from
+  search or calling themselves differently; links to non-canonical and closed pages, `utm_` in
+  internal links, links nobody can follow, and anchors that say nothing — "here" and "read more" in
+  every language of the panel, plus the site's own phrases (a new setting and
+  `webx-audit.vague_anchors`). Also meta refresh, meta tags written twice, `nofollow` on a whole
+  page, lorem ipsum, a "not found" page answering 200, duplicate and long H1, a title wider than the
+  results show (in pixels of their font), doctype and encoding, obsolete tags, broken and heavy CSS
+  and JS, pictures behind a redirect and long `alt`, pages linked only from closed pages, only with
+  `nofollow` or from one page, duplicates in the sitemap, folders that list their files, the site
+  opening at its IP address, and no HTTP/2.
+- 0f5ed7a: Blocks move between sites from the panel. **Export** in the «Blocks» section — and on a type's
+  editor — saves the ticked types as one `.json` pack together with every component they call, so
+  the file works on a site that has none of them. **Import** reads such a pack (or a file written by
+  `webx:blocks:export`), shows what each type would become — new, updated, unchanged or refused —
+  before writing anything, then brings the types in as drafts, optionally publishing what passes
+  the checks. `webx:blocks:import` and the panel share one importer, and the command reads packs too.
+  New routes: `GET /blocks/export`, `POST /blocks/import`.
+- 0f5ed7a: `webx:snapshot` and `webx:snapshot:restore` move a site's content between stands — local to dev,
+  dev or production to local — as one `.tar.gz`: the content tables as JSON lines, the public disk
+  without previews, and a manifest. Every package declares its tables as content, admins, stand,
+  derived or transient (`SnapshotTables`), so a restore replaces the pages, blocks, menus, settings
+  and media and leaves the stand's enquiries, journals, tokens and admins where they are. It takes
+  a `webx:db:backup` dump first, refuses migrations the code does not know and production without
+  `--force`, rewrites the source stand's addresses, mirrors the files (`--keep-extra` only adds),
+  reports rows left pointing at nothing, and clears the caches. `webx:doctor` mentions archives left
+  in storage for more than a week.
+- 0f5ed7a: An editor open on a record somebody deleted for good says so. A purge is noted as a `purged` event
+  that outlives the row for an hour; the heartbeat then answers 410 with who did it, through which
+  door and when, and so does a save or a publication through the module's own endpoint (any JSON 404
+  from a model `findOrFail` or route binding could not find). The editor says «Agent, through an agent
+  deleted this for good · 18:01», stops autosaving, keeps the form and offers «Copy my text» — every
+  piece of text in the form under the name the form gives it. `EditedRecords::register()` takes
+  `model:` for this; `useEditing` gains `gone`, `stopped`, `text()` and `copyText()`. A purge of a
+  record in the bin is no longer heard as a second trip to the bin. In the bin or gone, Save and Publish are
+  disabled with the reason as their title (`blocked`), and the save state is hidden.
+- 0f5ed7a: An open editor hears more than the revision. The heartbeat reports the record's state, where it
+  sits and what was done to it — published, unpublished, its draft discarded, a version put back,
+  moved, put in the bin or taken out — with who and through which door; the editor updates its badge,
+  trail and address and says it in one line («Owner restored version 21 and published»). Publishing
+  first checks the draft on the server: changes this editor never pulled in are named, with «Publish
+  with them» or «Review first», and the publication carries the revision the person agreed to (409
+  when it moved on). A record in the bin is said so, with who put it there, the form kept and
+  «Restore» — «Restore and save my changes» when there are unsaved ones. Notices and the list of
+  drafts name fields the way the form and the block type do, and each draft copy says what it
+  changed. Over MCP, publish, unpublish, discard, version restore, move and delete take the revision
+  too — required while somebody has the record open, and the refusal names who — and a record has one
+  revision whichever tool reads it (`pages_get` and `blocks_get_content` agree).
+- 0f5ed7a: Two hands on one record no longer cost either of them their work. A save refused because somebody
+  else wrote in between is merged with theirs — by field, by language, by block key — and saved
+  again without a question; only a place both sides changed, or a block one removed while the other
+  edited it, is listed with its three versions to settle one by one, and «Keep mine» never drops the
+  other side's other changes. The banner names who changed it and whether through an agent. While
+  an editor is open it sends a heartbeat (`POST /editing/{entity}/{id}`): a save that came in
+  meanwhile is offered with «Pull in» before it would be saved over, and the agent's reads answer
+  `being_edited_by`. A draft that a save by somebody else replaces is kept as an `overwritten`
+  version, listed with the autosaves under «Drafts» in every editor's History and restorable there,
+  and through `pages_versions` / `pages_version_restore` with `draft`. Over MCP a write to a page,
+  to block content or to a drafted record needs the `revision` its read returned; `force: true` is
+  the way for a script that means to overwrite. Shared as `useEditing`, `WxEditingAlerts` and
+  `WxDrafts` in `@webx-ui/module-admin` and `EditedRecords`, `Presence`, `LastChange` and
+  `AgentRevision` in `webx-ui/module-admin`, wired into pages, layout regions, services, recipes,
+  events, articles and vacancies.
+- 0f5ed7a: Deleting from Files keeps the rule `media_delete_files` keeps for an agent. Before a file, a
+  selection or a folder goes, the panel asks the server which of the files the site still uses and
+  shows where — by the row's title where it has one — in one question with «Delete anyway»; a folder
+  says what is inside through its whole subtree, with proper plurals («3 файла и 1 папка»). The
+  delete endpoints refuse a used file without `force` (409 `files_in_use`); `POST files/usage` and
+  `GET directories/{id}/contents` answer the question first.
+
+  The previews of a file go with it (single, batch and folder delete). Previews left by files deleted
+  earlier are found by the audit's `media.orphan_thumbs` and swept by its fix or by
+  `php artisan webx:media:prune-thumbs`.
+
+  «Move to…» shows the folder tree with the current folder marked; tiles (or the selection) can be
+  dragged onto a folder of the tree; a move says where the files went, with Undo. Sizes are written
+  in the panel's language («3,5 КБ»), and so is the upload limit.
+
+  In the design system: `WxActions` and `WxFileCard` take `moreLabel` (and the card `actionsLabel`);
+  `WxSelectionArea` takes `dragItems` and keeps a ctrl or shift held at the press; `WxTooltip` no
+  longer opens on the focus a closing dialog hands back. `pluralForm` moves to `module-admin`.
+
+  A place in that question says what it is and links to its edit screen («Страница: How We Can
+  Help»), from `webx-media.usage.places` or a module's own `PlaceDescriber`; the panel's history
+  (versions, journal, uploads, notes, sign-ins, agents' calls) is no longer counted as a use. When
+  only some of the files are used, «Delete only the unused» deletes the rest — for a folder, the
+  emptied subfolders too. A single tile drags onto a folder like a selection does, and `WxTree`
+  takes `expandLabel` and `collapseLabel`.
+
+- 0f5ed7a: The file library shows pictures large. A double-click on a picture in the library opens a lightbox
+  over the pictures of the page, starting on that one; in a picker, where a double-click takes the
+  file, the same is "View" in the card's `···` menu. `WxFileCard` gains `viewable`, `viewLabel` and a
+  `view` event for it, and `webx-ui/module-media` ships the lightbox's words in all ten languages.
+- 0f5ed7a: `wx-rich-text` takes `inline`: one line with bold, italic and an accent instead of a document —
+  for a heading like `Deeply heard<span>.</span> Gently guided` that used to sit in a plain input
+  with its tags on show. The value is the bare line, no paragraph around it; Enter does nothing and
+  pasted lines become one. On the server an inline field keeps `<strong>`, `<b>`, `<em>`, `<i>` and
+  a bare `<span>`, drops every attribute, flattens blocks into the line and is held to 2000
+  characters. Until a block type moves such a field over, a plain input whose value holds tags
+  says so under it and keeps the value exactly as stored.
+- 0f5ed7a: Shortcodes in block content: `Call us on [phone]` prints the number from one place, and `[dot]`
+  prints a site's own snippet. A site registers its own with `Shortcodes::register('dot', '<span
+class="accent-dot">.</span>', plain: '.')`; «Settings» → «Shortcodes» defines data shortcodes in
+  the panel — a name reading a setting or holding its value, printed as a `tel:` or `mailto:` link
+  when it is a phone or an e-mail, with `link=no` and `format=intl|digits`. Blocks resolve them in
+  every text, textarea and rich text field (repeater items too): the editor's text escaped first,
+  the shortcode's HTML raw, never escaped twice; only registered names, `[[name]]` for a literal.
+  Titles, meta descriptions, Open Graph, JSON-LD, the inbox mail, the blog's RSS and the MCP
+  outline get the plain rendering. `@shortcodes`, `@shortcodesIn` and `@shortcodesPlain` resolve a
+  site template's own fields. MCP gains `blocks://shortcodes`, and `settings://content-rules`
+  lists them; the audit gains `blocks.unknown_shortcodes` and `blocks.hardcoded_values`.
+- 0f5ed7a: The sitemap is readable. `module-seo` lays out `/sitemap.xml` and its files like Google's
+  multilingual example — an element a line, the attributes of each `xhtml:link` in a column — and
+  each file names the new `/sitemap.xsl`, which shows a browser that same text with the addresses
+  clickable, in light and dark. What the map says is unchanged. `WEBX_SEO_SITEMAP_XSL=false`
+  (`webx-seo.sitemap.stylesheet`) leaves the stylesheet out.
+
+### Patch Changes
+
+- 0f5ed7a: Blocks copy and paste between pages, and between every section that has the constructor —
+  pages, articles, services, layout regions. **Copy** in a block's `···` puts it aside with
+  everything inside it; **Copy all blocks** in the list's head puts aside the whole page. While
+  something is put aside, **Paste after**, **Paste inside** (on a container) and **Paste** (at the
+  end of the page) name what will go in. Keys are renewed all the way down; what the target may not
+  hold — by the same rules as adding a block — is left out and named in a toast. The clip lives in
+  the browser's storage of the site, survives a paste and is seen by every tab.
+
+  The core gains two icons for it: `clipboard` and `clipboard-paste`.
+
+- 0f5ed7a: Uploads into Files go a piece at a time through the panel's chunked protocol — the page, the
+  picker and every media field. Each file has its own bar; a dropped connection is retried with a
+  growing wait from the offset the server holds, an offline browser carries on by itself, the same
+  file chosen again after a reload continues, and cancelling throws the server's pieces away. Files
+  can be dropped onto the list. On the server, the purpose `media.library` and
+  `POST media/files/chunked` hand the finished file to the same rules and pipeline as a multipart
+  upload; an upload purpose in module-admin can now name extensions as well as MIME types.
+- 0f5ed7a: «Optimize» can convert to WebP. Ticked in the dialog (or `convert: true` of
+  `media_optimize_images`, or `php artisan webx:media:webp`), a still JPEG or PNG — and a HEIC where
+  Imagick reads it — becomes a WebP under the same uuid when that is smaller, and every reference to
+  the old key is rewritten in the same transaction — blocks, rich text, settings, versions and the
+  journal; a foreign key needs nothing. The old key stays as an alias: its public
+  address answers 301 and `files/by-path` finds the file by it. Previews and rendered caches are let
+  go of; «Restore original» re-encodes the kept original into the current format. Usage sources can
+  take part in a rewrite through `UsageRewriter`. The folder tree shows a placeholder while it loads
+  instead of an English «Nothing here yet».
+- 0f5ed7a: The type of a file is visible in the library. `WxFileCard` takes `extension` (for a name that does
+  not carry one) and `show-extension` (the extension as a badge over a picture); Files puts it on
+  every tile, writes it into the placeholder of a PDF or a HEIC, says extension, MIME type,
+  dimensions and size in the tip over a card and under it in a field, and the pager under the grid
+  speaks the panel's language.
+- 0f5ed7a: `WxRichText` shows and edits its HTML. A `</>` button (tool key `source`, on by default) turns
+  the field into a code editor with the document one block to a line; what is typed reaches the
+  model at once, and on the way back the editor names any tag or attribute its schema would drop
+  and asks before removing it. A read-only field opens its source to be read. The panel's editor
+  carries the new words in all ten languages.
+- 0f5ed7a: A block template that changed a text field with a string function — `{{ rtrim($heading, '.') }}`
+  — printed `Call &lt;a href=…` once the field held `[phone]`: the function turned the resolved
+  HTML into a string and `{{ }}` escaped it again. `wx_text($field)` takes a plain string or a
+  `ShortcodeText` and returns a `ShortcodeText` whose `trim`, `trimStart`, `trimEnd`,
+  `stripPrefix`, `stripSuffix` and `map()` change what the editor typed and stay HTML:
+  `{{ wx_text($heading)->trimEnd('.') }}`. The template checks warn (`string-on-text`) about a
+  string function or a cast applied to a text field inside `{{ }}`, naming the field and the fix,
+  on saving and live in the editor.
+
 ## 0.64.0
 
 ### Minor Changes

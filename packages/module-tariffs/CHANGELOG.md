@@ -1,5 +1,24 @@
 # @webx-ui/module-tariffs
 
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+  - @webx-ui/core@0.39.0
+  - @webx-ui/module-admin@0.24.0
+  - @webx-ui/schema@0.8.1
+
 ## 0.1.9
 
 ### Patch Changes

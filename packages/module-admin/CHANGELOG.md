@@ -1,5 +1,111 @@
 # @webx-ui/admin
 
+## 0.24.0
+
+### Minor Changes
+
+- 0f5ed7a: An editor open on a record somebody deleted for good says so. A purge is noted as a `purged` event
+  that outlives the row for an hour; the heartbeat then answers 410 with who did it, through which
+  door and when, and so does a save or a publication through the module's own endpoint (any JSON 404
+  from a model `findOrFail` or route binding could not find). The editor says «Agent, through an agent
+  deleted this for good · 18:01», stops autosaving, keeps the form and offers «Copy my text» — every
+  piece of text in the form under the name the form gives it. `EditedRecords::register()` takes
+  `model:` for this; `useEditing` gains `gone`, `stopped`, `text()` and `copyText()`. A purge of a
+  record in the bin is no longer heard as a second trip to the bin. In the bin or gone, Save and Publish are
+  disabled with the reason as their title (`blocked`), and the save state is hidden.
+- 0f5ed7a: An open editor hears more than the revision. The heartbeat reports the record's state, where it
+  sits and what was done to it — published, unpublished, its draft discarded, a version put back,
+  moved, put in the bin or taken out — with who and through which door; the editor updates its badge,
+  trail and address and says it in one line («Owner restored version 21 and published»). Publishing
+  first checks the draft on the server: changes this editor never pulled in are named, with «Publish
+  with them» or «Review first», and the publication carries the revision the person agreed to (409
+  when it moved on). A record in the bin is said so, with who put it there, the form kept and
+  «Restore» — «Restore and save my changes» when there are unsaved ones. Notices and the list of
+  drafts name fields the way the form and the block type do, and each draft copy says what it
+  changed. Over MCP, publish, unpublish, discard, version restore, move and delete take the revision
+  too — required while somebody has the record open, and the refusal names who — and a record has one
+  revision whichever tool reads it (`pages_get` and `blocks_get_content` agree).
+- 0f5ed7a: Two hands on one record no longer cost either of them their work. A save refused because somebody
+  else wrote in between is merged with theirs — by field, by language, by block key — and saved
+  again without a question; only a place both sides changed, or a block one removed while the other
+  edited it, is listed with its three versions to settle one by one, and «Keep mine» never drops the
+  other side's other changes. The banner names who changed it and whether through an agent. While
+  an editor is open it sends a heartbeat (`POST /editing/{entity}/{id}`): a save that came in
+  meanwhile is offered with «Pull in» before it would be saved over, and the agent's reads answer
+  `being_edited_by`. A draft that a save by somebody else replaces is kept as an `overwritten`
+  version, listed with the autosaves under «Drafts» in every editor's History and restorable there,
+  and through `pages_versions` / `pages_version_restore` with `draft`. Over MCP a write to a page,
+  to block content or to a drafted record needs the `revision` its read returned; `force: true` is
+  the way for a script that means to overwrite. Shared as `useEditing`, `WxEditingAlerts` and
+  `WxDrafts` in `@webx-ui/module-admin` and `EditedRecords`, `Presence`, `LastChange` and
+  `AgentRevision` in `webx-ui/module-admin`, wired into pages, layout regions, services, recipes,
+  events, articles and vacancies.
+- 0f5ed7a: Deleting from Files keeps the rule `media_delete_files` keeps for an agent. Before a file, a
+  selection or a folder goes, the panel asks the server which of the files the site still uses and
+  shows where — by the row's title where it has one — in one question with «Delete anyway»; a folder
+  says what is inside through its whole subtree, with proper plurals («3 файла и 1 папка»). The
+  delete endpoints refuse a used file without `force` (409 `files_in_use`); `POST files/usage` and
+  `GET directories/{id}/contents` answer the question first.
+
+  The previews of a file go with it (single, batch and folder delete). Previews left by files deleted
+  earlier are found by the audit's `media.orphan_thumbs` and swept by its fix or by
+  `php artisan webx:media:prune-thumbs`.
+
+  «Move to…» shows the folder tree with the current folder marked; tiles (or the selection) can be
+  dragged onto a folder of the tree; a move says where the files went, with Undo. Sizes are written
+  in the panel's language («3,5 КБ»), and so is the upload limit.
+
+  In the design system: `WxActions` and `WxFileCard` take `moreLabel` (and the card `actionsLabel`);
+  `WxSelectionArea` takes `dragItems` and keeps a ctrl or shift held at the press; `WxTooltip` no
+  longer opens on the focus a closing dialog hands back. `pluralForm` moves to `module-admin`.
+
+  A place in that question says what it is and links to its edit screen («Страница: How We Can
+  Help»), from `webx-media.usage.places` or a module's own `PlaceDescriber`; the panel's history
+  (versions, journal, uploads, notes, sign-ins, agents' calls) is no longer counted as a use. When
+  only some of the files are used, «Delete only the unused» deletes the rest — for a folder, the
+  emptied subfolders too. A single tile drags onto a folder like a selection does, and `WxTree`
+  takes `expandLabel` and `collapseLabel`.
+
+- 0f5ed7a: `wx-rich-text` takes `inline`: one line with bold, italic and an accent instead of a document —
+  for a heading like `Deeply heard<span>.</span> Gently guided` that used to sit in a plain input
+  with its tags on show. The value is the bare line, no paragraph around it; Enter does nothing and
+  pasted lines become one. On the server an inline field keeps `<strong>`, `<b>`, `<em>`, `<i>` and
+  a bare `<span>`, drops every attribute, flattens blocks into the line and is held to 2000
+  characters. Until a block type moves such a field over, a plain input whose value holds tags
+  says so under it and keeps the value exactly as stored.
+- 0f5ed7a: Text fields help to type placeholders. `WxInput`, `WxTextarea` and `WxRichText` take `tokens`
+  (`{ name, value?, description? }[]`): typing `[` opens a list filtered by what follows, with each
+  placeholder's current value beside it, and Enter, Tab or a click writes `[name]` in place of what
+  was typed; a button in the field (the toolbar, for the rich text) lists them all and inserts the
+  one chosen at the caret. Known placeholders already in the text are drawn as chips, while the
+  value stays the plain `[name]` — a mirror behind the input and the textarea, a decoration in the
+  rich text, the inline one included; `[[name]]` and unknown names stay text. The words are props:
+  `tokensTitle` and `tokensLabel`.
+
+  The panel fetches the site's shortcodes once (`loadShortcodes`, `useShortcodes` in
+  `@webx-ui/module-admin`), and the block editor offers them in every text field of a block and of a
+  region — plain inputs, textareas and rich texts, inside repeaters too, but not in e-mail, address
+  or phone inputs.
+
+### Patch Changes
+
+- 0f5ed7a: `WxRichText` shows and edits its HTML. A `</>` button (tool key `source`, on by default) turns
+  the field into a code editor with the document one block to a line; what is typed reaches the
+  model at once, and on the way back the editor names any tag or attribute its schema would drop
+  and asks before removing it. A read-only field opens its source to be read. The panel's editor
+  carries the new words in all ten languages.
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+  - @webx-ui/core@0.39.0
+  - @webx-ui/tokens@0.6.0
+  - @webx-ui/schema@0.8.1
+
 ## 0.23.5
 
 ### Patch Changes

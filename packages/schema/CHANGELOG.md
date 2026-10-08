@@ -1,5 +1,19 @@
 # @webx-ui/schema
 
+## 0.8.1
+
+### Patch Changes
+
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+  - @webx-ui/core@0.39.0
+
 ## 0.8.0
 
 ### Minor Changes

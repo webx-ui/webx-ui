@@ -1,5 +1,78 @@
 # @webx-ui/module-media
 
+## 0.10.0
+
+### Minor Changes
+
+- 0f5ed7a: Uploads into Files go a piece at a time through the panel's chunked protocol — the page, the
+  picker and every media field. Each file has its own bar; a dropped connection is retried with a
+  growing wait from the offset the server holds, an offline browser carries on by itself, the same
+  file chosen again after a reload continues, and cancelling throws the server's pieces away. Files
+  can be dropped onto the list. On the server, the purpose `media.library` and
+  `POST media/files/chunked` hand the finished file to the same rules and pipeline as a multipart
+  upload; an upload purpose in module-admin can now name extensions as well as MIME types.
+- 0f5ed7a: «Optimize» can convert to WebP. Ticked in the dialog (or `convert: true` of
+  `media_optimize_images`, or `php artisan webx:media:webp`), a still JPEG or PNG — and a HEIC where
+  Imagick reads it — becomes a WebP under the same uuid when that is smaller, and every reference to
+  the old key is rewritten in the same transaction — blocks, rich text, settings, versions and the
+  journal; a foreign key needs nothing. The old key stays as an alias: its public
+  address answers 301 and `files/by-path` finds the file by it. Previews and rendered caches are let
+  go of; «Restore original» re-encodes the kept original into the current format. Usage sources can
+  take part in a rewrite through `UsageRewriter`. The folder tree shows a placeholder while it loads
+  instead of an English «Nothing here yet».
+- 0f5ed7a: Deleting from Files keeps the rule `media_delete_files` keeps for an agent. Before a file, a
+  selection or a folder goes, the panel asks the server which of the files the site still uses and
+  shows where — by the row's title where it has one — in one question with «Delete anyway»; a folder
+  says what is inside through its whole subtree, with proper plurals («3 файла и 1 папка»). The
+  delete endpoints refuse a used file without `force` (409 `files_in_use`); `POST files/usage` and
+  `GET directories/{id}/contents` answer the question first.
+
+  The previews of a file go with it (single, batch and folder delete). Previews left by files deleted
+  earlier are found by the audit's `media.orphan_thumbs` and swept by its fix or by
+  `php artisan webx:media:prune-thumbs`.
+
+  «Move to…» shows the folder tree with the current folder marked; tiles (or the selection) can be
+  dragged onto a folder of the tree; a move says where the files went, with Undo. Sizes are written
+  in the panel's language («3,5 КБ»), and so is the upload limit.
+
+  In the design system: `WxActions` and `WxFileCard` take `moreLabel` (and the card `actionsLabel`);
+  `WxSelectionArea` takes `dragItems` and keeps a ctrl or shift held at the press; `WxTooltip` no
+  longer opens on the focus a closing dialog hands back. `pluralForm` moves to `module-admin`.
+
+  A place in that question says what it is and links to its edit screen («Страница: How We Can
+  Help»), from `webx-media.usage.places` or a module's own `PlaceDescriber`; the panel's history
+  (versions, journal, uploads, notes, sign-ins, agents' calls) is no longer counted as a use. When
+  only some of the files are used, «Delete only the unused» deletes the rest — for a folder, the
+  emptied subfolders too. A single tile drags onto a folder like a selection does, and `WxTree`
+  takes `expandLabel` and `collapseLabel`.
+
+- 0f5ed7a: The file library shows pictures large. A double-click on a picture in the library opens a lightbox
+  over the pictures of the page, starting on that one; in a picker, where a double-click takes the
+  file, the same is "View" in the card's `···` menu. `WxFileCard` gains `viewable`, `viewLabel` and a
+  `view` event for it, and `webx-ui/module-media` ships the lightbox's words in all ten languages.
+
+### Patch Changes
+
+- 0f5ed7a: The type of a file is visible in the library. `WxFileCard` takes `extension` (for a name that does
+  not carry one) and `show-extension` (the extension as a badge over a picture); Files puts it on
+  every tile, writes it into the placeholder of a PDF or a HEIC, says extension, MIME type,
+  dimensions and size in the tip over a card and under it in a field, and the pager under the grid
+  speaks the panel's language.
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+- Updated dependencies [0f5ed7a]
+  - @webx-ui/core@0.39.0
+  - @webx-ui/module-admin@0.24.0
+  - @webx-ui/schema@0.8.1
+
 ## 0.9.1
 
 ### Patch Changes
