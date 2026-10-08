@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { nextTick, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
-import type { TokenAnchor, TokenOption } from '../composables/useTokens'
+import { rectOf, type TokenAnchor, type TokenOption } from '../composables/useTokens'
 
 /**
  * The list of placeholders under a field's caret.
@@ -37,6 +37,39 @@ function onOutside(event: Event): void {
   if (target && props.owner?.contains(target)) event.preventDefault()
 }
 
+/*
+ * One reference for the popover's whole life, reading whichever anchor the field gave last.
+ * Handed a new reference in the same render that opens it, Reka positions the list against the
+ * one before — the hidden fallback in the page's corner the first time the button is pressed.
+ * And a list already open does not follow a new reference on its own, so the content is drawn
+ * again (`placement`) whenever the anchor moves: the next line, the next field.
+ */
+const reference: TokenAnchor = {
+  getBoundingClientRect: () =>
+    props.anchor?.getBoundingClientRect() ??
+    props.owner?.getBoundingClientRect() ??
+    rectOf(0, 0, 0, 0),
+  get contextElement() {
+    return props.anchor?.contextElement ?? props.owner ?? undefined
+  },
+}
+
+const placement = ref(0)
+let placedAt = ''
+
+watch(
+  () => props.anchor,
+  (anchor) => {
+    const rect = anchor?.getBoundingClientRect()
+    const at = rect ? `${rect.left}:${rect.top}:${rect.height}` : ''
+
+    if (at !== placedAt) {
+      placedAt = at
+      placement.value++
+    }
+  },
+)
+
 /* The active option stays in view while the arrows walk past the edge of a long list. */
 watch(
   () => [props.active, props.open],
@@ -50,9 +83,10 @@ watch(
 
 <template>
   <popover-root :open="open" @update:open="(value: boolean) => !value && emit('close')">
-    <popover-anchor :reference="anchor" as-child><span hidden /></popover-anchor>
+    <popover-anchor :reference="reference" as-child><span hidden /></popover-anchor>
     <popover-portal>
       <popover-content
+        :key="placement"
         class="wx-token-menu"
         side="bottom"
         align="start"
