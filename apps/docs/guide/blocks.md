@@ -456,7 +456,8 @@ every component they call, so the file works on a site that has none of them, an
 first. **Import** reads such a pack, or a single file the command wrote, and asks the server twice:
 first without writing, to show what each type would become — new, updated, unchanged or refused,
 and why — then for real. Types come in as drafts, an existing one gets a new draft version, and
-the switch beside the button publishes what passes the checks. The command reads packs as well,
+the switch beside the button publishes what passes the checks — switched on, the plan runs those
+checks as well, so a type they would hold back says so before anything is written. The command reads packs as well,
 so a file from the panel can go into `resources/blocks` as it is.
 
 Export needs only to see the section; import is `blocks.manage` and a site with editing on, like

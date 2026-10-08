@@ -70,7 +70,7 @@ describe('WxBlockImportDialog', () => {
     await choose(JSON.stringify(pack))
 
     expect(post).toHaveBeenCalledWith('/api/cms/blocks/import', {
-      file: pack,
+      file: JSON.stringify(pack),
       name: 'pack.json',
       dry_run: true,
       publish: false,
@@ -82,11 +82,35 @@ describe('WxBlockImportDialog', () => {
     await flushPromises()
 
     expect(post).toHaveBeenLastCalledWith('/api/cms/blocks/import', {
-      file: pack,
+      file: JSON.stringify(pack),
       name: 'pack.json',
       dry_run: false,
       publish: false,
     })
+  })
+
+  it('runs the publish checks in the plan once publishing is switched on', async () => {
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce({ data: [row('hero', 'created')] })
+      .mockResolvedValueOnce({
+        data: [row('hero', 'created', { error: 'would not be published — syntax error' })],
+      })
+
+    mount(BlockImportDialog, { attachTo: document.body, ...context({ post }) })
+    await flushPromises()
+    await choose(JSON.stringify(pack))
+
+    document.body.querySelector<HTMLInputElement>('[role=switch]')!.click()
+    await flushPromises()
+
+    expect(post).toHaveBeenLastCalledWith('/api/cms/blocks/import', {
+      file: JSON.stringify(pack),
+      name: 'pack.json',
+      dry_run: true,
+      publish: true,
+    })
+    expect(document.body.textContent).toContain('would not be published')
   })
 
   it('says a file that is not JSON is not, without asking the server', async () => {

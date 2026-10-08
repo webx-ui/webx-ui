@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
@@ -40,7 +40,8 @@ const message = useErrorText()
 
 const picker = ref<HTMLInputElement | null>(null)
 const name = ref<string | null>(null)
-const file = ref<unknown>(null)
+/** The text of the file, sent as it is: decoded here, its strings would be trimmed on the way. */
+const file = ref<string | null>(null)
 const rows = ref<BlockImportRow[] | null>(null)
 /** Why the file was refused as a whole: not JSON, not a pack, a circle among its types. */
 const refusal = ref<string | null>(null)
@@ -93,27 +94,49 @@ async function onFile(event: Event): Promise<void> {
   reading.value = true
 
   try {
+    const text = await chosen.text()
+
     try {
-      file.value = JSON.parse(await chosen.text())
+      JSON.parse(text)
     } catch {
+      file.value = null
       refusal.value = t('exchange.not-json')
 
       return
     }
 
-    rows.value = await api.importPack(file.value, { name: chosen.name, dryRun: true })
-  } catch (error) {
-    refusal.value = refusalOf(error)
+    file.value = text
+    await plan()
   } finally {
     reading.value = false
   }
 }
 
+/** The dry run — with the publish checks when publishing is asked, so the plan warns first. */
+async function plan(): Promise<void> {
+  if (file.value === null) return
+
+  try {
+    rows.value = await api.importPack(file.value, {
+      name: name.value ?? undefined,
+      dryRun: true,
+      publish: publish.value,
+    })
+  } catch (error) {
+    rows.value = null
+    refusal.value = refusalOf(error)
+  }
+}
+
+watch(publish, () => {
+  if (rows.value !== null && !done.value) void plan()
+})
+
 async function run(): Promise<void> {
   importing.value = true
 
   try {
-    const result = await api.importPack(file.value, {
+    const result = await api.importPack(file.value ?? '', {
       name: name.value ?? undefined,
       publish: publish.value,
     })

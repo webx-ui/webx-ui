@@ -149,19 +149,24 @@ onMounted(async () => {
 
         <ul class="wx-block-export__list">
           <li v-for="type in ordered" :key="type.id" class="wx-block-export__row">
+            <!-- The checkbox is the row: its own label stretches across it, the version included,
+                 so a click anywhere ticks it — a label around the checkbox's label would not. -->
             <wx-checkbox
               :model-value="chosen.includes(type.slug)"
+              class="wx-block-export__check"
               @update:model-value="toggle(type.slug, Boolean($event))"
             >
-              <span class="wx-block-export__title">{{ type.title }}</span>
-              <span class="wx-block-export__meta">
-                {{ type.slug }}
-                <template v-if="kindOf(type) === 'component'">
-                  · {{ t('components.kind-component') }}</template
-                >
+              <span class="wx-block-export__type">
+                <span class="wx-block-export__title">{{ type.title }}</span>
+                <span class="wx-block-export__meta">
+                  {{ type.slug }}
+                  <template v-if="kindOf(type) === 'component'">
+                    · {{ t('components.kind-component') }}</template
+                  >
+                </span>
               </span>
+              <span class="wx-block-export__version">{{ versionOf(type) }}</span>
             </wx-checkbox>
-            <span class="wx-block-export__version">{{ versionOf(type) }}</span>
           </li>
         </ul>
 
@@ -208,12 +213,20 @@ onMounted(async () => {
   border-radius: var(--wx-radius-md);
 }
 
-.wx-block-export__row {
+.wx-block-export__check {
   display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--wx-space-8) var(--wx-space-12);
+}
+
+.wx-block-export__check :deep(.wx-checkbox__label) {
+  display: flex;
+  flex: 1;
   align-items: center;
   justify-content: space-between;
   gap: var(--wx-space-12);
-  padding: var(--wx-space-8) var(--wx-space-12);
+  min-width: 0;
 }
 
 .wx-block-export__row + .wx-block-export__row {

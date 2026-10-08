@@ -39,7 +39,7 @@ final class ExchangeController
     {
         $name = $request->input('name');
         $name = is_string($name) && $name !== '' ? basename($name) : 'blocks.json';
-        $documents = Exchange::read($request->input('file'), $name);
+        $documents = Exchange::read(self::file($request), $name);
 
         if ($documents === null || $documents === []) {
             return $this->refuse((string) __('webx-blocks::exchange.not-a-pack'));
@@ -52,6 +52,20 @@ final class ExchangeController
         }
 
         return ApiResponse::data($rows);
+    }
+
+    /**
+     * The file as it was written. The panel sends the text it read and the server decodes it: a
+     * decoded file passes through the request's middleware string by string, and the stock
+     * `TrimStrings` would cut the newline every template ends with — an unchanged pack would then
+     * write a new version of every type. The route is kept out of `TrimStrings` and
+     * `ConvertEmptyStringsToNull` as well (the service provider), for a caller who sends JSON.
+     */
+    private static function file(Request $request): mixed
+    {
+        $file = $request->input('file');
+
+        return is_string($file) ? json_decode($file, true) : $file;
     }
 
     private function refuse(string $message): JsonResponse

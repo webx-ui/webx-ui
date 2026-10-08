@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Blocks\Panel;
 
 use Illuminate\Contracts\Validation\Factory as ValidatorFactory;
+use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Rendering\Calls;
+use WebxUi\Blocks\Rendering\Thumbnails;
 
 /**
  * Block types back from their documents (§17) — the one door the command and the panel share.
@@ -21,6 +23,10 @@ use WebxUi\Blocks\Rendering\Calls;
  *
  * The documents are written in the order of the call graph — what is called before what calls
  * it — so that publishing a parent checks it against children that are already there.
+ *
+ * A dry run that is asked to publish rehearses: everything is written and checked inside a
+ * transaction that is rolled back, so the plan says which types the checks would hold back
+ * before anything is written.
  */
 final class Importer
 {
@@ -36,6 +42,8 @@ final class Importer
         private readonly ValidatorFactory $validator,
         private readonly Publisher $publisher,
         private readonly Usage $usage,
+        private readonly BlockTypes $types,
+        private readonly Thumbnails $thumbnails,
     ) {}
 
     /**
@@ -60,10 +68,40 @@ final class Importer
         ));
 
         $counts = $this->usage->counts();
+
+        if (! $dryRun || ! $publish) {
+            return $this->rows($order, $read, $counts, $dryRun, $publish);
+        }
+
+        $connection = Block::query()->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $rows = $this->rows($order, $read, $counts, false, true, rehearsal: true);
+        } finally {
+            $connection->rollBack();
+            // What the rehearsal wrote may have been read into the caches, which outlive the
+            // transaction.
+            $this->types->forget();
+            $this->thumbnails->forget();
+        }
+
+        // Numbers of versions that were never kept.
+        return array_map(static fn (array $row): array => ['version' => null, 'published' => null] + $row, $rows);
+    }
+
+    /**
+     * @param  list<string>  $order
+     * @param  array<string, array{name: string, document: array<string, mixed>}>  $read
+     * @param  array<string, int>  $counts
+     * @return list<array{slug: string, title: string|null, kind: string, name: string, status: string, writes: bool, version: int|null, published: int|null, error: string|null}>
+     */
+    private function rows(array $order, array $read, array $counts, bool $dryRun, bool $publish, bool $rehearsal = false): array
+    {
         $rows = [];
 
         foreach ($order as $slug) {
-            $rows[] = $this->one($slug, $read[$slug]['name'], $read[$slug]['document'], $counts, $dryRun, $publish);
+            $rows[] = $this->one($slug, $read[$slug]['name'], $read[$slug]['document'], $counts, $dryRun, $publish, $rehearsal);
         }
 
         return $rows;
@@ -74,7 +112,7 @@ final class Importer
      * @param  array<string, int>  $counts
      * @return array{slug: string, title: string|null, kind: string, name: string, status: string, writes: bool, version: int|null, published: int|null, error: string|null}
      */
-    private function one(string $slug, string $name, array $document, array $counts, bool $dryRun, bool $publish): array
+    private function one(string $slug, string $name, array $document, array $counts, bool $dryRun, bool $publish, bool $rehearsal): array
     {
         $row = [
             'slug' => $slug,
@@ -135,15 +173,17 @@ final class Importer
         }
 
         if ($publish && $block->draftVersion !== null) {
+            $refused = $rehearsal ? 'would not be published' : 'not published';
+
             try {
                 $row['published'] = $this->publisher->publish($block)->number;
-            } catch (PublishFailed $refused) {
-                $line = $refused->failure->templateLine !== null ? " (template line {$refused->failure->templateLine})" : '';
-                $row['error'] = "not published — {$refused->describe()}{$line}";
-            } catch (DropsTranslations $refused) {
-                $row['error'] = "not published — {$refused->getMessage()}";
-            } catch (BlocksException $refused) {
-                $row['error'] = "not published — {$refused->getMessage()}";
+            } catch (PublishFailed $failure) {
+                $line = $failure->failure->templateLine !== null ? " (template line {$failure->failure->templateLine})" : '';
+                $row['error'] = "{$refused} — {$failure->describe()}{$line}";
+            } catch (DropsTranslations $failure) {
+                $row['error'] = "{$refused} — {$failure->getMessage()}";
+            } catch (BlocksException $failure) {
+                $row['error'] = "{$refused} — {$failure->getMessage()}";
             }
         }
 

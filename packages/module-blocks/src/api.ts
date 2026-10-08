@@ -43,9 +43,12 @@ export interface BlocksApi {
   reorder(ids: number[]): Promise<void>
   /** A pack of the types named — every type when none is — and the components they call. */
   exportPack(slugs: string[], options?: { draft?: boolean }): Promise<BlockExport>
-  /** What the file would do (`dryRun`), or what it did. Drafts, unless `publish` is asked for. */
+  /**
+   * What the file would do (`dryRun`), or what it did. Drafts, unless `publish` is asked for.
+   * The file goes as its text: the server compares it with what is stored, whitespace included.
+   */
   importPack(
-    file: unknown,
+    file: string,
     options?: { name?: string; dryRun?: boolean; publish?: boolean },
   ): Promise<BlockImportRow[]>
 }

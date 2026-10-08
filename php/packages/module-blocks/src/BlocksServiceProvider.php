@@ -8,6 +8,8 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
+use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
@@ -131,6 +133,13 @@ class BlocksServiceProvider extends ServiceProvider
         /** @var Router $router */
         $router = $this->app->make('router');
         $router->aliasMiddleware('webx.blocks-editing', EnsureEditing::class);
+
+        // An imported file is compared with what is stored, whitespace included: trimmed on the
+        // way in, every template that ends with a newline would read as changed.
+        $import = static fn (Request $request): bool => $request->isMethod('POST')
+            && $request->is(trim((string) config('webx-admin.api_path'), '/').'/blocks/import');
+        TrimStrings::skipWhen($import);
+        ConvertEmptyStringsToNull::skipWhen($import);
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(BlocksModule::class));
 

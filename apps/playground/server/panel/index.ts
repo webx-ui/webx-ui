@@ -1312,7 +1312,15 @@ on('GET', '/blocks/export', ({ query }) => {
 })
 
 on('POST', '/blocks/import', ({ body }) => {
-  const file = body.file as Record<string, unknown> | Record<string, unknown>[] | null
+  // The panel sends the file's text; a caller of the API may send it decoded.
+  let file = body.file as Record<string, unknown> | Record<string, unknown>[] | string | null
+  if (typeof file === 'string') {
+    try {
+      file = JSON.parse(file) as Record<string, unknown> | Record<string, unknown>[]
+    } catch {
+      file = null
+    }
+  }
   const name = typeof body.name === 'string' && body.name !== '' ? body.name : 'blocks.json'
   const notAPack = 'This file is not a block type or a pack of them.'
   const list = Array.isArray(file)
@@ -1362,7 +1370,17 @@ on('POST', '/blocks/import', ({ body }) => {
         existing === undefined || JSON.stringify(contentOf(existing)) !== JSON.stringify(content)
       const status = existing === undefined ? 'created' : writes ? 'updated' : 'unchanged'
 
-      if (dryRun) return { ...row, status, writes }
+      if (dryRun) {
+        // With publishing asked, the plan carries what the checks would say.
+        const failure = publish ? templateFailure(content.template) : null
+
+        return {
+          ...row,
+          status,
+          writes,
+          error: failure === null ? null : `would not be published — ${failure.reason}`,
+        }
+      }
 
       const now = new Date().toISOString()
       const type: BlockType = existing ?? {

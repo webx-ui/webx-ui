@@ -241,6 +241,59 @@ final class ExchangeTest extends TestCase
     }
 
     #[Test]
+    public function an_exported_pack_imported_unchanged_writes_nothing_whitespace_included(): void
+    {
+        // What every stored template looks like: a trailing newline, and strings around it that
+        // the stock middleware would trim.
+        $this->publish('hero', "<section data-wx-block=\"hero\">{{ \$title }}</section>\n", [], [
+            'sample' => ['title' => ' Welcome '],
+            'styles' => ".b-hero { display: grid; }\n",
+        ]);
+
+        $editor = $this->editor();
+        $pack = $this->actingAs($editor, 'cms')->getJson('/api/cms/blocks/export?slugs[]=hero')->json('data');
+
+        $this->assertStringEndsWith("\n", $pack['blocks'][0]['template']);
+
+        // As JSON, the way an API caller sends it, and as the text of the file, the way the panel does.
+        foreach ([$pack, (string) json_encode($pack)] as $file) {
+            $plan = $this->actingAs($editor, 'cms')
+                ->postJson('/api/cms/blocks/import', ['file' => $file, 'name' => 'hero.json', 'dry_run' => true])
+                ->assertOk();
+
+            $this->assertSame('unchanged', $plan->json('data.0.status'));
+            $this->assertFalse($plan->json('data.0.writes'));
+        }
+
+        $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => (string) json_encode($pack), 'name' => 'hero.json'])
+            ->assertOk();
+
+        $this->assertSame(1, Block::query()->where('slug', 'hero')->firstOrFail()->versions()->count());
+    }
+
+    #[Test]
+    public function a_dry_run_that_would_publish_says_what_the_checks_would_hold_back(): void
+    {
+        $pack = ['blocks' => [
+            ['slug' => 'fine', 'title' => 'Fine', 'template' => '<p data-wx-block="fine"></p>'],
+            ['slug' => 'broken', 'title' => 'Broken', 'template' => '<div data-wx-block="broken">@if($x) <div></div>'],
+        ]];
+
+        $plan = $this->actingAs($this->editor(), 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => $pack, 'dry_run' => true, 'publish' => true])
+            ->assertOk();
+
+        $rows = collect($plan->json('data'))->keyBy('slug');
+
+        $this->assertSame('created', $rows['broken']['status']);
+        $this->assertStringStartsWith('would not be published', (string) $rows['broken']['error']);
+        $this->assertNull($rows['fine']['error']);
+        $this->assertNull($rows['fine']['published'], 'nothing was kept, so there is no number to show');
+        $this->assertSame(0, Block::query()->count(), 'the rehearsal is rolled back');
+    }
+
+    #[Test]
     public function the_panel_import_takes_a_single_file_refuses_anything_else_and_needs_manage(): void
     {
         $editor = $this->editor();
