@@ -50,7 +50,7 @@ const hidden = computed(() => Math.max(0, props.inUse.length - FILES))
   <wx-dialog
     v-model:open="open"
     :title="title"
-    :width="480"
+    :width="520"
     :close-on-overlay="false"
     role="alertdialog"
   >
@@ -92,18 +92,29 @@ const hidden = computed(() => Math.max(0, props.inUse.length - FILES))
     </div>
 
     <template #footer>
-      <wx-button variant="outline" @click="dismiss()">{{ t('manager.cancel') }}</wx-button>
-      <wx-button v-if="mixed" variant="outline" type="danger" @click="resolve('unused')">
-        {{ t('dialogs.delete-unused') }}
-      </wx-button>
-      <wx-button type="danger" @click="resolve('all')">
-        {{ inUse.length > 0 ? t('dialogs.delete-anyway') : t('dialogs.confirm') }}
-      </wx-button>
+      <!-- Three answers do not fit one line in every language: they wrap, and stay inside. -->
+      <div class="wx-media-delete__actions">
+        <wx-button variant="outline" @click="dismiss()">{{ t('manager.cancel') }}</wx-button>
+        <wx-button v-if="mixed" variant="outline" type="danger" @click="resolve('unused')">
+          {{ t('dialogs.delete-unused') }}
+        </wx-button>
+        <wx-button type="danger" @click="resolve('all')">
+          {{ inUse.length > 0 ? t('dialogs.delete-anyway') : t('dialogs.confirm') }}
+        </wx-button>
+      </div>
     </template>
   </wx-dialog>
 </template>
 
 <style>
+.wx-media-delete__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wx-space-8);
+  min-width: 0;
+}
+
 .wx-media-delete {
   display: flex;
   flex-direction: column;
