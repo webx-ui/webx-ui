@@ -246,6 +246,9 @@ describe('WxSelectionArea', () => {
 
   it('leaves a press on an item to the browser to drag, with dragItems', async () => {
     const wrapper = area({ dragItems: true })
+    /* What makes an item draggable is the item's own business; the area must not mistake it
+       for a control that keeps its press. */
+    wrapper.findAll('.item').forEach((one) => one.element.setAttribute('draggable', 'true'))
 
     await down(item(wrapper, 0), 10, 10)
     await move(item(wrapper, 0), 160, 90)

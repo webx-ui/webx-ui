@@ -303,10 +303,21 @@ function pick(event: PointerEvent, from: HTMLElement | null) {
   apply([value])
 }
 
+/**
+ * A control inside the area keeps its press: a button, a field, something dragged on its own.
+ * An item that is draggable because of `dragItems` is not one of those — it is still an item,
+ * and a click on it still picks it.
+ */
+function ownControl(target: HTMLElement): boolean {
+  const hit = target.closest(INTERACTIVE)
+
+  return hit !== null && !(props.dragItems && hit.hasAttribute(SELECTABLE))
+}
+
 function onPointerDown(event: PointerEvent) {
   const el = root.value
   if (props.disabled || !el || event.button !== 0) return
-  if ((event.target as HTMLElement).closest(INTERACTIVE)) return
+  if (ownControl(event.target as HTMLElement)) return
 
   const isTouch = event.pointerType === 'touch'
 
