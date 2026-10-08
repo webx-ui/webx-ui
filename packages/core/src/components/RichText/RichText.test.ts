@@ -419,7 +419,9 @@ describe('WxRichText', () => {
 
     it('offers bold, italic and accent, and nothing a document needs', async () => {
       const wrapper = await mountEditor({ inline: true })
-      const labels = wrapper.findAll('[role="toolbar"] button').map((b) => b.attributes('aria-label'))
+      const labels = wrapper
+        .findAll('[role="toolbar"] button')
+        .map((b) => b.attributes('aria-label'))
 
       expect(labels).toEqual(['Bold', 'Italic', 'Accent'])
     })

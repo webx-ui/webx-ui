@@ -710,7 +710,8 @@ watch(
   [selectedKey, selectedType],
   () => {
     const schema = selectedType.value?.content?.schema
-    marked.value = schema && selected.value ? markupFields(schema, selected.value.node.values ?? {}) : []
+    marked.value =
+      schema && selected.value ? markupFields(schema, selected.value.node.values ?? {}) : []
   },
   { immediate: true },
 )
