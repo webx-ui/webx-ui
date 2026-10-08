@@ -6,6 +6,7 @@ return [
     'no-purpose' => 'Aquí nada acepta subidas de ese tipo.',
     'forbidden' => 'No puede subir archivos de este tipo.',
     'type' => 'Aquí no se aceptan archivos de este tipo.',
+    'type-list' => 'Aquí solo se puede subir: :types.',
     'too-large' => 'El archivo supera los :max permitidos.',
     'no-space' => 'No hay espacio suficiente en el servidor: :free libres.',
     'missing' => 'Esa subida ya no existe: empiécela de nuevo.',

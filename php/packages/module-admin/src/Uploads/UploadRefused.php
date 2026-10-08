@@ -36,9 +36,14 @@ final class UploadRefused extends RuntimeException
         return new self((string) __('webx-admin::uploads.forbidden'), 403);
     }
 
-    public static function wrongType(): self
+    /** @param  list<string>  $extensions  what may be sent instead, when the purpose says it in extensions */
+    public static function wrongType(array $extensions = []): self
     {
-        return new self((string) __('webx-admin::uploads.type'), 422, 'type');
+        $message = $extensions === []
+            ? __('webx-admin::uploads.type')
+            : __('webx-admin::uploads.type-list', ['types' => implode(', ', $extensions)]);
+
+        return new self((string) $message, 422, 'type');
     }
 
     public static function tooLarge(int $maxBytes): self

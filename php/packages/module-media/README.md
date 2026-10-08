@@ -75,6 +75,7 @@ Everything lives under the panel's API path, behind the panel session and a perm
 | `DELETE directories/{id}`                    | refuses a folder that holds anything (409 with counts) until `?force=1`         |
 | `GET files`                                  | paginated, `q`, `type`, `sort`, `per_page`                                      |
 | `POST files`                                 | multi-file upload; the same bytes in the same folder answer `duplicate`         |
+| `POST files/chunked`                         | `{ directory_id, upload }` — a finished chunked upload into the library         |
 | `PATCH files/{id}`                           | rename — the key on the disk never changes                                      |
 | `POST files/move`, `DELETE files`            | in batches                                                                      |
 | `GET files/{id}/thumb?w=&h=&fit=`            | cuts the variant once, then redirects to it                                     |
@@ -141,6 +142,18 @@ rather than the missing package.
 
 Uploads are limited by size and by a white list of types, and images are refused above
 `image.max_pixels` before they are decoded — a small file can still be a very large picture.
+
+## Chunked uploads
+
+The panel uploads into Files a piece at a time through module-admin's protocol (`POST uploads`,
+`PATCH uploads/{id}`, …), under the purpose `media.library` (`FileStore::UPLOAD_PURPOSE`):
+`media.upload` or `media.manage` may start one, the extensions are `upload.extensions` (checked
+against the file name, so a HEIC a browser declares no type for still goes) and the size is
+`upload.max_size` — both refused when the session is created. `POST files/chunked` then claims the
+finished file and runs it through exactly what `POST files` does: the same rules on the content,
+now read from the bytes, the same pipeline, the same deduplication, the same answer. PHP's
+`upload_max_filesize` and `post_max_size` only bound a piece (`webx-admin.uploads.chunk_mb`), not
+the file; pieces of abandoned uploads are swept by `webx:prune-uploads`.
 
 ## Permissions
 

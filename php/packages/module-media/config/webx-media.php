@@ -44,6 +44,12 @@ return [
     |---------------------------------------------------------------------------
     |
     | `max_size` is in kilobytes, the unit Laravel's own validation speaks.
+    | The panel sends every upload a piece at a time (module-admin's chunked
+    | protocol, purpose `media.library`), so this — not PHP's
+    | `upload_max_filesize` — is the limit of a file: PHP's only has to fit
+    | one piece. Both this and the extensions are checked when an upload
+    | starts, before a byte is sent, and the content again once it is whole.
+    | `max_files` bounds one multipart request to `POST files`.
     |
     | The types are a white list of extensions on purpose. A list of what must not be
     | uploaded is always missing one, and the one it misses is usually executable; and a

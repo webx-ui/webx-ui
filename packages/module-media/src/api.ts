@@ -25,11 +25,17 @@ export interface MediaApi {
    * saved last time. `null` when the file is gone from the library.
    */
   fileByPath(path: string): Promise<MediaFile | null>
+  /**
+   * Files in one multipart request. The library's own screens send a piece at a time instead
+   * (`useMediaUploads`); this stays for a caller that wants one request and no session.
+   */
   upload(
     directoryId: number,
     files: File[],
     onProgress?: (percent: number) => void,
   ): Promise<MediaFile[]>
+  /** A file that arrived a piece at a time, by its session's id, into a folder. */
+  finishUpload(directoryId: number, uploadId: string): Promise<MediaFile>
   rename(id: number, name: string): Promise<MediaFile>
   move(ids: number[], directoryId: number): Promise<number>
   remove(ids: number[]): Promise<number>
@@ -98,6 +104,13 @@ export function createMediaApi(admin: AdminContext): MediaApi {
         .get<{ data: MediaFile }>(`${base}/files/by-path?path=${encodeURIComponent(path)}`)
         .then(data)
         .catch(() => null),
+
+    finishUpload: (directoryId, uploadId) =>
+      admin.http
+        .post<{
+          data: MediaFile
+        }>(`${base}/files/chunked`, { directory_id: directoryId, upload: uploadId })
+        .then(data),
 
     async upload(directoryId, files, onProgress) {
       const body = new FormData()

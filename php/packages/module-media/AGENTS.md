@@ -17,9 +17,12 @@ guides when the question is about one of those. An entity's own attachments are 
   read. `alt` and `title` live in the value, not in the library.
 - **Asset addresses**: binds `WebxUi\Admin\Contracts\AssetUrls` to `LibraryUrls`, which is how
   pictures inside a `wx-rich-text` value find their address.
-- **API** under `{webx-admin.api_path}/media` (`directories`, `files`, `files/by-path`,
-  `files/{file}/thumb`, `files/{file}/source`, `files/{file}/edit`, `…/copy`,
+- **API** under `{webx-admin.api_path}/media` (`directories`, `files`, `files/chunked`,
+  `files/by-path`, `files/{file}/thumb`, `files/{file}/source`, `files/{file}/edit`, `…/copy`,
   `…/restore-original`, `files/move`, `files/delete`); route names `webx.media.*`.
+- **Chunked uploads**: the upload purpose `media.library` with module-admin's `uploads`
+  protocol — the panel sends every file a piece at a time and `files/chunked` hands the finished
+  one to the library through the same rules and pipeline as `POST files`.
 - **Permissions** `media.view`, `media.upload`, `media.manage` — uploading is separate from
   managing on purpose.
 - **MCP** tools `media_list_directories`, `media_list_files`, `media_search_files`,
@@ -37,6 +40,7 @@ guides when the question is about one of those. An entity's own attachments are 
 | The library on another disk (S3 and such) | `WEBX_MEDIA_DISK=s3`; for S3 also `composer require league/flysystem-aws-s3-v3`           |
 | Share a bucket with something else        | `WEBX_MEDIA_PREFIX=…` — the directory every new key starts with                           |
 | Bigger or smaller uploads                 | `WEBX_MEDIA_MAX_SIZE` (kilobytes); `upload.max_files` in the published config             |
+| Larger pieces of a chunked upload         | `webx-admin.uploads.chunk_mb`; PHP's own limits only have to fit one piece                |
 | Allow another file type                   | add the extension to `upload.extensions` in `config/webx-media.php`                       |
 | Imagick instead of GD, other JPEG quality | `WEBX_MEDIA_IMAGE_DRIVER=imagick`; `image.quality`, `image.max_pixels` in the config      |
 | Other thumbnail sizes                     | `thumbs.widths`, `thumbs.fits` in the config                                              |

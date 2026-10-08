@@ -11,6 +11,7 @@ use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Media\Audit\HeavyImages;
 use WebxUi\Media\Audit\MissingFiles;
@@ -19,6 +20,7 @@ use WebxUi\Media\Screens\FilesFieldType;
 use WebxUi\Media\Screens\GalleryFieldType;
 use WebxUi\Media\Screens\MediaFieldType;
 use WebxUi\Media\Screens\MediaFiles;
+use WebxUi\Media\Storage\FileStore;
 use WebxUi\Media\Storage\LibraryUrls;
 use WebxUi\Media\Usage\DatabaseUsage;
 use WebxUi\Media\Usage\MediaUsage;
@@ -62,6 +64,16 @@ class MediaServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(MediaModule::class));
+
+        // Uploads arrive a piece at a time through the panel's own protocol, so a dropped
+        // connection costs a piece rather than the file, and PHP's request limits stop mattering.
+        // The extensions and the size are the multipart endpoint's, read when a session starts.
+        $this->app->make(UploadPurposes::class)->register(
+            FileStore::UPLOAD_PURPOSE,
+            permission: ['media.upload', 'media.manage'],
+            maxBytes: static fn (): int => max(1, (int) config('webx-media.upload.max_size', 51200)) * 1024,
+            extensions: static fn (): array => array_values(array_map('strval', (array) config('webx-media.upload.extensions', []))),
+        );
 
         // The library's own checks of the site audit, when the audit is installed (§7 of its
         // spec): files the disk lost and images too heavy for a page.

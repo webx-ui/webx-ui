@@ -28,6 +28,8 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
 
         Route::middleware('cms.can:media.upload,media.manage')->group(function (): void {
             Route::post('files', [FileController::class, 'store'])->name('files.store');
+            // A file that arrived a piece at a time through `uploads`, handed to the library.
+            Route::post('files/chunked', [FileController::class, 'storeChunked'])->name('files.store-chunked');
         });
 
         Route::middleware('cms.can:media.manage')->group(function (): void {

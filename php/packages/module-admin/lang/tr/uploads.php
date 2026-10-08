@@ -6,6 +6,7 @@ return [
     'no-purpose' => 'Burada bu türden yüklemeleri kabul eden bir şey yok.',
     'forbidden' => 'Bu türden dosya yükleyemezsiniz.',
     'type' => 'Bu türdeki dosyalar burada kabul edilmiyor.',
+    'type-list' => 'Buraya yalnızca şunlar yüklenebilir: :types.',
     'too-large' => 'Dosya izin verilen :max boyutundan büyük.',
     'no-space' => 'Sunucuda yeterli yer yok: :free boş.',
     'missing' => 'Bu yükleme artık yok — yeniden başlatın.',

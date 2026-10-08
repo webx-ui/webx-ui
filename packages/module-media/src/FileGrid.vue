@@ -139,4 +139,44 @@ function copyFailed(file: MediaFile): void {
   grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   gap: var(--wx-space-8);
 }
+
+/*
+ * A touch screen shows a card's actions without a hover, and on a phone-sized card they sit
+ * right over the glyph — and over the extension under it, which for a PDF or a HEIC is the one
+ * thing that says what the file is. Smaller and in the bottom corner — where a picture carries
+ * its badge — it clears them.
+ */
+@media (hover: none) {
+  .wx-media--compact .wx-media-grid .wx-file-card {
+    --wx-file-card-glyph: 20px;
+  }
+
+  .wx-media--compact .wx-media-grid .wx-file-card__preview {
+    align-items: flex-end;
+    justify-content: flex-start;
+  }
+
+  .wx-media--compact .wx-media-grid .wx-file-card__file {
+    align-items: flex-start;
+  }
+}
+
+/*
+ * On a touch screen the card's menu button is grown to 44 px, the size a finger needs — on a
+ * tile a hundred pixels wide that is half the picture. Here it is drawn small and the 44 px stay
+ * as an invisible margin around it: as easy to hit, and the photo is visible again.
+ */
+@media (pointer: coarse) {
+  .wx-media-grid .wx-file-card__actions .wx-actions__menu .wx-action {
+    --wx-action-size: 28px;
+
+    position: relative;
+  }
+
+  .wx-media-grid .wx-file-card__actions .wx-actions__menu .wx-action::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
+}
 </style>

@@ -18,10 +18,12 @@ import MediaToolbar from './MediaToolbar.vue'
 import MoveDialog from './MoveDialog.vue'
 import NameDialog from './NameDialog.vue'
 import OptimizeDialog from './OptimizeDialog.vue'
+import UploadQueue from './UploadQueue.vue'
 import { createMediaApi } from './api'
 import { readable } from './format'
 import { useMediaMessages } from './i18n'
 import type { MediaDirectory, MediaFile, MediaKind, MediaPage } from './types'
+import { useMediaUploads } from './uploading'
 
 /**
  * The library: folders on the left, files on the right, a row of icons over both.
@@ -222,38 +224,88 @@ function choose(): void {
 }
 
 /**
- * Uploading says what happened in a toast and nowhere else.
+ * Every upload goes a piece at a time (`useMediaUploads`), whatever its size, so that one way of
+ * sending behaves one way: a bar per file while it goes, a dropped connection that costs a piece,
+ * and the same file chosen after a reload carrying on where it stopped.
  *
- * A list of what was just added under the toolbar is a second place to look and a thing to
- * dismiss; the files themselves appear in the grid a moment later, which is the answer.
+ * The list of uploads is only there while something is on its way or has failed. What arrived
+ * is in the grid a moment later, which is the answer, and a toast says how many.
  */
-async function upload(event: Event): Promise<void> {
+const uploads = useMediaUploads({ admin, api, onSettled: uploaded })
+
+async function uploaded(stored: MediaFile[]): Promise<void> {
+  const duplicates = stored.filter((file) => file.duplicate).length
+
+  if (stored.length > duplicates) {
+    toast.success(t('manager.uploaded', { count: stored.length - duplicates }))
+  }
+
+  if (duplicates > 0) {
+    toast.info(t('manager.duplicate-added'))
+  }
+
+  await load(1)
+}
+
+function enqueue(files: File[]): void {
+  if (files.length > 0 && current.value !== null) {
+    uploads.add(files, current.value)
+  }
+}
+
+function upload(event: Event): void {
   const input = event.target as HTMLInputElement
   const chosen = Array.from(input.files ?? [])
 
   // Cleared straight away, so choosing the same file twice in a row still counts as a change.
   input.value = ''
 
-  if (chosen.length === 0 || current.value === null) {
-    return
+  enqueue(chosen)
+}
+
+/*
+ * Files dropped from the desktop onto the list. Only files: a picture dragged from another tab
+ * is a link, and a card dragged inside the grid is the rubber band's business.
+ */
+const dropping = ref(false)
+let dragDepth = 0
+
+function carriesFiles(event: DragEvent): boolean {
+  return canUpload.value && (event.dataTransfer?.types ?? []).includes('Files')
+}
+
+function dragEnter(event: DragEvent): void {
+  if (!carriesFiles(event)) return
+
+  event.preventDefault()
+  dragDepth += 1
+  dropping.value = true
+}
+
+function dragOver(event: DragEvent): void {
+  if (!carriesFiles(event)) return
+
+  event.preventDefault()
+
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'copy'
   }
+}
 
-  try {
-    const stored = await api.upload(current.value, chosen)
-    const duplicates = stored.filter((file) => file.duplicate).length
+// Counted, because leaving a card for the grid under it is a `dragleave` as well.
+function dragLeave(): void {
+  dragDepth = Math.max(0, dragDepth - 1)
+  dropping.value = dragDepth > 0
+}
 
-    if (stored.length > duplicates) {
-      toast.success(t('manager.uploaded', { count: stored.length - duplicates }))
-    }
+function drop(event: DragEvent): void {
+  dragDepth = 0
+  dropping.value = false
 
-    if (duplicates > 0) {
-      toast.info(t('manager.duplicate-added'))
-    }
+  if (!carriesFiles(event)) return
 
-    await load(1)
-  } catch (error) {
-    toast.danger(message(error, t('errors.upload')))
-  }
+  event.preventDefault()
+  enqueue(Array.from(event.dataTransfer?.files ?? []))
 }
 
 const askName = createModal<
@@ -545,7 +597,15 @@ function debounce(run: () => void, wait: number): () => void {
       </wx-actions>
     </aside>
 
-    <section class="wx-media__files">
+    <section
+      class="wx-media__files"
+      :class="{ 'is-dropping': dropping }"
+      :data-drop-label="t('manager.drop-here')"
+      @dragenter="dragEnter"
+      @dragover="dragOver"
+      @dragleave="dragLeave"
+      @drop="drop"
+    >
       <!--
         Uploading is offered while picking too. Most of the time the picture somebody is looking
         for is the one on their desk, and a picker that can only choose from what is already
@@ -578,6 +638,14 @@ function debounce(run: () => void, wait: number): () => void {
         hidden
         :accept="accept === null ? undefined : `${accept}/*`"
         @change="upload"
+      />
+
+      <upload-queue
+        :jobs="uploads.jobs.value"
+        :unfinished="uploads.unfinished.value"
+        @cancel="uploads.cancel"
+        @retry="uploads.retry"
+        @forget="uploads.forget"
       />
 
       <file-grid
@@ -694,9 +762,28 @@ function debounce(run: () => void, wait: number): () => void {
 }
 
 .wx-media__files {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-10);
   min-height: 0;
+}
+
+/* Over the whole list while files are dragged across it, saying where they will go. */
+.wx-media__files.is-dropping::after {
+  content: attr(data-drop-label);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--wx-color-primary-soft) 85%, transparent);
+  border: 2px dashed var(--wx-color-primary);
+  border-radius: var(--wx-radius-md);
+  color: var(--wx-color-primary);
+  font-size: var(--wx-font-size-md);
+  font-weight: var(--wx-font-weight-semibold);
+  pointer-events: none;
 }
 </style>

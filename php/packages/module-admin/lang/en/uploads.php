@@ -6,6 +6,7 @@ return [
     'no-purpose' => 'Nothing here takes uploads of that kind.',
     'forbidden' => 'You may not upload files of this kind.',
     'type' => 'Files of this type are not accepted here.',
+    'type-list' => 'Only these can be uploaded here: :types.',
     'too-large' => 'The file is larger than :max allows.',
     'no-space' => 'There is not enough room on the server: :free free.',
     'missing' => 'That upload no longer exists — start it again.',

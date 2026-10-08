@@ -8,7 +8,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Validator;
+use Symfony\Component\Mime\MimeTypes;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Admin\Uploads\ClaimedUpload;
+use WebxUi\Admin\Uploads\Uploads;
 use WebxUi\Media\Http\Requests\FileDeleteRequest;
 use WebxUi\Media\Http\Requests\FileIndexRequest;
 use WebxUi\Media\Http\Requests\FileMoveRequest;
@@ -106,6 +110,44 @@ final class FileController
         return ApiResponse::data($stored, 201);
     }
 
+    /**
+     * A file that arrived a piece at a time, handed to the library.
+     *
+     * The same way in as a multipart upload from here on: the same rules on the content — now
+     * that it is whole, and its real type can be read rather than believed — then the same
+     * pipeline, the same deduplication, and the same answer.
+     */
+    public function storeChunked(Request $request, Uploads $uploads): JsonResponse
+    {
+        $data = $request->validate([
+            'directory_id' => ['required', 'integer', 'exists:media_directories,id'],
+            'upload' => ['required', 'string', 'max:64'],
+        ], [], ['directory_id' => (string) __('webx-media::validation.directory_id')]);
+
+        $directory = MediaDirectory::query()->findOrFail((int) $data['directory_id']);
+
+        // By whoever is asking: an id seen in somebody else's browser attaches nothing.
+        $claimed = $uploads->claim((string) $data['upload'], FileStore::UPLOAD_PURPOSE, $request->user());
+
+        try {
+            // `test`, because this is not PHP's own upload and `is_uploaded_file()` would say so.
+            $upload = new UploadedFile($claimed->path, $claimed->name, $this->typeOf($claimed), UPLOAD_ERR_OK, true);
+
+            Validator::make(
+                ['file' => $upload],
+                ['file' => FileUploadRequest::fileRules()],
+                FileUploadRequest::fileMessages('file'),
+            )->validate();
+
+            $file = $this->files->store($upload, $directory);
+        } finally {
+            // Stored or refused, the piece file is done with: the library made its own copy.
+            $claimed->discard();
+        }
+
+        return ApiResponse::data((new FileResource($file))->duplicate(! $file->wasRecentlyCreated), 201);
+    }
+
     public function update(FileRenameRequest $request, MediaFile $file): JsonResponse
     {
         $file->update(['name' => (string) $request->string('name')]);
@@ -124,6 +166,22 @@ final class FileController
             ->update(['directory_id' => $request->integer('directory_id')]);
 
         return ApiResponse::data(['moved' => $moved]);
+    }
+
+    /**
+     * What the browser declared, or else what the bytes are. A browser declares nothing for a
+     * type it does not know — a HEIC on most of them — and the library records the type it
+     * stores rather than `application/octet-stream`.
+     */
+    private function typeOf(ClaimedUpload $claimed): ?string
+    {
+        $declared = strtolower(trim(explode(';', $claimed->type)[0]));
+
+        if ($declared !== '' && $declared !== 'application/octet-stream') {
+            return $declared;
+        }
+
+        return MimeTypes::getDefault()->guessMimeType($claimed->path);
     }
 
     public function destroyOne(MediaFile $file): JsonResponse

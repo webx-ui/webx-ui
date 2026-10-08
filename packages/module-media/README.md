@@ -76,7 +76,14 @@ with multiple selection on, resolving with `MediaFile[]`.
 ## What it draws
 
 `WxMediaManager` is the section itself: a folder tree, a grid of cards with rubber-band
-selection, upload, search, a type filter and paging. `WxMediaPicker` is the same manager in a
+selection, upload (the button, or files dropped onto the list), search, a type filter and paging.
+Every card carries the file's extension in a corner, since the names are titles without one.
+
+Uploads go a piece at a time through the panel's chunked protocol (`useMediaUploads`, purpose
+`media.library`), whatever their size: a bar per file, a dropped connection that is retried
+with a growing wait from the offset the server holds, a browser gone offline that carries on by
+itself, and the same file chosen again after a reload continuing where it stopped. A file the
+library does not take is refused before a byte of it is sent. `WxMediaPicker` is the same manager in a
 dialog — deliberately the same, because a picker that browses differently is a second thing to
 learn.
 

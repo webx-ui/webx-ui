@@ -6,6 +6,7 @@ return [
     'no-purpose' => 'Nic tutaj nie przyjmuje przesyłek tego rodzaju.',
     'forbidden' => 'Nie możesz przesyłać plików tego rodzaju.',
     'type' => 'Pliki tego typu nie są tutaj przyjmowane.',
+    'type-list' => 'Można tu przesłać tylko: :types.',
     'too-large' => 'Plik jest większy niż dozwolone :max.',
     'no-space' => 'Na serwerze brakuje miejsca: wolne :free.',
     'missing' => 'Tej przesyłki już nie ma — zacznij od nowa.',
