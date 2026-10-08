@@ -111,8 +111,12 @@ export interface UsagePlace {
   table: string
   column: string
   id: number | string | null
+  /** What the row is, in the panel's language — «Страница», «Редирект». */
+  kind?: string | null
   /** The row's title, name or key, when it has one — what an editor knows it by. */
   label: string | null
+  /** Where the panel edits it, relative to the panel: `/pages/12`. */
+  edit_url?: string | null
 }
 
 /** A file the site still uses, and where. */

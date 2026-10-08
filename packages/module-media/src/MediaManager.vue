@@ -364,9 +364,10 @@ async function renameFolder(): Promise<void> {
   }
 }
 
-const askToDelete = createModal<true, { title: string; message?: string; inUse?: FileInUse[] }>(
-  DeleteDialog,
-)
+const askToDelete = createModal<
+  'all' | 'unused',
+  { title: string; message?: string; inUse?: FileInUse[]; mixed?: boolean; basePath?: string }
+>(DeleteDialog)
 
 /**
  * A folder is asked about once, with everything in the question: what is inside it through the
@@ -393,15 +394,33 @@ async function deleteFolder(): Promise<void> {
 
   const empty = contents.files === 0 && contents.directories === 0
 
-  const agreed = await askToDelete({
+  const answer = await askToDelete({
     title: t('dialogs.delete-folder-title', { title: target.title }),
     message: empty
       ? t('dialogs.delete-folder-text')
       : `${t('dialogs.delete-folder-contents', { what: counted(t, locale(), contents.files, contents.directories) })} ${t('dialogs.delete-folder-warning')}`,
     inUse: contents.in_use,
+    mixed: contents.in_use.length > 0 && contents.files > contents.in_use.length,
+    basePath: admin.basePath,
   })
 
-  if (!agreed) {
+  if (answer === undefined) {
+    return
+  }
+
+  if (answer === 'unused') {
+    try {
+      const result = await api.deleteUnused(target.id)
+
+      toast.success(t('manager.deleted-unused', { deleted: result.deleted, kept: result.kept }))
+
+      if (!result.directory_kept) current.value = null
+    } catch (error) {
+      toast.danger(message(error))
+    }
+
+    await load()
+
     return
   }
 
@@ -526,17 +545,31 @@ async function removeFiles(ids: number[], title: string): Promise<void> {
     return
   }
 
-  const agreed = await askToDelete({ title, inUse })
+  const answer = await askToDelete({
+    title,
+    inUse,
+    mixed: inUse.length > 0 && ids.length > inUse.length,
+    basePath: admin.basePath,
+  })
 
-  if (!agreed) {
+  if (answer === undefined) {
     return
   }
 
+  // «Only the unused» is the same delete without the files in use — and so without `force`.
+  const used = new Set(inUse.map((file) => file.id))
+  const going = answer === 'unused' ? ids.filter((id) => !used.has(id)) : ids
+  const force = answer === 'all' && inUse.length > 0
+
   try {
-    if (ids.length === 1) {
-      await api.removeOne(ids[0]!, inUse.length > 0)
+    if (going.length === 1) {
+      await api.removeOne(going[0]!, force)
     } else {
-      await api.remove(ids, inUse.length > 0)
+      await api.remove(going, force)
+    }
+
+    if (answer === 'unused') {
+      toast.success(t('manager.deleted-unused', { deleted: going.length, kept: used.size }))
     }
   } catch (error) {
     // Put to use between the question and the answer: refused, and said why.

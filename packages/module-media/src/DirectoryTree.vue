@@ -138,6 +138,8 @@ function filesDrop(event: DragEvent): void {
       draggable
       show-lines
       :empty-text="t('manager.no-folders')"
+      :expand-label="t('manager.expand')"
+      :collapse-label="t('manager.collapse')"
       @drop="onDrop"
     />
   </div>

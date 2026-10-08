@@ -55,6 +55,8 @@ function keysOf(directories: MediaDirectory[]): number[] {
         node-key="id"
         show-lines
         :aria-label="t('manager.move-to')"
+        :expand-label="t('manager.expand')"
+        :collapse-label="t('manager.collapse')"
       />
     </div>
 

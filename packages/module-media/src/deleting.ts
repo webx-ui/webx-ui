@@ -17,9 +17,18 @@ export function counted(t: Translate, locale: string, files: number, folders: nu
     .join(` ${t('dialogs.and')} `)
 }
 
-/** A row that uses a file: by its title when it has one, and always by where it is. */
+/**
+ * A row that uses a file, the way an editor knows it: «Страница: About us». The table is said
+ * only when nothing better is known about the row.
+ */
 export function placeText(place: UsagePlace): string {
   const row = place.id === null ? place.table : `${place.table} #${place.id}`
+
+  if (place.kind) {
+    const name = place.label ?? (place.id === null ? null : `#${place.id}`)
+
+    return name ? `${place.kind}: ${name}` : place.kind
+  }
 
   return place.label ? `«${place.label}» · ${row}` : row
 }

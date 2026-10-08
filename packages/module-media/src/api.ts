@@ -19,6 +19,11 @@ export interface MediaApi {
   deleteDirectory(id: number, force?: boolean): Promise<void>
   /** What deleting the folder would take — counts and the files the site still uses. */
   directoryContents(id: number): Promise<DirectoryContents>
+  /**
+   * «Delete only the unused»: the unused files of the subtree go, and every folder left empty;
+   * the folders that still hold a used file stay.
+   */
+  deleteUnused(id: number): Promise<{ deleted: number; kept: number; directory_kept: boolean }>
 
   files(query?: FileQuery): Promise<MediaPage>
   file(id: number): Promise<MediaFile>
@@ -105,6 +110,13 @@ export function createMediaApi(admin: AdminContext): MediaApi {
 
     directoryContents: (id) =>
       admin.http.get<{ data: DirectoryContents }>(`${base}/directories/${id}/contents`).then(data),
+
+    deleteUnused: (id) =>
+      admin.http
+        .post<{
+          data: { deleted: number; kept: number; directory_kept: boolean }
+        }>(`${base}/directories/${id}/delete-unused`)
+        .then(data),
 
     files: (query = {}) =>
       admin.http.get<MediaPage>(`${base}/files`, {

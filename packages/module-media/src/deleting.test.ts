@@ -42,6 +42,13 @@ describe('where a file is used', () => {
       'cms_settings',
     )
   })
+
+  it('says what the row is when the server knows', () => {
+    const place = { table: 'pages', column: 'blocks', id: 5, kind: 'Страница' }
+
+    expect(placeText({ ...place, label: 'How We Can Help' })).toBe('Страница: How We Can Help')
+    expect(placeText({ ...place, label: null })).toBe('Страница: #5')
+  })
 })
 
 describe('undoing a move', () => {
