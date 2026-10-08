@@ -75,4 +75,5 @@ return [
     'deleted-unused' => 'Gelöscht: :deleted. Behalten, weil verwendet: :kept',
     'expand' => 'Aufklappen',
     'collapse' => 'Zuklappen',
+    'view' => 'Ansehen',
 ];

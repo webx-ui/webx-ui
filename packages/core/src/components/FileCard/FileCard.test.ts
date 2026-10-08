@@ -244,6 +244,16 @@ describe('WxFileCard', () => {
     expect(document.querySelector('.wx-popconfirm')!.textContent).toContain('Gone for good?')
   })
 
+  it('asks for a lightbox over pictures, and only over pictures', async () => {
+    expect(action(card({ name: 'sheet.xlsx', viewable: true }), 'View')).toBeUndefined()
+
+    const wrapper = card({ name: 'photo.jpg', viewable: true })
+
+    await action(wrapper, 'View')!.trigger('click')
+
+    expect(wrapper.emitted('view')).toHaveLength(1)
+  })
+
   it('asks for an editor rather than being one', async () => {
     const wrapper = card({ name: 'photo.jpg', editable: true })
 

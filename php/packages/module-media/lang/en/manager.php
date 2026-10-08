@@ -75,4 +75,5 @@ return [
     'deleted-unused' => 'Deleted: :deleted. Kept, as they are in use: :kept',
     'expand' => 'Expand',
     'collapse' => 'Collapse',
+    'view' => 'View',
 ];

@@ -110,6 +110,7 @@ the name is.
 | Prop        | What it offers                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------- |
 | `renamable` | The name, in a panel under the button                                                           |
+| `viewable`  | `@view` — "show this picture large". The card only asks; the lightbox is whoever holds the grid |
 | `editable`  | `@edit` — "open this picture in an editor". Pictures only; there is nothing to crop in a `.zip` |
 | `copyable`  | `url` to the clipboard, with a tick for a moment afterwards                                     |
 | `removable` | `@remove`, after a question unless `:confirm-remove="false"`                                    |
@@ -122,7 +123,7 @@ They also stay while any of their panels is up. The menu, the rename field and t
 a deletion are all teleported, so neither the pointer nor the focus is on the card while one of
 them is open, and the buttons would otherwise fade out from under it.
 
-`disabled` takes all four away and stops the name being edited: a file a reader may look at and not
+`disabled` takes them all away and stops the name being edited: a file a reader may look at and not
 touch.
 
 ## Before deleting
@@ -148,6 +149,7 @@ that asks its own question or where the deletion can be undone.
 | `size`              | `'sm' \| 'md' \| 'lg'` | `'md'`                 | Glyph and text size                                           |
 | `disabled`          | `boolean`              | `false`                | No actions, no renaming                                       |
 | `renamable`         | `boolean`              | `false`                | Offers renaming                                               |
+| `viewable`          | `boolean`              | `false`                | Offers the view action, for pictures                          |
 | `editable`          | `boolean`              | `false`                | Offers the edit action, for pictures                          |
 | `removable`         | `boolean`              | `false`                | Offers deleting                                               |
 | `confirmRemove`     | `boolean`              | `true`                 | Asks before deleting                                          |
@@ -157,6 +159,7 @@ that asks its own question or where the deletion can be undone.
 | `renameLabel`       | `string`               | `'Rename'`             | Tooltip and accessible name                                   |
 | `saveLabel`         | `string`               | `'Save'`               | The two buttons under the rename field                        |
 | `cancelLabel`       | `string`               | `'Cancel'`             | —                                                             |
+| `viewLabel`         | `string`               | `'View'`               | —                                                             |
 | `editLabel`         | `string`               | `'Edit picture'`       | —                                                             |
 | `removeLabel`       | `string`               | `'Delete'`             | —                                                             |
 | `copyLabel`         | `string`               | `'Copy link'`          | —                                                             |
@@ -164,7 +167,7 @@ that asks its own question or where the deletion can be undone.
 | `moreLabel`         | `string`               | `'More'`               | The button the folded-up actions open from                    |
 | `actionsLabel`      | `string`               | `'Actions for {name}'` | Accessible name of the actions                                |
 
-**Events:** `rename` (`string`); `edit`; `remove`; `copy` (`string`); `copy-error` (`unknown`).
+**Events:** `rename` (`string`); `view`; `edit`; `remove`; `copy` (`string`); `copy-error` (`unknown`).
 
 **Slots:** `preview` — with `{ picture }`, for a video still or a player; `actions` — your own, after
 the card's; `meta` — under the name, for a size or a date.

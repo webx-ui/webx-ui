@@ -75,4 +75,5 @@ return [
     'deleted-unused' => 'Silinen: :deleted. Kullanıldığı için kalan: :kept',
     'expand' => 'Genişlet',
     'collapse' => 'Daralt',
+    'view' => 'Görüntüle',
 ];

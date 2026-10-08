@@ -87,6 +87,18 @@ export const mediaMessages: Record<string, Messages> = {
     'deleted-unused': 'Deleted: :deleted. Kept, as they are in use: :kept',
     expand: 'Expand',
     collapse: 'Collapse',
+    view: 'View',
+  },
+  // The lightbox is a component of the design system too, so these are handed to it as props.
+  lightbox: {
+    gallery: 'Gallery',
+    previous: 'Previous',
+    next: 'Next',
+    close: 'Close',
+    'zoom-in': 'Zoom in',
+    'zoom-out': 'Zoom out',
+    original: 'Open the original',
+    counter: ':index of :total',
   },
   // The picture field on a form, which is the module used from outside its own section.
   field: {

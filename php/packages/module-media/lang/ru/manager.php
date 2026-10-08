@@ -75,4 +75,5 @@ return [
     'deleted-unused' => 'Удалено: :deleted. Оставлены используемые: :kept',
     'expand' => 'Развернуть',
     'collapse' => 'Свернуть',
+    'view' => 'Просмотр',
 ];

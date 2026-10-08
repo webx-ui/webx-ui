@@ -37,6 +37,7 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   disabled: false,
   renamable: false,
   editable: false,
+  viewable: false,
   removable: false,
   confirmRemove: true,
   copyable: false,
@@ -45,6 +46,7 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   saveLabel: 'Save',
   cancelLabel: 'Cancel',
   editLabel: 'Edit picture',
+  viewLabel: 'View',
   removeLabel: 'Delete',
   removeConfirmText: undefined,
   copyLabel: 'Copy link',
@@ -282,6 +284,7 @@ watch(
 /* -------------------------------------------------------------------- render --- */
 
 const shows = computed(() => ({
+  view: props.viewable && picture.value && !props.disabled,
   rename: props.renamable && !props.disabled,
   /* Nothing to open for a `.zip`: the editor this asks for is an image editor. */
   edit: props.editable && picture.value && !props.disabled,
@@ -425,6 +428,7 @@ const classes = computed(() => [
           :aria-label="actionsLabel ?? `Actions for ${name}`"
           :more-label="moreLabel"
         >
+          <wx-action v-if="shows.view" type="view" :title="viewLabel" @click="emit('view')" />
           <wx-action
             v-if="shows.edit"
             type="edit"
@@ -457,6 +461,9 @@ const classes = computed(() => [
           in the panel, which is exactly those four icons.
         -->
           <template #collapsed>
+            <wx-dropdown-item v-if="shows.view" icon="eye" @click="emit('view')">
+              {{ viewLabel }}
+            </wx-dropdown-item>
             <wx-dropdown-item v-if="shows.edit" icon="crop" @click="emit('edit')">
               {{ editLabel }}
             </wx-dropdown-item>

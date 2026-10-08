@@ -33,6 +33,7 @@ const emit = defineEmits<{
   open: [file: MediaFile]
   rename: [file: MediaFile, name: string]
   edit: [file: MediaFile]
+  view: [file: MediaFile]
   remove: [file: MediaFile]
 }>()
 
@@ -125,11 +126,13 @@ function copyFailed(file: MediaFile): void {
       :selected="isSelected(file.id)"
       renamable
       :editable="file.editable"
+      viewable
       removable
       copyable
       actions-menu
       :rename-label="t('manager.rename')"
       :edit-label="t('manager.edit')"
+      :view-label="t('manager.view')"
       :remove-label="t('manager.delete')"
       :confirm-remove="false"
       :more-label="t('manager.more')"
@@ -143,6 +146,7 @@ function copyFailed(file: MediaFile): void {
       :copied-label="t('manager.link-copied')"
       @rename="(name) => emit('rename', file, name)"
       @edit="emit('edit', file)"
+      @view="emit('view', file)"
       @remove="emit('remove', file)"
       @copy="copied"
       @copy-error="copyFailed(file)"

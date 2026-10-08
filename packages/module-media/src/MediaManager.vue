@@ -4,6 +4,8 @@ import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   createModal,
   openImageEditor,
+  openLightbox,
+  type OpenLightboxOptions,
   toast,
   useElementWidth,
   WxAction,
@@ -89,6 +91,20 @@ const message = useErrorText()
  * Read when the editor is opened rather than kept in a computed: the dialog is mounted outside
  * the app, so it is handed plain strings once and nothing re-renders it afterwards.
  */
+/** The same, for the lightbox. */
+function lightboxLabels(): OpenLightboxOptions {
+  return {
+    ariaLabel: t('lightbox.gallery'),
+    prevLabel: t('lightbox.previous'),
+    nextLabel: t('lightbox.next'),
+    closeLabel: t('lightbox.close'),
+    zoomInLabel: t('lightbox.zoom-in'),
+    zoomOutLabel: t('lightbox.zoom-out'),
+    originalLabel: t('lightbox.original'),
+    counterText: (index: number, total: number) => t('lightbox.counter', { index, total }),
+  }
+}
+
 function editorLabels(): Record<string, string> {
   return {
     title: t('editor.title'),
@@ -630,15 +646,43 @@ async function edit(file: MediaFile): Promise<void> {
 }
 
 /**
- * A double-click means "this one, now".
+ * A double-click means "this one, now": in the library, show it; in a picker, take it — there a
+ * look is one item down the card's menu instead.
  *
  * While several are being picked it means nothing extra: the first click of it has already put
  * the file in the selection, and the dialog ends on its own button instead.
  */
 function open(file: MediaFile): void {
-  if (!props.multiple) {
+  if (!props.picking) {
+    view(file)
+  } else if (!props.multiple) {
     emit('pick', file)
   }
+}
+
+/**
+ * A picture, large, with the other pictures of the page on either side of it — what somebody
+ * looking for the right photo does next is look at the one beside it.
+ *
+ * `url` and not `source`: this only looks at the picture, and the CDN is the faster of the two.
+ */
+function view(file: MediaFile): void {
+  const pictures = rows.value.filter((row) => row.type === 'image')
+  const start = pictures.findIndex((row) => row.id === file.id)
+
+  if (start < 0) {
+    return
+  }
+
+  openLightbox(
+    pictures.map((row) => ({
+      src: row.url,
+      thumb: api.thumb(row, 160, 160) ?? undefined,
+      alt: row.name,
+      caption: row.name,
+    })),
+    { start, ...lightboxLabels() },
+  )
 }
 
 function find(id: number | null): MediaDirectory | null {
@@ -791,6 +835,7 @@ function debounce(run: () => void, wait: number): () => void {
         :draggable="canManage && !picking && !compact"
         @rename="rename"
         @edit="edit"
+        @view="view"
         @remove="remove"
         @open="open"
       />

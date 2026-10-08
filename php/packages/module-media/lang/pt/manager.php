@@ -75,4 +75,5 @@ return [
     'deleted-unused' => 'Eliminados: :deleted. Mantidos por estarem em uso: :kept',
     'expand' => 'Expandir',
     'collapse' => 'Recolher',
+    'view' => 'Ver',
 ];

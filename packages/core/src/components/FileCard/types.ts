@@ -44,6 +44,12 @@ export interface FileCardProps {
    * nothing to open for a `.zip`.
    */
   editable?: boolean
+  /**
+   * Offers the view action — "show this picture large" — which the card only reports: a
+   * lightbox over one file is a poorer thing than one over the grid it is in, and only whoever
+   * holds the cards knows the grid. Pictures only.
+   */
+  viewable?: boolean
   removable?: boolean
   /**
    * Asks before deleting. On, because a file deleted from a grid of thumbnails is a file
@@ -76,6 +82,7 @@ export interface FileCardProps {
   saveLabel?: string
   cancelLabel?: string
   editLabel?: string
+  viewLabel?: string
   removeLabel?: string
   /** The question `confirmRemove` asks. The file name is worth putting in it. */
   removeConfirmText?: string
@@ -94,6 +101,8 @@ export interface FileCardEmits {
   rename: [name: string]
   /** Open this picture in an editor. */
   edit: []
+  /** Show this picture large. */
+  view: []
   remove: []
   /** The URL reached the clipboard. */
   copy: [url: string]

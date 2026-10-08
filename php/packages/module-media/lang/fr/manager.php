@@ -75,4 +75,5 @@ return [
     'deleted-unused' => 'Supprimés : :deleted. Gardés, car utilisés : :kept',
     'expand' => 'Déplier',
     'collapse' => 'Replier',
+    'view' => 'Voir',
 ];

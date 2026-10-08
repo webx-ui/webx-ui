@@ -75,4 +75,5 @@ return [
     'deleted-unused' => 'Usunięto: :deleted. Zostawiono używane: :kept',
     'expand' => 'Rozwiń',
     'collapse' => 'Zwiń',
+    'view' => 'Podgląd',
 ];
