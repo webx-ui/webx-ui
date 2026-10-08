@@ -1,5 +1,6 @@
 <script setup>
 import RichTextDemo from '../components/demos/RichTextDemo.vue'
+import RichTextInlineDemo from '../components/demos/RichTextInlineDemo.vue'
 </script>
 
 # RichText
@@ -166,6 +167,8 @@ A read-only field still opens its source, to be read. A field that should not sh
 A heading often carries a touch of markup — a coloured full stop, one word in italics — and a
 plain input shows that markup raw, one stray keystroke from printing `</span>` on the site.
 `inline` turns the editor into one line for exactly that:
+
+<RichTextInlineDemo />
 
 ```vue
 <template>
