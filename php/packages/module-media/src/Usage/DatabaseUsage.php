@@ -7,7 +7,6 @@ namespace WebxUi\Media\Usage;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Illuminate\Support\Str;
@@ -340,7 +339,7 @@ final class DatabaseUsage implements UsageRewriter, UsageSource
         $tables = [];
 
         foreach (self::TRAILS as $class) {
-            if (class_exists($class) && is_subclass_of($class, Model::class)) {
+            if (class_exists($class)) {
                 $tables[] = (new $class)->getTable();
             }
         }

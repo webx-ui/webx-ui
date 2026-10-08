@@ -119,7 +119,11 @@ final class PlaceLabels
         return $this->columns[$table] ??= $connection->getSchemaBuilder()->getColumnListing($table);
     }
 
-    /** `/press?outlet={outlet_id}` with the row's value; nothing when a value is missing. */
+    /**
+     * `/press?outlet={outlet_id}` with the row's value; nothing when a value is missing.
+     *
+     * @param  array<string, mixed>  $row
+     */
     private function address(mixed $pattern, array $row): ?string
     {
         if (! is_string($pattern) || $pattern === '') {
