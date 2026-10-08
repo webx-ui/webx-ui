@@ -145,7 +145,7 @@ final class RegionController
         try {
             [, $block] = $this->writer->adopt($name, $this->author($request));
         } catch (RegionRefused $refused) {
-            return $this->refused($refused);
+            return $this->refused($refused, $request, $name);
         }
 
         return new JsonResponse([

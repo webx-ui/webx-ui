@@ -154,7 +154,7 @@ final class StrayValuesTest extends TestCase
             $this->node('hero', ['legacy' => 'from an import', 'heading' => ['en' => 'Kept']], 'k-hero'),
             $this->node('faq', ['items' => [['question' => 'Why?']]], 'k-faq'),
         ]);
-        $edit = fn (array $op, bool $dry = false): TestResponse => $this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => [$op], 'dry_run' => $dry]);
+        $edit = fn (array $op, bool $dry = false): TestResponse => $this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => [$op], 'dry_run' => $dry, 'force' => true]);
 
         foreach ([true, false] as $dry) {
             $edit(['op' => 'set', 'key' => 'k-hero', 'values' => ['audit_test_stray' => 'x']], $dry)

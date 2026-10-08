@@ -280,6 +280,7 @@ describe('WxPageEditorPage', () => {
   })
 
   it('says who saved meanwhile, and pulls their edit in before this one is saved over it', async () => {
+    vi.useFakeTimers()
     const { wrapper, get, put } = await panel()
 
     heartbeat = {
@@ -290,10 +291,8 @@ describe('WxPageEditorPage', () => {
     }
     get.mockResolvedValue({ data: detail('r5', 'About', 'about-us') })
 
-    // Opening another page and coming back is the quickest way to make the editor ask again.
-    await wrapper.vm.$router.push('/pages')
-    await flushPromises()
-    await wrapper.vm.$router.push('/pages/2')
+    // The next heartbeat hears that the page moved, and the editor reads it.
+    await vi.advanceTimersByTimeAsync(20_000)
     await flushPromises()
 
     const notice = wrapper.find('.wx-alert')
@@ -307,6 +306,7 @@ describe('WxPageEditorPage', () => {
 
     await type(wrapper, 'TEST About')
     await wrapper.find('.wx-page-editor').trigger('focusout')
+    await vi.advanceTimersByTimeAsync(1500)
     await flushPromises()
 
     expect(put.mock.calls.at(-1)?.[1]).toEqual({

@@ -667,7 +667,7 @@ final class McpTest extends TestCase
         $this->assertFalse($about->refresh()->hasDraft());
 
         // What pages_get answers can be sent back as it came: `is_home` is read, never written.
-        $this->agent('update', ['page' => '/about', 'values' => ['title' => ['en' => 'About us'], 'is_home' => false]], $this->editor())
+        $this->agent('update', ['page' => '/about', 'values' => ['title' => ['en' => 'About us'], 'is_home' => false], 'force' => true], $this->editor())
             ->assertOk();
     }
 
