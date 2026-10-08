@@ -7,6 +7,7 @@ return [
     'stray-selectors' => 'Selectores fuera del prefijo del bloque .b-:slug: :selectors',
     'bare-selectors' => 'Los selectores de elemento alcanzan todo el sitio: :selectors',
     'media-query' => '@media mide la ventana. Un bloque se dimensiona por su contenedor: use @container.',
+    'string-on-text' => 'Con un shortcode dentro, :field es HTML: una función de cadena o un cast entrega ese HTML a {{ }}, que lo escapa por segunda vez. Cámbielo a través de wx_text(): {{ wx_text(:field)->trimEnd(".") }} — trim, trimStart, stripPrefix, stripSuffix y map() lo mantienen como HTML.',
     'variables-missing' => 'La plantilla usa :variables, que el esquema no declara. La publicación será rechazada.',
     'ok-marker' => 'La raíz lleva data-wx-block.',
     'ok-prefix' => 'Todos los selectores empiezan por .b-:slug.',

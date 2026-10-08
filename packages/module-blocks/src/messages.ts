@@ -328,6 +328,8 @@ export const blocksMessages: Record<string, Messages> = {
     'stray-selectors': 'Selectors outside the block prefix .b-:slug: :selectors',
     'bare-selectors': 'Element selectors reach the whole site: :selectors',
     'media-query': '@media measures the window. A block is sized by its container: use @container.',
+    'string-on-text':
+      'With a shortcode in it, :field is HTML: a string function or a cast hands that HTML to {{ }}, which escapes it a second time. Change it through wx_text(): {{ wx_text(:field)->trimEnd(".") }} — trim, trimStart, stripPrefix, stripSuffix and map() keep it HTML.',
     'variables-missing':
       'The template uses :variables, which the schema does not declare. Publishing will be refused.',
     'marker-slug':

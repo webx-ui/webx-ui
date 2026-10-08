@@ -55,6 +55,10 @@ no facades that reach for the database, no `@php` that does work a controller sh
 - A text field may hold shortcodes (`[phone]`, `[dot]` — `blocks://shortcodes`); they arrive
   resolved. `{{ $title }}` prints them as HTML with the text around them escaped, and needs
   nothing more. In an attribute (`alt`, `title`, `aria-label`) print `@shortcodesPlain($title)`.
+  To change one before printing it, never `{{ rtrim($title, '.') }}` — a string function turns
+  the shortcode's HTML into a string that `{{ }}` escapes again. Write
+  `{{ wx_text($title)->trimEnd('.') }}`: `trim`, `trimStart`, `stripPrefix`, `stripSuffix` and
+  `map(fn ($text) => …)` keep it HTML, for a field with a shortcode and one without alike.
 - Every field may be empty. A template that throws on an empty value is refused at publish
   time; render it on empty values before you are done.
 - A `wx-media` field (when the media module is installed) holds the file the editor picked as

@@ -235,6 +235,23 @@ final class Shortcodes
     }
 
     /**
+     * Any text as a {@see ShortcodeText}: one already resolved as it is, a string resolved — and
+     * one with nothing in it to replace wrapped too, escaped, so that a template changing a field
+     * has one kind of value whichever arrived. What `wx_text()` is.
+     */
+    public function wrap(string|Stringable|null $text): ShortcodeText
+    {
+        if ($text instanceof ShortcodeText) {
+            return $text;
+        }
+
+        $text = (string) $text;
+        $resolved = $this->resolve($text);
+
+        return $resolved instanceof ShortcodeText ? $resolved : new ShortcodeText($text, e($text), $text);
+    }
+
+    /**
      * Every bracket in a text that reads as a shortcode, registered or not — what the audit
      * looks through for typos.
      *

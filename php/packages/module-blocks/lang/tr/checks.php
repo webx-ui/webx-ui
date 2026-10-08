@@ -7,6 +7,7 @@ return [
     'stray-selectors' => 'Blok öneki .b-:slug dışındaki seçiciler: :selectors',
     'bare-selectors' => 'Öğe seçicileri tüm siteye ulaşır: :selectors',
     'media-query' => '@media pencereyi ölçer. Bir blok kapsayıcısına göre boyutlanır: @container kullanın.',
+    'string-on-text' => 'İçinde bir kısa kod olduğunda :field HTML’dir: bir dize işlevi ya da dönüştürme bu HTML’i {{ }} öğesine verir ve o da ikinci kez kaçışlar. Alanı wx_text() ile değiştirin: {{ wx_text(:field)->trimEnd(".") }} — trim, trimStart, stripPrefix, stripSuffix ve map() onu HTML olarak tutar.',
     'variables-missing' => 'Şablon, şemanın bildirmediği :variables değişkenlerini kullanıyor. Yayımlama reddedilecek.',
     'ok-marker' => 'Kök data-wx-block taşıyor.',
     'ok-prefix' => 'Her seçici .b-:slug ile başlıyor.',

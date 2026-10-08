@@ -88,7 +88,7 @@ over a panel row with the same name.
 
 ## In a block template
 
-Nothing to do. A text field holding a shortcode reaches the template resolved:
+Nothing to do to print one. A text field holding a shortcode reaches the template resolved:
 
 ```blade
 <h1>{{ $heading }}</h1>          {{-- escaped text with the shortcode's HTML in it --}}
@@ -101,6 +101,35 @@ A text field without a shortcode is the same string it always was. One with a sh
 `->text()` what the editor typed. In an attribute use `@shortcodesPlain(...)`, which takes either.
 A `wx-input` of type `email`, `url` or `tel` is never resolved: it goes into an attribute, and its
 rules refuse a bracket anyway.
+
+### Changing the text before printing it
+
+A string function breaks that: `rtrim($heading, '.')` works on the `ShortcodeText`'s HTML and
+returns it as a string, and `{{ }}` escapes it again — `Call [phone].` prints
+`Call &lt;a href=…`. `{!! !!}` is no way out either: a field without a shortcode is the editor's
+unescaped text. Change the field through `wx_text()`, which takes either kind and returns a
+`ShortcodeText`:
+
+```blade
+<h2>{{ wx_text($heading)->trimEnd('.') }}</h2>                {{-- the typed full stop --}}
+<q>{{ wx_text($item['quote'])->trim('“”"') }}</q>             {{-- quotes typed around a quote --}}
+<p>{{ wx_text($lead)->stripPrefix('New: ') }}</p>
+<p>{{ wx_text($lead)->map(fn ($text) => Str::limit($text, 120)) }}</p>
+@unless (wx_text($heading)->isEmpty()) … @endunless
+```
+
+| Method                                       | Does                                                |
+| -------------------------------------------- | --------------------------------------------------- |
+| `trim($chars)`, `trimStart(…)`, `trimEnd(…)` | `mb_trim` and friends; white space when left out    |
+| `stripPrefix($s)`, `stripSuffix($s)`         | the string once, if the text starts or ends with it |
+| `map(fn (string $text): string => …)`        | any other change                                    |
+| `isEmpty()`                                  | nothing typed but white space                       |
+
+Each works on what the editor typed, brackets and all, and resolves the result again: trimming a
+full stop off `Call [phone].` never cuts into the number, and `Heard[dot]` keeps its accent. The
+template checks warn about a string function or a `(string)` cast applied to a text field inside
+`{{ }}` — `$heading` or a repeater's `$item['quote']` — naming the field; an echo through
+`wx_text()` or `->plain()` is not counted.
 
 ## In the site's own templates
 

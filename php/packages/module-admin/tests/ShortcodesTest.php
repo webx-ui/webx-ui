@@ -140,6 +140,40 @@ final class ShortcodesTest extends TestCase
         $this->assertSame('<img alt="Fish &amp; chips.">', Blade::render('<img alt="@shortcodesPlain($text)">', ['text' => $text]));
     }
 
+    /*
+     * The trap the helper is for: a string function hands `{{ }}` the HTML as a string, and it is
+     * escaped a second time. Through `wx_text()` the change is made to the typed text and the
+     * result is HTML again — for a field with a shortcode and for a plain one alike.
+     */
+    #[Test]
+    public function wx_text_changes_a_field_of_either_kind_and_keeps_it_html(): void
+    {
+        $resolved = $this->shortcodes->resolve('Call [phone].');
+
+        $this->assertSame('<p>Call &lt;a href=&quot;tel:+15550100&quot;&gt;555 0100&lt;/a&gt;</p>', Blade::render('<p>{{ rtrim(trim($heading), \'.\') }}</p>', ['heading' => $resolved]));
+        $this->assertSame('<p>Call <a href="tel:+15550100">555 0100</a></p>', Blade::render('<p>{{ wx_text($heading)->trimEnd(\'.\') }}</p>', ['heading' => $resolved]));
+        $this->assertSame('<p>Fish &amp; chips</p>', Blade::render('<p>{{ wx_text($heading)->trimEnd(\'.\') }}</p>', ['heading' => 'Fish & chips.']));
+        $this->assertSame('<p></p>', Blade::render('<p>{{ wx_text($heading)->trim() }}</p>', ['heading' => null]));
+    }
+
+    #[Test]
+    public function the_changes_read_the_typed_text_and_leave_the_shortcodes_whole(): void
+    {
+        $quote = $this->shortcodes->wrap('“Great & [phone]”');
+
+        $this->assertSame('Great &amp; <a href="tel:+15550100">555 0100</a>', $quote->trim('“”"')->toHtml());
+        $this->assertSame('Great & 555 0100', $quote->trim('“”')->plain());
+        $this->assertSame('Heard<span class="accent-dot">.</span>', $this->shortcodes->wrap('Heard[dot]')->trimEnd('.')->toHtml());
+        $this->assertSame('[phone] now', $this->shortcodes->wrap('Call: [phone] now')->stripPrefix('Call: ')->text());
+        $this->assertSame('Call', $this->shortcodes->wrap('Call [phone]')->stripSuffix(' [phone]')->toHtml());
+        $this->assertSame('CALL &lt;B&gt;', $this->shortcodes->wrap('call <b>')->map(strtoupper(...))->toHtml());
+        $this->assertTrue($this->shortcodes->wrap('  ')->isEmpty());
+        $this->assertFalse($this->shortcodes->wrap('[dot]')->isEmpty());
+
+        $same = $this->shortcodes->resolve('x[dot]');
+        $this->assertSame($same, wx_text($same));
+    }
+
     #[Test]
     public function the_blade_directives_resolve_a_template_s_own_fields(): void
     {

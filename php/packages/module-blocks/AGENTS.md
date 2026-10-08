@@ -17,7 +17,9 @@ their guides when the question is about one of those.
   `webx-blocks.max_depth` levels. `$table->blocks()` adds the column to an entity.
 - **Shortcodes**: text, textarea and rich text values (repeater items too) reach the template
   with `[name]` resolved (`Rendering\Values`): the editor's text escaped, the shortcode's HTML
-  raw; `@shortcodesPlain($field)` for an attribute. The outline an agent reads is plain text.
+  raw; `@shortcodesPlain($field)` for an attribute. A template changes such a field through
+  `wx_text($field)->trimEnd('.')`, never a string function inside `{{ }}` (escaped twice; the
+  template checks warn, `string-on-text`). The outline an agent reads is plain text.
   With module-audit: checks `blocks.unknown_shortcodes` (a bracket a slip of a registered name)
   and `blocks.hardcoded_values` (a value a panel shortcode holds, typed by hand).
 - **Rendering**: `Blocks::render($blocks, $entity)`, `$model->renderBlocks()`, `@webxBlocks` in the

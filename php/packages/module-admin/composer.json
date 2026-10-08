@@ -43,7 +43,10 @@
     "autoload": {
         "psr-4": {
             "WebxUi\\Admin\\": "src/"
-        }
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

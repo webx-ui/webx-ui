@@ -7,6 +7,7 @@ return [
     'stray-selectors' => 'Selektory poza prefiksem bloku .b-:slug: :selectors',
     'bare-selectors' => 'Selektory elementów sięgają całej strony: :selectors',
     'media-query' => '@media mierzy okno. O szerokości bloku decyduje kontener: użyj @container.',
+    'string-on-text' => 'Z shortcode’em w środku :field jest HTML-em: funkcja tekstowa lub rzutowanie oddaje ten HTML do {{ }}, które escapuje go drugi raz. Zmieniaj pole przez wx_text(): {{ wx_text(:field)->trimEnd(".") }} — trim, trimStart, stripPrefix, stripSuffix i map() zostawiają je HTML-em.',
     'variables-missing' => 'Szablon używa :variables, których schemat nie deklaruje. Publikacja zostanie odrzucona.',
     'ok-marker' => 'Korzeń ma data-wx-block.',
     'ok-prefix' => 'Każdy selektor zaczyna się od .b-:slug.',

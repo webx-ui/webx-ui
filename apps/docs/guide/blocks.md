@@ -211,6 +211,24 @@ a library that moves to another disk rewrites no page. A value whose type nobody
 server — `wx-blocks`, a field of the project's own — arrives as it is stored. `$block->values`
 holds the same map, which is what a template hands its script in `data-wx-values`.
 
+**A text field the template changes goes through `wx_text()`.** A text or textarea field arrives
+as a plain string, or — once an editor types a [shortcode](/guide/shortcodes) into it — as HTML
+that `{{ }}` prints without escaping again. A string function or a cast turns the second kind into
+a string, and `{{ }}` escapes it a second time: `{{ rtrim($heading, '.') }}` prints
+`Call &lt;a href=…` for `Call [phone].`. `wx_text()` takes either kind and returns one whose
+changes stay HTML:
+
+```blade
+<h2>{{ wx_text($heading)->trimEnd('.') }}</h2>
+<q>{{ wx_text($item['quote'])->trim('“”"') }}</q>
+<p>{{ wx_text($lead)->map(fn ($text) => Str::limit($text, 120)) }}</p>
+```
+
+`trim`, `trimStart`, `trimEnd`, `stripPrefix`, `stripSuffix`, `map` and `isEmpty` work on what the
+editor typed — the brackets, not what they print — so trimming a full stop never cuts into a phone
+number, and a `[dot]` at the end stays. Saving warns about a string function applied to a text
+field inside `{{ }}`, naming the field.
+
 The way in is the same walk. What a save keeps is what the field type makes of what was sent —
 the editor's save and `blocks_edit_content` alike — so a type that cleans what it is given cleans
 it here too, rather than on screens only. The same two things pass through untouched: a value
@@ -243,7 +261,8 @@ the page.
 **The styles start with `.b-{slug}`**, in BEM: `.b-hero__title`, `.b-hero--wide`. Width decisions
 are container queries, because the block does not know whether it is the page or a third of it.
 Saving reports what leaks — a selector outside the prefix, a bare element selector, `@media`, a
-missing `data-wx-block` — as warnings under the editor, never as a refusal. (A marker that names
+missing `data-wx-block`, a text field changed by a string function without `wx_text()` — as
+warnings under the editor, never as a refusal. (A marker that names
 another slug is the one exception: it is refused on publishing.)
 
 **The script is a body**, not a program:

@@ -7,6 +7,7 @@ return [
     'stray-selectors' => 'Селекторы вне префикса блока .b-:slug: :selectors',
     'bare-selectors' => 'Элементные селекторы задевают весь сайт: :selectors',
     'media-query' => '@media меряет окно. У блока ширину решает контейнер: используйте @container.',
+    'string-on-text' => 'С шорткодом внутри :field — это HTML: строковая функция или приведение к строке отдают этот HTML в {{ }}, и он экранируется второй раз. Меняйте поле через wx_text(): {{ wx_text(:field)->trimEnd(".") }} — trim, trimStart, stripPrefix, stripSuffix и map() оставляют его HTML.',
     'variables-missing' => 'В шаблоне есть :variables, которых нет в схеме. Публикация будет отклонена.',
     'ok-marker' => 'Корень помечен data-wx-block.',
     'ok-prefix' => 'Все селекторы начинаются с .b-:slug.',

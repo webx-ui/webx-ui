@@ -7,6 +7,7 @@ return [
     'stray-selectors' => 'Selektoren außerhalb des Blockpräfixes .b-:slug: :selectors',
     'bare-selectors' => 'Elementselektoren greifen auf die ganze Site: :selectors',
     'media-query' => '@media misst das Fenster. Ein Block richtet sich nach seinem Container: Verwenden Sie @container.',
+    'string-on-text' => 'Mit einem Shortcode darin ist :field HTML: Eine String-Funktion oder ein Cast gibt dieses HTML an {{ }} weiter, das es ein zweites Mal maskiert. Ändern Sie das Feld über wx_text(): {{ wx_text(:field)->trimEnd(".") }} — trim, trimStart, stripPrefix, stripSuffix und map() lassen es HTML bleiben.',
     'variables-missing' => 'Das Template verwendet :variables, die das Schema nicht deklariert. Die Veröffentlichung wird abgelehnt.',
     'ok-marker' => 'Die Wurzel trägt data-wx-block.',
     'ok-prefix' => 'Jeder Selektor beginnt mit .b-:slug.',

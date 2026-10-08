@@ -7,6 +7,7 @@ return [
     'stray-selectors' => 'Sélecteurs hors du préfixe du bloc .b-:slug : :selectors',
     'bare-selectors' => 'Des sélecteurs d’élément touchent tout le site : :selectors',
     'media-query' => '@media mesure la fenêtre. Un bloc se dimensionne selon son conteneur : utilisez @container.',
+    'string-on-text' => 'Avec un shortcode dedans, :field est du HTML : une fonction de chaîne ou un cast passe ce HTML à {{ }}, qui l’échappe une seconde fois. Modifiez-le via wx_text() : {{ wx_text(:field)->trimEnd(".") }} — trim, trimStart, stripPrefix, stripSuffix et map() le gardent en HTML.',
     'variables-missing' => 'Le gabarit utilise :variables, que le schéma ne déclare pas. La publication sera refusée.',
     'ok-marker' => 'La racine porte data-wx-block.',
     'ok-prefix' => 'Chaque sélecteur commence par .b-:slug.',

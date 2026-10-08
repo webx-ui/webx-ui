@@ -93,6 +93,29 @@ final class ShortcodesTest extends TestCase
         );
     }
 
+    /*
+     * `Call [phone].` printed `Call &lt;a href=…` once a template trimmed its full stop with
+     * `rtrim()`; through `wx_text()` the same change prints the link, and a heading without a
+     * shortcode prints escaped as before.
+     */
+    #[Test]
+    public function a_template_changes_a_text_field_through_wx_text_and_prints_it_once(): void
+    {
+        $this->publish('cta', '<h2>{{ rtrim(trim($heading), \'.\') }}</h2><p>{{ wx_text($heading)->trimEnd(\'.\') }}</p>', [], ['schema' => [
+            ['id' => 'heading', 'type' => 'wx-input'],
+        ]]);
+
+        $this->assertSame(
+            '<h2>Call &lt;a href=&quot;tel:+15550100&quot;&gt;555 0100&lt;/a&gt;</h2><p>Call <a href="tel:+15550100">555 0100</a></p>',
+            $this->render([$this->node('cta', ['heading' => 'Call [phone].'])]),
+        );
+
+        $this->assertSame(
+            '<h2>Fish &amp; chips</h2><p>Fish &amp; chips</p>',
+            $this->render([$this->node('cta', ['heading' => 'Fish & chips.'])]),
+        );
+    }
+
     #[Test]
     public function the_outline_an_agent_reads_names_a_block_in_plain_text(): void
     {
