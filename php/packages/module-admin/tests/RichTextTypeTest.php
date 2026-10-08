@@ -30,6 +30,7 @@ final class RichTextTypeTest extends TestCase
                     ['id' => 'body', 'type' => 'wx-rich-text', 'name' => 'body', 'label' => 'Body'],
                     ['id' => 'text', 'type' => 'wx-rich-text', 'name' => 'text', 'label' => 'Text', 'localized' => true],
                     ['id' => 'lead', 'type' => 'wx-rich-text', 'name' => 'lead', 'label' => 'Lead', 'props' => ['maxlength' => 40]],
+                    ['id' => 'heading', 'type' => 'wx-rich-text', 'name' => 'heading', 'label' => 'Heading', 'props' => ['inline' => true]],
                 ],
             ],
         ]);
@@ -183,5 +184,37 @@ final class RichTextTypeTest extends TestCase
         $stored = '<p><img src="/m/hero.png" data-wx-path="2026/09/hero.png"></p>';
 
         $this->assertSame($stored, $this->values()->resolve($node, $stored));
+    }
+
+    #[Test]
+    public function an_inline_field_keeps_a_line_with_its_accent_as_it_was_written(): void
+    {
+        $line = 'Deeply heard<span>.</span> Gently <em>guided</em>';
+
+        $this->assertSame(['heading' => $line], $this->save(['heading' => $line]));
+    }
+
+    #[Test]
+    public function an_inline_field_takes_out_everything_but_the_marks_of_a_line(): void
+    {
+        $saved = $this->save([
+            'heading' => '<h2>One <span style="color:red" class="x">two</span></h2><p>three <a href="/x">four</a><br>five</p><script>alert(1)</script>',
+        ]);
+
+        $this->assertSame(['heading' => 'One <span>two</span> three four five'], $saved);
+    }
+
+    #[Test]
+    public function an_inline_field_is_held_to_the_limit_of_a_line(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        $this->save(['heading' => str_repeat('a', RichTextType::INLINE_MAX + 1)]);
+    }
+
+    #[Test]
+    public function an_inline_field_emptied_of_words_holds_nothing(): void
+    {
+        $this->assertSame(['heading' => null], $this->save(['heading' => '<span> </span>']));
     }
 }

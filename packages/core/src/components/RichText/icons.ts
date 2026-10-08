@@ -6,6 +6,7 @@
 export const richTextIcons: Record<string, string> = {
   bold: 'M7 5h6a3.5 3.5 0 0 1 0 7H7zm0 7h7a3.5 3.5 0 0 1 0 7H7z',
   italic: 'M15 5h-5M14 19H9M13.5 5 10.5 19',
+  accent: 'M5 19 12 5l7 14M8 13h8M18 4.5h.01',
   strike:
     'M5 12h14M8 8.5A3 3 0 0 1 11 6h2a3 3 0 0 1 3 2.5M16 15.5A3 3 0 0 1 13 18h-2a3 3 0 0 1-3-2.5',
   code: 'm9 8-5 4 5 4M15 8l5 4-5 4',

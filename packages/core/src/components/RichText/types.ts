@@ -4,6 +4,8 @@ import type { LocalizedFieldProps, LocalizedValue } from '../../composables/useL
 export type RichTextTool =
   | 'bold'
   | 'italic'
+  /** The accent of an inline field: a bare `<span>` the site's styles colour. */
+  | 'accent'
   | 'strike'
   | 'code'
   | 'h2'
@@ -99,6 +101,12 @@ export interface RichTextProps extends LocalizedFieldProps {
   id?: string
   /** Accessible label used when there is no visible `<label>`. */
   ariaLabel?: string
+  /**
+   * One line of text with a few marks instead of a document: no paragraphs, no Enter, and the
+   * value is the bare line — `Deeply heard<span>.</span> Gently guided` — for a heading or a
+   * caption that carries a touch of markup. The toolbar defaults to bold, italic and accent.
+   */
+  inline?: boolean
   /** Height of the editing area before it starts growing. */
   minHeight?: string
   /** Which buttons the toolbar shows, in order. */

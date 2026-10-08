@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Kalın',
     'italic' => 'İtalik',
+    'accent' => 'Vurgu',
     'strike' => 'Üstü çizili',
     'code' => 'Satır içi kod',
     'h2' => 'Başlık 2',

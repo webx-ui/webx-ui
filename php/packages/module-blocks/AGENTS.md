@@ -55,6 +55,7 @@ their guides when the question is about one of those.
 | Blocks drawn inside the site's layout      | `WEBX_BLOCKS_LAYOUT=layout` (`<x-layout>` with a `head` slot and the default one)                                       |
 | A library a block script can ask for       | `webx.provide('swiper', Swiper)` in the site's bundle, list it in `provides`; the block does `await webx.use('swiper')` |
 | A module's partial replaced by a block     | «Customise» in the panel, or `blocks_create` on the declared slug; `blocks_delete` brings the partial back              |
+| A heading with an accent or bold in it     | `wx-rich-text` with `"props": {"inline": true}`, printed `{!! $heading !!}`; not markup typed into a `wx-input`         |
 | A type under another slug                  | «Identifier» in the type's settings, or `blocks_update` with `rename_to`: pages, regions and `allow` lists follow       |
 | A bad edit of a page undone                | `pages_versions`, then `pages_version_restore` (services: `services_*`; a type: `blocks_versions`)                      |
 | Types read-only on production              | `WEBX_BLOCKS_EDITING=false`; types then arrive by `webx:blocks:import`                                                  |

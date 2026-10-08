@@ -18,6 +18,10 @@ use WebxUi\Admin\Screens\ScreenValues;
  * Localized needs nothing here. The language map is picked apart one layer up
  * ({@see ScreenValues}), which validates and stores each language against these same rules, so
  * a translated article is this type run once per language.
+ *
+ * `props.inline` makes it a line rather than a document — a heading with an accent in it, kept
+ * as `Deeply heard<span>.</span> Gently guided` — and holds it to the few marks such a line
+ * carries ({@see Html::clean()}), with the limit of a line rather than of an article.
  */
 final class RichTextType implements FieldType
 {
@@ -26,6 +30,9 @@ final class RichTextType implements FieldType
      * number so that a runaway paste is a validation error rather than a truncated row.
      */
     public const MAX = 262144;
+
+    /** The limit of an inline field: what `wx-input` takes, since that is what it replaces. */
+    public const INLINE_MAX = 2000;
 
     /**
      * `null` on a site with no file manager: there is then nothing to ask where a key lives,
@@ -39,7 +46,7 @@ final class RichTextType implements FieldType
      */
     public function rules(array $node): array
     {
-        $max = $node['props']['maxlength'] ?? self::MAX;
+        $max = $node['props']['maxlength'] ?? (self::isInline($node) ? self::INLINE_MAX : self::MAX);
 
         return ['nullable', 'string', 'max:'.(int) $max];
     }
@@ -69,9 +76,17 @@ final class RichTextType implements FieldType
             return null;
         }
 
-        $clean = Html::clean($value);
+        $clean = Html::clean($value, self::isInline($node));
 
         return Html::isEmpty($clean) ? null : $clean;
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     */
+    public static function isInline(array $node): bool
+    {
+        return ($node['props']['inline'] ?? false) === true;
     }
 
     /**

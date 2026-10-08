@@ -39,6 +39,7 @@ return [
     'hidden-note' => 'Ausgeblendet: wird auf der Website nicht dargestellt, alles darin ebenso wenig',
     'empty' => 'Noch keine Blöcke. Fügen Sie den ersten hinzu.',
     'nested-note' => 'Verschachtelte Blöcke werden im Baum links bearbeitet.',
+    'markup-in-text' => 'Dieser Text enthält HTML-Tags. Ändern Sie die Wörter und lassen Sie die Tags wie sie sind.',
     'unknown-type' => 'Unbekannter Blocktyp „:type“',
     'draft-type' => 'Der Blocktyp hat eine unveröffentlichte Version',
     'disabled-type' => 'Der Blocktyp ist vor Redakteuren verborgen',

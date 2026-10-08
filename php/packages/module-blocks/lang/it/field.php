@@ -39,6 +39,7 @@ return [
     'hidden-note' => 'Nascosto: non viene disegnato sul sito, né ciò che contiene',
     'empty' => 'Nessun blocco per ora. Aggiungi il primo.',
     'nested-note' => 'I blocchi annidati si modificano nell’albero a sinistra.',
+    'markup-in-text' => 'Questo testo contiene tag HTML. Modifica le parole e lascia i tag come sono.',
     'unknown-type' => 'Tipo di blocco sconosciuto «:type»',
     'draft-type' => 'Il tipo di blocco ha una versione non pubblicata',
     'disabled-type' => 'Il tipo di blocco è nascosto ai redattori',

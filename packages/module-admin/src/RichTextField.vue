@@ -71,6 +71,7 @@ function remember(value: unknown): void {
 const labels = computed<RichTextLabels>(() => ({
   bold: t('rich-text.bold'),
   italic: t('rich-text.italic'),
+  accent: t('rich-text.accent'),
   strike: t('rich-text.strike'),
   code: t('rich-text.code'),
   h2: t('rich-text.h2'),

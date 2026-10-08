@@ -39,6 +39,7 @@ return [
     'hidden-note' => 'Masqué : non affiché sur le site, pas plus que son contenu',
     'empty' => 'Aucun bloc pour l’instant. Ajoutez le premier.',
     'nested-note' => 'Les blocs imbriqués se modifient dans l’arborescence à gauche.',
+    'markup-in-text' => 'Ce texte contient des balises HTML. Modifiez les mots et laissez les balises telles quelles.',
     'unknown-type' => 'Type de bloc inconnu « :type »',
     'draft-type' => 'Le type de bloc a une version non publiée',
     'disabled-type' => 'Le type de bloc est masqué aux rédacteurs',

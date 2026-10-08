@@ -39,6 +39,7 @@ return [
     'hidden-note' => 'Gizli: sitede çizilmez, içindekiler de öyle',
     'empty' => 'Henüz blok yok. İlkini ekleyin.',
     'nested-note' => 'İç içe bloklar soldaki ağaçta düzenlenir.',
+    'markup-in-text' => 'Bu metin HTML etiketleri içeriyor. Sözcükleri değiştirin, etiketlere dokunmayın.',
     'unknown-type' => 'Bilinmeyen blok türü ":type"',
     'draft-type' => 'Blok türünün yayımlanmamış bir sürümü var',
     'disabled-type' => 'Blok türü editörlerden gizli',

@@ -175,6 +175,22 @@ itself, null for anywhere), `max_per_entity`, `is_enabled`.
 nodes (`wx-card`, `wx-tabs`, `wx-row`) group fields; the values stay flat. Translatable labels
 work with the same `trans::` marker as everywhere on a screen.
 
+**A line with markup in it is `wx-rich-text` with `inline`, not `wx-input`.** A heading like
+`Deeply heard<span>.</span> Gently guided` — an accent the site's styles colour — in a plain
+input is shown to the editor raw, tags and all. The inline field shows the words with the
+accent drawn, offers bold, italic and accent, and stores the same string, cleaned on the server
+to those few tags. The template prints it unescaped, `{!! $heading !!}`, as it would any rich
+text:
+
+```json
+{ "id": "heading", "type": "wx-rich-text", "label": "Heading", "props": { "inline": true } }
+```
+
+Switching a field from `wx-input` is safe for what pages already hold: the values are strings
+either way, and the first save runs them through the allowlist — which takes every attribute
+off, so a theme that styles `span.dot` should style the heading's `span` instead. Until a type is switched, the
+editor warns under a plain field whose value holds tags, and the value is kept exactly as stored.
+
 **The template is Blade** with the fields as variables, plus `$block` (`key`, `type`, `version`,
 `depth`, `value('name', default)`) and `$entity`, the record the block stands on. The root element
 carries `data-wx-block="{slug}"`: the runtime finds the block by it and the panel highlights it by

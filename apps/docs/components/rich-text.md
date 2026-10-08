@@ -161,19 +161,39 @@ whichever way it was typed — see [below](#sanitise-on-the-server-anyway).
 A read-only field still opens its source, to be read. A field that should not show it leaves
 `source` out of `tools`.
 
+## Inline
+
+A heading often carries a touch of markup — a coloured full stop, one word in italics — and a
+plain input shows that markup raw, one stray keystroke from printing `</span>` on the site.
+`inline` turns the editor into one line for exactly that:
+
+```vue
+<template>
+  <wx-rich-text v-model="heading" inline placeholder="Heading" />
+</template>
+```
+
+The value is the line itself, with no paragraph around it —
+`Deeply heard<span>.</span> Gently guided` — so a template prints it inside its own `<h1>`.
+Enter does nothing, pasted lines become one line, and the toolbar is bold, italic and accent.
+The accent is a bare `<span>`: what a heading written by hand already holds and what the site's
+styles colour. Anything else pasted in — a heading, a list, a link — leaves its words and loses
+its tags. `tools` still decides the buttons; `source` works here too.
+
 ## Props
 
 | Prop          | Type                                             | Default                 | Description                                                       |
 | ------------- | ------------------------------------------------ | ----------------------- | ----------------------------------------------------------------- |
-| `modelValue`  | `string                                          | Record<string, string>` | `''`                                                              | HTML content; a map per language under `localized` |
+| `modelValue`  | `string \| Record<string, string>`               | `''`                    | HTML content; a map per language under `localized`                |
 | `placeholder` | `string`                                         | —                       | Shown while the document is empty                                 |
-| `tools`       | `RichTextTool[]`                                 | all                     | Which buttons appear, in order                                    |
+| `inline`      | `boolean`                                        | `false`                 | One line with a few marks instead of a document — see [Inline](#inline) |
+| `tools`       | `RichTextTool[]`                                 | all; inline: three      | Which buttons appear, in order                                    |
 | `upload`      | `(file: File) => Promise<{ url, alt? }>`         | —                       | Handles pasted, dropped and picked files                          |
 | `pickImage`   | `() => Promise<string \| null>`                  | —                       | Opens a media library; `null` cancels                             |
 | `accept`      | `string[]`                                       | image types             | MIME types accepted for upload                                    |
 | `localized`   | `boolean`                                        | `false`                 | Edits one language at a time; the model becomes a map             |
 | `labels`      | `RichTextLabels`                                 | English                 | What the buttons and the link bar are called                      |
-| `minHeight`   | `string`                                         | `'220px'`               | Height before the editor starts growing                           |
+| `minHeight`   | `string`                                         | `'220px'`; inline: none | Height before the editor starts growing                           |
 | `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`                  | Control size                                                      |
 | `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`             | Validation state                                                  |
 | `disabled`    | `boolean`                                        | `false`                 | Disables the editor and its toolbar                               |
@@ -189,7 +209,7 @@ A read-only field still opens its source, to be read. A field that should not sh
 **Exposed:** `editor` — the Tiptap instance, for commands this component does not wrap — plus
 `focus()` and `clear()`.
 
-Tool keys: `bold`, `italic`, `strike`, `code`, `h2`, `h3`, `h4`, `bulletList`, `orderedList`,
+Tool keys: `bold`, `italic`, `accent` (a bare `<span>`, meant for `inline`), `strike`, `code`, `h2`, `h3`, `h4`, `bulletList`, `orderedList`,
 `blockquote`, `hr`, `link`, `table`, `image`, `youtube`, `undo`, `redo`, `source`, and `divider`
 for a separator.
 

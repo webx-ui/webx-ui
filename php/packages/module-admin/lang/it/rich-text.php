@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Grassetto',
     'italic' => 'Corsivo',
+    'accent' => 'Accento',
     'strike' => 'Barrato',
     'code' => 'Codice in linea',
     'h2' => 'Titolo 2',

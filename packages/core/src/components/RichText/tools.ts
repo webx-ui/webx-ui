@@ -30,6 +30,9 @@ export const DEFAULT_TOOLS: RichTextTool[] = [
   'source',
 ]
 
+/** What an inline field offers: the marks a line of a heading is ever given. */
+export const INLINE_TOOLS: RichTextTool[] = ['bold', 'italic', 'accent']
+
 export const DEFAULT_ACCEPT = [
   'image/png',
   'image/jpeg',
@@ -47,6 +50,7 @@ export interface ToolMeta {
 export const TOOL_META: Record<Exclude<RichTextTool, 'divider'>, ToolMeta> = {
   bold: { label: 'Bold', icon: 'bold' },
   italic: { label: 'Italic', icon: 'italic' },
+  accent: { label: 'Accent', icon: 'accent' },
   strike: { label: 'Strikethrough', icon: 'strike' },
   code: { label: 'Inline code', icon: 'code' },
   h2: { label: 'Heading 2', text: 'H2' },

@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'bold' => 'Pogrubienie',
     'italic' => 'Kursywa',
+    'accent' => 'Akcent',
     'strike' => 'Przekreślenie',
     'code' => 'Kod w wierszu',
     'h2' => 'Nagłówek 2',

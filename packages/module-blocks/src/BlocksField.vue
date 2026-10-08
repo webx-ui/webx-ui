@@ -58,7 +58,7 @@ import {
 import { useBlocksMessages } from './i18n'
 import { blocksOwnerKey, blocksPreviewKey, blocksRootKey, blocksTopKey } from './preview'
 import { destinations, type Destination } from './move'
-import { formSchema, startValues, withPlaceholders } from './schema'
+import { formSchema, markupFields, startValues, withPlaceholders } from './schema'
 import type { BlockNode, BlockType } from './types'
 
 /**
@@ -699,11 +699,29 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
 })
 
+/*
+ * Plain fields whose value holds tags, read once per block opened rather than on every keystroke:
+ * the help under a field coming and going while somebody types into it would rebuild the form
+ * under their caret.
+ */
+const marked = ref<string[]>([])
+
+watch(
+  [selectedKey, selectedType],
+  () => {
+    const schema = selectedType.value?.content?.schema
+    marked.value = schema && selected.value ? markupFields(schema, selected.value.node.values ?? {}) : []
+  },
+  { immediate: true },
+)
+
 const formRoot = computed(() =>
   selectedType.value?.content
     ? withPlaceholders(
         formSchema(selectedType.value.content.schema),
         selectedType.value.content.sample ?? {},
+        marked.value,
+        t('field.markup-in-text'),
       )
     : [],
 )

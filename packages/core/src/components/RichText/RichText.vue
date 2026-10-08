@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { createDocument, getHTMLFromFragment } from '@tiptap/core'
+import {
+  Extension,
+  Mark,
+  Node,
+  createDocument,
+  getHTMLFromFragment,
+  type Extensions,
+} from '@tiptap/core'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import { TableKit } from '@tiptap/extension-table'
@@ -14,7 +21,14 @@ import WxButton from '../Button/Button.vue'
 import WxCodeEditor from '../CodeEditor/CodeEditor.vue'
 import WxRichTextToolbarButton from './ToolbarButton.vue'
 import { formatHtml, lostMarkup } from './source'
-import { DEFAULT_ACCEPT, DEFAULT_TOOLS, TABLE_TOOLS, TOOL_META, type TableToolKey } from './tools'
+import {
+  DEFAULT_ACCEPT,
+  DEFAULT_TOOLS,
+  INLINE_TOOLS,
+  TABLE_TOOLS,
+  TOOL_META,
+  type TableToolKey,
+} from './tools'
 import type {
   RichTextEmits,
   RichTextImage,
@@ -35,8 +49,11 @@ const props = withDefaults(defineProps<RichTextProps>(), {
   status: undefined,
   id: undefined,
   ariaLabel: undefined,
-  minHeight: '220px',
-  tools: () => DEFAULT_TOOLS,
+  inline: false,
+  // Both left unset rather than defaulted: what they default to depends on `inline`, and
+  // `withDefaults` cannot see the other props.
+  minHeight: undefined,
+  tools: undefined,
   upload: undefined,
   pickImage: undefined,
   accept: () => DEFAULT_ACCEPT,
@@ -95,6 +112,88 @@ const LibraryImage = Image.extend({
   },
 })
 
+/**
+ * The accent of a line: a bare `<span>`, because that is what a heading written by hand already
+ * holds — `Deeply heard<span>.</span>` — and what a site's styles colour. No class: a class would
+ * be one more thing to agree on between the panel and every theme.
+ */
+const Accent = Mark.create({
+  name: 'accent',
+  parseHTML: () => [{ tag: 'span' }],
+  renderHTML: () => ['span', 0],
+})
+
+/**
+ * The document of an inline field is the line itself — text and its marks, no paragraph around
+ * it — so `getHTML()` answers with exactly what a template prints inside its `<h1>`.
+ */
+const LineDocument = Node.create({ name: 'doc', topNode: true, content: 'text*' })
+
+/**
+ * Enter has nowhere to go in a line. Swallowed rather than left to ProseMirror, which would try
+ * to split a block the schema does not have.
+ */
+const OneLine = Extension.create({
+  name: 'wxOneLine',
+  addKeyboardShortcuts: () => ({
+    Enter: () => true,
+    'Shift-Enter': () => true,
+    'Mod-Enter': () => true,
+  }),
+})
+
+function inlineExtensions(): Extensions {
+  return [
+    StarterKit.configure({
+      document: false,
+      paragraph: false,
+      heading: false,
+      blockquote: false,
+      bulletList: false,
+      orderedList: false,
+      listItem: false,
+      listKeymap: false,
+      codeBlock: false,
+      code: false,
+      horizontalRule: false,
+      hardBreak: false,
+      strike: false,
+      underline: false,
+      link: false,
+      trailingNode: false,
+      gapcursor: false,
+    }),
+    LineDocument,
+    Accent,
+    OneLine,
+  ]
+}
+
+function documentExtensions(): Extensions {
+  return [
+    StarterKit.configure({
+      link: {
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
+      },
+    }),
+    TableKit.configure({ table: { resizable: true } }),
+    LibraryImage.configure({ HTMLAttributes: { class: 'wx-rich-text__image' } }),
+    Youtube.configure({ nocookie: true, width: 640, height: 360 }),
+    FileHandler.configure({
+      allowedMimeTypes: props.accept,
+      onDrop: (_editor, files, pos) => void uploadFiles(files, pos),
+      onPaste: (_editor, files) => void uploadFiles(files),
+    }),
+  ]
+}
+
+const toolList = computed(() => props.tools ?? (props.inline ? INLINE_TOOLS : DEFAULT_TOOLS))
+
+/** A line is as tall as a line; a document starts tall enough to look like one. */
+const bodyHeight = computed(() => props.minHeight ?? (props.inline ? undefined : '220px'))
+
 const model = defineModel<RichTextModelValue>({ default: '' })
 
 const field = useFormField(props)
@@ -138,23 +237,14 @@ function readHtml(): string {
 const editor = useEditor({
   content: currentValue.value,
   editable: editable.value,
-  extensions: [
-    StarterKit.configure({
-      link: {
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' },
-      },
-    }),
-    TableKit.configure({ table: { resizable: true } }),
-    LibraryImage.configure({ HTMLAttributes: { class: 'wx-rich-text__image' } }),
-    Youtube.configure({ nocookie: true, width: 640, height: 360 }),
-    FileHandler.configure({
-      allowedMimeTypes: props.accept,
-      onDrop: (_editor, files, pos) => void uploadFiles(files, pos),
-      onPaste: (_editor, files) => void uploadFiles(files),
-    }),
-  ],
+  extensions: props.inline ? inlineExtensions() : documentExtensions(),
+  editorProps: props.inline
+    ? {
+        // Pasted lines become one line: the breaks would otherwise vanish between the words
+        // and glue the last of one line to the first of the next.
+        transformPastedText: (text: string) => text.replace(/\s*[\r\n]+\s*/g, ' '),
+      }
+    : {},
   onUpdate: () => {
     const html = readHtml()
     // Tiptap raises an update for things that are not edits too. Writing the same words back
@@ -209,6 +299,7 @@ const classes = computed(() => [
     'is-disabled': field.disabled.value,
     'is-readonly': props.readonly,
     'is-localized': locales.on.value,
+    'is-inline': props.inline,
   },
 ])
 
@@ -372,7 +463,7 @@ function toolVisible(tool: RichTextTool): boolean {
   return true
 }
 
-const visibleTools = computed(() => props.tools.filter(toolVisible))
+const visibleTools = computed(() => toolList.value.filter(toolVisible))
 
 function isActive(tool: RichTextTool): boolean {
   if (tool === 'source') return source.value !== null
@@ -402,6 +493,9 @@ function run(tool: RichTextTool) {
       break
     case 'italic':
       chain.toggleItalic().run()
+      break
+    case 'accent':
+      chain.toggleMark('accent').run()
       break
     case 'strike':
       chain.toggleStrike().run()
@@ -541,7 +635,7 @@ defineExpose({
         :model-value="source"
         language="html"
         line-wrapping
-        :min-height="minHeight"
+        :min-height="bodyHeight"
         :readonly="readonly"
         :disabled="field.disabled.value"
         :aria-label="label('source')"
@@ -552,7 +646,7 @@ defineExpose({
     </div>
 
     <!-- Hidden rather than unmounted: ProseMirror keeps its view, history and selection. -->
-    <div v-show="source === null" class="wx-rich-text__body" :style="{ minHeight }">
+    <div v-show="source === null" class="wx-rich-text__body" :style="{ minHeight: bodyHeight }">
       <span v-if="placeholder && isEmpty" class="wx-rich-text__placeholder">{{ placeholder }}</span>
       <editor-content
         :editor="editor"
@@ -722,6 +816,28 @@ defineExpose({
   left: var(--wx-space-16);
   color: var(--wx-text-placeholder);
   pointer-events: none;
+}
+
+/*
+ * A line: the toolbar shrinks to a strip of three buttons and the text sits where an input's
+ * would, so a form mixing the two does not jump between them.
+ */
+.wx-rich-text.is-inline .wx-rich-text__toolbar {
+  padding: var(--wx-space-2) var(--wx-space-4);
+}
+
+.wx-rich-text.is-inline .wx-rich-text__body {
+  padding: var(--wx-space-6) var(--wx-space-12);
+}
+
+.wx-rich-text.is-inline .wx-rich-text__placeholder {
+  top: var(--wx-space-6);
+  left: var(--wx-space-12);
+}
+
+/* The accent shows as one: the editor sees which words a site will colour. */
+.wx-rich-text.is-inline .wx-rich-text__content :deep(span) {
+  color: var(--wx-color-primary);
 }
 
 .wx-rich-text__file {

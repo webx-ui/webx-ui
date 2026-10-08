@@ -407,6 +407,59 @@ describe('WxRichText', () => {
     })
   })
 
+  describe('inline', () => {
+    const heading = 'Deeply heard<span>.</span> Gently guided'
+
+    it('keeps a line with its accent exactly as it came, with no paragraph around it', async () => {
+      const wrapper = await mountEditor({ inline: true, modelValue: heading })
+
+      expect(editorOf(wrapper).getHTML()).toBe(heading)
+      expect(wrapper.find('.wx-rich-text').classes()).toContain('is-inline')
+    })
+
+    it('offers bold, italic and accent, and nothing a document needs', async () => {
+      const wrapper = await mountEditor({ inline: true })
+      const labels = wrapper.findAll('[role="toolbar"] button').map((b) => b.attributes('aria-label'))
+
+      expect(labels).toEqual(['Bold', 'Italic', 'Accent'])
+    })
+
+    it('wraps the selection in a span from the accent button', async () => {
+      const wrapper = await mountEditor({ inline: true, modelValue: 'Calm' })
+      editorOf(wrapper).commands.selectAll()
+
+      await toolByLabel(wrapper, 'Accent').trigger('click')
+      await nextTick()
+
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['<span>Calm</span>'])
+    })
+
+    it('flattens paragraphs and drops what a line cannot hold', async () => {
+      const wrapper = await mountEditor({ inline: true })
+
+      editorOf(wrapper).commands.setContent('<h2>One <em>two</em></h2><ul><li>three</li></ul>')
+      await nextTick()
+
+      expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['One <em>two</em>three'])
+    })
+
+    it('does not break the line on Enter', async () => {
+      const wrapper = await mountEditor({ inline: true, modelValue: 'One line' })
+      const surface = wrapper.get('.ProseMirror')
+
+      await surface.trigger('keydown', { key: 'Enter' })
+      await nextTick()
+
+      expect(editorOf(wrapper).getHTML()).toBe('One line')
+    })
+
+    it('still takes the tools it is given', async () => {
+      const wrapper = await mountEditor({ inline: true, tools: ['bold', 'source'] })
+
+      expect(wrapper.findAll('[role="toolbar"] button')).toHaveLength(2)
+    })
+  })
+
   describe('the source view', () => {
     async function openSource(props: Record<string, unknown>) {
       const wrapper = await mountEditor(props)

@@ -155,6 +155,7 @@ export const adminMessages: Record<string, Messages> = {
   'rich-text': {
     bold: 'Bold',
     italic: 'Italic',
+    accent: 'Accent',
     strike: 'Strikethrough',
     code: 'Inline code',
     h2: 'Heading 2',
