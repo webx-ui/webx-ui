@@ -77,6 +77,7 @@ export const adminMessages: Record<string, Messages> = {
     base: 'Before',
     mine: 'Yours',
     theirs: 'Theirs',
+    'take-theirs': 'Take theirs everywhere',
     removed: 'Removed',
     empty: 'Empty',
     'removed-mine': 'you removed this block, they edited it',

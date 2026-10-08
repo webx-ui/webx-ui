@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { confirm, WxAlert, WxButton } from '@webx-ui/core'
 import { useDates } from './dates'
 import type { Editing } from './editing'
@@ -35,6 +35,24 @@ const others = computed(() => props.editing.editors.value)
 
 const conflictTitle = computed(() =>
   t('editing.conflict-title', { who: props.editing.who(conflict.value?.theirs.changed) }),
+)
+
+/*
+ * A conflict is the one thing here that waits for an answer, and it appears after a save — often
+ * with the editor scrolled deep into a long page, where the top of the screen is out of sight.
+ * Brought into view once, when it appears; the notice of an incoming save is not, because it asks
+ * for nothing and pulling the page away from what somebody is reading is worse than missing it.
+ */
+const conflictAlert = ref<{ $el?: Element } | null>(null)
+
+watch(
+  () => conflict.value !== null,
+  async (open) => {
+    if (!open) return
+
+    await nextTick()
+    conflictAlert.value?.$el?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+  },
 )
 
 function when(at: string | null | undefined): string {
@@ -77,7 +95,7 @@ async function takeTheirs(): Promise<void> {
   const agreed = await confirm({
     title: t('editing.theirs-title'),
     message: t('editing.theirs-text'),
-    confirmText: t('editing.theirs'),
+    confirmText: t('editing.take-theirs'),
     cancelText: t('editing.cancel'),
     tone: 'danger',
   })
@@ -91,7 +109,7 @@ async function pull(): Promise<void> {
 </script>
 
 <template>
-  <wx-alert v-if="conflict" class="wx-editing-alerts" type="warning" :title="conflictTitle" live>
+  <wx-alert v-if="conflict" ref="conflictAlert" class="wx-editing-alerts" type="warning" :title="conflictTitle" live>
     <p class="wx-editing-alerts__lead">{{ t('editing.conflict-text') }}</p>
 
     <ul class="wx-editing-alerts__list">
@@ -132,7 +150,7 @@ async function pull(): Promise<void> {
 
     <template #actions>
       <wx-button size="sm" variant="outline" @click="takeTheirs">
-        {{ t('editing.theirs') }}
+        {{ t('editing.take-theirs') }}
       </wx-button>
       <wx-button size="sm" type="primary" @click="save">
         {{ t('editing.apply') }}

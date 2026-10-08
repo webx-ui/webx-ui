@@ -12,6 +12,7 @@ return [
     'base' => 'Vorher',
     'mine' => 'Ihre',
     'theirs' => 'Deren',
+    'take-theirs' => 'Überall deren Version',
     'removed' => 'Entfernt',
     'empty' => 'Leer',
     'removed-mine' => 'Sie haben diesen Block entfernt, er wurde bearbeitet',

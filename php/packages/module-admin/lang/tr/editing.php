@@ -12,6 +12,7 @@ return [
     'base' => 'Önce',
     'mine' => 'Sizinki',
     'theirs' => 'Onlarınki',
+    'take-theirs' => 'Her yerde onlarınkini al',
     'removed' => 'Kaldırıldı',
     'empty' => 'Boş',
     'removed-mine' => 'bu bloğu siz kaldırdınız, o düzenledi',

@@ -12,6 +12,7 @@ return [
     'base' => 'Antes',
     'mine' => 'Sua',
     'theirs' => 'Deles',
+    'take-theirs' => 'Usar a deles em tudo',
     'removed' => 'Removido',
     'empty' => 'Vazio',
     'removed-mine' => 'você removeu este bloco, ele foi editado',
