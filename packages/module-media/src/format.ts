@@ -66,7 +66,7 @@ export function usePanelLocale(): () => string {
   try {
     const { i18n } = useAdmin()
 
-    return () => i18n.state.locale
+    return () => i18n?.state?.locale ?? 'en'
   } catch {
     return () => 'en'
   }

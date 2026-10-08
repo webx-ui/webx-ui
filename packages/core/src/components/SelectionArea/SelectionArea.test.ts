@@ -252,7 +252,7 @@ describe('WxSelectionArea', () => {
     await up(item(wrapper, 0), 160, 90)
 
     expect(wrapper.emitted('start')).toBeUndefined()
-    expect(chosen(wrapper)).toEqual([])
+    expect(chosen(wrapper)).toBeUndefined()
 
     /* A click is still a click. */
     await click(item(wrapper, 1), 120, 20)
