@@ -105,3 +105,26 @@ export interface DirectoryNotEmpty {
   message: string
   counts: { files: number; directories: number }
 }
+
+/** One row of the site that uses a library file. */
+export interface UsagePlace {
+  table: string
+  column: string
+  id: number | string | null
+  /** The row's title, name or key, when it has one — what an editor knows it by. */
+  label: string | null
+}
+
+/** A file the site still uses, and where. */
+export interface FileInUse {
+  id: number
+  name: string
+  used_in: UsagePlace[]
+}
+
+/** What deleting a folder would take with it, through its whole subtree. */
+export interface DirectoryContents {
+  files: number
+  directories: number
+  in_use: FileInUse[]
+}

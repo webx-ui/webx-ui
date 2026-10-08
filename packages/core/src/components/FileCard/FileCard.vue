@@ -51,6 +51,8 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   downloadUrl: undefined,
   downloadLabel: 'Download',
   copiedLabel: 'Copied',
+  moreLabel: 'More',
+  actionsLabel: undefined,
 })
 
 const emit = defineEmits<FileCardEmits>()
@@ -420,7 +422,8 @@ const classes = computed(() => [
           size="sm"
           align="end"
           :collapse="actionsMenu ? 'always' : true"
-          :aria-label="`Actions for ${name}`"
+          :aria-label="actionsLabel ?? `Actions for ${name}`"
+          :more-label="moreLabel"
         >
           <wx-action
             v-if="shows.edit"

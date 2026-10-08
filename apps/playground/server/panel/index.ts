@@ -5066,6 +5066,29 @@ on('DELETE', '/media/directories/(\\d+)', ({ params, query }) => {
   return { data: null }
 })
 
+// The fixtures are used nowhere: the question before a delete always comes back empty here,
+// and the delete itself is never refused.
+on('GET', '/media/directories/(\\d+)/contents', ({ params }) => {
+  const node = directory(params[0])
+  const ids: number[] = []
+  const walk = (one: MediaDirectory): void => {
+    ids.push(one.id)
+    ;(one.children ?? []).forEach(walk)
+  }
+
+  walk(node)
+
+  return {
+    data: {
+      files: mediaFiles.filter((file) => ids.includes(file.directory_id)).length,
+      directories: ids.length - 1,
+      in_use: [],
+    },
+  }
+})
+
+on('POST', '/media/files/usage', () => ({ data: [] }))
+
 on('GET', '/media/files', ({ query }) => {
   const inside = number(query.get('directory_id'))
   const search = (query.get('q') ?? '').trim().toLowerCase()

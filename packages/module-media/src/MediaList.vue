@@ -13,7 +13,7 @@ import {
   type LocalizedValue,
 } from '@webx-ui/core'
 import { createMediaApi, type MediaApi } from './api'
-import { details, nameFromPath } from './format'
+import { details, nameFromPath, usePanelLocale } from './format'
 import { openMediaFiles, openMediaLibrary } from './openMediaPicker'
 import { useMediaMessages } from './i18n'
 import type { MediaAspect, MediaFile, MediaKind, MediaValue } from './types'
@@ -68,6 +68,7 @@ const model = defineModel<MediaValue[]>({ default: () => [] })
 useMediaMessages()
 
 const t = useTranslate('webx-media')
+const locale = usePanelLocale()
 
 /*
  * The panel, when there is one. A field has to draw itself without it — a demo page or a test
@@ -164,7 +165,7 @@ function metaOf(item: MediaValue): string {
   if (!file) return ''
 
   // The MIME type is the details panel's business; under a card it is one word too many.
-  return details({ ...file, mime: undefined })
+  return details({ ...file, mime: undefined }, locale())
 }
 
 /* ------------------------------------------------------------------ editing --- */

@@ -65,7 +65,7 @@ describe('FileGrid', () => {
     const wrapper = grid([file(1, 'png', 'image/png')])
 
     expect(wrapper.get('.wx-file-card').attributes('title')).toBe(
-      'PNG · image/png · 800×600 · 2.0 KB',
+      'PNG · image/png · 800×600 · 2.0 kB',
     )
   })
 })

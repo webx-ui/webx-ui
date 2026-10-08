@@ -40,6 +40,7 @@ export {
 export { adminMessages } from './messages'
 export { renderMarkdown } from './markdown'
 export { createDates, useDates, type DateLike, type Dates } from './dates'
+export { pluralForm, type PluralForm } from './plural'
 export { errorText, useErrorText } from './errors'
 export { useBodyKeys } from './keys'
 export { createNotesApi, type EntityNote, type NoteAuthor, type NotesApi } from './notes'

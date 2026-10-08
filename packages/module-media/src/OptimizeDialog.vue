@@ -11,7 +11,7 @@ import {
   WxText,
 } from '@webx-ui/core'
 import { createMediaApi } from './api'
-import { readable } from './format'
+import { readable, usePanelLocale } from './format'
 import type { OptimizePending, OptimizeResult } from './types'
 
 /**
@@ -33,6 +33,7 @@ const { open, resolve } = useModal<true>()
 const admin = useAdmin()
 const api = createMediaApi(admin)
 const t = useTranslate('webx-media')
+const locale = usePanelLocale()
 const message = useErrorText()
 
 /** The server takes this many per request. */
@@ -114,7 +115,7 @@ function close(): void {
           {{
             t(convert ? 'manager.convert-waiting' : 'manager.optimize-waiting', {
               count: total,
-              size: readable(chosen.size),
+              size: readable(chosen.size, locale()),
             })
           }}
         </wx-text>
@@ -131,7 +132,7 @@ function close(): void {
         />
         <wx-text v-if="failure" size="sm" tone="danger">{{ failure }}</wx-text>
         <template v-if="state === 'done'">
-          <wx-text>{{ t('manager.optimize-saved', { size: readable(saved) }) }}</wx-text>
+          <wx-text>{{ t('manager.optimize-saved', { size: readable(saved, locale()) }) }}</wx-text>
           <wx-text v-if="convert" size="sm" tone="muted">
             {{
               t('manager.convert-report', {

@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { toast, WxEmpty, WxFileCard, WxSelectionArea } from '@webx-ui/core'
 import type { MediaApi } from './api'
-import { details } from './format'
+import { startDrag } from './dragging'
+import { details, usePanelLocale } from './format'
 import type { MediaFile } from './types'
 
 /**
@@ -19,6 +20,11 @@ const props = defineProps<{
   query?: string
   /** A picker takes one file; the manager selects to act on a batch. */
   single?: boolean
+  /**
+   * Cards can be dragged onto a folder of the tree — the selection, when the card is in it.
+   * A rubber band then starts from the gaps between cards, not from a card.
+   */
+  draggable?: boolean
 }>()
 
 const selected = defineModel<number[]>('selected', { default: () => [] })
@@ -31,10 +37,23 @@ const emit = defineEmits<{
 }>()
 
 const t = useTranslate('webx-media')
+const locale = usePanelLocale()
 
 const empty = computed(() =>
   props.query ? t('manager.empty-search', { query: props.query }) : t('manager.empty'),
 )
+
+/**
+ * The selection goes when the card is in it; a card outside it goes alone, and becomes the
+ * selection — what is moving is then what is highlighted.
+ */
+function dragStart(file: MediaFile, event: DragEvent): void {
+  if (!selected.value.includes(file.id)) {
+    selected.value = [file.id]
+  }
+
+  startDrag(event, [...selected.value])
+}
 
 function copied(): void {
   toast.success(t('manager.link-copied'))
@@ -81,6 +100,7 @@ function copyFailed(file: MediaFile): void {
     v-model="selected"
     class="wx-media-grid"
     :multiple="!single"
+    :drag-items="draggable"
   >
     <wx-file-card
       v-for="file in files"
@@ -90,7 +110,7 @@ function copyFailed(file: MediaFile): void {
       :name="file.name"
       :extension="file.extension"
       show-extension
-      :title="details(file)"
+      :title="details(file, locale())"
       :url="file.url"
       :thumbnail="api.thumb(file, 320, 320) ?? undefined"
       :type="file.mime"
@@ -103,7 +123,10 @@ function copyFailed(file: MediaFile): void {
       :rename-label="t('manager.rename')"
       :edit-label="t('manager.edit')"
       :remove-label="t('manager.delete')"
-      :remove-confirm-text="t('dialogs.delete-file', { name: file.name })"
+      :confirm-remove="false"
+      :more-label="t('manager.more')"
+      :actions-label="t('manager.actions-for', { name: file.name })"
+      :draggable="draggable ? 'true' : undefined"
       :cancel-label="t('manager.cancel')"
       :save-label="t('manager.save')"
       :download-url="file.source ?? file.url"
@@ -116,6 +139,7 @@ function copyFailed(file: MediaFile): void {
       @copy="copied"
       @copy-error="copyFailed(file)"
       @dblclick="emit('open', file)"
+      @dragstart="dragStart(file, $event)"
     />
   </wx-selection-area>
 

@@ -83,6 +83,10 @@ export interface FileCardProps {
   downloadLabel?: string
   /** Shown on the copy action for a moment after it worked. */
   copiedLabel?: string
+  /** The button the folded-up actions open from. */
+  moreLabel?: string
+  /** The accessible name of the actions, said with the file's name in it. */
+  actionsLabel?: string
 }
 
 export interface FileCardEmits {

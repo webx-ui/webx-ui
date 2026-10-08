@@ -1,6 +1,8 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type {
+  DirectoryContents,
   EditOperations,
+  FileInUse,
   FileQuery,
   MediaDirectory,
   MediaFile,
@@ -15,6 +17,8 @@ export interface MediaApi {
   moveDirectory(id: number, parentId: number): Promise<MediaDirectory>
   /** Without `force` the server refuses a folder that holds anything, and says what it holds. */
   deleteDirectory(id: number, force?: boolean): Promise<void>
+  /** What deleting the folder would take — counts and the files the site still uses. */
+  directoryContents(id: number): Promise<DirectoryContents>
 
   files(query?: FileQuery): Promise<MediaPage>
   file(id: number): Promise<MediaFile>
@@ -38,8 +42,14 @@ export interface MediaApi {
   finishUpload(directoryId: number, uploadId: string): Promise<MediaFile>
   rename(id: number, name: string): Promise<MediaFile>
   move(ids: number[], directoryId: number): Promise<number>
-  remove(ids: number[]): Promise<number>
-  removeOne(id: number): Promise<void>
+  /** Which of these files the site still uses, and where — asked before a delete. */
+  usage(ids: number[]): Promise<FileInUse[]>
+  /**
+   * Without `force` the server refuses files the site still uses (409, `files_in_use`), the way
+   * `media_delete_files` does for an agent; `force` is the answer to «delete anyway».
+   */
+  remove(ids: number[], force?: boolean): Promise<number>
+  removeOne(id: number, force?: boolean): Promise<void>
 
   edit(id: number, operations: EditOperations): Promise<MediaFile>
   copy(id: number): Promise<MediaFile>
@@ -92,6 +102,11 @@ export function createMediaApi(admin: AdminContext): MediaApi {
       admin.http.delete<void>(`${base}/directories/${id}`, {
         query: { force: force ? 1 : undefined },
       }),
+
+    directoryContents: (id) =>
+      admin.http
+        .get<{ data: DirectoryContents }>(`${base}/directories/${id}/contents`)
+        .then(data),
 
     files: (query = {}) =>
       admin.http.get<MediaPage>(`${base}/files`, {
@@ -182,12 +197,18 @@ export function createMediaApi(admin: AdminContext): MediaApi {
 
     // A POST for the batch, not a DELETE: the panel's own client sends no body on DELETE, and
     // a list of ids in a query string is a worse answer than an honest verb.
-    remove: (ids) =>
+    usage: (ids) =>
+      admin.http.post<{ data: FileInUse[] }>(`${base}/files/usage`, { ids }).then(data),
+
+    remove: (ids, force = false) =>
       admin.http
-        .post<{ data: { deleted: number } }>(`${base}/files/delete`, { ids })
+        .post<{
+          data: { deleted: number }
+        }>(`${base}/files/delete`, { ids, force: force || undefined })
         .then((body) => body.data.deleted),
 
-    removeOne: (id) => admin.http.delete<void>(`${base}/files/${id}`),
+    removeOne: (id, force = false) =>
+      admin.http.delete<void>(`${base}/files/${id}`, { query: { force: force ? 1 : undefined } }),
 
     edit: (id, operations) =>
       admin.http.post<{ data: MediaFile }>(`${base}/files/${id}/edit`, operations).then(data),

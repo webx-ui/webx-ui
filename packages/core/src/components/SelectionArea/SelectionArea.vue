@@ -16,6 +16,7 @@ const props = withDefaults(defineProps<SelectionAreaProps>(), {
   threshold: 5,
   clickSelect: true,
   touch: false,
+  dragItems: false,
   edgeScroll: 48,
   disabled: false,
 })
@@ -72,6 +73,13 @@ let boxDrag = true
  * release on the same thing.
  */
 let downTarget: HTMLElement | null = null
+/*
+ * The modifiers held when the press began. A click is read on release, and a key let go a
+ * moment early — or a tool that holds it for the press only — made a ctrl-click a plain one
+ * that replaced the selection instead of adding to it.
+ */
+let downShift = false
+let downToggle = false
 let downX = 0
 let downY = 0
 let originX = 0
@@ -272,7 +280,7 @@ function pick(event: PointerEvent, from: HTMLElement | null) {
     return
   }
 
-  if (event.shiftKey && anchor >= 0 && index >= 0) {
+  if ((event.shiftKey || downShift) && anchor >= 0 && index >= 0) {
     const [from, to] = anchor < index ? [anchor, index] : [index, anchor]
     apply(resolve(candidates.slice(from, to + 1).map((item) => item.value)))
     return
@@ -285,7 +293,8 @@ function pick(event: PointerEvent, from: HTMLElement | null) {
    * gesture there is — and a tap that replaces the selection can never build one. It adds
    * and removes instead; the background still clears, which is the way back out.
    */
-  const toggles = event.ctrlKey || event.metaKey || event.pointerType === 'touch'
+  const toggles =
+    event.ctrlKey || event.metaKey || downToggle || event.pointerType === 'touch'
 
   if (toggles) {
     apply(selected.value.has(value) ? base.filter((held) => held !== value) : [...base, value])
@@ -308,11 +317,16 @@ function onPointerDown(event: PointerEvent) {
    * gesture is followed but never becomes a box. It is still followed — a tap has to pick
    * the item under it, and bailing out here is how a touch screen came to select nothing.
    */
-  boxDrag = props.multiple && (!isTouch || props.touch)
+  boxDrag =
+    props.multiple &&
+    (!isTouch || props.touch) &&
+    !(props.dragItems && (event.target as HTMLElement).closest(`[${SELECTABLE}]`))
 
   pointer = event.pointerId
   started = false
   downTarget = event.target as HTMLElement
+  downShift = event.shiftKey
+  downToggle = event.ctrlKey || event.metaKey
   downX = event.clientX
   downY = event.clientY
   atX = event.clientX

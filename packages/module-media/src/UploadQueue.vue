@@ -2,7 +2,7 @@
 import { useErrorText, useTranslate } from '@webx-ui/module-admin'
 import { WxAction, WxActions, WxProgress } from '@webx-ui/core'
 import type { UnfinishedUpload } from '@webx-ui/module-admin'
-import { readable } from './format'
+import { readable, usePanelLocale } from './format'
 import type { MediaUploadJob } from './uploading'
 
 /**
@@ -23,6 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const t = useTranslate('webx-media')
+const locale = usePanelLocale()
 const message = useErrorText()
 
 function status(job: MediaUploadJob): string {
@@ -56,7 +57,7 @@ function percent(entry: UnfinishedUpload): number {
       :class="{ 'is-failed': job.stage === 'failed' }"
     >
       <span class="wx-media-uploads__name" :title="job.name">{{ job.name }}</span>
-      <span class="wx-media-uploads__size">{{ readable(job.size) }}</span>
+      <span class="wx-media-uploads__size">{{ readable(job.size, locale()) }}</span>
 
       <wx-progress
         class="wx-media-uploads__bar"

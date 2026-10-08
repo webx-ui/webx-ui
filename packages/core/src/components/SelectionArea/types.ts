@@ -20,6 +20,12 @@ export interface SelectionAreaProps {
    * because on a touch screen a drag means scroll — a tap still picks either way.
    */
   touch?: boolean
+  /**
+   * Items can be dragged somewhere else — onto a folder, into another list — with the
+   * browser's own drag and drop. A press on an item then never becomes a box (the drag is
+   * the item's), and a box starts from the background only. A click still picks.
+   */
+  dragItems?: boolean
   /** How near the scroller's edge the pointer scrolls it, in pixels. `0` never does. */
   edgeScroll?: number
   disabled?: boolean

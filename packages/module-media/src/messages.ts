@@ -79,6 +79,11 @@ export const mediaMessages: Record<string, Messages> = {
     'convert-report':
       'Converted: :converted, left as they were: :unchanged, references updated: :references',
     'no-folders': 'No folders',
+    moved: 'Moved: :count → :folder',
+    undo: 'Undo',
+    current: 'current folder',
+    more: 'More',
+    'actions-for': 'Actions for :name',
   },
   // The picture field on a form, which is the module used from outside its own section.
   field: {
@@ -129,11 +134,29 @@ export const mediaMessages: Record<string, Messages> = {
     'delete-files-text': 'Anywhere they are already used, they will stop opening.',
     'delete-folder-title': 'Delete the folder :title?',
     'delete-folder-text': 'It goes for good, and so does whatever is inside it.',
-    'delete-folder-contents': 'It holds :files file(s) and :directories folder(s).',
+    'delete-folder-contents': 'Inside: :what.',
     'delete-folder-warning':
       'Everything inside goes too, and pictures already placed in content will stop opening.',
     confirm: 'Delete',
     'delete-file': 'Delete :name?',
+    // One line per CLDR form, picked by `pluralForm`: «3 файла и 1 папка».
+    'count-files': {
+      one: ':count file',
+      few: ':count files',
+      many: ':count files',
+      other: ':count files',
+    },
+    'count-folders': {
+      one: ':count folder',
+      few: ':count folders',
+      many: ':count folders',
+      other: ':count folders',
+    },
+    and: 'and',
+    'in-use': 'Still used on the site:',
+    'in-use-warning': 'Deleted anyway, those places will show a broken picture or a dead link.',
+    'in-use-more': 'and :count more',
+    'delete-anyway': 'Delete anyway',
   },
   errors: {
     'directory-not-empty': 'This folder is not empty.',
@@ -147,6 +170,7 @@ export const mediaMessages: Record<string, Messages> = {
     'file-too-large': 'The file is larger than :size MB.',
     'too-many-files': 'No more than :count files at a time.',
     'file-not-found': 'There is no such file in the library.',
+    'files-in-use': 'Nothing was deleted: some of these files are still used on the site.',
   },
   files: {
     copy: ':name (copy)',

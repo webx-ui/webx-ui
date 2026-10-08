@@ -12,6 +12,7 @@ const props = withDefaults(defineProps<ActionsProps>(), {
   size: undefined,
   collapse: false,
   ariaLabel: undefined,
+  moreLabel: undefined,
 })
 
 const emit = defineEmits<ActionsEmits>()
@@ -94,7 +95,7 @@ defineExpose({ collapsed, measure })
       <wx-dropdown v-model:open="menuOpen" align="end">
         <template #trigger>
           <slot name="trigger">
-            <wx-action type="more" :size="size" />
+            <wx-action type="more" :size="size" :label="moreLabel" />
           </slot>
         </template>
 

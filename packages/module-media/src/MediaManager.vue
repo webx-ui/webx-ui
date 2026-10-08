@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { pluralForm, useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
@@ -12,6 +12,7 @@ import {
   WxDrawer,
   WxPagination,
 } from '@webx-ui/core'
+import DeleteDialog from './DeleteDialog.vue'
 import DirectoryTree from './DirectoryTree.vue'
 import FileGrid from './FileGrid.vue'
 import MediaToolbar from './MediaToolbar.vue'
@@ -20,9 +21,17 @@ import NameDialog from './NameDialog.vue'
 import OptimizeDialog from './OptimizeDialog.vue'
 import UploadQueue from './UploadQueue.vue'
 import { createMediaApi } from './api'
-import { readable } from './format'
+import { carriesLibraryFiles } from './dragging'
+import { readable, usePanelLocale } from './format'
 import { useMediaMessages } from './i18n'
-import type { MediaDirectory, MediaFile, MediaKind, MediaPage, OptimizePending } from './types'
+import type {
+  FileInUse,
+  MediaDirectory,
+  MediaFile,
+  MediaKind,
+  MediaPage,
+  OptimizePending,
+} from './types'
 import { useMediaUploads } from './uploading'
 
 /**
@@ -70,6 +79,7 @@ const api = createMediaApi(admin)
 useMediaMessages()
 
 const t = useTranslate('webx-media')
+const locale = usePanelLocale()
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
@@ -274,7 +284,12 @@ const dropping = ref(false)
 let dragDepth = 0
 
 function carriesFiles(event: DragEvent): boolean {
-  return canUpload.value && (event.dataTransfer?.types ?? []).includes('Files')
+  // A card of the grid dragged in Chrome says `Files` too; it is on its way to a folder.
+  return (
+    canUpload.value &&
+    !carriesLibraryFiles(event) &&
+    (event.dataTransfer?.types ?? []).includes('Files')
+  )
 }
 
 function dragEnter(event: DragEvent): void {
@@ -349,6 +364,30 @@ async function renameFolder(): Promise<void> {
   }
 }
 
+const askToDelete = createModal<true, { title: string; message?: string; inUse?: FileInUse[] }>(
+  DeleteDialog,
+)
+
+/** «3 файла и 1 папка» — each count in the form its language wants for it. */
+function counted(files: number, folders: number): string {
+  const language = locale()
+
+  return [
+    files > 0 ? t(`dialogs.count-files.${pluralForm(files, language)}`, { count: files }) : null,
+    folders > 0
+      ? t(`dialogs.count-folders.${pluralForm(folders, language)}`, { count: folders })
+      : null,
+  ]
+    .filter((part): part is string => part !== null)
+    .join(` ${t('dialogs.and')} `)
+}
+
+/**
+ * A folder is asked about once, with everything in the question: what is inside it through the
+ * whole subtree, and which of those files the site still uses and where (§14.2). The answer is
+ * fetched before the dialog opens rather than discovered from a refusal after it closes — that
+ * was a second dialog, asking the same thing again with numbers in it.
+ */
 async function deleteFolder(): Promise<void> {
   const target = folder.value
 
@@ -356,45 +395,38 @@ async function deleteFolder(): Promise<void> {
     return
   }
 
-  // Asked before anything is tried, because a folder is a folder whether or not it holds
-  // anything (§14.2) — and asked a second time, with the counts the server sent back, when it
-  // turns out that what goes with it is somebody's article illustrations.
-  const first = await confirm({
+  let contents
+
+  try {
+    contents = await api.directoryContents(target.id)
+  } catch (error) {
+    toast.danger(message(error))
+
+    return
+  }
+
+  const empty = contents.files === 0 && contents.directories === 0
+
+  const agreed = await askToDelete({
     title: t('dialogs.delete-folder-title', { title: target.title }),
-    message: t('dialogs.delete-folder-text'),
-    confirmText: t('dialogs.confirm'),
-    cancelText: t('manager.cancel'),
-    tone: 'danger',
+    message: empty
+      ? t('dialogs.delete-folder-text')
+      : `${t('dialogs.delete-folder-contents', { what: counted(contents.files, contents.directories) })} ${t('dialogs.delete-folder-warning')}`,
+    inUse: contents.in_use,
   })
 
-  if (!first) {
+  if (!agreed) {
     return
   }
 
   try {
-    await api.deleteDirectory(target.id)
+    await api.deleteDirectory(target.id, !empty)
   } catch (error) {
-    const counts = countsOf(error)
+    // Something landed in it between the question and the answer: said, and nothing went.
+    toast.danger(message(error))
+    await load()
 
-    if (!counts) {
-      toast.danger(message(error))
-
-      return
-    }
-
-    const agreed = await confirm({
-      title: t('dialogs.delete-folder-title', { title: target.title }),
-      message: `${t('dialogs.delete-folder-contents', counts)} ${t('dialogs.delete-folder-warning')}`,
-      confirmText: t('dialogs.confirm'),
-      cancelText: t('manager.cancel'),
-      tone: 'danger',
-    })
-
-    if (!agreed) {
-      return
-    }
-
-    await api.deleteDirectory(target.id, true)
+    return
   }
 
   current.value = null
@@ -427,25 +459,109 @@ async function moveSelected(): Promise<void> {
     return
   }
 
-  await api.move([...selected.value], to)
+  await moveFiles([...selected.value], to)
+}
+
+/**
+ * Files into a folder — from the dialog or dropped on the tree — and a toast that says where
+ * they went, with the way back: each file returns to the folder it was taken from, which is
+ * not always one folder when the list was a search.
+ */
+async function moveFiles(ids: number[], to: number): Promise<void> {
+  const from = new Map(
+    rows.value.filter((file) => ids.includes(file.id)).map((file) => [file.id, file.directory_id]),
+  )
+  const staying = [...from].filter(([, directory]) => directory === to).map(([id]) => id)
+  const moving = ids.filter((id) => !staying.includes(id))
+
+  if (moving.length === 0) {
+    return
+  }
+
+  try {
+    await api.move(moving, to)
+  } catch (error) {
+    toast.danger(message(error))
+
+    return
+  }
+
+  const target = find(to)
+
+  toast.success(
+    t('manager.moved', {
+      count: moving.length,
+      folder: target ? (target.is_root ? t('manager.root') : target.title) : '',
+    }),
+    {
+      action: {
+        label: t('manager.undo'),
+        onClick: () => void moveBack(from),
+      },
+    },
+  )
+
+  await load(page.value?.meta.current_page ?? 1)
+}
+
+async function moveBack(from: Map<number, number>): Promise<void> {
+  const byFolder = new Map<number, number[]>()
+
+  for (const [id, directory] of from) {
+    byFolder.set(directory, [...(byFolder.get(directory) ?? []), id])
+  }
+
+  try {
+    for (const [directory, ids] of byFolder) {
+      await api.move(ids, directory)
+    }
+  } catch (error) {
+    toast.danger(message(error))
+  }
+
   await load(page.value?.meta.current_page ?? 1)
 }
 
 async function removeSelected(): Promise<void> {
   const ids = [...selected.value]
 
-  const agreed = await confirm({
-    title: t('dialogs.delete-files-title', { count: ids.length }),
-    message: t('dialogs.delete-files-text'),
-    confirmText: t('dialogs.confirm'),
-    cancelText: t('manager.cancel'),
-    tone: 'danger',
-  })
+  await removeFiles(ids, t('dialogs.delete-files-title', { count: ids.length }))
+}
 
-  if (agreed) {
-    await api.remove(ids)
-    await load(page.value?.meta.current_page ?? 1)
+/**
+ * The same rule as `media_delete_files` for an agent: before anything goes, the server is asked
+ * which of the files the site still uses, and the question says where. «Delete anyway» is the
+ * `force` the server otherwise refuses without.
+ */
+async function removeFiles(ids: number[], title: string): Promise<void> {
+  let inUse: FileInUse[]
+
+  try {
+    inUse = await api.usage(ids)
+  } catch (error) {
+    toast.danger(message(error))
+
+    return
   }
+
+  const agreed = await askToDelete({ title, inUse })
+
+  if (!agreed) {
+    return
+  }
+
+  try {
+    if (ids.length === 1) {
+      await api.removeOne(ids[0]!, inUse.length > 0)
+    } else {
+      await api.remove(ids, inUse.length > 0)
+    }
+  } catch (error) {
+    // Put to use between the question and the answer: refused, and said why.
+    toast.danger(message(error))
+  }
+
+  await load(page.value?.meta.current_page ?? 1)
 }
 
 async function rename(file: MediaFile, name: string): Promise<void> {
@@ -454,8 +570,7 @@ async function rename(file: MediaFile, name: string): Promise<void> {
 }
 
 async function remove(file: MediaFile): Promise<void> {
-  await api.removeOne(file.id)
-  await load(page.value?.meta.current_page ?? 1)
+  await removeFiles([file.id], t('dialogs.delete-file', { name: file.name }))
 }
 
 /**
@@ -531,14 +646,6 @@ function find(id: number | null): MediaDirectory | null {
   return id === null ? null : walk(directories.value)
 }
 
-function countsOf(error: unknown): { files: number; directories: number } | null {
-  const body = (
-    error as { body?: { code?: string; counts?: { files: number; directories: number } } }
-  )?.body
-
-  return body?.code === 'directory_not_empty' ? (body.counts ?? null) : null
-}
-
 const askToOptimize = createModal<true, { plain: OptimizePending; convertible: OptimizePending }>(
   OptimizeDialog,
 )
@@ -589,6 +696,7 @@ function debounce(run: () => void, wait: number): () => void {
         :directories="directories"
         :loading="!foldersLoaded"
         @move="moveFolder"
+        @move-files="moveFiles"
       />
 
       <wx-actions v-if="canManage" size="sm" align="start">
@@ -665,6 +773,7 @@ function debounce(run: () => void, wait: number): () => void {
         :api="api"
         :query="search"
         :single="picksOne"
+        :draggable="canManage && !picking && !compact"
         @rename="rename"
         @edit="edit"
         @remove="remove"
@@ -676,7 +785,7 @@ function debounce(run: () => void, wait: number): () => void {
         <span v-if="selected.length > 0">
           {{ t('manager.status-selected', { count: selected.length }) }}
         </span>
-        <span>{{ t('manager.status-size', { size: readable(shownSize) }) }}</span>
+        <span>{{ t('manager.status-size', { size: readable(shownSize, locale()) }) }}</span>
       </footer>
 
       <wx-pagination
@@ -709,6 +818,7 @@ function debounce(run: () => void, wait: number): () => void {
           :directories="directories"
           :loading="!foldersLoaded"
           @move="moveFolder"
+          @move-files="moveFiles"
           @update:selected="foldersOpen = false"
         />
 
