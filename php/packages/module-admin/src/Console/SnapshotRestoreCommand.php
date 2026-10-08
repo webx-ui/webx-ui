@@ -133,7 +133,10 @@ class SnapshotRestoreCommand extends Command
                     $files['deleted'],
                 ));
 
-                if (! file_exists(public_path('storage'))) {
+                // The links the site configured, which is what `storage:link` itself makes.
+                $links = array_keys((array) config('filesystems.links', [public_path('storage') => null]));
+
+                if (array_filter($links, static fn ($link): bool => ! file_exists((string) $link)) !== []) {
                     try {
                         $this->callSilently('storage:link');
                     } catch (Throwable $failure) {

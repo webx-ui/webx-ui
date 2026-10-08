@@ -38,7 +38,7 @@ final class SnapshotsTest extends TestCase
 
         // A restore runs `storage:link` when the link is missing; Testbench's own public folder is
         // shared by every package's tests, and a link left there changes what they see.
-        $app->usePublicPath($this->dir.'/www');
+        $app['config']->set('filesystems.links', [$this->dir.'/www/storage' => $this->dir.'/public']);
 
         $app['config']->set('app.name', 'Demo Site');
         $app['config']->set('app.url', 'http://demo.local');
