@@ -480,6 +480,8 @@ async function moveFiles(ids: number[], to: number): Promise<void> {
       folder: target ? (target.is_root ? t('manager.root') : target.title) : '',
     }),
     {
+      // Longer than a toast that only reports: there is a button in this one to reach for.
+      duration: 10000,
       action: {
         label: t('manager.undo'),
         onClick: () => void moveBack(from),

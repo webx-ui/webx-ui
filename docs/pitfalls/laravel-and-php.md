@@ -118,6 +118,11 @@ MCP-сервер, движок Manticore. Всё ниже однажды сто�
   smoke против настоящей СУБД.
 - Было: `getTables()` отдавал таблицы всех баз сервера, и `mysqldump` падал на чужой. Починено в
   `Backups\Dumper` — спрашивать `getTables($schema->getCurrentSchemaName())`.
+- **`getForeignKeys()` на MariaDB — около 30 мс на таблицу.** По восьмидесяти таблицам это
+  2,5 секунды, и вопрос «где используется файл» перед каждым удалением в «Файлах» висел две
+  секунды без отклика. Все внешние ключи в одну таблицу — одним запросом к
+  `information_schema.KEY_COLUMN_USAGE` (`REFERENCED_TABLE_NAME = ?`), как в
+  `Media\Usage\DatabaseUsage`; по таблице — только там, где `information_schema` нет.
 
 ## Blade и рендер сайта
 
