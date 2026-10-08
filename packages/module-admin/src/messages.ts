@@ -142,6 +142,10 @@ export const adminMessages: Record<string, Messages> = {
     apply: 'Apply',
     cancel: 'Cancel',
     uploading: 'Uploading…',
+    source: 'HTML source',
+    'source-loss': 'The editor does not keep this markup and will remove it:',
+    'source-drop': 'Remove it',
+    'source-keep': 'Keep editing',
   },
   // What one administrator writes on a record for the next one. Not the property of any
   // section: the same feed hangs off a submission, an order and a client, so the words are
