@@ -162,6 +162,7 @@ class PagesServiceProvider extends ServiceProvider
                     'paths' => $paths === [] ? new stdClass : $paths,
                 ];
             },
+            model: Page::class,
         );
     }
 

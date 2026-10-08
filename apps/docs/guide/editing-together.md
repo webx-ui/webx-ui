@@ -64,6 +64,15 @@ there and when, keeps the form as it is so nothing typed is lost, and offers «R
 and save my changes» when the form holds unsaved ones — to whoever may restore it. A save or a
 publication that finds it gone hands over to that notice rather than a vague error.
 
+**Deleted for good.** A purge — emptying the bin, `pages_purge` — is noted like the rest, and the
+note outlives the row for an hour. The heartbeat then answers `410` with `gone`: who deleted it,
+through which door and when. A save or a publication through the module's own endpoint answers the
+same, for any model `findOrFail` or route binding fails to find. The editor says «Agent, through an
+agent deleted this for good · 18:01», stops autosaving and stops asking, keeps the form, and offers
+«Copy my text»: every piece of text in the form under the name the form gives it, rich text as its
+words. There is no restore, because there is nothing left to restore into. A record that never
+existed is still a plain `404`.
+
 **Where the record sits is never a draft value.** A move is applied at once and on its own; a form
 left open on a page somebody moved meanwhile cannot move it back by saving.
 
@@ -125,12 +134,13 @@ $this->app->make(EditedRecords::class)->register(
         ? ['revision' => Revision::of($course), 'model' => $course]
         : null,
     'courses.manage',                       // who may restore a draft
+    model: Course::class,                   // whose key the id is: a purge is heard by it
 );
 ```
 
 Find the record with `withTrashed()` when the model has a bin, so the editor hears that it went
 there; a record that can move passes a fifth argument, `fn (Model $course): array` with where it
-sits. Publishing, the bin and a version put back are noted by `HasDraft` and `HasVersions`
+sits. Without `model:` a purged record answers a plain `404` and the editor says nothing. Publishing, the bin and a version put back are noted by `HasDraft` and `HasVersions`
 themselves; a move by `nested-set`.
 
 Add `'changed' => LastChange::of($course, $request->user())` to the `409` body, and in the MCP

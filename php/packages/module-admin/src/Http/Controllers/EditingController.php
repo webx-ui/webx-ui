@@ -6,6 +6,7 @@ namespace WebxUi\Admin\Http\Controllers;
 
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -15,6 +16,7 @@ use WebxUi\Admin\Editing\DraftCopies;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Editing\Presence;
+use WebxUi\Admin\Editing\Purged;
 use WebxUi\Admin\Editing\RecordEvents;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
@@ -166,7 +168,18 @@ final class EditingController
             throw new AccessDeniedHttpException;
         }
 
-        return $this->records->find($entity, $id) ?? throw new NotFoundHttpException;
+        $found = $this->records->find($entity, $id);
+
+        if ($found !== null) {
+            return $found;
+        }
+
+        // Deleted for good is not the same as never there: the editor open on it has to say who
+        // took it away, and stop, rather than take the silence for a network that blinked.
+        $model = $this->records->model($entity);
+        $purged = $model === null ? null : $this->events->purged($model, $id);
+
+        throw $purged === null ? new NotFoundHttpException : new HttpResponseException(Purged::answer($purged));
     }
 
     private function adminId(Request $request): ?int

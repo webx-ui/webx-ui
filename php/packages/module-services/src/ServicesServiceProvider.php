@@ -292,6 +292,7 @@ class ServicesServiceProvider extends ServiceProvider
                 return $service instanceof Service ? ['revision' => Revision::of($service), 'model' => $service] : null;
             },
             'services.manage',
+            model: Service::class,
         );
     }
 

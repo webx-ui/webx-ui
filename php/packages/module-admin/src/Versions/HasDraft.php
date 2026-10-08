@@ -43,7 +43,7 @@ trait HasDraft
 {
     /**
      * What an open editor of this record has to hear about besides its content (RecordEvents):
-     * a move in the tree, the bin and the way out of it. Publishing, unpublishing and the draft
+     * a move in the tree, the bin and the way out of it, and a delete for good. Publishing, unpublishing and the draft
      * thrown away are noted where they happen, below.
      */
     public static function bootHasDraft(): void
@@ -54,11 +54,19 @@ trait HasDraft
             $model->noteEvent(RecordEvents::MOVED);
         });
 
+        // A purge fires `deleted` too, on a model that is still `trashed()` — it was in the bin.
+        // Only the flag tells the two apart; a model without the bin is gone on any delete.
         static::deleted(static function (Model $model): void {
             /** @var Model&self $model */
-            if (method_exists($model, 'trashed') && $model->trashed()) {
-                $model->noteEvent(RecordEvents::TRASHED);
+            if (method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting()) {
+                if (method_exists($model, 'trashed') && $model->trashed()) {
+                    $model->noteEvent(RecordEvents::TRASHED);
+                }
+
+                return;
             }
+
+            $model->noteEvent(RecordEvents::PURGED);
         });
 
         // Only a model with `SoftDeletes` ever fires it; registering it for the rest is harmless.

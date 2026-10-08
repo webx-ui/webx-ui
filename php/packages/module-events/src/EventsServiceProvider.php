@@ -275,6 +275,7 @@ class EventsServiceProvider extends ServiceProvider
                 return $event instanceof Event ? ['revision' => Revision::of($event), 'model' => $event] : null;
             },
             'events.manage',
+            model: Event::class,
         );
     }
 

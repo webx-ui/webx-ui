@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class EditedRecords
 {
-    /** @var array<string, array{permissions: list<string>, write: list<string>, find: Closure(string): ?array{revision: string, model: Model}, place: (Closure(Model): array<string, mixed>)|null}> */
+    /** @var array<string, array{permissions: list<string>, write: list<string>, find: Closure(string): ?array{revision: string, model: Model}, place: (Closure(Model): array<string, mixed>)|null, model: class-string<Model>|null}> */
     private array $records = [];
 
     /**
@@ -29,8 +29,10 @@ final class EditedRecords
      * @param  (Closure(Model): array<string, mixed>)|null  $place  Where the record sits, for one that can be moved — a page's
      *                                                              parent and address. An open editor compares it with what it
      *                                                              shows and catches up when it moved.
+     * @param  class-string<Model>|null  $model  The model whose key the id is. With it, an editor open on a record somebody
+     *                                           deleted for good hears who did it and when, rather than nothing.
      */
-    public function register(string $entity, string|array $permission, Closure $find, string|array|null $write = null, ?Closure $place = null): void
+    public function register(string $entity, string|array $permission, Closure $find, string|array|null $write = null, ?Closure $place = null, ?string $model = null): void
     {
         $read = is_array($permission) ? array_values($permission) : [$permission];
 
@@ -39,7 +41,14 @@ final class EditedRecords
             'write' => $write === null ? $read : (is_array($write) ? array_values($write) : [$write]),
             'find' => $find,
             'place' => $place,
+            'model' => $model,
         ];
+    }
+
+    /** @return class-string<Model>|null */
+    public function model(string $entity): ?string
+    {
+        return $this->records[$entity]['model'] ?? null;
     }
 
     public function has(string $entity): bool

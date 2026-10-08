@@ -63,6 +63,7 @@ export interface EditingEvent {
     | 'moved'
     | 'trashed'
     | 'restored'
+    | 'purged'
     | string
   author: string | null
   author_id: number | null
@@ -154,6 +155,13 @@ export interface Editing<T> {
   trashed: ComputedRef<boolean>
   /** Who put it there and when, when the server knows. */
   trashedBy: ComputedRef<EditingEvent | null>
+  /**
+   * The record was deleted for good: who did it and when. Nothing can be saved or restored —
+   * the form keeps what it holds, to be copied out with `copyText`.
+   */
+  gone: Ref<EditingEvent | null>
+  /** In the bin or gone: autosave waits, and a save would only fail. */
+  stopped: ComputedRef<boolean>
   /** Whether the form holds something the server does not. */
   unsaved: ComputedRef<boolean>
   /** Whether this editor can take the record out of the bin. */
@@ -188,6 +196,10 @@ export interface Editing<T> {
   failed(error: unknown): Promise<boolean>
   /** Out of the bin. The form keeps what it holds; saving it is the caller's next step. */
   restoreFromBin(): Promise<boolean>
+  /** What the form holds, as text a person can paste somewhere else: each field under its name. */
+  text(): string
+  /** That text onto the clipboard, said with a toast either way. */
+  copyText(): Promise<boolean>
   /** The events have been read. */
   dismissEvents(): void
   /** Ask the server now rather than at the next heartbeat. */
@@ -251,6 +263,8 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
   const canWrite = (): boolean => options.canWrite?.() ?? true
 
   const trashed = computed(() => state.value?.trashed === true)
+  const gone = ref<EditingEvent | null>(null)
+  const stopped = computed(() => trashed.value || gone.value !== null)
   const trashedBy = computed(
     () => [...recent.value].reverse().find((event) => event.kind === 'trashed') ?? null,
   )
@@ -484,12 +498,17 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
   }
 
   async function failed(error: unknown): Promise<boolean> {
-    const failure = error as { status?: number; body?: { message?: string; revision?: unknown } }
+    const failure = error as {
+      status?: number
+      body?: { message?: string; revision?: unknown; gone?: unknown }
+    }
+
+    if (failure?.status === 410 && heardGone(failure.body?.gone)) return true
 
     if (failure?.status === 404 || failure?.status === 410) {
       await beat()
 
-      return trashed.value
+      return stopped.value
     }
 
     // A publication that carried a revision the draft is no longer at: somebody wrote between
@@ -530,6 +549,52 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
 
   function dismissEvents(): void {
     events.value = []
+  }
+
+  /**
+   * A 410 with the purge in it. Said once and kept: the record will not come back, and every
+   * heartbeat after this one would only hear the same.
+   */
+  function heardGone(event: unknown): boolean {
+    if (gone.value !== null) return true
+    if (event === undefined) return false
+
+    const purge = (event ?? {}) as Partial<EditingEvent>
+
+    gone.value = {
+      id: typeof purge.id === 'number' ? purge.id : 0,
+      kind: 'purged',
+      author: typeof purge.author === 'string' ? purge.author : null,
+      author_id: typeof purge.author_id === 'number' ? purge.author_id : null,
+      source: typeof purge.source === 'string' ? purge.source : 'panel',
+      at: typeof purge.at === 'string' ? purge.at : '',
+      detail: null,
+    }
+    incoming.value = null
+    conflict.value = null
+    editors.value = []
+
+    return true
+  }
+
+  function text(): string {
+    return texts(options.values.value)
+      .map(([path, words]) => `${labels.label(path)}\n${words}`)
+      .join('\n\n')
+  }
+
+  async function copyText(): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text())
+    } catch {
+      toast.danger(t('editing.copy-failed'))
+
+      return false
+    }
+
+    toast.success(t('editing.copied'))
+
+    return true
   }
 
   /* The heartbeat. */
@@ -599,9 +664,22 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     const held = options.revision.value
     let ping: Ping
 
+    // Gone is gone: the next record the screen opens starts over (see the watch on the id).
+    if (gone.value !== null) return
+
     try {
       ping = (await admin.http.post<{ data: Ping }>(url)).data
-    } catch {
+    } catch (error) {
+      const failure = error as { status?: number; body?: { gone?: unknown } }
+
+      // Deleted for good is the one silence that is not a courtesy: what is typed here has
+      // nowhere to go, and the person has to hear it before they type more.
+      if (failure?.status === 410) {
+        heardGone(failure.body?.gone ?? null)
+
+        return
+      }
+
       // A record nobody has saved yet, a panel without the endpoint, a network that blinked:
       // the heartbeat is a courtesy, and its absence is not worth a word on screen.
       return
@@ -675,6 +753,7 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
         seen = null
         stateKey = null
         events.value = []
+        gone.value = null
         void beat()
       },
       { immediate: true },
@@ -696,6 +775,8 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     events,
     trashed,
     trashedBy,
+    gone,
+    stopped,
     unsaved,
     canRestore,
     opened,
@@ -707,6 +788,8 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     beforePublish,
     failed,
     restoreFromBin,
+    text,
+    copyText,
     dismissEvents,
     check: beat,
     label: labels.label,
@@ -738,6 +821,56 @@ export function preview(value: unknown): string {
   }
 
   return clip(JSON.stringify(value))
+}
+
+/**
+ * Every piece of text in a value with where it sits — what a person typed, to be carried out of
+ * a form whose record is gone. Rich text comes out as its words, a paragraph to a line; a block's
+ * own `key` and `type` are its shape, not anything anybody wrote.
+ */
+export function texts(value: unknown, path: MergeSegment[] = []): [MergeSegment[], string][] {
+  if (typeof value === 'string') {
+    const words = plain(value)
+
+    return words === '' ? [] : [[path, words]]
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => {
+      const node = item as { key?: unknown; type?: unknown } | null
+
+      return node !== null && typeof node === 'object' && typeof node.key === 'string'
+        ? texts(item, [
+            ...path,
+            { block: node.key, type: typeof node.type === 'string' ? node.type : '' },
+          ])
+        : texts(item, path)
+    })
+  }
+
+  if (value === null || typeof value !== 'object') return []
+
+  const inBlock = path.length > 0 && 'block' in path[path.length - 1]!
+
+  return Object.entries(value).flatMap(([key, item]) =>
+    inBlock && (key === 'key' || key === 'type') ? [] : texts(item, [...path, { field: key }]),
+  )
+}
+
+function plain(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|h[1-6]|li|blockquote|div)>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 /** A sentence whose time was not known ends where the time would have been, not on a «·». */

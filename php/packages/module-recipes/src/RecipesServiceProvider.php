@@ -286,6 +286,7 @@ class RecipesServiceProvider extends ServiceProvider
                 return $recipe instanceof Recipe ? ['revision' => Revision::of($recipe), 'model' => $recipe] : null;
             },
             'recipes.manage',
+            model: Recipe::class,
         );
     }
 

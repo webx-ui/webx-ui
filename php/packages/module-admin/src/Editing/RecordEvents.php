@@ -11,7 +11,8 @@ use WebxUi\Admin\History\HistoryContext;
 
 /**
  * What happened to a record that is not a change of its content: published, taken off the site,
- * its draft thrown away, an old version put back, moved in the tree, put in the bin or taken out.
+ * its draft thrown away, an old version put back, moved in the tree, put in the bin or taken out,
+ * deleted for good.
  *
  * The revision an open editor holds is a hash of the content, and none of these change it — or
  * change it without saying why. Publishing left a second editor showing «Edited» on a page that
@@ -38,6 +39,12 @@ final class RecordEvents
     public const TRASHED = 'trashed';
 
     public const RESTORED = 'restored';
+
+    /**
+     * Deleted for good. Noted like the rest, and it outlives the row it is about: the record is
+     * gone, and this is the only thing left that can tell an open editor who did it and when.
+     */
+    public const PURGED = 'purged';
 
     /** How many are kept per record: the newest ones. */
     private const KEEP = 10;
@@ -91,7 +98,33 @@ final class RecordEvents
      */
     public function of(Model $record): array
     {
-        $stored = $this->cache->get($this->key($record));
+        return $this->stored($this->key($record));
+    }
+
+    /**
+     * How a record that no longer exists went, when it was deleted for good within the hour.
+     * Asked by its class and key, because there is no model left to ask with.
+     *
+     * @param  class-string<Model>  $class
+     * @return array{id: int, kind: string, author: string|null, author_id: int|null, source: string, at: string, detail: array<string, mixed>|null}|null
+     */
+    public function purged(string $class, int|string $id): ?array
+    {
+        $events = $this->stored('webx-admin.record-events.'.(new $class)->getMorphClass().'.'.$id);
+
+        foreach (array_reverse($events) as $event) {
+            if (($event['kind'] ?? null) === self::PURGED) {
+                return $event;
+            }
+        }
+
+        return null;
+    }
+
+    /** @return list<array{id: int, kind: string, author: string|null, author_id: int|null, source: string, at: string, detail: array<string, mixed>|null}> */
+    private function stored(string $key): array
+    {
+        $stored = $this->cache->get($key);
 
         return is_array($stored) ? array_values(array_filter($stored, is_array(...))) : [];
     }

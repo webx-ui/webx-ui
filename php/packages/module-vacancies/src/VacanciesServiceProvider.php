@@ -231,6 +231,7 @@ class VacanciesServiceProvider extends ServiceProvider
                 return $vacancy instanceof Vacancy ? ['revision' => Revision::of($vacancy), 'model' => $vacancy] : null;
             },
             'vacancies.manage',
+            model: Vacancy::class,
         );
     }
 

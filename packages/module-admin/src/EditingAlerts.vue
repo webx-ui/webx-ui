@@ -9,7 +9,8 @@ import type { MergeChoice, MergeConflict } from './merge'
 /**
  * What an editor says about other people editing the same record, above its form.
  *
- * Five things, the loudest first. The record is in the bin, with the way out of it. A conflict: both sides changed the same place, and each such
+ * Six things, the loudest first. The record was deleted for good, with a way to copy out what was
+ * typed. The record is in the bin, with the way out of it. A conflict: both sides changed the same place, and each such
  * place is listed with what it was, what this editor wrote and what the other side wrote, to be
  * settled one by one — everything else has already been merged. A save that came in while this
  * editor was open, with what it changed and an offer to pull it in before saving over it. What
@@ -103,6 +104,18 @@ const trashedTitle = computed(() => {
   })
 })
 
+/* Deleted for good: who did it and when. No way back — only the text, to be carried out. */
+const gone = computed(() => props.editing.gone.value)
+
+const goneTitle = computed(() => {
+  const by = gone.value
+
+  // A 410 with nothing in it — an older server — says only that it is gone.
+  if (!by?.at) return t('editing.purged-anonymous')
+
+  return timeless(t('editing.purged-title', { who: props.editing.who(by), when: when(by.at) }))
+})
+
 const restoring = ref(false)
 
 /** Out of the bin, and what the form holds saved right after when there is anything. */
@@ -152,10 +165,27 @@ async function pull(): Promise<void> {
 </script>
 
 <template>
+  <!-- Deleted for good: there is nothing to save into and nothing to restore. The form keeps what
+       it holds, and the one thing left to offer is carrying it out. -->
+  <wx-alert
+    v-if="gone"
+    class="wx-editing-alerts"
+    type="danger"
+    :title="goneTitle"
+    :description="t('editing.purged-text')"
+    live
+  >
+    <template #actions>
+      <wx-button size="sm" type="primary" @click="editing.copyText()">
+        {{ t('editing.copy-text') }}
+      </wx-button>
+    </template>
+  </wx-alert>
+
   <!-- In the bin: nothing typed here can be saved until it is out. The form keeps what it holds,
        so the text can be copied even by somebody who may not restore it. -->
   <wx-alert
-    v-if="trashed"
+    v-else-if="trashed"
     class="wx-editing-alerts"
     type="danger"
     :title="trashedTitle"

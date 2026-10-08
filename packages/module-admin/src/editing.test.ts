@@ -4,7 +4,7 @@ import { defineComponent, h, ref } from 'vue'
 import type * as core from '@webx-ui/core'
 import { confirm, localesKey } from '@webx-ui/core'
 import { adminKey, type AdminContext } from './admin'
-import { useEditing, type Editing, type EditingEvent, type EditingOptions } from './editing'
+import { texts, useEditing, type Editing, type EditingEvent, type EditingOptions } from './editing'
 import { createI18n, i18nKey } from './i18n'
 import { adminMessages } from './messages'
 
@@ -329,6 +329,76 @@ describe('useEditing', () => {
     expect(editor.editing().trashed.value).toBe(false)
     // Who put it in the bin is not said again once it is out.
     expect(editor.editing().events.value.map((one) => one.kind)).not.toContain('trashed')
+  })
+
+  it('deleted for good: says who did it, stops, keeps the form and copies it out', async () => {
+    ping = answer()
+    const restore = vi.fn(() => Promise.resolve())
+    const editor = await host({ restore })
+    editor.open()
+    await flushPromises()
+
+    editor.form.value = values('My unsaved title', 'Mine')
+    const purge = { ...event(50, 'purged'), author: 'Agent', source: 'mcp' }
+    editor.post.mockImplementation(() =>
+      Promise.reject({ status: 410, body: { message: 'Gone', gone: purge } }),
+    )
+    editor.read.mockClear()
+
+    await editor.editing().check()
+
+    expect(editor.editing().gone.value).toMatchObject({ kind: 'purged', author: 'Agent' })
+    expect(editor.editing().stopped.value).toBe(true)
+    expect(editor.editing().who(editor.editing().gone.value)).toBe('Agent, through an agent')
+    expect(editor.form.value.title.en).toBe('My unsaved title')
+    expect(editor.read).not.toHaveBeenCalled()
+
+    // Gone does not come back: no more heartbeats ask, and a failed save is the notice's.
+    editor.post.mockClear()
+    await editor.editing().check()
+    expect(editor.post).not.toHaveBeenCalled()
+    expect(await editor.editing().failed({ status: 404 })).toBe(true)
+    expect(restore).not.toHaveBeenCalled()
+
+    // What was typed, each piece under the name the form gives it.
+    expect(editor.editing().text()).toBe(
+      'Page title · EN\nMy unsaved title\n\nHero › Line above the heading · EN\nMine',
+    )
+
+    const writeText = vi.fn(() => Promise.resolve())
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    expect(await editor.editing().copyText()).toBe(true)
+    expect(writeText).toHaveBeenCalledWith(editor.editing().text())
+
+    // Another record on the same screen starts over.
+    editor.post.mockImplementation(() => Promise.resolve({ data: answer() }))
+    editor.id.value = 3
+    await flushPromises()
+    expect(editor.editing().gone.value).toBeNull()
+  })
+
+  it('a save refused with 410 says gone without waiting for the heartbeat', async () => {
+    ping = answer()
+    const editor = await host()
+    editor.open()
+    await flushPromises()
+    editor.post.mockClear()
+
+    const gone = { ...event(51, 'purged'), at: '2026-10-08T18:01:00+00:00' }
+
+    expect(await editor.editing().failed({ status: 410, body: { gone } })).toBe(true)
+    expect(editor.editing().gone.value?.at).toBe('2026-10-08T18:01:00+00:00')
+    expect(editor.post).not.toHaveBeenCalled()
+  })
+
+  it('texts: rich text as its words, a block’s key and type left out', () => {
+    expect(
+      texts({
+        body: '<p>One &amp; two</p><p>Three<br>four</p>',
+        blocks: [{ key: 'k1', type: 'hero', values: { cta: '' } }],
+      }),
+    ).toEqual([[[{ field: 'body' }], 'One & two\nThree\nfour']])
   })
 
   it('a publication refused for a stale revision is the notice’s to explain', async () => {

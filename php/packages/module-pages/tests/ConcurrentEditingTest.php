@@ -7,11 +7,13 @@ namespace WebxUi\Pages\Tests;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Editing\RecordEvents;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\RegistryTool;
 use WebxUi\Mcp\Server\WebxServer;
+use WebxUi\Pages\Models\Page;
 
 /**
  * An editor in the panel and an agent over MCP on the same page.
@@ -293,6 +295,54 @@ final class ConcurrentEditingTest extends TestCase
         $this->actingAs($owner, 'cms')
             ->putJson($this->api($about->getKey()), ['values' => ['title' => ['en' => 'Too late']]])
             ->assertNotFound();
+    }
+
+    #[Test]
+    public function a_page_deleted_for_good_is_gone_rather_than_missing(): void
+    {
+        $about = $this->page('about');
+        $owner = $this->named('Owner');
+        $agent = $this->named('Agent');
+        $url = '/api/cms/editing/pages/'.$about->getKey();
+
+        $revision = $this->actingAs($owner, 'cms')->postJson($url)->assertOk()->json('data.revision');
+
+        $this->agent('pages_delete', ['page' => $about->getKey(), 'revision' => $revision], $agent)->assertOk();
+        $this->agent('pages_purge', ['page' => $about->getKey()], $agent)->assertOk();
+
+        // The heartbeat: 410 with who and when, not the 404 a typo in an id would get.
+        $gone = $this->actingAs($owner, 'cms')->postJson($url)->assertStatus(410);
+        $gone->assertJsonPath('gone.kind', 'purged')
+            ->assertJsonPath('gone.author', 'Agent')
+            ->assertJsonPath('gone.source', 'mcp');
+        $this->assertStringContainsString('Agent, through an agent deleted this for good at', (string) $gone->json('message'));
+
+        // A save and a publication answer the same, through the module's own endpoints.
+        $this->actingAs($owner, 'cms')
+            ->putJson($this->api($about->getKey()), ['values' => ['title' => ['en' => 'Too late']]])
+            ->assertStatus(410)
+            ->assertJsonPath('gone.author', 'Agent');
+        $this->actingAs($owner, 'cms')
+            ->postJson($this->api($about->getKey()).'/publish', ['revision' => $revision])
+            ->assertStatus(410);
+
+        // A page that never was is still a 404, and so is one only in the bin.
+        $this->actingAs($owner, 'cms')->postJson('/api/cms/editing/pages/99999')->assertNotFound();
+        $this->actingAs($owner, 'cms')->putJson($this->api(99999), ['values' => []])->assertNotFound();
+    }
+
+    #[Test]
+    public function the_purge_of_a_page_in_the_bin_is_not_heard_as_a_second_trip_there(): void
+    {
+        $about = $this->page('about');
+        $id = $about->getKey();
+        $about->delete();
+        Page::withTrashed()->findOrFail($id)->forceDelete();
+
+        $events = $this->app->make(RecordEvents::class);
+
+        $this->assertSame('purged', $events->purged(Page::class, $id)['kind'] ?? null);
+        $this->assertSame(['trashed', 'purged'], array_slice(array_column($events->of($about), 'kind'), -2));
     }
 
     #[Test]

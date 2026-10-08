@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace WebxUi\Admin;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Http\Kernel;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Categories\CategoriesType;
 use WebxUi\Admin\Categories\CategorySources;
@@ -40,6 +45,8 @@ use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Editing\Presence;
+use WebxUi\Admin\Editing\Purged;
+use WebxUi\Admin\Editing\RecordEvents;
 use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\History\HistoryContext;
@@ -284,6 +291,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerHistorySchedule();
         $this->registerUploadsSchedule();
         $this->registerGate();
+        $this->registerPurgedAnswer();
         SystemSections::register($this->app->make('config'));
 
         $router = $this->app->make('router');
@@ -330,6 +338,42 @@ class AdminServiceProvider extends ServiceProvider
             SnapshotCommand::class,
             SnapshotRestoreCommand::class,
         ]);
+    }
+
+    /**
+     * A save or a publication of a record somebody deleted for good answers 410 with who did it,
+     * the same as the heartbeat, instead of a 404 the editor cannot tell from a typo in an id.
+     *
+     * Every module's endpoint finds its record by route binding or `findOrFail`, and both end in
+     * a `ModelNotFoundException` that still names the model and the key — enough to look the
+     * purge up without each module learning to. Only for JSON: a site's page stays a 404.
+     */
+    private function registerPurgedAnswer(): void
+    {
+        $this->callAfterResolving(ExceptionHandler::class, function (ExceptionHandler $handler): void {
+            if (! method_exists($handler, 'renderable')) {
+                return;
+            }
+
+            $handler->renderable(function (NotFoundHttpException $e, Request $request): ?JsonResponse {
+                $missing = $e->getPrevious();
+
+                if (! $missing instanceof ModelNotFoundException || ! $request->expectsJson()) {
+                    return null;
+                }
+
+                $ids = $missing->getIds();
+                $id = is_array($ids) && count($ids) === 1 ? reset($ids) : null;
+
+                if (! is_int($id) && ! is_string($id)) {
+                    return null;
+                }
+
+                $purged = $this->app->make(RecordEvents::class)->purged($missing->getModel(), $id);
+
+                return $purged === null ? null : Purged::answer($purged);
+            });
+        });
     }
 
     /**

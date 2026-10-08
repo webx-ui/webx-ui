@@ -333,6 +333,7 @@ class BlogServiceProvider extends ServiceProvider
                 return $article instanceof Article ? ['revision' => Revision::of($article), 'model' => $article] : null;
             },
             'blog.articles.manage',
+            model: Article::class,
         );
     }
 

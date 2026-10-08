@@ -203,7 +203,7 @@ async function refresh(): Promise<void> {
 let timer: ReturnType<typeof setTimeout> | undefined
 
 function schedule(): void {
-  if (!canManage.value || conflict.value || !dirty.value || editing.trashed.value) return
+  if (!canManage.value || conflict.value || !dirty.value || editing.stopped.value) return
 
   clearTimeout(timer)
   timer = setTimeout(() => void save(), PAUSE)
@@ -211,7 +211,7 @@ function schedule(): void {
 
 /** A field was left: write now rather than at the end of a pause nobody is waiting through. */
 function onFocusOut(): void {
-  if (!canManage.value || conflict.value || !dirty.value || saving.value || editing.trashed.value)
+  if (!canManage.value || conflict.value || !dirty.value || saving.value || editing.stopped.value)
     return
 
   clearTimeout(timer)
