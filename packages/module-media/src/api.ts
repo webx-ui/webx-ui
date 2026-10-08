@@ -104,9 +104,7 @@ export function createMediaApi(admin: AdminContext): MediaApi {
       }),
 
     directoryContents: (id) =>
-      admin.http
-        .get<{ data: DirectoryContents }>(`${base}/directories/${id}/contents`)
-        .then(data),
+      admin.http.get<{ data: DirectoryContents }>(`${base}/directories/${id}/contents`).then(data),
 
     files: (query = {}) =>
       admin.http.get<MediaPage>(`${base}/files`, {

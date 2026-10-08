@@ -293,8 +293,7 @@ function pick(event: PointerEvent, from: HTMLElement | null) {
    * gesture there is — and a tap that replaces the selection can never build one. It adds
    * and removes instead; the background still clears, which is the way back out.
    */
-  const toggles =
-    event.ctrlKey || event.metaKey || downToggle || event.pointerType === 'touch'
+  const toggles = event.ctrlKey || event.metaKey || downToggle || event.pointerType === 'touch'
 
   if (toggles) {
     apply(selected.value.has(value) ? base.filter((held) => held !== value) : [...base, value])

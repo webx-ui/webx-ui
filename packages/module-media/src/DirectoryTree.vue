@@ -129,13 +129,7 @@ function filesDrop(event: DragEvent): void {
 <template>
   <wx-skeleton v-if="loading" class="wx-media-tree" :rows="3" :title="false" animated />
 
-  <div
-    v-else
-    class="wx-media-tree"
-    @dragover="filesOver"
-    @dragleave="filesLeave"
-    @drop="filesDrop"
-  >
+  <div v-else class="wx-media-tree" @dragover="filesOver" @dragleave="filesLeave" @drop="filesDrop">
     <wx-tree
       v-model:selected="selected"
       v-model:expanded="expanded"

@@ -72,7 +72,7 @@ Everything lives under the panel's API path, behind the panel session and a perm
 | -------------------------------------------- | ------------------------------------------------------------------------------- |
 | `GET directories`                            | the whole tree with file counts                                                 |
 | `POST/PATCH directories`, `PATCH …/move`     | create, rename, move                                                            |
-| `GET directories/{id}/contents`              | what deleting it would take: counts through the subtree and `in_use`             |
+| `GET directories/{id}/contents`              | what deleting it would take: counts through the subtree and `in_use`            |
 | `DELETE directories/{id}`                    | refuses a folder that holds anything (409 with counts) until `?force=1`         |
 | `GET files`                                  | paginated, `q`, `type`, `sort`, `per_page`                                      |
 | `POST files`                                 | multi-file upload; the same bytes in the same folder answer `duplicate`         |

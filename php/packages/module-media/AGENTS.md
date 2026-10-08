@@ -38,21 +38,21 @@ guides when the question is about one of those. An entity's own attachments are 
 
 ## Change it without forking
 
-| You want                                  | Do this                                                                                   |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------- |
-| The library on another disk (S3 and such) | `WEBX_MEDIA_DISK=s3`; for S3 also `composer require league/flysystem-aws-s3-v3`           |
-| Share a bucket with something else        | `WEBX_MEDIA_PREFIX=…` — the directory every new key starts with                           |
-| Old JPEG and PNG pictures as WebP         | **Optimize** → «Convert to WebP», or `php artisan webx:media:webp --dry-run` first        |
-| Bigger or smaller uploads                 | `WEBX_MEDIA_MAX_SIZE` (kilobytes); `upload.max_files` in the published config             |
-| Larger pieces of a chunked upload         | `webx-admin.uploads.chunk_mb`; PHP's own limits only have to fit one piece                |
-| Allow another file type                   | add the extension to `upload.extensions` in `config/webx-media.php`                       |
-| Imagick instead of GD, other JPEG quality | `WEBX_MEDIA_IMAGE_DRIVER=imagick`; `image.quality`, `image.max_pixels` in the config      |
-| Other thumbnail sizes                     | `thumbs.widths`, `thumbs.fits` in the config                                              |
-| Signed addresses that live longer         | `temporary_url_ttl` (seconds) — used only for a disk without a `url`                      |
+| You want                                  | Do this                                                                                           |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| The library on another disk (S3 and such) | `WEBX_MEDIA_DISK=s3`; for S3 also `composer require league/flysystem-aws-s3-v3`                   |
+| Share a bucket with something else        | `WEBX_MEDIA_PREFIX=…` — the directory every new key starts with                                   |
+| Old JPEG and PNG pictures as WebP         | **Optimize** → «Convert to WebP», or `php artisan webx:media:webp --dry-run` first                |
+| Bigger or smaller uploads                 | `WEBX_MEDIA_MAX_SIZE` (kilobytes); `upload.max_files` in the published config                     |
+| Larger pieces of a chunked upload         | `webx-admin.uploads.chunk_mb`; PHP's own limits only have to fit one piece                        |
+| Allow another file type                   | add the extension to `upload.extensions` in `config/webx-media.php`                               |
+| Imagick instead of GD, other JPEG quality | `WEBX_MEDIA_IMAGE_DRIVER=imagick`; `image.quality`, `image.max_pixels` in the config              |
+| Other thumbnail sizes                     | `thumbs.widths`, `thumbs.fits` in the config                                                      |
+| Signed addresses that live longer         | `temporary_url_ttl` (seconds) — used only for a disk without a `url`                              |
 | Previews of files deleted long ago        | audit `media.orphan_thumbs` and its fix, or `php artisan webx:media:prune-thumbs --dry-run` first |
-| Edit the config at all                    | `php artisan vendor:publish --tag=webx-media-config`, keep only the keys you change       |
-| Other words in the panel                  | `php artisan vendor:publish --tag=webx-media-lang`                                        |
-| A picture or file field on a screen       | a field of type `wx-media`, `wx-gallery`, `wx-file` or `wx-files`; `props.accept` narrows |
+| Edit the config at all                    | `php artisan vendor:publish --tag=webx-media-config`, keep only the keys you change               |
+| Other words in the panel                  | `php artisan vendor:publish --tag=webx-media-lang`                                                |
+| A picture or file field on a screen       | a field of type `wx-media`, `wx-gallery`, `wx-file` or `wx-files`; `props.accept` narrows         |
 
 The disk and prefix apply to new uploads: every row keeps the disk and key it was written with,
 so switching `WEBX_MEDIA_DISK` does not move or break what is already there — moving old files is
