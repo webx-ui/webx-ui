@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import WxTextarea from './Textarea.vue'
 
 describe('WxTextarea', () => {
@@ -69,5 +69,82 @@ describe('WxTextarea', () => {
 
     expect(wrapper.get('textarea').attributes('disabled')).toBeDefined()
     expect(wrapper.classes()).toContain('is-disabled')
+  })
+})
+
+describe('WxTextarea placeholders', () => {
+  const tokens = [
+    { name: 'phone', value: '+1 555 0100' },
+    { name: 'email', value: 'hello@example.com' },
+  ]
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  function options(): HTMLElement[] {
+    return Array.from(document.querySelectorAll<HTMLElement>('.wx-token-menu__option'))
+  }
+
+  async function type(wrapper: VueWrapper, value: string) {
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+    textarea.value = value
+    textarea.setSelectionRange(value.length, value.length)
+    await wrapper.get('textarea').trigger('input')
+    await flushPromises()
+  }
+
+  it('suggests on a bracket and inserts on Tab', async () => {
+    const wrapper = mount(WxTextarea, { props: { tokens }, attachTo: document.body })
+
+    await type(wrapper, 'Line one\nCall [ph')
+    expect(options()).toHaveLength(1)
+
+    await wrapper.get('textarea').trigger('keydown', { key: 'Tab' })
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['Line one\nCall [phone]'])
+    wrapper.unmount()
+  })
+
+  it('draws chips for known names only', () => {
+    const wrapper = mount(WxTextarea, {
+      props: { tokens, modelValue: 'Write to [email]\nor [unknown], not [[email]]' },
+    })
+
+    expect(wrapper.findAll('.wx-textarea__mirror .wx-token').map((chip) => chip.text())).toEqual([
+      '[email]',
+    ])
+    expect(wrapper.classes()).toContain('is-tokenized')
+  })
+
+  it('keeps the mirror scrolled with the textarea', async () => {
+    const wrapper = mount(WxTextarea, {
+      props: { tokens, modelValue: 'a\nb\nc\nd\n[phone]', rows: 2 },
+    })
+    const textarea = wrapper.get('textarea').element
+    const mirror = wrapper.get('.wx-textarea__mirror').element
+
+    // jsdom has no layout: the scroll positions are stood in for.
+    Object.defineProperty(textarea, 'scrollTop', { value: 40, configurable: true })
+    Object.defineProperty(mirror, 'scrollTop', { value: 0, writable: true, configurable: true })
+
+    await wrapper.get('textarea').trigger('scroll')
+    expect(mirror.scrollTop).toBe(40)
+  })
+
+  it('inserts from the help button where the caret is', async () => {
+    const wrapper = mount(WxTextarea, {
+      props: { tokens, modelValue: 'ab' },
+      attachTo: document.body,
+    })
+    const textarea = wrapper.get('textarea').element as HTMLTextAreaElement
+    textarea.focus()
+    textarea.setSelectionRange(1, 1)
+
+    await wrapper.get('.wx-token-button').trigger('click')
+    await flushPromises()
+    options()[1]!.click()
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['a[email]b'])
+    wrapper.unmount()
   })
 })

@@ -52,6 +52,9 @@ no facades that reach for the database, no `@php` that does work a controller sh
   runtime finds the block by it, and the panel highlights it by it. Another word there is refused
   on publishing. One root element per block.
 - Escape by default (`{{ }}`); `{!! !!}` only for a field that is rich text on purpose.
+- A text field may hold shortcodes (`[phone]`, `[dot]` — `blocks://shortcodes`); they arrive
+  resolved. `{{ $title }}` prints them as HTML with the text around them escaped, and needs
+  nothing more. In an attribute (`alt`, `title`, `aria-label`) print `@shortcodesPlain($title)`.
 - Every field may be empty. A template that throws on an empty value is refused at publish
   time; render it on empty values before you are done.
 - A `wx-media` field (when the media module is installed) holds the file the editor picked as
@@ -67,6 +70,13 @@ no facades that reach for the database, no `@php` that does work a controller sh
   does not jump, and label a download with `name` and `size`. An item whose file has been
   deleted has `url` of `null`, so guard it rather than assuming it is there.
 - Links go through the site's addresses, not hard-coded paths.
+
+## Content
+
+When you write the content of a page rather than a type, read `blocks://shortcodes`: the
+phone, the e-mail and whatever else the site keeps in one place is a shortcode — write `[phone]`,
+never the number — and a shortcode already in a text (`[dot]` above all) stays as it is.
+`blocks_render` shows them resolved.
 
 ## Styles
 

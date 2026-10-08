@@ -77,6 +77,7 @@ use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Admin\Screens\Types\TagsType;
 use WebxUi\Admin\Screens\Types\TimeType;
 use WebxUi\Admin\Screens\Types\TreeSelectType;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Support\Parts;
 use WebxUi\Admin\Uploads\FreeSpace;
@@ -129,6 +130,11 @@ class AdminServiceProvider extends ServiceProvider
 
         // What modules add to `webx:doctor` after the frame's own checks.
         $this->app->singleton(DoctorChecks::class);
+
+        // The shortcodes content may hold: the site registers its own from its provider, the
+        // settings section adds the ones the panel defines, and every module that prints text
+        // reads the same registry.
+        $this->app->singleton(Shortcodes::class);
 
         // The language prefix, when there is an address registry to ask. Behind `class_exists`
         // because the frame does not require `webx-ui/routing` — a panel of settings and
@@ -273,6 +279,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerDraftMacro();
         $this->registerCategoryMacros();
         $this->registerPartDirective();
+        $this->registerShortcodeDirectives();
         $this->registerBackupSchedule();
         $this->registerHistorySchedule();
         $this->registerUploadsSchedule();
@@ -465,6 +472,20 @@ class AdminServiceProvider extends ServiceProvider
         Blade::directive('webxPartAssets', static function (): string {
             return sprintf('<?php echo \%s::assets(); ?>', Parts::class);
         });
+    }
+
+    /**
+     * Shortcodes in a site's own templates, for the fields a block does not print:
+     * `@shortcodes($text)` prints an editor's text escaped, with the shortcodes as HTML;
+     * `@shortcodesIn($html)` replaces them inside HTML that is already trusted (a rich text
+     * field); `@shortcodesPlain($text)` prints the text, escaped — for an attribute, a `<title>`,
+     * an `alt`.
+     */
+    private function registerShortcodeDirectives(): void
+    {
+        Blade::directive('shortcodes', static fn (string $expression): string => sprintf('<?php echo app(\%s::class)->html(%s); ?>', Shortcodes::class, $expression));
+        Blade::directive('shortcodesIn', static fn (string $expression): string => sprintf('<?php echo app(\%s::class)->htmlIn(%s); ?>', Shortcodes::class, $expression));
+        Blade::directive('shortcodesPlain', static fn (string $expression): string => sprintf('<?php echo e(app(\%s::class)->plain(%s)); ?>', Shortcodes::class, $expression));
     }
 
     /**

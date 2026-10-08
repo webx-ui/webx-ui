@@ -8,6 +8,9 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ResolvesForEntity;
 use WebxUi\Admin\Screens\ResolvesMissing;
 use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Admin\Screens\Tree;
+use WebxUi\Admin\Shortcodes\Shortcodes;
+use WebxUi\Admin\Shortcodes\ShortcodeText;
 use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\ContentValues;
 use WebxUi\Blocks\Schema;
@@ -27,6 +30,12 @@ use WebxUi\Localization\Locales;
  * `wx-blocks` above all. The nested tree is a list of blocks, and the renderer, not a field
  * type, is what prints it.
  *
+ * Shortcodes are resolved here too, and only here, so that the page, the preview and
+ * `blocks_render` print the same thing: an editor's text field holding `[phone]` reaches the
+ * template as a {@see ShortcodeText} — escaped text with the shortcode's HTML in it — and a rich
+ * text field as its HTML with the shortcodes replaced between the tags. The content keeps the
+ * brackets, so a changed phone number changes every page that says `[phone]`.
+ *
  * The other direction is {@see ContentValues}: the same walk over the same schema, asking the
  * type what to keep rather than what to hand over.
  */
@@ -35,6 +44,7 @@ final readonly class Values
     public function __construct(
         private FieldTypes $types,
         private Locales $locales,
+        private Shortcodes $shortcodes,
     ) {}
 
     /**
@@ -90,14 +100,62 @@ final readonly class Values
 
             $field = $node === null ? null : $this->types->get((string) ($node['type'] ?? ''));
 
-            $resolved[$name] = match (true) {
+            $resolved[$name] = $this->withShortcodes(match (true) {
                 $field === null || $node === null => $value,
                 $field instanceof ResolvesForEntity => $field->resolveFor($value, $node, $entity),
                 default => $field->resolve($value, $node),
-            };
+            }, $node);
         }
 
         return $resolved;
+    }
+
+    /**
+     * A resolved value with its shortcodes printed: a text field's as {@see ShortcodeText}, a rich
+     * text field's inside its HTML, and the same for the fields of every repeater item.
+     *
+     * A text input of another kind — `email`, `url`, `tel` — is left as it is: its value goes
+     * into an attribute, where HTML has no business, and its rules refuse a bracket anyway.
+     *
+     * @param  array<string, mixed>|null  $node
+     */
+    private function withShortcodes(mixed $value, ?array $node): mixed
+    {
+        if ($node === null) {
+            return $value;
+        }
+
+        $type = (string) ($node['type'] ?? '');
+
+        if (is_string($value) && in_array($type, ['wx-input', 'wx-textarea'], true)) {
+            return in_array($node['props']['type'] ?? 'text', ['text', 'search'], true) ? $this->shortcodes->resolve($value) : $value;
+        }
+
+        if (is_string($value) && $type === 'wx-rich-text') {
+            return $this->shortcodes->htmlIn($value);
+        }
+
+        if (is_array($value) && $type === 'wx-repeater') {
+            $children = Tree::fields(Tree::children($node));
+
+            return array_map(function (mixed $item) use ($children): mixed {
+                if (! is_array($item)) {
+                    return $item;
+                }
+
+                foreach ($children as $child) {
+                    $name = (string) ($child['name'] ?? '');
+
+                    if (array_key_exists($name, $item)) {
+                        $item[$name] = $this->withShortcodes($item[$name], $child);
+                    }
+                }
+
+                return $item;
+            }, $value);
+        }
+
+        return $value;
     }
 
     /**

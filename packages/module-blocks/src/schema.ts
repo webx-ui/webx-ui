@@ -192,6 +192,46 @@ export function withPlaceholders(
   })
 }
 
+/**
+ * Whether the site reads shortcodes in a field's value: words a person wrote — a line, a
+ * paragraph, a rich text. An input typed as an e-mail, an address or a phone is a value the site
+ * prints into an attribute, and a `[phone]` there would be a broken link rather than a number.
+ */
+function takesShortcodes(node: ScreenNode): boolean {
+  if (node.type === 'wx-textarea' || node.type === 'wx-rich-text') return true
+  if (node.type !== 'wx-input') return false
+
+  const type = node.props?.type
+
+  return type === undefined || type === 'text'
+}
+
+/**
+ * The form of a block, with the site's shortcodes handed to every field the site reads them in —
+ * through layout and into a repeater's items, whose children are the fields of one item. A field
+ * whose type already set `tokens` keeps its own.
+ *
+ * Here and not in the panel's field types: the same `wx-input` is a slug or a search box on
+ * other screens, and only block content is printed through the shortcodes. `words` are the
+ * field's own words for them — core's defaults speak of placeholders, the panel of shortcodes.
+ */
+export function withShortcodes<T>(
+  nodes: ScreenNode[],
+  tokens: readonly T[],
+  words: { tokensTitle?: string; tokensLabel?: string } = {},
+): ScreenNode[] {
+  if (tokens.length === 0) return nodes
+
+  return nodes.map((node) => {
+    const children = node.children ? withShortcodes(node.children, tokens, words) : node.children
+    const next = children === node.children ? node : { ...node, children }
+
+    return takesShortcodes(node) && next.props?.tokens === undefined
+      ? { ...next, props: { ...words, ...(next.props ?? {}), tokens } }
+      : next
+  })
+}
+
 /** A sample's text: itself, or the first language of a translated one. */
 function sampleWords(value: unknown, strip = false): string | null {
   if (value && typeof value === 'object' && !Array.isArray(value)) {

@@ -20,6 +20,18 @@ return [
             'why' => 'Ziyaretçi bunları görmez, ama düzenleyicinin verisinde ve bir ajanın okuduğu içerikte durur, bloğun yanlış etiketi olarak ortaya çıkar.',
             'fix' => 'Bunları düzeltmeyle ya da tüm site için php artisan webx:blocks:prune ile kaldırın. Artık var olmayan bir türün bloğuna dokunulmaz. Tekrarlayıcı öğeleri kendi alanlarıyla karşılaştırılır.',
         ],
+        'unknown_shortcodes' => [
+            'title' => 'Yanlış yazılmış kısa kodlar',
+            'found' => 'Bir metinde sitenin bir kısa koduna çok benzeyen ya da argüman taşıyan, ama kısa kod olmayan bir köşeli parantez var.',
+            'why' => 'Yalnızca kayıtlı kısa kodlar değiştirilir. Gerisi parantezleriyle birlikte yazıldığı gibi basılır ve her ziyaretçi görür.',
+            'fix' => 'Adı önerilenle düzeltin ya da sayfa parantezleri göstermeliyse [[ad]] yazın. Liste alanın kısa kod yardımında ve «Ayarlar» → «Kısa kodlar» altındadır.',
+        ],
+        'hardcoded_values' => [
+            'title' => 'Kısa kod yerine değerler',
+            'found' => 'Bir metin, «Ayarlar» → «Kısa kodlar» içindeki bir kısa kodun zaten tuttuğu bir telefon, e-posta ya da başka bir değer içeriyor.',
+            'why' => 'Bugün doğru, değer değiştiği gün yanlış: kısa kod her yerde değişir, elle yazılan değer yalnızca birinin hatırladığı yerde.',
+            'fix' => 'Değeri önerilen kısa kodla değiştirin, ör. [phone]. Bağlantıyı kısa kodun kendisi oluşturur.',
+        ],
     ],
     'syntax' => 'Şablon derlenmiyor: :reason. Yayınlama reddedilecek.',
     'unknown-field-type' => 'Sitenin tanımadığı türde alanlar: :fields. Form yerlerinde bir uyarı gösterir ve değerlerini kimse denetlemez.',

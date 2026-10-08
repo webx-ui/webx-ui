@@ -30,6 +30,7 @@ export const richTextIcons: Record<string, string> = {
   deleteColumn: 'M8 4v16M16 4v16M12 9v6',
   deleteTable: 'M5 7h14M9 7V5h6v2M7 7l1 12h8l1-12M10 11v4M14 11v4',
   mergeCells: 'M4 6h16v12H4zM12 6v3M12 15v3M9 12h6M9 12l2-2M9 12l2 2',
+  token: 'M9 4H6v16h3M15 4h3v16h-3',
   check: 'm5 13 4 4L19 7',
   close: 'M6 6l12 12M18 6 6 18',
 }

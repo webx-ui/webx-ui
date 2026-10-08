@@ -20,6 +20,18 @@ return [
             'why' => 'Odwiedzający ich nie widzi, ale są w danych edytora i w tym, co czyta agent, i wracają jako błędny podpis bloku.',
             'fix' => 'Usuń je poprawką albo dla całej strony poleceniem php artisan webx:blocks:prune. Blok typu, którego już nie ma, nie jest ruszany. Elementy repeatera są porównywane z jego polami.',
         ],
+        'unknown_shortcodes' => [
+            'title' => 'Literówki w shortcodach',
+            'found' => 'Tekst zawiera nawias, który prawie jest shortcodem strony albo ma argumenty, ale nim nie jest.',
+            'why' => 'Zastępowane są tylko zarejestrowane shortcody. Reszta drukuje się tak, jak ją wpisano, z nawiasami — na oczach każdego odwiedzającego.',
+            'fix' => 'Popraw nazwę na sugerowaną albo napisz [[nazwa]], jeśli strona ma pokazać nawiasy. Lista jest w pomocy shortcodów pola i w «Ustawienia» → «Shortcody».',
+        ],
+        'hardcoded_values' => [
+            'title' => 'Wartości zamiast shortcodu',
+            'found' => 'Tekst zawiera numer telefonu, e-mail lub inną wartość, którą już trzyma shortcode z «Ustawienia» → «Shortcody».',
+            'why' => 'Dziś jest poprawna, nieaktualna w dniu zmiany: shortcode zmienia się wszędzie, wartość wpisana ręcznie tylko tam, gdzie ktoś o niej pamięta.',
+            'fix' => 'Zastąp wartość sugerowanym shortcodem, np. [phone]. Link tworzy sam shortcode.',
+        ],
     ],
     'syntax' => 'Szablon się nie kompiluje: :reason. Publikacja zostanie odrzucona.',
     'unknown-field-type' => 'Pola typu nieznanego stronie: :fields. Formularz pokaże w ich miejscu ostrzeżenie, a wartości nikt nie sprawdzi.',

@@ -11,13 +11,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $form->title ?: $form->slug }}</title>
+    <title>@shortcodesPlain($form->title ?: $form->slug)</title>
 </head>
 <body style="margin:0;padding:24px;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#1f2430;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:8px;">
     <tr>
         <td style="padding:24px 24px 8px 24px;">
-            <h1 style="margin:0 0 4px 0;font-size:19px;font-weight:600;">{{ $form->title ?: $form->slug }}</h1>
+            <h1 style="margin:0 0 4px 0;font-size:19px;font-weight:600;">@shortcodesPlain($form->title ?: $form->slug)</h1>
             <p style="margin:0;color:#6b7280;font-size:13px;">
                 {{ __('webx-inbox::mail.received', ['date' => optional($submission->created_at)->format('d.m.Y H:i')]) }}
             </p>
@@ -30,7 +30,7 @@
                 @forelse ($values as $value)
                     <tr>
                         <td style="padding:8px 12px 8px 0;vertical-align:top;color:#6b7280;width:38%;border-bottom:1px solid #eceef1;">
-                            {{ $value->label ?: $value->name }}
+                            @shortcodesPlain($value->label ?: $value->name)
                         </td>
                         <td style="padding:8px 0;vertical-align:top;border-bottom:1px solid #eceef1;">
                             {{-- Kept as the visitor typed it, newlines and all: a message from a

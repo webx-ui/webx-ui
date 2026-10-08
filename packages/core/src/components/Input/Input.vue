@@ -1,8 +1,19 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useFormField } from '../../composables/useFormField'
 import { useLocalized } from '../../composables/useLocalized'
 import LocalePicker from '../Locales/LocalePicker.vue'
+import WxTokenButton from '../../internal/TokenButton.vue'
+import WxTokenMenu from '../../internal/TokenMenu.vue'
+import {
+  fieldAnchor,
+  textRect,
+  tokenSegments,
+  tokenText,
+  useTokenMenu,
+  type TokenOption,
+  type TokenRange,
+} from '../../composables/useTokens'
 import type { InputEmits, InputModelValue, InputProps } from './types'
 import { useControlAttrs } from '../../composables/useControlAttrs'
 
@@ -25,6 +36,9 @@ const props = withDefaults(defineProps<InputProps>(), {
   autocomplete: undefined,
   ariaLabel: undefined,
   localized: false,
+  tokens: undefined,
+  tokensTitle: 'Placeholders',
+  tokensLabel: 'Insert a placeholder',
 })
 
 const emit = defineEmits<InputEmits>()
@@ -76,13 +90,129 @@ const classes = computed(() => [
     'is-disabled': field.disabled.value,
     'is-readonly': props.readonly,
     'is-localized': locales.on.value,
+    'is-tokenized': tokenized.value,
   },
 ])
+
+const rootRef = ref<HTMLElement | null>(null)
+const mirrorRef = ref<HTMLElement | null>(null)
+
+const tokens = useTokenMenu(() => props.tokens)
+const hasTokens = computed(() => tokens.all.value.length > 0)
+const listId = computed(() => `${field.id.value}-tokens`)
+
+/**
+ * The text again, in a layer over the input, with the known placeholders wrapped as chips.
+ *
+ * The input cannot draw a chip — it holds one string in one colour — so while there is a chip to
+ * draw the input's own letters go transparent and the mirror's show instead, at the same places:
+ * same font, same box, same horizontal scroll. The input stays the control: caret, selection,
+ * input methods and the value are all still its own, and the value is still `[name]`.
+ */
+const segments = computed(() =>
+  hasTokens.value ? tokenSegments(String(currentValue.value), tokens.known.value) : [],
+)
+const tokenized = computed(() => segments.value.some((segment) => segment.token !== null))
+
+function syncMirror(): void {
+  const input = inputRef.value
+  const mirror = mirrorRef.value
+  if (!input || !mirror) return
+
+  mirror.style.left = `${input.offsetLeft}px`
+  mirror.style.top = `${input.offsetTop}px`
+  mirror.style.width = `${input.offsetWidth}px`
+  mirror.style.height = `${input.offsetHeight}px`
+  mirror.scrollLeft = input.scrollLeft
+}
+
+/* The input's width moves with the panel, and the mirror has to move with it. */
+let resizing: ResizeObserver | null = null
+
+onMounted(() => {
+  void nextTick(syncMirror)
+  if (typeof ResizeObserver !== 'undefined' && inputRef.value) {
+    resizing = new ResizeObserver(() => syncMirror())
+    resizing.observe(inputRef.value)
+  }
+})
+onBeforeUnmount(() => resizing?.disconnect())
+watch(segments, () => void nextTick(syncMirror))
+
+function caretAnchor(offset: number) {
+  return fieldAnchor(rootRef.value, mirrorRef.value ? textRect(mirrorRef.value, offset) : null)
+}
+
+/** After the text or the caret moved: open, narrow or close the list by what is before it. */
+function suggestTokens(): void {
+  const input = inputRef.value
+  if (!hasTokens.value || !input) return
+
+  const caret = input.selectionStart ?? input.value.length
+  if (caret !== input.selectionEnd) return tokens.close()
+
+  const before = input.value.slice(0, caret)
+  tokens.suggest(before, caret, () => caretAnchor(before.lastIndexOf('[')))
+}
+
+function insertToken(token: TokenOption, at: TokenRange): void {
+  const input = inputRef.value
+  const value = String(currentValue.value)
+  const text = tokenText(token)
+  const next = value.slice(0, at.from) + text + value.slice(at.to)
+
+  locales.write(editing.value, next)
+  emit('input', next)
+
+  if (!input) return
+
+  // Written straight away rather than on the next render, so the caret lands after the chip.
+  input.value = next
+  input.focus()
+  input.setSelectionRange(at.from + text.length, at.from + text.length)
+  void nextTick(syncMirror)
+}
+
+/** The help button: every placeholder, going where the caret is — or at the end, if nowhere. */
+function browseTokens(): void {
+  const input = inputRef.value
+  if (!input) return
+  if (tokens.open.value && tokens.browsing.value) return tokens.close()
+
+  const length = input.value.length
+  const had = document.activeElement === input
+
+  input.focus()
+  if (!had) input.setSelectionRange(length, length)
+
+  const from = had ? (input.selectionStart ?? length) : length
+  const to = had ? (input.selectionEnd ?? from) : length
+
+  tokens.browse({ from, to }, fieldAnchor(rootRef.value, null))
+}
+
+function onKeydown(event: KeyboardEvent): void {
+  tokens.keydown(event, insertToken)
+}
+
+/* The caret moved without typing: the list follows it, or goes. Only an open list cares. */
+function onCaretMove(event: Event): void {
+  syncMirror()
+  if (!tokens.open.value) return
+  if (
+    event instanceof KeyboardEvent &&
+    !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)
+  )
+    return
+  suggestTokens()
+}
 
 function onInput(event: Event) {
   const value = (event.target as HTMLInputElement).value
   locales.write(editing.value, value)
   emit('input', value)
+  suggestTokens()
+  syncMirror()
 }
 
 function onChange(event: Event) {
@@ -96,6 +226,7 @@ function onFocus(event: FocusEvent) {
 
 function onBlur(event: FocusEvent) {
   focused.value = false
+  tokens.close()
   emit('blur', event)
 }
 
@@ -125,7 +256,7 @@ defineExpose({
 </script>
 
 <template>
-  <div :class="classes" v-bind="rootAttrs">
+  <div ref="rootRef" :class="classes" v-bind="rootAttrs">
     <span v-if="$slots.prefix" class="wx-input__affix wx-input__affix--prefix">
       <slot name="prefix" />
     </span>
@@ -146,11 +277,32 @@ defineExpose({
       :aria-label="ariaLabel"
       :aria-describedby="field.describedBy.value"
       :aria-invalid="field.status.value === 'error' || undefined"
+      :aria-autocomplete="hasTokens ? 'list' : undefined"
+      :aria-controls="tokens.open.value ? listId : undefined"
+      :aria-activedescendant="tokens.open.value ? `${listId}-${tokens.active.value}` : undefined"
       @input="onInput"
       @change="onChange"
       @focus="onFocus"
       @blur="onBlur"
+      @keydown="onKeydown"
+      @keyup="onCaretMove"
+      @click="onCaretMove"
+      @scroll="syncMirror"
     />
+
+    <span
+      v-if="hasTokens"
+      ref="mirrorRef"
+      class="wx-input__mirror"
+      :class="{ 'is-shown': tokenized }"
+      aria-hidden="true"
+      ><span class="wx-input__mirror-text"
+        ><template v-for="(segment, index) in segments" :key="index"
+          ><span v-if="segment.token" class="wx-token">{{ segment.text }}</span
+          ><template v-else>{{ segment.text }}</template></template
+        ></span
+      ></span
+    >
 
     <input
       v-for="other in carried"
@@ -171,11 +323,32 @@ defineExpose({
       &#10005;
     </button>
 
+    <wx-token-button
+      v-if="hasTokens"
+      :label="tokensLabel"
+      :disabled="field.disabled.value || readonly"
+      @click="browseTokens"
+    />
+
     <span v-if="counter" class="wx-input__count">{{ counter }}</span>
 
     <span v-if="$slots.suffix" class="wx-input__affix wx-input__affix--suffix">
       <slot name="suffix" />
     </span>
+
+    <wx-token-menu
+      v-if="hasTokens"
+      :open="tokens.open.value"
+      :items="tokens.items.value"
+      :active="tokens.active.value"
+      :anchor="tokens.anchor.value"
+      :list-id="listId"
+      :title="tokens.browsing.value ? tokensTitle : undefined"
+      :owner="rootRef"
+      @choose="(token) => tokens.choose(token, insertToken)"
+      @hover="(index) => (tokens.active.value = index)"
+      @close="tokens.close()"
+    />
 
     <locale-picker
       v-if="locales.on.value"
@@ -294,6 +467,39 @@ defineExpose({
 
 .wx-input__inner:disabled {
   cursor: not-allowed;
+}
+
+/*
+ * The mirror is placed over the input by measurement (see `syncMirror`) and always there while
+ * the field has placeholders — transparent until it has a chip to draw, because it is also what
+ * the caret's column is measured on.
+ */
+.wx-input__mirror {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* One run of inline text, so the chips sit in the line instead of becoming flex items. */
+.wx-input__mirror-text {
+  flex: 0 0 auto;
+}
+
+.wx-input__mirror.is-shown {
+  color: inherit;
+}
+
+/* Only the letters go: the caret, the selection and the placeholder are still the input's. */
+.wx-input.is-tokenized .wx-input__inner {
+  color: transparent;
+  caret-color: var(--wx-text-default);
 }
 
 .wx-input__affix,

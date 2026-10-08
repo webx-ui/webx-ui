@@ -15,6 +15,11 @@ their guides when the question is about one of those.
 - **Content shape**: a node is `{ key, type, values }`, plus `hidden: true` when switched off. A
   container holds nodes in one of its values; `@blocks('content')` prints them, up to
   `webx-blocks.max_depth` levels. `$table->blocks()` adds the column to an entity.
+- **Shortcodes**: text, textarea and rich text values (repeater items too) reach the template
+  with `[name]` resolved (`Rendering\Values`): the editor's text escaped, the shortcode's HTML
+  raw; `@shortcodesPlain($field)` for an attribute. The outline an agent reads is plain text.
+  With module-audit: checks `blocks.unknown_shortcodes` (a bracket a slip of a registered name)
+  and `blocks.hardcoded_values` (a value a panel shortcode holds, typed by hand).
 - **Rendering**: `Blocks::render($blocks, $entity)`, `$model->renderBlocks()`, `@webxBlocks` in the
   layout's head (styles and scripts of what the page rendered), `<x-webx-block type="…">` for a
   component, `<x-webx-blocks::region name="header" fallback="components.header" />` for a region.
@@ -30,7 +35,7 @@ their guides when the question is about one of those.
   `blocks_preview_url`, `blocks_regions`, `blocks_region_publish`, `blocks_region_unpublish`,
   `blocks_region_discard`, `blocks_region_versions`, `blocks_region_restore`, `blocks_region_adopt`;
   resources `blocks://guidelines`, `blocks://schema`, `blocks://catalog`, `blocks://fields`,
-  `blocks://site`; prompt `design_block`. Scopes `blocks:read`, `blocks:write`.
+  `blocks://site`, `blocks://shortcodes`; prompt `design_block`. Scopes `blocks:read`, `blocks:write`.
 - **Commands** `webx:blocks:export`, `webx:blocks:import`, `webx:blocks:offered`,
   `webx:blocks:bundles`, `webx:blocks:clear`, `webx:blocks:regions`, `webx:blocks:prune`.
 - Also registered: field types `wx-data` and `wx-slot`, the registries `BlockOffers`,
@@ -43,26 +48,27 @@ their guides when the question is about one of those.
 
 ## Change it without forking
 
-| You want                                   | Do this                                                                                                                 |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| A block type of the site's own             | make it in the panel's «Blocks», or `blocks_create` → `blocks_render` → `blocks_publish` over MCP                       |
-| The site's types in git                    | `php artisan webx:blocks:export` writes `resources/blocks/{slug}.json`; `webx:blocks:import --publish` reads them back  |
-| Blocks from another site or a catalogue    | «Blocks» → Export (a pack with the components they call), Import there; the command reads the same pack                 |
-| The types a module offers (FAQ accordion…) | `php artisan webx:blocks:offered --install`; a slug the site already has is never touched                               |
-| A region in the layout                     | declare it under `regions` in `config/webx-blocks.php` and print `<x-webx-blocks::region>` with a `fallback`            |
-| A type only for one region                 | `"region:header"` in the type's `allowed_in`; `allow` and `max` on the region limit what it takes                       |
-| Another group in the picker                | add it to `groups` in `config/webx-blocks.php` and translate it in the panel's dictionary                               |
-| Blocks drawn inside the site's layout      | `WEBX_BLOCKS_LAYOUT=layout` (`<x-layout>` with a `head` slot and the default one)                                       |
-| A library a block script can ask for       | `webx.provide('swiper', Swiper)` in the site's bundle, list it in `provides`; the block does `await webx.use('swiper')` |
-| A module's partial replaced by a block     | «Customise» in the panel, or `blocks_create` on the declared slug; `blocks_delete` brings the partial back              |
-| A heading with an accent or bold in it     | `wx-rich-text` with `"props": {"inline": true}`, printed `{!! $heading !!}`; not markup typed into a `wx-input`         |
-| A type under another slug                  | «Identifier» in the type's settings, or `blocks_update` with `rename_to`: pages, regions and `allow` lists follow       |
-| A bad edit of a page undone                | `pages_versions`, then `pages_version_restore` (services: `services_*`; a type: `blocks_versions`)                      |
-| Types read-only on production              | `WEBX_BLOCKS_EDITING=false`; types then arrive by `webx:blocks:import`                                                  |
-| Bundles written before the first visitor   | list the models in `entities`, run `webx:blocks:bundles --warm`                                                         |
-| Values of fields no type defines any more  | `php artisan webx:blocks:prune --dry-run`, then without the flag: live and draft, every listed model and the regions    |
-| Other words in the panel                   | `php artisan vendor:publish --tag=webx-blocks-lang`                                                                     |
-| All config keys                            | `php artisan vendor:publish --tag=webx-blocks-config`                                                                   |
+| You want                                    | Do this                                                                                                                  |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| A block type of the site's own              | make it in the panel's «Blocks», or `blocks_create` → `blocks_render` → `blocks_publish` over MCP                        |
+| The site's types in git                     | `php artisan webx:blocks:export` writes `resources/blocks/{slug}.json`; `webx:blocks:import --publish` reads them back   |
+| Blocks from another site or a catalogue     | «Blocks» → Export (a pack with the components they call), Import there; the command reads the same pack                  |
+| The types a module offers (FAQ accordion…)  | `php artisan webx:blocks:offered --install`; a slug the site already has is never touched                                |
+| A region in the layout                      | declare it under `regions` in `config/webx-blocks.php` and print `<x-webx-blocks::region>` with a `fallback`             |
+| A type only for one region                  | `"region:header"` in the type's `allowed_in`; `allow` and `max` on the region limit what it takes                        |
+| Another group in the picker                 | add it to `groups` in `config/webx-blocks.php` and translate it in the panel's dictionary                                |
+| Blocks drawn inside the site's layout       | `WEBX_BLOCKS_LAYOUT=layout` (`<x-layout>` with a `head` slot and the default one)                                        |
+| A library a block script can ask for        | `webx.provide('swiper', Swiper)` in the site's bundle, list it in `provides`; the block does `await webx.use('swiper')`  |
+| A module's partial replaced by a block      | «Customise» in the panel, or `blocks_create` on the declared slug; `blocks_delete` brings the partial back               |
+| A heading with an accent or bold in it      | `wx-rich-text` with `"props": {"inline": true}`, printed `{!! $heading !!}`; not markup typed into a `wx-input`          |
+| A phone or e-mail that changes in one place | write `[phone]` in the text (`blocks://shortcodes` lists them); never the number. A site's own: `Shortcodes::register()` |
+| A type under another slug                   | «Identifier» in the type's settings, or `blocks_update` with `rename_to`: pages, regions and `allow` lists follow        |
+| A bad edit of a page undone                 | `pages_versions`, then `pages_version_restore` (services: `services_*`; a type: `blocks_versions`)                       |
+| Types read-only on production               | `WEBX_BLOCKS_EDITING=false`; types then arrive by `webx:blocks:import`                                                   |
+| Bundles written before the first visitor    | list the models in `entities`, run `webx:blocks:bundles --warm`                                                          |
+| Values of fields no type defines any more   | `php artisan webx:blocks:prune --dry-run`, then without the flag: live and draft, every listed model and the regions     |
+| Other words in the panel                    | `php artisan vendor:publish --tag=webx-blocks-lang`                                                                      |
+| All config keys                             | `php artisan vendor:publish --tag=webx-blocks-config`                                                                    |
 
 ### Editing content through MCP
 

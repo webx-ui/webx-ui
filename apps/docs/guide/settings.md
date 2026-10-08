@@ -26,6 +26,9 @@ server declares for what keeps the panel running, next to the administrators —
 The page loads the values, draws the screen `settings.index` through `WxScreen`, and has one
 button of its own: Save. A 422 from the server lands under the field it names.
 
+The tab «Shortcodes» is the list of data shortcodes: a name content writes in brackets —
+`[phone]` — reading a setting or holding its own value. See [Shortcodes](/guide/shortcodes).
+
 ## The screen, and what to patch
 
 Out of the box the screen is three tabs — what the panel is called, what it wears, and the house

@@ -191,6 +191,12 @@ either way, and the first save runs them through the allowlist — which takes e
 off, so a theme that styles `span.dot` should style the heading's `span` instead. Until a type is switched, the
 editor warns under a plain field whose value holds tags, and the value is kept exactly as stored.
 
+**A value the site keeps in one place is a shortcode.** `Call us on [phone]` in any text, textarea
+or rich text field prints the number from «Settings» → «Shortcodes» as a link that dials, and a
+changed number changes every page. The template needs nothing: the field arrives resolved, with
+the editor's text escaped. See [Shortcodes](/guide/shortcodes) — also for when to use one rather
+than the inline accent mark.
+
 **The template is Blade** with the fields as variables, plus `$block` (`key`, `type`, `version`,
 `depth`, `value('name', default)`) and `$entity`, the record the block stands on. The root element
 carries `data-wx-block="{slug}"`: the runtime finds the block by it and the panel highlights it by

@@ -7,15 +7,18 @@ import {
   onMounted,
   provide,
   ref,
+  shallowRef,
   watch,
 } from 'vue'
 import {
   adminKey,
+  loadShortcodes,
   useErrorText,
   useTranslate,
   WxRowMenu,
   type AdminContext,
   type RowAction,
+  type ShortcodeToken,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -58,7 +61,7 @@ import {
 import { useBlocksMessages } from './i18n'
 import { blocksOwnerKey, blocksPreviewKey, blocksRootKey, blocksTopKey } from './preview'
 import { destinations, type Destination } from './move'
-import { formSchema, markupFields, startValues, withPlaceholders } from './schema'
+import { formSchema, markupFields, startValues, withPlaceholders, withShortcodes } from './schema'
 import type { BlockNode, BlockType } from './types'
 
 /**
@@ -94,6 +97,11 @@ const props = withDefaults(
     disabled?: boolean
     /** Where the section lives, for the picker's "make one" link. */
     blocksPath?: string
+    /**
+     * The site's shortcodes, offered in the text fields of a block. Fetched from the panel when
+     * absent, like the catalog.
+     */
+    shortcodes?: ShortcodeToken[] | null
   }>(),
   {
     node: undefined,
@@ -105,6 +113,7 @@ const props = withDefaults(
     catalog: null,
     disabled: false,
     blocksPath: '/blocks',
+    shortcodes: null,
   },
 )
 
@@ -716,13 +725,30 @@ watch(
   { immediate: true },
 )
 
+/*
+ * The shortcodes of the site, for the text fields of the open block. Asked of the panel only
+ * when a block is drawn here at all — a nested instance is a note — and once per panel, however
+ * many blocks and pages are opened. They come late, and the fields take them when they do.
+ */
+const fetchedShortcodes = shallowRef<ShortcodeToken[]>([])
+
+if (admin && !nested && props.shortcodes === null) {
+  void loadShortcodes(admin).then((list) => (fetchedShortcodes.value = list))
+}
+
+const shortcodes = computed(() => props.shortcodes ?? fetchedShortcodes.value)
+
 const formRoot = computed(() =>
   selectedType.value?.content
-    ? withPlaceholders(
-        formSchema(selectedType.value.content.schema),
-        selectedType.value.content.sample ?? {},
-        marked.value,
-        t('field.markup-in-text'),
+    ? withShortcodes(
+        withPlaceholders(
+          formSchema(selectedType.value.content.schema),
+          selectedType.value.content.sample ?? {},
+          marked.value,
+          t('field.markup-in-text'),
+        ),
+        shortcodes.value,
+        { tokensTitle: t('field.shortcodes'), tokensLabel: t('field.shortcodes-insert') },
       )
     : [],
 )

@@ -8,6 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Rendering\SeoData;
@@ -160,6 +161,31 @@ final class FallbackTest extends TestCase
 
         $this->assertSame('/about', $seo->currentUrl());
         $this->assertSame('http://localhost/about', $seo->for($seo->currentUrl(), null, 'ru')->canonical);
+    }
+
+    /*
+     * A title, a description and JSON-LD are text: a shortcode in them is its plain rendering —
+     * the full stop, the number — never the span or the link the body of the page prints.
+     */
+    #[Test]
+    public function shortcodes_in_the_head_and_in_json_ld_are_their_plain_text(): void
+    {
+        $shortcodes = app(Shortcodes::class);
+        $shortcodes->register('dot', '<span class="accent-dot">.</span>', plain: '.');
+        $shortcodes->register('phone', '<a href="tel:+15550100">555 0100</a>', plain: '555 0100');
+
+        $entity = $this->entity(['name' => 'Печенье[dot]', 'lead' => '<p>Звоните: [phone]</p>']);
+        $seo = app(Seo::class);
+        $seo->push(['@context' => 'https://schema.org', '@type' => 'Thing', 'name' => 'Печенье[dot]', 'about' => ['text' => 'Тел. [phone], буквально [[phone]]']]);
+
+        $head = (string) $seo->head($entity, '/recipes/cookies', 'ru');
+
+        $this->assertStringContainsString('<title>Печенье. — Акме</title>', $head);
+        $this->assertStringContainsString('<meta name="description" content="Звоните: 555 0100">', $head);
+        $this->assertStringContainsString('"name":"Печенье."', $head);
+        $this->assertStringContainsString('"text":"Тел. 555 0100, буквально [phone]"', $head);
+        $this->assertStringNotContainsString('accent-dot', $head);
+        $this->assertStringNotContainsString('tel:', $head);
     }
 
     /**

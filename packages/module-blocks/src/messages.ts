@@ -174,6 +174,8 @@ export const blocksMessages: Record<string, Messages> = {
     empty: 'No blocks yet. Add the first one.',
     'nested-note': 'Nested blocks are edited in the tree on the left.',
     'markup-in-text': 'This text holds HTML tags. Change the words and leave the tags as they are.',
+    shortcodes: 'Shortcodes',
+    'shortcodes-insert': 'Insert a shortcode',
     'unknown-type': 'Unknown block type ":type"',
     'draft-type': 'The block type has an unpublished version',
     'disabled-type': 'The block type is hidden from editors',

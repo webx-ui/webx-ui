@@ -20,6 +20,18 @@ return [
             'why' => 'Besucher sehen davon nichts, aber es steckt in den Daten des Editors und in dem, was ein Agent liest, und taucht als falsche Bezeichnung eines Blocks auf.',
             'fix' => 'Entfernen Sie sie mit der Korrektur oder für die ganze Website mit php artisan webx:blocks:prune. Ein Block eines Typs, den es nicht mehr gibt, bleibt unberührt. Elemente eines Repeaters werden mit dessen Feldern verglichen.',
         ],
+        'unknown_shortcodes' => [
+            'title' => 'Vertippte Shortcodes',
+            'found' => 'Ein Text enthält eine Klammer, die fast ein Shortcode dieser Website ist oder Argumente hat, aber keiner ist.',
+            'why' => 'Ersetzt werden nur registrierte Shortcodes. Alles andere wird genau so gedruckt, wie es getippt wurde, mit Klammern — für jeden Besucher sichtbar.',
+            'fix' => 'Korrigieren Sie den Namen auf den vorgeschlagenen oder schreiben Sie [[name]], wenn die Seite die Klammern zeigen soll. Die Liste steht in der Shortcode-Hilfe des Felds und unter «Einstellungen» → «Shortcodes».',
+        ],
+        'hardcoded_values' => [
+            'title' => 'Werte statt Shortcode',
+            'found' => 'Ein Text enthält eine Telefonnummer, eine E-Mail-Adresse oder einen anderen Wert, den ein Shortcode aus «Einstellungen» → «Shortcodes» bereits hält.',
+            'why' => 'Heute stimmt er, am Tag der Änderung nicht mehr: Der Shortcode ändert sich überall, ein von Hand getippter Wert nur dort, wo jemand daran denkt.',
+            'fix' => 'Ersetzen Sie den Wert durch den vorgeschlagenen Shortcode, z. B. [phone]. Den Link macht der Shortcode selbst.',
+        ],
     ],
     'syntax' => 'Die Vorlage lässt sich nicht kompilieren: :reason. Die Veröffentlichung wird abgelehnt.',
     'unknown-field-type' => 'Felder eines Typs, den die Website nicht kennt: :fields. Das Formular zeigt an ihrer Stelle eine Warnung, und ihre Werte prüft niemand.',

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import BlocksField from './BlocksField.vue'
 import { useBlocksClipboard } from './clipboard'
 import type { BlockNode, BlockType } from './types'
+import type { ScreenNode } from '@webx-ui/schema'
 
 /**
  * What the constructor does to the value.
@@ -380,5 +381,41 @@ describe('WxBlocks', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('.wx-blocks__fields').exists()).toBe(false)
+  })
+})
+
+describe('WxBlocks shortcodes', () => {
+  it('offers the shortcodes in the text fields of the open block, and nowhere else', async () => {
+    const shortcodes = [{ name: 'phone', value: '+1 555 0100' }]
+    const contact = type('contact', {
+      content: {
+        schema: [
+          { id: 'title', type: 'wx-input', label: 'Title' },
+          { id: 'mail', type: 'wx-input', label: 'Mail', props: { type: 'email' } },
+          { id: 'items', type: 'wx-repeater', children: [{ id: 'caption', type: 'wx-textarea' }] },
+        ],
+        template: '',
+        styles: '',
+        script: null,
+        sample: {},
+      },
+    })
+    const wrapper = mount(BlocksField, {
+      props: {
+        modelValue: [{ key: 'a', type: 'contact', values: {} }],
+        catalog: [contact],
+        shortcodes,
+        'onUpdate:modelValue': () => {},
+      },
+      global: { stubs: { RouterLink: true, WxScreenRenderer: true } },
+    })
+
+    await wrapper.findAll('.wx-blocks-tree__row')[0]!.trigger('click')
+
+    const root = wrapper.findComponent({ name: 'WxScreenRenderer' }).props('root') as ScreenNode[]
+
+    expect(root[0]!.props?.tokens).toEqual(shortcodes)
+    expect(root[1]!.props?.tokens).toBeUndefined()
+    expect(root[2]!.children![0]!.props?.tokens).toEqual(shortcodes)
   })
 })

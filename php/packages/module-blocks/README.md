@@ -267,7 +267,7 @@ the panel uses, with `mcp` as the source in the history; every tool that changes
 shapes and the declared places; `blocks_create` on a declared slug without a template customises
 it. Scopes `blocks:read` and `blocks:write` are the abilities of the token
 `php artisan webx:mcp:token` issues. Before writing, an agent reads `blocks://guidelines`,
-`blocks://catalog`, `blocks://fields` and `blocks://site`; the prompt `design_block` packages the
+`blocks://catalog`, `blocks://fields`, `blocks://site` and, before writing content, `blocks://shortcodes`; the prompt `design_block` packages the
 loop of create, render, fix, report.
 
 ## Config

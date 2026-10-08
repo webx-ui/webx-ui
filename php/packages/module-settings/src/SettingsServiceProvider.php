@@ -10,6 +10,7 @@ use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 
 class SettingsServiceProvider extends ServiceProvider
@@ -51,6 +52,10 @@ class SettingsServiceProvider extends ServiceProvider
         // boots after this one — `Screens::extend('settings.index', ...)`.
         $this->app->make(ScreenRegistry::class)->register(Settings::SCREEN, __DIR__.'/../resources/screens/index.json');
         $this->app->make(ScreenRegistry::class)->register(Settings::CONTENT_SCREEN, __DIR__.'/../resources/screens/content.json');
+
+        // The shortcodes defined in the panel, read when a page asks rather than at boot: they
+        // change without a deploy.
+        $this->app->make(Shortcodes::class)->source(fn (): array => $this->app->make(DataShortcodes::class)->all());
 
         if (! $this->app->runningInConsole()) {
             return;

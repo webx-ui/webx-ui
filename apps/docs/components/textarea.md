@@ -36,23 +36,32 @@ past `maxRows` the field scrolls instead of growing:
 
 While autosizing, manual resizing is switched off — the two fight each other otherwise.
 
+## Placeholders
+
+The same as [Input](/components/input#placeholders): `tokens` turns on the list on `[`, the
+button in the top corner and the chips. The mirror wraps where the textarea wraps and scrolls with
+it, and the list opens under the line being typed rather than under the field.
+
 ## Props
 
-| Prop          | Type                                                | Default      | Description                                                       |
-| ------------- | --------------------------------------------------- | ------------ | ----------------------------------------------------------------- |
-| `modelValue`  | `string`                                            | `''`         | `v-model` value                                                   |
-| `rows`        | `number`                                            | `3`          | Visible rows when autosize is off                                 |
-| `autosize`    | `boolean \| { minRows?: number; maxRows?: number }` | `false`      | Grows with the content                                            |
-| `maxlength`   | `number`                                            | —            | Native `maxlength`                                                |
-| `showCount`   | `boolean`                                           | `false`      | Renders `current / max` (needs `maxlength`)                       |
-| `resize`      | `'none' \| 'vertical' \| 'both'`                    | `'vertical'` | Manual resize handle                                              |
-| `size`        | `'sm' \| 'md' \| 'lg'`                              | `'md'`       | Font size                                                         |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'`    | `'default'`  | Validation state                                                  |
-| `placeholder` | `string`                                            | —            | Placeholder text                                                  |
-| `disabled`    | `boolean`                                           | `false`      | Disables the field                                                |
-| `readonly`    | `boolean`                                           | `false`      | Read-only field                                                   |
-| `id`          | `string`                                            | generated    | Overrides the `id` the label points at; `WxFormItem` supplies one |
-| `ariaLabel`   | `string`                                            | —            | Label when there is no visible one                                |
+| Prop          | Type                                                | Default                  | Description                                                            |
+| ------------- | --------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| `modelValue`  | `string`                                            | `''`                     | `v-model` value                                                        |
+| `rows`        | `number`                                            | `3`                      | Visible rows when autosize is off                                      |
+| `autosize`    | `boolean \| { minRows?: number; maxRows?: number }` | `false`                  | Grows with the content                                                 |
+| `maxlength`   | `number`                                            | —                        | Native `maxlength`                                                     |
+| `showCount`   | `boolean`                                           | `false`                  | Renders `current / max` (needs `maxlength`)                            |
+| `resize`      | `'none' \| 'vertical' \| 'both'`                    | `'vertical'`             | Manual resize handle                                                   |
+| `size`        | `'sm' \| 'md' \| 'lg'`                              | `'md'`                   | Font size                                                              |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'`    | `'default'`              | Validation state                                                       |
+| `placeholder` | `string`                                            | —                        | Placeholder text                                                       |
+| `disabled`    | `boolean`                                           | `false`                  | Disables the field                                                     |
+| `readonly`    | `boolean`                                           | `false`                  | Read-only field                                                        |
+| `id`          | `string`                                            | generated                | Overrides the `id` the label points at; `WxFormItem` supplies one      |
+| `ariaLabel`   | `string`                                            | —                        | Label when there is no visible one                                     |
+| `tokens`      | `TokenOption[]`                                     | —                        | Placeholders to suggest on `[`, list from the button and draw as chips |
+| `tokensTitle` | `string`                                            | `'Placeholders'`         | Heading of the list the button opens                                   |
+| `tokensLabel` | `string`                                            | `'Insert a placeholder'` | Name and tooltip of the button                                         |
 
 **Events:** `update:modelValue` (`string`), `input` (`string`), `change` (`string`), `focus`, `blur`.
 

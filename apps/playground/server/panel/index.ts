@@ -2568,6 +2568,36 @@ on('GET', '/links/routes', () => ({
   ],
 }))
 
+/*
+ * The site's shortcodes, as the panel's text fields are offered them: two from the settings and
+ * one a package declares in code. The playground's preview does not replace them — the site does.
+ */
+on('GET', '/shortcodes', () => ({
+  data: [
+    {
+      name: 'dot',
+      description: 'The accent dot after a heading',
+      html: '<span class="dot">.</span>',
+      plain: '.',
+      origin: 'code',
+    },
+    {
+      name: 'email',
+      description: null,
+      html: '<a href="mailto:hello@example.com">hello@example.com</a>',
+      plain: 'hello@example.com',
+      origin: 'settings',
+    },
+    {
+      name: 'phone',
+      description: 'The main line',
+      html: '<a href="tel:+15550100">+1 555 0100</a>',
+      plain: '+1 555 0100',
+      origin: 'settings',
+    },
+  ],
+}))
+
 /* ------------------------------------------------------------------------ collections ----- */
 
 /*

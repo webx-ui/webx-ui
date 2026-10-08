@@ -40,6 +40,8 @@ return [
     'empty' => 'Nie ma jeszcze bloków. Dodaj pierwszy.',
     'nested-note' => 'Zagnieżdżone bloki edytuje się w drzewie po lewej.',
     'markup-in-text' => 'Ten tekst zawiera znaczniki HTML. Zmieniaj słowa, a znaczniki zostaw bez zmian.',
+    'shortcodes' => 'Shortcody',
+    'shortcodes-insert' => 'Wstaw shortcode',
     'unknown-type' => 'Nieznany typ bloku „:type”',
     'draft-type' => 'Typ bloku ma nieopublikowaną wersję',
     'disabled-type' => 'Typ bloku jest ukryty przed redaktorami',

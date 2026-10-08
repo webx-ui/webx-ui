@@ -134,6 +134,7 @@ final class SettingsEndpointsTest extends TestCase
             'general.project-name' => 'Глобекс',
             'branding.logo' => null,
             'branding.mark' => null,
+            'shortcodes.data' => [],
             'content.tone' => null,
             'content.donts' => null,
             'content.notes' => null,

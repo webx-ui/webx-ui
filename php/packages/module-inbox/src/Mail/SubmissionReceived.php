@@ -16,6 +16,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\SentMessage;
 use Illuminate\Queue\SerializesModels;
 use Throwable;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Models\Submission;
 
 /**
@@ -118,7 +119,8 @@ class SubmissionReceived extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        $title = (string) $this->submission->form->title;
+        // A subject is text: a shortcode in the form's title is its plain rendering there.
+        $title = app(Shortcodes::class)->plain((string) $this->submission->form->title);
 
         return new Envelope(
             subject: (string) trans('webx-inbox::mail.subject', [

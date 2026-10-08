@@ -40,6 +40,8 @@ return [
     'empty' => 'Ainda não há blocos. Adicione o primeiro.',
     'nested-note' => 'Os blocos aninhados editam-se na árvore à esquerda.',
     'markup-in-text' => 'Este texto contém tags HTML. Altere as palavras e deixe as tags como estão.',
+    'shortcodes' => 'Shortcodes',
+    'shortcodes-insert' => 'Inserir um shortcode',
     'unknown-type' => 'Tipo de bloco desconhecido «:type»',
     'draft-type' => 'O tipo de bloco tem uma versão não publicada',
     'disabled-type' => 'O tipo de bloco está oculto aos editores',

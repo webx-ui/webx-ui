@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blocks;
 
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Localization\Locales;
 
 /**
@@ -35,6 +36,7 @@ final class BlockLabel
         private readonly BlockTypes $blocks,
         private readonly FieldTypes $fieldTypes,
         private readonly Locales $locales,
+        private readonly Shortcodes $shortcodes,
     ) {}
 
     /**
@@ -114,7 +116,8 @@ final class BlockLabel
             return null;
         }
 
-        $text = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($value))) ?? '');
+        // Read as the page reads it: «Deeply heard.», not «Deeply heard[dot]».
+        $text = trim(preg_replace('/\s+/u', ' ', $this->shortcodes->text($value)) ?? '');
 
         // A text field that holds an address is a link somebody pasted, not a name.
         if ($text === '' || preg_match('~^(https?://|/|mailto:|tel:|#)~i', $text) === 1) {

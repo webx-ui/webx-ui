@@ -40,6 +40,8 @@ return [
     'empty' => 'Noch keine Blöcke. Fügen Sie den ersten hinzu.',
     'nested-note' => 'Verschachtelte Blöcke werden im Baum links bearbeitet.',
     'markup-in-text' => 'Dieser Text enthält HTML-Tags. Ändern Sie die Wörter und lassen Sie die Tags wie sie sind.',
+    'shortcodes' => 'Shortcodes',
+    'shortcodes-insert' => 'Shortcode einfügen',
     'unknown-type' => 'Unbekannter Blocktyp „:type“',
     'draft-type' => 'Der Blocktyp hat eine unveröffentlichte Version',
     'disabled-type' => 'Der Blocktyp ist vor Redakteuren verborgen',

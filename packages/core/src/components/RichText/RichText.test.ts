@@ -554,3 +554,105 @@ describe('WxRichText', () => {
     })
   })
 })
+
+describe('WxRichText placeholders', () => {
+  const tokens = [
+    { name: 'phone', value: '+1 555 0100' },
+    { name: 'email', value: 'hello@example.com' },
+  ]
+
+  function options(): HTMLElement[] {
+    return Array.from(document.querySelectorAll<HTMLElement>('.wx-token-menu__option'))
+  }
+
+  function chips(wrapper: Wrapper): string[] {
+    return wrapper.findAll('.ProseMirror .wx-token').map((chip) => chip.text())
+  }
+
+  it('suggests on a bracket and replaces the typed part on Enter', async () => {
+    const wrapper = await mountEditor({ tokens })
+    const editor = editorOf(wrapper)
+
+    editor.commands.focus()
+    editor.commands.insertContent('Call [ph')
+    await flush()
+    expect(options().map((option) => option.textContent)).toEqual(['[phone]+1 555 0100'])
+
+    await wrapper.get('.ProseMirror').trigger('keydown', { key: 'Enter' })
+    await flush()
+
+    expect(editor.getHTML()).toBe('<p>Call [phone]</p>')
+    expect(options()).toHaveLength(0)
+    wrapper.unmount()
+  })
+
+  it('closes the list on Escape and leaves the text alone', async () => {
+    const wrapper = await mountEditor({ tokens })
+    const editor = editorOf(wrapper)
+
+    editor.commands.focus()
+    editor.commands.insertContent('[')
+    await flush()
+    expect(options()).toHaveLength(2)
+
+    await wrapper.get('.ProseMirror').trigger('keydown', { key: 'Escape' })
+    await flush()
+
+    expect(options()).toHaveLength(0)
+    expect(editor.getHTML()).toBe('<p>[</p>')
+    wrapper.unmount()
+  })
+
+  it('draws known placeholders as chips without putting them in the value', async () => {
+    const html = '<p>Call [phone], [fax] or [[phone]]</p>'
+    const wrapper = await mountEditor({ tokens, modelValue: html })
+
+    expect(chips(wrapper)).toEqual(['[phone]'])
+    expect(editorOf(wrapper).getHTML()).toBe(html)
+    wrapper.unmount()
+  })
+
+  it('draws chips in an inline field too, beside an accent', async () => {
+    const line = 'Call [email]<span>.</span>'
+    const wrapper = await mountEditor({ tokens, inline: true, modelValue: line })
+
+    expect(chips(wrapper)).toEqual(['[email]'])
+    expect(editorOf(wrapper).getHTML()).toBe(line)
+    wrapper.unmount()
+  })
+
+  it('draws chips once the placeholders arrive after the editor', async () => {
+    const wrapper = await mountEditor({ modelValue: '<p>[phone]</p>' })
+    expect(chips(wrapper)).toEqual([])
+
+    await wrapper.setProps({ tokens })
+    await flush()
+
+    expect(chips(wrapper)).toEqual(['[phone]'])
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('inserts from the toolbar button where the caret is', async () => {
+    const wrapper = await mountEditor({ tokens, modelValue: '<p>Call us on</p>' })
+    const editor = editorOf(wrapper)
+    editor.commands.focus('end')
+
+    await toolByLabel(wrapper, 'Insert a placeholder').trigger('click')
+    await flush()
+    expect(options()).toHaveLength(2)
+
+    options()[1]!.click()
+    await flush()
+
+    expect(editor.getHTML()).toBe('<p>Call us on[email]</p>')
+    wrapper.unmount()
+  })
+
+  it('has no button without placeholders', async () => {
+    const wrapper = await mountEditor()
+
+    expect(wrapper.find('button[aria-label="Insert a placeholder"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+})

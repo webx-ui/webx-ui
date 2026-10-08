@@ -14,9 +14,23 @@ import { TableKit } from '@tiptap/extension-table'
 import Image from '@tiptap/extension-image'
 import Youtube from '@tiptap/extension-youtube'
 import FileHandler from '@tiptap/extension-file-handler'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
+import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { useFormField } from '../../composables/useFormField'
 import { useLocalized } from '../../composables/useLocalized'
 import LocalePicker from '../Locales/LocalePicker.vue'
+import WxTokenMenu from '../../internal/TokenMenu.vue'
+import {
+  fieldAnchor,
+  rectOf,
+  tokenAnchor,
+  tokenSpans,
+  tokenText,
+  useTokenMenu,
+  type TokenAnchor,
+  type TokenOption,
+  type TokenRange,
+} from '../../composables/useTokens'
 import WxButton from '../Button/Button.vue'
 import WxCodeEditor from '../CodeEditor/CodeEditor.vue'
 import WxRichTextToolbarButton from './ToolbarButton.vue'
@@ -59,6 +73,9 @@ const props = withDefaults(defineProps<RichTextProps>(), {
   accept: () => DEFAULT_ACCEPT,
   labels: undefined,
   localized: false,
+  tokens: undefined,
+  tokensTitle: 'Placeholders',
+  tokensLabel: 'Insert a placeholder',
 })
 
 /**
@@ -142,6 +159,51 @@ const OneLine = Extension.create({
   }),
 })
 
+const tokens = useTokenMenu(() => props.tokens)
+const hasTokens = computed(() => tokens.all.value.length > 0)
+
+const tokenChipsKey = new PluginKey('wxTokenChips')
+
+/**
+ * The known placeholders drawn as chips: a decoration over the text `[name]`, not a node.
+ *
+ * A node would have to be written back as something, and what the site reads is the brackets
+ * typed as text — so the document keeps them as text, `getHTML()` answers with them as text,
+ * and the chip exists only on screen. A name nobody registered stays plain, which is the hint
+ * that it will print as typed.
+ */
+const TokenChips = Extension.create({
+  name: 'wxTokenChips',
+  addProseMirrorPlugins: () => [
+    new Plugin({
+      key: tokenChipsKey,
+      props: {
+        decorations: (state) => {
+          const known = tokens.known.value
+          if (known.size === 0) return DecorationSet.empty
+
+          const chips: Decoration[] = []
+
+          state.doc.descendants((node, pos) => {
+            if (!node.isText || !node.text) return
+
+            for (const span of tokenSpans(node.text, known)) {
+              chips.push(
+                Decoration.inline(pos + span.from, pos + span.to, {
+                  class: 'wx-token',
+                  'data-token': span.name,
+                }),
+              )
+            }
+          })
+
+          return DecorationSet.create(state.doc, chips)
+        },
+      },
+    }),
+  ],
+})
+
 function inlineExtensions(): Extensions {
   return [
     StarterKit.configure({
@@ -166,6 +228,7 @@ function inlineExtensions(): Extensions {
     LineDocument,
     Accent,
     OneLine,
+    TokenChips,
   ]
 }
 
@@ -186,6 +249,7 @@ function documentExtensions(): Extensions {
       onDrop: (_editor, files, pos) => void uploadFiles(files, pos),
       onPaste: (_editor, files) => void uploadFiles(files),
     }),
+    TokenChips,
   ]
 }
 
@@ -238,13 +302,17 @@ const editor = useEditor({
   content: currentValue.value,
   editable: editable.value,
   extensions: props.inline ? inlineExtensions() : documentExtensions(),
-  editorProps: props.inline
-    ? {
-        // Pasted lines become one line: the breaks would otherwise vanish between the words
-        // and glue the last of one line to the first of the next.
-        transformPastedText: (text: string) => text.replace(/\s*[\r\n]+\s*/g, ' '),
-      }
-    : {},
+  editorProps: {
+    // The list's keys first: Enter picks a placeholder rather than splitting the paragraph.
+    handleKeyDown: (_view, event) => tokens.keydown(event, insertToken),
+    ...(props.inline
+      ? {
+          // Pasted lines become one line: the breaks would otherwise vanish between the words
+          // and glue the last of one line to the first of the next.
+          transformPastedText: (text: string) => text.replace(/\s*[\r\n]+\s*/g, ' '),
+        }
+      : {}),
+  },
   onUpdate: () => {
     const html = readHtml()
     // Tiptap raises an update for things that are not edits too. Writing the same words back
@@ -253,6 +321,11 @@ const editor = useEditor({
     if (html === currentValue.value) return
     locales.write(editing.value, html)
     emit('change', html)
+    suggestTokens()
+  },
+  onSelectionUpdate: () => {
+    // A caret moved by hand: an open list follows it, or goes.
+    if (tokens.open.value) suggestTokens()
   },
   onFocus: () => {
     focused.value = true
@@ -260,6 +333,7 @@ const editor = useEditor({
   },
   onBlur: () => {
     focused.value = false
+    tokens.close()
     emit('blur')
   },
 })
@@ -286,6 +360,73 @@ watch(currentValue, (value) => {
  * unlocked after it would otherwise hear every editor on it "change" at once.
  */
 watch(editable, (value) => editor.value?.setEditable(value, false))
+
+/*
+ * Placeholders arrive after the editor — a panel fetches them — and decorations are only drawn
+ * again on a transaction, so the arrival is one: empty, and changing nothing in the document.
+ */
+watch(tokens.known, () => {
+  const instance = editor.value
+  if (instance) instance.view.dispatch(instance.state.tr.setMeta(tokenChipsKey, true))
+})
+
+const rootRef = ref<HTMLElement | null>(null)
+const tokenListId = computed(() => `${field.id.value}-tokens`)
+
+/** Under the line at a position of the document; under the field where nothing is measured. */
+function caretAnchor(pos: number): TokenAnchor | undefined {
+  try {
+    const at = editor.value?.view.coordsAtPos(pos)
+    if (at && at.bottom > at.top) {
+      return tokenAnchor(rectOf(at.left, at.top, 0, at.bottom - at.top), rootRef.value)
+    }
+  } catch {
+    // No layout to ask (a test), or a position the view has not drawn yet.
+  }
+  return fieldAnchor(rootRef.value, null)
+}
+
+/** After a keystroke or a caret move: open, narrow or close the list by what is before it. */
+function suggestTokens(): void {
+  const instance = editor.value
+  if (!instance || !hasTokens.value || !editable.value) return
+
+  const { selection } = instance.state
+  const { $from } = selection
+
+  if (!selection.empty || !$from.parent.isTextblock) return tokens.close()
+
+  // Every leaf inline node counts as one character, so offsets stay document positions.
+  const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '￼')
+  tokens.suggest(before, $from.pos, () =>
+    caretAnchor($from.pos - before.length + before.lastIndexOf('[')),
+  )
+}
+
+function insertToken(token: TokenOption, at: TokenRange): void {
+  const instance = editor.value
+  if (!instance) return
+
+  instance
+    .chain()
+    .focus()
+    .command(({ tr }) => {
+      tr.insertText(tokenText(token), at.from, at.to)
+      return true
+    })
+    .run()
+}
+
+/** The toolbar's button: every placeholder, going where the caret is or over the selection. */
+function browseTokens(): void {
+  const instance = editor.value
+  if (!instance) return
+  if (tokens.open.value && tokens.browsing.value) return tokens.close()
+
+  const { from, to } = instance.state.selection
+  instance.commands.focus()
+  tokens.browse({ from, to }, caretAnchor(from))
+}
 
 const isEmpty = computed(() => editor.value?.isEmpty ?? true)
 const inTable = computed(() => editor.value?.isActive('table') ?? false)
@@ -560,7 +701,7 @@ defineExpose({
 </script>
 
 <template>
-  <div :class="classes">
+  <div ref="rootRef" :class="classes">
     <div class="wx-rich-text__toolbar" role="toolbar" :aria-label="ariaLabel ?? label('toolbar')">
       <template v-for="(tool, index) in visibleTools" :key="`${tool}-${index}`">
         <span v-if="tool === 'divider'" class="wx-rich-text__divider" aria-hidden="true" />
@@ -575,8 +716,33 @@ defineExpose({
         />
       </template>
 
+      <wx-rich-text-toolbar-button
+        v-if="hasTokens"
+        class="wx-rich-text__tokens"
+        icon="token"
+        :label="tokensLabel"
+        :active="tokens.open.value && tokens.browsing.value"
+        :disabled="!editable || source !== null"
+        @mousedown.prevent
+        @click="browseTokens"
+      />
+
       <span v-if="uploading > 0" class="wx-rich-text__uploading">{{ label('uploading') }}</span>
     </div>
+
+    <wx-token-menu
+      v-if="hasTokens"
+      :open="tokens.open.value"
+      :items="tokens.items.value"
+      :active="tokens.active.value"
+      :anchor="tokens.anchor.value"
+      :list-id="tokenListId"
+      :title="tokens.browsing.value ? tokensTitle : undefined"
+      :owner="rootRef"
+      @choose="(token) => tokens.choose(token, insertToken)"
+      @hover="(index) => (tokens.active.value = index)"
+      @close="tokens.close()"
+    />
 
     <locale-picker
       v-if="locales.on.value"

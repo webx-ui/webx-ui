@@ -40,6 +40,8 @@ return [
     'empty' => 'Aucun bloc pour l’instant. Ajoutez le premier.',
     'nested-note' => 'Les blocs imbriqués se modifient dans l’arborescence à gauche.',
     'markup-in-text' => 'Ce texte contient des balises HTML. Modifiez les mots et laissez les balises telles quelles.',
+    'shortcodes' => 'Shortcodes',
+    'shortcodes-insert' => 'Insérer un shortcode',
     'unknown-type' => 'Type de bloc inconnu « :type »',
     'draft-type' => 'Le type de bloc a une version non publiée',
     'disabled-type' => 'Le type de bloc est masqué aux rédacteurs',

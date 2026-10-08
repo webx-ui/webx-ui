@@ -20,6 +20,18 @@ return [
             'why' => 'Le visiteur ne les voit pas, mais elles sont dans les données de l’éditeur et dans ce que lit un agent, et ressortent comme un mauvais libellé de bloc.',
             'fix' => 'Retirez-les avec la correction, ou pour tout le site avec php artisan webx:blocks:prune. Un bloc d’un type qui n’existe plus n’est pas touché. Les éléments d’un répéteur sont comparés à ses champs.',
         ],
+        'unknown_shortcodes' => [
+            'title' => 'Shortcodes mal saisis',
+            'found' => 'Un texte contient un crochet qui est presque un shortcode du site, ou qui a des arguments, sans en être un.',
+            'why' => 'Seuls les shortcodes enregistrés sont remplacés. Le reste est imprimé tel quel, crochets compris, sous les yeux de chaque visiteur.',
+            'fix' => 'Corrigez le nom selon la suggestion, ou écrivez [[nom]] si la page doit montrer les crochets. La liste est dans l’aide des shortcodes du champ et sous « Réglages » → « Shortcodes ».',
+        ],
+        'hardcoded_values' => [
+            'title' => 'Valeurs au lieu d’un shortcode',
+            'found' => 'Un texte contient un téléphone, un e-mail ou une autre valeur qu’un shortcode de « Réglages » → « Shortcodes » tient déjà.',
+            'why' => 'Juste aujourd’hui, faux le jour où la valeur change : le shortcode change partout, une valeur saisie à la main seulement là où l’on y pense.',
+            'fix' => 'Remplacez la valeur par le shortcode suggéré, p. ex. [phone]. Le lien est créé par le shortcode lui-même.',
+        ],
     ],
     'syntax' => 'Le modèle ne compile pas : :reason. La publication sera refusée.',
     'unknown-field-type' => 'Champs d\'un type que le site ne connaît pas : :fields. Le formulaire affiche un avertissement à leur place et rien ne vérifie leurs valeurs.',

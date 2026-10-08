@@ -3,8 +3,9 @@ export type InputStatus = 'default' | 'success' | 'warning' | 'error'
 export type InputNativeType = 'text' | 'password' | 'email' | 'number' | 'search' | 'tel' | 'url'
 
 import type { LocalizedFieldProps, LocalizedValue } from '../../composables/useLocalized'
+import type { TokenFieldProps } from '../../composables/useTokens'
 
-export interface InputProps extends LocalizedFieldProps {
+export interface InputProps extends LocalizedFieldProps, TokenFieldProps {
   /** Overrides the id generated for the control (and used by a WxFormItem label). */
   id?: string
   /** `type` attribute of the underlying `<input>`. */

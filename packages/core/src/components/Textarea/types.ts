@@ -6,8 +6,9 @@ export interface AutosizeOptions {
 }
 
 import type { LocalizedFieldProps, LocalizedValue } from '../../composables/useLocalized'
+import type { TokenFieldProps } from '../../composables/useTokens'
 
-export interface TextareaProps extends LocalizedFieldProps {
+export interface TextareaProps extends LocalizedFieldProps, TokenFieldProps {
   size?: ControlSize
   status?: ControlStatus
   id?: string

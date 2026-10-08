@@ -1,5 +1,6 @@
 import type { ControlSize, ControlStatus } from '../../composables/useFormField'
 import type { LocalizedFieldProps, LocalizedValue } from '../../composables/useLocalized'
+import type { TokenFieldProps } from '../../composables/useTokens'
 
 export type RichTextTool =
   | 'bold'
@@ -92,7 +93,7 @@ export type RichTextImagePicker = () => Promise<RichTextImage | string | null>
 /** One language's HTML, or every language's when the field is localized. */
 export type RichTextModelValue = string | LocalizedValue
 
-export interface RichTextProps extends LocalizedFieldProps {
+export interface RichTextProps extends LocalizedFieldProps, TokenFieldProps {
   placeholder?: string
   disabled?: boolean
   readonly?: boolean

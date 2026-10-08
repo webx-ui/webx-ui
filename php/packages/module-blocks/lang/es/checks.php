@@ -20,6 +20,18 @@ return [
             'why' => 'El visitante no los ve, pero están en los datos del editor y en lo que lee un agente, y aparecen como una etiqueta equivocada del bloque.',
             'fix' => 'Quítelos con la corrección o en todo el sitio con php artisan webx:blocks:prune. Un bloque de un tipo que ya no existe no se toca. Los elementos de un repetidor se comparan con sus campos.',
         ],
+        'unknown_shortcodes' => [
+            'title' => 'Shortcodes mal escritos',
+            'found' => 'Un texto tiene un corchete que casi es un shortcode del sitio, o que lleva argumentos, y no lo es.',
+            'why' => 'Solo se reemplazan los shortcodes registrados. Lo demás se imprime tal cual, con corchetes, a la vista de todos los visitantes.',
+            'fix' => 'Corrija el nombre al sugerido o escriba [[nombre]] si la página debe mostrar los corchetes. La lista está en la ayuda de shortcodes del campo y en «Ajustes» → «Shortcodes».',
+        ],
+        'hardcoded_values' => [
+            'title' => 'Valores en lugar de un shortcode',
+            'found' => 'Un texto contiene un teléfono, un correo u otro valor que ya guarda un shortcode de «Ajustes» → «Shortcodes».',
+            'why' => 'Hoy es correcto y deja de serlo el día que cambie: el shortcode cambia en todas partes, un valor escrito a mano solo donde alguien lo recuerde.',
+            'fix' => 'Sustituya el valor por el shortcode sugerido, p. ej. [phone]. El enlace también lo crea el shortcode.',
+        ],
     ],
     'syntax' => 'La plantilla no compila: :reason. La publicación será rechazada.',
     'unknown-field-type' => 'Campos de un tipo que el sitio no conoce: :fields. El formulario muestra un aviso en su lugar y nadie comprueba sus valores.',

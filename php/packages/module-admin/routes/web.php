@@ -14,6 +14,7 @@ use WebxUi\Admin\Http\Controllers\NoteController;
 use WebxUi\Admin\Http\Controllers\RelationController;
 use WebxUi\Admin\Http\Controllers\ScreenController;
 use WebxUi\Admin\Http\Controllers\ShellController;
+use WebxUi\Admin\Http\Controllers\ShortcodeController;
 use WebxUi\Admin\Http\Controllers\TranslationController;
 use WebxUi\Admin\Http\Controllers\UploadController;
 
@@ -40,6 +41,9 @@ Route::prefix((string) config('webx-admin.api_path'))
         Route::get('relations/{target}', RelationController::class)
             ->where('target', '[a-z0-9-]+')
             ->name('relations');
+
+        // What `[` offers in a text field: the shortcodes and what each prints now.
+        Route::get('shortcodes', ShortcodeController::class)->name('shortcodes');
 
         Route::get('screens/{name}', ScreenController::class)
             ->where('name', '[a-z0-9-]+\.[a-z0-9-]+')

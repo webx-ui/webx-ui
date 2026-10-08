@@ -24,9 +24,11 @@ use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Audit\Fixes\AuditFixes;
+use WebxUi\Blocks\Audit\HardcodedValuesCheck;
 use WebxUi\Blocks\Audit\PruneStrayValuesFix;
 use WebxUi\Blocks\Audit\RegionContentSource;
 use WebxUi\Blocks\Audit\StrayValuesCheck;
+use WebxUi\Blocks\Audit\UnknownShortcodesCheck;
 use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
 use WebxUi\Blocks\Console\ExportCommand;
@@ -217,6 +219,10 @@ class BlocksServiceProvider extends ServiceProvider
             // Values for fields a block type does not define: found, and taken out per entity.
             $this->app->make(AuditChecks::class)->register($this->app->make(StrayValuesCheck::class));
             $this->app->make(AuditFixes::class)->register($this->app->make(PruneStrayValuesFix::class));
+            // Shortcodes: a bracket that was meant as one and prints as typed, and a value typed
+            // by hand where a data shortcode holds it.
+            $this->app->make(AuditChecks::class)->register($this->app->make(UnknownShortcodesCheck::class));
+            $this->app->make(AuditChecks::class)->register($this->app->make(HardcodedValuesCheck::class));
         }
     }
 
