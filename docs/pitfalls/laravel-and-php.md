@@ -433,6 +433,12 @@ true` в `defineEnvironment()`. На настоящей СУБД всё это �
 - **Метод `fail()` в команде уже занят.** У `Illuminate\Console\Command` есть свой
   `fail()`, который бросает исключение; приватный помощник с тем же именем в наследнике —
   фатальная ошибка сигнатуры. Свой называть иначе (`refuse()` в `webx:mcp:token`).
+- **Тест чужого пакета падает на `config.storage_link`, а ты его не трогал.** Тест, который
+  вызывает `storage:link` (например, через `webx:snapshot:restore`), оставляет симлинк в
+  `vendor/orchestra/testbench-core/laravel/public/storage` — общей папке всех пакетов, и аудит
+  дальше видит ссылку, которой «не должно быть». `usePublicPath()` в `defineEnvironment` не
+  помогает: `filesystems.links` уже посчитан. Лечится `filesystems.links` на временную папку
+  теста; проверка — `ls` той папки после прогона, симлинк удалять как ссылку (`rm`, не `-r`).
 
 ## PHPStan
 
