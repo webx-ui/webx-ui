@@ -135,32 +135,34 @@ that asks its own question or where the deletion can be undone.
 
 ## Props
 
-| Prop                | Type                   | Default          | Description                                                   |
-| ------------------- | ---------------------- | ---------------- | ------------------------------------------------------------- |
-| `name`              | `string`               | —                | The file name, extension and all                              |
-| `url`               | `string`               | —                | Where the file is; what the copy action copies                |
-| `thumbnail`         | `string`               | —                | A smaller picture to draw instead of `url`                    |
-| `type`              | `string`               | —                | MIME type; decides picture or glyph before the extension does |
-| `icon`              | `IconName`             | by extension     | Glyph to draw instead                                         |
-| `extension`         | `string`               | from `name`      | The extension, for a name that does not carry one             |
-| `showExtension`     | `boolean`              | `false`          | The extension as a badge over a picture too                   |
-| `selected`          | `boolean`              | `false`          | Draws the card as chosen                                      |
-| `size`              | `'sm' \| 'md' \| 'lg'` | `'md'`           | Glyph and text size                                           |
-| `disabled`          | `boolean`              | `false`          | No actions, no renaming                                       |
-| `renamable`         | `boolean`              | `false`          | Offers renaming                                               |
-| `editable`          | `boolean`              | `false`          | Offers the edit action, for pictures                          |
-| `removable`         | `boolean`              | `false`          | Offers deleting                                               |
-| `confirmRemove`     | `boolean`              | `true`           | Asks before deleting                                          |
-| `removeConfirmText` | `string`               | `Delete <name>?` | The question it asks                                          |
-| `copyable`          | `boolean`              | `false`          | Offers copying the link                                       |
-| `actionsMenu`       | `boolean`              | `false`          | The actions are a `···` menu at every width, never a row      |
-| `renameLabel`       | `string`               | `'Rename'`       | Tooltip and accessible name                                   |
-| `saveLabel`         | `string`               | `'Save'`         | The two buttons under the rename field                        |
-| `cancelLabel`       | `string`               | `'Cancel'`       | —                                                             |
-| `editLabel`         | `string`               | `'Edit picture'` | —                                                             |
-| `removeLabel`       | `string`               | `'Delete'`       | —                                                             |
-| `copyLabel`         | `string`               | `'Copy link'`    | —                                                             |
-| `copiedLabel`       | `string`               | `'Copied'`       | Shown for a moment after a copy worked                        |
+| Prop                | Type                   | Default                | Description                                                   |
+| ------------------- | ---------------------- | ---------------------- | ------------------------------------------------------------- |
+| `name`              | `string`               | —                      | The file name, extension and all                              |
+| `url`               | `string`               | —                      | Where the file is; what the copy action copies                |
+| `thumbnail`         | `string`               | —                      | A smaller picture to draw instead of `url`                    |
+| `type`              | `string`               | —                      | MIME type; decides picture or glyph before the extension does |
+| `icon`              | `IconName`             | by extension           | Glyph to draw instead                                         |
+| `extension`         | `string`               | from `name`            | The extension, for a name that does not carry one             |
+| `showExtension`     | `boolean`              | `false`                | The extension as a badge over a picture too                   |
+| `selected`          | `boolean`              | `false`                | Draws the card as chosen                                      |
+| `size`              | `'sm' \| 'md' \| 'lg'` | `'md'`                 | Glyph and text size                                           |
+| `disabled`          | `boolean`              | `false`                | No actions, no renaming                                       |
+| `renamable`         | `boolean`              | `false`                | Offers renaming                                               |
+| `editable`          | `boolean`              | `false`                | Offers the edit action, for pictures                          |
+| `removable`         | `boolean`              | `false`                | Offers deleting                                               |
+| `confirmRemove`     | `boolean`              | `true`                 | Asks before deleting                                          |
+| `removeConfirmText` | `string`               | `Delete <name>?`       | The question it asks                                          |
+| `copyable`          | `boolean`              | `false`                | Offers copying the link                                       |
+| `actionsMenu`       | `boolean`              | `false`                | The actions are a `···` menu at every width, never a row      |
+| `renameLabel`       | `string`               | `'Rename'`             | Tooltip and accessible name                                   |
+| `saveLabel`         | `string`               | `'Save'`               | The two buttons under the rename field                        |
+| `cancelLabel`       | `string`               | `'Cancel'`             | —                                                             |
+| `editLabel`         | `string`               | `'Edit picture'`       | —                                                             |
+| `removeLabel`       | `string`               | `'Delete'`             | —                                                             |
+| `copyLabel`         | `string`               | `'Copy link'`          | —                                                             |
+| `copiedLabel`       | `string`               | `'Copied'`             | Shown for a moment after a copy worked                        |
+| `moreLabel`         | `string`               | `'More'`               | The button the folded-up actions open from                    |
+| `actionsLabel`      | `string`               | `'Actions for {name}'` | Accessible name of the actions                                |
 
 **Events:** `rename` (`string`); `edit`; `remove`; `copy` (`string`); `copy-error` (`unknown`).
 

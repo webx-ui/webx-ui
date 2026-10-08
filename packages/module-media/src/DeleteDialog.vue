@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useModal, WxButton, WxDialog } from '@webx-ui/core'
-import type { FileInUse, UsagePlace } from './types'
+import { placeText } from './deleting'
+import type { FileInUse } from './types'
 
 /**
  * The one question before anything leaves the library — a file, a selection, a folder.
@@ -31,12 +32,6 @@ const PLACES = 3
 
 const shown = computed(() => props.inUse.slice(0, FILES))
 const hidden = computed(() => Math.max(0, props.inUse.length - FILES))
-
-function where(place: UsagePlace): string {
-  const row = place.id === null ? place.table : `${place.table} #${place.id}`
-
-  return place.label ? `«${place.label}» · ${row}` : row
-}
 </script>
 
 <template>
@@ -60,7 +55,7 @@ function where(place: UsagePlace): string {
               v-for="place in file.used_in.slice(0, PLACES)"
               :key="`${place.table}.${place.column}.${place.id}`"
               class="wx-media-delete__place"
-              >{{ where(place) }}</span
+              >{{ placeText(place) }}</span
             >
             <span v-if="file.used_in.length > PLACES" class="wx-media-delete__place">
               {{ t('dialogs.in-use-more', { count: file.used_in.length - PLACES }) }}

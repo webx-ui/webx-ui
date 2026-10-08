@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { pluralForm, useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
-  confirm,
   createModal,
   openImageEditor,
   toast,
@@ -21,6 +20,7 @@ import NameDialog from './NameDialog.vue'
 import OptimizeDialog from './OptimizeDialog.vue'
 import UploadQueue from './UploadQueue.vue'
 import { createMediaApi } from './api'
+import { byFolder, counted } from './deleting'
 import { carriesLibraryFiles } from './dragging'
 import { readable, usePanelLocale } from './format'
 import { useMediaMessages } from './i18n'
@@ -368,20 +368,6 @@ const askToDelete = createModal<true, { title: string; message?: string; inUse?:
   DeleteDialog,
 )
 
-/** «3 файла и 1 папка» — each count in the form its language wants for it. */
-function counted(files: number, folders: number): string {
-  const language = locale()
-
-  return [
-    files > 0 ? t(`dialogs.count-files.${pluralForm(files, language)}`, { count: files }) : null,
-    folders > 0
-      ? t(`dialogs.count-folders.${pluralForm(folders, language)}`, { count: folders })
-      : null,
-  ]
-    .filter((part): part is string => part !== null)
-    .join(` ${t('dialogs.and')} `)
-}
-
 /**
  * A folder is asked about once, with everything in the question: what is inside it through the
  * whole subtree, and which of those files the site still uses and where (§14.2). The answer is
@@ -411,7 +397,7 @@ async function deleteFolder(): Promise<void> {
     title: t('dialogs.delete-folder-title', { title: target.title }),
     message: empty
       ? t('dialogs.delete-folder-text')
-      : `${t('dialogs.delete-folder-contents', { what: counted(contents.files, contents.directories) })} ${t('dialogs.delete-folder-warning')}`,
+      : `${t('dialogs.delete-folder-contents', { what: counted(t, locale(), contents.files, contents.directories) })} ${t('dialogs.delete-folder-warning')}`,
     inUse: contents.in_use,
   })
 
@@ -505,14 +491,8 @@ async function moveFiles(ids: number[], to: number): Promise<void> {
 }
 
 async function moveBack(from: Map<number, number>): Promise<void> {
-  const byFolder = new Map<number, number[]>()
-
-  for (const [id, directory] of from) {
-    byFolder.set(directory, [...(byFolder.get(directory) ?? []), id])
-  }
-
   try {
-    for (const [directory, ids] of byFolder) {
+    for (const [directory, ids] of byFolder(from)) {
       await api.move(ids, directory)
     }
   } catch (error) {

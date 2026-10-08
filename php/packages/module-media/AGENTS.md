@@ -49,6 +49,7 @@ guides when the question is about one of those. An entity's own attachments are 
 | Imagick instead of GD, other JPEG quality | `WEBX_MEDIA_IMAGE_DRIVER=imagick`; `image.quality`, `image.max_pixels` in the config      |
 | Other thumbnail sizes                     | `thumbs.widths`, `thumbs.fits` in the config                                              |
 | Signed addresses that live longer         | `temporary_url_ttl` (seconds) — used only for a disk without a `url`                      |
+| Previews of files deleted long ago        | audit `media.orphan_thumbs` and its fix, or `php artisan webx:media:prune-thumbs --dry-run` first |
 | Edit the config at all                    | `php artisan vendor:publish --tag=webx-media-config`, keep only the keys you change       |
 | Other words in the panel                  | `php artisan vendor:publish --tag=webx-media-lang`                                        |
 | A picture or file field on a screen       | a field of type `wx-media`, `wx-gallery`, `wx-file` or `wx-files`; `props.accept` narrows |
@@ -68,12 +69,15 @@ a migration of your own, bytes and rows together.
 - Do not write files into the disk by hand or insert `media_files` rows with SQL: the row carries
   `hash`, `mime`, `size`, dimensions and `name_lower` that search and duplicates rely on. Upload
   through the panel, the API or `media_upload_from_url`.
-- Do not delete rows with SQL: `media_delete_files` (or the panel) removes the bytes and the
-  edited original with the row. It refuses a file the site still uses and says where (a foreign
+- Do not delete rows with SQL: `media_delete_files` (or the panel) removes the bytes, the
+  edited original and every preview (`media/thumbs/<key>`) with the row. It refuses a file the site still uses and says where (a foreign
   key into `media_files`, or the file's key inside a text or JSON column); `force: true` deletes
   anyway — replace the file in those places first. A module that keeps files where the schema
-  cannot show them tags a `WebxUi\Media\Usage\UsageSource` with `MediaUsage::TAG`. A raw delete leaves orphaned bytes; a deleted file on the disk
-  leaves a row the audit reports as `media.missing_file`.
+  cannot show them tags a `WebxUi\Media\Usage\UsageSource` with `MediaUsage::TAG`. The panel's delete keeps the same rule: `DELETE files/{id}` and
+  `POST files/delete` answer `409 files_in_use` with where unless `force`, and `POST files/usage`
+  and `GET directories/{id}/contents` say it before anything is asked. A raw delete leaves
+  orphaned bytes and previews; a deleted file on the disk leaves a row the audit reports as
+  `media.missing_file`.
 - Do not try to move or delete the root folder — it is refused (`root_immutable`). Deleting a
   non-empty folder answers `409` with counts until `?force=1`; ask the person first, there is no
   bin. `media_delete_directory` deletes only an empty folder, on purpose.

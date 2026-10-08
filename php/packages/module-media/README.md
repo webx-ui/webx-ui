@@ -72,12 +72,15 @@ Everything lives under the panel's API path, behind the panel session and a perm
 | -------------------------------------------- | ------------------------------------------------------------------------------- |
 | `GET directories`                            | the whole tree with file counts                                                 |
 | `POST/PATCH directories`, `PATCH …/move`     | create, rename, move                                                            |
+| `GET directories/{id}/contents`              | what deleting it would take: counts through the subtree and `in_use`             |
 | `DELETE directories/{id}`                    | refuses a folder that holds anything (409 with counts) until `?force=1`         |
 | `GET files`                                  | paginated, `q`, `type`, `sort`, `per_page`                                      |
 | `POST files`                                 | multi-file upload; the same bytes in the same folder answer `duplicate`         |
 | `POST files/chunked`                         | `{ directory_id, upload }` — a finished chunked upload into the library         |
 | `PATCH files/{id}`                           | rename — the key on the disk never changes                                      |
-| `POST files/move`, `DELETE files`            | in batches                                                                      |
+| `POST files/move`                            | in batches                                                                      |
+| `POST files/usage`                           | `{ ids }` — which of them the site uses, where, with a readable `label` per row |
+| `DELETE files/{id}`, `POST files/delete`     | refuse a file the site uses (409 `files_in_use` with where) until `force`       |
 | `GET files/{id}/thumb?w=&h=&fit=`            | cuts the variant once, then redirects to it                                     |
 | `POST files/{id}/edit`                       | crop, rotate, flip, resize — applied to the original, written over the same key |
 | `POST files/{id}/copy`, `…/restore-original` | a second file; the picture as it arrived                                        |
@@ -137,7 +140,9 @@ the same transaction.
 - `delete_directory` deletes an **empty** folder only: recursive deletion is the one operation
   here that a mistaken call cannot take back, and an agent cannot ask the question the panel asks
   first.
-- `delete_files` refuses a file the site still uses and says where, unless `force: true`.
+- `delete_files` refuses a file the site still uses and says where, unless `force: true`. The
+  panel keeps the same rule: it asks `files/usage` (or a folder's `contents`) first and shows the
+  places in one question with «delete anyway», and the delete endpoints refuse without `force`.
   `WebxUi\Media\Usage\MediaUsage` asks every source tagged `MediaUsage::TAG`; the one that ships,
   `DatabaseUsage`, reads the schema — foreign keys into `media_files`, and the last segment of
   the file's key (a uuid) inside text and JSON columns. History, logs and queues are skipped
