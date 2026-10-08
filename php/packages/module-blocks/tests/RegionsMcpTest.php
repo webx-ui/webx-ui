@@ -50,7 +50,7 @@ final class RegionsMcpTest extends RegionTestCase
 
         $revision = null;
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bar', 'values' => ['text' => 'First']]]], $editor)
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bar', 'values' => ['text' => 'First']]]], $editor)
             ->assertOk()
             ->assertStructuredContent(static function (AssertableJson $json) use (&$revision): void {
                 $content = $json->etc()->toArray();
@@ -71,7 +71,7 @@ final class RegionsMcpTest extends RegionTestCase
         $this->assertCount(2, $region->refresh()->editingTree());
 
         // The footer holds two at most.
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'footer', 'blocks' => [['type' => 'bar'], ['type' => 'bar'], ['type' => 'bar']]], $editor)
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'footer', 'blocks' => [['type' => 'bar'], ['type' => 'bar'], ['type' => 'bar']]], $editor)
             ->assertHasErrors(['at most 2']);
     }
 
@@ -85,10 +85,10 @@ final class RegionsMcpTest extends RegionTestCase
         $regionsOnly = $this->editor(['blocks.regions']);
         $blocksOnly = $this->editor(['blocks.view', 'blocks.manage']);
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => []], $blocksOnly)->assertHasErrors(['blocks.regions']);
-        $this->agent('set_content', ['entity' => 'note', 'id' => $page->id, 'blocks' => []], $regionsOnly)->assertHasErrors(['blocks.manage']);
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => []], $blocksOnly)->assertHasErrors(['blocks.regions']);
+        $this->agent('set_content', ['force' => true, 'entity' => 'note', 'id' => $page->id, 'blocks' => []], $regionsOnly)->assertHasErrors(['blocks.manage']);
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => []], $regionsOnly)->assertOk();
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => []], $regionsOnly)->assertOk();
     }
 
     #[Test]
@@ -100,11 +100,11 @@ final class RegionsMcpTest extends RegionTestCase
 
         $this->agent('region_publish', ['name' => 'header'], $editor)->assertHasErrors(['never saved']);
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bomb', 'values' => ['boom' => 'yes']]]], $editor)->assertOk();
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bomb', 'values' => ['boom' => 'yes']]]], $editor)->assertOk();
         $this->agent('region_publish', ['name' => 'header'], $editor)->assertHasErrors(['Not published', 'Boom']);
         $this->agent('region_publish', ['name' => 'header', 'dry_run' => true], $editor)->assertHasErrors(['Would not publish']);
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bar', 'values' => ['text' => 'Live']]]], $editor)->assertOk();
+        $this->agent('set_content', ['force' => true, 'entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bar', 'values' => ['text' => 'Live']]]], $editor)->assertOk();
 
         $this->tag();
 

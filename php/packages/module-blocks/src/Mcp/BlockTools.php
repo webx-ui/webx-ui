@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\AgentRevision;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Admin\Versions\EntityVersion;
@@ -84,10 +86,7 @@ final class BlockTools
         // one the entity needs.
         $reads = ['blocks.view', 'blocks.manage', 'blocks.regions'];
         $writes = ['blocks.manage', 'blocks.regions'];
-        $revision = [
-            'type' => 'string',
-            'description' => 'The revision blocks_get_content returned. Left out, the write goes in whatever happened since.',
-        ];
+        $revision = AgentRevision::properties('blocks_get_content');
 
         $tools = [
             Tool::read(
@@ -239,7 +238,7 @@ final class BlockTools
                     'entity' => $entity,
                     'id' => $id,
                     'blocks' => ['type' => 'array', 'items' => ['type' => 'object'], 'description' => 'The whole tree, top to bottom.'],
-                    'revision' => $revision,
+                    ...$revision,
                 ], 'required' => ['entity', 'id', 'blocks']],
                 permission: $writes,
             ),
@@ -253,13 +252,14 @@ final class BlockTools
                 .'options, dates, colours, links — http(s), mailto, tel, relative paths and #anchors only — library files) '
                 .'and every block against where it stands (a container\'s allow and max, a type\'s allowed_in and '
                 .'max_per_entity); a refusal names the block\'s key and the field. '
-                .'Send the revision blocks_get_content gave you and the edit is refused if the entity changed in '
-                .'between, instead of quietly overwriting somebody.',
+                .'Send the revision blocks_get_content gave you: the edit is refused if the entity changed in '
+                .'between, instead of quietly overwriting somebody, and refused without one. blocks_get_content also '
+                .'names who has the entity open in the panel (being_edited_by) — tell your user before writing under them.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->editContent($arguments, $user),
                 ['properties' => [
                     'entity' => $entity,
                     'id' => $id,
-                    'revision' => $revision,
+                    ...$revision,
                     'ops' => [
                         'type' => 'array',
                         'items' => ['type' => 'object'],
@@ -949,6 +949,9 @@ final class BlockTools
             // is one, otherwise what the site shows.
             'editing' => $draftTree === null ? $column : 'draft',
             'revision' => Content::revision($editing),
+            // Who has it open in the panel right now: an editor typing into the same draft. Tell
+            // your user before writing; their editor merges a write that touches other fields.
+            'being_edited_by' => $this->container->make(Presence::class)->of($entity),
         ];
 
         $key = $arguments['key'] ?? null;
@@ -1013,7 +1016,7 @@ final class BlockTools
         }
 
         $tree = $this->editing($entity);
-        $this->sameRevision($arguments, $tree);
+        AgentRevision::check($arguments, Content::revision($tree), 'entity', 'blocks_get_content');
         $keysBefore = self::keys($tree);
 
         $localized = $this->localized(...);
@@ -1228,28 +1231,6 @@ final class BlockTools
     }
 
     /**
-     * @param  array<string, mixed>  $arguments
-     * @param  list<array<string, mixed>>  $tree
-     */
-    private function sameRevision(array $arguments, array $tree): void
-    {
-        $sent = $arguments['revision'] ?? null;
-
-        if (! is_string($sent) || $sent === '') {
-            return;
-        }
-
-        $current = Content::revision($tree);
-
-        if ($sent !== $current) {
-            throw new ToolFailure(
-                "The entity changed since you read it: revision is [{$current}], you sent [{$sent}]. "
-                .'Read it again with blocks_get_content and redo the edit on what is there now.'
-            );
-        }
-    }
-
-    /**
      * Normalise a tree, cast its values, then keep it as the draft — the one way content is
      * written here.
      *
@@ -1361,7 +1342,7 @@ final class BlockTools
         }
 
         $editing = $this->editing($entity);
-        $this->sameRevision($arguments, $editing);
+        AgentRevision::check($arguments, Content::revision($editing), 'entity', 'blocks_get_content');
 
         try {
             $held = self::held($editing);

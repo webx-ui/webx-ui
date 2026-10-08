@@ -38,6 +38,8 @@ use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\Editing\EditedRecords;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\History\HistoryContext;
@@ -97,6 +99,10 @@ class AdminServiceProvider extends ServiceProvider
         // Same for screens and the field types they are written in: modules and the project
         // add theirs from `boot()`, and the endpoints read the sum.
         $this->app->singleton(ScreenRegistry::class);
+
+        // The drafted records an open editor keeps watch over, and who has them open.
+        $this->app->singleton(EditedRecords::class);
+        $this->app->singleton(Presence::class);
 
         // Which records have notes. A register rather than the morph map alone, because the
         // type comes out of an address and must not be able to name anything else.

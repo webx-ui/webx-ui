@@ -27,6 +27,7 @@ describe('the English here matches the English the server ships', () => {
   it.each([
     'shell',
     'nav',
+    'editing',
     'dates',
     'backup',
     'errors',

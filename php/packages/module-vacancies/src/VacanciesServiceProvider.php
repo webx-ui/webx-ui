@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -28,6 +29,7 @@ use WebxUi\Vacancies\Links\VacancyLinkSource;
 use WebxUi\Vacancies\Models\Vacancy;
 use WebxUi\Vacancies\Models\VacancyCategory;
 use WebxUi\Vacancies\Panel\CategoriesModule;
+use WebxUi\Vacancies\Panel\Revision;
 use WebxUi\Vacancies\Panel\VacanciesGroup;
 use WebxUi\Vacancies\Panel\VacanciesModule;
 use WebxUi\Vacancies\Seo\ClosedSource;
@@ -72,6 +74,7 @@ class VacanciesServiceProvider extends ServiceProvider
         $this->app->make(LinkSources::class)->register($this->app->make(VacancyLinkSource::class));
         $this->app->make(SeoSources::class)->register($this->app->make(ClosedSource::class));
         $this->registerPanel();
+        $this->registerEditedRecord();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -210,6 +213,24 @@ class VacanciesServiceProvider extends ServiceProvider
         foreach ([VacanciesModule::class, CategoriesModule::class] as $module) {
             $modules->register($this->app->make($module));
         }
+    }
+
+    /**
+     * The editor's heartbeat asks after a vacancy by this name: whether it moved under the
+     * editor, who moved it, who else has it open.
+     */
+    private function registerEditedRecord(): void
+    {
+        $this->app->make(EditedRecords::class)->register(
+            'vacancies',
+            ['vacancies.view', 'vacancies.manage'],
+            static function (string $id): ?array {
+                $vacancy = ctype_digit($id) ? Vacancy::query()->find((int) $id) : null;
+
+                return $vacancy instanceof Vacancy ? ['revision' => Revision::of($vacancy), 'model' => $vacancy] : null;
+            },
+            'vacancies.manage',
+        );
     }
 
     private function config(): Config

@@ -161,7 +161,9 @@ return [
     |
     | An entity with `HasVersions` keeps this many publications; the oldest go
     | as new ones are written, pinned ones excepted. `autosaves` is the ring of
-    | draft copies kept beside the history as insurance, not as part of it.
+    | draft copies kept beside the history as insurance, not as part of it;
+    | `overwritten` keeps the drafts a save by somebody else replaced — an
+    | agent's edit under an editor's — so that neither side's work is lost.
     | Lowering a limit after the fact is what `webx:versions:prune` is for.
     |
     */
@@ -169,6 +171,7 @@ return [
     'versions' => [
         'limit' => 30,
         'autosaves' => 5,
+        'overwritten' => 10,
     ],
 
     /*

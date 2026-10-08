@@ -73,10 +73,10 @@ final class StrayValuesTest extends TestCase
         $this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => [$op], 'dry_run' => true])->assertOk();
         $this->assertArrayHasKey('title', $this->values($page));
 
-        $this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => [$op]])->assertOk();
+        $this->agent('edit_content', ['force' => true, 'entity' => 'note', 'id' => $page->id, 'ops' => [$op]])->assertOk();
         $this->assertSame(['heading' => ['en' => 'Kept']], $this->values($page));
 
-        $this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => [['op' => 'unset', 'key' => 'k-hero']]])
+        $this->agent('edit_content', ['force' => true, 'entity' => 'note', 'id' => $page->id, 'ops' => [['op' => 'unset', 'key' => 'k-hero']]])
             ->assertHasErrors(['`fields` is required by unset']);
     }
 
@@ -183,7 +183,7 @@ final class StrayValuesTest extends TestCase
         $page = $this->page([$this->node('banner', ['heading' => 'Hi', 'head_row' => 'from an import'], 'k-banner')]);
 
         // The fields inside the row and its columns are reachable; the row and columns are not fields.
-        $this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => [['op' => 'set', 'key' => 'k-banner', 'values' => ['head_col' => 'x']]]])
+        $this->agent('edit_content', ['force' => true, 'entity' => 'note', 'id' => $page->id, 'ops' => [['op' => 'set', 'key' => 'k-banner', 'values' => ['head_col' => 'x']]]])
             ->assertHasErrors(['banner has no field [head_col]. Its fields: image, heading.']);
 
         $this->assertSame(['head_row'], $this->app->make(StrayValues::class)->find($page)->site[0]['fields']);

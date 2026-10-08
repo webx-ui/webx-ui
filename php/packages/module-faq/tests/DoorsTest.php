@@ -73,7 +73,7 @@ final class DoorsTest extends TestCase
         $this->page->blocks = [['key' => 'k-faq', 'type' => 'faq', 'values' => []]];
         $this->page->save();
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'page',
             'id' => $this->page->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-faq', 'values' => [
@@ -81,7 +81,7 @@ final class DoorsTest extends TestCase
             ]]],
         ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertHasErrors(['field [questions]']);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'page',
             'id' => $this->page->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-faq', 'values' => [

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxDate, WxDrafts } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxEmpty, WxSkeleton, WxText } from '@webx-ui/core'
 import { createPagesApi } from './api'
 import { usePageEditor } from './editor'
@@ -10,9 +10,10 @@ import type { PageVersion } from './types'
 /**
  * What was published, when, by whom and from where.
  *
- * Publications only. The autosaves a save writes are insurance rather than history — a ring of
- * the last few copies of the draft, replaced every couple of minutes — and a list with them in
- * it would be a list nobody can read.
+ * Publications first, and the copies of the draft under them in a list of their own: the autosave
+ * ring, and a draft somebody else's save wrote over — an agent's edit under an editor's «Keep
+ * mine». Mixed into one line they would be a list nobody can read; left out, an edit written over
+ * would have nowhere to be found.
  *
  * Restoring makes the old version the draft. Publishing it is the same separate step it always
  * is, which is what keeps the history a line: nothing here changes the site by itself.
@@ -96,6 +97,7 @@ watch(
 </script>
 
 <template>
+  <div class="wx-page-history-tab">
   <div class="wx-page-history">
     <!-- Where a row would stand, not against the border: a skeleton flush with a rounded
          corner has its ends clipped by it, which reads as a drawing fault rather than as
@@ -133,9 +135,24 @@ watch(
       </wx-button>
     </div>
   </div>
+
+  <wx-drafts
+    entity="pages"
+    :id="page?.id"
+    :can-restore="canManage"
+    :stamp="[page?.published_at, page?.updated_at]"
+    @restored="editor?.reload()"
+  />
+  </div>
 </template>
 
 <style scoped>
+.wx-page-history-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-24);
+}
+
 .wx-page-history {
   display: flex;
   flex-direction: column;

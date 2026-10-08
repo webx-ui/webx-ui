@@ -53,8 +53,8 @@ function detail(extra: Partial<RegionDetail> = {}): RegionDetail {
 }
 
 /**
- * Stands in for the constructor: a button that adds a block, and what the editor provides to
- * it written out — the preview address and the top level — so the test can read both.
+ * Stands in for the constructor: a button that adds a block, one that writes into the first,
+ * and what the editor provides to it written out — the preview address and the top level — so the test can read both.
  */
 const FakeBlocks = defineComponent({
   props: { modelValue: { type: Array as PropType<BlockNode[]>, default: () => [] } },
@@ -71,6 +71,14 @@ const FakeBlocks = defineComponent({
             emit('update:modelValue', [
               ...props.modelValue,
               { key: `k${props.modelValue.length}`, type: 'text', values: {} },
+            ]),
+        }),
+        h('button', {
+          class: 'fake-edit',
+          onClick: () =>
+            emit('update:modelValue', [
+              { ...props.modelValue[0]!, values: { text: 'Mine' } },
+              ...props.modelValue.slice(1),
             ]),
         }),
         h('span', { class: 'fake-url' }, preview?.url.value ?? ''),
@@ -179,25 +187,65 @@ describe('WxRegionEditorPage', () => {
     })
   })
 
-  it('puts a conflict on the screen and writes over it with the revision it was given', async () => {
+  it('merges a save refused over another block, and saves both trees as one', async () => {
     const { wrapper, put } = await panel()
+    const theirs = { key: 'z9', type: 'text', values: {} }
 
     put.mockRejectedValueOnce({
       status: 409,
-      body: { message: 'Somebody changed this region.', revision: 'r9' },
+      body: {
+        message: 'Somebody changed this region.',
+        revision: 'r9',
+        data: detail({ revision: 'r9', blocks: [block, theirs] }),
+        changed: { author: 'Anna', author_id: 2, source: 'mcp', at: null },
+      },
     })
 
     await wrapper.get('.fake-add').trigger('click')
     await wrapper.get('.wx-region-editor').trigger('focusout')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Somebody changed this region.')
+    expect(put).toHaveBeenCalledTimes(2)
 
-    await button(wrapper, 'Keep mine').trigger('click')
+    const sent = put.mock.calls[1]?.[1] as { blocks: BlockNode[]; revision: string }
+
+    expect(sent.revision).toBe('r9')
+    expect(sent.blocks.map((one) => one.key).sort()).toEqual(['a1', 'k1', 'z9'])
+    expect(wrapper.find('.wx-editing-alerts').exists()).toBe(false)
+  })
+
+  it('asks about a block both sides changed, and writes the answer with their revision', async () => {
+    const { wrapper, put } = await panel()
+
+    put.mockRejectedValueOnce({
+      status: 409,
+      body: {
+        message: 'Somebody changed this region.',
+        revision: 'r9',
+        data: detail({ revision: 'r9', blocks: [{ ...block, values: { text: 'Theirs' } }] }),
+      },
+    })
+
+    await wrapper.get('.fake-edit').trigger('click')
+    await wrapper.get('.wx-region-editor').trigger('focusout')
     await flushPromises()
 
-    expect(put.mock.calls[1]?.[1]).toMatchObject({ revision: 'r9' })
-    expect(wrapper.text()).not.toContain('Somebody changed this region.')
+    expect(put).toHaveBeenCalledTimes(1)
+
+    const alert = wrapper.find('.wx-editing-alerts')
+
+    expect(alert.findAll('.wx-editing-alerts__item')).toHaveLength(1)
+    expect(alert.text()).toContain('Theirs')
+
+    // This editor's side is the one chosen until somebody picks; the last button applies it.
+    await alert.findAll('button').at(-1)?.trigger('click')
+    await flushPromises()
+
+    expect(put.mock.calls[1]?.[1]).toMatchObject({
+      revision: 'r9',
+      blocks: [{ key: 'a1', values: { text: 'Mine' } }],
+    })
+    expect(wrapper.find('.wx-editing-alerts').exists()).toBe(false)
   })
 
   it('publishes, and takes off the site, after asking', async () => {

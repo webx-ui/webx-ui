@@ -4,8 +4,10 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
   provideRecordAddress,
   useAdmin,
+  useEditing,
   useErrorText,
   useTranslate,
+  WxEditingAlerts,
   WxSaveState,
   WxScreen,
   WxScreenHead,
@@ -18,7 +20,6 @@ import {
   toast,
   useLocales,
   WxActionBar,
-  WxAlert,
   WxBadge,
   WxBreadcrumb,
   WxBreadcrumbItem,
@@ -76,12 +77,37 @@ const loading = ref(true)
 const saving = ref(false)
 const working = ref(false)
 const errors = ref<Record<string, string[]>>({})
-const conflict = ref<PageConflict | null>(null)
 
 const snapshot = ref('')
 const reloadToken = ref(0)
 
 const canManage = computed(() => context.can('pages.manage'))
+
+/*
+ * Other people on the same page: a save refused because somebody else wrote is merged with
+ * theirs field by field and saved again, and only a field both changed is asked about. While
+ * the page is open the server is asked every few seconds whether it moved, so an agent's edit
+ * is offered before this editor saves over it, not after.
+ */
+const editing = useEditing<ScreenModel>({
+  entity: 'pages',
+  id: () => page.value?.id,
+  values,
+  revision,
+  read: async () => {
+    const detail = await api.get(id.value)
+
+    return { values: detail.values, revision: detail.revision }
+  },
+  adopt: (theirs) => {
+    snapshot.value = JSON.stringify(theirs.values)
+    reloadToken.value += 1
+  },
+  canWrite: () => canManage.value,
+  busy: () => saving.value || flight !== undefined,
+})
+
+const conflict = editing.conflict
 
 const current = computed(() => JSON.stringify(values.value))
 const dirty = computed(() => snapshot.value !== '' && current.value !== snapshot.value)
@@ -151,6 +177,7 @@ function take(detail: PageDetail): void {
   prefixes.value = detail.address_prefix
   addresses.value = detail.addresses ?? {}
   snapshot.value = JSON.stringify(detail.values)
+  editing.opened(detail.values)
   conflict.value = null
 }
 
@@ -246,6 +273,9 @@ async function write(): Promise<void> {
 
     if (current.value === sending) snapshot.value = sending
 
+    // What the server holds now is what was sent: the base of the next merge.
+    editing.opened(sent)
+
     // The preview is rendered from the draft, and the draft is what was just written.
     reloadToken.value += 1
   } catch (error) {
@@ -255,7 +285,13 @@ async function write(): Promise<void> {
     }
 
     if (failure.status === 409 && failure.body?.data) {
-      conflict.value = failure.body
+      const theirs = failure.body.data
+
+      // Nothing overlapping: both edits are in the form now, and they go to the server again.
+      if (editing.refused({ values: theirs.values, revision: theirs.revision, changed: failure.body.changed })) {
+        page.value = theirs.page
+        void save()
+      }
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
       toast.danger(t('page.save-failed'))
@@ -267,36 +303,9 @@ async function write(): Promise<void> {
   }
 }
 
-/** Give up what was typed and take the page as it now is (§6). */
+/** Give up what was typed and take the page as it now is (§6); the component asked first. */
 async function takeTheirs(): Promise<void> {
-  const agreed = await confirm({
-    title: t('page.conflict-theirs-title'),
-    message: t('page.conflict-theirs-text'),
-    confirmText: t('page.conflict-theirs'),
-    cancelText: t('page.cancel'),
-    tone: 'danger',
-  })
-
-  if (!agreed) return
-
   await load(true)
-}
-
-/**
- * Keep what was typed and write it over the other version.
- *
- * Nothing is lost by it: the version that is about to be overwritten is in the history if it
- * was published, and in the autosave ring if it was not.
- */
-async function keepMine(): Promise<void> {
-  const theirs = conflict.value
-
-  if (!theirs) return
-
-  revision.value = theirs.data.revision
-  conflict.value = null
-
-  await save()
 }
 
 /**
@@ -556,24 +565,10 @@ const actions = computed<ScreenAction[]>(() => {
         </template>
       </wx-screen-head>
 
-      <!-- Somebody else wrote while this editor was typing. Both versions still exist, so the
-           question is which one the site gets — and it is a question, not a toast that
-           disappears while the answer is being thought about. -->
-      <wx-alert
-        v-if="conflict"
-        type="warning"
-        :title="t('page.conflict-title')"
-        :description="conflict.message"
-      >
-        <template #actions>
-          <wx-button size="sm" variant="outline" @click="takeTheirs">
-            {{ t('page.conflict-theirs') }}
-          </wx-button>
-          <wx-button size="sm" type="primary" @click="keepMine">
-            {{ t('page.conflict-mine') }}
-          </wx-button>
-        </template>
-      </wx-alert>
+      <!-- Somebody else wrote while this editor was open. What does not overlap is merged
+           without a word; what does is listed place by place, and a save that came in while
+           nobody was saving is offered before it is saved over. -->
+      <wx-editing-alerts :editing="editing" @save="save" @theirs="takeTheirs" />
 
       <div class="wx-page-editor__screen">
         <wx-screen

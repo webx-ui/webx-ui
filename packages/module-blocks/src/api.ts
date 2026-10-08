@@ -134,7 +134,7 @@ export interface RegionsApi {
   get(name: string): Promise<RegionDetail>
   /**
    * Save the draft. Refused with a 409 when the revision is not the current one — the error's
-   * body is a {@link RegionConflict} carrying the revision to write over.
+   * body is a {@link RegionConflict}: the region as it now is, to merge with.
    */
   save(name: string, input: { blocks: BlockNode[]; revision?: string }): Promise<RegionDetail>
   publish(name: string): Promise<RegionDetail>

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -29,6 +30,7 @@ use WebxUi\Blog\Models\Tag;
 use WebxUi\Blog\Panel\ArticleForm;
 use WebxUi\Blog\Panel\ArticlesModule;
 use WebxUi\Blog\Panel\BlogModule;
+use WebxUi\Blog\Panel\Revision;
 use WebxUi\Blog\Panel\RubricsModule;
 use WebxUi\Blog\Panel\TagsModule;
 use WebxUi\Blog\Screens\AuthorType;
@@ -76,6 +78,7 @@ class BlogServiceProvider extends ServiceProvider
         $this->registerLinkSources();
         $this->registerScreens();
         $this->registerPanel();
+        $this->registerEditedRecord();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -312,6 +315,24 @@ class BlogServiceProvider extends ServiceProvider
             210,
         ));
         $links->register($this->app->make(TagLinkSource::class));
+    }
+
+    /**
+     * The editor's heartbeat asks after an article by this name: whether it moved under the
+     * editor, who moved it, who else has it open.
+     */
+    private function registerEditedRecord(): void
+    {
+        $this->app->make(EditedRecords::class)->register(
+            'articles',
+            ['blog.articles.view', 'blog.articles.manage'],
+            static function (string $id): ?array {
+                $article = ctype_digit($id) ? Article::query()->find((int) $id) : null;
+
+                return $article instanceof Article ? ['revision' => Revision::of($article), 'model' => $article] : null;
+            },
+            'blog.articles.manage',
+        );
     }
 
     private function prefix(): string

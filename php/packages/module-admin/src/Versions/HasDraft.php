@@ -97,6 +97,10 @@ trait HasDraft
             $values = [];
         }
 
+        if ($this->hasVersions()) {
+            $this->keepOverwritten($values, $authorId, $source);
+        }
+
         $this->setAttribute($this->draftColumn(), $values === [] ? null : $values);
         $this->save();
 
@@ -105,6 +109,38 @@ trait HasDraft
         }
 
         return $this;
+    }
+
+    /**
+     * Keep the draft that is about to be replaced when somebody else wrote it.
+     *
+     * Who wrote the draft is who wrote the newest autosave, which is the copy of it. A save by
+     * the same person through the same door is the next keystroke of one edit and is what the
+     * ring is for; a save by anybody else replaces work that is not theirs, and that work is put
+     * aside as an `overwritten` version before it goes — an agent's edit that an editor's
+     * «Keep mine» wrote over, or the other way round, can be put back from the history.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    protected function keepOverwritten(array $values, ?int $authorId, string $source): void
+    {
+        $previous = $this->draftValues();
+
+        if ($previous === [] || $previous == $values) {
+            return;
+        }
+
+        $last = $this->versions()->autosaves()->first();
+
+        if (! $last instanceof EntityVersion) {
+            return;
+        }
+
+        if ($last->author_id === $authorId && $last->source === $source) {
+            return;
+        }
+
+        $this->writeVersion(EntityVersion::KIND_OVERWRITTEN, $last->author_id, $last->source, null, $previous);
     }
 
     public function discardDraft(): static

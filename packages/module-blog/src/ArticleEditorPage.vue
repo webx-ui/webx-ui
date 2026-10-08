@@ -4,8 +4,10 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
   useDates,
+  useEditing,
   useErrorText,
   useTranslate,
+  WxEditingAlerts,
   WxSaveState,
   WxScreen,
   WxScreenHead,
@@ -18,7 +20,6 @@ import {
   toast,
   useLocales,
   WxActionBar,
-  WxAlert,
   WxBadge,
   WxBreadcrumb,
   WxBreadcrumbItem,
@@ -82,12 +83,36 @@ const loading = ref(true)
 const saving = ref(false)
 const working = ref(false)
 const errors = ref<Record<string, string[]>>({})
-const conflict = ref<ArticleConflict | null>(null)
 
 const snapshot = ref('')
 const reloadToken = ref(0)
 
 const canManage = computed(() => context.can('blog.articles.manage'))
+
+/*
+ * Other people on the same article: a refused save is merged with theirs field by field and
+ * saved again, only a field both changed is asked about, and a save made meanwhile — by a
+ * colleague or an agent — is offered before this editor writes over it.
+ */
+const editing = useEditing<ScreenModel>({
+  entity: 'articles',
+  id: () => article.value?.id,
+  values,
+  revision,
+  read: async () => {
+    const detail = await api.get(id.value)
+
+    return { values: detail.values, revision: detail.revision }
+  },
+  adopt: (theirs) => {
+    snapshot.value = JSON.stringify(theirs.values)
+    reloadToken.value += 1
+  },
+  canWrite: () => canManage.value,
+  busy: () => saving.value || flight !== undefined,
+})
+
+const conflict = editing.conflict
 
 /** Closed for writing: no permission, or a publication in flight. */
 const locked = computed(() => !canManage.value || working.value)
@@ -178,6 +203,7 @@ function take(detail: ArticleDetail): void {
   options.value = detail.options
   related.value = detail.related
   snapshot.value = JSON.stringify(detail.values)
+  editing.opened(detail.values)
   conflict.value = null
 }
 
@@ -274,6 +300,9 @@ async function write(): Promise<void> {
 
     if (current.value === sending) snapshot.value = sending
 
+    // What the server holds now is what was sent: the base of the next merge.
+    editing.opened(sent)
+
     // The preview is rendered from the draft, and the draft is what was just written.
     reloadToken.value += 1
   } catch (error) {
@@ -283,7 +312,13 @@ async function write(): Promise<void> {
     }
 
     if (failure.status === 409 && failure.body?.data) {
-      conflict.value = failure.body
+      const theirs = failure.body.data
+
+      // Nothing overlapping: both edits are in the form now, and they go to the server again.
+      if (editing.refused({ values: theirs.values, revision: theirs.revision, changed: failure.body.changed })) {
+        article.value = theirs.article
+        void save()
+      }
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
       toast.danger(t('article.save-failed'))
@@ -295,36 +330,9 @@ async function write(): Promise<void> {
   }
 }
 
-/** Give up what was typed and take the article as it now is. */
+/** Give up what was typed and take the article as it now is; the component asked first. */
 async function takeTheirs(): Promise<void> {
-  const agreed = await confirm({
-    title: t('article.conflict-theirs-title'),
-    message: t('article.conflict-theirs-text'),
-    confirmText: t('article.conflict-theirs'),
-    cancelText: t('panel.cancel'),
-    tone: 'danger',
-  })
-
-  if (!agreed) return
-
   await load(true)
-}
-
-/**
- * Keep what was typed and write it over the other version.
- *
- * Nothing is lost by it: the version that is about to be overwritten is in the history if it
- * was published, and in the autosave ring if it was not.
- */
-async function keepMine(): Promise<void> {
-  const theirs = conflict.value
-
-  if (!theirs) return
-
-  revision.value = theirs.data.revision
-  conflict.value = null
-
-  await save()
 }
 
 /**
@@ -595,24 +603,9 @@ const actions = computed<ScreenAction[]>(() => {
         </template>
       </wx-screen-head>
 
-      <!-- Somebody else wrote while this editor was typing. Both versions still exist, so the
-           question is which one the site gets — and it is a question, not a toast that
-           disappears while the answer is being thought about. -->
-      <wx-alert
-        v-if="conflict"
-        type="warning"
-        :title="t('article.conflict-title')"
-        :description="conflict.message"
-      >
-        <template #actions>
-          <wx-button size="sm" variant="outline" @click="takeTheirs">
-            {{ t('article.conflict-theirs') }}
-          </wx-button>
-          <wx-button size="sm" type="primary" @click="keepMine">
-            {{ t('article.conflict-mine') }}
-          </wx-button>
-        </template>
-      </wx-alert>
+      <!-- Somebody else wrote while this editor was open. What does not overlap is merged
+           without a word; what does is listed place by place. -->
+      <wx-editing-alerts :editing="editing" @save="save" @theirs="takeTheirs" />
 
       <div class="wx-article-editor__screen">
         <wx-screen v-model="values" name="blog.article-form" :errors="errors" :disabled="locked" />

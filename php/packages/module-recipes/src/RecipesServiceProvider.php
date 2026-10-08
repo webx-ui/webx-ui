@@ -11,6 +11,7 @@ use InvalidArgumentException;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
@@ -32,6 +33,7 @@ use WebxUi\Recipes\Panel\CategoriesModule;
 use WebxUi\Recipes\Panel\NutrientsModule;
 use WebxUi\Recipes\Panel\RecipesGroup;
 use WebxUi\Recipes\Panel\RecipesModule;
+use WebxUi\Recipes\Panel\Revision;
 use WebxUi\Recipes\Relations\RecipeTarget;
 use WebxUi\Recipes\Rendering\RecipeCard;
 use WebxUi\Recipes\Seo\FilteredCatalogSource;
@@ -85,6 +87,7 @@ class RecipesServiceProvider extends ServiceProvider
         $this->app->make(RelationTargets::class)->register(new RecipeTarget);
         $this->app->make(SeoSources::class)->register(new FilteredCatalogSource);
         $this->registerPanel();
+        $this->registerEditedRecord();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
 
@@ -265,6 +268,24 @@ class RecipesServiceProvider extends ServiceProvider
         foreach ([RecipesModule::class, CategoriesModule::class, NutrientsModule::class] as $module) {
             $modules->register($this->app->make($module));
         }
+    }
+
+    /**
+     * The editor's heartbeat asks after a recipe by this name: whether it moved under the
+     * editor, who moved it, who else has it open.
+     */
+    private function registerEditedRecord(): void
+    {
+        $this->app->make(EditedRecords::class)->register(
+            'recipes',
+            ['recipes.view', 'recipes.manage'],
+            static function (string $id): ?array {
+                $recipe = ctype_digit($id) ? Recipe::query()->find((int) $id) : null;
+
+                return $recipe instanceof Recipe ? ['revision' => Revision::of($recipe), 'model' => $recipe] : null;
+            },
+            'recipes.manage',
+        );
     }
 
     private function config(): Config

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Admin\Http\Controllers\CollectionController;
+use WebxUi\Admin\Http\Controllers\EditingController;
 use WebxUi\Admin\Http\Controllers\HistoryController;
 use WebxUi\Admin\Http\Controllers\IconController;
 use WebxUi\Admin\Http\Controllers\LinkController;
@@ -63,6 +64,17 @@ Route::prefix((string) config('webx-admin.api_path'))
             ->whereNumber('id')->name('history.run');
         Route::get('history/{type}/{id}', [HistoryController::class, 'index'])
             ->where('type', '[a-z0-9_.-]+')->whereNumber('id')->name('history.index');
+
+        // The heartbeat of an open editor: who else has the record open, and whether it moved
+        // under it. The record is a registered one and names the permission it is read with.
+        Route::post('editing/{entity}/{id}', [EditingController::class, 'ping'])
+            ->where('entity', '[a-z0-9_-]+')->where('id', '[A-Za-z0-9_.-]+')->name('editing.ping');
+        Route::delete('editing/{entity}/{id}', [EditingController::class, 'leave'])
+            ->where('entity', '[a-z0-9_-]+')->where('id', '[A-Za-z0-9_.-]+')->name('editing.leave');
+        Route::get('editing/{entity}/{id}/drafts', [EditingController::class, 'drafts'])
+            ->where('entity', '[a-z0-9_-]+')->where('id', '[A-Za-z0-9_.-]+')->name('editing.drafts');
+        Route::post('editing/{entity}/{id}/drafts/{version}/restore', [EditingController::class, 'restoreDraft'])
+            ->where('entity', '[a-z0-9_-]+')->where('id', '[A-Za-z0-9_.-]+')->whereNumber('version')->name('editing.drafts.restore');
 
         // Large files a piece at a time (§4 of the video spec). What a file is for is a
         // registered purpose, which says who may send one; the session is its sender's alone.

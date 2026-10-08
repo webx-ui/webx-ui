@@ -1,3 +1,4 @@
+import type { EditingChange } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 
 /**
@@ -94,6 +95,8 @@ export interface RecipeDetail {
 export interface RecipeConflict {
   message: string
   data: RecipeDetail
+  /** Who wrote it last and through which door — the panel, an agent, an import. */
+  changed?: EditingChange | null
 }
 
 /** One publication in the history. */

@@ -74,7 +74,7 @@ final class DoorsTest extends TestCase
         $this->pricing->blocks = [['key' => 'k-tariffs', 'type' => 'tariffs', 'values' => []]];
         $this->pricing->save();
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'page',
             'id' => $this->pricing->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-tariffs', 'values' => [
@@ -82,7 +82,7 @@ final class DoorsTest extends TestCase
             ]]],
         ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertHasErrors(['field [tariffs]']);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'page',
             'id' => $this->pricing->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-tariffs', 'values' => [
@@ -115,7 +115,7 @@ final class DoorsTest extends TestCase
 
         $this->assertSame($current, $this->draftOf($service)['blocks'][0]['values']['tariffs']['related'] ?? null);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'service',
             'id' => $service->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k1', 'values' => ['tariffs' => ['related' => $current, 'limit' => 3]]]],

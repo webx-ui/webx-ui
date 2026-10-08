@@ -68,6 +68,17 @@ trait HasVersions
     }
 
     /**
+     * The copies of the draft, newest first: the autosave ring and the drafts somebody else's
+     * save wrote over. What the history's «Drafts» lists and what an agent restores from.
+     *
+     * @return MorphMany<EntityVersion, $this>
+     */
+    public function draftVersions(): MorphMany
+    {
+        return $this->versions()->drafts();
+    }
+
+    /**
      * What a version is a snapshot of: every attribute the row has, less the unversioned ones.
      *
      * @return list<string>

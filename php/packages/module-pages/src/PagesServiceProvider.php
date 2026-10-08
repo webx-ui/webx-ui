@@ -6,6 +6,7 @@ namespace WebxUi\Pages;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -50,6 +51,7 @@ class PagesServiceProvider extends ServiceProvider
         $this->registerScreens();
         $this->registerLinkSource();
         $this->registerAuditSource();
+        $this->registerEditedRecord();
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(PagesModule::class));
 
@@ -116,6 +118,26 @@ class PagesServiceProvider extends ServiceProvider
         if (class_exists(AuditContentSources::class)) {
             $this->app->make(AuditContentSources::class)->register(new PageContentSource);
         }
+    }
+
+    /**
+     * The editor's heartbeat asks after a page by this name: whether it moved under the editor,
+     * who moved it, who else has it open.
+     */
+    private function registerEditedRecord(): void
+    {
+        $this->app->make(EditedRecords::class)->register(
+            'pages',
+            ['pages.view', 'pages.manage'],
+            function (string $id): ?array {
+                $page = ctype_digit($id) ? Page::query()->find((int) $id) : null;
+
+                return $page instanceof Page
+                    ? ['revision' => $this->app->make(PageForm::class)->revision($page), 'model' => $page]
+                    : null;
+            },
+            'pages.manage',
+        );
     }
 
     private function registerLinkSource(): void

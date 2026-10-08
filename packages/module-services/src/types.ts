@@ -1,3 +1,4 @@
+import type { EditingChange } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 
 /**
@@ -96,6 +97,8 @@ export interface ServiceDetail {
 export interface ServiceConflict {
   message: string
   data: ServiceDetail
+  /** Who wrote it last and through which door — the panel, an agent, an import. */
+  changed?: EditingChange | null
 }
 
 /** One publication in the history. */

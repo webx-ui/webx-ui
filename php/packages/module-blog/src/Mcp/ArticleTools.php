@@ -13,6 +13,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use WebxUi\Admin\Editing\AgentRevision;
+use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
@@ -127,15 +129,17 @@ final class ArticleTools
             Tool::mutating(
                 'update',
                 'Change the values of an article — title, address, lead, rubrics, tags, cover, the SEO card — '
-                .'into its draft. A field left out keeps what it had. Send the revision articles_get gave you '
-                .'and the write is refused if somebody saved in between, instead of quietly overwriting them. '
+                .'into its draft. A field left out keeps what it had. Send the revision articles_get gave you: '
+                .'the write is refused if somebody saved in between, instead of quietly overwriting them, and '
+                .'refused without one — articles_get also says who has the article open in the panel '
+                .'(being_edited_by), which is worth telling your user before writing. '
                 .'The body is not written here: blocks go through blocks_edit_content. Rubrics, tags, the pin '
                 .'and the related list are not drafted — they are on the site the moment they are saved.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'article' => $article,
                     'values' => ['type' => 'object', 'description' => 'Field name → value, as articles_get returns them. Localized fields take { "en": "…" }.'],
-                    'revision' => ['type' => 'string', 'description' => 'The revision articles_get returned. Left out, the write goes in over whatever happened since.'],
+                    ...AgentRevision::properties('articles_get'),
                 ], 'required' => ['article', 'values']],
                 permission: 'blog.articles.manage',
             ),
@@ -298,6 +302,8 @@ final class ArticleTools
             // The article as you read it: send it back with articles_update and a write that
             // would land on top of somebody else's is refused instead.
             'revision' => Revision::of($article),
+            // Who has the article open in the panel right now: tell your user before writing.
+            'being_edited_by' => $this->presence()->of($article),
             'preview_url' => $this->preview($article, $user),
         ];
     }
@@ -363,7 +369,7 @@ final class ArticleTools
         $values = $this->container->make(ScreenValues::class)->patch(ArticleForm::SCREEN, $this->form()->values($article), $values);
 
         $this->refuseBlocks($values);
-        $this->sameRevision($arguments, $article);
+        AgentRevision::check($arguments, Revision::of($article), 'article', 'articles_get');
 
         if ($this->dryRun($arguments)) {
             return [
@@ -633,27 +639,6 @@ final class ArticleTools
     }
 
     /**
-     * @param  array<string, mixed>  $arguments
-     */
-    private function sameRevision(array $arguments, Article $article): void
-    {
-        $sent = $arguments['revision'] ?? null;
-
-        if (! is_string($sent) || $sent === '') {
-            return;
-        }
-
-        $current = Revision::of($article);
-
-        if ($sent !== $current) {
-            throw new ToolFailure(
-                "The article changed since you read it: revision is [{$current}], you sent [{$sent}]. "
-                .'Read it again with articles_get and redo the edit on what is there now.'
-            );
-        }
-    }
-
-    /**
      * An article by id or by address.
      *
      * The address is what a blog is talked about in — "the piece about belts", which is
@@ -787,6 +772,11 @@ final class ArticleTools
     private function form(): ArticleForm
     {
         return $this->container->make(ArticleForm::class);
+    }
+
+    private function presence(): Presence
+    {
+        return $this->container->make(Presence::class);
     }
 
     private function locales(): Locales

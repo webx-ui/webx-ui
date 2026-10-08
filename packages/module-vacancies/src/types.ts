@@ -1,3 +1,4 @@
+import type { EditingChange } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 
 /**
@@ -108,6 +109,8 @@ export interface VacancyDetail {
 export interface VacancyConflict {
   message: string
   data: VacancyDetail
+  /** Who wrote it last and through which door — the panel, an agent, an import. */
+  changed?: EditingChange | null
 }
 
 /** One publication in the history. */

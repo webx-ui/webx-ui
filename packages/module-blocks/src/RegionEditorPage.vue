@@ -3,8 +3,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
+  useEditing,
   useErrorText,
   useTranslate,
+  WxEditingAlerts,
   WxSaveState,
   WxScreen,
   WxScreenHead,
@@ -67,7 +69,6 @@ const loading = ref(true)
 const saving = ref(false)
 const working = ref(false)
 const errors = ref<Record<string, string[]>>({})
-const conflict = ref<RegionConflict | null>(null)
 
 const snapshot = ref('')
 const reloadToken = ref(0)
@@ -75,6 +76,31 @@ const screenKey = ref(0)
 
 /* `can()` answers a plain boolean; wrapped here so the template and the guards read one thing. */
 const canManage = computed(() => context.can('blocks.regions'))
+
+/*
+ * Other people on the same region: a refused save is merged with theirs block by block and saved
+ * again, and only a block both sides changed is asked about. The form is `{ blocks }` — the shape
+ * the screen edits — so the merge walks the tree the same way it walks a page's.
+ */
+const editing = useEditing<ScreenModel>({
+  entity: 'regions',
+  id: () => region.value?.name,
+  values,
+  revision,
+  read: async () => {
+    const detail = await api.get(name.value)
+
+    return { values: { blocks: detail.blocks }, revision: detail.revision }
+  },
+  adopt: (theirs) => {
+    snapshot.value = JSON.stringify(theirs.values)
+    reloadToken.value += 1
+  },
+  canWrite: () => canManage.value,
+  busy: () => saving.value || flight !== undefined,
+})
+
+const conflict = editing.conflict
 
 const current = computed(() => JSON.stringify(values.value))
 const dirty = computed(() => snapshot.value !== '' && current.value !== snapshot.value)
@@ -142,6 +168,7 @@ function take(detail: RegionDetail): void {
   values.value = { blocks: detail.blocks }
   revision.value = detail.revision
   snapshot.value = JSON.stringify(values.value)
+  editing.opened(values.value)
   conflict.value = null
 }
 
@@ -208,6 +235,7 @@ async function write(): Promise<void> {
 
   // What is being sent, so that anything changed while the request is out stays dirty.
   const sending = current.value
+  const sent = values.value
   const blocks = tree.value
 
   saving.value = true
@@ -222,6 +250,9 @@ async function write(): Promise<void> {
 
     if (current.value === sending) snapshot.value = sending
 
+    // What the server holds now is what was sent: the base of the next merge.
+    editing.opened(sent)
+
     // The preview draws the draft, and the draft is what was just written.
     reloadToken.value += 1
   } catch (error) {
@@ -230,10 +261,18 @@ async function write(): Promise<void> {
       body?: Partial<RegionConflict> & { errors?: Record<string, string[]> }
     }
 
-    if (failure.status === 409 && failure.body?.revision) {
-      conflict.value = {
-        message: failure.body.message ?? t('region.conflict-title'),
-        revision: failure.body.revision,
+    if (failure.status === 409 && failure.body?.data) {
+      const theirs = failure.body.data
+      const merged = editing.refused({
+        values: { blocks: theirs.blocks },
+        revision: theirs.revision,
+        changed: failure.body.changed,
+      })
+
+      // Nothing overlapping: both edits are in the form now, and they go to the server again.
+      if (merged) {
+        region.value = theirs
+        void save()
       }
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
@@ -246,28 +285,9 @@ async function write(): Promise<void> {
   }
 }
 
+/** Give up what was written and take the region as it now is; the component asked first. */
 async function takeTheirs(): Promise<void> {
-  const agreed = await confirm({
-    title: t('region.conflict-theirs-title'),
-    message: t('region.conflict-theirs-text'),
-    confirmText: t('region.conflict-theirs'),
-    cancelText: t('region.cancel'),
-    tone: 'danger',
-  })
-
-  if (agreed) await load(true)
-}
-
-/** Keep what was written, over the other version: that one is in the autosave ring anyway. */
-async function keepMine(): Promise<void> {
-  const theirs = conflict.value
-
-  if (!theirs) return
-
-  revision.value = theirs.revision
-  conflict.value = null
-
-  await save()
+  await load(true)
 }
 
 /**
@@ -473,21 +493,9 @@ onBeforeRouteLeave(async () => {
         </template>
       </wx-screen-head>
 
-      <wx-alert
-        v-if="conflict"
-        type="warning"
-        :title="t('region.conflict-title')"
-        :description="conflict.message"
-      >
-        <template #actions>
-          <wx-button size="sm" variant="outline" @click="takeTheirs">
-            {{ t('region.conflict-theirs') }}
-          </wx-button>
-          <wx-button size="sm" type="primary" @click="keepMine">
-            {{ t('region.conflict-mine') }}
-          </wx-button>
-        </template>
-      </wx-alert>
+      <!-- Somebody else wrote while this editor was open. What does not overlap is merged
+           without a word; what does is listed block by block. -->
+      <wx-editing-alerts :editing="editing" @save="save" @theirs="takeTheirs" />
 
       <!--
         While the tree is empty the site prints the view from the code, and the preview shows

@@ -1,3 +1,4 @@
+import type { EditingChange } from '@webx-ui/module-admin'
 import type { ScreenNode } from '@webx-ui/schema'
 
 export type BlockSource = 'panel' | 'mcp' | 'import'
@@ -285,10 +286,15 @@ export interface RegionDetail extends RegionRow {
   can_adopt: boolean
 }
 
-/** A save refused because somebody else wrote first: the region as it now is. */
+/**
+ * A save refused because somebody else wrote first: the region as it now is, and who changed it
+ * last and through which door — the panel or an agent.
+ */
 export interface RegionConflict {
   message: string
   revision: string
+  data: RegionDetail
+  changed?: EditingChange | null
 }
 
 export interface RegionVersion {

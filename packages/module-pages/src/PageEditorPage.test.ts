@@ -49,11 +49,11 @@ const about: PageRow = {
   can: { move: true, delete: true, address: true },
 }
 
-function detail(revision: string, title = 'About'): PageDetail {
+function detail(revision: string, title = 'About', slug = 'about'): PageDetail {
   return {
     page: { ...about, title },
     ancestors: [],
-    values: { title, slug: 'about', blocks: [], is_home: false },
+    values: { title, slug, blocks: [], is_home: false },
     revision,
     address_prefix: { en: '' },
     preview_url: 'https://example.test/_preview/page/2?token=x',
@@ -64,10 +64,15 @@ function detail(revision: string, title = 'About'): PageDetail {
    second copy of the real description here would be a copy that drifts. */
 let screen: ScreenNode[] = [{ id: 'title', type: 'wx-input', name: 'title' }]
 
+/** What the editor's heartbeat hears: by default, that nothing moved and nobody else is here. */
+let heartbeat: Record<string, unknown> = { revision: 'r1', changed: null, editors: [], heartbeat: 20 }
+
 async function panel(first = detail('r1')) {
   const get = vi.fn().mockResolvedValue({ data: first })
   const put = vi.fn().mockResolvedValue({ data: detail('r2', 'About us') })
-  const post = vi.fn().mockResolvedValue({ data: about })
+  const post = vi.fn((url: string) =>
+    Promise.resolve({ data: url.includes('/editing/') ? heartbeat : about }),
+  )
 
   const i18n = createI18n()
   i18n.defaults('webx-admin', adminMessages)
@@ -125,6 +130,7 @@ async function type(wrapper: Awaited<ReturnType<typeof panel>>['wrapper'], text:
 
 afterEach(() => {
   vi.useRealTimers()
+  heartbeat = { revision: 'r1', changed: null, editors: [], heartbeat: 20 }
 })
 
 /**
@@ -173,19 +179,54 @@ describe('WxPageEditorPage', () => {
     expect(put.mock.calls[1]?.[1]).toMatchObject({ revision: 'r2' })
   })
 
-  it('puts a conflict on the screen instead of one version over the other', async () => {
+  it('merges a save refused by an edit of another field, and saves both without asking', async () => {
+    const { wrapper, put } = await panel()
+
+    // An agent changed the address while this editor was typing the title.
+    put.mockRejectedValueOnce({
+      status: 409,
+      body: {
+        message: 'Somebody changed this page.',
+        data: detail('r9', 'About', 'about-us'),
+        changed: { author: 'Administrator', author_id: 1, source: 'mcp', at: '2026-10-08T10:00:00+00:00' },
+      },
+    })
+
+    await type(wrapper, 'TEST About')
+    await wrapper.find('.wx-page-editor').trigger('focusout')
+    await flushPromises()
+
+    expect(put).toHaveBeenCalledTimes(2)
+    expect(put.mock.calls[1]?.[1]).toEqual({
+      values: { title: 'TEST About', slug: 'about-us', blocks: [], is_home: false },
+      revision: 'r9',
+    })
+    expect(wrapper.find('.wx-alert').exists()).toBe(false)
+  })
+
+  it('lists a field both sides changed, with all three versions, and waits for an answer', async () => {
     const { wrapper, put } = await panel()
 
     put.mockRejectedValueOnce({
       status: 409,
-      body: { message: 'Somebody changed this page.', data: detail('r9', 'Theirs') },
+      body: {
+        message: 'Somebody changed this page.',
+        data: detail('r9', 'Theirs'),
+        changed: { author: 'Administrator', author_id: 1, source: 'mcp', at: null },
+      },
     })
 
     await type(wrapper, 'Mine')
     await wrapper.find('.wx-page-editor').trigger('focusout')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Somebody changed this page.')
+    const alert = wrapper.find('.wx-alert')
+
+    expect(alert.text()).toContain('Administrator, through an agent')
+    expect(alert.text()).toContain('Title')
+    expect(alert.text()).toContain('About')
+    expect(alert.text()).toContain('Mine')
+    expect(alert.text()).toContain('Theirs')
     expect(wrapper.find('input').element.value).toBe('Mine')
 
     // And nothing is written again on its own: the question stands until it is answered.
@@ -194,7 +235,31 @@ describe('WxPageEditorPage', () => {
     expect(put).toHaveBeenCalledTimes(1)
   })
 
-  it('writes over the other version, with its revision, when mine is kept', async () => {
+  it('keeps their change to every other field when mine is kept on the one that clashed', async () => {
+    const { wrapper, put } = await panel()
+
+    put.mockRejectedValueOnce({
+      status: 409,
+      body: { message: 'Somebody changed this page.', data: detail('r9', 'Theirs', 'about-us') },
+    })
+
+    await type(wrapper, 'Mine')
+    await wrapper.find('.wx-page-editor').trigger('focusout')
+    await flushPromises()
+
+    // «Yours» is chosen until somebody picks otherwise; the last button saves the choices.
+    const save = wrapper.findAll('.wx-alert button').at(-1)
+    await save?.trigger('click')
+    await flushPromises()
+
+    expect(put.mock.calls[1]?.[1]).toEqual({
+      values: { title: 'Mine', slug: 'about-us', blocks: [], is_home: false },
+      revision: 'r9',
+    })
+    expect(wrapper.find('.wx-alert').exists()).toBe(false)
+  })
+
+  it('takes their side of a clash when it is chosen', async () => {
     const { wrapper, put } = await panel()
 
     put.mockRejectedValueOnce({
@@ -206,12 +271,48 @@ describe('WxPageEditorPage', () => {
     await wrapper.find('.wx-page-editor').trigger('focusout')
     await flushPromises()
 
-    const keep = wrapper.findAll('.wx-alert button').at(-1)
-    await keep?.trigger('click')
+    const [, theirs] = wrapper.findAll('.wx-editing-alerts__choice')
+    await theirs?.trigger('click')
+    await wrapper.findAll('.wx-alert button').at(-1)?.trigger('click')
     await flushPromises()
 
-    expect(put.mock.calls[1]?.[1]).toMatchObject({ revision: 'r9', values: { title: 'Mine' } })
-    expect(wrapper.text()).not.toContain('Somebody changed this page.')
+    expect(wrapper.find('input').element.value).toBe('Theirs')
+  })
+
+  it('says who saved meanwhile, and pulls their edit in before this one is saved over it', async () => {
+    const { wrapper, get, put } = await panel()
+
+    heartbeat = {
+      revision: 'r5',
+      changed: { author: 'Administrator', author_id: 1, source: 'mcp', at: '2026-10-08T10:00:00+00:00' },
+      editors: [{ id: 3, name: 'Anna', since: '2026-10-08T09:00:00+00:00', seen_at: '2026-10-08T10:00:00+00:00' }],
+      heartbeat: 20,
+    }
+    get.mockResolvedValue({ data: detail('r5', 'About', 'about-us') })
+
+    // Opening another page and coming back is the quickest way to make the editor ask again.
+    await wrapper.vm.$router.push('/pages')
+    await flushPromises()
+    await wrapper.vm.$router.push('/pages/2')
+    await flushPromises()
+
+    const notice = wrapper.find('.wx-alert')
+
+    expect(notice.text()).toContain('Administrator, through an agent changed Slug')
+
+    await notice.find('button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.wx-alert').exists()).toBe(false)
+
+    await type(wrapper, 'TEST About')
+    await wrapper.find('.wx-page-editor').trigger('focusout')
+    await flushPromises()
+
+    expect(put.mock.calls.at(-1)?.[1]).toEqual({
+      values: { title: 'TEST About', slug: 'about-us', blocks: [], is_home: false },
+      revision: 'r5',
+    })
   })
 
   it('hands the constructor a preview of the draft', async () => {

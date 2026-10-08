@@ -222,7 +222,31 @@ describe('WxArticleEditorPage', () => {
     expect(put.mock.calls[1]?.[1]).toMatchObject({ revision: 'r2' })
   })
 
-  it('puts a conflict on the screen instead of one version over the other', async () => {
+  it('merges a save refused over a change elsewhere, and saves both', async () => {
+    const { wrapper, put } = await panel()
+    const theirs = detail('r9')
+
+    // An agent wrote the lead while this editor was typing the title.
+    theirs.values = { ...theirs.values, lead: { en: 'Written by an agent' } }
+
+    put.mockRejectedValueOnce({
+      status: 409,
+      body: { message: 'Somebody changed this article.', data: theirs },
+    })
+
+    await type(wrapper, 'Mine')
+    await wrapper.find('.wx-article-editor').trigger('focusout')
+    await flushPromises()
+
+    expect(put).toHaveBeenCalledTimes(2)
+    expect(put.mock.calls[1]?.[1]).toMatchObject({
+      revision: 'r9',
+      values: { title: { en: 'Mine' }, lead: { en: 'Written by an agent' } },
+    })
+    expect(wrapper.find('.wx-editing-alerts').exists()).toBe(false)
+  })
+
+  it('asks about the place both sides changed instead of one version over the other', async () => {
     const { wrapper, put } = await panel()
 
     put.mockRejectedValueOnce({
@@ -234,7 +258,10 @@ describe('WxArticleEditorPage', () => {
     await wrapper.find('.wx-article-editor').trigger('focusout')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Somebody changed this article.')
+    const alert = wrapper.find('.wx-editing-alerts')
+
+    expect(alert.findAll('.wx-editing-alerts__item')).toHaveLength(1)
+    expect(alert.text()).toContain('Theirs')
     expect(wrapper.find('input').element.value).toBe('Mine')
 
     // And nothing is written again on its own: the question stands until it is answered.
@@ -243,7 +270,7 @@ describe('WxArticleEditorPage', () => {
     expect(put).toHaveBeenCalledTimes(1)
   })
 
-  it('writes over the other version, with its revision, when mine is kept', async () => {
+  it('writes the settled version, with their revision, once the conflict is answered', async () => {
     const { wrapper, put } = await panel()
 
     put.mockRejectedValueOnce({
@@ -255,12 +282,12 @@ describe('WxArticleEditorPage', () => {
     await wrapper.find('.wx-article-editor').trigger('focusout')
     await flushPromises()
 
-    const keep = wrapper.findAll('.wx-alert button').at(-1)
-    await keep?.trigger('click')
+    // This editor's side is the one chosen until somebody picks; the last button applies it.
+    await wrapper.findAll('.wx-editing-alerts button').at(-1)?.trigger('click')
     await flushPromises()
 
-    expect(put.mock.calls[1]?.[1]).toMatchObject({ revision: 'r9' })
-    expect(wrapper.text()).not.toContain('Somebody changed this article.')
+    expect(put.mock.calls[1]?.[1]).toMatchObject({ revision: 'r9', values: { title: { en: 'Mine' } } })
+    expect(wrapper.find('.wx-editing-alerts').exists()).toBe(false)
   })
 
   /*

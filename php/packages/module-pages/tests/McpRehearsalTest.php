@@ -28,7 +28,7 @@ final class McpRehearsalTest extends TestCase
         $first = $this->page('child-1', $parent, published: false);
         $this->page('child-2', $parent);
 
-        $this->agent('update', ['page' => $first->getKey(), 'values' => ['slug' => ['en' => 'child-2']]])->assertOk();
+        $this->agent('update', ['page' => $first->getKey(), 'values' => ['slug' => ['en' => 'child-2']], 'force' => true])->assertOk();
 
         // The rehearsal publishes for real and rolls back, so the registry is asked as it will be.
         $this->agent('publish', ['page' => $first->getKey(), 'dry_run' => true])->assertHasErrors(['already taken']);
@@ -87,7 +87,7 @@ final class McpRehearsalTest extends TestCase
     {
         $page = $this->page('about');
 
-        $this->agent('update', ['page' => '/about', 'values' => ['title' => ['en' => '']]])->assertHasErrors(['title']);
+        $this->agent('update', ['page' => '/about', 'values' => ['title' => ['en' => '']], 'force' => true])->assertHasErrors(['title']);
         $this->agent('update', ['page' => '/about', 'values' => ['title' => ['en' => '']], 'dry_run' => true])->assertHasErrors(['title']);
 
         $this->assertFalse($page->refresh()->hasDraft());
@@ -150,7 +150,7 @@ final class McpRehearsalTest extends TestCase
     public function a_former_address_names_the_page_it_now_leads_to(): void
     {
         $about = $this->page('about');
-        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['en' => 'about-us']]])->assertOk();
+        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['en' => 'about-us']], 'force' => true])->assertOk();
         $this->agent('publish', ['page' => $about->getKey()])->assertOk();
 
         $this->agent('get', ['page' => '/about'])->assertHasErrors(['former address of page #'.$about->getKey(), '/about-us']);

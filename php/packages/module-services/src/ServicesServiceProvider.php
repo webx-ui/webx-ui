@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
@@ -34,6 +35,7 @@ use WebxUi\Services\Links\ServiceLinkSource;
 use WebxUi\Services\Models\Service;
 use WebxUi\Services\Models\ServiceCategory;
 use WebxUi\Services\Panel\CategoriesModule;
+use WebxUi\Services\Panel\Revision;
 use WebxUi\Services\Panel\ServicesGroup;
 use WebxUi\Services\Panel\ServicesModule;
 use WebxUi\Services\Relations\ServiceTarget;
@@ -73,6 +75,7 @@ class ServicesServiceProvider extends ServiceProvider
         $this->registerCollection();
         $this->app->make(RelationTargets::class)->register(new ServiceTarget);
         $this->registerPanel();
+        $this->registerEditedRecord();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
 
@@ -271,6 +274,24 @@ class ServicesServiceProvider extends ServiceProvider
         foreach ([ServicesModule::class, CategoriesModule::class] as $module) {
             $modules->register($this->app->make($module));
         }
+    }
+
+    /**
+     * The editor's heartbeat asks after a service by this name: whether it moved under the
+     * editor, who moved it, who else has it open.
+     */
+    private function registerEditedRecord(): void
+    {
+        $this->app->make(EditedRecords::class)->register(
+            'services',
+            ['services.view', 'services.manage'],
+            static function (string $id): ?array {
+                $service = ctype_digit($id) ? Service::query()->find((int) $id) : null;
+
+                return $service instanceof Service ? ['revision' => Revision::of($service), 'model' => $service] : null;
+            },
+            'services.manage',
+        );
     }
 
     private function prefix(): string

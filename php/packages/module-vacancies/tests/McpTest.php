@@ -171,7 +171,7 @@ final class McpTest extends TestCase
         $vacancy = $this->vacancy('developer', attributes: ['salary_currency' => 'PLN']);
         $this->app['config']->set('webx-vacancies.currencies', ['USD' => '$']);
 
-        $this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['salary_currency' => 'PLN', 'lead' => 'Still in złoty.']])
+        $this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['salary_currency' => 'PLN', 'lead' => 'Still in złoty.'], 'force' => true])
             ->assertOk();
 
         $other = $this->vacancy('designer');
@@ -199,8 +199,23 @@ final class McpTest extends TestCase
 
         // `null` is no form at all, and so is an empty list.
         $form = $this->form();
-        $this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['form' => $form->id]])->assertOk();
-        $this->assertSame([], $this->content($this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['form' => null]]))['values']['form']);
+        $this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['form' => $form->id], 'force' => true])->assertOk();
+        $this->assertSame([], $this->content($this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['form' => null], 'force' => true]))['values']['form']);
+    }
+
+    #[Test]
+    public function an_agent_writes_what_it_read_or_says_force(): void
+    {
+        $vacancy = $this->vacancy('developer');
+
+        $this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['lead' => 'Unread.']])
+            ->assertHasErrors(['Read the vacancy first']);
+        $this->assertFalse($vacancy->refresh()->hasDraft());
+
+        $this->assertSame([], $this->content($this->agent('vacancies_get', ['vacancy' => $vacancy->id]))['being_edited_by']);
+
+        $this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['lead' => 'Forced.'], 'force' => true])->assertOk();
+        $this->assertTrue($vacancy->refresh()->hasDraft());
     }
 
     #[Test]
@@ -239,7 +254,7 @@ final class McpTest extends TestCase
         $this->assertFalse($this->content($this->agent('vacancies_reopen', ['vacancy' => $vacancy->id]))['vacancy']['closed']);
 
         // Edits waiting would be published by the button, so it refuses — in the panel's words.
-        $this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['lead' => 'An edit.']])->assertOk();
+        $this->agent('vacancies_update', ['vacancy' => $vacancy->id, 'values' => ['lead' => 'An edit.'], 'force' => true])->assertOk();
         $this->agent('vacancies_close', ['vacancy' => $vacancy->id])->assertHasErrors([(string) __('webx-vacancies::errors.close-with-edits')]);
 
         // And off the site it would put the vacancy back on it.

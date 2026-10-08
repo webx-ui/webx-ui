@@ -68,7 +68,7 @@ final class McpWritesTest extends TestCase
         $this->assertArrayHasKey('icon', $values);
         $this->assertNull($values['icon']);
 
-        $written = $this->content($this->agent('events_update', ['event' => $event->id, 'values' => ['icon' => 'star']]));
+        $written = $this->content($this->agent('events_update', ['event' => $event->id, 'values' => ['icon' => 'star'], 'force' => true]));
         $this->assertSame('star', $written['values']['icon']);
     }
 

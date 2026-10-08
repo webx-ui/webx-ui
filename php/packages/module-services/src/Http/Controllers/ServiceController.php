@@ -7,6 +7,7 @@ namespace WebxUi\Services\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Localization\Locales;
 use WebxUi\Services\Http\Requests\ServiceRequest;
@@ -89,6 +90,9 @@ final class ServiceController
             return new JsonResponse([
                 'message' => (string) __('webx-services::errors.conflict'),
                 'data' => $form->describe($this->loaded($service), $this->author($request)),
+                // Who it was and through which door: «Administrator» is also the name an agent
+                // writes under, and an editor who reads it as a colleague asks the wrong person.
+                'changed' => LastChange::of($service, $request->user()),
             ], 409);
         }
 

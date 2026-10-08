@@ -6,8 +6,10 @@ import {
   provideRelationOwner,
   useAdmin,
   useDates,
+  useEditing,
   useErrorText,
   useTranslate,
+  WxEditingAlerts,
   WxSaveState,
   WxScreen,
   WxScreenHead,
@@ -19,7 +21,6 @@ import {
   toast,
   useLocales,
   WxActionBar,
-  WxAlert,
   WxBadge,
   WxBreadcrumb,
   WxBreadcrumbItem,
@@ -43,7 +44,7 @@ import type { RecipeConflict, RecipeDetail, RecipeRow } from './types'
  * note) with a patch rather than a fork of this file. Saving is by autosave into the draft, and
  * the draft carries the categories, the services and the similar recipes too: the site changes,
  * all of it at once, only on "Publish". Edits are guarded by a revision: a save over somebody
- * else's is refused with a 409 and the question of which version the site gets.
+ * else's is refused with a 409, merged with theirs, and asked about only where both changed.
  */
 const props = withDefaults(defineProps<{ base?: string }>(), { base: '/recipes' })
 
@@ -76,11 +77,34 @@ const loading = ref(true)
 const saving = ref(false)
 const working = ref(false)
 const errors = ref<Record<string, string[]>>({})
-const conflict = ref<RecipeConflict | null>(null)
 
 const snapshot = ref('')
 
 const canManage = computed(() => context.can('recipes.manage'))
+
+/*
+ * Other people on the same recipe: a refused save is merged with theirs field by field and
+ * saved again, only a field both changed is asked about, and a save made meanwhile — by a
+ * colleague or an agent — is offered before this editor writes over it.
+ */
+const editing = useEditing<ScreenModel>({
+  entity: 'recipes',
+  id: () => recipe.value?.id,
+  values,
+  revision,
+  read: async () => {
+    const detail = await api.get(id.value)
+
+    return { values: detail.values, revision: detail.revision }
+  },
+  adopt: (theirs) => {
+    snapshot.value = JSON.stringify(theirs.values)
+  },
+  canWrite: () => canManage.value,
+  busy: () => saving.value || flight !== undefined,
+})
+
+const conflict = editing.conflict
 
 /** Closed for writing: no permission, or a publication in flight. */
 const locked = computed(() => !canManage.value || working.value)
@@ -130,6 +154,7 @@ function take(detail: RecipeDetail): void {
   prefix.value = detail.prefix
   previewUrl.value = detail.preview_url
   snapshot.value = JSON.stringify(detail.values)
+  editing.opened(detail.values)
   conflict.value = null
 }
 
@@ -220,6 +245,9 @@ async function write(): Promise<void> {
     conflict.value = null
 
     if (current.value === sending) snapshot.value = sending
+
+    // What the server holds now is what was sent: the base of the next merge.
+    editing.opened(sent)
   } catch (error) {
     const failure = error as {
       status?: number
@@ -227,7 +255,13 @@ async function write(): Promise<void> {
     }
 
     if (failure.status === 409 && failure.body?.data) {
-      conflict.value = failure.body
+      const theirs = failure.body.data
+
+      // Nothing overlapping: both edits are in the form now, and they go to the server again.
+      if (editing.refused({ values: theirs.values, revision: theirs.revision, changed: failure.body.changed })) {
+        recipe.value = theirs.recipe
+        void save()
+      }
     } else if (failure.body?.errors) {
       errors.value = failure.body.errors
       toast.danger(t('recipe.save-failed'))
@@ -239,31 +273,9 @@ async function write(): Promise<void> {
   }
 }
 
-/** Give up what was typed and take the recipe as it now is. */
+/** Give up what was typed and take the recipe as it now is; the component asked first. */
 async function takeTheirs(): Promise<void> {
-  const agreed = await confirm({
-    title: t('recipe.conflict-theirs-title'),
-    message: t('recipe.conflict-theirs-text'),
-    confirmText: t('recipe.conflict-theirs'),
-    cancelText: t('panel.cancel'),
-    tone: 'danger',
-  })
-
-  if (!agreed) return
-
   await load(true)
-}
-
-/** Keep what was typed and write it over the other version — which is still in the history. */
-async function keepMine(): Promise<void> {
-  const theirs = conflict.value
-
-  if (!theirs) return
-
-  revision.value = theirs.data.revision
-  conflict.value = null
-
-  await save()
 }
 
 /** Throw away what is waiting — asked about, because it is the one button here that loses writing. */
@@ -493,23 +505,9 @@ const actions = computed<ScreenAction[]>(() => {
         </template>
       </wx-screen-head>
 
-      <!-- Somebody else wrote while this editor was typing. Both versions still exist, so the
-           question is which one the site gets — a question, not a toast that disappears. -->
-      <wx-alert
-        v-if="conflict"
-        type="warning"
-        :title="t('recipe.conflict-title')"
-        :description="conflict.message"
-      >
-        <template #actions>
-          <wx-button size="sm" variant="outline" @click="takeTheirs">
-            {{ t('recipe.conflict-theirs') }}
-          </wx-button>
-          <wx-button size="sm" type="primary" @click="keepMine">
-            {{ t('recipe.conflict-mine') }}
-          </wx-button>
-        </template>
-      </wx-alert>
+      <!-- Somebody else wrote while this editor was open. What does not overlap is merged
+           without a word; what does is listed place by place. -->
+      <wx-editing-alerts :editing="editing" @save="save" @theirs="takeTheirs" />
 
       <wx-screen v-model="values" name="recipes.form" :errors="errors" :disabled="locked" />
 

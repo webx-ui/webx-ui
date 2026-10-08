@@ -80,7 +80,7 @@ final class LanguageShapesTest extends TestCase
             'f_tags' => ['en', 'ru'],
         ], 'k1')]]);
 
-        $this->agent('edit_content', [
+        $this->agent('edit_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'set', 'key' => 'k1', 'values' => ['f_title' => 'Русский'], 'locale' => 'ru']],

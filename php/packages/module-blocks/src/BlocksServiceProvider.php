@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
@@ -147,6 +148,14 @@ class BlocksServiceProvider extends ServiceProvider
         // whoever may write Blade (§7.1 of the regions spec).
         $this->app->make(ModuleRegistry::class)->register($this->app->make(RegionsModule::class));
         $this->app->make(ScreenRegistry::class)->register(RegionForm::SCREEN, __DIR__.'/../resources/screens/regions.form.json');
+
+        // The region editor's heartbeat asks after a region by its name. One nobody has saved
+        // yet has no row and nothing to have moved under anybody: the heartbeat hears 404.
+        $this->app->make(EditedRecords::class)->register('regions', 'blocks.regions', function (string $name): ?array {
+            $region = $this->app->make(Regions::class)->find($name);
+
+            return $region === null ? null : ['revision' => Content::revision($region->editingTree()), 'model' => $region];
+        });
 
         $this->registerGateOpenings();
         $this->registerAuditSource();

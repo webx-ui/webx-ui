@@ -69,7 +69,7 @@ Read `blocks_get_content` (entity and id; for a region, entity `region` and its 
 `blocks_edit_content` with the `revision` it returned and `ops`: `set`, `unset`, `add`, `move`,
 `duplicate`, `remove`, `hide`, `show`, each by `key`. `set` with null keeps the key; `unset` with `fields` takes it out. A
 value for a field the type does not define is refused in `set`, `add` and `blocks_set_content` (repeater
-items included); one the block already holds may be written back as it was or emptied. Nodes not named stay as they are; a stale revision is refused.
+items included); one the block already holds may be written back as it was or emptied. Nodes not named stay as they are. The `revision` is required: a write without one is refused, and so is a stale one — `force: true` is for a script that means to overwrite. `blocks_get_content` names in `being_edited_by` who has the entity open in the panel; tell your user before writing under them. Their editor merges your write with theirs block by block and field by field.
 `blocks_set_content` replaces the whole draft tree: anything left out is gone. Both write the
 draft; the site changes when a person publishes the entity (a region: `blocks_region_publish`).
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxDate, WxDrafts } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxEmpty, WxSkeleton, WxText } from '@webx-ui/core'
 import { createRecipesApi } from './api'
 import { useRecipeEditor } from './editor'
@@ -8,8 +8,8 @@ import { useRecipesMessages } from './i18n'
 import type { RecipeVersion } from './types'
 
 /**
- * What was published, when, by whom and from where — publications only; the autosaves are
- * insurance, not history.
+ * What was published, when, by whom and from where — and under it, in a list of its own, the
+ * copies of the draft: the autosaves, and a draft somebody else's save wrote over.
  *
  * Restoring makes the old version the draft. Publishing it is the same separate step it always
  * is, so nothing here changes the site by itself.
@@ -90,43 +90,59 @@ watch(
 </script>
 
 <template>
-  <div class="wx-recipe-history">
-    <wx-skeleton v-if="versions === null" class="wx-recipe-history__ghost" :rows="3" />
-    <wx-empty v-else-if="versions.length === 0" :description="t('recipe.history-empty')" />
-    <div
-      v-for="version in versions"
-      v-else
-      :key="version.number"
-      class="wx-recipe-history__row"
-      :class="{ 'is-live': version.number === live }"
-    >
-      <code class="wx-recipe-history__number">{{
-        t('recipe.version', { number: version.number })
-      }}</code>
-      <div class="wx-recipe-history__who">
-        <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
-        <wx-text size="sm" tone="muted">
-          {{ version.author ?? t(`recipe.source-${version.source}`) }}
-          <template v-if="version.comment"> · {{ version.comment }}</template>
-        </wx-text>
-      </div>
-      <wx-badge v-if="version.number === live" type="success" dot>{{
-        t('recipe.version-live')
-      }}</wx-badge>
-      <wx-button
-        v-if="canManage && version.number !== live"
-        size="sm"
-        variant="outline"
-        :loading="working"
-        @click="restore(version)"
+  <div class="wx-recipe-history-tab">
+    <div class="wx-recipe-history">
+      <wx-skeleton v-if="versions === null" class="wx-recipe-history__ghost" :rows="3" />
+      <wx-empty v-else-if="versions.length === 0" :description="t('recipe.history-empty')" />
+      <div
+        v-for="version in versions"
+        v-else
+        :key="version.number"
+        class="wx-recipe-history__row"
+        :class="{ 'is-live': version.number === live }"
       >
-        {{ t('recipe.restore-version') }}
-      </wx-button>
+        <code class="wx-recipe-history__number">{{
+          t('recipe.version', { number: version.number })
+        }}</code>
+        <div class="wx-recipe-history__who">
+          <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
+          <wx-text size="sm" tone="muted">
+            {{ version.author ?? t(`recipe.source-${version.source}`) }}
+            <template v-if="version.comment"> · {{ version.comment }}</template>
+          </wx-text>
+        </div>
+        <wx-badge v-if="version.number === live" type="success" dot>{{
+          t('recipe.version-live')
+        }}</wx-badge>
+        <wx-button
+          v-if="canManage && version.number !== live"
+          size="sm"
+          variant="outline"
+          :loading="working"
+          @click="restore(version)"
+        >
+          {{ t('recipe.restore-version') }}
+        </wx-button>
+      </div>
     </div>
+
+    <wx-drafts
+      entity="recipes"
+      :id="recipe?.id"
+      :can-restore="canManage"
+      :stamp="[recipe?.published_at, recipe?.updated_at]"
+      @restored="editor?.reload()"
+    />
   </div>
 </template>
 
 <style scoped>
+.wx-recipe-history-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-24);
+}
+
 .wx-recipe-history {
   display: flex;
   flex-direction: column;

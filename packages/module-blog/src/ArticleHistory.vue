@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxDate, WxDrafts } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxEmpty, WxSkeleton, WxText } from '@webx-ui/core'
 import { createBlogApi } from './api'
 import { useArticleEditor } from './editor'
@@ -10,9 +10,9 @@ import type { ArticleVersion } from './types'
 /**
  * What was published, when, by whom and from where.
  *
- * Publications only. The autosaves a save writes are insurance rather than history — a ring of
- * the last few copies of the draft, replaced every couple of minutes — and a list with them in
- * it would be a list nobody can read.
+ * Publications first, and the copies of the draft under them in a list of their own: the autosave
+ * ring, and a draft somebody else's save wrote over. Mixed into one line they would be a list
+ * nobody can read; left out, an edit written over would have nowhere to be found.
  *
  * Restoring makes the old version the draft. Publishing it is the same separate step it always
  * is, which is what keeps the history a line: nothing here changes the site by itself.
@@ -97,46 +97,62 @@ watch(
 </script>
 
 <template>
-  <div class="wx-article-history">
-    <!-- Where a row would stand, not against the border: a skeleton flush with a rounded
-         corner has its ends clipped by it, which reads as a drawing fault rather than as
-         something loading. -->
-    <wx-skeleton v-if="versions === null" class="wx-article-history__ghost" :rows="3" />
-    <wx-empty v-else-if="versions.length === 0" :description="t('article.history-empty')" />
-    <div
-      v-for="version in versions"
-      v-else
-      :key="version.number"
-      class="wx-article-history__row"
-      :class="{ 'is-live': version.number === live }"
-    >
-      <code class="wx-article-history__number">{{
-        t('article.version', { number: version.number })
-      }}</code>
-      <div class="wx-article-history__who">
-        <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
-        <wx-text size="sm" tone="muted">
-          {{ version.author ?? t(`article.source-${version.source}`) }}
-          <template v-if="version.comment"> · {{ version.comment }}</template>
-        </wx-text>
-      </div>
-      <wx-badge v-if="version.number === live" type="success" dot>{{
-        t('article.version-live')
-      }}</wx-badge>
-      <wx-button
-        v-if="canManage && version.number !== live"
-        size="sm"
-        variant="outline"
-        :loading="working"
-        @click="restore(version)"
+  <div class="wx-article-history-tab">
+    <div class="wx-article-history">
+      <!-- Where a row would stand, not against the border: a skeleton flush with a rounded
+           corner has its ends clipped by it, which reads as a drawing fault rather than as
+           something loading. -->
+      <wx-skeleton v-if="versions === null" class="wx-article-history__ghost" :rows="3" />
+      <wx-empty v-else-if="versions.length === 0" :description="t('article.history-empty')" />
+      <div
+        v-for="version in versions"
+        v-else
+        :key="version.number"
+        class="wx-article-history__row"
+        :class="{ 'is-live': version.number === live }"
       >
-        {{ t('article.restore-version') }}
-      </wx-button>
+        <code class="wx-article-history__number">{{
+          t('article.version', { number: version.number })
+        }}</code>
+        <div class="wx-article-history__who">
+          <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
+          <wx-text size="sm" tone="muted">
+            {{ version.author ?? t(`article.source-${version.source}`) }}
+            <template v-if="version.comment"> · {{ version.comment }}</template>
+          </wx-text>
+        </div>
+        <wx-badge v-if="version.number === live" type="success" dot>{{
+          t('article.version-live')
+        }}</wx-badge>
+        <wx-button
+          v-if="canManage && version.number !== live"
+          size="sm"
+          variant="outline"
+          :loading="working"
+          @click="restore(version)"
+        >
+          {{ t('article.restore-version') }}
+        </wx-button>
+      </div>
     </div>
+
+    <wx-drafts
+      entity="articles"
+      :id="article?.id"
+      :can-restore="canManage"
+      :stamp="[article?.published_at, article?.updated_at]"
+      @restored="editor?.reload()"
+    />
   </div>
 </template>
 
 <style scoped>
+.wx-article-history-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-24);
+}
+
 .wx-article-history {
   display: flex;
   flex-direction: column;

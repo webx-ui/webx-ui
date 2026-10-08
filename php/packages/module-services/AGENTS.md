@@ -71,8 +71,13 @@ whose target is gone throws when the screen is first built.
   addresses. To take over the index, switch `index` off and make a page there.
 - Do not write blocks through `services_update`: content goes through `blocks_edit_content`,
   which changes one node and leaves the rest alone. A `blocks` key there is refused.
-- Do not save without the `revision` you read: a stale one is answered `409`. Read again with
-  `services_get` and redo the change; do not retry blindly.
+- Do not write without the `revision` services_get gave you: `services_update` refuses a write
+  with none and refuses a stale one. Read again and redo the change; do not retry blindly.
+  `force: true` writes without one and is for a script that means to overwrite, not for an
+  agent working beside people. `services_get` names in `being_edited_by` who has the service open
+  in the panel right now — tell your user before writing under them. Their editor merges your
+  write with theirs field by field, and a draft written over by somebody else is kept: the
+  panel's History lists it under Drafts, and «Restore» puts it back.
 - Do not add a migration for a project field: the patch and the `extra` column are the place.
 - Do not bin a category that still has services — it is refused with the count. Move the services
   out first. Do not delete rows with SQL: a raw delete leaves addresses in the routing registry.
