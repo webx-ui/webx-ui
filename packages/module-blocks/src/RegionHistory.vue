@@ -131,8 +131,8 @@ watch(
     </div>
 
     <wx-drafts
-      entity="regions"
       :id="region?.name"
+      entity="regions"
       :can-restore="canManage"
       :stamp="[region?.published_at, region?.updated_at]"
       @restored="editor?.reload()"

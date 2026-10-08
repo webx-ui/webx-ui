@@ -98,51 +98,51 @@ watch(
 
 <template>
   <div class="wx-page-history-tab">
-  <div class="wx-page-history">
-    <!-- Where a row would stand, not against the border: a skeleton flush with a rounded
+    <div class="wx-page-history">
+      <!-- Where a row would stand, not against the border: a skeleton flush with a rounded
          corner has its ends clipped by it, which reads as a drawing fault rather than as
          something loading. -->
-    <wx-skeleton v-if="versions === null" class="wx-page-history__ghost" :rows="3" />
-    <wx-empty v-else-if="versions.length === 0" :description="t('page.history-empty')" />
-    <div
-      v-for="version in versions"
-      v-else
-      :key="version.number"
-      class="wx-page-history__row"
-      :class="{ 'is-live': version.number === live }"
-    >
-      <code class="wx-page-history__number">{{
-        t('page.version', { number: version.number })
-      }}</code>
-      <div class="wx-page-history__who">
-        <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
-        <wx-text size="sm" tone="muted">
-          {{ version.author ?? t(`page.source-${version.source}`) }}
-          <template v-if="version.comment"> · {{ version.comment }}</template>
-        </wx-text>
-      </div>
-      <wx-badge v-if="version.number === live" type="success" dot>{{
-        t('page.version-live')
-      }}</wx-badge>
-      <wx-button
-        v-if="canManage && version.number !== live"
-        size="sm"
-        variant="outline"
-        :loading="working"
-        @click="restore(version)"
+      <wx-skeleton v-if="versions === null" class="wx-page-history__ghost" :rows="3" />
+      <wx-empty v-else-if="versions.length === 0" :description="t('page.history-empty')" />
+      <div
+        v-for="version in versions"
+        v-else
+        :key="version.number"
+        class="wx-page-history__row"
+        :class="{ 'is-live': version.number === live }"
       >
-        {{ t('page.restore') }}
-      </wx-button>
+        <code class="wx-page-history__number">{{
+          t('page.version', { number: version.number })
+        }}</code>
+        <div class="wx-page-history__who">
+          <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
+          <wx-text size="sm" tone="muted">
+            {{ version.author ?? t(`page.source-${version.source}`) }}
+            <template v-if="version.comment"> · {{ version.comment }}</template>
+          </wx-text>
+        </div>
+        <wx-badge v-if="version.number === live" type="success" dot>{{
+          t('page.version-live')
+        }}</wx-badge>
+        <wx-button
+          v-if="canManage && version.number !== live"
+          size="sm"
+          variant="outline"
+          :loading="working"
+          @click="restore(version)"
+        >
+          {{ t('page.restore') }}
+        </wx-button>
+      </div>
     </div>
-  </div>
 
-  <wx-drafts
-    entity="pages"
-    :id="page?.id"
-    :can-restore="canManage"
-    :stamp="[page?.published_at, page?.updated_at]"
-    @restored="editor?.reload()"
-  />
+    <wx-drafts
+      :id="page?.id"
+      entity="pages"
+      :can-restore="canManage"
+      :stamp="[page?.published_at, page?.updated_at]"
+      @restored="editor?.reload()"
+    />
   </div>
 </template>
 

@@ -91,13 +91,7 @@ async function pull(): Promise<void> {
 </script>
 
 <template>
-  <wx-alert
-    v-if="conflict"
-    class="wx-editing-alerts"
-    type="warning"
-    :title="conflictTitle"
-    live
-  >
+  <wx-alert v-if="conflict" class="wx-editing-alerts" type="warning" :title="conflictTitle" live>
     <p class="wx-editing-alerts__lead">{{ t('editing.conflict-text') }}</p>
 
     <ul class="wx-editing-alerts__list">
@@ -114,7 +108,11 @@ async function pull(): Promise<void> {
           {{ side(one, 'base') }}
         </div>
 
-        <div class="wx-editing-alerts__choices" role="radiogroup" :aria-label="editing.label(one.path)">
+        <div
+          class="wx-editing-alerts__choices"
+          role="radiogroup"
+          :aria-label="editing.label(one.path)"
+        >
           <button
             v-for="which in ['mine', 'theirs'] as const"
             :key="which"

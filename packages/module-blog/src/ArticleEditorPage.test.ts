@@ -286,7 +286,10 @@ describe('WxArticleEditorPage', () => {
     await wrapper.findAll('.wx-editing-alerts button').at(-1)?.trigger('click')
     await flushPromises()
 
-    expect(put.mock.calls[1]?.[1]).toMatchObject({ revision: 'r9', values: { title: { en: 'Mine' } } })
+    expect(put.mock.calls[1]?.[1]).toMatchObject({
+      revision: 'r9',
+      values: { title: { en: 'Mine' } },
+    })
     expect(wrapper.find('.wx-editing-alerts').exists()).toBe(false)
   })
 

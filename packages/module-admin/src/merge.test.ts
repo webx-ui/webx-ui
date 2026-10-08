@@ -43,7 +43,12 @@ describe('mergeThreeWay', () => {
     const { value, conflicts } = mergeThreeWay(base, mine, theirs)
 
     expect(conflicts).toHaveLength(1)
-    expect(conflicts[0]).toMatchObject({ kind: 'changed', base: 'Deeply heard', mine: 'Mine', theirs: 'Theirs' })
+    expect(conflicts[0]).toMatchObject({
+      kind: 'changed',
+      base: 'Deeply heard',
+      mine: 'Mine',
+      theirs: 'Theirs',
+    })
     expect(conflicts[0]!.path).toEqual([
       { field: 'blocks' },
       { block: 'hero1', type: 'hero' },
@@ -59,13 +64,22 @@ describe('mergeThreeWay', () => {
     const mine = { title: { en: 'Home' }, blocks: [hero('Mine')] }
     const theirs = { title: { en: 'Welcome' }, blocks: [hero('Theirs', 'Since 2010')] }
 
-    const id = conflictId([{ field: 'blocks' }, { block: 'hero1', type: 'hero' }, { field: 'values' }, { field: 'heading' }, { field: 'en' }])
+    const id = conflictId([
+      { field: 'blocks' },
+      { block: 'hero1', type: 'hero' },
+      { field: 'values' },
+      { field: 'heading' },
+      { field: 'en' },
+    ])
 
     // «Keep mine» on the one conflict: their title and eyebrow are not collateral.
     const kept = mergeThreeWay(base, mine, theirs, { [id]: 'mine' }).value
 
     expect(kept.title).toEqual({ en: 'Welcome' })
-    expect(kept.blocks[0]!.values).toEqual({ heading: { en: 'Mine' }, eyebrow: { en: 'Since 2010' } })
+    expect(kept.blocks[0]!.values).toEqual({
+      heading: { en: 'Mine' },
+      eyebrow: { en: 'Since 2010' },
+    })
 
     const taken = mergeThreeWay(base, mine, theirs, { [id]: 'theirs' }).value
 
@@ -122,7 +136,11 @@ describe('mergeThreeWay', () => {
   })
 
   it('merges the blocks nested inside a block', () => {
-    const columns = (children: unknown[]) => ({ key: 'cols', type: 'columns', values: { items: children } })
+    const columns = (children: unknown[]) => ({
+      key: 'cols',
+      type: 'columns',
+      values: { items: children },
+    })
     const base = [columns([text('x', 'X'), text('y', 'Y')])]
     const mine = [columns([text('x', 'X mine'), text('y', 'Y')])]
     const theirs = [columns([text('x', 'X'), text('y', 'Y theirs')])]
@@ -134,7 +152,11 @@ describe('mergeThreeWay', () => {
   })
 
   it('treats a list of ids as one value', () => {
-    const { conflicts } = mergeThreeWay({ categories: [1] }, { categories: [1, 2] }, { categories: [1, 3] })
+    const { conflicts } = mergeThreeWay(
+      { categories: [1] },
+      { categories: [1, 2] },
+      { categories: [1, 3] },
+    )
 
     expect(conflicts).toHaveLength(1)
     expect(conflicts[0]!.path).toEqual([{ field: 'categories' }])

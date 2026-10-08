@@ -88,7 +88,11 @@ async function restore(copy: DraftCopy): Promise<void> {
   }
 }
 
-watch(() => [props.entity, props.id, props.stamp], () => void load(), { immediate: true })
+watch(
+  () => [props.entity, props.id, props.stamp],
+  () => void load(),
+  { immediate: true },
+)
 </script>
 
 <template>

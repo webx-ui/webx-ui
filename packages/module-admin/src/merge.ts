@@ -116,7 +116,13 @@ export function conflictId(path: MergeSegment[]): string {
   return path.map((step) => ('block' in step ? `#${step.block}` : step.field)).join('/')
 }
 
-function merge(base: unknown, mine: unknown, theirs: unknown, path: MergeSegment[], walk: Walk): unknown {
+function merge(
+  base: unknown,
+  mine: unknown,
+  theirs: unknown,
+  path: MergeSegment[],
+  walk: Walk,
+): unknown {
   if (sameValue(mine, theirs)) return mine
   if (sameValue(base, mine)) return theirs
   if (sameValue(base, theirs)) return mine
@@ -132,7 +138,13 @@ function merge(base: unknown, mine: unknown, theirs: unknown, path: MergeSegment
   return settle(walk, path, 'changed', base, mine, theirs, mine, theirs)
 }
 
-function mergeObject(base: Plain, mine: Plain, theirs: Plain, path: MergeSegment[], walk: Walk): Plain {
+function mergeObject(
+  base: Plain,
+  mine: Plain,
+  theirs: Plain,
+  path: MergeSegment[],
+  walk: Walk,
+): Plain {
   const merged: Plain = {}
   const keys = [...Object.keys(mine), ...Object.keys(theirs).filter((key) => !(key in mine))]
 
@@ -145,7 +157,13 @@ function mergeObject(base: Plain, mine: Plain, theirs: Plain, path: MergeSegment
   return merged
 }
 
-function mergeList(base: Node[], mine: Node[], theirs: Node[], path: MergeSegment[], walk: Walk): Node[] {
+function mergeList(
+  base: Node[],
+  mine: Node[],
+  theirs: Node[],
+  path: MergeSegment[],
+  walk: Walk,
+): Node[] {
   const before = byKey(base)
   const ours = byKey(mine)
   const other = byKey(theirs)
@@ -227,7 +245,12 @@ function settle(
   return walk.choices[id] === 'theirs' ? keepTheirs : keepMine
 }
 
-function diff(before: unknown, after: unknown, path: MergeSegment[], found: MergeSegment[][]): void {
+function diff(
+  before: unknown,
+  after: unknown,
+  path: MergeSegment[],
+  found: MergeSegment[][],
+): void {
   if (sameValue(before, after)) return
 
   if (isNodeList(before) && isNodeList(after)) {
@@ -235,7 +258,10 @@ function diff(before: unknown, after: unknown, path: MergeSegment[], found: Merg
     const now = byKey(after)
 
     for (const key of new Set([...old.keys(), ...now.keys()])) {
-      const at: MergeSegment[] = [...path, { block: key, type: typeOf(now.get(key) ?? old.get(key)) }]
+      const at: MergeSegment[] = [
+        ...path,
+        { block: key, type: typeOf(now.get(key) ?? old.get(key)) },
+      ]
 
       if (old.has(key) && now.has(key)) diff(old.get(key), now.get(key), at, found)
       else found.push(at)
@@ -281,5 +307,7 @@ function isPlain(value: unknown): value is Plain {
 }
 
 function isNodeList(value: unknown): value is Node[] {
-  return Array.isArray(value) && value.every((item) => isPlain(item) && typeof item.key === 'string')
+  return (
+    Array.isArray(value) && value.every((item) => isPlain(item) && typeof item.key === 'string')
+  )
 }

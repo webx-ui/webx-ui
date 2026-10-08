@@ -73,8 +73,7 @@ export const adminMessages: Record<string, Messages> = {
     'via-agent': ':name, through an agent',
     'via-import': ':name, through an import',
     'conflict-title': 'You and :who changed the same places',
-    'conflict-text':
-      'Everything else was merged. Pick a version for each place below, then save.',
+    'conflict-text': 'Everything else was merged. Pick a version for each place below, then save.',
     base: 'Before',
     mine: 'Yours',
     theirs: 'Theirs',

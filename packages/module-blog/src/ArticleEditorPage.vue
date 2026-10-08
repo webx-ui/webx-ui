@@ -315,7 +315,13 @@ async function write(): Promise<void> {
       const theirs = failure.body.data
 
       // Nothing overlapping: both edits are in the form now, and they go to the server again.
-      if (editing.refused({ values: theirs.values, revision: theirs.revision, changed: failure.body.changed })) {
+      if (
+        editing.refused({
+          values: theirs.values,
+          revision: theirs.revision,
+          changed: failure.body.changed,
+        })
+      ) {
         article.value = theirs.article
         void save()
       }

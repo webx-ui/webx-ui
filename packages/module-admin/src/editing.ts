@@ -188,7 +188,8 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
   }
 
   function choose(id: string, choice: MergeChoice): void {
-    if (conflict.value) conflict.value = { ...conflict.value, choices: { ...conflict.value.choices, [id]: choice } }
+    if (conflict.value)
+      conflict.value = { ...conflict.value, choices: { ...conflict.value.choices, [id]: choice } }
   }
 
   function resolve(): void {
@@ -196,7 +197,12 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
 
     if (!open) return
 
-    const { value } = mergeThreeWay(base.value, options.values.value, open.theirs.values, open.choices)
+    const { value } = mergeThreeWay(
+      base.value,
+      options.values.value,
+      open.theirs.values,
+      open.choices,
+    )
 
     take(open.theirs, value)
     conflict.value = null
@@ -368,10 +374,20 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
 /** A value, short, as text: the words of a rich text without its tags, a block by its type. */
 export function preview(value: unknown): string {
   if (value === undefined || value === null || value === '') return ''
-  if (typeof value === 'string') return clip(value.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim())
+  if (typeof value === 'string')
+    return clip(
+      value
+        .replace(/<[^>]*>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    )
   if (typeof value === 'number' || typeof value === 'boolean') return String(value)
 
-  if (typeof value === 'object' && !Array.isArray(value) && typeof (value as { type?: unknown }).type === 'string') {
+  if (
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    typeof (value as { type?: unknown }).type === 'string'
+  ) {
     return humanize((value as { type: string }).type)
   }
 

@@ -127,8 +127,8 @@ watch(
     </div>
 
     <wx-drafts
-      entity="vacancies"
       :id="vacancy?.id"
+      entity="vacancies"
       :can-restore="canManage"
       :stamp="[vacancy?.published_at, vacancy?.updated_at]"
       @restored="editor?.reload()"

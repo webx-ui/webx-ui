@@ -65,7 +65,12 @@ function detail(revision: string, title = 'About', slug = 'about'): PageDetail {
 let screen: ScreenNode[] = [{ id: 'title', type: 'wx-input', name: 'title' }]
 
 /** What the editor's heartbeat hears: by default, that nothing moved and nobody else is here. */
-let heartbeat: Record<string, unknown> = { revision: 'r1', changed: null, editors: [], heartbeat: 20 }
+let heartbeat: Record<string, unknown> = {
+  revision: 'r1',
+  changed: null,
+  editors: [],
+  heartbeat: 20,
+}
 
 async function panel(first = detail('r1')) {
   const get = vi.fn().mockResolvedValue({ data: first })
@@ -188,7 +193,12 @@ describe('WxPageEditorPage', () => {
       body: {
         message: 'Somebody changed this page.',
         data: detail('r9', 'About', 'about-us'),
-        changed: { author: 'Administrator', author_id: 1, source: 'mcp', at: '2026-10-08T10:00:00+00:00' },
+        changed: {
+          author: 'Administrator',
+          author_id: 1,
+          source: 'mcp',
+          at: '2026-10-08T10:00:00+00:00',
+        },
       },
     })
 
@@ -285,8 +295,20 @@ describe('WxPageEditorPage', () => {
 
     heartbeat = {
       revision: 'r5',
-      changed: { author: 'Administrator', author_id: 1, source: 'mcp', at: '2026-10-08T10:00:00+00:00' },
-      editors: [{ id: 3, name: 'Anna', since: '2026-10-08T09:00:00+00:00', seen_at: '2026-10-08T10:00:00+00:00' }],
+      changed: {
+        author: 'Administrator',
+        author_id: 1,
+        source: 'mcp',
+        at: '2026-10-08T10:00:00+00:00',
+      },
+      editors: [
+        {
+          id: 3,
+          name: 'Anna',
+          since: '2026-10-08T09:00:00+00:00',
+          seen_at: '2026-10-08T10:00:00+00:00',
+        },
+      ],
       heartbeat: 20,
     }
     get.mockResolvedValue({ data: detail('r5', 'About', 'about-us') })
