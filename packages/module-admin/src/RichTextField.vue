@@ -86,6 +86,7 @@ const labels = computed<RichTextLabels>(() => ({
   youtube: t('rich-text.youtube'),
   undo: t('rich-text.undo'),
   redo: t('rich-text.redo'),
+  source: t('rich-text.source'),
   addRowAfter: t('rich-text.row-below'),
   addRowBefore: t('rich-text.row-above'),
   addColumnAfter: t('rich-text.column-after'),
@@ -100,6 +101,9 @@ const labels = computed<RichTextLabels>(() => ({
   apply: t('rich-text.apply'),
   cancel: t('rich-text.cancel'),
   uploading: t('rich-text.uploading'),
+  sourceLoss: t('rich-text.source-loss'),
+  sourceDrop: t('rich-text.source-drop'),
+  sourceKeep: t('rich-text.source-keep'),
 }))
 </script>
 

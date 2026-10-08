@@ -34,4 +34,8 @@ return [
     'apply' => 'Übernehmen',
     'cancel' => 'Abbrechen',
     'uploading' => 'Wird hochgeladen…',
+    'source' => 'HTML-Quelltext',
+    'source-loss' => 'Der Editor behält dieses Markup nicht und entfernt es:',
+    'source-drop' => 'Entfernen',
+    'source-keep' => 'Weiter bearbeiten',
 ];

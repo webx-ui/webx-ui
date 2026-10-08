@@ -34,4 +34,8 @@ return [
     'apply' => 'Aplicar',
     'cancel' => 'Cancelar',
     'uploading' => 'A carregar…',
+    'source' => 'Código HTML',
+    'source-loss' => 'O editor não mantém esta marcação e vai removê-la:',
+    'source-drop' => 'Remover',
+    'source-keep' => 'Continuar a editar',
 ];

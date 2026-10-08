@@ -26,6 +26,8 @@ export const DEFAULT_TOOLS: RichTextTool[] = [
   'divider',
   'undo',
   'redo',
+  'divider',
+  'source',
 ]
 
 export const DEFAULT_ACCEPT = [
@@ -60,6 +62,7 @@ export const TOOL_META: Record<Exclude<RichTextTool, 'divider'>, ToolMeta> = {
   youtube: { label: 'YouTube video', icon: 'youtube' },
   undo: { label: 'Undo', icon: 'undo' },
   redo: { label: 'Redo', icon: 'redo' },
+  source: { label: 'HTML source', icon: 'source' },
 }
 
 /** Shown as a second row while the caret sits inside a table. */

@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { computed, nextTick, ref } from 'vue'
 import { localesKey } from '../../composables/useLocalized'
 import WxRichText from './RichText.vue'
+import WxCodeEditor from '../CodeEditor/CodeEditor.vue'
 
 type Wrapper = ReturnType<typeof mount>
 
@@ -403,6 +404,98 @@ describe('WxRichText', () => {
 
       expect(wrapper.classes()).not.toContain('is-localized')
       expect(wrapper.find('.wx-locale-picker').exists()).toBe(false)
+    })
+  })
+
+  describe('the source view', () => {
+    async function openSource(props: Record<string, unknown>) {
+      const wrapper = await mountEditor(props)
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+      return wrapper
+    }
+
+    function typeSource(wrapper: Wrapper, html: string) {
+      wrapper.findComponent(WxCodeEditor).vm.$emit('update:modelValue', html)
+    }
+
+    it('shows the document as indented HTML and hides the editor', async () => {
+      const wrapper = await openSource({ modelValue: '<ul><li><p>One</p></li></ul>' })
+      const code = wrapper.findComponent(WxCodeEditor)
+
+      expect(code.props('modelValue')).toBe('<ul>\n  <li>\n    <p>One</p>\n  </li>\n</ul>')
+      expect(code.props('language')).toBe('html')
+      expect((wrapper.get('.wx-rich-text__body').element as HTMLElement).style.display).toBe('none')
+      expect(toolByLabel(wrapper, 'Bold').attributes('disabled')).toBeDefined()
+      expect(toolByLabel(wrapper, 'HTML source').attributes('aria-pressed')).toBe('true')
+    })
+
+    it('opened and closed untouched, changes nothing', async () => {
+      const wrapper = await openSource({ modelValue: '<h2>Title</h2><p>Text</p>' })
+
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+
+      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(false)
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+      expect(wrapper.emitted('change')).toBeUndefined()
+    })
+
+    it('sends what is typed to the model at once, and the editor’s HTML on the way out', async () => {
+      const wrapper = await openSource({ modelValue: '<p>Old</p>' })
+
+      typeSource(wrapper, '<p>New <b>bold</b></p>')
+      await flush()
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe('<p>New <b>bold</b></p>')
+
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+
+      expect(editorOf(wrapper).getHTML()).toBe('<p>New <strong>bold</strong></p>')
+      expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(
+        '<p>New <strong>bold</strong></p>',
+      )
+    })
+
+    it('stops before dropping markup and says what would go', async () => {
+      const wrapper = await openSource({ modelValue: '<p>Old</p>' })
+
+      typeSource(wrapper, '<div class="box"><p style="color: red">Kept</p></div>')
+      await flush()
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+
+      const warning = wrapper.get('.wx-rich-text__loss')
+      expect(warning.text()).toContain('<div>')
+      expect(warning.text()).toContain('style on <p>')
+      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(true)
+
+      await warning.findAll('button').at(1)!.trigger('click')
+      await flush()
+      expect(wrapper.find('.wx-rich-text__loss').exists()).toBe(false)
+      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(true)
+
+      await toolByLabel(wrapper, 'HTML source').trigger('click')
+      await flush()
+      await wrapper.get('.wx-rich-text__loss').findAll('button').at(0)!.trigger('click')
+      await flush()
+
+      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(false)
+      expect(editorOf(wrapper).getHTML()).toBe('<p>Kept</p>')
+    })
+
+    it('lets a read-only field show its source', async () => {
+      const wrapper = await openSource({ modelValue: '<p>Read me</p>', readonly: true })
+      const code = wrapper.findComponent(WxCodeEditor)
+
+      expect(code.exists()).toBe(true)
+      expect(code.props('readonly')).toBe(true)
+    })
+
+    it('is left out like any other tool', async () => {
+      const wrapper = await mountEditor({ tools: ['bold'] })
+
+      expect(wrapper.find('button[aria-label="HTML source"]').exists()).toBe(false)
     })
   })
 })

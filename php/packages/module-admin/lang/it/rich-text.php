@@ -34,4 +34,8 @@ return [
     'apply' => 'Applica',
     'cancel' => 'Annulla',
     'uploading' => 'Caricamento…',
+    'source' => 'Sorgente HTML',
+    'source-loss' => 'L’editor non conserva questo markup e lo rimuoverà:',
+    'source-drop' => 'Rimuovi',
+    'source-keep' => 'Continua a modificare',
 ];

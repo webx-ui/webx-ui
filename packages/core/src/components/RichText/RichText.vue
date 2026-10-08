@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { createDocument, getHTMLFromFragment } from '@tiptap/core'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import { TableKit } from '@tiptap/extension-table'
@@ -9,7 +10,10 @@ import FileHandler from '@tiptap/extension-file-handler'
 import { useFormField } from '../../composables/useFormField'
 import { useLocalized } from '../../composables/useLocalized'
 import LocalePicker from '../Locales/LocalePicker.vue'
+import WxButton from '../Button/Button.vue'
+import WxCodeEditor from '../CodeEditor/CodeEditor.vue'
 import WxRichTextToolbarButton from './ToolbarButton.vue'
+import { formatHtml, lostMarkup } from './source'
 import { DEFAULT_ACCEPT, DEFAULT_TOOLS, TABLE_TOOLS, TOOL_META, type TableToolKey } from './tools'
 import type {
   RichTextEmits,
@@ -52,6 +56,9 @@ const DEFAULT_LABELS: RichTextLabels = {
   apply: 'Apply',
   cancel: 'Cancel',
   uploading: 'Uploading…',
+  sourceLoss: 'The editor does not keep this markup and will remove it:',
+  sourceDrop: 'Remove it',
+  sourceKeep: 'Keep editing',
 }
 
 function label(key: RichTextLabelKey): string {
@@ -112,6 +119,15 @@ const prompt = ref<{ kind: 'link' | 'youtube'; value: string } | null>(null)
 
 const editable = computed(() => !field.disabled.value && !props.readonly)
 
+/** The HTML on screen while the source view is open; `null` while the editor is. */
+const source = ref<string | null>(null)
+
+/** What leaving the source would cost, while the editor waits to hear whether that is fine. */
+const losing = ref<string[] | null>(null)
+
+/** The source as it was opened: leaving it untouched has nothing to check and nothing to apply. */
+let opened = ''
+
 /** Tiptap renders `<p></p>` for an empty document; a backend wants an empty string. */
 function readHtml(): string {
   const instance = editor.value
@@ -166,6 +182,11 @@ const editor = useEditor({
 watch(currentValue, (value) => {
   const instance = editor.value
   if (!instance) return
+  // The source view owns the value while it is open; another language brings its own source.
+  if (source.value !== null) {
+    if (value !== source.value) openSource(value)
+    return
+  }
   if (value === readHtml()) return
   instance.commands.setContent(value, { emitUpdate: false })
 })
@@ -268,6 +289,83 @@ function applyPrompt() {
   prompt.value = null
 }
 
+function openSource(html = readHtml()) {
+  prompt.value = null
+  losing.value = null
+  opened = formatHtml(html)
+  source.value = opened
+}
+
+/**
+ * The source goes to the model as it is typed, not when the view closes: a form saved with the
+ * source still open saves what is on screen. The server's allowlist still applies to it.
+ */
+function onSourceInput(html: string) {
+  source.value = html
+  losing.value = null
+  if (html === currentValue.value) return
+  locales.write(editing.value, html)
+  emit('change', html)
+}
+
+/**
+ * Back to the editor, which parses the source against its schema. Markup the schema does not
+ * know would vanish without a word, so when a hand edit is about to lose some the view stays
+ * open and says what, until it is told to go ahead.
+ */
+function closeSource(force = false) {
+  const instance = editor.value
+  const html = source.value
+  if (!instance || html === null) return
+
+  const edited = html !== opened
+
+  if (edited && !force) {
+    const parsed = createDocument(html, instance.schema)
+    const lost = lostMarkup(html, getHTMLFromFragment(parsed.content, instance.schema))
+
+    if (lost.length > 0) {
+      losing.value = lost
+      return
+    }
+  }
+
+  losing.value = null
+  source.value = null
+
+  if (edited) instance.commands.setContent(html, { emitUpdate: false })
+
+  // Written here rather than left to `onUpdate`: a source typed and typed back changes no node,
+  // raises no update, and would leave the model holding the indented copy.
+  const normalised = readHtml()
+  if (normalised !== currentValue.value) {
+    locales.write(editing.value, normalised)
+    emit('change', normalised)
+  }
+
+  void nextTick(() => instance.commands.focus())
+}
+
+function onSourceFocus(on: boolean) {
+  focused.value = on
+  if (on) emit('focus')
+  else emit('blur')
+}
+
+function toggleSource() {
+  if (source.value === null) openSource()
+  else closeSource()
+}
+
+/**
+ * The source button stays usable on a read-only field — reading the markup is half of what it
+ * is for — while every other button waits for the editor to come back.
+ */
+function toolDisabled(tool: RichTextTool): boolean {
+  if (tool === 'source') return field.disabled.value
+  return !editable.value || source.value !== null
+}
+
 /** Whether a tool should render at all — the image button needs somewhere to get a file. */
 function toolVisible(tool: RichTextTool): boolean {
   if (tool === 'image') return Boolean(props.upload || props.pickImage)
@@ -277,6 +375,7 @@ function toolVisible(tool: RichTextTool): boolean {
 const visibleTools = computed(() => props.tools.filter(toolVisible))
 
 function isActive(tool: RichTextTool): boolean {
+  if (tool === 'source') return source.value !== null
   const instance = editor.value
   if (!instance) return false
   switch (tool) {
@@ -292,6 +391,7 @@ function isActive(tool: RichTextTool): boolean {
 }
 
 function run(tool: RichTextTool) {
+  if (tool === 'source') return toggleSource()
   const instance = editor.value
   if (!instance) return
   const chain = instance.chain().focus()
@@ -376,7 +476,7 @@ defineExpose({
           :text="TOOL_META[tool].text"
           :label="label(tool)"
           :active="isActive(tool)"
-          :disabled="!editable"
+          :disabled="toolDisabled(tool)"
           @click="run(tool)"
         />
       </template>
@@ -391,7 +491,10 @@ defineExpose({
       @choose="chooseLocale"
     />
 
-    <div v-if="inTable && editable" class="wx-rich-text__toolbar wx-rich-text__toolbar--table">
+    <div
+      v-if="inTable && editable && source === null"
+      class="wx-rich-text__toolbar wx-rich-text__toolbar--table"
+    >
       <wx-rich-text-toolbar-button
         v-for="tool in TABLE_TOOLS"
         :key="tool.key"
@@ -417,7 +520,39 @@ defineExpose({
       <wx-rich-text-toolbar-button icon="close" :label="label('cancel')" @click="prompt = null" />
     </form>
 
-    <div class="wx-rich-text__body" :style="{ minHeight }">
+    <div v-if="losing" class="wx-rich-text__prompt wx-rich-text__loss" role="alert">
+      <p class="wx-rich-text__loss-text">
+        {{ label('sourceLoss') }}
+        <template v-for="(item, index) in losing" :key="item">
+          <code>{{ item }}</code
+          ><template v-if="index < losing.length - 1">, </template>
+        </template>
+      </p>
+      <wx-button size="sm" type="danger" variant="outline" @click="closeSource(true)">
+        {{ label('sourceDrop') }}
+      </wx-button>
+      <wx-button size="sm" variant="text" @click="losing = null">{{
+        label('sourceKeep')
+      }}</wx-button>
+    </div>
+
+    <div v-if="source !== null" class="wx-rich-text__source">
+      <wx-code-editor
+        :model-value="source"
+        language="html"
+        line-wrapping
+        :min-height="minHeight"
+        :readonly="readonly"
+        :disabled="field.disabled.value"
+        :aria-label="label('source')"
+        @update:model-value="onSourceInput"
+        @focus="onSourceFocus(true)"
+        @blur="onSourceFocus(false)"
+      />
+    </div>
+
+    <!-- Hidden rather than unmounted: ProseMirror keeps its view, history and selection. -->
+    <div v-show="source === null" class="wx-rich-text__body" :style="{ minHeight }">
       <span v-if="placeholder && isEmpty" class="wx-rich-text__placeholder">{{ placeholder }}</span>
       <editor-content
         :editor="editor"
@@ -547,6 +682,32 @@ defineExpose({
 
 .wx-rich-text__prompt-input:focus {
   border-color: var(--wx-border-focus);
+}
+
+.wx-rich-text__loss {
+  flex-wrap: wrap;
+  background: var(--wx-color-danger-soft);
+}
+
+.wx-rich-text__loss-text {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: var(--wx-font-size-sm);
+}
+
+.wx-rich-text__loss-text code {
+  font-family: var(--wx-font-family-mono);
+  white-space: nowrap;
+}
+
+/* The field draws the frame; the code editor inside it is only the surface. */
+.wx-rich-text__source {
+  flex: 1 1 auto;
+}
+
+.wx-rich-text__source :deep(.wx-code-editor) {
+  border: 0;
+  border-radius: 0 0 var(--wx-radius-control) var(--wx-radius-control);
 }
 
 .wx-rich-text__body {

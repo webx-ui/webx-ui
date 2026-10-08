@@ -34,4 +34,8 @@ return [
     'apply' => 'Zastosuj',
     'cancel' => 'Anuluj',
     'uploading' => 'Wysyłanie…',
+    'source' => 'Kod HTML',
+    'source-loss' => 'Edytor nie zachowuje tych znaczników i je usunie:',
+    'source-drop' => 'Usuń',
+    'source-keep' => 'Edytuj dalej',
 ];

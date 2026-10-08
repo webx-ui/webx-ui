@@ -126,7 +126,8 @@ opened in, so whoever opens it translates it:
 ```
 
 The keys are the tool keys, the table tools (`addRowAfter`, `deleteTable`, …), and
-`toolbar`, `linkAddress`, `youtubeAddress`, `apply`, `cancel` and `uploading`. A key left out
+`toolbar`, `linkAddress`, `youtubeAddress`, `apply`, `cancel`, `uploading`, and the three of the
+[source view](#html-source) — `sourceLoss`, `sourceDrop`, `sourceKeep`. A key left out
 stays English rather than blank. In a WebX panel none of this is written by hand:
 [`wx-rich-text`](/guide/screens) is the same editor with the panel's dictionary already behind
 it.
@@ -138,6 +139,27 @@ toolbar row appears with add and delete for rows and columns, merge and split, a
 Columns are resizable by dragging.
 
 The YouTube button asks for a URL and embeds it through `youtube-nocookie.com`.
+
+## HTML source
+
+The last button, `</>`, turns the field into the HTML behind it — highlighted, one block to a
+line, indented where blocks hold blocks — and back. It is for the jobs the toolbar cannot do:
+seeing what a paste from a word processor really left behind, fixing a link's `rel` by hand,
+pasting a fragment a copywriter prepared. (The `<>` button next to Bold is inline code, a
+different thing.)
+
+What is typed goes to the model as it is typed, so a form saved with the source still open
+saves what is on screen. Leaving the source hands it to the editor, which keeps only what its
+schema knows — paragraphs, headings, lists, quotes, links, tables, pictures, videos. When a
+hand edit holds anything else — a `<div>`, a `<span>`, a `style` or a `class` — the view stays
+open and names it first, with a choice to remove it or keep editing. Nothing goes without a
+word, and a source left untouched leaves the value exactly as it was.
+
+The source is not a way around the server: a WebX panel stores rich text through an allowlist
+whichever way it was typed — see [below](#sanitise-on-the-server-anyway).
+
+A read-only field still opens its source, to be read. A field that should not show it leaves
+`source` out of `tools`.
 
 ## Props
 
@@ -168,8 +190,8 @@ The YouTube button asks for a URL and embeds it through `youtube-nocookie.com`.
 `focus()` and `clear()`.
 
 Tool keys: `bold`, `italic`, `strike`, `code`, `h2`, `h3`, `h4`, `bulletList`, `orderedList`,
-`blockquote`, `hr`, `link`, `table`, `image`, `youtube`, `undo`, `redo`, and `divider` for a
-separator.
+`blockquote`, `hr`, `link`, `table`, `image`, `youtube`, `undo`, `redo`, `source`, and `divider`
+for a separator.
 
 ```vue
 <template>

@@ -20,6 +20,7 @@ export const richTextIcons: Record<string, string> = {
     'M3 8.5A2.5 2.5 0 0 1 5.5 6h13A2.5 2.5 0 0 1 21 8.5v7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 15.5zM10.5 9.5l4 2.5-4 2.5z',
   undo: 'M4 9h11a4.5 4.5 0 0 1 0 9h-4M4 9l4-4M4 9l4 4',
   redo: 'M20 9H9a4.5 4.5 0 0 0 0 9h4M20 9l-4-4M20 9l-4 4',
+  source: 'm8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14',
   rowAfter: 'M4 5h16M4 11h16M8 15v6M5 18h6',
   rowBefore: 'M4 19h16M4 13h16M8 3v6M5 6h6',
   columnAfter: 'M5 4v16M11 4v16M15 8h6M18 5v6',

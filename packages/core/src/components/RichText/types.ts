@@ -19,6 +19,8 @@ export type RichTextTool =
   | 'youtube'
   | 'undo'
   | 'redo'
+  /** Shows the document as HTML to read and edit by hand. */
+  | 'source'
   /** A vertical rule between groups. */
   | 'divider'
 
@@ -35,7 +37,7 @@ export type RichTextTableTool =
 
 /**
  * Everything this editor says out loud: a tooltip on every button, the two lines of the link
- * bar, and the word shown while a file is going up.
+ * bar, the word shown while a file is going up, and the warning the source view gives.
  */
 export type RichTextLabelKey =
   | Exclude<RichTextTool, 'divider'>
@@ -47,6 +49,10 @@ export type RichTextLabelKey =
   | 'apply'
   | 'cancel'
   | 'uploading'
+  /** The warning before the editor drops markup typed in the source, and its two answers. */
+  | 'sourceLoss'
+  | 'sourceDrop'
+  | 'sourceKeep'
 
 /**
  * What the editor calls its own buttons. It knows nothing about the panel it is opened in, so

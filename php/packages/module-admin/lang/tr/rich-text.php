@@ -34,4 +34,8 @@ return [
     'apply' => 'Uygula',
     'cancel' => 'İptal',
     'uploading' => 'Yükleniyor…',
+    'source' => 'HTML kaynağı',
+    'source-loss' => 'Düzenleyici bu işaretlemeyi tutmaz ve kaldıracak:',
+    'source-drop' => 'Kaldır',
+    'source-keep' => 'Düzenlemeye devam et',
 ];
