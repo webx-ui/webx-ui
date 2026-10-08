@@ -28,4 +28,5 @@ return [
     'in-use-warning' => 'Yine de silinirse bu yerlerde bozuk bir görsel ya da ölü bir bağlantı görünür.',
     'in-use-more' => 've :count tane daha',
     'delete-anyway' => 'Yine de sil',
+    'delete-unused' => 'Yalnızca kullanılmayanları sil',
 ];

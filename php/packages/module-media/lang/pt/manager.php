@@ -72,4 +72,7 @@ return [
     'current' => 'pasta atual',
     'more' => 'Mais',
     'actions-for' => 'Ações de :name',
+    'deleted-unused' => 'Eliminados: :deleted. Mantidos por estarem em uso: :kept',
+    'expand' => 'Expandir',
+    'collapse' => 'Recolher',
 ];

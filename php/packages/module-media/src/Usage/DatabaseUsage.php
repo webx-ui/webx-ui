@@ -7,6 +7,7 @@ namespace WebxUi\Media\Usage;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Illuminate\Support\Str;
@@ -40,6 +41,20 @@ final class DatabaseUsage implements UsageRewriter, UsageSource
     private const NAMES_PER_QUERY = 20;
 
     private const ROWS_PER_QUERY = 50;
+
+    /** The models of history, named by class so a renamed table follows them. */
+    private const TRAILS = [
+        'WebxUi\Admin\Versions\EntityVersion',
+        'WebxUi\Admin\History\HistoryEntry',
+        'WebxUi\Admin\Uploads\Upload',
+        'WebxUi\Admin\Notes\Note',
+        'WebxUi\Auth\Models\LoginRecord',
+        'WebxUi\Blocks\Models\BlockVersion',
+        'WebxUi\Mcp\Calls\Call',
+    ];
+
+    /** @var list<string>|null */
+    private ?array $trails = null;
 
     public function __construct(private readonly Config $config) {}
 
@@ -298,6 +313,38 @@ final class DatabaseUsage implements UsageRewriter, UsageSource
         /** @var list<string> $patterns */
         $patterns = (array) $this->config->get($key, []);
 
+        if ($key === 'webx-media.usage.ignore') {
+            $patterns = [...$patterns, ...$this->trails()];
+        }
+
         return Str::is($patterns, $table);
+    }
+
+    /**
+     * The tables of the panel's own trails — versions, the journal, uploads in progress, notes,
+     * sign-ins, agents' calls — as their models name them. A mention there is the past, not a
+     * use: eight old versions of a page listed before the page itself crowded the page off the
+     * list ({@see MediaUsage::LIMIT}), and the tables had been renamed (`entity_versions` →
+     * `cms_versions`) under a config that still named them the old way.
+     *
+     * A rewrite of keys does not ask this: history is rewritten on purpose.
+     *
+     * @return list<string>
+     */
+    private function trails(): array
+    {
+        if ($this->trails !== null) {
+            return $this->trails;
+        }
+
+        $tables = [];
+
+        foreach (self::TRAILS as $class) {
+            if (class_exists($class) && is_subclass_of($class, Model::class)) {
+                $tables[] = (new $class)->getTable();
+            }
+        }
+
+        return $this->trails = $tables;
     }
 }

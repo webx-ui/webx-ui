@@ -28,4 +28,5 @@ return [
     'in-use-warning' => 'Si se eliminan de todos modos, esos lugares mostrarán una imagen rota o un enlace muerto.',
     'in-use-more' => 'y :count más',
     'delete-anyway' => 'Eliminar de todos modos',
+    'delete-unused' => 'Eliminar solo los no usados',
 ];

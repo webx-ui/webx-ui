@@ -72,4 +72,7 @@ return [
     'current' => 'current folder',
     'more' => 'More',
     'actions-for' => 'Actions for :name',
+    'deleted-unused' => 'Deleted: :deleted. Kept, as they are in use: :kept',
+    'expand' => 'Expand',
+    'collapse' => 'Collapse',
 ];

@@ -28,4 +28,5 @@ return [
     'in-use-warning' => 'Deleted anyway, those places will show a broken picture or a dead link.',
     'in-use-more' => 'and :count more',
     'delete-anyway' => 'Delete anyway',
+    'delete-unused' => 'Delete only the unused',
 ];

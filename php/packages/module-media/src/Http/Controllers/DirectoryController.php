@@ -87,6 +87,12 @@ final class DirectoryController
         ]);
     }
 
+    /** «Delete only the unused»: what goes and what stays, said back for the toast. */
+    public function destroyUnused(MediaDirectory $directory): JsonResponse
+    {
+        return ApiResponse::data($this->directories->deleteUnused($directory));
+    }
+
     public function destroy(Request $request, MediaDirectory $directory): JsonResponse
     {
         $this->directories->delete($directory, $request->boolean('force'));

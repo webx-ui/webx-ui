@@ -72,4 +72,7 @@ return [
     'current' => 'dossier actuel',
     'more' => 'Plus',
     'actions-for' => 'Actions pour :name',
+    'deleted-unused' => 'Supprimés : :deleted. Gardés, car utilisés : :kept',
+    'expand' => 'Déplier',
+    'collapse' => 'Replier',
 ];

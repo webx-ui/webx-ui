@@ -28,4 +28,5 @@ return [
     'in-use-warning' => 'Se forem eliminados mesmo assim, esses sítios mostrarão uma imagem partida ou uma ligação morta.',
     'in-use-more' => 'e mais :count',
     'delete-anyway' => 'Eliminar mesmo assim',
+    'delete-unused' => 'Eliminar só os não usados',
 ];

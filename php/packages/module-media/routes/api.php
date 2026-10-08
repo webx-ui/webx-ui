@@ -54,5 +54,6 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
             Route::patch('directories/{directory}', [DirectoryController::class, 'update'])->name('directories.update');
             Route::patch('directories/{directory}/move', [DirectoryController::class, 'move'])->name('directories.move');
             Route::delete('directories/{directory}', [DirectoryController::class, 'destroy'])->name('directories.destroy');
+            Route::post('directories/{directory}/delete-unused', [DirectoryController::class, 'destroyUnused'])->name('directories.destroy-unused');
         });
     });

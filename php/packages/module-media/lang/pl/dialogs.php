@@ -28,4 +28,5 @@ return [
     'in-use-warning' => 'Jeśli mimo to je usuniesz, w tych miejscach pojawi się uszkodzony obraz lub martwy link.',
     'in-use-more' => 'i jeszcze: :count',
     'delete-anyway' => 'Usuń mimo to',
+    'delete-unused' => 'Usuń tylko nieużywane',
 ];

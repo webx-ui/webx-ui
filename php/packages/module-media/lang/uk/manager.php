@@ -72,4 +72,7 @@ return [
     'current' => 'поточна папка',
     'more' => 'Ще',
     'actions-for' => 'Дії: :name',
+    'deleted-unused' => 'Видалено: :deleted. Залишено використовувані: :kept',
+    'expand' => 'Розгорнути',
+    'collapse' => 'Згорнути',
 ];

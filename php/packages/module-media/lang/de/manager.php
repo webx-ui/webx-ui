@@ -72,4 +72,7 @@ return [
     'current' => 'aktueller Ordner',
     'more' => 'Mehr',
     'actions-for' => 'Aktionen für :name',
+    'deleted-unused' => 'Gelöscht: :deleted. Behalten, weil verwendet: :kept',
+    'expand' => 'Aufklappen',
+    'collapse' => 'Zuklappen',
 ];

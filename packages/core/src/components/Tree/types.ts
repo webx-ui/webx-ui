@@ -90,6 +90,10 @@ export interface TreeProps<T = TreeNode> {
   emptyText?: string
   /** What the drag handle is called, before the name of the node it holds. */
   dragLabel?: string
+  /** What the button that opens a branch is called, before the node's name. */
+  expandLabel?: string
+  /** What the same button is called while the branch is open. */
+  collapseLabel?: string
   /** Accessible name for the tree. */
   ariaLabel?: string
 }

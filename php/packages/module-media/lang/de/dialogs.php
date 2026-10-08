@@ -28,4 +28,5 @@ return [
     'in-use-warning' => 'Trotzdem gelöscht, zeigen diese Stellen ein kaputtes Bild oder einen toten Link.',
     'in-use-more' => 'und :count weitere',
     'delete-anyway' => 'Trotzdem löschen',
+    'delete-unused' => 'Nur ungenutzte löschen',
 ];

@@ -36,6 +36,8 @@ const props = withDefaults(defineProps<TreeProps<T>>(), {
   size: 'md',
   emptyText: 'Nothing here yet',
   dragLabel: 'Move',
+  expandLabel: 'Expand',
+  collapseLabel: 'Collapse',
   ariaLabel: undefined,
 })
 
@@ -504,7 +506,7 @@ defineExpose({
         type="button"
         class="wx-tree__toggle"
         :aria-expanded="row.expanded"
-        :aria-label="`${row.expanded ? 'Collapse' : 'Expand'} ${accessors.label?.(row.node)}`"
+        :aria-label="`${row.expanded ? collapseLabel : expandLabel} ${accessors.label?.(row.node)}`"
         tabindex="-1"
         @click.stop="toggle(row)"
       >

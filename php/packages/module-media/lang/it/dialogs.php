@@ -28,4 +28,5 @@ return [
     'in-use-warning' => 'Se li elimini comunque, quei punti mostreranno un’immagine rotta o un link morto.',
     'in-use-more' => 'e altri :count',
     'delete-anyway' => 'Elimina comunque',
+    'delete-unused' => 'Elimina solo quelli non usati',
 ];

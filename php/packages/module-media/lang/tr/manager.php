@@ -72,4 +72,7 @@ return [
     'current' => 'geçerli klasör',
     'more' => 'Daha fazla',
     'actions-for' => ':name için işlemler',
+    'deleted-unused' => 'Silinen: :deleted. Kullanıldığı için kalan: :kept',
+    'expand' => 'Genişlet',
+    'collapse' => 'Daralt',
 ];

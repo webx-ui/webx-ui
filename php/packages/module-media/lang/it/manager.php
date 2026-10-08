@@ -72,4 +72,7 @@ return [
     'current' => 'cartella attuale',
     'more' => 'Altro',
     'actions-for' => 'Azioni per :name',
+    'deleted-unused' => 'Eliminati: :deleted. Tenuti perché usati: :kept',
+    'expand' => 'Espandi',
+    'collapse' => 'Comprimi',
 ];

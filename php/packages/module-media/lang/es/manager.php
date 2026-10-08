@@ -72,4 +72,7 @@ return [
     'current' => 'carpeta actual',
     'more' => 'Más',
     'actions-for' => 'Acciones de :name',
+    'deleted-unused' => 'Eliminados: :deleted. Conservados por estar en uso: :kept',
+    'expand' => 'Expandir',
+    'collapse' => 'Contraer',
 ];

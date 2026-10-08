@@ -72,4 +72,7 @@ return [
     'current' => 'bieżący folder',
     'more' => 'Więcej',
     'actions-for' => 'Działania: :name',
+    'deleted-unused' => 'Usunięto: :deleted. Zostawiono używane: :kept',
+    'expand' => 'Rozwiń',
+    'collapse' => 'Zwiń',
 ];

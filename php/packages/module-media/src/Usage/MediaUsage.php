@@ -19,6 +19,9 @@ final class MediaUsage
 {
     public const TAG = 'webx-media.usage-sources';
 
+    /** Modules that say their own rows ({@see PlaceDescriber}) are tagged with this. */
+    public const DESCRIBERS = 'webx-media.usage-describers';
+
     /** How many places are kept per file. */
     public const LIMIT = 10;
 
@@ -61,7 +64,7 @@ final class MediaUsage
      * editor reads ({@see PlaceLabels}) — what the panel shows before it deletes anything.
      *
      * @param  Collection<int, MediaFile>  $files
-     * @return list<array{id: int, name: string, used_in: list<array{table: string, column: string, id: int|string|null, label: string|null}>}>
+     * @return list<array{id: int, name: string, used_in: list<array{table: string, column: string, id: int|string|null, kind: string|null, label: string|null, edit_url: string|null}>}>
      */
     public function report(Collection $files): array
     {
@@ -71,7 +74,7 @@ final class MediaUsage
             return [];
         }
 
-        $labels = new PlaceLabels;
+        $labels = new PlaceLabels($this->container, $this->container->make('config'));
         $report = [];
 
         foreach ($files as $file) {
@@ -83,7 +86,7 @@ final class MediaUsage
                 'id' => (int) $file->id,
                 'name' => (string) $file->name,
                 'used_in' => array_map(
-                    static fn (array $place): array => [...$place, 'label' => $labels->of($place['table'], $place['id'])],
+                    static fn (array $place): array => [...$place, ...$labels->of($place['table'], $place['column'], $place['id'])],
                     $usage[$file->id],
                 ),
             ];

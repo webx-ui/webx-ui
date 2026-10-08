@@ -54,6 +54,51 @@ final class DirectoryService
         });
     }
 
+    /**
+     * «Delete only the unused»: the files of the subtree the site does not use go, and so does
+     * every folder that is left empty — the folder itself included. A folder that still holds a
+     * used file stays, with the folders above it, so nothing on the site loses its picture.
+     *
+     * @return array{deleted: int, kept: int, directory_kept: bool}
+     */
+    public function deleteUnused(MediaDirectory $directory): array
+    {
+        if ($directory->isLibraryRoot()) {
+            throw new RootIsImmutable;
+        }
+
+        /** @var list<int> $used */
+        $used = array_column($this->usage($directory), 'id');
+        $subtree = $this->subtreeIds($directory);
+
+        return $this->connection->connection()->transaction(function () use ($directory, $subtree, $used): array {
+            $deleted = $this->files->deleteAll(
+                MediaFile::query()->whereIn('directory_id', $subtree)->whereNotIn('id', $used)->cursor(),
+            );
+
+            // Deepest first, so a folder whose children have just gone is seen empty in turn.
+            $folders = MediaDirectory::query()
+                ->whereIn($directory->getKeyName(), $subtree)
+                ->orderByDesc($directory->getDepthName())
+                ->get();
+
+            foreach ($folders as $folder) {
+                $empty = ! MediaFile::query()->where('directory_id', $folder->getKey())->exists()
+                    && ! MediaDirectory::query()->where('parent_id', $folder->getKey())->exists();
+
+                if ($empty) {
+                    $folder->refresh()->delete();
+                }
+            }
+
+            return [
+                'deleted' => $deleted,
+                'kept' => count($used),
+                'directory_kept' => MediaDirectory::query()->whereKey($directory->getKey())->exists(),
+            ];
+        });
+    }
+
     /** What is inside, so the panel can say it before asking whether to go ahead. */
     public function contents(MediaDirectory $directory): DirectoryContents
     {

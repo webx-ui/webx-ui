@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { vWxSelect } from '@webx-ui/core'
 import FileGrid from './FileGrid.vue'
 import type { MediaApi } from './api'
@@ -67,5 +67,52 @@ describe('FileGrid', () => {
     expect(wrapper.get('.wx-file-card').attributes('title')).toBe(
       'PNG · image/png · 800×600 · 2.0 kB',
     )
+  })
+
+  /* jsdom has no DataTransfer: this one records what a drag would carry. */
+  function transfer() {
+    const data = new Map<string, string>()
+
+    return {
+      data,
+      effectAllowed: '',
+      items: { clear: () => data.clear() },
+      setData: (type: string, value: string) => data.set(type, value),
+    }
+  }
+
+  async function drag(wrapper: ReturnType<typeof grid>, index: number) {
+    const dataTransfer = transfer()
+    const event = new Event('dragstart', { bubbles: true, cancelable: true })
+
+    Object.defineProperty(event, 'dataTransfer', { value: dataTransfer })
+    wrapper.findAll('.wx-file-card')[index]!.element.dispatchEvent(event)
+
+    return JSON.parse(dataTransfer.data.get('application/x-webx-media-files') ?? 'null')
+  }
+
+  it('drags one file that was never selected, then highlights it', async () => {
+    vi.useFakeTimers()
+    const wrapper = grid([file(1, 'png', 'image/png'), file(2, 'png', 'image/png')])
+    await wrapper.setProps({ draggable: true, selected: [1] })
+
+    expect(await drag(wrapper, 1)).toEqual([2])
+    // Not inside dragstart: Chrome cancels a drag whose card changes while it starts.
+    expect(wrapper.emitted('update:selected')).toBeUndefined()
+
+    vi.runAllTimers()
+    expect(wrapper.emitted('update:selected')?.at(-1)).toEqual([[2]])
+    vi.useRealTimers()
+  })
+
+  it('drags the only selected file, and a whole selection from any of its cards', async () => {
+    const wrapper = grid([file(1, 'png', 'image/png'), file(2, 'png', 'image/png')])
+
+    await wrapper.setProps({ draggable: true, selected: [2] })
+    expect(await drag(wrapper, 1)).toEqual([2])
+
+    await wrapper.setProps({ selected: [1, 2] })
+    expect(await drag(wrapper, 0)).toEqual([1, 2])
+    expect(wrapper.emitted('update:selected')).toBeUndefined()
   })
 })

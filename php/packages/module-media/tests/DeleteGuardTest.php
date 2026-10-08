@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Audit\Checks\Finding;
 use WebxUi\Media\Audit\OrphanThumbnailsCheck;
 use WebxUi\Media\Audit\PruneThumbnailsFix;
@@ -63,6 +64,71 @@ final class DeleteGuardTest extends TestCase
             ->assertJsonPath('data.0.used_in.0.table', 'test_articles')
             ->assertJsonPath('data.0.used_in.0.id', 5)
             ->assertJsonPath('data.0.used_in.0.label', 'About us');
+    }
+
+    #[Test]
+    public function a_place_says_what_it_is_and_where_it_is_edited_and_history_is_not_a_use(): void
+    {
+        config()->set('webx-media.usage.places.test_articles', [
+            'kind' => 'article', 'label' => 'title', 'edit' => '/blog/articles/{id}',
+        ]);
+
+        $cover = $this->upload($this->root());
+
+        DB::table('test_articles')->insert(['id' => 5, 'title' => 'About us', 'content' => json_encode(['path' => $cover->path])]);
+
+        // A dozen old versions that mention it, more than the places kept per file: they used to
+        // come first and push the page itself off the list.
+        $versions = (new EntityVersion)->getTable();
+
+        foreach (range(1, 12) as $number) {
+            DB::table($versions)->insert([
+                'versionable_type' => 'page', 'versionable_id' => 5, 'number' => $number,
+                'kind' => 'version', 'payload' => json_encode(['cover' => $cover->path]),
+            ]);
+        }
+
+        $this->postJson('/api/cms/media/files/usage', ['ids' => [$cover->id]])
+            ->assertOk()
+            ->assertJsonCount(1, 'data.0.used_in')
+            ->assertJsonPath('data.0.used_in.0.table', 'test_articles')
+            ->assertJsonPath('data.0.used_in.0.kind', 'Article')
+            ->assertJsonPath('data.0.used_in.0.label', 'About us')
+            ->assertJsonPath('data.0.used_in.0.edit_url', '/blog/articles/5');
+    }
+
+    #[Test]
+    public function only_the_unused_go_and_a_folder_that_still_holds_a_used_file_stays(): void
+    {
+        $pictures = $this->folder('Pictures', $this->root());
+        $covers = $this->folder('Covers', $pictures);
+        $empty = $this->folder('Old', $this->root());
+        $used = $this->upload($pictures);
+        $free = $this->upload($pictures);
+        $deeper = $this->upload($covers);
+        $alone = $this->upload($empty);
+
+        DB::table('test_articles')->insert(['id' => 5, 'title' => null, 'cover_id' => $used->id]);
+
+        $this->postJson("/api/cms/media/directories/{$pictures->getKey()}/delete-unused")
+            ->assertOk()
+            ->assertJsonPath('data.deleted', 2)
+            ->assertJsonPath('data.kept', 1)
+            ->assertJsonPath('data.directory_kept', true);
+
+        $this->assertNotNull(MediaFile::query()->find($used->id));
+        $this->assertNull(MediaFile::query()->find($free->id));
+        $this->assertNull(MediaFile::query()->find($deeper->id));
+        $this->assertNull(MediaDirectory::query()->find($covers->getKey()), 'the emptied subfolder goes');
+        $this->assertNotNull(MediaDirectory::query()->find($pictures->getKey()));
+
+        // Nothing in use at all: the folder goes too.
+        $this->postJson("/api/cms/media/directories/{$empty->getKey()}/delete-unused")
+            ->assertOk()
+            ->assertJsonPath('data.directory_kept', false);
+
+        $this->assertNull(MediaFile::query()->find($alone->id));
+        $this->assertNull(MediaDirectory::query()->find($empty->getKey()));
     }
 
     #[Test]

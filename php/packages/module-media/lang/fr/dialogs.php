@@ -28,4 +28,5 @@ return [
     'in-use-warning' => 'Supprimés malgré tout, ces endroits afficheront une image cassée ou un lien mort.',
     'in-use-more' => 'et :count de plus',
     'delete-anyway' => 'Supprimer quand même',
+    'delete-unused' => 'Supprimer seulement les inutilisés',
 ];

@@ -46,13 +46,21 @@ const empty = computed(() =>
 /**
  * The selection goes when the card is in it; a card outside it goes alone, and becomes the
  * selection — what is moving is then what is highlighted.
+ *
+ * The highlight follows a moment later, not inside `dragstart`: a card restyled while the
+ * browser is still taking its picture is a drag Chrome cancels on the spot — which is how one
+ * file, never selected first, would not drag at all while a selection of two did.
  */
 function dragStart(file: MediaFile, event: DragEvent): void {
-  if (!selected.value.includes(file.id)) {
-    selected.value = [file.id]
-  }
+  const alone = !selected.value.includes(file.id)
 
-  startDrag(event, [...selected.value])
+  startDrag(event, alone ? [file.id] : [...selected.value])
+
+  if (alone) {
+    setTimeout(() => {
+      selected.value = [file.id]
+    })
+  }
 }
 
 function copied(): void {

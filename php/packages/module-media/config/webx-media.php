@@ -178,8 +178,46 @@ return [
             'password_reset_tokens', 'personal_access_tokens', 'oauth_*',
             'mcp_*', 'audit_*', 'admin_history', 'admin_uploads',
             'entity_versions', 'block_versions', 'routes_trashed',
+            // The panel's own trails are skipped by their models' table names as well, so a
+            // rename follows them; these are the names they have today.
+            'cms_versions', 'cms_history', 'cms_uploads', 'cms_notes', 'cms_login_records',
             'catalog_exchange_*', 'catalog_bulk_*', 'catalog_index_queue',
             'telescope_*', 'pulse_*',
+        ],
+
+        // How a row that uses a file is said in the panel: what it is (a word of
+        // `webx-media::places`), which column names it, and where it is edited —
+        // `{column}` is filled from the row. A table not listed is said by the
+        // first of title/name/label/key/slug it has, and the table's own name.
+        // A module can answer for its tables instead: tag a
+        // `WebxUi\Media\Usage\PlaceDescriber` with `MediaUsage::DESCRIBERS`.
+        'places' => [
+            'pages' => ['kind' => 'page', 'label' => 'title', 'edit' => '/pages/{id}'],
+            'blog_articles' => ['kind' => 'article', 'label' => 'title', 'edit' => '/blog/articles/{id}'],
+            'blog_rubrics' => ['kind' => 'category', 'label' => 'title', 'edit' => '/blog'],
+            'events' => ['kind' => 'event', 'label' => 'title', 'edit' => '/events/{id}'],
+            'event_categories' => ['kind' => 'category', 'label' => 'title', 'edit' => '/events'],
+            'services' => ['kind' => 'service', 'label' => 'title', 'edit' => '/services/{id}'],
+            'service_categories' => ['kind' => 'category', 'label' => 'title', 'edit' => '/services'],
+            'recipes' => ['kind' => 'recipe', 'label' => 'title', 'edit' => '/recipes/{id}'],
+            'recipe_categories' => ['kind' => 'category', 'label' => 'title', 'edit' => '/recipes'],
+            'vacancies' => ['kind' => 'vacancy', 'label' => 'title', 'edit' => '/vacancies/{id}'],
+            'banners' => ['kind' => 'banner', 'label' => 'title', 'edit' => '/banners/{id}'],
+            'faq_questions' => ['kind' => 'question', 'label' => 'question', 'edit' => '/faq?question={id}'],
+            'reviews' => ['kind' => 'review', 'label' => 'name', 'edit' => '/reviews?review={id}'],
+            'press_outlets' => ['kind' => 'press', 'label' => 'title', 'edit' => '/press?outlet={id}'],
+            'press_articles' => ['kind' => 'press', 'label' => 'title', 'edit' => '/press?outlet={outlet_id}'],
+            'blocks' => ['kind' => 'block', 'label' => 'title', 'edit' => '/blocks/{id}'],
+            'block_regions' => ['kind' => 'region', 'label' => 'name', 'edit' => '/regions/{name}'],
+            'menu_items' => ['kind' => 'menu-item', 'label' => 'title', 'edit' => null],
+            'cms_settings' => ['kind' => 'setting', 'label' => 'key', 'edit' => '/settings'],
+            'cms_users' => ['kind' => 'admin', 'label' => 'name', 'edit' => '/admins'],
+            'users' => ['kind' => 'user', 'label' => 'name', 'edit' => null],
+            'seo_redirects' => ['kind' => 'redirect', 'label' => 'pattern', 'edit' => '/seo'],
+            'seo_urls' => ['kind' => 'seo', 'label' => 'pattern', 'edit' => '/seo'],
+            'seo_meta' => ['kind' => 'seo', 'label' => 'title', 'edit' => null],
+            'inbox_submission_files' => ['kind' => 'submission', 'label' => 'name', 'edit' => '/inbox/submissions/{submission_id}'],
+            'catalog_products' => ['kind' => 'product', 'label' => 'name', 'edit' => '/catalog/products/{id}'],
         ],
 
         // What a rewrite of keys passes over («Convert to WebP»). Shorter than
