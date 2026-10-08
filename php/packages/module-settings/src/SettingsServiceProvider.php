@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\BrandingSource;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 
@@ -29,6 +31,12 @@ class SettingsServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(SettingsModule::class));
+
+        // Values rewritten around the model (the library moving a logo to a new key): the cached
+        // settings still hold the old one.
+        $this->app->make(Dispatcher::class)->listen(StoredContentRewritten::class, function (): void {
+            $this->app->make(Settings::class)->forget();
+        });
 
         // The reference screen. A project lays its own tabs over it from its provider, which
         // boots after this one — `Screens::extend('settings.index', ...)`.

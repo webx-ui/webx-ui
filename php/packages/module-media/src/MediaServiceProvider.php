@@ -9,6 +9,7 @@ use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\AssetUrls;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -17,7 +18,6 @@ use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Media\Audit\HeavyImages;
 use WebxUi\Media\Audit\MissingFiles;
 use WebxUi\Media\Console\ConvertToWebpCommand;
-use WebxUi\Media\Events\MediaKeysRewritten;
 use WebxUi\Media\Http\Controllers\OldAddressController;
 use WebxUi\Media\Screens\FileFieldType;
 use WebxUi\Media\Screens\FilesFieldType;
@@ -27,7 +27,6 @@ use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Storage\FileStore;
 use WebxUi\Media\Storage\LibraryUrls;
 use WebxUi\Media\Usage\DatabaseUsage;
-use WebxUi\Media\Usage\ForgetRenderedContent;
 use WebxUi\Media\Usage\MediaUsage;
 
 class MediaServiceProvider extends ServiceProvider
@@ -110,10 +109,9 @@ class MediaServiceProvider extends ServiceProvider
             $files->flush();
         });
 
-        // Keys rewritten in the database directly: the rendered caches never heard of it.
-        $events->listen(MediaKeysRewritten::class, function () use ($files): void {
+        // Keys rewritten in the database directly: the lookup of this response forgets them too.
+        $events->listen(StoredContentRewritten::class, static function () use ($files): void {
             $files->flush();
-            $this->app->make(ForgetRenderedContent::class)->handle();
         });
 
         if (! $this->app->runningInConsole()) {

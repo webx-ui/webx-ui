@@ -107,7 +107,8 @@ alone. Per file, so that a failure leaves the site as it was:
    is rewritten — every text and JSON column of every table, **without** the caps the delete
    check uses, history and versions included (`usage.rewrite_ignore` names what is skipped);
 3. then the old bytes and old previews go, and the rendered caches (settings, block regions,
-   menus) are let go of through the `MediaKeysRewritten` event.
+   menus) are let go of by those modules themselves, on module-admin's `StoredContentRewritten`
+   event — the library does not know whose caches there are.
 
 Why history is rewritten: restoring an old version must not bring back a key whose bytes are
 gone. The alias covers what no rewrite reaches — search engines, CDNs, e-mails, links on other

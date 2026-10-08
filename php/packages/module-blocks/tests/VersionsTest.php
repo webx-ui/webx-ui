@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Tests;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
@@ -138,6 +139,24 @@ final class VersionsTest extends TestCase
         $this->assertNull($types->find('nothing'));
 
         $this->assertSame(1, $types->draft('unpublished')?->version);
+    }
+
+    #[Test]
+    public function content_rewritten_around_the_models_empties_the_caches(): void
+    {
+        $types = $this->app->make(BlockTypes::class);
+        $key = (string) $this->app['config']->get('webx-blocks.cache.key');
+        $this->publish('hero', '<img src="/storage/media/aa/bb/one.jpg">');
+
+        $types->all();
+        $this->assertTrue(Cache::has($key));
+        $generation = Cache::get('webx.blocks.thumbnails.generation');
+
+        // What the library dispatches once it has moved a picture to a new key in every table.
+        event(new StoredContentRewritten(['one.jpg' => 'one.webp']));
+
+        $this->assertFalse(Cache::has($key), 'the cached registry still holds the old key');
+        $this->assertNotSame($generation, Cache::get('webx.blocks.thumbnails.generation'), 'the thumbnails were not started afresh');
     }
 
     #[Test]

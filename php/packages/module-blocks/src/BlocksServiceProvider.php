@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -135,6 +136,22 @@ class BlocksServiceProvider extends ServiceProvider
         // What a response printed is what its bundle is glued from, and no more than that: in a
         // process that serves many requests the list would otherwise grow across them.
         $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (): void {
+            $this->app->make(Renderer::class)->flush();
+        });
+
+        // Content rewritten around the models — the library moving pictures to new keys: the
+        // cached registry, its thumbnails and the published trees of the regions all hold the
+        // old values, and nothing else would tell them until their TTL.
+        $this->app->make(Dispatcher::class)->listen(StoredContentRewritten::class, function (): void {
+            $this->app->make(BlockTypes::class)->forget();
+            $this->app->make(Thumbnails::class)->forget();
+
+            $regions = $this->app->make(Regions::class);
+
+            foreach (array_keys($regions->declared()) as $name) {
+                $regions->forget($name);
+            }
+
             $this->app->make(Renderer::class)->flush();
         });
 

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Menu;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\SiteUrls;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\ModuleRegistry;
@@ -59,6 +61,12 @@ class MenuServiceProvider extends ServiceProvider
         }
 
         Blade::componentNamespace('WebxUi\\Menu\\View\\Components', 'webx-menu');
+
+        // Links rewritten around the models (a picture moved to a new key): every cached menu
+        // may hold the old one.
+        $this->app->make(Dispatcher::class)->listen(StoredContentRewritten::class, function (): void {
+            $this->app->make(MenuCache::class)->flush();
+        });
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(MenuModule::class));
 

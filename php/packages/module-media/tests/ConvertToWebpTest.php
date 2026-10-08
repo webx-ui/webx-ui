@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
-use WebxUi\Media\Events\MediaKeysRewritten;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Media\Images\ImageEditing;
 use WebxUi\Media\Images\Optimizing\ImageOptimizer;
 use WebxUi\Media\Images\Optimizing\LibraryOptimizing;
@@ -141,12 +141,13 @@ final class ConvertToWebpTest extends TestCase
     {
         $file = $this->oldPicture();
         $this->usedEverywhere($file);
-        Event::fake([MediaKeysRewritten::class]);
+        $old = basename($file->path);
+        Event::fake([StoredContentRewritten::class]);
 
         $this->artisan('webx:media:webp')->assertSuccessful();
 
         $this->assertSame('webp', $file->refresh()->extension);
-        Event::assertDispatched(MediaKeysRewritten::class, fn (MediaKeysRewritten $event): bool => array_values($event->paths) === [$file->path]);
+        Event::assertDispatched(StoredContentRewritten::class, fn (StoredContentRewritten $event): bool => $event->replacements === [$old => basename($file->path)]);
     }
 
     #[Test]

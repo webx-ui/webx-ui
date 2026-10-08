@@ -8,7 +8,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Throwable;
-use WebxUi\Media\Events\MediaKeysRewritten;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Media\Images\Thumbnails;
 use WebxUi\Media\Models\MediaAlias;
 use WebxUi\Media\Models\MediaFile;
@@ -156,7 +156,8 @@ final class LibraryOptimizing
 
         $disk->delete($from);
         $this->thumbnails->forget($file);
-        $this->events->dispatch(new MediaKeysRewritten([$from => $to]));
+        // Every module that caches content lets go of it; the library does not have to know whose.
+        $this->events->dispatch(new StoredContentRewritten([basename($from) => basename($to)]));
 
         return $result(self::CONVERTED, $after, $references, $to);
     }
