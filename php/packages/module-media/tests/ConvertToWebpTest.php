@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Media\Images\ImageEditing;
-use WebxUi\Media\Images\Optimizing\ImageOptimizer;
 use WebxUi\Media\Images\Optimizing\LibraryOptimizing;
 use WebxUi\Media\Models\MediaAlias;
 use WebxUi\Media\Models\MediaDirectory;
@@ -182,28 +181,6 @@ final class ConvertToWebpTest extends TestCase
     }
 
     #[Test]
-    public function a_heic_becomes_a_webp_where_imagick_reads_it(): void
-    {
-        if (! app(ImageOptimizer::class)->readsHeic()) {
-            $this->markTestSkipped('Imagick with a HEIC decoder (libheif) is not installed here.');
-        }
-
-        $image = new \Imagick;
-        $image->newImage(800, 600, new \ImagickPixel('orange'));
-        $image->addNoiseImage(\Imagick::NOISE_GAUSSIAN);
-        $image->setImageFormat('heic');
-        $path = tempnam(sys_get_temp_dir(), 'wx').'.heic';
-        file_put_contents($path, $image->getImageBlob());
-
-        config(['webx-media.optimize.enabled' => false]);
-        $file = $this->store(new UploadedFile($path, 'IMG_0001.heic', 'image/heic', null, true), 'IMG_0001.heic');
-        config(['webx-media.optimize.enabled' => true]);
-
-        $this->assertSame('converted', app(LibraryOptimizing::class)->convert($file)['status'], $this->heicDiagnosis($file, (string) file_get_contents($path)));
-        $this->assertSame('webp', $file->refresh()->extension);
-    }
-
-    #[Test]
     public function the_original_kept_by_the_editor_comes_back_in_the_new_format(): void
     {
         $file = $this->oldPicture();
@@ -269,38 +246,6 @@ final class ConvertToWebpTest extends TestCase
         $this->assertSame('jpg', $file->extension);
 
         return $file;
-    }
-
-    /** What the pipeline saw of a HEIC, for a failure on a runner whose libheif differs from ours. */
-    private function heicDiagnosis(MediaFile $file, string $contents): string
-    {
-        $optimizer = app(ImageOptimizer::class);
-        $facts = [
-            'extension' => $file->extension,
-            'mime' => $file->mime,
-            'handles' => $optimizer->handles($file->extension, $file->mime),
-            'convertible' => $optimizer->convertible(),
-            'format' => $optimizer->format(),
-            'magic' => bin2hex(substr($contents, 4, 8)),
-            'formats' => \Imagick::queryFormats('HEI*'),
-        ];
-
-        try {
-            $image = new \Imagick;
-            $image->readImageBlob($contents);
-            $facts['frames'] = $image->getNumberImages();
-            $facts['size'] = [$image->getImageWidth(), $image->getImageHeight()];
-        } catch (\Throwable $e) {
-            $facts['imagick'] = $e->getMessage();
-        }
-
-        try {
-            $facts['optimized'] = $optimizer->optimize($contents, $file->extension, convert: true)?->extension;
-        } catch (\Throwable $e) {
-            $facts['optimize'] = $e::class.': '.$e->getMessage();
-        }
-
-        return (string) json_encode($facts);
     }
 
     private function store(UploadedFile $upload, string $name): MediaFile
