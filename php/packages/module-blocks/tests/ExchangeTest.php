@@ -284,7 +284,7 @@ final class ExchangeTest extends TestCase
             ->postJson('/api/cms/blocks/import', ['file' => $pack, 'dry_run' => true, 'publish' => true])
             ->assertOk();
 
-        $rows = collect($plan->json('data'))->keyBy('slug');
+        $rows = array_column($plan->json('data'), null, 'slug');
 
         $this->assertSame('created', $rows['broken']['status']);
         $this->assertStringStartsWith('would not be published', (string) $rows['broken']['error']);
