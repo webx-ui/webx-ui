@@ -285,8 +285,9 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
     options.adopt?.(theirs)
     options.values.value = clone(merged)
     incoming.value = null
-    // What explained the change is in the form now.
-    events.value = events.value.filter((event) => !EXPLAINING.has(event.kind))
+    // What explained the change is in the form now — and the notice that explained it said every
+    // event it had, so none of them is news any more.
+    if (events.value.some((event) => EXPLAINING.has(event.kind))) events.value = []
   }
 
   function settleWith(theirs: EditingVersion<T>): boolean {
@@ -518,6 +519,8 @@ export function useEditing<T>(options: EditingOptions<T>): Editing<T> {
       return false
     }
 
+    // Who put it in the bin was the notice's to say; out of it, that is no longer news.
+    events.value = events.value.filter((event) => event.kind !== 'trashed')
     await beat()
     await options.refresh?.()
     toast.success(t('editing.out-of-bin'))

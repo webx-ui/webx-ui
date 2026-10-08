@@ -327,6 +327,8 @@ describe('useEditing', () => {
     expect(await editor.editing().restoreFromBin()).toBe(true)
     expect(restore).toHaveBeenCalled()
     expect(editor.editing().trashed.value).toBe(false)
+    // Who put it in the bin is not said again once it is out.
+    expect(editor.editing().events.value.map((one) => one.kind)).not.toContain('trashed')
   })
 
   it('a publication refused for a stale revision is the notice’s to explain', async () => {
