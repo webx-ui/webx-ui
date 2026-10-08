@@ -14,4 +14,5 @@ return [
     'file-too-large' => 'El archivo supera :size MB.',
     'too-many-files' => 'No más de :count archivos a la vez.',
     'file-not-found' => 'Ese archivo no está en la biblioteca.',
+    'files-in-use' => 'No se eliminó nada: algunos de estos archivos todavía se usan en el sitio.',
 ];

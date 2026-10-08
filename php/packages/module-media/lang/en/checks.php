@@ -16,5 +16,11 @@ return [
             'why' => 'A page that shows one loads slowly on a phone, and search engines rank slow pages lower.',
             'fix' => 'Replace them with smaller versions: a photo for a page rarely needs to be wider than 2000 pixels or heavier than a few hundred kilobytes.',
         ],
+        'orphan_thumbs' => [
+            'title' => 'Previews of deleted files',
+            'found' => 'The disk keeps preview folders of files the media library no longer has.',
+            'why' => 'They take up space, and nothing will ever show them.',
+            'fix' => 'Delete them with the button here, or run php artisan webx:media:prune-thumbs.',
+        ],
     ],
 ];

@@ -14,4 +14,5 @@ return [
     'overflow' => 'Foi enviado mais do que o tamanho do ficheiro.',
     'unfinished' => 'O ficheiro ainda não terminou de ser enviado.',
     'wrong-purpose' => 'Esse envio era para outra coisa.',
+    'megabytes' => ':count MB',
 ];

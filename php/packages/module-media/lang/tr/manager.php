@@ -67,4 +67,9 @@ return [
     'convert-run' => 'Dönüştür',
     'convert-report' => 'Dönüştürülen: :converted, olduğu gibi bırakılan: :unchanged, güncellenen bağlantı: :references',
     'no-folders' => 'Klasör yok',
+    'moved' => 'Taşındı: :count → :folder',
+    'undo' => 'Geri al',
+    'current' => 'geçerli klasör',
+    'more' => 'Daha fazla',
+    'actions-for' => ':name için işlemler',
 ];

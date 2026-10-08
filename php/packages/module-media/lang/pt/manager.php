@@ -67,4 +67,9 @@ return [
     'convert-run' => 'Converter',
     'convert-report' => 'Convertidas: :converted, deixadas como estavam: :unchanged, referências atualizadas: :references',
     'no-folders' => 'Sem pastas',
+    'moved' => 'Movido: :count → :folder',
+    'undo' => 'Anular',
+    'current' => 'pasta atual',
+    'more' => 'Mais',
+    'actions-for' => 'Ações de :name',
 ];

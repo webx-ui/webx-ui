@@ -67,4 +67,9 @@ return [
     'convert-run' => 'Convertir',
     'convert-report' => 'Convertidas: :converted, sin cambios: :unchanged, referencias actualizadas: :references',
     'no-folders' => 'No hay carpetas',
+    'moved' => 'Movido: :count → :folder',
+    'undo' => 'Deshacer',
+    'current' => 'carpeta actual',
+    'more' => 'Más',
+    'actions-for' => 'Acciones de :name',
 ];

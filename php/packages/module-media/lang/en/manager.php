@@ -67,4 +67,9 @@ return [
     'convert-run' => 'Convert',
     'convert-report' => 'Converted: :converted, left as they were: :unchanged, references updated: :references',
     'no-folders' => 'No folders',
+    'moved' => 'Moved: :count → :folder',
+    'undo' => 'Undo',
+    'current' => 'current folder',
+    'more' => 'More',
+    'actions-for' => 'Actions for :name',
 ];

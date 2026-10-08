@@ -14,4 +14,5 @@ return [
     'overflow' => 'Plus de données envoyées que la longueur du fichier.',
     'unfinished' => 'Le fichier n’a pas fini d’être envoyé.',
     'wrong-purpose' => 'Cet envoi était destiné à autre chose.',
+    'megabytes' => ':count Mo',
 ];

@@ -67,4 +67,9 @@ return [
     'convert-run' => 'Перетворити',
     'convert-report' => 'Перетворено: :converted, лишено як було: :unchanged, оновлено посилань: :references',
     'no-folders' => 'Тек немає',
+    'moved' => 'Переміщено: :count → :folder',
+    'undo' => 'Скасувати',
+    'current' => 'поточна папка',
+    'more' => 'Ще',
+    'actions-for' => 'Дії: :name',
 ];

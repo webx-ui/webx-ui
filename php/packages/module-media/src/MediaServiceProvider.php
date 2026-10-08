@@ -15,9 +15,13 @@ use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Media\Audit\HeavyImages;
 use WebxUi\Media\Audit\MissingFiles;
+use WebxUi\Media\Audit\OrphanThumbnailsCheck;
+use WebxUi\Media\Audit\PruneThumbnailsFix;
 use WebxUi\Media\Console\ConvertToWebpCommand;
+use WebxUi\Media\Console\PruneThumbnailsCommand;
 use WebxUi\Media\Http\Controllers\OldAddressController;
 use WebxUi\Media\Screens\FileFieldType;
 use WebxUi\Media\Screens\FilesFieldType;
@@ -81,11 +85,13 @@ class MediaServiceProvider extends ServiceProvider
         );
 
         // The library's own checks of the site audit, when the audit is installed (§7 of its
-        // spec): files the disk lost and images too heavy for a page.
+        // spec): files the disk lost, images too heavy for a page, and previews of files long gone.
         if (class_exists(AuditChecks::class)) {
             $checks = $this->app->make(AuditChecks::class);
             $checks->register($this->app->make(MissingFiles::class));
             $checks->register($this->app->make(HeavyImages::class));
+            $checks->register($this->app->make(OrphanThumbnailsCheck::class));
+            $this->app->make(AuditFixes::class)->register($this->app->make(PruneThumbnailsFix::class));
         }
 
         // What a screen means by these names, on the server: the keys the fields store and the
@@ -118,7 +124,7 @@ class MediaServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([ConvertToWebpCommand::class]);
+        $this->commands([ConvertToWebpCommand::class, PruneThumbnailsCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-media.php' => config_path('webx-media.php'),

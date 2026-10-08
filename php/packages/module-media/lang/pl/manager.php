@@ -67,4 +67,9 @@ return [
     'convert-run' => 'Konwertuj',
     'convert-report' => 'Przekonwertowano: :converted, bez zmian: :unchanged, zaktualizowane odwołania: :references',
     'no-folders' => 'Brak folderów',
+    'moved' => 'Przeniesiono: :count → :folder',
+    'undo' => 'Cofnij',
+    'current' => 'bieżący folder',
+    'more' => 'Więcej',
+    'actions-for' => 'Działania: :name',
 ];

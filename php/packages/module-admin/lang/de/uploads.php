@@ -14,4 +14,5 @@ return [
     'overflow' => 'Es wurde mehr gesendet, als die Datei lang ist.',
     'unfinished' => 'Die Datei ist noch nicht vollständig hochgeladen.',
     'wrong-purpose' => 'Dieser Upload war für etwas anderes bestimmt.',
+    'megabytes' => ':count MB',
 ];

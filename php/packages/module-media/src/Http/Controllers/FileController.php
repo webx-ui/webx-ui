@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -13,6 +14,7 @@ use Symfony\Component\Mime\MimeTypes;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Uploads\ClaimedUpload;
 use WebxUi\Admin\Uploads\Uploads;
+use WebxUi\Media\Exceptions\FilesInUse;
 use WebxUi\Media\Http\Requests\FileDeleteRequest;
 use WebxUi\Media\Http\Requests\FileIndexRequest;
 use WebxUi\Media\Http\Requests\FileMoveRequest;
@@ -24,10 +26,14 @@ use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileStore;
 use WebxUi\Media\Support\MediaType;
+use WebxUi\Media\Usage\MediaUsage;
 
 final class FileController
 {
-    public function __construct(private readonly FileStore $files) {}
+    public function __construct(
+        private readonly FileStore $files,
+        private readonly MediaUsage $usage,
+    ) {}
 
     /**
      * Always paginated, search included.
@@ -187,8 +193,27 @@ final class FileController
         return MimeTypes::getDefault()->guessMimeType($claimed->path);
     }
 
-    public function destroyOne(MediaFile $file): JsonResponse
+    /**
+     * Which of these files the site still uses, and where — asked before a delete, so the
+     * question the panel puts has the places in it rather than a refusal after the fact.
+     */
+    public function usage(FileDeleteRequest $request): JsonResponse
     {
+        /** @var list<int> $ids */
+        $ids = $request->input('ids', []);
+
+        return ApiResponse::data($this->usage->report(MediaFile::query()->whereIn('id', $ids)->get()));
+    }
+
+    /**
+     * A file the site still uses is refused unless `force` says to go ahead anyway — the rule
+     * `media_delete_files` keeps for an agent, kept for a request too, so a call that skipped
+     * the panel's question cannot break a page on its own.
+     */
+    public function destroyOne(Request $request, MediaFile $file): JsonResponse
+    {
+        $this->guard(new Collection([$file]), $request->boolean('force'));
+
         $this->files->deleteAll([$file]);
 
         return ApiResponse::noContent();
@@ -198,9 +223,26 @@ final class FileController
     {
         /** @var list<int> $ids */
         $ids = $request->input('ids', []);
+        $files = MediaFile::query()->whereIn('id', $ids)->get();
 
-        $deleted = $this->files->deleteAll(MediaFile::query()->whereIn('id', $ids)->cursor());
+        $this->guard($files, $request->boolean('force'));
 
-        return ApiResponse::data(['deleted' => $deleted]);
+        return ApiResponse::data(['deleted' => $this->files->deleteAll($files)]);
+    }
+
+    /**
+     * @param  Collection<int, MediaFile>  $files
+     */
+    private function guard(Collection $files, bool $force): void
+    {
+        if ($force) {
+            return;
+        }
+
+        $inUse = $this->usage->report($files);
+
+        if ($inUse !== []) {
+            throw new FilesInUse($inUse);
+        }
     }
 }

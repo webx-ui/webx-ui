@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use WebxUi\Media\Images\Thumbnails;
 
 /**
  * One file in the library.
@@ -109,11 +110,17 @@ class MediaFile extends Model
         return $query->where('name_lower', 'like', '%'.addcslashes(mb_strtolower($term), '%_\\').'%');
     }
 
-    /** Remove what this row owns on the disk: the file itself and the copy kept before editing. */
+    /**
+     * Remove what this row owns on the disk: the file itself, the copy kept before editing, and
+     * every preview cut from it. The previews live under a folder of their own named for the
+     * key, and nothing else ever deletes that folder — left here, it stays forever.
+     */
     public function eraseFiles(): void
     {
         $disk = Storage::disk($this->disk);
 
         $disk->delete(array_values(array_filter([$this->path, $this->original_path])));
+
+        app(Thumbnails::class)->forget($this);
     }
 }

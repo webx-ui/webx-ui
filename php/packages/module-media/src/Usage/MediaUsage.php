@@ -57,6 +57,42 @@ final class MediaUsage
     }
 
     /**
+     * The files of `$files` that are in use, each with where, and every place with a label an
+     * editor reads ({@see PlaceLabels}) — what the panel shows before it deletes anything.
+     *
+     * @param  Collection<int, MediaFile>  $files
+     * @return list<array{id: int, name: string, used_in: list<array{table: string, column: string, id: int|string|null, label: string|null}>}>
+     */
+    public function report(Collection $files): array
+    {
+        $usage = $this->of($files);
+
+        if ($usage === []) {
+            return [];
+        }
+
+        $labels = new PlaceLabels;
+        $report = [];
+
+        foreach ($files as $file) {
+            if (! isset($usage[$file->id])) {
+                continue;
+            }
+
+            $report[] = [
+                'id' => (int) $file->id,
+                'name' => (string) $file->name,
+                'used_in' => array_map(
+                    static fn (array $place): array => [...$place, 'label' => $labels->of($place['table'], $place['id'])],
+                    $usage[$file->id],
+                ),
+            ];
+        }
+
+        return $report;
+    }
+
+    /**
      * Move every reference from each file's old basename to its new one, through every source
      * that can ({@see UsageRewriter}).
      *

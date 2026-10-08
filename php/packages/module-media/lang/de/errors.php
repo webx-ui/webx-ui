@@ -14,4 +14,5 @@ return [
     'file-too-large' => 'Die Datei ist größer als :size MB.',
     'too-many-files' => 'Höchstens :count Dateien auf einmal.',
     'file-not-found' => 'Diese Datei gibt es in der Bibliothek nicht.',
+    'files-in-use' => 'Nichts wurde gelöscht: Einige dieser Dateien werden auf der Website noch verwendet.',
 ];

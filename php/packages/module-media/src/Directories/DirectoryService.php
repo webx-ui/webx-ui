@@ -10,6 +10,7 @@ use WebxUi\Media\Exceptions\RootIsImmutable;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileStore;
+use WebxUi\Media\Usage\MediaUsage;
 
 /**
  * Folder operations that are more than one line of Eloquent.
@@ -19,6 +20,7 @@ final class DirectoryService
     public function __construct(
         private readonly FileStore $files,
         private readonly ConnectionResolverInterface $connection,
+        private readonly MediaUsage $usage,
     ) {}
 
     /**
@@ -61,6 +63,26 @@ final class DirectoryService
             files: MediaFile::query()->whereIn('directory_id', $subtree)->count(),
             directories: count($subtree) - 1,
         );
+    }
+
+    /**
+     * The files of the whole subtree the site still uses, and where: what deleting the folder
+     * would break, said in the one question the panel asks before it does.
+     *
+     * @return list<array{id: int, name: string, used_in: list<array<string, mixed>>}>
+     */
+    public function usage(MediaDirectory $directory): array
+    {
+        $report = [];
+
+        MediaFile::query()
+            ->whereIn('directory_id', $this->subtreeIds($directory))
+            ->orderBy('id')
+            ->chunkById(200, function ($files) use (&$report): void {
+                array_push($report, ...$this->usage->report($files));
+            });
+
+        return $report;
     }
 
     /**

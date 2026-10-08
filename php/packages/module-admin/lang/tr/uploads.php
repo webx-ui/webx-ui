@@ -14,4 +14,5 @@ return [
     'overflow' => 'Dosyanın uzunluğundan fazlası gönderildi.',
     'unfinished' => 'Dosyanın yüklenmesi henüz bitmedi.',
     'wrong-purpose' => 'Bu yükleme başka bir şey içindi.',
+    'megabytes' => ':count MB',
 ];

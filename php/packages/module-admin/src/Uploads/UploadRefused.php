@@ -101,6 +101,7 @@ final class UploadRefused extends RuntimeException
 
     private static function megabytes(int $bytes): string
     {
-        return number_format($bytes / 1048576, 0, '.', ' ').' MB';
+        // The unit is a word like any other: «50 МБ» in a Russian panel, «50 Mo» in a French one.
+        return (string) __('webx-admin::uploads.megabytes', ['count' => number_format($bytes / 1048576, 0, '.', ' ')]);
     }
 }
