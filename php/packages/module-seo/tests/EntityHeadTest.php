@@ -255,15 +255,45 @@ final class EntityHeadTest extends TestCase
         $this->entity(['ru' => 'О нас', 'uk' => 'Про нас'], ['ru' => 'about', 'uk' => 'pro-nas']);
         $this->entity(['ru' => 'Только по-русски'], ['ru' => 'only-ru']);
 
-        $file = (string) $this->get('/sitemap-crumbed.xml')->getContent();
+        // The layout is asserted on its own below; here only what the map says.
+        $file = (string) preg_replace('/\s+/', ' ', (string) $this->get('/sitemap-crumbed.xml')->getContent());
 
         $this->assertStringContainsString('xmlns:xhtml="http://www.w3.org/1999/xhtml"', $file);
         $this->assertSame(2, substr_count($file, 'hreflang="uk" href="http://localhost/uk/pro-nas"'));
         $this->assertSame(2, substr_count($file, 'hreflang="x-default" href="http://localhost/about"'));
         $this->assertStringNotContainsString('hreflang="uk" href="http://localhost/uk/only-ru"', $file);
 
-        preg_match('#<url><loc>http://localhost/only-ru</loc>.*?</url>#', $file, $only);
+        preg_match('#<url> <loc>http://localhost/only-ru</loc>.*?</url>#', $file, $only);
         $this->assertStringNotContainsString('xhtml:link', $only[0] ?? 'missing');
+    }
+
+    #[Test]
+    public function the_map_is_laid_out_as_googles_multilingual_example(): void
+    {
+        $this->entity(['ru' => 'О нас', 'uk' => 'Про нас'], ['ru' => 'about', 'uk' => 'pro-nas']);
+
+        $file = (string) $this->get('/sitemap-crumbed.xml')->getContent();
+
+        $this->assertStringStartsWith(
+            '<?xml version="1.0" encoding="UTF-8"?>'."\n"
+            .'<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>'."\n"
+            .'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'."\n"
+            .'  xmlns:xhtml="http://www.w3.org/1999/xhtml">'."\n"
+            .'  <url>'."\n"
+            .'    <loc>http://localhost/about</loc>'."\n",
+            $file,
+        );
+        $this->assertStringContainsString(
+            '    <xhtml:link'."\n"
+            .'               rel="alternate"'."\n"
+            .'               hreflang="uk"'."\n"
+            .'               href="http://localhost/uk/pro-nas"/>'."\n",
+            $file,
+        );
+        $this->assertStringEndsWith('  </url>'."\n".'</urlset>'."\n", $file);
+
+        // Whitespace is all that changed: the file is still one a parser reads.
+        $this->assertNotFalse(simplexml_load_string($file));
     }
 
     #[Test]

@@ -396,6 +396,12 @@ to tell the map. On a multilingual site each line carries the same `hreflang` se
 - `php artisan webx:seo:sitemap` builds it ahead of the first crawler: put it in the deploy.
 - `/robots.txt` gets a `Sitemap:` line by itself if the setting does not have one.
 - `WEBX_SEO_SITEMAP=false` turns the whole thing off for a site with a map of its own.
+- The files are laid out like
+  [Google's multilingual example](https://developers.google.com/search/docs/specialty/international/localized-versions#sitemap):
+  an element a line, the attributes of each `xhtml:link` in a column. Each file names
+  `/sitemap.xsl`, so a browser shows that same text with every address a link — not a table,
+  because whoever opens a map is checking the markup a crawler reads. Crawlers ignore both.
+  `WEBX_SEO_SITEMAP_XSL=false` leaves the stylesheet out.
 
 ### A type that is not a page
 
