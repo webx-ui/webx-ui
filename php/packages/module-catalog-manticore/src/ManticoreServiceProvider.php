@@ -7,6 +7,7 @@ namespace WebxUi\Catalog\Manticore;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Catalog\Engine\CatalogEngines;
 use WebxUi\Catalog\Manticore\Doctor\ManticoreCheck;
 use WebxUi\Catalog\Manticore\Mcp\IndexTools;
@@ -26,6 +27,12 @@ class ManticoreServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            // The index lives in Manticore, not in the tables that were just replaced.
+            $tables->afterRestore('webx:catalog:index', ['--rebuild' => true]);
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog-manticore.php', 'webx-catalog-manticore');
     }
 

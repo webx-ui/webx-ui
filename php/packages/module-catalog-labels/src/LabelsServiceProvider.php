@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Exchange\ExchangeColumns;
@@ -41,6 +42,11 @@ class LabelsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('catalog_labels', 'catalog_label_product');
+        });
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-labels');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-labels');

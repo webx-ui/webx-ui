@@ -13,6 +13,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Inbox\Antispam\Throttle;
 use WebxUi\Inbox\Audit\CaptchaKeys;
@@ -33,6 +34,15 @@ class InboxServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('inbox_forms', 'inbox_form_fields');
+            // What visitors sent stays where they sent it: personal data must not land on a laptop, and
+            // a copy of local must not wipe dev's real enquiries. The statuses go with them — the
+            // enquiries point at their ids.
+            $tables->stand('inbox_statuses', 'inbox_submissions', 'inbox_submission_values', 'inbox_submission_files', 'inbox_submission_events');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-inbox.php', 'webx-inbox');
 
         // Looked up by the rate limiter and then by the controller, within one request.

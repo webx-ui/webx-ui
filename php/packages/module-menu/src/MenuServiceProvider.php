@@ -12,6 +12,7 @@ use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Menu\Audit\MenuLinks;
@@ -31,6 +32,11 @@ class MenuServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('menus', 'menu_items');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-menu.php', 'webx-menu');
 
         $this->app->singleton(MenuCache::class);

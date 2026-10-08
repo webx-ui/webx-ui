@@ -31,6 +31,8 @@ use WebxUi\Admin\Console\PruneHistoryCommand;
 use WebxUi\Admin\Console\PruneUploadsCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Console\SetupCommand;
+use WebxUi\Admin\Console\SnapshotCommand;
+use WebxUi\Admin\Console\SnapshotRestoreCommand;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\SiteUrls;
@@ -73,6 +75,7 @@ use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Admin\Screens\Types\TagsType;
 use WebxUi\Admin\Screens\Types\TimeType;
 use WebxUi\Admin\Screens\Types\TreeSelectType;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Support\Parts;
 use WebxUi\Admin\Uploads\FreeSpace;
 use WebxUi\Admin\Uploads\UploadPurposes;
@@ -226,6 +229,10 @@ class AdminServiceProvider extends ServiceProvider
         // is a singleton to be injectable by name, not because it remembers anything.
         $this->app->singleton(Backups::class);
 
+        // Which table travels between stands: filled by every package from its own provider,
+        // the way the notes' and the history's registers are.
+        $this->app->singleton(SnapshotTables::class);
+
         // One journal for the run, shared by every module that seeds into it. The path is
         // fixed rather than configurable: it is a file two commands pass between them, and a
         // site that moved it would gain nothing and lose the answer to "where is it".
@@ -307,6 +314,8 @@ class AdminServiceProvider extends ServiceProvider
             PruneUploadsCommand::class,
             PruneVersionsCommand::class,
             SetupCommand::class,
+            SnapshotCommand::class,
+            SnapshotRestoreCommand::class,
         ]);
     }
 

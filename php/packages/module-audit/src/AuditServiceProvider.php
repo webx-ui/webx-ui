@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use Throwable;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Checks\Config;
 use WebxUi\Audit\Checks\Host;
@@ -147,6 +148,12 @@ class AuditServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            // Every result belongs to the stand it was found on.
+            $tables->stand('audit_runs', 'audit_pages', 'audit_issues', 'audit_ignores', 'audit_links', 'audit_resources', 'audit_content_urls');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-audit.php', 'webx-audit');
 
         $this->app->singleton(AuditChecks::class);

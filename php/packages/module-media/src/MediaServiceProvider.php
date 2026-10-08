@@ -13,6 +13,7 @@ use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Fixes\AuditFixes;
@@ -49,6 +50,11 @@ class MediaServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('media_files', 'media_directories', 'media_aliases');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-media.php', 'webx-media');
 
         // One lookup behind all four field types: a page of blocks asks about the same library

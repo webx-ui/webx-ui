@@ -15,6 +15,7 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\StringType;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Blog\Handlers\ArticleHandler;
 use WebxUi\Blog\Handlers\RubricHandler;
 use WebxUi\Blog\Handlers\TagHandler;
@@ -52,6 +53,11 @@ class BlogServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('blog_articles', 'blog_rubrics', 'blog_tags', 'blog_article_rubric', 'blog_article_tag', 'blog_article_related');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-blog.php', 'webx-blog');
     }
 

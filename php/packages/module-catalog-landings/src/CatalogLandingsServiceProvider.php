@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
 use WebxUi\Catalog\Events\ProductsIndexed;
 use WebxUi\Catalog\Filter\FilterUrls;
@@ -48,6 +49,12 @@ class CatalogLandingsServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('catalog_landings', 'catalog_landing_products');
+            $tables->stand('catalog_landing_runs');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog-landings.php', 'webx-catalog-landings');
     }
 

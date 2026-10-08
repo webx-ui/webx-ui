@@ -17,6 +17,7 @@ use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Audit\Fixes\AuditFixes;
@@ -56,6 +57,14 @@ class BlocksServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('blocks', 'block_versions', 'block_regions');
+            // Glued from the versions that were current here; glued again on the first request.
+            $tables->derived('block_bundles');
+            $tables->afterRestore('webx:blocks:clear');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-blocks.php', 'webx-blocks');
 
         $this->app->singleton(BlockTypes::class);

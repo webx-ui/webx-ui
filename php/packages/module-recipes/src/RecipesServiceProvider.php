@@ -15,6 +15,7 @@ use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
@@ -56,6 +57,11 @@ class RecipesServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('recipes', 'recipe_categories', 'recipe_category_recipe', 'recipe_nutrients', 'recipe_nutrient_recipe');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-recipes.php', 'webx-recipes');
     }
 

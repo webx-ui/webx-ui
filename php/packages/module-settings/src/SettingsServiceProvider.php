@@ -10,11 +10,20 @@ use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 
 class SettingsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('cms_settings');
+            // A key in `webx-settings.stand_own` keeps this stand's value through a restore: a key of
+            // an integration that differs per stand, should one ever be stored here rather than in .env.
+            $tables->preserve('cms_settings', 'key', static fn (): array => array_values(array_map(strval(...), (array) config('webx-settings.stand_own', []))));
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-settings.php', 'webx-settings');
 
         $this->app->singleton(Settings::class);

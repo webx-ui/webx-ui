@@ -12,6 +12,7 @@ use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Exchange\ExchangeColumns;
@@ -63,6 +64,11 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('catalog_property_groups', 'catalog_properties', 'catalog_property_values', 'catalog_property_intervals', 'catalog_category_property', 'catalog_product_property_values');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog-properties.php', 'webx-catalog-properties');
 
         $this->app->singleton(Properties::class);

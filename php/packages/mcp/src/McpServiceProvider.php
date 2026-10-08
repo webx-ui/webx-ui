@@ -20,6 +20,7 @@ use Laravel\Passport\Contracts\AuthorizationViewResponse;
 use Laravel\Passport\Passport;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Mcp\Console\ListToolsCommand;
 use WebxUi\Mcp\Console\PruneCallsCommand;
 use WebxUi\Mcp\Grants\Grants;
@@ -32,6 +33,12 @@ class McpServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            // Who connected an agent here, and what it did here.
+            $tables->stand('mcp_grants', 'mcp_calls');
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-mcp.php', 'webx-mcp');
 
         // Registered here rather than left to package discovery, so that a Testbench or an
