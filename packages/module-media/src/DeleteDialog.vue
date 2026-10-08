@@ -33,7 +33,7 @@ const props = withDefaults(
 const { open, resolve, dismiss } = useModal<'all' | 'unused'>()
 
 function href(url: string): string {
-  return `${props.basePath.replace(//$/, '')}${url}`
+  return `${props.basePath.replace(/\/$/, '')}${url}`
 }
 
 const t = useTranslate('webx-media')
