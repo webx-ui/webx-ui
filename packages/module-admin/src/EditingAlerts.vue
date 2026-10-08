@@ -109,7 +109,14 @@ async function pull(): Promise<void> {
 </script>
 
 <template>
-  <wx-alert v-if="conflict" ref="conflictAlert" class="wx-editing-alerts" type="warning" :title="conflictTitle" live>
+  <wx-alert
+    v-if="conflict"
+    ref="conflictAlert"
+    class="wx-editing-alerts"
+    type="warning"
+    :title="conflictTitle"
+    live
+  >
     <p class="wx-editing-alerts__lead">{{ t('editing.conflict-text') }}</p>
 
     <ul class="wx-editing-alerts__list">
