@@ -8,6 +8,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Illuminate\Support\Str;
 use Throwable;
 use WebxUi\Media\Models\MediaFile;
@@ -63,7 +64,10 @@ final class DatabaseUsage implements UsageRewriter, UsageSource
             }
         }
 
-        foreach ($schema->getTables($schema->getCurrentSchemaName()) as $table) {
+        $tables = $schema->getTables($schema->getCurrentSchemaName());
+        $keys = $this->keysIntoLibrary($connection, $model->getTable(), $prefix);
+
+        foreach ($tables as $table) {
             $name = (string) $table['name'];
             $bare = $prefix !== '' && str_starts_with($name, $prefix) ? substr($name, strlen($prefix)) : $name;
 
@@ -75,14 +79,7 @@ final class DatabaseUsage implements UsageRewriter, UsageSource
                 $columns = $schema->getColumns($bare);
                 $hasId = in_array('id', array_column($columns, 'name'), true);
 
-                foreach ($schema->getForeignKeys($bare) as $key) {
-                    $target = (string) $key['foreign_table'];
-
-                    if (count($key['columns']) !== 1 || ($target !== $model->getTable() && $target !== $prefix.$model->getTable())) {
-                        continue;
-                    }
-
-                    $column = (string) $key['columns'][0];
+                foreach ($keys === null ? $this->keysOf($schema, $bare, $model->getTable(), $prefix) : ($keys[$name] ?? []) as $column) {
                     $rows = $connection->table($bare)
                         ->whereIn($column, $ids)
                         ->limit(self::ROWS_PER_QUERY)
@@ -186,6 +183,71 @@ final class DatabaseUsage implements UsageRewriter, UsageSource
         }
 
         return $counts;
+    }
+
+    /**
+     * Every single-column foreign key into the library, by table, in one question to
+     * `information_schema` — where the database has one to ask. Asked table by table instead,
+     * MariaDB took two and a half seconds over eighty tables, and the panel asks before every
+     * delete. `null` means: ask each table ({@see keysOf()}).
+     *
+     * @return array<string, list<string>>|null
+     */
+    private function keysIntoLibrary(Connection $connection, string $library, string $prefix): ?array
+    {
+        if (! in_array($connection->getDriverName(), ['mysql', 'mariadb'], true)) {
+            return null;
+        }
+
+        try {
+            $rows = $connection->select(
+                'select TABLE_NAME as table_name, COLUMN_NAME as column_name, CONSTRAINT_NAME as name
+                 from information_schema.KEY_COLUMN_USAGE
+                 where TABLE_SCHEMA = database() and REFERENCED_TABLE_NAME = ?',
+                [$prefix.$library],
+            );
+        } catch (Throwable $error) {
+            report($error);
+
+            return null;
+        }
+
+        /** @var array<string, array<string, list<string>>> $constraints table → constraint → columns */
+        $constraints = [];
+
+        foreach ($rows as $row) {
+            $constraints[(string) $row->table_name][(string) $row->name][] = (string) $row->column_name;
+        }
+
+        $keys = [];
+
+        foreach ($constraints as $table => $named) {
+            foreach ($named as $columns) {
+                if (count($columns) === 1) {
+                    $keys[$table][] = $columns[0];
+                }
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function keysOf(SchemaBuilder $schema, string $table, string $library, string $prefix): array
+    {
+        $columns = [];
+
+        foreach ($schema->getForeignKeys($table) as $key) {
+            $target = (string) $key['foreign_table'];
+
+            if (count($key['columns']) === 1 && ($target === $library || $target === $prefix.$library)) {
+                $columns[] = (string) $key['columns'][0];
+            }
+        }
+
+        return $columns;
     }
 
     private function contains(Connection $connection, Builder $query, string $column, string $type, string $needle): void
