@@ -609,7 +609,16 @@ function debounce(run: () => void, wait: number): () => void {
         :disabled="busy"
         size="sm"
         @change="({ page: to }) => loadFiles(to)"
-      />
+      >
+        <!-- The pager's own line is English; the panel is read in whatever the person reads. -->
+        <template #total="{ from, to, total }">
+          {{
+            from === null
+              ? t('manager.range-empty')
+              : t('manager.range', { first: from ?? 0, last: to ?? 0, count: total })
+          }}
+        </template>
+      </wx-pagination>
     </section>
 
     <!-- On a narrow screen the folders are a drawer: a tree beside a grid leaves room for

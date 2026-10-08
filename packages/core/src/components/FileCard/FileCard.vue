@@ -30,6 +30,8 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   thumbnail: undefined,
   type: undefined,
   icon: undefined,
+  extension: undefined,
+  showExtension: false,
   selected: false,
   size: 'md',
   disabled: false,
@@ -64,8 +66,10 @@ defineSlots<{
 
 const picture = computed(() => isPicture(props.name, props.type))
 const source = computed(() => props.thumbnail ?? props.url)
-const extension = computed(() => extensionOf(props.name))
-const glyph = computed(() => props.icon ?? fileIconName(props.name))
+const extension = computed(() => props.extension?.toLowerCase() || extensionOf(props.name))
+const glyph = computed(
+  () => props.icon ?? fileIconName(props.extension ? `file.${extension.value}` : props.name),
+)
 
 /* ------------------------------------------------------------------ renaming --- */
 
@@ -335,6 +339,14 @@ const classes = computed(() => [
         </span>
       </slot>
 
+      <!-- Under a glyph the extension is already written out; over a picture it is a badge. -->
+      <span
+        v-if="showExtension && extension && picture && source"
+        class="wx-file-card__badge"
+        aria-hidden="true"
+        >{{ extension }}</span
+      >
+
       <!--
         Over the preview, and on a pointer that can hover they stay out of the way until
         it does. There is no hovering on a touch screen, so there they simply stand.
@@ -555,10 +567,32 @@ const classes = computed(() => [
   overflow: hidden;
   color: var(--wx-text-muted);
   font-size: var(--wx-font-size-xs);
+  font-weight: var(--wx-font-weight-semibold);
   letter-spacing: 0.04em;
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/*
+ * The same word over a picture, where it has to be readable on any of them: a near-opaque
+ * surface with a border of its own, the pill the actions sit in. Bottom left, out of their way.
+ */
+.wx-file-card__badge {
+  position: absolute;
+  bottom: var(--wx-space-4);
+  left: var(--wx-space-4);
+  padding: 0 var(--wx-space-4);
+  background: color-mix(in srgb, var(--wx-bg-surface) 88%, transparent);
+  border: 1px solid var(--wx-border-muted);
+  border-radius: var(--wx-radius-xs);
+  color: var(--wx-text-default);
+  font-size: var(--wx-font-size-xs);
+  font-weight: var(--wx-font-weight-semibold);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 
 /*

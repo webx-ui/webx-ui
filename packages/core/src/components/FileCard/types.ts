@@ -19,6 +19,17 @@ export interface FileCardProps {
   type?: string
   /** Icon to draw instead of the one the extension picks. */
   icon?: IconName
+  /**
+   * The extension, for a `name` that does not carry one — a library that shows titles rather
+   * than file names. Given, it picks the glyph and the word under it instead of the name.
+   */
+  extension?: string
+  /**
+   * Puts the extension in a corner of a picture too, not only under a glyph. A grid of
+   * thumbnails looks alike whether the files are JPEGs or PNGs, and the format is often
+   * exactly what somebody is looking for.
+   */
+  showExtension?: boolean
   /** Draws the card as chosen. The choosing itself belongs to whatever holds the cards. */
   selected?: boolean
   size?: FileCardSize

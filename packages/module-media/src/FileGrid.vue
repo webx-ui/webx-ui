@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { toast, WxEmpty, WxFileCard, WxSelectionArea } from '@webx-ui/core'
 import type { MediaApi } from './api'
+import { details } from './format'
 import type { MediaFile } from './types'
 
 /**
@@ -87,6 +88,9 @@ function copyFailed(file: MediaFile): void {
       v-wx-select="file.id"
       class="wx-media-grid__card"
       :name="file.name"
+      :extension="file.extension"
+      show-extension
+      :title="details(file)"
       :url="file.url"
       :thumbnail="api.thumb(file, 320, 320) ?? undefined"
       :type="file.mime"

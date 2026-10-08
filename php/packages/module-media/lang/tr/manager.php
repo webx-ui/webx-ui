@@ -38,6 +38,8 @@ return [
     'status-files' => 'Dosyalar: :count',
     'status-selected' => 'seçili: :count',
     'status-size' => 'boyut: :size',
+    'range' => ':count içinden :first–:last',
+    'range-empty' => 'Gösterilecek bir şey yok',
     'save' => 'Kaydet',
     'pick' => 'Seç (:count)',
     'chosen' => ':max dosyadan :count seçildi',

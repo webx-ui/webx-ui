@@ -38,6 +38,8 @@ return [
     'status-files' => 'Файлов: :count',
     'status-selected' => 'выделено: :count',
     'status-size' => 'размер: :size',
+    'range' => ':first–:last из :count',
+    'range-empty' => 'Нечего показать',
     'save' => 'Сохранить',
     'pick' => 'Выбрать (:count)',
     'chosen' => 'Выбрано :count из :max',

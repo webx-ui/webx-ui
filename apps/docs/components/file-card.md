@@ -73,6 +73,13 @@ registerIcons({ 'file-dwg': '<path d="…" />' })
 The card asks the icon registry, so that is all it takes. `:icon="…"` overrides one card's glyph
 where the name is not the whole truth.
 
+## A name without an extension
+
+A library that shows titles — «Price list» rather than `price-list-2026.pdf` — passes the
+extension on its own: `extension="pdf"` picks the glyph and the word under it. `show-extension`
+puts the same word in a corner of a picture as well, so a grid of thumbnails says which are JPEGs
+and which are PNGs.
+
 ## Renaming
 
 `renamable` opens a small panel under the actions — from the rename action, or by double-clicking
@@ -135,6 +142,8 @@ that asks its own question or where the deletion can be undone.
 | `thumbnail`         | `string`               | —                | A smaller picture to draw instead of `url`                    |
 | `type`              | `string`               | —                | MIME type; decides picture or glyph before the extension does |
 | `icon`              | `IconName`             | by extension     | Glyph to draw instead                                         |
+| `extension`         | `string`               | from `name`      | The extension, for a name that does not carry one             |
+| `showExtension`     | `boolean`              | `false`          | The extension as a badge over a picture too                   |
 | `selected`          | `boolean`              | `false`          | Draws the card as chosen                                      |
 | `size`              | `'sm' \| 'md' \| 'lg'` | `'md'`           | Glyph and text size                                           |
 | `disabled`          | `boolean`              | `false`          | No actions, no renaming                                       |

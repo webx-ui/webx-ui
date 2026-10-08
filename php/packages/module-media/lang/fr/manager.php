@@ -38,6 +38,8 @@ return [
     'status-files' => 'Fichiers : :count',
     'status-selected' => 'sélectionnés : :count',
     'status-size' => 'taille : :size',
+    'range' => ':first–:last sur :count',
+    'range-empty' => 'Rien à afficher',
     'save' => 'Enregistrer',
     'pick' => 'Choisir (:count)',
     'chosen' => ':count sur :max choisis',

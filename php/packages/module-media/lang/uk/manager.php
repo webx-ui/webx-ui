@@ -38,6 +38,8 @@ return [
     'status-files' => 'Файлів: :count',
     'status-selected' => 'обрано: :count',
     'status-size' => 'розмір: :size',
+    'range' => ':first–:last з :count',
+    'range-empty' => 'Нічого показати',
     'save' => 'Зберегти',
     'pick' => 'Вибрати (:count)',
     'chosen' => 'Вибрано :count з :max',

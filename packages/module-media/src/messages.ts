@@ -48,6 +48,8 @@ export const mediaMessages: Record<string, Messages> = {
     'status-files': 'Files: :count',
     'status-selected': 'selected: :count',
     'status-size': 'size: :size',
+    range: ':first–:last of :count',
+    'range-empty': 'Nothing to show',
     pick: 'Choose (:count)',
     chosen: 'Chosen :count of :max',
     optimize: 'Optimize',
