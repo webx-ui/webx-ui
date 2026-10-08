@@ -1,6 +1,9 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type {
+  BlockExport,
+  BlockImportRow,
   BlockInput,
+  BlockPack,
   BlockList,
   BlockType,
   BlockUsage,
@@ -38,6 +41,13 @@ export interface BlocksApi {
   restore(id: number, number: number): Promise<BlockType>
   /** The new order of some types — a group — in the places they held; the rest stay put. */
   reorder(ids: number[]): Promise<void>
+  /** A pack of the types named — every type when none is — and the components they call. */
+  exportPack(slugs: string[], options?: { draft?: boolean }): Promise<BlockExport>
+  /** What the file would do (`dryRun`), or what it did. Drafts, unless `publish` is asked for. */
+  importPack(
+    file: unknown,
+    options?: { name?: string; dryRun?: boolean; publish?: boolean },
+  ): Promise<BlockImportRow[]>
 }
 
 /** Everything under `/blocks`, below the panel's API path. */
@@ -83,6 +93,35 @@ export function createBlocksApi(admin: AdminContext): BlocksApi {
         .post<{ data: BlockType }>(`${base}/${id}/versions/${number}/restore`, {})
         .then(data),
     reorder: (ids) => admin.http.post<unknown>(`${base}/reorder`, { ids }).then(() => undefined),
+    exportPack: (slugs, options = {}) => {
+      const query = new URLSearchParams()
+
+      for (const slug of slugs) query.append('slugs[]', slug)
+      if (options.draft) query.set('draft', '1')
+
+      const search = query.toString()
+
+      return admin.http
+        .get<{
+          data: BlockPack
+          skipped?: string[]
+          missing?: string[]
+        }>(`${base}/export${search === '' ? '' : `?${search}`}`)
+        .then((body) => ({
+          pack: body.data,
+          skipped: body.skipped ?? [],
+          missing: body.missing ?? [],
+        }))
+    },
+    importPack: (file, options = {}) =>
+      admin.http
+        .post<{ data: BlockImportRow[] }>(`${base}/import`, {
+          file,
+          name: options.name,
+          dry_run: options.dryRun === true,
+          publish: options.publish === true,
+        })
+        .then(data),
   }
 }
 

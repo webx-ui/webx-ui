@@ -1219,6 +1219,212 @@ on('POST', '/blocks/reorder', ({ body }) => {
   return { data: { ids } }
 })
 
+/**
+ * Export and import (§17.1), the way the module does them: a pack of the types named and every
+ * type they call, called first; an import read twice — without writing, then for real — where a
+ * type that is already here gets a new draft rather than being replaced.
+ */
+const EXCHANGE_ROW = [
+  'slug',
+  'kind',
+  'title',
+  'description',
+  'icon',
+  'group',
+  'sort',
+  'allow',
+  'allowed_in',
+  'max_per_entity',
+  'is_enabled',
+] as const
+
+function exportedContent(type: BlockType, draft: boolean): BlockType['content'] | null {
+  if (draft && type.draft !== null) return contentOf(type)
+  if (type.published === null) return null
+
+  return (
+    history(type).find((record) => record.number === type.published?.number)?.content ??
+    contentOf(type)
+  )
+}
+
+on('GET', '/blocks/export', ({ query }) => {
+  const draft = query.get('draft') === '1'
+  const asked = query.getAll('slugs[]')
+  const queue = asked.length > 0 ? [...asked] : blockTypes.map((type) => type.slug)
+  const chosen = new Map<string, { type: BlockType; content: NonNullable<BlockType['content']> }>()
+  const skipped: string[] = []
+  const missing: string[] = []
+
+  while (queue.length > 0) {
+    const slug = queue.shift()!
+
+    if (chosen.has(slug) || skipped.includes(slug) || missing.includes(slug)) continue
+
+    const type = blockTypes.find((item) => item.slug === slug)
+
+    if (type === undefined) {
+      missing.push(slug)
+      continue
+    }
+
+    const content = exportedContent(type, draft)
+
+    if (content == null) {
+      skipped.push(slug)
+      continue
+    }
+
+    chosen.set(slug, { type, content })
+    queue.push(...callsOf(content.template))
+  }
+
+  /* What is called before what calls it; a circle keeps the order it was found in. */
+  const ordered: string[] = []
+  const visit = (slug: string, path: string[]): void => {
+    if (ordered.includes(slug) || path.includes(slug) || !chosen.has(slug)) return
+
+    for (const called of callsOf(chosen.get(slug)!.content.template)) visit(called, [...path, slug])
+
+    ordered.push(slug)
+  }
+
+  for (const slug of [...chosen.keys()].sort()) visit(slug, [])
+
+  const now = new Date().toISOString()
+
+  return {
+    data: {
+      format: 'webx-blocks',
+      format_version: 1,
+      exported_at: now,
+      blocks: ordered.map((slug) => {
+        const { type, content } = chosen.get(slug)!
+        const row = Object.fromEntries(EXCHANGE_ROW.map((key) => [key, type[key] ?? null]))
+        const number = (draft ? (type.draft ?? type.published) : type.published)?.number ?? 1
+
+        return { ...row, kind: type.kind ?? 'block', version: number, exported_at: now, ...content }
+      }),
+    },
+    skipped,
+    missing,
+  }
+})
+
+on('POST', '/blocks/import', ({ body }) => {
+  const file = body.file as Record<string, unknown> | Record<string, unknown>[] | null
+  const name = typeof body.name === 'string' && body.name !== '' ? body.name : 'blocks.json'
+  const notAPack = 'This file is not a block type or a pack of them.'
+  const list = Array.isArray(file)
+    ? file
+    : file !== null && typeof file === 'object' && 'blocks' in file
+      ? file.blocks
+      : file !== null && typeof file === 'object'
+        ? [{ slug: name.replace(/\.json$/, ''), ...file }]
+        : null
+
+  if (!Array.isArray(list) || list.length === 0) {
+    throw new HttpFailure(422, notAPack, undefined, { file: [notAPack] })
+  }
+
+  const dryRun = body.dry_run === true
+  const publish = body.publish === true
+
+  return {
+    data: (list as Record<string, unknown>[]).map((document) => {
+      const slug = String(document.slug ?? '')
+      const kind = document.kind === 'component' ? 'component' : 'block'
+      const row = {
+        slug,
+        title: typeof document.title === 'string' ? document.title : null,
+        kind,
+        name,
+        status: 'failed',
+        writes: false,
+        version: null as number | null,
+        published: null as number | null,
+        error: null as string | null,
+      }
+
+      if (!/^[a-z][a-z0-9-]*$/.test(slug)) {
+        return { ...row, error: 'The identifier must be latin letters, digits and dashes.' }
+      }
+
+      const content = {
+        schema: (document.schema ?? []) as NonNullable<BlockType['content']>['schema'],
+        template: String(document.template ?? ''),
+        styles: String(document.styles ?? ''),
+        script: (document.script as string | null) ?? null,
+        sample: (document.sample ?? {}) as Record<string, unknown>,
+      }
+      const existing = blockTypes.find((type) => type.slug === slug)
+      const writes =
+        existing === undefined || JSON.stringify(contentOf(existing)) !== JSON.stringify(content)
+      const status = existing === undefined ? 'created' : writes ? 'updated' : 'unchanged'
+
+      if (dryRun) return { ...row, status, writes }
+
+      const now = new Date().toISOString()
+      const type: BlockType = existing ?? {
+        id: Math.max(...blockTypes.map((item) => item.id)) + 1,
+        kind,
+        slug,
+        title: row.title ?? slug,
+        description: (document.description as string | null) ?? null,
+        icon: (document.icon as string | null) ?? 'square',
+        group: String(document.group ?? 'content'),
+        sort: blockTypes.length * 10 + 10,
+        allow: (document.allow as string[] | null) ?? null,
+        allowed_in: (document.allowed_in as string[] | null) ?? null,
+        max_per_entity: (document.max_per_entity as number | null) ?? null,
+        is_enabled: document.is_enabled !== false,
+        draft: null,
+        published: null,
+        usage_count: 0,
+        thumbnail: null,
+        created_at: now,
+        updated_at: now,
+      }
+
+      if (existing === undefined) blockTypes.push(type)
+
+      let version: number | null = null
+
+      if (writes) {
+        type.content = content
+        type.updated_at = now
+        type.draft = {
+          number: next(type),
+          source: 'import',
+          comment: `Imported from ${name}`,
+          author_id: 1,
+          author: 'Анна Ковальчук',
+          created_at: now,
+        }
+        history(type).push({ ...type.draft, content: blockClone(content) })
+        version = type.draft.number
+      }
+
+      let published: number | null = null
+      let error: string | null = null
+
+      if (publish && type.draft !== null) {
+        const failure = templateFailure(content.template)
+
+        if (failure === null) {
+          type.published = type.draft
+          type.draft = null
+          published = type.published.number
+        } else {
+          error = `not published — ${failure.reason}`
+        }
+      }
+
+      return { ...row, status, writes, version, published, error }
+    }),
+  }
+})
+
 on('POST', '/blocks', ({ body }) => {
   const now = new Date().toISOString()
   const type: BlockType = {

@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'export' => 'Eksport',
+    'import' => 'Import',
+    'export-title' => 'Eksport bloków',
+    'import-title' => 'Import bloków',
+    'export-help' => 'Wybierz typy. Komponenty, które wywołują, pojadą razem z nimi, żeby plik działał na innej stronie bez zmian.',
+    'select-all' => 'Zaznacz wszystkie',
+    'drafts' => 'Brać szkice, jeśli są',
+    'drafts-help' => 'W przeciwnym razie idzie wersja opublikowana, a typ nigdy nieopublikowany jest pomijany.',
+    'download' => 'Pobierz',
+    'exported' => 'Typów w pliku: :count',
+    'skipped' => 'Nieopublikowane, pominięte: :list',
+    'missing' => 'Wywoływane, ale nie ma ich na tej stronie: :list',
+    'nothing' => 'Nie ma czego eksportować: żaden z wybranych typów nie jest opublikowany.',
+    'export-failed' => 'Eksport się nie powiódł.',
+    'import-help' => 'Plik wyeksportowany z tej sekcji lub poleceniem webx:blocks:export. Typy przychodzą jako szkice; typ, który już istnieje, dostaje nową wersję szkicu.',
+    'choose-file' => 'Wybierz plik',
+    'other-file' => 'Inny plik',
+    'publish' => 'Opublikuj to, co przejdzie kontrole',
+    'status-created' => 'Nowy',
+    'status-updated' => 'Zostanie zaktualizowany',
+    'status-unchanged' => 'Bez zmian',
+    'status-failed' => 'Odrzucony',
+    'run' => 'Importuj',
+    'imported' => 'Zapisanych typów: :count',
+    'up-to-date' => 'Wszystko z pliku już jest na stronie, nie ma czego zapisywać.',
+    'not-json' => 'Ten plik nie jest JSON-em.',
+    'not-a-pack' => 'W pliku nie ma typu bloku ani zestawu typów.',
+    'cycle' => 'Typy w pliku wywołują się nawzajem w kółko: :path.',
+    'import-failed' => 'Import się nie powiódł.',
+];

@@ -247,6 +247,10 @@ php artisan webx:blocks:import --publish   # …and publish what passes the chec
 php artisan webx:blocks:import --dry-run
 ```
 
+The section does the same with **Export** and **Import**: a pack of the ticked types and the
+components they call, in one file, and an import that shows what it would do before it writes.
+The command reads those packs too.
+
 A block does not travel through git on its own; the files do. Each is the row's settings and one
 version's content, flat and pretty-printed for a diff. Import checks a file by the rules the panel
 checks a save with, writes a version only when the content differs from the one being edited, and

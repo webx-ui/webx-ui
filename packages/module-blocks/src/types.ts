@@ -305,3 +305,40 @@ export interface RegionAdopted {
   region: RegionDetail
   block: { id: number; slug: string }
 }
+
+/**
+ * A file of block types (§17.1): what "Export" saves and "Import" reads. The documents are the
+ * command's files as they are — the row's fields, then one version's content — in the order the
+ * call graph wants them, what is called first.
+ */
+export interface BlockPack {
+  format: 'webx-blocks'
+  format_version: number
+  exported_at: string
+  blocks: Record<string, unknown>[]
+}
+
+export interface BlockExport {
+  pack: BlockPack
+  /** Asked for, but with no version to give: never published, and drafts were not asked for. */
+  skipped: string[]
+  /** Asked for or called by a template, but not a type on this site. */
+  missing: string[]
+}
+
+export type BlockImportStatus = 'created' | 'updated' | 'unchanged' | 'failed'
+
+/** One type of an import: what would happen to it, or what did. */
+export interface BlockImportRow {
+  slug: string
+  title: string | null
+  kind: BlockKind
+  name: string
+  status: BlockImportStatus
+  /** A version is (or would be) written: the content differs from the one being edited. */
+  writes: boolean
+  version: number | null
+  published: number | null
+  /** Why the type was refused, or — beside a status that is not `failed` — why it stayed a draft. */
+  error: string | null
+}

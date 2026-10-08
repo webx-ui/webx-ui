@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'export' => 'Exporter',
+    'import' => 'Importer',
+    'export-title' => 'Exporter des blocs',
+    'import-title' => 'Importer des blocs',
+    'export-help' => 'Choisissez les types. Les composants qu’ils appellent les accompagnent, pour que le fichier fonctionne tel quel sur un autre site.',
+    'select-all' => 'Tout sélectionner',
+    'drafts' => 'Prendre les brouillons quand il y en a',
+    'drafts-help' => 'Sinon, c’est la version publiée qui part, et un type jamais publié est laissé de côté.',
+    'download' => 'Télécharger',
+    'exported' => 'Types dans le fichier : :count',
+    'skipped' => 'Jamais publiés, laissés de côté : :list',
+    'missing' => 'Appelés, mais absents de ce site : :list',
+    'nothing' => 'Rien à exporter : aucun des types choisis n’est publié.',
+    'export-failed' => 'L’export a échoué.',
+    'import-help' => 'Un fichier exporté depuis cette section ou par la commande webx:blocks:export. Les types arrivent en brouillon ; un type déjà présent reçoit une nouvelle version de brouillon.',
+    'choose-file' => 'Choisir un fichier',
+    'other-file' => 'Un autre fichier',
+    'publish' => 'Publier ce qui passe les vérifications',
+    'status-created' => 'Nouveau',
+    'status-updated' => 'Mis à jour',
+    'status-unchanged' => 'Inchangé',
+    'status-failed' => 'Refusé',
+    'run' => 'Importer',
+    'imported' => 'Types écrits : :count',
+    'up-to-date' => 'Tout le contenu du fichier est déjà là ; rien à écrire.',
+    'not-json' => 'Ce fichier n’est pas du JSON.',
+    'not-a-pack' => 'Ce fichier ne contient ni type de bloc ni lot de types.',
+    'cycle' => 'Les types du fichier s’appellent en boucle : :path.',
+    'import-failed' => 'L’import a échoué.',
+];

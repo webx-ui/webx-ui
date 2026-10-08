@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'export' => 'Dışa aktar',
+    'import' => 'İçe aktar',
+    'export-title' => 'Blokları dışa aktar',
+    'import-title' => 'Blokları içe aktar',
+    'export-help' => 'Türleri seçin. Çağırdıkları bileşenler de onlarla birlikte gider; böylece dosya başka bir sitede olduğu gibi çalışır.',
+    'select-all' => 'Tümünü seç',
+    'drafts' => 'Varsa taslakları al',
+    'drafts-help' => 'Aksi halde yayımlanmış sürüm gider; hiç yayımlanmamış bir tür atlanır.',
+    'download' => 'İndir',
+    'exported' => 'Dosyadaki türler: :count',
+    'skipped' => 'Hiç yayımlanmamış, atlandı: :list',
+    'missing' => 'Çağrılıyor ama bu sitede yok: :list',
+    'nothing' => 'Dışa aktarılacak bir şey yok: seçilen türlerin hiçbiri yayımlanmamış.',
+    'export-failed' => 'Dışa aktarma başarısız oldu.',
+    'import-help' => 'Bu bölümden veya webx:blocks:export komutuyla dışa aktarılmış bir dosya. Türler taslak olarak gelir; zaten var olan bir tür yeni bir taslak sürümü alır.',
+    'choose-file' => 'Dosya seç',
+    'other-file' => 'Başka bir dosya',
+    'publish' => 'Denetimlerden geçenleri yayımla',
+    'status-created' => 'Yeni',
+    'status-updated' => 'Güncellenecek',
+    'status-unchanged' => 'Değişiklik yok',
+    'status-failed' => 'Reddedildi',
+    'run' => 'İçe aktar',
+    'imported' => 'Yazılan türler: :count',
+    'up-to-date' => 'Dosyadaki her şey zaten burada; yazılacak bir şey yok.',
+    'not-json' => 'Bu dosya JSON değil.',
+    'not-a-pack' => 'Bu dosyada ne bir blok türü ne de tür paketi var.',
+    'cycle' => 'Dosyadaki türler birbirini döngü halinde çağırıyor: :path.',
+    'import-failed' => 'İçe aktarma başarısız oldu.',
+];

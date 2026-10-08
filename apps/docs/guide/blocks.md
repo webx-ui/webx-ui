@@ -449,6 +449,19 @@ fails is left as a draft and the command says so with its exit code. Keep the ex
 repository as a seed for a fresh install and as the thing that gets reviewed; moving types from a
 local site to a production one becomes two commands.
 
+The same files move through the section too, for whoever has no shell on the site. **Export** at
+the top of «Blocks» — and on a type's editor, with that type ticked — takes the ticked types and
+every component they call, so the file works on a site that has none of them, and saves one
+`.json`: a pack, the command's documents in a list under `"format": "webx-blocks"`, what is called
+first. **Import** reads such a pack, or a single file the command wrote, and asks the server twice:
+first without writing, to show what each type would become — new, updated, unchanged or refused,
+and why — then for real. Types come in as drafts, an existing one gets a new draft version, and
+the switch beside the button publishes what passes the checks. The command reads packs as well,
+so a file from the panel can go into `resources/blocks` as it is.
+
+Export needs only to see the section; import is `blocks.manage` and a site with editing on, like
+making a type by hand.
+
 The two drift apart quietly, so export on the day you edit. A type changed in the panel and not
 written back leaves the file describing the release before: the site is fine, because the site
 reads the database — what breaks is the next fresh install, the next deploy that seeds from the

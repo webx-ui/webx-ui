@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Blocks\Http\Controllers\BlockController;
 use WebxUi\Blocks\Http\Controllers\BlockVersionController;
 use WebxUi\Blocks\Http\Controllers\ComponentController;
+use WebxUi\Blocks\Http\Controllers\ExchangeController;
 use WebxUi\Blocks\Http\Controllers\PublishController;
 use WebxUi\Blocks\Http\Controllers\RegionController;
 use WebxUi\Blocks\Http\Controllers\RenderController;
@@ -31,6 +32,8 @@ Route::prefix((string) config('webx-admin.api_path').'/blocks')
 
         Route::middleware('cms.can:blocks.view,blocks.manage')->group(function (): void {
             Route::get('/', [BlockController::class, 'index'])->name('index');
+            // A pack of types and the components they call (§17.1): reading, like the list.
+            Route::get('export', [ExchangeController::class, 'export'])->name('export');
             Route::get('{block}', [BlockController::class, 'show'])->whereNumber('block')->name('show');
             Route::get('{block}/usage', UsageController::class)->whereNumber('block')->name('usage');
             Route::get('{block}/versions', [BlockVersionController::class, 'index'])->whereNumber('block')->name('versions.index');
@@ -41,6 +44,8 @@ Route::prefix((string) config('webx-admin.api_path').'/blocks')
             Route::post('/', [BlockController::class, 'store'])->name('store');
             // The order of the list and the picker; never the order of the styles (`sort`).
             Route::post('reorder', ReorderController::class)->name('reorder');
+            // Writes drafts, and publishes when asked: the same as saving and publishing by hand.
+            Route::post('import', [ExchangeController::class, 'import'])->name('import');
             Route::put('{block}', [BlockController::class, 'update'])->whereNumber('block')->name('update');
             Route::delete('{block}', [BlockController::class, 'destroy'])->whereNumber('block')->name('destroy');
             Route::post('{block}/publish', PublishController::class)->whereNumber('block')->name('publish');

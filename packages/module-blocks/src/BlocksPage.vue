@@ -24,9 +24,11 @@ import { createBlocksApi } from './api'
 import BlockCard from './BlockCard.vue'
 import BlockCreateDialog from './BlockCreateDialog.vue'
 import BlockDeclaredCard from './BlockDeclaredCard.vue'
+import BlockExportDialog from './BlockExportDialog.vue'
+import BlockImportDialog from './BlockImportDialog.vue'
 import { useBlocksMessages } from './i18n'
 import { groupLabel, kindOf } from './schema'
-import type { BlocksMeta, BlockType, DeclaredComponent } from './types'
+import type { BlockImportRow, BlocksMeta, BlockType, DeclaredComponent } from './types'
 
 /**
  * The section: every type as a card with a live thumbnail, grouped the way the picker groups
@@ -61,6 +63,8 @@ const customising = ref<string | null>(null)
 const COMPONENTS = '@components'
 
 const create = createModal<BlockType, Record<string, never>>(BlockCreateDialog)
+const exportTypes = createModal<true, { selected?: string[] }>(BlockExportDialog)
+const importTypes = createModal<BlockImportRow[], Record<string, never>>(BlockImportDialog)
 
 const meta = computed<BlocksMeta>(() => {
   const found = context.state.manifest?.modules.find((module) => module.id === 'blocks')?.meta
@@ -294,12 +298,39 @@ async function customise(place: DeclaredComponent): Promise<void> {
 
 onMounted(load)
 
-/* What the section offers. Declared, because on a phone the head folds it into the ···. */
-const actions = computed<ScreenAction[]>(() =>
-  canManage.value
-    ? [{ key: 'new', label: t('page.new'), icon: 'plus', primary: true, run: () => void add() }]
-    : [],
-)
+/** A file of types in: the list is fetched again, since new cards and new drafts came with it. */
+async function importFile(): Promise<void> {
+  if (await importTypes({})) await load()
+}
+
+/*
+ * What the section offers. Declared, because on a phone the head folds it into the ···.
+ * Export is reading, so whoever sees the section may take a file; import writes drafts, so it
+ * stands with "New block" behind the right to make types.
+ */
+const actions = computed<ScreenAction[]>(() => [
+  ...(types.value.length > 0
+    ? [
+        {
+          key: 'export',
+          label: t('exchange.export'),
+          icon: 'download',
+          run: () => void exportTypes({}),
+        },
+      ]
+    : []),
+  ...(canManage.value
+    ? [
+        {
+          key: 'import',
+          label: t('exchange.import'),
+          icon: 'upload',
+          run: () => void importFile(),
+        },
+        { key: 'new', label: t('page.new'), icon: 'plus', primary: true, run: () => void add() },
+      ]
+    : []),
+])
 </script>
 
 <template>

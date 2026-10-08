@@ -172,4 +172,102 @@ final class ExchangeTest extends TestCase
 
         $this->artisan('webx:blocks:export', ['slug' => ['ghost'], '--path' => $this->dir])->assertFailed();
     }
+
+    #[Test]
+    public function the_panel_exports_a_pack_with_the_components_the_chosen_types_call(): void
+    {
+        $this->publish('badge', '<span class="b-badge">{{ $label }}</span>', ['kind' => 'component']);
+        $this->publish('hero', '<section data-wx-block="hero"><x-webx-block type="badge" :label="$title" /></section>');
+        $this->publish('quote', '<blockquote data-wx-block="quote">{{ $text }}</blockquote>');
+        Block::query()->create(['slug' => 'sketch', 'title' => 'Sketch'])->saveVersion(['template' => '<p></p>']);
+
+        $response = $this->actingAs($this->editor(['blocks.view']), 'cms')
+            ->getJson('/api/cms/blocks/export?slugs[]=hero&slugs[]=sketch&slugs[]=ghost')
+            ->assertOk();
+
+        $this->assertSame('webx-blocks', $response->json('data.format'));
+        // What is called comes first, so a reader meets the component before its caller.
+        $this->assertSame(['badge', 'hero'], array_column($response->json('data.blocks'), 'slug'));
+        $this->assertSame(['sketch'], $response->json('skipped'));
+        $this->assertSame(['ghost'], $response->json('missing'));
+
+        $drafts = $this->actingAs($this->editor(['blocks.view']), 'cms')
+            ->getJson('/api/cms/blocks/export?slugs[]=sketch&draft=1')
+            ->assertOk();
+
+        $this->assertSame(['sketch'], array_column($drafts->json('data.blocks'), 'slug'));
+    }
+
+    #[Test]
+    public function the_panel_imports_a_pack_after_showing_what_it_would_do(): void
+    {
+        $this->publish('badge', '<span class="b-badge">{{ $label }}</span>', ['kind' => 'component']);
+        $this->publish('hero', '<section data-wx-block="hero"><x-webx-block type="badge" :label="$title" /></section>');
+
+        $editor = $this->editor();
+        $pack = $this->actingAs($editor, 'cms')->getJson('/api/cms/blocks/export')->json('data');
+
+        // Another site: nothing there yet.
+        Block::query()->where('slug', 'hero')->first()?->delete();
+        Block::query()->where('slug', 'badge')->first()?->delete();
+
+        $plan = $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => $pack, 'name' => 'catalog.json', 'dry_run' => true])
+            ->assertOk();
+
+        $this->assertSame(['created', 'created'], array_column($plan->json('data'), 'status'));
+        $this->assertSame(0, Block::query()->count(), 'a dry run writes nothing');
+
+        $done = $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => $pack, 'name' => 'catalog.json', 'publish' => true])
+            ->assertOk();
+
+        $this->assertSame(['badge', 'hero'], array_column($done->json('data'), 'slug'));
+        $this->assertSame([1, 1], array_column($done->json('data'), 'published'));
+
+        $hero = Block::query()->where('slug', 'hero')->with('publishedVersion')->firstOrFail();
+
+        $published = $hero->publishedVersion;
+
+        $this->assertInstanceOf(BlockVersion::class, $published);
+        $this->assertSame('import', $published->source);
+        $this->assertSame('Imported from catalog.json', $published->comment);
+
+        $again = $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => $pack, 'dry_run' => true])
+            ->assertOk();
+
+        $this->assertSame(['unchanged', 'unchanged'], array_column($again->json('data'), 'status'));
+    }
+
+    #[Test]
+    public function the_panel_import_takes_a_single_file_refuses_anything_else_and_needs_manage(): void
+    {
+        $editor = $this->editor();
+        $single = ['slug' => 'note', 'title' => 'Note', 'template' => '<p data-wx-block="note"></p>'];
+
+        $this->actingAs($this->editor(['blocks.view']), 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => $single])
+            ->assertForbidden();
+
+        $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => $single, 'name' => 'note.json'])
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'created');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => ['blocks' => 'nope']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('file');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => ['blocks' => [
+                ['slug' => 'ping', 'title' => 'Ping', 'kind' => 'component', 'template' => '<x-webx-block type="pong" />'],
+                ['slug' => 'pong', 'title' => 'Pong', 'kind' => 'component', 'template' => '<x-webx-block type="ping" />'],
+            ]]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('file');
+
+        $this->assertNull(Block::query()->where('slug', 'ping')->first(), 'a circle is refused before anything is written');
+    }
 }
