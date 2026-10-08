@@ -153,8 +153,8 @@ HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` 
   не знает.** Пакет завёл `autoload.files` (`src/helpers.php`), а `composer dump-autoload` строит
   карту из `vendor/composer/installed.json`, где записан старый `composer.json` пакета, — и
   helpers.php в неё не попадает. Похоже на сломанную чужую ветку. Лечится `composer update
-  webx-ui/<пакет>` из `php/`: path-репозиторий перечитывается. Проверка — `grep helpers.php
-  vendor/composer/autoload_files.php`.
+webx-ui/<пакет>` из `php/`: path-репозиторий перечитывается. Проверка — `grep helpers.php
+vendor/composer/autoload_files.php`.
 
 ## Windows, Git Bash, OSPanel
 
