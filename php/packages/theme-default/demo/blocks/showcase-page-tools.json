@@ -1,0 +1,110 @@
+{
+  "slug": "showcase-page-tools",
+  "title": "Showcase: page tools",
+  "description": "The page tools of the widgets in a block, for the kitchen sink of the default theme: prose with tables (a rich text field, which no block of the demo has), cards that reveal on scroll, share and back to top — each needs markup a real block does not print.",
+  "icon": null,
+  "group": "content",
+  "sort": 94,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "tool",
+      "type": "wx-select",
+      "label": "Tool",
+      "props": {
+        "options": [
+          {
+            "label": "Prose",
+            "value": "prose"
+          },
+          {
+            "label": "Reveal",
+            "value": "reveal"
+          },
+          {
+            "label": "Share",
+            "value": "share"
+          },
+          {
+            "label": "Back to top",
+            "value": "back-to-top"
+          }
+        ]
+      }
+    },
+    {
+      "id": "body",
+      "type": "wx-rich-text",
+      "label": "Prose"
+    },
+    {
+      "id": "effect",
+      "type": "wx-select",
+      "label": "Effect",
+      "props": {
+        "options": [
+          {
+            "label": "Up",
+            "value": "up"
+          },
+          {
+            "label": "Fade",
+            "value": "fade"
+          },
+          {
+            "label": "Scale",
+            "value": "scale"
+          },
+          {
+            "label": "Stagger",
+            "value": "stagger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "width",
+      "type": "wx-select",
+      "label": "Width",
+      "props": {
+        "options": [
+          {
+            "label": "Full",
+            "value": "full"
+          },
+          {
+            "label": "Narrow column",
+            "value": "narrow"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "<section class=\"b-showcase-page-tools b-showcase-page-tools--{{ $width === 'narrow' ? 'narrow' : 'full' }}\" data-wx-block=\"showcase-page-tools\">\n    @if ($heading)\n        <h2 class=\"b-showcase-page-tools__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-page-tools__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-page-tools__frame\">\n        @if ($tool === 'reveal')\n            <ul class=\"b-showcase-page-tools__cards\" @if ($effect === 'stagger') data-webx-reveal=\"stagger\" @endif>\n                @foreach (range(1, 6) as $card)\n                    <li class=\"b-showcase-page-tools__card\" @if ($effect !== 'stagger') data-webx-reveal=\"{{ $effect ?: 'up' }}\" @endif>{{ ucfirst($effect ?: 'up') }} {{ $card }}</li>\n                @endforeach\n            </ul>\n        @elseif ($tool === 'share')\n            <x-webx-share :title=\"$heading ?: null\" />\n        @elseif ($tool === 'back-to-top')\n            <x-webx-back-to-top />\n        @else\n            {!! $body !!}\n        @endif\n    </div>\n</section>\n",
+  "styles": ".b-showcase-page-tools {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-page-tools__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-page-tools__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-page-tools--narrow .b-showcase-page-tools__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n\n.b-showcase-page-tools__cards {\n    display: grid;\n    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));\n    gap: var(--site-space-4);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-showcase-page-tools__card {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    min-height: 8rem;\n    margin: 0;\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-surface);\n    font-weight: 600;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Page tools",
+    "note": "",
+    "tool": "prose",
+    "body": "<p>Prose with a table.</p>",
+    "effect": "up",
+    "width": "full"
+  }
+}

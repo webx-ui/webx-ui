@@ -973,6 +973,168 @@
           }
         }
       ]
+    },
+    {
+      "title": "Page tools",
+      "slug": "page-tools",
+      "seo": {
+        "title": "Page tools",
+        "description": "Tables of prose that scroll inside themselves, blocks that reveal on scroll, share links without a network’s script, and back to top."
+      },
+      "blocks": [
+        {
+          "key": "showcase-tools-intro",
+          "type": "text",
+          "values": {
+            "heading": "Page tools",
+            "body": "The small things a long page needs. A table an editor wrote in a rich text field scrolls inside itself, with a shadow on the side there is more behind and its caption standing still. Blocks come in as the page scrolls to them — and with reduced motion, or without JavaScript, they are simply there. Share is plain links to each network, no script of theirs. Back to top waits in the corner until the page is two screens down."
+          }
+        },
+        {
+          "key": "showcase-tools-wide",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "A table wider than the column",
+            "note": "Nine columns: on a phone, and here on a desktop too, the table scrolls inside its frame. The caption stays above it.",
+            "tool": "prose",
+            "body": "<p>A comparison of plans, as an editor would paste it.</p><table><caption>Plans compared, per month</caption><thead><tr><th>Plan</th><th>Price</th><th>Pages</th><th>Languages</th><th>Storage</th><th>Backups</th><th>Support</th><th>Custom domain</th><th>Audit</th></tr></thead><tbody><tr><td>Start</td><td>€9</td><td>20</td><td>1</td><td>2 GB</td><td>Weekly</td><td>E-mail</td><td>No</td><td>Monthly</td></tr><tr><td>Business</td><td>€29</td><td>200</td><td>3</td><td>20 GB</td><td>Daily</td><td>E-mail and chat</td><td>Yes</td><td>Weekly</td></tr><tr><td>Enterprise</td><td>€99</td><td>Unlimited</td><td>Unlimited</td><td>200 GB</td><td>Hourly</td><td>A manager of your own</td><td>Yes</td><td>Daily</td></tr></tbody></table><p>The paragraph after the table starts where it always would.</p>",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-narrow",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "The same table in a column 20rem wide, and a small one that fits: it has no tab stop and no shadow.",
+            "tool": "prose",
+            "body": "<table><caption>Plans compared, per month</caption><thead><tr><th>Plan</th><th>Price</th><th>Pages</th><th>Languages</th><th>Storage</th><th>Backups</th><th>Support</th><th>Custom domain</th><th>Audit</th></tr></thead><tbody><tr><td>Start</td><td>€9</td><td>20</td><td>1</td><td>2 GB</td><td>Weekly</td><td>E-mail</td><td>No</td><td>Monthly</td></tr><tr><td>Business</td><td>€29</td><td>200</td><td>3</td><td>20 GB</td><td>Daily</td><td>E-mail and chat</td><td>Yes</td><td>Weekly</td></tr><tr><td>Enterprise</td><td>€99</td><td>Unlimited</td><td>Unlimited</td><td>200 GB</td><td>Hourly</td><td>A manager of your own</td><td>Yes</td><td>Daily</td></tr></tbody></table><table><caption>Opening of the office</caption><tbody><tr><th>Weekdays</th><td>9:00–18:00</td></tr><tr><th>Saturday</th><td>10:00–14:00</td></tr></tbody></table>",
+            "effect": "up",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-tools-bare",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Without a caption",
+            "note": "A screen reader calls the scroller “Table”.",
+            "tool": "prose",
+            "body": "<table><thead><tr><th>Code</th><th>Country</th><th>Currency</th><th>Language</th><th>Time zone</th><th>Calling code</th></tr></thead><tbody><tr><td>DE</td><td>Germany</td><td>Euro</td><td>German</td><td>Europe/Berlin</td><td>+49</td></tr><tr><td>PL</td><td>Poland</td><td>Złoty</td><td>Polish</td><td>Europe/Warsaw</td><td>+48</td></tr></tbody></table>",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-intro",
+          "type": "text",
+          "values": {
+            "heading": "Reveal on scroll",
+            "body": "The rows of cards below come in as they reach the screen, once each: up, fade, scale, and stagger — the cards of a row one after another. What is on the screen when the page opens is never hidden first."
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-up",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Up",
+            "note": "",
+            "tool": "reveal",
+            "body": "",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-fade",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Fade",
+            "note": "",
+            "tool": "reveal",
+            "body": "",
+            "effect": "fade",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-scale",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Scale",
+            "note": "",
+            "tool": "reveal",
+            "body": "",
+            "effect": "scale",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-stagger",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Stagger",
+            "note": "",
+            "tool": "reveal",
+            "body": "",
+            "effect": "stagger",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-share",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Share this page",
+            "note": "Each network’s own address for sharing, in a new tab; e-mail; Copy link. On a phone, one Share button opens the system’s share sheet.",
+            "tool": "share",
+            "body": "",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-share-narrow",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Share in a narrow column",
+            "note": "The row wraps; every link stays 44px.",
+            "tool": "share",
+            "body": "",
+            "effect": "up",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-tools-back-to-top",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Back to top",
+            "note": "The round button in the corner of the window: it came once this page was two screens down, and stands above the cookie banner while that is on the screen.",
+            "tool": "back-to-top",
+            "body": "",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Scroll the wide table with a finger, the trackpad or the keyboard — Tab reaches its frame, the arrows scroll it — and watch the shadows follow. Make the window narrow: the small table starts to scroll, and only then gets a tab stop.\nScroll down slowly to see each row come in; switch on reduced motion in the system and reload — nothing is hidden. Switch JavaScript off — the cards are there, the tables still scroll, Copy link is gone and back to top is a link at the end of the page.\nPress back to top with the keyboard: the page goes up and the next Tab is the skip link."
+          }
+        },
+        {
+          "key": "showcase-tools-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "Tables: nothing to write. Every table without a class on a page — what a rich text field stores — is put in a scroller by the server; a table a template wrote has a class and is left alone. Classes: webx-table, __caption, __frame, __scroller, __table; is-more-left, is-more-right. Tokens: --webx-table-shadow, --webx-table-shadow-size, --webx-table-caption-color.\ndata-webx-reveal=\"up\" (fade, scale) on any element; data-webx-reveal=\"stagger\" with data-webx-reveal-effect on a container. Tokens: --webx-reveal-duration, --webx-reveal-distance, --webx-reveal-scale, --webx-reveal-stagger.\nx-webx-share title=\"…\" :networks=\"['facebook', 'x', 'linkedin', 'telegram', 'whatsapp', 'email', 'copy']\" — also viber, reddit, pinterest, threads, bluesky, vk; url is the page by default.\nx-webx-back-to-top corner=\"bottom-end\" :after=\"2\" — the screens scrolled before it shows."
+          }
+        }
+      ]
     }
   ]
 }
