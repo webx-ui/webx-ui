@@ -70,6 +70,8 @@ export default {
         runtime: join(root, 'resources/js/runtime.js'),
         consent: join(root, 'resources/js/consent.js'),
         contacts: join(root, 'resources/js/contacts.js'),
+        // No script of its own: the dropdown it opens is the runtime's.
+        'language-switcher': join(root, 'resources/css/language-switcher.css'),
       },
       output: {
         entryFileNames: '[name].js',

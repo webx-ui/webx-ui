@@ -76,4 +76,8 @@ return [
     'socials' => [
         'label' => 'Sosyal ağlar',
     ],
+    'language' => [
+        'label' => 'Dil',
+        'fallback' => 'Henüz çevrilmedi: bu dildeki ana sayfa',
+    ],
 ];

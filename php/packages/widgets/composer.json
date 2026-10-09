@@ -34,7 +34,8 @@
     },
     "suggest": {
         "webx-ui/module-inbox": "Its forms opened in a dialog by any button (data-webx-form=\"<slug>\")",
-        "webx-ui/module-settings": "The \"Cookie\" tab of the settings screen and MCP for the consent banner, without it config/webx-widgets.php; the Contacts tab the phones, hours, quick contact and networks read"
+        "webx-ui/module-settings": "The \"Cookie\" tab of the settings screen and MCP for the consent banner, without it config/webx-widgets.php; the Contacts tab the phones, hours, quick contact and networks read",
+        "webx-ui/routing": "The language switcher's addresses of the same page in the other languages (with webx-ui/localization)"
     },
     "autoload": {
         "psr-4": {

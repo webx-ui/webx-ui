@@ -1,11 +1,10 @@
 /*
  * The contacts widgets (spec §12): phones, opening hours, quick contact, the bottom bar, the
- * networks — and the icons they share. One flat class per rule, like the runtime's (THEMES §8);
+ * networks; the icons they use are the runtime's `.webx-icon`. One flat class per rule (THEMES §8);
  * the dropdowns they open are the runtime's `.webx-dropdown`, and only what is their own is here.
  */
 
 :where(:root) {
-  --webx-icon-size: 1.25rem;
   --webx-contacts-gap: var(--site-space-2);
   --webx-hours-open-color: var(--site-color-success);
   --webx-hours-closed-color: var(--site-color-danger);
@@ -19,12 +18,6 @@
   --webx-contact-bar-size: 56px;
   --webx-contact-bar-bg: var(--site-color-surface);
   --webx-socials-size: 44px;
-}
-
-.webx-icon {
-  flex: none;
-  width: var(--webx-icon-size);
-  height: var(--webx-icon-size);
 }
 
 /* Phones */

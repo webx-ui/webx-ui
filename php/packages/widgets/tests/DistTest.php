@@ -28,6 +28,9 @@ final class DistTest extends PlainTestCase
     /** The contacts widgets — phones, hours, quick contact, the bar, networks: 6 KB gzip, only where they stand. */
     private const int CONTACTS_BUDGET = 6 * 1024;
 
+    /** The language switcher: a stylesheet only — its dropdown is the runtime's. */
+    private const int LANGUAGE_SWITCHER_BUDGET = 2 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -66,7 +69,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'runtime.css', 'runtime.js', 'sources.json'], $built);
+        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'runtime.css', 'runtime.js', 'sources.json'], $built);
     }
 
     #[Test]
@@ -75,6 +78,16 @@ final class DistTest extends PlainTestCase
         $size = self::gzipped('contacts.js') + self::gzipped('contacts.css');
 
         $this->assertLessThanOrEqual(self::CONTACTS_BUDGET, $size, sprintf('The contacts widgets are %.1f KB gzip.', $size / 1024));
+    }
+
+    #[Test]
+    public function the_language_switcher_is_a_stylesheet_inside_its_budget(): void
+    {
+        $this->assertFileDoesNotExist(Widgets::path().'/dist/language-switcher.js');
+
+        $size = self::gzipped('language-switcher.css');
+
+        $this->assertLessThanOrEqual(self::LANGUAGE_SWITCHER_BUDGET, $size, sprintf('The language switcher is %.1f KB gzip.', $size / 1024));
     }
 
     private static function gzipped(string $file): int

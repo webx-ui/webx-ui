@@ -76,4 +76,8 @@ return [
     'socials' => [
         'label' => 'Social networks',
     ],
+    'language' => [
+        'label' => 'Language',
+        'fallback' => 'Not translated yet: the home page in this language',
+    ],
 ];

@@ -1,13 +1,14 @@
 {
   "algorithm": "sha256",
   "files": {
-    "resources/css/base.css": "52d919782ecddc4d8eb368a3482624305139d6c934a4fc115df5a0b9babc2c2f",
+    "resources/css/base.css": "f6a6b9c8a1c3479f68d4f3164147d651a18daacbc3330fdcb248917e80448135",
     "resources/css/consent.css": "6f89e8898761ed2e4f4c43bc2cbe05e572b46e3317f01979b0286c059f6093fa",
-    "resources/css/contacts.css": "dedade30b8aa89a0703c6b2e1b2e980dc0ea385c61f61e4688392c942177dd8b",
+    "resources/css/contacts.css": "9f416bae3e12047335b44fe109bb82c4e984d7af44848e957e227e5f5b5d3815",
     "resources/css/dialog.css": "3671582ee2192756e4552e3b34357c0f0ed5139b7c38804d004bdb79d6db8a2f",
     "resources/css/dropdown.css": "29e5860d4cea6818e2eea232af7022cfceef3da6e10be24728b975576143f719",
     "resources/css/form-dialog.css": "693670966aeda84544d1b0e754c9999afb0736393304a735b609ae10d024f9d3",
     "resources/css/header.css": "48e5fd41c8eaf12af10742ce918e3a3eea35edd0e6265d803832b6ed0139a4f9",
+    "resources/css/language-switcher.css": "12d26cdda3be158b41df3d9f4f49c0822eb4ab7ede2ea290a0cfcf0e3d784063",
     "resources/css/mobile-menu.css": "65f19b0b2b4ab25be0950c7b85c57206787e3d307a618336d36be11972b9ecb2",
     "resources/css/runtime.css": "25188e37a71bee6987fb3bd732f20dd525b65cd79cfa68f925c1efa2db6341c6",
     "resources/css/tabs.css": "d65263249c29025b907b52733f10e6969382a3eb35e4e024baf3a02053ccee39",
