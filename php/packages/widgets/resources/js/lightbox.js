@@ -124,7 +124,8 @@ export async function show(link) {
     index,
     mainClass: 'webx-lightbox',
     showHideAnimationType: reduced ? 'none' : 'zoom',
-    bgOpacity: 0.96,
+    // Opaque: a page showing through competes with the counter and the buttons on a phone.
+    bgOpacity: 1,
     // Focus goes back to the link of the picture last shown, not always to the opener: after
     // paging to the fifth, Tab goes on from the fifth.
     returnFocus: false,
