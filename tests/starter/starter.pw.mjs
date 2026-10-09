@@ -1193,3 +1193,219 @@ test.describe('slider', () => {
     )
   })
 })
+
+test.describe('lightbox', () => {
+  const PATH = '/kitchen-sink/lightbox'
+
+  // Answered already: the banner would stand over the pictures at the bottom of a phone.
+  const answered = async (context) => {
+    const url = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local')
+    await context.addCookies([
+      {
+        name: 'webx_consent',
+        value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: [] })),
+        domain: url.hostname,
+        path: '/',
+      },
+    ])
+  }
+
+  const viewer = (page) => page.locator('.pswp')
+  const counter = (page) => page.locator('.pswp__counter')
+
+  // The picture on screen: not the placeholder, in the slide that is shown.
+  const picture = (page) =>
+    page.evaluate(() => {
+      const image = document.querySelector(
+        '.pswp__item[aria-hidden="false"] img.pswp__img:not(.pswp__img--placeholder)',
+      )
+      if (!image?.complete) return null
+      const box = image.getBoundingClientRect()
+      return {
+        left: box.left,
+        top: box.top,
+        right: box.right,
+        bottom: box.bottom,
+        width: box.width,
+        height: box.height,
+      }
+    })
+
+  // The section of the page by its heading: grid, gallery slider, links by hand.
+  const section = (page, heading) =>
+    page
+      .locator('.b-showcase-lightbox')
+      .filter({ has: page.getByRole('heading', { name: heading }) })
+
+  test('on a phone the picture fits the screen, a swipe and an arrow page on, Esc gives the focus back', async ({
+    page,
+    context,
+  }) => {
+    await answered(context)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.setViewportSize({ width: 375, height: 667 })
+    await page.goto(PATH)
+
+    const links = section(page, 'Grid').locator('a[data-webx-lightbox]')
+    await expect(links).toHaveCount(6)
+    await expect(links.first()).toHaveAttribute('aria-haspopup', 'dialog')
+    await links.first().click()
+
+    await expect(viewer(page)).toBeVisible()
+    await expect(viewer(page)).toHaveAttribute('role', 'dialog')
+    await expect(viewer(page)).toHaveAttribute('aria-modal', 'true')
+    await expect(viewer(page)).toHaveAttribute('aria-label', /.+/)
+    await expect(counter(page)).toHaveText('1 / 6')
+
+    // 2400 × 1600 on 375 × 667: the width of the screen, all of it on the screen.
+    await expect.poll(() => picture(page)).not.toBeNull()
+    const wide = await picture(page)
+    expect(wide.left).toBeGreaterThanOrEqual(-1)
+    expect(wide.top).toBeGreaterThanOrEqual(-1)
+    expect(wide.right).toBeLessThanOrEqual(376)
+    expect(wide.bottom).toBeLessThanOrEqual(668)
+    expect(wide.width).toBeGreaterThan(370)
+    expect(wide.width / wide.height).toBeCloseTo(1.5, 1)
+
+    // A swipe to the left: the next of the group.
+    await page.mouse.move(300, 333)
+    await page.mouse.down()
+    for (let x = 280; x >= 40; x -= 40) await page.mouse.move(x, 336)
+    await page.mouse.up()
+    await expect(counter(page)).toHaveText('2 / 6')
+
+    await page.keyboard.press('ArrowRight')
+    await expect(counter(page)).toHaveText('3 / 6')
+
+    // Nothing sideways, the viewer open or closed.
+    const sideways = () =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      )
+    expect(await sideways()).toBe(false)
+
+    await page.keyboard.press('Escape')
+    await expect(viewer(page)).toHaveCount(0)
+    // Back on the picture last shown, so Tab goes on from there.
+    expect(await links.nth(2).evaluate((a) => a === document.activeElement)).toBe(true)
+    expect(await sideways()).toBe(false)
+
+    // Taller than wide: it fits by its height.
+    await section(page, 'Links by hand').locator('a').first().click()
+    await expect(viewer(page)).toBeVisible()
+    await expect.poll(() => picture(page)).not.toBeNull()
+    const tall = await picture(page)
+    expect(tall.top).toBeGreaterThanOrEqual(-1)
+    expect(tall.bottom).toBeLessThanOrEqual(668)
+    expect(tall.right).toBeLessThanOrEqual(376)
+    expect(tall.width / tall.height).toBeCloseTo(0.6, 1)
+    // On its own: no counter, nothing to page to.
+    await expect(counter(page)).toBeHidden()
+  })
+
+  test('asks nothing of anybody but the site, and measures a picture that came without sizes', async ({
+    page,
+    context,
+  }) => {
+    await answered(context)
+    const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+    const outside = []
+    page.on('request', (request) => {
+      const url = request.url()
+      if (!url.startsWith('data:') && new URL(url).origin !== site) outside.push(url)
+    })
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto(PATH)
+
+    // Opened from the keyboard.
+    await section(page, 'Grid').locator('a').first().focus()
+    await page.keyboard.press('Enter')
+    await expect(counter(page)).toHaveText('1 / 6')
+    await page.keyboard.press('ArrowLeft')
+    await expect(counter(page)).toHaveText('6 / 6')
+    await page.keyboard.press('Escape')
+    await expect(viewer(page)).toHaveCount(0)
+
+    // No data-width, no data-height: measured before it opens — 2400 × 1600 at its proportions.
+    await section(page, 'Links by hand').locator('a').nth(1).click()
+    await expect.poll(() => picture(page)).not.toBeNull()
+    const bare = await picture(page)
+    expect(bare.width / bare.height).toBeCloseTo(1.5, 1)
+    expect(bare.height).toBeGreaterThan(780)
+    await page.keyboard.press('Escape')
+
+    await page.waitForLoadState('networkidle')
+    expect(outside).toEqual([])
+  })
+
+  test("the gallery slider: a click opens the slide's picture, a drag only moves the slider", async ({
+    page,
+    context,
+  }) => {
+    await answered(context)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(PATH)
+
+    const gallery = section(page, 'Gallery slider')
+    const viewport = gallery.locator('.webx-slider__viewport')
+    const index = () => viewport.evaluate((el) => el.swiper.realIndex)
+    await viewport.scrollIntoViewIfNeeded()
+    await expect.poll(() => viewport.evaluate((el) => Boolean(el.swiper))).toBe(true)
+
+    // A drag across the picture moves the slider and opens nothing.
+    const box = await viewport.boundingBox()
+    const y = box.y + box.height / 2
+    await page.mouse.move(box.x + box.width * 0.8, y)
+    await page.mouse.down()
+    for (let x = box.x + box.width * 0.7; x >= box.x + box.width * 0.2; x -= box.width * 0.1) {
+      await page.mouse.move(x, y)
+    }
+    await page.mouse.up()
+    await expect.poll(index).toBe(1)
+    await page.waitForTimeout(100)
+    await expect(viewer(page)).toHaveCount(0)
+
+    // A click on the slide opens its picture, in the group of the slider.
+    await gallery.locator('.webx-slider__slide.is-active a[data-webx-lightbox]').click()
+    await expect(counter(page)).toHaveText('2 / 6')
+    await page.keyboard.press('ArrowRight')
+    await expect(counter(page)).toHaveText('3 / 6')
+
+    // Closed on the third: the slider comes to it, and the focus is on its link.
+    await page.keyboard.press('Escape')
+    await expect(viewer(page)).toHaveCount(0)
+    await expect.poll(index).toBe(2)
+    expect(
+      await gallery
+        .locator('.webx-slider__slide.is-active a[data-webx-lightbox]')
+        .evaluate((a) => a === document.activeElement),
+    ).toBe(true)
+  })
+
+  test('without JavaScript a picture is a link that opens its file', async ({ browser }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 375, height: 667 },
+    })
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const hrefs = await page
+      .locator('a[data-webx-lightbox]')
+      .evaluateAll((links) => links.map((a) => a.href))
+    expect(hrefs.length).toBeGreaterThanOrEqual(14)
+
+    const file = await page.request.get(hrefs[0])
+    expect(file.status()).toBe(200)
+    expect(file.headers()['content-type']).toContain('image/svg+xml')
+
+    // Neither the script nor the words of a page that has no lightbox.
+    expect(await page.locator('script[src*="lightbox.js"]').count()).toBe(1)
+    const plain = await context.newPage()
+    await plain.goto('/kitchen-sink/slider')
+    expect(await plain.locator('script[src*="lightbox.js"], #webx-lightbox').count()).toBe(0)
+    await context.close()
+  })
+})
