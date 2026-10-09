@@ -799,3 +799,127 @@ test.describe('contacts', () => {
     }
   })
 })
+
+test.describe('language switcher', () => {
+  const PATH = '/kitchen-sink/language-switcher'
+
+  // The starter site speaks English, Russian and Polish. The home page is in all three; the
+  // showcase pages are in English only.
+  const header = (page) => page.locator('.webx-header__actions .webx-language-switcher')
+
+  const inWindow = async (locator) => {
+    const box = await locator.boundingBox()
+    const width = await locator.page().evaluate(() => document.documentElement.clientWidth)
+    expect(box, 'the panel is not on the screen').not.toBeNull()
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(width + 0.5)
+  }
+
+  const links = (switcher) =>
+    switcher.locator('.webx-language-switcher__link').evaluateAll((all) =>
+      all.map((a) => ({
+        path: new URL(a.href).pathname,
+        hreflang: a.getAttribute('hreflang'),
+        lang: a.getAttribute('lang'),
+        current: a.getAttribute('aria-current'),
+        isCurrent: a.classList.contains('is-current'),
+        fallback: a.classList.contains('is-fallback'),
+        title: a.getAttribute('title'),
+        name: a.textContent.trim(),
+      })),
+    )
+
+  // Every link answers 200, in the language it says it is in.
+  const answers = async (page, link) => {
+    const response = await page.request.get(link.path)
+    expect(response.status(), `${link.path} does not answer`).toBe(200)
+    const html = await response.text()
+    expect(
+      html.match(/<html[^>]*\slang="([^"]+)"/)?.[1],
+      `${link.path} is not in ${link.lang}`,
+    ).toBe(link.lang)
+  }
+
+  test('leads to the same page where it is translated', async ({ page }) => {
+    await page.goto('/')
+    const all = await links(header(page))
+    expect(all.map((l) => l.hreflang)).toEqual(['en', 'ru', 'pl'])
+    expect(all.map((l) => l.name)).toEqual(['English', 'Русский', 'Polski'])
+    expect(all.map((l) => l.path)).toEqual(['/', '/ru', '/pl'])
+    for (const link of all) {
+      expect(link.lang).toBe(link.hreflang)
+      expect(link.fallback).toBe(false)
+      await answers(page, link)
+    }
+    expect(all.filter((l) => l.current === 'page').map((l) => l.hreflang)).toEqual(['en'])
+    expect(all.filter((l) => l.isCurrent).map((l) => l.hreflang)).toEqual(['en'])
+
+    // And back: the Polish home page leads to the English one, and marks Polish.
+    await page.goto('/pl')
+    const back = await links(header(page))
+    expect(back.find((l) => l.hreflang === 'en').path).toBe('/')
+    expect(back.find((l) => l.current === 'page').hreflang).toBe('pl')
+  })
+
+  test('leads to the home page of a language without a translation, and marks it', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    const all = await links(header(page))
+    expect(all.find((l) => l.hreflang === 'en')).toMatchObject({
+      path: PATH,
+      current: 'page',
+      fallback: false,
+    })
+    for (const code of ['ru', 'pl']) {
+      const link = all.find((l) => l.hreflang === code)
+      expect(link).toMatchObject({ path: `/${code}`, fallback: true, current: null })
+      expect(link.title, `the fallback to ${code} says nothing`).toMatch(/\S/)
+      await answers(page, link)
+    }
+  })
+
+  test('its dropdown stays in the window at 1280, and in the menu at 360', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto(PATH)
+    await still(page)
+    await header(page).locator('.webx-language-switcher__current').click()
+    const panel = header(page).locator('.webx-dropdown__panel')
+    await expect(panel).toBeVisible()
+    await inWindow(panel)
+    await expect(header(page).locator('.webx-language-switcher__current')).toContainText('English')
+
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+    await page.locator('.webx-mobile-menu__trigger').click()
+    const inMenu = page.locator('.webx-mobile-menu__bottom .webx-language-switcher')
+    await inMenu.locator('.webx-language-switcher__current').click()
+    const menuPanel = inMenu.locator('.webx-dropdown__panel')
+    await expect(menuPanel).toBeVisible()
+    await inWindow(menuPanel)
+    // Every language is reachable with a finger.
+    for (const link of await menuPanel.locator('.webx-language-switcher__link').all()) {
+      expect((await link.boundingBox()).height).toBeGreaterThanOrEqual(44)
+    }
+    const { scroll, client } = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      client: document.documentElement.clientWidth,
+    }))
+    expect(scroll, 'the page scrolls sideways').toBeLessThanOrEqual(client)
+  })
+
+  test('opens from the keyboard and gives the focus back on Esc', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto(PATH)
+    const trigger = header(page).locator('.webx-language-switcher__current')
+    await trigger.focus()
+    await page.keyboard.press('Enter')
+    await expect(header(page).locator('.webx-dropdown__panel')).toBeVisible()
+    await page.keyboard.press('Tab')
+    await expect(header(page).locator('.webx-language-switcher__link').first()).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(header(page).locator('.webx-dropdown__panel')).toBeHidden()
+    await expect(trigger).toBeFocused()
+  })
+})
