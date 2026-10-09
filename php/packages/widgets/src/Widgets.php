@@ -11,6 +11,7 @@ use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeManifest;
+use WebxUi\Widgets\Prose\Tables;
 use WebxUi\Widgets\View\Components\Lightbox;
 
 /**
@@ -34,7 +35,7 @@ final class Widgets implements HeadPart
     public const string MARKER = '<!--webx-widgets-->';
 
     /** The behaviours inside the runtime: claiming one is allowed and loads nothing more. */
-    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog'];
+    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog', 'reveal'];
 
     /** A form's slug, the shape `module-inbox` gives it. */
     private const string SLUG = '/^[a-z0-9][a-z0-9_-]*$/i';
@@ -119,6 +120,15 @@ final class Widgets implements HeadPart
 
         // A response that never went through the router has not had its dialogs yet.
         $html = $this->withDialogs($html);
+
+        // Every table of prose in a scroller of its own (§14), whichever module printed the
+        // prose: the shadows at its edges are a file of their own, claimed when there is one.
+        [$html, $tables] = Tables::wrap($html, (string) __('webx-widgets::widgets.table.label'));
+
+        if ($tables > 0) {
+            $this->need('table');
+        }
+
         $at = (int) strpos($html, self::MARKER);
         $styles = [];
         $scripts = [];

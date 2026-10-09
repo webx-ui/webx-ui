@@ -118,4 +118,18 @@ return [
         'open' => 'Apri nelle mappe',
         'hint' => 'Fai clic sulla mappa per ingrandire con la rotella',
     ],
+    'table' => [
+        'label' => 'Tabella',
+    ],
+    'back_to_top' => [
+        'label' => 'Torna su',
+    ],
+    'share' => [
+        'label' => 'Condividi',
+        'on' => 'Condividi su :network',
+        'email' => 'Invia per e-mail',
+        'copy' => 'Copia link',
+        'copied' => 'Link copiato',
+        'failed' => 'Impossibile copiare il link',
+    ],
 ];

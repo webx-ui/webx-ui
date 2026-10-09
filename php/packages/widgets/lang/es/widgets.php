@@ -118,4 +118,18 @@ return [
         'open' => 'Abrir en mapas',
         'hint' => 'Haz clic en el mapa para hacer zoom con la rueda',
     ],
+    'table' => [
+        'label' => 'Tabla',
+    ],
+    'back_to_top' => [
+        'label' => 'Volver arriba',
+    ],
+    'share' => [
+        'label' => 'Compartir',
+        'on' => 'Compartir en :network',
+        'email' => 'Enviar por correo',
+        'copy' => 'Copiar enlace',
+        'copied' => 'Enlace copiado',
+        'failed' => 'No se pudo copiar el enlace',
+    ],
 ];

@@ -118,4 +118,18 @@ return [
         'open' => 'Open in maps',
         'hint' => 'Click the map to zoom with the wheel',
     ],
+    'table' => [
+        'label' => 'Table',
+    ],
+    'back_to_top' => [
+        'label' => 'Back to top',
+    ],
+    'share' => [
+        'label' => 'Share',
+        'on' => 'Share on :network',
+        'email' => 'Send by email',
+        'copy' => 'Copy link',
+        'copied' => 'Link copied',
+        'failed' => 'The link could not be copied',
+    ],
 ];

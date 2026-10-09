@@ -96,6 +96,11 @@ export default {
         video: join(root, 'resources/js/video.js'),
         // Leaflet, built in here and only here: tiles wait for consent to media (§11).
         map: join(root, 'resources/js/map.js'),
+        // The shadows at the edge of a table of prose, claimed by the server when it wrapped one.
+        table: join(root, 'resources/js/table.js'),
+        'back-to-top': join(root, 'resources/js/back-to-top.js'),
+        // Plain links: no network's script, and nothing to ask consent for.
+        share: join(root, 'resources/js/share.js'),
       },
       output: {
         entryFileNames: '[name].js',

@@ -118,4 +118,18 @@ return [
         'open' => 'Abrir nos mapas',
         'hint' => 'Clique no mapa para ampliar com a roda',
     ],
+    'table' => [
+        'label' => 'Tabela',
+    ],
+    'back_to_top' => [
+        'label' => 'Voltar ao topo',
+    ],
+    'share' => [
+        'label' => 'Partilhar',
+        'on' => 'Partilhar no :network',
+        'email' => 'Enviar por e-mail',
+        'copy' => 'Copiar link',
+        'copied' => 'Link copiado',
+        'failed' => 'Não foi possível copiar o link',
+    ],
 ];

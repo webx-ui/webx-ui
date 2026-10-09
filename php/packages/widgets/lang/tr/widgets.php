@@ -118,4 +118,18 @@ return [
         'open' => 'Haritada aç',
         'hint' => 'Tekerlekle yakınlaştırmak için haritaya tıklayın',
     ],
+    'table' => [
+        'label' => 'Tablo',
+    ],
+    'back_to_top' => [
+        'label' => 'Başa dön',
+    ],
+    'share' => [
+        'label' => 'Paylaş',
+        'on' => ':network üzerinde paylaş',
+        'email' => 'E-postayla gönder',
+        'copy' => 'Bağlantıyı kopyala',
+        'copied' => 'Bağlantı kopyalandı',
+        'failed' => 'Bağlantı kopyalanamadı',
+    ],
 ];

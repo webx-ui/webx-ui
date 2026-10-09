@@ -118,4 +118,18 @@ return [
         'open' => 'Otwórz w mapach',
         'hint' => 'Kliknij mapę, aby przybliżać kółkiem',
     ],
+    'table' => [
+        'label' => 'Tabela',
+    ],
+    'back_to_top' => [
+        'label' => 'Do góry',
+    ],
+    'share' => [
+        'label' => 'Udostępnij',
+        'on' => 'Udostępnij w :network',
+        'email' => 'Wyślij e-mailem',
+        'copy' => 'Kopiuj link',
+        'copied' => 'Link skopiowany',
+        'failed' => 'Nie udało się skopiować linku',
+    ],
 ];

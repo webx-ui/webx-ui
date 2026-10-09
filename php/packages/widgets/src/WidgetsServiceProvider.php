@@ -32,6 +32,7 @@ use WebxUi\Widgets\Audit\WaitForConsent;
 use WebxUi\Widgets\Audit\WidgetsPageReader;
 use WebxUi\Widgets\Video\Posters;
 use WebxUi\Widgets\Video\VideoProviders;
+use WebxUi\Widgets\View\Components\BackToTop;
 use WebxUi\Widgets\View\Components\ConsentGate;
 use WebxUi\Widgets\View\Components\ConsentLink;
 use WebxUi\Widgets\View\Components\ContactBar;
@@ -48,6 +49,7 @@ use WebxUi\Widgets\View\Components\MobileMenu;
 use WebxUi\Widgets\View\Components\MobileMenuNav;
 use WebxUi\Widgets\View\Components\OpeningHours;
 use WebxUi\Widgets\View\Components\Phones;
+use WebxUi\Widgets\View\Components\Share;
 use WebxUi\Widgets\View\Components\Slide;
 use WebxUi\Widgets\View\Components\Slider;
 use WebxUi\Widgets\View\Components\Socials;
@@ -131,6 +133,8 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-lightbox', Lightbox::class);
         Blade::component('webx-video', Video::class);
         Blade::component('webx-map', Map::class);
+        Blade::component('webx-back-to-top', BackToTop::class);
+        Blade::component('webx-share', Share::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');

@@ -118,4 +118,18 @@ return [
         'open' => 'In Karten öffnen',
         'hint' => 'Klicken Sie auf die Karte, um mit dem Mausrad zu zoomen',
     ],
+    'table' => [
+        'label' => 'Tabelle',
+    ],
+    'back_to_top' => [
+        'label' => 'Nach oben',
+    ],
+    'share' => [
+        'label' => 'Teilen',
+        'on' => 'Auf :network teilen',
+        'email' => 'Per E-Mail senden',
+        'copy' => 'Link kopieren',
+        'copied' => 'Link kopiert',
+        'failed' => 'Der Link konnte nicht kopiert werden',
+    ],
 ];

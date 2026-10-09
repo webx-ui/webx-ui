@@ -118,4 +118,18 @@ return [
         'open' => 'Ouvrir dans une carte',
         'hint' => 'Cliquez sur la carte pour zoomer avec la molette',
     ],
+    'table' => [
+        'label' => 'Tableau',
+    ],
+    'back_to_top' => [
+        'label' => 'Haut de page',
+    ],
+    'share' => [
+        'label' => 'Partager',
+        'on' => 'Partager sur :network',
+        'email' => 'Envoyer par e-mail',
+        'copy' => 'Copier le lien',
+        'copied' => 'Lien copié',
+        'failed' => 'Le lien n\'a pas pu être copié',
+    ],
 ];
