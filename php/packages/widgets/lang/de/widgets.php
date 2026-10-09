@@ -109,4 +109,13 @@ return [
         'load' => 'Laden',
         'always' => 'Videos immer laden',
     ],
+    'map' => [
+        'untitled' => 'Karte',
+        'label' => 'Karte: :place',
+        'notice' => 'Die Karte wird von :provider geladen, der Ihre IP-Adresse erhält.',
+        'load' => 'Laden',
+        'always' => 'Karten immer laden',
+        'open' => 'In Karten öffnen',
+        'hint' => 'Klicken Sie auf die Karte, um mit dem Mausrad zu zoomen',
+    ],
 ];

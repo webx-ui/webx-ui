@@ -109,4 +109,13 @@ return [
         'load' => 'Carregar',
         'always' => 'Carregar sempre os vídeos',
     ],
+    'map' => [
+        'untitled' => 'Mapa',
+        'label' => 'Mapa: :place',
+        'notice' => 'O mapa é carregado de :provider, que recebe o seu endereço IP.',
+        'load' => 'Carregar',
+        'always' => 'Carregar mapas sempre',
+        'open' => 'Abrir nos mapas',
+        'hint' => 'Clique no mapa para ampliar com a roda',
+    ],
 ];

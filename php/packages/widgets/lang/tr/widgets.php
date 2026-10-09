@@ -109,4 +109,13 @@ return [
         'load' => 'Yükle',
         'always' => 'Videoları her zaman yükle',
     ],
+    'map' => [
+        'untitled' => 'Harita',
+        'label' => 'Harita: :place',
+        'notice' => 'Harita, IP adresinizi alan :provider üzerinden yüklenir.',
+        'load' => 'Yükle',
+        'always' => 'Haritaları her zaman yükle',
+        'open' => 'Haritada aç',
+        'hint' => 'Tekerlekle yakınlaştırmak için haritaya tıklayın',
+    ],
 ];

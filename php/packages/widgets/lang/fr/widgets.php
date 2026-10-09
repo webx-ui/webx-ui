@@ -109,4 +109,13 @@ return [
         'load' => 'Charger',
         'always' => 'Toujours charger les vidéos',
     ],
+    'map' => [
+        'untitled' => 'Carte',
+        'label' => 'Carte : :place',
+        'notice' => 'La carte se charge depuis :provider, qui reçoit votre adresse IP.',
+        'load' => 'Charger',
+        'always' => 'Toujours charger les cartes',
+        'open' => 'Ouvrir dans une carte',
+        'hint' => 'Cliquez sur la carte pour zoomer avec la molette',
+    ],
 ];

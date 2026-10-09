@@ -109,4 +109,13 @@ return [
         'load' => 'Carica',
         'always' => 'Carica sempre i video',
     ],
+    'map' => [
+        'untitled' => 'Mappa',
+        'label' => 'Mappa: :place',
+        'notice' => 'La mappa si carica da :provider, che riceve il tuo indirizzo IP.',
+        'load' => 'Carica',
+        'always' => 'Carica sempre le mappe',
+        'open' => 'Apri nelle mappe',
+        'hint' => 'Fai clic sulla mappa per ingrandire con la rotella',
+    ],
 ];

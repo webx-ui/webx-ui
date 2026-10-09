@@ -54,11 +54,27 @@ function sources() {
   }
 }
 
+// Leaflet's stylesheet points at PNGs — the default pin, the layers control — that the map never
+// shows: its pin is the package's SVG. Inlined, they would be kilobytes of base64 in map.css. The
+// VML rule of Internet Explorer goes too: no browser the site serves draws VML.
+function leafletWithoutPictures() {
+  return {
+    name: 'webx-widgets-leaflet-css',
+    enforce: 'pre',
+    transform(code, id) {
+      if (!id.replace(/\\/g, '/').endsWith('leaflet/dist/leaflet.css')) return null
+      return code
+        .replace(/background-image:\s*url\(images\/[^)]+\);?/g, '')
+        .replace(/\.lvml\s*\{[^}]*\}/g, '')
+    },
+  }
+}
+
 export default {
   root,
   publicDir: false,
   logLevel: 'warn',
-  plugins: [sources()],
+  plugins: [sources(), leafletWithoutPictures()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -78,6 +94,8 @@ export default {
         lightbox: join(root, 'resources/js/lightbox.js'),
         // The facade and the notice before consent: no player library, the provider's is in its iframe.
         video: join(root, 'resources/js/video.js'),
+        // Leaflet, built in here and only here: tiles wait for consent to media (§11).
+        map: join(root, 'resources/js/map.js'),
       },
       output: {
         entryFileNames: '[name].js',

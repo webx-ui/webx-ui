@@ -109,4 +109,13 @@ return [
         'load' => 'Load',
         'always' => 'Always load videos',
     ],
+    'map' => [
+        'untitled' => 'Map',
+        'label' => 'Map: :place',
+        'notice' => 'The map loads from :provider, which receives your IP address.',
+        'load' => 'Load',
+        'always' => 'Always load maps',
+        'open' => 'Open in maps',
+        'hint' => 'Click the map to zoom with the wheel',
+    ],
 ];

@@ -109,4 +109,13 @@ return [
         'load' => 'Załaduj',
         'always' => 'Zawsze ładuj wideo',
     ],
+    'map' => [
+        'untitled' => 'Mapa',
+        'label' => 'Mapa: :place',
+        'notice' => 'Mapa wczyta się z :provider, który otrzyma Twój adres IP.',
+        'load' => 'Wczytaj',
+        'always' => 'Zawsze wczytuj mapy',
+        'open' => 'Otwórz w mapach',
+        'hint' => 'Kliknij mapę, aby przybliżać kółkiem',
+    ],
 ];
