@@ -43,6 +43,7 @@ final class Widgets implements HeadPart
         private readonly ThemeAssets $assets,
         private readonly UrlGenerator $urls,
         private readonly Config $config,
+        private readonly Consent $consent,
     ) {}
 
     /** The package's own directory: `dist/`, `resources/`, `lang/` are under it. */
@@ -94,6 +95,20 @@ final class Widgets implements HeadPart
             $styles[] = $this->config->get('app.debug') ? '<!-- webx-widgets: not published: php artisan webx:theme:sync -->' : '';
         }
 
+        // The consent banner is on every page (§9): it asks until answered, and its script is
+        // what switches on whatever third-party code waits for an answer — with the banner off too.
+        $bottom = '';
+
+        // Unpublished, its script could not answer: no banner, as no stylesheet.
+        if ($this->url('consent', 'js') !== null) {
+            $this->need('consent');
+            $bottom = $this->consent->render($html)."\n";
+
+            if ($this->consent->enabled()) {
+                $styles[] = $this->consent->googleDefault();
+            }
+        }
+
         foreach (['runtime', ...array_diff($this->claimed(), self::RUNTIME)] as $widget) {
             if (($url = $this->url($widget, 'css')) !== null) {
                 $styles[] = '<link rel="stylesheet" href="'.e($url).'">';
@@ -107,12 +122,12 @@ final class Widgets implements HeadPart
         // The first marker takes the stylesheets; a second `@webxTheme` on the page prints nothing twice.
         $html = substr($html, 0, $at).implode("\n", array_filter($styles)).str_replace(self::MARKER, '', substr($html, $at + strlen(self::MARKER)));
 
-        if ($scripts === []) {
+        if ($scripts === [] && $bottom === '') {
             return $html;
         }
 
         $body = strripos($html, '</body>');
-        $scripts = implode("\n", $scripts)."\n";
+        $scripts = $bottom.implode("\n", $scripts)."\n";
 
         return $body === false ? $html.$scripts : substr($html, 0, $body).$scripts.substr($html, $body);
     }

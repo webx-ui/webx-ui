@@ -1,6 +1,6 @@
 {
     "name": "webx-ui/widgets",
-    "description": "The interactive pieces every site repeats — menus, dialogs, tabs, accordions and, next, sliders, video, maps and cookie consent — with their logic and accessibility done and their look left to the theme, loaded only on the pages that use them.",
+    "description": "The interactive pieces every site repeats — menus, dialogs, tabs, accordions, cookie consent and, next, sliders, video and maps — with their logic and accessibility done and their look left to the theme, loaded only on the pages that use them.",
     "keywords": [
         "laravel",
         "blade",
@@ -31,6 +31,9 @@
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "suggest": {
+        "webx-ui/module-settings": "The \"Cookie\" tab of the settings screen and MCP for the consent banner; without it, config/webx-widgets.php"
     },
     "autoload": {
         "psr-4": {

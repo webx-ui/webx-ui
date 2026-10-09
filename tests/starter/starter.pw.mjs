@@ -252,3 +252,188 @@ test.describe('header', () => {
     await expect(item.locator('.webx-header-nav__dropdown')).toBeHidden()
   })
 })
+
+test.describe('cookie consent', () => {
+  const PATH = '/kitchen-sink/cookie-consent'
+  const THIRD = 'https://third-party.example'
+
+  // The starter site has nothing third-party, so the page gets some the way the server would
+  // print it: a counter waiting for statistics, an embed waiting for media.
+  async function withThirdParty(page) {
+    await page.route(
+      (url) => url.pathname === PATH,
+      async (route) => {
+        const response = await route.fetch()
+        const body = (await response.text()).replace(
+          '</main>',
+          `<script type="text/plain" data-webx-consent="statistics">window.statisticsRan = true</script>` +
+            `<iframe title="probe" data-webx-consent="media" data-src="${THIRD}/embed"></iframe></main>`,
+        )
+        await route.fulfill({ response, body })
+      },
+    )
+    await page.route(`${THIRD}/**`, (route) =>
+      route.fulfill({ body: '<p>third party</p>', contentType: 'text/html' }),
+    )
+    const outside = []
+    page.on('request', (request) => {
+      if (!request.url().startsWith(new URL(PATH, page.url()).origin)) outside.push(request.url())
+    })
+    return outside
+  }
+
+  const answer = async (page) =>
+    (await page.context().cookies()).find((cookie) => cookie.name === 'webx_consent')
+
+  test('the banner covers at most a third of a 360px screen, its buttons on it', async ({
+    page,
+  }) => {
+    for (const height of [640, 740]) {
+      await page.setViewportSize({ width: 360, height })
+      await page.goto(PATH)
+      const banner = page.locator('.webx-consent')
+      await expect(banner).toBeVisible()
+      const box = await banner.boundingBox()
+      expect(box.height, `at 360×${height}`).toBeLessThanOrEqual(height / 3)
+      expect(Math.round(box.y + box.height)).toBe(height)
+      for (const button of await banner.locator('button').all()) {
+        const b = await button.boundingBox()
+        expect(b.y + b.height).toBeLessThanOrEqual(height)
+        expect(b.height).toBeGreaterThanOrEqual(44)
+      }
+    }
+  })
+
+  test('"Reject all" and "Accept all" are the same size and the same weight', async ({ page }) => {
+    for (const width of [360, 1280]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto(PATH)
+      const look = (selector) =>
+        page.locator(`.webx-consent ${selector}`).evaluate((el) => {
+          const style = getComputedStyle(el)
+          const box = el.getBoundingClientRect()
+          return {
+            width: Math.round(box.width),
+            height: Math.round(box.height),
+            weight: style.fontWeight,
+            size: style.fontSize,
+            background: style.backgroundColor,
+            color: style.color,
+          }
+        })
+      expect(await look('[data-webx-consent-reject]'), `at ${width}px`).toEqual(
+        await look('[data-webx-consent-accept]'),
+      )
+    }
+  })
+
+  test('nothing third-party loads before consent; a text/plain script runs after it', async ({
+    page,
+  }) => {
+    const outside = await withThirdParty(page)
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto(PATH)
+    await page.waitForLoadState('networkidle')
+    expect(outside, 'requests before any answer').toEqual([])
+    expect(await page.evaluate(() => window.statisticsRan)).toBeUndefined()
+
+    // Customize: the page asks for statistics and media, so the dialog offers them — and no more.
+    await page.locator('.webx-consent__customize').click()
+    const dialog = page.locator('#webx-consent')
+    await expect(dialog).toHaveJSProperty('open', true)
+    await expect(dialog.locator('[data-webx-consent-row="statistics"]')).toBeVisible()
+    await expect(dialog.locator('[data-webx-consent-row="media"]')).toBeVisible()
+    await expect(dialog.locator('[data-webx-consent-row="marketing"]')).toBeHidden()
+
+    await dialog.locator('[name="statistics"]').check()
+    await dialog.locator('[data-webx-consent-save]').click()
+    await expect(dialog).toHaveJSProperty('open', false)
+    await expect(page.locator('.webx-consent')).toBeHidden()
+    expect(await page.evaluate(() => window.statisticsRan)).toBe(true)
+    expect(outside, 'statistics is not media').toEqual([])
+    expect(decodeURIComponent((await answer(page)).value)).toContain('"c":["statistics"]')
+    expect((await answer(page)).sameSite).toBe('Lax')
+
+    // The footer link opens the dialog again; accepting media loads the embed.
+    await page.locator('.webx-consent-link').click()
+    await expect(dialog).toHaveJSProperty('open', true)
+    await expect(dialog.locator('[name="statistics"]')).toBeChecked()
+    const embed = page.waitForRequest(`${THIRD}/embed`)
+    await dialog.locator('[data-webx-consent-accept]').click()
+    await embed
+
+    // Answered: the next page does not ask, and what waited runs at once.
+    await page.goto(PATH)
+    await expect(page.locator('.webx-consent')).toBeHidden()
+    expect(await page.evaluate(() => window.statisticsRan)).toBe(true)
+  })
+
+  test('taking an answer back reloads the page', async ({ page }) => {
+    await withThirdParty(page)
+    await page.goto(PATH)
+    await page.locator('.webx-consent [data-webx-consent-accept]').click()
+    expect(await page.evaluate(() => window.statisticsRan)).toBe(true)
+
+    await page.locator('.webx-consent-link').click()
+    await page.locator('#webx-consent [name="statistics"]').uncheck()
+    await Promise.all([
+      page.waitForEvent('load'),
+      page.locator('#webx-consent [data-webx-consent-save]').click(),
+    ])
+    expect(await page.evaluate(() => window.statisticsRan)).toBeUndefined()
+    await expect(page.locator('.webx-consent')).toBeHidden()
+  })
+
+  test('Global Privacy Control leaves marketing out of "Accept all"', async ({ browser }) => {
+    const context = await browser.newContext({ extraHTTPHeaders: { 'Sec-GPC': '1' } })
+    const page = await context.newPage()
+    await page.goto(PATH)
+    await page.locator('.webx-consent__customize').click()
+    await expect(page.locator('#webx-consent [data-webx-consent-gpc]')).toBeVisible()
+    await page.locator('#webx-consent [data-webx-consent-accept]').click()
+    const cookie = (await context.cookies()).find((c) => c.name === 'webx_consent')
+    expect(decodeURIComponent(cookie.value)).not.toContain('marketing')
+    await context.close()
+  })
+
+  test('the buttons of the banner keep their contrast in every preset', async ({ page }) => {
+    await page.goto(PATH)
+    for (const preset of Object.keys(presets)) {
+      await paint(page, preset)
+      const pairs = await page.evaluate(() => {
+        const canvas = document
+          .createElement('canvas')
+          .getContext('2d', { willReadFrequently: true })
+        // Whatever form the computed colour takes (rgb, oklch, color-mix), as sRGB bytes.
+        const rgb = (color) => {
+          canvas.clearRect(0, 0, 1, 1)
+          canvas.fillStyle = color
+          canvas.fillRect(0, 0, 1, 1)
+          return Array.from(canvas.getImageData(0, 0, 1, 1).data).slice(0, 3)
+        }
+        const luminance = (color) => {
+          const [r, g, b] = rgb(color).map((v) => {
+            v /= 255
+            return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+          })
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        }
+        const ratio = (a, b) => {
+          const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+          return (x + 0.05) / (y + 0.05)
+        }
+        const banner = getComputedStyle(document.querySelector('.webx-consent'))
+        const button = getComputedStyle(document.querySelector('.webx-consent__button'))
+        const customize = getComputedStyle(document.querySelector('.webx-consent__customize'))
+        return {
+          button: ratio(button.color, button.backgroundColor),
+          customize: ratio(customize.color, banner.backgroundColor),
+          text: ratio(banner.color, banner.backgroundColor),
+        }
+      })
+      for (const [what, ratio] of Object.entries(pairs)) {
+        expect(ratio, `${preset}: ${what}`).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
+})

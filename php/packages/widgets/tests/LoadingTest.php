@@ -47,7 +47,7 @@ class LoadingTest extends TestCase
     }
 
     #[Test]
-    public function every_page_with_a_theme_gets_the_runtime_and_no_more(): void
+    public function every_page_with_a_theme_gets_the_runtime_the_consent_banner_and_no_more(): void
     {
         $this->sync();
         $base = $this->published();
@@ -56,9 +56,14 @@ class LoadingTest extends TestCase
 
         $this->assertStringNotContainsString(Widgets::MARKER, $html);
         $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"{$base}/runtime.css\">", $html);
-        $this->assertStringContainsString("<script type=\"module\" src=\"{$base}/runtime.js\"></script>\n</body>", $html);
-        $this->assertSame(1, substr_count($html, '<script'));
+        $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"{$base}/consent.css\">", $html);
+        $this->assertStringContainsString("<script type=\"module\" src=\"{$base}/runtime.js\"></script>\n<script type=\"module\" src=\"{$base}/consent.js\"></script>\n</body>", $html);
+        $this->assertSame(2, substr_count($html, '<script type="module"'));
         $this->assertLessThan(strpos($html, '</head>'), strpos($html, 'runtime.css'));
+
+        // The banner before the scripts, and the Consent Mode default in the head (§9.3).
+        $this->assertLessThan(strpos($html, 'runtime.js'), (int) strpos($html, 'data-webx-consent-root'));
+        $this->assertLessThan(strpos($html, '</head>'), (int) strpos($html, '"consent","default"'));
     }
 
     #[Test]

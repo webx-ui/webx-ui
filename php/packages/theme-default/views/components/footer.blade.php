@@ -1,7 +1,8 @@
 @php
     /**
      * The footer region's fallback. `menu('footer')` when the menus module is there and the
-     * menu has entries; otherwise just the line every footer has.
+     * menu has entries; otherwise just the line every footer has. "Cookie settings" is there
+     * either way: taking a consent back must be as easy as giving it (WIDGETS §9.1).
      */
     $items = function_exists('menu')
         ? menu('footer')->map(fn ($item) => ['label' => $item->label, 'attrs' => $item->attrs()])
@@ -10,13 +11,12 @@
 
 <footer class="site-footer">
     <div class="site-container site-footer__inner">
-        @if ($items->isNotEmpty())
-            <nav class="site-footer__nav" aria-label="{{ __('Footer') }}">
-                @foreach ($items as $item)
-                    <a class="site-footer__link" @foreach ($item['attrs'] as $name => $value) {{ $name }}="{{ $value }}" @endforeach>{{ $item['label'] }}</a>
-                @endforeach
-            </nav>
-        @endif
+        <nav class="site-footer__nav" aria-label="{{ __('Footer') }}">
+            @foreach ($items as $item)
+                <a class="site-footer__link" @foreach ($item['attrs'] as $name => $value) {{ $name }}="{{ $value }}" @endforeach>{{ $item['label'] }}</a>
+            @endforeach
+            <x-webx-consent-link class="site-footer__link" />
+        </nav>
 
         <p class="site-footer__copy">&copy; {{ date('Y') }} {{ config('app.name') }}</p>
     </div>

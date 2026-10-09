@@ -66,7 +66,10 @@ export default {
     // Each widget is its own file: a shared chunk would be one more request on every page.
     modulePreload: false,
     rollupOptions: {
-      input: { runtime: join(root, 'resources/js/runtime.js') },
+      input: {
+        runtime: join(root, 'resources/js/runtime.js'),
+        consent: join(root, 'resources/js/consent.js'),
+      },
       output: {
         entryFileNames: '[name].js',
         assetFileNames: '[name][extname]',

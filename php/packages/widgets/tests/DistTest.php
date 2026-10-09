@@ -22,6 +22,9 @@ final class DistTest extends PlainTestCase
     /** Runtime with the behaviours, the mobile menu and the header: 16 KB gzip (§4). */
     private const int RUNTIME_BUDGET = 16 * 1024;
 
+    /** The consent banner, on every page too: 6 KB gzip (§4). */
+    private const int CONSENT_BUDGET = 6 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -44,6 +47,28 @@ final class DistTest extends PlainTestCase
         }
 
         $this->assertLessThanOrEqual(self::RUNTIME_BUDGET, $size, sprintf('The runtime is %.1f KB gzip.', $size / 1024));
+    }
+
+    #[Test]
+    public function the_consent_banner_is_its_own_file_inside_its_budget(): void
+    {
+        $size = self::gzipped('consent.js') + self::gzipped('consent.css');
+
+        $this->assertLessThanOrEqual(self::CONSENT_BUDGET, $size, sprintf('The consent banner is %.1f KB gzip.', $size / 1024));
+
+        // Nothing shared with the runtime: a chunk both import would be one more request on every page.
+        $built = array_values(array_filter(
+            array_map('basename', (array) glob(Widgets::path().'/dist/*')),
+            static fn (string $file): bool => ! str_starts_with($file, 'zz-'),
+        ));
+        sort($built);
+
+        $this->assertSame(['consent.css', 'consent.js', 'runtime.css', 'runtime.js', 'sources.json'], $built);
+    }
+
+    private static function gzipped(string $file): int
+    {
+        return strlen((string) gzencode((string) file_get_contents(Widgets::path().'/dist/'.$file), 9));
     }
 
     /**
@@ -100,12 +125,15 @@ final class DistTest extends PlainTestCase
     #[Test]
     public function every_locale_has_every_word(): void
     {
-        $english = self::keys(require Widgets::path().'/lang/en/widgets.php');
+        // The visitor's words and the panel's ("Cookie" tab of the settings, §9.5).
+        foreach (['widgets', 'panel'] as $group) {
+            $english = self::keys(require Widgets::path()."/lang/en/{$group}.php");
 
-        foreach (self::LOCALES as $locale) {
-            $file = Widgets::path()."/lang/{$locale}/widgets.php";
-            $this->assertFileExists($file);
-            $this->assertSame($english, self::keys(require $file), "lang/{$locale} differs from lang/en.");
+            foreach (self::LOCALES as $locale) {
+                $file = Widgets::path()."/lang/{$locale}/{$group}.php";
+                $this->assertFileExists($file);
+                $this->assertSame($english, self::keys(require $file), "lang/{$locale}/{$group}.php differs from lang/en.");
+            }
         }
     }
 

@@ -192,6 +192,48 @@
           ]
         }
       ]
+    },
+    {
+      "title": "Cookie consent",
+      "slug": "cookie-consent",
+      "seo": {
+        "title": "Cookie consent",
+        "description": "The cookie banner of the widgets: rejecting, customising, taking an answer back and Global Privacy Control."
+      },
+      "blocks": [
+        {
+          "key": "showcase-consent-intro",
+          "type": "text",
+          "values": {
+            "heading": "The cookie banner",
+            "body": "Every page asks until the visitor answers: a short text, a link to the policy and three buttons. Reject all and Accept all are the same size and the same weight, because consent won with a big green button next to a grey link is no consent. On a phone the banner never covers more than a third of the screen; a long text scrolls inside it and the buttons stay.\nThe answer is the cookie webx_consent: the categories, the date and the version of the policy. When the policy changes, the panel raises the version and everyone is asked again."
+          }
+        },
+        {
+          "key": "showcase-consent-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Reject all: the banner goes and nothing third-party loads on any page. Reload — it does not come back.\nCustomize: a dialog with a switch per category. Necessary is always on; a category nothing on the site uses is not offered at all, so a site without a counter does not ask about statistics.\nCookie settings in the footer opens the same dialog on any page. Switch off something you agreed to and the page reloads: a script that already ran cannot be unloaded.\nTo start again, delete the webx_consent cookie in the developer tools."
+          }
+        },
+        {
+          "key": "showcase-consent-gpc",
+          "type": "text",
+          "values": {
+            "heading": "Global Privacy Control",
+            "body": "A browser that sends Sec-GPC (Brave, or Firefox with the setting on) asks sites not to track it. Here that means marketing is never part of Accept all and the dialog says why; the visitor can still switch it on by hand."
+          }
+        },
+        {
+          "key": "showcase-consent-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "Anything third-party waits for its category: a script written as type=\"text/plain\" with data-webx-consent=\"statistics\", an iframe with data-webx-consent=\"media\" and data-src instead of src, or any code inside <x-webx-consent category=\"marketing\">. Once agreed to, the script runs, the iframe loads, the code goes on the page.\nScripts of the site ask webx.consent.has('media') and listen to webx:consent. Google Consent Mode v2 is on by itself: denied by default in the head, updated after the answer."
+          }
+        }
+      ]
     }
   ]
 }

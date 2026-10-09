@@ -31,6 +31,18 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `top`, the default (the body), `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items
 mode="accordion|drill">` in its body. The header builds one by itself out of its brand,
   navigation and actions unless given `mobile` or `collapse="never"`.
+- **Cookie consent** — `dist/consent.js|css`, on every page with a theme. The banner and its
+  dialog (`#webx-consent`) are printed before `</body>` by the package itself — no component to
+  place; the theme's footer has `<x-webx-consent-link />` ("Cookie settings"). Categories
+  `necessary`, `preferences`, `statistics`, `marketing`, `media`. Third-party code waits for its
+  category: `<script type="text/plain" data-webx-consent="statistics" src|inline>` (real type in
+  `data-webx-type`), `<iframe data-webx-consent="media" data-src="…">`, or any code inside
+  `<x-webx-consent category="marketing">…</x-webx-consent>`. Server: `Consent::has('media')`
+  (facade `WebxUi\Widgets\Facades\Consent`) reads the `webx_consent` cookie. Browser:
+  `webx.consent.has('media')`, `webx.consent.set([...])`, `webx.consent.open()`, event
+  `webx:consent` on `document`. Google Consent Mode v2 default is in the head. Settings: the
+  "Cookie" tab of `module-settings` (`consent.*`, also over MCP `settings_set`), otherwise
+  `config/webx-widgets.php` (`php artisan vendor:publish --tag=webx-widgets-config`).
 - **Loading** — `Widgets::need('<name>')` (facade `WebxUi\Widgets\Facades\Widgets`) claims a
   widget's own `dist/<name>.js|css` for the page. `@webxTheme` prints a marker; the response gets
   the `<link>`s there and the `<script type="module">`s before `</body>`.
@@ -39,13 +51,18 @@ mode="accordion|drill">` in its body. The header builds one by itself out of its
   `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,
   `is-collapsed|is-scrolled|is-hidden`; `webx-header-nav__item|link|toggle|dropdown|mega|sublink`,
   `is-open|is-current|is-flipped`; `webx-mobile-menu__trigger|panel|panel--<side>|top|close|body|bottom`;
-  `webx-mobile-nav__list|item|link|toggle|level|back|title`, `is-drilled`).
+  `webx-mobile-nav__list|item|link|toggle|level|back|title`, `is-drilled`;
+  `webx-consent__inner|text|title|body|policy|actions|button|customize`,
+  `webx-consent-dialog__intro|gpc|list|item|label|switch|name|always|description|actions`,
+  `webx-consent-link`).
   `html.webx-js` once the runtime runs; `html.webx-scroll-locked` while a modal is open;
   `html.webx-header-sticky` while a header sticks (the page's scroll padding is its height).
 - **Local tokens** — `--webx-dialog-width`, `--webx-dialog-padding`, `--webx-dialog-backdrop`,
   `--webx-tabs-gap`, `--webx-tabs-indicator`, `--webx-header-bg`, `--webx-header-gap`,
   `--webx-header-overlay-color`, `--webx-mobile-menu-width`, `--webx-mobile-menu-backdrop`,
-  `--webx-mobile-menu-padding`; declared on `:root` from `--site-*`. `--webx-header-height` and
+  `--webx-mobile-menu-padding`, `--webx-consent-z`, `--webx-consent-max-height`,
+  `--webx-consent-padding`, `--webx-consent-bg`, `--webx-consent-color`,
+  `--webx-consent-button-bg`, `--webx-consent-button-color`, `--webx-consent-font-size`; declared on `:root` from `--site-*`. `--webx-header-height` and
   `--webx-header-topbar-height` are kept live by the runtime — use them for `top` of anything
   else sticky.
 - **Words** — `webx-widgets::widgets.*` in en, ru, uk, de, pl, fr, es, it, pt, tr; every word
@@ -73,6 +90,10 @@ mode="accordion|drill">` in its body. The header builds one by itself out of its
 - Do not add `hidden` to a disclosure's panel in markup: without JavaScript it would never show.
 - Do not style a widget through a chain (`.site-main .webx-dialog__title`): one class matches the
   package and wins by order; a longer chain starts a specificity race with the next theme.
+- Do not paste a counter, a pixel, a chat or an embed as it is: wrap it in
+  `<x-webx-consent category="…">` or write it as `type="text/plain"` / `data-src` — nothing
+  third-party may load before the visitor agrees.
+- Do not make "Accept all" bigger or brighter than "Reject all": they share one class on purpose.
 - Do not copy the runtime into the theme to change one behaviour: register your own widget.
 - Do not call `Widgets::need()` for the behaviours above to get them — the runtime is already on
   every page; `need()` matters for widgets with files of their own.
