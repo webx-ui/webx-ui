@@ -77,8 +77,10 @@
   column-gap: var(--webx-contacts-gap);
 }
 
+/* Under the number and its messengers, which stand beside the number they open a chat with. */
 .webx-phones__label {
-  grid-column: 1;
+  grid-row: 2;
+  grid-column: 1 / -1;
   color: var(--site-color-text-muted);
   font-size: calc(var(--site-font-size-base) * 0.875);
 }

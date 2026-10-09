@@ -3,7 +3,7 @@
   "files": {
     "resources/css/base.css": "52d919782ecddc4d8eb368a3482624305139d6c934a4fc115df5a0b9babc2c2f",
     "resources/css/consent.css": "6f89e8898761ed2e4f4c43bc2cbe05e572b46e3317f01979b0286c059f6093fa",
-    "resources/css/contacts.css": "1c686be8b5eb212b154fc164159c41aeeb8b802d53b83d4a7325566644f66b11",
+    "resources/css/contacts.css": "dedade30b8aa89a0703c6b2e1b2e980dc0ea385c61f61e4688392c942177dd8b",
     "resources/css/dialog.css": "3671582ee2192756e4552e3b34357c0f0ed5139b7c38804d004bdb79d6db8a2f",
     "resources/css/dropdown.css": "29e5860d4cea6818e2eea232af7022cfceef3da6e10be24728b975576143f719",
     "resources/css/form-dialog.css": "693670966aeda84544d1b0e754c9999afb0736393304a735b609ae10d024f9d3",
