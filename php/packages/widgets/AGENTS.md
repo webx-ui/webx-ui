@@ -31,6 +31,18 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `top`, the default (the body), `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items
 mode="accordion|drill">` in its body. The header builds one by itself out of its brand,
   navigation and actions unless given `mobile` or `collapse="never"`.
+- **Dropdown panel** — `<x-webx-dropdown placement="bottom-start|bottom-end|bottom|top-start|top-end|top"
+open-on="click|hover" label open>` with slot `trigger` (its attributes go on the `<summary>`).
+  A `<details>`: without JavaScript a click opens it; with it the panel is a popover placed from
+  the trigger and turned over at the window's edge (`is-flipped`), Esc / Tab out / a click
+  elsewhere close it, one is open on the page. Phones, hours, languages, "share" are built on it.
+- **Form in a dialog** — any `<a>` or `<button>` with `data-webx-form="<slug>"`, or a link to
+  `#webx-form-<slug>` (typed into a menu item or a block's button in the panel), opens that
+  `module-inbox` form in `<dialog id="webx-form-<slug>">`, printed once per slug before
+  `</body>`, the form inside `placement="modal"`. `data-webx-form-value-<field>="…"` fills the
+  form's field `fields[<field>]` (a hidden field of the form). An opener the server does not
+  print: `Widgets::form('<slug>')`. Without `module-inbox` or with no enabled form by that slug
+  there is no dialog. View `webx-widgets::form-dialog`.
 - **Cookie consent** — `dist/consent.js|css`, on every page with a theme. The banner and its
   dialog (`#webx-consent`) are printed before `</body>` by the package itself — no component to
   place; the theme's footer has `<x-webx-consent-link />` ("Cookie settings"). Categories
@@ -54,7 +66,8 @@ mode="accordion|drill">` in its body. The header builds one by itself out of its
   `webx-mobile-nav__list|item|link|toggle|level|back|title`, `is-drilled`;
   `webx-consent__inner|text|title|body|policy|actions|button|customize`,
   `webx-consent-dialog__intro|gpc|list|item|label|switch|name|always|description|actions`,
-  `webx-consent-link`).
+  `webx-consent-link`; `webx-dropdown`, `--<placement>`, `__trigger|panel`, `is-open|is-flipped`;
+  `webx-form-dialog__header|title|close|body|done`, `is-sent`).
   `html.webx-js` once the runtime runs; `html.webx-scroll-locked` while a modal is open;
   `html.webx-header-sticky` while a header sticks (the page's scroll padding is its height).
 - **Local tokens** — `--webx-dialog-width`, `--webx-dialog-padding`, `--webx-dialog-backdrop`,
@@ -62,7 +75,8 @@ mode="accordion|drill">` in its body. The header builds one by itself out of its
   `--webx-header-overlay-color`, `--webx-mobile-menu-width`, `--webx-mobile-menu-backdrop`,
   `--webx-mobile-menu-padding`, `--webx-consent-z`, `--webx-consent-max-height`,
   `--webx-consent-padding`, `--webx-consent-bg`, `--webx-consent-color`,
-  `--webx-consent-button-bg`, `--webx-consent-button-color`, `--webx-consent-font-size`; declared on `:root` from `--site-*`. `--webx-header-height` and
+  `--webx-consent-button-bg`, `--webx-consent-button-color`, `--webx-consent-font-size`,
+  `--webx-dropdown-offset`, `--webx-dropdown-min-width`; declared on `:root` from `--site-*`. `--webx-header-height` and
   `--webx-header-topbar-height` are kept live by the runtime — use them for `top` of anything
   else sticky.
 - **Words** — `webx-widgets::widgets.*` in en, ru, uk, de, pl, fr, es, it, pt, tr; every word
@@ -93,6 +107,8 @@ mode="accordion|drill">` in its body. The header builds one by itself out of its
 - Do not paste a counter, a pixel, a chat or an embed as it is: wrap it in
   `<x-webx-consent category="…">` or write it as `type="text/plain"` / `data-src` — nothing
   third-party may load before the visitor agrees.
+- Do not print a form of the inbox inside a dialog of your own for a button: link the button to
+  `#webx-form-<slug>` — the page gets the form once, however many buttons lead to it.
 - Do not make "Accept all" bigger or brighter than "Reject all": they share one class on purpose.
 - Do not copy the runtime into the theme to change one behaviour: register your own widget.
 - Do not call `Widgets::need()` for the behaviours above to get them — the runtime is already on

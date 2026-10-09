@@ -565,7 +565,6 @@ test.describe('form in a dialog', () => {
     await page.setViewportSize({ width: 360, height: 480 })
     await page.goto(PATH)
     await still(page)
-    const before = await page.evaluate(() => window.scrollY)
     await page.locator('a[href="#webx-form-contact"]').first().click()
     const dialog = page.locator('#webx-form-contact')
     await expect(dialog).toHaveJSProperty('open', true)
@@ -591,7 +590,9 @@ test.describe('form in a dialog', () => {
     expect(box.sideways, 'scrolls sideways').toBeLessThanOrEqual(0)
     expect(box.scroll, 'the form is longer than the screen here').toBeGreaterThan(box.client)
 
-    await dialog.hover()
+    // Measured from here: the click scrolled the button into view first.
+    const before = await page.evaluate(() => window.scrollY)
+    await page.mouse.move(180, 240)
     await page.mouse.wheel(0, 400)
     await expect.poll(() => dialog.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)
     expect(await page.evaluate(() => window.scrollY)).toBe(before)
