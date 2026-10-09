@@ -396,6 +396,7 @@ final class PanelCommand extends Command
         // The site's own file, or the one a theme brings: with `webx-themes.theme` set the
         // chain is in the view paths, and `components/layout` lives in the theme it stands on.
         $layout = $files->exists($this->laravel->resourcePath('views/components/layout.blade.php'))
+            // @phpstan-ignore method.impossibleType (the theme's chain joins the view paths at run time, out of Larastan's sight)
             || $this->laravel->make('view')->exists('components.layout')
             ? 'layout'
             : null;
