@@ -7,6 +7,7 @@ namespace WebxUi\Widgets;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Routing\Events\ResponsePrepared;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -19,6 +20,7 @@ use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Widgets\View\Components\ConsentGate;
 use WebxUi\Widgets\View\Components\ConsentLink;
 use WebxUi\Widgets\View\Components\Dialog;
+use WebxUi\Widgets\View\Components\Dropdown;
 use WebxUi\Widgets\View\Components\Header;
 use WebxUi\Widgets\View\Components\HeaderNav;
 use WebxUi\Widgets\View\Components\MobileMenu;
@@ -49,6 +51,7 @@ class WidgetsServiceProvider extends ServiceProvider
         // Scoped: what one request claimed must not load on the next one of a long-lived worker.
         $this->app->scoped(Widgets::class);
         $this->app->scoped(HeaderNavigation::class);
+        $this->app->scoped(FormDialogs::class);
         // Scoped too: the answer is read once from the request it came with.
         $this->app->scoped(Consent::class);
         $this->app->tag([Widgets::class], HeadPart::TAG);
@@ -78,10 +81,22 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-header.nav', HeaderNav::class);
         Blade::component('webx-consent', ConsentGate::class);
         Blade::component('webx-consent-link', ConsentLink::class);
+        Blade::component('webx-dropdown', Dropdown::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');
         }
+
+        // The route's response, before the session middleware saves the session and drops the
+        // flash a form in a dialog prints (§6.4). Prepared twice — inside the middleware and
+        // outside it — and the dialogs go in on the first.
+        $this->app->make(Dispatcher::class)->listen(ResponsePrepared::class, function (ResponsePrepared $event): void {
+            $response = $event->response;
+
+            if ($response instanceof Response && self::isPage($response)) {
+                $response->setContent($this->app->make(Widgets::class)->withDialogs((string) $response->getContent()));
+            }
+        });
 
         // The whole page has rendered, the header and the footer too: every claim is known.
         $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (RequestHandled $event): void {

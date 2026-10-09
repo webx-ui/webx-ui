@@ -234,6 +234,60 @@
           }
         }
       ]
+    },
+    {
+      "title": "Dropdown and form in a dialog",
+      "slug": "dropdown-and-form",
+      "seo": {
+        "title": "Dropdown and form in a dialog",
+        "description": "A form of the inbox opened in a dialog from any button, and the dropdown panel the phones and the languages are built on."
+      },
+      "blocks": [
+        {
+          "key": "showcase-form-hero",
+          "type": "hero",
+          "values": {
+            "title": "A form in a dialog",
+            "subtitle": "The button below is a link to #webx-form-contact. On a page with that link the site prints the Contact us form once, in a dialog at the end of the page, and the button opens it.",
+            "button_label": "Write to us",
+            "button_url": "#webx-form-contact"
+          }
+        },
+        {
+          "key": "showcase-form-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Open the form on a phone: the dialog fits the screen, a long form scrolls inside it while the title and the close button stay on top, and the page under it does not move. Tab goes round the dialog and never reaches the page; Esc closes it and gives the focus back to the button.\nSend the form: the dialog shows the thank-you of the form and a Close button, and waits — it never closes by itself. In the panel the submission says it came from the place modal.\nTwo buttons on this page open the same form, and the page has it once. With JavaScript off the button is a link that shows the same dialog over the page."
+          }
+        },
+        {
+          "key": "showcase-form-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "Any link or button opens a form of the inbox by its slug: data-webx-form=\"callback\", or simply href=\"#webx-form-callback\" — the second one can be typed into a menu item or the button of a block in the panel. data-webx-form-value-service=\"12\" fills the hidden field service of the form, so Book from a service page arrives with the service. An opener the server never prints asks for its form with Widgets::form('callback')."
+          }
+        },
+        {
+          "key": "showcase-dropdown",
+          "type": "text",
+          "values": {
+            "heading": "The dropdown panel",
+            "body": "x-webx-dropdown is a panel tied to its trigger: the phones, the opening hours and the language switcher of the next stages are built on it. Without JavaScript it is a details element that opens under its trigger. With it the panel lifts above everything around it, turns over at the edge of the window, opens on hover when asked, closes on Esc, on Tab out and on a click elsewhere, and only one is open on the page.\nThe starter run (pnpm test:starter) puts a row of them on this page and measures that."
+          }
+        },
+        {
+          "key": "showcase-form-hero-again",
+          "type": "hero",
+          "values": {
+            "title": "Still have a question?",
+            "subtitle": "A second button to the same form: the page still has one.",
+            "button_label": "Ask us",
+            "button_url": "#webx-form-contact"
+          }
+        }
+      ]
     }
   ]
 }

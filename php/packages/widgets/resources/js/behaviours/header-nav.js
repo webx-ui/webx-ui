@@ -13,6 +13,7 @@
  */
 
 import { listeners } from '../core.js'
+import { trail } from './corridor.js'
 
 const OPEN_DELAY = 120
 const CLOSE_DELAY = 300
@@ -37,7 +38,7 @@ export function headerNav(list) {
   let openTimer = 0
   let closeTimer = 0
   let pointer = 'mouse'
-  let trail = []
+  const path = trail()
   let hovered = null
 
   const set = (item, open) => {
@@ -69,23 +70,7 @@ export function headerNav(list) {
     current = null
   }
 
-  // Is the pointer on its way to the open panel: inside the triangle from where it was a moment
-  // ago to the two near corners of the panel?
-  const heading = () => {
-    const panel = current ? panelOf(current) : null
-    if (!panel || trail.length < 2) return false
-    const [from, to] = [trail[0], trail[trail.length - 1]]
-    const box = panel.getBoundingClientRect()
-    const a = { x: box.left, y: box.top }
-    const b = { x: box.right, y: box.top }
-    const side = (p, q, r) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)
-    const d1 = side(from, a, to)
-    const d2 = side(a, b, to)
-    const d3 = side(b, from, to)
-    const negative = d1 < 0 || d2 < 0 || d3 < 0
-    const positive = d1 > 0 || d2 > 0 || d3 > 0
-    return !(negative && positive)
-  }
+  const heading = () => path.heading(current ? panelOf(current) : null)
 
   for (const item of items) {
     on(item, 'pointerenter', (event) => {
@@ -134,8 +119,7 @@ export function headerNav(list) {
   on(list, 'pointerdown', (event) => (pointer = event.pointerType || 'mouse'), true)
   on(document, 'pointermove', (event) => {
     if (!current || event.pointerType !== 'mouse') return
-    trail.push({ x: event.clientX, y: event.clientY })
-    if (trail.length > 4) trail = trail.slice(-4)
+    path.push(event)
   })
 
   on(list, 'keydown', (event) => {

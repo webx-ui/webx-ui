@@ -33,10 +33,18 @@ final class Widgets implements HeadPart
     public const string MARKER = '<!--webx-widgets-->';
 
     /** The behaviours inside the runtime: claiming one is allowed and loads nothing more. */
-    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header'];
+    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog'];
+
+    /** A form's slug, the shape `module-inbox` gives it. */
+    private const string SLUG = '/^[a-z0-9][a-z0-9_-]*$/i';
 
     /** @var array<string, true> */
     private array $claimed = [];
+
+    /** @var array<string, true> */
+    private array $forms = [];
+
+    private bool $dialogsDone = false;
 
     public function __construct(
         private readonly BottomLayers $layers,
@@ -44,6 +52,7 @@ final class Widgets implements HeadPart
         private readonly UrlGenerator $urls,
         private readonly Config $config,
         private readonly Consent $consent,
+        private readonly FormDialogs $dialogs,
     ) {}
 
     /** The package's own directory: `dist/`, `resources/`, `lang/` are under it. */
@@ -65,6 +74,27 @@ final class Widgets implements HeadPart
         $this->claimed[$widget] = true;
     }
 
+    /**
+     * Claim a form of `module-inbox` for a dialog on this page (spec §6.4): anything with
+     * `data-webx-form="<slug>"` opens it. Printed once at the end of `<body>` however many
+     * buttons lead to it. A link written in a template or a block is found on the page without
+     * a claim (`FormDialogs::openers()`); this is for an opener the server never prints.
+     */
+    public function form(string $slug): void
+    {
+        if (preg_match(self::SLUG, $slug) !== 1) {
+            throw new InvalidArgumentException("\"{$slug}\" is not the slug of a form.");
+        }
+
+        $this->forms[$slug] = true;
+    }
+
+    /** @return list<string> The forms this page claimed for a dialog. */
+    public function forms(): array
+    {
+        return array_keys($this->forms);
+    }
+
     /** @return list<string> What this page claimed, in the order it did. */
     public function claimed(): array
     {
@@ -82,12 +112,13 @@ final class Widgets implements HeadPart
      */
     public function finish(string $html): string
     {
-        $at = strpos($html, self::MARKER);
-
-        if ($at === false) {
+        if (! str_contains($html, self::MARKER)) {
             return $html;
         }
 
+        // A response that never went through the router has not had its dialogs yet.
+        $html = $this->withDialogs($html);
+        $at = (int) strpos($html, self::MARKER);
         $styles = [];
         $scripts = [];
 
@@ -132,10 +163,39 @@ final class Widgets implements HeadPart
         return $body === false ? $html.$scripts : substr($html, 0, $body).$scripts.substr($html, $body);
     }
 
+    /**
+     * The page with the dialogs of its forms before `</body>` (§6.4), once per response.
+     *
+     * Called as soon as the route's response is prepared, before `finish()`: by the time the
+     * whole response is handled the session is saved and has dropped its flash — the
+     * thank-you and the errors a form sent without JavaScript came back with, which the form
+     * in the dialog prints, and which open the dialog.
+     */
+    public function withDialogs(string $html): string
+    {
+        if ($this->dialogsDone || ! str_contains($html, self::MARKER)) {
+            return $html;
+        }
+
+        $this->dialogsDone = true;
+        $dialogs = $this->dialogs->render([...$this->forms(), ...FormDialogs::openers($html)]);
+
+        if ($dialogs === '') {
+            return $html;
+        }
+
+        $this->need('form-dialog');
+        $body = strripos($html, '</body>');
+
+        return $body === false ? $html.$dialogs : substr($html, 0, $body).$dialogs."\n".substr($html, $body);
+    }
+
     /** Forget the claims: the next request of a long-lived worker starts with none. */
     public function flush(): void
     {
         $this->claimed = [];
+        $this->forms = [];
+        $this->dialogsDone = false;
     }
 
     private function built(string $widget, string $extension): bool

@@ -445,3 +445,190 @@ test.describe('cookie consent', () => {
     }
   })
 })
+
+test.describe('dropdown panel', () => {
+  const PATH = '/kitchen-sink/dropdown-and-form'
+
+  // The starter site prints no dropdown yet (the phones and the languages come next), so the
+  // page gets a row of them the way <x-webx-dropdown> prints them, across the whole window:
+  // one at its left, one on hover, one against its right edge.
+  async function withDropdowns(page) {
+    await page.addInitScript((path) => {
+      if (location.pathname !== path) return
+      const dropdown = (id, openOn) =>
+        `<details id="${id}" class="webx-dropdown webx-dropdown--bottom-start" data-webx-dropdown="${openOn}">` +
+        `<summary class="webx-dropdown__trigger">${id}</summary>` +
+        '<div class="webx-dropdown__panel"><a href="#one">Office: 0800-303-332</a><br><a href="#two">Sales: 0800-303-333</a></div>' +
+        '</details>'
+      new MutationObserver((_, observer) => {
+        const main = document.querySelector('main')
+        if (!main) return
+        observer.disconnect()
+        document.body.insertAdjacentHTML(
+          'afterbegin',
+          '<div id="dropdowns" style="display: flex; justify-content: space-between; padding: 0 8px">' +
+            dropdown('first', 'click') +
+            dropdown('hovered', 'hover') +
+            dropdown('edge', 'click') +
+            '</div>',
+        )
+      }).observe(document, { childList: true, subtree: true })
+    }, PATH)
+  }
+
+  test('turns over at the right edge of the window at 360 and 1280', async ({ page }) => {
+    await withDropdowns(page)
+    for (const width of [360, 1280]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto(PATH)
+      await still(page)
+      await page.locator('#first summary').click()
+      const first = await page.locator('#first .webx-dropdown__panel').evaluate((panel) => ({
+        left: panel.getBoundingClientRect().left,
+        trigger: panel.previousElementSibling.getBoundingClientRect().left,
+        flipped: panel.classList.contains('is-flipped'),
+      }))
+      expect(first.flipped, `at ${width}`).toBe(false)
+      expect(Math.round(first.left)).toBe(Math.round(first.trigger))
+
+      await page.locator('#edge summary').click()
+      const edge = await page.locator('#edge .webx-dropdown__panel').evaluate((panel) => {
+        const box = panel.getBoundingClientRect()
+        const trigger = panel.previousElementSibling.getBoundingClientRect()
+        return {
+          left: box.left,
+          right: box.right,
+          triggerRight: trigger.right,
+          window: document.documentElement.clientWidth,
+          flipped: panel.classList.contains('is-flipped'),
+          top: panel.matches(':popover-open'),
+        }
+      })
+      expect(edge.flipped, `at ${width}`).toBe(true)
+      expect(edge.top, 'in the top layer').toBe(true)
+      expect(edge.left).toBeGreaterThanOrEqual(0)
+      expect(edge.right).toBeLessThanOrEqual(edge.window)
+      expect(Math.round(edge.right)).toBe(Math.round(edge.triggerRight))
+    }
+  })
+
+  test('keeps one open on the page, opens on hover', async ({ page }) => {
+    await withDropdowns(page)
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto(PATH)
+    await page.locator('#first summary').click()
+    await expect(page.locator('#first')).toHaveJSProperty('open', true)
+    await page.locator('#edge summary').click()
+    await expect(page.locator('#first')).toHaveJSProperty('open', false)
+    await expect(page.locator('#edge')).toHaveJSProperty('open', true)
+
+    await page.locator('#hovered summary').hover()
+    await expect(page.locator('#hovered .webx-dropdown__panel')).toBeVisible()
+    await expect(page.locator('#edge')).toHaveJSProperty('open', false)
+    await page.mouse.move(5, 790)
+    await expect(page.locator('#hovered')).toHaveJSProperty('open', false)
+  })
+
+  test('closes on Esc and gives the focus back to its trigger', async ({ page }) => {
+    await withDropdowns(page)
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await page.locator('#first summary').focus()
+    await page.keyboard.press('Enter')
+    await expect(page.locator('#first')).toHaveJSProperty('open', true)
+    await page.keyboard.press('Tab')
+    expect(await page.evaluate(() => document.activeElement?.getAttribute('href'))).toBe('#one')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('#first')).toHaveJSProperty('open', false)
+    expect(await page.evaluate(() => document.activeElement?.textContent)).toBe('first')
+
+    // Tab out of the panel closes it.
+    await page.keyboard.press('Space')
+    await expect(page.locator('#first')).toHaveJSProperty('open', true)
+    for (let i = 0; i < 3; i++) await page.keyboard.press('Tab')
+    await expect(page.locator('#first')).toHaveJSProperty('open', false)
+  })
+})
+
+test.describe('form in a dialog', () => {
+  const PATH = '/kitchen-sink/dropdown-and-form'
+
+  test('is on the page once, however many buttons open it', async ({ page }) => {
+    await page.goto(PATH)
+    expect(await page.locator('a[href="#webx-form-contact"]').count()).toBeGreaterThanOrEqual(2)
+    expect(await page.locator('dialog#webx-form-contact').count()).toBe(1)
+    expect(await page.locator('form[data-webx-form="contact"]').count()).toBe(1)
+    await expect(page.locator('#webx-form-contact form')).toHaveClass(/wx-form--modal/)
+  })
+
+  test('fits a 360px screen and scrolls inside, the page under it still', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 480 })
+    await page.goto(PATH)
+    await still(page)
+    const before = await page.evaluate(() => window.scrollY)
+    await page.locator('a[href="#webx-form-contact"]').first().click()
+    const dialog = page.locator('#webx-form-contact')
+    await expect(dialog).toHaveJSProperty('open', true)
+
+    const box = await dialog.evaluate((el) => {
+      const r = el.getBoundingClientRect()
+      return {
+        left: r.left,
+        right: r.right,
+        top: r.top,
+        bottom: r.bottom,
+        width: document.documentElement.clientWidth,
+        height: window.innerHeight,
+        scroll: el.scrollHeight,
+        client: el.clientHeight,
+        sideways: el.scrollWidth - el.clientWidth,
+      }
+    })
+    expect(box.left).toBeGreaterThanOrEqual(0)
+    expect(box.right).toBeLessThanOrEqual(box.width)
+    expect(box.top).toBeGreaterThanOrEqual(0)
+    expect(box.bottom).toBeLessThanOrEqual(box.height)
+    expect(box.sideways, 'scrolls sideways').toBeLessThanOrEqual(0)
+    expect(box.scroll, 'the form is longer than the screen here').toBeGreaterThan(box.client)
+
+    await dialog.hover()
+    await page.mouse.wheel(0, 400)
+    await expect.poll(() => dialog.evaluate((el) => el.scrollTop)).toBeGreaterThan(0)
+    expect(await page.evaluate(() => window.scrollY)).toBe(before)
+    // The title and the close button stay on top while the form scrolls.
+    const header = await page
+      .locator('#webx-form-contact .webx-form-dialog__header')
+      .evaluate(
+        (el) => el.getBoundingClientRect().top - el.parentElement.getBoundingClientRect().top,
+      )
+    expect(Math.abs(header)).toBeLessThanOrEqual(1)
+  })
+
+  test('keeps the focus inside and gives it back to its button on Esc', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    const opener = page.locator('a[href="#webx-form-contact"]').first()
+    await opener.focus()
+    await page.keyboard.press('Enter')
+    const dialog = page.locator('#webx-form-contact')
+    await expect(dialog).toHaveJSProperty('open', true)
+    for (let i = 0; i < 25; i++) {
+      await page.keyboard.press('Tab')
+      const inside = await page.evaluate(() => {
+        const active = document.activeElement
+        return (
+          !active ||
+          active === document.body ||
+          document.getElementById('webx-form-contact').contains(active)
+        )
+      })
+      expect(inside, `Tab #${i + 1} left the dialog`).toBe(true)
+    }
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveJSProperty('open', false)
+    expect(await opener.evaluate((el) => el === document.activeElement)).toBe(true)
+    expect(
+      await page.evaluate(() => document.documentElement.classList.contains('webx-scroll-locked')),
+    ).toBe(false)
+  })
+})

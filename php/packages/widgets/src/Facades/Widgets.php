@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Facade;
 /**
  * @method static void need(string $widget)
  * @method static list<string> claimed()
+ * @method static void form(string $slug)
+ * @method static list<string> forms()
  * @method static string finish(string $html)
  *
  * @see \WebxUi\Widgets\Widgets
