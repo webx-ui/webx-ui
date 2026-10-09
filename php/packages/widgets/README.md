@@ -81,6 +81,22 @@ wheel and one finger move the page until the map is clicked or focused. Without 
 is its address and a link. Other tiles — MapTiler or any address with `{z}/{x}/{y}` and a `{key}` —
 are an entry of `webx-widgets.map.providers` and its name in `webx-widgets.map.provider`.
 
+## Page tools
+
+```blade
+<x-webx-share title="Our new workshop" :networks="['facebook', 'x', 'linkedin', 'email', 'copy']" />
+<x-webx-back-to-top corner="bottom-end" :after="2" />
+<ul data-webx-reveal="stagger">…</ul>
+```
+
+Every `<table>` without a class on a page — what a rich text field stores — is put by the server in
+a frame that scrolls sideways, its caption above the frame so that it does not scroll away, with a
+shadow on the side there is more behind. `data-webx-reveal` (`up`, `fade`, `scale`, `stagger`) brings
+an element in as it scrolls into view; only the script hides anything, so without JavaScript or with
+reduced motion it is simply there. Share is plain links to each network, Copy link, and the system's
+share sheet on a phone — no network's script. Back to top comes after two screens and stands above
+the cookie banner and the quick contact of its corner.
+
 ## Blocks
 
 On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers four block

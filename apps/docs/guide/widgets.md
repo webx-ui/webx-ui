@@ -204,6 +204,37 @@ provider of tiles is a config entry:
 `{key}` is replaced by the entry's `key`; a provider named but not described, or a `{key}` with no
 key, is an error at once rather than a map that silently asks for tiles without one.
 
+## Page tools
+
+What a long page needs, each loading only where it stands:
+
+```blade
+<x-webx-share title="Our new workshop" />
+<x-webx-back-to-top />
+
+<div class="cards" data-webx-reveal="stagger" data-webx-reveal-effect="up">…</div>
+<section data-webx-reveal="fade">…</section>
+```
+
+- **Tables of prose** — nothing to write. Every `<table>` without a class on a page — what a rich
+  text field stores, whichever module prints it — is put by the server in a frame that scrolls
+  sideways when the table is wider than the column. Its caption is taken out above the frame, so it
+  stays in place while the table scrolls, and still names the table. A shadow shows the side there
+  is more behind; a table that fits is no tab stop. A table a template wrote has a class and is
+  left alone.
+- **Reveal on scroll** — `data-webx-reveal="up"`, `fade` or `scale` on any element, or `stagger`
+  on a container to bring its children in one after another. In the runtime, no component. Only
+  the script hides anything, and only what is below the screen when the page opens: without
+  JavaScript or with reduced motion everything is simply there.
+- **Share** — each network's own address for sharing as a plain link (Facebook, X, LinkedIn,
+  Telegram, WhatsApp, e-mail by default; also Viber, Reddit, Pinterest, Threads, Bluesky, VK) and
+  Copy link. No network's script, so nothing to ask consent for. On a phone one Share button opens
+  the system's share sheet instead. `url` is the page by default.
+- **Back to top** — a round button in a corner that comes after two screens (`:after`), goes up
+  smoothly unless the visitor asked for reduced motion and leaves the focus at the top. It stands
+  above the cookie banner, the contact bar and the quick contact of its corner. Without JavaScript
+  it is a link to `#top` where the template put it.
+
 ## Blocks
 
 On a site with `module-blocks` and `module-media` the package offers four block types — `webx:setup`
@@ -259,6 +290,6 @@ third party the audit does not know is added in `webx-widgets.audit.third-party`
 
 `theme-default` brings a showcase, seeded by `php artisan webx:demo` and removed with it: under
 **Kitchen sink** a page per widget — Header and menu, Cookie consent, Dropdown and form in a
-dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map — with every variant, a narrow
+dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map, Page tools — with every variant, a narrow
 column, what to try and the markup to copy. It is the place to look at a change in the theme
 before a real page does, and the pages the starter site's browser tests measure.

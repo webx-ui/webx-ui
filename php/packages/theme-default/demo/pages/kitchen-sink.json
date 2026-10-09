@@ -995,7 +995,7 @@
           "type": "showcase-page-tools",
           "values": {
             "heading": "A table wider than the column",
-            "note": "Nine columns: on a phone, and here on a desktop too, the table scrolls inside its frame. The caption stays above it.",
+            "note": "Nine columns: on a phone the table scrolls inside its frame, on a desktop it fits. The caption stays above it either way.",
             "tool": "prose",
             "body": "<p>A comparison of plans, as an editor would paste it.</p><table><caption>Plans compared, per month</caption><thead><tr><th>Plan</th><th>Price</th><th>Pages</th><th>Languages</th><th>Storage</th><th>Backups</th><th>Support</th><th>Custom domain</th><th>Audit</th></tr></thead><tbody><tr><td>Start</td><td>€9</td><td>20</td><td>1</td><td>2 GB</td><td>Weekly</td><td>E-mail</td><td>No</td><td>Monthly</td></tr><tr><td>Business</td><td>€29</td><td>200</td><td>3</td><td>20 GB</td><td>Daily</td><td>E-mail and chat</td><td>Yes</td><td>Weekly</td></tr><tr><td>Enterprise</td><td>€99</td><td>Unlimited</td><td>Unlimited</td><td>200 GB</td><td>Hourly</td><td>A manager of your own</td><td>Yes</td><td>Daily</td></tr></tbody></table><p>The paragraph after the table starts where it always would.</p>",
             "effect": "up",

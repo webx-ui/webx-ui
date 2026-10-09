@@ -23,21 +23,17 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   its own skip link), `mode` and `side` of the mobile menu it builds. Inside it
   `<x-webx-header.nav :items="menu('header')" :mega="['services' => 'components.mega']">` — dropdowns; a `mega`
   view gets `$item`. `:items` takes `menu()` trees or arrays `['label', 'url', 'children', 'current', 'variant']`.
-- **Mobile menu** — `<x-webx-mobile-menu side breakpoint close-on-navigate history>`, slots `top`, the default (the
-  body), `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill">` in its body. The header builds
-  one of its brand, navigation and actions unless given `mobile` or `collapse="never"`.
+- **Mobile menu** — `<x-webx-mobile-menu side breakpoint close-on-navigate history>`, slots `top`, default (body), `bottom`,
+  `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill">` inside. A header builds one unless given `mobile` or `collapse="never"`.
 - **Dropdown panel** — `<x-webx-dropdown placement="bottom-start|bottom-end|bottom|top-start|top-end|top"
 open-on="click|hover" label open>` with slot `trigger` (its attributes go on the `<summary>`).
   A `<details>`: without JavaScript a click opens it; with it the panel is a popover placed from
   the trigger and turned over at the window's edge (`is-flipped`), Esc / Tab out / a click
-  elsewhere close it, one is open on the page. Phones, hours, languages, "share" are built on it.
-- **Form in a dialog** — any `<a>` or `<button>` with `data-webx-form="<slug>"`, or a link to
-  `#webx-form-<slug>` (typed into a menu item or a block's button in the panel), opens that
-  `module-inbox` form in `<dialog id="webx-form-<slug>">`, printed once per slug before
-  `</body>`, the form inside `placement="modal"`. `data-webx-form-value-<field>="…"` fills the
-  form's field `fields[<field>]` (a hidden field of the form). An opener the server does not
-  print: `Widgets::form('<slug>')`. Without `module-inbox` or with no enabled form by that slug
-  there is no dialog. View `webx-widgets::form-dialog`.
+  elsewhere close it, one is open on the page. Phones, hours, languages are built on it.
+- **Form in a dialog** — any `<a>`/`<button>` with `data-webx-form="<slug>"`, or a link to `#webx-form-<slug>` (a menu
+  item, a block's button), opens that `module-inbox` form in `<dialog id="webx-form-<slug>">`, printed once per slug
+  before `</body>`, form `placement="modal"`. `data-webx-form-value-<field>="…"` fills `fields[<field>]` (a hidden field).
+  An opener the server does not print: `Widgets::form('<slug>')`. No inbox or no enabled form — no dialog. View `webx-widgets::form-dialog`.
 - **Cookie consent** — `dist/consent.js|css`, on every page with a theme. The banner and its
   dialog (`#webx-consent`) are printed before `</body>` by the package itself — no component to
   place; the theme's footer has `<x-webx-consent-link />` ("Cookie settings"). Categories
@@ -76,12 +72,15 @@ variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3
 - **Video** — `dist/video.js|css`, only where one stands: `<x-webx-video src="<YouTube or Vimeo>"
 :poster="$picture" title ratio="16/9">` — a poster and a play button, the player (youtube-nocookie)
   only on a click; before consent to `media` the server prints the notice with "Load" / "Always load
-  videos". No poster: the video's preview, fetched once into the library (folder "Video posters").
-  `<x-webx-video :file="$media" :poster>` — a `<video preload="none">`, no consent. No JS: a link.
+  videos". No poster: its preview, fetched once into the library ("Video posters"). `:file="$media"` — `<video preload="none">`.
 - **Map** — `dist/map.js|css` (Leaflet), only where one stands: `<x-webx-map :lat :lng :zoom marker height title link>`
   or `<x-webx-map from="settings">` (main address of the Contacts tab; no coordinates — the address alone). The server
   prints the address, "Open in maps" and, before consent to `media`, "Load" / "Always load maps"; tiles only after. The
   wheel scrolls the page until the map is clicked. Tiles: `webx-widgets.map.provider` (OpenStreetMap; `{key}` entries).
+- **Page tools** — every `<table>` without a class (what a rich text field stores) the server puts in `.webx-table`
+  (`__caption` above `__frame` > `__scroller` > `__table`; `dist/table.js` adds the shadows `is-more-left|right`);
+  `data-webx-reveal="up|fade|scale"`, or `"stagger"` + `data-webx-reveal-effect` (runtime; only the script hides, below the
+  fold); `<x-webx-back-to-top corner :after>`; `<x-webx-share title url :networks>` — plain links, Copy link, a phone's sheet.
 - **Blocks** — offered with `module-media` (`webx:setup`, or `webx:blocks:offered --install --module=widgets`),
   then the site's: `gallery` (library pictures, grid or slider, zoom = lightbox, a group per block, title = caption),
   `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16), `map` (contacts or coordinates, zoom, height); nothing to show prints nothing.

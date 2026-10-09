@@ -32,7 +32,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   the library by the media demo and named in a page as `"path": "demo:<file name>"`. Nothing
   under `demo/` is published on a site. A page per widget under "Kitchen sink": Header and menu,
   Cookie consent, Dropdown and form in a dialog, Contacts, Language switcher, Slider, Lightbox,
-  Video, Map — every variant, a narrow column, what to try; the place to look before changing one.
+  Video, Map, Page tools — every variant, a narrow column, what to try; the place to look before changing one.
 - **`src/css/`** — `base.css`, `shell.css`, `prose.css`, joined by `theme.css`; every selector
   inside `:where()` (no specificity). **`dist/theme.css`** — the committed build that
   `webx:theme:sync` publishes.
