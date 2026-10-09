@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Audit\Checks\Page\SerpWidth;
 use WebxUi\Audit\Checks\Page\VagueAnchors;
 use WebxUi\Audit\Runs\AuditIssue;
+use WebxUi\Audit\Runs\AuditLink;
 
 /**
  * The checks of A6 (§14) on one small site that makes every mistake they look for: canonicals
@@ -85,7 +86,11 @@ final class MoreChecksTest extends TestCase
 
         $unfollowable = $found->get('links.unfollowable')?->first();
         $this->assertSame('warning', $unfollowable?->severity, 'A mailto: without an address is broken, not a button.');
+        // A letter with a subject and no address is the visitor's to address — a share row's e-mail.
         $this->assertSame(3, $unfollowable->details['summary']['params']['count'] ?? null);
+
+        // A network's dialog for sharing is not a page: it is neither checked nor counted.
+        $this->assertFalse(AuditLink::query()->where('to_url', 'like', '%facebook.com/sharer%')->exists());
 
         $hreflang = $found->get('hreflang.not_indexable')?->first();
         $this->assertSame('error', $hreflang?->severity);
@@ -122,6 +127,8 @@ final class MoreChecksTest extends TestCase
                 .'<a href="/about">About us</a> <a href="/catalog">Read more →</a> <a href="/twin">See the offer!</a>'
                 .'<a href="/catalog?page=2">Catalogue, page 2</a> <a href="/about?utm_source=mail">Spring sale</a>'
                 .'<a href="#">Menu</a> <a href="mailto:info">Write to us</a> <a href="www.partner.example.org">Partner</a>'
+                .'<a href="mailto:?subject=Tools&amp;body=https%3A%2F%2Fshop.com">Send by e-mail</a>'
+                .'<a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fshop.com">Share on Facebook</a>'
                 .'<a href="/copy">A copy</a> <a href="/closed">Closed</a> <a href="/nf" rel="nofollow">Hidden</a>'
                 .'<a href="/old">Old</a> <a href="/lorem">Draft</a> <a href="/gone">Gone</a> <a href="/wide">Sale</a>'
                 .'<a href="/chain-a">Chain</a> <a href="/loop-a">Loop</a> <a href="/foreign">Foreign</a> <a href="/frag">Fragment</a>'

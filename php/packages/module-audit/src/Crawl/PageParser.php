@@ -45,6 +45,9 @@ final class PageParser
     private const OBSOLETE = 'font, center, marquee, blink, big, strike, tt, acronym, applet, basefont, dir, frame, frameset, noframes, nobr, spacer, xmp, listing, plaintext';
 
     /** Flash: dead in every browser since 2021, still in old content. */
+    /** The networks' dialogs for sharing a page — what a share row links to (`<x-webx-share>` and the like). */
+    private const SHARE = '~^(?:https?:)?//(?:www\.)?(?:facebook\.com/sharer|(?:x|twitter)\.com/intent/|linkedin\.com/(?:sharing/share-offsite|shareArticle)|t\.me/share/|wa\.me/\?|api\.whatsapp\.com/send|(?:[a-z]{2,3}\.)?pinterest\.[a-z.]+/pin/create/|reddit\.com/submit|bsky\.app/intent/|threads\.(?:net|com)/intent/|vk\.com/share\.php)~i';
+
     private const FLASH = 'embed[src$=".swf" i], object[data$=".swf" i], object[type="application/x-shockwave-flash"], embed[type="application/x-shockwave-flash"]';
 
     public function __construct(
@@ -312,6 +315,12 @@ final class PageParser
                 $element->querySelector('img') !== null ? $empty['images']++ : $empty['text']++;
             }
 
+            // A network's dialog for sharing this page is not a page: it answers a robot with a
+            // login, a redirect or 999, and would be a broken link on every page with a share row.
+            if (preg_match(self::SHARE, trim((string) $element->getAttribute('href'))) === 1) {
+                continue;
+            }
+
             $links->add(
                 (string) $element->getAttribute('href'),
                 AuditLink::A,
@@ -335,7 +344,8 @@ final class PageParser
 
         return match (true) {
             $value === '', $value === '#', str_starts_with($value, 'javascript:') => false,
-            str_starts_with($value, 'mailto:') => ! str_contains($value, '@') ? true : null,
+            // `mailto:?subject=…&body=…` is a letter the visitor addresses — "send by e-mail" of a share row.
+            str_starts_with($value, 'mailto:') => ! str_contains($value, '@') && preg_match('~^mailto:\?(?:.*&)?(?:subject|body)=~', $value) !== 1 ? true : null,
             str_starts_with($value, 'tel:') => preg_match('~\d~', $value) !== 1 ? true : null,
             preg_match('~^[a-z][a-z0-9+.-]*:~', $value) !== 1 && preg_match('~(mailto|tel|javascript):~', $value) === 1 => true,
             str_starts_with($value, 'www.'), preg_match('~^https?:/[^/]|^https?//|^https?:\\\\~', $value) === 1 => true,
