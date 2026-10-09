@@ -376,6 +376,117 @@
           }
         }
       ]
+    },
+    {
+      "title": "Slider",
+      "slug": "slider",
+      "seo": {
+        "title": "Slider",
+        "description": "The slider in every variant, at full width and in a narrow column."
+      },
+      "blocks": [
+        {
+          "key": "showcase-slider-intro",
+          "type": "text",
+          "values": {
+            "heading": "Slider",
+            "body": "Four variants of one widget: cards, hero, gallery and logos. Slides per view follow the width of the column the slider stands in, not the width of the window — so the same cards show three to a row here and one and a bit in the narrow column below.\nWithout JavaScript every slider is a strip that scrolls sideways and stops at a slide."
+          }
+        },
+        {
+          "key": "showcase-slider-cards",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Cards",
+            "note": "Three per view at full width, two on a tablet, one and a bit on a phone. The arrows move a whole view; the dots are pages.",
+            "variant": "cards",
+            "width": "full",
+            "slides": "8"
+          }
+        },
+        {
+          "key": "showcase-slider-cards-narrow",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Cards in a narrow column",
+            "note": "The same cards in a column 20rem wide: one and a bit per view, whatever the width of the window.",
+            "variant": "cards",
+            "width": "narrow",
+            "slides": "8"
+          }
+        },
+        {
+          "key": "showcase-slider-hero",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Hero",
+            "note": "One slide to the width, fading, turning on its own every six seconds. It stops while the pointer or the focus is inside, and the first button stops it for good; with reduced motion it does not start.",
+            "variant": "hero",
+            "width": "full",
+            "slides": "4"
+          }
+        },
+        {
+          "key": "showcase-slider-gallery",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Gallery",
+            "note": "A big picture and its thumbnails: a thumbnail picks its picture, the current one is framed.",
+            "variant": "gallery",
+            "width": "full",
+            "slides": "6"
+          }
+        },
+        {
+          "key": "showcase-slider-gallery-narrow",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Gallery in a narrow column",
+            "note": "The thumbnails scroll when they do not fit.",
+            "variant": "gallery",
+            "width": "narrow",
+            "slides": "6"
+          }
+        },
+        {
+          "key": "showcase-slider-logos",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Logos",
+            "note": "A running strip with no arrows and no dots — and a pause button all the same.",
+            "variant": "logos",
+            "width": "full",
+            "slides": "8"
+          }
+        },
+        {
+          "key": "showcase-slider-single",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "One slide",
+            "note": "Nothing to move: no arrows, no dots.",
+            "variant": "cards",
+            "width": "narrow",
+            "slides": "1"
+          }
+        },
+        {
+          "key": "showcase-slider-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Narrow the window: the full-width cards go from three to two to one and a bit; the narrow ones stay as they are.\nWith the keyboard: Tab into a slider, then the arrows, Home and End move it — only the slider the focus is in. A link in a slide that is out of view brings its slide in when it gets the focus.\nOn a phone: swipe. The page still scrolls up and down over a slider.\nSwitch JavaScript off: every slider is a strip that scrolls sideways and snaps to a slide, the arrows and dots are gone, and so are the thumbnails."
+          }
+        },
+        {
+          "key": "showcase-slider-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-slider with x-webx-slide inside. variant — cards, hero, gallery, logos; per-view — a number, or by the width of the slider: ['sm' => 1.2, 'md' => 2, 'lg' => 3] (sm from 0, md from 640px, lg from 960px, xl from 1280px, or a width in pixels); arrows, pagination, loop, autoplay (milliseconds, true or false), effect (slide or fade), thumbs, speed, label; options — anything else Swiper takes. A slide's thumb names the picture of its thumbnail.\nClasses: webx-slider, webx-slider--<variant>, __viewport, __track, __slide, __controls, __button, __prev, __next, __pause, __pagination, __bullet, __thumbs, __thumb; is-ready, is-active. Tokens: --webx-slider-gap, --webx-slider-arrow-size, --webx-slider-per-view and the rest of --webx-slider-*."
+          }
+        }
+      ]
     }
   ]
 }

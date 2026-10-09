@@ -109,8 +109,9 @@ class ThemeDefaultTest extends TestCase
     /** dist/ is committed; an edit to src/ without a build would ship yesterday's CSS. */
     /**
      * The showcase pages are seeded by module-pages, and their blocks by the block types of the
-     * module-blocks demo — the only types a fresh site has until the theme brings its own (TH2).
-     * A type outside those three is a page the seed writes and the site cannot print.
+     * module-blocks demo and the theme's own `demo/blocks/` (THEMES §15.1) — the only types a
+     * fresh site has until the theme brings its own (TH2). Any other type is a page the seed
+     * writes and the site cannot print.
      */
     #[Test]
     public function the_showcase_pages_use_only_the_demo_block_types(): void
@@ -118,15 +119,20 @@ class ThemeDefaultTest extends TestCase
         $pages = glob(self::path().'/demo/pages/*.json') ?: [];
         $this->assertNotSame([], $pages);
 
+        $types = ['hero', 'text', 'columns', ...array_map(
+            static fn (string $file): string => basename($file, '.json'),
+            glob(self::path().'/demo/blocks/*.json') ?: [],
+        )];
+
         $keys = [];
-        $walk = function (array $page, string $file) use (&$walk, &$keys): void {
+        $walk = function (array $page, string $file) use (&$walk, &$keys, $types): void {
             $this->assertIsString($page['title'] ?? null, $file);
             $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', (string) ($page['slug'] ?? ''), $file);
 
             $blocks = $page['blocks'] ?? [];
             while ($blocks !== []) {
                 $block = array_shift($blocks);
-                $this->assertContains($block['type'] ?? null, ['hero', 'text', 'columns'], $file);
+                $this->assertContains($block['type'] ?? null, $types, $file);
                 $this->assertNotContains($block['key'], $keys, "{$file}: block keys are unique");
                 $keys[] = $block['key'];
                 array_push($blocks, ...($block['values']['items'] ?? []));
@@ -141,6 +147,24 @@ class ThemeDefaultTest extends TestCase
             $page = json_decode((string) file_get_contents($file), true);
             $this->assertIsArray($page, $file);
             $walk($page, basename($file));
+        }
+    }
+
+    /**
+     * The showcase's own block types — a widget needs a block to stand in on a page — are what
+     * `webx:blocks:export` writes, named after their slug, and know only the site's tokens.
+     */
+    #[Test]
+    public function the_showcase_block_types_are_block_documents(): void
+    {
+        foreach (glob(self::path().'/demo/blocks/*.json') ?: [] as $file) {
+            $type = json_decode((string) file_get_contents($file), true);
+            $slug = basename($file, '.json');
+
+            $this->assertIsArray($type, $file);
+            $this->assertSame($slug, $type['slug'] ?? null, $file);
+            $this->assertStringContainsString("data-wx-block=\"{$slug}\"", (string) ($type['template'] ?? ''), $file);
+            $this->assertDoesNotMatchRegularExpression('/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?)\(/i', (string) ($type['styles'] ?? ''), "{$file}: a literal colour.");
         }
     }
 
