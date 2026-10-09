@@ -229,6 +229,9 @@ final class AuditTest extends TestCase
         $this->assertNull(ThirdParty::category('/embed/own'));
         $this->assertSame('statistics', ThirdParty::category('https://www.googletagmanager.com/gtag/js?id=G-1'));
         $this->assertSame('marketing', ThirdParty::category('https://connect.facebook.net/en_US/fbevents.js'));
+        // Share buttons of a service track the visitor; the package's share is plain links.
+        $this->assertSame('marketing', ThirdParty::category('https://platform-api.sharethis.com/js/sharethis.js#property=1'));
+        $this->assertSame('marketing', ThirdParty::category('https://static.addtoany.com/menu/page.js'));
 
         config()->set('webx-widgets.audit.third-party', ['widget.example.org' => 'marketing']);
         $this->assertSame('marketing', ThirdParty::category('https://cdn.widget.example.org/w.js'), 'A site adds its own.');
