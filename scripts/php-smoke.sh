@@ -33,6 +33,10 @@ COMPOSER_BIN="${COMPOSER_BIN:-composer}"
 DB_CONNECTION="${DB_CONNECTION:-sqlite}"
 PORT="${SMOKE_PORT:-8123}"
 BASE="http://127.0.0.1:${PORT}"
+# The same server by name, the way a visitor asks for it. A request from this machine to
+# 127.0.0.1 is a health probe to module-seo (Probes), and no redirect answers a probe: every
+# check that expects a redirect goes here.
+VISITOR="http://localhost:${PORT}"
 
 ADMIN_EMAIL="smoke@example.test"
 ADMIN_PASSWORD="correct-horse-battery-staple"
@@ -751,7 +755,7 @@ run_http_checks() {
     expect 201 "$(send_json POST "$BASE/api/cms/seo/redirects" \
         '{"match_type":"exact","pattern":"/moved-'"$phase"'","target":"/cms"}')" \
         "[$phase] a redirect is written through the panel"
-    expect 301 "$(status "$BASE/moved-$phase")" "[$phase] and the public side follows it"
+    expect 301 "$(status "$VISITOR/moved-$phase")" "[$phase] and the public side follows it"
 
     expect 200 "$(send_json PUT "$BASE/api/cms/settings" \
         '{"values":{"seo.robots-txt":"User-agent: *"}}')" \
@@ -767,12 +771,12 @@ run_http_checks() {
     "$PHP_BIN" "$APP/artisan" smoke:page "about-$phase" --no-interaction > /dev/null
 
     expect 200 "$(status "$BASE/about-$phase")" "[$phase] a page in the registry answers"
-    expect 301 "$(status "$BASE/About-$phase")" "[$phase] another spelling of it is a 301"
+    expect 301 "$(status "$VISITOR/About-$phase")" "[$phase] another spelling of it is a 301"
     expect 404 "$(status "$BASE/about-$phase/nothing")" "[$phase] a type that takes no tail is a 404"
 
     "$PHP_BIN" "$APP/artisan" smoke:page "about-$phase" --rename="moved-page-$phase" --no-interaction > /dev/null
 
-    expect 301 "$(status "$BASE/about-$phase")" "[$phase] a rename leaves the old address behind"
+    expect 301 "$(status "$VISITOR/about-$phase")" "[$phase] a rename leaves the old address behind"
     expect 200 "$(status "$BASE/moved-page-$phase")" "[$phase] and the new one answers"
 
     # module-blocks, the preview. The route is registered by a package and carries a signed
