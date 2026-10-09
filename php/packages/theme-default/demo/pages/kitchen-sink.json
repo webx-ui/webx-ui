@@ -883,6 +883,96 @@
           }
         }
       ]
+    },
+    {
+      "title": "Map",
+      "slug": "map",
+      "seo": {
+        "title": "Map",
+        "description": "The Map block: OpenStreetMap through Leaflet, the address of the contacts or coordinates of its own, the placeholder before consent, the wheel that scrolls the page."
+      },
+      "blocks": [
+        {
+          "key": "showcase-map-intro",
+          "type": "text",
+          "values": {
+            "heading": "Map",
+            "body": "Every map on this page is the Map block of the widgets but one — a column 20rem wide, which a block cannot stand in. The map is Leaflet over the tiles of OpenStreetMap, which need no key. Tiles are requests to another site with the visitor’s address, so until a visitor agrees to media the server prints the place instead — the address, Open in maps, a line saying where the map loads from, Load and Always load maps — and nothing on this page asks OpenStreetMap for anything.\nThe attribution of the map’s data stands in the corner of every map, before it loads and after: its licence asks for it."
+          }
+        },
+        {
+          "key": "showcase-map-contacts",
+          "type": "map",
+          "values": {
+            "heading": "From the contacts",
+            "source": "settings",
+            "latitude": null,
+            "longitude": null,
+            "address": "",
+            "zoom": 15,
+            "height": "medium"
+          }
+        },
+        {
+          "key": "showcase-map-contacts-note",
+          "type": "text",
+          "values": {
+            "heading": "",
+            "body": "The map above has no coordinates of its own: it reads the main address of the Contacts tab of the settings — its text, latitude and longitude, its link to a map. Change the address there and every map from the contacts moves with it."
+          }
+        },
+        {
+          "key": "showcase-map-coordinates",
+          "type": "map",
+          "values": {
+            "heading": "Coordinates of its own",
+            "source": "coordinates",
+            "latitude": 52.516275,
+            "longitude": 13.377704,
+            "address": "Pariser Platz, Berlin",
+            "zoom": 16,
+            "height": "large"
+          }
+        },
+        {
+          "key": "showcase-map-low",
+          "type": "map",
+          "values": {
+            "heading": "Low, the whole city",
+            "source": "coordinates",
+            "latitude": 48.8566,
+            "longitude": 2.3522,
+            "address": "Paris",
+            "zoom": 11,
+            "height": "small"
+          }
+        },
+        {
+          "key": "showcase-map-narrow",
+          "type": "showcase-map",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "The placeholder keeps the map’s height in a column 20rem wide, its buttons inside the frame.",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-map-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Before an answer, or after Reject all: every map is its place. Load puts that one map in and agrees to nothing; Always load maps agrees to media — the banner is answered and every map on the page loads without a reload.\nOver a loaded map the wheel scrolls the page and says how to zoom; click the map, and the wheel zooms it; press anywhere else, or leave it with the mouse, and the wheel scrolls the page again. On a phone one finger scrolls the page until the map is tapped. With the keyboard: Tab reaches the map, the arrows pan it, + and − zoom.\nTake media back in Cookie settings in the footer: the page reloads with the places.\nSwitch JavaScript off: each map is its address and a link to a map."
+          }
+        },
+        {
+          "key": "showcase-map-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "The Map block: a heading, the place — from the contacts or coordinates with an address of their own — a zoom from 1 to 19 and a height: low, medium or tall. Nowhere to show — no address in the contacts, no coordinates — prints nothing.\nx-webx-map from=\"settings\" — the main address of the Contacts tab; an address without coordinates is the place alone, with no map.\nx-webx-map :lat=\"51.5074\" :lng=\"-0.1278\" :zoom=\"15\" marker=\"1 Example Street, London\" height=\"24rem\" — marker is the pin’s label (false: no pin), height a CSS length or a number of pixels, link the address of Open in maps.\nThe provider of the tiles is config: webx-widgets.map.provider — openstreetmap, or maptiler with WEBX_MAP_KEY, or an entry of your own with the address of a tile.\nClasses: webx-map, --place, __place, __address, __open, __notice, __button, __attribution, __canvas, __marker, __hint; is-blocked, is-ready, is-loaded, is-active. Tokens: --webx-map-height, --webx-map-bg, --webx-map-radius, --webx-map-marker, --webx-map-notice-bg, --webx-map-button-bg, --webx-map-attribution-bg, --webx-map-hint-bg."
+          }
+        }
+      ]
     }
   ]
 }
