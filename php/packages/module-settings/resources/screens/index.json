@@ -131,7 +131,6 @@
                       "id": "shortcode-value",
                       "type": "wx-input",
                       "name": "value",
-                      "label": "trans::webx-settings::screen.shortcode-value",
                       "help": "trans::webx-settings::screen.shortcode-value-help",
                       "localized": true,
                       "visible": {
@@ -139,6 +138,7 @@
                         "not": "setting"
                       },
                       "props": {
+                        "ariaLabel": "trans::webx-settings::screen.shortcode-value",
                         "maxlength": 500
                       }
                     }
