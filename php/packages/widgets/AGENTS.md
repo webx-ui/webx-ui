@@ -70,17 +70,21 @@ label fallback-label>`: each language named in itself, a link to the same page i
   `dist/language-switcher.css` only. Links for a markup of your own: `LanguageLinks::current()`.
 - **Slider** — `dist/slider.js|css` (Swiper built in), only where one stands: `<x-webx-slider
 variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3]">` with
-  `<x-webx-slide thumb>` inside. Per view by the slider's own width (`sm` 0, `md` 640, `lg` 960,
-  `xl` 1280 or px); `arrows pagination loop autoplay continuous effect thumbs speed label`, and
-  `options` for any other Swiper setting. Without JavaScript a strip that scrolls and snaps;
-  whatever moves on its own has a pause button. Only the first slides in view load at once.
+  `<x-webx-slide thumb>` inside. Per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280
+  or px); `arrows pagination loop autoplay continuous effect thumbs speed label`, `options` for the
+  rest of Swiper. No JavaScript: a strip that scrolls and snaps; what moves itself has a pause
+  button; only the first slides in view load at once.
 - **Lightbox** — `dist/lightbox.js|css` (PhotoSwipe), claimed by any `<a data-webx-lightbox>` on the
   page: `<x-webx-lightbox :image="$picture" group>` (a media field's value or an object with `url()`,
   `width`, `height`; or `src width height thumb alt`; the slot replaces the thumbnail), or by hand
-  `<a href data-webx-lightbox="<group>" data-width data-height>`. One group pages together, an empty
-  one is alone; slides of a slider too. No JavaScript: the link opens the file. Write the sizes.
-- **Loading** — `Widgets::need('<name>')` (facade `WebxUi\Widgets\Facades\Widgets`) claims a
-  widget's `dist/<name>.js|css`: `<link>`s go where `@webxTheme` stands, scripts before `</body>`.
+  `<a href data-webx-lightbox="<group>" data-width data-height>`. A group pages together, an empty
+  one is alone, a slider's slides too. No JavaScript: the link opens the file. Write the sizes.
+- **Blocks** — offered to `module-blocks` when `module-media` is there (`webx:setup` installs them;
+  else `php artisan webx:blocks:offered --install --module=widgets`), then the site's: `gallery`
+  (library pictures as a grid or the slider's `gallery`, zoom = the lightbox, a group per block, a
+  picture's title its caption) and `logos` (name, logo, link each, in the `logos` strip).
+- **Loading** — `Widgets::need('<name>')` (facade `WebxUi\Widgets\Facades\Widgets`) claims
+  `dist/<name>.js|css`: `<link>`s go where `@webxTheme` stands, scripts before `</body>`.
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
   (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`;
   `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,
@@ -97,9 +101,8 @@ body|done`, `is-sent`; `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-
   `is-ready|is-active`; `webx-lightbox-link`, `__image`, `is-ready`, the viewer PhotoSwipe's `.pswp`
   with `webx-lightbox` — in each view). `html.webx-js` once the runtime runs; `html.webx-scroll-locked`
   while a modal is open; `html.webx-header-sticky` while a header sticks (scroll padding = its height).
-- **Local tokens** — `--webx-<name>-*` of each widget above (`--webx-slider-per-view`,
-  `--webx-lightbox-backdrop`…), declared on `:root` from `--site-*` in its stylesheet;
-  `--webx-header-height` and `-topbar-height` are kept live by the runtime — `top` of anything sticky.
+- **Local tokens** — `--webx-<name>-*` of each widget (`--webx-slider-per-view`, `--webx-lightbox-backdrop`…),
+  on `:root` from `--site-*`; `--webx-header-height|-topbar-height` kept live by the runtime — `top` of anything sticky.
 - **Words** — `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
 
 ## Change it without forking
@@ -119,10 +122,8 @@ body|done`, `is-sent`; `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-
 ## Do not
 
 - Do not edit `vendor/webx-ui/widgets` or `public/themes/webx-ui/widgets`: an update or a sync replaces them.
-- Do not write a colour literally or with a fallback (`var(--site-x, #fff)`): presets stop
-  repainting it.
-- Do not add `hidden` to a disclosure's panel in markup: without JavaScript it would never show.
-- Do not style a widget through a chain (`.site-main .webx-dialog__title`): one class matches the
+- Do not write a colour literally or with a fallback (`var(--site-x, #fff)`): presets skip it.
+- Do not add `hidden` to a disclosure's panel in markup: without JavaScript it would never show.- Do not style a widget through a chain (`.site-main .webx-dialog__title`): one class matches the
   package and wins by order; a longer chain starts a specificity race with the next theme.
 - Do not paste a counter, a pixel, a chat or an embed as it is: wrap it in
   `<x-webx-consent category="…">` or write it as `type="text/plain"` / `data-src` — nothing
@@ -141,10 +142,8 @@ body|done`, `is-sent`; `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-
 
 - `php artisan webx:theme:sync` lists `webx-ui/widgets` as published; the page source has
   `.../widgets/<hash>/runtime.css` in `<head>`, `runtime.js` before `</body>`, no `<!--webx-widgets-->`.
-- In the browser console: `typeof webx.widget === 'function'`; Tab through the widget with the
-  keyboard; turn JavaScript off and the content is still there.
+- Console: `typeof webx.widget === 'function'`; Tab through the widget; JavaScript off — still there.
 
 ## Read more
 
-- [README.md](README.md) in this directory.
-- Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md
+- [README.md](README.md); the spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md

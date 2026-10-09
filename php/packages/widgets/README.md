@@ -15,8 +15,8 @@ theme/                   ← the site's local theme
 ```
 
 > Under way: the loading, the runtime with the light behaviours, the mobile menu, the header, cookie
-> consent, the dropdown, contacts, the language switcher, the slider and the lightbox are here;
-> video and maps arrive in the next releases.
+> consent, the dropdown, contacts, the language switcher, the slider, the lightbox and the
+> gallery and logos blocks are here; video and maps arrive in the next releases.
 
 ## What is in it
 
@@ -46,6 +46,18 @@ theme/                   ← the site's local theme
 
 Without JavaScript: the disclosure's panel is shown, the dialog opens through `:target` from a link
 to `#<id>`, the tabs are headings above their panels, the accordion is plain `<details>`.
+
+## Blocks
+
+On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers two block
+types — `webx:setup` installs them, or `php artisan webx:blocks:offered --install --module=widgets`:
+
+- **Gallery** — pictures of the media library as a grid (as many columns as the column has room
+  for, up to the number set) or as the slider's gallery with thumbnails; a click opens the picture
+  in the lightbox and pages through that block's pictures; a picture's title is its caption.
+- **Logos** — a name, a logo and a link each, in the slider's running strip with its pause button.
+
+Installed once, they belong to the site: change them in the panel, an update never overwrites them.
 
 ## How a page gets it
 
