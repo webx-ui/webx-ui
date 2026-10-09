@@ -4,6 +4,7 @@ import WxAction from '../Action/Action.vue'
 import WxActions from '../Actions/Actions.vue'
 import WxButton from '../Button/Button.vue'
 import WxIcon from '../Icon/Icon.vue'
+import WxPopconfirm from '../Popconfirm/Popconfirm.vue'
 import WxSortableList from '../SortableList/SortableList.vue'
 import WxFormScope from '../../internal/FormScope'
 import type { SortableMove } from '../SortableList/types'
@@ -18,6 +19,9 @@ const props = withDefaults(defineProps<RepeaterProps<T>>(), {
   newItem: undefined,
   addLabel: 'Add',
   removeLabel: 'Remove',
+  confirmRemove: false,
+  removeQuestion: 'Remove this row?',
+  cancelLabel: 'Cancel',
   dragLabel: 'Reorder',
   collapsible: false,
   collapsed: false,
@@ -294,7 +298,23 @@ function onMove(move: SortableMove<T>) {
       <template #actions="{ index }">
         <wx-actions :size="size === 'sm' ? 'sm' : 'md'">
           <slot name="actions" :item="items[index] as T" :index="index" />
+          <wx-popconfirm
+            v-if="confirmRemove"
+            :title="removeQuestion"
+            :confirm-text="removeLabel"
+            :cancel-text="cancelLabel"
+            confirm-type="danger"
+            side="bottom"
+            align="end"
+            :disabled="disabled || atMin"
+            @confirm="remove(index)"
+          >
+            <template #trigger>
+              <wx-action type="remove" :label="removeLabel" :disabled="disabled || atMin" />
+            </template>
+          </wx-popconfirm>
           <wx-action
+            v-else
             type="remove"
             :label="removeLabel"
             :disabled="disabled || atMin"

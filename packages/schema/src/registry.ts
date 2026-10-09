@@ -42,6 +42,20 @@ function fieldNames(node: ScreenNode): string[] {
   )
 }
 
+/** Wide in a row of a repeater: what spreads its fields across, or is wide on its own. */
+const WIDE_IN_A_ROW = new Set(['wx-row', 'wx-col', 'wx-transfer', 'wx-code-editor', 'wx-rich-text'])
+
+/**
+ * A repeater takes the whole width only when its rows need it — fields side by side, an editor.
+ * Rows of plain fields stacked one under another stop where a field does: a row as wide as a
+ * monitor put the bin a screen away from the inputs it removes.
+ */
+function sideBySide(node: ScreenNode): boolean {
+  return (node.children ?? []).some(
+    (child) => WIDE_IN_A_ROW.has(child.type) || (child.type !== 'wx-repeater' && sideBySide(child)),
+  )
+}
+
 /**
  * The types every panel has: the core's layout, form and display components under
  * their full names. A module or a project adds its own the same way — `wx-media` comes
@@ -112,7 +126,7 @@ export const coreTypes: TypeRegistry = {
   'wx-transfer': { component: WxTransfer, kind: 'field', wide: true },
   // Wide for the reason an editor is: code is read in long lines.
   'wx-code-editor': { component: WxCodeEditor, kind: 'field', wide: true },
-  'wx-repeater': { component: ScreenRepeater, kind: 'field', nested: true, wide: true },
+  'wx-repeater': { component: ScreenRepeater, kind: 'field', nested: true, wide: sideBySide },
 
   'wx-heading': { component: WxHeading, kind: 'display' },
   'wx-text': { component: WxText, kind: 'display' },

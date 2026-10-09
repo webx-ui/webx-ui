@@ -427,6 +427,11 @@ which record it is (`#1 · …`, from `itemLabel`). A row added now opens anyway
 core only has in English — add, remove, reorder, the empty text — come from the panel's
 dictionary (`webx-admin::screens.repeater.*`); a node's own `addLabel` and the rest win over it.
 
+Removing a row asks first, in a popover by the bin (`confirmRemove`, on unless the node says
+`false`): a row is data somebody typed. A repeater whose rows stack plain fields stops at a
+field's width; one whose rows lay fields side by side — a `wx-row` among the children — or hold
+an editor takes the whole width.
+
 Fields of an item can stand in columns: a `wx-row` of `wx-col` among the children, as anywhere
 else on a screen. A column's `sm`/`md` count the width of the row, not of the window, so a
 repeater in a narrow column stacks them and a wide one lays them side by side.

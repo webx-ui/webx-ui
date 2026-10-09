@@ -12,6 +12,8 @@ return [
     'repeater' => [
         'add' => 'Add',
         'remove' => 'Remove',
+        'remove-question' => 'Remove this row?',
+        'cancel' => 'Cancel',
         'reorder' => 'Reorder',
         'empty' => 'Nothing here yet',
     ],

@@ -12,6 +12,8 @@ return [
     'repeater' => [
         'add' => 'Adicionar',
         'remove' => 'Remover',
+        'remove-question' => 'Remover esta linha?',
+        'cancel' => 'Cancelar',
         'reorder' => 'Reordenar',
         'empty' => 'Ainda não há nada',
     ],

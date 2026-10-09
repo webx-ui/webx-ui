@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { defineComponent, ref } from 'vue'
+import { defineComponent, nextTick, ref } from 'vue'
 import { localesKey } from '../../composables/useLocalized'
 import WxForm from '../Form/Form.vue'
 import WxFormItem from '../FormItem/FormItem.vue'
@@ -91,6 +91,29 @@ describe('WxRepeater', () => {
 
     expect(model(wrapper).map((office) => office.city)).toEqual(['Lviv'])
     expect(wrapper.emitted('remove')?.[0]?.[0]).toEqual(offices[0])
+  })
+
+  it('asks before removing a row with `confirmRemove`, and keeps it on a no', async () => {
+    const wrapper = repeater({ confirmRemove: true, removeQuestion: 'Remove this office?' })
+
+    await removeButton(wrapper, 0).trigger('click')
+    await nextTick()
+
+    expect(model(wrapper)).toHaveLength(2)
+    expect(document.querySelector('.wx-popconfirm__title')?.textContent).toBe('Remove this office?')
+
+    const [no] = document.querySelectorAll<HTMLElement>('.wx-popconfirm__actions button')
+    no!.click()
+    await nextTick()
+    expect(model(wrapper)).toHaveLength(2)
+
+    await removeButton(wrapper, 0).trigger('click')
+    await nextTick()
+    document.querySelectorAll<HTMLElement>('.wx-popconfirm__actions button')[1]!.click()
+    await nextTick()
+
+    expect(model(wrapper).map((office) => office.city)).toEqual(['Lviv'])
+    wrapper.unmount()
   })
 
   it('writes a field through `update` without touching the item it was given', async () => {

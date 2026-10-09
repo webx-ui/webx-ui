@@ -160,7 +160,7 @@ export function renderNode(node: ScreenNode, context: RenderContext): VNode | nu
         name,
         label: own ? undefined : label,
         help: words(node.help, translate),
-        wide: entry.wide,
+        wide: typeof entry.wide === 'function' ? entry.wide(node) : entry.wide,
       },
       () => control,
     )
