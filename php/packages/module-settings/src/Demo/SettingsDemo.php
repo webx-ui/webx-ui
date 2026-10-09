@@ -42,19 +42,67 @@ final class SettingsDemo
         foreach ($this->read() as $key => $value) {
             $node = $nodes[$key] ?? null;
 
-            if ($node === null || ! is_string($value) || Setting::query()->where('key', $key)->exists()) {
+            $list = ($node['type'] ?? null) === 'wx-repeater' && is_array($value) && array_is_list($value);
+
+            if ($node === null || (! is_string($value) && ! $list) || Setting::query()->where('key', $key)->exists()) {
                 continue;
             }
 
             $ledger->created(Setting::query()->create([
                 'key' => $key,
-                // The column holds a map of languages for a localized field and the value
-                // itself for anything else; the fixture holds one string either way.
-                'value' => ($node['localized'] ?? false) === true
-                    ? [$this->locales->defaultCode() => $value]
-                    : $value,
+                'value' => $list ? $this->rows($node, $value) : $this->localized($node, $value),
             ]), $key);
         }
+    }
+
+    /**
+     * The column holds a map of languages for a localized field and the value itself for
+     * anything else; the fixture holds one string either way.
+     *
+     * @param  array<string, mixed>  $node
+     */
+    private function localized(array $node, mixed $value): mixed
+    {
+        return ($node['localized'] ?? false) === true && is_string($value)
+            ? [$this->locales->defaultCode() => $value]
+            : $value;
+    }
+
+    /**
+     * A list's rows (the contacts' phones, hours, networks), each field of a row the way its
+     * own child of the repeater keeps it.
+     *
+     * @param  array<string, mixed>  $node
+     * @param  list<mixed>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function rows(array $node, array $rows): array
+    {
+        $children = [];
+
+        foreach (Tree::fields((array) ($node['children'] ?? [])) as $child) {
+            $children[(string) $child['name']] = $child;
+        }
+
+        $stored = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $item = [];
+
+            foreach ($row as $name => $value) {
+                if (isset($children[$name])) {
+                    $item[$name] = $this->localized($children[$name], $value);
+                }
+            }
+
+            $stored[] = $item;
+        }
+
+        return $stored;
     }
 
     /**

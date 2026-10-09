@@ -9,6 +9,9 @@ use Illuminate\Contracts\Container\Container;
 use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Rendering\SeoData;
 use WebxUi\Seo\Rendering\SeoSource;
+use WebxUi\Settings\Contacts\Channel;
+use WebxUi\Settings\Contacts\Contacts;
+use WebxUi\Settings\Contacts\Hours;
 use WebxUi\Settings\Settings;
 
 /**
@@ -94,11 +97,22 @@ final class DefaultsSource implements SeoSource
             $organisation['logo'] = $logo;
         }
 
-        $sameAs = $this->sameAs($settings->get('seo.org-socials', null, $locale));
+        $contacts = $this->container->make(Contacts::class);
+
+        // The networks of the Contacts tab and the ones typed here before it existed, once each.
+        $sameAs = array_values(array_unique([
+            ...$this->sameAs($settings->get('seo.org-socials', null, $locale)),
+            ...array_values(array_filter(array_map(
+                static fn (Channel $social): string => $social->url,
+                $contacts->socials($locale),
+            ), static fn (string $url): bool => Contacts::isWebLink($url))),
+        ]));
 
         if ($sameAs !== []) {
             $organisation['sameAs'] = $sameAs;
         }
+
+        $organisation = [...$organisation, ...$this->contacts($contacts, $locale)];
 
         $blocks = [$organisation];
 
@@ -136,6 +150,87 @@ final class DefaultsSource implements SeoSource
             ?? $this->text($settings->get('general.project-name', null, $locale));
 
         return $name === null ? null : self::organizationIdOf($home);
+    }
+
+    /**
+     * What the Contacts tab says about the organisation (WIDGETS §12.1): the main number in
+     * E.164, the first e-mail, the main address; and where it is and when it is open, which
+     * only a `LocalBusiness` may say — an Organization that is also a place, so the `@id` other
+     * blocks point at is the same thing either way.
+     *
+     * @return array<string, mixed>
+     */
+    private function contacts(Contacts $contacts, ?string $locale): array
+    {
+        $fields = [];
+        $phone = $contacts->primaryPhone($locale);
+        $email = $contacts->emails($locale)[0] ?? null;
+        $address = $contacts->primaryAddress($locale);
+        $hours = $contacts->hours($locale);
+
+        if ($phone !== null) {
+            $fields['telephone'] = $phone->e164;
+        }
+
+        if ($email !== null) {
+            $fields['email'] = $email->address;
+        }
+
+        if ($address !== null) {
+            $fields['address'] = $address->text;
+        }
+
+        if ($address !== null && $address->hasCoordinates()) {
+            $fields['@type'] = 'LocalBusiness';
+            $fields['geo'] = ['@type' => 'GeoCoordinates', 'latitude' => $address->latitude, 'longitude' => $address->longitude];
+        }
+
+        if (! $hours->isEmpty()) {
+            $fields['@type'] = 'LocalBusiness';
+            $fields['openingHoursSpecification'] = $this->openingHours($hours);
+        }
+
+        return $fields;
+    }
+
+    /**
+     * The week, a specification per group of days with the same interval, and the special dates
+     * of the next two months, each valid on its one day. A day closed is 00:00–00:00, the way
+     * Google reads "closed" in this markup.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function openingHours(Hours $hours): array
+    {
+        $names = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday'];
+        $time = static fn (int $minutes): string => sprintf('%02d:%02d', intdiv($minutes % 1440, 60), $minutes % 60);
+        $specifications = [];
+
+        foreach ($hours->rows() as $row) {
+            foreach ($row['intervals'] as [$opens, $closes]) {
+                $specifications[] = [
+                    '@type' => 'OpeningHoursSpecification',
+                    'dayOfWeek' => array_map(static fn (int $day): string => 'https://schema.org/'.$names[$day], $row['days']),
+                    'opens' => $time($opens),
+                    // The whole day closes a minute before midnight: 00:00 would read as closed.
+                    'closes' => $closes - $opens >= 1440 ? '23:59' : $time($closes),
+                ];
+            }
+        }
+
+        foreach ($hours->upcoming(null, 60) as $date => $exception) {
+            foreach ($exception['intervals'] === [] ? [[0, 0]] : $exception['intervals'] as [$opens, $closes]) {
+                $specifications[] = [
+                    '@type' => 'OpeningHoursSpecification',
+                    'validFrom' => $date,
+                    'validThrough' => $date,
+                    'opens' => $time($opens),
+                    'closes' => $time($closes),
+                ];
+            }
+        }
+
+        return $specifications;
     }
 
     private static function organizationIdOf(string $home): string

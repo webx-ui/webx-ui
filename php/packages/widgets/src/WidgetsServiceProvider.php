@@ -19,12 +19,18 @@ use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Widgets\View\Components\ConsentGate;
 use WebxUi\Widgets\View\Components\ConsentLink;
+use WebxUi\Widgets\View\Components\ContactBar;
+use WebxUi\Widgets\View\Components\ContactButton;
 use WebxUi\Widgets\View\Components\Dialog;
 use WebxUi\Widgets\View\Components\Dropdown;
 use WebxUi\Widgets\View\Components\Header;
 use WebxUi\Widgets\View\Components\HeaderNav;
+use WebxUi\Widgets\View\Components\Icon;
 use WebxUi\Widgets\View\Components\MobileMenu;
 use WebxUi\Widgets\View\Components\MobileMenuNav;
+use WebxUi\Widgets\View\Components\OpeningHours;
+use WebxUi\Widgets\View\Components\Phones;
+use WebxUi\Widgets\View\Components\Socials;
 use WebxUi\Widgets\View\Components\Tabs;
 use WebxUi\Widgets\View\Components\TabsPanel;
 use WebxUi\Widgets\View\HeaderNavigation;
@@ -82,6 +88,12 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-consent', ConsentGate::class);
         Blade::component('webx-consent-link', ConsentLink::class);
         Blade::component('webx-dropdown', Dropdown::class);
+        Blade::component('webx-icon', Icon::class);
+        Blade::component('webx-phones', Phones::class);
+        Blade::component('webx-hours', OpeningHours::class);
+        Blade::component('webx-contact-button', ContactButton::class);
+        Blade::component('webx-contact-bar', ContactBar::class);
+        Blade::component('webx-socials', Socials::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');

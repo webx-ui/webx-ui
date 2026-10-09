@@ -61,6 +61,24 @@
   color: var(--site-color-bg);
 }
 
+/* Above the bar: the opening hours and the e-mail of the Contacts tab. */
+:where(.site-header__topbar) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--site-space-4);
+  color: var(--site-color-text-muted);
+}
+
+:where(.site-header__email) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
 /*
  * Main: every direct child keeps to the container's column; `site-bleed` lets a section span
  * the page. The column is a width and auto margins rather than padding: a direct child is as
@@ -119,4 +137,20 @@
 
 :where(.site-footer__copy) {
   margin: 0;
+}
+
+/* The Contacts tab: numbers, e-mails, the address and the networks, as one line that wraps. */
+:where(.site-footer__contacts) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-2) var(--site-space-6);
+  width: 100%;
+  padding-block-end: var(--site-space-4);
+  border-bottom: 1px solid var(--site-color-border);
+  color: var(--site-color-text);
+}
+
+:where(.site-footer__address) {
+  font-style: normal;
 }

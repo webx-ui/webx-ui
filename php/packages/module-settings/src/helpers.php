@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use WebxUi\Settings\Contacts\Contacts;
 use WebxUi\Settings\Settings;
 
 if (! function_exists('settings')) {
@@ -14,5 +15,16 @@ if (! function_exists('settings')) {
         $settings = app(Settings::class);
 
         return $key === null ? $settings : $settings->get($key, $default);
+    }
+}
+
+if (! function_exists('contacts')) {
+    /**
+     * `contacts()->primaryPhone()`, `contacts()->hours()->openNow()` — the "Contacts" tab of the
+     * settings, read as phones, addresses, hours and channels (WIDGETS §12.1).
+     */
+    function contacts(): Contacts
+    {
+        return app(Contacts::class);
     }
 }

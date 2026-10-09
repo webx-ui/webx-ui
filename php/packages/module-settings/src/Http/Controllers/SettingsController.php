@@ -10,6 +10,7 @@ use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Settings\Contacts\ContactsCheck;
 use WebxUi\Settings\DataShortcodes;
 use WebxUi\Settings\Settings;
 
@@ -53,6 +54,7 @@ final class SettingsController
         );
 
         app(DataShortcodes::class)->check($stored);
+        ContactsCheck::check($stored);
         $settings->save($stored);
 
         return ApiResponse::data(['values' => $this->described($settings, $screen)]);

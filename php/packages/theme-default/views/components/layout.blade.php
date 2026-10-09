@@ -43,6 +43,9 @@
 
     <x-webx-blocks::region name="footer" fallback="components.footer" />
 
+    {{-- Quick contact (WIDGETS §12.4): the chats, the number, the e-mail of the Contacts tab; nothing while it is empty. --}}
+    <x-webx-contact-button />
+
     @stack('scripts')
 </body>
 </html>

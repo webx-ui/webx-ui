@@ -69,6 +69,7 @@ export default {
       input: {
         runtime: join(root, 'resources/js/runtime.js'),
         consent: join(root, 'resources/js/consent.js'),
+        contacts: join(root, 'resources/js/contacts.js'),
       },
       output: {
         entryFileNames: '[name].js',

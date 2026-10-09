@@ -25,6 +25,9 @@ final class DistTest extends PlainTestCase
     /** The consent banner, on every page too: 6 KB gzip (§4). */
     private const int CONSENT_BUDGET = 6 * 1024;
 
+    /** The contacts widgets — phones, hours, quick contact, the bar, networks: 6 KB gzip, only where they stand. */
+    private const int CONTACTS_BUDGET = 6 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -63,7 +66,15 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['consent.css', 'consent.js', 'runtime.css', 'runtime.js', 'sources.json'], $built);
+        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'runtime.css', 'runtime.js', 'sources.json'], $built);
+    }
+
+    #[Test]
+    public function the_contacts_widgets_stay_inside_their_budget(): void
+    {
+        $size = self::gzipped('contacts.js') + self::gzipped('contacts.css');
+
+        $this->assertLessThanOrEqual(self::CONTACTS_BUDGET, $size, sprintf('The contacts widgets are %.1f KB gzip.', $size / 1024));
     }
 
     private static function gzipped(string $file): int

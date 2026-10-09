@@ -288,6 +288,50 @@
           }
         }
       ]
+    },
+    {
+      "title": "Contacts",
+      "slug": "contacts",
+      "seo": {
+        "title": "Contacts",
+        "description": "Phone numbers, opening hours, chats and networks from the Contacts tab of the settings, in the header, the footer and the corner of the window."
+      },
+      "blocks": [
+        {
+          "key": "showcase-contacts-hero",
+          "type": "hero",
+          "values": {
+            "title": "Contacts typed once",
+            "subtitle": "Everything on this page that rings, writes or says when the office is open comes from one place: Settings › Contacts in the panel. Change a number there and the header, the footer, the button in the corner and the markup for search engines change with it.",
+            "button_label": "Call +44 20 7946 0958",
+            "button_url": "tel:+442079460958"
+          }
+        },
+        {
+          "key": "showcase-contacts-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Above the header: the opening hours — \"Open until 7:00 PM\" or \"Closed, opens tomorrow at 9:00 AM\", in the time zone of the office in London, not yours. Open it: the week in a table, Monday to Friday folded into one row, today in bold. Leave the page open past seven: the status changes by itself.\nIn the header: the main number, a link that dials it, its WhatsApp and Telegram beside it, and the arrow — the other numbers with their labels. On a phone the numbers are at the bottom of the menu.\nIn the corner: the round button opens the chats, the number and the e-mail. While the cookie banner is on the screen the button stands above it.\nIn the footer: every number, the e-mail, the address that opens a map, and the networks as icons."
+          }
+        },
+        {
+          "key": "showcase-contacts-panel",
+          "type": "text",
+          "values": {
+            "heading": "In the panel",
+            "body": "Settings › Contacts: the numbers with their labels and messengers, the e-mails, the addresses with their coordinates, the hours as rows of days, the special dates that replace a weekday, the time zone, the chats and the networks.\nA number has to start with + and its country code: \"020 7946 0958\" is refused with a word on what to add, because the site cannot tell which country it is in — a language is not a country. The page shows the number as it was typed; the link dials it in E.164, +442079460958.\nThe same keys are settings over MCP: an agent asked to change the phone on the site changes it in one place."
+          }
+        },
+        {
+          "key": "showcase-contacts-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-phones (layout=\"list\", compact, callback=\"<form>\"), x-webx-hours (layout=\"table\"), x-webx-contact-button (corner, form, :items), x-webx-contact-bar (form, :breakpoint) and x-webx-socials read the Contacts tab and print nothing while it is empty. In a template: contacts()->primaryPhone(), contacts()->hours()->openNow(), contacts()->addresses().\nThe organisation in the markup of every page takes its telephone, e-mail and address from the same tab, and becomes a LocalBusiness with its place and opening hours once they are filled in."
+          }
+        }
+      ]
     }
   ]
 }
