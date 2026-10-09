@@ -1998,3 +1998,242 @@ test.describe('video', () => {
     await context.close()
   })
 })
+
+test.describe('map', () => {
+  const PATH = '/kitchen-sink/map'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  // A tile, answered here: the run does not depend on the network, and every tile is written down.
+  const TILE = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+    'base64',
+  )
+
+  const consent = (c) => ({
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c })),
+    domain: new URL(site).hostname,
+    path: '/',
+  })
+
+  // Anything not the site is answered with a tile and written down; before consent there must be none.
+  async function outside(context) {
+    const asked = []
+    await context.route(
+      (url) => url.protocol.startsWith('http') && url.origin !== site,
+      (route) => {
+        asked.push(route.request().url())
+        return route.fulfill({ body: TILE, contentType: 'image/png' })
+      },
+    )
+    return asked
+  }
+
+  const tiles = (asked) =>
+    asked.filter((url) => /^https:\/\/tile\.openstreetmap\.org\/\d+\//.test(url))
+
+  const section = (page, heading) =>
+    page
+      .locator('[data-wx-block="map"], [data-wx-block="showcase-map"]')
+      .filter({ has: page.getByRole('heading', { name: heading, exact: true }) })
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  // Each map's frame, and whether what stands in it stays inside it.
+  const frames = (page) =>
+    page.locator('.webx-map').evaluateAll((all) =>
+      all.map((map) => {
+        const box = map.getBoundingClientRect()
+        const place = map.querySelector('.webx-map__place')
+        const within = (el) => {
+          const b = el.getBoundingClientRect()
+          return (
+            b.width > 0 &&
+            b.left >= box.left - 0.5 &&
+            b.right <= box.right + 0.5 &&
+            b.top >= box.top - 0.5 &&
+            b.bottom <= box.bottom + 0.5
+          )
+        }
+        return {
+          height: box.height,
+          width: box.width,
+          blocked: map.classList.contains('is-blocked'),
+          fits:
+            !place ||
+            place.hidden ||
+            (place.scrollHeight <= place.clientHeight + 1 &&
+              [...place.querySelectorAll('p, a, button')].every(within)),
+          buttons: [...map.querySelectorAll('.webx-map__button')].map(
+            (b) => b.getBoundingClientRect().height,
+          ),
+          attribution: within(map.querySelector('.webx-map__attribution')),
+        }
+      }),
+    )
+
+  test('before consent nothing is asked of the tiles; the place keeps the map’s height and fits', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext()
+    const asked = await outside(context)
+    const page = await context.newPage()
+
+    for (const width of [375, 1280]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto(PATH)
+      await page.waitForLoadState('networkidle')
+      await still(page)
+
+      const all = await frames(page)
+      // From the contacts, Berlin tall, Paris low, the narrow column.
+      expect(all.length, `at ${width}`).toBe(4)
+      for (const frame of all) {
+        expect(frame.blocked).toBe(true)
+        expect(frame.fits, `the place fits a frame ${Math.round(frame.width)}px wide`).toBe(true)
+        expect(frame.attribution, 'the attribution in its corner').toBe(true)
+        expect(Math.min(...frame.buttons)).toBeGreaterThanOrEqual(44)
+      }
+      // Low, medium and tall are three heights.
+      const [contacts, tall, low] = all.map((frame) => frame.height)
+      expect(low).toBeLessThan(contacts)
+      expect(contacts).toBeLessThan(tall)
+      expect(await sideways(page), `at ${width}`).toBe(0)
+    }
+
+    expect(asked, 'anybody but the site, before any answer').toEqual([])
+    await context.close()
+  })
+
+  test('"Load" puts that map in with its tiles and the attribution over it; "Always load maps" loads every one, no reload', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    // Answered without media: the banner stays out of the way, the maps wait.
+    await context.addCookies([consent([])])
+    const asked = await outside(context)
+    const page = await context.newPage()
+    await page.goto(PATH)
+    await still(page)
+    await page.evaluate(() => (window.notReloaded = true))
+
+    const contacts = section(page, 'From the contacts')
+    const before = (await frames(page))[0].height
+    await contacts.locator('[data-webx-map-load]').click()
+    await expect(contacts.locator('.webx-map.is-loaded .leaflet-tile-loaded').first()).toBeVisible()
+
+    const after = await frames(page)
+    expect(after[0].height, 'the frame keeps its height').toBeCloseTo(before, 0)
+    expect(tiles(asked).length).toBeGreaterThan(0)
+    expect(tiles(asked).every((url) => url.includes('/15/'))).toBe(true)
+    // The attribution stands over the map, readable: the topmost thing at its middle is it.
+    const top = await contacts.locator('.webx-map__attribution').evaluate((el) => {
+      const b = el.getBoundingClientRect()
+      return el.contains(document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2))
+    })
+    expect(top).toBe(true)
+    await expect(contacts.locator('.webx-map__attribution')).toContainText('OpenStreetMap')
+    await expect(contacts.locator('.webx-map__marker')).toBeVisible()
+    expect(await page.locator('.webx-map.is-blocked').count(), 'the others still wait').toBe(3)
+    expect(
+      decodeURIComponent((await context.cookies()).find((c) => c.name === 'webx_consent').value),
+    ).toContain('"c":[]')
+
+    const low = section(page, 'Low, the whole city')
+    await low.locator('[data-webx-map-always]').click()
+    await expect(page.locator('.webx-map.is-blocked')).toHaveCount(0)
+    await expect(page.locator('.webx-map__notice')).toHaveCount(0)
+    // Each loads when it comes near the screen.
+    for (const heading of ['Coordinates of its own', 'Low, the whole city', 'In a narrow column']) {
+      const map = section(page, heading).locator('.webx-map')
+      await map.scrollIntoViewIfNeeded()
+      await expect(map).toHaveClass(/is-loaded/)
+    }
+    expect(await page.evaluate(() => window.notReloaded)).toBe(true)
+    expect(
+      decodeURIComponent((await context.cookies()).find((c) => c.name === 'webx_consent').value),
+    ).toContain('"c":["media"]')
+    expect(
+      asked.every((url) => url.startsWith('https://tile.openstreetmap.org/')),
+      'only tiles, only after consent',
+    ).toBe(true)
+    expect(await sideways(page)).toBe(0)
+    await context.close()
+  })
+
+  test('the wheel over the map scrolls the page until the map is clicked, then zooms it', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    await context.addCookies([consent(['media'])])
+    await outside(context)
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const map = section(page, 'Coordinates of its own').locator('.webx-map')
+    // The zooms of this map's own tiles: the other maps load their own as they come near.
+    const zooms = () =>
+      map
+        .locator('img.leaflet-tile')
+        .evaluateAll((all) => [...new Set(all.map((img) => img.src.split('/')[3]))])
+    await map.evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    await expect(map).toHaveClass(/is-loaded/)
+    await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible()
+    const box = await map.boundingBox()
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+
+    const scrolled = await page.evaluate(() => scrollY)
+    // Small: the page scrolls before the event is hit-tested, and the map must still be under the pointer.
+    await page.mouse.wheel(0, 100)
+    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(scrolled + 50)
+    await expect(map.locator('.webx-map__hint')).toHaveClass(/is-visible/)
+    expect(await zooms(), 'the map did not zoom').toEqual(['16'])
+
+    // Clicked, it is the map's wheel: the page stays, the map zooms.
+    const again = await map.boundingBox()
+    await page.mouse.click(again.x + again.width / 4, again.y + again.height / 2)
+    await expect(map).toHaveClass(/is-active/)
+    const stayed = await page.evaluate(() => scrollY)
+    await page.mouse.wheel(0, -300)
+    await expect.poll(async () => (await zooms()).some((z) => Number(z) > 16)).toBe(true)
+    expect(await page.evaluate(() => scrollY)).toBe(stayed)
+
+    // A press elsewhere puts it back to sleep.
+    await page.mouse.click(5, 5)
+    await expect(map).not.toHaveClass(/is-active/)
+    await context.close()
+  })
+
+  test('without JavaScript a map is its address and a link to a map', async ({ browser }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 375, height: 800 },
+    })
+    const asked = await outside(context)
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const places = await page.locator('.webx-map').evaluateAll((all) =>
+      all.map((map) => ({
+        address: map.querySelector('.webx-map__address')?.textContent ?? null,
+        link: map.querySelector('a.webx-map__open')?.href ?? null,
+        notice: map.querySelector('.webx-map__notice')?.getBoundingClientRect().height ?? 0,
+        buttons: map.querySelector('.webx-map__actions')?.getBoundingClientRect().height ?? 0,
+      })),
+    )
+    expect(places).toHaveLength(4)
+    expect(places.map((place) => place.address)).toEqual([
+      '1 Example Street, London',
+      'Pariser Platz, Berlin',
+      'Paris',
+      '1 Example Street, London',
+    ])
+    for (const place of places) {
+      expect(place.link).toMatch(/^https:\/\/www\.openstreetmap\.org\/\?mlat=/)
+      expect(place.notice + place.buttons, 'nothing to press without the script').toBe(0)
+    }
+    expect(asked).toEqual([])
+    expect(await sideways(page)).toBe(0)
+    await context.close()
+  })
+})
