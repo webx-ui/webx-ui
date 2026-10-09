@@ -125,9 +125,16 @@ test.describe('mobile menu at 375px', () => {
     await open(page)
     for (let i = 0; i < 25; i++) {
       await page.keyboard.press('Tab')
-      const inside = await page.evaluate(() =>
-        document.getElementById('webx-mobile-menu').contains(document.activeElement),
-      )
+      // Past the last entry a modal hands focus to the browser's own controls (activeElement is
+      // <body> then), never to the page behind it.
+      const inside = await page.evaluate(() => {
+        const active = document.activeElement
+        return (
+          !active ||
+          active === document.body ||
+          document.getElementById('webx-mobile-menu').contains(active)
+        )
+      })
       expect(inside, `Tab #${i + 1} left the menu`).toBe(true)
     }
     await page.keyboard.press('Escape')
@@ -146,14 +153,16 @@ test.describe('mobile menu at 375px', () => {
     expect(page.url()).toBe(url)
 
     await open(page)
-    await page.locator('.webx-mobile-nav a[href]').first().click()
+    await page.locator('.webx-mobile-nav a[href]:visible').first().click()
     await page.waitForLoadState()
     await expect(page.locator('#webx-mobile-menu')).toHaveJSProperty('open', false)
   })
 
   test('opens on the branch of the page, and goes back a level with Back', async ({ page }) => {
     await open(page)
-    const back = page.locator('.webx-mobile-nav__level--drill .webx-mobile-nav__back').first()
+    const back = page
+      .locator('details[open] > .webx-mobile-nav__level--drill > .webx-mobile-nav__back')
+      .last()
     await expect(back).toBeVisible()
     await back.click()
     await expect(page.locator('.webx-mobile-nav > .webx-mobile-nav__list')).not.toHaveClass(
