@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Blocks\BlockOffers;
+use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Widgets\View\Components\ConsentGate;
@@ -57,6 +59,9 @@ class WidgetsServiceProvider extends ServiceProvider
 
     private const string ASK_AGAIN = 'consent.ask-again';
 
+    /** What `webx:blocks:offered --module=` calls the blocks this package offers. */
+    public const string OFFERS = 'widgets';
+
     public function register(): void
     {
         // Scoped: what one request claimed must not load on the next one of a long-lived worker.
@@ -81,6 +86,7 @@ class WidgetsServiceProvider extends ServiceProvider
         EncryptCookies::except(Consent::COOKIE);
 
         $this->registerConsentSettings();
+        $this->offerBlocks();
 
         $this->app->make(BottomLayers::class)->add(Widgets::NAME, Widgets::path());
 
@@ -160,6 +166,25 @@ class WidgetsServiceProvider extends ServiceProvider
                 ]);
             }
         });
+    }
+
+    /**
+     * The blocks `gallery` and `logos` (§15.1), offered to `module-blocks` when the site has it:
+     * the slider and the lightbox are what a gallery is made of, and a site would otherwise put
+     * them together again in a block of its own. Offered, not installed — `webx:blocks:offered
+     * --install --module=widgets` (and `webx:setup`) puts them on the site once, and a type the
+     * site already has by that name is never touched.
+     *
+     * Their pictures are fields of the media library, so without `module-media` there is
+     * nothing to offer: a type with a field nobody registered would not survive the panel's save.
+     */
+    private function offerBlocks(): void
+    {
+        if (! class_exists(BlockOffers::class) || ! $this->app->bound(BlockOffers::class) || ! class_exists(MediaServiceProvider::class)) {
+            return;
+        }
+
+        $this->app->make(BlockOffers::class)->offer(self::OFFERS, Widgets::path().'/resources/blocks');
     }
 
     /** HTML with the marker: JSON could carry a rendered page inside a string, and must stay JSON. */
