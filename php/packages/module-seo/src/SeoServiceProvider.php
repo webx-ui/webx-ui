@@ -36,7 +36,6 @@ use WebxUi\Seo\Models\SeoLinkItem;
 use WebxUi\Seo\Models\SeoMeta;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
-use WebxUi\Seo\Normalisation;
 use WebxUi\Seo\Panel\DefaultsSource;
 use WebxUi\Seo\Panel\SeoModule;
 use WebxUi\Seo\Panel\SeoRules;

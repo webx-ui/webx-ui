@@ -287,6 +287,16 @@ MCP-сервер, движок Manticore. Всё ниже однажды сто�
 - **`where` у группы маршрутов — массив.** `Route::prefix(...)->where('key', '…')` падает не
   на себе, а внутри `RouteGroup` с `array_merge(): Argument #1 must be of type array`, и
   выглядит это как сломанная группа. Правильно — `->where(['key' => '…'])`.
+- **Путь `health:` из `bootstrap/app.php` в рантайме не узнать.** Laravel регистрирует `/up`
+  замыканием без имени, и единственное место, где путь остаётся, — защищённый статический
+  `PreventRequestsDuringMaintenance::$neverPrevent`. `module-seo` читает его рефлексией
+  (`Http\Probes`) плюс `webx-seo.probes`; глобальный middleware, который редиректит, обязан
+  пропускать этот путь, иначе healthcheck контейнера получает 301. В тесте путь кладётся
+  `PreventRequestsDuringMaintenance::except()` и убирается `flushState()`.
+- **Две `preserve()` на одну таблицу в `SnapshotTables` складываются, а не перетирают друг друга**
+  (так `cms_settings` держат и `webx-settings.stand_own`, и `module-seo`). Сохранённая строка
+  стенда остаётся со своим `id`; строка архива с тем же `id` встаёт под новым в конце таблицы —
+  ссылаться на такие строки по `id` нельзя.
 
 ## Типы полей и значения
 

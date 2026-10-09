@@ -288,6 +288,21 @@ vendor/composer/autoload_files.php`.
   образе их нет — entrypoint падает на `package:discover` с «Class … not found», хотя сборка
   прошла. `.dockerignore` сверять с `.gitignore`: всё, что git не видит, кроме исходников, —
   кандидат и туда (кеши `bootstrap/cache/*.php`, `auth.json`, ключи `storage/*.key`).
+- **После `docker exec … php artisan …` каждая страница с картинкой отвечает 500
+  (`UnableToCreateDirectory` для `storage/app/public/media/thumbs/<key>`), а команда сказала
+  «Restored.».** `docker exec` — это root: всё, что команда создала в `storage`, — `root:root`, и
+  php-fpm под `www-data` не режет превью в таких папках. `webx:snapshot` и
+  `webx:snapshot:restore` теперь отдают написанное владельцу `storage` сами (`Support\Ownership`),
+  но любая другая artisan-команда под root оставит тот же след — логи, кеш. Звать
+  `docker exec -u www-data …`; проверка — `webx:doctor` под root перечисляет пути в `storage`
+  чужого владельца, лечится `chown -R www-data:www-data storage`.
+- **Весь сайт вместе с панелью — «404 page not found» от Traefik, а в контейнере всё живое.**
+  Traefik выводит из маршрутизации контейнер с упавшим healthcheck, а тот спрашивает
+  `http://127.0.0.1/up` изнутри: любой редирект на https (нормализация `module-seo`, правило
+  редиректа) — провал проверки. Нормализация и таблица редиректов теперь не трогают health-маршрут
+  и запрос с 127.0.0.1 на `http://127.0.0.1` без `X-Forwarded-*`, а `seo.normalise-*` при restore
+  остаются стендовыми. Проверка — `docker inspect --format '{{.State.Health.Status}}' <контейнер>`
+  и `curl -si http://127.0.0.1/up` внутри.
 
 ## Плейграунд
 
