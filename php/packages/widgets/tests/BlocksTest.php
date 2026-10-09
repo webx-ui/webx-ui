@@ -6,6 +6,7 @@ namespace WebxUi\Widgets\Tests;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Auth\AuthServiceProvider;
@@ -27,9 +28,10 @@ use WebxUi\Widgets\Facades\Widgets;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
- * The blocks `gallery` and `logos` (§15.1): offered to a site with blocks and a media library,
- * installed and published by the command `webx:setup` runs, and printed with the slider and the
- * lightbox inside — pictures of the library with their sizes, one group per block.
+ * The blocks `gallery`, `logos` and `video` (§15.1): offered to a site with blocks and a media
+ * library, installed and published by the command `webx:setup` runs, and printed with the
+ * slider, the lightbox and the video inside — pictures of the library with their sizes, one
+ * group per block; a video of a provider behind the consent, a file of the library as is.
  */
 final class BlocksTest extends TestCase
 {
@@ -95,7 +97,7 @@ final class BlocksTest extends TestCase
     #[Test]
     public function both_are_installed_and_published_on_their_samples(): void
     {
-        foreach (['gallery', 'logos'] as $slug) {
+        foreach (['gallery', 'logos', 'video'] as $slug) {
             $block = Block::query()->where('slug', $slug)->with('publishedVersion')->firstOrFail();
 
             $this->assertSame('Offered by widgets', $block->publishedVersion?->comment, "{$slug} is published — it draws on its sample");
@@ -171,11 +173,87 @@ final class BlocksTest extends TestCase
         $this->assertStringContainsString('alt="From the library"', $html, 'no name: the picture says it');
     }
 
+    #[Test]
+    public function a_link_is_the_video_of_its_provider_waiting_for_consent_with_the_caption_under_it(): void
+    {
+        $poster = $this->picture('poster');
+
+        $html = $this->render('video', [
+            'heading' => 'Our workshop',
+            'link' => 'https://youtu.be/aqz-KE-bpKQ',
+            'poster' => ['path' => $poster->path],
+            'caption' => 'Two minutes in the workshop',
+            'ratio' => '4/3',
+        ]);
+
+        $this->assertStringContainsString('class="b-video b-video--4-3"', $html);
+        $this->assertStringContainsString('<h2 class="b-video__heading">Our workshop</h2>', $html);
+        $this->assertStringContainsString('webx-video--youtube', $html, 'a link unless the switch says file');
+        $this->assertStringContainsString('is-blocked', $html, 'no answer yet: the placeholder of §9.4');
+        $this->assertStringContainsString('--webx-video-ratio: 4 / 3', $html);
+        $this->assertStringContainsString('aria-label="Play: Our workshop"', $html, 'the video is named by the heading');
+        $this->assertMatchesRegularExpression('#class="webx-video__poster" src="[^"]*/'.preg_quote($poster->path, '#').'[^"]*"#', $html, 'the poster of the library');
+        $this->assertMatchesRegularExpression('#</div>\s*<figcaption class="b-video__caption">Two minutes in the workshop</figcaption>\s*</figure>#', $html, 'the caption under the frame');
+        $this->assertStringNotContainsString('<iframe', $html);
+        $this->assertContains('video', Widgets::claimed());
+
+        // Vimeo too, and a shape the field does not offer is the default.
+        $vimeo = $this->render('video', ['link' => 'https://vimeo.com/1084537', 'poster' => ['path' => $poster->path], 'ratio' => '21/9']);
+        $this->assertStringContainsString('webx-video--vimeo', $vimeo);
+        $this->assertStringContainsString('class="b-video b-video--16-9"', $vimeo);
+        $this->assertStringNotContainsString('b-video__heading', $vimeo);
+        $this->assertStringNotContainsString('b-video__caption', $vimeo);
+    }
+
+    #[Test]
+    public function a_file_of_the_library_plays_on_the_site_with_no_consent_asked(): void
+    {
+        $clip = $this->picture('clip', 'video/mp4');
+        $poster = $this->picture('poster');
+
+        $html = $this->render('video', ['source' => 'file', 'link' => 'https://youtu.be/aqz-KE-bpKQ', 'file' => ['path' => $clip->path], 'poster' => ['path' => $poster->path]]);
+
+        $this->assertStringContainsString('webx-video--file', $html, 'the switch decides, not whichever field is filled');
+        $this->assertStringContainsString('preload="none"', $html);
+        $this->assertMatchesRegularExpression('#<source src="[^"]*/'.preg_quote($clip->path, '#').'[^"]*"\s+type="video/mp4"\s*>#', $html);
+        $this->assertMatchesRegularExpression('#poster="[^"]*/'.preg_quote($poster->path, '#').'[^"]*"#', $html);
+        $this->assertStringNotContainsString('data-webx-consent', $html);
+        $this->assertStringNotContainsString('youtube', $html);
+    }
+
+    #[Test]
+    public function a_video_with_nothing_to_play_prints_nothing(): void
+    {
+        Http::fake();
+
+        $nothing = [
+            'no address' => ['heading' => 'Video', 'link' => ''],
+            'an address of no provider' => ['heading' => 'Video', 'link' => 'https://example.com/clip'],
+            'not an address' => ['heading' => 'Video', 'link' => 'our film'],
+            'a file gone from the library' => ['heading' => 'Video', 'source' => 'file', 'file' => ['path' => 'media/gone.mp4']],
+            'the switch on file, a link filled' => ['heading' => 'Video', 'source' => 'file', 'link' => 'https://youtu.be/aqz-KE-bpKQ'],
+        ];
+
+        foreach ($nothing as $case => $values) {
+            $this->assertStringNotContainsString('b-video', $this->render('video', $values), $case);
+        }
+
+        // A poster gone from the library is no poster: the video's own preview stands in.
+        $html = $this->render('video', ['link' => 'https://youtu.be/aqz-KE-bpKQ', 'poster' => ['path' => 'media/gone.webp']]);
+        $this->assertStringContainsString('webx-video--youtube', $html);
+        $this->assertStringNotContainsString('gone.webp', $html);
+        Http::assertNothingSent();
+    }
+
     /** A picture in the library, the way an upload leaves one — the bytes need not be there. */
     private function picture(string $name, string $mime = 'image/webp'): MediaFile
     {
         $root = MediaDirectory::query()->whereNull('parent_id')->firstOrFail();
-        $extension = $mime === 'image/svg+xml' ? 'svg' : 'webp';
+        $extension = match ($mime) {
+            'image/svg+xml' => 'svg',
+            'video/mp4' => 'mp4',
+            default => 'webp',
+        };
 
         return MediaFile::query()->create([
             'directory_id' => $root->getKey(),
@@ -187,8 +265,8 @@ final class BlocksTest extends TestCase
             'extension' => $extension,
             'mime' => $mime,
             'size' => 2048,
-            'width' => $extension === 'svg' ? null : 1800,
-            'height' => $extension === 'svg' ? null : 1200,
+            'width' => $extension === 'webp' ? 1800 : null,
+            'height' => $extension === 'webp' ? 1200 : null,
         ]);
     }
 

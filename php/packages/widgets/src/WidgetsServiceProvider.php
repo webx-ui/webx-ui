@@ -176,14 +176,14 @@ class WidgetsServiceProvider extends ServiceProvider
     }
 
     /**
-     * The blocks `gallery` and `logos` (§15.1), offered to `module-blocks` when the site has it:
-     * the slider and the lightbox are what a gallery is made of, and a site would otherwise put
-     * them together again in a block of its own. Offered, not installed — `webx:blocks:offered
-     * --install --module=widgets` (and `webx:setup`) puts them on the site once, and a type the
-     * site already has by that name is never touched.
+     * The blocks `gallery`, `logos` and `video` (§15.1), offered to `module-blocks` when the site
+     * has it: the slider, the lightbox and the video are what they are made of, and a site would
+     * otherwise put them together again in a block of its own. Offered, not installed —
+     * `webx:blocks:offered --install --module=widgets` (and `webx:setup`) puts them on the site
+     * once, and a type the site already has by that name is never touched.
      *
-     * Their pictures are fields of the media library, so without `module-media` there is
-     * nothing to offer: a type with a field nobody registered would not survive the panel's save.
+     * Their pictures and videos are fields of the media library, so without `module-media` there
+     * is nothing to offer: a type with a field nobody registered would not survive the panel's save.
      */
     private function offerBlocks(): void
     {

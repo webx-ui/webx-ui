@@ -25,6 +25,11 @@ final class VideoProviders
         $this->providers[$provider->key()] = $provider;
     }
 
+    public function has(string $key): bool
+    {
+        return isset($this->providers[$key]);
+    }
+
     public function find(string $url): ?ProvidedVideo
     {
         foreach ($this->providers as $provider) {
