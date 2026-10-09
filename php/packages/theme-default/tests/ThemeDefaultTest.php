@@ -15,6 +15,7 @@ use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Themes\Vocabulary;
+use WebxUi\Widgets\Widgets;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
@@ -109,9 +110,12 @@ class ThemeDefaultTest extends TestCase
     /** dist/ is committed; an edit to src/ without a build would ship yesterday's CSS. */
     /**
      * The showcase pages are seeded by module-pages, and their blocks by the block types of the
-     * module-blocks demo and the theme's own `demo/blocks/` (THEMES §15.1) — the only types a
-     * fresh site has until the theme brings its own (TH2). Any other type is a page the seed
-     * writes and the site cannot print.
+     * module-blocks demo, the theme's own `demo/blocks/` (THEMES §15.1) and the blocks the
+     * widgets offer (WIDGETS §15.1), which the blocks demo installs for the pages that stand on
+     * them. Any other type is a page the seed writes and the site cannot print.
+     *
+     * A picture is named `demo:<file>` and the media demo stores `demo/media/<file>.*` under that
+     * name; a name with no file is a hole in a gallery.
      */
     #[Test]
     public function the_showcase_pages_use_only_the_demo_block_types(): void
@@ -121,8 +125,18 @@ class ThemeDefaultTest extends TestCase
 
         $types = ['hero', 'text', 'columns', ...array_map(
             static fn (string $file): string => basename($file, '.json'),
-            glob(self::path().'/demo/blocks/*.json') ?: [],
+            [...glob(self::path().'/demo/blocks/*.json') ?: [], ...glob(Widgets::path().'/resources/blocks/*.json') ?: []],
         )];
+        $pictures = array_map(static fn (string $file): string => 'demo:'.pathinfo($file, PATHINFO_FILENAME), glob(self::path().'/demo/media/*') ?: []);
+        $named = [];
+
+        foreach ($pages as $file) {
+            preg_match_all('/"path":\s*"(demo:[^"]+)"/', (string) file_get_contents($file), $found);
+            array_push($named, ...$found[1]);
+        }
+
+        $this->assertNotSame([], $named);
+        $this->assertSame([], array_values(array_diff($named, $pictures)), 'pictures named with no file in demo/media');
 
         $keys = [];
         $walk = function (array $page, string $file) use (&$walk, &$keys, $types): void {

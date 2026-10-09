@@ -390,7 +390,7 @@
           "type": "text",
           "values": {
             "heading": "Slider",
-            "body": "Four variants of one widget: cards, hero, gallery and logos. Slides per view follow the width of the column the slider stands in, not the width of the window — so the same cards show three to a row here and one and a bit in the narrow column below.\nWithout JavaScript every slider is a strip that scrolls sideways and stops at a slide."
+            "body": "Four variants of one widget: cards, hero, gallery and logos. Slides per view follow the width of the column the slider stands in, not the width of the window — so the same cards show three to a row here and one and a bit in the narrow column below.\nThe gallery and the logos are the blocks of the same names — what a site puts on a page in the panel, with pictures of the media library. The rest stand on a block made for this page.\nWithout JavaScript every slider is a strip that scrolls sideways and stops at a slide."
           }
         },
         {
@@ -428,13 +428,37 @@
         },
         {
           "key": "showcase-slider-gallery",
-          "type": "showcase-slider",
+          "type": "gallery",
           "values": {
             "heading": "Gallery",
-            "note": "A big picture and its thumbnails: a thumbnail picks its picture, the current one is framed.",
-            "variant": "gallery",
-            "width": "full",
-            "slides": "6"
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-1",
+                "alt": "Photo 1"
+              },
+              {
+                "path": "demo:showcase-photo-2",
+                "alt": "Photo 2"
+              },
+              {
+                "path": "demo:showcase-photo-3",
+                "alt": "Photo 3"
+              },
+              {
+                "path": "demo:showcase-photo-4",
+                "alt": "Photo 4"
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5"
+              },
+              {
+                "path": "demo:showcase-photo-6",
+                "alt": "Photo 6"
+              }
+            ],
+            "view": "slider",
+            "zoom": false
           }
         },
         {
@@ -450,13 +474,99 @@
         },
         {
           "key": "showcase-slider-logos",
-          "type": "showcase-slider",
+          "type": "logos",
           "values": {
             "heading": "Logos",
-            "note": "A running strip with no arrows and no dots — and a pause button all the same.",
-            "variant": "logos",
-            "width": "full",
-            "slides": "8"
+            "logos": [
+              {
+                "name": "Strategy Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-1"
+                },
+                "link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "#logo-1",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                }
+              },
+              {
+                "name": "Design Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-2"
+                },
+                "link": null
+              },
+              {
+                "name": "Development Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-3"
+                },
+                "link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "#logo-3",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                }
+              },
+              {
+                "name": "Support Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-4"
+                },
+                "link": null
+              },
+              {
+                "name": "Hosting Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-5"
+                },
+                "link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "#logo-5",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                }
+              },
+              {
+                "name": "Analytics Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-6"
+                },
+                "link": null
+              },
+              {
+                "name": "Training Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-7"
+                },
+                "link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "#logo-7",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                }
+              },
+              {
+                "name": "Audit Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-8"
+                },
+                "link": null
+              }
+            ]
           }
         },
         {
@@ -483,7 +593,7 @@
           "type": "text",
           "values": {
             "heading": "For the site",
-            "body": "x-webx-slider with x-webx-slide inside. variant — cards, hero, gallery, logos; per-view — a number, or by the width of the slider: ['sm' => 1.2, 'md' => 2, 'lg' => 3] (sm from 0, md from 640px, lg from 960px, xl from 1280px, or a width in pixels); arrows, pagination, loop, autoplay (milliseconds, true or false), effect (slide or fade), thumbs, speed, label; options — anything else Swiper takes. A slide's thumb names the picture of its thumbnail.\nClasses: webx-slider, webx-slider--<variant>, __viewport, __track, __slide, __controls, __button, __prev, __next, __pause, __pagination, __bullet, __thumbs, __thumb; is-ready, is-active. Tokens: --webx-slider-gap, --webx-slider-arrow-size, --webx-slider-per-view and the rest of --webx-slider-*."
+            "body": "x-webx-slider with x-webx-slide inside. variant — cards, hero, gallery, logos; per-view — a number, or by the width of the slider: ['sm' => 1.2, 'md' => 2, 'lg' => 3] (sm from 0, md from 640px, lg from 960px, xl from 1280px, or a width in pixels); arrows, pagination, loop, autoplay (milliseconds, true or false), effect (slide or fade), thumbs, speed, label; options — anything else Swiper takes. A slide's thumb names the picture of its thumbnail.\nClasses: webx-slider, webx-slider--<variant>, __viewport, __track, __slide, __controls, __button, __prev, __next, __pause, __pagination, __bullet, __thumbs, __thumb; is-ready, is-active. Tokens: --webx-slider-gap, --webx-slider-arrow-size, --webx-slider-per-view and the rest of --webx-slider-*.\nIn the panel: the block gallery (pictures of the library, view grid or slider, zoom) and the block logos (a name, a logo and a link each) — offered by webx-ui/widgets, installed by webx:blocks:offered --install --module=widgets."
           }
         }
       ]
@@ -493,7 +603,7 @@
       "slug": "lightbox",
       "seo": {
         "title": "Lightbox",
-        "description": "Pictures that open over the page: a grid, a gallery slider, links written by hand."
+        "description": "Pictures that open over the page: the gallery block as a grid and as a slider, links written by hand."
       },
       "blocks": [
         {
@@ -501,27 +611,84 @@
           "type": "text",
           "values": {
             "heading": "Lightbox",
-            "body": "A picture that opens over the page, at the size of the screen, and pages through the pictures of its group. It is a link to the picture: without JavaScript the link simply opens it.\nThe page loads the lightbox only because a link on it asks for one — data-webx-lightbox, wherever it was written."
+            "body": "A picture that opens over the page, at the size of the screen, and pages through the pictures of its group. It is a link to the picture: without JavaScript the link simply opens it.\nThe grid and the slider are the gallery block with pictures of the media library: one group per block, the sizes stored at upload, a title of a picture printed under it. The page loads the lightbox only because a link on it asks for one — data-webx-lightbox, wherever it was written."
           }
         },
         {
           "key": "showcase-lightbox-grid",
-          "type": "showcase-lightbox",
+          "type": "gallery",
           "values": {
             "heading": "Grid",
-            "note": "Pictures of the media library, printed by x-webx-lightbox: their sizes are stored at upload, so the component knows them. One group: the arrows page through all six.",
-            "layout": "grid",
-            "pictures": "6"
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-1",
+                "alt": "Photo 1",
+                "title": "Photo 1 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-2",
+                "alt": "Photo 2",
+                "title": "Photo 2 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-3",
+                "alt": "Photo 3",
+                "title": "Photo 3 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-4",
+                "alt": "Photo 4",
+                "title": "Photo 4 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5",
+                "title": "Photo 5 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-6",
+                "alt": "Photo 6",
+                "title": "Photo 6 — a caption from the library"
+              }
+            ],
+            "view": "grid",
+            "columns": 3,
+            "zoom": true
           }
         },
         {
           "key": "showcase-lightbox-gallery",
-          "type": "showcase-lightbox",
+          "type": "gallery",
           "values": {
             "heading": "Gallery slider",
-            "note": "The gallery variant of the slider with a lightbox on its slides: a click opens the picture, a drag only moves the slider. Closed on another picture, the slider comes to it.",
-            "layout": "gallery",
-            "pictures": "6"
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-1",
+                "alt": "Photo 1"
+              },
+              {
+                "path": "demo:showcase-photo-2",
+                "alt": "Photo 2"
+              },
+              {
+                "path": "demo:showcase-photo-3",
+                "alt": "Photo 3"
+              },
+              {
+                "path": "demo:showcase-photo-4",
+                "alt": "Photo 4"
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5"
+              },
+              {
+                "path": "demo:showcase-photo-6",
+                "alt": "Photo 6"
+              }
+            ],
+            "view": "slider",
+            "zoom": true
           }
         },
         {
@@ -530,8 +697,16 @@
           "values": {
             "heading": "Links by hand",
             "note": "Two links written in a template with no component, each on its own. The first is taller than wide — on a phone it fits by its height. The second came without its sizes: it is measured before it opens.",
-            "layout": "by-hand",
-            "pictures": "2"
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-7",
+                "alt": "Photo 7, taller than wide"
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5, a link without sizes"
+              }
+            ]
           }
         },
         {
