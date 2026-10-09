@@ -1000,10 +1000,19 @@ test.describe('slider', () => {
         [CARDS, full],
         [NARROW, 1.2],
       ]) {
+        // Swiper's width of a slide: the frame less the gaps between the slides in view. A frame
+        // that changed width is measured again by Swiper on its next frame — so, polled.
+        await expect
+          .poll(
+            async () => {
+              const m = await measure(page, index)
+              return Math.abs(m.slide - (m.width - (perView - 1) * m.gap) / perView) < 0.5
+            },
+            { message: `the width of a slide at ${width}` },
+          )
+          .toBe(true)
         const m = await measure(page, index)
         expect(m.perView, `the container query at ${width}`).toBe(perView)
-        // Swiper's width of a slide: the frame less the gaps between the slides in view.
-        expect(m.slide).toBeCloseTo((m.width - (perView - 1) * m.gap) / perView, 0)
         expect(m.whole, `whole slides at ${width}`).toBe(Math.floor(perView))
         expect(m.seen, `slides in view at ${width}`).toBe(Math.ceil(perView))
       }
@@ -1094,6 +1103,14 @@ test.describe('slider', () => {
     await page.keyboard.press('End')
     await expect.poll(() => index(NARROW)).toBe(7)
     expect(await index(CARDS)).toBe(3)
+
+    // Eight dots in a 20rem column wrap among themselves; the arrows stay on their row.
+    const narrow = page.locator('.webx-slider').nth(NARROW)
+    const prev = await narrow.locator('.webx-slider__prev').boundingBox()
+    const next = await narrow.locator('.webx-slider__next').boundingBox()
+    const frame = await narrow.boundingBox()
+    expect(Math.abs(prev.y - next.y)).toBeLessThan(1)
+    expect(next.x + next.width).toBeLessThanOrEqual(frame.x + frame.width + 0.5)
 
     // Named for a screen reader; the live region is hidden, not a stray line of text.
     await expect(cards.locator('.webx-slider__slide').nth(1)).toHaveAttribute('aria-label', '2 / 8')

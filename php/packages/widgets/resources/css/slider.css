@@ -116,9 +116,10 @@
 
 /* Controls: printed `hidden`, shown by the script — without it they would do nothing. */
 
+/* One row: in a narrow column the dots wrap inside their own box, the arrows stay beside them. */
 .webx-slider__controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: var(--site-space-2);
@@ -130,6 +131,7 @@
 
 .webx-slider__button {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
   width: var(--webx-slider-arrow-size);
@@ -179,6 +181,7 @@
 
 .webx-slider__pagination {
   display: flex;
+  flex: 0 1 auto;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
