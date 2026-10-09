@@ -32,6 +32,10 @@
     $hours = $contacts !== null && ! $contacts->hours()->isEmpty();
     $email = $contacts?->emails()[0] ?? null;
     $phones = $contacts !== null && $contacts->phones() !== [];
+
+    // The same page in the site's other languages (WIDGETS §13), last among the actions — and so
+    // at the bottom of the mobile menu. Only on a site with more than one.
+    $languages = \WebxUi\Widgets\Languages\LanguageLinks::current();
 @endphp
 
 <x-webx-header class="site-header" sticky="sticky" mode="drill" :skip="false">
@@ -56,7 +60,7 @@
         <x-webx-header.nav :items="$nav->values()" />
     @endif
 
-    @if ($calls->isNotEmpty() || $phones)
+    @if ($calls->isNotEmpty() || $phones || count($languages) > 1)
         <x-slot:actions>
             @if ($phones)
                 <x-webx-phones class="site-header__phones" />
@@ -64,6 +68,9 @@
             @foreach ($calls as $call)
                 <a class="site-header__cta" @foreach ($call->attrs() as $name => $value) {{ $name }}="{{ $value }}" @endforeach>{{ $call->label }}</a>
             @endforeach
+            @if (count($languages) > 1)
+                <x-webx-language-switcher class="site-header__languages" :languages="$languages" />
+            @endif
         </x-slot:actions>
     @endif
 </x-webx-header>

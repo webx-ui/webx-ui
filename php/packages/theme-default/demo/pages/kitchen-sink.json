@@ -332,6 +332,50 @@
           }
         }
       ]
+    },
+    {
+      "title": "Language switcher",
+      "slug": "language-switcher",
+      "seo": {
+        "title": "Language switcher",
+        "description": "The same page in the site’s other languages, from the address registry — the home page of a language where the page is not translated yet."
+      },
+      "blocks": [
+        {
+          "key": "showcase-languages-hero",
+          "type": "hero",
+          "values": {
+            "title": "One page, every language",
+            "subtitle": "The globe in the header lists the languages of the site, each in its own words: English, Русский, Polski. A link leads to this very page in that language — or, while it has no translation, to that language’s home page, and says so.",
+            "button_label": "The home page in Polish",
+            "button_url": "/pl"
+          }
+        },
+        {
+          "key": "showcase-languages-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Open the globe in the header: the current language is marked, the other two are greyed — this page is in English only, so they lead to the Russian and the Polish home pages. Hover one: its title says so in that language.\nGo to the home page and open the globe there: the home page is in all three languages, and every link leads to it — the same page, nothing greyed.\nOn a phone the switcher is at the bottom of the menu, with the numbers. With the keyboard: Enter opens it, Tab walks the languages, Esc closes it and gives the focus back to the globe.\nA site in one language has no switcher at all: there is nothing to switch to."
+          }
+        },
+        {
+          "key": "showcase-languages-addresses",
+          "type": "text",
+          "values": {
+            "heading": "Where the addresses come from",
+            "body": "From the address registry — the same rows hreflang in the head of the page is built from. A page, an article, a product has its address in each language it is translated into; the switcher leads there. A module’s own address, such as the blog’s list, is the same path under the other language’s prefix.\nA translation that is hidden in a language is no translation: the link leads home. So does a page that does not exist.\nThe switcher needs the language in the address (/pl/…). With the language read from the browser instead, every language has one address and there is nothing for a link to choose."
+          }
+        },
+        {
+          "key": "showcase-languages-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-language-switcher — the dropdown, or layout=\"list\" for the languages in a row; codes adds EN, RU, PL; placement for the dropdown; label and fallback-label replace the words. Classes: webx-language-switcher, __current, __list, __link, is-current, is-fallback. No flags: a flag is a country, not a language.\nIn a template: WebxUi\\Widgets\\Languages\\LanguageLinks::current() — the same links, to draw them your own way."
+          }
+        }
+      ]
     }
   ]
 }
