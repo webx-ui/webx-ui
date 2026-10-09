@@ -157,6 +157,24 @@ final class DemoTest extends RegionTestCase
         $this->assertStringContainsString('The theme draws the header', implode(' ', $ledger->takeNotes()));
     }
 
+    #[Test]
+    public function the_theme_adds_its_own_types_and_its_copy_of_one_wins(): void
+    {
+        $this->app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('acme/theme', __DIR__.'/Fixtures/theme-demo', false)]));
+
+        $ledger = $this->seeded();
+
+        $this->assertSame(['columns', 'hero', 'showcase-thing', 'text'], Block::query()->orderBy('slug')->pluck('slug')->all());
+        $this->assertSame('Text of the theme', Block::query()->where('slug', 'text')->value('title'));
+
+        // And they go with the rest of the demo.
+        foreach (array_reverse($ledger->entries()) as $entry) {
+            $ledger->undo($entry);
+        }
+
+        $this->assertSame(0, Block::query()->count());
+    }
+
     private function seeded(): DemoLedger
     {
         $ledger = $this->app->make(DemoLedger::class);

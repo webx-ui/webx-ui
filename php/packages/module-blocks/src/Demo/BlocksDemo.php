@@ -26,6 +26,10 @@ use WebxUi\Blocks\Regions;
  * The fixtures are the files `webx:blocks:export` writes, so what ships here is what the panel
  * would have saved — and a site that wants to keep one of them can export it, edit it and
  * import it back long after the demo is gone.
+ *
+ * The site's theme may bring its own in `demo/blocks/` (§15.1 of the themes spec): its copy of
+ * one of the three wins, and the types it adds are seeded after them — the showcase of
+ * `theme-default`, whose pages stand on them.
  */
 final class BlocksDemo
 {
@@ -50,7 +54,7 @@ final class BlocksDemo
 
     public function seed(DemoLedger $ledger): void
     {
-        foreach (self::TYPES as $slug) {
+        foreach ([...self::TYPES, ...$this->themeTypes()] as $slug) {
             $this->type($ledger, $slug);
         }
 
@@ -138,11 +142,34 @@ final class BlocksDemo
     }
 
     /**
+     * The types the theme adds to the three, in the order of their file names.
+     *
+     * @return list<string>
+     */
+    private function themeTypes(): array
+    {
+        $directory = ThemeDemo::directory('blocks');
+
+        if ($directory === null) {
+            return [];
+        }
+
+        $slugs = array_map(static fn (string $file): string => pathinfo($file, PATHINFO_FILENAME), $this->files->glob($directory.'/*.json'));
+        sort($slugs);
+
+        return array_values(array_diff($slugs, self::TYPES, array_column(self::REGIONS, 'type')));
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function read(string $slug): array
     {
-        $path = __DIR__."/../../resources/demo/{$slug}.json";
+        // The theme's copy of a type wins; the module's own fills in what it leaves out.
+        $theme = ThemeDemo::directory('blocks');
+        $path = $theme !== null && $this->files->exists("{$theme}/{$slug}.json")
+            ? "{$theme}/{$slug}.json"
+            : __DIR__."/../../resources/demo/{$slug}.json";
         $document = json_decode((string) $this->files->get($path), true);
 
         if (! is_array($document)) {
