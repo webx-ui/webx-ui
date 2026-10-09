@@ -726,6 +726,147 @@
           }
         }
       ]
+    },
+    {
+      "title": "Video",
+      "slug": "video",
+      "seo": {
+        "title": "Video",
+        "description": "Videos in the page: YouTube and Vimeo as a facade, the placeholder before consent, a file of the site, posters and ratios."
+      },
+      "blocks": [
+        {
+          "key": "showcase-video-intro",
+          "type": "text",
+          "values": {
+            "heading": "Video",
+            "body": "A YouTube or Vimeo video is a facade: a poster and a play button, and the player only on a click. Until a visitor agrees to media, the server prints a placeholder in its place — the poster, a line saying where the video loads from, Load and Always load videos — and nothing on this page asks YouTube or Vimeo for anything, the posters included: they are pictures of the site.\nA video of the site is a video element that loads nothing before Play, with no consent to ask for: it is first party."
+          }
+        },
+        {
+          "key": "showcase-video-youtube-poster",
+          "type": "showcase-video",
+          "values": {
+            "note": "The poster is a picture of the media library, picked for the video.",
+            "source": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
+            "file": null,
+            "poster": {
+              "path": "demo:showcase-photo-2",
+              "alt": ""
+            },
+            "ratio": "",
+            "width": "full",
+            "heading": "YouTube, a poster from the library"
+          }
+        },
+        {
+          "key": "showcase-video-youtube",
+          "type": "showcase-video",
+          "values": {
+            "note": "No poster picked: the site fetched the video’s preview once into its library (folder Video posters). The first page that showed it had none.",
+            "source": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+            "file": null,
+            "poster": null,
+            "ratio": "",
+            "width": "full",
+            "heading": "YouTube, no poster"
+          }
+        },
+        {
+          "key": "showcase-video-vimeo",
+          "type": "showcase-video",
+          "values": {
+            "note": "The same with Vimeo, whose preview its oEmbed names.",
+            "source": "https://vimeo.com/1084537",
+            "file": null,
+            "poster": null,
+            "ratio": "",
+            "width": "full",
+            "heading": "Vimeo, no poster"
+          }
+        },
+        {
+          "key": "showcase-video-file",
+          "type": "showcase-video",
+          "values": {
+            "note": "A file of the media library with a poster: nothing loads before Play, and there is nothing to agree to.",
+            "source": "",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": {
+              "path": "demo:showcase-photo-4",
+              "alt": ""
+            },
+            "ratio": "",
+            "width": "full",
+            "heading": "A video of the site"
+          }
+        },
+        {
+          "key": "showcase-video-file-bare",
+          "type": "showcase-video",
+          "values": {
+            "note": "Without a poster the frame keeps its place until Play.",
+            "source": "",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": null,
+            "ratio": "",
+            "width": "full",
+            "heading": "A video of the site, no poster"
+          }
+        },
+        {
+          "key": "showcase-video-narrow",
+          "type": "showcase-video",
+          "values": {
+            "note": "The placeholder keeps the ratio in a column 20rem wide, its buttons inside the frame.",
+            "source": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+            "file": null,
+            "poster": {
+              "path": "demo:showcase-photo-3",
+              "alt": ""
+            },
+            "ratio": "",
+            "width": "narrow",
+            "heading": "In a narrow column"
+          }
+        },
+        {
+          "key": "showcase-video-ratio",
+          "type": "showcase-video",
+          "values": {
+            "note": "ratio=\"4:3\" — the frame has its height before anything loads.",
+            "source": "https://vimeo.com/1084537",
+            "file": null,
+            "poster": {
+              "path": "demo:showcase-photo-5",
+              "alt": ""
+            },
+            "ratio": "4:3",
+            "width": "full",
+            "heading": "A ratio of its own"
+          }
+        },
+        {
+          "key": "showcase-video-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Before an answer, or after Reject all: every YouTube and Vimeo video is the placeholder. Load plays that one and agrees to nothing; Always load videos agrees to media — the banner is answered, every placeholder becomes a play button without a reload, the one you clicked plays.\nAfter consent: the play button puts the player in, with the focus in it. Take media back in Cookie settings in the footer: the page reloads with the placeholders.\nWith the keyboard: Tab reaches each play button, Enter plays.\nSwitch JavaScript off: each video is a link to its page with its poster; a file of the site still plays."
+          }
+        },
+        {
+          "key": "showcase-video-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-video src=\"https://www.youtube.com/watch?v=…\" :poster=\"$picture\" title=\"…\" — an address of YouTube (watch, youtu.be, shorts, embed, live) or Vimeo (unlisted with its hash too); a start from ?t= or #t= is kept.\nx-webx-video :file=\"$media\" :poster=\"$picture\" ratio=\"4:3\" — a value of a media field, an object with url() or an address; ratio is 16/9 unless told.\nClasses: webx-video, --youtube, --vimeo, --file, __facade, __poster, __play, __consent, __notice, __button, __frame, __player; is-blocked, is-ready, is-playing. Tokens: --webx-video-ratio, --webx-video-bg, --webx-video-radius, --webx-video-play-size, --webx-video-play-bg, --webx-video-play-color, --webx-video-notice-bg, --webx-video-button-bg."
+          }
+        }
+      ]
     }
   ]
 }

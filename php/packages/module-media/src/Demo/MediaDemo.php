@@ -34,8 +34,8 @@ final class MediaDemo
     /** Landscape for a cover, square for an avatar or a logo slot. */
     private const FILES = ['demo-wide.jpg', 'demo-square.jpg'];
 
-    /** The kinds of file a theme's demo may bring, by extension. */
-    private const TYPES = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'svg' => 'image/svg+xml'];
+    /** The kinds of file a theme's demo may bring, by extension: pictures, and a video for the video widget's showcase. */
+    private const TYPES = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'svg' => 'image/svg+xml', 'mp4' => 'video/mp4', 'webm' => 'video/webm'];
 
     public function __construct(
         private readonly FileStore $store,
