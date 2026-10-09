@@ -1606,17 +1606,36 @@ test.describe('gallery and logos blocks', () => {
         .evaluateAll((all) =>
           all.filter((a) => !a.closest('[inert]')).map((a) => a.getAttribute('href')),
         )
-      expect(links).toEqual(['#logo-1', '#logo-3', '#logo-5', '#logo-7'])
+      // In the strip's order, from whichever logo the running loop has put first in the DOM.
+      const order = ['#logo-1', '#logo-3', '#logo-5', '#logo-7']
+      const round = (from) => [...order.slice(from), ...order.slice(0, from)]
+      expect(links).toEqual(round(order.indexOf(links[0])))
       await logos.locator('h2').evaluate((h) => {
         h.tabIndex = -1
         h.focus()
       })
+      // A press per frame, as a person types: Swiper's A11y brings a slide past the edge in on
+      // the next frame, and its loop moves slides in the DOM. Two presses inside one frame let
+      // the move meant for the previous link land on the focused one, which drops the focus to
+      // <body> — a test's speed, not a visitor's. The focus is read after the move.
       const reached = []
       for (let i = 0; i < links.length; i++) {
         await page.keyboard.press('Tab')
-        reached.push(await page.evaluate(() => document.activeElement.getAttribute('href')))
+        reached.push(
+          await page.evaluate(
+            () =>
+              new Promise((settled) =>
+                requestAnimationFrame(() =>
+                  requestAnimationFrame(() => settled(document.activeElement.getAttribute('href'))),
+                ),
+              ),
+          ),
+        )
       }
-      expect(reached).toEqual(links)
+      // The running loop rotates the slides in the DOM, so Tab enters at whichever logo leads
+      // the strip at that moment and goes round from there: each once, in the strip's order.
+      expect(order, `Tab enters the strip on a link at ${width}`).toContain(reached[0])
+      expect(reached).toEqual(round(order.indexOf(reached[0])))
       expect(await viewport.evaluate((el) => el.swiper.autoplay.paused)).toBe(true)
 
       // The button stops it for good, wherever the focus goes.
