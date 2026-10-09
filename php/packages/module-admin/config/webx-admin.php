@@ -315,4 +315,18 @@ return [
         ],
     ],
 
+    /*
+    |---------------------------------------------------------------------------
+    | The web server's user
+    |---------------------------------------------------------------------------
+    |
+    | Who `webx:doctor` checks the run-time folders of `storage` are writable
+    | for (`www-data`, or a uid). Empty means the owner of `storage`, which is
+    | what a deploy sets up; name it when `storage` is root's and the web
+    | server is somebody else.
+    |
+    */
+
+    'web_user' => env('WEBX_WEB_USER'),
+
 ];

@@ -6,6 +6,7 @@ namespace WebxUi\Admin\Snapshots;
 
 use Closure;
 use Illuminate\Contracts\Config\Repository;
+use LogicException;
 
 /**
  * Which table belongs to which group (§ "moving content between stands" in the guide).
@@ -29,7 +30,7 @@ final class SnapshotTables
     /** @var array<string, TableGroup> Exact names; a trailing `*` is a prefix. */
     private array $tables = [];
 
-    /** @var array<string, array{column: string, values: Closure(): list<int|string>}> */
+    /** @var array<string, array{column: string, values: list<Closure(): list<int|string>>}> */
     private array $preserved = [];
 
     /** @var array<string, array{command: string, parameters: array<string, mixed>}> */
@@ -89,11 +90,19 @@ final class SnapshotTables
      * inside a content table. `values` is asked at restore time, on the target, and answers the
      * values of `column` whose rows are kept — the archive's rows with those values are dropped.
      *
+     * Several packages may keep rows of one table (settings: the site's own keys, SEO's address
+     * normalisation): their values add up, as long as they name the same column.
+     *
      * @param  Closure(): list<int|string>  $values
      */
     public function preserve(string $table, string $column, Closure $values): self
     {
-        $this->preserved[$table] = ['column' => $column, 'values' => $values];
+        if (isset($this->preserved[$table]) && $this->preserved[$table]['column'] !== $column) {
+            throw new LogicException("Rows of [{$table}] are already kept by [{$this->preserved[$table]['column']}], not [{$column}].");
+        }
+
+        $this->preserved[$table] ??= ['column' => $column, 'values' => []];
+        $this->preserved[$table]['values'][] = $values;
 
         return $this;
     }
@@ -109,7 +118,7 @@ final class SnapshotTables
             return null;
         }
 
-        $values = array_values(array_unique(($rule['values'])()));
+        $values = array_values(array_unique(array_merge(...array_map(static fn (Closure $values): array => $values(), $rule['values']))));
 
         return $values === [] ? null : ['column' => $rule['column'], 'values' => $values];
     }

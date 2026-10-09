@@ -15,6 +15,7 @@ use WebxUi\Admin\Snapshots\Restorer;
 use WebxUi\Admin\Snapshots\SnapshotFailed;
 use WebxUi\Admin\Snapshots\Snapshotter;
 use WebxUi\Admin\Snapshots\UrlRewriter;
+use WebxUi\Admin\Support\Ownership;
 
 /**
  * Replaces this stand's content with an archive's.
@@ -22,6 +23,10 @@ use WebxUi\Admin\Snapshots\UrlRewriter;
  * Everything that can refuse refuses before anything is written — an unknown format, migrations
  * this code has never seen, production without `--force`, a "no" to the question — and the
  * rollback dump is taken before the first row goes. The stand's own tables are never part of it.
+ *
+ * Run as root (`docker exec` is), whatever it writes — the files, the folders, the dump, the link —
+ * is handed back to the owner of `storage` at the end; the web server cannot cut a thumbnail inside a
+ * folder root made. Run as somebody who can neither do that nor share the owner's group, it refuses.
  */
 class SnapshotRestoreCommand extends Command
 {
@@ -36,7 +41,7 @@ class SnapshotRestoreCommand extends Command
 
     protected $description = 'Replace this stand\'s content (database and uploaded files) with a webx:snapshot archive';
 
-    public function handle(Restorer $restorer, Backups $backups, Snapshotter $snapshots): int
+    public function handle(Restorer $restorer, Backups $backups, Snapshotter $snapshots, Ownership $ownership, MediaDisk $disk): int
     {
         $archive = (string) $this->argument('archive');
 
@@ -65,6 +70,12 @@ class SnapshotRestoreCommand extends Command
             }
         } catch (SnapshotFailed $failure) {
             $this->components->error($failure->getMessage());
+
+            return self::FAILURE;
+        }
+
+        if (($refusal = $ownership->refusal()) !== null) {
+            $this->components->error($refusal);
 
             return self::FAILURE;
         }
@@ -150,12 +161,35 @@ class SnapshotRestoreCommand extends Command
             return self::FAILURE;
         } finally {
             MediaDisk::deleteDirectory($staging);
+            $this->handBack($ownership, $disk);
         }
 
         $this->clearCaches($restorer);
+        // Clearing writes too: a file cache rebuilds its folders as whoever cleared it.
+        $this->handBack($ownership, $disk);
         $this->components->info('Restored.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Everything this run may have written: `storage` (the dump, the logs, the caches), the media
+     * folder when it lives elsewhere, and the links `storage:link` makes.
+     */
+    private function handBack(Ownership $ownership, MediaDisk $disk): void
+    {
+        try {
+            $media = [$disk->root()];
+        } catch (SnapshotFailed) {
+            $media = [];
+        }
+
+        $links = array_map(strval(...), array_keys((array) config('filesystems.links', [])));
+        $changed = $ownership->adopt([storage_path(), ...$media, ...$links]);
+
+        if ($changed > 0 && ($owner = $ownership->owner()) !== null) {
+            $this->components->twoColumnDetail('Handed back to '.$ownership->name($owner['uid']), $changed.' paths');
+        }
     }
 
     private function describe(Manifest $manifest, RestorePlan $plan, UrlRewriter $rewriter, bool $keepExtra): void

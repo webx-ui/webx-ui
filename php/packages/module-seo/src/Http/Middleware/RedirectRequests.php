@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Routing\UrlNormaliser;
+use WebxUi\Seo\Http\Probes;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Panel\RedirectFinder;
 
@@ -31,11 +32,13 @@ final class RedirectRequests
     public function __construct(
         private readonly RedirectFinder $redirects,
         private readonly Config $config,
+        private readonly Probes $probes,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! (bool) $this->config->get('webx-seo.redirects.enabled', true) || ! $request->isMethodCacheable()) {
+        // A mask written for the site (`/u*`) must not catch the health probe either.
+        if (! (bool) $this->config->get('webx-seo.redirects.enabled', true) || ! $request->isMethodCacheable() || $this->probes->is($request)) {
             return $next($request);
         }
 
