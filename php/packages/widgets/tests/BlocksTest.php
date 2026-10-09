@@ -22,16 +22,18 @@ use WebxUi\Media\Models\MediaFile;
 use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
+use WebxUi\Settings\Settings;
 use WebxUi\Settings\SettingsServiceProvider;
 use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Widgets\Facades\Widgets;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
- * The blocks `gallery`, `logos` and `video` (§15.1): offered to a site with blocks and a media
+ * The blocks `gallery`, `logos`, `video` and `map` (§15.1): offered to a site with blocks and a media
  * library, installed and published by the command `webx:setup` runs, and printed with the
  * slider, the lightbox and the video inside — pictures of the library with their sizes, one
- * group per block; a video of a provider behind the consent, a file of the library as is.
+ * group per block; a video of a provider behind the consent, a file of the library as is; a
+ * map of the contacts or of its own coordinates, behind the consent too.
  */
 final class BlocksTest extends TestCase
 {
@@ -97,7 +99,7 @@ final class BlocksTest extends TestCase
     #[Test]
     public function both_are_installed_and_published_on_their_samples(): void
     {
-        foreach (['gallery', 'logos', 'video'] as $slug) {
+        foreach (['gallery', 'logos', 'video', 'map'] as $slug) {
             $block = Block::query()->where('slug', $slug)->with('publishedVersion')->firstOrFail();
 
             $this->assertSame('Offered by widgets', $block->publishedVersion?->comment, "{$slug} is published — it draws on its sample");
@@ -243,6 +245,64 @@ final class BlocksTest extends TestCase
         $this->assertStringContainsString('webx-video--youtube', $html);
         $this->assertStringNotContainsString('gone.webp', $html);
         Http::assertNothingSent();
+    }
+
+    #[Test]
+    public function the_map_of_the_contacts_is_their_main_address_waiting_for_consent(): void
+    {
+        app(Settings::class)->save(['contacts.addresses' => [
+            ['address' => ['en' => '1 Example Street, London'], 'latitude' => 51.5074, 'longitude' => -0.1278, 'primary' => true],
+        ]]);
+
+        // A block saved before the fields had values: the contacts, zoom 15, medium.
+        $html = $this->render('map', ['heading' => 'Find us']);
+
+        $this->assertStringContainsString('<section class="b-map" data-wx-block="map">', $html);
+        $this->assertStringContainsString('<h2 class="b-map__heading">Find us</h2>', $html);
+        $this->assertStringContainsString('style="--webx-map-height: 24em" class="webx-map is-blocked"', $html);
+        $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, London</p>', $html);
+        $this->assertStringContainsString('&quot;lat&quot;:51.5074,&quot;lng&quot;:-0.1278,&quot;zoom&quot;:15', $html);
+        $this->assertStringContainsString('webx-map__attribution', $html);
+        $this->assertContains('map', Widgets::claimed());
+
+        $tall = $this->render('map', ['source' => 'settings', 'zoom' => 18, 'height' => 'large', 'latitude' => 1, 'longitude' => 1]);
+        $this->assertStringContainsString('--webx-map-height: 32em', $tall);
+        $this->assertStringContainsString('&quot;lat&quot;:51.5074,&quot;lng&quot;:-0.1278,&quot;zoom&quot;:18', $tall, 'the switch decides, not whichever field is filled');
+        $this->assertStringNotContainsString('b-map__heading', $tall);
+    }
+
+    #[Test]
+    public function the_map_of_its_own_coordinates_has_its_own_address(): void
+    {
+        $html = $this->render('map', ['source' => 'coordinates', 'latitude' => 48.8584, 'longitude' => 2.2945, 'address' => 'Champ de Mars, Paris', 'zoom' => 40, 'height' => 'small']);
+
+        $this->assertStringContainsString('--webx-map-height: 16em', $html);
+        $this->assertStringContainsString('aria-label="Map: Champ de Mars, Paris"', $html);
+        $this->assertStringContainsString('<p class="webx-map__address">Champ de Mars, Paris</p>', $html);
+        $this->assertStringContainsString('&quot;lat&quot;:48.8584,&quot;lng&quot;:2.2945,&quot;zoom&quot;:19', $html, 'a zoom past the field is held to it');
+        $this->assertStringContainsString('&quot;marker&quot;:&quot;Champ de Mars, Paris&quot;', $html);
+
+        // No address: a pin with no label, and the map named a map.
+        $bare = $this->render('map', ['source' => 'coordinates', 'latitude' => 48.8584, 'longitude' => 2.2945]);
+        $this->assertStringContainsString('aria-label="Map: Map"', $bare);
+        $this->assertStringContainsString('&quot;marker&quot;:&quot;&quot;', $bare);
+        $this->assertStringNotContainsString('webx-map__address', $bare);
+    }
+
+    #[Test]
+    public function a_map_with_nowhere_to_show_prints_nothing(): void
+    {
+        $nothing = [
+            'empty contacts' => ['heading' => 'Map'],
+            'no coordinates' => ['heading' => 'Map', 'source' => 'coordinates', 'address' => 'London'],
+            'a latitude only' => ['heading' => 'Map', 'source' => 'coordinates', 'latitude' => 51.5],
+            'off the earth' => ['heading' => 'Map', 'source' => 'coordinates', 'latitude' => 120, 'longitude' => 0],
+            'not numbers' => ['heading' => 'Map', 'source' => 'coordinates', 'latitude' => 'north', 'longitude' => 'west'],
+        ];
+
+        foreach ($nothing as $case => $values) {
+            $this->assertStringNotContainsString('b-map', $this->render('map', $values), $case);
+        }
     }
 
     /** A picture in the library, the way an upload leaves one — the bytes need not be there. */
