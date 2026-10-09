@@ -160,3 +160,5 @@ apps/docs/.vitepress/dist
 !php/packages/themes/tests/Fixtures/*/dist/
 # A packaged theme ships its built CSS: a site installs it from Composer and has no Node for it.
 !php/packages/theme-default/dist/
+# The widgets ship their built runtime the same way.
+!php/packages/widgets/dist/

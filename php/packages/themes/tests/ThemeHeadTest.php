@@ -8,6 +8,8 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Themes\BottomLayers;
+use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeManifest;
@@ -82,6 +84,45 @@ class ThemeHeadTest extends TestCase
         $this->assertSame($first, $assets->current($package));
         $this->assertDirectoryExists($directory.'/aaaaaaaaaaaa');
         $this->assertDirectoryDoesNotExist($directory.'/bbbbbbbbbbbb');
+    }
+
+    /** What a package below the themes prints comes after the tokens and before every layer. */
+    #[Test]
+    public function a_head_part_is_first_in_the_cascade(): void
+    {
+        $this->app->instance('fixture.head', new class implements HeadPart
+        {
+            public function head(): string
+            {
+                return '<!-- the widgets -->';
+            }
+        });
+        $this->app->tag(['fixture.head'], HeadPart::TAG);
+        $this->app->make(ThemeAssets::class)->publish($this->package());
+
+        $html = Blade::render('@webxTheme');
+        $tokens = strpos($html, '<style data-webx-theme>');
+        $part = strpos($html, '<!-- the widgets -->');
+        $layer = strpos($html, '/themes/webx-ui/theme-fixture/');
+
+        $this->assertNotFalse($tokens);
+        $this->assertNotFalse($part);
+        $this->assertNotFalse($layer);
+        $this->assertLessThan($part, $tokens);
+        $this->assertLessThan($layer, $part, 'the bottom of the chain comes first');
+    }
+
+    #[Test]
+    public function sync_publishes_the_bottom_layers_next_to_the_themes(): void
+    {
+        $layer = $this->app->make(BottomLayers::class)->add('fixture/bottom-layer', self::fixture('bottom-layer'));
+
+        $this->artisan('webx:theme:sync')
+            ->expectsOutputToContain('fixture/bottom-layer')
+            ->assertSuccessful();
+
+        $hash = (string) $this->app->make(ThemeAssets::class)->current($layer);
+        $this->assertFileExists("{$this->public}/themes/fixture/bottom-layer/{$hash}/bottom.css");
     }
 
     #[Test]

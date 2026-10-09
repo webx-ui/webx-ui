@@ -1235,7 +1235,10 @@ printf '%s' "$HOME_PAGE" | grep -q '<title>' || fail 'the SEO card did not reach
 printf '%s' "$HOME_PAGE" | grep -q '<style data-webx-theme>' || fail 'the site tokens did not reach the head'
 printf '%s' "$HOME_PAGE" | grep -qE '<link rel="stylesheet" href="[^"]*/themes/webx-ui/theme-default/[a-f0-9]{12}/theme\.css">' \
     || fail 'the stylesheet of theme-default did not reach the head'
-note 'the demo home page renders inside the theme layout: a header of blocks, the tokens, the head filled in'
+# theme-default brings webx-ui/widgets; their runtime is on every page, its script before </body>.
+printf '%s' "$HOME_PAGE" | grep -qE '<script type="module" src="[^"]*/themes/webx-ui/widgets/[a-f0-9]{12}/runtime\.js"></script>' \
+    || fail 'the widgets runtime did not reach the page'
+note 'the demo home page renders inside the theme layout: a header of blocks, the tokens, the head filled in, the widgets runtime'
 
 expect 200 "$(status "$SITE_BASE/")" 'GET /'
 

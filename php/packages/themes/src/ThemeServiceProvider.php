@@ -47,6 +47,8 @@ class ThemeServiceProvider extends ServiceProvider
         // Scoped: the owner's choice may change between two requests of one long-lived worker.
         $this->app->scoped(Tokens::class, fn (Application $app) => new Tokens($app->make(ThemeChain::class), $app->make(Appearance::class)));
 
+        $this->app->singleton(BottomLayers::class);
+
         $this->app->singleton(ThemeAssets::class, fn (Application $app) => new ThemeAssets($app->publicPath()));
     }
 

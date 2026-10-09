@@ -42,6 +42,7 @@
             <directory>packages/routing/tests</directory>
             <directory>packages/themes/tests</directory>
             <directory>packages/theme-default/tests</directory>
+            <directory>packages/widgets/tests</directory>
         </testsuite>
     </testsuites>
     <source>
@@ -79,6 +80,7 @@
             <directory>packages/nested-set/src</directory>
             <directory>packages/routing/src</directory>
             <directory>packages/themes/src</directory>
+            <directory>packages/widgets/src</directory>
         </include>
     </source>
 </phpunit>

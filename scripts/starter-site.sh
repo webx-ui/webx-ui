@@ -250,6 +250,11 @@ else
     grep -q '<style data-webx-theme' "$home" || fail 'the home page has no theme tokens (<style data-webx-theme>)'
     grep -q 'themes/webx-ui/theme-default/[^"]*/theme.css' "$home" || fail 'the home page does not link theme-default'
     note "GET $URL/ — 200, styled by theme-default"
+    grep -q 'themes/webx-ui/widgets/[^"]*/runtime.css' "$home" || fail 'the home page does not link the widgets runtime stylesheet'
+    grep -qE '<script type="module" src="[^"]*/themes/webx-ui/widgets/[a-f0-9]{12}/runtime\.js"></script>' "$home" \
+        || fail 'the home page does not load the widgets runtime'
+    ! grep -q '<!--webx-widgets-->' "$home" || fail 'the widgets marker was left on the page'
+    note "GET $URL/ — the widgets runtime is loaded"
     for path in /ru /pl /cms /kitchen-sink; do
         code="$(curl -s -o /dev/null -w '%{http_code}' "$URL$path")"
         [ "$code" = "200" ] || fail "GET $URL$path answered $code"

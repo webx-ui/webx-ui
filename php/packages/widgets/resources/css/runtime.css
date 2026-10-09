@@ -1,0 +1,10 @@
+/*
+ * The skeleton of the runtime's behaviours, on site tokens only (THEMES §8). Every selector is
+ * inside :where() — no specificity — and this file comes first in the cascade, so a theme
+ * restyles a widget by writing its rule at all. Each widget's own tokens, --webx-<name>-*, are
+ * declared on :root from site tokens: a theme sets them on :root or on the widget's class.
+ */
+
+@import './base.css';
+@import './dialog.css';
+@import './tabs.css';

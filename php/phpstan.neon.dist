@@ -71,6 +71,8 @@ parameters:
         - packages/themes/src
         - packages/themes/tests
         - packages/theme-default/tests
+        - packages/widgets/src
+        - packages/widgets/tests
     tmpDir: .phpstan.cache
 
     # Without an application to read config/auth.php from, Larastan assumes the framework's own

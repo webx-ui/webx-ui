@@ -7,11 +7,13 @@ namespace WebxUi\Themes;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Foundation\Vite;
+use WebxUi\Themes\Contracts\HeadPart;
 
 /**
  * What `@webxTheme` prints in `<head>` (spec §7.3, §13.2):
  *
  *     <style>:root { --site-…: … }</style>     the merged tokens, inline
+ *     each Contracts\HeadPart                   the packages below the themes: widgets
  *     <link rel="stylesheet" href="/themes/…">  each packaged layer's theme.css, bottom first
  *     Vite tags                                 each local layer's src/css/theme.css and src/js/theme.js
  *
@@ -46,6 +48,12 @@ class ThemeHead
 
         if ($css !== '') {
             $html[] = "<style data-webx-theme>\n{$css}\n</style>";
+        }
+
+        foreach ($this->app->tagged(HeadPart::TAG) as $part) {
+            if ($part instanceof HeadPart) {
+                $html[] = $part->head();
+            }
         }
 
         foreach (array_reverse($this->chain->layers) as $layer) {

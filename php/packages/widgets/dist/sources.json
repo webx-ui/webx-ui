@@ -1,0 +1,15 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "resources/css/base.css": "fbcfb80b56724048cb93312078c9a3b4e5a35347e6dc5fe5ba6b4c22f7df02ec",
+    "resources/css/dialog.css": "4c30d33cf56e8b712250c180f75cba2b5e6522e9557c756354f37e3daa929653",
+    "resources/css/runtime.css": "4b9b902f02f78de81976b3a134521564351a766025a0b7141d2c64e5b073753f",
+    "resources/css/tabs.css": "b768f977a1cdb8d4fde0576f4261ca80a9b4739add7d4c060bddb5aa696791a5",
+    "resources/js/behaviours/accordion.js": "dbaa803462d843a07713df1367d7bea3d0b526a32da80e255e9f8f3c1daaff94",
+    "resources/js/behaviours/dialog.js": "2af4bb644a943e6f7de0a8cff8aabc51d8c0d8507df409033db276b4a5944dd5",
+    "resources/js/behaviours/disclosure.js": "601db646c7c5575d8d888541adb369bced13ed624f193aa85efbe448cdf2ffbc",
+    "resources/js/behaviours/tabs.js": "ac551bfcb9eed90dfd6b21f5fc0ffea916accedf7279999dce72675825a91d42",
+    "resources/js/core.js": "cd0590b2429e6fc14169b3cea90b0f2eebe0a05758adb71ff428947ce5677b3b",
+    "resources/js/runtime.js": "aed2ad22125cd752db4a763da0d79ff73cbcd131332bddbfab591f8646339d47"
+  }
+}
