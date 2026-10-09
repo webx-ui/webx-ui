@@ -60,6 +60,12 @@ status() {
     curl -s -o /dev/null -w '%{http_code}' -c "$COOKIES" -b "$COOKIES" -H 'Accept: application/json' "$@"
 }
 
+# A visitor's request, by name ($VISITOR) and without the administrator's cookie jar: a second
+# session under `localhost` in it would hand xsrf_token() the wrong token for 127.0.0.1.
+visit() {
+    curl -s -o /dev/null -w '%{http_code}' -H 'Accept: application/json' "$@"
+}
+
 expect() {
     local expected="$1" actual="$2" what="$3"
     [ "$actual" = "$expected" ] || fail "$what — expected $expected, got $actual"
@@ -755,7 +761,7 @@ run_http_checks() {
     expect 201 "$(send_json POST "$BASE/api/cms/seo/redirects" \
         '{"match_type":"exact","pattern":"/moved-'"$phase"'","target":"/cms"}')" \
         "[$phase] a redirect is written through the panel"
-    expect 301 "$(status "$VISITOR/moved-$phase")" "[$phase] and the public side follows it"
+    expect 301 "$(visit "$VISITOR/moved-$phase")" "[$phase] and the public side follows it"
 
     expect 200 "$(send_json PUT "$BASE/api/cms/settings" \
         '{"values":{"seo.robots-txt":"User-agent: *"}}')" \
@@ -771,12 +777,12 @@ run_http_checks() {
     "$PHP_BIN" "$APP/artisan" smoke:page "about-$phase" --no-interaction > /dev/null
 
     expect 200 "$(status "$BASE/about-$phase")" "[$phase] a page in the registry answers"
-    expect 301 "$(status "$VISITOR/About-$phase")" "[$phase] another spelling of it is a 301"
+    expect 301 "$(visit "$VISITOR/About-$phase")" "[$phase] another spelling of it is a 301"
     expect 404 "$(status "$BASE/about-$phase/nothing")" "[$phase] a type that takes no tail is a 404"
 
     "$PHP_BIN" "$APP/artisan" smoke:page "about-$phase" --rename="moved-page-$phase" --no-interaction > /dev/null
 
-    expect 301 "$(status "$VISITOR/about-$phase")" "[$phase] a rename leaves the old address behind"
+    expect 301 "$(visit "$VISITOR/about-$phase")" "[$phase] a rename leaves the old address behind"
     expect 200 "$(status "$BASE/moved-page-$phase")" "[$phase] and the new one answers"
 
     # module-blocks, the preview. The route is registered by a package and carries a signed
