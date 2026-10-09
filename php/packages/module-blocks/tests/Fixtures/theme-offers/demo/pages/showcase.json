@@ -1,0 +1,28 @@
+{
+  "title": "Showcase",
+  "slug": "showcase",
+  "blocks": [
+    {
+      "key": "one",
+      "type": "text",
+      "values": {
+        "heading": "Hello"
+      }
+    }
+  ],
+  "children": [
+    {
+      "title": "Deeper",
+      "slug": "deeper",
+      "blocks": [
+        {
+          "key": "two",
+          "type": "offered-thing",
+          "values": {
+            "heading": "From an offer"
+          }
+        }
+      ]
+    }
+  ]
+}
