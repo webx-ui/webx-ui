@@ -923,3 +923,256 @@ test.describe('language switcher', () => {
     await expect(trigger).toBeFocused()
   })
 })
+
+test.describe('slider', () => {
+  const PATH = '/kitchen-sink/slider'
+
+  // Answered already: the banner would stand over the sliders at the bottom of a phone.
+  const answered = async (context) => {
+    const url = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local')
+    await context.addCookies([
+      {
+        name: 'webx_consent',
+        value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: [] })),
+        domain: url.hostname,
+        path: '/',
+      },
+    ])
+  }
+
+  // Slider `index` on the page: its width, per view as the browser chose it and as Swiper took
+  // it, and how many of its slides are on its screen — wholly and at all.
+  const measure = (page, index) =>
+    page.evaluate((i) => {
+      const root = document.querySelectorAll('.webx-slider')[i]
+      const viewport = root.querySelector('.webx-slider__viewport')
+      const frame = viewport.getBoundingClientRect()
+      const slides = [...root.querySelectorAll('.webx-slider__slide:not([aria-hidden])')]
+      const inside = (slide, whole) => {
+        // A faded slide stands where the current one does: out of view is opacity 0.
+        if (getComputedStyle(slide).opacity === '0') return false
+        const box = slide.getBoundingClientRect()
+        return whole
+          ? box.left >= frame.left - 1 && box.right <= frame.right + 1
+          : box.right > frame.left + 1 && box.left < frame.right - 1
+      }
+      const track = root.querySelector('.webx-slider__track')
+      return {
+        width: frame.width,
+        perView: parseFloat(getComputedStyle(track).getPropertyValue('--webx-slider-per-view')),
+        swiper: viewport.swiper?.params.slidesPerView,
+        gap: parseFloat(getComputedStyle(track).rowGap),
+        slide: slides[0].getBoundingClientRect().width,
+        whole: slides.filter((slide) => inside(slide, true)).length,
+        seen: slides.filter((slide) => inside(slide, false)).length,
+      }
+    }, index)
+
+  // The page's sliders, in order: cards, cards narrow, hero, gallery, gallery narrow, logos, one slide.
+  const CARDS = 0
+  const NARROW = 1
+  const HERO = 2
+  const GALLERY = 3
+
+  test('shows as many slides as its container has room for, in a narrow column and at full width', async ({
+    page,
+    context,
+  }) => {
+    await answered(context)
+    await page.setViewportSize({ width: 1400, height: 900 })
+    await page.goto(PATH)
+    await still(page)
+
+    // Cards at full width: three per view from a 960px container, two from 640, 1.2 below.
+    // In the 20rem column: 1.2 whatever the window. One window, resized — the script follows.
+    for (const [width, full] of [
+      [1400, 3],
+      [900, 2],
+      [375, 1.2],
+      [1280, 3],
+    ]) {
+      await page.setViewportSize({ width, height: 900 })
+      await expect
+        .poll(async () => (await measure(page, CARDS)).swiper, { message: `per view at ${width}` })
+        .toBe(full)
+
+      for (const [index, perView] of [
+        [CARDS, full],
+        [NARROW, 1.2],
+      ]) {
+        const m = await measure(page, index)
+        expect(m.perView, `the container query at ${width}`).toBe(perView)
+        // Swiper's width of a slide: the frame less the gaps between the slides in view.
+        expect(m.slide).toBeCloseTo((m.width - (perView - 1) * m.gap) / perView, 0)
+        expect(m.whole, `whole slides at ${width}`).toBe(Math.floor(perView))
+        expect(m.seen, `slides in view at ${width}`).toBe(Math.ceil(perView))
+      }
+
+      const hero = await measure(page, HERO)
+      expect([hero.whole, hero.seen]).toEqual([1, 1])
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        ),
+        `no horizontal scroll at ${width}`,
+      ).toBe(0)
+    }
+  })
+
+  test('without JavaScript is a strip that scrolls sideways and snaps', async ({ browser }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 1280, height: 900 },
+    })
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const strip = await page.evaluate(() =>
+      [...document.querySelectorAll('.webx-slider__track')].map((track) => {
+        const before = track.scrollLeft
+        // To the end: a snap would pull a short scroll back to the first slide.
+        track.scrollLeft = track.scrollWidth
+        const style = getComputedStyle(track)
+        const first = track.querySelector('.webx-slider__slide').getBoundingClientRect().width
+        return {
+          scrolls: track.scrollWidth > track.clientWidth,
+          moved: track.scrollLeft > before,
+          overflow: style.overflowX,
+          snap: style.scrollSnapType,
+          perView: parseFloat(style.getPropertyValue('--webx-slider-per-view')),
+          gap: parseFloat(style.columnGap),
+          width: track.clientWidth,
+          first,
+        }
+      }),
+    )
+    const controls = await page
+      .locator('.webx-slider__controls')
+      .evaluateAll((all) => all.map((c) => c.hidden))
+
+    // Every slider with more slides than fit scrolls; the one-slide one has nothing to scroll.
+    for (const track of strip.slice(0, 6)) {
+      expect(track.overflow).toBe('auto')
+      expect(track.snap).toContain('x')
+      expect(track.scrolls).toBe(true)
+      expect(track.moved).toBe(true)
+      expect(track.first).toBeCloseTo(
+        (track.width - (track.perView - 1) * track.gap) / track.perView,
+        0,
+      )
+    }
+    expect(strip[CARDS].perView).toBe(3)
+    expect(controls.every(Boolean)).toBe(true)
+    expect(await page.locator('.webx-slider__thumbs').count()).toBe(0)
+    await context.close()
+  })
+
+  test('moves by its arrows, and by the keyboard only the slider the focus is in', async ({
+    page,
+    context,
+  }) => {
+    await answered(context)
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(PATH)
+    await still(page)
+
+    const index = (i) =>
+      page.evaluate(
+        (n) => document.querySelectorAll('.webx-slider__viewport')[n].swiper.realIndex,
+        i,
+      )
+    const cards = page.locator('.webx-slider').nth(CARDS)
+
+    // Three per view: the arrow moves a view.
+    await cards.locator('.webx-slider__next').click()
+    await expect.poll(() => index(CARDS)).toBe(3)
+    await expect(cards.locator('.webx-slider__slide').nth(3)).toHaveClass(/is-active/)
+
+    await page.locator('.webx-slider').nth(NARROW).locator('.webx-slider__slide a').first().focus()
+    await page.keyboard.press('ArrowRight')
+    await expect.poll(() => index(NARROW)).toBe(1)
+    await page.keyboard.press('End')
+    await expect.poll(() => index(NARROW)).toBe(7)
+    expect(await index(CARDS)).toBe(3)
+
+    // Named for a screen reader; the live region is hidden, not a stray line of text.
+    await expect(cards.locator('.webx-slider__slide').nth(1)).toHaveAttribute('aria-label', '2 / 8')
+    const notice = await cards.locator('.webx-slider__notice').boundingBox()
+    expect(notice.width).toBeLessThanOrEqual(1)
+  })
+
+  test('what turns on its own has a pause button, and does not start with reduced motion', async ({
+    browser,
+  }) => {
+    for (const reducedMotion of ['no-preference', 'reduce']) {
+      const context = await browser.newContext({
+        reducedMotion,
+        viewport: { width: 1280, height: 900 },
+      })
+      await answered(context)
+      const page = await context.newPage()
+      await page.goto(PATH)
+
+      const running = () =>
+        page.evaluate(
+          (n) => document.querySelectorAll('.webx-slider__viewport')[n].swiper.autoplay.running,
+          HERO,
+        )
+      const pause = page.locator('.webx-slider').nth(HERO).locator('.webx-slider__pause')
+      await expect(pause).toBeVisible()
+      const box = await pause.boundingBox()
+      expect(box.height).toBeGreaterThanOrEqual(44)
+
+      if (reducedMotion === 'reduce') {
+        expect(await running()).toBe(false)
+        await expect(pause).toHaveAttribute('aria-label', 'Play')
+      } else {
+        expect(await running()).toBe(true)
+        await pause.click()
+        expect(await running()).toBe(false)
+        await expect(pause).toHaveAttribute('aria-label', 'Play')
+        // The logos run too, with nothing but a pause button.
+        const logos = page.locator('.webx-slider--logos')
+        await expect(logos.locator('.webx-slider__pause')).toBeVisible()
+        expect(await logos.locator('.webx-slider__prev, .webx-slider__bullet').count()).toBe(0)
+      }
+      await context.close()
+    }
+  })
+
+  test('a thumbnail of the gallery picks its picture and says it is current', async ({
+    page,
+    context,
+  }) => {
+    await answered(context)
+    await page.setViewportSize({ width: 375, height: 800 })
+    await page.goto(PATH)
+    await still(page)
+
+    const gallery = page.locator('.webx-slider').nth(GALLERY)
+    const thumbs = gallery.locator('.webx-slider__thumb')
+    await expect(thumbs).toHaveCount(6)
+    const box = await thumbs.first().boundingBox()
+    expect(box.width).toBeGreaterThanOrEqual(44)
+
+    await thumbs.nth(2).click()
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (n) => document.querySelectorAll('.webx-slider__viewport')[n].swiper.realIndex,
+          GALLERY,
+        ),
+      )
+      .toBe(2)
+    await expect(thumbs.nth(2)).toHaveAttribute('aria-current', 'true')
+    await expect(thumbs.nth(0)).not.toHaveAttribute('aria-current', /.*/)
+
+    // Only the first picture of a slider loads at once; the rest wait for the screen.
+    expect(
+      await gallery.locator('.webx-slider__slide img').first().getAttribute('loading'),
+    ).toBeNull()
+    expect(await gallery.locator('.webx-slider__slide img').nth(1).getAttribute('loading')).toBe(
+      'lazy',
+    )
+  })
+})

@@ -218,7 +218,8 @@ export function slider(root) {
   // The current thumbnail says so to a screen reader, not only by its frame.
   const current = () => {
     strip?.querySelectorAll('.webx-slider__thumb').forEach((button, index) => {
-      button.toggleAttribute('aria-current', index === swiper.realIndex)
+      if (index === swiper.realIndex) button.setAttribute('aria-current', 'true')
+      else button.removeAttribute('aria-current')
     })
   }
   swiper.on('slideChange', current)
