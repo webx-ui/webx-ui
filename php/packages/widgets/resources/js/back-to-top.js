@@ -14,6 +14,9 @@ import '../css/back-to-top.css'
 
 const webx = (window.webx ??= {})
 
+/** What stands at the bottom of the window and may be under the button. */
+const BELOW = '[data-webx-consent-banner], .webx-contact-bar__bar, [data-webx-contact-button]'
+
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
 function settings(root) {
@@ -49,6 +52,7 @@ export function backToTop(root) {
   const { after = 2 } = settings(root)
   const sizes = new ResizeObserver(() => lift())
   const shown = new MutationObserver(() => lift())
+  const below = Array.from(document.querySelectorAll(BELOW))
   let frame = 0
 
   const lift = () => root.style.setProperty('--webx-back-to-top-lift', `${reach(root)}px`)
@@ -74,11 +78,12 @@ export function backToTop(root) {
   }
 
   root.classList.add('is-ready')
-  for (const el of document.querySelectorAll(
-    '[data-webx-consent-banner], .webx-contact-bar__bar, [data-webx-contact-button]',
-  )) {
+  for (const el of below) {
     sizes.observe(el)
     shown.observe(el, { attributes: true, attributeFilter: ['hidden', 'class'] })
+    // The quick-contact button rises over the banner and settles back with a transition: where
+    // it ends is known only then.
+    el.addEventListener('transitionend', lift)
   }
   window.addEventListener('scroll', schedule, { passive: true })
   window.addEventListener('resize', schedule)
@@ -87,6 +92,7 @@ export function backToTop(root) {
 
   return () => {
     cancelAnimationFrame(frame)
+    below.forEach((el) => el.removeEventListener('transitionend', lift))
     sizes.disconnect()
     shown.disconnect()
     window.removeEventListener('scroll', schedule)

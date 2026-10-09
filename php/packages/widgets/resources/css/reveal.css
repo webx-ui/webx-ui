@@ -23,6 +23,9 @@
 
 .webx-reveal.is-pending {
   opacity: 0;
+  /* Hidden at once — below the fold, and a fade-out nobody sees would still be running when it
+     comes in. The transition is the shown state's: a change takes the transition it ends in. */
+  transition: none;
 }
 
 .webx-reveal--up.is-pending {
