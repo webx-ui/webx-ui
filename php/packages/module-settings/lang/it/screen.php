@@ -98,7 +98,6 @@ return [
     'social-url' => 'Link al profilo',
     'social-label' => 'Nome',
     'social-label-help' => 'Letto ad alta voce dallo screen reader.',
-    'row' => 'Riga :row: :message',
     'phone-missing' => 'scrivi il numero.',
     'phone-no-country' => ':number non ha il prefisso del paese. Inizia con + e il prefisso: +44 20 7946 0958.',
     'phone-invalid' => ':number non è un numero di telefono.',

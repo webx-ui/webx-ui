@@ -98,7 +98,6 @@ return [
     'social-url' => 'Profil bağlantısı',
     'social-label' => 'Ad',
     'social-label-help' => 'Ekran okuyucu kullanan ziyaretçilere sesli okunur.',
-    'row' => 'Satır :row: :message',
     'phone-missing' => 'numarayı yazın.',
     'phone-no-country' => ':number numarasında ülke kodu yok. + ve kodla başlayın: +44 20 7946 0958.',
     'phone-invalid' => ':number bir telefon numarası değil.',

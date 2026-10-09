@@ -98,7 +98,6 @@ return [
     'social-url' => 'Link zum Profil',
     'social-label' => 'Name',
     'social-label-help' => 'Wird Besuchern mit Screenreader vorgelesen.',
-    'row' => 'Zeile :row: :message',
     'phone-missing' => 'Nummer eingeben.',
     'phone-no-country' => ':number hat keine Ländervorwahl. Beginnen Sie mit + und der Vorwahl: +44 20 7946 0958.',
     'phone-invalid' => ':number ist keine Telefonnummer.',

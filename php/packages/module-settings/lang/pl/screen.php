@@ -98,7 +98,6 @@ return [
     'social-url' => 'Link do profilu',
     'social-label' => 'Nazwa',
     'social-label-help' => 'Odczytywana na głos przez czytnik ekranu.',
-    'row' => 'Wiersz :row: :message',
     'phone-missing' => 'wpisz numer.',
     'phone-no-country' => 'numer :number nie ma kodu kraju. Zacznij od + i kodu: +44 20 7946 0958.',
     'phone-invalid' => ':number nie jest numerem telefonu.',

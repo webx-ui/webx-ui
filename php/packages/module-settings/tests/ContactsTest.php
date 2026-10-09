@@ -63,11 +63,12 @@ final class ContactsTest extends TestCase
                 'contacts.phones' => [['number' => '+44 20 7946 0958'], ['number' => '020 7946 0321']],
             ]])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['contacts.phones']);
+            ->assertJsonValidationErrors(['contacts.phones.1.number']);
 
+        // Under the row and the field, where the panel shows it.
         $this->assertSame(
-            'Row 2: 020 7946 0321 has no country code. Start it with + and the code: +44 20 7946 0958.',
-            $response->json('errors')['contacts.phones'][0],
+            '020 7946 0321 has no country code. Start it with + and the code: +44 20 7946 0958.',
+            $response->json('errors')['contacts.phones.1.number'][0],
         );
 
         $this->assertSame([], contacts()->phones());
@@ -76,7 +77,7 @@ final class ContactsTest extends TestCase
         $tool = $this->app->make(ToolRegistry::class)->tool('settings_set')->tool->handler;
         $refused = $tool(['key' => 'contacts.phones', 'value' => [['number' => '7946 0958']]]);
         $this->assertFalse($refused['ok']);
-        $this->assertArrayHasKey('contacts.phones', $refused['errors']);
+        $this->assertArrayHasKey('contacts.phones.0.number', $refused['errors']);
 
         $saved = $tool(['key' => 'contacts.timezone', 'value' => 'Mars/Olympus']);
         $this->assertFalse($saved['ok']);

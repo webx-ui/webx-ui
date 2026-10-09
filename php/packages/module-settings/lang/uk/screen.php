@@ -98,7 +98,6 @@ return [
     'social-url' => 'Посилання на профіль',
     'social-label' => 'Назва',
     'social-label-help' => 'Її прочитає вголос програма екранного доступу.',
-    'row' => 'Рядок :row: :message',
     'phone-missing' => 'введіть номер.',
     'phone-no-country' => 'у номера :number немає коду країни. Почніть його з + і коду: +44 20 7946 0958.',
     'phone-invalid' => ':number — не номер телефону.',

@@ -100,9 +100,7 @@ final class InputFormatTest extends TestCase
             $this->values()->validate('settings.index', ['org.socials' => [['url' => 'https://example.com'], ['url' => 'nope']]]);
             $this->fail('A row with a bad address was kept.');
         } catch (ValidationException $exception) {
-            $messages = implode(' ', $exception->errors()['org.socials'] ?? []);
-
-            $this->assertStringContainsString('2', $messages);
+            $this->assertSame(['org.socials.1.url'], array_keys($exception->errors()));
         }
     }
 }

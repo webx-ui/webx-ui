@@ -98,7 +98,6 @@ return [
     'social-url' => 'Profile link',
     'social-label' => 'Name',
     'social-label-help' => 'Read aloud to visitors who use a screen reader.',
-    'row' => 'Row :row: :message',
     'phone-missing' => 'type the number.',
     'phone-no-country' => ':number has no country code. Start it with + and the code: +44 20 7946 0958.',
     'phone-invalid' => ':number is not a phone number.',

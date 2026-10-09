@@ -6,6 +6,7 @@ namespace WebxUi\Admin\Screens\Types;
 
 use Closure;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
+use WebxUi\Admin\Screens\ChecksItems;
 use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenValues;
@@ -20,12 +21,13 @@ use WebxUi\Localization\Locales;
  * rules its own type declares, per language where the child is localized, keep only the keys the
  * tree names, and resolve the lot for the site.
  *
- * A row that fails says which row it was, because the whole list arrives under one field name and
- * "The City field is required" on its own tells nobody which city.
+ * A row that fails is named by its path — `offices.2.city` — through {@see ChecksItems}, so the
+ * panel can mark the row and the field. Where a caller only runs `rules()`, the words say which row
+ * it was instead, because "The City field is required" on its own tells nobody which city.
  *
  * @phpstan-type Node array<string, mixed>
  */
-final class RepeaterType implements FieldType
+final class RepeaterType implements ChecksItems, FieldType
 {
     public function __construct(
         private readonly FieldTypes $types,
@@ -55,19 +57,47 @@ final class RepeaterType implements FieldType
             foreach (array_values($value) as $position => $item) {
                 if (! is_array($item)) {
                     $fail($this->rowMessage($position, __('webx-admin::screens.row-shape')));
-
-                    continue;
                 }
+            }
 
-                foreach ($this->itemFields($node) as $child) {
-                    foreach ($this->messages($child, $item) as $message) {
-                        $fail($this->rowMessage($position, $message));
-                    }
+            foreach ($this->itemErrors($value, $node) as $path => $messages) {
+                foreach ($messages as $message) {
+                    $fail($this->rowMessage((int) $path, $message));
                 }
             }
         };
 
         return $rules;
+    }
+
+    /**
+     * Every item checked by its own fields' rules, each problem under its row and field. A row
+     * that is not a set of fields is the list's problem, and `rules()` reports it.
+     *
+     * @param  Node  $node
+     * @return array<string, list<string>>
+     */
+    public function itemErrors(mixed $value, array $node): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach (array_values($value) as $position => $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            foreach ($this->itemFields($node) as $child) {
+                foreach ($this->messages($child, $item) as $path => $messages) {
+                    $errors["{$position}.{$path}"] = $messages;
+                }
+            }
+        }
+
+        return $errors;
     }
 
     /**
@@ -168,11 +198,13 @@ final class RepeaterType implements FieldType
     }
 
     /**
-     * What is wrong with one value of one item, in words — empty when nothing is.
+     * What is wrong with one value of one item, in words by path from the item — `title`, a
+     * language of it as `title.en`, a row of a repeater inside as `links.0.url` — empty when
+     * nothing is.
      *
      * @param  Node  $child
      * @param  array<string, mixed>  $item
-     * @return list<string>
+     * @return array<string, list<string>>
      */
     private function messages(array $child, array $item): array
     {
@@ -183,14 +215,28 @@ final class RepeaterType implements FieldType
             return [];
         }
 
-        $rules = $this->types->get((string) $child['type'])?->rules($child) ?? [];
+        $type = $this->types->get((string) $child['type']);
+        $value = $item[$name];
+
+        if ($type instanceof ChecksItems && ! $this->isMap($child, $value)) {
+            $nested = [];
+
+            foreach ($type->itemErrors($value, $child) as $path => $messages) {
+                $nested["{$name}.{$path}"] = $messages;
+            }
+
+            if ($nested !== []) {
+                return $nested;
+            }
+        }
+
+        $rules = $type?->rules($child) ?? [];
 
         if ($rules === []) {
             return [];
         }
 
         $label = $this->label($child);
-        $value = $item[$name];
 
         $validator = $this->isMap($child, $value)
             ? $this->validator->make(
@@ -201,7 +247,18 @@ final class RepeaterType implements FieldType
             )
             : $this->validator->make(['value' => $value], ['value' => $rules], [], ['value' => $label]);
 
-        return $validator->fails() ? array_values(array_unique($validator->errors()->all())) : [];
+        if (! $validator->fails()) {
+            return [];
+        }
+
+        $errors = [];
+
+        // `value` is the field itself and `value.en` one language of it.
+        foreach ($validator->errors()->messages() as $key => $messages) {
+            $errors[$name.substr((string) $key, strlen('value'))] = array_values(array_unique($messages));
+        }
+
+        return $errors;
     }
 
     /**

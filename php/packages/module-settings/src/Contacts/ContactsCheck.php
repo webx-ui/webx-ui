@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Settings\Contacts;
 
 use DateTimeZone;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -34,7 +35,7 @@ final class ContactsCheck
             };
 
             if ($problem !== null) {
-                $errors[Contacts::KEYS['phones']][] = self::message($row, $problem, ['number' => $number]);
+                self::refuse($errors, 'phones', $row, 'number', $problem, ['number' => $number]);
             }
         }
 
@@ -42,7 +43,7 @@ final class ContactsCheck
             $email = is_string($item['email'] ?? null) ? trim($item['email']) : '';
 
             if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-                $errors[Contacts::KEYS['emails']][] = self::message($row, 'email-invalid', ['email' => $email]);
+                self::refuse($errors, 'emails', $row, 'email', 'email-invalid', ['email' => $email]);
             }
         }
 
@@ -50,7 +51,7 @@ final class ContactsCheck
             $map = is_string($item['map'] ?? null) ? trim($item['map']) : '';
 
             if ($map !== '' && ! Contacts::isWebLink($map)) {
-                $errors[Contacts::KEYS['addresses']][] = self::message($row, 'link-invalid', ['url' => $map]);
+                self::refuse($errors, 'addresses', $row, 'map', 'link-invalid', ['url' => $map]);
             }
         }
 
@@ -59,16 +60,16 @@ final class ContactsCheck
                 $url = is_string($item['url'] ?? null) ? trim($item['url']) : '';
 
                 if (! is_string($item[$kind] ?? null) || $item[$kind] === '') {
-                    $errors[Contacts::KEYS[$list]][] = self::message($row, $list === 'socials' ? 'network-missing' : 'channel-missing');
+                    self::refuse($errors, $list, $row, $kind, $list === 'socials' ? 'network-missing' : 'channel-missing');
                 } elseif (! Contacts::isLink($url, $list === 'messengers')) {
-                    $errors[Contacts::KEYS[$list]][] = self::message($row, 'link-invalid', ['url' => $url]);
+                    self::refuse($errors, $list, $row, 'url', 'link-invalid', ['url' => $url]);
                 }
             }
         }
 
         foreach (self::rows($stored, Contacts::KEYS['hours']) as $row => $item) {
             if (($item['days'] ?? []) === [] || ! is_string($item['opens'] ?? null) || ! is_string($item['closes'] ?? null)) {
-                $errors[Contacts::KEYS['hours']][] = self::message($row, 'hours-incomplete');
+                self::refuse($errors, 'hours', $row, ($item['days'] ?? []) === [] ? 'days' : (is_string($item['opens'] ?? null) ? 'closes' : 'opens'), 'hours-incomplete');
             }
         }
 
@@ -76,7 +77,7 @@ final class ContactsCheck
             $open = ($item['closed'] ?? true) === false;
 
             if (! is_string($item['date'] ?? null) || ($open && (! is_string($item['opens'] ?? null) || ! is_string($item['closes'] ?? null)))) {
-                $errors[Contacts::KEYS['exceptions']][] = self::message($row, 'exception-incomplete');
+                self::refuse($errors, 'exceptions', $row, ! is_string($item['date'] ?? null) ? 'date' : (is_string($item['opens'] ?? null) ? 'closes' : 'opens'), 'exception-incomplete');
             }
         }
 
@@ -103,13 +104,15 @@ final class ContactsCheck
     }
 
     /**
+     * A refusal under the path of the field it is about — `contacts.phones.2.number` — so the
+     * panel marks that row and opens it at the field, and an agent reads the row from the key.
+     * The words are the same either way, and say nothing of a row number the key already holds.
+     *
+     * @param  array<string, list<string>>  $errors
      * @param  array<string, string>  $replace
      */
-    private static function message(int $row, string $key, array $replace = []): string
+    private static function refuse(array &$errors, string $list, int $row, string $field, string $key, array $replace = []): void
     {
-        return (string) __('webx-settings::screen.row', [
-            'row' => $row + 1,
-            'message' => (string) __("webx-settings::screen.{$key}", $replace),
-        ]);
+        $errors[Contacts::KEYS[$list].".{$row}.{$field}"][] = Str::ucfirst((string) __("webx-settings::screen.{$key}", $replace));
     }
 }

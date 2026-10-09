@@ -98,7 +98,6 @@ return [
     'social-url' => 'Ligação do perfil',
     'social-label' => 'Nome',
     'social-label-help' => 'Lido em voz alta pelo leitor de ecrã.',
-    'row' => 'Linha :row: :message',
     'phone-missing' => 'escreva o número.',
     'phone-no-country' => ':number não tem indicativo do país. Comece com + e o indicativo: +44 20 7946 0958.',
     'phone-invalid' => ':number não é um número de telefone.',
