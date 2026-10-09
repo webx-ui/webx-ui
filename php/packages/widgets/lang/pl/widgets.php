@@ -80,4 +80,18 @@ return [
         'label' => 'Język',
         'fallback' => 'Jeszcze nie przetłumaczono: strona główna w tym języku',
     ],
+    'slider' => [
+        'carousel' => 'karuzela',
+        'slide' => 'slajd',
+        'prev' => 'Poprzedni slajd',
+        'next' => 'Następny slajd',
+        'first' => 'To pierwszy slajd',
+        'last' => 'To ostatni slajd',
+        'go_to' => 'Przejdź do slajdu :index',
+        'position' => ':index / :count',
+        'pause' => 'Wstrzymaj',
+        'play' => 'Odtwórz',
+        'thumbs' => 'Wybierz slajd',
+        'thumb' => 'Pokaż slajd :index',
+    ],
 ];

@@ -80,4 +80,18 @@ return [
         'label' => 'Langue',
         'fallback' => 'Pas encore traduit : la page d’accueil dans cette langue',
     ],
+    'slider' => [
+        'carousel' => 'carrousel',
+        'slide' => 'diapositive',
+        'prev' => 'Diapositive précédente',
+        'next' => 'Diapositive suivante',
+        'first' => 'C’est la première diapositive',
+        'last' => 'C’est la dernière diapositive',
+        'go_to' => 'Aller à la diapositive :index',
+        'position' => ':index / :count',
+        'pause' => 'Pause',
+        'play' => 'Lecture',
+        'thumbs' => 'Choisir une diapositive',
+        'thumb' => 'Afficher la diapositive :index',
+    ],
 ];

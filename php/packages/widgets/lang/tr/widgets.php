@@ -80,4 +80,18 @@ return [
         'label' => 'Dil',
         'fallback' => 'Henüz çevrilmedi: bu dildeki ana sayfa',
     ],
+    'slider' => [
+        'carousel' => 'karusel',
+        'slide' => 'slayt',
+        'prev' => 'Önceki slayt',
+        'next' => 'Sonraki slayt',
+        'first' => 'Bu ilk slayt',
+        'last' => 'Bu son slayt',
+        'go_to' => ':index. slayta git',
+        'position' => ':index / :count',
+        'pause' => 'Duraklat',
+        'play' => 'Oynat',
+        'thumbs' => 'Slayt seçin',
+        'thumb' => ':index. slaytı göster',
+    ],
 ];

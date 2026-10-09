@@ -31,6 +31,9 @@ final class DistTest extends PlainTestCase
     /** The language switcher: a stylesheet only — its dropdown is the runtime's. */
     private const int LANGUAGE_SWITCHER_BUDGET = 2 * 1024;
 
+    /** The slider, Swiper built in: 45 KB gzip (§4), only where a slider stands. */
+    private const int SLIDER_BUDGET = 45 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -69,7 +72,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'runtime.css', 'runtime.js', 'sources.json'], $built);
+        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'runtime.css', 'runtime.js', 'slider.css', 'slider.js', 'sources.json'], $built);
     }
 
     #[Test]
@@ -88,6 +91,17 @@ final class DistTest extends PlainTestCase
         $size = self::gzipped('language-switcher.css');
 
         $this->assertLessThanOrEqual(self::LANGUAGE_SWITCHER_BUDGET, $size, sprintf('The language switcher is %.1f KB gzip.', $size / 1024));
+    }
+
+    #[Test]
+    public function the_slider_stays_inside_its_budget(): void
+    {
+        $size = self::gzipped('slider.js') + self::gzipped('slider.css');
+
+        $this->assertLessThanOrEqual(self::SLIDER_BUDGET, $size, sprintf('The slider is %.1f KB gzip.', $size / 1024));
+
+        // Swiper's own stylesheet stays out: its rules are not the package's classes (THEMES §8).
+        $this->assertStringNotContainsString('.swiper', (string) file_get_contents(Widgets::path().'/dist/slider.css'));
     }
 
     private static function gzipped(string $file): int

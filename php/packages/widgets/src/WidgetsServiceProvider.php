@@ -31,10 +31,13 @@ use WebxUi\Widgets\View\Components\MobileMenu;
 use WebxUi\Widgets\View\Components\MobileMenuNav;
 use WebxUi\Widgets\View\Components\OpeningHours;
 use WebxUi\Widgets\View\Components\Phones;
+use WebxUi\Widgets\View\Components\Slide;
+use WebxUi\Widgets\View\Components\Slider;
 use WebxUi\Widgets\View\Components\Socials;
 use WebxUi\Widgets\View\Components\Tabs;
 use WebxUi\Widgets\View\Components\TabsPanel;
 use WebxUi\Widgets\View\HeaderNavigation;
+use WebxUi\Widgets\View\Sliders;
 
 /**
  * The widgets as the bottom layer of the theme chain (spec §3, THEMES §7.1, §11):
@@ -58,6 +61,7 @@ class WidgetsServiceProvider extends ServiceProvider
         // Scoped: what one request claimed must not load on the next one of a long-lived worker.
         $this->app->scoped(Widgets::class);
         $this->app->scoped(HeaderNavigation::class);
+        $this->app->scoped(Sliders::class);
         $this->app->scoped(FormDialogs::class);
         // Scoped too: the answer is read once from the request it came with.
         $this->app->scoped(Consent::class);
@@ -96,6 +100,8 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-contact-bar', ContactBar::class);
         Blade::component('webx-socials', Socials::class);
         Blade::component('webx-language-switcher', LanguageSwitcher::class);
+        Blade::component('webx-slider', Slider::class);
+        Blade::component('webx-slide', Slide::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');

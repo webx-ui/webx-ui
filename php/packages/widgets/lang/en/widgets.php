@@ -80,4 +80,18 @@ return [
         'label' => 'Language',
         'fallback' => 'Not translated yet: the home page in this language',
     ],
+    'slider' => [
+        'carousel' => 'carousel',
+        'slide' => 'slide',
+        'prev' => 'Previous slide',
+        'next' => 'Next slide',
+        'first' => 'This is the first slide',
+        'last' => 'This is the last slide',
+        'go_to' => 'Go to slide :index',
+        'position' => ':index / :count',
+        'pause' => 'Pause',
+        'play' => 'Play',
+        'thumbs' => 'Choose a slide',
+        'thumb' => 'Show slide :index',
+    ],
 ];

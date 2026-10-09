@@ -72,6 +72,8 @@ export default {
         contacts: join(root, 'resources/js/contacts.js'),
         // No script of its own: the dropdown it opens is the runtime's.
         'language-switcher': join(root, 'resources/css/language-switcher.css'),
+        // Swiper is built in here, and only here: a page without a slider never loads it.
+        slider: join(root, 'resources/js/slider.js'),
       },
       output: {
         entryFileNames: '[name].js',

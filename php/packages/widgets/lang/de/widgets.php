@@ -80,4 +80,18 @@ return [
         'label' => 'Sprache',
         'fallback' => 'Noch nicht übersetzt: die Startseite in dieser Sprache',
     ],
+    'slider' => [
+        'carousel' => 'Karussell',
+        'slide' => 'Folie',
+        'prev' => 'Vorherige Folie',
+        'next' => 'Nächste Folie',
+        'first' => 'Das ist die erste Folie',
+        'last' => 'Das ist die letzte Folie',
+        'go_to' => 'Zu Folie :index',
+        'position' => ':index / :count',
+        'pause' => 'Pause',
+        'play' => 'Abspielen',
+        'thumbs' => 'Folie wählen',
+        'thumb' => 'Folie :index zeigen',
+    ],
 ];
