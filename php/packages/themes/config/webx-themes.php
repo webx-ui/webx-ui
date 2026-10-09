@@ -21,4 +21,18 @@ return [
 
     'theme' => env('WEBX_THEME', ''),
 
+    /*
+    |---------------------------------------------------------------------------
+    | The preset
+    |---------------------------------------------------------------------------
+    |
+    | One of the presets the chain's tokens.json files declare ('night',
+    | 'warm'), laid over the layers' values. A name no layer has is ignored.
+    | With the panel's «Appearance» tab installed, the owner's choice there
+    | wins over this.
+    |
+    */
+
+    'preset' => env('WEBX_THEME_PRESET', ''),
+
 ];

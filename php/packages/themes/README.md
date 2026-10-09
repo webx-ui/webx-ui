@@ -16,9 +16,9 @@ theme/                   ← the site's local theme: its differences
 
 Part of [WebX UI](https://github.com/webx-ui/webx-ui). No tables, no JavaScript.
 
-> Early days: this release resolves the chain and the order Blade looks views up in. Tokens,
-> `@webxTheme`, assets and the `webx:theme:*` commands arrive in the next releases — see the
-> specification.
+> Early days: this release resolves the chain, the order Blade looks views up in, the token
+> vocabulary and `@webxTheme`. Block types, icons, the panel tab and the rest of the
+> `webx:theme:*` commands arrive in the next releases — see the specification.
 
 ## Requirements
 
@@ -89,6 +89,49 @@ renders, `views/vendor/webx-pages/show.blade.php` overrides the pages module's `
 
 The first file found wins. The chain is resolved once, after every package has booted, and never
 changes in the life of the process.
+
+## Tokens
+
+A site's style is written in one vocabulary of tokens, the same for every theme, module and
+block: `color-bg`, `color-accent`, `color-accent-2`, `font-heading`, `space-1`…`space-8`,
+`radius-md`, `container-width`, `duration` and the rest — on the page `--site-<name>`. Each layer
+gives values in its `tokens.json`:
+
+```json
+{
+  "defaults": { "color-accent": "#0e6b5c", "font-heading": "\"Inter\", sans-serif" },
+  "presets": {
+    "night": { "title": "Night", "tokens": { "color-bg": "#111418", "color-text": "#e8eaed" } }
+  },
+  "vocabulary": { "color-olive": "color" }
+}
+```
+
+Values merge bottom up: the lowest layer's defaults, each layer above, then the preset
+(`webx-themes.preset`, `WEBX_THEME_PRESET`), then the owner's edits of the tokens the theme lists
+as `editable`. `vocabulary` adds names of the theme's own (`color`, `length`, `font`, `shadow`,
+`number`, `time`, `easing`); the engine's names cannot be redeclared. Every value is checked
+against its type — a name the vocabulary does not know or a value of the wrong shape in a
+tokens.json fails at boot, an owner's value that does not fit is dropped.
+
+In the layout's `<head>`:
+
+```blade
+@webxTheme
+```
+
+prints one inline `<style>` with `:root { --site-… }`, then each layer's stylesheet bottom up: a
+packaged layer's `dist/theme.css` from `public/themes/` (copied there by
+`php artisan webx:theme:sync` — run it after `composer update`), a local layer's
+`src/css/theme.css` and `src/js/theme.js` through the site's Vite. Without a theme it prints
+nothing.
+
+Where a CSS variable does not reach — mail, an inline SVG:
+
+```php
+theme_token('color-accent');            // '#0e6b5c'
+theme_token('color-danger', '#e11d48'); // the default when the chain gives no value
+```
 
 ## PHP
 

@@ -24,6 +24,12 @@ class ThemeException extends RuntimeException
         return new self("Theme manifest [{$path}] is invalid: {$reason}");
     }
 
+    /** A tokens.json a theme ships with: malformed, an unknown name, a value not of its type. */
+    public static function invalidTokens(string $path, string $reason): self
+    {
+        return new self("Theme tokens [{$path}] are invalid: {$reason}");
+    }
+
     /**
      * @param  list<string>  $path  The names from the theme that started the loop back to itself.
      */

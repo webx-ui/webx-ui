@@ -155,3 +155,6 @@ apps/docs/.vitepress/dist
 
 # The project skeleton ships Laravel's empty storage tree, and `logs` above hides one of it.
 !php/site/storage/logs/
+
+# A packaged theme's built files are part of the fixture, not a build output
+!php/packages/themes/tests/Fixtures/*/dist/

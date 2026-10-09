@@ -84,6 +84,92 @@ final readonly class ThemeManifest
     }
 
     /**
+     * The layer's tokens.json (§7.3). A theme without one has nothing to say about tokens and
+     * takes them all from below; a file that is there but malformed is an error, not silence.
+     */
+    public function tokens(): TokenFile
+    {
+        $file = $this->path.'/tokens.json';
+
+        if (! is_file($file)) {
+            return new TokenFile($file);
+        }
+
+        $fail = ThemeException::invalidTokens(...);
+        $data = self::read($file, $fail);
+
+        $unknown = array_diff(array_keys($data), ['defaults', 'presets', 'vocabulary']);
+
+        if ($unknown !== []) {
+            throw $fail($file, 'unknown key "'.implode('", "', $unknown).'"; a tokens.json has "defaults", "presets" and "vocabulary".');
+        }
+
+        $presets = [];
+
+        foreach (self::map($data, 'presets', $file) as $name => $preset) {
+            if (! is_array($preset) || ! is_string($preset['title'] ?? '') || array_diff(array_keys($preset), ['title', 'tokens']) !== []) {
+                throw $fail($file, "preset \"{$name}\" is an object with \"title\" and \"tokens\".");
+            }
+
+            $presets[$name] = [
+                'title' => (string) ($preset['title'] ?? $name),
+                'tokens' => self::values($preset, 'tokens', $file, "preset \"{$name}\""),
+            ];
+        }
+
+        $vocabulary = [];
+
+        foreach (self::values($data, 'vocabulary', $file) as $name => $type) {
+            $vocabulary[$name] = TokenType::tryFrom($type)
+                ?? throw $fail($file, "\"{$name}\" has an unknown type \"{$type}\"; the types are ".implode(', ', array_column(TokenType::cases(), 'value')).'.');
+        }
+
+        return new TokenFile($file, self::values($data, 'defaults', $file), $presets, $vocabulary);
+    }
+
+    /**
+     * An object of token names: the names follow the vocabulary's spelling, the values are strings.
+     *
+     * @param  array<mixed>  $data
+     * @return array<string, string>
+     */
+    private static function values(array $data, string $key, string $file, ?string $where = null): array
+    {
+        $values = [];
+
+        foreach (self::map($data, $key, $file) as $name => $value) {
+            if (preg_match('/^[a-z][a-z0-9-]*$/', $name) !== 1 || ! is_string($value)) {
+                throw ThemeException::invalidTokens($file, '"'.($where === null ? $key : "{$where}.{$key}")."\" maps lower-case token names to strings; \"{$name}\" does not.");
+            }
+
+            $values[$name] = trim($value);
+        }
+
+        return $values;
+    }
+
+    /**
+     * @param  array<mixed>  $data
+     * @return array<string, mixed>
+     */
+    private static function map(array $data, string $key, string $file): array
+    {
+        $value = $data[$key] ?? [];
+
+        if (! is_array($value) || ($value !== [] && array_is_list($value))) {
+            throw ThemeException::invalidTokens($file, "\"{$key}\" is an object.");
+        }
+
+        $map = [];
+
+        foreach ($value as $name => $item) {
+            $map[(string) $name] = $item;
+        }
+
+        return $map;
+    }
+
+    /**
      * @param  array<mixed>  $theme
      */
     private static function make(string $name, string $path, bool $local, array $theme, string $file): self
@@ -136,22 +222,25 @@ final readonly class ThemeManifest
     }
 
     /**
+     * @param  (callable(string, string): ThemeException)|null  $fail
      * @return array<mixed>
      */
-    private static function read(string $file): array
+    private static function read(string $file, ?callable $fail = null): array
     {
+        $fail ??= ThemeException::invalidManifest(...);
+
         if (! is_file($file)) {
-            throw ThemeException::invalidManifest($file, 'the file does not exist.');
+            throw $fail($file, 'the file does not exist.');
         }
 
         try {
             $data = json_decode((string) file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            throw ThemeException::invalidManifest($file, $e->getMessage());
+            throw $fail($file, $e->getMessage());
         }
 
-        if (! is_array($data)) {
-            throw ThemeException::invalidManifest($file, 'the top level is an object.');
+        if (! is_array($data) || ($data !== [] && array_is_list($data))) {
+            throw $fail($file, 'the top level is an object.');
         }
 
         return $data;

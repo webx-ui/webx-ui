@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Themes;
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
+use WebxUi\Themes\Console\SyncCommand;
+use WebxUi\Themes\Contracts\Appearance;
 
 /**
  * Slots the theme chain into Blade's lookup (spec §7.1):
@@ -17,8 +20,11 @@ use Illuminate\View\FileViewFinder;
  *     default    vendor/webx-ui/theme-default/views, …/views/vendor/<ns>
  *     modules    their own resources/views
  *
+ * and gives the page its tokens: `@webxTheme`, `theme_token()` (§7.3).
+ *
  * With `webx-themes.theme` empty it does nothing at all, so a site without a theme behaves
- * exactly as it did before the package was installed.
+ * exactly as it did before the package was installed: `@webxTheme` is still there for a layout
+ * that has it, and prints nothing.
  */
 class ThemeServiceProvider extends ServiceProvider
 {
@@ -33,6 +39,14 @@ class ThemeServiceProvider extends ServiceProvider
 
             return $reference === null ? new ThemeChain : ThemeChain::resolve($reference, $app->make(ThemeLocator::class));
         });
+
+        // If: the panel's «Appearance» tab binds its own, and may register before or after this.
+        $this->app->singletonIf(Appearance::class, fn (Application $app) => new ConfigAppearance($app->make('config')));
+
+        // Scoped: the owner's choice may change between two requests of one long-lived worker.
+        $this->app->scoped(Tokens::class, fn (Application $app) => new Tokens($app->make(ThemeChain::class), $app->make(Appearance::class)));
+
+        $this->app->singleton(ThemeAssets::class, fn (Application $app) => new ThemeAssets($app->publicPath()));
     }
 
     public function boot(): void
@@ -41,7 +55,13 @@ class ThemeServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/webx-themes.php' => config_path('webx-themes.php'),
             ], 'webx-themes-config');
+
+            $this->commands([SyncCommand::class]);
         }
+
+        // `var_export` rather than a literal class name: the compiled string has to carry the
+        // namespace separators.
+        Blade::directive('webxTheme', static fn (): string => sprintf('<?php echo app(%s)->render(); ?>', var_export(ThemeHead::class, true)));
 
         if ($this->reference() === null) {
             return;

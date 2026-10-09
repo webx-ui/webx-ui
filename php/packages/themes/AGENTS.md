@@ -15,6 +15,14 @@ and the site's `theme/`).
 - **`ThemeChain`** — the layers, top first (`app(ThemeChain::class)`).
 - **`ThemeLocator`** — reference to manifest; `register($name, $path)` for a theme Composer does
   not know.
+- **Config** `webx-themes.preset` (`WEBX_THEME_PRESET`): a preset from the chain's tokens.json;
+  an unknown name is ignored.
+- **`Vocabulary`** — the token names and their types (`Vocabulary::base()`); a theme adds its own
+  under `vocabulary` in tokens.json. **`Tokens`** — the merged values (`app(Tokens::class)`):
+  layers bottom up → preset → the owner's edits of `editable` tokens (`Contracts\Appearance`).
+- **`@webxTheme`** — `<style>:root { --site-… }</style>` and every layer's stylesheet; nothing
+  without a theme. **`theme_token($name, $default)`** — a merged value, for mail.
+- **`webx:theme:sync`** — copies the packaged layers' `dist/` and `assets/` to `public/themes/`.
 - **View order**: plain views — `resources/views`, then each layer's `views/`; `<ns>::` views —
   `resources/views/vendor/<ns>`, then each layer's `views/vendor/<ns>`, then the module's own.
 
@@ -26,6 +34,9 @@ and the site's `theme/`).
 | Override a module's page                            | `theme/views/vendor/<ns>/<view>.blade.php`            |
 | Override a view for this site only, above any theme | `resources/views/…` — it always wins                  |
 | Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json` |
+| Change a colour, a font, a radius                   | `theme/tokens.json` → `defaults`                      |
+| A token the vocabulary does not have                | `theme/tokens.json` → `vocabulary`, then `defaults`   |
+| Another palette the site can switch to              | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`  |
 | Publish the config                                  | `php artisan vendor:publish --tag=webx-themes-config` |
 
 ## Do not
@@ -35,6 +46,9 @@ and the site's `theme/`).
 - Do not copy a whole packaged theme into `theme/`: copy only the files you change, or fixes to
   the rest never reach the site.
 - Do not make two themes `use` each other: the site refuses to boot with the loop in the message.
+- Do not write a colour or a font literally in CSS: use `var(--site-…)`, or the value stops
+  following presets and the panel.
+- Do not edit files under `public/themes/`: they are copies, and the next sync replaces them.
 - Do not call `View::prependNamespace()` for a theme yourself: it puts the theme above the site's
   `resources/views/vendor/<ns>`.
 
@@ -42,6 +56,9 @@ and the site's `theme/`).
 
 - `php artisan tinker` → `app(\WebxUi\Themes\ThemeChain::class)->layers` — the chain as resolved.
 - Open a page: the layout and the module views come from the layer you expect.
+- `php artisan tinker` → `app(\WebxUi\Themes\Tokens::class)->css()` — the tokens as the page
+  gets them; a bad tokens.json throws here with the file and the token.
+- `php artisan webx:theme:sync --dry-run` — what would be published.
 
 ## Read more
 
