@@ -61,4 +61,14 @@ return [
         // "Open in maps": where the link under the address leads when the address has no link of its own.
         'open' => 'https://www.openstreetmap.org/?mlat={lat}&mlon={lng}#map={zoom}/{lat}/{lng}',
     ],
+
+    /*
+     * The site audit (spec §15.2), when `module-audit` is installed. Its check "loads before
+     * consent" knows the usual players, maps, counters and pixels; a site adds the third parties
+     * it uses by host, or host and path, with the category they wait for:
+     * 'widget.example.com' => 'marketing', 'example.com/embed' => 'media'.
+     */
+    'audit' => [
+        'third-party' => [],
+    ],
 ];

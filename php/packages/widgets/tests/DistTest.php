@@ -228,7 +228,8 @@ final class DistTest extends PlainTestCase
     public function every_locale_has_every_word(): void
     {
         // The visitor's words and the panel's ("Cookie" tab of the settings, §9.5).
-        foreach (['widgets', 'panel'] as $group) {
+        // And the site audit's (§15.2): its checks, their summaries and their fixes.
+        foreach (['widgets', 'panel', 'checks', 'audit', 'fixes'] as $group) {
             $english = self::keys(require Widgets::path()."/lang/en/{$group}.php");
 
             foreach (self::LOCALES as $locale) {

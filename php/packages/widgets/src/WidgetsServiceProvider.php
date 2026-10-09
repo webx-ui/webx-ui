@@ -15,10 +15,21 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Audit\Crawl\PageReaders;
+use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
+use WebxUi\Widgets\Audit\BannerOff;
+use WebxUi\Widgets\Audit\BannerOn;
+use WebxUi\Widgets\Audit\BeforeConsent;
+use WebxUi\Widgets\Audit\ContactBoth;
+use WebxUi\Widgets\Audit\LightboxSize;
+use WebxUi\Widgets\Audit\SliderPause;
+use WebxUi\Widgets\Audit\WaitForConsent;
+use WebxUi\Widgets\Audit\WidgetsPageReader;
 use WebxUi\Widgets\Video\Posters;
 use WebxUi\Widgets\Video\VideoProviders;
 use WebxUi\Widgets\View\Components\ConsentGate;
@@ -94,6 +105,7 @@ class WidgetsServiceProvider extends ServiceProvider
 
         $this->registerConsentSettings();
         $this->offerBlocks();
+        $this->registerAudit();
 
         $this->app->make(BottomLayers::class)->add(Widgets::NAME, Widgets::path());
 
@@ -194,6 +206,31 @@ class WidgetsServiceProvider extends ServiceProvider
         }
 
         $this->app->make(BlockOffers::class)->offer(self::OFFERS, Widgets::path().'/resources/blocks');
+    }
+
+    /**
+     * The checks of §15.2, when the site has `module-audit`: what loads before consent, the banner
+     * switched off with something third-party on the site, a lightbox link without the picture's
+     * size, a moving slider without its pause button, both quick-contact widgets on one page. The
+     * page's HTML is not kept by the audit, so the reader takes what they need while it parses.
+     */
+    private function registerAudit(): void
+    {
+        if (! class_exists(AuditChecks::class) || ! class_exists(PageReaders::class)) {
+            return;
+        }
+
+        $this->app->make(PageReaders::class)->register(new WidgetsPageReader);
+
+        $checks = $this->app->make(AuditChecks::class);
+
+        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth] as $check) {
+            $checks->register($check);
+        }
+
+        $fixes = $this->app->make(AuditFixes::class);
+        $fixes->register($this->app->make(WaitForConsent::class));
+        $fixes->register(new BannerOn);
     }
 
     /** HTML with the marker: JSON could carry a rendered page inside a string, and must stay JSON. */
