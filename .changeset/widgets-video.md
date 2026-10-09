@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-`webx-ui/widgets`: the video — `<x-webx-video src="<YouTube or Vimeo>" :poster title ratio>` and `<x-webx-video :file :poster>`. A YouTube or Vimeo video is a poster and a play button, and the player (`youtube-nocookie.com`, Vimeo with `dnt=1`) goes in only on a click. Before the visitor agrees to `media` the server prints a placeholder from the consent cookie — the poster, a line saying where the video loads from, "Load" (this one) and "Always load videos" (the consent, without a reload) — and the page asks the provider for nothing. A video without a poster gets its preview fetched once into the media library (folder "Video posters") after the response of the first page that shows it. A file of the site is a `<video preload="none">` with no consent to ask for. The frame keeps its ratio before anything loads; without JavaScript the video is a link to it. `dist/video.js|css`, 1.7 KB gzip, only on pages with a video; providers of a site's own through `VideoProviders::register()`. `webx-ui/theme-default`: Kitchen sink › Video. `webx-ui/module-media`: the demo seeds `mp4` and `webm` from a theme's `demo/media/` too.

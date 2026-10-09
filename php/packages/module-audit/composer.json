@@ -33,10 +33,10 @@
         "illuminate/queue": "^13.0",
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/mcp": "^0.66.0",
-        "webx-ui/module-admin": "^0.66.0",
-        "webx-ui/module-auth": "^0.66.0",
-        "webx-ui/module-settings": "^0.66.0"
+        "webx-ui/mcp": "^0.67.0",
+        "webx-ui/module-admin": "^0.67.0",
+        "webx-ui/module-auth": "^0.67.0",
+        "webx-ui/module-settings": "^0.67.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
