@@ -139,6 +139,22 @@ MCP-сервер, движок Manticore. Всё ниже однажды сто�
   закрывается, пустой триггер и «Attempt to read property "attributes" on string». После
   `</x-slot…>` — перевод строки или пробел.
 
+- **Тип блока с компонентом внутри компонента не публикуется: «Undefined array key 0».**
+  `<x-webx-slider><x-webx-slide>…` в шаблоне блока: публикация рисует образец и падает в
+  `ManagesComponents` — `array_merge(): Argument #2 must be of type array, null given`, а тот же
+  шаблон через `Blade::render()` рисуется. Рендерер блоков исполняет шаблон движком PHP мимо
+  `View::render()`, счётчик рендеров фабрики стоит на нуле, и вьюха внутреннего компонента,
+  закончив, решает, что закончился весь рендер, — `flushStateIfDoneRendering()` сбрасывает стек
+  компонентов вместе с данными внешнего. Починено в `Renderer::evaluate()`: шаблон считается
+  рендером (`incrementRender()`/`decrementRender()`). Проверка —
+  `RenderingTest::a_component_inside_another_keeps_its_slot`.
+
+- **Переменная вьюхи компонента стала объектом: «Cannot use object of type
+  InvokableComponentVariable as array».** Публичный метод класса компонента виден во вьюхе
+  переменной с тем же именем и перекрывает то, что `render()` передал в `view(..., [...])`:
+  `public static function words()` и `'words' => …` — во вьюхе `$words` уже не массив. Методы,
+  которые вьюхе не нужны, — `private`.
+
 - **Ответ, дописанный в `RequestHandled`, не видит flash сессии.** К этому событию `StartSession`
   уже сохранил сессию и выбросил flash прошлого запроса — «спасибо» и ошибки формы, отправленной
   без JavaScript: компонент формы, нарисованный здесь, пуст, хотя тот же компонент в самой

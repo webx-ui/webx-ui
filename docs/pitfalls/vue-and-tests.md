@@ -173,6 +173,11 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
 
 ## Тесты в jsdom
 
+- **Swiper в jsdom: `slideToLoop()` (и Home/End слайдера) «не сработал».** Он переходит на
+  следующем кадре (`requestAnimationFrame`), а `slideTo()` — сразу; тест читает `realIndex`
+  раньше. Ждать кадр: `await new Promise((r) => requestAnimationFrame(r))`. И Swiper без ширины
+  не раскладывает слайды — в тесте `clientWidth` у `HTMLElement.prototype` подменяется
+  (`slider.test.js`).
 - **Прогон нескольких пакетов разом пишет `FAIL` у файла, но «Tests: N passed» без единого
   упавшего.** Файл не упал — он не успел собраться: `--singleFork` гонит всё одним процессом, и
   на тяжёлом прогоне (семь пакетов панели) сбор файла с большим деревом импортов упирается в

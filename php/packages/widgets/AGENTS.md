@@ -6,10 +6,9 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 
 ## What it owns
 
-- **Runtime** — `dist/runtime.js` + `dist/runtime.css`, on every page of a site with a theme. Joins
-  `window.webx`: `webx.mount(root)` starts what is new inside `root` (idempotent),
-  `webx.unmount(root)` lets it go, `webx.widget(name, selector, setup)` registers a widget —
-  `setup(el)` may return its cleanup.
+- **Runtime** — `dist/runtime.js|css`, on every page of a site with a theme. Joins `window.webx`:
+  `webx.mount(root)` starts what is new inside `root` (idempotent), `webx.unmount(root)` lets it
+  go, `webx.widget(name, selector, setup)` registers one — `setup(el)` may return its cleanup.
 - **Behaviours by attribute** (no component needed):
   - `data-webx-disclosure="<id>"` on a button — shows/hides `#<id>`, Esc and a click outside close.
   - `data-webx-dialog="<id>"` on a link or button — opens `<dialog id="<id>">` as a modal;
@@ -70,9 +69,14 @@ label fallback-label>`: each language named in itself, a link to the same page i
   `webx-ui/routing` registry (as `hreflang`), or to its home page with `is-fallback` where there
   is no translation; nothing with one language or without the language in the path.
   `dist/language-switcher.css` only. Links for a markup of your own: `LanguageLinks::current()`.
+- **Slider** — `dist/slider.js|css` (Swiper built in), only where one stands: `<x-webx-slider
+variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3]">` with
+  `<x-webx-slide thumb>` inside. Per view by the slider's own width (`sm` 0, `md` 640, `lg` 960,
+  `xl` 1280 or px); `arrows pagination loop autoplay continuous effect thumbs speed label`, and
+  `options` for any other Swiper setting. Without JavaScript a strip that scrolls and snaps;
+  whatever moves on its own has a pause button. Only the first slides in view load at once.
 - **Loading** — `Widgets::need('<name>')` (facade `WebxUi\Widgets\Facades\Widgets`) claims a
-  widget's own `dist/<name>.js|css` for the page. `@webxTheme` prints a marker; the response gets
-  the `<link>`s there and the `<script type="module">`s before `</body>`.
+  widget's `dist/<name>.js|css`: `<link>`s go where `@webxTheme` stands, scripts before `</body>`.
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
   (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`;
   `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,
@@ -85,18 +89,17 @@ label fallback-label>`: each language named in itself, a link to the same page i
   `webx-form-dialog__header|title|close|body|done`, `is-sent`;
   `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-today`), `webx-contact-button__*`,
   `webx-contact-bar__*`, `webx-socials__*`, `webx-icon`; `webx-language-switcher__current|list|
-link`, `is-current|is-fallback` — listed in each view's header).
+link`, `is-current|is-fallback`; `webx-slider`, `--<variant>`, `__viewport|track|slide|controls|
+button|prev|next|pause|pagination|bullet|thumbs|thumb`, `is-ready|is-active` — in each view).
   `html.webx-js` once the runtime runs; `html.webx-scroll-locked` while a modal is open;
   `html.webx-header-sticky` while a header sticks (the page's scroll padding is its height).
 - **Local tokens** — `--webx-dialog-*`, `--webx-tabs-*`, `--webx-header-*`,
   `--webx-mobile-menu-*`, `--webx-consent-*`, `--webx-dropdown-offset|min-width`,
   `--webx-icon-size`, `--webx-hours-*`, `--webx-contact-*`, `--webx-contact-bar-*`,
-  `--webx-socials-size`, `--webx-language-switcher-*`; each listed in its stylesheet, declared on
-  `:root` from `--site-*`. `--webx-header-height` and
-  `--webx-header-topbar-height` are kept live by the runtime — use them for `top` of anything
-  else sticky.
-- **Words** — `webx-widgets::widgets.*` in en, ru, uk, de, pl, fr, es, it, pt, tr; every word
-  is also a prop (`close="…"`).
+  `--webx-socials-size`, `--webx-language-switcher-*`, `--webx-slider-*` (`-per-view`, `-gap`…);
+  each declared on `:root` from `--site-*` in its stylesheet. `--webx-header-height` and
+  `--webx-header-topbar-height` are kept live by the runtime — `top` of anything else sticky.
+- **Words** — `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
 
 ## Change it without forking
 
@@ -131,15 +134,13 @@ link`, `is-current|is-fallback` — listed in each view's header).
   tab, and the widgets and the SEO markup read it from there.
 - Do not format the hours or a time with `toLocaleString()` in a script of your own: it writes the
   browser's way, not the page's language — `<x-webx-hours>` already carries the words.
-- Do not copy the runtime into the theme to change one behaviour: register your own widget.
-- Do not call `Widgets::need()` for the behaviours above to get them — the runtime is already on
-  every page; `need()` matters for widgets with files of their own.
+- Do not copy the runtime into the theme to change one behaviour (register your own widget), nor
+  `Widgets::need()` the behaviours above: the runtime is on every page.
 
 ## Check your work
 
-- `php artisan webx:theme:sync` lists `webx-ui/widgets` as published.
-- The page source has `/themes/webx-ui/widgets/<hash>/runtime.css` in `<head>` and
-  `runtime.js` right before `</body>`; no `<!--webx-widgets-->` left.
+- `php artisan webx:theme:sync` lists `webx-ui/widgets` as published; the page source has
+  `.../widgets/<hash>/runtime.css` in `<head>`, `runtime.js` before `</body>`, no `<!--webx-widgets-->`.
 - In the browser console: `typeof webx.widget === 'function'`; Tab through the widget with the
   keyboard; turn JavaScript off and the content is still there.
 
