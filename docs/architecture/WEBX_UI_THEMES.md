@@ -5,7 +5,8 @@
 и сайты по подписке — вторая часть (§21). В работе с 09.10.2026 (ветка `hot/2026-10-09`): TH1.1 —
 движок `webx-ui/themes` с манифестом, цепочкой и порядком вьюх; TH1.2 — словарь, слияние токенов,
 `@webxTheme`, `theme_token()` и `webx:theme:sync` для ассетов; TH1.3 — пакет `webx-ui/theme-default`:
-значения всех токенов, пресеты, лейаут с шапкой и подвалом, CSS оболочки и прозы; как легло в код — §23. Пакеты — новые `webx-ui/themes` и
+значения всех токенов, пресеты, лейаут с шапкой и подвалом, CSS оболочки и прозы; TH1.4 — `webx:theme:make --local`, `webx:setup` создаёт `theme/` (`--theme=`,
+`--no-theme`), скелет без лейаута и инлайн-стилей; как легло в код — §23. Пакеты — новые `webx-ui/themes` и
 `webx-ui/theme-default` (§3), правки в `module-admin` (§14), `module-blocks` (§8, §9),
 `module-settings` (§7.4) и в модулях с публичными страницами (§10). Соседние спеки: новый сайт —
 [`WEBX_UI_NEW_SITE.md`](WEBX_UI_NEW_SITE.md), блоки — [`WEBX_UI_MODULE_BLOCKS.md`](WEBX_UI_MODULE_BLOCKS.md),
@@ -1116,3 +1117,76 @@ final class SiteState
 - Иконок, блоков, писем, страниц ошибок и демо ещё нет — их этапы TH2 и TH4. `AGENTS.md` темы
   появился уже здесь, а не в TH6: тест покрытия гайдов (`AgentDocsCoverageTest`) требует его у
   каждого пакета с первого дня; в TH6 он дополняется блоками, пресетами и иконками.
+
+### TH1.4 — `webx:theme:make --local`, `webx:setup` с темой, скелет без лейаута
+
+- **`webx:theme:make <имя> --local [--uses=…] [--path=…]`** (`WebxUi\Themes\Console\MakeCommand`,
+  заготовки в `php/packages/themes/stubs/local/`) — `theme.json` с `title` (имя сайта из
+  `app.name`, иначе имя темы) и `uses`, `tokens.json` вида `{"defaults": {}}`, `src/css/theme.css`
+  и `src/js/theme.js` (имена — `ThemeHead::LOCAL_ENTRIES`, с комментарием о трёх дверях §10.5 и
+  `:where()`), `tests/ThemeTest.php`. Каждое имя из `uses` проверяется через `ThemeLocator` до
+  записи: опечатка — сообщение о флаге, а не исключение на первой странице. Непустой каталог —
+  отказ без записи. Без `--local` — отказ: пакетная заготовка (`composer.json`, `package.json`,
+  `vite.config.js`, CI) — TH6.
+- **Тест локальной темы — тест сайта, а не `ThemeContract`** (его ещё нет, TH6): `Tests\Theme\ThemeTest`
+  на `Tests\TestCase` скелета проверяет, что сайт стоит на этой теме (верхний слой цепочки —
+  локальный, путь — каталог теста), что токены сливаются без исключения и что у цепочки есть
+  `components.layout`. Команда дописывает в `phpunit.xml` сайта сьют `Theme` с `<каталог>/tests`
+  — только если тег `</testsuites>` один и каталог ещё не упомянут, иначе говорит, что добавить.
+  Так `php artisan test` сайта гоняет тест темы без правки автозагрузки.
+- **`webx:setup`** решает про тему в `gather()`, до установки (`Setup\ThemeChoice`):
+  - новый сайт — `theme/` на `webx-ui/theme-default`; `--theme=<vendor/name>` — на другой теме
+    (наш пакет — с общей версией `^x.y.z`, чужой — без ограничения); не имя пакета — отказ до
+    `composer require`;
+  - `--no-theme` — тема не ставится, в `resources/views/components/` пишутся лейаут, шапка и
+    подвал, которые раньше лежали в скелете (с теми же восемьюдесятью строками `<style>`), плюс
+    `resources/css/app.css` и `resources/js/app.js` — заготовки в `module-admin/stubs/site/`;
+  - **`WEBX_THEME` уже не пуст** — тема остаётся как есть, повторный прогон только синхронизирует
+    файлы; так `webx:setup` остаётся способом добавить модуль на живой сайт;
+  - **у сайта свой `components/layout` и `--theme` не передан** — темы нет: это сайт, который
+    жил до тем, и смена вида — не то, о чём он просил. С `--theme` поверх своего лейаута тема
+    ставится, а setup предупреждает, что `resources/views` выше всех слоёв и лейаут надо удалить.
+
+  Шаг `installTheme()` стоит после `installModules()` (пакет темы уходит в тот же `composer
+require`) и **до** `wireThePanel()`: `webx:panel --sync` указывает модулям на `<x-layout>`, только
+  когда находит лейаут, а у сайта с темой он в теме. Порядок внутри — `webx:theme:make`, потом
+  запись `WEBX_THEME=theme` в `.env` и в окружение детей, потом `webx:theme:sync`: **`WEBX_THEME`
+  на каталог, которого нет, роняет загрузку любого `artisan`** (решение TH1.1), так что имя пишется
+  только после того, как каталог есть. Sync не фатален — сайт откроется с меньшим стилем.
+
+- **`webx:panel --sync`** ищет лейаут через `view()->exists('components.layout')`, а не по файлу в
+  `resources/views`: в дочернем процессе с `WEBX_THEME` цепочка уже в путях вьюх.
+- **Скелет `php/site`** — `components/layout`, `header`, `footer`, `resources/css/app.css` и
+  `resources/js/app.js` уехали в заготовки `--no-theme`; `regions/region.blade.php` остался (нужен
+  сайту без `module-blocks`, а значит без темы). Вход Vite — `theme/src/css/theme.css`,
+  `theme/src/js/theme.js`, `resources/css/app.css`, `resources/js/app.js` через
+  `.filter(existsSync)`: один конфиг для сайта с темой и без, и `webx:panel --sync` по-прежнему
+  дописывает `admin.ts` в тот же массив. `.env.example` — `WEBX_THEME=` и закомментированный
+  `WEBX_THEME_PRESET`. `public/themes` — в `.gitignore` и `.dockerignore`.
+- **Docker:** стадия ассетов берёт `theme/` из стадии `vendor` (`COPY --from=vendor /app/theme`), где
+  после установки стоит `mkdir -p theme`: `COPY theme` из контекста на сайте с `--no-theme` остановил
+  бы сборку. **`webx:boot`** получил шаг `webx:theme:sync` (не фатальный), если стоит
+  `webx-ui/themes` и `webx-themes.theme` не пуст: `public/themes` не в репозитории и не в свежем
+  контейнере.
+- **`AGENTS.md` сайта** (`Agents\RootFile`) говорит про `theme/` вместо `resources/css/app.css`;
+  README скелета — раздел «The look»; гайды `styles.md` и `new-site.md` переписаны под тему.
+- **Тесты** — `themes`: `MakeCommandTest` (раскладка, цепочка из созданной темы, тест сайта — PHP,
+  сьют в `phpunit.xml` один раз, отказы: непустой каталог, ненайденная тема, без `--local`).
+  `module-admin`: `SetupThemeTest` — решение `ThemeChoice` на всех ветках и **весь `webx:setup`**
+  на sqlite с подменёнными процессами: порядок `composer require` → `webx:theme:make` →
+  `webx:theme:sync` → `webx:panel --sync`, `.env`, `--theme`, `--no-theme` с файлами лейаута, свой
+  лейаут сайта, повторный прогон. `BootTest` — шаг sync; `PanelSyncTest` — лейаут из пути темы.
+  `scripts/php-smoke.sh` проверяет, что скелет без лейаута, что после setup есть `theme/` на
+  `theme-default`, `WEBX_THEME=theme` и `public/themes/webx-ui/theme-default/current`, а главная
+  несёт `<style data-webx-theme>` и `<link>` на `theme.css` темы.
+
+Отступления от спеки:
+
+- **Демо из цепочки (шаг 5 §14.1) не сделано** — демо пока прежнее, от модулей; демо темы — TH4.
+- **Решение «свой лейаут — значит без темы»** спекой не описано: §14.1 говорит только о новом
+  сайте, а `webx:setup` — ещё и способ доустановить модуль на живой сайт, и молча поставить ему
+  тему под его же лейаутом значило бы пакет, который ничего не меняет, кроме `.env`.
+- Тест локальной темы — не `ThemeContract` (§18), а три проверки на `Tests\TestCase` сайта; когда
+  `ThemeContract` появится (TH6), заготовка переходит на него.
+- Проверка в браузере — не здесь: что новый сайт из скелета открывается оформленным, проверяет
+  стартовый сайт TH1.5 (`scripts/starter-site.sh`).

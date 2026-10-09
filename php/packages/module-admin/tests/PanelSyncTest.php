@@ -317,6 +317,23 @@ final class PanelSyncTest extends TestCase
     }
 
     #[Test]
+    public function a_layout_from_the_theme_is_a_layout_too(): void
+    {
+        // A site on a theme has no components/layout of its own: the theme's is in the view
+        // paths after resources/views, and that is the one <x-layout> finds.
+        $this->withLayoutSeam();
+        $config = $this->at('config/webx-pages.php');
+        $this->writeFile($config, $this->publishedConfig());
+        $this->writeFile($this->at('theme-views/components/layout.blade.php'), '<html>{{ $slot }}</html>');
+        $this->app->make('view')->addLocation($this->app->basePath('theme-views'));
+
+        $this->artisan('webx:panel')->assertSuccessful();
+
+        $this->files->deleteDirectory($this->app->basePath('theme-views'));
+        $this->assertStringContainsString("'layout' => env('WEBX_PAGES_LAYOUT', 'layout')", $this->readFile($config));
+    }
+
+    #[Test]
     public function a_site_without_a_layout_keeps_the_module_printing_its_own_document(): void
     {
         // The seam is the site's to open. Pointing a module at `<x-layout>` that nobody wrote

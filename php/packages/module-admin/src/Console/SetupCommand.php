@@ -22,6 +22,7 @@ use WebxUi\Admin\Setup\EnvFile;
 use WebxUi\Admin\Setup\LocalesConfig;
 use WebxUi\Admin\Setup\Processes;
 use WebxUi\Admin\Setup\SetupFailed;
+use WebxUi\Admin\Setup\ThemeChoice;
 
 /**
  * Everything between an empty directory and a panel somebody can sign into.
@@ -56,6 +57,8 @@ final class SetupCommand extends Command
                             {--admin-name= : What to call them}
                             {--demo : Fill the site with demo content}
                             {--no-demo : Leave the site empty}
+                            {--theme= : The packaged theme the local theme/ stands on (webx-ui/theme-default)}
+                            {--no-theme : No theme: the layout, the header, the footer and the styles are files of the site}
                             {--no-build : Leave npm alone — no install, no build}
                             {--composer= : The Composer binary, when it is not on the PATH}';
 
@@ -74,6 +77,8 @@ final class SetupCommand extends Command
 
     /** @var list<string> */
     private array $modules = [];
+
+    private ThemeChoice $theme;
 
     /**
      * What every child process is told, over the top of what it inherits.
@@ -105,6 +110,7 @@ final class SetupCommand extends Command
             $this->writeEnvironment();
             $this->prepareDatabase();
             $this->installModules();
+            $this->installTheme($files);
             $this->wireThePanel($files);
             $this->migrate();
             $this->installOfferedBlocks();
@@ -179,6 +185,13 @@ final class SetupCommand extends Command
                 throw SetupFailed::badDatabaseName($this->answers['db']);
             }
         }
+
+        $this->theme = ThemeChoice::decide(
+            is_string($this->option('theme')) ? $this->option('theme') : null,
+            (bool) $this->option('no-theme'),
+            $this->env->get('WEBX_THEME'),
+            file_exists($this->laravel->resourcePath('views/components/layout.blade.php')),
+        );
 
         $this->answers['demo'] = $this->wantsDemo() ? 'yes' : 'no';
 
@@ -412,6 +425,10 @@ final class SetupCommand extends Command
     {
         $wanted = $this->catalogue->toRequire($this->modules);
 
+        if ($this->theme->package !== null && ! $this->catalogue->has($this->theme->package)) {
+            $wanted[] = (string) $this->theme->requirement($this->catalogue->constraint());
+        }
+
         if ($wanted === []) {
             $this->components->twoColumnDetail('Modules', 'already installed: '.implode(', ', $this->modules));
 
@@ -427,6 +444,93 @@ final class SetupCommand extends Command
 
         // The list this command read at boot is now a list of what used to be installed.
         $this->catalogue->refresh();
+    }
+
+    /**
+     * The site's look (spec WEBX_UI_THEMES.md §14.1): `theme/` over the packaged theme, before
+     * the panel is wired, because `webx:panel --sync` points the modules at `<x-layout>` only
+     * when it can find one — and with a theme, that layout is the theme's.
+     *
+     * Each step is a child for the reason everything here is: this process has never heard of
+     * the theme package `composer require` just installed, nor of `WEBX_THEME`.
+     */
+    private function installTheme(Filesystem $files): void
+    {
+        if (! $this->theme->themed) {
+            $this->components->twoColumnDetail('Theme', $this->theme->why);
+            $this->writeOwnLayout($files);
+
+            return;
+        }
+
+        if ($this->theme->package !== null) {
+            $directory = ThemeChoice::DIRECTORY;
+
+            if ($files->exists($this->laravel->basePath($directory.'/theme.json'))) {
+                $this->components->twoColumnDetail('Theme', "{$directory}/ is already there — kept as it is");
+            } else {
+                $this->artisan(
+                    ['webx:theme:make', $directory, '--uses='.$this->theme->package, '--local'],
+                    'webx:theme:make',
+                );
+            }
+
+            $this->env->write(['WEBX_THEME' => $directory]);
+            $this->childEnv['WEBX_THEME'] = $directory;
+            $this->components->twoColumnDetail('Theme', $this->theme->why);
+
+            if ($files->exists($this->laravel->resourcePath('views/components/layout.blade.php'))) {
+                $this->components->warn(
+                    'resources/views/components/layout.blade.php is above every theme layer, so the site keeps printing it. '
+                    .'Delete it, and header.blade.php and footer.blade.php beside it, for the theme\'s to show.',
+                );
+            }
+        } else {
+            $this->components->twoColumnDetail('Theme', $this->theme->why);
+        }
+
+        // The packaged layers' built CSS reaches a page only from public/themes. Not fatal: the
+        // site still opens, with less style, and the command is one line to run again.
+        $this->artisan(['webx:theme:sync'], 'webx:theme:sync', fatal: false);
+    }
+
+    /**
+     * The skeleton ships no layout: the theme has one. A site without a theme gets the one the
+     * skeleton used to ship — a document, a header, a footer and eighty lines of inline style,
+     * enough that nothing looks broken — written once and never over a file that is there.
+     */
+    private function writeOwnLayout(Filesystem $files): void
+    {
+        // A layout of its own means the site has made this choice already, and a file it
+        // deleted on purpose beside that layout is not one to bring back.
+        if ($files->exists($this->laravel->resourcePath('views/components/layout.blade.php'))) {
+            return;
+        }
+
+        $stubs = dirname(__DIR__, 2).'/stubs/site';
+        $written = [];
+
+        foreach ([
+            'views/components/layout.blade.php',
+            'views/components/header.blade.php',
+            'views/components/footer.blade.php',
+            'css/app.css',
+            'js/app.js',
+        ] as $file) {
+            $target = $this->laravel->resourcePath($file);
+
+            if ($files->exists($target)) {
+                continue;
+            }
+
+            $files->ensureDirectoryExists(dirname($target));
+            $files->copy($stubs.'/'.$file.'.stub', $target);
+            $written[] = 'resources/'.$file;
+        }
+
+        if ($written !== []) {
+            $this->components->twoColumnDetail('Layout', 'written — '.implode(', ', $written));
+        }
     }
 
     private function wireThePanel(Filesystem $files): void

@@ -17,8 +17,9 @@ theme/                   ← the site's local theme: its differences
 Part of [WebX UI](https://github.com/webx-ui/webx-ui). No tables, no JavaScript.
 
 > Early days: this release resolves the chain, the order Blade looks views up in, the token
-> vocabulary and `@webxTheme`. Block types, icons, the panel tab and the rest of the
-> `webx:theme:*` commands arrive in the next releases — see the specification.
+> vocabulary, `@webxTheme`, `webx:theme:sync` and `webx:theme:make --local`. Block types, icons,
+> the panel tab and the rest of the `webx:theme:*` commands arrive in the next releases — see the
+> specification.
 
 ## Requirements
 

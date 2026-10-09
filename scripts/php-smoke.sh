@@ -1112,11 +1112,14 @@ $COMPOSER_BIN create-project webx-ui/site "$SITE" \
     --no-install --no-scripts --no-interaction --quiet
 note "webx-ui/site $SHARED_VERSION in $SITE"
 
-[ -f "$SITE/resources/views/components/layout.blade.php" ] || fail 'the skeleton brought no layout'
+# The layout is the theme's. One in resources/views would sit above every theme layer and hide
+# whatever the theme brings, so the skeleton must not ship one.
+[ -f "$SITE/resources/views/components/layout.blade.php" ] \
+    && fail 'the skeleton ships a layout of its own, above every theme layer'
 # At the start of a line: the file explains this very trap in prose, and names it while doing so.
 grep -qE '^[[:space:]]*(\\?Illuminate|Route::)' "$SITE/routes/web.php" \
     && fail 'the skeleton declares a route, and / belongs to the page tree'
-note 'a layout, and no routes taking addresses from the registry'
+note 'no layout of its own, and no routes taking addresses from the registry'
 
 (
     cd "$SITE"
@@ -1181,7 +1184,13 @@ note 'the entry file registers every module that was installed'
 
 grep -q "'layout' => env('WEBX_PAGES_LAYOUT', 'layout')" "$SITE/config/webx-pages.php" \
     || fail 'the pages module was not pointed at the layout'
-note 'the public views stand in the layout of the skeleton'
+note 'the public views stand in the layout of the theme'
+
+[ -f "$SITE/theme/theme.json" ] || fail 'setup created no theme/'
+grep -q '"webx-ui/theme-default"' "$SITE/theme/theme.json" || fail 'theme/ does not stand on theme-default'
+grep -q '^WEBX_THEME=theme$' "$SITE/.env" || fail '.env does not name the local theme'
+[ -f "$SITE/public/themes/webx-ui/theme-default/current" ] || fail 'theme-default was not synced to public/themes'
+note 'theme/ over webx-ui/theme-default, named in .env and published'
 
 [ -f "$SITE/storage/app/webx-demo.json" ] || fail 'the demo journal is not there'
 note 'the demo journal is there'
@@ -1223,7 +1232,10 @@ printf '%s' "$HOME_PAGE" | grep -q 'class="b-demo-header"' || fail 'the home pag
 printf '%s' "$HOME_PAGE" | sed -n '/<body/,$p' | grep -qE '<link rel="stylesheet" href="[^"]+/[a-f0-9]{16}\.css"><header class="b-demo-header"' \
     || fail 'the header region did not print its own stylesheet in <body>'
 printf '%s' "$HOME_PAGE" | grep -q '<title>' || fail 'the SEO card did not reach the head'
-note 'the demo home page renders inside the layout, with a header of blocks and its head filled in'
+printf '%s' "$HOME_PAGE" | grep -q '<style data-webx-theme>' || fail 'the site tokens did not reach the head'
+printf '%s' "$HOME_PAGE" | grep -qE '<link rel="stylesheet" href="[^"]*/themes/webx-ui/theme-default/[a-f0-9]{12}/theme\.css">' \
+    || fail 'the stylesheet of theme-default did not reach the head'
+note 'the demo home page renders inside the theme layout: a header of blocks, the tokens, the head filled in'
 
 expect 200 "$(status "$SITE_BASE/")" 'GET /'
 

@@ -23,6 +23,8 @@ and the site's `theme/`).
 - **`@webxTheme`** — `<style>:root { --site-… }</style>` and every layer's stylesheet; nothing
   without a theme. **`theme_token($name, $default)`** — a merged value, for mail.
 - **`webx:theme:sync`** — copies the packaged layers' `dist/` and `assets/` to `public/themes/`.
+- **`webx:theme:make theme --local --uses=<vendor/name>`** — a local theme: `theme.json`, an empty
+  `tokens.json`, `src/css/theme.css`, `src/js/theme.js` and a test. `webx:setup` runs it on a new site.
 - **View order**: plain views — `resources/views`, then each layer's `views/`; `<ns>::` views —
   `resources/views/vendor/<ns>`, then each layer's `views/vendor/<ns>`, then the module's own.
 

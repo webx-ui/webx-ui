@@ -1,7 +1,7 @@
 # A WebX UI site
 
 A Laravel website with the [WebX UI](https://github.com/webx-ui/webx-ui) admin panel on it: the
-public pages are this site's own views and styles, the content — pages, articles, products,
+public pages are this site's theme over a shared one, the content — pages, articles, products,
 menus, forms — is edited in the panel at `/cms`, and the modules that do the work are Composer
 packages `webx-ui/*` in `vendor/`.
 
@@ -38,17 +38,36 @@ the site.** Configure it, publish its views, patch its screens — the seams are
 
 ## What to delete first
 
-Everything here is yours, and three things are here only so that the first page is not blank:
+Everything here is yours, and two things are here only so that the first page is not blank:
 
-| what                                                | when                                                     |
-| --------------------------------------------------- | -------------------------------------------------------- |
-| `resources/views/demo.blade.php` and its route       | as soon as the site has a front page of its own           |
-| the `<style>` block in `components/layout.blade.php` | when you start on the design — `resources/css/app.css`    |
-| the demo content                                     | `php artisan webx:demo --remove`                          |
+| what                                           | when                                            |
+| ---------------------------------------------- | ----------------------------------------------- |
+| `resources/views/demo.blade.php` and its route | as soon as the site has a front page of its own |
+| the demo content                               | `php artisan webx:demo --remove`                |
 
 The demo content is rows in the database and files on disk, and the command takes out exactly
-what it put in, backwards, by a journal in `storage/app/webx-demo.json`. The layout is files and
-stays.
+what it put in, backwards, by a journal in `storage/app/webx-demo.json`.
+
+## The look
+
+`webx:setup` gives the site a theme of its own, `theme/`, standing on `webx-ui/theme-default`:
+the layout, the header, the footer, the typography and a value for every site token come from
+there, so the site opens finished. `theme/` holds only what makes this site different, and it
+starts empty:
+
+| file                | what goes in it                                                            |
+| ------------------- | -------------------------------------------------------------------------- |
+| `theme/tokens.json` | colours, fonts, radii — `"defaults": { "color-accent": "#…" }`             |
+| `theme/src/css/`    | rules on the classes the shell and the modules print, `var(--site-…)` only |
+| `theme/views/`      | a copy of a view, only when the markup itself has to change                |
+| `theme/tests/`      | the theme's test, run with the site's own by `php artisan test`            |
+
+`npm run dev` rebuilds `theme/src` as you type; `php artisan webx:theme:sync` publishes the
+packaged theme's files after `composer update`. A view in `resources/views/components/` is above
+every theme layer and wins over it, so leave `layout`, `header` and `footer` out of there.
+
+A site set up with `--no-theme` has none of this: `webx:setup` writes the layout, the header and
+the footer into `resources/views/components/` and its styles go in `resources/css/app.css`.
 
 ## What not to delete
 
@@ -62,13 +81,13 @@ and a `Route::get('/')` here is a home page the panel cannot even save.
 
 Three places where the site makes the library its own:
 
-**The layout.** `resources/views/components/layout.blade.php` is `<x-layout>`, and every public
-view a module ships stands inside it. The agreement is two lines long — a `head` slot and the
+**The layout.** `components/layout.blade.php` is `<x-layout>` — the theme's, or the site's own
+with `--no-theme` — and every public view a module ships stands inside it. The agreement is two lines long — a `head` slot and the
 default slot for the content — and `config('webx-pages.layout')` and its siblings are what point
 at it. Keep `@stack('head')`: a slot is one place, and what a block type pushes cannot reach it.
 The header and the footer are regions — `<x-webx-blocks::region name="header"
 fallback="components.header" />`, declared in `config/webx-blocks.php`: until somebody publishes
-blocks there in the panel, the site prints `components/header.blade.php` as it always did. Without
+blocks there in the panel, the site prints `components/header.blade.php` from the theme. Without
 `webx-ui/module-blocks` the tag prints its fallback and nothing else (`AppServiceProvider`).
 
 **The views.** `php artisan vendor:publish --tag=webx-blog-views` copies a module's public views

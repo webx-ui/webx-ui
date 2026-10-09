@@ -1,0 +1,18 @@
+/*
+ * This site's look, over the theme it stands on.
+ *
+ * Empty on purpose: the site already looks finished, because every layer below this one —
+ * the packaged theme and the modules — brings its own stylesheet. What goes here is only what
+ * makes this site different, and the cheapest door first:
+ *
+ *   1. a value in ../../tokens.json ("defaults": { "color-accent": "#…" }) recolours the whole
+ *      site, blocks and module pages included, without a line of CSS;
+ *   2. a rule here, on the classes the shell and the modules print — `site-header__*`,
+ *      `site-main`, `site-footer__*`, `site-prose`, `webx-<module>-*`;
+ *   3. a copy of a view in ../../views/ only when the markup itself has to change.
+ *
+ * Every rule below this layer sits inside `:where()`, so a rule here wins by existing — no
+ * `!important`, no longer selector. Colours, fonts, radii, spacing and shadows are
+ * `var(--site-…)` only; a literal value belongs in tokens.json, where a preset and the panel
+ * can change it.
+ */

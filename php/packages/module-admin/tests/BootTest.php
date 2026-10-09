@@ -167,6 +167,26 @@ final class BootTest extends TestCase
         $this->assertNotContains('php artisan webx:blocks:import --publish', $lines);
     }
 
+    // -- The theme -----------------------------------------------------------------------------
+
+    #[Test]
+    public function it_publishes_the_theme_files_a_fresh_container_does_not_have(): void
+    {
+        config()->set('webx-themes.theme', 'theme');
+
+        $lines = $this->lines($this->plan(['webx-ui/module-admin', 'webx-ui/themes']));
+
+        $this->assertContains('php artisan webx:theme:sync', $lines);
+    }
+
+    #[Test]
+    public function a_site_without_a_theme_syncs_nothing(): void
+    {
+        config()->set('webx-themes.theme', '');
+
+        $this->assertNotContains('php artisan webx:theme:sync', $this->lines($this->plan(['webx-ui/module-admin', 'webx-ui/themes'])));
+    }
+
     // -- The first administrator ---------------------------------------------------------------
 
     #[Test]

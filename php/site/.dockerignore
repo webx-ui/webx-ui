@@ -34,6 +34,7 @@ public/build
 public/hot
 public/fonts-manifest.dev.json
 public/storage
+public/themes
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*

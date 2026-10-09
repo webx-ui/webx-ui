@@ -188,9 +188,9 @@ a package.
 
 ## The layout
 
-`resources/views/components/layout.blade.php` is the document every public page of this site is
-printed in, and the agreement between it and the modules is two lines long: a `head` slot, and
-the default slot for the content. A page, an article, a rubric asks for it by name — that is what
+`components/layout.blade.php` — the theme's, or the site's own in `resources/views` on a site
+without one — is the document every public page is printed in, and the agreement between it and
+the modules is two lines long: a `head` slot, and the default slot for the content. A page, an article, a rubric asks for it by name — that is what
 `config('webx-pages.layout')` holds — and stands inside it.
 
 ```blade
@@ -335,17 +335,22 @@ php artisan webx:doctor --strict   # anything worth mentioning stops the deploy 
 ## What the skeleton gives you, and what to delete
 
 ```
-resources/
-├── css/app.css                    # empty: this is where the design goes
-├── js/app.js
-└── views/
-    ├── components/
-    │   ├── layout.blade.php       # <x-layout>
-    │   ├── header.blade.php       # a menu out of the page tree
-    │   └── footer.blade.php
-    └── demo.blade.php             # "the modules are standing" — delete it first
+theme/                             # the site's own theme, over webx-ui/theme-default
+├── theme.json                     # which theme it stands on
+├── tokens.json                    # empty: the site's colours and fonts go here
+├── src/css/theme.css              # empty: the rest of the design
+├── src/js/theme.js
+└── tests/ThemeTest.php            # run by `php artisan test`
+resources/views/
+├── regions/region.blade.php       # the region tag on a site without module-blocks
+└── demo.blade.php                 # "the modules are standing" — delete it first
 routes/web.php                     # empty, and meant to stay that way
 ```
+
+`theme/` is written by `webx:setup`, not shipped: the layout, the header and the footer come from
+the theme it stands on (see [Where the styles live](./styles.md)). With `--no-theme` there is no
+`theme/`, and `webx:setup` writes `layout`, `header` and `footer` into
+`resources/views/components/` and an empty `resources/css/app.css` instead.
 
 `routes/web.php` being empty is the point, not laziness. Every public address of this site comes
 out of the [address registry](./routing.md) and is answered by `Route::fallback()`. A route

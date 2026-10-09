@@ -6,46 +6,50 @@ change — for a person changing the design with an agent, and for the agent its
 
 ## Three looks, three places
 
-| Look                                    | Where it lives                                                               | Whose                                     |
-| --------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------- |
-| The public site — pages, header, footer | the site's own files: `resources/css/app.css`, `resources/views/`, `public/` | **the site's**, edit freely               |
-| Blocks on the pages                     | block types, made in the panel («Blocks») and stored in the database         | **the site's**, in the panel              |
-| The admin panel                         | the packages `@webx-ui/*` in `node_modules/` and `webx-ui/*` in `vendor/`    | the library's — rebrand it, never edit it |
+| Look                                    | Where it lives                                                              | Whose                                     |
+| --------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------- |
+| The public site — pages, header, footer | the site's theme: `theme/`, over the packaged theme it stands on; `public/` | **the site's**, edit `theme/` freely      |
+| Blocks on the pages                     | block types, made in the panel («Blocks») and stored in the database        | **the site's**, in the panel              |
+| The admin panel                         | the packages `@webx-ui/*` in `node_modules/` and `webx-ui/*` in `vendor/`   | the library's — rebrand it, never edit it |
 
 ## The public site
 
-Everything a visitor sees is printed by the site's own views, and the modules' pages (a page, an
-article, a product) stand inside the site's layout.
+A new site stands on a theme: `webx:setup` creates `theme/` over `webx-ui/theme-default`, which
+brings the layout, the header, the footer, the typography and a value for every site token — so
+the site opens finished. `theme/` holds only what makes this site different, and the modules'
+pages (a page, an article, a product) stand inside the theme's layout.
 
-| You want to change                    | Edit                                                                                                  |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Colours, fonts, spacing, the grid     | `resources/css/app.css` — see [switching it on](#switching-on-app-css) below                          |
-| The frame of every page, the `<head>` | `resources/views/components/layout.blade.php` — keep `{{ $head ?? '' }}` and `@stack('head')` in it   |
-| The header and the footer             | `resources/views/components/header.blade.php` and `footer.blade.php`, shown while the region is empty |
-| The menu items                        | the panel («Menus»), not the view — the header prints `menu('header')`                                |
-| Images, the favicon, fonts            | `public/` — `public/favicon.ico`, your own folders such as `public/images/`                           |
-| A module's page (article, page…)      | publish its view, see [below](#a-module-s-page), and edit the copy                                    |
-| The start page before real content    | `resources/views/demo.blade.php` — delete it with its route when the site has a home page             |
+| You want to change                    | Edit                                                                                                 |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Colours, fonts, radii, spacing        | `theme/tokens.json` — `"defaults": { "color-accent": "#…" }`; every page, block and module follows   |
+| Anything else about the look          | `theme/src/css/theme.css`, on the classes the shell and the modules print, with `var(--site-…)` only |
+| The frame of every page, the `<head>` | copy `components/layout.blade.php` from `vendor/webx-ui/theme-default/views/` into `theme/views/`    |
+| The header and the footer             | the same, `components/header.blade.php` and `footer.blade.php` — shown while the region is empty     |
+| The menu items                        | the panel («Menus»), not the view — the header prints `menu('header')`                               |
+| Images, the favicon, fonts            | `public/` — `public/favicon.ico`, your own folders such as `public/images/`                          |
+| A module's page (article, page…)      | its classes in `theme/src/css` first; see [below](#a-module-s-page)                                  |
+| The start page before real content    | `resources/views/demo.blade.php` — delete it with its route when the site has a home page            |
 
-### Switching on `app.css`
+Never edit the packaged theme in `vendor/`: `composer update` brings its fixes, and
+`php artisan webx:theme:sync` publishes its built files into `public/themes/`. A view in
+`resources/views/components/` sits above every theme layer and wins over it — that is why the
+skeleton has no `layout`, `header` or `footer` there.
 
-A new site is styled by about eighty lines of `<style>` inside `layout.blade.php`, so that the
-first pages are readable without a build. The day the real design starts:
+### A site without a theme
 
-1. Delete the whole `<style>…</style>` block in `layout.blade.php`.
-2. Uncomment the line under it: `@vite(['resources/css/app.css', 'resources/js/app.js'])`.
-3. Write the design in `resources/css/app.css`. Its variables are your own — name them as you
-   like (`--ink`, `--accent`…). The `--wx-*` variables are the panel's and are not loaded on the
-   public site.
-
-From then on the stylesheet is built by Vite — see [Seeing the change](#seeing-the-change).
+`php artisan webx:setup --no-theme` writes the layout, the header and the footer into
+`resources/views/components/`, styled by about eighty lines of `<style>` in the layout so that the
+first pages are readable without a build. The day the real design starts, delete that block,
+uncomment the `@vite([...])` line under it and write the design in `resources/css/app.css`. Its
+variables are your own; the `--site-*` tokens and the `--wx-*` variables of the panel are not
+loaded on such a site.
 
 ### A module's page
 
 A module prints its public pages with views of its own, and they carry semantic markup and a few
 `wx-<module>` classes. Two ways to change one, the first one first:
 
-1. **Style it from `app.css`** by element or by its class — nothing to publish, nothing to keep
+1. **Style it from `theme/src/css`** by its class — nothing to publish, nothing to keep
    up to date.
 2. **Change its markup**: copy the views into the site and edit the copy.
 
@@ -97,21 +101,21 @@ means, is in [Theming](./theming.md). Check the result in the dark theme too.
 
 ## Safe and not safe
 
-| Safe to edit                                                                            | Never edit                                                                                                         |
-| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `resources/css/`, `resources/js/app.js`                                                 | `vendor/` — `composer update` overwrites it; extend by configuration and published views instead                   |
-| `resources/views/` — the layout, the components, published copies in `vendor/` under it | `node_modules/` — `npm install` overwrites it; rebrand the panel through `--wx-*` instead                          |
-| `public/` — images, icons, fonts                                                        | `public/build/` and `public/hot` — written by the build                                                            |
-| `resources/js/admin.ts` **outside** the `// webx:` markers                              | the `// webx:imports`, `// webx:styles`, `// webx:modules` regions — `php artisan webx:panel --sync` rewrites them |
-| block types, in the panel or over MCP                                                   | a copy of a module in the site (a fork) — it stops getting fixes; patch and configure instead                      |
-| `AGENTS.md` under `## This project`                                                     | `AGENTS.md` between `<!-- webx:agents -->` markers — rewritten on every `webx:panel --sync`                        |
+| Safe to edit                                                                        | Never edit                                                                                                         |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `theme/` — tokens, CSS, copies of views; `resources/css/` on a site without a theme | `vendor/` — `composer update` overwrites it; extend by configuration and published views instead                   |
+| `resources/views/` — your own views, published module copies in `vendor/` under it  | `node_modules/` — `npm install` overwrites it; rebrand the panel through `--wx-*` instead                          |
+| `public/` — images, icons, fonts                                                    | `public/build/` and `public/hot` — written by the build                                                            |
+| `resources/js/admin.ts` **outside** the `// webx:` markers                          | the `// webx:imports`, `// webx:styles`, `// webx:modules` regions — `php artisan webx:panel --sync` rewrites them |
+| block types, in the panel or over MCP                                               | a copy of a module in the site (a fork) — it stops getting fixes; patch and configure instead                      |
+| `AGENTS.md` under `## This project`                                                 | `AGENTS.md` between `<!-- webx:agents -->` markers — rewritten on every `webx:panel --sync`                        |
 
 ## Seeing the change
 
 | What changed                                | How to see it                                                                                                                                              |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A view (`.blade.php`), the inline `<style>` | reload the page                                                                                                                                            |
-| `app.css`, `admin.css`, `admin.ts`          | the development server rebuilds as you save: `npm run dev` on a local site, the `vite` container under [Docker](./docker.md). Without it — `npm run build` |
+| `theme/src`, `admin.css`, `admin.ts`        | the development server rebuilds as you save: `npm run dev` on a local site, the `vite` container under [Docker](./docker.md). Without it — `npm run build` |
 | A block type                                | its preview in the panel, then publish it                                                                                                                  |
 | Anything, on the server                     | `npm run build` (in Docker: `docker compose up -d --build`)                                                                                                |
 
@@ -123,11 +127,11 @@ when the built front end is older than its sources ("has changed since the bundl
 1. Decide which look the request is about: the public site, a block, or the panel.
 2. Edit only what the "safe" column lists. Never `vendor/`, `node_modules/` or a `// webx:`
    region; never copy a module into the site.
-3. To change a module's page, try `app.css` first; publish its views only when the markup must
+3. To change a module's page, try `theme/src/css` first; publish its views only when the markup must
    change, and delete every published file you did not edit.
-4. Use only variables that exist: the site's own in `app.css`, `--wx-*` from `tokens.css` in the
+4. Use only variables that exist: `--site-*` on the public site, `--wx-*` from `tokens.css` in the
    panel. In a block, prefix every selector with `.b-<slug>` and use `@container`.
 5. Show the change: reload, or `npm run build`; run `php artisan webx:doctor`.
 6. Look at a phone width as well as a wide one; for the panel, the dark theme too.
-7. Commit what the site owns: `resources/`, `public/` (not `public/build`), `config/`, and the
+7. Commit what the site owns: `theme/`, `resources/`, `public/` (not `public/build`, `public/themes`), `config/`, and the
    block types after `php artisan webx:blocks:export`.

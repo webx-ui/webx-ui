@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
+use WebxUi\Themes\Console\MakeCommand;
 use WebxUi\Themes\Console\SyncCommand;
 use WebxUi\Themes\Contracts\Appearance;
 
@@ -56,7 +57,7 @@ class ThemeServiceProvider extends ServiceProvider
                 __DIR__.'/../config/webx-themes.php' => config_path('webx-themes.php'),
             ], 'webx-themes-config');
 
-            $this->commands([SyncCommand::class]);
+            $this->commands([MakeCommand::class, SyncCommand::class]);
         }
 
         // `var_export` rather than a literal class name: the compiled string has to carry the

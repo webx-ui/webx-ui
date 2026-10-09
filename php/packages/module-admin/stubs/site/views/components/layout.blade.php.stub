@@ -1,6 +1,9 @@
 {{--
     The document every public page of this site is printed in.
 
+    Written by `php artisan webx:setup --no-theme`: this site chose to have no theme, so the
+    layout, the header, the footer and the styles are its own files, and nothing updates them.
+
     The deal with the panel's modules is two lines long: a `head` slot and the default slot for
     the content. A module's view — a page, an article, a rubric — asks for this component by
     name (`config('webx-pages.layout')` and friends, which `php artisan webx:panel --sync`

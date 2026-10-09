@@ -367,9 +367,9 @@ final class PanelCommand extends Command
      *
      * A module that has a layout seam says so by carrying a `layout` key in its configuration,
      * and there is nothing else to declare: a package with no public half has no key, and one
-     * written before this existed keeps installing. The site's side of it is the component the
-     * skeleton writes — `resources/views/components/layout.blade.php`, which is `<x-layout>` —
-     * and without that file there is nothing to point at, so the modules keep printing their own
+     * written before this existed keeps installing. The site's side of it is `<x-layout>` —
+     * `components/layout.blade.php` from its theme or from its own `resources/views` — and
+     * without that view there is nothing to point at, so the modules keep printing their own
      * bare documents and this says so once.
      *
      * Never over a value somebody chose: a site that named its own layout, in the configuration
@@ -393,14 +393,17 @@ final class PanelCommand extends Command
             return;
         }
 
+        // The site's own file, or the one a theme brings: with `webx-themes.theme` set the
+        // chain is in the view paths, and `components/layout` lives in the theme it stands on.
         $layout = $files->exists($this->laravel->resourcePath('views/components/layout.blade.php'))
+            || $this->laravel->make('view')->exists('components.layout')
             ? 'layout'
             : null;
 
         if ($layout === null) {
             $this->components->twoColumnDetail(
                 'Layout',
-                'none at resources/views/components/layout.blade.php — public pages print their own document',
+                'no components/layout in resources/views or the theme — public pages print their own document',
             );
 
             return;
