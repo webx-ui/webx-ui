@@ -35,6 +35,11 @@ their guides when the question is about one of those.
   The resolver's spelling (routing's `Contracts\Spelling`) is bound to the same settings
   (`SeoSpelling`): an address the registry answers takes one 301, never two, and «keep as it is»
   is obeyed. «With a slash» is not offered: every link the site prints is written without one.
+- **Organization** markup on every page: name, logo and `sameAs` from the SEO tab, `telephone`
+  (E.164), `email`, `address` from the Contacts tab of `module-settings`, and its networks merged
+  into `sameAs`; with coordinates or opening hours on that tab it is a `LocalBusiness` with `geo`
+  and `openingHoursSpecification` (the special dates of the next two months included). There are
+  no phone or address fields of SEO's own.
 - **Public routes** `/robots.txt` (the `seo.robots-txt` setting; 404 while it is empty),
   `/sitemap.xml` and `/sitemap-{file}.xml`, one file per address type.
 - **Panel** module `seo` (group `system`); permissions `seo.view`, `seo.manage`; API under

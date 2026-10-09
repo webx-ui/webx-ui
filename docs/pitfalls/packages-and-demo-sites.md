@@ -83,6 +83,12 @@
 
 ## Worktree и pnpm
 
+- **Файл, скопированный «в стартовый сайт», оказывается в основном чекауте.** `vendor/webx-ui/*`
+  сайта, слинкованного с монорепой, — симлинки на `php/packages` **основного** чекаута, не
+  worktree: `cp dist/contacts.css <сайт>/vendor/webx-ui/widgets/dist/` из worktree тихо правит
+  чужой рабочий каталог, и `git status` основного чекаута показывает изменённый `dist/`. Свежая
+  сборка попадает на сайт только через коммит → ff в основной чекаут → `php artisan
+webx:theme:sync`. Случайную запись снимать `git -C <основной> checkout -- <файл>`.
 - **В worktree `node_modules` — симлинк на основной чекаут, и `pnpm` это не переживает.** Любой
   `pnpm <скрипт>` оттуда либо отказывается («Refusing to use task run state directory … because it
   is a symbolic link»), либо, решив, что сменился пакетный менеджер, идёт по симлинку и **сносит

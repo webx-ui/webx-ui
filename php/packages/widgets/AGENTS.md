@@ -55,6 +55,16 @@ open-on="click|hover" label open>` with slot `trigger` (its attributes go on the
   `webx:consent` on `document`. Google Consent Mode v2 default is in the head. Settings: the
   "Cookie" tab of `module-settings` (`consent.*`, also over MCP `settings_set`), otherwise
   `config/webx-widgets.php` (`php artisan vendor:publish --tag=webx-widgets-config`).
+- **Contacts** — `dist/contacts.js|css`, only where one stands; they read the Contacts tab of
+  `module-settings` (`contacts()`) and print nothing while it is empty.
+  `<x-webx-phones layout="dropdown|list" callback="<form>" compact placement>` — the main number a
+  `tel:` link in E.164 (shown as typed), the others in a dropdown, messengers as icons;
+  `<x-webx-hours layout="status|table">` — "Open until 19:00" in the site's time zone, the week
+  folded, worked out again in the browser every minute from words the server wrote;
+  `<x-webx-contact-button corner form :items>` — a round button in a corner, above the cookie
+  banner while it shows; `<x-webx-contact-bar form :breakpoint>` — "Call / Write / Request" on a
+  phone, no script; `<x-webx-socials>`; `<x-webx-icon name>` — networks, messengers (Simple Icons,
+  CC0) and `phone`, `chat`, `mail`, `clock`, `link`, `form`, `close`.
 - **Loading** — `Widgets::need('<name>')` (facade `WebxUi\Widgets\Facades\Widgets`) claims a
   widget's own `dist/<name>.js|css` for the page. `@webxTheme` prints a marker; the response gets
   the `<link>`s there and the `<script type="module">`s before `</body>`.
@@ -67,7 +77,9 @@ open-on="click|hover" label open>` with slot `trigger` (its attributes go on the
   `webx-consent__inner|text|title|body|policy|actions|button|customize`,
   `webx-consent-dialog__intro|gpc|list|item|label|switch|name|always|description|actions`,
   `webx-consent-link`; `webx-dropdown`, `--<placement>`, `__trigger|panel`, `is-open|is-flipped`;
-  `webx-form-dialog__header|title|close|body|done`, `is-sent`).
+  `webx-form-dialog__header|title|close|body|done`, `is-sent`;
+  `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-today`), `webx-contact-button__*`,
+  `webx-contact-bar__*`, `webx-socials__*`, `webx-icon` — listed in each view's header).
   `html.webx-js` once the runtime runs; `html.webx-scroll-locked` while a modal is open;
   `html.webx-header-sticky` while a header sticks (the page's scroll padding is its height).
 - **Local tokens** — `--webx-dialog-width`, `--webx-dialog-padding`, `--webx-dialog-backdrop`,
@@ -76,7 +88,8 @@ open-on="click|hover" label open>` with slot `trigger` (its attributes go on the
   `--webx-mobile-menu-padding`, `--webx-consent-z`, `--webx-consent-max-height`,
   `--webx-consent-padding`, `--webx-consent-bg`, `--webx-consent-color`,
   `--webx-consent-button-bg`, `--webx-consent-button-color`, `--webx-consent-font-size`,
-  `--webx-dropdown-offset`, `--webx-dropdown-min-width`; declared on `:root` from `--site-*`. `--webx-header-height` and
+  `--webx-dropdown-offset`, `--webx-dropdown-min-width`, `--webx-icon-size`,
+  `--webx-hours-*`, `--webx-contact-*`, `--webx-contact-bar-*`, `--webx-socials-size`; declared on `:root` from `--site-*`. `--webx-header-height` and
   `--webx-header-topbar-height` are kept live by the runtime — use them for `top` of anything
   else sticky.
 - **Words** — `webx-widgets::widgets.*` in en, ru, uk, de, pl, fr, es, it, pt, tr; every word
@@ -91,6 +104,7 @@ open-on="click|hover" label open>` with slot `trigger` (its attributes go on the
 | Another look of a widget                 | the same `.webx-<name>*` class in `theme/src/css` — it comes later in the cascade, no `!important` |
 | Logo in the middle, two rows in a header | `grid-template-areas` on `.webx-header__bar` in `theme/src/css`                                    |
 | Other markup of a component              | `theme/views/vendor/webx-widgets/components/<name>.blade.php`                                      |
+| A network's or a messenger's icon        | `theme/views/vendor/webx-widgets/icons/<name>.blade.php` — what goes inside a 24×24 `<svg>`        |
 | A word                                   | the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`                           |
 | A behaviour of the site's own            | `webx.widget('name', '[data-…]', (el) => cleanup)` in `theme/src/js/theme.js`                      |
 | Start widgets in HTML added later        | `webx.mount(container)`; before removing it, `webx.unmount(container)`                             |
@@ -110,6 +124,10 @@ open-on="click|hover" label open>` with slot `trigger` (its attributes go on the
 - Do not print a form of the inbox inside a dialog of your own for a button: link the button to
   `#webx-form-<slug>` — the page gets the form once, however many buttons lead to it.
 - Do not make "Accept all" bigger or brighter than "Reject all": they share one class on purpose.
+- Do not type a phone number, an address or a network into a template: it goes on the Contacts
+  tab, and the widgets and the SEO markup read it from there.
+- Do not format the hours or a time with `toLocaleString()` in a script of your own: it writes the
+  browser's way, not the page's language — `<x-webx-hours>` already carries the words.
 - Do not copy the runtime into the theme to change one behaviour: register your own widget.
 - Do not call `Widgets::need()` for the behaviours above to get them — the runtime is already on
   every page; `need()` matters for widgets with files of their own.

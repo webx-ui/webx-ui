@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+Contacts as data of the site. `module-settings` gets a standard **Contacts** tab — numbers with labels and messengers, e-mails, addresses with coordinates, opening hours as rows of days, special dates, the time zone, chats and networks — read through `contacts()` (`primaryPhone()`, `hours()->openNow()`, `addresses()`, `socials()`). A number is shown as typed and dialled in E.164; one without its country code is refused on save, in the panel and over MCP. `php artisan webx:settings:contacts --from=<key>` moves contacts a site kept under keys of its own. `module-seo` takes the organisation's telephone, e-mail, address, place and opening hours from the tab (a `LocalBusiness` once there is a place or hours) and merges its networks into `sameAs`. `webx-ui/widgets`: `<x-webx-phones>`, `<x-webx-hours>` (status in the site's time zone, brought up to date in the browser), `<x-webx-contact-button>`, `<x-webx-contact-bar>`, `<x-webx-socials>` and `<x-webx-icon>`, loaded only where they stand; `theme-default` shows them in the header, the footer and the corner, and its kitchen sink has a Contacts page.

@@ -39,7 +39,23 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   shortcode registry of `webx-ui/module-admin` — `[phone]` reads a setting or its own value, a
   phone prints as a `tel:` link, an e-mail as `mailto:`. Listed in `settings://content-rules`
   under `shortcodes`.
-- Demo content (`resources/demo`), the content rules included.
+- **Contacts** — the tab `contacts` of `settings.index` (cards `contacts-phones-card`,
+  `contacts-addresses-card`, `contacts-hours-card`, `contacts-channels-card`): `contacts.phones`
+  (rows `number`, `label` per language, `messengers` — whatsapp, telegram, viber, signal —
+  `primary`), `contacts.emails` (`email`, `label`), `contacts.addresses` (`address` per language,
+  `latitude`, `longitude`, `map`, `primary`), `contacts.hours` (`days` mon…sun, `opens`, `closes`;
+  closing earlier than opening runs past midnight), `contacts.hours-exceptions` (`date`, `label`,
+  `closed`, `opens`, `closes`), `contacts.timezone` (Region/City; empty — `app.timezone`),
+  `contacts.messengers` (`channel`, `url`, `label`), `contacts.socials` (`network`, `url`,
+  `label` for `other`). Read through `contacts()` (`WebxUi\Settings\Contacts\Contacts`):
+  `phones()`, `primaryPhone()` (`number` as typed, `e164`, `href` — the `tel:` link), `emails()`,
+  `addresses()`, `primaryAddress()` (`mapUrl()`), `hours()` (`openNow()`, `status()`, `rows()`,
+  `upcoming()`), `messengers()`, `chats()`, `socials()`. A number without its country code, a
+  link that is not one, an unknown time zone are refused on save — panel and MCP alike.
+  `php artisan webx:settings:contacts --from=<key> [--as=phones|emails|addresses] [--dry-run]`
+  moves contacts kept under a key of the site's own; `webx-settings.contacts.legacy` names such
+  keys so they are read until then.
+- Demo content (`resources/demo`), the content rules and the contacts included.
 
 ## Change it without forking
 
@@ -49,7 +65,7 @@ picture fields `webx-ui/module-media`, the languages of a localized value
 | Read it on the site                   | `settings('<tab>.<field>', 'fallback')` (e.g. `settings('branding.logo')`) — current language, media resolved to its address                    |
 | A setting per language                | `"localized": true` on the field in the patch                                                                                                   |
 | A content rule of the site's own      | a patch on `settings.content` adding a field under `content-card` named `content.<name>`; it comes out in `more`                                |
-| A phone, an e-mail typed once         | «Settings» → «Shortcodes»: a row `phone` reading `contacts.phone` (or holding the value); content says `[phone]`                                |
+| A phone, an e-mail typed once         | «Settings» → «Contacts»; in a template `contacts()->primaryPhone()`, in content a shortcode row holding the value — `[phone]`                   |
 | React when settings change            | listen to `WebxUi\Settings\Events\SettingsSaved`                                                                                                |
 | The panel's brand from somewhere else | bind your own `WebxUi\Admin\Contracts\BrandingSource`                                                                                           |
 | No cache while debugging              | `WEBX_SETTINGS_CACHE=false`                                                                                                                     |
