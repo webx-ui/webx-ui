@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-catalog-stock",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Stock statuses for the catalogue of the WebX UI admin panel: in stock, out of stock, on order — a reference book, a field of the product form, a column and a filter of the list.",
   "license": "MIT",
   "type": "module",

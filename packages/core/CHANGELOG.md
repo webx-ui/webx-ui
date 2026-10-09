@@ -1,5 +1,21 @@
 # @webx-ui/core
 
+## 0.40.0
+
+### Minor Changes
+
+- f2556af: `WxRepeater` takes `confirmRemove`: the bin asks in a popover first (`removeQuestion`,
+  `cancelLabel`). A repeater on a screen asks by default, in the panel's words
+  (`webx-admin::screens.repeater.remove-question` and `.cancel`), and stops at a field's width
+  unless its rows lay fields side by side or hold an editor — a `TypeEntry`'s `wide` may now be a
+  function of the node.
+
+### Patch Changes
+
+- f2556af: `WxSegmented` stays as wide as its options inside a column that stretches its children — a form
+  field's control is one, and the track ran the width of the input under it — and its labels no
+  longer cut off descenders such as the tail of a "g". `block` still fills the width.
+
 ## 0.39.0
 
 ### Minor Changes
