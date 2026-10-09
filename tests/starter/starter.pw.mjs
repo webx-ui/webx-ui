@@ -2237,3 +2237,356 @@ test.describe('map', () => {
     await context.close()
   })
 })
+
+test.describe('page tools', () => {
+  const PATH = '/kitchen-sink/page-tools'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const CAPTION = 'Plans compared, per month'
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  // Anything not the site is refused and written down: share is links, not a network's script.
+  async function outside(context) {
+    const asked = []
+    await context.route(
+      (url) => url.protocol.startsWith('http') && url.origin !== site,
+      (route) => {
+        asked.push(route.request().url())
+        return route.abort()
+      },
+    )
+    return asked
+  }
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  // Each wrapped table: its scroller, whether it scrolls, its shadows, where its caption stands.
+  const tables = (page) =>
+    page.locator('[data-webx-table]').evaluateAll((all) =>
+      all.map((table) => {
+        const scroller = table.querySelector('.webx-table__scroller')
+        const frame = table.querySelector('.webx-table__frame')
+        const caption = table.querySelector('.webx-table__caption')
+        const box = scroller.getBoundingClientRect()
+        const block = table.closest('[data-wx-block]').getBoundingClientRect()
+        return {
+          caption: caption?.textContent ?? null,
+          captionAbove: caption ? caption.getBoundingClientRect().bottom <= box.top + 0.5 : null,
+          scrolls: scroller.scrollWidth > scroller.clientWidth + 1,
+          tabindex: scroller.getAttribute('tabindex'),
+          left: frame.classList.contains('is-more-left'),
+          right: frame.classList.contains('is-more-right'),
+          inside: box.left >= block.left - 0.5 && box.right <= block.right + 0.5,
+        }
+      }),
+    )
+
+  test('a table of prose scrolls inside its frame, its caption stands still, the shadow follows', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const context = await browser.newContext({ viewport: { width, height: 900 } })
+      await context.addCookies([answered])
+      const page = await context.newPage()
+      await page.goto(PATH)
+      await still(page)
+
+      const found = await tables(page)
+      expect(found.map((t) => t.caption)).toEqual([CAPTION, CAPTION, 'Opening of the office', null])
+      for (const t of found) {
+        expect(t.inside, `${width}: the scroller stays in its block`).toBe(true)
+        if (t.caption) expect(t.captionAbove).toBe(true)
+        // A table that scrolls can be reached by the keyboard; one that fits is no tab stop.
+        expect(t.tabindex).toBe(t.scrolls ? '0' : null)
+        expect(t.left).toBe(false)
+        expect(t.right).toBe(t.scrolls)
+      }
+      // Nine columns do not fit in a phone, nor in 20rem; the office's hours do.
+      expect(found[0].scrolls).toBe(width === 375)
+      expect(found[1].scrolls).toBe(true)
+      expect(found[2].scrolls).toBe(false)
+      expect(await sideways(page)).toBe(0)
+
+      // The caption names the region; the table without one is called Table.
+      await expect(page.getByRole('region', { name: CAPTION })).toHaveCount(2)
+      await expect(page.getByRole('region', { name: 'Table', exact: true })).toHaveCount(1)
+
+      // Scrolled by the keyboard: the caption does not move, the shadows change sides.
+      const wide = page.getByRole('region', { name: CAPTION }).nth(1)
+      const caption = page.locator('.webx-table__caption').nth(1)
+      // Focusing scrolls the page to the table: the caption is measured against its scroller.
+      await wide.focus()
+      const before = await caption.boundingBox()
+      await page.keyboard.press('ArrowRight')
+      await expect.poll(() => wide.evaluate((el) => Math.round(el.scrollLeft))).toBeGreaterThan(0)
+      await expect.poll(async () => (await tables(page))[1]).toMatchObject({ left: true })
+      await wide.evaluate((el) => (el.scrollLeft = el.scrollWidth))
+      await expect
+        .poll(async () => (await tables(page))[1])
+        .toMatchObject({ left: true, right: false })
+      const after = await caption.boundingBox()
+      expect(after.x).toBe(before.x)
+      expect(after.y + after.height).toBeLessThanOrEqual((await wide.boundingBox()).y + 0.5)
+      await context.close()
+    }
+  })
+
+  test('cards come in as they reach the screen, one after another, and nothing above the fold is hidden', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const cards = page.locator('.b-showcase-page-tools__card')
+    await expect(cards).toHaveCount(24)
+    // The screen the page opened on hides nothing; every card is below it, and waits.
+    const pending = await page.locator('.is-pending').evaluateAll((all) =>
+      all.map((el) => ({
+        top: el.getBoundingClientRect().top,
+        opacity: getComputedStyle(el).opacity,
+      })),
+    )
+    expect(pending).toHaveLength(24)
+    for (const { top, opacity } of pending) {
+      expect(top).toBeGreaterThanOrEqual(900)
+      expect(opacity).toBe('0')
+    }
+
+    // The staggered row: its cards come one after another, in their order.
+    const stagger = page
+      .locator('[data-wx-block="showcase-page-tools"]')
+      .filter({ has: page.getByRole('heading', { name: 'Stagger', exact: true }) })
+      .locator('.b-showcase-page-tools__card')
+    await stagger.first().evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    await expect
+      .poll(() =>
+        stagger.evaluateAll((all) => all.filter((el) => el.matches('.is-pending')).length),
+      )
+      .toBe(0)
+
+    // Down the page a screen at a time: once in, each is a plain card again, fully there.
+    const height = await page.evaluate(() => document.documentElement.scrollHeight)
+    for (let y = 0; y <= height; y += 400) {
+      await page.evaluate((top) => window.scrollTo(0, top), y)
+      await page.waitForTimeout(60)
+    }
+    await expect.poll(() => page.locator('.webx-reveal').count(), { timeout: 5000 }).toBe(0)
+    expect(
+      await cards.evaluateAll((all) => all.every((el) => getComputedStyle(el).opacity === '1')),
+    ).toBe(true)
+    await context.close()
+  })
+
+  test('the cards of a staggered row are delayed one after another', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const stagger = page
+      .locator('[data-wx-block="showcase-page-tools"]')
+      .filter({ has: page.getByRole('heading', { name: 'Stagger', exact: true }) })
+      .locator('.b-showcase-page-tools__card')
+    // Read the delays as the row comes in, before each card settles and drops its own.
+    await page.evaluate(() => {
+      window.__delays = []
+      const seen = new MutationObserver((records) => {
+        for (const r of records) {
+          const delay = r.target.style.getPropertyValue('--webx-reveal-delay')
+          if (delay) window.__delays.push(delay)
+        }
+      })
+      for (const el of document.querySelectorAll('.b-showcase-page-tools__card'))
+        seen.observe(el, { attributes: true, attributeFilter: ['style'] })
+    })
+    await stagger.first().evaluate((el) => el.scrollIntoView({ block: 'center' }))
+    await expect.poll(() => page.evaluate(() => window.__delays.length)).toBeGreaterThan(0)
+    expect(await page.evaluate(() => window.__delays)).toContain(
+      'calc(1 * var(--webx-reveal-stagger))',
+    )
+    await context.close()
+  })
+
+  test('with reduced motion and without JavaScript every card is there at once', async ({
+    browser,
+  }) => {
+    for (const options of [{ reducedMotion: 'reduce' }, { javaScriptEnabled: false }]) {
+      const context = await browser.newContext({
+        viewport: { width: 1280, height: 900 },
+        ...options,
+      })
+      await context.addCookies([answered])
+      const page = await context.newPage()
+      await page.goto(PATH)
+      await page.waitForLoadState('networkidle')
+
+      const shown = await page
+        .locator('.b-showcase-page-tools__card')
+        .evaluateAll((all) =>
+          all.map((el) => (el.matches('.is-pending') ? 'pending' : getComputedStyle(el).opacity)),
+        )
+      expect(shown, JSON.stringify(options)).toEqual(Array(24).fill('1'))
+      await context.close()
+    }
+  })
+
+  test('back to top comes two screens down, above the cookie banner, and takes the page and the focus up', async ({
+    browser,
+  }) => {
+    // No answer yet: the banner is on the screen, and the button stands above it.
+    const context = await browser.newContext({ viewport: { width: 375, height: 812 } })
+    const page = await context.newPage()
+    await page.goto(PATH)
+    const button = page.locator('.webx-back-to-top')
+    const banner = page.locator('[data-webx-consent-banner]')
+    await expect(banner).toBeVisible()
+    await expect(button).toBeHidden()
+
+    await page.evaluate(() => window.scrollTo(0, window.innerHeight * 2 - 10))
+    await page.waitForTimeout(150)
+    await expect(button).toBeHidden()
+    await page.evaluate(() => window.scrollTo(0, window.innerHeight * 2 + 40))
+    await expect(button).toBeVisible()
+    await still(page)
+
+    const box = await button.boundingBox()
+    const bannerBox = await banner.boundingBox()
+    expect(box.width).toBeGreaterThanOrEqual(44)
+    expect(box.height).toBeGreaterThanOrEqual(44)
+    expect(box.x + box.width).toBeLessThanOrEqual(375)
+    expect(box.y + box.height, 'above the banner').toBeLessThanOrEqual(bannerBox.y)
+
+    // The theme's quick contact stands in the same corner: the button stays above it too, once
+    // that has risen over the banner — and after it settles back when the banner goes.
+    const contact = page.locator('[data-webx-contact-button] .webx-contact-button__toggle')
+    const clear = async () => {
+      const b = await button.boundingBox()
+      const c = (await contact.count()) ? await contact.boundingBox() : null
+      return c === null || b.x + b.width <= c.x || b.y + b.height <= c.y
+    }
+    await expect.poll(clear).toBe(true)
+
+    await page.getByRole('button', { name: 'Reject all' }).click()
+    await expect(banner).toBeHidden()
+    await expect.poll(clear).toBe(true)
+    await expect
+      .poll(async () => {
+        const b = await button.boundingBox()
+        const c = (await contact.count()) ? await contact.boundingBox() : null
+        return Math.round((c ? c.y : 812) - b.y - b.height)
+      })
+      .toBe(16)
+
+    // From the keyboard: up, and the next Tab is the skip link at the top.
+    await button.focus()
+    await page.keyboard.press('Enter')
+    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 5000 }).toBe(0)
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true)
+    await page.keyboard.press('Tab')
+    expect(await page.evaluate(() => document.activeElement.textContent.trim())).toBe(
+      'Skip to content',
+    )
+    await expect(button).toBeHidden()
+    await context.close()
+  })
+
+  test('share is links of the page’s own address, copies it, and on a phone opens the share sheet', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      viewport: { width: 375, height: 812 },
+    })
+    await context.addCookies([answered])
+    const asked = await outside(context)
+    const page = await context.newPage()
+    await page.goto(PATH)
+    await page.waitForLoadState('networkidle')
+
+    const href = new URL(PATH, site).href
+    const address = encodeURIComponent(href)
+    const rows = page.locator('.webx-share')
+    await expect(rows).toHaveCount(2)
+    const first = rows.first()
+    await expect(first.locator('a.webx-share__link')).toHaveCount(6)
+    expect(await first.locator('a[href*="facebook.com/sharer"]').getAttribute('href')).toBe(
+      `https://www.facebook.com/sharer/sharer.php?u=${address}`,
+    )
+    expect(await first.locator('a[href^="https://x.com/intent/post"]').getAttribute('href')).toBe(
+      `https://x.com/intent/post?url=${address}&text=Share%20this%20page`,
+    )
+    // Each link 44px, every row inside its block — the narrow one wraps.
+    for (const row of await rows.all()) {
+      const block = await row.locator('xpath=ancestor::*[@data-wx-block][1]').boundingBox()
+      for (const link of await row.locator('.webx-share__link').all()) {
+        const box = await link.boundingBox()
+        expect(box.width).toBeGreaterThanOrEqual(44)
+        expect(box.x + box.width).toBeLessThanOrEqual(block.x + block.width + 0.5)
+      }
+    }
+    expect(await sideways(page)).toBe(0)
+
+    await first.getByRole('button', { name: 'Copy link' }).click()
+    // The starter site is plain http, where a page has no clipboard API: this is the old way
+    // through a selection, which every browser still takes.
+    await expect(first.locator('.webx-share__status')).toHaveText('Link copied')
+    expect(asked, 'no network is asked for anything').toEqual([])
+    await context.close()
+
+    // A phone: one Share button, the system's sheet with the page's address.
+    const phone = await browser.newContext({
+      viewport: { width: 375, height: 812 },
+      hasTouch: true,
+      isMobile: true,
+    })
+    await phone.addCookies([answered])
+    await phone.addInitScript(() => {
+      window.__shared = []
+      navigator.share = (data) => {
+        window.__shared.push(data)
+        return Promise.resolve()
+      }
+    })
+    const mobile = await phone.newPage()
+    await mobile.goto(PATH)
+    const row = mobile.locator('.webx-share').first()
+    await expect(row.locator('.webx-share__list')).toBeHidden()
+    await row.getByRole('button', { name: 'Share' }).click()
+    expect(await mobile.evaluate(() => window.__shared)).toEqual([
+      { url: href, title: 'Share this page' },
+    ])
+    await phone.close()
+  })
+
+  test('without JavaScript the tables still scroll, copy is gone, back to top is a link', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 375, height: 800 },
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const found = await tables(page)
+    expect(found).toHaveLength(4)
+    expect(found[0].scrolls).toBe(true)
+    expect(found[0].tabindex).toBe('0')
+    expect(await sideways(page)).toBe(0)
+    await expect(page.locator('.webx-share__link--copy').first()).toBeHidden()
+    await expect(page.locator('a.webx-share__link').first()).toBeVisible()
+    const top = page.locator('a.webx-back-to-top')
+    await expect(top).toBeVisible()
+    expect(await top.getAttribute('href')).toBe('#top')
+    expect(await top.evaluate((el) => getComputedStyle(el).position)).toBe('static')
+    await context.close()
+  })
+})
