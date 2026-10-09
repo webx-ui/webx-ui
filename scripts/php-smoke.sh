@@ -1224,13 +1224,11 @@ HOME_PAGE="$(curl -s "$SITE_BASE/")"
 
 printf '%s' "$HOME_PAGE" | grep -q '<!doctype html>' || fail "the home page is not a document: $HOME_PAGE"
 # The layout seam, both halves of it: the header around the module's view, and a metatag that
-# only reaches the head through @stack. The header is the demo's, made of blocks: the skeleton
-# declares its header and footer as regions, and the demo publishes both — so the stylesheet of
-# the region's own bundle stands in <body>, before it, where `@webxBlocks` in the head never
-# sees it.
-printf '%s' "$HOME_PAGE" | grep -q 'class="b-demo-header"' || fail 'the home page did not get the header region the demo published'
-printf '%s' "$HOME_PAGE" | sed -n '/<body/,$p' | grep -qE '<link rel="stylesheet" href="[^"]+/[a-f0-9]{16}\.css"><header class="b-demo-header"' \
-    || fail 'the header region did not print its own stylesheet in <body>'
+# only reaches the head through @stack. The header is the theme's — the region's fallback, the
+# header widget: with a theme the demo leaves the regions empty rather than cover it with a
+# header of blocks (a region's own stylesheet in <body> is module-blocks' test to hold).
+printf '%s' "$HOME_PAGE" | grep -q 'data-webx-header=""' || fail 'the home page did not get the header of the theme'
+printf '%s' "$HOME_PAGE" | grep -q 'b-demo-header' && fail 'the demo covered the theme header with a header of blocks'
 printf '%s' "$HOME_PAGE" | grep -q '<title>' || fail 'the SEO card did not reach the head'
 printf '%s' "$HOME_PAGE" | grep -q '<style data-webx-theme>' || fail 'the site tokens did not reach the head'
 printf '%s' "$HOME_PAGE" | grep -qE '<link rel="stylesheet" href="[^"]*/themes/webx-ui/theme-default/[a-f0-9]{12}/theme\.css">' \
@@ -1238,7 +1236,7 @@ printf '%s' "$HOME_PAGE" | grep -qE '<link rel="stylesheet" href="[^"]*/themes/w
 # theme-default brings webx-ui/widgets; their runtime is on every page, its script before </body>.
 printf '%s' "$HOME_PAGE" | grep -qE '<script type="module" src="[^"]*/themes/webx-ui/widgets/[a-f0-9]{12}/runtime\.js"></script>' \
     || fail 'the widgets runtime did not reach the page'
-note 'the demo home page renders inside the theme layout: a header of blocks, the tokens, the head filled in, the widgets runtime'
+note 'the demo home page renders inside the theme layout: its header widget, the tokens, the head filled in, the widgets runtime'
 
 expect 200 "$(status "$SITE_BASE/")" 'GET /'
 

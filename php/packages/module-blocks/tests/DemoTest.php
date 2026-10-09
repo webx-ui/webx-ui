@@ -18,6 +18,8 @@ use WebxUi\Menu\Models\MenuItem;
 use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Settings\Settings;
 use WebxUi\Settings\SettingsServiceProvider;
+use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\ThemeManifest;
 
 /**
  * The demo content: three types to build pages out of, and — where the layout declares them — a
@@ -140,6 +142,19 @@ final class DemoTest extends RegionTestCase
         $this->assertSame(0, Region::query()->count());
         $this->assertFalse(Block::query()->where('slug', 'demo-header')->exists());
         $this->assertCount(1, $ledger->takeNotes());
+    }
+
+    #[Test]
+    public function with_a_theme_the_regions_are_left_to_its_header_and_footer(): void
+    {
+        $this->app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('acme/theme', __DIR__, false)]));
+
+        $ledger = $this->seeded();
+
+        $this->assertSame(0, Region::query()->count());
+        $this->assertFalse(Block::query()->where('slug', 'demo-header')->exists());
+        $this->assertTrue(Block::query()->where('slug', 'hero')->exists());
+        $this->assertStringContainsString('The theme draws the header', implode(' ', $ledger->takeNotes()));
     }
 
     private function seeded(): DemoLedger

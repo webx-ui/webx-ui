@@ -18,18 +18,33 @@ final class ThemeDemo
 {
     public static function directory(string $module): ?string
     {
-        $container = Container::getInstance();
-
-        if (! class_exists(ThemeChain::class) || ! $container->bound(ThemeChain::class)) {
-            return null;
-        }
-
-        foreach ($container->make(ThemeChain::class)->layers as $layer) {
+        foreach (self::chain()?->layers ?? [] as $layer) {
             if (is_dir($layer->path.'/demo/'.$module)) {
                 return $layer->path.'/demo/'.$module;
             }
         }
 
         return null;
+    }
+
+    /**
+     * The site prints its pages through a theme. Its layout already has a header and a footer —
+     * the regions' fallbacks — so a module's demo block in those regions would cover the very
+     * thing the theme is there to show.
+     */
+    public static function themed(): bool
+    {
+        return (self::chain()?->layers ?? []) !== [];
+    }
+
+    private static function chain(): ?ThemeChain
+    {
+        $container = Container::getInstance();
+
+        if (! class_exists(ThemeChain::class) || ! $container->bound(ThemeChain::class)) {
+            return null;
+        }
+
+        return $container->make(ThemeChain::class);
     }
 }
