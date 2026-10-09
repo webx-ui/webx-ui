@@ -92,13 +92,39 @@
                       }
                     },
                     {
+                      "id": "shortcode-source",
+                      "type": "wx-segmented",
+                      "name": "source",
+                      "label": "trans::webx-settings::screen.shortcode-source",
+                      "default": "value",
+                      "props": {
+                        "options": [
+                          {
+                            "value": "value",
+                            "label": "trans::webx-settings::screen.shortcode-source-value"
+                          },
+                          {
+                            "value": "setting",
+                            "label": "trans::webx-settings::screen.shortcode-source-setting"
+                          }
+                        ]
+                      }
+                    },
+                    {
                       "id": "shortcode-key",
-                      "type": "wx-input",
+                      "type": "wx-autocomplete",
                       "name": "key",
                       "label": "trans::webx-settings::screen.shortcode-key",
                       "help": "trans::webx-settings::screen.shortcode-key-help",
+                      "visible": {
+                        "when": "source",
+                        "is": "setting"
+                      },
                       "props": {
-                        "maxlength": 120
+                        "openOnFocus": true,
+                        "clearable": true,
+                        "teleport": true,
+                        "placeholder": "contacts.phone"
                       }
                     },
                     {
@@ -108,6 +134,10 @@
                       "label": "trans::webx-settings::screen.shortcode-value",
                       "help": "trans::webx-settings::screen.shortcode-value-help",
                       "localized": true,
+                      "visible": {
+                        "when": "source",
+                        "not": "setting"
+                      },
                       "props": {
                         "maxlength": 500
                       }

@@ -33,7 +33,9 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   (`languages`, `primary`, `tone`, `donts`, `notes`, `more`, `empty`); the MCP server's
   instructions point every agent at it.
 - **Data shortcodes** `WebxUi\Settings\DataShortcodes`: the tab `shortcodes` of `settings.index`
-  (repeater `shortcodes-data`, key `shortcodes.data`, rows of `name`, `key`, `value`) feeds the
+  (repeater `shortcodes-data`, key `shortcodes.data`, rows of `name`, `source` — `setting` or
+  `value` — `key`, `value`; a row saved before `source` existed reads a filled-in `key` as
+  `setting`, and a `key` the settings do not have is refused on save) feeds the
   shortcode registry of `webx-ui/module-admin` — `[phone]` reads a setting or its own value, a
   phone prints as a `tel:` link, an e-mail as `mailto:`. Listed in `settings://content-rules`
   under `shortcodes`.

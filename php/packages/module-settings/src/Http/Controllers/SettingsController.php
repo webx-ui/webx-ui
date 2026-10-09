@@ -10,6 +10,7 @@ use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Settings\DataShortcodes;
 use WebxUi\Settings\Settings;
 
 /**
@@ -51,6 +52,7 @@ final class SettingsController
             static fn (string $permission): bool => $user instanceof HasPermissions && $user->hasPermission($permission),
         );
 
+        app(DataShortcodes::class)->check($stored);
         $settings->save($stored);
 
         return ApiResponse::data(['values' => $this->described($settings, $screen)]);
@@ -65,7 +67,12 @@ final class SettingsController
     private function described(Settings $settings, string $screen): array
     {
         $keys = array_column(app(ScreenRegistry::class)->fields($screen), 'name');
+        $values = array_intersect_key($settings->raw(), array_flip($keys));
 
-        return array_intersect_key($settings->raw(), array_flip($keys));
+        if (array_key_exists(DataShortcodes::KEY, $values)) {
+            $values[DataShortcodes::KEY] = DataShortcodes::withSources($values[DataShortcodes::KEY]);
+        }
+
+        return $values;
     }
 }
