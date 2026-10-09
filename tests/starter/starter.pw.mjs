@@ -275,9 +275,10 @@ test.describe('cookie consent', () => {
     await page.route(`${THIRD}/**`, (route) =>
       route.fulfill({ body: '<p>third party</p>', contentType: 'text/html' }),
     )
+    const origin = new URL(test.info().project.use.baseURL).origin
     const outside = []
     page.on('request', (request) => {
-      if (!request.url().startsWith(new URL(PATH, page.url()).origin)) outside.push(request.url())
+      if (new URL(request.url()).origin !== origin) outside.push(request.url())
     })
     return outside
   }

@@ -27,6 +27,8 @@
   container-type: inline-size;
   max-height: var(--webx-consent-max-height);
   display: grid;
+  /* A row that may shrink: an implicit auto row would grow past max-height and push the buttons off screen. */
+  grid-template-rows: minmax(0, 1fr);
   padding: var(--webx-consent-padding) var(--site-gutter);
   border-top: 1px solid var(--site-color-border);
   background: var(--webx-consent-bg);
