@@ -21,6 +21,8 @@ use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
 use WebxUi\Settings\SettingsServiceProvider;
+use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\WidgetsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -42,6 +44,9 @@ abstract class TestCase extends Orchestra
             MediaServiceProvider::class,
             SettingsServiceProvider::class,
             SeoServiceProvider::class,
+            // The product page plays its videos through `<x-webx-video>` (§6 of the video spec).
+            ThemeServiceProvider::class,
+            WidgetsServiceProvider::class,
             CatalogServiceProvider::class,
         ];
     }

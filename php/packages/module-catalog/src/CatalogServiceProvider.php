@@ -58,6 +58,7 @@ use WebxUi\Catalog\Filter\FilterSerializer;
 use WebxUi\Catalog\Filter\FilterUrls;
 use WebxUi\Catalog\Filter\SegmentSerializer;
 use WebxUi\Catalog\Gallery\Gallery;
+use WebxUi\Catalog\Gallery\Video\PlayedByWidgets;
 use WebxUi\Catalog\Gallery\Video\VideoProviders;
 use WebxUi\Catalog\Gallery\Video\YouTubeProvider;
 use WebxUi\Catalog\Http\Controllers\StorefrontController;
@@ -98,6 +99,7 @@ use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Rendering\SeoSources;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
 use WebxUi\Seo\Sitemap\SitemapSources;
+use WebxUi\Widgets\Video\VideoProviders as PlayedProviders;
 
 /**
  * The core of the catalogue: products, a tree of categories, the gallery, the engine and the
@@ -474,6 +476,17 @@ class CatalogServiceProvider extends ServiceProvider
     private function registerVideo(): void
     {
         $this->app->make(VideoProviders::class)->register(new YouTubeProvider);
+
+        // The product page plays through the widgets' `<x-webx-video>`, behind the consent: a
+        // provider registered only here is handed over, read when the page first asks — by then
+        // every satellite has registered its own.
+        $this->callAfterResolving(PlayedProviders::class, function (PlayedProviders $played): void {
+            foreach ($this->app->make(VideoProviders::class)->all() as $provider) {
+                if (! $played->has($provider->key())) {
+                    $played->register(new PlayedByWidgets($provider));
+                }
+            }
+        });
 
         $this->app->make(UploadPurposes::class)->register(
             Gallery::UPLOAD_PURPOSE,
