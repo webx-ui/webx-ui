@@ -16,7 +16,7 @@ theme/                   ← the site's local theme
 
 > Under way: the loading, the runtime with the light behaviours, the mobile menu, the header, cookie
 > consent, the dropdown, contacts, the language switcher, the slider, the lightbox and the
-> gallery and logos blocks are here; video and maps arrive in the next releases.
+> gallery and logos blocks and the video are here; the video block and maps arrive in the next releases.
 
 ## What is in it
 
@@ -46,6 +46,23 @@ theme/                   ← the site's local theme
 
 Without JavaScript: the disclosure's panel is shown, the dialog opens through `:target` from a link
 to `#<id>`, the tabs are headings above their panels, the accordion is plain `<details>`.
+
+## Video
+
+```blade
+<x-webx-video src="https://www.youtube.com/watch?v=…" :poster="$picture" title="Our workshop" />
+<x-webx-video src="https://vimeo.com/…" ratio="4:3" />
+<x-webx-video :file="$media" :poster="$picture" />
+```
+
+A YouTube or Vimeo video is a poster and a play button; the player (from `youtube-nocookie.com`,
+Vimeo with `dnt=1`) goes in only on a click. Until the visitor agrees to `media` the server prints a
+placeholder instead — the poster, a line saying where the video loads from, **Load** (this one) and
+**Always load videos** (the consent, without a reload) — and the page asks the provider for
+nothing. The poster is always the site's: the one given, or the video's preview, which the site
+fetches once into its media library (folder "Video posters") after the first page that shows the
+video. A file of the site is a `<video preload="none">` with no consent to ask for. The frame keeps
+its ratio (16/9 unless told) before anything loads; without JavaScript the video is a link.
 
 ## Blocks
 
