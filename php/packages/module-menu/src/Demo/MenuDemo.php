@@ -66,6 +66,11 @@ final class MenuDemo
             return;
         }
 
+        // The top of what was created: a theme's showcase brings pages under pages, and a header
+        // listing every one of them flat is a site map, not a menu.
+        $nested = $source->model()::query()->whereKey($pages)->whereIn('parent_id', $pages)->pluck('id')->map(fn ($id) => (string) $id)->all();
+        $pages = array_values(array_filter($pages, fn (int|string $id): bool => ! in_array((string) $id, $nested, true)));
+
         $document = $this->read();
 
         $this->header($pages, is_array($document['header'] ?? null) ? $document['header'] : [], $ledger);

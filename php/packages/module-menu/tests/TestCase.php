@@ -79,6 +79,8 @@ abstract class TestCase extends Orchestra
 
         Schema::create('things', function (Blueprint $table): void {
             $table->id();
+            // A page sits under a page; the demo puts only the top of what it made in the menus.
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->json('title')->nullable();
             $table->string('slug')->default('');
             $table->boolean('published')->default(true);

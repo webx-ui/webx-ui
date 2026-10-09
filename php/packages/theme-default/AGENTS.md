@@ -22,7 +22,12 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 - **Classes** (the contract a local theme restyles): `site` on `<body>`, `site-container`,
   `site-skip`, `site-header`, `site-header__inner|title|nav|link`, `site-main`, `site-bleed` (a
   direct child of `<main>` that spans the page), `site-footer`,
-  `site-footer__inner|nav|link|copy`, `site-prose` (prose typography outside `<main>`).
+  `site-footer__inner|nav|link|copy`, `site-prose` (prose typography outside `<main>`, and
+  the muted colours of quotes, captions and `small` inside a block, which otherwise keep the
+  block's own colour).
+- **`demo/pages/`** — the showcase ("Kitchen sink" and the pages under it), seeded by
+  `webx:demo` beside the pages demo and removed with it. Its blocks use only the demo block types
+  (`hero`, `text`, `columns`).
 - **`src/css/`** — `base.css`, `shell.css`, `prose.css`, joined by `theme.css`; every selector
   inside `:where()` (no specificity). **`dist/theme.css`** — the committed build that
   `webx:theme:sync` publishes.

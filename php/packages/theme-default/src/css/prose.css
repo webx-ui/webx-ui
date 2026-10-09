@@ -146,6 +146,7 @@
  * inside one only where the block asks for it with `site-prose`. Everything that sets a
  * background above sets its text colour with it, so those pairs read the same anywhere.
  */
-:where(.site-main, .site-prose) :where(blockquote, figcaption, small):where(:not([data-wx-block] *), .site-prose *) {
+:where(.site-main, .site-prose)
+  :where(blockquote, figcaption, small):where(:not([data-wx-block] *), .site-prose *) {
   color: var(--site-color-text-muted);
 }

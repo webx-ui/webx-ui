@@ -33,6 +33,28 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
+    public function pages_under_a_created_page_stay_out_of_the_menus(): void
+    {
+        $ledger = $this->seeded();
+        $ledger->forModule('pages');
+        $showcase = $this->thing('kitchen-sink', 'Kitchen sink');
+        $ledger->created($showcase, 'kitchen-sink');
+        $child = $this->thing('long-words', 'Long words');
+        $child->parent_id = $showcase->id;
+        $child->save();
+        $ledger->created($child, 'long-words');
+        $ledger->forModule('menu');
+
+        $this->app->make(MenuDemo::class)->seed($ledger);
+
+        $this->assertSame(
+            [$this->tree('header')[0]->entity_id, $showcase->id],
+            array_map(fn (MenuItem $item) => $item->entity_id, array_slice($this->tree('header'), 0, 2)),
+        );
+        $this->assertSame(0, MenuItem::query()->where('entity_id', $child->id)->count());
+    }
+
+    #[Test]
     public function the_demo_waits_for_the_pages(): void
     {
         $this->assertSame(['pages'], $this->app->make(MenuModule::class)->requires());
