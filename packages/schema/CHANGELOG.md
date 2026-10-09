@@ -1,5 +1,21 @@
 # @webx-ui/schema
 
+## 0.9.0
+
+### Minor Changes
+
+- f2556af: `WxRepeater` takes `confirmRemove`: the bin asks in a popover first (`removeQuestion`,
+  `cancelLabel`). A repeater on a screen asks by default, in the panel's words
+  (`webx-admin::screens.repeater.remove-question` and `.cancel`), and stops at a field's width
+  unless its rows lay fields side by side or hold an editor — a `TypeEntry`'s `wide` may now be a
+  function of the node.
+
+### Patch Changes
+
+- Updated dependencies [f2556af]
+- Updated dependencies [f2556af]
+  - @webx-ui/core@0.40.0
+
 ## 0.8.1
 
 ### Patch Changes

@@ -1,5 +1,111 @@
 # @webx-ui/php
 
+## 0.66.0
+
+### Minor Changes
+
+- f2556af: «Settings» → «Shortcodes»: a row says with a switch whether it prints its own value or a setting,
+  and shows only the field it uses. The setting is picked from a list of the text fields on the
+  settings screen — labelled where they live, with the key and what they hold now — and a key the
+  settings do not have is refused on save, under the row, instead of printing nothing. A row saved
+  before the switch existed reads a filled-in key as a setting, as it did. `WxScreen` takes a `patch`
+  of the page's own, laid under the project's.
+- f2556af: New package `webx-ui/theme-default` (`"type": "webx-theme"`): the theme every new site stands on.
+  It gives a value to every token of the engine's vocabulary, with the presets `warm` and `night`;
+  a layout with `@webxTheme`, the page's head and the `header`/`footer` regions, whose fallbacks are a
+  header with the site name and `menu('header')` and a footer with `menu('footer')`; and the shell and
+  prose stylesheet, written on `--site-*` tokens only and inside `:where()`, so anything above
+  overrides it without a fight. `dist/theme.css` is built by Vite and committed — a site installs the
+  theme with no Node — and the package's test fails when `src/` changed and `dist/` did not, when a
+  token has no value, when a preset names a token outside the vocabulary, when body text falls below
+  WCAG AA in any preset, or when a stylesheet uses a literal colour or an unknown token.
+- f2556af: New library `webx-ui/themes`, the engine of site themes, starting with the chain. A theme is a
+  `"type": "webx-theme"` package describing itself under `extra.webx.theme`, or a local `theme/`
+  with the same keys in `theme.json`; `webx-themes.theme` (`WEBX_THEME`) names the top of the chain
+  and `uses` the layers below it. Blade then looks a view up in `resources/views`, the local theme,
+  the packaged themes and only then the module — for `<ns>::` views too, with the site's
+  `resources/views/vendor/<ns>` still first. A loop in `uses` or a missing theme fails at boot; an
+  empty setting leaves the site exactly as it was.
+- f2556af: A new site opens styled. `webx:setup` installs `webx-ui/theme-default`, creates the site's own
+  theme `theme/` over it and writes `WEBX_THEME=theme` before the panel is wired, then publishes the
+  theme's files with `webx:theme:sync`; `--theme=<vendor/name>` stands `theme/` on another packaged
+  theme, and `--no-theme` writes the layout, header, footer and stylesheet the skeleton used to ship.
+  A site that already has a layout of its own or a theme keeps it. The new `webx:theme:make <name>
+--local [--uses=…]` lays out a local theme — `theme.json`, an empty `tokens.json`, the two Vite
+  entries `@webxTheme` asks for and a test the site's `php artisan test` runs. The skeleton loses its
+  layout and its eighty lines of inline style; its Vite builds `theme/src` (or `resources/` without a
+  theme), its Dockerfile copies `theme/`, and `webx:boot` syncs the theme's files into a fresh
+  container. `webx:panel --sync` points the modules at a layout that comes from the theme.
+- f2556af: A theme can bring demo content: `webx:demo` takes `demo/pages/home.json` and `about.json` from the
+  first theme layer that has them, and seeds every other document there as pages under the home
+  page (with `children`), removed by `webx:demo --remove` like the rest. `webx-ui/theme-default`
+  brings the first showcase pages ("Kitchen sink": long words, a dark block in the main column).
+  The menu demo links only the top of the pages it finds, not the pages under them. In the default
+  theme, prose sets a text colour with every background it paints, and paints its muted colour
+  outside blocks only (or under `site-prose` inside one). `scripts/starter-site.sh` rebuilds the
+  starter site from the skeleton.
+- f2556af: `webx-ui/themes` gets the token vocabulary and `@webxTheme`. Forty tokens — colour roles, fonts,
+  spacing, radii, shadows, grid, motion — are `--site-<name>` on the page; a theme sets values in
+  `tokens.json` (`defaults`, `presets`, its own `vocabulary`) and they merge bottom up the chain,
+  then the preset (`webx-themes.preset`), then the owner's edits of the `editable` tokens. Every
+  value is checked against its type, so nothing can close the `<style>`. `@webxTheme` prints the
+  merged `:root` inline and each layer's stylesheet — packaged layers from `public/themes/`, put
+  there by the new `webx:theme:sync`, local layers through the site's Vite — and nothing without a
+  theme. `theme_token()` gives a merged value for mail.
+- f2556af: Contacts as data of the site. `module-settings` gets a standard **Contacts** tab — numbers with labels and messengers, e-mails, addresses with coordinates, opening hours as rows of days, special dates, the time zone, chats and networks — read through `contacts()` (`primaryPhone()`, `hours()->openNow()`, `addresses()`, `socials()`). A number is shown as typed and dialled in E.164; one without its country code is refused on save, in the panel and over MCP. `php artisan webx:settings:contacts --from=<key>` moves contacts a site kept under keys of its own. `module-seo` takes the organisation's telephone, e-mail, address, place and opening hours from the tab (a `LocalBusiness` once there is a place or hours) and merges its networks into `sameAs`. `webx-ui/widgets`: `<x-webx-phones>`, `<x-webx-hours>` (status in the site's time zone, brought up to date in the browser), `<x-webx-contact-button>`, `<x-webx-contact-bar>`, `<x-webx-socials>` and `<x-webx-icon>`, loaded only where they stand; `theme-default` shows them in the header, the footer and the corner, and its kitchen sink has a Contacts page.
+- f2556af: `webx-ui/widgets`: cookie consent. A banner on every page with a theme until the visitor answers
+  ("Reject all" and "Accept all" of one class, "Customize" opens a dialog with a switch per
+  category; a category nothing on the site uses is not offered), its own `dist/consent.js|css`
+  (≈3 KB gzip). The answer is the first-party cookie `webx_consent` with the policy version — a new
+  version asks again — read on the server by `Consent::has()`. Third-party code waits for its
+  category (`script type="text/plain"`, `iframe data-src`, `<x-webx-consent>`); taking an answer
+  back reloads the page; Google Consent Mode v2 and Global Privacy Control; `webx.consent` and the
+  `webx:consent` event. Set up on the "Cookie" tab of `module-settings` (a screen patch, reachable
+  over MCP) or in `config/webx-widgets.php`. `theme-default` puts `<x-webx-consent-link>` in its
+  footer and adds a showcase page about consent.
+- f2556af: `webx-ui/widgets`: `<x-webx-dropdown>` — a panel tied to its trigger (`placement`, `open-on="click|hover"`), a `<details>` without JavaScript and a popover with it, turned over at the window's edge, closed on Esc, Tab out and a click elsewhere, one open on the page. And a form of `module-inbox` in a dialog: any link or button with `data-webx-form="<slug>"`, or a link to `#webx-form-<slug>`, opens it; the page gets the form once, before `</body>`, placed `modal`; `data-webx-form-value-<field>` fills a field of it; after sending the dialog shows the thank-you and waits for Close. `theme-default`'s kitchen sink has a page for both.
+- f2556af: `webx-ui/widgets`: `<x-webx-mobile-menu>` (three zones in a modal dialog, 100dvh, closes on
+  navigation, on Back and on a swipe; `<x-webx-mobile-menu.nav>` in `accordion` or `drill` mode) and
+  `<x-webx-header>` (folds its navigation into the mobile menu when the items stop fitting, at a
+  width or never; sticky, hide-on-scroll, overlay; `--webx-header-height` kept live for anchors;
+  `<x-webx-header.nav>` with dropdowns and mega panels), both in the shared runtime.
+  `theme-default` draws its header with them. With a theme, the blocks demo leaves the header and
+  footer regions to it, and the menu demo nests the pages it links under their parents in the
+  header.
+- f2556af: `webx-ui/widgets`: `<x-webx-language-switcher>` — a dropdown or a row of the site's languages,
+  each named in itself, leading to the same page in that language (its address from the
+  `webx-ui/routing` registry, as `hreflang`) or to that language's home page, marked
+  `is-fallback`, where there is no translation; nothing on a site with one language. A stylesheet
+  of its own only. `theme-default` puts it last among the header's actions on a multilingual site,
+  and the kitchen sink has a page for it.
+- f2556af: New library `webx-ui/widgets`: the interactive pieces of the public site, as the bottom layer of
+  the theme chain. This first release holds the loading — `@webxTheme` links the widgets'
+  stylesheets first in the cascade and their scripts before `</body>`, a widget's own files only on
+  the page that claims it with `Widgets::need()` — and the shared runtime with the light
+  behaviours: `data-webx-disclosure`, `data-webx-dialog` / `<x-webx-dialog>`, `data-webx-tabs` /
+  `<x-webx-tabs>`, `data-webx-accordion`. `webx.mount(root)` starts both blocks and widgets inside
+  `root`, `webx.unmount(root)` lets the widgets go. `webx-ui/theme-default` requires the package,
+  so every new site gets it. The theme engine gains `Contracts\HeadPart` and `BottomLayers`, and
+  `webx:theme:sync` publishes the widgets' `dist/` next to the themes'. The blocks runtime now joins
+  an existing `window.webx` instead of replacing it.
+
+### Patch Changes
+
+- f2556af: `WxRepeater` takes `confirmRemove`: the bin asks in a popover first (`removeQuestion`,
+  `cancelLabel`). A repeater on a screen asks by default, in the panel's words
+  (`webx-admin::screens.repeater.remove-question` and `.cancel`), and stops at a field's width
+  unless its rows lay fields side by side or hold an editor — a `TypeEntry`'s `wide` may now be a
+  function of the node.
+- f2556af: A refused row of a repeater is named by its path — `contacts.phones.1.number` — instead of "Row 2: …" under the whole list. The panel marks that row, opens it and shows the words under the field; an agent reads the row from the key. Field types made of items implement `ChecksItems`; the Contacts tab's own checks answer the same way.
+- f2556af: A snapshot restore no longer breaks a container stand. Run as root (`docker exec`),
+  `webx:snapshot` and `webx:snapshot:restore` hand everything they wrote back to the owner of
+  `storage`, and refuse before writing when they can neither do that nor share its group. `webx:doctor`
+  checks that the web server's user (`WEBX_WEB_USER`, else the owner of `storage`) can write where
+  the site writes at run time and, as root, lists paths under `storage` owned by somebody else.
+  `module-seo` keeps the target's `seo.normalise-*` through a restore, and neither its address
+  normalisation nor its redirects table answers the health route or a loopback probe without
+  `X-Forwarded-*`. `SnapshotTables::preserve()` now adds up across packages.
+
 ## 0.65.0
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # @webx-ui/module-blocks
 
+## 0.13.1
+
+### Patch Changes
+
+- Updated dependencies [f2556af]
+- Updated dependencies [f2556af]
+- Updated dependencies [f2556af]
+  - @webx-ui/core@0.40.0
+  - @webx-ui/schema@0.9.0
+  - @webx-ui/module-admin@0.25.0
+
 ## 0.13.0
 
 ### Minor Changes
