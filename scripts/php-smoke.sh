@@ -1421,10 +1421,12 @@ platform_up() {
     }
 }
 
+# Artisan in the container runs as www-data, as php-fpm does: as root, the doctor's own media
+# check writes storage/app/public/media for root, and its storage-owner check then refuses it.
 platform_doctor() {
     local what="$1"
 
-    platform_compose exec -T app php artisan webx:doctor --strict > "$WORKDIR/platform-doctor.log" 2>&1 || {
+    platform_compose exec -T -u www-data app php artisan webx:doctor --strict > "$WORKDIR/platform-doctor.log" 2>&1 || {
         cat "$WORKDIR/platform-doctor.log" >&2
         fail "$what: webx:doctor --strict refused the container"
     }
@@ -1516,11 +1518,11 @@ platform_doctor '[platform] the first build'
 step "A key to the MCP server, without anybody pressing Allow"
 # The administrator setup created lives in the platform's database, not in the container's —
 # the container migrated a fresh one — so the platform creates its own, the way it would.
-platform_compose exec -T -e WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" app \
+platform_compose exec -T -u www-data -e WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" app \
     php artisan webx:admin --name=Platform --email=platform@example.test --super > /dev/null \
     || fail '[platform] webx:admin did not create the administrator in the container'
 
-PLATFORM_ISSUED="$(platform_compose exec -T app php artisan webx:mcp:token --name=platform --json)" \
+PLATFORM_ISSUED="$(platform_compose exec -T -u www-data app php artisan webx:mcp:token --name=platform --json)" \
     || fail "[platform] webx:mcp:token failed: $PLATFORM_ISSUED"
 PLATFORM_TOKEN="$("$PHP_BIN" -r 'echo json_decode(stream_get_contents(STDIN), true)["token"] ?? "";' <<<"$PLATFORM_ISSUED")"
 [ -n "$PLATFORM_TOKEN" ] || fail "[platform] webx:mcp:token printed no token: $PLATFORM_ISSUED"

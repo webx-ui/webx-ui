@@ -257,6 +257,10 @@ vendor/composer/autoload_files.php`.
 - **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` сервер надо
   перезапустить: свежий HTML тянет новые хеши, их нет в списке → 404, страница без стилей и без
   гидрации. Выглядит как «правка не помогла».
+- **`webx:doctor --strict` в контейнере: «storage owner: storage/app/public/media is not
+  www-data's», хотя entrypoint только что сделал `chown`.** Доктор, запущенный от root
+  (`docker compose exec app php artisan …`), сам создаёт этот каталог своей проверкой «Media
+  disk» — следующей проверке он уже чужой. Artisan в контейнере — всегда `exec -u www-data`.
 - **Проверка smoke падает на тексте, в котором искомое есть** («the consent page did not draw»,
   а в выводе ровно эта страница), рядом `printf: write error: Broken pipe`. `… | grep -q` под
   `pipefail`: `grep -q` уходит на первом совпадении, писатель упирается в закрытую трубу, как
