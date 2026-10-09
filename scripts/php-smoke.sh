@@ -1291,7 +1291,8 @@ site_artisan webx:demo --remove --no-interaction > "$WORKDIR/demo-remove.log" 2>
 # Not through `/`: the removal puts the home page back as the unpublished draft it was, and it
 # answers 404. The tag itself, rendered by the application, is the same question.
 REMOVED_HEADER="$(site_artisan tinker --execute="echo Illuminate\Support\Facades\Blade::render('<x-webx-blocks::region name=\"header\" fallback=\"components.header\" />');")"
-printf '%s' "$REMOVED_HEADER" | grep -q 'class="site-header"' \
+# The header is the widget's (<x-webx-header class="site-header">): the class is one of several.
+printf '%s' "$REMOVED_HEADER" | grep -qE 'class="([^"]* )?site-header[ "]' \
     || fail "without the demo the header is not the one from code: $REMOVED_HEADER"
 printf '%s' "$REMOVED_HEADER" | grep -q 'b-demo-header' && fail 'the demo header outlived the removal'
 note 'the removal gives the site back its header from code'
