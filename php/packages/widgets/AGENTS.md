@@ -15,20 +15,17 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   a modal (`[data-webx-dialog-close]` inside closes it, a URL ending in `#<id>` opens it on load);
   `data-webx-tabs` on a container of `[data-webx-tab]` panels (label: the value or the first heading;
   `data-webx-tab-selected` first shown); `data-webx-accordion="single"` on `<details>` — one open.
-- **Components** — `<x-webx-dialog id title close>`, `<x-webx-tabs label>` with
-  `<x-webx-tabs.panel title selected level>`. Views: `webx-widgets::components.<name>`.
+- **Components** — `<x-webx-dialog id title close>`, `<x-webx-tabs label>` with `<x-webx-tabs.panel title selected level>`.
 - **Header** — `<x-webx-header>` with slots `topbar`, `brand`, the default (the navigation),
   `actions`, `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` | a width in px |
   `never`), `breakpoint` (where `auto` folds without JavaScript, 960), `sticky` (`none` |
   `sticky` | `hide-on-scroll`), `overlay`, `skip` (`#content`, or `false` when the layout has
   its own skip link), `mode` and `side` of the mobile menu it builds. Inside it
-  `<x-webx-header.nav :items="menu('header')" :mega="['services' => 'components.mega']">` —
-  dropdowns; a `mega` view gets `$item`. `:items` takes `menu()` trees or arrays
-  `['label', 'url', 'children', 'current', 'variant']`.
-- **Mobile menu** — `<x-webx-mobile-menu side breakpoint close-on-navigate history>` with slots
-  `top`, the default (the body), `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items
-mode="accordion|drill">` in its body. The header builds one by itself out of its brand,
-  navigation and actions unless given `mobile` or `collapse="never"`.
+  `<x-webx-header.nav :items="menu('header')" :mega="['services' => 'components.mega']">` — dropdowns; a `mega`
+  view gets `$item`. `:items` takes `menu()` trees or arrays `['label', 'url', 'children', 'current', 'variant']`.
+- **Mobile menu** — `<x-webx-mobile-menu side breakpoint close-on-navigate history>`, slots `top`, the default (the
+  body), `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill">` in its body. The header builds
+  one of its brand, navigation and actions unless given `mobile` or `collapse="never"`.
 - **Dropdown panel** — `<x-webx-dropdown placement="bottom-start|bottom-end|bottom|top-start|top-end|top"
 open-on="click|hover" label open>` with slot `trigger` (its attributes go on the `<summary>`).
   A `<details>`: without JavaScript a click opens it; with it the panel is a popover placed from
@@ -62,10 +59,9 @@ layout="status|table">` — "Open until 19:00" in the site's time zone, the week
   button in a corner, above the cookie banner; `<x-webx-contact-bar form :breakpoint>` — "Call /
   Write / Request" on a phone, no script; `<x-webx-socials>`; `<x-webx-icon name>` — networks,
   messengers (Simple Icons, CC0), `phone chat mail clock link form close globe zoom`.
-- **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes placement
-label fallback-label>`: each language named in itself, a link to the same page in it (`routing`,
-  `hreflang`), or to its home page with `is-fallback` where untranslated; nothing with one language
-  or without the language in the path. CSS only. Own markup: `LanguageLinks::current()`.
+- **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes placement label fallback-label>`:
+  each language named in itself, a link to the same page in it (`routing`, `hreflang`), or to its home page with
+  `is-fallback`; nothing with one language or no language in the path. CSS only. `LanguageLinks::current()`.
 - **Slider** — `dist/slider.js|css` (Swiper built in), only where one stands: `<x-webx-slider
 variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3]">` with
   `<x-webx-slide thumb>` inside. Per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280
@@ -89,6 +85,9 @@ variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3
 - **Blocks** — offered with `module-media` (`webx:setup`, or `webx:blocks:offered --install --module=widgets`),
   then the site's: `gallery` (library pictures, grid or slider, zoom = lightbox, a group per block, title = caption),
   `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16), `map` (contacts or coordinates, zoom, height); nothing to show prints nothing.
+- **Audit** (with `module-audit`): `widgets.before_consent` (a known player, map, counter or pixel asked at once —
+  fix `widgets.wait-for-consent` rewrites it where content stores it), `widgets.banner_off` (fix `widgets.banner-on`),
+  `widgets.lightbox_size`, `widgets.slider_pause`, `widgets.contact_both`. Own third parties: `webx-widgets.audit.third-party`.
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
   (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`;
   `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,
@@ -144,7 +143,8 @@ button|frame|player`, `is-blocked|is-ready|is-playing`; `webx-map`, `--place`, `
 ## Check your work
 
 - `webx:theme:sync` lists `webx-ui/widgets`; `.../widgets/<hash>/runtime.css` in `<head>`, `runtime.js` before `</body>`. Tab; JS off.
+- `php artisan webx:audit:run`, then `audit_issues` with `check: "widgets.before_consent"` — nothing; the "Kitchen sink" pages of `theme-default` show each widget.
 
 ## Read more
 
-- [README.md](README.md); the spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md
+- [README.md](README.md); the guide: https://webx-ui.github.io/webx-ui/guide/widgets; the spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md

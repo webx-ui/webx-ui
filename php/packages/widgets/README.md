@@ -99,6 +99,21 @@ types — `webx:setup` installs them, or `php artisan webx:blocks:offered --inst
 
 Installed once, they belong to the site: change them in the panel, an update never overwrites them.
 
+## In the site audit
+
+With `webx-ui/module-audit` every crawled page is also read for what the widgets promise:
+
+- **Loads before consent** (error) — a YouTube, Vimeo, Google Maps or OpenStreetMap iframe, or a
+  known counter or pixel, that the page asks for before the visitor answers the banner. When the
+  code was pasted into content (a text block, a page's body), "Make it wait for consent" rewrites
+  it there: an iframe's `src` becomes `data-src`, a script becomes `type="text/plain"`, both get
+  `data-webx-consent`. Code a template prints is the template's to fix: `<x-webx-consent>` or the
+  video and map blocks. A site's own third parties: `webx-widgets.audit.third-party`.
+- **Banner off with third parties on the site** (warning) — "Turn the cookie banner on" writes the
+  setting of the Cookie tab, which wins over the config.
+- **Lightbox link without the picture size**, **moving slider without a pause button** (a theme's
+  override that lost it) — warnings; **both quick-contact widgets on one page** — a notice.
+
 ## How a page gets it
 
 `@webxTheme` leaves a marker in `<head>`. When the response is ready — the header and the footer
