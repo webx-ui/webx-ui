@@ -23,8 +23,8 @@
     },
     "require": {
         "php": "^8.4",
-        "webx-ui/themes": "^0.65.0",
-        "webx-ui/widgets": "^0.65.0"
+        "webx-ui/themes": "^0.66.0",
+        "webx-ui/widgets": "^0.66.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
