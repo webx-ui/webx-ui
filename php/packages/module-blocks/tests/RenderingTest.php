@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks\Tests;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Test;
@@ -180,6 +181,19 @@ final class RenderingTest extends TestCase
         $this->assertStringContainsString('boom (line 2)', $html);
         $this->assertStringEndsWith('<!--/wx:b-->', $html);
         Exceptions::assertNothingReported();
+    }
+
+    #[Test]
+    public function a_component_inside_another_keeps_its_slot(): void
+    {
+        // The inner component's view finishing must not look like the end of the whole render:
+        // the factory would flush the outer component's slot data (publishing renders the sample).
+        Blade::anonymousComponentPath(__DIR__.'/Fixtures/views/nesting', 'nest');
+        $this->publish('nesting', '<div data-wx-block="nesting"><x-nest::outer><x-nest::inner>a</x-nest::inner><x-nest::inner>b</x-nest::inner></x-nest::outer></div>');
+
+        $html = $this->render([$this->node('nesting')]);
+
+        $this->assertSame('<div data-wx-block="nesting"><ul><li>a</li><li>b</li></ul></div>', trim((string) preg_replace('/>\s+</', '><', $html)));
     }
 
     #[Test]

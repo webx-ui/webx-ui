@@ -11,6 +11,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\ComponentAttributeBag;
+use Illuminate\View\Factory;
 use Psr\Log\LoggerInterface;
 use Throwable;
 use WebxUi\Blocks\BlockType;
@@ -518,9 +519,22 @@ final class Renderer
 
         $this->stack[] = ['context' => $context, 'calls' => []];
 
+        // Counted as a render, as View::render() counts one: otherwise the first component view
+        // inside the template that finishes believes the whole render is done and flushes the
+        // factory's component stack — and a component wrapping another loses its slot data.
+        $counted = $this->views instanceof Factory;
+
+        if ($counted) {
+            $this->views->incrementRender();
+        }
+
         try {
             return $this->views->getEngineResolver()->resolve('php')->get($path, $data);
         } finally {
+            if ($counted) {
+                $this->views->decrementRender();
+            }
+
             array_pop($this->stack);
         }
     }
