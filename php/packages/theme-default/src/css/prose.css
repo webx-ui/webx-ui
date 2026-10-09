@@ -13,7 +13,8 @@
   font-weight: 650;
   line-height: 1.2;
   text-wrap: balance;
-  color: var(--site-color-text);
+  /* No colour: the body sets the text colour, and a heading inherits whatever its container
+     says — a block on a dark background sets white once, on itself, and its heading follows. */
 }
 
 :where(.site-main, .site-prose) :where(h1) {
