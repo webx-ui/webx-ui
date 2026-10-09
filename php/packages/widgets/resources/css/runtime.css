@@ -1,8 +1,14 @@
 /*
- * The skeleton of the runtime's behaviours, on site tokens only (THEMES §8). Every selector is
- * inside :where() — no specificity — and this file comes first in the cascade, so a theme
- * restyles a widget by writing its rule at all. Each widget's own tokens, --webx-<name>-*, are
- * declared on :root from site tokens: a theme sets them on :root or on the widget's class.
+ * The skeleton of the runtime's behaviours, on site tokens only (THEMES §8).
+ *
+ * Every rule is one flat class — `.webx-<name>__<element>`, a state at most — and never a
+ * descendant chain. That is enough to win over the default theme's prose, which is written in
+ * :where() so that a component with a class of its own wins without trying, the way a block's
+ * `.b-<slug> h2` does: a dialog in <main> keeps its own title. A theme restyles a widget with the
+ * same class: it comes later in the cascade, so it wins with no !important.
+ *
+ * Each widget's own tokens, --webx-<name>-*, are declared on :where(:root) from site tokens: a
+ * theme sets them on :root or on the widget's class.
  */
 
 @import './base.css';

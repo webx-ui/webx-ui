@@ -48,7 +48,7 @@ final class DistTest extends PlainTestCase
 
     /**
      * Site tokens of the vocabulary and the widgets' own `--webx-<name>-*`, declared here; no
-     * literal colour, no fallback in var(), no width @media, every selector inside :where().
+     * literal colour, no fallback in var(), no width @media, one flat class per rule.
      */
     #[Test]
     public function the_stylesheets_know_only_tokens(): void
@@ -83,9 +83,15 @@ final class DistTest extends PlainTestCase
 
             preg_match_all('/(?:^|[;{}])\s*([^;{}@]+?)\s*\{/', $css, $rules);
 
+            // One flat class (a state at most): enough to win over the prose of the theme, which is
+            // all :where(), and no more than a theme matches by writing the same class later.
             foreach ($rules[1] as $selectors) {
                 foreach (array_map('trim', explode(',', $selectors)) as $selector) {
-                    $this->assertStringStartsWith(':where(', $selector, "{$relative}: \"{$selector}\" carries specificity — wrap it in :where().");
+                    $this->assertMatchesRegularExpression(
+                        '/^(?::where\(:root\)|(?:html:not\(\.webx-js\) )?\.webx-[a-z0-9_-]+(?:\[[^\]]+\]|::?[a-z-]+)*)$/',
+                        $selector,
+                        "{$relative}: \"{$selector}\" — a widget's rule is one .webx-* class, with a state at most.",
+                    );
                 }
             }
         }

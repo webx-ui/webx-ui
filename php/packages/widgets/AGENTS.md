@@ -32,15 +32,15 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 
 ## Change it without forking
 
-| You want                               | Do this                                                                                                   |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Other colours, radius, spacing         | site tokens in `theme/tokens.json` — the widgets follow                                                   |
-| A widget's own measure (dialog width…) | `--webx-<name>-*` on `:root` or on `.webx-<name>` in `theme/src/css`                                      |
-| Another look of a widget               | CSS on `.webx-<name>*` classes in `theme/src/css` — no `!important` needed, every rule here is `:where()` |
-| Other markup of a component            | `theme/views/vendor/webx-widgets/components/<name>.blade.php`                                             |
-| A word                                 | the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`                                  |
-| A behaviour of the site's own          | `webx.widget('name', '[data-…]', (el) => cleanup)` in `theme/src/js/theme.js`                             |
-| Start widgets in HTML added later      | `webx.mount(container)`; before removing it, `webx.unmount(container)`                                    |
+| You want                               | Do this                                                                                            |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Other colours, radius, spacing         | site tokens in `theme/tokens.json` — the widgets follow                                            |
+| A widget's own measure (dialog width…) | `--webx-<name>-*` on `:root` or on `.webx-<name>` in `theme/src/css`                               |
+| Another look of a widget               | the same `.webx-<name>*` class in `theme/src/css` — it comes later in the cascade, no `!important` |
+| Other markup of a component            | `theme/views/vendor/webx-widgets/components/<name>.blade.php`                                      |
+| A word                                 | the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`                           |
+| A behaviour of the site's own          | `webx.widget('name', '[data-…]', (el) => cleanup)` in `theme/src/js/theme.js`                      |
+| Start widgets in HTML added later      | `webx.mount(container)`; before removing it, `webx.unmount(container)`                             |
 
 ## Do not
 
@@ -49,6 +49,8 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - Do not write a colour literally or with a fallback (`var(--site-x, #fff)`): presets stop
   repainting it.
 - Do not add `hidden` to a disclosure's panel in markup: without JavaScript it would never show.
+- Do not style a widget through a chain (`.site-main .webx-dialog__title`): one class matches the
+  package and wins by order; a longer chain starts a specificity race with the next theme.
 - Do not copy the runtime into the theme to change one behaviour: register your own widget.
 - Do not call `Widgets::need()` for the behaviours above to get them — the runtime is already on
   every page; `need()` matters for widgets with files of their own.
