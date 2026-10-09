@@ -487,6 +487,70 @@
           }
         }
       ]
+    },
+    {
+      "title": "Lightbox",
+      "slug": "lightbox",
+      "seo": {
+        "title": "Lightbox",
+        "description": "Pictures that open over the page: a grid, a gallery slider, links written by hand."
+      },
+      "blocks": [
+        {
+          "key": "showcase-lightbox-intro",
+          "type": "text",
+          "values": {
+            "heading": "Lightbox",
+            "body": "A picture that opens over the page, at the size of the screen, and pages through the pictures of its group. It is a link to the picture: without JavaScript the link simply opens it.\nThe page loads the lightbox only because a link on it asks for one — data-webx-lightbox, wherever it was written."
+          }
+        },
+        {
+          "key": "showcase-lightbox-grid",
+          "type": "showcase-lightbox",
+          "values": {
+            "heading": "Grid",
+            "note": "Pictures of the media library, printed by x-webx-lightbox: their sizes are stored at upload, so the component knows them. One group: the arrows page through all six.",
+            "layout": "grid",
+            "pictures": "6"
+          }
+        },
+        {
+          "key": "showcase-lightbox-gallery",
+          "type": "showcase-lightbox",
+          "values": {
+            "heading": "Gallery slider",
+            "note": "The gallery variant of the slider with a lightbox on its slides: a click opens the picture, a drag only moves the slider. Closed on another picture, the slider comes to it.",
+            "layout": "gallery",
+            "pictures": "6"
+          }
+        },
+        {
+          "key": "showcase-lightbox-by-hand",
+          "type": "showcase-lightbox",
+          "values": {
+            "heading": "Links by hand",
+            "note": "Two links written in a template with no component, each on its own. The first is taller than wide — on a phone it fits by its height. The second came without its sizes: it is measured before it opens.",
+            "layout": "by-hand",
+            "pictures": "2"
+          }
+        },
+        {
+          "key": "showcase-lightbox-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "With the keyboard: Tab to a picture and press Enter; the arrows page, Esc closes, and the focus is back on the picture you ended on.\nOn a phone: swipe to the next picture, pinch to zoom, swipe down to close.\nSwitch JavaScript off: every picture is a link that opens the file."
+          }
+        },
+        {
+          "key": "showcase-lightbox-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-lightbox :image=\"$picture\" group=\"product-1\" — image is a value of a media field (url, thumb, alt, width, height) or any object with url() and width and height; src, width, height, thumb, alt say it by hand. The slot replaces the thumbnail.\nBy hand: a href=\"picture\" data-webx-lightbox=\"group\" data-width=\"2400\" data-height=\"1600\" — the same group pages together, an empty one is alone. Write the sizes: without them the picture is loaded once more to be measured.\nClasses: webx-lightbox-link, __image, is-ready; the viewer is PhotoSwipe's .pswp with webx-lightbox on it. Tokens: --webx-lightbox-backdrop, --webx-lightbox-color, --webx-lightbox-outline, --webx-lightbox-placeholder, --webx-lightbox-icon-size, --webx-lightbox-z."
+          }
+        }
+      ]
     }
   ]
 }

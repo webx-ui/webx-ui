@@ -1,0 +1,65 @@
+{
+  "slug": "showcase-lightbox",
+  "title": "Showcase: lightbox",
+  "description": "The lightbox of webx-ui/widgets: a grid of pictures, a gallery slider whose slides open it, and links written by hand — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 91,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "layout",
+      "type": "wx-select",
+      "label": "Layout",
+      "props": {
+        "options": [
+          {
+            "label": "Grid",
+            "value": "grid"
+          },
+          {
+            "label": "Gallery slider",
+            "value": "gallery"
+          },
+          {
+            "label": "Links by hand",
+            "value": "by-hand"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pictures",
+      "type": "wx-input",
+      "label": "Pictures",
+      "props": {
+        "placeholder": "6"
+      }
+    }
+  ],
+  "template": "@php\n    $layout = in_array($layout, ['grid', 'gallery', 'by-hand'], true) ? $layout : 'grid';\n    $count = max(1, min(6, (int) ($pictures ?: 6)));\n    // The pictures ship with the theme (assets/showcase): the page loads nothing from anywhere but\n    // the site, and a link opens a real file without JavaScript.\n    $theme = collect(app(\\WebxUi\\Themes\\ThemeChain::class)->layers)->firstWhere('name', 'webx-ui/theme-default');\n    $file = static fn (int $n): string => ($theme ? app(\\WebxUi\\Themes\\ThemeAssets::class)->url($theme, \"assets/showcase/photo-{$n}.svg\", url()) : null) ?? \"#photo-{$n}\";\n    // What a media field of the library resolves to: the sizes are stored at upload.\n    $image = static fn (int $n): array => ['url' => $file($n), 'thumb' => null, 'alt' => \"Photo {$n}\", 'title' => null, 'width' => $n === 7 ? 1200 : 2400, 'height' => $n === 7 ? 2000 : 1600];\n@endphp\n<section class=\"b-showcase-lightbox b-showcase-lightbox--{{ $layout }}\" data-wx-block=\"showcase-lightbox\">\n    @if ($heading)\n        <h2 class=\"b-showcase-lightbox__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-lightbox__note\">{{ $note }}</p>\n    @endif\n    @switch($layout)\n        @case('gallery')\n            <div class=\"b-showcase-lightbox__frame\">\n                <x-webx-slider variant=\"gallery\" :label=\"$heading ?: null\">\n                    @for ($i = 1; $i <= $count; $i++)\n                        <x-webx-slide>\n                            <x-webx-lightbox :image=\"$image($i)\" group=\"showcase-gallery\">\n                                <img class=\"b-showcase-lightbox__photo\" src=\"{{ $file($i) }}\" width=\"2400\" height=\"1600\" alt=\"Photo {{ $i }} of {{ $count }}\">\n                            </x-webx-lightbox>\n                        </x-webx-slide>\n                    @endfor\n                </x-webx-slider>\n            </div>\n            @break\n        @case('by-hand')\n            <div class=\"b-showcase-lightbox__row\">\n                <a class=\"b-showcase-lightbox__tall\" href=\"{{ $file(7) }}\" data-webx-lightbox=\"\" data-width=\"1200\" data-height=\"2000\"><img class=\"b-showcase-lightbox__photo\" src=\"{{ $file(7) }}\" width=\"1200\" height=\"2000\" alt=\"Photo 7, taller than wide\"></a>\n                <a class=\"b-showcase-lightbox__tall\" href=\"{{ $file(5) }}\" data-webx-lightbox=\"\"><img class=\"b-showcase-lightbox__photo\" src=\"{{ $file(5) }}\" width=\"2400\" height=\"1600\" alt=\"Photo 5, a link without sizes\"></a>\n            </div>\n            @break\n        @default\n            <ul class=\"b-showcase-lightbox__grid\">\n                @for ($i = 1; $i <= $count; $i++)\n                    <li class=\"b-showcase-lightbox__cell\"><x-webx-lightbox :image=\"$image($i)\" group=\"showcase-grid\" /></li>\n                @endfor\n            </ul>\n    @endswitch\n</section>\n",
+  "styles": ".b-showcase-lightbox {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n    container-type: inline-size;\n}\n\n.b-showcase-lightbox__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-lightbox__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-lightbox__grid {\n    display: grid;\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n    gap: var(--site-space-3);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n@container (min-width: 40rem) {\n    .b-showcase-lightbox__grid {\n        grid-template-columns: repeat(3, minmax(0, 1fr));\n    }\n}\n\n.b-showcase-lightbox__cell {\n    min-width: 0;\n    border-radius: var(--site-radius-sm);\n    overflow: hidden;\n}\n\n.b-showcase-lightbox__frame {\n    max-width: 40rem;\n}\n\n.b-showcase-lightbox__row {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--site-space-3);\n    align-items: flex-start;\n}\n\n.b-showcase-lightbox__tall {\n    display: block;\n    width: 10rem;\n    max-width: 100%;\n}\n\n.b-showcase-lightbox__photo {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: var(--site-radius-sm);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Grid",
+    "note": "Pictures of the media library: a click opens one over the page, the arrows page through the rest.",
+    "layout": "grid",
+    "pictures": "6"
+  }
+}
