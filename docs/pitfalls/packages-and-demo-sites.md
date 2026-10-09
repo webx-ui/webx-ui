@@ -240,6 +240,14 @@ vendor/composer/autoload_files.php`.
   `php -d memory_limit=-1 vendor/bin/phpunit --colors=never` и
   `php -d memory_limit=-1 vendor/bin/phpstan analyse --no-progress --error-format=raw`
   (`--colors=never`, иначе `grep` по итогу не находит ничего — строки обёрнуты в коды цвета).
+- **Страница, переписанная в Playwright через `page.route()` + `route.fulfill()`, остаётся без
+  стилей и скриптов** — баннер не появляется, клик ждёт минуту и падает по таймауту, а в консоли
+  «blocked by CORS policy: … the resource is in more-private address space `loopback`». Документ,
+  отданный `fulfill`, для браузера уже не с loopback-адреса сайта, и Private Network Access режет
+  каждый его запрос к `*.local`. Убрать `Content-Length` и `Content-Encoding` (их тоже приходится
+  убирать: тело из `route.fetch()` уже разжато) не помогает. Добавлять разметку не в ответ, а при
+  разборе страницы: `page.addInitScript()` с `MutationObserver`, который вставляет её в `<main>`,
+  как только тот появится, — до модульных скриптов (`tests/starter/starter.pw.mjs`, согласие).
 - **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` сервер надо
   перезапустить: свежий HTML тянет новые хеши, их нет в списке → 404, страница без стилей и без
   гидрации. Выглядит как «правка не помогла».
