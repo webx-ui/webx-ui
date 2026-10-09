@@ -375,12 +375,21 @@ menu attaches a file or a link to it. Uploads belong to the editor, not the tab:
 filled in meanwhile, leaving the page asks first, and an interrupted upload is offered again the
 next time the product is opened — the same file continues from where the server stopped.
 
-**On the storefront**, `product.blade.php` shows the poster with a ▶, and the player is put in only
-on the click: `<video>` for a file, an iframe from `youtube-nocookie.com` for YouTube. Until then
-nothing is loaded from YouTube and no cookie is set; without JavaScript the ▶ is a plain link. A
-site that overrides the view keeps the classes `webx-catalog-product__video` and
-`webx-catalog-product__play` and the attributes `data-webx-embed` / `data-webx-video` to reuse the
-script.
+**On the storefront**, `product.blade.php` prints each video with `<x-webx-video>` of
+[`webx-ui/widgets`](https://github.com/webx-ui/webx-ui/tree/main/php/packages/widgets), the picture as its poster and in its shape. A
+YouTube video waits for the visitor's consent to media: before it, a notice over the poster with
+**Load** and **Always load videos**; after it, a play button that puts the `youtube-nocookie.com`
+player in on the click. Until then nothing is loaded from YouTube and no cookie is set; without
+JavaScript the video is a link to it. A file of the site is a `<video preload="none">` with
+controls and no consent to ask. A site that overrides the view prints the same component:
+
+```blade
+<x-webx-video :src="$video['url']" :poster="['url' => $image->url(), 'width' => $image->width, 'height' => $image->height]" />
+<x-webx-video :file="$video['url']" :poster="…" />   {{-- when $video['embed'] is null --}}
+```
+
+A provider a satellite registers in the catalog's `VideoProviders` plays there too: the catalog
+hands it to the widgets' registry.
 
 ```php
 // config/webx-catalog.php

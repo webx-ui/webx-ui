@@ -83,8 +83,8 @@ variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3
   videos". No poster: the video's preview, fetched once into the library (folder "Video posters").
   `<x-webx-video :file="$media" :poster>` — a `<video preload="none">`, no consent. No JS: a link.
 - **Blocks** — offered with `module-media` (`webx:setup`, or `webx:blocks:offered --install --module=widgets`),
-  then the site's: `gallery` (library pictures as a grid or the slider's `gallery`, zoom = the lightbox,
-  a group per block, a picture's title its caption) and `logos` (name, logo, link each, a `logos` strip).
+  then the site's: `gallery` (library pictures, grid or slider, zoom = lightbox, a group per block, title = caption),
+  `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16; an unknown address prints nothing).
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
   (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`;
   `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,

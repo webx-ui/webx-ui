@@ -16,7 +16,7 @@ theme/                   ← the site's local theme
 
 > Under way: the loading, the runtime with the light behaviours, the mobile menu, the header, cookie
 > consent, the dropdown, contacts, the language switcher, the slider, the lightbox and the
-> gallery and logos blocks and the video are here; the video block and maps arrive in the next releases.
+> video, and the gallery, logos and video blocks are here; maps arrive in the next release.
 
 ## What is in it
 
@@ -66,13 +66,17 @@ its ratio (16/9 unless told) before anything loads; without JavaScript the video
 
 ## Blocks
 
-On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers two block
+On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers three block
 types — `webx:setup` installs them, or `php artisan webx:blocks:offered --install --module=widgets`:
 
 - **Gallery** — pictures of the media library as a grid (as many columns as the column has room
   for, up to the number set) or as the slider's gallery with thumbnails; a click opens the picture
   in the lightbox and pages through that block's pictures; a picture's title is its caption.
 - **Logos** — a name, a logo and a link each, in the slider's running strip with its pause button.
+- **Video** — an address of YouTube or Vimeo or a video of the library (a switch says which), a
+  poster (empty: the video's own preview), a caption under it and a shape — 16:9, 4:3, 1:1 or
+  9:16, the last two held to a phone's width. A link waits for consent like any `<x-webx-video>`;
+  an address of no known provider, a file gone from the library or nothing at all prints nothing.
 
 Installed once, they belong to the site: change them in the panel, an update never overwrites them.
 

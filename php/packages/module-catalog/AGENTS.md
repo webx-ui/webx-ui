@@ -23,6 +23,10 @@ question is about one of them.
 - **Views** `webx-catalog::category`, `root`, `search`, `product`, `product-unavailable`, `filter`
   and `filter/*`, `grid`, `card`, `sort`, `pagination`, `breadcrumbs`. They render inside
   `config('webx-catalog.layout')`.
+- **Gallery videos** on the product page are `<x-webx-video>` of `webx-ui/widgets`, the picture
+  its poster and shape: YouTube waits for consent to `media`, a file is `<video preload="none">`.
+  `VideoProviders` here decides what a row stores; a provider registered only here is handed to
+  the widgets' registry (`PlayedByWidgets`), so its videos play there too.
 - **Storefront points** that satellites print into: `catalog.card.badges`, `catalog.card.meta`,
   `catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`,
   `catalog.listing.top`, `catalog.listing.bottom`.

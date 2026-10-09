@@ -6,13 +6,14 @@ and the registries its satellite modules (properties, stock, brands, labels…) 
 
 The address is `webx-ui/routing`, the tree is `webx-ui/nested-set`, the journal and the screens are
 `webx-ui/module-admin`, what a page says about itself is `webx-ui/module-seo`, the previews are
-`webx-ui/module-media`, the languages are `webx-ui/localization`.
+`webx-ui/module-media`, the languages are `webx-ui/localization`, and the videos of the gallery
+play on the product page through `webx-ui/widgets`, behind the visitor's consent.
 
 ## Requirements
 
 - PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-media`, `webx-ui/module-seo`, `webx-ui/routing`,
-  `webx-ui/nested-set`, `webx-ui/localization`
+  `webx-ui/nested-set`, `webx-ui/localization`, `webx-ui/widgets`
 
 ## Install
 
