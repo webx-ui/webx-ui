@@ -1204,6 +1204,8 @@ install && npm run build` → `webx:doctor`, `php artisan test` (тест `theme
   `<style data-webx-theme>` и `theme.css` темы, 200 на `/ru`, `/pl`, `/cms`, `/kitchen-sink`.
   `--down` — только снос. Всё — переменными окружения (`STARTER_PATH`, `DB_*`, `PHP_BIN`,
   `COMPOSER_PHAR`, `STARTER_ADMIN` — по умолчанию `git config user.email`), умолчания — OSPanel.
+  Их и `WEBX_ADMIN_PASSWORD` можно держать в `.env.starter` в корне монорепы (не в git, `.env.*`):
+  с паролем там `webx:setup` берёт его, а не придумывает новый при каждой пересборке.
   - **Снос** снимает **все** ссылки в каталоге сайта до `rm -rf` (`vendor/webx-ui/*` и
     `node_modules/@webx-ui/*` — джанкшены в монорепу, `public/storage` — внутрь сайта), на Windows —
     `cmd //c rmdir`; если ссылка осталась — отказ, а не удаление; после удаления проверяет, что файл

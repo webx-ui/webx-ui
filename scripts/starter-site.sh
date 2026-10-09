@@ -22,10 +22,26 @@
 #   PHP_BIN           php, or OSPanel's PHP-8.4 when it is there
 #   COMPOSER_PHAR     composer.phar; default: the `composer` on the PATH
 #   DB_HOST DB_PORT DB_USERNAME DB_PASSWORD DB_DATABASE    OSPanel's MariaDB, webx_starter
+#   WEBX_ADMIN_PASSWORD  the administrator's password; without it setup makes one and prints it
+#
+# Any of them can live in .env.starter at the root of this checkout (ignored by git), one
+# NAME=value per line; STARTER_ENV names another file.
 
 set -euo pipefail
 
 MONOREPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# This machine's answers, kept out of git (.env.* is ignored) and out of the site, which the
+# rebuild deletes: any variable below, and WEBX_ADMIN_PASSWORD, which `webx:setup` takes instead
+# of making up a new password every time.
+STARTER_ENV="${STARTER_ENV:-$MONOREPO/.env.starter}"
+if [ -f "$STARTER_ENV" ]; then
+    set -a
+    # shellcheck source=/dev/null
+    . "$STARTER_ENV"
+    set +a
+fi
+
 SITE="${STARTER_PATH:-$(cd "$MONOREPO/.." && pwd)/webx-starter.local}"
 NAME="$(basename "$SITE")"
 URL="${STARTER_URL:-http://$NAME}"
@@ -242,4 +258,8 @@ else
 fi
 rm -f "$home"
 
-printf '\n\033[32m== %s is a new site again. The administrator password is the one setup printed above.\033[0m\n' "$URL"
+if [ -n "${WEBX_ADMIN_PASSWORD:-}" ]; then
+    printf '\n\033[32m== %s is a new site again. The administrator password is the one in %s.\033[0m\n' "$URL" "$STARTER_ENV"
+else
+    printf '\n\033[32m== %s is a new site again. The administrator password is the one setup printed above.\033[0m\n' "$URL"
+fi
