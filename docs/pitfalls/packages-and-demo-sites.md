@@ -149,6 +149,9 @@ HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` 
   `vendor/autoload.php` внутри testbench и падает на `require`. **Новый пакет в `php/` — это
   `composer update webx-ui/<пакет>`**, после которого манифест прогревается заново (снести
   `packages.php` и `services.php`), иначе тест отвечает «Class …ServiceProvider not found».
+  В свежем worktree `php/composer.lock` нет (он не отслеживается), и `update <пакет>` отказывается
+  «Cannot update only a partial set of packages without a lock file» — скопировать lock основного
+  чекаута, тогда ставится всё остальное ровно его версиями и новый пакет сверху.
 - **«Call to undefined function wx_text()» после rebase — функция в ветке есть, `vendor` о ней
   не знает.** Пакет завёл `autoload.files` (`src/helpers.php`), а `composer dump-autoload` строит
   карту из `vendor/composer/installed.json`, где записан старый `composer.json` пакета, — и

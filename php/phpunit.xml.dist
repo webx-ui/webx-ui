@@ -40,6 +40,7 @@
             <directory>packages/module-tariffs/tests</directory>
             <directory>packages/nested-set/tests</directory>
             <directory>packages/routing/tests</directory>
+            <directory>packages/themes/tests</directory>
         </testsuite>
     </testsuites>
     <source>
@@ -76,6 +77,7 @@
             <directory>packages/module-tariffs/src</directory>
             <directory>packages/nested-set/src</directory>
             <directory>packages/routing/src</directory>
+            <directory>packages/themes/src</directory>
         </include>
     </source>
 </phpunit>

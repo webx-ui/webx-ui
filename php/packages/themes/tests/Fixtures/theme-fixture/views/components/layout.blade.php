@@ -1,0 +1,1 @@
+<main class="default-layout">{{ $slot }}</main>

@@ -1,0 +1,16 @@
+{
+  "name": "webx-ui/theme-fixture",
+  "type": "webx-theme",
+  "extra": {
+    "webx": {
+      "theme": {
+        "title": "Fixture",
+        "uses": [],
+        "requires": [
+          "module-pages",
+          "module-blocks"
+        ]
+      }
+    }
+  }
+}

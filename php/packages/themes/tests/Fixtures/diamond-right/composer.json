@@ -1,0 +1,13 @@
+{
+  "name": "fixture/diamond-right",
+  "type": "webx-theme",
+  "extra": {
+    "webx": {
+      "theme": {
+        "uses": [
+          "webx-ui/theme-fixture"
+        ]
+      }
+    }
+  }
+}

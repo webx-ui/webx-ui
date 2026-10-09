@@ -1,0 +1,14 @@
+{
+  "name": "fixture/diamond-top",
+  "type": "webx-theme",
+  "extra": {
+    "webx": {
+      "theme": {
+        "uses": [
+          "fixture/diamond-left",
+          "fixture/diamond-right"
+        ]
+      }
+    }
+  }
+}
