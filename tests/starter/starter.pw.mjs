@@ -260,23 +260,24 @@ test.describe('cookie consent', () => {
   // The starter site has nothing third-party, so the page gets some the way the server would
   // print it: a counter waiting for statistics, an embed waiting for media.
   async function withThirdParty(page) {
-    await page.route(
-      (url) => url.pathname === PATH,
-      async (route) => {
-        const response = await route.fetch()
-        const body = (await response.text()).replace(
-          '</main>',
-          `<script type="text/plain" data-webx-consent="statistics">window.statisticsRan = true</script>` +
-            `<iframe title="probe" data-webx-consent="media" data-src="${THIRD}/embed"></iframe></main>`,
-        )
-        // Fresh headers: the body grew and is no longer compressed, so the original length and
-        // encoding would cut its end off — the scripts before </body> with it.
-        await route.fulfill({
-          status: response.status(),
-          contentType: 'text/html; charset=utf-8',
-          body,
-        })
+    // Added while the page is parsed, before its module scripts run — not by rewriting the
+    // response: a document fulfilled by page.route() is no longer on the loopback address, and
+    // the browser's Private Network Access blocks every stylesheet and script it asks the site for.
+    await page.addInitScript(
+      ({ path, third }) => {
+        if (location.pathname !== path) return
+        new MutationObserver((_, observer) => {
+          const main = document.querySelector('main')
+          if (!main) return
+          observer.disconnect()
+          main.insertAdjacentHTML(
+            'beforeend',
+            '<script type="text/plain" data-webx-consent="statistics">window.statisticsRan = true</script>' +
+              `<iframe title="probe" data-webx-consent="media" data-src="${third}/embed"></iframe>`,
+          )
+        }).observe(document, { childList: true, subtree: true })
       },
+      { path: PATH, third: THIRD },
     )
     await page.route(`${THIRD}/**`, (route) =>
       route.fulfill({ body: '<p>third party</p>', contentType: 'text/html' }),
