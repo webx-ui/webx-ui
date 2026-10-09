@@ -66,6 +66,15 @@ visit() {
     curl -s -o /dev/null -w '%{http_code}' -H 'Accept: application/json' "$@"
 }
 
+# `… | has <pattern>` rather than `… | grep -q`: grep -q leaves on its first match, the writer
+# is cut off mid-text once it outgrows the pipe buffer, and under pipefail the check fails on
+# the very match it found ("printf: write error: Broken pipe", curl exit 23). This reads it all.
+has() {
+    local text
+    text="$(cat)"
+    grep -q "$@" <<< "$text"
+}
+
 expect() {
     local expected="$1" actual="$2" what="$3"
     [ "$actual" = "$expected" ] || fail "$what — expected $expected, got $actual"
@@ -230,7 +239,7 @@ step "Install the block types modules offer"
 note 'the offered block types are installed, and installing them again is harmless'
 
 step "Seed the languages"
-"$PHP_BIN" "$APP/artisan" webx:locales:seed --no-interaction | grep -qi 'english' \
+"$PHP_BIN" "$APP/artisan" webx:locales:seed --no-interaction | has -i 'english' \
     || fail 'webx:locales:seed did not create the configured languages'
 note 'the locales table has the configured languages'
 
@@ -487,11 +496,11 @@ PHP
 
 SMOKE_HOME="$("$PHP_BIN" "$APP/artisan" smoke:home --no-interaction)"
 
-echo "$SMOKE_HOME" | grep -q 'home address: \[\]' \
+echo "$SMOKE_HOME" | has 'home address: \[\]' \
     || fail "the home page did not take the empty address in the registry: $SMOKE_HOME"
 note 'the home page is published on the empty address'
 
-echo "$SMOKE_HOME" | grep -q 'child address: \[about-pages\]' \
+echo "$SMOKE_HOME" | has 'child address: \[about-pages\]' \
     || fail "a child of the home page is not addressed from the root: $SMOKE_HOME"
 note 'its child is /about-pages, not /home/about-pages'
 
@@ -592,7 +601,7 @@ PHP
 note 'a form with two fields'
 
 step "The modules answer to artisan"
-"$PHP_BIN" "$APP/artisan" webx:mcp-tools | grep -q 'admins_grant_role' \
+"$PHP_BIN" "$APP/artisan" webx:mcp-tools | has 'admins_grant_role' \
     || fail 'the auth module offers no MCP tools'
 note 'webx:mcp-tools lists the auth tools'
 
@@ -653,9 +662,9 @@ connect_an_agent() {
     # which php reads as an option of its own and refuses.
     challenge="$("$PHP_BIN" -r 'echo rtrim(strtr(base64_encode(hash("sha256", $argv[1], true)), "+/", "-_"), "=");' -- "$verifier")"
 
-    curl -s "$BASE/.well-known/oauth-protected-resource/api/cms/mcp" | grep -q '"mcp:use"' \
+    curl -s "$BASE/.well-known/oauth-protected-resource/api/cms/mcp" | has '"mcp:use"' \
         || fail "[$phase] the protected resource metadata says nothing"
-    curl -s "$BASE/.well-known/oauth-authorization-server" | grep -q '"registration_endpoint"' \
+    curl -s "$BASE/.well-known/oauth-authorization-server" | has '"registration_endpoint"' \
         || fail "[$phase] the authorization server metadata says nothing"
     note "[$phase] a client finds the authorization server from the address alone"
 
@@ -684,15 +693,15 @@ connect_an_agent() {
 
     # The administrator, not a visitor of the site: Passport asks whichever guard it was given,
     # and its own default is the wrong one.
-    printf '%s' "$consent" | grep -q 'Smoke client' \
+    grep -q 'Smoke client' <<< "$consent" \
         || fail "[$phase] the consent page did not draw: $(printf '%s' "$consent" | head -c 400)"
-    printf '%s' "$consent" | grep -q 'localhost' \
+    grep -q 'localhost' <<< "$consent" \
         || fail "[$phase] the consent page does not say where the code is sent"
     # The panel's own screen and not the plain one: the warning about responsibility is the
     # line a grant on file says the person was shown.
-    printf '%s' "$consent" | grep -q 'You are responsible for what the agent does' \
+    grep -q 'You are responsible for what the agent does' <<< "$consent" \
         || fail "[$phase] the consent page is not the panel's own"
-    printf '%s' "$consent" | grep -q 'name="read_only"' \
+    grep -q 'name="read_only"' <<< "$consent" \
         || fail "[$phase] the consent page offers no read-only box"
 
     auth_token="$(printf '%s' "$consent" | grep -o 'name="auth_token" value="[^"]*"' | head -1 \
@@ -749,7 +758,7 @@ run_http_checks() {
     # at boot — the one place a cached config could have made that a no-op. The tests cannot see
     # it: Testbench never caches the config.
     curl -s -c "$COOKIES" -b "$COOKIES" -H 'Accept: application/json' "$BASE/api/cms/manifest" \
-        | grep -q '"id":"blog"' \
+        | has '"id":"blog"' \
         || fail "[$phase] the blog group is missing from the manifest"
     note "[$phase] the blog's navigation group survived the config cache"
 
@@ -767,7 +776,7 @@ run_http_checks() {
         '{"values":{"seo.robots-txt":"User-agent: *"}}')" \
         "[$phase] the SEO tab of the settings takes a value"
     expect 200 "$(status "$BASE/robots.txt")" "[$phase] and /robots.txt answers"
-    curl -s "$BASE/robots.txt" | grep -q '^User-agent: \*' \
+    curl -s "$BASE/robots.txt" | has '^User-agent: \*' \
         || fail "[$phase] /robots.txt is not the setting"
     note "[$phase] /robots.txt serves the setting"
 
@@ -795,11 +804,11 @@ run_http_checks() {
     expect 403 "$(status "${PREVIEW_URL%%\?*}")" "[$phase] the preview without a token is a 403"
     expect 200 "$(status "$PREVIEW_URL")" "[$phase] and with the token it answers"
 
-    curl -s -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | grep -q 'Draft only' \
+    curl -s -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | has 'Draft only' \
         || fail "[$phase] the preview did not render the draft"
     note "[$phase] the preview shows the draft"
 
-    curl -s -D - -o /dev/null -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | grep -qi '^X-Robots-Tag: noindex' \
+    curl -s -D - -o /dev/null -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | has -i '^X-Robots-Tag: noindex' \
         || fail "[$phase] the preview is not marked noindex"
     note "[$phase] the preview is noindex and no-store"
 
@@ -808,7 +817,7 @@ run_http_checks() {
     expect 200 "$(status "$BASE/")" "[$phase] the home page of the tree answers /"
     expect 200 "$(status "$BASE/about-pages")" "[$phase] and its child answers from the root"
 
-    curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/about-pages" | grep -q '<html lang=' \
+    curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/about-pages" | has '<html lang=' \
         || fail "[$phase] the page view of module-pages did not print the document"
     note "[$phase] the page view printed the document"
 
@@ -830,7 +839,7 @@ run_http_checks() {
     fi
     note "[$phase] the sitemap has the page and not the draft"
 
-    curl -s "$BASE/robots.txt" | grep -q '^Sitemap: ' \
+    curl -s "$BASE/robots.txt" | has '^Sitemap: ' \
         || fail "[$phase] robots.txt does not name the sitemap"
     note "[$phase] robots.txt names the sitemap"
 
@@ -841,7 +850,7 @@ run_http_checks() {
     expect 200 "$(status "$BASE/blog/rss")" "[$phase] and the RSS beside it"
 
     curl -s -D - -o /dev/null -c "$COOKIES" -b "$COOKIES" "$BASE/blog/rss" \
-        | grep -qi '^Content-Type: application/rss' \
+        | has -i '^Content-Type: application/rss' \
         || fail "[$phase] the RSS did not come back as a feed"
     note "[$phase] the RSS is served as a feed"
 
@@ -861,7 +870,7 @@ run_http_checks() {
         -d "{\"$mark_field\":\"$mark_value\",\"fields\":{\"name\":\"Ada $phase\",\"email\":\"ada-$phase@example.test\"}}" \
         "$BASE/webx/forms/smoke-contact")"
 
-    printf '%s' "$answer" | grep -q '"ok":true' \
+    grep -q '"ok":true' <<< "$answer" \
         || fail "[$phase] the intake refused a form posted without a CSRF token: $answer"
 
     after="$("$PHP_BIN" "$APP/artisan" smoke:form --count --no-interaction | tr -dc '0-9')"
@@ -890,7 +899,7 @@ run_http_checks() {
         -F "fields[attachment]=@$WORKDIR/attachment.txt" \
         "$BASE/webx/forms/smoke-contact")"
 
-    printf '%s' "$answer" | grep -q '"ok":true' \
+    grep -q '"ok":true' <<< "$answer" \
         || fail "[$phase] the intake refused a submission with a file: $answer"
 
     attachment="$("$PHP_BIN" "$APP/artisan" smoke:form --attachment --no-interaction | sed 's/.*: //' | tr -d '\r')"
@@ -898,7 +907,7 @@ run_http_checks() {
     note "[$phase] an attachment arrives and is stored off the web root"
 
     curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/api/cms/inbox/submissions/$attachment" \
-        | grep -q "attached in $phase" \
+        | has "attached in $phase" \
         || fail "[$phase] the panel did not serve the attachment back"
     note "[$phase] and the panel serves it back to somebody with inbox.view"
 
@@ -943,7 +952,7 @@ run_http_checks() {
         -H "Authorization: Bearer $MCP_TOKEN" -X POST \
         -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"blocks_create","arguments":{"slug":"smoke-'"$phase"'","title":"Smoke"}}}' \
         "$BASE/api/cms/mcp")"
-    printf '%s' "$created" | grep -q '"slug":"smoke-'"$phase"'"' \
+    grep -q '"slug":"smoke-'"$phase"'"' <<< "$created" \
         || fail "[$phase] the agent's token could not write: $created"
     note "[$phase] and writes with it"
 
@@ -963,7 +972,7 @@ run_http_checks() {
         -H "Authorization: Bearer $MCP_READ_TOKEN" -X POST \
         -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"blocks_create","arguments":{"slug":"read-only-'"$phase"'","title":"Nope"}}}' \
         "$BASE/api/cms/mcp")"
-    printf '%s' "$refused_write" | grep -q '"error"' \
+    grep -q '"error"' <<< "$refused_write" \
         || fail "[$phase] a read-only connection was allowed to write: $refused_write"
     note "[$phase] and is refused when it tries to write anyway"
 }
@@ -1232,19 +1241,19 @@ done
 
 HOME_PAGE="$(curl -s "$SITE_BASE/")"
 
-printf '%s' "$HOME_PAGE" | grep -q '<!doctype html>' || fail "the home page is not a document: $HOME_PAGE"
+grep -q '<!doctype html>' <<< "$HOME_PAGE" || fail "the home page is not a document: $HOME_PAGE"
 # The layout seam, both halves of it: the header around the module's view, and a metatag that
 # only reaches the head through @stack. The header is the theme's — the region's fallback, the
 # header widget: with a theme the demo leaves the regions empty rather than cover it with a
 # header of blocks (a region's own stylesheet in <body> is module-blocks' test to hold).
-printf '%s' "$HOME_PAGE" | grep -q 'data-webx-header=""' || fail 'the home page did not get the header of the theme'
-printf '%s' "$HOME_PAGE" | grep -q 'b-demo-header' && fail 'the demo covered the theme header with a header of blocks'
-printf '%s' "$HOME_PAGE" | grep -q '<title>' || fail 'the SEO card did not reach the head'
-printf '%s' "$HOME_PAGE" | grep -q '<style data-webx-theme>' || fail 'the site tokens did not reach the head'
-printf '%s' "$HOME_PAGE" | grep -qE '<link rel="stylesheet" href="[^"]*/themes/webx-ui/theme-default/[a-f0-9]{12}/theme\.css">' \
+grep -q 'data-webx-header=""' <<< "$HOME_PAGE" || fail 'the home page did not get the header of the theme'
+grep -q 'b-demo-header' <<< "$HOME_PAGE" && fail 'the demo covered the theme header with a header of blocks'
+grep -q '<title>' <<< "$HOME_PAGE" || fail 'the SEO card did not reach the head'
+grep -q '<style data-webx-theme>' <<< "$HOME_PAGE" || fail 'the site tokens did not reach the head'
+grep -qE '<link rel="stylesheet" href="[^"]*/themes/webx-ui/theme-default/[a-f0-9]{12}/theme\.css">' <<< "$HOME_PAGE" \
     || fail 'the stylesheet of theme-default did not reach the head'
 # theme-default brings webx-ui/widgets; their runtime is on every page, its script before </body>.
-printf '%s' "$HOME_PAGE" | grep -qE '<script type="module" src="[^"]*/themes/webx-ui/widgets/[a-f0-9]{12}/runtime\.js"></script>' \
+grep -qE '<script type="module" src="[^"]*/themes/webx-ui/widgets/[a-f0-9]{12}/runtime\.js"></script>' <<< "$HOME_PAGE" \
     || fail 'the widgets runtime did not reach the page'
 note 'the demo home page renders inside the theme layout: its header widget, the tokens, the head filled in, the widgets runtime'
 
@@ -1292,9 +1301,9 @@ site_artisan webx:demo --remove --no-interaction > "$WORKDIR/demo-remove.log" 2>
 # answers 404. The tag itself, rendered by the application, is the same question.
 REMOVED_HEADER="$(site_artisan tinker --execute="echo Illuminate\Support\Facades\Blade::render('<x-webx-blocks::region name=\"header\" fallback=\"components.header\" />');")"
 # The header is the widget's (<x-webx-header class="site-header">): the class is one of several.
-printf '%s' "$REMOVED_HEADER" | grep -qE 'class="([^"]* )?site-header[ "]' \
+grep -qE 'class="([^"]* )?site-header[ "]' <<< "$REMOVED_HEADER" \
     || fail "without the demo the header is not the one from code: $REMOVED_HEADER"
-printf '%s' "$REMOVED_HEADER" | grep -q 'b-demo-header' && fail 'the demo header outlived the removal'
+grep -q 'b-demo-header' <<< "$REMOVED_HEADER" && fail 'the demo header outlived the removal'
 note 'the removal gives the site back its header from code'
 
 printf '\n\033[32m== And one command turns an empty directory into a site with a panel on it.\033[0m\n'
