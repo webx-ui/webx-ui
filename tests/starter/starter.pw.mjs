@@ -1017,8 +1017,16 @@ test.describe('slider', () => {
         expect(m.seen, `slides in view at ${width}`).toBe(Math.ceil(perView))
       }
 
-      const hero = await measure(page, HERO)
-      expect([hero.whole, hero.seen]).toEqual([1, 1])
+      // The hero follows the new width on its own next frame, like the cards: polled.
+      await expect
+        .poll(
+          async () => {
+            const hero = await measure(page, HERO)
+            return [hero.whole, hero.seen]
+          },
+          { message: `the hero at ${width}` },
+        )
+        .toEqual([1, 1])
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -1231,11 +1239,12 @@ test.describe('lightbox', () => {
       }
     })
 
-  // The section of the page by its heading: grid, gallery slider, links by hand.
+  // The block of the page by its heading: the gallery block as a grid and as a slider, and the
+  // showcase's links by hand.
   const section = (page, heading) =>
     page
-      .locator('.b-showcase-lightbox')
-      .filter({ has: page.getByRole('heading', { name: heading }) })
+      .locator('[data-wx-block]')
+      .filter({ has: page.getByRole('heading', { name: heading, exact: true }) })
 
   test('on a phone the picture fits the screen, a swipe and an arrow page on, Esc gives the focus back', async ({
     page,
@@ -1257,7 +1266,7 @@ test.describe('lightbox', () => {
     await expect(viewer(page)).toHaveAttribute('aria-label', /.+/)
     await expect(counter(page)).toHaveText('1 / 6')
 
-    // 2400 × 1600 on 375 × 667: the width of the screen, all of it on the screen.
+    // 1800 × 1200 on 375 × 667: the width of the screen, all of it on the screen.
     await expect.poll(() => picture(page)).not.toBeNull()
     const wide = await picture(page)
     expect(wide.left).toBeGreaterThanOrEqual(-1)
@@ -1327,7 +1336,7 @@ test.describe('lightbox', () => {
     await page.keyboard.press('Escape')
     await expect(viewer(page)).toHaveCount(0)
 
-    // No data-width, no data-height: measured before it opens — 2400 × 1600 at its proportions.
+    // No data-width, no data-height: measured before it opens — 1800 × 1200 at its proportions.
     await section(page, 'Links by hand').locator('a').nth(1).click()
     await expect.poll(() => picture(page)).not.toBeNull()
     const bare = await picture(page)
@@ -1397,15 +1406,262 @@ test.describe('lightbox', () => {
       .evaluateAll((links) => links.map((a) => a.href))
     expect(hrefs.length).toBeGreaterThanOrEqual(14)
 
+    // A picture of the media library: the JPEG of the demo, made a WebP on the way in.
     const file = await page.request.get(hrefs[0])
     expect(file.status()).toBe(200)
-    expect(file.headers()['content-type']).toContain('image/svg+xml')
+    expect(file.headers()['content-type']).toContain('image/webp')
 
     // Neither the script nor the words of a page that has no lightbox.
     expect(await page.locator('script[src*="lightbox.js"]').count()).toBe(1)
     const plain = await context.newPage()
     await plain.goto('/kitchen-sink/slider')
     expect(await plain.locator('script[src*="lightbox.js"], #webx-lightbox').count()).toBe(0)
+    await context.close()
+  })
+})
+
+test.describe('gallery and logos blocks', () => {
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  // Answered already: the banner would stand over the blocks at the bottom of a phone.
+  const answered = async (context) => {
+    const url = new URL(site)
+    await context.addCookies([
+      {
+        name: 'webx_consent',
+        value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: [] })),
+        domain: url.hostname,
+        path: '/',
+      },
+    ])
+  }
+
+  const block = (page, type, heading) =>
+    page
+      .locator(`[data-wx-block="${type}"]`)
+      .filter({ has: page.getByRole('heading', { name: heading, exact: true }) })
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  // Every picture of the blocks is a file of the site — the library's, through its own address.
+  const pictures = (page) =>
+    page.evaluate(() =>
+      [
+        ...document.querySelectorAll('[data-wx-block="gallery"] img, [data-wx-block="logos"] img'),
+      ].map((img) => img.currentSrc || img.src),
+    )
+
+  test('the grid takes as many columns as its column has room for, and opens the lightbox', async ({
+    page,
+    context,
+  }) => {
+    await answered(context)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    const outside = []
+    page.on('request', (request) => {
+      const url = request.url()
+      if (!url.startsWith('data:') && new URL(url).origin !== site) outside.push(url)
+    })
+
+    // Three asked for: three on a wide page, two where a cell would be narrower than 9em.
+    for (const [width, columns] of [
+      [1280, 3],
+      [375, 2],
+    ]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto('/kitchen-sink/lightbox')
+      await still(page)
+
+      const grid = block(page, 'gallery', 'Grid')
+      const measured = await grid.locator('.b-gallery__grid').evaluate((list) => {
+        const cells = [...list.querySelectorAll('.b-gallery__cell')]
+        const box = list.getBoundingClientRect()
+        return {
+          columns: getComputedStyle(list).gridTemplateColumns.split(' ').length,
+          rows: new Set(cells.map((cell) => Math.round(cell.getBoundingClientRect().top))).size,
+          widths: cells.map((cell) => Math.round(cell.getBoundingClientRect().width)),
+          inside: cells.every((cell) => {
+            const c = cell.getBoundingClientRect()
+            return c.left >= box.left - 0.5 && c.right <= box.right + 0.5
+          }),
+          square: cells.every((cell) => {
+            const img = cell.querySelector('img').getBoundingClientRect()
+            return Math.abs(img.width - img.height) < 1
+          }),
+        }
+      })
+      expect(measured.columns, `columns at ${width}`).toBe(columns)
+      expect(measured.rows, `rows at ${width}`).toBe(Math.ceil(6 / columns))
+      expect(new Set(measured.widths).size, `cells of one width at ${width}`).toBe(1)
+      expect(measured.inside).toBe(true)
+      expect(measured.square).toBe(true)
+      expect(await sideways(page), `no horizontal scroll at ${width}`).toBe(0)
+
+      // The title of a picture in the library is its caption.
+      await expect(grid.locator('figcaption').first()).toHaveText(/caption from the library/)
+
+      // A cell opens its picture over the page, among the six of its block.
+      await grid.locator('a[data-webx-lightbox]').nth(1).click()
+      await expect(page.locator('.pswp__counter')).toHaveText('2 / 6')
+      await page.keyboard.press('Escape')
+      await expect(page.locator('.pswp')).toHaveCount(0)
+    }
+
+    // One group per block: the grid and the slider do not page into each other.
+    const groups = await page
+      .locator('[data-wx-block="gallery"] a[data-webx-lightbox]')
+      .evaluateAll((links) => [...new Set(links.map((a) => a.dataset.webxLightbox))])
+    expect(groups).toHaveLength(2)
+
+    for (const src of await pictures(page)) expect(new URL(src).origin).toBe(site)
+    await page.waitForLoadState('networkidle')
+    expect(outside).toEqual([])
+  })
+
+  test('as a slider it shows one picture to the width, its thumbnails and the lightbox', async ({
+    page,
+    context,
+  }) => {
+    await answered(context)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+
+    for (const width of [375, 1280]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto('/kitchen-sink/lightbox')
+      await still(page)
+
+      const gallery = block(page, 'gallery', 'Gallery slider')
+      const viewport = gallery.locator('.webx-slider__viewport')
+      await viewport.scrollIntoViewIfNeeded()
+      await expect.poll(() => viewport.evaluate((el) => Boolean(el.swiper))).toBe(true)
+
+      const m = await gallery.evaluate((root) => {
+        const frame = root.querySelector('.webx-slider__viewport').getBoundingClientRect()
+        const slide = root.querySelector('.webx-slider__slide').getBoundingClientRect()
+        const thumb = root.querySelector('.webx-slider__thumb')?.getBoundingClientRect()
+        return {
+          frame: frame.width,
+          slide: slide.width,
+          thumb: thumb?.width ?? 0,
+          block: root.getBoundingClientRect().width,
+        }
+      })
+      expect(Math.abs(m.slide - m.frame), `one picture to the width at ${width}`).toBeLessThan(1)
+      expect(m.frame).toBeLessThanOrEqual(m.block + 0.5)
+      expect(m.thumb).toBeGreaterThanOrEqual(44)
+      await expect(gallery.locator('.webx-slider__thumb')).toHaveCount(6)
+      expect(await sideways(page), `no horizontal scroll at ${width}`).toBe(0)
+
+      // The picture of the slide opens over the page; the thumbnails come from the library too.
+      await gallery.locator('.webx-slider__slide.is-active a[data-webx-lightbox]').click()
+      await expect(page.locator('.pswp__counter')).toHaveText('1 / 6')
+      await page.keyboard.press('Escape')
+      await expect(page.locator('.pswp')).toHaveCount(0)
+      const thumbs = await gallery
+        .locator('.webx-slider__thumb img')
+        .evaluateAll((all) => all.map((img) => img.currentSrc || img.src))
+      expect(thumbs).toHaveLength(6)
+      for (const src of thumbs) expect(new URL(src).origin).toBe(site)
+    }
+  })
+
+  test('the logos run, stop for a pause button and for the focus, and are links by the keyboard', async ({
+    page,
+    context,
+  }) => {
+    await answered(context)
+
+    for (const [width, perView] of [
+      [1280, 6],
+      [375, 2.5],
+    ]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto('/kitchen-sink/slider')
+
+      const logos = block(page, 'logos', 'Logos')
+      const viewport = logos.locator('.webx-slider__viewport')
+      await viewport.scrollIntoViewIfNeeded()
+      await expect
+        .poll(() => viewport.evaluate((el) => el.swiper?.params.slidesPerView))
+        .toBe(perView)
+
+      // Running: the strip moves on its own.
+      const offset = () => viewport.evaluate((el) => el.swiper.getTranslate())
+      const before = await offset()
+      await expect.poll(offset, { message: `the strip runs at ${width}` }).not.toBe(before)
+      expect(await sideways(page), `no horizontal scroll at ${width}`).toBe(0)
+
+      // A pause button a finger can hit, and nothing else to press.
+      const pause = logos.locator('.webx-slider__pause')
+      const box = await pause.boundingBox()
+      expect(box.width).toBeGreaterThanOrEqual(44)
+      expect(box.height).toBeGreaterThanOrEqual(44)
+      expect(await logos.locator('.webx-slider__prev, .webx-slider__bullet').count()).toBe(0)
+
+      // Every logo with a link is reached by Tab, once — the copies of the strip are inert —
+      // and the strip holds still while the focus is inside.
+      const links = await logos
+        .locator('a.b-logos__item')
+        .evaluateAll((all) =>
+          all.filter((a) => !a.closest('[inert]')).map((a) => a.getAttribute('href')),
+        )
+      expect(links).toEqual(['#logo-1', '#logo-3', '#logo-5', '#logo-7'])
+      await logos.locator('h2').evaluate((h) => {
+        h.tabIndex = -1
+        h.focus()
+      })
+      const reached = []
+      for (let i = 0; i < links.length; i++) {
+        await page.keyboard.press('Tab')
+        reached.push(await page.evaluate(() => document.activeElement.getAttribute('href')))
+      }
+      expect(reached).toEqual(links)
+      expect(await viewport.evaluate((el) => el.swiper.autoplay.paused)).toBe(true)
+
+      // The button stops it for good, wherever the focus goes.
+      await pause.click()
+      await expect(pause).toHaveAttribute('aria-label', 'Play')
+      await page.mouse.click(1, 1)
+      expect(await viewport.evaluate((el) => el.swiper.autoplay.running)).toBe(false)
+    }
+
+    for (const src of await pictures(page)) expect(new URL(src).origin).toBe(site)
+  })
+
+  test('without JavaScript the logos are a strip that scrolls, the grid a grid of links', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 375, height: 800 },
+    })
+    const page = await context.newPage()
+    await page.goto('/kitchen-sink/slider')
+
+    const logos = block(page, 'logos', 'Logos')
+    const strip = await logos.locator('.webx-slider__track').evaluate((track) => {
+      const before = track.scrollLeft
+      track.scrollLeft = track.scrollWidth
+      return {
+        overflow: getComputedStyle(track).overflowX,
+        scrolls: track.scrollWidth > track.clientWidth,
+        moved: track.scrollLeft > before,
+        slides: track.querySelectorAll('.webx-slider__slide').length,
+      }
+    })
+    expect(strip).toEqual({ overflow: 'auto', scrolls: true, moved: true, slides: 8 })
+    expect(await logos.locator('.webx-slider__pause').isHidden()).toBe(true)
+    expect(await sideways(page)).toBe(0)
+
+    await page.goto('/kitchen-sink/lightbox')
+    const hrefs = await block(page, 'gallery', 'Grid')
+      .locator('a')
+      .evaluateAll((all) => all.map((a) => a.href))
+    expect(hrefs).toHaveLength(6)
+    const file = await page.request.get(hrefs[0])
+    expect(file.status()).toBe(200)
+    expect(file.headers()['content-type']).toContain('image/')
     await context.close()
   })
 })
