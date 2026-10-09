@@ -18,7 +18,7 @@ final class ThemeDemo
 {
     public static function directory(string $module): ?string
     {
-        foreach (self::chain()?->layers ?? [] as $layer) {
+        foreach (self::chain()->layers ?? [] as $layer) {
             if (is_dir($layer->path.'/demo/'.$module)) {
                 return $layer->path.'/demo/'.$module;
             }
@@ -34,7 +34,7 @@ final class ThemeDemo
      */
     public static function themed(): bool
     {
-        return (self::chain()?->layers ?? []) !== [];
+        return (self::chain()->layers ?? []) !== [];
     }
 
     private static function chain(): ?ThemeChain

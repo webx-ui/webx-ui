@@ -19,28 +19,50 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   - `data-webx-accordion="single"` on a container of `<details>` — one open at a time.
 - **Components** — `<x-webx-dialog id title close>`, `<x-webx-tabs label>` with
   `<x-webx-tabs.panel title selected level>`. Views: `webx-widgets::components.<name>`.
+- **Header** — `<x-webx-header>` with slots `topbar`, `brand`, the default (the navigation),
+  `actions`, `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` | a width in px |
+  `never`), `breakpoint` (where `auto` folds without JavaScript, 960), `sticky` (`none` |
+  `sticky` | `hide-on-scroll`), `overlay`, `skip` (`#content`, or `false` when the layout has
+  its own skip link), `mode` and `side` of the mobile menu it builds. Inside it
+  `<x-webx-header.nav :items="menu('header')" :mega="['services' => 'components.mega']">` —
+  dropdowns; a `mega` view gets `$item`. `:items` takes `menu()` trees or arrays
+  `['label', 'url', 'children', 'current', 'variant']`.
+- **Mobile menu** — `<x-webx-mobile-menu side breakpoint close-on-navigate history>` with slots
+  `top`, the default (the body), `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items
+mode="accordion|drill">` in its body. The header builds one by itself out of its brand,
+  navigation and actions unless given `mobile` or `collapse="never"`.
 - **Loading** — `Widgets::need('<name>')` (facade `WebxUi\Widgets\Facades\Widgets`) claims a
   widget's own `dist/<name>.js|css` for the page. `@webxTheme` prints a marker; the response gets
   the `<link>`s there and the `<script type="module">`s before `</body>`.
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
-  (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`).
-  `html.webx-js` once the runtime runs; `html.webx-scroll-locked` while a modal is open.
+  (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`;
+  `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,
+  `is-collapsed|is-scrolled|is-hidden`; `webx-header-nav__item|link|toggle|dropdown|mega|sublink`,
+  `is-open|is-current|is-flipped`; `webx-mobile-menu__trigger|panel|panel--<side>|top|close|body|bottom`;
+  `webx-mobile-nav__list|item|link|toggle|level|back|title`, `is-drilled`).
+  `html.webx-js` once the runtime runs; `html.webx-scroll-locked` while a modal is open;
+  `html.webx-header-sticky` while a header sticks (the page's scroll padding is its height).
 - **Local tokens** — `--webx-dialog-width`, `--webx-dialog-padding`, `--webx-dialog-backdrop`,
-  `--webx-tabs-gap`, `--webx-tabs-indicator`; declared on `:root` from `--site-*`.
+  `--webx-tabs-gap`, `--webx-tabs-indicator`, `--webx-header-bg`, `--webx-header-gap`,
+  `--webx-header-overlay-color`, `--webx-mobile-menu-width`, `--webx-mobile-menu-backdrop`,
+  `--webx-mobile-menu-padding`; declared on `:root` from `--site-*`. `--webx-header-height` and
+  `--webx-header-topbar-height` are kept live by the runtime — use them for `top` of anything
+  else sticky.
 - **Words** — `webx-widgets::widgets.*` in en, ru, uk, de, pl, fr, es, it, pt, tr; every word
   is also a prop (`close="…"`).
 
 ## Change it without forking
 
-| You want                               | Do this                                                                                            |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Other colours, radius, spacing         | site tokens in `theme/tokens.json` — the widgets follow                                            |
-| A widget's own measure (dialog width…) | `--webx-<name>-*` on `:root` or on `.webx-<name>` in `theme/src/css`                               |
-| Another look of a widget               | the same `.webx-<name>*` class in `theme/src/css` — it comes later in the cascade, no `!important` |
-| Other markup of a component            | `theme/views/vendor/webx-widgets/components/<name>.blade.php`                                      |
-| A word                                 | the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`                           |
-| A behaviour of the site's own          | `webx.widget('name', '[data-…]', (el) => cleanup)` in `theme/src/js/theme.js`                      |
-| Start widgets in HTML added later      | `webx.mount(container)`; before removing it, `webx.unmount(container)`                             |
+| You want                                 | Do this                                                                                            |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Other colours, radius, spacing           | site tokens in `theme/tokens.json` — the widgets follow                                            |
+| A widget's own measure (dialog width…)   | `--webx-<name>-*` on `:root` or on `.webx-<name>` in `theme/src/css`                               |
+| Another look of a widget                 | the same `.webx-<name>*` class in `theme/src/css` — it comes later in the cascade, no `!important` |
+| Logo in the middle, two rows in a header | `grid-template-areas` on `.webx-header__bar` in `theme/src/css`                                    |
+| Other markup of a component              | `theme/views/vendor/webx-widgets/components/<name>.blade.php`                                      |
+| A word                                   | the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`                           |
+| A behaviour of the site's own            | `webx.widget('name', '[data-…]', (el) => cleanup)` in `theme/src/js/theme.js`                      |
+| Start widgets in HTML added later        | `webx.mount(container)`; before removing it, `webx.unmount(container)`                             |
 
 ## Do not
 
