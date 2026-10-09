@@ -64,7 +64,12 @@ open-on="click|hover" label open>` with slot `trigger` (its attributes go on the
   `<x-webx-contact-button corner form :items>` — a round button in a corner, above the cookie
   banner while it shows; `<x-webx-contact-bar form :breakpoint>` — "Call / Write / Request" on a
   phone, no script; `<x-webx-socials>`; `<x-webx-icon name>` — networks, messengers (Simple Icons,
-  CC0) and `phone`, `chat`, `mail`, `clock`, `link`, `form`, `close`.
+  CC0) and `phone`, `chat`, `mail`, `clock`, `link`, `form`, `close`, `globe`.
+- **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes placement
+label fallback-label>`: each language named in itself, a link to the same page in it from the
+  `webx-ui/routing` registry (as `hreflang`), or to its home page with `is-fallback` where there
+  is no translation; nothing with one language or without the language in the path.
+  `dist/language-switcher.css` only. Links for a markup of your own: `LanguageLinks::current()`.
 - **Loading** — `Widgets::need('<name>')` (facade `WebxUi\Widgets\Facades\Widgets`) claims a
   widget's own `dist/<name>.js|css` for the page. `@webxTheme` prints a marker; the response gets
   the `<link>`s there and the `<script type="module">`s before `</body>`.
@@ -79,17 +84,15 @@ open-on="click|hover" label open>` with slot `trigger` (its attributes go on the
   `webx-consent-link`; `webx-dropdown`, `--<placement>`, `__trigger|panel`, `is-open|is-flipped`;
   `webx-form-dialog__header|title|close|body|done`, `is-sent`;
   `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-today`), `webx-contact-button__*`,
-  `webx-contact-bar__*`, `webx-socials__*`, `webx-icon` — listed in each view's header).
+  `webx-contact-bar__*`, `webx-socials__*`, `webx-icon`; `webx-language-switcher__current|list|
+link`, `is-current|is-fallback` — listed in each view's header).
   `html.webx-js` once the runtime runs; `html.webx-scroll-locked` while a modal is open;
   `html.webx-header-sticky` while a header sticks (the page's scroll padding is its height).
-- **Local tokens** — `--webx-dialog-width`, `--webx-dialog-padding`, `--webx-dialog-backdrop`,
-  `--webx-tabs-gap`, `--webx-tabs-indicator`, `--webx-header-bg`, `--webx-header-gap`,
-  `--webx-header-overlay-color`, `--webx-mobile-menu-width`, `--webx-mobile-menu-backdrop`,
-  `--webx-mobile-menu-padding`, `--webx-consent-z`, `--webx-consent-max-height`,
-  `--webx-consent-padding`, `--webx-consent-bg`, `--webx-consent-color`,
-  `--webx-consent-button-bg`, `--webx-consent-button-color`, `--webx-consent-font-size`,
-  `--webx-dropdown-offset`, `--webx-dropdown-min-width`, `--webx-icon-size`,
-  `--webx-hours-*`, `--webx-contact-*`, `--webx-contact-bar-*`, `--webx-socials-size`; declared on `:root` from `--site-*`. `--webx-header-height` and
+- **Local tokens** — `--webx-dialog-*`, `--webx-tabs-*`, `--webx-header-*`,
+  `--webx-mobile-menu-*`, `--webx-consent-*`, `--webx-dropdown-offset|min-width`,
+  `--webx-icon-size`, `--webx-hours-*`, `--webx-contact-*`, `--webx-contact-bar-*`,
+  `--webx-socials-size`, `--webx-language-switcher-*`; each listed in its stylesheet, declared on
+  `:root` from `--site-*`. `--webx-header-height` and
   `--webx-header-topbar-height` are kept live by the runtime — use them for `top` of anything
   else sticky.
 - **Words** — `webx-widgets::widgets.*` in en, ru, uk, de, pl, fr, es, it, pt, tr; every word

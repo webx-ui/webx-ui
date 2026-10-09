@@ -449,7 +449,7 @@ test.describe('cookie consent', () => {
 test.describe('dropdown panel', () => {
   const PATH = '/kitchen-sink/dropdown-and-form'
 
-  // The starter site prints no dropdown yet (the phones and the languages come next), so the
+  // The header's dropdowns (the phones, the languages) stand at its right edge only, so the
   // page gets a row of them the way <x-webx-dropdown> prints them, across the whole window:
   // one at its left, one on hover, one against its right edge.
   async function withDropdowns(page) {
