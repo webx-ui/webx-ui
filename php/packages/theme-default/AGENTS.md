@@ -26,8 +26,13 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   the muted colours of quotes, captions and `small` inside a block, which otherwise keep the
   block's own colour).
 - **`demo/pages/`** — the showcase ("Kitchen sink" and the pages under it), seeded by
-  `webx:demo` beside the pages demo and removed with it. Its blocks use only the demo block types
-  (`hero`, `text`, `columns`).
+  `webx:demo` beside the pages demo and removed with it. Its blocks use the demo block types
+  (`hero`, `text`, `columns`), the showcase's own in `demo/blocks/` (what no real block shows) and
+  the `gallery`, `logos`, `video` and `map` blocks of `webx-ui/widgets`; their pictures are `demo/media/`, put in
+  the library by the media demo and named in a page as `"path": "demo:<file name>"`. Nothing
+  under `demo/` is published on a site. A page per widget under "Kitchen sink": Header and menu,
+  Cookie consent, Dropdown and form in a dialog, Contacts, Language switcher, Slider, Lightbox,
+  Video, Map — every variant, a narrow column, what to try; the place to look before changing one.
 - **`src/css/`** — `base.css`, `shell.css`, `prose.css`, joined by `theme.css`; every selector
   inside `:where()` (no specificity). **`dist/theme.css`** — the committed build that
   `webx:theme:sync` publishes.

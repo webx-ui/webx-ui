@@ -62,6 +62,20 @@ final class BlockTest extends TestCase
         );
     }
 
+    /**
+     * A theme's prose spaces `li + li`, which in a grid or a row lifts the first cell above the
+     * others: the cells of the type's lists keep no margin of their own.
+     */
+    #[Test]
+    public function the_cells_of_its_rows_keep_no_margin(): void
+    {
+        $styles = (string) $this->installBlock()->load('publishedVersion')->publishedVersion?->styles;
+
+        foreach (['.b-menu__item'] as $cell) {
+            $this->assertMatchesRegularExpression('~^'.preg_quote($cell, '~').'(,\n[^{]*)? \{[^}]*\n    margin: 0[ ;]~m', $styles, $cell);
+        }
+    }
+
     #[Test]
     public function a_type_the_site_already_has_by_that_slug_is_never_touched(): void
     {

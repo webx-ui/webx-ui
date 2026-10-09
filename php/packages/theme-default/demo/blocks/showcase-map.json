@@ -1,0 +1,52 @@
+{
+  "slug": "showcase-map",
+  "title": "Showcase: map",
+  "description": "One <x-webx-map from=\"settings\"> in a column 20rem wide, for the kitchen sink of the default theme: the Map block of the widgets shows every other case, but a block cannot stand in a narrow column.",
+  "icon": null,
+  "group": "content",
+  "sort": 93,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "width",
+      "type": "wx-select",
+      "label": "Width",
+      "props": {
+        "options": [
+          {
+            "label": "Full",
+            "value": "full"
+          },
+          {
+            "label": "Narrow column",
+            "value": "narrow"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "<section class=\"b-showcase-map b-showcase-map--{{ $width === 'narrow' ? 'narrow' : 'full' }}\" data-wx-block=\"showcase-map\">\n    @if ($heading)\n        <h2 class=\"b-showcase-map__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-map__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-map__frame\">\n        <x-webx-map from=\"settings\" height=\"18rem\" />\n    </div>\n</section>\n",
+  "styles": ".b-showcase-map {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-map__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-map__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-map--narrow .b-showcase-map__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "A map",
+    "note": "The main address of the contacts.",
+    "width": "full"
+  }
+}

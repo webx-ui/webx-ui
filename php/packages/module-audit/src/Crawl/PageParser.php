@@ -19,12 +19,12 @@ use WebxUi\Audit\Runs\AuditLink;
  */
 final class PageParser
 {
-    /** The most addresses kept of one page: a mega-menu is a few hundred, a spam page is not. */
     /** How many elements a finding quotes, and how much of each. */
     private const EXCERPTS = 5;
 
     private const EXCERPT_LENGTH = 200;
 
+    /** The most addresses kept of one page: a mega-menu is a few hundred, a spam page is not. */
     private const LINKS = 2000;
 
     /** The most H1 texts kept. */
@@ -47,7 +47,11 @@ final class PageParser
     /** Flash: dead in every browser since 2021, still in old content. */
     private const FLASH = 'embed[src$=".swf" i], object[data$=".swf" i], object[type="application/x-shockwave-flash"], embed[type="application/x-shockwave-flash"]';
 
-    public function __construct(private readonly UrlFinder $finder) {}
+    public function __construct(
+        private readonly UrlFinder $finder,
+        // Other modules' readers (§7): what their checks need of the page, read while it is here.
+        private readonly ?PageReaders $readers = null,
+    ) {}
 
     /**
      * @param  string|null  $charset  From the `Content-Type` header, when it names one.
@@ -121,6 +125,9 @@ final class PageParser
 
         $this->styles($document, $links);
         $jsonLd = $this->jsonLd($document, $links);
+
+        // Before the text is taken: that removes the scripts, the templates and the SVG.
+        $facts += $this->readers?->read($document, $base) ?? [];
 
         $text = $this->text($document);
         $words = $text === '' ? 0 : (int) preg_match_all('/[\p{L}\p{N}][\p{L}\p{N}\'’-]*/u', $text);
@@ -607,11 +614,21 @@ final class PageParser
     private static function excerpt(HTMLDocument $document, Element $element, array &$into): void
     {
         if (count($into) < self::EXCERPTS) {
-            // Parsed without the HTML namespace, a void element comes back with a closing tag the
-            // page never wrote: `<img src="…"></img>`.
-            $html = (string) preg_replace('~></(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)>~i', '>', $document->saveHtml($element));
-            $into[] = self::cut(self::clean($html), self::EXCERPT_LENGTH);
+            $into[] = self::quote($document, $element);
         }
+    }
+
+    /**
+     * One element as the page wrote it, cut to the length of an excerpt — public for a module's
+     * {@see AuditPageReader}, whose findings quote the same way.
+     */
+    public static function quote(HTMLDocument $document, Element $element): string
+    {
+        // Parsed without the HTML namespace, a void element comes back with a closing tag the
+        // page never wrote: `<img src="…"></img>`.
+        $html = (string) preg_replace('~></(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)>~i', '>', $document->saveHtml($element));
+
+        return self::cut(self::clean($html), self::EXCERPT_LENGTH);
     }
 
     private static function cut(string $value, int $length): string

@@ -63,6 +63,7 @@ export default defineConfig({
             { text: 'Blocks', link: '/guide/blocks' },
             { text: 'Layout regions', link: '/guide/layout-regions' },
             { text: 'Shortcodes', link: '/guide/shortcodes' },
+            { text: 'Site widgets', link: '/guide/widgets' },
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },

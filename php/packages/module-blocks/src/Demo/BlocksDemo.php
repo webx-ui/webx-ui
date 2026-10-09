@@ -9,6 +9,8 @@ use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Demo\ThemeDemo;
 use WebxUi\Admin\Versions\EntityVersion;
+use WebxUi\Blocks\BlockOffers;
+use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Exceptions\RegionRefused;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
@@ -26,6 +28,10 @@ use WebxUi\Blocks\Regions;
  * The fixtures are the files `webx:blocks:export` writes, so what ships here is what the panel
  * would have saved — and a site that wants to keep one of them can export it, edit it and
  * import it back long after the demo is gone.
+ *
+ * The site's theme may bring its own in `demo/blocks/` (§15.1 of the themes spec): its copy of
+ * one of the three wins, and the types it adds are seeded after them — the showcase of
+ * `theme-default`, whose pages stand on them.
  */
 final class BlocksDemo
 {
@@ -46,15 +52,91 @@ final class BlocksDemo
         private readonly Filesystem $files,
         private readonly Regions $regions,
         private readonly RegionWriter $writer,
+        private readonly BlockOffers $offers,
     ) {}
 
     public function seed(DemoLedger $ledger): void
     {
-        foreach (self::TYPES as $slug) {
+        foreach ([...self::TYPES, ...$this->themeTypes()] as $slug) {
             $this->type($ledger, $slug);
         }
 
+        $this->offered($ledger);
         $this->regions($ledger);
+    }
+
+    /**
+     * The offered types the theme's pages stand on — the gallery and logos of `webx-ui/widgets`
+     * on the showcase of `theme-default`. `webx:setup` installs them before the demo runs; this
+     * is for a site that never did, so that the pages the demo writes are pages it can print.
+     * Installed the way the command installs them, and journalled, so `--remove` takes them.
+     */
+    private function offered(DemoLedger $ledger): void
+    {
+        $wanted = $this->typesOnThemePages();
+
+        if ($wanted === []) {
+            return;
+        }
+
+        foreach ($this->offers->documents() as $offer) {
+            if (! in_array($offer['slug'], $wanted, true) || $this->offers->present($offer['slug'])) {
+                continue;
+            }
+
+            try {
+                $status = $this->offers->install($offer);
+            } catch (BlocksException $refused) {
+                $ledger->note("The offered block type {$offer['slug']} was refused: {$refused->getMessage()}");
+
+                continue;
+            }
+
+            $block = Block::query()->where('slug', $offer['slug'])->first();
+
+            if ($block instanceof Block) {
+                $ledger->created($block, $offer['slug']);
+            }
+
+            if ($status === BlockOffers::DRAFT) {
+                $ledger->note("The offered block type {$offer['slug']} is left as a draft: it does not render on its sample.");
+            }
+        }
+    }
+
+    /**
+     * Every block type the theme's demo pages name, nested blocks and child pages included.
+     *
+     * @return list<string>
+     */
+    private function typesOnThemePages(): array
+    {
+        $directory = ThemeDemo::directory('pages');
+
+        if ($directory === null) {
+            return [];
+        }
+
+        $types = [];
+        $walk = static function (mixed $node) use (&$walk, &$types): void {
+            if (! is_array($node)) {
+                return;
+            }
+
+            if (is_string($node['type'] ?? null) && array_key_exists('values', $node)) {
+                $types[$node['type']] = true;
+            }
+
+            foreach ($node as $child) {
+                $walk($child);
+            }
+        };
+
+        foreach ($this->files->glob($directory.'/*.json') as $file) {
+            $walk(json_decode((string) $this->files->get($file), true));
+        }
+
+        return array_keys($types);
     }
 
     private function type(DemoLedger $ledger, string $slug): void
@@ -138,11 +220,34 @@ final class BlocksDemo
     }
 
     /**
+     * The types the theme adds to the three, in the order of their file names.
+     *
+     * @return list<string>
+     */
+    private function themeTypes(): array
+    {
+        $directory = ThemeDemo::directory('blocks');
+
+        if ($directory === null) {
+            return [];
+        }
+
+        $slugs = array_map(static fn (string $file): string => pathinfo($file, PATHINFO_FILENAME), $this->files->glob($directory.'/*.json'));
+        sort($slugs);
+
+        return array_values(array_diff($slugs, self::TYPES, array_column(self::REGIONS, 'type')));
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function read(string $slug): array
     {
-        $path = __DIR__."/../../resources/demo/{$slug}.json";
+        // The theme's copy of a type wins; the module's own fills in what it leaves out.
+        $theme = ThemeDemo::directory('blocks');
+        $path = $theme !== null && $this->files->exists("{$theme}/{$slug}.json")
+            ? "{$theme}/{$slug}.json"
+            : __DIR__."/../../resources/demo/{$slug}.json";
         $document = json_decode((string) $this->files->get($path), true);
 
         if (! is_array($document)) {

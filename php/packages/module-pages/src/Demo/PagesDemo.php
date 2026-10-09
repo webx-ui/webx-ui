@@ -8,8 +8,10 @@ use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Demo\ThemeDemo;
+use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Localization\Locales;
+use WebxUi\Media\Models\MediaFile;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Routing\Reserved;
 use WebxUi\Seo\Fields;
@@ -34,10 +36,14 @@ final class PagesDemo
     /** The documents the module seeds itself; a theme may replace them, not add them twice. */
     private const OWN = ['home', 'about'];
 
+    /** How a document names a picture of the media demo: `demo:<its file name, no extension>`. */
+    private const PICTURE = 'demo:';
+
     public function __construct(
         private readonly Filesystem $files,
         private readonly Locales $locales,
         private readonly Reserved $reserved,
+        private readonly ModuleRegistry $modules,
     ) {}
 
     public function seed(DemoLedger $ledger): void
@@ -87,7 +93,7 @@ final class PagesDemo
 
         $ledger->changed($home, ['blocks', 'draft', 'published_at'], 'the home page');
 
-        $home->setAttribute('blocks', $document['blocks'] ?? []);
+        $home->setAttribute('blocks', $this->pictures($document['blocks'] ?? [], $ledger));
         $home->save();
         $home->publish(null, EntityVersion::SOURCE_IMPORT, 'Demo content');
 
@@ -107,7 +113,7 @@ final class PagesDemo
         $page = new Page([
             'title' => [$this->locale() => (string) ($document['title'] ?? ucfirst($slug))],
             'slug' => [$this->locale() => $slug],
-            'blocks' => $document['blocks'] ?? [],
+            'blocks' => $this->pictures($document['blocks'] ?? [], $ledger),
         ]);
 
         // Through the tree rather than through `save()`: the bounds are what put the page
@@ -198,6 +204,70 @@ final class PagesDemo
         if ($meta instanceof SeoMeta) {
             $ledger->created($meta, 'what '.$page->routePath().' says about itself');
         }
+    }
+
+    /**
+     * The library first when it is installed: a theme's page names the pictures its media demo
+     * puts there. A name `requires()` gives that is not installed skips the whole demo, and the
+     * pages have plenty to show without a picture.
+     *
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return $this->modules->has('media') ? ['blocks', 'media'] : ['blocks'];
+    }
+
+    /**
+     * The blocks of a page with every `{ "path": "demo:<name>" }` made a picture of the library:
+     * the one the media demo stored under that name. The library gives a file its key when it
+     * stores it, so a document written beforehand can only name it. A picture that is not there —
+     * no library, or a site that had the same bytes already under another name — is left out of
+     * its list, or leaves its field empty.
+     */
+    private function pictures(mixed $value, DemoLedger $ledger): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        $path = $value['path'] ?? null;
+
+        if (is_string($path) && str_starts_with($path, self::PICTURE)) {
+            $found = $this->picture(substr($path, strlen(self::PICTURE)), $ledger);
+
+            return $found === null ? null : ['path' => $found] + $value;
+        }
+
+        $list = array_is_list($value);
+        $done = [];
+
+        foreach ($value as $key => $item) {
+            $made = $this->pictures($item, $ledger);
+
+            // A picture that is not there drops out of a gallery rather than leaving a hole.
+            if ($list && $made === null && is_array($item)) {
+                continue;
+            }
+
+            $done[$key] = $made;
+        }
+
+        return $list ? array_values($done) : $done;
+    }
+
+    /** The key of the demo's picture by this name: the one this run stored, else any by the name. */
+    private function picture(string $name, DemoLedger $ledger): ?string
+    {
+        if (! class_exists(MediaFile::class)) {
+            return null;
+        }
+
+        $ids = $ledger->idsOf('media', MediaFile::class);
+        $file = ($ids === [] ? null : MediaFile::query()->whereKey($ids)->where('name', $name)->first())
+            ?? MediaFile::query()->where('name', $name)->orderByDesc('id')->first();
+
+        return $file instanceof MediaFile ? $file->path : null;
     }
 
     /** The language the demo is written in: one, and the site's own default. */

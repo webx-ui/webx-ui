@@ -165,6 +165,21 @@ final class HelperTest extends TestCase
         $this->assertSame(['Crowns'], array_column($source->items(new Selection([(int) $implants->getKey()]), 'en'), 'title'));
     }
 
+    /**
+     * A theme's prose spaces `li + li`, which in a grid or a row lifts the first cell above the
+     * others: the cells of the type's lists keep no margin of their own.
+     */
+    #[Test]
+    public function the_cells_of_its_rows_keep_no_margin(): void
+    {
+        $this->artisan('webx:blocks:offered', ['--install' => true, '--module' => ['services']])->assertSuccessful();
+        $styles = (string) Block::query()->where('slug', 'services')->firstOrFail()->load('publishedVersion')->publishedVersion?->styles;
+
+        foreach (['.b-services__card'] as $cell) {
+            $this->assertMatchesRegularExpression('~^'.preg_quote($cell, '~').'(,\n[^{]*)? \{[^}]*\n    margin: 0[ ;]~m', $styles, $cell);
+        }
+    }
+
     #[Test]
     public function the_offered_block_prints_the_cards_with_their_filter(): void
     {

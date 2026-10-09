@@ -376,6 +376,603 @@
           }
         }
       ]
+    },
+    {
+      "title": "Slider",
+      "slug": "slider",
+      "seo": {
+        "title": "Slider",
+        "description": "The slider in every variant, at full width and in a narrow column."
+      },
+      "blocks": [
+        {
+          "key": "showcase-slider-intro",
+          "type": "text",
+          "values": {
+            "heading": "Slider",
+            "body": "Four variants of one widget: cards, hero, gallery and logos. Slides per view follow the width of the column the slider stands in, not the width of the window — so the same cards show three to a row here and one and a bit in the narrow column below.\nThe gallery and the logos are the blocks of the same names — what a site puts on a page in the panel, with pictures of the media library. The rest stand on a block made for this page.\nWithout JavaScript every slider is a strip that scrolls sideways and stops at a slide."
+          }
+        },
+        {
+          "key": "showcase-slider-cards",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Cards",
+            "note": "Three per view at full width, two on a tablet, one and a bit on a phone. The arrows move a whole view; the dots are pages.",
+            "variant": "cards",
+            "width": "full",
+            "slides": "8"
+          }
+        },
+        {
+          "key": "showcase-slider-cards-narrow",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Cards in a narrow column",
+            "note": "The same cards in a column 20rem wide: one and a bit per view, whatever the width of the window.",
+            "variant": "cards",
+            "width": "narrow",
+            "slides": "8"
+          }
+        },
+        {
+          "key": "showcase-slider-hero",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Hero",
+            "note": "One slide to the width, fading, turning on its own every six seconds. It stops while the pointer or the focus is inside, and the first button stops it for good; with reduced motion it does not start.",
+            "variant": "hero",
+            "width": "full",
+            "slides": "4"
+          }
+        },
+        {
+          "key": "showcase-slider-gallery",
+          "type": "gallery",
+          "values": {
+            "heading": "Gallery",
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-1",
+                "alt": "Photo 1"
+              },
+              {
+                "path": "demo:showcase-photo-2",
+                "alt": "Photo 2"
+              },
+              {
+                "path": "demo:showcase-photo-3",
+                "alt": "Photo 3"
+              },
+              {
+                "path": "demo:showcase-photo-4",
+                "alt": "Photo 4"
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5"
+              },
+              {
+                "path": "demo:showcase-photo-6",
+                "alt": "Photo 6"
+              }
+            ],
+            "view": "slider",
+            "zoom": false
+          }
+        },
+        {
+          "key": "showcase-slider-gallery-narrow",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "Gallery in a narrow column",
+            "note": "The thumbnails scroll when they do not fit.",
+            "variant": "gallery",
+            "width": "narrow",
+            "slides": "6"
+          }
+        },
+        {
+          "key": "showcase-slider-logos",
+          "type": "logos",
+          "values": {
+            "heading": "Logos",
+            "logos": [
+              {
+                "name": "Strategy Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-1"
+                },
+                "link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "#logo-1",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                }
+              },
+              {
+                "name": "Design Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-2"
+                },
+                "link": null
+              },
+              {
+                "name": "Development Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-3"
+                },
+                "link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "#logo-3",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                }
+              },
+              {
+                "name": "Support Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-4"
+                },
+                "link": null
+              },
+              {
+                "name": "Hosting Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-5"
+                },
+                "link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "#logo-5",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                }
+              },
+              {
+                "name": "Analytics Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-6"
+                },
+                "link": null
+              },
+              {
+                "name": "Training Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-7"
+                },
+                "link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "#logo-7",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                }
+              },
+              {
+                "name": "Audit Co.",
+                "logo": {
+                  "path": "demo:showcase-logo-8"
+                },
+                "link": null
+              }
+            ]
+          }
+        },
+        {
+          "key": "showcase-slider-single",
+          "type": "showcase-slider",
+          "values": {
+            "heading": "One slide",
+            "note": "Nothing to move: no arrows, no dots.",
+            "variant": "cards",
+            "width": "narrow",
+            "slides": "1"
+          }
+        },
+        {
+          "key": "showcase-slider-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Narrow the window: the full-width cards go from three to two to one and a bit; the narrow ones stay as they are.\nWith the keyboard: Tab into a slider, then the arrows, Home and End move it — only the slider the focus is in. A link in a slide that is out of view brings its slide in when it gets the focus.\nOn a phone: swipe. The page still scrolls up and down over a slider.\nSwitch JavaScript off: every slider is a strip that scrolls sideways and snaps to a slide, the arrows and dots are gone, and so are the thumbnails."
+          }
+        },
+        {
+          "key": "showcase-slider-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-slider with x-webx-slide inside. variant — cards, hero, gallery, logos; per-view — a number, or by the width of the slider: ['sm' => 1.2, 'md' => 2, 'lg' => 3] (sm from 0, md from 640px, lg from 960px, xl from 1280px, or a width in pixels); arrows, pagination, loop, autoplay (milliseconds, true or false), effect (slide or fade), thumbs, speed, label; options — anything else Swiper takes. A slide's thumb names the picture of its thumbnail.\nClasses: webx-slider, webx-slider--<variant>, __viewport, __track, __slide, __controls, __button, __prev, __next, __pause, __pagination, __bullet, __thumbs, __thumb; is-ready, is-active. Tokens: --webx-slider-gap, --webx-slider-arrow-size, --webx-slider-per-view and the rest of --webx-slider-*.\nIn the panel: the block gallery (pictures of the library, view grid or slider, zoom) and the block logos (a name, a logo and a link each) — offered by webx-ui/widgets, installed by webx:blocks:offered --install --module=widgets."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Lightbox",
+      "slug": "lightbox",
+      "seo": {
+        "title": "Lightbox",
+        "description": "Pictures that open over the page: the gallery block as a grid and as a slider, links written by hand."
+      },
+      "blocks": [
+        {
+          "key": "showcase-lightbox-intro",
+          "type": "text",
+          "values": {
+            "heading": "Lightbox",
+            "body": "A picture that opens over the page, at the size of the screen, and pages through the pictures of its group. It is a link to the picture: without JavaScript the link simply opens it.\nThe grid and the slider are the gallery block with pictures of the media library: one group per block, the sizes stored at upload, a title of a picture printed under it. The page loads the lightbox only because a link on it asks for one — data-webx-lightbox, wherever it was written."
+          }
+        },
+        {
+          "key": "showcase-lightbox-grid",
+          "type": "gallery",
+          "values": {
+            "heading": "Grid",
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-1",
+                "alt": "Photo 1",
+                "title": "Photo 1 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-2",
+                "alt": "Photo 2",
+                "title": "Photo 2 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-3",
+                "alt": "Photo 3",
+                "title": "Photo 3 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-4",
+                "alt": "Photo 4",
+                "title": "Photo 4 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5",
+                "title": "Photo 5 — a caption from the library"
+              },
+              {
+                "path": "demo:showcase-photo-6",
+                "alt": "Photo 6",
+                "title": "Photo 6 — a caption from the library"
+              }
+            ],
+            "view": "grid",
+            "columns": 3,
+            "zoom": true
+          }
+        },
+        {
+          "key": "showcase-lightbox-gallery",
+          "type": "gallery",
+          "values": {
+            "heading": "Gallery slider",
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-1",
+                "alt": "Photo 1"
+              },
+              {
+                "path": "demo:showcase-photo-2",
+                "alt": "Photo 2"
+              },
+              {
+                "path": "demo:showcase-photo-3",
+                "alt": "Photo 3"
+              },
+              {
+                "path": "demo:showcase-photo-4",
+                "alt": "Photo 4"
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5"
+              },
+              {
+                "path": "demo:showcase-photo-6",
+                "alt": "Photo 6"
+              }
+            ],
+            "view": "slider",
+            "zoom": true
+          }
+        },
+        {
+          "key": "showcase-lightbox-by-hand",
+          "type": "showcase-lightbox",
+          "values": {
+            "heading": "Links by hand",
+            "note": "Two links written in a template with no component, each on its own. The first is taller than wide — on a phone it fits by its height. The second came without its sizes: it is measured before it opens.",
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-7",
+                "alt": "Photo 7, taller than wide"
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5, a link without sizes"
+              }
+            ]
+          }
+        },
+        {
+          "key": "showcase-lightbox-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "With the keyboard: Tab to a picture and press Enter; the arrows page, Esc closes, and the focus is back on the picture you ended on.\nOn a phone: swipe to the next picture, pinch to zoom, swipe down to close.\nSwitch JavaScript off: every picture is a link that opens the file."
+          }
+        },
+        {
+          "key": "showcase-lightbox-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-lightbox :image=\"$picture\" group=\"product-1\" — image is a value of a media field (url, thumb, alt, width, height) or any object with url() and width and height; src, width, height, thumb, alt say it by hand. The slot replaces the thumbnail.\nBy hand: a href=\"picture\" data-webx-lightbox=\"group\" data-width=\"2400\" data-height=\"1600\" — the same group pages together, an empty one is alone. Write the sizes: without them the picture is loaded once more to be measured.\nClasses: webx-lightbox-link, __image, is-ready; the viewer is PhotoSwipe's .pswp with webx-lightbox on it. Tokens: --webx-lightbox-backdrop, --webx-lightbox-color, --webx-lightbox-outline, --webx-lightbox-placeholder, --webx-lightbox-icon-size, --webx-lightbox-z."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Video",
+      "slug": "video",
+      "seo": {
+        "title": "Video",
+        "description": "The Video block: YouTube and Vimeo as a facade, the placeholder before consent, a file of the site, posters, captions and shapes."
+      },
+      "blocks": [
+        {
+          "key": "showcase-video-intro",
+          "type": "text",
+          "values": {
+            "heading": "Video",
+            "body": "Every video on this page is the Video block of the widgets but one — a column 20rem wide, which a block cannot stand in. A YouTube or Vimeo video is a facade: a poster and a play button, and the player only on a click. Until a visitor agrees to media, the server prints a placeholder in its place — the poster, a line saying where the video loads from, Load and Always load videos — and nothing on this page asks YouTube or Vimeo for anything, the posters included: they are pictures of the site.\nA video of the site is a video element that loads nothing before Play, with no consent to ask for: it is first party. The line under each video is the block’s caption."
+          }
+        },
+        {
+          "key": "showcase-video-youtube-poster",
+          "type": "video",
+          "values": {
+            "heading": "YouTube, a poster from the library",
+            "source": "link",
+            "link": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
+            "file": null,
+            "poster": {
+              "path": "demo:showcase-photo-2",
+              "alt": ""
+            },
+            "caption": "The poster is a picture of the media library, picked for the video.",
+            "ratio": "16/9"
+          }
+        },
+        {
+          "key": "showcase-video-youtube",
+          "type": "video",
+          "values": {
+            "heading": "YouTube, no poster",
+            "source": "link",
+            "link": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+            "file": null,
+            "poster": null,
+            "caption": "No poster picked: the site fetched the video’s preview once into its library (folder Video posters). The first page that showed it had none.",
+            "ratio": "16/9"
+          }
+        },
+        {
+          "key": "showcase-video-vimeo",
+          "type": "video",
+          "values": {
+            "heading": "Vimeo, no poster",
+            "source": "link",
+            "link": "https://vimeo.com/1084537",
+            "file": null,
+            "poster": null,
+            "caption": "The same with Vimeo, whose preview its oEmbed names.",
+            "ratio": "16/9"
+          }
+        },
+        {
+          "key": "showcase-video-file",
+          "type": "video",
+          "values": {
+            "heading": "A video of the site",
+            "source": "file",
+            "link": "",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": {
+              "path": "demo:showcase-photo-4",
+              "alt": ""
+            },
+            "caption": "A file of the media library with a poster: nothing loads before Play, and there is nothing to agree to.",
+            "ratio": "16/9"
+          }
+        },
+        {
+          "key": "showcase-video-file-bare",
+          "type": "video",
+          "values": {
+            "heading": "A video of the site, no poster",
+            "source": "file",
+            "link": "",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": null,
+            "caption": "Without a poster the frame keeps its place until Play.",
+            "ratio": "16/9"
+          }
+        },
+        {
+          "key": "showcase-video-narrow",
+          "type": "showcase-video",
+          "values": {
+            "note": "The placeholder keeps the ratio in a column 20rem wide, its buttons inside the frame.",
+            "source": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+            "file": null,
+            "poster": {
+              "path": "demo:showcase-photo-3",
+              "alt": ""
+            },
+            "ratio": "",
+            "width": "narrow",
+            "heading": "In a narrow column"
+          }
+        },
+        {
+          "key": "showcase-video-ratio",
+          "type": "video",
+          "values": {
+            "heading": "A ratio of its own",
+            "source": "link",
+            "link": "https://vimeo.com/1084537",
+            "file": null,
+            "poster": {
+              "path": "demo:showcase-photo-5",
+              "alt": ""
+            },
+            "caption": "Shape 4:3 — the frame has its height before anything loads.",
+            "ratio": "4/3"
+          }
+        },
+        {
+          "key": "showcase-video-upright",
+          "type": "video",
+          "values": {
+            "heading": "Upright",
+            "source": "link",
+            "link": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
+            "file": null,
+            "poster": {
+              "path": "demo:showcase-photo-7",
+              "alt": ""
+            },
+            "caption": "Shape 9:16, as a phone films: held to a phone’s width in the middle of the column.",
+            "ratio": "9/16"
+          }
+        },
+        {
+          "key": "showcase-video-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Before an answer, or after Reject all: every YouTube and Vimeo video is the placeholder. Load plays that one and agrees to nothing; Always load videos agrees to media — the banner is answered, every placeholder becomes a play button without a reload, the one you clicked plays.\nAfter consent: the play button puts the player in, with the focus in it. Take media back in Cookie settings in the footer: the page reloads with the placeholders.\nWith the keyboard: Tab reaches each play button, Enter plays.\nSwitch JavaScript off: each video is a link to its page with its poster; a file of the site still plays."
+          }
+        },
+        {
+          "key": "showcase-video-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "The Video block: a heading, a link or a file (a switch says which), a poster, a caption and a shape — 16:9, 4:3, 1:1 or 9:16. An address of no known provider, a file gone from the library or nothing at all prints nothing.\nx-webx-video src=\"https://www.youtube.com/watch?v=…\" :poster=\"$picture\" title=\"…\" — an address of YouTube (watch, youtu.be, shorts, embed, live) or Vimeo (unlisted with its hash too); a start from ?t= or #t= is kept.\nx-webx-video :file=\"$media\" :poster=\"$picture\" ratio=\"4:3\" — a value of a media field, an object with url() or an address; ratio is 16/9 unless told.\nClasses: webx-video, --youtube, --vimeo, --file, __facade, __poster, __play, __consent, __notice, __button, __frame, __player; is-blocked, is-ready, is-playing. Tokens: --webx-video-ratio, --webx-video-bg, --webx-video-radius, --webx-video-play-size, --webx-video-play-bg, --webx-video-play-color, --webx-video-notice-bg, --webx-video-button-bg."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Map",
+      "slug": "map",
+      "seo": {
+        "title": "Map",
+        "description": "The Map block: OpenStreetMap through Leaflet, the address of the contacts or coordinates of its own, the placeholder before consent, the wheel that scrolls the page."
+      },
+      "blocks": [
+        {
+          "key": "showcase-map-intro",
+          "type": "text",
+          "values": {
+            "heading": "Map",
+            "body": "Every map on this page is the Map block of the widgets but one — a column 20rem wide, which a block cannot stand in. The map is Leaflet over the tiles of OpenStreetMap, which need no key. Tiles are requests to another site with the visitor’s address, so until a visitor agrees to media the server prints the place instead — the address, Open in maps, a line saying where the map loads from, Load and Always load maps — and nothing on this page asks OpenStreetMap for anything.\nThe attribution of the map’s data stands in the corner of every map, before it loads and after: its licence asks for it."
+          }
+        },
+        {
+          "key": "showcase-map-contacts",
+          "type": "map",
+          "values": {
+            "heading": "From the contacts",
+            "source": "settings",
+            "latitude": null,
+            "longitude": null,
+            "address": "",
+            "zoom": 15,
+            "height": "medium"
+          }
+        },
+        {
+          "key": "showcase-map-contacts-note",
+          "type": "text",
+          "values": {
+            "heading": "",
+            "body": "The map above has no coordinates of its own: it reads the main address of the Contacts tab of the settings — its text, latitude and longitude, its link to a map. Change the address there and every map from the contacts moves with it."
+          }
+        },
+        {
+          "key": "showcase-map-coordinates",
+          "type": "map",
+          "values": {
+            "heading": "Coordinates of its own",
+            "source": "coordinates",
+            "latitude": 52.516275,
+            "longitude": 13.377704,
+            "address": "Pariser Platz, Berlin",
+            "zoom": 16,
+            "height": "large"
+          }
+        },
+        {
+          "key": "showcase-map-low",
+          "type": "map",
+          "values": {
+            "heading": "Low, the whole city",
+            "source": "coordinates",
+            "latitude": 48.8566,
+            "longitude": 2.3522,
+            "address": "Paris",
+            "zoom": 11,
+            "height": "small"
+          }
+        },
+        {
+          "key": "showcase-map-narrow",
+          "type": "showcase-map",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "The placeholder keeps the map’s height in a column 20rem wide, its buttons inside the frame.",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-map-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Before an answer, or after Reject all: every map is its place. Load puts that one map in and agrees to nothing; Always load maps agrees to media — the banner is answered and every map on the page loads without a reload.\nOver a loaded map the wheel scrolls the page and says how to zoom; click the map, and the wheel zooms it; press anywhere else, or leave it with the mouse, and the wheel scrolls the page again. On a phone one finger scrolls the page until the map is tapped. With the keyboard: Tab reaches the map, the arrows pan it, + and − zoom.\nTake media back in Cookie settings in the footer: the page reloads with the places.\nSwitch JavaScript off: each map is its address and a link to a map."
+          }
+        },
+        {
+          "key": "showcase-map-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "The Map block: a heading, the place — from the contacts or coordinates with an address of their own — a zoom from 1 to 19 and a height: low, medium or tall. Nowhere to show — no address in the contacts, no coordinates — prints nothing.\nx-webx-map from=\"settings\" — the main address of the Contacts tab; an address without coordinates is the place alone, with no map.\nx-webx-map :lat=\"51.5074\" :lng=\"-0.1278\" :zoom=\"15\" marker=\"1 Example Street, London\" height=\"24rem\" — marker is the pin’s label (false: no pin), height a CSS length or a number of pixels, link the address of Open in maps.\nThe provider of the tiles is config: webx-widgets.map.provider — openstreetmap, or maptiler with WEBX_MAP_KEY, or an entry of your own with the address of a tile.\nClasses: webx-map, --place, __place, __address, __open, __notice, __button, __attribution, __canvas, __marker, __hint; is-blocked, is-ready, is-loaded, is-active. Tokens: --webx-map-height, --webx-map-bg, --webx-map-radius, --webx-map-marker, --webx-map-notice-bg, --webx-map-button-bg, --webx-map-attribution-bg, --webx-map-hint-bg."
+          }
+        }
+      ]
     }
   ]
 }

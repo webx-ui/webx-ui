@@ -1,0 +1,44 @@
+{
+  "slug": "showcase-lightbox",
+  "title": "Showcase: lightbox",
+  "description": "Links to pictures written by hand, with data-webx-lightbox and no component — what the gallery block cannot show — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 91,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "pictures",
+      "type": "wx-gallery",
+      "label": "Pictures",
+      "help": "The first opens with its sizes written on the link; the second without them.",
+      "props": {
+        "max": 2
+      }
+    }
+  ],
+  "template": "@php\n    $shown = array_values(array_filter(is_array($pictures) ? $pictures : [], static fn ($picture): bool => is_array($picture) && ! empty($picture['url'])));\n    $sized = $shown[0] ?? null;\n    $bare = $shown[1] ?? null;\n@endphp\n<section class=\"b-showcase-lightbox\" data-wx-block=\"showcase-lightbox\">\n    @if ($heading)\n        <h2 class=\"b-showcase-lightbox__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-lightbox__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-lightbox__row\">\n        @if ($sized)\n            <a class=\"b-showcase-lightbox__link\" href=\"{{ $sized['url'] }}\" data-webx-lightbox=\"\" data-width=\"{{ $sized['width'] }}\" data-height=\"{{ $sized['height'] }}\"><img class=\"b-showcase-lightbox__photo\" src=\"{{ $sized['url'] }}\" width=\"{{ $sized['width'] }}\" height=\"{{ $sized['height'] }}\" alt=\"{{ $sized['alt'] ?: 'A link with its sizes' }}\"></a>\n        @endif\n        @if ($bare)\n            <a class=\"b-showcase-lightbox__link\" href=\"{{ $bare['url'] }}\" data-webx-lightbox=\"\"><img class=\"b-showcase-lightbox__photo\" src=\"{{ $bare['url'] }}\" width=\"{{ $bare['width'] }}\" height=\"{{ $bare['height'] }}\" alt=\"{{ $bare['alt'] ?: 'A link without sizes' }}\"></a>\n        @endif\n    </div>\n</section>\n",
+  "styles": ".b-showcase-lightbox {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-lightbox__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-lightbox__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-lightbox__row {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--site-space-3);\n    align-items: flex-start;\n}\n\n.b-showcase-lightbox__link {\n    display: block;\n    width: 10rem;\n    max-width: 100%;\n}\n\n.b-showcase-lightbox__photo {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: var(--site-radius-sm);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Links by hand",
+    "note": "Two links written in a template with no component.",
+    "pictures": []
+  }
+}

@@ -38,6 +38,22 @@ final class BlockTest extends TestCase
         );
     }
 
+    /**
+     * A theme's prose spaces `li + li`, which in a grid or a row lifts the first cell above the
+     * others: the cells of the type's lists keep no margin of their own.
+     */
+    #[Test]
+    public function the_cells_of_its_rows_keep_no_margin(): void
+    {
+        $this->artisan('webx:blocks:offered', ['--install' => true, '--module' => ['press']])->assertSuccessful();
+
+        foreach (['press-logos' => '.b-press-logos__item', 'press-outlets' => '.b-press-outlets__item', 'press-articles' => '.b-press-articles__item'] as $slug => $cell) {
+            $styles = (string) Block::query()->where('slug', $slug)->firstOrFail()->load('publishedVersion')->publishedVersion?->styles;
+
+            $this->assertMatchesRegularExpression('~^'.preg_quote($cell, '~').'(,\n[^{]*)? \{[^}]*\n    margin: 0[ ;]~m', $styles, $cell);
+        }
+    }
+
     #[Test]
     #[DataProvider('samples')]
     public function each_draws_on_its_sample_with_something_to_show_and_without(string $slug, string $expected): void

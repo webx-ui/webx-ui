@@ -64,13 +64,14 @@ final class PagesModule extends AbstractModule implements ProvidesDemo, Provides
     }
 
     /**
-     * The block types, because the demo pages are made of them (§9).
+     * The block types, because the demo pages are made of them (§9) — and the library when it is
+     * there, for the pictures a theme's pages name.
      *
      * @return list<string>
      */
     public function requires(): array
     {
-        return ['blocks'];
+        return $this->demo->requires();
     }
 
     public function seed(DemoLedger $ledger): void

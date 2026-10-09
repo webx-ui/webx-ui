@@ -41,7 +41,8 @@
         "webx-ui/module-media": "^0.66.0",
         "webx-ui/module-seo": "^0.66.0",
         "webx-ui/nested-set": "^0.66.0",
-        "webx-ui/routing": "^0.66.0"
+        "webx-ui/routing": "^0.66.0",
+        "webx-ui/widgets": "^0.66.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",

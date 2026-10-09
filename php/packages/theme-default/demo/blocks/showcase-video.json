@@ -1,0 +1,90 @@
+{
+  "slug": "showcase-video",
+  "title": "Showcase: video",
+  "description": "One <x-webx-video> in a column 20rem wide, for the kitchen sink of the default theme: the Video block of the widgets shows every other case, but a block cannot stand in a narrow column.",
+  "icon": null,
+  "group": "content",
+  "sort": 92,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "source",
+      "type": "wx-input",
+      "label": "Address on YouTube or Vimeo",
+      "help": "Left empty when a video of the library is picked below.",
+      "props": {
+        "placeholder": "https://www.youtube.com/watch?v=…"
+      }
+    },
+    {
+      "id": "file",
+      "type": "wx-media",
+      "label": "Video of the library",
+      "props": {
+        "accept": "video"
+      }
+    },
+    {
+      "id": "poster",
+      "type": "wx-media",
+      "label": "Poster",
+      "help": "Empty: the video’s own preview, fetched once onto the site.",
+      "props": {
+        "accept": "image"
+      }
+    },
+    {
+      "id": "ratio",
+      "type": "wx-input",
+      "label": "Ratio",
+      "props": {
+        "placeholder": "16/9"
+      }
+    },
+    {
+      "id": "width",
+      "type": "wx-select",
+      "label": "Width",
+      "props": {
+        "options": [
+          {
+            "label": "Full",
+            "value": "full"
+          },
+          {
+            "label": "Narrow column",
+            "value": "narrow"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "@php\n    $address = is_string($source) ? trim($source) : '';\n    $clip = is_array($file) && ! empty($file['url']) ? $file : null;\n    $picture = is_array($poster) && ! empty($poster['url']) ? $poster : null;\n    $shape = is_string($ratio) && trim($ratio) !== '' ? trim($ratio) : null;\n@endphp\n<section class=\"b-showcase-video b-showcase-video--{{ $width === 'narrow' ? 'narrow' : 'full' }}\" data-wx-block=\"showcase-video\">\n    @if ($heading)\n        <h2 class=\"b-showcase-video__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-video__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-video__frame\">\n        @if ($clip)\n            <x-webx-video :file=\"$clip\" :poster=\"$picture\" :title=\"$heading ?: null\" :ratio=\"$shape\" />\n        @elseif ($address !== '')\n            <x-webx-video :src=\"$address\" :poster=\"$picture\" :title=\"$heading ?: null\" :ratio=\"$shape\" />\n        @endif\n    </div>\n</section>\n",
+  "styles": ".b-showcase-video {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-video__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-video__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-video--narrow .b-showcase-video__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "A video",
+    "note": "A YouTube video with its preview for a poster.",
+    "source": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+    "file": null,
+    "poster": null,
+    "ratio": "",
+    "width": "full"
+  }
+}

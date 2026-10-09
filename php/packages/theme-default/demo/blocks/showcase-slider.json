@@ -1,0 +1,83 @@
+{
+  "slug": "showcase-slider",
+  "title": "Showcase: slider",
+  "description": "The slider of webx-ui/widgets where a real block cannot show it — cards, a hero, a gallery in a narrow column — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 90,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "variant",
+      "type": "wx-select",
+      "label": "Variant",
+      "props": {
+        "options": [
+          {
+            "label": "Cards",
+            "value": "cards"
+          },
+          {
+            "label": "Hero",
+            "value": "hero"
+          },
+          {
+            "label": "Gallery",
+            "value": "gallery"
+          }
+        ]
+      }
+    },
+    {
+      "id": "width",
+      "type": "wx-select",
+      "label": "Width",
+      "props": {
+        "options": [
+          {
+            "label": "Full",
+            "value": "full"
+          },
+          {
+            "label": "Narrow column",
+            "value": "narrow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "slides",
+      "type": "wx-input",
+      "label": "Slides",
+      "props": {
+        "placeholder": "6"
+      }
+    }
+  ],
+  "template": "@php\n    $variant = in_array($variant, ['cards', 'hero', 'gallery'], true) ? $variant : 'cards';\n    $count = max(1, min(12, (int) ($slides ?: 6)));\n    // Pictures drawn on the spot: the showcase loads nothing from anywhere but the site.\n    $picture = static function (int $i, int $width, int $height, string $label): string {\n        $hue = (int) (($i * 47 + 200) % 360);\n        $svg = \"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {$width} {$height}'>\"\n            .\"<rect width='100%' height='100%' fill='hsl({$hue} 45% 42%)'/>\"\n            .\"<circle cx='\".($width * 0.72).\"' cy='\".($height * 0.38).\"' r='\".($height * 0.22).\"' fill='hsl({$hue} 60% 70%)'/>\"\n            .\"<path d='M0 {$height} L\".($width * 0.35).' '.($height * 0.45).' L'.($width * 0.6).\" {$height} Z' fill='hsl({$hue} 40% 28%)'/>\"\n            .\"<text x='6%' y='16%' font-family='sans-serif' font-size='\".($height * 0.1).\"' fill='white'>{$label}</text></svg>\";\n\n        return 'data:image/svg+xml,'.rawurlencode($svg);\n    };\n    $words = ['Strategy', 'Design', 'Development', 'Support', 'Hosting', 'Analytics', 'Training', 'Audit', 'Content', 'Search', 'Mobile', 'Security'];\n@endphp\n<section class=\"b-showcase-slider b-showcase-slider--{{ $width === 'narrow' ? 'narrow' : 'full' }}\" data-wx-block=\"showcase-slider\">\n    @if ($heading)\n        <h2 class=\"b-showcase-slider__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-slider__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-slider__frame\">\n        <x-webx-slider :variant=\"$variant\" :label=\"$heading ?: null\">\n            @for ($i = 1; $i <= $count; $i++)\n                @switch($variant)\n                    @case('hero')\n                        <x-webx-slide>\n                            <div class=\"b-showcase-slider__hero\">\n                                <img class=\"b-showcase-slider__hero-image\" src=\"{{ $picture($i, 1200, 500, '') }}\" width=\"1200\" height=\"500\" alt=\"\">\n                                <div class=\"b-showcase-slider__hero-text\">\n                                    <p class=\"b-showcase-slider__hero-title\">{{ $words[$i - 1] }} that lasts</p>\n                                    <a class=\"b-showcase-slider__hero-link\" href=\"#slide-{{ $i }}\">Slide {{ $i }} of {{ $count }}</a>\n                                </div>\n                            </div>\n                        </x-webx-slide>\n                        @break\n                    @case('gallery')\n                        <x-webx-slide>\n                            <img class=\"b-showcase-slider__photo\" src=\"{{ $picture($i, 1200, 800, 'Photo '.$i) }}\" width=\"1200\" height=\"800\" alt=\"Photo {{ $i }} of {{ $count }}\">\n                        </x-webx-slide>\n                        @break\n                    @default\n                        <x-webx-slide>\n                            <article class=\"b-showcase-slider__card\">\n                                <img class=\"b-showcase-slider__card-image\" src=\"{{ $picture($i, 600, 360, '') }}\" width=\"600\" height=\"360\" alt=\"\">\n                                <h3 class=\"b-showcase-slider__card-title\">{{ $words[$i - 1] }}</h3>\n                                <p class=\"b-showcase-slider__card-text\">Card {{ $i }} of {{ $count }}{{ $i % 3 === 0 ? ' — a longer line of text, so that the cards of one strip differ in height and the strip shows whether they still line up.' : '.' }}</p>\n                                <a class=\"b-showcase-slider__card-link\" href=\"#card-{{ $i }}\">More about {{ strtolower($words[$i - 1]) }}</a>\n                            </article>\n                        </x-webx-slide>\n                @endswitch\n            @endfor\n        </x-webx-slider>\n    </div>\n</section>\n",
+  "styles": ".b-showcase-slider {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-slider__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-slider__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-slider--narrow .b-showcase-slider__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n\n.b-showcase-slider__card {\n    display: flex;\n    flex-direction: column;\n    gap: var(--site-space-2);\n    height: 100%;\n    box-sizing: border-box;\n    padding: var(--site-space-3);\n    border: 1px solid var(--site-color-border);\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-surface);\n}\n\n.b-showcase-slider__card-image,\n.b-showcase-slider__photo,\n.b-showcase-slider__hero-image {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: var(--site-radius-sm);\n}\n\n.b-showcase-slider__card-title {\n    margin: 0;\n    font-size: var(--site-font-size-4);\n}\n\n.b-showcase-slider__card-text {\n    margin: 0;\n    flex: 1;\n}\n\n.b-showcase-slider__hero {\n    position: relative;\n}\n\n.b-showcase-slider__hero-text {\n    position: absolute;\n    inset: auto 0 0 0;\n    padding: var(--site-space-4);\n    background: var(--site-color-surface);\n    opacity: 0.92;\n}\n\n.b-showcase-slider__hero-title {\n    margin: 0;\n    font-size: var(--site-font-size-5);\n    font-weight: 700;\n}\n\n",
+  "script": null,
+  "sample": {
+    "heading": "Cards",
+    "note": "A strip of cards: as many per view as the column has room for.",
+    "variant": "cards",
+    "width": "full",
+    "slides": "6"
+  }
+}

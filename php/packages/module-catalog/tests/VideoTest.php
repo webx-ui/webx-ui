@@ -28,6 +28,9 @@ use WebxUi\Catalog\Gallery\Video\VideoProviders;
 use WebxUi\Catalog\Gallery\Video\YouTubeProvider;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Models\ProductImage;
+use WebxUi\Widgets\Consent;
+use WebxUi\Widgets\Video\VideoProviders as PlayedProviders;
+use WebxUi\Widgets\Video\YouTube as PlayedYouTube;
 
 /**
  * Videos in the gallery (the video spec, §11): the providers' links, files through the chunked
@@ -154,6 +157,15 @@ final class VideoTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.video.provider', 'clips')
             ->assertJsonPath('data.video.embed', 'https://clips.test/embed/42');
+
+        // The storefront plays it through the widgets, which hear of it when first asked; YouTube
+        // they know themselves.
+        $played = $this->app->make(PlayedProviders::class);
+        $clip = $played->find('https://clips.test/42');
+        $this->assertNotNull($clip);
+        $this->assertSame('https://clips.test/embed/42?autoplay=1', $clip->provider->embed($clip));
+        $this->assertSame('https://clips.test/42', $clip->provider->page($clip));
+        $this->assertInstanceOf(PlayedYouTube::class, $played->find('https://youtu.be/aqz-KE-bpKQ')?->provider);
 
         $this->expectException(LogicException::class);
         $file = $this->createStub(VideoProvider::class);
@@ -381,7 +393,7 @@ final class VideoTest extends TestCase
     }
 
     #[Test]
-    public function the_storefront_plays_on_a_click_and_says_so_in_its_markup(): void
+    public function the_storefront_plays_through_the_video_of_the_widgets_behind_the_consent(): void
     {
         $product = $this->product('Belt', $this->category('belts'), ['summary' => 'A belt.']);
         $file = $this->picture($product);
@@ -391,11 +403,31 @@ final class VideoTest extends TestCase
 
         $page = $this->get("/belt-{$product->id}")->assertOk();
 
-        // A link before JS, a player after the click; nothing of YouTube loaded before it.
-        $page->assertSee('class="webx-catalog-product__play"', false)
+        // The picture is the poster, in its own shape; YouTube waits for consent to media, and
+        // nothing of it is loaded before — not even its preview.
+        $page->assertSee('webx-video webx-video--youtube is-blocked', false)
+            ->assertSee('--webx-video-ratio: 20 / 10', false)
             ->assertSee('href="https://www.youtube.com/watch?v=aqz-KE-bpKQ"', false)
-            ->assertSee('data-webx-embed="https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ"', false)
-            ->assertSee('data-webx-video="/storage/catalog/0/'.$product->id.'/clip.mp4"', false)
+            ->assertSee('youtube-nocookie.com/embed/aqz-KE-bpKQ?autoplay=1', false)
+            ->assertSee('class="webx-video__poster" src="'.$tube->url().'"', false)
+            ->assertSee('data-webx-video-always', false)
+            ->assertDontSee('<iframe', false)
+            ->assertDontSee('ytimg', false)
+            ->assertDontSee('webx-catalog-product__play', false)
+            ->assertDontSee('data-webx-embed', false);
+
+        // A file of the site is first party: a <video> asking nobody's consent.
+        $page->assertSee('webx-video webx-video--file', false)
+            ->assertSee('preload="none"', false)
+            ->assertSee('poster="'.$file->url().'"', false)
+            ->assertSee('src="/storage/catalog/0/'.$product->id.'/clip.mp4"', false);
+
+        // With consent to media the placeholder is gone; the facade still waits for the click.
+        $this->withUnencryptedCookie(Consent::COOKIE, json_encode(['v' => 1, 'd' => '2026-10-09', 'c' => ['media']], JSON_THROW_ON_ERROR))
+            ->get("/belt-{$product->id}")
+            ->assertOk()
+            ->assertSee('webx-video webx-video--youtube"', false)
+            ->assertDontSee('is-blocked', false)
             ->assertDontSee('<iframe', false);
 
         $page->assertSee('"subjectOf":[{"@type":"VideoObject"', false)

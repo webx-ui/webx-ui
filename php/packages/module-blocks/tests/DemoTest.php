@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Versions\EntityVersion;
+use WebxUi\Blocks\BlockOffers;
 use WebxUi\Blocks\Demo\BlocksDemo;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\Region;
@@ -155,6 +156,48 @@ final class DemoTest extends RegionTestCase
         $this->assertFalse(Block::query()->where('slug', 'demo-header')->exists());
         $this->assertTrue(Block::query()->where('slug', 'hero')->exists());
         $this->assertStringContainsString('The theme draws the header', implode(' ', $ledger->takeNotes()));
+    }
+
+    #[Test]
+    public function the_theme_adds_its_own_types_and_its_copy_of_one_wins(): void
+    {
+        $this->app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('acme/theme', __DIR__.'/Fixtures/theme-demo', false)]));
+
+        $ledger = $this->seeded();
+
+        $this->assertSame(['columns', 'hero', 'showcase-thing', 'text'], Block::query()->orderBy('slug')->pluck('slug')->all());
+        $this->assertSame('Text of the theme', Block::query()->where('slug', 'text')->value('title'));
+
+        // And they go with the rest of the demo.
+        foreach (array_reverse($ledger->entries()) as $entry) {
+            $ledger->undo($entry);
+        }
+
+        $this->assertSame(0, Block::query()->count());
+    }
+
+    /**
+     * A type offered by a package that the site never installed, and that a page of the theme
+     * stands on: the demo installs it, so the page it writes is one the site can print — and
+     * only that one, and only while nobody has a type by its name.
+     */
+    #[Test]
+    public function an_offered_type_the_themes_pages_stand_on_is_installed_with_the_demo(): void
+    {
+        $this->app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('acme/theme', __DIR__.'/Fixtures/theme-offers', false)]));
+        $this->app->make(BlockOffers::class)->offer('acme', __DIR__.'/Fixtures/offers');
+
+        $ledger = $this->seeded();
+
+        $offered = Block::query()->where('slug', 'offered-thing')->with('publishedVersion')->first();
+        $this->assertSame('Offered by acme', $offered?->publishedVersion?->comment);
+        $this->assertFalse(Block::query()->where('slug', 'unused-thing')->exists(), 'no page of the theme stands on it');
+
+        foreach (array_reverse($ledger->entries()) as $entry) {
+            $ledger->undo($entry);
+        }
+
+        $this->assertSame(0, Block::query()->count(), 'it goes with the rest of the demo');
     }
 
     private function seeded(): DemoLedger
