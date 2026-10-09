@@ -1,0 +1,50 @@
+/* The document: box model, the body text, media that never overflows, a visible focus. */
+
+:where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+
+:where(.site) {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--site-font-body);
+  font-size: var(--site-font-size-base);
+  line-height: var(--site-line-height-base);
+  color: var(--site-color-text);
+  background: var(--site-color-bg);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-wrap: break-word;
+}
+
+:where(.site) :where(img, picture, video, canvas, svg) {
+  max-width: 100%;
+  height: auto;
+}
+
+:where(.site) :where(img, picture, video, canvas) {
+  display: block;
+}
+
+:where(.site) :where(a) {
+  color: var(--site-color-accent);
+  text-underline-offset: 0.15em;
+  transition: color var(--site-duration) var(--site-easing);
+}
+
+:where(.site) :where(:focus-visible) {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+:where(.site) :where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
+
+:where(.site) :where([hidden]) {
+  display: none !important;
+}

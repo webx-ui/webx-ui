@@ -41,6 +41,7 @@
             <directory>packages/nested-set/tests</directory>
             <directory>packages/routing/tests</directory>
             <directory>packages/themes/tests</directory>
+            <directory>packages/theme-default/tests</directory>
         </testsuite>
     </testsuites>
     <source>

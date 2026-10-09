@@ -1,0 +1,15 @@
+/*
+ * theme-default: the shell and the typography of prose, on site tokens only.
+ *
+ * Every value is a var(--site-…) from the engine's vocabulary; the literal values live in
+ * tokens.json and nowhere else, so a preset or an owner's edit in the panel repaints all of
+ * this without a rebuild.
+ *
+ * Selectors sit inside :where() wherever they can, which gives them no specificity: a local
+ * theme, a module's base look or a block wins over this file by being written at all, in any
+ * order, without !important and without copying a selector to beat it.
+ */
+
+@import './base.css';
+@import './shell.css';
+@import './prose.css';
