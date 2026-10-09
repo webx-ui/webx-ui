@@ -88,14 +88,17 @@ function word(key: string): string | undefined {
 /**
  * Folded unless the node says otherwise: a list of records opened all at once is a form a
  * kilometre long, and the header of each row already says which one it is. A row added now is
- * the core's business and opens anyway.
+ * the core's business and opens anyway. And a row asks before it goes: in a screen it is data
+ * somebody typed, and the bin sits right by the header one clicks to unfold it.
  */
 const bound = computed(() => {
-  const defaults: Record<string, unknown> = { collapsed: true }
+  const defaults: Record<string, unknown> = { collapsed: true, confirmRemove: true }
 
   for (const [prop, key] of [
     ['addLabel', 'add'],
     ['removeLabel', 'remove'],
+    ['removeQuestion', 'remove-question'],
+    ['cancelLabel', 'cancel'],
     ['dragLabel', 'reorder'],
     ['emptyText', 'empty'],
   ] as const) {

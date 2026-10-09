@@ -2,5 +2,38 @@
   "general.project-name": "Demo site",
   "content.tone": "Plain and warm, addressed to the reader as \"you\". Short sentences, one idea each; a fact before an adjective.",
   "content.donts": "No prices or discounts unless the page is about them\nNo superlatives (\"the best\", \"number one\")\nNo promises of results",
-  "content.notes": "Write the site's name the way it is in the General tab. Every picture gets alt text that says what is in it."
+  "content.notes": "Write the site's name the way it is in the General tab. Every picture gets alt text that says what is in it.",
+  "contacts.phones": [
+    {
+      "number": "+44 20 7946 0958",
+      "label": "Sales",
+      "primary": true,
+      "messengers": ["whatsapp", "telegram"]
+    },
+    { "number": "+44 20 7946 0321", "label": "Support", "primary": false, "messengers": ["viber"] },
+    { "number": "+1 202 555 0143", "label": "North America", "primary": false, "messengers": [] }
+  ],
+  "contacts.emails": [{ "email": "hello@example.com", "label": "General questions" }],
+  "contacts.addresses": [
+    {
+      "address": "1 Example Street, London",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "primary": true
+    }
+  ],
+  "contacts.hours": [
+    { "days": ["mon", "tue", "wed", "thu", "fri"], "opens": "09:00", "closes": "19:00" },
+    { "days": ["sat"], "opens": "10:00", "closes": "16:00" }
+  ],
+  "contacts.timezone": "Europe/London",
+  "contacts.messengers": [
+    { "channel": "telegram", "url": "https://t.me/example_bot", "label": "Bot" }
+  ],
+  "contacts.socials": [
+    { "network": "facebook", "url": "https://www.facebook.com/example" },
+    { "network": "instagram", "url": "https://www.instagram.com/example" },
+    { "network": "youtube", "url": "https://www.youtube.com/@example" },
+    { "network": "linkedin", "url": "https://www.linkedin.com/company/example" }
+  ]
 }

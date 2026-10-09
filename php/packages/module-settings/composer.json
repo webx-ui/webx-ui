@@ -22,6 +22,7 @@
     },
     "require": {
         "php": "^8.4",
+        "giggsey/libphonenumber-for-php-lite": "^9.0",
         "illuminate/contracts": "^13.0",
         "illuminate/database": "^13.0",
         "illuminate/http": "^13.0",

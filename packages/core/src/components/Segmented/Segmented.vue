@@ -73,6 +73,10 @@ const classes = computed(() => [
   box-sizing: border-box;
   gap: 2px;
   max-width: 100%;
+  /* As wide as its options, also in a column that stretches its children — a form field's
+     control is one, and the track ran the width of the input under it with the segments
+     huddled at its left end. */
+  align-self: flex-start;
   padding: 2px;
   background: var(--wx-bg-fill);
   border-radius: var(--wx-radius-control);
@@ -81,6 +85,7 @@ const classes = computed(() => [
 
 .wx-segmented--block {
   display: flex;
+  align-self: stretch;
   width: 100%;
 }
 
@@ -152,9 +157,12 @@ const classes = computed(() => [
   cursor: not-allowed;
 }
 
+/* A line of its own height: the ellipsis needs `overflow: hidden`, and on the option's
+   `line-height: 1` that cut the descenders off — the tail of a "g", a "y". */
 .wx-segmented__label {
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: var(--wx-font-line-height-normal);
 }
 
 .wx-segmented__icon {

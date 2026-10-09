@@ -54,6 +54,60 @@ final class DataShortcodesTest extends TestCase
     }
 
     #[Test]
+    public function the_switch_decides_what_a_row_prints_and_an_old_row_reads_its_key(): void
+    {
+        app(Settings::class)->save([
+            'general.project-name' => ['ru' => 'Глобекс'],
+            DataShortcodes::KEY => [
+                // Switched to its own value: the key left behind from before is not read.
+                ['name' => 'own', 'source' => 'value', 'key' => 'general.project-name', 'value' => ['ru' => 'Свой']],
+                ['name' => 'read', 'source' => 'setting', 'key' => 'general.project-name', 'value' => ['ru' => 'Свой']],
+                // Saved before there was a switch: a key filled in means the setting.
+                ['name' => 'old', 'key' => 'general.project-name', 'value' => null],
+            ],
+        ]);
+
+        $shortcodes = app(Shortcodes::class);
+
+        $this->assertSame('Свой Глобекс Глобекс', $shortcodes->plain('[own] [read] [old]'));
+        $this->assertNull($shortcodes->get('own')?->description);
+        $this->assertSame(['setting', 'value', 'value'], [
+            DataShortcodes::source(['key' => 'a.b']),
+            DataShortcodes::source(['key' => '']),
+            DataShortcodes::source(['source' => 'value', 'key' => 'a.b']),
+        ]);
+    }
+
+    #[Test]
+    public function the_panel_sees_every_row_s_source_and_cannot_save_a_setting_that_does_not_exist(): void
+    {
+        app(Settings::class)->save([DataShortcodes::KEY => [
+            ['name' => 'brand', 'key' => 'general.project-name', 'value' => null],
+            ['name' => 'phone', 'key' => '', 'value' => ['ru' => '+44 20 7946 0958']],
+        ]]);
+
+        $rows = $this->actingAs($this->editor(), 'cms')
+            ->getJson('/api/cms/settings')
+            ->assertOk()
+            ->json('data.values')[DataShortcodes::KEY];
+
+        $this->assertSame(['setting', 'value'], array_column($rows, 'source'));
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson('/api/cms/settings', ['values' => [DataShortcodes::KEY => [
+                ['name' => 'brand', 'source' => 'setting', 'key' => 'general.project-name', 'value' => null],
+                ['name' => 'typo', 'source' => 'setting', 'key' => 'contacts.phnoe', 'value' => null],
+                ['name' => 'blank', 'source' => 'setting', 'key' => '', 'value' => null],
+                ['name' => 'own', 'source' => 'value', 'key' => 'no.such', 'value' => ['ru' => 'x']],
+            ]]])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors', [
+                DataShortcodes::KEY.'.1.key' => ['There is no setting contacts.phnoe.'],
+                DataShortcodes::KEY.'.2.key' => ['Choose the setting to read.'],
+            ]);
+    }
+
+    #[Test]
     public function a_value_is_printed_as_text_when_it_is_neither_a_phone_nor_an_e_mail(): void
     {
         $this->assertSame('phone', DataShortcodes::kind('(555) 010-0199'));

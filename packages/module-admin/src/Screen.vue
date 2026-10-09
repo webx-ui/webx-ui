@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { WxAlert, WxSkeleton } from '@webx-ui/core'
-import { WxScreenRenderer, type ScreenModel, type ScreenNode } from '@webx-ui/schema'
+import { WxScreenRenderer, type Patch, type ScreenModel, type ScreenNode } from '@webx-ui/schema'
 import { useAdmin } from './admin'
 import { useTranslate } from './i18n'
 
@@ -23,6 +23,11 @@ const props = withDefaults(
     labelPosition?: 'top' | 'left'
     labelWidth?: string
     size?: 'sm' | 'md' | 'lg'
+    /**
+     * The page's own patch, laid under the project's: what only the page can know — options
+     * read from the values it loaded, say. The project's patch still has the last word.
+     */
+    patch?: Patch
   }>(),
   {
     errors: undefined,
@@ -30,6 +35,7 @@ const props = withDefaults(
     labelPosition: undefined,
     labelWidth: undefined,
     size: undefined,
+    patch: () => [],
   },
 )
 
@@ -62,6 +68,8 @@ async function load(): Promise<void> {
 // A new language means a new tree: the labels inside it were translated on the server.
 watch([() => props.name, () => admin.i18n.state.locale], () => void load(), { immediate: true })
 
+const patch = computed<Patch>(() => [...props.patch, ...admin.screenPatch(props.name)])
+
 defineExpose({ reload: load })
 </script>
 
@@ -73,7 +81,7 @@ defineExpose({ reload: load })
       v-else
       v-model="model"
       :root="root"
-      :patch="admin.screenPatch(name)"
+      :patch="patch"
       :types="admin.types"
       :errors="errors"
       :translate="admin.i18n.t"

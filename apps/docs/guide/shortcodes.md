@@ -17,11 +17,14 @@ over MCP print the same result, because they share one renderer.
 «Settings» → «Shortcodes» is a list anybody with `settings.manage` can extend — no developer
 needed. Each row has:
 
-| Field   | What it is                                                                                   |
-| ------- | -------------------------------------------------------------------------------------------- |
-| Name    | Lowercase letters, digits, `-` and `_`. Typed in content as `[name]`                         |
-| Setting | Optional: the key of a setting to read, e.g. `contacts.phone` — the value follows that field |
-| Value   | What it prints when it reads no setting; one per language                                    |
+| Field   | What it is                                                                                     |
+| ------- | ---------------------------------------------------------------------------------------------- |
+| Name    | Lowercase letters, digits, `-` and `_`. Typed in content as `[name]`                           |
+| Prints  | A switch: its own value, or a setting                                                          |
+| Setting | The setting to read, picked from the text fields of the settings screen — the value follows it |
+| Value   | What it prints when it holds its own value; one per language                                   |
+
+A setting that does not exist is refused on save, under the row — a typo used to print nothing.
 
 What a value looks like decides how it is printed:
 

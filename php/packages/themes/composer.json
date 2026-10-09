@@ -1,0 +1,61 @@
+{
+    "name": "webx-ui/themes",
+    "description": "Site themes as layers: a local theme over a packaged one over the modules, resolved into one view order, one token vocabulary and one set of assets.",
+    "keywords": [
+        "laravel",
+        "blade",
+        "theme",
+        "views",
+        "design-tokens",
+        "webx-ui"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/themes"
+    },
+    "require": {
+        "php": "^8.4",
+        "composer-runtime-api": "^2.2",
+        "illuminate/console": "^13.0",
+        "illuminate/filesystem": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/view": "^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Themes\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Themes\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Themes\\ThemeServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

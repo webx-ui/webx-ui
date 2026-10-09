@@ -24,6 +24,15 @@ export interface RepeaterProps<T extends object = Record<string, unknown>> {
   newItem?: () => T
   addLabel?: string
   removeLabel?: string
+  /**
+   * Removing a row asks first, in a popover by the button: a row is often a whole record's
+   * worth of typing, and the button sits where a hand reaching for the row's header lands.
+   */
+  confirmRemove?: boolean
+  /** The question `confirmRemove` asks. */
+  removeQuestion?: string
+  /** The button of that question that keeps the row. */
+  cancelLabel?: string
   /** What the grip is called to a screen reader. */
   dragLabel?: string
   /** Rows fold to their header, so a long form stays readable. */

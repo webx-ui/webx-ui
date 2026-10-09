@@ -7,6 +7,7 @@ namespace WebxUi\Admin\Console;
 use Illuminate\Console\Command;
 use WebxUi\Admin\Snapshots\SnapshotFailed;
 use WebxUi\Admin\Snapshots\Snapshotter;
+use WebxUi\Admin\Support\Ownership;
 
 /**
  * The site's content in one file, to carry to another stand (`webx:snapshot:restore` there).
@@ -24,10 +25,19 @@ class SnapshotCommand extends Command
 
     protected $description = 'Pack the site\'s content (database and uploaded files) into an archive for another stand';
 
-    public function handle(Snapshotter $snapshots): int
+    public function handle(Snapshotter $snapshots, Ownership $ownership): int
     {
         $output = $this->option('output');
         $path = is_string($output) && $output !== '' ? $output : $snapshots->defaultPath();
+        // Only an archive written into `storage` is the site's business; one written elsewhere is
+        // whoever asked for it.
+        $inStorage = str_starts_with(str_replace('\\', '/', $path), str_replace('\\', '/', storage_path()));
+
+        if ($inStorage && ($refusal = $ownership->refusal()) !== null) {
+            $this->components->error($refusal);
+
+            return self::FAILURE;
+        }
 
         try {
             $made = $snapshots->make(
@@ -40,6 +50,10 @@ class SnapshotCommand extends Command
             $this->components->error($failure->getMessage());
 
             return self::FAILURE;
+        }
+
+        if ($inStorage) {
+            $ownership->adopt([$snapshots->directory()]);
         }
 
         $manifest = $made['manifest'];

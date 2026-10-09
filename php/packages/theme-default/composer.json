@@ -1,0 +1,61 @@
+{
+    "name": "webx-ui/theme-default",
+    "description": "The theme every new WebX UI site stands on: a value for every site token, the page shell and the typography of prose — a neutral starting point, written to be overridden.",
+    "type": "webx-theme",
+    "keywords": [
+        "laravel",
+        "blade",
+        "theme",
+        "design-tokens",
+        "webx-ui"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/theme-default"
+    },
+    "require": {
+        "php": "^8.4",
+        "webx-ui/themes": "^0.65.0",
+        "webx-ui/widgets": "^0.65.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\ThemeDefault\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "webx": {
+            "theme": {
+                "title": "Default",
+                "uses": [],
+                "requires": [
+                    "module-pages",
+                    "module-blocks",
+                    "module-seo"
+                ],
+                "editable": [
+                    "color-accent",
+                    "color-accent-contrast",
+                    "font-heading"
+                ]
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

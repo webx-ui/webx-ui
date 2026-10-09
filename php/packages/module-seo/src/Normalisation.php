@@ -28,6 +28,13 @@ final readonly class Normalisation
 
     public const LOWERCASE = 'seo.normalise-case';
 
+    /**
+     * Every part, as the keys of the settings they are saved under. They are the stand's own: a
+     * snapshot restore keeps the target's values (`SnapshotTables::preserve()`, declared by the
+     * provider).
+     */
+    public const KEYS = [self::HOST, self::HTTPS, self::SLASHES, self::INDEX, self::TRAILING, self::LOWERCASE];
+
     /** `seo.normalise-host`: the main mirror. */
     public const WWW = 'www';
 

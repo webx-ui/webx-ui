@@ -1,0 +1,156 @@
+/*
+ * The shell: the container, the header, the main column and the footer.
+ *
+ * The classes are the contract a local theme restyles (`site-*`, BEM, states as `is-*`);
+ * the markup inside them may change, the classes will not.
+ */
+
+:where(.site-container) {
+  width: 100%;
+  max-width: var(--site-container-width);
+  margin-inline: auto;
+  padding-inline: var(--site-gutter);
+}
+
+/* A link that is only there for the keyboard: off-screen until it has the focus. */
+:where(.site-skip) {
+  position: absolute;
+  top: var(--site-space-2);
+  left: var(--site-space-2);
+  z-index: 10;
+  padding: var(--site-space-2) var(--site-space-4);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  transform: translateY(-200%);
+}
+
+:where(.site-skip:focus) {
+  transform: none;
+}
+
+/*
+ * Header: the widget's (`<x-webx-header>`, with `site-header` on its root) — its skeleton, the
+ * folding into the mobile menu and the dropdowns come with it. The theme dresses the brand and
+ * the call to action; the bar's layout is the widget's grid, rearranged on `.webx-header__bar`.
+ */
+
+:where(.site-header__title) {
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-5);
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+:where(.site-header__cta) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-4);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+:where(.site-header__cta:hover) {
+  background: var(--site-color-text);
+  color: var(--site-color-bg);
+}
+
+/* Above the bar: the opening hours and the e-mail of the Contacts tab. */
+:where(.site-header__topbar) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--site-space-4);
+  color: var(--site-color-text-muted);
+}
+
+:where(.site-header__email) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Main: every direct child keeps to the container's column; `site-bleed` lets a section span
+ * the page. The column is a width and auto margins rather than padding: a direct child is as
+ * often a list or a quote as a section, and the padding of prose would replace the gutter.
+ */
+
+:where(.site-main) {
+  flex: 1 0 auto;
+  padding-block: var(--site-space-6) var(--site-space-8);
+}
+
+:where(.site-main) > :where(*) {
+  width: min(100% - 2 * var(--site-gutter), var(--site-container-width) - 2 * var(--site-gutter));
+  margin-inline: auto;
+}
+
+:where(.site-main) > :where(.site-bleed) {
+  width: 100%;
+}
+
+/* Footer */
+
+:where(.site-footer) {
+  container-type: inline-size;
+  border-top: 1px solid var(--site-color-border);
+  background: var(--site-color-surface);
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+:where(.site-footer__inner) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--site-space-4) var(--site-space-6);
+  padding-block: var(--site-space-6);
+}
+
+:where(.site-footer__nav) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2) var(--site-space-5);
+}
+
+:where(.site-footer__link) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+}
+
+:where(.site-footer__link:hover) {
+  color: var(--site-color-accent);
+}
+
+:where(.site-footer__copy) {
+  margin: 0;
+}
+
+/* The Contacts tab: numbers, e-mails, the address and the networks, as one line that wraps. */
+:where(.site-footer__contacts) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-2) var(--site-space-6);
+  width: 100%;
+  padding-block-end: var(--site-space-4);
+  border-bottom: 1px solid var(--site-color-border);
+  color: var(--site-color-text);
+}
+
+:where(.site-footer__address) {
+  font-style: normal;
+}

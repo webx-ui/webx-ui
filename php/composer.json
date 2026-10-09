@@ -36,7 +36,10 @@
         "webx-ui/module-team": "*",
         "webx-ui/module-vacancies": "*",
         "webx-ui/nested-set": "*",
-        "webx-ui/routing": "*"
+        "webx-ui/routing": "*",
+        "webx-ui/theme-default": "*",
+        "webx-ui/themes": "*",
+        "webx-ui/widgets": "*"
     },
     "require-dev": {
         "larastan/larastan": "^3.12",
@@ -83,7 +86,10 @@
                     "webx-ui/module-team": "0.65.0",
                     "webx-ui/module-vacancies": "0.65.0",
                     "webx-ui/nested-set": "0.65.0",
-                    "webx-ui/routing": "0.65.0"
+                    "webx-ui/routing": "0.65.0",
+                    "webx-ui/theme-default": "0.65.0",
+                    "webx-ui/themes": "0.65.0",
+                    "webx-ui/widgets": "0.65.0"
                 }
             }
         }
@@ -121,7 +127,10 @@
             "WebxUi\\Settings\\Tests\\": "packages/module-settings/tests/",
             "WebxUi\\Tariffs\\Tests\\": "packages/module-tariffs/tests/",
             "WebxUi\\Team\\Tests\\": "packages/module-team/tests/",
-            "WebxUi\\Vacancies\\Tests\\": "packages/module-vacancies/tests/"
+            "WebxUi\\ThemeDefault\\Tests\\": "packages/theme-default/tests/",
+            "WebxUi\\Themes\\Tests\\": "packages/themes/tests/",
+            "WebxUi\\Vacancies\\Tests\\": "packages/module-vacancies/tests/",
+            "WebxUi\\Widgets\\Tests\\": "packages/widgets/tests/"
         }
     },
     "minimum-stability": "stable",

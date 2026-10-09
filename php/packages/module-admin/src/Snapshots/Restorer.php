@@ -211,6 +211,10 @@ final class Restorer
                 $preserve = null;
                 $batch = [];
                 $size = 1;
+                // The ids of the rows this stand keeps, and the archive's rows that would collide with
+                // them: those go in last, under a new id (nothing points at a setting by its id).
+                $taken = [];
+                $displaced = [];
 
                 while (($line = fgets($handle)) !== false) {
                     $line = trim($line);
@@ -223,6 +227,7 @@ final class Restorer
 
                     if (! array_is_list($decoded)) {
                         $batch = self::insert($connection, $table, $batch);
+                        $displaced = self::insertEach($connection, $table, $displaced);
                         $table = isset($replace[$decoded['table']]) ? (string) $decoded['table'] : null;
 
                         if ($table === null) {
@@ -249,6 +254,9 @@ final class Restorer
                         }
 
                         $query->delete();
+                        $taken = $preserve !== null && isset($present['id'])
+                            ? array_flip(array_map(strval(...), $connection->table($table)->pluck('id')->all()))
+                            : [];
                         $result['rows'][$table] = 0;
                         // SQLite counts bound values against a limit of 999 on older builds.
                         $size = max(1, intdiv(900, max(1, count($keep))));
@@ -278,8 +286,16 @@ final class Restorer
                         continue;
                     }
 
-                    $batch[] = $row;
                     $result['rows'][$table]++;
+
+                    if ($taken !== [] && isset($row['id'], $taken[(string) $row['id']])) {
+                        unset($row['id']);
+                        $displaced[] = $row;
+
+                        continue;
+                    }
+
+                    $batch[] = $row;
 
                     if (count($batch) >= $size) {
                         $batch = self::insert($connection, $table, $batch);
@@ -287,6 +303,7 @@ final class Restorer
                 }
 
                 self::insert($connection, $table, $batch);
+                self::insertEach($connection, $table, $displaced);
             });
         } finally {
             fclose($handle);
@@ -413,6 +430,21 @@ final class Restorer
     {
         if ($batch !== [] && $table !== null) {
             $connection->table($table)->insert($batch);
+        }
+
+        return [];
+    }
+
+    /**
+     * One at a time, so each takes the next id the table has rather than one the batch guessed.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>> Always empty.
+     */
+    private static function insertEach(Connection $connection, ?string $table, array $rows): array
+    {
+        foreach ($table === null ? [] : $rows as $row) {
+            $connection->table($table)->insert($row);
         }
 
         return [];

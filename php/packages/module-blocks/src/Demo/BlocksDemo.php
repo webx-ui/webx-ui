@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Demo;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\ThemeDemo;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Exceptions\RegionRefused;
 use WebxUi\Blocks\Models\Block;
@@ -83,6 +84,12 @@ final class BlocksDemo
      */
     private function regions(DemoLedger $ledger): void
     {
+        if (ThemeDemo::themed()) {
+            $ledger->note('The theme draws the header and the footer, so the demo leaves both regions empty.');
+
+            return;
+        }
+
         $declared = array_values(array_filter(array_keys(self::REGIONS), $this->regions->has(...)));
 
         if ($declared === []) {

@@ -1,0 +1,37 @@
+<?php
+
+namespace Tests\Theme;
+
+use Tests\TestCase;
+use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\Tokens;
+
+/**
+ * The site's own theme, checked the way the site boots it: from `WEBX_THEME` in `.env`.
+ *
+ * Green from the first day. It goes red when theme.json or tokens.json stops being something
+ * the engine can read, when the theme it stands on is no longer installed, or when the chain
+ * has lost the layout every public page is printed in.
+ */
+class ThemeTest extends TestCase
+{
+    public function test_the_site_stands_on_this_theme(): void
+    {
+        $top = $this->app->make(ThemeChain::class)->layers[0] ?? null;
+
+        $this->assertNotNull($top, 'WEBX_THEME is empty: the site has no theme.');
+        $this->assertTrue($top->local);
+        $this->assertSame(realpath(dirname(__DIR__)), realpath($top->path));
+    }
+
+    public function test_its_tokens_merge_with_the_layers_below(): void
+    {
+        // Throws on a token outside the vocabulary or a value of the wrong type.
+        $this->assertIsString($this->app->make(Tokens::class)->css());
+    }
+
+    public function test_the_chain_has_a_layout(): void
+    {
+        $this->assertTrue(view()->exists('components.layout'));
+    }
+}

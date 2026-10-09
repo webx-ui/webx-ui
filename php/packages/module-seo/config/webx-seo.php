@@ -127,6 +127,20 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Health probes
+    |---------------------------------------------------------------------------
+    |
+    | Paths no redirect answers — neither the address normalisation nor the
+    | table. The `health:` route of bootstrap/app.php is found on its own; name
+    | another probe here. A request from 127.0.0.1 to http://127.0.0.1 with no
+    | X-Forwarded-* header is a probe whatever its path.
+    |
+    */
+
+    'probes' => ['/up'],
+
+    /*
+    |---------------------------------------------------------------------------
     | Redirects
     |---------------------------------------------------------------------------
     |

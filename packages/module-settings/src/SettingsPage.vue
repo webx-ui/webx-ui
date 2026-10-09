@@ -10,8 +10,9 @@ import {
   type ScreenAction,
 } from '@webx-ui/module-admin'
 import { toast, WxActionBar, WxButton, WxSkeleton } from '@webx-ui/core'
-import type { ScreenModel } from '@webx-ui/schema'
+import type { Patch, ScreenModel, ScreenNode } from '@webx-ui/schema'
 import { createSettingsApi } from './api'
+import { settingOptions } from './settingOptions'
 import { useSettingsMessages } from './i18n'
 
 /**
@@ -33,6 +34,30 @@ const loading = ref(true)
 const saving = ref(false)
 
 const canManage = context.can('settings.manage')
+
+/** The tree as drawn, for what the shortcodes can read; it arrives with the screen. */
+const tree = ref<ScreenNode[]>([])
+
+/*
+ * A shortcode that reads a setting names it by key, and nobody remembers keys: the list to pick
+ * from is every text setting on this screen, with where it lives and what it holds right now.
+ * Built here because only the page has both the tree and the values.
+ */
+const patch = computed<Patch>(() =>
+  hasNode(tree.value, 'shortcode-key')
+    ? [
+        {
+          op: 'set',
+          target: 'shortcode-key',
+          props: { options: settingOptions(tree.value, values.value, context.i18n.state.locale) },
+        },
+      ]
+    : [],
+)
+
+function hasNode(nodes: ScreenNode[], id: string): boolean {
+  return nodes.some((node) => node.id === id || hasNode(node.children ?? [], id))
+}
 
 /** The section's name, as the server translated it; the built-in English until it arrives. */
 const title = computed(
@@ -102,8 +127,10 @@ const actions = computed<ScreenAction[]>(() =>
       v-else
       v-model="values"
       name="settings.index"
+      :patch="patch"
       :errors="errors"
       :disabled="!canManage"
+      @loaded="tree = $event"
     />
 
     <!--

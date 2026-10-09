@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Tests;
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
@@ -131,12 +132,63 @@ final class NormaliseTest extends TestCase
     }
 
     /**
+     * A container's health check asks `http://127.0.0.1/up` from inside; a 301 to https there is
+     * a failed check and a site taken out of routing.
+     */
+    #[Test]
+    public function the_health_route_is_never_redirected_whatever_is_on(): void
+    {
+        Route::get('/up', fn (): string => 'alive');
+        Route::get('/status', fn (): string => 'alive');
+        // Where `withRouting(health: '/status')` leaves its path.
+        PreventRequestsDuringMaintenance::except('/status');
+
+        $this->settings([
+            Normalisation::HOST => 'www',
+            Normalisation::HTTPS => true,
+            Normalisation::SLASHES => true,
+            Normalisation::INDEX => true,
+            Normalisation::TRAILING => 'strip',
+            Normalisation::LOWERCASE => true,
+        ]);
+        SeoRedirect::query()->create(['match_type' => 'exact', 'pattern' => '/up', 'target' => '/about']);
+
+        try {
+            foreach (['http://shop.example.com/up', 'http://10.0.0.5/up', 'http://shop.example.com/status'] as $url) {
+                $response = $this->visit($url, ['REMOTE_ADDR' => '10.0.0.9']);
+                $this->assertSame(200, $response->getStatusCode(), $url);
+                $this->assertSame('alive', $response->getContent());
+            }
+
+            // The rest of the site is still normalised.
+            $this->assertSame(301, $this->visit('http://shop.example.com/about', ['REMOTE_ADDR' => '10.0.0.9'])->getStatusCode());
+        } finally {
+            PreventRequestsDuringMaintenance::flushState();
+        }
+    }
+
+    #[Test]
+    public function a_probe_from_inside_the_machine_is_answered_and_a_proxied_request_is_not(): void
+    {
+        $this->settings([Normalisation::HTTPS => true]);
+
+        $this->assertSame(200, $this->visit('http://127.0.0.1/about')->getStatusCode());
+        $this->assertSame(301, $this->visit('http://127.0.0.1/about', ['HTTP_X_FORWARDED_PROTO' => 'http'])->getStatusCode());
+        $this->assertSame(301, $this->visit('http://127.0.0.1/about', ['REMOTE_ADDR' => '172.18.0.4'])->getStatusCode());
+        // A name is how a visitor and the audit ask, from this machine or not.
+        $this->assertSame(301, $this->visit('http://shop.example.com/about')->getStatusCode());
+    }
+
+    /**
      * Straight through the kernel: the test client trims the slash at the end of every address it
      * is given, and the slash at the end is half of what is being tested here.
      */
-    private function visit(string $url): Response
+    /**
+     * @param  array<string, string>  $server
+     */
+    private function visit(string $url, array $server = []): Response
     {
-        return $this->app->make(Kernel::class)->handle(Request::create($url));
+        return $this->app->make(Kernel::class)->handle(Request::create($url, server: $server));
     }
 
     /**

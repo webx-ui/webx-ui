@@ -14,6 +14,7 @@ use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
+use WebxUi\Settings\Contacts\ContactsCheck;
 use WebxUi\Settings\Demo\SettingsDemo;
 
 /**
@@ -205,6 +206,8 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
                 // A translated setting changes in the languages named and refuses one the site lacks.
                 $input = app(ScreenValues::class)->patch($screen, [$key => $settings->raw()[$key] ?? null], [$key => $value]);
                 $stored = app(ScreenValues::class)->validate($screen, $input);
+                app(DataShortcodes::class)->check($stored);
+                ContactsCheck::check($stored);
             } catch (ValidationException $exception) {
                 return ['ok' => false, 'reason' => 'The value was refused.', 'errors' => $exception->errors()];
             }

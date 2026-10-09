@@ -60,6 +60,391 @@
           ]
         },
         {
+          "id": "contacts",
+          "type": "wx-tab",
+          "label": "trans::webx-settings::screen.contacts",
+          "children": [
+            {
+              "id": "contacts-phones-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "contacts-phones",
+                  "type": "wx-repeater",
+                  "name": "contacts.phones",
+                  "label": "trans::webx-settings::screen.phones",
+                  "help": "trans::webx-settings::screen.phones-help",
+                  "props": {
+                    "sortable": true,
+                    "itemLabel": "number",
+                    "addLabel": "trans::webx-settings::screen.phones-add",
+                    "emptyText": "trans::webx-settings::screen.phones-empty"
+                  },
+                  "children": [
+                    {
+                      "id": "phone-number",
+                      "type": "wx-input",
+                      "name": "number",
+                      "label": "trans::webx-settings::screen.phone-number",
+                      "help": "trans::webx-settings::screen.phone-number-help",
+                      "props": {
+                        "maxlength": 40,
+                        "placeholder": "+1 202 555 0143",
+                        "inputmode": "tel"
+                      }
+                    },
+                    {
+                      "id": "phone-label",
+                      "type": "wx-input",
+                      "name": "label",
+                      "label": "trans::webx-settings::screen.phone-label",
+                      "help": "trans::webx-settings::screen.phone-label-help",
+                      "localized": true,
+                      "props": { "maxlength": 80 }
+                    },
+                    {
+                      "id": "phone-messengers",
+                      "type": "wx-checkbox-group",
+                      "name": "messengers",
+                      "label": "trans::webx-settings::screen.phone-messengers",
+                      "props": {
+                        "options": [
+                          { "value": "whatsapp", "label": "WhatsApp" },
+                          { "value": "telegram", "label": "Telegram" },
+                          { "value": "viber", "label": "Viber" },
+                          { "value": "signal", "label": "Signal" }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "phone-primary",
+                      "type": "wx-switch",
+                      "name": "primary",
+                      "label": "trans::webx-settings::screen.phone-primary",
+                      "help": "trans::webx-settings::screen.phone-primary-help"
+                    }
+                  ]
+                },
+                {
+                  "id": "contacts-emails",
+                  "type": "wx-repeater",
+                  "name": "contacts.emails",
+                  "label": "trans::webx-settings::screen.emails",
+                  "props": {
+                    "sortable": true,
+                    "itemLabel": "email",
+                    "addLabel": "trans::webx-settings::screen.emails-add",
+                    "emptyText": "trans::webx-settings::screen.emails-empty"
+                  },
+                  "children": [
+                    {
+                      "id": "email-address",
+                      "type": "wx-input",
+                      "name": "email",
+                      "label": "trans::webx-settings::screen.email-address",
+                      "props": { "maxlength": 254, "type": "email" }
+                    },
+                    {
+                      "id": "email-label",
+                      "type": "wx-input",
+                      "name": "label",
+                      "label": "trans::webx-settings::screen.phone-label",
+                      "localized": true,
+                      "props": { "maxlength": 80 }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "contacts-addresses-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "contacts-addresses",
+                  "type": "wx-repeater",
+                  "name": "contacts.addresses",
+                  "label": "trans::webx-settings::screen.addresses",
+                  "props": {
+                    "sortable": true,
+                    "itemLabel": "address",
+                    "addLabel": "trans::webx-settings::screen.addresses-add",
+                    "emptyText": "trans::webx-settings::screen.addresses-empty"
+                  },
+                  "children": [
+                    {
+                      "id": "address-text",
+                      "type": "wx-textarea",
+                      "name": "address",
+                      "label": "trans::webx-settings::screen.address-text",
+                      "help": "trans::webx-settings::screen.address-text-help",
+                      "localized": true,
+                      "props": { "rows": 2, "maxlength": 300 }
+                    },
+                    {
+                      "id": "address-latitude",
+                      "type": "wx-input-number",
+                      "name": "latitude",
+                      "label": "trans::webx-settings::screen.address-latitude",
+                      "props": { "min": -90, "max": 90, "step": 0.000001, "precision": 6 }
+                    },
+                    {
+                      "id": "address-longitude",
+                      "type": "wx-input-number",
+                      "name": "longitude",
+                      "label": "trans::webx-settings::screen.address-longitude",
+                      "props": { "min": -180, "max": 180, "step": 0.000001, "precision": 6 }
+                    },
+                    {
+                      "id": "address-map",
+                      "type": "wx-input",
+                      "name": "map",
+                      "label": "trans::webx-settings::screen.address-map",
+                      "help": "trans::webx-settings::screen.address-map-help",
+                      "props": { "maxlength": 2000, "type": "url" }
+                    },
+                    {
+                      "id": "address-primary",
+                      "type": "wx-switch",
+                      "name": "primary",
+                      "label": "trans::webx-settings::screen.address-primary"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "contacts-hours-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "contacts-hours",
+                  "type": "wx-repeater",
+                  "name": "contacts.hours",
+                  "label": "trans::webx-settings::screen.hours",
+                  "help": "trans::webx-settings::screen.hours-help",
+                  "props": {
+                    "sortable": true,
+                    "addLabel": "trans::webx-settings::screen.hours-add",
+                    "emptyText": "trans::webx-settings::screen.hours-empty"
+                  },
+                  "children": [
+                    {
+                      "id": "hours-days",
+                      "type": "wx-checkbox-group",
+                      "name": "days",
+                      "label": "trans::webx-settings::screen.hours-days",
+                      "props": {
+                        "options": [
+                          { "value": "mon", "label": "trans::webx-settings::screen.day-mon" },
+                          { "value": "tue", "label": "trans::webx-settings::screen.day-tue" },
+                          { "value": "wed", "label": "trans::webx-settings::screen.day-wed" },
+                          { "value": "thu", "label": "trans::webx-settings::screen.day-thu" },
+                          { "value": "fri", "label": "trans::webx-settings::screen.day-fri" },
+                          { "value": "sat", "label": "trans::webx-settings::screen.day-sat" },
+                          { "value": "sun", "label": "trans::webx-settings::screen.day-sun" }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "hours-opens",
+                      "type": "wx-time-picker",
+                      "name": "opens",
+                      "label": "trans::webx-settings::screen.hours-opens"
+                    },
+                    {
+                      "id": "hours-closes",
+                      "type": "wx-time-picker",
+                      "name": "closes",
+                      "label": "trans::webx-settings::screen.hours-closes",
+                      "help": "trans::webx-settings::screen.hours-closes-help"
+                    }
+                  ]
+                },
+                {
+                  "id": "contacts-hours-exceptions",
+                  "type": "wx-repeater",
+                  "name": "contacts.hours-exceptions",
+                  "label": "trans::webx-settings::screen.exceptions",
+                  "help": "trans::webx-settings::screen.exceptions-help",
+                  "props": {
+                    "sortable": true,
+                    "itemLabel": "date",
+                    "addLabel": "trans::webx-settings::screen.exceptions-add",
+                    "emptyText": "trans::webx-settings::screen.exceptions-empty"
+                  },
+                  "children": [
+                    {
+                      "id": "exception-date",
+                      "type": "wx-date-picker",
+                      "name": "date",
+                      "label": "trans::webx-settings::screen.exception-date"
+                    },
+                    {
+                      "id": "exception-label",
+                      "type": "wx-input",
+                      "name": "label",
+                      "label": "trans::webx-settings::screen.exception-label",
+                      "localized": true,
+                      "props": { "maxlength": 80 }
+                    },
+                    {
+                      "id": "exception-closed",
+                      "type": "wx-switch",
+                      "name": "closed",
+                      "label": "trans::webx-settings::screen.exception-closed",
+                      "default": true
+                    },
+                    {
+                      "id": "exception-opens",
+                      "type": "wx-time-picker",
+                      "name": "opens",
+                      "label": "trans::webx-settings::screen.hours-opens",
+                      "visible": { "when": "closed", "is": false }
+                    },
+                    {
+                      "id": "exception-closes",
+                      "type": "wx-time-picker",
+                      "name": "closes",
+                      "label": "trans::webx-settings::screen.hours-closes",
+                      "visible": { "when": "closed", "is": false }
+                    }
+                  ]
+                },
+                {
+                  "id": "contacts-timezone",
+                  "type": "wx-input",
+                  "name": "contacts.timezone",
+                  "label": "trans::webx-settings::screen.timezone",
+                  "help": "trans::webx-settings::screen.timezone-help",
+                  "props": { "maxlength": 64, "placeholder": "Europe/Berlin" }
+                }
+              ]
+            },
+            {
+              "id": "contacts-channels-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "contacts-messengers",
+                  "type": "wx-repeater",
+                  "name": "contacts.messengers",
+                  "label": "trans::webx-settings::screen.messengers",
+                  "help": "trans::webx-settings::screen.messengers-help",
+                  "props": {
+                    "sortable": true,
+                    "itemLabel": "channel",
+                    "addLabel": "trans::webx-settings::screen.messengers-add",
+                    "emptyText": "trans::webx-settings::screen.messengers-empty"
+                  },
+                  "children": [
+                    {
+                      "id": "messenger-channel",
+                      "type": "wx-select",
+                      "name": "channel",
+                      "label": "trans::webx-settings::screen.messenger-channel",
+                      "props": {
+                        "options": [
+                          { "value": "telegram", "label": "Telegram" },
+                          { "value": "whatsapp", "label": "WhatsApp" },
+                          { "value": "viber", "label": "Viber" },
+                          { "value": "signal", "label": "Signal" },
+                          { "value": "messenger", "label": "Messenger" },
+                          { "value": "line", "label": "LINE" },
+                          { "value": "wechat", "label": "WeChat" },
+                          { "value": "discord", "label": "Discord" }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "messenger-url",
+                      "type": "wx-input",
+                      "name": "url",
+                      "label": "trans::webx-settings::screen.messenger-url",
+                      "help": "trans::webx-settings::screen.messenger-url-help",
+                      "props": { "maxlength": 2000 }
+                    },
+                    {
+                      "id": "messenger-label",
+                      "type": "wx-input",
+                      "name": "label",
+                      "label": "trans::webx-settings::screen.phone-label",
+                      "localized": true,
+                      "props": { "maxlength": 80 }
+                    }
+                  ]
+                },
+                {
+                  "id": "contacts-socials",
+                  "type": "wx-repeater",
+                  "name": "contacts.socials",
+                  "label": "trans::webx-settings::screen.socials",
+                  "help": "trans::webx-settings::screen.socials-help",
+                  "props": {
+                    "sortable": true,
+                    "itemLabel": "network",
+                    "addLabel": "trans::webx-settings::screen.socials-add",
+                    "emptyText": "trans::webx-settings::screen.socials-empty"
+                  },
+                  "children": [
+                    {
+                      "id": "social-network",
+                      "type": "wx-select",
+                      "name": "network",
+                      "label": "trans::webx-settings::screen.social-network",
+                      "props": {
+                        "options": [
+                          { "value": "facebook", "label": "Facebook" },
+                          { "value": "instagram", "label": "Instagram" },
+                          { "value": "x", "label": "X" },
+                          { "value": "youtube", "label": "YouTube" },
+                          { "value": "tiktok", "label": "TikTok" },
+                          { "value": "linkedin", "label": "LinkedIn" },
+                          { "value": "threads", "label": "Threads" },
+                          { "value": "pinterest", "label": "Pinterest" },
+                          { "value": "telegram", "label": "Telegram" },
+                          { "value": "whatsapp", "label": "WhatsApp" },
+                          { "value": "viber", "label": "Viber" },
+                          { "value": "discord", "label": "Discord" },
+                          { "value": "reddit", "label": "Reddit" },
+                          { "value": "twitch", "label": "Twitch" },
+                          { "value": "vimeo", "label": "Vimeo" },
+                          { "value": "mastodon", "label": "Mastodon" },
+                          { "value": "bluesky", "label": "Bluesky" },
+                          { "value": "github", "label": "GitHub" },
+                          { "value": "behance", "label": "Behance" },
+                          { "value": "dribbble", "label": "Dribbble" },
+                          { "value": "medium", "label": "Medium" },
+                          { "value": "tripadvisor", "label": "Tripadvisor" },
+                          { "value": "vk", "label": "VK" },
+                          { "value": "other", "label": "trans::webx-settings::screen.social-other" }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "social-url",
+                      "type": "wx-input",
+                      "name": "url",
+                      "label": "trans::webx-settings::screen.social-url",
+                      "props": { "maxlength": 2000, "type": "url" }
+                    },
+                    {
+                      "id": "social-label",
+                      "type": "wx-input",
+                      "name": "label",
+                      "label": "trans::webx-settings::screen.social-label",
+                      "help": "trans::webx-settings::screen.social-label-help",
+                      "localized": true,
+                      "visible": { "when": "network", "is": "other" },
+                      "props": { "maxlength": 80 }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "id": "shortcodes",
           "type": "wx-tab",
           "label": "trans::webx-settings::screen.shortcodes",
@@ -92,23 +477,53 @@
                       }
                     },
                     {
-                      "id": "shortcode-key",
-                      "type": "wx-input",
-                      "name": "key",
-                      "label": "trans::webx-settings::screen.shortcode-key",
-                      "help": "trans::webx-settings::screen.shortcode-key-help",
+                      "id": "shortcode-source",
+                      "type": "wx-segmented",
+                      "name": "source",
+                      "label": "trans::webx-settings::screen.shortcode-source",
+                      "default": "value",
                       "props": {
-                        "maxlength": 120
+                        "options": [
+                          {
+                            "value": "value",
+                            "label": "trans::webx-settings::screen.shortcode-source-value"
+                          },
+                          {
+                            "value": "setting",
+                            "label": "trans::webx-settings::screen.shortcode-source-setting"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "shortcode-key",
+                      "type": "wx-autocomplete",
+                      "name": "key",
+                      "help": "trans::webx-settings::screen.shortcode-key-help",
+                      "visible": {
+                        "when": "source",
+                        "is": "setting"
+                      },
+                      "props": {
+                        "ariaLabel": "trans::webx-settings::screen.shortcode-key",
+                        "openOnFocus": true,
+                        "clearable": true,
+                        "teleport": true,
+                        "placeholder": "contacts.phone"
                       }
                     },
                     {
                       "id": "shortcode-value",
                       "type": "wx-input",
                       "name": "value",
-                      "label": "trans::webx-settings::screen.shortcode-value",
                       "help": "trans::webx-settings::screen.shortcode-value-help",
                       "localized": true,
+                      "visible": {
+                        "when": "source",
+                        "not": "setting"
+                      },
                       "props": {
+                        "ariaLabel": "trans::webx-settings::screen.shortcode-value",
                         "maxlength": 500
                       }
                     }

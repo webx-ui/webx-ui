@@ -136,6 +136,32 @@ describe('wx-repeater', () => {
     expect(wrapper.findAll('input[name="floor"]')).toHaveLength(0)
   })
 
+  it('stops at the width of a field unless its rows lay fields side by side', () => {
+    const plain = mountScreen()
+    expect(plain.find('.wx-form-item').classes()).not.toContain('wx-form-item--wide')
+
+    const columns: ScreenNode[] = [
+      {
+        ...root[0]!,
+        children: [
+          {
+            id: 'office-row',
+            type: 'wx-row',
+            children: [
+              {
+                id: 'office-col',
+                type: 'wx-col',
+                children: [{ id: 'office-city', type: 'wx-input', name: 'city', label: 'City' }],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+    const wide = mount(WxScreenRenderer, { props: { root: columns, modelValue: {} } })
+    expect(wide.find('.wx-form-item').classes()).toContain('wx-form-item--wide')
+  })
+
   it('survives a value that is not a list', () => {
     const wrapper = mountScreen({ 'contacts.offices': null })
 

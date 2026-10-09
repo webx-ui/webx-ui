@@ -58,6 +58,7 @@ final class Plan
             $this->passportKeys(),
             ...$this->locales(),
             $this->blockTypes(),
+            $this->themeFiles(),
             $this->administrator(),
             ...($cache ? $this->caches() : []),
         ]));
@@ -154,6 +155,27 @@ final class Plan
             'webx:blocks:import',
             ['webx:blocks:import', '--publish'],
             'the block types this repository describes',
+        );
+    }
+
+    /**
+     * The built CSS and assets of the packaged theme layers, which reach a page only from
+     * `public/themes` — generated, so not in the repository and not in a fresh container.
+     * Unchanged files are left alone, so every boot after the first costs a hash.
+     */
+    private function themeFiles(): ?Step
+    {
+        $theme = $this->config->get('webx-themes.theme');
+
+        if (! $this->catalogue->has('webx-ui/themes') || ! is_string($theme) || trim($theme) === '') {
+            return null;
+        }
+
+        return new Step(
+            'webx:theme:sync',
+            ['webx:theme:sync'],
+            'the theme stylesheets answer from public/themes',
+            fatal: false,
         );
     }
 

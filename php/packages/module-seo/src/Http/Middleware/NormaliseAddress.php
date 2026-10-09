@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
+use WebxUi\Seo\Http\Probes;
 use WebxUi\Seo\Normalisation;
 
 /**
@@ -38,11 +39,14 @@ final class NormaliseAddress
         private readonly Normalisation $settings,
         private readonly Config $config,
         private readonly Router $router,
+        private readonly Probes $probes,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->isMethodCacheable()) {
+        // A health probe gets the page it asked for: a 301 to an https nobody serves inside the
+        // container is a failed check, and a failed check is a site taken out of routing.
+        if (! $request->isMethodCacheable() || $this->probes->is($request)) {
             return $next($request);
         }
 

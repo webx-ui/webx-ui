@@ -118,7 +118,7 @@ final class BundlesTest extends TestCase
         $this->assertNotNull($bundle);
         $this->assertNotNull($bundle->js);
         $this->assertStringStartsWith('/*', $bundle->js);
-        $this->assertStringContainsString('window.webx = {', $bundle->js);
+        $this->assertStringContainsString('const webx = (window.webx ??= {})', $bundle->js);
         $this->assertStringContainsString("webx.block(\"hero\", async (el, values) => {\nel.classList.add('ready')\n});", $bundle->js);
         $this->assertStringNotContainsString('webx.block("text"', $bundle->js);
 
@@ -196,7 +196,7 @@ final class BundlesTest extends TestCase
         $runtime = $this->get('/blocks/runtime.js?v=deadbeef');
         $runtime->assertOk();
         $runtime->assertHeader('Content-Type', 'text/javascript; charset=UTF-8');
-        $this->assertStringContainsString('window.webx = {', (string) $runtime->getContent());
+        $this->assertStringContainsString('const webx = (window.webx ??= {})', (string) $runtime->getContent());
     }
 
     #[Test]

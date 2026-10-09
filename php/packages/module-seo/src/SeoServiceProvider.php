@@ -74,6 +74,9 @@ class SeoServiceProvider extends ServiceProvider
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
             $tables->content('seo_meta', 'seo_urls', 'seo_redirects', 'seo_link_blocks', 'seo_link_items', 'seo_faq_items');
             $tables->afterRestore('webx:seo:sitemap');
+            // The main mirror and https describe the server, not the content: the laptop's `true`
+            // carried onto a stand whose health probe speaks plain http took it out of routing.
+            $tables->preserve('cms_settings', 'key', static fn (): array => Normalisation::KEYS);
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-seo.php', 'webx-seo');

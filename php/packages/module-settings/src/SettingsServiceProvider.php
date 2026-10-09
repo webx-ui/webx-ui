@@ -12,6 +12,9 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Settings\Console\MoveContactsCommand;
+use WebxUi\Settings\Contacts\Contacts;
+use WebxUi\Settings\Events\SettingsSaved;
 
 class SettingsServiceProvider extends ServiceProvider
 {
@@ -28,6 +31,8 @@ class SettingsServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/webx-settings.php', 'webx-settings');
 
         $this->app->singleton(Settings::class);
+        // Scoped: it remembers what it read, for one request of a long-lived worker.
+        $this->app->scoped(Contacts::class);
 
         // What the panel wears is a setting like any other, so the section that holds the
         // settings is the one that answers the frame's question about it.
@@ -48,6 +53,12 @@ class SettingsServiceProvider extends ServiceProvider
             $this->app->make(Settings::class)->forget();
         });
 
+        $this->app->make(Dispatcher::class)->listen(SettingsSaved::class, function (): void {
+            if ($this->app->resolved(Contacts::class)) {
+                $this->app->make(Contacts::class)->forget();
+            }
+        });
+
         // The reference screen. A project lays its own tabs over it from its provider, which
         // boots after this one — `Screens::extend('settings.index', ...)`.
         $this->app->make(ScreenRegistry::class)->register(Settings::SCREEN, __DIR__.'/../resources/screens/index.json');
@@ -60,6 +71,8 @@ class SettingsServiceProvider extends ServiceProvider
         if (! $this->app->runningInConsole()) {
             return;
         }
+
+        $this->commands([MoveContactsCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-settings.php' => config_path('webx-settings.php'),

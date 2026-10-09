@@ -13,6 +13,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     globals: true,
-    include: ['packages/*/src/**/*.{test,spec}.ts'],
+    // The JavaScript the Composer packages ship next to their Blade, too.
+    include: ['packages/*/src/**/*.{test,spec}.ts', 'php/packages/*/resources/js/**/*.test.js'],
   },
 })

@@ -49,7 +49,11 @@ function sources() {
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            // The site's own theme first: `webx:setup` creates theme/, and `@webxTheme` asks Vite
+            // for exactly these two. The files under resources/ are the site's own styles when it
+            // was set up with --no-theme. Whichever is not there is left out rather than failing
+            // the build, so one config serves both.
+            input: ['theme/src/css/theme.css', 'theme/src/js/theme.js', 'resources/css/app.css', 'resources/js/app.js'].filter((entry) => existsSync(entry)),
             refresh: true,
         }),
         sources(),

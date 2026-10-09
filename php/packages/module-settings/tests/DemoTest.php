@@ -38,6 +38,12 @@ final class DemoTest extends TestCase
         $this->assertSame('Demo site', $settings->get('general.project-name'));
         // The house rules a content agent reads come filled in, so the resource is worth reading.
         $this->assertStringStartsWith('Plain and warm', (string) $settings->get('content.tone'));
+        // The Contacts tab too, so the theme's header and footer have numbers, hours and networks to show.
+        $this->assertCount(3, contacts()->phones());
+        $this->assertSame('Sales', contacts()->primaryPhone()?->label);
+        $this->assertFalse(contacts()->hours()->isEmpty());
+        $this->assertSame('Europe/London', contacts()->hours()->timezone()->getName());
+        $this->assertCount(4, contacts()->socials());
 
         $this->artisan('webx:demo', ['--remove' => true])->assertSuccessful();
 

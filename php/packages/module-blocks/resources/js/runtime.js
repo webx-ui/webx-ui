@@ -8,9 +8,15 @@
  * A block's script is a function per instance, not code run once: two identical blocks on a page,
  * a nested block and the panel replacing one block after an edit all rely on that. An instance is
  * mounted once; `webx.mount(root)` picks up whatever is new inside a subtree.
+ *
+ * It joins `window.webx` rather than replacing it: the widgets runtime (webx-ui/widgets) lives
+ * there too and may have loaded first. Each wraps the `mount` it found, so one call starts both.
  */
 ;(() => {
-  if (window.webx && typeof window.webx.block === 'function') return
+  const webx = (window.webx ??= {})
+  if (typeof webx.block === 'function') return
+
+  const mountBefore = webx.mount
 
   const inits = new Map()
   const provided = new Map()
@@ -45,12 +51,13 @@
     }
   }
 
-  window.webx = {
+  Object.assign(webx, {
     block(slug, init) {
       inits.set(slug, init)
       mount(document, slug)
     },
     mount(root = document) {
+      mountBefore?.call(webx, root)
       mount(root)
     },
     provide(name, value) {
@@ -62,5 +69,5 @@
       if (provided.has(name)) return Promise.resolve(provided.get(name))
       return new Promise((resolve) => waiting.set(name, [...(waiting.get(name) ?? []), resolve]))
     },
-  }
+  })
 })()

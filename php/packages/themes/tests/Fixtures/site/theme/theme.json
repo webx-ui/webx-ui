@@ -1,0 +1,8 @@
+{
+  "theme": {
+    "title": "Local",
+    "uses": ["webx-ui/theme-fixture"],
+    "requires": ["module-pages"],
+    "editable": ["color-accent", "font-heading", "color-gone"]
+  }
+}

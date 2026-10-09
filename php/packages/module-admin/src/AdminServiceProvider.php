@@ -86,6 +86,7 @@ use WebxUi\Admin\Screens\Types\TimeType;
 use WebxUi\Admin\Screens\Types\TreeSelectType;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Admin\Support\Ownership;
 use WebxUi\Admin\Support\Parts;
 use WebxUi\Admin\Uploads\FreeSpace;
 use WebxUi\Admin\Uploads\UploadPurposes;
@@ -137,6 +138,9 @@ class AdminServiceProvider extends ServiceProvider
 
         // What modules add to `webx:doctor` after the frame's own checks.
         $this->app->singleton(DoctorChecks::class);
+
+        // Whose `storage` it is: what a command run as root hands its files back to.
+        $this->app->bind(Ownership::class, static fn (): Ownership => new Ownership(storage_path()));
 
         // The shortcodes content may hold: the site registers its own from its provider, the
         // settings section adds the ones the panel defines, and every module that prints text

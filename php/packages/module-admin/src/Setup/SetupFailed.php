@@ -49,6 +49,11 @@ final class SetupFailed extends RuntimeException
         return new self("There is no module called [{$id}]. The ones there are: {$known}.");
     }
 
+    public static function badTheme(string $given): self
+    {
+        return new self("[{$given}] is not a Composer package name. --theme takes one, such as webx-ui/theme-default.");
+    }
+
     public static function noEnv(string $path): self
     {
         return new self(

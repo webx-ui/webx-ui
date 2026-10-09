@@ -117,8 +117,9 @@ export interface TypeEntry {
   /**
    * A `field` whose control is not a field in the reading sense — an editor, a list of
    * blocks, a table. It keeps the whole width instead of stopping at `--wx-field-max-width`.
+   * A function decides per node — a repeater is wide only when its rows lay fields side by side.
    */
-  wide?: boolean
+  wide?: boolean | ((node: ScreenNode) => boolean)
 }
 
 export type TypeRegistry = Record<string, TypeEntry>

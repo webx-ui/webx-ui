@@ -33,6 +33,10 @@ COMPOSER_BIN="${COMPOSER_BIN:-composer}"
 DB_CONNECTION="${DB_CONNECTION:-sqlite}"
 PORT="${SMOKE_PORT:-8123}"
 BASE="http://127.0.0.1:${PORT}"
+# The same server by name, the way a visitor asks for it. A request from this machine to
+# 127.0.0.1 is a health probe to module-seo (Probes), and no redirect answers a probe: every
+# check that expects a redirect goes here.
+VISITOR="http://localhost:${PORT}"
 
 ADMIN_EMAIL="smoke@example.test"
 ADMIN_PASSWORD="correct-horse-battery-staple"
@@ -54,6 +58,21 @@ trap cleanup EXIT
 
 status() {
     curl -s -o /dev/null -w '%{http_code}' -c "$COOKIES" -b "$COOKIES" -H 'Accept: application/json' "$@"
+}
+
+# A visitor's request, by name ($VISITOR) and without the administrator's cookie jar: a second
+# session under `localhost` in it would hand xsrf_token() the wrong token for 127.0.0.1.
+visit() {
+    curl -s -o /dev/null -w '%{http_code}' -H 'Accept: application/json' "$@"
+}
+
+# `… | has <pattern>` rather than `… | grep -q`: grep -q leaves on its first match, the writer
+# is cut off mid-text once it outgrows the pipe buffer, and under pipefail the check fails on
+# the very match it found ("printf: write error: Broken pipe", curl exit 23). This reads it all.
+has() {
+    local text
+    text="$(cat)"
+    grep -q "$@" <<< "$text"
 }
 
 expect() {
@@ -220,7 +239,7 @@ step "Install the block types modules offer"
 note 'the offered block types are installed, and installing them again is harmless'
 
 step "Seed the languages"
-"$PHP_BIN" "$APP/artisan" webx:locales:seed --no-interaction | grep -qi 'english' \
+"$PHP_BIN" "$APP/artisan" webx:locales:seed --no-interaction | has -i 'english' \
     || fail 'webx:locales:seed did not create the configured languages'
 note 'the locales table has the configured languages'
 
@@ -477,11 +496,11 @@ PHP
 
 SMOKE_HOME="$("$PHP_BIN" "$APP/artisan" smoke:home --no-interaction)"
 
-echo "$SMOKE_HOME" | grep -q 'home address: \[\]' \
+echo "$SMOKE_HOME" | has 'home address: \[\]' \
     || fail "the home page did not take the empty address in the registry: $SMOKE_HOME"
 note 'the home page is published on the empty address'
 
-echo "$SMOKE_HOME" | grep -q 'child address: \[about-pages\]' \
+echo "$SMOKE_HOME" | has 'child address: \[about-pages\]' \
     || fail "a child of the home page is not addressed from the root: $SMOKE_HOME"
 note 'its child is /about-pages, not /home/about-pages'
 
@@ -582,7 +601,7 @@ PHP
 note 'a form with two fields'
 
 step "The modules answer to artisan"
-"$PHP_BIN" "$APP/artisan" webx:mcp-tools | grep -q 'admins_grant_role' \
+"$PHP_BIN" "$APP/artisan" webx:mcp-tools | has 'admins_grant_role' \
     || fail 'the auth module offers no MCP tools'
 note 'webx:mcp-tools lists the auth tools'
 
@@ -643,9 +662,9 @@ connect_an_agent() {
     # which php reads as an option of its own and refuses.
     challenge="$("$PHP_BIN" -r 'echo rtrim(strtr(base64_encode(hash("sha256", $argv[1], true)), "+/", "-_"), "=");' -- "$verifier")"
 
-    curl -s "$BASE/.well-known/oauth-protected-resource/api/cms/mcp" | grep -q '"mcp:use"' \
+    curl -s "$BASE/.well-known/oauth-protected-resource/api/cms/mcp" | has '"mcp:use"' \
         || fail "[$phase] the protected resource metadata says nothing"
-    curl -s "$BASE/.well-known/oauth-authorization-server" | grep -q '"registration_endpoint"' \
+    curl -s "$BASE/.well-known/oauth-authorization-server" | has '"registration_endpoint"' \
         || fail "[$phase] the authorization server metadata says nothing"
     note "[$phase] a client finds the authorization server from the address alone"
 
@@ -674,15 +693,15 @@ connect_an_agent() {
 
     # The administrator, not a visitor of the site: Passport asks whichever guard it was given,
     # and its own default is the wrong one.
-    printf '%s' "$consent" | grep -q 'Smoke client' \
+    grep -q 'Smoke client' <<< "$consent" \
         || fail "[$phase] the consent page did not draw: $(printf '%s' "$consent" | head -c 400)"
-    printf '%s' "$consent" | grep -q 'localhost' \
+    grep -q 'localhost' <<< "$consent" \
         || fail "[$phase] the consent page does not say where the code is sent"
     # The panel's own screen and not the plain one: the warning about responsibility is the
     # line a grant on file says the person was shown.
-    printf '%s' "$consent" | grep -q 'You are responsible for what the agent does' \
+    grep -q 'You are responsible for what the agent does' <<< "$consent" \
         || fail "[$phase] the consent page is not the panel's own"
-    printf '%s' "$consent" | grep -q 'name="read_only"' \
+    grep -q 'name="read_only"' <<< "$consent" \
         || fail "[$phase] the consent page offers no read-only box"
 
     auth_token="$(printf '%s' "$consent" | grep -o 'name="auth_token" value="[^"]*"' | head -1 \
@@ -739,7 +758,7 @@ run_http_checks() {
     # at boot — the one place a cached config could have made that a no-op. The tests cannot see
     # it: Testbench never caches the config.
     curl -s -c "$COOKIES" -b "$COOKIES" -H 'Accept: application/json' "$BASE/api/cms/manifest" \
-        | grep -q '"id":"blog"' \
+        | has '"id":"blog"' \
         || fail "[$phase] the blog group is missing from the manifest"
     note "[$phase] the blog's navigation group survived the config cache"
 
@@ -751,13 +770,13 @@ run_http_checks() {
     expect 201 "$(send_json POST "$BASE/api/cms/seo/redirects" \
         '{"match_type":"exact","pattern":"/moved-'"$phase"'","target":"/cms"}')" \
         "[$phase] a redirect is written through the panel"
-    expect 301 "$(status "$BASE/moved-$phase")" "[$phase] and the public side follows it"
+    expect 301 "$(visit "$VISITOR/moved-$phase")" "[$phase] and the public side follows it"
 
     expect 200 "$(send_json PUT "$BASE/api/cms/settings" \
         '{"values":{"seo.robots-txt":"User-agent: *"}}')" \
         "[$phase] the SEO tab of the settings takes a value"
     expect 200 "$(status "$BASE/robots.txt")" "[$phase] and /robots.txt answers"
-    curl -s "$BASE/robots.txt" | grep -q '^User-agent: \*' \
+    curl -s "$BASE/robots.txt" | has '^User-agent: \*' \
         || fail "[$phase] /robots.txt is not the setting"
     note "[$phase] /robots.txt serves the setting"
 
@@ -767,12 +786,12 @@ run_http_checks() {
     "$PHP_BIN" "$APP/artisan" smoke:page "about-$phase" --no-interaction > /dev/null
 
     expect 200 "$(status "$BASE/about-$phase")" "[$phase] a page in the registry answers"
-    expect 301 "$(status "$BASE/About-$phase")" "[$phase] another spelling of it is a 301"
+    expect 301 "$(visit "$VISITOR/About-$phase")" "[$phase] another spelling of it is a 301"
     expect 404 "$(status "$BASE/about-$phase/nothing")" "[$phase] a type that takes no tail is a 404"
 
     "$PHP_BIN" "$APP/artisan" smoke:page "about-$phase" --rename="moved-page-$phase" --no-interaction > /dev/null
 
-    expect 301 "$(status "$BASE/about-$phase")" "[$phase] a rename leaves the old address behind"
+    expect 301 "$(visit "$VISITOR/about-$phase")" "[$phase] a rename leaves the old address behind"
     expect 200 "$(status "$BASE/moved-page-$phase")" "[$phase] and the new one answers"
 
     # module-blocks, the preview. The route is registered by a package and carries a signed
@@ -785,11 +804,11 @@ run_http_checks() {
     expect 403 "$(status "${PREVIEW_URL%%\?*}")" "[$phase] the preview without a token is a 403"
     expect 200 "$(status "$PREVIEW_URL")" "[$phase] and with the token it answers"
 
-    curl -s -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | grep -q 'Draft only' \
+    curl -s -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | has 'Draft only' \
         || fail "[$phase] the preview did not render the draft"
     note "[$phase] the preview shows the draft"
 
-    curl -s -D - -o /dev/null -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | grep -qi '^X-Robots-Tag: noindex' \
+    curl -s -D - -o /dev/null -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | has -i '^X-Robots-Tag: noindex' \
         || fail "[$phase] the preview is not marked noindex"
     note "[$phase] the preview is noindex and no-store"
 
@@ -798,7 +817,7 @@ run_http_checks() {
     expect 200 "$(status "$BASE/")" "[$phase] the home page of the tree answers /"
     expect 200 "$(status "$BASE/about-pages")" "[$phase] and its child answers from the root"
 
-    curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/about-pages" | grep -q '<html lang=' \
+    curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/about-pages" | has '<html lang=' \
         || fail "[$phase] the page view of module-pages did not print the document"
     note "[$phase] the page view printed the document"
 
@@ -820,7 +839,7 @@ run_http_checks() {
     fi
     note "[$phase] the sitemap has the page and not the draft"
 
-    curl -s "$BASE/robots.txt" | grep -q '^Sitemap: ' \
+    curl -s "$BASE/robots.txt" | has '^Sitemap: ' \
         || fail "[$phase] robots.txt does not name the sitemap"
     note "[$phase] robots.txt names the sitemap"
 
@@ -831,7 +850,7 @@ run_http_checks() {
     expect 200 "$(status "$BASE/blog/rss")" "[$phase] and the RSS beside it"
 
     curl -s -D - -o /dev/null -c "$COOKIES" -b "$COOKIES" "$BASE/blog/rss" \
-        | grep -qi '^Content-Type: application/rss' \
+        | has -i '^Content-Type: application/rss' \
         || fail "[$phase] the RSS did not come back as a feed"
     note "[$phase] the RSS is served as a feed"
 
@@ -851,7 +870,7 @@ run_http_checks() {
         -d "{\"$mark_field\":\"$mark_value\",\"fields\":{\"name\":\"Ada $phase\",\"email\":\"ada-$phase@example.test\"}}" \
         "$BASE/webx/forms/smoke-contact")"
 
-    printf '%s' "$answer" | grep -q '"ok":true' \
+    grep -q '"ok":true' <<< "$answer" \
         || fail "[$phase] the intake refused a form posted without a CSRF token: $answer"
 
     after="$("$PHP_BIN" "$APP/artisan" smoke:form --count --no-interaction | tr -dc '0-9')"
@@ -880,7 +899,7 @@ run_http_checks() {
         -F "fields[attachment]=@$WORKDIR/attachment.txt" \
         "$BASE/webx/forms/smoke-contact")"
 
-    printf '%s' "$answer" | grep -q '"ok":true' \
+    grep -q '"ok":true' <<< "$answer" \
         || fail "[$phase] the intake refused a submission with a file: $answer"
 
     attachment="$("$PHP_BIN" "$APP/artisan" smoke:form --attachment --no-interaction | sed 's/.*: //' | tr -d '\r')"
@@ -888,7 +907,7 @@ run_http_checks() {
     note "[$phase] an attachment arrives and is stored off the web root"
 
     curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/api/cms/inbox/submissions/$attachment" \
-        | grep -q "attached in $phase" \
+        | has "attached in $phase" \
         || fail "[$phase] the panel did not serve the attachment back"
     note "[$phase] and the panel serves it back to somebody with inbox.view"
 
@@ -933,7 +952,7 @@ run_http_checks() {
         -H "Authorization: Bearer $MCP_TOKEN" -X POST \
         -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"blocks_create","arguments":{"slug":"smoke-'"$phase"'","title":"Smoke"}}}' \
         "$BASE/api/cms/mcp")"
-    printf '%s' "$created" | grep -q '"slug":"smoke-'"$phase"'"' \
+    grep -q '"slug":"smoke-'"$phase"'"' <<< "$created" \
         || fail "[$phase] the agent's token could not write: $created"
     note "[$phase] and writes with it"
 
@@ -953,7 +972,7 @@ run_http_checks() {
         -H "Authorization: Bearer $MCP_READ_TOKEN" -X POST \
         -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"blocks_create","arguments":{"slug":"read-only-'"$phase"'","title":"Nope"}}}' \
         "$BASE/api/cms/mcp")"
-    printf '%s' "$refused_write" | grep -q '"error"' \
+    grep -q '"error"' <<< "$refused_write" \
         || fail "[$phase] a read-only connection was allowed to write: $refused_write"
     note "[$phase] and is refused when it tries to write anyway"
 }
@@ -1112,11 +1131,14 @@ $COMPOSER_BIN create-project webx-ui/site "$SITE" \
     --no-install --no-scripts --no-interaction --quiet
 note "webx-ui/site $SHARED_VERSION in $SITE"
 
-[ -f "$SITE/resources/views/components/layout.blade.php" ] || fail 'the skeleton brought no layout'
+# The layout is the theme's. One in resources/views would sit above every theme layer and hide
+# whatever the theme brings, so the skeleton must not ship one.
+[ -f "$SITE/resources/views/components/layout.blade.php" ] \
+    && fail 'the skeleton ships a layout of its own, above every theme layer'
 # At the start of a line: the file explains this very trap in prose, and names it while doing so.
 grep -qE '^[[:space:]]*(\\?Illuminate|Route::)' "$SITE/routes/web.php" \
     && fail 'the skeleton declares a route, and / belongs to the page tree'
-note 'a layout, and no routes taking addresses from the registry'
+note 'no layout of its own, and no routes taking addresses from the registry'
 
 (
     cd "$SITE"
@@ -1181,7 +1203,13 @@ note 'the entry file registers every module that was installed'
 
 grep -q "'layout' => env('WEBX_PAGES_LAYOUT', 'layout')" "$SITE/config/webx-pages.php" \
     || fail 'the pages module was not pointed at the layout'
-note 'the public views stand in the layout of the skeleton'
+note 'the public views stand in the layout of the theme'
+
+[ -f "$SITE/theme/theme.json" ] || fail 'setup created no theme/'
+grep -q '"webx-ui/theme-default"' "$SITE/theme/theme.json" || fail 'theme/ does not stand on theme-default'
+grep -q '^WEBX_THEME=theme$' "$SITE/.env" || fail '.env does not name the local theme'
+[ -f "$SITE/public/themes/webx-ui/theme-default/current" ] || fail 'theme-default was not synced to public/themes'
+note 'theme/ over webx-ui/theme-default, named in .env and published'
 
 [ -f "$SITE/storage/app/webx-demo.json" ] || fail 'the demo journal is not there'
 note 'the demo journal is there'
@@ -1213,17 +1241,21 @@ done
 
 HOME_PAGE="$(curl -s "$SITE_BASE/")"
 
-printf '%s' "$HOME_PAGE" | grep -q '<!doctype html>' || fail "the home page is not a document: $HOME_PAGE"
+grep -q '<!doctype html>' <<< "$HOME_PAGE" || fail "the home page is not a document: $HOME_PAGE"
 # The layout seam, both halves of it: the header around the module's view, and a metatag that
-# only reaches the head through @stack. The header is the demo's, made of blocks: the skeleton
-# declares its header and footer as regions, and the demo publishes both — so the stylesheet of
-# the region's own bundle stands in <body>, before it, where `@webxBlocks` in the head never
-# sees it.
-printf '%s' "$HOME_PAGE" | grep -q 'class="b-demo-header"' || fail 'the home page did not get the header region the demo published'
-printf '%s' "$HOME_PAGE" | sed -n '/<body/,$p' | grep -qE '<link rel="stylesheet" href="[^"]+/[a-f0-9]{16}\.css"><header class="b-demo-header"' \
-    || fail 'the header region did not print its own stylesheet in <body>'
-printf '%s' "$HOME_PAGE" | grep -q '<title>' || fail 'the SEO card did not reach the head'
-note 'the demo home page renders inside the layout, with a header of blocks and its head filled in'
+# only reaches the head through @stack. The header is the theme's — the region's fallback, the
+# header widget: with a theme the demo leaves the regions empty rather than cover it with a
+# header of blocks (a region's own stylesheet in <body> is module-blocks' test to hold).
+grep -q 'data-webx-header=""' <<< "$HOME_PAGE" || fail 'the home page did not get the header of the theme'
+grep -q 'b-demo-header' <<< "$HOME_PAGE" && fail 'the demo covered the theme header with a header of blocks'
+grep -q '<title>' <<< "$HOME_PAGE" || fail 'the SEO card did not reach the head'
+grep -q '<style data-webx-theme>' <<< "$HOME_PAGE" || fail 'the site tokens did not reach the head'
+grep -qE '<link rel="stylesheet" href="[^"]*/themes/webx-ui/theme-default/[a-f0-9]{12}/theme\.css">' <<< "$HOME_PAGE" \
+    || fail 'the stylesheet of theme-default did not reach the head'
+# theme-default brings webx-ui/widgets; their runtime is on every page, its script before </body>.
+grep -qE '<script type="module" src="[^"]*/themes/webx-ui/widgets/[a-f0-9]{12}/runtime\.js"></script>' <<< "$HOME_PAGE" \
+    || fail 'the widgets runtime did not reach the page'
+note 'the demo home page renders inside the theme layout: its header widget, the tokens, the head filled in, the widgets runtime'
 
 expect 200 "$(status "$SITE_BASE/")" 'GET /'
 
@@ -1268,9 +1300,10 @@ site_artisan webx:demo --remove --no-interaction > "$WORKDIR/demo-remove.log" 2>
 # Not through `/`: the removal puts the home page back as the unpublished draft it was, and it
 # answers 404. The tag itself, rendered by the application, is the same question.
 REMOVED_HEADER="$(site_artisan tinker --execute="echo Illuminate\Support\Facades\Blade::render('<x-webx-blocks::region name=\"header\" fallback=\"components.header\" />');")"
-printf '%s' "$REMOVED_HEADER" | grep -q 'class="site-header"' \
+# The header is the widget's (<x-webx-header class="site-header">): the class is one of several.
+grep -qE 'class="([^"]* )?site-header[ "]' <<< "$REMOVED_HEADER" \
     || fail "without the demo the header is not the one from code: $REMOVED_HEADER"
-printf '%s' "$REMOVED_HEADER" | grep -q 'b-demo-header' && fail 'the demo header outlived the removal'
+grep -q 'b-demo-header' <<< "$REMOVED_HEADER" && fail 'the demo header outlived the removal'
 note 'the removal gives the site back its header from code'
 
 printf '\n\033[32m== And one command turns an empty directory into a site with a panel on it.\033[0m\n'
@@ -1388,10 +1421,12 @@ platform_up() {
     }
 }
 
+# Artisan in the container runs as www-data, as php-fpm does: as root, the doctor's own media
+# check writes storage/app/public/media for root, and its storage-owner check then refuses it.
 platform_doctor() {
     local what="$1"
 
-    platform_compose exec -T app php artisan webx:doctor --strict > "$WORKDIR/platform-doctor.log" 2>&1 || {
+    platform_compose exec -T -u www-data app php artisan webx:doctor --strict > "$WORKDIR/platform-doctor.log" 2>&1 || {
         cat "$WORKDIR/platform-doctor.log" >&2
         fail "$what: webx:doctor --strict refused the container"
     }
@@ -1483,11 +1518,11 @@ platform_doctor '[platform] the first build'
 step "A key to the MCP server, without anybody pressing Allow"
 # The administrator setup created lives in the platform's database, not in the container's —
 # the container migrated a fresh one — so the platform creates its own, the way it would.
-platform_compose exec -T -e WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" app \
+platform_compose exec -T -u www-data -e WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" app \
     php artisan webx:admin --name=Platform --email=platform@example.test --super > /dev/null \
     || fail '[platform] webx:admin did not create the administrator in the container'
 
-PLATFORM_ISSUED="$(platform_compose exec -T app php artisan webx:mcp:token --name=platform --json)" \
+PLATFORM_ISSUED="$(platform_compose exec -T -u www-data app php artisan webx:mcp:token --name=platform --json)" \
     || fail "[platform] webx:mcp:token failed: $PLATFORM_ISSUED"
 PLATFORM_TOKEN="$("$PHP_BIN" -r 'echo json_decode(stream_get_contents(STDIN), true)["token"] ?? "";' <<<"$PLATFORM_ISSUED")"
 [ -n "$PLATFORM_TOKEN" ] || fail "[platform] webx:mcp:token printed no token: $PLATFORM_ISSUED"

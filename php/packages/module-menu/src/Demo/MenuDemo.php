@@ -66,10 +66,18 @@ final class MenuDemo
             return;
         }
 
+        // A theme's showcase brings pages under pages. The header nests them as they are nested —
+        // dropdowns and the mobile menu's branches are what it is there to show — while the
+        // footer keeps to the top of what was created: every page in it flat is a site map.
+        /** @var array<string, string> $parents */
+        $parents = $source->model()::query()->whereKey($pages)->whereIn('parent_id', $pages)->pluck('parent_id', 'id')
+            ->mapWithKeys(fn ($parent, $id) => [(string) $id => (string) $parent])->all();
+        $top = array_values(array_filter($pages, fn (int|string $id): bool => ! isset($parents[(string) $id])));
+
         $document = $this->read();
 
-        $this->header($pages, is_array($document['header'] ?? null) ? $document['header'] : [], $ledger);
-        $this->footer($pages, is_array($document['footer'] ?? null) ? $document['footer'] : [], $ledger);
+        $this->header($top, $pages, $parents, is_array($document['header'] ?? null) ? $document['header'] : [], $ledger);
+        $this->footer($top, is_array($document['footer'] ?? null) ? $document['footer'] : [], $ledger);
     }
 
     /**
@@ -79,10 +87,12 @@ final class MenuDemo
      * one — a site whose configuration names no second variant gets an ordinary link rather
      * than a class its markup does not divide by.
      *
-     * @param  list<int|string>  $pages
+     * @param  list<int|string>  $top  The created pages whose parent was not created.
+     * @param  list<int|string>  $pages  Every created page, parents before children.
+     * @param  array<string, string>  $parents  A created page under a created page => its parent.
      * @param  array<string, mixed>  $document
      */
-    private function header(array $pages, array $document, DemoLedger $ledger): void
+    private function header(array $top, array $pages, array $parents, array $document, DemoLedger $ledger): void
     {
         $menu = $this->menu('header');
 
@@ -90,10 +100,18 @@ final class MenuDemo
             return;
         }
 
-        foreach ($pages as $id) {
+        /** @var array<string, MenuItem> $items */
+        $items = [];
+
+        foreach ([...$top, ...array_values(array_filter($pages, fn (int|string $id): bool => isset($parents[(string) $id])))] as $id) {
             // No label: the item is called what the page is called, in every language the page
             // is translated into, and renaming the page renames the item (§4).
-            $this->item($menu, ['target' => 'entity', 'entity_type' => self::PAGES, 'entity_id' => (int) $id], null, $ledger);
+            $items[(string) $id] = $this->item(
+                $menu,
+                ['target' => 'entity', 'entity_type' => self::PAGES, 'entity_id' => (int) $id],
+                $items[$parents[(string) $id] ?? ''] ?? null,
+                $ledger,
+            );
         }
 
         $external = is_array($document['external'] ?? null) ? $document['external'] : [];

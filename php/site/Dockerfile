@@ -29,7 +29,8 @@ COPY . .
 RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache \
     composer install --no-dev --no-scripts --prefer-dist --no-interaction \
-        --ignore-platform-reqs --optimize-autoloader --classmap-authoritative
+        --ignore-platform-reqs --optimize-autoloader --classmap-authoritative \
+    && mkdir -p theme
 
 # ---------- 2. The panel and the site's own styles, built by the site's own Vite ----------
 FROM node:22-alpine AS assets
@@ -40,6 +41,9 @@ RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 
 COPY vite.config.js ./
 COPY resources ./resources
+# From the stage above rather than the context: a site set up with --no-theme has no theme/, and
+# COPY of a directory that is not there stops the build. That stage guarantees one, empty or not.
+COPY --from=vendor /app/theme ./theme
 COPY public ./public
 RUN mkdir -p storage/framework/views && npm run build
 

@@ -7,6 +7,7 @@ namespace WebxUi\Pages\Demo;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\ThemeDemo;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Localization\Locales;
 use WebxUi\Pages\Models\Page;
@@ -15,7 +16,9 @@ use WebxUi\Seo\Fields;
 use WebxUi\Seo\Models\SeoMeta;
 
 /**
- * The home page filled in, and one page under it (§9 of the new-site spec).
+ * The home page filled in, and one page under it (§9 of the new-site spec) — plus whatever pages
+ * the site's theme brings in its `demo/pages/` (§15.1 of the themes spec), which may also stand
+ * in for either of the two.
  *
  * The two halves are not alike, and that is the point of the journal: `about` is created and
  * removing it deletes it, while the home page comes from a migration and has to survive the
@@ -28,6 +31,9 @@ use WebxUi\Seo\Models\SeoMeta;
  */
 final class PagesDemo
 {
+    /** The documents the module seeds itself; a theme may replace them, not add them twice. */
+    private const OWN = ['home', 'about'];
+
     public function __construct(
         private readonly Filesystem $files,
         private readonly Locales $locales,
@@ -42,8 +48,19 @@ final class PagesDemo
             throw new RuntimeException('There is no home page; run the migrations first.');
         }
 
+        // Anything beyond the home page means the site already has pages of its own, and demo
+        // pages among them are clutter rather than an example.
+        $fresh = Page::withTrashed()->count() <= 1;
+
         $this->fillHome($home, $ledger);
-        $this->addChild($home, $ledger);
+
+        if ($fresh) {
+            $this->addPage($this->read('about'), $home, $ledger);
+
+            foreach ($this->themePages() as $document) {
+                $this->addPage($document, $home, $ledger);
+            }
+        }
     }
 
     private function fillHome(Page $home, DemoLedger $ledger): void
@@ -78,32 +95,66 @@ final class PagesDemo
         $ledger->createdVersionsOf($home);
     }
 
-    private function addChild(Page $home, DemoLedger $ledger): void
+    /**
+     * A page under `$parent`, and the pages its document nests under `children`.
+     *
+     * @param  array<string, mixed>  $document
+     */
+    private function addPage(array $document, Page $parent, DemoLedger $ledger): void
     {
-        // Anything beyond the home page means the site already has pages of its own, and a
-        // demo page among them is clutter rather than an example.
-        if (Page::withTrashed()->count() > 1) {
-            return;
-        }
-
-        $document = $this->read('about');
         $slug = (string) ($document['slug'] ?? 'about');
 
         $page = new Page([
-            'title' => [$this->locale() => (string) ($document['title'] ?? 'About')],
+            'title' => [$this->locale() => (string) ($document['title'] ?? ucfirst($slug))],
             'slug' => [$this->locale() => $slug],
             'blocks' => $document['blocks'] ?? [],
         ]);
 
         // Through the tree rather than through `save()`: the bounds are what put the page
-        // under the home page, and the address is built out of the slugs above it.
-        $page->appendTo($home);
+        // under its parent, and the address is built out of the slugs above it.
+        $page->appendTo($parent);
         $ledger->created($page, $slug);
 
         $page->publish(null, EntityVersion::SOURCE_IMPORT, 'Demo content');
 
         $this->describe($page, $document, $ledger);
         $ledger->createdVersionsOf($page);
+
+        foreach (is_array($document['children'] ?? null) ? $document['children'] : [] as $child) {
+            if (is_array($child)) {
+                $this->addPage($child, $page, $ledger);
+            }
+        }
+    }
+
+    /**
+     * The pages the theme brings beside the module's two — its showcase, on `theme-default`
+     * (§18.3 of the themes spec): every document in its `demo/pages/` but the two the module
+     * itself names, in the order of their file names.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function themePages(): array
+    {
+        $directory = ThemeDemo::directory('pages');
+
+        if ($directory === null) {
+            return [];
+        }
+
+        $documents = [];
+
+        foreach ($this->files->glob($directory.'/*.json') as $file) {
+            $name = pathinfo($file, PATHINFO_FILENAME);
+
+            if (! in_array($name, self::OWN, true)) {
+                $documents[$name] = $this->decode($file, $name);
+            }
+        }
+
+        ksort($documents);
+
+        return array_values($documents);
     }
 
     /**
@@ -160,7 +211,21 @@ final class PagesDemo
      */
     private function read(string $name): array
     {
-        $document = json_decode((string) $this->files->get(__DIR__."/../../resources/demo/{$name}.json"), true);
+        // The theme's copy of a document wins; the module's own fills in what it leaves out.
+        $theme = ThemeDemo::directory('pages');
+        $file = $theme !== null && $this->files->exists("{$theme}/{$name}.json")
+            ? "{$theme}/{$name}.json"
+            : __DIR__."/../../resources/demo/{$name}.json";
+
+        return $this->decode($file, $name);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decode(string $file, string $name): array
+    {
+        $document = json_decode((string) $this->files->get($file), true);
 
         if (! is_array($document)) {
             throw new RuntimeException("{$name}.json is not a page document.");

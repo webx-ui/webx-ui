@@ -1,0 +1,13 @@
+{
+  "name": "fixture/cycle-a",
+  "type": "webx-theme",
+  "extra": {
+    "webx": {
+      "theme": {
+        "uses": [
+          "fixture/cycle-b"
+        ]
+      }
+    }
+  }
+}

@@ -72,6 +72,17 @@ final class ScreenValues
                 continue;
             }
 
+            // A list of records names what is wrong by row and field, where the panel can show it.
+            $items = ! $localized && $type instanceof ChecksItems ? $type->itemErrors($value, $node) : [];
+
+            foreach ($items as $path => $messages) {
+                $errors["{$name}.{$path}"] = $messages;
+            }
+
+            if ($items !== []) {
+                continue;
+            }
+
             if ($localized) {
                 $value = $this->localeKeys($value);
                 $validator = $this->validator->make(

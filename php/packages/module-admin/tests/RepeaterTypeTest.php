@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Tests;
 
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Facades\Screens;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 
@@ -78,24 +80,37 @@ final class RepeaterTypeTest extends TestCase
     }
 
     #[Test]
-    public function a_bad_value_says_which_row_it_was_in(): void
+    public function a_bad_value_is_named_by_its_row_and_field(): void
     {
         try {
             $this->values()->validate('settings.index', [
                 'contacts.offices' => [
-                    ['floor' => 3],
+                    ['floor' => 3, 'city' => ['uk' => ['not', 'a', 'string']]],
                     ['floor' => 99],
                 ],
             ]);
 
             $this->fail('the repeater accepted a floor above its maximum');
         } catch (ValidationException $exception) {
-            $messages = $exception->errors()['contacts.offices'] ?? [];
+            $errors = $exception->errors();
 
-            $this->assertCount(1, $messages);
-            $this->assertStringContainsString('Row 2', $messages[0]);
-            $this->assertStringContainsString('Floor', $messages[0]);
+            // Under the row and the field, where the panel marks the row and opens it at the field.
+            $this->assertSame(['contacts.offices.0.city.uk', 'contacts.offices.1.floor'], array_keys($errors));
+            $this->assertStringContainsString('Floor', $errors['contacts.offices.1.floor'][0]);
+            $this->assertStringNotContainsString('Row', $errors['contacts.offices.1.floor'][0]);
         }
+    }
+
+    #[Test]
+    public function a_caller_that_only_runs_the_rules_still_hears_which_row(): void
+    {
+        $node = $this->app->make(ScreenRegistry::class)->fields('settings.index')[1];
+        $rules = $this->app->make(FieldTypes::class)->get('wx-repeater')?->rules($node) ?? [];
+
+        $validator = Validator::make(['value' => [['floor' => 3], ['floor' => 99]]], ['value' => $rules]);
+
+        $this->assertTrue($validator->fails());
+        $this->assertStringContainsString('Row 2', $validator->errors()->first('value'));
     }
 
     #[Test]

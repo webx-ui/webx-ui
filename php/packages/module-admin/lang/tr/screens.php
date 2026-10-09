@@ -12,6 +12,8 @@ return [
     'repeater' => [
         'add' => 'Ekle',
         'remove' => 'Kaldır',
+        'remove-question' => 'Bu satır kaldırılsın mı?',
+        'cancel' => 'İptal',
         'reorder' => 'Yeniden sırala',
         'empty' => 'Henüz bir şey yok',
     ],

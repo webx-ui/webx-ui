@@ -27,7 +27,9 @@ function sources(): string[] {
   const found: string[] = []
 
   for (const entry of readdirSync(packages, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue
+    // The widgets draw the public site's icons with views of their own (`webx-widgets::icons.*`),
+    // never with the panel's set: an `'icon' => 'form'` there is not a name `WxIcon` resolves.
+    if (!entry.isDirectory() || entry.name === 'widgets') continue
 
     for (const room of ['src', 'config']) {
       const dir = join(packages, entry.name, room)

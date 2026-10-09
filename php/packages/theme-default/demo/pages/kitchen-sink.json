@@ -1,0 +1,381 @@
+{
+  "title": "Kitchen sink",
+  "slug": "kitchen-sink",
+  "seo": {
+    "title": "Kitchen sink",
+    "description": "Every part of the default theme in the context of a page: the edge cases a real site runs into sooner or later."
+  },
+  "blocks": [
+    {
+      "key": "showcase-intro",
+      "type": "text",
+      "values": {
+        "heading": "Kitchen sink",
+        "body": "The pages under this one show the default theme at its edges: long words, dark blocks in the main column, blocks side by side on a narrow screen.\nThey come with the demo and go with php artisan webx:demo --remove — a real site never has them."
+      }
+    }
+  ],
+  "children": [
+    {
+      "title": "Long words",
+      "slug": "long-words",
+      "seo": {
+        "title": "Long words",
+        "description": "Words longer than a phone is wide, in the languages that have them."
+      },
+      "blocks": [
+        {
+          "key": "showcase-words-german",
+          "type": "text",
+          "values": {
+            "heading": "Donaudampfschifffahrtsgesellschaftskapitänsmützenabzeichen",
+            "body": "German glues nouns together: Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz was a real law, and a heading like the one above has to break inside the word rather than push the page sideways."
+          }
+        },
+        {
+          "key": "showcase-words-polish",
+          "type": "text",
+          "values": {
+            "heading": "Konstantynopolitańczykowianeczka",
+            "body": "Polish brings its own letters and its own lengths: najprawdopodobniej, dziewięćdziesięciokilkuletni, współpracowniczka. Ąą Ćć Ęę Łł Ńń Óó Śś Źź Żż — every one of them in the font the theme names."
+          }
+        },
+        {
+          "key": "showcase-words-cyrillic",
+          "type": "text",
+          "values": {
+            "heading": "Превысокомногорассмотрительствующий",
+            "body": "Cyrillic, which a site with Russian among its languages prints on every page: человеконенавистничество, высокопревосходительство.\nAn address with no place to break: https://example.com/a/very/long/path/that/goes/on/and/on/without/a/single/space/in/it/anywhere"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Blocks in the column",
+      "slug": "blocks",
+      "seo": {
+        "title": "Blocks in the column",
+        "description": "A dark block, text and columns one after another in the main column of the page."
+      },
+      "blocks": [
+        {
+          "key": "showcase-blocks-hero",
+          "type": "hero",
+          "values": {
+            "title": "A dark block in the main column",
+            "subtitle": "The prose of the theme reaches every block inside the page, so its colours must not assume a light background: this heading and this line stay readable on navy.",
+            "button_label": "Back to the kitchen sink",
+            "button_url": "/kitchen-sink"
+          }
+        },
+        {
+          "key": "showcase-blocks-text",
+          "type": "text",
+          "values": {
+            "heading": "Text right after it",
+            "body": "The column and the blocks share one left edge, and nothing on this page scrolls sideways at 360 pixels."
+          }
+        },
+        {
+          "key": "showcase-blocks-three",
+          "type": "columns",
+          "values": {
+            "columns": "3",
+            "items": [
+              {
+                "key": "showcase-blocks-three-one",
+                "type": "text",
+                "values": {
+                  "heading": "One",
+                  "body": "Three columns on a wide screen, one under another on a phone."
+                }
+              },
+              {
+                "key": "showcase-blocks-three-two",
+                "type": "text",
+                "values": {
+                  "heading": "Two",
+                  "body": "A column with a longer text in it, so that the three are not the same height and the grid has to say what it does about that."
+                }
+              },
+              {
+                "key": "showcase-blocks-three-three",
+                "type": "text",
+                "values": {
+                  "heading": "Three",
+                  "body": "Short."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "title": "Header and menu",
+      "slug": "header-and-menu",
+      "seo": {
+        "title": "Header and menu",
+        "description": "The header of the theme at every width: dropdowns, the mobile menu, a sticky bar and anchors under it."
+      },
+      "blocks": [
+        {
+          "key": "showcase-header-intro",
+          "type": "text",
+          "values": {
+            "heading": "The header and the mobile menu",
+            "body": "Every page has the header of the theme, so this one is about trying it. Hover the items with an arrow: a dropdown opens after a short delay and stays while the pointer goes to it. On a phone the first tap opens it and the second follows the link. From the keyboard Enter or Space opens a dropdown, the arrows move inside, Esc closes it.\nMake the window narrower: the items fold into the menu exactly when they no longer fit in a row, not at a fixed width."
+          }
+        },
+        {
+          "key": "showcase-header-mobile",
+          "type": "text",
+          "values": {
+            "heading": "The mobile menu",
+            "body": "It opens from the right with the logo on top and the call to action at the bottom. The page under it does not scroll; its own body does. Back in the browser closes it instead of leaving the page, and so does a swipe to the right. A branch of the menu opens over its parent, with Back and the branch name on top; the branch of the page you are on is open already."
+          }
+        },
+        {
+          "key": "showcase-header-sticky",
+          "type": "text",
+          "values": {
+            "heading": "A sticky header and anchors",
+            "body": "The header stays on top while the page scrolls. A link to a heading further down stops below the header rather than under it: the header keeps its height in --webx-header-height and the page scrolls by it."
+          }
+        },
+        {
+          "key": "showcase-header-long",
+          "type": "text",
+          "values": {
+            "heading": "A long page to scroll",
+            "body": "This text is here so that the page is longer than a phone. Scroll down and up again and watch the header stay.\nLorem ipsum is not used on purpose: a showcase in words reads as a page, and a page is what the header lives on.\nThe next pages go two levels deeper, which is where the mobile menu needs Back."
+          }
+        }
+      ],
+      "children": [
+        {
+          "title": "Second level",
+          "slug": "second-level",
+          "seo": {
+            "title": "Second level",
+            "description": "A page one level below the header showcase, with a page under it in turn."
+          },
+          "blocks": [
+            {
+              "key": "showcase-second-level",
+              "type": "text",
+              "values": {
+                "heading": "Second level",
+                "body": "In the header this page is an entry of the dropdown under Kitchen sink › Header and menu. In the mobile menu it is a branch of its own."
+              }
+            }
+          ],
+          "children": [
+            {
+              "title": "Third level",
+              "slug": "third-level",
+              "seo": {
+                "title": "Third level",
+                "description": "Three levels down: the mobile menu opens on this branch with Back to each level above."
+              },
+              "blocks": [
+                {
+                  "key": "showcase-third-level",
+                  "type": "text",
+                  "values": {
+                    "heading": "Third level",
+                    "body": "Open the mobile menu here: it starts on this branch, the page marked as current, and Back goes up one level at a time."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Cookie consent",
+      "slug": "cookie-consent",
+      "seo": {
+        "title": "Cookie consent",
+        "description": "The cookie banner of the widgets: rejecting, customising, taking an answer back and Global Privacy Control."
+      },
+      "blocks": [
+        {
+          "key": "showcase-consent-intro",
+          "type": "text",
+          "values": {
+            "heading": "The cookie banner",
+            "body": "Every page asks until the visitor answers: a short text, a link to the policy and three buttons. Reject all and Accept all are the same size and the same weight, because consent won with a big green button next to a grey link is no consent. On a phone the banner never covers more than a third of the screen; a long text scrolls inside it and the buttons stay.\nThe answer is the cookie webx_consent: the categories, the date and the version of the policy. When the policy changes, the panel raises the version and everyone is asked again."
+          }
+        },
+        {
+          "key": "showcase-consent-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Reject all: the banner goes and nothing third-party loads on any page. Reload — it does not come back.\nCustomize: a dialog with a switch per category. Necessary is always on; a category nothing on the site uses is not offered at all, so a site without a counter does not ask about statistics.\nCookie settings in the footer opens the same dialog on any page. Switch off something you agreed to and the page reloads: a script that already ran cannot be unloaded.\nTo start again, delete the webx_consent cookie in the developer tools."
+          }
+        },
+        {
+          "key": "showcase-consent-gpc",
+          "type": "text",
+          "values": {
+            "heading": "Global Privacy Control",
+            "body": "A browser that sends Sec-GPC (Brave, or Firefox with the setting on) asks sites not to track it. Here that means marketing is never part of Accept all and the dialog says why; the visitor can still switch it on by hand."
+          }
+        },
+        {
+          "key": "showcase-consent-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "Anything third-party waits for its category: a script written as type=\"text/plain\" with data-webx-consent=\"statistics\", an iframe with data-webx-consent=\"media\" and data-src instead of src, or any code inside <x-webx-consent category=\"marketing\">. Once agreed to, the script runs, the iframe loads, the code goes on the page.\nScripts of the site ask webx.consent.has('media') and listen to webx:consent. Google Consent Mode v2 is on by itself: denied by default in the head, updated after the answer."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Dropdown and form in a dialog",
+      "slug": "dropdown-and-form",
+      "seo": {
+        "title": "Dropdown and form in a dialog",
+        "description": "A form of the inbox opened in a dialog from any button, and the dropdown panel the phones and the languages are built on."
+      },
+      "blocks": [
+        {
+          "key": "showcase-form-hero",
+          "type": "hero",
+          "values": {
+            "title": "A form in a dialog",
+            "subtitle": "The button below is a link to #webx-form-contact. On a page with that link the site prints the Contact us form once, in a dialog at the end of the page, and the button opens it.",
+            "button_label": "Write to us",
+            "button_url": "#webx-form-contact"
+          }
+        },
+        {
+          "key": "showcase-form-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Open the form on a phone: the dialog fits the screen, a long form scrolls inside it while the title and the close button stay on top, and the page under it does not move. Tab goes round the dialog and never reaches the page; Esc closes it and gives the focus back to the button.\nSend the form: the dialog shows the thank-you of the form and a Close button, and waits — it never closes by itself. In the panel the submission says it came from the place modal.\nTwo buttons on this page open the same form, and the page has it once. With JavaScript off the button is a link that shows the same dialog over the page."
+          }
+        },
+        {
+          "key": "showcase-form-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "Any link or button opens a form of the inbox by its slug: data-webx-form=\"callback\", or simply href=\"#webx-form-callback\" — the second one can be typed into a menu item or the button of a block in the panel. data-webx-form-value-service=\"12\" fills the hidden field service of the form, so Book from a service page arrives with the service. An opener the server never prints asks for its form with Widgets::form('callback')."
+          }
+        },
+        {
+          "key": "showcase-dropdown",
+          "type": "text",
+          "values": {
+            "heading": "The dropdown panel",
+            "body": "x-webx-dropdown is a panel tied to its trigger: the phones, the opening hours and the language switcher of the next stages are built on it. Without JavaScript it is a details element that opens under its trigger. With it the panel lifts above everything around it, turns over at the edge of the window, opens on hover when asked, closes on Esc, on Tab out and on a click elsewhere, and only one is open on the page.\nThe starter run (pnpm test:starter) puts a row of them on this page and measures that."
+          }
+        },
+        {
+          "key": "showcase-form-hero-again",
+          "type": "hero",
+          "values": {
+            "title": "Still have a question?",
+            "subtitle": "A second button to the same form: the page still has one.",
+            "button_label": "Ask us",
+            "button_url": "#webx-form-contact"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Contacts",
+      "slug": "contacts",
+      "seo": {
+        "title": "Contacts",
+        "description": "Phone numbers, opening hours, chats and networks from the Contacts tab of the settings, in the header, the footer and the corner of the window."
+      },
+      "blocks": [
+        {
+          "key": "showcase-contacts-hero",
+          "type": "hero",
+          "values": {
+            "title": "Contacts typed once",
+            "subtitle": "Everything on this page that rings, writes or says when the office is open comes from one place: Settings › Contacts in the panel. Change a number there and the header, the footer, the button in the corner and the markup for search engines change with it.",
+            "button_label": "Call +44 20 7946 0958",
+            "button_url": "tel:+442079460958"
+          }
+        },
+        {
+          "key": "showcase-contacts-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Above the header: the opening hours — \"Open until 7:00 PM\" or \"Closed, opens tomorrow at 9:00 AM\", in the time zone of the office in London, not yours. Open it: the week in a table, Monday to Friday folded into one row, today in bold. Leave the page open past seven: the status changes by itself.\nIn the header: the main number, a link that dials it, its WhatsApp and Telegram beside it, and the arrow — the other numbers with their labels. On a phone the numbers are at the bottom of the menu.\nIn the corner: the round button opens the chats, the number and the e-mail. While the cookie banner is on the screen the button stands above it.\nIn the footer: every number, the e-mail, the address that opens a map, and the networks as icons."
+          }
+        },
+        {
+          "key": "showcase-contacts-panel",
+          "type": "text",
+          "values": {
+            "heading": "In the panel",
+            "body": "Settings › Contacts: the numbers with their labels and messengers, the e-mails, the addresses with their coordinates, the hours as rows of days, the special dates that replace a weekday, the time zone, the chats and the networks.\nA number has to start with + and its country code: \"020 7946 0958\" is refused with a word on what to add, because the site cannot tell which country it is in — a language is not a country. The page shows the number as it was typed; the link dials it in E.164, +442079460958.\nThe same keys are settings over MCP: an agent asked to change the phone on the site changes it in one place."
+          }
+        },
+        {
+          "key": "showcase-contacts-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-phones (layout=\"list\", compact, callback=\"<form>\"), x-webx-hours (layout=\"table\"), x-webx-contact-button (corner, form, :items), x-webx-contact-bar (form, :breakpoint) and x-webx-socials read the Contacts tab and print nothing while it is empty. In a template: contacts()->primaryPhone(), contacts()->hours()->openNow(), contacts()->addresses().\nThe organisation in the markup of every page takes its telephone, e-mail and address from the same tab, and becomes a LocalBusiness with its place and opening hours once they are filled in."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Language switcher",
+      "slug": "language-switcher",
+      "seo": {
+        "title": "Language switcher",
+        "description": "The same page in the site’s other languages, from the address registry — the home page of a language where the page is not translated yet."
+      },
+      "blocks": [
+        {
+          "key": "showcase-languages-hero",
+          "type": "hero",
+          "values": {
+            "title": "One page, every language",
+            "subtitle": "The globe in the header lists the languages of the site, each in its own words: English, Русский, Polski. A link leads to this very page in that language — or, while it has no translation, to that language’s home page, and says so.",
+            "button_label": "The home page in Polish",
+            "button_url": "/pl"
+          }
+        },
+        {
+          "key": "showcase-languages-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Open the globe in the header: the current language is marked, the other two are greyed — this page is in English only, so they lead to the Russian and the Polish home pages. Hover one: its title says so in that language.\nGo to the home page and open the globe there: the home page is in all three languages, and every link leads to it — the same page, nothing greyed.\nOn a phone the switcher is at the bottom of the menu, with the numbers. With the keyboard: Enter opens it, Tab walks the languages, Esc closes it and gives the focus back to the globe.\nA site in one language has no switcher at all: there is nothing to switch to."
+          }
+        },
+        {
+          "key": "showcase-languages-addresses",
+          "type": "text",
+          "values": {
+            "heading": "Where the addresses come from",
+            "body": "From the address registry — the same rows hreflang in the head of the page is built from. A page, an article, a product has its address in each language it is translated into; the switcher leads there. A module’s own address, such as the blog’s list, is the same path under the other language’s prefix.\nA translation that is hidden in a language is no translation: the link leads home. So does a page that does not exist.\nThe switcher needs the language in the address (/pl/…). With the language read from the browser instead, every language has one address and there is nothing for a link to choose."
+          }
+        },
+        {
+          "key": "showcase-languages-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-language-switcher — the dropdown, or layout=\"list\" for the languages in a row; codes adds EN, RU, PL; placement for the dropdown; label and fallback-label replace the words. Classes: webx-language-switcher, __current, __list, __link, is-current, is-fallback. No flags: a flag is a country, not a language.\nIn a template: WebxUi\\Widgets\\Languages\\LanguageLinks::current() — the same links, to draw them your own way."
+          }
+        }
+      ]
+    }
+  ]
+}

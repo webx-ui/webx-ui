@@ -16,6 +16,7 @@ use WebxUi\Localization\HasTranslations;
  * it, and a content module is a great deal of machinery to install in order to supply three.
  *
  * @property int $id
+ * @property int|null $parent_id
  * @property array<string, string>|string|null $title
  * @property string $slug
  * @property bool $published
@@ -28,7 +29,7 @@ class Thing extends Model
     protected $table = 'things';
 
     /** @var list<string> */
-    protected $fillable = ['title', 'slug', 'published'];
+    protected $fillable = ['parent_id', 'title', 'slug', 'published'];
 
     /**
      * @return list<string>

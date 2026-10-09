@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings;
 
+use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Shortcodes\Shortcode;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 
 /**
  * The shortcodes the panel defines: «Settings» → «Shortcodes», a list of names, each reading a
- * setting (`contacts.phone`) or holding its value right there.
+ * setting (`contacts.phone`) or holding its value right there — which of the two is the row's
+ * `source`.
  *
  * So that a phone number, an e-mail or an address is typed once, in one place, and content says
  * `[phone]`. A new one needs no developer — that is the difference from a shortcode a site
@@ -25,6 +27,12 @@ final class DataShortcodes
     /** The setting the list is kept in. */
     public const KEY = 'shortcodes.data';
 
+    /** A row that prints a setting, named by its `key`. */
+    public const SOURCE_SETTING = 'setting';
+
+    /** A row that prints its own `value`. */
+    public const SOURCE_VALUE = 'value';
+
     public function __construct(private readonly Settings $settings) {}
 
     /**
@@ -38,9 +46,13 @@ final class DataShortcodes
             return [];
         }
 
+        // The source as stored, row for row: resolving fills a missing one with the form's
+        // default, and a row saved before the switch existed would read as "its own value".
+        $stored = $this->settings->raw()[self::KEY] ?? null;
+        $stored = is_array($stored) ? array_values(array_filter($stored, is_array(...))) : [];
         $shortcodes = [];
 
-        foreach ($items as $item) {
+        foreach (array_values($items) as $position => $item) {
             if (! is_array($item)) {
                 continue;
             }
@@ -52,20 +64,93 @@ final class DataShortcodes
                 continue;
             }
 
-            // The setting when one is named — and it is not this list, which would read itself.
-            $value = $key !== '' && $key !== self::KEY ? $this->settings->get($key) : ($item['value'] ?? null);
+            $reads = self::source($stored[$position] ?? $item) === self::SOURCE_SETTING;
+
+            // The setting when the row reads one — and it is not this list, which would read itself.
+            $value = $reads ? ($key !== '' && $key !== self::KEY ? $this->settings->get($key) : null) : ($item['value'] ?? null);
             $value = is_scalar($value) ? trim((string) $value) : '';
 
             $shortcodes[] = new Shortcode(
                 $name,
                 static fn (array $args): string => self::html($value, $args),
                 static fn (array $args): string => self::plain($value, $args),
-                $key !== '' ? $key : null,
+                $reads && $key !== '' ? $key : null,
                 'settings',
             );
         }
 
         return $shortcodes;
+    }
+
+    /**
+     * What a row prints: its `source`, or — for a row saved before there was one — the setting
+     * when a key is filled in, which is what the two fields side by side used to mean.
+     *
+     * @param  array<array-key, mixed>  $item
+     */
+    public static function source(array $item): string
+    {
+        $source = $item['source'] ?? null;
+
+        if ($source === self::SOURCE_SETTING || $source === self::SOURCE_VALUE) {
+            return $source;
+        }
+
+        return trim((string) ($item['key'] ?? '')) !== '' ? self::SOURCE_SETTING : self::SOURCE_VALUE;
+    }
+
+    /**
+     * The stored list with every row's `source` spelled out, for the panel: the switch has to
+     * show what an old row does, and the form's default would say "its own value" for all of them.
+     */
+    public static function withSources(mixed $items): mixed
+    {
+        if (! is_array($items)) {
+            return $items;
+        }
+
+        return array_map(
+            static fn (mixed $item): mixed => is_array($item) ? ['source' => self::source($item), ...$item] : $item,
+            $items,
+        );
+    }
+
+    /**
+     * Refuses a row that reads a setting the site does not have. The key is typed or picked
+     * from a list, and a typo used to print nothing at all, wherever the shortcode stood.
+     *
+     * @param  array<string, mixed>  $values  What is about to be saved, keyed by setting.
+     *
+     * @throws ValidationException
+     */
+    public function check(array $values): void
+    {
+        $items = $values[self::KEY] ?? null;
+
+        if (! is_array($items)) {
+            return;
+        }
+
+        $keys = array_diff($this->settings->keys(), [self::KEY]);
+        $errors = [];
+
+        foreach (array_values($items) as $position => $item) {
+            if (! is_array($item) || self::source($item) !== self::SOURCE_SETTING) {
+                continue;
+            }
+
+            $key = trim((string) ($item['key'] ?? ''));
+
+            if ($key === '') {
+                $errors[self::KEY.'.'.$position.'.key'] = [(string) __('webx-settings::screen.shortcode-key-missing')];
+            } elseif (! in_array($key, $keys, true)) {
+                $errors[self::KEY.'.'.$position.'.key'] = [(string) __('webx-settings::screen.shortcode-key-unknown', ['key' => $key])];
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
     }
 
     /** `phone`, `email` or `text`: what the value looks like, and so how it is printed. */

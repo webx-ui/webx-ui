@@ -1,0 +1,164 @@
+{
+  "title": "Services",
+  "slug": "services",
+  "seo": {
+    "title": "Services",
+    "description": "A long dropdown and a long branch of the mobile menu: eight services under one item."
+  },
+  "blocks": [
+    {
+      "key": "showcase-services-intro",
+      "type": "text",
+      "values": {
+        "heading": "Services",
+        "body": "Eight pages under one item of the header: a dropdown taller than most, and a branch of the mobile menu that scrolls in its own body."
+      }
+    }
+  ],
+  "children": [
+    {
+      "title": "Freight forwarding",
+      "slug": "freight-forwarding",
+      "seo": {
+        "title": "Freight forwarding",
+        "description": "Moving goods by road, rail, sea and air under one contract."
+      },
+      "blocks": [
+        {
+          "key": "showcase-services-freight-forwarding",
+          "type": "text",
+          "values": {
+            "heading": "Freight forwarding",
+            "body": "Moving goods by road, rail, sea and air under one contract."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Customs clearance",
+      "slug": "customs-clearance",
+      "seo": {
+        "title": "Customs clearance",
+        "description": "Declarations, duties and the papers a border asks for."
+      },
+      "blocks": [
+        {
+          "key": "showcase-services-customs-clearance",
+          "type": "text",
+          "values": {
+            "heading": "Customs clearance",
+            "body": "Declarations, duties and the papers a border asks for."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Warehousing",
+      "slug": "warehousing",
+      "seo": {
+        "title": "Warehousing",
+        "description": "Storage by the pallet and by the shelf, with stock counted daily."
+      },
+      "blocks": [
+        {
+          "key": "showcase-services-warehousing",
+          "type": "text",
+          "values": {
+            "heading": "Warehousing",
+            "body": "Storage by the pallet and by the shelf, with stock counted daily."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Cold chain",
+      "slug": "cold-chain",
+      "seo": {
+        "title": "Cold chain",
+        "description": "Goods that must stay between two and eight degrees all the way."
+      },
+      "blocks": [
+        {
+          "key": "showcase-services-cold-chain",
+          "type": "text",
+          "values": {
+            "heading": "Cold chain",
+            "body": "Goods that must stay between two and eight degrees all the way."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Project cargo",
+      "slug": "project-cargo",
+      "seo": {
+        "title": "Project cargo",
+        "description": "Loads too long, too heavy or too wide for an ordinary truck."
+      },
+      "blocks": [
+        {
+          "key": "showcase-services-project-cargo",
+          "type": "text",
+          "values": {
+            "heading": "Project cargo",
+            "body": "Loads too long, too heavy or too wide for an ordinary truck."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Last-mile delivery",
+      "slug": "last-mile-delivery",
+      "seo": {
+        "title": "Last-mile delivery",
+        "description": "From the warehouse to the door, with a time window the buyer chose."
+      },
+      "blocks": [
+        {
+          "key": "showcase-services-last-mile-delivery",
+          "type": "text",
+          "values": {
+            "heading": "Last-mile delivery",
+            "body": "From the warehouse to the door, with a time window the buyer chose."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Returns handling",
+      "slug": "returns-handling",
+      "seo": {
+        "title": "Returns handling",
+        "description": "Taking goods back, checking them and putting them on sale again."
+      },
+      "blocks": [
+        {
+          "key": "showcase-services-returns-handling",
+          "type": "text",
+          "values": {
+            "heading": "Returns handling",
+            "body": "Taking goods back, checking them and putting them on sale again."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Insurance of cargo",
+      "slug": "insurance-of-cargo",
+      "seo": {
+        "title": "Insurance of cargo",
+        "description": "Cover for the value of the goods while they travel."
+      },
+      "blocks": [
+        {
+          "key": "showcase-services-insurance-of-cargo",
+          "type": "text",
+          "values": {
+            "heading": "Insurance of cargo",
+            "body": "Cover for the value of the goods while they travel."
+          }
+        }
+      ]
+    }
+  ]
+}

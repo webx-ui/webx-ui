@@ -83,6 +83,12 @@
 
 ## Worktree и pnpm
 
+- **Файл, скопированный «в стартовый сайт», оказывается в основном чекауте.** `vendor/webx-ui/*`
+  сайта, слинкованного с монорепой, — симлинки на `php/packages` **основного** чекаута, не
+  worktree: `cp dist/contacts.css <сайт>/vendor/webx-ui/widgets/dist/` из worktree тихо правит
+  чужой рабочий каталог, и `git status` основного чекаута показывает изменённый `dist/`. Свежая
+  сборка попадает на сайт только через коммит → ff в основной чекаут → `php artisan
+webx:theme:sync`. Случайную запись снимать `git -C <основной> checkout -- <файл>`.
 - **В worktree `node_modules` — симлинк на основной чекаут, и `pnpm` это не переживает.** Любой
   `pnpm <скрипт>` оттуда либо отказывается («Refusing to use task run state directory … because it
   is a symbolic link»), либо, решив, что сменился пакетный менеджер, идёт по симлинку и **сносит
@@ -149,6 +155,13 @@ HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` 
   `vendor/autoload.php` внутри testbench и падает на `require`. **Новый пакет в `php/` — это
   `composer update webx-ui/<пакет>`**, после которого манифест прогревается заново (снести
   `packages.php` и `services.php`), иначе тест отвечает «Class …ServiceProvider not found».
+  В свежем worktree `php/composer.lock` нет (он не отслеживается), и `update <пакет>` отказывается
+  «Cannot update only a partial set of packages without a lock file» — скопировать lock основного
+  чекаута, тогда ставится всё остальное ровно его версиями и новый пакет сверху.
+  Если и после прогрева `analyse` падает на том же `rename(…services.php)`, — так было после
+  `composer update` с новым пакетом, — один последовательный прогон греет манифест в том виде, в
+  каком его строит Larastan: `php vendor/bin/phpstan analyse --debug <любой путь пакета>`, убрать
+  `*.tmp`, потом полный `analyse`.
 - **«Call to undefined function wx_text()» после rebase — функция в ветке есть, `vendor` о ней
   не знает.** Пакет завёл `autoload.files` (`src/helpers.php`), а `composer dump-autoload` строит
   карту из `vendor/composer/installed.json`, где записан старый `composer.json` пакета, — и
@@ -157,6 +170,13 @@ webx-ui/<пакет>` из `php/`: path-репозиторий перечиты�
 vendor/composer/autoload_files.php`.
 
 ## Windows, Git Bash, OSPanel
+
+- **Команда, которой не было, запустилась сама — `pnpm install` прямо в worktree.** Текст с
+  обратными кавычками (markdown: `` `pnpm test:starter` ``) внутри `node -e "…"` в двойных
+  кавычках Bash выполняет как подстановку команды — до node. Так правка спеки поставила зависимости
+  в worktree и запустила Playwright; рядом «header: command not found» от соседних кавычек. Текст с
+  обратными кавычками — только скриптом из файла (Write), никогда в аргументе Bash. Проверка —
+  `git status` и `ls -ld node_modules` в обоих чекаутах.
 
 - **Правка скриптом на node задвоила половину файла.** `String.prototype.replace` со строкой
   замены понимает `$'`, `$&` и `$$` (и обратную кавычку после доллара) как шаблоны: PHP с
@@ -226,9 +246,35 @@ vendor/composer/autoload_files.php`.
   `php -d memory_limit=-1 vendor/bin/phpunit --colors=never` и
   `php -d memory_limit=-1 vendor/bin/phpstan analyse --no-progress --error-format=raw`
   (`--colors=never`, иначе `grep` по итогу не находит ничего — строки обёрнуты в коды цвета).
+- **Страница, переписанная в Playwright через `page.route()` + `route.fulfill()`, остаётся без
+  стилей и скриптов** — баннер не появляется, клик ждёт минуту и падает по таймауту, а в консоли
+  «blocked by CORS policy: … the resource is in more-private address space `loopback`». Документ,
+  отданный `fulfill`, для браузера уже не с loopback-адреса сайта, и Private Network Access режет
+  каждый его запрос к `*.local`. Убрать `Content-Length` и `Content-Encoding` (их тоже приходится
+  убирать: тело из `route.fetch()` уже разжато) не помогает. Добавлять разметку не в ответ, а при
+  разборе страницы: `page.addInitScript()` с `MutationObserver`, который вставляет её в `<main>`,
+  как только тот появится, — до модульных скриптов (`tests/starter/starter.pw.mjs`, согласие).
 - **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` сервер надо
   перезапустить: свежий HTML тянет новые хеши, их нет в списке → 404, страница без стилей и без
   гидрации. Выглядит как «правка не помогла».
+- **`webx:doctor --strict` в контейнере: «storage owner: storage/app/public/media is not
+  www-data's», хотя entrypoint только что сделал `chown`.** Доктор, запущенный от root
+  (`docker compose exec app php artisan …`), сам создаёт этот каталог своей проверкой «Media
+  disk» — следующей проверке он уже чужой. Artisan в контейнере — всегда `exec -u www-data`.
+- **Проверка smoke падает на тексте, в котором искомое есть** («the consent page did not draw»,
+  а в выводе ровно эта страница), рядом `printf: write error: Broken pipe`. `… | grep -q` под
+  `pipefail`: `grep -q` уходит на первом совпадении, писатель упирается в закрытую трубу, как
+  только текст больше её буфера, и конвейер — провал. Растёт страница — проверка начинает
+  падать сама. В smoke — `… | has <шаблон>` (дочитывает вход до конца) или
+  `grep -q … <<< "$текст"`, никогда `| grep -q`.
+- **Редирект `module-seo` в smoke отвечает 404 вместо 301, а на сайте работает.** Запрос с этой
+  же машины на хост `127.0.0.1` без `X-Forwarded-*` — для `Probes` проба здоровья контейнера, и
+  ни редирект, ни нормализация адреса ей не отвечают. Smoke ходит в `artisan serve` по
+  `http://127.0.0.1:<порт>` — поэтому всё, что ждёт 3xx, спрашивает по имени: `visit
+"$VISITOR/…"` (`http://localhost:<порт>`), **без общего cookie-jar**: вторая сессия под
+  `localhost` в нём отдаёт `xsrf_token()` чужой токен, и согласие OAuth дальше не возвращает
+  `code`. Проверка руками: `artisan serve --host=127.0.0.1` и `curl` одного
+  адреса через `127.0.0.1` и через `localhost`.
 - **Локальный smoke против MariaDB запускается так, и никак иначе.** MariaDB OSPanel слушает
   `127.0.1.14:3306` под `root` без пароля (`DB_HOST=127.0.1.14`). Перед прогоном:
   - `DROP DATABASE` обеих баз (`webx_smoke`, `webx_smoke_site`) и `CREATE DATABASE webx_smoke`:
@@ -285,6 +331,21 @@ vendor/composer/autoload_files.php`.
   образе их нет — entrypoint падает на `package:discover` с «Class … not found», хотя сборка
   прошла. `.dockerignore` сверять с `.gitignore`: всё, что git не видит, кроме исходников, —
   кандидат и туда (кеши `bootstrap/cache/*.php`, `auth.json`, ключи `storage/*.key`).
+- **После `docker exec … php artisan …` каждая страница с картинкой отвечает 500
+  (`UnableToCreateDirectory` для `storage/app/public/media/thumbs/<key>`), а команда сказала
+  «Restored.».** `docker exec` — это root: всё, что команда создала в `storage`, — `root:root`, и
+  php-fpm под `www-data` не режет превью в таких папках. `webx:snapshot` и
+  `webx:snapshot:restore` теперь отдают написанное владельцу `storage` сами (`Support\Ownership`),
+  но любая другая artisan-команда под root оставит тот же след — логи, кеш. Звать
+  `docker exec -u www-data …`; проверка — `webx:doctor` под root перечисляет пути в `storage`
+  чужого владельца, лечится `chown -R www-data:www-data storage`.
+- **Весь сайт вместе с панелью — «404 page not found» от Traefik, а в контейнере всё живое.**
+  Traefik выводит из маршрутизации контейнер с упавшим healthcheck, а тот спрашивает
+  `http://127.0.0.1/up` изнутри: любой редирект на https (нормализация `module-seo`, правило
+  редиректа) — провал проверки. Нормализация и таблица редиректов теперь не трогают health-маршрут
+  и запрос с 127.0.0.1 на `http://127.0.0.1` без `X-Forwarded-*`, а `seo.normalise-*` при restore
+  остаются стендовыми. Проверка — `docker inspect --format '{{.State.Health.Status}}' <контейнер>`
+  и `curl -si http://127.0.0.1/up` внутри.
 
 ## Плейграунд
 

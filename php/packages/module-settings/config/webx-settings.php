@@ -34,4 +34,24 @@ return [
 
     'stand_own' => [],
 
+    /*
+    |---------------------------------------------------------------------------
+    | Contacts kept under keys of the site's own
+    |---------------------------------------------------------------------------
+    |
+    | A site that had its phone or e-mail under a key of a screen patch names
+    | it here — 'phones' => 'contacts.phone' — and contacts() reads it while
+    | the list on the Contacts tab is empty. `php artisan webx:settings:contacts
+    | --from=<key>` moves it over for good.
+    |
+    */
+
+    'contacts' => [
+        'legacy' => [
+            // 'phones' => 'contacts.phone',
+            // 'emails' => 'contacts.email',
+            // 'addresses' => 'contacts.address',
+        ],
+    ],
+
 ];

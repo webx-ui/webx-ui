@@ -1,0 +1,152 @@
+/*
+ * The typography of prose: headings, paragraphs, lists, quotes, tables and code.
+ *
+ * Applied in the main column and under `site-prose` anywhere else. Modules print their pages
+ * without a prose class of their own, so the main column is where a fresh site's pages, articles
+ * and text blocks get read — and with :where() around every selector, a block that styles its
+ * own `h2` under `.b-<slug>` wins without trying.
+ */
+
+:where(.site-main, .site-prose) :where(h1, h2, h3, h4, h5, h6) {
+  margin-block: var(--site-space-7) var(--site-space-4);
+  font-family: var(--site-font-heading);
+  font-weight: 650;
+  line-height: 1.2;
+  text-wrap: balance;
+  /* No colour: the body sets the text colour, and a heading inherits whatever its container
+     says — a block on a dark background sets white once, on itself, and its heading follows. */
+}
+
+:where(.site-main, .site-prose) :where(h1) {
+  margin-block-start: 0;
+  font-size: var(--site-font-size-1);
+  line-height: 1.1;
+}
+
+:where(.site-main, .site-prose) :where(h2) {
+  font-size: var(--site-font-size-2);
+}
+
+:where(.site-main, .site-prose) :where(h3) {
+  font-size: var(--site-font-size-3);
+}
+
+:where(.site-main, .site-prose) :where(h4) {
+  font-size: var(--site-font-size-4);
+}
+
+:where(.site-main, .site-prose) :where(h5) {
+  font-size: var(--site-font-size-5);
+}
+
+:where(.site-main, .site-prose) :where(h6) {
+  font-size: var(--site-font-size-6);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+:where(.site-main, .site-prose) :where(p, ul, ol, dl, blockquote, figure, pre, table) {
+  margin-block: 0 var(--site-space-4);
+}
+
+:where(.site-main, .site-prose) :where(ul, ol) {
+  padding-left: var(--site-space-5);
+}
+
+:where(.site-main, .site-prose) :where(li + li) {
+  margin-top: var(--site-space-1);
+}
+
+:where(.site-main, .site-prose) :where(li > ul, li > ol) {
+  margin: var(--site-space-1) 0 0;
+}
+
+:where(.site-main, .site-prose) :where(dt) {
+  font-weight: 600;
+}
+
+:where(.site-main, .site-prose) :where(dd) {
+  margin: 0 0 var(--site-space-2) var(--site-space-5);
+}
+
+:where(.site-main, .site-prose) :where(blockquote) {
+  padding: var(--site-space-1) 0 var(--site-space-1) var(--site-space-5);
+  border-left: 3px solid var(--site-color-accent);
+}
+
+:where(.site-main, .site-prose) :where(blockquote > :last-child) {
+  margin-bottom: 0;
+}
+
+:where(.site-main, .site-prose) :where(figcaption) {
+  margin-top: var(--site-space-2);
+  font-size: var(--site-font-size-6);
+}
+
+:where(.site-main, .site-prose) :where(hr) {
+  margin-block: var(--site-space-7);
+  border: 0;
+  border-top: 1px solid var(--site-color-border);
+}
+
+:where(.site-main, .site-prose) :where(mark) {
+  padding-inline: 0.15em;
+  background: var(--site-color-highlight);
+  color: var(--site-color-text);
+}
+
+:where(.site-main, .site-prose) :where(code, kbd, samp, pre) {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+:where(.site-main, .site-prose) :where(:not(pre) > code, kbd) {
+  padding: 0.1em 0.35em;
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text);
+}
+
+:where(.site-main, .site-prose) :where(pre) {
+  overflow-x: auto;
+  padding: var(--site-space-4);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+}
+
+/* A table wider than the column scrolls inside itself, never the page. */
+:where(.site-main, .site-prose) :where(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+:where(.site-main, .site-prose) :where(th, td) {
+  padding: var(--site-space-2) var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+:where(.site-main, .site-prose) :where(th) {
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  font-weight: 600;
+}
+
+:where(.site-main, .site-prose) :where(img, video) {
+  border-radius: var(--site-radius-md);
+}
+
+/*
+ * The muted colour assumes the page's own background, and <main> holds blocks that paint their
+ * own: a quote in a dark hero would go grey on navy. So it applies to prose outside blocks, and
+ * inside one only where the block asks for it with `site-prose`. Everything that sets a
+ * background above sets its text colour with it, so those pairs read the same anywhere.
+ */
+:where(.site-main, .site-prose)
+  :where(blockquote, figcaption, small):where(:not([data-wx-block] *), .site-prose *) {
+  color: var(--site-color-text-muted);
+}
