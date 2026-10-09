@@ -633,3 +633,169 @@ test.describe('form in a dialog', () => {
     ).toBe(false)
   })
 })
+
+test.describe('contacts', () => {
+  const PATH = '/kitchen-sink/contacts'
+
+  // The demo's Contacts tab: three numbers, Mon–Fri 9–19 and Sat 10–16 in London.
+  const inWindow = async (locator) => {
+    const box = await locator.boundingBox()
+    const width = await locator.page().evaluate(() => document.documentElement.clientWidth)
+    expect(box, 'the panel is not on the screen').not.toBeNull()
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(width + 0.5)
+  }
+
+  test('every number dials in E.164', async ({ page }) => {
+    await page.goto(PATH)
+    const links = await page.$$eval('.webx-phones a[href^="tel:"], main a[href^="tel:"]', (all) =>
+      all.map((a) => a.getAttribute('href')),
+    )
+    expect(links.length).toBeGreaterThanOrEqual(4)
+    for (const href of links) expect(href).toMatch(/^tel:\+[1-9][\d-]{6,}(;ext=\d+)?$/)
+    // Shown as typed, dialled without the spaces.
+    const main = page.locator('.webx-header__actions .webx-phones__primary > .webx-phones__number')
+    await expect(main).toHaveText('+44 20 7946 0958')
+    await expect(main).toHaveAttribute('href', 'tel:+44-20-7946-0958')
+  })
+
+  test('the phone dropdown stays in the window at 1280, and in the menu at 360', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.goto(PATH)
+    await still(page)
+    await page.locator('.webx-header__actions .webx-phones__toggle').click()
+    const panel = page.locator('.webx-header__actions .webx-phones .webx-dropdown__panel')
+    await expect(panel).toBeVisible()
+    await inWindow(panel)
+    await expect(panel.locator('.webx-phones__label')).toHaveText(['Support', 'North America'])
+
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+    await page.locator('.webx-mobile-menu__trigger').click()
+    const inMenu = page.locator('.webx-mobile-menu__bottom .webx-phones')
+    await inMenu.locator('.webx-phones__toggle').click()
+    const menuPanel = inMenu.locator('.webx-dropdown__panel')
+    await expect(menuPanel).toBeVisible()
+    await inWindow(menuPanel)
+  })
+
+  test('the hours are the office clock, whatever the visitor clock says', async ({ browser }) => {
+    // 14:30 in New York on a Monday is 19:30 in London: closed there, not open here.
+    const context = await browser.newContext({ timezoneId: 'America/New_York' })
+    const page = await context.newPage()
+    await page.clock.setFixedTime(new Date('2026-10-12T14:30:00-04:00'))
+    await page.goto(PATH)
+    const status = page.locator('.webx-header__topbar [data-webx-hours-status]')
+    await expect(status).toHaveText('Closed, opens tomorrow at 9:00 AM')
+    await expect(status).toHaveClass(/is-closed/)
+
+    await page.clock.setFixedTime(new Date('2026-10-12T10:00:00+01:00'))
+    await page.reload()
+    await expect(status).toHaveText('Open until 7:00 PM')
+    await expect(status).toHaveClass(/is-open/)
+
+    // Sunday: a day off, and Monday next.
+    await page.clock.setFixedTime(new Date('2026-10-18T12:00:00+01:00'))
+    await page.reload()
+    await expect(status).toHaveText('Closed today, opens tomorrow at 9:00 AM')
+    await page.locator('.webx-header__topbar .webx-hours__toggle').click()
+    const today = page.locator('.webx-header__topbar .webx-hours__day.is-today')
+    await expect(today).toHaveCount(1)
+    await expect(today.locator('th')).toHaveText('Sun')
+    await inWindow(page.locator('.webx-header__topbar .webx-dropdown__panel'))
+    await context.close()
+  })
+
+  test('quick contact stands above the cookie banner, and in the corner without it', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+    const button = page.locator('.webx-contact-button__toggle')
+    const banner = page.locator('[data-webx-consent-banner]')
+    await expect(banner).toBeVisible()
+    const above = await button.boundingBox()
+    const top = (await banner.boundingBox()).y
+    expect(above.y + above.height).toBeLessThanOrEqual(top)
+
+    await banner.locator('[data-webx-consent-accept]').click()
+    await expect(banner).toBeHidden()
+    await expect
+      .poll(async () => {
+        const box = await button.boundingBox()
+        return Math.round(740 - (box.y + box.height))
+      })
+      .toBe(16)
+
+    await button.click()
+    const panel = page.locator('.webx-contact-button .webx-dropdown__panel')
+    await expect(panel).toBeVisible()
+    await inWindow(panel)
+    const kinds = await panel
+      .locator('.webx-contact-button__item')
+      .evaluateAll((items) => items.map((a) => a.className.match(/__item--([a-z]+)/)[1]))
+    expect(kinds).toEqual(['whatsapp', 'telegram', 'viber', 'telegram', 'phone', 'email'])
+  })
+
+  test('the bottom bar keeps the footer clear on a phone and is gone on a desktop', async ({
+    page,
+  }) => {
+    // The default theme stands the button in the corner rather than the bar, so the page gets
+    // the bar the way <x-webx-contact-bar :breakpoint="768"> prints it.
+    await page.addInitScript((path) => {
+      if (location.pathname !== path) return
+      new MutationObserver((_, observer) => {
+        const footer = document.querySelector('.site-footer')
+        if (!footer || !document.querySelector('.webx-contact-button')) return
+        observer.disconnect()
+        footer.insertAdjacentHTML(
+          'afterend',
+          '<div class="webx-contact-bar" id="probe-bar">' +
+            '<style>@container (min-width: 768px) { #probe-bar-spacer, #probe-bar-bar { display: none; } }</style>' +
+            '<div class="webx-contact-bar__spacer" id="probe-bar-spacer"></div>' +
+            '<nav class="webx-contact-bar__bar" id="probe-bar-bar">' +
+            '<a class="webx-contact-bar__item webx-contact-bar__item--call" href="tel:+442079460958"><span>Call</span></a>' +
+            '<a class="webx-contact-bar__item webx-contact-bar__item--form" href="#webx-form-contact"><span>Request</span></a>' +
+            '</nav></div>',
+        )
+      }).observe(document, { childList: true, subtree: true })
+    }, PATH)
+
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+    const bar = page.locator('#probe-bar-bar')
+    await expect(bar).toBeVisible()
+    const box = await bar.boundingBox()
+    expect(Math.round(box.y + box.height)).toBe(740)
+    expect(box.width).toBe(360)
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    const footer = await page.locator('.site-footer').boundingBox()
+    expect(footer.y + footer.height).toBeLessThanOrEqual(box.y + 0.5)
+    const { scroll, client } = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      client: document.documentElement.clientWidth,
+    }))
+    expect(scroll).toBeLessThanOrEqual(client)
+
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await expect(bar).toBeHidden()
+    await expect(page.locator('#probe-bar-spacer')).toBeHidden()
+  })
+
+  test('the networks are links with names, opening apart from the site', async ({ page }) => {
+    await page.goto(PATH)
+    const links = page.locator('.site-footer .webx-socials__link')
+    await expect(links).toHaveCount(4)
+    for (const link of await links.all()) {
+      await expect(link).toHaveAttribute('rel', 'noopener')
+      await expect(link).toHaveAttribute('aria-label', /\S/)
+      const size = await link.boundingBox()
+      expect(size.width).toBeGreaterThanOrEqual(44)
+    }
+  })
+})
