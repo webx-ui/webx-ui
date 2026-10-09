@@ -254,6 +254,13 @@ vendor/composer/autoload_files.php`.
   убирать: тело из `route.fetch()` уже разжато) не помогает. Добавлять разметку не в ответ, а при
   разборе страницы: `page.addInitScript()` с `MutationObserver`, который вставляет её в `<main>`,
   как только тот появится, — до модульных скриптов (`tests/starter/starter.pw.mjs`, согласие).
+- **`pnpm test:starter` из worktree падает до первого теста: «Playwright Test did not expect
+  test.describe() to be called here … No tests found».** Похоже на сломанный файл тестов, а это
+  две копии `@playwright/test`: CLI запущен из `node_modules` основного чекаута, а
+  `tests/starter/starter.pw.mjs` импортирует пакет из `node_modules` worktree. В worktree со
+  своими `node_modules` звать его CLI —
+  `node node_modules/@playwright/test/cli.js test -c tests/starter/playwright.config.mjs`; путь
+  основного чекаута годится, только пока у worktree своих `node_modules` нет.
 - **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` сервер надо
   перезапустить: свежий HTML тянет новые хеши, их нет в списке → 404, страница без стилей и без
   гидрации. Выглядит как «правка не помогла».

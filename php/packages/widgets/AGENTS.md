@@ -55,15 +55,14 @@ open-on="click|hover" label open>` with slot `trigger` (its attributes go on the
   "Cookie" tab of `module-settings` (`consent.*`, also over MCP `settings_set`), otherwise
   `config/webx-widgets.php` (`php artisan vendor:publish --tag=webx-widgets-config`).
 - **Contacts** — `dist/contacts.js|css`, only where one stands; they read the Contacts tab of
-  `module-settings` (`contacts()`) and print nothing while it is empty.
-  `<x-webx-phones layout="dropdown|list" callback="<form>" compact placement>` — the main number a
-  `tel:` link in E.164 (shown as typed), the others in a dropdown, messengers as icons;
-  `<x-webx-hours layout="status|table">` — "Open until 19:00" in the site's time zone, the week
-  folded, worked out again in the browser every minute from words the server wrote;
-  `<x-webx-contact-button corner form :items>` — a round button in a corner, above the cookie
-  banner while it shows; `<x-webx-contact-bar form :breakpoint>` — "Call / Write / Request" on a
-  phone, no script; `<x-webx-socials>`; `<x-webx-icon name>` — networks, messengers (Simple Icons,
-  CC0) and `phone`, `chat`, `mail`, `clock`, `link`, `form`, `close`, `globe`.
+  `module-settings` (`contacts()`) and print nothing while it is empty. `<x-webx-phones
+layout="dropdown|list" callback="<form>" compact placement>` — the main number a `tel:` link in
+  E.164 (shown as typed), the others in a dropdown, messengers as icons; `<x-webx-hours
+layout="status|table">` — "Open until 19:00" in the site's time zone, the week folded, worked
+  out again in the browser every minute; `<x-webx-contact-button corner form :items>` — a round
+  button in a corner, above the cookie banner; `<x-webx-contact-bar form :breakpoint>` — "Call /
+  Write / Request" on a phone, no script; `<x-webx-socials>`; `<x-webx-icon name>` — networks,
+  messengers (Simple Icons, CC0), `phone chat mail clock link form close globe zoom`.
 - **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes placement
 label fallback-label>`: each language named in itself, a link to the same page in it from the
   `webx-ui/routing` registry (as `hreflang`), or to its home page with `is-fallback` where there
@@ -75,6 +74,11 @@ variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3
   `xl` 1280 or px); `arrows pagination loop autoplay continuous effect thumbs speed label`, and
   `options` for any other Swiper setting. Without JavaScript a strip that scrolls and snaps;
   whatever moves on its own has a pause button. Only the first slides in view load at once.
+- **Lightbox** — `dist/lightbox.js|css` (PhotoSwipe), claimed by any `<a data-webx-lightbox>` on the
+  page: `<x-webx-lightbox :image="$picture" group>` (a media field's value or an object with `url()`,
+  `width`, `height`; or `src width height thumb alt`; the slot replaces the thumbnail), or by hand
+  `<a href data-webx-lightbox="<group>" data-width data-height>`. One group pages together, an empty
+  one is alone; slides of a slider too. No JavaScript: the link opens the file. Write the sizes.
 - **Loading** — `Widgets::need('<name>')` (facade `WebxUi\Widgets\Facades\Widgets`) claims a
   widget's `dist/<name>.js|css`: `<link>`s go where `@webxTheme` stands, scripts before `</body>`.
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
@@ -83,22 +87,19 @@ variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3
   `is-collapsed|is-scrolled|is-hidden`; `webx-header-nav__item|link|toggle|dropdown|mega|sublink`,
   `is-open|is-current|is-flipped`; `webx-mobile-menu__trigger|panel|panel--<side>|top|close|body|bottom`;
   `webx-mobile-nav__list|item|link|toggle|level|back|title`, `is-drilled`;
-  `webx-consent__inner|text|title|body|policy|actions|button|customize`,
-  `webx-consent-dialog__intro|gpc|list|item|label|switch|name|always|description|actions`,
-  `webx-consent-link`; `webx-dropdown`, `--<placement>`, `__trigger|panel`, `is-open|is-flipped`;
-  `webx-form-dialog__header|title|close|body|done`, `is-sent`;
-  `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-today`), `webx-contact-button__*`,
-  `webx-contact-bar__*`, `webx-socials__*`, `webx-icon`; `webx-language-switcher__current|list|
-link`, `is-current|is-fallback`; `webx-slider`, `--<variant>`, `__viewport|track|slide|controls|
-button|prev|next|pause|pagination|bullet|thumbs|thumb`, `is-ready|is-active` — in each view).
-  `html.webx-js` once the runtime runs; `html.webx-scroll-locked` while a modal is open;
-  `html.webx-header-sticky` while a header sticks (the page's scroll padding is its height).
-- **Local tokens** — `--webx-dialog-*`, `--webx-tabs-*`, `--webx-header-*`,
-  `--webx-mobile-menu-*`, `--webx-consent-*`, `--webx-dropdown-offset|min-width`,
-  `--webx-icon-size`, `--webx-hours-*`, `--webx-contact-*`, `--webx-contact-bar-*`,
-  `--webx-socials-size`, `--webx-language-switcher-*`, `--webx-slider-*` (`-per-view`, `-gap`…);
-  each declared on `:root` from `--site-*` in its stylesheet. `--webx-header-height` and
-  `--webx-header-topbar-height` are kept live by the runtime — `top` of anything else sticky.
+  `webx-consent__inner|text|title|body|policy|actions|button|customize`, `webx-consent-dialog__intro|
+gpc|list|item|label|switch|name|always|description|actions`, `webx-consent-link`; `webx-dropdown`,
+  `--<placement>`, `__trigger|panel`, `is-open|is-flipped`; `webx-form-dialog__header|title|close|
+body|done`, `is-sent`; `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-today`),
+  `webx-contact-button__*`, `webx-contact-bar__*`, `webx-socials__*`, `webx-icon`;
+  `webx-language-switcher__current|list|link`, `is-current|is-fallback`; `webx-slider`, `--<variant>`,
+  `__viewport|track|slide|controls|button|prev|next|pause|pagination|bullet|thumbs|thumb`,
+  `is-ready|is-active`; `webx-lightbox-link`, `__image`, `is-ready`, the viewer PhotoSwipe's `.pswp`
+  with `webx-lightbox` — in each view). `html.webx-js` once the runtime runs; `html.webx-scroll-locked`
+  while a modal is open; `html.webx-header-sticky` while a header sticks (scroll padding = its height).
+- **Local tokens** — `--webx-<name>-*` of each widget above (`--webx-slider-per-view`,
+  `--webx-lightbox-backdrop`…), declared on `:root` from `--site-*` in its stylesheet;
+  `--webx-header-height` and `-topbar-height` are kept live by the runtime — `top` of anything sticky.
 - **Words** — `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
 
 ## Change it without forking
@@ -117,8 +118,7 @@ button|prev|next|pause|pagination|bullet|thumbs|thumb`, `is-ready|is-active` —
 
 ## Do not
 
-- Do not edit `vendor/webx-ui/widgets` or `public/themes/webx-ui/widgets`: the next update or
-  `webx:theme:sync` replaces them.
+- Do not edit `vendor/webx-ui/widgets` or `public/themes/webx-ui/widgets`: an update or a sync replaces them.
 - Do not write a colour literally or with a fallback (`var(--site-x, #fff)`): presets stop
   repainting it.
 - Do not add `hidden` to a disclosure's panel in markup: without JavaScript it would never show.

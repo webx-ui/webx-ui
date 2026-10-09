@@ -14,9 +14,9 @@ theme/                   ← the site's local theme
     → modules, widgets   ← this package: views in views/vendor/webx-widgets, CSS first in the cascade
 ```
 
-> Early days: this release holds the loading and the shared runtime with the light behaviours —
-> disclosure, dialog, tabs, accordion. The mobile menu, the header, cookie consent, the dropdown,
-> contacts, the language switcher, sliders, the lightbox, video and maps arrive in the next ones.
+> Under way: the loading, the runtime with the light behaviours, the mobile menu, the header, cookie
+> consent, the dropdown, contacts, the language switcher, the slider and the lightbox are here;
+> video and maps arrive in the next releases.
 
 ## What is in it
 
@@ -53,7 +53,8 @@ to `#<id>`, the tabs are headings above their panels, the accordion is plain `<d
 rendered too — the marker becomes the stylesheets and the scripts go before `</body>`:
 
 - the runtime (`dist/runtime.js`, `dist/runtime.css`) on every page of a site with a theme;
-- a widget's own files only where a component claimed it: `Widgets::need('slider')`.
+- a widget's own files only where a component claimed it, `Widgets::need('slider')`, or a link on
+  the page asked for it — `data-webx-lightbox` claims the lightbox wherever it was written.
 
 The files are published by `php artisan webx:theme:sync` next to the themes', under
 `public/themes/webx-ui/widgets/<hash>/`.
