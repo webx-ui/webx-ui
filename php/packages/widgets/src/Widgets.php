@@ -33,7 +33,7 @@ final class Widgets implements HeadPart
     public const string MARKER = '<!--webx-widgets-->';
 
     /** The behaviours inside the runtime: claiming one is allowed and loads nothing more. */
-    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion'];
+    public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header'];
 
     /** @var array<string, true> */
     private array $claimed = [];

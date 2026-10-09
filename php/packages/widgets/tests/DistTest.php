@@ -83,14 +83,14 @@ final class DistTest extends PlainTestCase
 
             preg_match_all('/(?:^|[;{}])\s*([^;{}@]+?)\s*\{/', $css, $rules);
 
-            // One flat class (a state at most): enough to win over the prose of the theme, which is
+            // One flat class (a state or a modifier on it at most): enough to win over the prose of the theme, which is
             // all :where(), and no more than a theme matches by writing the same class later.
             foreach ($rules[1] as $selectors) {
                 foreach (array_map('trim', explode(',', $selectors)) as $selector) {
                     $this->assertMatchesRegularExpression(
-                        '/^(?::where\(:root\)|(?:html:not\(\.webx-js\) )?\.webx-[a-z0-9_-]+(?:\[[^\]]+\]|::?[a-z-]+)*)$/',
+                        '/^(?::where\(:root\)|(?:html:not\(\.webx-js\) )?\.webx-[a-z0-9_-]+(?:\.(?:is-[a-z-]+|webx-[a-z0-9_-]+--[a-z0-9-]+))?(?:\[[^\]]+\]|::?[a-z-]+)*)$/',
                         $selector,
-                        "{$relative}: \"{$selector}\" — a widget's rule is one .webx-* class, with a state at most.",
+                        "{$relative}: \"{$selector}\" — a widget's rule is one .webx-* class, with a state or a modifier at most.",
                     );
                 }
             }

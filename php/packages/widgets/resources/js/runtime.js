@@ -6,7 +6,7 @@
  * `mount` it found, so `webx.mount(root)` starts both the blocks and the widgets inside `root`,
  * whichever loaded first. `webx.unmount(root)` lets the widgets inside `root` go.
  *
- * The light behaviours (§6) live here and not in files of their own: an attribute in any
+ * The light behaviours (§6), the mobile menu and the header (§6.1, §6.2) live here and not in files of their own: an attribute in any
  * template switches them on, with no component to claim them.
  */
 
@@ -15,6 +15,10 @@ import { define, mount, unmount } from './core.js'
 import { accordion } from './behaviours/accordion.js'
 import { dialog, openDialog } from './behaviours/dialog.js'
 import { disclosure } from './behaviours/disclosure.js'
+import { header } from './behaviours/header.js'
+import { headerNav } from './behaviours/header-nav.js'
+import { mobileMenu } from './behaviours/mobile-menu.js'
+import { mobileNav } from './behaviours/mobile-nav.js'
 import { tabs } from './behaviours/tabs.js'
 
 const webx = (window.webx ??= {})
@@ -43,6 +47,10 @@ if (typeof webx.widget !== 'function') {
   webx.widget('dialog', '[data-webx-dialog]', dialog)
   webx.widget('tabs', '[data-webx-tabs]', tabs)
   webx.widget('accordion', '[data-webx-accordion]', accordion)
+  webx.widget('mobile-menu', '[data-webx-mobile-menu]', mobileMenu)
+  webx.widget('mobile-nav', '[data-webx-mobile-nav]', mobileNav)
+  webx.widget('header-nav', '[data-webx-header-nav]', headerNav)
+  webx.widget('header', '[data-webx-header]', header)
 
   // A link to a dialog, shared or bookmarked, opens it the way its opener would.
   const target = location.hash

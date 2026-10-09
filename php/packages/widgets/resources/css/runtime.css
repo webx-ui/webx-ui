@@ -1,8 +1,10 @@
 /*
  * The skeleton of the runtime's behaviours, on site tokens only (THEMES §8).
  *
- * Every rule is one flat class — `.webx-<name>__<element>`, a state at most — and never a
- * descendant chain. That is enough to win over the default theme's prose, which is written in
+ * Every rule is one flat class — `.webx-<name>__<element>`, a state (`.is-*`) or a modifier of
+ * the same element at most — and never a descendant chain. What a state of the root changes
+ * inside it travels down as a custom property (`--webx-header-nav-panel`) or as the state set
+ * on the inner element too (`is-collapsed` on the header's navigation, actions and trigger). That is enough to win over the default theme's prose, which is written in
  * :where() so that a component with a class of its own wins without trying, the way a block's
  * `.b-<slug> h2` does: a dialog in <main> keeps its own title. A theme restyles a widget with the
  * same class: it comes later in the cascade, so it wins with no !important.
@@ -14,3 +16,5 @@
 @import './base.css';
 @import './dialog.css';
 @import './tabs.css';
+@import './mobile-menu.css';
+@import './header.css';

@@ -15,8 +15,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Widgets\View\Components\Dialog;
+use WebxUi\Widgets\View\Components\Header;
+use WebxUi\Widgets\View\Components\HeaderNav;
+use WebxUi\Widgets\View\Components\MobileMenu;
+use WebxUi\Widgets\View\Components\MobileMenuNav;
 use WebxUi\Widgets\View\Components\Tabs;
 use WebxUi\Widgets\View\Components\TabsPanel;
+use WebxUi\Widgets\View\HeaderNavigation;
 
 /**
  * The widgets as the bottom layer of the theme chain (spec §3, THEMES §7.1, §11):
@@ -32,6 +37,7 @@ class WidgetsServiceProvider extends ServiceProvider
     {
         // Scoped: what one request claimed must not load on the next one of a long-lived worker.
         $this->app->scoped(Widgets::class);
+        $this->app->scoped(HeaderNavigation::class);
         $this->app->tag([Widgets::class], HeadPart::TAG);
     }
 
@@ -45,6 +51,10 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-dialog', Dialog::class);
         Blade::component('webx-tabs', Tabs::class);
         Blade::component('webx-tabs.panel', TabsPanel::class);
+        Blade::component('webx-mobile-menu', MobileMenu::class);
+        Blade::component('webx-mobile-menu.nav', MobileMenuNav::class);
+        Blade::component('webx-header', Header::class);
+        Blade::component('webx-header.nav', HeaderNav::class);
 
         // The whole page has rendered, the header and the footer too: every claim is known.
         $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (RequestHandled $event): void {
