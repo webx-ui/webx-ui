@@ -162,3 +162,7 @@ apps/docs/.vitepress/dist
 !php/packages/theme-default/dist/
 # The widgets ship their built runtime the same way.
 !php/packages/widgets/dist/
+
+# The local browser run of the starter site: its report and what it left behind.
+tests/starter/report/
+tests/starter/results/
