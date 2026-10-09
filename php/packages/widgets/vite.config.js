@@ -74,6 +74,8 @@ export default {
         'language-switcher': join(root, 'resources/css/language-switcher.css'),
         // Swiper is built in here, and only here: a page without a slider never loads it.
         slider: join(root, 'resources/js/slider.js'),
+        // PhotoSwipe, the same way: only where a picture opens over the page.
+        lightbox: join(root, 'resources/js/lightbox.js'),
       },
       output: {
         entryFileNames: '[name].js',

@@ -94,4 +94,12 @@ return [
         'thumbs' => 'Choisir une diapositive',
         'thumb' => 'Afficher la diapositive :index',
     ],
+    'lightbox' => [
+        'dialog' => 'Visionneuse d\'images',
+        'close' => 'Fermer',
+        'zoom' => 'Agrandir',
+        'prev' => 'Image précédente',
+        'next' => 'Image suivante',
+        'error' => 'Impossible de charger l\'image',
+    ],
 ];

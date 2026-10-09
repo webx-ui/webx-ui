@@ -94,4 +94,12 @@ return [
         'thumbs' => 'Slayt seçin',
         'thumb' => ':index. slaytı göster',
     ],
+    'lightbox' => [
+        'dialog' => 'Görsel görüntüleyici',
+        'close' => 'Kapat',
+        'zoom' => 'Yakınlaştır',
+        'prev' => 'Önceki görsel',
+        'next' => 'Sonraki görsel',
+        'error' => 'Görsel yüklenemedi',
+    ],
 ];

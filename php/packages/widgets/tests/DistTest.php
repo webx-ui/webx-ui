@@ -34,6 +34,9 @@ final class DistTest extends PlainTestCase
     /** The slider, Swiper built in: 45 KB gzip (§4), only where a slider stands. */
     private const int SLIDER_BUDGET = 45 * 1024;
 
+    /** The lightbox, PhotoSwipe built in: 25 KB gzip (§4), only where a picture opens over the page. */
+    private const int LIGHTBOX_BUDGET = 25 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -72,7 +75,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'runtime.css', 'runtime.js', 'slider.css', 'slider.js', 'sources.json'], $built);
+        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'runtime.css', 'runtime.js', 'slider.css', 'slider.js', 'sources.json'], $built);
     }
 
     #[Test]
@@ -102,6 +105,31 @@ final class DistTest extends PlainTestCase
 
         // Swiper's own stylesheet stays out: its rules are not the package's classes (THEMES §8).
         $this->assertStringNotContainsString('.swiper', (string) file_get_contents(Widgets::path().'/dist/slider.css'));
+    }
+
+    #[Test]
+    public function the_lightbox_stays_inside_its_budget_and_brings_no_rule_but_photoswipes_and_its_own(): void
+    {
+        $size = self::gzipped('lightbox.js') + self::gzipped('lightbox.css');
+
+        $this->assertLessThanOrEqual(self::LIGHTBOX_BUDGET, $size, sprintf('The lightbox is %.1f KB gzip.', $size / 1024));
+
+        // PhotoSwipe draws a DOM of its own under `.pswp*`, which it cannot rename: its stylesheet
+        // comes as it is, and nothing else foreign does. Each rule is PhotoSwipe's or the package's.
+        $css = (string) preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(Widgets::path().'/dist/lightbox.css'));
+        preg_match_all('/(?:^|[;{}])\s*([^;{}@]+?)\s*\{/', $css, $rules);
+        $this->assertNotEmpty($rules[1]);
+
+        foreach ($rules[1] as $selectors) {
+            foreach (array_map('trim', explode(',', $selectors)) as $selector) {
+                // A stop of PhotoSwipe's spinner's @keyframes.
+                if (preg_match('/^(?:\d+%|from|to)$/', $selector) === 1) {
+                    continue;
+                }
+
+                $this->assertMatchesRegularExpression('/^(?::where\(:root\)|(?:[a-z]+)?\.pswp|\.webx-lightbox)/', $selector, "lightbox.css: \"{$selector}\" is neither PhotoSwipe's nor the package's.");
+            }
+        }
     }
 
     private static function gzipped(string $file): int

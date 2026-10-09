@@ -94,4 +94,12 @@ return [
         'thumbs' => 'Wybierz slajd',
         'thumb' => 'Pokaż slajd :index',
     ],
+    'lightbox' => [
+        'dialog' => 'Podgląd obrazu',
+        'close' => 'Zamknij',
+        'zoom' => 'Powiększ',
+        'prev' => 'Poprzedni obraz',
+        'next' => 'Następny obraz',
+        'error' => 'Nie można wczytać obrazu',
+    ],
 ];

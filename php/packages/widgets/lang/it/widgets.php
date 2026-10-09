@@ -94,4 +94,12 @@ return [
         'thumbs' => 'Scegli una slide',
         'thumb' => 'Mostra la slide :index',
     ],
+    'lightbox' => [
+        'dialog' => 'Visualizzatore di immagini',
+        'close' => 'Chiudi',
+        'zoom' => 'Ingrandisci',
+        'prev' => 'Immagine precedente',
+        'next' => 'Immagine successiva',
+        'error' => 'Impossibile caricare l\'immagine',
+    ],
 ];

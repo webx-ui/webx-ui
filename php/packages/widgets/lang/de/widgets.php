@@ -94,4 +94,12 @@ return [
         'thumbs' => 'Folie wählen',
         'thumb' => 'Folie :index zeigen',
     ],
+    'lightbox' => [
+        'dialog' => 'Bildansicht',
+        'close' => 'Schließen',
+        'zoom' => 'Vergrößern',
+        'prev' => 'Vorheriges Bild',
+        'next' => 'Nächstes Bild',
+        'error' => 'Das Bild kann nicht geladen werden',
+    ],
 ];

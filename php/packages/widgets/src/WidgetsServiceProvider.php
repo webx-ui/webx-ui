@@ -27,6 +27,7 @@ use WebxUi\Widgets\View\Components\Header;
 use WebxUi\Widgets\View\Components\HeaderNav;
 use WebxUi\Widgets\View\Components\Icon;
 use WebxUi\Widgets\View\Components\LanguageSwitcher;
+use WebxUi\Widgets\View\Components\Lightbox;
 use WebxUi\Widgets\View\Components\MobileMenu;
 use WebxUi\Widgets\View\Components\MobileMenuNav;
 use WebxUi\Widgets\View\Components\OpeningHours;
@@ -102,6 +103,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-language-switcher', LanguageSwitcher::class);
         Blade::component('webx-slider', Slider::class);
         Blade::component('webx-slide', Slide::class);
+        Blade::component('webx-lightbox', Lightbox::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');

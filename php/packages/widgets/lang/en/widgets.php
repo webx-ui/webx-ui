@@ -94,4 +94,12 @@ return [
         'thumbs' => 'Choose a slide',
         'thumb' => 'Show slide :index',
     ],
+    'lightbox' => [
+        'dialog' => 'Picture viewer',
+        'close' => 'Close',
+        'zoom' => 'Zoom',
+        'prev' => 'Previous picture',
+        'next' => 'Next picture',
+        'error' => 'The picture cannot be loaded',
+    ],
 ];

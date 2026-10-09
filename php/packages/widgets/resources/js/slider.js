@@ -105,6 +105,8 @@ export function slider(root) {
       const copy = slides[copies.length % slides.length].cloneNode(true)
       copy.setAttribute('aria-hidden', 'true')
       copy.inert = true
+      // The lightbox leaves copies out of a group: a picture would come round twice.
+      copy.dataset.webxCopy = ''
       copy.removeAttribute('id')
       copies.push(copy)
       track.append(copy)
