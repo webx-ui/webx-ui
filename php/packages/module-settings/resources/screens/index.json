@@ -114,13 +114,13 @@
                       "id": "shortcode-key",
                       "type": "wx-autocomplete",
                       "name": "key",
-                      "label": "trans::webx-settings::screen.shortcode-key",
                       "help": "trans::webx-settings::screen.shortcode-key-help",
                       "visible": {
                         "when": "source",
                         "is": "setting"
                       },
                       "props": {
+                        "ariaLabel": "trans::webx-settings::screen.shortcode-key",
                         "openOnFocus": true,
                         "clearable": true,
                         "teleport": true,
