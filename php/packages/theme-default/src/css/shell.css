@@ -29,47 +29,36 @@
   transform: none;
 }
 
-/* Header */
-
-:where(.site-header) {
-  container-type: inline-size;
-  border-bottom: 1px solid var(--site-color-border);
-  background: var(--site-color-bg);
-}
-
-:where(.site-header__inner) {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--site-space-3) var(--site-space-5);
-  padding-block: var(--site-space-4);
-}
+/*
+ * Header: the widget's (`<x-webx-header>`, with `site-header` on its root) — its skeleton, the
+ * folding into the mobile menu and the dropdowns come with it. The theme dresses the brand and
+ * the call to action; the bar's layout is the widget's grid, rearranged on `.webx-header__bar`.
+ */
 
 :where(.site-header__title) {
-  margin-right: auto;
   font-family: var(--site-font-heading);
   font-size: var(--site-font-size-5);
   font-weight: 600;
-  color: var(--site-color-text);
+  color: inherit;
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
-:where(.site-header__nav) {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--site-space-2) var(--site-space-5);
-}
-
-:where(.site-header__link) {
+:where(.site-header__cta) {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: var(--site-color-text);
+  padding: 0 var(--site-space-4);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font-weight: 600;
   text-decoration: none;
 }
 
-:where(.site-header__link:hover, .site-header__link[aria-current='page']) {
-  color: var(--site-color-accent);
+:where(.site-header__cta:hover) {
+  background: var(--site-color-text);
+  color: var(--site-color-bg);
 }
 
 /*

@@ -15,6 +15,7 @@ use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Themes\Vocabulary;
+use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
  * The bottom of every site's chain. What the engine leaves to "the layer below" ends here, so
@@ -31,7 +32,8 @@ class ThemeDefaultTest extends TestCase
      */
     protected function getPackageProviders($app): array
     {
-        return [ThemeServiceProvider::class];
+        // The widgets too: the header is `<x-webx-header>`, and the theme requires the package.
+        return [ThemeServiceProvider::class, WidgetsServiceProvider::class];
     }
 
     /**

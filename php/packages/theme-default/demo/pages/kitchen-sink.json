@@ -110,6 +110,88 @@
           }
         }
       ]
+    },
+    {
+      "title": "Header and menu",
+      "slug": "header-and-menu",
+      "seo": {
+        "title": "Header and menu",
+        "description": "The header of the theme at every width: dropdowns, the mobile menu, a sticky bar and anchors under it."
+      },
+      "blocks": [
+        {
+          "key": "showcase-header-intro",
+          "type": "text",
+          "values": {
+            "heading": "The header and the mobile menu",
+            "body": "Every page has the header of the theme, so this one is about trying it. Hover the items with an arrow: a dropdown opens after a short delay and stays while the pointer goes to it. On a phone the first tap opens it and the second follows the link. From the keyboard Enter or Space opens a dropdown, the arrows move inside, Esc closes it.\nMake the window narrower: the items fold into the menu exactly when they no longer fit in a row, not at a fixed width."
+          }
+        },
+        {
+          "key": "showcase-header-mobile",
+          "type": "text",
+          "values": {
+            "heading": "The mobile menu",
+            "body": "It opens from the right with the logo on top and the call to action at the bottom. The page under it does not scroll; its own body does. Back in the browser closes it instead of leaving the page, and so does a swipe to the right. A branch of the menu opens over its parent, with Back and the branch name on top; the branch of the page you are on is open already."
+          }
+        },
+        {
+          "key": "showcase-header-sticky",
+          "type": "text",
+          "values": {
+            "heading": "A sticky header and anchors",
+            "body": "The header stays on top while the page scrolls. A link to a heading further down stops below the header rather than under it: the header keeps its height in --webx-header-height and the page scrolls by it."
+          }
+        },
+        {
+          "key": "showcase-header-long",
+          "type": "text",
+          "values": {
+            "heading": "A long page to scroll",
+            "body": "This text is here so that the page is longer than a phone. Scroll down and up again and watch the header stay.\nLorem ipsum is not used on purpose: a showcase in words reads as a page, and a page is what the header lives on.\nThe next pages go two levels deeper, which is where the mobile menu needs Back."
+          }
+        }
+      ],
+      "children": [
+        {
+          "title": "Second level",
+          "slug": "second-level",
+          "seo": {
+            "title": "Second level",
+            "description": "A page one level below the header showcase, with a page under it in turn."
+          },
+          "blocks": [
+            {
+              "key": "showcase-second-level",
+              "type": "text",
+              "values": {
+                "heading": "Second level",
+                "body": "In the header this page is an entry of the dropdown under Kitchen sink › Header and menu. In the mobile menu it is a branch of its own."
+              }
+            }
+          ],
+          "children": [
+            {
+              "title": "Third level",
+              "slug": "third-level",
+              "seo": {
+                "title": "Third level",
+                "description": "Three levels down: the mobile menu opens on this branch with Back to each level above."
+              },
+              "blocks": [
+                {
+                  "key": "showcase-third-level",
+                  "type": "text",
+                  "values": {
+                    "heading": "Third level",
+                    "body": "Open the mobile menu here: it starts on this branch, the page marked as current, and Back goes up one level at a time."
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }

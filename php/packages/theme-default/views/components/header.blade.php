@@ -1,34 +1,45 @@
 @php
     /**
      * The header region's fallback: what shows until somebody arranges the region in the panel.
+     * The behaviour — dropdowns, folding into the mobile menu, sticking — is the widget's
+     * (`<x-webx-header>`, WIDGETS §6.2); what is here is which items and which brand.
      *
-     * With the menus module it is `menu('header')` — the entries an editor put there, in their
-     * order; `$item->attrs()` carries `href`, `target` and `rel` together. Until that menu is
-     * filled in, the published pages one level below the home page: a header that is empty on
-     * the day a site is created reads as broken rather than as waiting. Both halves are guarded,
-     * since the theme requires neither module.
+     * With the menus module it is `menu('header')` — the entries an editor put there, nested, in
+     * their order. An entry of the `button` look is a call to action and stands among the
+     * actions rather than in the navigation. Until that menu is filled in, the published pages
+     * one level below the home page: a header that is empty on the day a site is created reads
+     * as broken rather than as waiting. Both halves are guarded, since the theme requires
+     * neither module.
+     *
+     * The layout prints its own "Skip to content" first in <body> — it must be there when a
+     * region from the panel replaces this header — so the widget's is off.
      */
-    $items = function_exists('menu')
-        ? menu('header')->map(fn ($item) => ['label' => $item->label, 'attrs' => $item->attrs()])
-        : collect();
+    $items = function_exists('menu') ? collect(menu('header')) : collect();
 
     if ($items->isEmpty() && class_exists(\WebxUi\Pages\Models\Page::class)) {
         $items = (\WebxUi\Pages\Models\Page::query()->roots()->first()
                 ?->children()->whereNotNull('published_at')->ordered()->get() ?? collect())
-            ->map(fn ($page) => ['label' => $page->title, 'attrs' => ['href' => $page->url()]]);
+            ->map(fn ($page) => ['label' => $page->title, 'url' => $page->url()]);
     }
+
+    $variant = fn ($item) => is_array($item) ? ($item['variant'] ?? 'link') : ($item->variant ?? 'link');
+    [$calls, $nav] = $items->partition(fn ($item) => $variant($item) === 'button');
 @endphp
 
-<header class="site-header">
-    <div class="site-container site-header__inner">
+<x-webx-header class="site-header" sticky="sticky" mode="drill" :skip="false">
+    <x-slot:brand>
         <a class="site-header__title" href="{{ url('/') }}">{{ config('app.name') }}</a>
+    </x-slot:brand>
 
-        @if ($items->isNotEmpty())
-            <nav class="site-header__nav" aria-label="{{ __('Main') }}">
-                @foreach ($items as $item)
-                    <a class="site-header__link" @foreach ($item['attrs'] as $name => $value) {{ $name }}="{{ $value }}" @endforeach>{{ $item['label'] }}</a>
-                @endforeach
-            </nav>
-        @endif
-    </div>
-</header>
+    @if ($nav->isNotEmpty())
+        <x-webx-header.nav :items="$nav->values()" />
+    @endif
+
+    @if ($calls->isNotEmpty())
+        <x-slot:actions>
+            @foreach ($calls as $call)
+                <a class="site-header__cta" @foreach ($call->attrs() as $name => $value) {{ $name }}="{{ $value }}" @endforeach>{{ $call->label }}</a>
+            @endforeach
+        </x-slot:actions>
+    @endif
+</x-webx-header>

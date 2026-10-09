@@ -33,7 +33,7 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
-    public function pages_under_a_created_page_stay_out_of_the_menus(): void
+    public function pages_under_a_created_page_hang_under_it_in_the_header_and_stay_out_of_the_footer(): void
     {
         $ledger = $this->seeded();
         $ledger->forModule('pages');
@@ -51,7 +51,11 @@ final class DemoTest extends TestCase
             [$this->tree('header')[0]->entity_id, $showcase->id],
             array_map(fn (MenuItem $item) => $item->entity_id, array_slice($this->tree('header'), 0, 2)),
         );
-        $this->assertSame(0, MenuItem::query()->where('entity_id', $child->id)->count());
+        // In the header under its parent, so the header has a dropdown to show; not in the footer.
+        $items = MenuItem::query()->where('entity_id', $child->id)->get();
+        $this->assertCount(1, $items);
+        $this->assertSame($showcase->id, MenuItem::query()->findOrFail($items[0]->parent_id)->entity_id);
+        $this->assertSame('header', $items[0]->menuKey());
     }
 
     #[Test]

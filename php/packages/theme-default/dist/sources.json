@@ -3,7 +3,7 @@
   "files": {
     "src/css/base.css": "3e55fb5da45fbba9a565ea40a0ce458109f8ace2d209c113b441c27198d789f2",
     "src/css/prose.css": "aa425724a4dc564c8c2c397e441c25018b7564b0f67bdf4017d8c67cbffab50a",
-    "src/css/shell.css": "75ac4e6c1ec9294fe6671dfb193812f3bac4826aba99fc84f3abc606f068364e",
+    "src/css/shell.css": "e4a7cbc10c46b63c574efbf02e632ba15f5235461c3a6e3e5e1eb1bd33d84455",
     "src/css/theme.css": "4e7aece5f20d206d483199dc68a2e9b6f74ef3f323b4f15eab25d237da61f227"
   }
 }
