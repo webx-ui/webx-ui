@@ -106,7 +106,9 @@ teardown() {
 
         local canary="$MONOREPO/php/packages/themes/composer.json"
         local links
-        links="$(find "$SITE" -maxdepth 4 -type l \( -path '*/vendor/*' -o -path '*/node_modules/*' \) 2>/dev/null || true)"
+        # Every link, wherever it points: vendor/webx-ui/* and node_modules/@webx-ui/* into this
+        # checkout, public/storage into the site itself. Taking a link away never touches its target.
+        links="$(find "$SITE" -type l 2>/dev/null || true)"
         while IFS= read -r link; do
             [ -n "$link" ] && unlink_one "$link"
         done <<< "$links"
