@@ -39,7 +39,7 @@ final class PageToolsTest extends TestCase
 
         $this->assertSame(1, $count);
         $this->assertSame(
-            '<p>a</p><div class="webx-table" data-webx-table><div class="webx-table__caption" id="webx-table-1">Prices <em>2026</em></div>'
+            '<p>a</p><div class="webx-table" data-webx-table style="--webx-table-columns: 1"><div class="webx-table__caption" id="webx-table-1">Prices <em>2026</em></div>'
             .'<div class="webx-table__frame"><div class="webx-table__scroller" tabindex="0" role="region" aria-labelledby="webx-table-1">'
             .'<table class="webx-table__table" aria-labelledby="webx-table-1"><thead><tr><th>A</th></tr></thead></table>'
             .'</div></div></div><p>b</p>',
@@ -55,6 +55,10 @@ final class PageToolsTest extends TestCase
         $this->assertStringContainsString('<div class="webx-table__scroller" tabindex="0" role="region" aria-label="Tabelle">', $html);
         $this->assertStringContainsString('<table class="webx-table__table" style="min-width: 50px"><tr><td>1</td></tr></TABLE></div></div></div>', $html);
         $this->assertStringNotContainsString('webx-table__caption', $html);
+
+        // The columns of the first row, spans counted: the stylesheet keeps each from squeezing.
+        [$spans] = Tables::wrap('<table><thead><tr><th colspan="2">Name</th><th>Price</th><th colspan=3>Sizes</th></tr></thead><tr><td>1</td></tr></table>', 'Table');
+        $this->assertStringContainsString('<div class="webx-table" data-webx-table style="--webx-table-columns: 6">', $spans);
     }
 
     #[Test]
@@ -86,7 +90,7 @@ final class PageToolsTest extends TestCase
         $this->artisan('webx:theme:sync')->assertSuccessful();
 
         $html = (string) $this->get('/prose')->assertOk()->getContent();
-        $this->assertStringContainsString('<section class="b-text"><div class="webx-table" data-webx-table><div class="webx-table__caption" id="webx-table-1">Prices <em>2026</em></div>', $html);
+        $this->assertStringContainsString('<section class="b-text"><div class="webx-table" data-webx-table style="--webx-table-columns: 1"><div class="webx-table__caption" id="webx-table-1">Prices <em>2026</em></div>', $html);
         $this->assertMatchesRegularExpression('~<link rel="stylesheet" href="[^"]+/table\.css">~', $html);
         $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/table\.js"></script>~', $html);
 

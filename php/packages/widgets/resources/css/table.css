@@ -10,6 +10,9 @@
   --webx-table-shadow-size: var(--site-space-5);
   --webx-table-shadow: color-mix(in srgb, var(--site-color-text) 22%, transparent);
   --webx-table-focus: var(--site-color-accent);
+  /* The narrowest a column gets before the table scrolls; the server writes how many there are. */
+  --webx-table-column-min: 7rem;
+  --webx-table-columns: 1;
 }
 
 .webx-table {
@@ -39,9 +42,11 @@
   outline-offset: 2px;
 }
 
-/* The scroller scrolls now: the table is a table again, as wide as its cells need. */
+/* The scroller scrolls now: the table is a table again, as wide as its cells need and never so
+   narrow that a column holds a word a line. */
 .webx-table__table {
   display: table;
+  min-width: calc(var(--webx-table-columns) * var(--webx-table-column-min));
   max-width: none;
   margin: 0;
   overflow: visible;

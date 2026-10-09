@@ -62,7 +62,7 @@ final class Tables
             }
 
             $out .= substr($html, $done, $start - $done)
-                .'<div class="webx-table" data-webx-table>'.$caption
+                .'<div class="webx-table" data-webx-table style="--webx-table-columns: '.self::columns($body).'">'.$caption
                 .'<div class="webx-table__frame"><div class="webx-table__scroller" tabindex="0" role="region" '
                 .($caption !== '' ? 'aria-labelledby="'.$id.'"' : 'aria-label="'.e($label).'"').'>'
                 .'<table class="webx-table__table"'.($caption !== '' ? ' aria-labelledby="'.$id.'"' : '').$attributes.'>'
@@ -73,6 +73,27 @@ final class Tables
         }
 
         return [$out.substr($html, $done), $count];
+    }
+
+    /**
+     * How many columns the first row spans. The stylesheet keeps each at least
+     * `--webx-table-column-min` wide: squeezed into a phone, an automatic table would rather wrap
+     * every cell a word a line than scroll.
+     */
+    private static function columns(string $body): int
+    {
+        if (preg_match('~<tr\b[^>]*>(.*?)</tr\s*>~is', $body, $row) !== 1) {
+            return 1;
+        }
+
+        preg_match_all('~<t[hd]\b([^>]*)>~i', $row[1], $cells);
+        $count = 0;
+
+        foreach ($cells[1] as $attributes) {
+            $count += preg_match('~\bcolspan\s*=\s*["\']?(\d+)~i', $attributes, $span) === 1 ? max(1, (int) $span[1]) : 1;
+        }
+
+        return max(1, min($count, 50));
     }
 
     /**
