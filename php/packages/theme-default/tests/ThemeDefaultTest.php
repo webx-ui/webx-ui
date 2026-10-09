@@ -105,6 +105,43 @@ class ThemeDefaultTest extends TestCase
     }
 
     /** dist/ is committed; an edit to src/ without a build would ship yesterday's CSS. */
+    /**
+     * The showcase pages are seeded by module-pages, and their blocks by the block types of the
+     * module-blocks demo — the only types a fresh site has until the theme brings its own (TH2).
+     * A type outside those three is a page the seed writes and the site cannot print.
+     */
+    #[Test]
+    public function the_showcase_pages_use_only_the_demo_block_types(): void
+    {
+        $pages = glob(self::path().'/demo/pages/*.json') ?: [];
+        $this->assertNotSame([], $pages);
+
+        $keys = [];
+        $walk = function (array $page, string $file) use (&$walk, &$keys): void {
+            $this->assertIsString($page['title'] ?? null, $file);
+            $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', (string) ($page['slug'] ?? ''), $file);
+
+            $blocks = $page['blocks'] ?? [];
+            while ($blocks !== []) {
+                $block = array_shift($blocks);
+                $this->assertContains($block['type'] ?? null, ['hero', 'text', 'columns'], $file);
+                $this->assertNotContains($block['key'], $keys, "{$file}: block keys are unique");
+                $keys[] = $block['key'];
+                array_push($blocks, ...($block['values']['items'] ?? []));
+            }
+
+            foreach ($page['children'] ?? [] as $child) {
+                $walk($child, $file);
+            }
+        };
+
+        foreach ($pages as $file) {
+            $page = json_decode((string) file_get_contents($file), true);
+            $this->assertIsArray($page, $file);
+            $walk($page, basename($file));
+        }
+    }
+
     #[Test]
     public function dist_is_built_from_the_current_sources(): void
     {

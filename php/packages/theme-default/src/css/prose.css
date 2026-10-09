@@ -72,7 +72,6 @@
 :where(.site-main, .site-prose) :where(blockquote) {
   padding: var(--site-space-1) 0 var(--site-space-1) var(--site-space-5);
   border-left: 3px solid var(--site-color-accent);
-  color: var(--site-color-text-muted);
 }
 
 :where(.site-main, .site-prose) :where(blockquote > :last-child) {
@@ -82,7 +81,6 @@
 :where(.site-main, .site-prose) :where(figcaption) {
   margin-top: var(--site-space-2);
   font-size: var(--site-font-size-6);
-  color: var(--site-color-text-muted);
 }
 
 :where(.site-main, .site-prose) :where(hr) {
@@ -94,11 +92,7 @@
 :where(.site-main, .site-prose) :where(mark) {
   padding-inline: 0.15em;
   background: var(--site-color-highlight);
-  color: inherit;
-}
-
-:where(.site-main, .site-prose) :where(small) {
-  color: var(--site-color-text-muted);
+  color: var(--site-color-text);
 }
 
 :where(.site-main, .site-prose) :where(code, kbd, samp, pre) {
@@ -110,6 +104,7 @@
   padding: 0.1em 0.35em;
   border-radius: var(--site-radius-sm);
   background: var(--site-color-surface-muted);
+  color: var(--site-color-text);
 }
 
 :where(.site-main, .site-prose) :where(pre) {
@@ -117,6 +112,7 @@
   padding: var(--site-space-4);
   border-radius: var(--site-radius-md);
   background: var(--site-color-surface);
+  color: var(--site-color-text);
 }
 
 /* A table wider than the column scrolls inside itself, never the page. */
@@ -136,9 +132,20 @@
 
 :where(.site-main, .site-prose) :where(th) {
   background: var(--site-color-surface);
+  color: var(--site-color-text);
   font-weight: 600;
 }
 
 :where(.site-main, .site-prose) :where(img, video) {
   border-radius: var(--site-radius-md);
+}
+
+/*
+ * The muted colour assumes the page's own background, and <main> holds blocks that paint their
+ * own: a quote in a dark hero would go grey on navy. So it applies to prose outside blocks, and
+ * inside one only where the block asks for it with `site-prose`. Everything that sets a
+ * background above sets its text colour with it, so those pairs read the same anywhere.
+ */
+:where(.site-main, .site-prose) :where(blockquote, figcaption, small):where(:not([data-wx-block] *), .site-prose *) {
+  color: var(--site-color-text-muted);
 }

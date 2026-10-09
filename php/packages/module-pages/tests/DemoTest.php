@@ -9,6 +9,8 @@ use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Seo\Models\SeoMeta;
+use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\ThemeManifest;
 
 /**
  * The demo content of this package, seeded and taken out again.
@@ -52,6 +54,41 @@ final class DemoTest extends TestCase
         // name in the tree — and an untitled front page is the wrong first impression.
         $this->assertSame('A site made of blocks', $home->seoData()?->title);
         $this->assertSame('About this demo', $about->seoData()?->title);
+    }
+
+    #[Test]
+    public function a_theme_replaces_a_document_and_adds_its_own_pages_with_their_children(): void
+    {
+        $theme = sys_get_temp_dir().'/webx-pages-demo-theme-'.getmypid();
+        @mkdir($theme.'/demo/pages', 0777, true);
+        file_put_contents($theme.'/demo/pages/about.json', (string) json_encode(['title' => 'Studio', 'slug' => 'studio']));
+        file_put_contents($theme.'/demo/pages/showcase.json', (string) json_encode([
+            'title' => 'Showcase',
+            'slug' => 'showcase',
+            'children' => [['title' => 'Long words', 'slug' => 'long-words']],
+        ]));
+
+        try {
+            $this->app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('acme/theme', $theme, false)]));
+
+            $this->artisan('webx:demo')->assertSuccessful();
+
+            $home = $this->home();
+            $under = Page::query()->where('parent_id', $home->getKey())->orderBy('id')->get();
+
+            $this->assertSame(['studio', 'showcase'], array_map(fn (Page $page): string => (string) $page->slug, $under->all()), 'The theme\'s about stands in for the module\'s; its showcase comes after.');
+
+            $words = Page::query()->where('parent_id', $under->all()[1]->getKey())->first();
+            $this->assertSame('showcase/long-words', (string) $words?->routeCanonical()?->path);
+
+            $this->artisan('webx:demo', ['--remove' => true])->assertSuccessful();
+            $this->assertSame(1, Page::withTrashed()->count(), 'The theme\'s pages go with the rest of the demo.');
+        } finally {
+            array_map('unlink', glob($theme.'/demo/pages/*.json') ?: []);
+            @rmdir($theme.'/demo/pages');
+            @rmdir($theme.'/demo');
+            @rmdir($theme);
+        }
     }
 
     #[Test]

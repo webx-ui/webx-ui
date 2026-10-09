@@ -1,0 +1,115 @@
+{
+  "title": "Kitchen sink",
+  "slug": "kitchen-sink",
+  "seo": {
+    "title": "Kitchen sink",
+    "description": "Every part of the default theme in the context of a page: the edge cases a real site runs into sooner or later."
+  },
+  "blocks": [
+    {
+      "key": "showcase-intro",
+      "type": "text",
+      "values": {
+        "heading": "Kitchen sink",
+        "body": "The pages under this one show the default theme at its edges: long words, dark blocks in the main column, blocks side by side on a narrow screen.\nThey come with the demo and go with php artisan webx:demo --remove — a real site never has them."
+      }
+    }
+  ],
+  "children": [
+    {
+      "title": "Long words",
+      "slug": "long-words",
+      "seo": {
+        "title": "Long words",
+        "description": "Words longer than a phone is wide, in the languages that have them."
+      },
+      "blocks": [
+        {
+          "key": "showcase-words-german",
+          "type": "text",
+          "values": {
+            "heading": "Donaudampfschifffahrtsgesellschaftskapitänsmützenabzeichen",
+            "body": "German glues nouns together: Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz was a real law, and a heading like the one above has to break inside the word rather than push the page sideways."
+          }
+        },
+        {
+          "key": "showcase-words-polish",
+          "type": "text",
+          "values": {
+            "heading": "Konstantynopolitańczykowianeczka",
+            "body": "Polish brings its own letters and its own lengths: najprawdopodobniej, dziewięćdziesięciokilkuletni, współpracowniczka. Ąą Ćć Ęę Łł Ńń Óó Śś Źź Żż — every one of them in the font the theme names."
+          }
+        },
+        {
+          "key": "showcase-words-cyrillic",
+          "type": "text",
+          "values": {
+            "heading": "Превысокомногорассмотрительствующий",
+            "body": "Cyrillic, which a site with Russian among its languages prints on every page: человеконенавистничество, высокопревосходительство.\nAn address with no place to break: https://example.com/a/very/long/path/that/goes/on/and/on/without/a/single/space/in/it/anywhere"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Blocks in the column",
+      "slug": "blocks",
+      "seo": {
+        "title": "Blocks in the column",
+        "description": "A dark block, text and columns one after another in the main column of the page."
+      },
+      "blocks": [
+        {
+          "key": "showcase-blocks-hero",
+          "type": "hero",
+          "values": {
+            "title": "A dark block in the main column",
+            "subtitle": "The prose of the theme reaches every block inside the page, so its colours must not assume a light background: this heading and this line stay readable on navy.",
+            "button_label": "Back to the kitchen sink",
+            "button_url": "/kitchen-sink"
+          }
+        },
+        {
+          "key": "showcase-blocks-text",
+          "type": "text",
+          "values": {
+            "heading": "Text right after it",
+            "body": "The column and the blocks share one left edge, and nothing on this page scrolls sideways at 360 pixels."
+          }
+        },
+        {
+          "key": "showcase-blocks-three",
+          "type": "columns",
+          "values": {
+            "columns": "3",
+            "items": [
+              {
+                "key": "showcase-blocks-three-one",
+                "type": "text",
+                "values": {
+                  "heading": "One",
+                  "body": "Three columns on a wide screen, one under another on a phone."
+                }
+              },
+              {
+                "key": "showcase-blocks-three-two",
+                "type": "text",
+                "values": {
+                  "heading": "Two",
+                  "body": "A column with a longer text in it, so that the three are not the same height and the grid has to say what it does about that."
+                }
+              },
+              {
+                "key": "showcase-blocks-three-three",
+                "type": "text",
+                "values": {
+                  "heading": "Three",
+                  "body": "Short."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
