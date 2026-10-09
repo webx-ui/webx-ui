@@ -102,4 +102,11 @@ return [
         'next' => 'Immagine successiva',
         'error' => 'Impossibile caricare l\'immagine',
     ],
+    'video' => [
+        'untitled' => 'Video',
+        'play' => 'Riproduci: :title',
+        'notice' => 'Il video viene caricato da :provider, che può impostare cookie.',
+        'load' => 'Carica',
+        'always' => 'Carica sempre i video',
+    ],
 ];

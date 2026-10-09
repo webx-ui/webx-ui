@@ -19,6 +19,8 @@ use WebxUi\Blocks\BlockOffers;
 use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
+use WebxUi\Widgets\Video\Posters;
+use WebxUi\Widgets\Video\VideoProviders;
 use WebxUi\Widgets\View\Components\ConsentGate;
 use WebxUi\Widgets\View\Components\ConsentLink;
 use WebxUi\Widgets\View\Components\ContactBar;
@@ -39,6 +41,7 @@ use WebxUi\Widgets\View\Components\Slider;
 use WebxUi\Widgets\View\Components\Socials;
 use WebxUi\Widgets\View\Components\Tabs;
 use WebxUi\Widgets\View\Components\TabsPanel;
+use WebxUi\Widgets\View\Components\Video;
 use WebxUi\Widgets\View\HeaderNavigation;
 use WebxUi\Widgets\View\Sliders;
 
@@ -71,6 +74,9 @@ class WidgetsServiceProvider extends ServiceProvider
         $this->app->scoped(FormDialogs::class);
         // Scoped too: the answer is read once from the request it came with.
         $this->app->scoped(Consent::class);
+        // Scoped: a request puts off the fetch of each missing poster once.
+        $this->app->scoped(Posters::class);
+        $this->app->singleton(VideoProviders::class);
         $this->app->tag([Widgets::class], HeadPart::TAG);
 
         $this->mergeConfigFrom(Widgets::path().'/config/webx-widgets.php', 'webx-widgets');
@@ -110,6 +116,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-slider', Slider::class);
         Blade::component('webx-slide', Slide::class);
         Blade::component('webx-lightbox', Lightbox::class);
+        Blade::component('webx-video', Video::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');

@@ -102,4 +102,11 @@ return [
         'next' => 'Następny obraz',
         'error' => 'Nie można wczytać obrazu',
     ],
+    'video' => [
+        'untitled' => 'Wideo',
+        'play' => 'Odtwórz: :title',
+        'notice' => 'Wideo załaduje się z serwisu :provider, który może zapisywać pliki cookie.',
+        'load' => 'Załaduj',
+        'always' => 'Zawsze ładuj wideo',
+    ],
 ];

@@ -102,4 +102,11 @@ return [
         'next' => 'Sonraki görsel',
         'error' => 'Görsel yüklenemedi',
     ],
+    'video' => [
+        'untitled' => 'Video',
+        'play' => 'Oynat: :title',
+        'notice' => 'Video :provider üzerinden yüklenir ve çerez bırakabilir.',
+        'load' => 'Yükle',
+        'always' => 'Videoları her zaman yükle',
+    ],
 ];

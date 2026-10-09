@@ -102,4 +102,11 @@ return [
         'next' => 'Nächstes Bild',
         'error' => 'Das Bild kann nicht geladen werden',
     ],
+    'video' => [
+        'untitled' => 'Video',
+        'play' => 'Abspielen: :title',
+        'notice' => 'Das Video wird von :provider geladen, das Cookies setzen kann.',
+        'load' => 'Laden',
+        'always' => 'Videos immer laden',
+    ],
 ];

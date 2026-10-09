@@ -102,4 +102,11 @@ return [
         'next' => 'Imagen siguiente',
         'error' => 'No se puede cargar la imagen',
     ],
+    'video' => [
+        'untitled' => 'Vídeo',
+        'play' => 'Reproducir: :title',
+        'notice' => 'El vídeo se carga desde :provider, que puede instalar cookies.',
+        'load' => 'Cargar',
+        'always' => 'Cargar siempre los vídeos',
+    ],
 ];

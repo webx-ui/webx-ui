@@ -102,4 +102,11 @@ return [
         'next' => 'Next picture',
         'error' => 'The picture cannot be loaded',
     ],
+    'video' => [
+        'untitled' => 'Video',
+        'play' => 'Play: :title',
+        'notice' => 'The video loads from :provider, which may set cookies.',
+        'load' => 'Load',
+        'always' => 'Always load videos',
+    ],
 ];

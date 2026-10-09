@@ -76,6 +76,8 @@ export default {
         slider: join(root, 'resources/js/slider.js'),
         // PhotoSwipe, the same way: only where a picture opens over the page.
         lightbox: join(root, 'resources/js/lightbox.js'),
+        // The facade and the notice before consent: no player library, the provider's is in its iframe.
+        video: join(root, 'resources/js/video.js'),
       },
       output: {
         entryFileNames: '[name].js',

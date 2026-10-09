@@ -37,6 +37,9 @@ final class DistTest extends PlainTestCase
     /** The lightbox, PhotoSwipe built in: 25 KB gzip (§4), only where a picture opens over the page. */
     private const int LIGHTBOX_BUDGET = 25 * 1024;
 
+    /** The video's facade and the notice before consent: 4 KB gzip — the player is the provider's, in its iframe. */
+    private const int VIDEO_BUDGET = 4 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -75,7 +78,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'runtime.css', 'runtime.js', 'slider.css', 'slider.js', 'sources.json'], $built);
+        $this->assertSame(['consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'runtime.css', 'runtime.js', 'slider.css', 'slider.js', 'sources.json', 'video.css', 'video.js'], $built);
     }
 
     #[Test]
@@ -130,6 +133,14 @@ final class DistTest extends PlainTestCase
                 $this->assertMatchesRegularExpression('/^(?::where\(:root\)|(?:[a-z]+)?\.pswp|\.webx-lightbox)/', $selector, "lightbox.css: \"{$selector}\" is neither PhotoSwipe's nor the package's.");
             }
         }
+    }
+
+    #[Test]
+    public function the_video_stays_inside_its_budget(): void
+    {
+        $size = self::gzipped('video.js') + self::gzipped('video.css');
+
+        $this->assertLessThanOrEqual(self::VIDEO_BUDGET, $size, sprintf('The video is %.1f KB gzip.', $size / 1024));
     }
 
     private static function gzipped(string $file): int
