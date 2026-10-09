@@ -1665,3 +1665,255 @@ test.describe('gallery and logos blocks', () => {
     await context.close()
   })
 })
+
+test.describe('video', () => {
+  const PATH = '/kitchen-sink/video'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const THIRD =
+    /(^|\.)(youtube\.com|youtube-nocookie\.com|youtu\.be|ytimg\.com|googlevideo\.com|vimeo\.com|vimeocdn\.com)$/
+
+  const consent = (c) => ({
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c })),
+    domain: new URL(site).hostname,
+    path: '/',
+  })
+
+  // The providers answered here, so the run does not depend on the network, and every request
+  // to them is written down — before consent there must be none at all.
+  async function providers(context) {
+    const asked = []
+    await context.route(
+      (url) => THIRD.test(url.hostname),
+      (route) => {
+        asked.push(route.request().url())
+        return route.fulfill({ body: '<p>player</p>', contentType: 'text/html' })
+      },
+    )
+    return asked
+  }
+
+  const section = (page, heading) =>
+    page
+      .locator('[data-wx-block="showcase-video"]')
+      .filter({ has: page.getByRole('heading', { name: heading, exact: true }) })
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  test('before consent nothing is asked of YouTube or Vimeo; the placeholder keeps its ratio and fits', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext()
+    const asked = await providers(context)
+    const page = await context.newPage()
+    const outside = []
+    page.on('request', (request) => {
+      const url = request.url()
+      if (!url.startsWith('data:') && new URL(url).origin !== site) outside.push(url)
+    })
+
+    for (const width of [375, 1280]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto(PATH)
+      await page.waitForLoadState('networkidle')
+      await still(page)
+
+      const frames = await page.locator('.webx-video.is-blocked').evaluateAll((all) =>
+        all.map((video) => {
+          const box = video.getBoundingClientRect()
+          const [w, h] = getComputedStyle(video).aspectRatio.split('/').map(Number)
+          const notice = video.querySelector('.webx-video__consent')
+          const inside = [...notice.querySelectorAll('button, p')].every((el) => {
+            const b = el.getBoundingClientRect()
+            return (
+              b.left >= box.left - 0.5 &&
+              b.right <= box.right + 0.5 &&
+              b.top >= box.top - 0.5 &&
+              b.bottom <= box.bottom + 0.5
+            )
+          })
+          return {
+            ratio: box.width / box.height,
+            expected: w / (h || 1),
+            width: box.width,
+            fits: notice.scrollHeight <= notice.clientHeight + 1 && inside,
+            buttons: [...notice.querySelectorAll('button')].map(
+              (b) => b.getBoundingClientRect().height,
+            ),
+            posters: [...video.querySelectorAll('img')].map((img) => img.currentSrc || img.src),
+          }
+        }),
+      )
+
+      // YouTube with a poster, without, Vimeo, the narrow column, the 4:3 one.
+      expect(frames.length, `at ${width}`).toBe(5)
+      for (const frame of frames) {
+        expect(frame.ratio, `at ${width}`).toBeCloseTo(frame.expected, 1)
+        expect(frame.fits, `the notice fits a frame ${Math.round(frame.width)}px wide`).toBe(true)
+        expect(Math.min(...frame.buttons)).toBeGreaterThanOrEqual(44)
+        for (const poster of frame.posters) expect(new URL(poster).origin).toBe(site)
+      }
+      expect(await sideways(page), `at ${width}`).toBe(0)
+    }
+
+    expect(asked, 'the providers, before any answer').toEqual([])
+    expect(outside, 'anybody but the site').toEqual([])
+    await context.close()
+  })
+
+  test('"Load" plays that one only; "Always load videos" agrees to media and unblocks the page without a reload', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    // Answered without media: the banner stays out of the way, the videos wait.
+    await context.addCookies([consent([])])
+    const asked = await providers(context)
+    const page = await context.newPage()
+    await page.goto(PATH)
+    await page.evaluate(() => (window.notReloaded = true))
+
+    const bunny = section(page, 'YouTube, no poster')
+    await bunny.locator('[data-webx-video-load]').click()
+    const player = bunny.locator('iframe.webx-video__frame')
+    await expect(player).toHaveAttribute(
+      'src',
+      /^https:\/\/www\.youtube-nocookie\.com\/embed\/aqz-KE-bpKQ\?autoplay=1/,
+    )
+    expect(await page.evaluate(() => document.activeElement?.className)).toBe('webx-video__frame')
+    expect(await page.locator('.webx-video.is-blocked').count(), 'the others still wait').toBe(4)
+    expect(
+      decodeURIComponent((await context.cookies()).find((c) => c.name === 'webx_consent').value),
+    ).toContain('"c":[]')
+
+    const vimeo = section(page, 'Vimeo, no poster')
+    await vimeo.locator('[data-webx-video-always]').click()
+    await expect(vimeo.locator('iframe.webx-video__frame')).toHaveAttribute(
+      'src',
+      /player\.vimeo\.com\/video\/1084537\?.*dnt=1/,
+    )
+    await expect(page.locator('.webx-video.is-blocked')).toHaveCount(0)
+    await expect(page.locator('.webx-video__consent')).toHaveCount(0)
+    // The rest are facades now: a play button each, and no player until it is pressed.
+    expect(await page.locator('iframe.webx-video__frame').count()).toBe(2)
+    expect(await page.locator('button.webx-video__facade').count()).toBe(3)
+    expect(await page.evaluate(() => window.notReloaded)).toBe(true)
+    expect(
+      decodeURIComponent((await context.cookies()).find((c) => c.name === 'webx_consent').value),
+    ).toContain('"c":["media"]')
+    expect(
+      asked.every((url) => /youtube-nocookie\.com\/embed|player\.vimeo\.com\/video/.test(url)),
+    ).toBe(true)
+    await context.close()
+  })
+
+  test('with consent: a play button, the player only after it is pressed, the focus in it', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    await context.addCookies([consent(['media'])])
+    const asked = await providers(context)
+    const page = await context.newPage()
+    await page.goto(PATH)
+    await page.waitForLoadState('networkidle')
+
+    expect(await page.locator('.webx-video__consent').count()).toBe(0)
+    expect(await page.locator('iframe').count()).toBe(0)
+    expect(asked, 'a facade asks for nothing').toEqual([])
+
+    // From the keyboard: Tab reaches the first play button, a real button with a name.
+    let focused = null
+    for (let i = 0; i < 80 && !focused?.facade; i++) {
+      await page.keyboard.press('Tab')
+      focused = await page.evaluate(() => ({
+        facade: document.activeElement?.classList.contains('webx-video__facade'),
+        tag: document.activeElement?.tagName,
+        name: document.activeElement?.getAttribute('aria-label'),
+      }))
+    }
+    expect(focused).toEqual({
+      facade: true,
+      tag: 'BUTTON',
+      name: 'Play: YouTube, a poster from the library',
+    })
+    await page.keyboard.press('Enter')
+
+    const player = section(page, 'YouTube, a poster from the library').locator(
+      'iframe.webx-video__frame',
+    )
+    await expect(player).toHaveAttribute('src', /youtube-nocookie\.com\/embed\/eRsGyueVLvQ/)
+    expect(await page.evaluate(() => document.activeElement?.className)).toBe('webx-video__frame')
+    expect(await player.evaluate((el) => el.title)).toBe('YouTube, a poster from the library')
+    await expect.poll(() => asked.length).toBe(1)
+    await context.close()
+  })
+
+  test('a video of the site asks for no consent and loads nothing before Play', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    await context.addCookies([consent([])])
+    const page = await context.newPage()
+    const clips = []
+    page.on('request', (request) => {
+      if (/\.(mp4|webm)(\?|$)/.test(request.url())) clips.push(request.url())
+    })
+    await page.goto(PATH)
+    await page.waitForLoadState('networkidle')
+
+    const own = section(page, 'A video of the site')
+    const video = own.locator('video.webx-video__player')
+    expect(await own.locator('.webx-video').getAttribute('class')).toBe(
+      'webx-video webx-video--file',
+    )
+    expect(await own.locator('[data-webx-consent]').count()).toBe(0)
+    expect(await video.evaluate((v) => [v.preload, v.controls, new URL(v.poster).origin])).toEqual([
+      'none',
+      true,
+      new URL(site).origin,
+    ])
+    const box = await own.locator('.webx-video').boundingBox()
+    expect(box.width / box.height).toBeCloseTo(16 / 9, 1)
+    expect(clips, 'preload none').toEqual([])
+
+    const played = await video.evaluate(async (v) => {
+      v.muted = true
+      await v.play()
+      await new Promise((resolve) => setTimeout(resolve, 600))
+      return v.currentTime
+    })
+    expect(played).toBeGreaterThan(0)
+    expect(clips.length).toBeGreaterThan(0)
+    for (const clip of clips) expect(new URL(clip).origin).toBe(site)
+    // The frame did not move when the video came.
+    expect((await own.locator('.webx-video').boundingBox()).height).toBeCloseTo(box.height, 0)
+    await context.close()
+  })
+
+  test('without JavaScript a video is a link to it with its poster', async ({ browser }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 375, height: 800 },
+    })
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const links = await page.locator('a.webx-video__facade').evaluateAll((all) =>
+      all.map((a) => ({
+        href: a.href,
+        poster: a.querySelector('img')?.src ?? null,
+        visible: a.getBoundingClientRect().height > 0,
+      })),
+    )
+    expect(links).toHaveLength(5)
+    for (const link of links) {
+      expect(link.href).toMatch(/^https:\/\/(www\.youtube\.com\/watch\?v=|vimeo\.com\/)/)
+      expect(link.visible).toBe(true)
+    }
+    expect(links.filter((link) => link.poster).length).toBeGreaterThanOrEqual(3)
+    expect(await page.locator('.webx-video__consent').first().isHidden()).toBe(true)
+    expect(await page.locator('video.webx-video__player[controls]').count()).toBe(2)
+    expect(await sideways(page)).toBe(0)
+    await context.close()
+  })
+})
