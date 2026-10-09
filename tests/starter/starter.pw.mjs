@@ -269,11 +269,13 @@ test.describe('cookie consent', () => {
           `<script type="text/plain" data-webx-consent="statistics">window.statisticsRan = true</script>` +
             `<iframe title="probe" data-webx-consent="media" data-src="${THIRD}/embed"></iframe></main>`,
         )
-        // Without the original length: the body grew, and a stale Content-Length would cut its end
-        // off — the scripts before </body> with it.
-        const headers = { ...response.headers() }
-        delete headers['content-length']
-        await route.fulfill({ response, body, headers })
+        // Fresh headers: the body grew and is no longer compressed, so the original length and
+        // encoding would cut its end off — the scripts before </body> with it.
+        await route.fulfill({
+          status: response.status(),
+          contentType: 'text/html; charset=utf-8',
+          body,
+        })
       },
     )
     await page.route(`${THIRD}/**`, (route) =>
