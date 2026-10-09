@@ -40,12 +40,16 @@ function prepare(dialog) {
     if (!inside) dialog.close()
   })
 
-  dialog.addEventListener('close', () => {
+  // Watched on the `open` attribute rather than the `close` event: the event is queued behind
+  // rendering, and a page in a background tab never gets it — its scroll would stay locked.
+  // Every way out (Esc, a form with method="dialog", close()) drops the attribute.
+  new MutationObserver(() => {
+    if (dialog.open || !open.has(dialog)) return
     open.delete(dialog)
     lock()
     openers.get(dialog)?.focus()
     openers.delete(dialog)
-  })
+  }).observe(dialog, { attributes: true, attributeFilter: ['open'] })
 }
 
 export function openDialog(dialog, opener = null) {

@@ -194,6 +194,7 @@ describe('dialog', () => {
     expect(document.documentElement.classList.contains('webx-scroll-locked')).toBe(true)
 
     dialog.querySelector('[data-webx-dialog-close]').click()
+    await Promise.resolve() // the attribute is observed, and observers report in a microtask
     expect(dialog.open).toBe(false)
     expect(document.documentElement.classList.contains('webx-scroll-locked')).toBe(false)
     expect(document.activeElement).toBe(opener)
