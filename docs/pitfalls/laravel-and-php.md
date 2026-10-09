@@ -419,6 +419,12 @@ $value` не отличает «типа нет» от «тип сказал н�
 
 ## Тесты: Testbench и PHPUnit
 
+- **`config()->set('webx-widgets.consent.enabled', false)` в тесте ничего не выключает.** Если
+  среди провайдеров теста есть `module-settings`, баннер читает вкладку «Cookie» (`consent.*`), и
+  она главнее конфига — заглушка видео или карты остаётся. Выключать сохранением настройки:
+  `app(Settings::class)->save(['consent.enabled' => false])`; конфиг — только в тесте без
+  `module-settings`.
+
 - **«Class …\Tests\TestCase not found» в пакете, который прописан в `php/` всеми четырьмя
   записями.** `php/composer.lock` не в git, и `vendor` чекаута отстаёт от `composer.json`: пакета,
   добавленного после последней установки, там нет вовсе (`ls php/vendor/webx-ui`), а

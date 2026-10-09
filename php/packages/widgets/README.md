@@ -15,8 +15,8 @@ theme/                   ← the site's local theme
 ```
 
 > Under way: the loading, the runtime with the light behaviours, the mobile menu, the header, cookie
-> consent, the dropdown, contacts, the language switcher, the slider, the lightbox and the
-> video, and the gallery, logos and video blocks are here; maps arrive in the next release.
+> consent, the dropdown, contacts, the language switcher, the slider, the lightbox, the video and
+> the map, and the gallery, logos, video and map blocks are here.
 
 ## What is in it
 
@@ -64,9 +64,26 @@ fetches once into its media library (folder "Video posters") after the first pag
 video. A file of the site is a `<video preload="none">` with no consent to ask for. The frame keeps
 its ratio (16/9 unless told) before anything loads; without JavaScript the video is a link.
 
+## Map
+
+```blade
+<x-webx-map from="settings" />
+<x-webx-map :lat="51.5074" :lng="-0.1278" :zoom="15" marker="1 Example Street, London" height="24rem" />
+```
+
+Leaflet over the tiles of OpenStreetMap, which need no key. `from="settings"` is the main address of
+the Contacts tab of the settings — its text, its coordinates, its link to a map; an address without
+coordinates is printed alone. The server prints the place — the address and **Open in maps** — in a
+frame of the map's height; until the visitor agrees to `media` it carries a line saying where the
+map loads from, **Load** (this one) and **Always load maps** (the consent, without a reload), and
+the page asks for no tile. The attribution of the tiles is printed in the corner of every map. The
+wheel and one finger move the page until the map is clicked or focused. Without JavaScript the map
+is its address and a link. Other tiles — MapTiler or any address with `{z}/{x}/{y}` and a `{key}` —
+are an entry of `webx-widgets.map.providers` and its name in `webx-widgets.map.provider`.
+
 ## Blocks
 
-On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers three block
+On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers four block
 types — `webx:setup` installs them, or `php artisan webx:blocks:offered --install --module=widgets`:
 
 - **Gallery** — pictures of the media library as a grid (as many columns as the column has room
@@ -77,6 +94,8 @@ types — `webx:setup` installs them, or `php artisan webx:blocks:offered --inst
   poster (empty: the video's own preview), a caption under it and a shape — 16:9, 4:3, 1:1 or
   9:16, the last two held to a phone's width. A link waits for consent like any `<x-webx-video>`;
   an address of no known provider, a file gone from the library or nothing at all prints nothing.
+- **Map** — the main address of the Contacts tab or coordinates with an address of their own (a
+  switch says which), a zoom and a height: low, medium or tall. Nowhere to show prints nothing.
 
 Installed once, they belong to the site: change them in the panel, an update never overwrites them.
 

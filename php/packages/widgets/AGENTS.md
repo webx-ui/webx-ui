@@ -82,9 +82,13 @@ variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3
   only on a click; before consent to `media` the server prints the notice with "Load" / "Always load
   videos". No poster: the video's preview, fetched once into the library (folder "Video posters").
   `<x-webx-video :file="$media" :poster>` — a `<video preload="none">`, no consent. No JS: a link.
+- **Map** — `dist/map.js|css` (Leaflet), only where one stands: `<x-webx-map :lat :lng :zoom marker height title link>`
+  or `<x-webx-map from="settings">` (main address of the Contacts tab; no coordinates — the address alone). The server
+  prints the address, "Open in maps" and, before consent to `media`, "Load" / "Always load maps"; tiles only after. The
+  wheel scrolls the page until the map is clicked. Tiles: `webx-widgets.map.provider` (OpenStreetMap; `{key}` entries).
 - **Blocks** — offered with `module-media` (`webx:setup`, or `webx:blocks:offered --install --module=widgets`),
   then the site's: `gallery` (library pictures, grid or slider, zoom = lightbox, a group per block, title = caption),
-  `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16; an unknown address prints nothing).
+  `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16), `map` (contacts or coordinates, zoom, height); nothing to show prints nothing.
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
   (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`;
   `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,
@@ -100,7 +104,7 @@ body|done`, `is-sent`; `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-
   `__viewport|track|slide|controls|button|prev|next|pause|pagination|bullet|thumbs|thumb`,
   `is-ready|is-active`; `webx-lightbox-link`, `__image`, `is-ready`, the viewer PhotoSwipe's `.pswp`
   with `webx-lightbox`; `webx-video`, `--youtube|vimeo|file`, `__facade|poster|play|consent|notice|
-button|frame|player`, `is-blocked|is-ready|is-playing` — in each view). `html.webx-js` once the runtime runs; `html.webx-scroll-locked`
+button|frame|player`, `is-blocked|is-ready|is-playing`; `webx-map`, `--place`, `__place|address|open|notice|button|attribution|canvas|marker|hint`, `is-loaded|is-active` — in each view). `html.webx-js` once the runtime runs; `html.webx-scroll-locked`
   while a modal is open; `html.webx-header-sticky` while a header sticks (scroll padding = its height).
 - **Local tokens** — `--webx-<name>-*` of each widget (`--webx-slider-per-view`, `--webx-lightbox-backdrop`…),
   on `:root` from `--site-*`; `--webx-header-height|-topbar-height` kept live by the runtime — `top` of anything sticky.
@@ -129,21 +133,17 @@ button|frame|player`, `is-blocked|is-ready|is-playing` — in each view). `html.
   package and wins by order; a longer chain starts a specificity race with the next theme.
 - Do not paste a counter, a pixel, a chat or an embed as it is: wrap it in
   `<x-webx-consent category="…">` or write it as `type="text/plain"` / `data-src` — nothing
-  third-party may load before the visitor agrees. A YouTube or Vimeo video is `<x-webx-video>`.
-- Do not print a form of the inbox inside a dialog of your own for a button: link the button to
-  `#webx-form-<slug>` — the page gets the form once, however many buttons lead to it.
+  third-party may load before the visitor agrees. A video is `<x-webx-video>`, a map `<x-webx-map>`.
+- Do not put an inbox form in a dialog of your own: link the button to `#webx-form-<slug>` — printed once.
 - Do not make "Accept all" bigger or brighter than "Reject all": they share one class on purpose.
 - Do not type a phone number, an address or a network into a template: it goes on the Contacts
   tab, and the widgets and the SEO markup read it from there.
-- Do not format the hours or a time with `toLocaleString()` in a script of your own: it writes the
-  browser's way, not the page's language — `<x-webx-hours>` already carries the words.
-- Do not copy the runtime into the theme to change one behaviour (register your own widget), nor
-  `Widgets::need()` the behaviours above: the runtime is on every page.
+- Do not format a time with `toLocaleString()`: it writes the browser's way — `<x-webx-hours>` has the words.
+- Do not copy the runtime into the theme (register your own widget), nor `Widgets::need()` its behaviours.
 
 ## Check your work
 
-- `webx:theme:sync` lists `webx-ui/widgets` as published; the page has `.../widgets/<hash>/runtime.css`
-  in `<head>`, `runtime.js` before `</body>`, no `<!--webx-widgets-->`. Tab through it; JS off — still there.
+- `webx:theme:sync` lists `webx-ui/widgets`; `.../widgets/<hash>/runtime.css` in `<head>`, `runtime.js` before `</body>`. Tab; JS off.
 
 ## Read more
 
