@@ -1695,7 +1695,7 @@ test.describe('video', () => {
 
   const section = (page, heading) =>
     page
-      .locator('[data-wx-block="showcase-video"]')
+      .locator('[data-wx-block="video"], [data-wx-block="showcase-video"]')
       .filter({ has: page.getByRole('heading', { name: heading, exact: true }) })
 
   const sideways = (page) =>
@@ -1746,8 +1746,8 @@ test.describe('video', () => {
         }),
       )
 
-      // YouTube with a poster, without, Vimeo, the narrow column, the 4:3 one.
-      expect(frames.length, `at ${width}`).toBe(5)
+      // YouTube with a poster, without, Vimeo, the narrow column, the 4:3 one, the upright one.
+      expect(frames.length, `at ${width}`).toBe(6)
       for (const frame of frames) {
         expect(frame.ratio, `at ${width}`).toBeCloseTo(frame.expected, 1)
         expect(frame.fits, `the notice fits a frame ${Math.round(frame.width)}px wide`).toBe(true)
@@ -1781,7 +1781,7 @@ test.describe('video', () => {
       /^https:\/\/www\.youtube-nocookie\.com\/embed\/aqz-KE-bpKQ\?autoplay=1/,
     )
     expect(await page.evaluate(() => document.activeElement?.className)).toBe('webx-video__frame')
-    expect(await page.locator('.webx-video.is-blocked').count(), 'the others still wait').toBe(4)
+    expect(await page.locator('.webx-video.is-blocked').count(), 'the others still wait').toBe(5)
     expect(
       decodeURIComponent((await context.cookies()).find((c) => c.name === 'webx_consent').value),
     ).toContain('"c":[]')
@@ -1796,7 +1796,7 @@ test.describe('video', () => {
     await expect(page.locator('.webx-video__consent')).toHaveCount(0)
     // The rest are facades now: a play button each, and no player until it is pressed.
     expect(await page.locator('iframe.webx-video__frame').count()).toBe(2)
-    expect(await page.locator('button.webx-video__facade').count()).toBe(3)
+    expect(await page.locator('button.webx-video__facade').count()).toBe(4)
     expect(await page.evaluate(() => window.notReloaded)).toBe(true)
     expect(
       decodeURIComponent((await context.cookies()).find((c) => c.name === 'webx_consent').value),
@@ -1890,6 +1890,68 @@ test.describe('video', () => {
     await context.close()
   })
 
+  test('the Video block: the caption under its frame, an upright one held to a phone’s width in the middle', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext()
+    await context.addCookies([consent([])])
+    const asked = await providers(context)
+    const page = await context.newPage()
+
+    for (const width of [375, 1280]) {
+      await page.setViewportSize({ width, height: 800 })
+      await page.goto(PATH)
+      await page.waitForLoadState('networkidle')
+      await still(page)
+
+      const blocks = await page.locator('[data-wx-block="video"]').evaluateAll((all) =>
+        all.map((block) => {
+          const own = block.getBoundingClientRect()
+          const frame = block.querySelector('.webx-video').getBoundingClientRect()
+          const caption = block.querySelector('.b-video__caption')
+          const under = caption?.getBoundingClientRect()
+          const em = parseFloat(getComputedStyle(block.querySelector('.b-video__figure')).fontSize)
+          return {
+            name: block.querySelector('h2')?.textContent.trim(),
+            upright: block.classList.contains('b-video--9-16'),
+            gap: under ? under.top - frame.bottom : null,
+            captionInside: under
+              ? under.left >= own.left - 0.5 && under.right <= own.right + 0.5
+              : null,
+            frameInside: frame.left >= own.left - 0.5 && frame.right <= own.right + 0.5,
+            frameWidth: frame.width,
+            blockWidth: own.width,
+            centred: Math.abs(frame.left - own.left - (own.right - frame.right)),
+            em,
+          }
+        }),
+      )
+
+      expect(blocks.length, `seven blocks at ${width}`).toBe(7)
+      for (const block of blocks) {
+        expect(
+          block.gap,
+          `${block.name}: the caption right under the frame`,
+        ).toBeGreaterThanOrEqual(0)
+        expect(block.gap, `${block.name}: the caption right under the frame`).toBeLessThan(24)
+        expect(block.captionInside, block.name).toBe(true)
+        expect(block.frameInside, block.name).toBe(true)
+        if (!block.upright)
+          expect(block.frameWidth, `${block.name} spans the column`).toBeCloseTo(
+            block.blockWidth,
+            0,
+          )
+      }
+      const upright = blocks.find((block) => block.upright)
+      expect(upright.frameWidth).toBeLessThanOrEqual(22 * upright.em + 0.5)
+      expect(upright.centred, 'in the middle of the column').toBeLessThan(1)
+      expect(await sideways(page), `at ${width}`).toBe(0)
+    }
+
+    expect(asked, 'the providers, before consent to media').toEqual([])
+    await context.close()
+  })
+
   test('without JavaScript a video is a link to it with its poster', async ({ browser }) => {
     const context = await browser.newContext({
       javaScriptEnabled: false,
@@ -1905,7 +1967,7 @@ test.describe('video', () => {
         visible: a.getBoundingClientRect().height > 0,
       })),
     )
-    expect(links).toHaveLength(5)
+    expect(links).toHaveLength(6)
     for (const link of links) {
       expect(link.href).toMatch(/^https:\/\/(www\.youtube\.com\/watch\?v=|vimeo\.com\/)/)
       expect(link.visible).toBe(true)

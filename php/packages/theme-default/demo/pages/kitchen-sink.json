@@ -732,7 +732,7 @@
       "slug": "video",
       "seo": {
         "title": "Video",
-        "description": "Videos in the page: YouTube and Vimeo as a facade, the placeholder before consent, a file of the site, posters and ratios."
+        "description": "The Video block: YouTube and Vimeo as a facade, the placeholder before consent, a file of the site, posters, captions and shapes."
       },
       "blocks": [
         {
@@ -740,57 +740,58 @@
           "type": "text",
           "values": {
             "heading": "Video",
-            "body": "A YouTube or Vimeo video is a facade: a poster and a play button, and the player only on a click. Until a visitor agrees to media, the server prints a placeholder in its place — the poster, a line saying where the video loads from, Load and Always load videos — and nothing on this page asks YouTube or Vimeo for anything, the posters included: they are pictures of the site.\nA video of the site is a video element that loads nothing before Play, with no consent to ask for: it is first party."
+            "body": "Every video on this page is the Video block of the widgets but one — a column 20rem wide, which a block cannot stand in. A YouTube or Vimeo video is a facade: a poster and a play button, and the player only on a click. Until a visitor agrees to media, the server prints a placeholder in its place — the poster, a line saying where the video loads from, Load and Always load videos — and nothing on this page asks YouTube or Vimeo for anything, the posters included: they are pictures of the site.\nA video of the site is a video element that loads nothing before Play, with no consent to ask for: it is first party. The line under each video is the block’s caption."
           }
         },
         {
           "key": "showcase-video-youtube-poster",
-          "type": "showcase-video",
+          "type": "video",
           "values": {
-            "note": "The poster is a picture of the media library, picked for the video.",
-            "source": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
+            "heading": "YouTube, a poster from the library",
+            "source": "link",
+            "link": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
             "file": null,
             "poster": {
               "path": "demo:showcase-photo-2",
               "alt": ""
             },
-            "ratio": "",
-            "width": "full",
-            "heading": "YouTube, a poster from the library"
+            "caption": "The poster is a picture of the media library, picked for the video.",
+            "ratio": "16/9"
           }
         },
         {
           "key": "showcase-video-youtube",
-          "type": "showcase-video",
+          "type": "video",
           "values": {
-            "note": "No poster picked: the site fetched the video’s preview once into its library (folder Video posters). The first page that showed it had none.",
-            "source": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+            "heading": "YouTube, no poster",
+            "source": "link",
+            "link": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
             "file": null,
             "poster": null,
-            "ratio": "",
-            "width": "full",
-            "heading": "YouTube, no poster"
+            "caption": "No poster picked: the site fetched the video’s preview once into its library (folder Video posters). The first page that showed it had none.",
+            "ratio": "16/9"
           }
         },
         {
           "key": "showcase-video-vimeo",
-          "type": "showcase-video",
+          "type": "video",
           "values": {
-            "note": "The same with Vimeo, whose preview its oEmbed names.",
-            "source": "https://vimeo.com/1084537",
+            "heading": "Vimeo, no poster",
+            "source": "link",
+            "link": "https://vimeo.com/1084537",
             "file": null,
             "poster": null,
-            "ratio": "",
-            "width": "full",
-            "heading": "Vimeo, no poster"
+            "caption": "The same with Vimeo, whose preview its oEmbed names.",
+            "ratio": "16/9"
           }
         },
         {
           "key": "showcase-video-file",
-          "type": "showcase-video",
+          "type": "video",
           "values": {
-            "note": "A file of the media library with a poster: nothing loads before Play, and there is nothing to agree to.",
-            "source": "",
+            "heading": "A video of the site",
+            "source": "file",
+            "link": "",
             "file": {
               "path": "demo:showcase-clip"
             },
@@ -798,24 +799,23 @@
               "path": "demo:showcase-photo-4",
               "alt": ""
             },
-            "ratio": "",
-            "width": "full",
-            "heading": "A video of the site"
+            "caption": "A file of the media library with a poster: nothing loads before Play, and there is nothing to agree to.",
+            "ratio": "16/9"
           }
         },
         {
           "key": "showcase-video-file-bare",
-          "type": "showcase-video",
+          "type": "video",
           "values": {
-            "note": "Without a poster the frame keeps its place until Play.",
-            "source": "",
+            "heading": "A video of the site, no poster",
+            "source": "file",
+            "link": "",
             "file": {
               "path": "demo:showcase-clip"
             },
             "poster": null,
-            "ratio": "",
-            "width": "full",
-            "heading": "A video of the site, no poster"
+            "caption": "Without a poster the frame keeps its place until Play.",
+            "ratio": "16/9"
           }
         },
         {
@@ -836,18 +836,34 @@
         },
         {
           "key": "showcase-video-ratio",
-          "type": "showcase-video",
+          "type": "video",
           "values": {
-            "note": "ratio=\"4:3\" — the frame has its height before anything loads.",
-            "source": "https://vimeo.com/1084537",
+            "heading": "A ratio of its own",
+            "source": "link",
+            "link": "https://vimeo.com/1084537",
             "file": null,
             "poster": {
               "path": "demo:showcase-photo-5",
               "alt": ""
             },
-            "ratio": "4:3",
-            "width": "full",
-            "heading": "A ratio of its own"
+            "caption": "Shape 4:3 — the frame has its height before anything loads.",
+            "ratio": "4/3"
+          }
+        },
+        {
+          "key": "showcase-video-upright",
+          "type": "video",
+          "values": {
+            "heading": "Upright",
+            "source": "link",
+            "link": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
+            "file": null,
+            "poster": {
+              "path": "demo:showcase-photo-7",
+              "alt": ""
+            },
+            "caption": "Shape 9:16, as a phone films: held to a phone’s width in the middle of the column.",
+            "ratio": "9/16"
           }
         },
         {
@@ -863,7 +879,7 @@
           "type": "text",
           "values": {
             "heading": "For the site",
-            "body": "x-webx-video src=\"https://www.youtube.com/watch?v=…\" :poster=\"$picture\" title=\"…\" — an address of YouTube (watch, youtu.be, shorts, embed, live) or Vimeo (unlisted with its hash too); a start from ?t= or #t= is kept.\nx-webx-video :file=\"$media\" :poster=\"$picture\" ratio=\"4:3\" — a value of a media field, an object with url() or an address; ratio is 16/9 unless told.\nClasses: webx-video, --youtube, --vimeo, --file, __facade, __poster, __play, __consent, __notice, __button, __frame, __player; is-blocked, is-ready, is-playing. Tokens: --webx-video-ratio, --webx-video-bg, --webx-video-radius, --webx-video-play-size, --webx-video-play-bg, --webx-video-play-color, --webx-video-notice-bg, --webx-video-button-bg."
+            "body": "The Video block: a heading, a link or a file (a switch says which), a poster, a caption and a shape — 16:9, 4:3, 1:1 or 9:16. An address of no known provider, a file gone from the library or nothing at all prints nothing.\nx-webx-video src=\"https://www.youtube.com/watch?v=…\" :poster=\"$picture\" title=\"…\" — an address of YouTube (watch, youtu.be, shorts, embed, live) or Vimeo (unlisted with its hash too); a start from ?t= or #t= is kept.\nx-webx-video :file=\"$media\" :poster=\"$picture\" ratio=\"4:3\" — a value of a media field, an object with url() or an address; ratio is 16/9 unless told.\nClasses: webx-video, --youtube, --vimeo, --file, __facade, __poster, __play, __consent, __notice, __button, __frame, __player; is-blocked, is-ready, is-playing. Tokens: --webx-video-ratio, --webx-video-bg, --webx-video-radius, --webx-video-play-size, --webx-video-play-bg, --webx-video-play-color, --webx-video-notice-bg, --webx-video-button-bg."
           }
         }
       ]

@@ -1,7 +1,7 @@
 {
   "slug": "showcase-video",
   "title": "Showcase: video",
-  "description": "One <x-webx-video> — an address of YouTube or Vimeo, or a video of the library — with a poster, a ratio and a narrow column, for the kitchen sink of the default theme. The video block itself comes with the widgets later.",
+  "description": "One <x-webx-video> in a column 20rem wide, for the kitchen sink of the default theme: the Video block of the widgets shows every other case, but a block cannot stand in a narrow column.",
   "icon": null,
   "group": "content",
   "sort": 92,
