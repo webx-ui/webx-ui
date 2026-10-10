@@ -89,6 +89,8 @@
   width: var(--webx-compare-line-width);
   margin-left: calc(var(--webx-compare-line-width) / -2);
   background: var(--webx-compare-line);
+  /* A thin edge of the other colour: the line stays seen on a picture as light or as dark as it. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--webx-compare-knob-color) 35%, transparent);
   pointer-events: none;
 }
 
