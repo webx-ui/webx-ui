@@ -1510,6 +1510,169 @@
           }
         }
       ]
+    },
+    {
+      "title": "Show more",
+      "slug": "show-more",
+      "seo": {
+        "title": "Show more",
+        "description": "Show more over an ordinary pagination: the next page fetched as it is, its items added to the list, the address and the links following; the links of the pages alone, too."
+      },
+      "blocks": [
+        {
+          "key": "showcase-more-intro",
+          "type": "text",
+          "values": {
+            "heading": "Show more",
+            "body": "Each list below is paginated the way ->paginate() does it: 23 cards, six a page. The links of the pages under it are what a page without JavaScript and a search engine get.\nWith JavaScript a button takes their place: it fetches the next page, adds its cards to the list, moves the focus to the first new card and the address to that page. A reload lands on the page last loaded; its links lead back."
+          }
+        },
+        {
+          "key": "showcase-more-covered",
+          "type": "showcase-load-more",
+          "values": {
+            "heading": "The button covers the links",
+            "note": "pages=\"covered\", the default: the links come back only when the next page cannot be loaded.",
+            "pages": "covered"
+          }
+        },
+        {
+          "key": "showcase-more-shown",
+          "type": "showcase-load-more",
+          "values": {
+            "heading": "The button and the links",
+            "note": "pages=\"shown\": the links stay under the button, follow what was loaded and mark the pages already on the screen.",
+            "pages": "shown"
+          }
+        },
+        {
+          "key": "showcase-more-links",
+          "type": "showcase-load-more",
+          "values": {
+            "heading": "The links alone",
+            "note": "<x-webx-pagination>: previous, the numbers around this page with the first and the last, next — no script at all.",
+            "pages": "links"
+          }
+        },
+        {
+          "key": "showcase-more-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Press Show more twice: six cards come each time, the focus lands on the first of them, the address says ?page=3. On the last page the button goes. Reload: the page last loaded, with its links back to the first. Switch JavaScript off: the links of the pages, nothing else."
+          }
+        },
+        {
+          "key": "showcase-more-markup",
+          "type": "text",
+          "values": {
+            "heading": "For a site",
+            "body": "<x-webx-load-more :paginator=\"$articles\"> around the items, or around a list marked data-webx-load-more-list. A module with links of its own puts them in the links slot. <x-webx-pagination :paginator=\"$articles\"> alone is the links without a button."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Notice bar",
+      "slug": "notice-bar",
+      "seo": {
+        "title": "Notice bar",
+        "description": "An announcement bar above the header: named for a screen reader, closed by a button, remembered closed by the version of its words, with no flash on the next page."
+      },
+      "blocks": [
+        {
+          "key": "showcase-notice-a",
+          "type": "showcase-notice",
+          "values": {
+            "text": "Open on Saturdays from November.",
+            "link_label": "The same words on another page",
+            "link_url": "/kitchen-sink/notice-bar/same-words",
+            "note": ""
+          }
+        },
+        {
+          "key": "showcase-notice-intro",
+          "type": "text",
+          "values": {
+            "heading": "Notice bar",
+            "body": "The bar above the header is <x-webx-notice-bar> of the layout. On a site it says the first banner of the place notice; here a block of the page puts its words there, since a banner would stand on every page.\nIt is in the flow above the header and does not stick: scrolled past, the header sticks as it always did."
+          }
+        },
+        {
+          "key": "showcase-notice-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Close the bar and follow its link: the next page has the same words, and the bar is not there — not even for a moment. The page New words has other words: the bar is back. Close it with the keyboard: the next Tab is Skip to content."
+          }
+        },
+        {
+          "key": "showcase-notice-markup",
+          "type": "text",
+          "values": {
+            "heading": "For a site",
+            "body": "<x-webx-notice-bar /> in the layout, before the header. The words are the place notice of the banners, a banner of words only; without the module, the slot. A version of its own: version=\"sale-2026\"."
+          }
+        }
+      ],
+      "children": [
+        {
+          "title": "Same words",
+          "slug": "same-words",
+          "seo": {
+            "title": "Notice bar, the same words",
+            "description": "The announcement bar with the same words as on the page before: closed there, it is not here."
+          },
+          "blocks": [
+            {
+              "key": "showcase-notice-same",
+              "type": "showcase-notice",
+              "values": {
+                "text": "Open on Saturdays from November.",
+                "link_label": "The same words on another page",
+                "link_url": "/kitchen-sink/notice-bar/same-words",
+                "note": ""
+              }
+            },
+            {
+              "key": "showcase-notice-same-text",
+              "type": "text",
+              "values": {
+                "heading": "The same words",
+                "body": "Closed on the page before, the bar is not here: the version of its words is remembered in this browser."
+              }
+            }
+          ]
+        },
+        {
+          "title": "New words",
+          "slug": "new-words",
+          "seo": {
+            "title": "Notice bar, new words",
+            "description": "The announcement bar with other words: a new version, back for everybody who closed the old one."
+          },
+          "blocks": [
+            {
+              "key": "showcase-notice-new",
+              "type": "showcase-notice",
+              "values": {
+                "text": "New words: free delivery until Sunday.",
+                "link_label": "Back to the first",
+                "link_url": "/kitchen-sink/notice-bar",
+                "note": ""
+              }
+            },
+            {
+              "key": "showcase-notice-new-text",
+              "type": "text",
+              "values": {
+                "heading": "New words",
+                "body": "Other words are another version: the bar is back for everybody who closed the old one."
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
