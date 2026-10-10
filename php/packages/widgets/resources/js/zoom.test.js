@@ -249,6 +249,28 @@ describe('fingers', () => {
     expect(swiper.slideTo).toHaveBeenCalledWith(2, 0)
   })
 
+  it('two fingers lifted one after the other leave a picture pinched back as it was', async () => {
+    const root = await mounted()
+    const two = (type, spread) =>
+      touch(root, type, [
+        [100 - spread, 50],
+        [100 + spread, 50],
+      ])
+    two('touchstart', 20)
+    two('touchmove', 60)
+    expect(root.classList.contains('is-zoomed')).toBe(true)
+    two('touchmove', 10)
+    // The first finger up: one is still down.
+    const first = new Event('touchend', { bubbles: true, cancelable: true })
+    Object.defineProperty(first, 'touches', { value: [{ clientX: 110, clientY: 50 }] })
+    Object.defineProperty(first, 'changedTouches', { value: [{ clientX: 90, clientY: 50 }] })
+    root.dispatchEvent(first)
+    expect(root.classList.contains('is-zoomed')).toBe(true)
+    touch(root, 'touchend', [], [[110, 50]])
+    expect(root.classList.contains('is-zoomed')).toBe(false)
+    expect(root.querySelector('.webx-zoom__view').classList.contains('is-active')).toBe(false)
+  })
+
   it('one finger on a picture at its own size is the page’s and the slider’s', async () => {
     const root = await mounted()
     touch(root, 'touchstart', [[50, 50]])

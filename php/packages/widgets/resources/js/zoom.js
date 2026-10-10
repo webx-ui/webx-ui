@@ -306,14 +306,15 @@ export function zoom(root) {
     if (!gesture) return
     const box = frame()
 
-    if (gesture.pinch) {
-      // One finger left: it goes on panning. None: pinched back to its own size, it is as it was.
-      gesture = event.touches[0] ? pan(event.touches[0], box, true) : null
-      if (!gesture && z < 1.05) reset()
-      return
-    }
-
+    // One finger left of two goes on panning; two lifted together are often two events.
+    if (gesture.pinch)
+      gesture = event.touches[0] ? pan(event.touches[0], box, true) : { moved: true }
     if (event.touches[0]) return
+    // The last finger up on a picture pinched back to its own size: it is as it was.
+    if (z < 1.05 && classes.contains('is-zoomed')) {
+      gesture = null
+      return reset()
+    }
     const tap = !gesture.moved && event.type === 'touchend'
     gesture = null
     if (!tap) return
