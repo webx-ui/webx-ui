@@ -125,9 +125,26 @@ moment with its offset, and ticks every second from the clock, so a page from a 
 the end it says `ended`, or goes — with the nearest `[data-webx-countdown-scope]` around it. Without
 JavaScript it is the line "Ends on …" rather than digits standing still.
 
+## Before and after, table of contents
+
+```blade
+<x-webx-compare :before="$old" :after="$new" :start="30" />
+<x-webx-toc>…a long text with h2 and h3…</x-webx-toc>
+```
+
+Before and after lays the after picture over the before one, in the shape the media library
+stored for them, and cuts it at a divider that is a range input: the arrows move it, a screen
+reader hears a slider, a mouse drags it and so does a finger that moves sideways. Without
+JavaScript the two stand side by side with their labels.
+
+A table of contents is made by the server from the finished page — of its slot, of an element by
+id (`for`) or of `<main>` — and the headings get their ids there, so every link works without
+JavaScript. Wide, the list stands beside the text and sticks under the header; narrow, it folds
+into a bar above the text that names the section being read.
+
 ## Blocks
 
-On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers six block
+On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers eight block
 types — `webx:setup` installs them, or `php artisan webx:blocks:offered --install --module=widgets`:
 
 - **Gallery** — pictures of the media library as a grid (as many columns as the column has room
@@ -145,6 +162,10 @@ types — `webx:setup` installs them, or `php artisan webx:blocks:offered --inst
 - **Countdown** — a heading, a line, a date and a time of the site's time zone, and at the end a
   text or nothing: a countdown over with nothing to say is not printed, and goes from the page the
   second it ends.
+- **Before and after** — two pictures of the library, their labels (empty: "Before" and "After" in
+  the page's language), where the divider starts and a caption; one picture alone prints nothing.
+- **Table of contents** — of the whole page, where the block stands, or of a text of its own that
+  the list stands beside (a switch says which); the side, and whether the third level is listed.
 
 Installed once, they belong to the site: change them in the panel, an update never overwrites them.
 
@@ -161,7 +182,8 @@ With `webx-ui/module-audit` every crawled page is also read for what the widgets
 - **Banner off with third parties on the site** (warning) — "Turn the cookie banner on" writes the
   setting of the Cookie tab, which wins over the config.
 - **Lightbox link without the picture size**, **moving slider without a pause button**, **background
-  video without a pause button** (a theme's override that lost it) — warnings; **a counter without
+  video without a pause button**, **before and after without its slider** (a theme's override that
+  lost it), **a table of contents linking to a heading the page does not have** — warnings; **a counter without
   its number** (an override that left it to the script) and **both quick-contact widgets on one
   page** — notices.
 

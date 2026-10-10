@@ -270,9 +270,36 @@ What a long page needs, each loading only where it stands:
   `[data-webx-countdown-scope]` around it (the Countdown block is one). Without JavaScript it is the
   line "Ends on …" rather than digits standing still; with it, that line is what a screen reader hears.
 
+## Before and after, table of contents
+
+```blade
+<x-webx-compare :before="$old" :after="$new" :start="30">Two weeks apart</x-webx-compare>
+
+<x-webx-toc>…a long text with h2 and h3…</x-webx-toc>
+<x-webx-toc for="terms" :depth="2" title="Contents" />
+```
+
+- **Before and after** — `before` and `after` are what `<x-webx-lightbox :image>` takes: a media
+  field's value, an object with `url()`, an address. The frame has the shape of the first picture
+  with sizes (or `ratio`), so nothing below it moves while they load; the after picture lies over
+  the before one, cut at the divider. The divider is an `<input type="range">`: the arrows move it
+  (5%, 1% with Shift, Home and End), a screen reader hears a slider; a mouse drags it, a finger too
+  once it moves sideways — up and down still scrolls the page. Labels are `before-label` and
+  `after-label`, "Before" and "After" in the page's language by default. Without JavaScript the
+  two pictures stand side by side, or one under the other in a narrow column.
+- **Table of contents** — the list is made by the server from the finished page: of the tag's own
+  slot, of the element `for` names (an id, without `#`) or of `<main>`. Headings without an id get
+  one from their words, unique on the page, so every link works without JavaScript and can be
+  shared; an id you gave is kept, a heading with `data-webx-toc-skip` is left out. `depth` 2 lists
+  the `h2`, 3 (the default) the `h3` under them. With a slot, a wide container puts the list beside
+  the text (`side="end"` or `start`), sticky under the header; a narrow one — a phone, a column
+  20rem wide — puts it above, folded into a bar that names the section being read and opens the
+  list. `fold="never"` keeps it open. The section being read is marked `is-current` as the page
+  scrolls.
+
 ## Blocks
 
-On a site with `module-blocks` and `module-media` the package offers six block types — `webx:setup`
+On a site with `module-blocks` and `module-media` the package offers eight block types — `webx:setup`
 installs them, or `php artisan webx:blocks:offered --install --module=widgets`. Installed, they
 belong to the site: an update never overwrites them.
 
@@ -284,6 +311,8 @@ belong to the site: an update never overwrites them.
 | `map`       | heading, the contacts or coordinates with an address, zoom, height             | `<x-webx-map>`             |
 | `counters`  | heading, a number, what stands before and after it, a label each               | `<x-webx-counter>`         |
 | `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide | `<x-webx-countdown>`       |
+| `compare`   | heading, before, after, their labels, where the divider starts, caption        | `<x-webx-compare>`         |
+| `toc`       | title, the whole page or a text of its own (a switch), side, depth             | `<x-webx-toc>`             |
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 
@@ -308,15 +337,17 @@ view promised — a slider that moves needs its pause button, and the audit chec
 With `webx-ui/module-audit` installed, every crawled page is also read for what the widgets
 promise:
 
-| Check                    | Severity | Finds                                                                                         | Fix by a button                                    |
-| ------------------------ | -------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `widgets.before_consent` | error    | a YouTube, Vimeo, Google Maps or OpenStreetMap iframe, a known counter or pixel asked at once | pasted into content: rewritten to wait for consent |
-| `widgets.banner_off`     | warning  | the banner off while something third-party is on the site                                     | turns the banner on                                |
-| `widgets.lightbox_size`  | warning  | a lightbox link without `data-width` / `data-height`                                          | —                                                  |
-| `widgets.slider_pause`   | warning  | a slider that moves with no pause button — a theme's override that lost it                    | —                                                  |
-| `widgets.video_pause`    | warning  | a background video with no pause button — an override that lost it                            | —                                                  |
-| `widgets.counter_number` | notice   | a counter whose markup does not hold its number — an override that left it to the script      | —                                                  |
-| `widgets.contact_both`   | notice   | the quick-contact button and the bottom bar on one page                                       | —                                                  |
+| Check                    | Severity | Finds                                                                                              | Fix by a button                                    |
+| ------------------------ | -------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `widgets.before_consent` | error    | a YouTube, Vimeo, Google Maps or OpenStreetMap iframe, a known counter or pixel asked at once      | pasted into content: rewritten to wait for consent |
+| `widgets.banner_off`     | warning  | the banner off while something third-party is on the site                                          | turns the banner on                                |
+| `widgets.lightbox_size`  | warning  | a lightbox link without `data-width` / `data-height`                                               | —                                                  |
+| `widgets.slider_pause`   | warning  | a slider that moves with no pause button — a theme's override that lost it                         | —                                                  |
+| `widgets.video_pause`    | warning  | a background video with no pause button — an override that lost it                                 | —                                                  |
+| `widgets.counter_number` | notice   | a counter whose markup does not hold its number — an override that left it to the script           | —                                                  |
+| `widgets.compare_range`  | warning  | before and after without its range input — an override that lost it: no keyboard, no screen reader | —                                                  |
+| `widgets.toc_target`     | warning  | a link of a table of contents to an id the page does not have                                      | —                                                  |
+| `widgets.contact_both`   | notice   | the quick-contact button and the bottom bar on one page                                            | —                                                  |
 
 "Pasted into content" means a text block, a page's body or any field a module hands to the audit:
 the fix finds the code there and rewrites it — an iframe's `src` becomes `data-src`, a script
@@ -330,6 +361,6 @@ third party the audit does not know is added in `webx-widgets.audit.third-party`
 `theme-default` brings a showcase, seeded by `php artisan webx:demo` and removed with it: under
 **Kitchen sink** a page per widget — Header and menu, Cookie consent, Dropdown and form in a
 dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map, Page tools, Background video,
-Counters and countdown — with every variant, a narrow
+Counters and countdown, Before and after, Table of contents — with every variant, a narrow
 column, what to try and the markup to copy. It is the place to look at a change in the theme
 before a real page does, and the pages the starter site's browser tests measure.
