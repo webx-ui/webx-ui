@@ -1673,6 +1673,103 @@
           ]
         }
       ]
+    },
+    {
+      "title": "Zoom",
+      "slug": "zoom",
+      "seo": {
+        "title": "Zoom",
+        "description": "The zoom of a picture: magnified under the mouse inside its frame or beside it, pinched with two fingers, and opened over the page by a click or a key."
+      },
+      "blocks": [
+        {
+          "key": "showcase-zoom-intro",
+          "type": "text",
+          "values": {
+            "heading": "Zoom",
+            "body": "A picture whose details matter — a product, a fabric, a plan. With a mouse, hover it: the picture comes closer inside its own frame, following the cursor, or a lens on it shows the magnified part in a panel beside it, where the column has room for one. On a phone, pinch with two fingers and move about; double tap for twice the size and back. One finger still scrolls the page and swipes a slider.\nA click, a tap or Enter opens the picture over the page, as a lightbox, for a keyboard and a screen reader too. The large picture is the original of the media library, fetched only when someone looks closer. Without JavaScript the picture is a link to the original."
+          }
+        },
+        {
+          "key": "showcase-zoom-product",
+          "type": "showcase-zoom",
+          "values": {
+            "heading": "Beside the picture",
+            "note": "A product page: the panel opens over the text column. On a phone the text goes under the picture, there is no room beside it, and the picture is magnified in its own frame.",
+            "picture": {
+              "path": "demo:showcase-zoom",
+              "alt": "A watch on a grid, a label of small print and a ruler"
+            },
+            "shown": {
+              "path": "demo:showcase-zoom-small",
+              "alt": ""
+            },
+            "layout": "product",
+            "mode": "side"
+          }
+        },
+        {
+          "key": "showcase-zoom-gallery",
+          "type": "gallery",
+          "values": {
+            "heading": "A gallery slider",
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-1",
+                "alt": "Photo 1",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-2",
+                "alt": "Photo 2",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-3",
+                "alt": "Photo 3",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-4",
+                "alt": "Photo 4",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-6",
+                "alt": "Photo 6",
+                "title": ""
+              }
+            ],
+            "view": "slider",
+            "columns": 3,
+            "zoom": true,
+            "magnify": "inner"
+          }
+        },
+        {
+          "key": "showcase-zoom-narrow",
+          "type": "showcase-zoom",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "Asked to magnify beside, but the column has no room beside the picture: inside its frame then.",
+            "picture": {
+              "path": "demo:showcase-zoom",
+              "alt": "A watch on a grid"
+            },
+            "shown": {
+              "path": "demo:showcase-zoom-small",
+              "alt": ""
+            },
+            "layout": "narrow",
+            "mode": "side"
+          }
+        }
+      ]
     }
   ]
 }
