@@ -1,0 +1,40 @@
+{
+  "slug": "showcase-toc",
+  "title": "Showcase: a table of contents in a column",
+  "description": "A table of contents beside its text in a column 20rem wide, folded as on a phone, for the kitchen sink of the default theme: the Table of contents block shows every other case.",
+  "icon": null,
+  "group": "content",
+  "sort": 98,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "body",
+      "type": "wx-rich-text",
+      "label": "Text"
+    }
+  ],
+  "template": "<section class=\"b-showcase-toc\" data-wx-block=\"showcase-toc\">\n    @if ($heading)\n        <p class=\"b-showcase-toc__heading\">{{ $heading }}</p>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-toc__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-toc__frame\">\n        @if (is_string($body) && trim($body) !== '')\n            <x-webx-toc title=\"In this column\">{!! $body !!}</x-webx-toc>\n        @endif\n    </div>\n</section>\n",
+  "styles": ".b-showcase-toc {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-toc__heading {\n    margin: 0 0 var(--site-space-2);\n    font-size: var(--site-font-size-4);\n    font-weight: 700;\n}\n\n.b-showcase-toc__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-toc__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "A table of contents in a column",
+    "note": "",
+    "body": "<h2>One</h2><p>A paragraph.</p>"
+  }
+}

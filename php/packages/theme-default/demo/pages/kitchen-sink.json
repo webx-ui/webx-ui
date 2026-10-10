@@ -1370,6 +1370,146 @@
           }
         }
       ]
+    },
+    {
+      "title": "Before and after",
+      "slug": "before-and-after",
+      "seo": {
+        "title": "Before and after",
+        "description": "The Before and after block: two pictures of the media library and a divider moved by a mouse, a finger and the arrow keys."
+      },
+      "blocks": [
+        {
+          "key": "showcase-compare-intro",
+          "type": "text",
+          "values": {
+            "heading": "Before and after",
+            "body": "Two pictures of one thing, the after one over the before one, and a divider between them. Drag it with a mouse or a finger — a finger that moves up and down still scrolls the page — or focus it with Tab and use the arrows: 5% a press, 1% with Shift, Home and End for the ends.\nThe frame has the shape of the pictures before they load, from the sizes the media library stored at upload, so nothing below it moves. Without JavaScript the two pictures stand side by side, each under its label, and one under the other in a narrow column."
+          }
+        },
+        {
+          "key": "showcase-compare-room",
+          "type": "compare",
+          "values": {
+            "heading": "A living room",
+            "before": {
+              "path": "demo:showcase-before",
+              "alt": "The living room before: grey walls, a crack, an old sofa"
+            },
+            "after": {
+              "path": "demo:showcase-after",
+              "alt": "The living room after: warm walls, a picture, a plant"
+            },
+            "before_label": "",
+            "after_label": "",
+            "start": 50,
+            "caption": "The Before and after block, its labels in the language of the page."
+          }
+        },
+        {
+          "key": "showcase-compare-start",
+          "type": "compare",
+          "values": {
+            "heading": "Labels of its own, the divider at a quarter",
+            "before": {
+              "path": "demo:showcase-photo-3",
+              "alt": "Photo 3"
+            },
+            "after": {
+              "path": "demo:showcase-photo-4",
+              "alt": "Photo 4"
+            },
+            "before_label": "2019",
+            "after_label": "2026",
+            "start": 25,
+            "caption": ""
+          }
+        },
+        {
+          "key": "showcase-compare-narrow",
+          "type": "showcase-compare",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "The labels move closer to the corners; without JavaScript the pictures stand one under the other.",
+            "before": {
+              "path": "demo:showcase-before",
+              "alt": "The living room before"
+            },
+            "after": {
+              "path": "demo:showcase-after",
+              "alt": "The living room after"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Table of contents",
+      "slug": "table-of-contents",
+      "seo": {
+        "title": "Table of contents",
+        "description": "The Table of contents block: the sections of the whole page where it stands, or of a text of its own beside it, sticky under the header."
+      },
+      "blocks": [
+        {
+          "key": "showcase-toc-page",
+          "type": "toc",
+          "values": {
+            "heading": "",
+            "source": "page",
+            "body": "",
+            "side": "end",
+            "depth": "2"
+          }
+        },
+        {
+          "key": "showcase-toc-intro",
+          "type": "text",
+          "values": {
+            "heading": "Of the whole page",
+            "body": "The list above is a Table of contents block at the top of the page: it lists every heading of the second level on the page, whichever block printed it. The server gives each heading an id from its words, so the links work without JavaScript and a link to a section can be shared.\nOn a wide screen it is an open list; in a narrow container it folds into one line that names the section being read and opens the list."
+          }
+        },
+        {
+          "key": "showcase-toc-policy",
+          "type": "toc",
+          "values": {
+            "heading": "In this policy",
+            "source": "text",
+            "body": "<h2>Who we are</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><h3>Our address</h3><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>What we collect</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h3>When you write to us</h3><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><h3>When you browse</h3><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>Cookies</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><h2>How long we keep it</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>Who else sees it</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><h3>Services we use</h3><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>Your rights</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>Changes to this policy</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p>",
+            "side": "end",
+            "depth": "3"
+          }
+        },
+        {
+          "key": "showcase-toc-start",
+          "type": "toc",
+          "values": {
+            "heading": "",
+            "source": "text",
+            "body": "<h2>Prices</h2><p>What a visit costs and what it includes.</p><h2>Booking</h2><p>How to book, change or cancel a visit.</p><h2>Payment</h2><p>Cards, transfers, and when to pay.</p>",
+            "side": "start",
+            "depth": "2"
+          }
+        },
+        {
+          "key": "showcase-toc-narrow",
+          "type": "showcase-toc",
+          "values": {
+            "heading": "Beside a text in a narrow column",
+            "note": "A column 20rem wide folds the list as a phone does: the width is the container’s, not the window’s.",
+            "body": "<h2>Prices</h2><p>What a visit costs and what it includes.</p><h2>Booking</h2><p>How to book, change or cancel a visit.</p><h2>Payment</h2><p>Cards, transfers, and when to pay.</p>"
+          }
+        },
+        {
+          "key": "showcase-toc-end",
+          "type": "text",
+          "values": {
+            "heading": "Below the texts",
+            "body": "A heading the block on top lists too: the end of the page. Scroll here and the list on top, and the one beside the policy, have moved on with you."
+          }
+        }
+      ]
     }
   ]
 }

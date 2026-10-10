@@ -1,0 +1,52 @@
+{
+  "slug": "showcase-compare",
+  "title": "Showcase: before and after in a column",
+  "description": "Before and after in a column 20rem wide, for the kitchen sink of the default theme: the Before and after block shows every other case.",
+  "icon": null,
+  "group": "content",
+  "sort": 97,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "before",
+      "type": "wx-media",
+      "label": "Before",
+      "props": {
+        "accept": "image"
+      }
+    },
+    {
+      "id": "after",
+      "type": "wx-media",
+      "label": "After",
+      "props": {
+        "accept": "image"
+      }
+    }
+  ],
+  "template": "<section class=\"b-showcase-compare\" data-wx-block=\"showcase-compare\">\n    @if ($heading)\n        <h2 class=\"b-showcase-compare__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-compare__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-compare__frame\">\n        @if (is_array($before) && ! empty($before['url']) && is_array($after) && ! empty($after['url']))\n            <x-webx-compare :before=\"$before\" :after=\"$after\">A column 20rem wide</x-webx-compare>\n        @endif\n    </div>\n</section>\n",
+  "styles": ".b-showcase-compare {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-compare__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-compare__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-compare__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Before and after",
+    "note": "",
+    "before": null,
+    "after": null
+  }
+}
