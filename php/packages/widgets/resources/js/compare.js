@@ -46,7 +46,12 @@ export function compare(root) {
   // The arrows go on from where the pointer left the divider; the frame is no tab stop of its own.
   const grab = (event) => {
     range.focus({ preventScroll: true })
-    frame.setPointerCapture?.(event.pointerId)
+    try {
+      // The drag goes on outside the frame; a pointer already gone cannot be captured.
+      frame.setPointerCapture?.(event.pointerId)
+    } catch {
+      // Followed for as long as it stays over the frame.
+    }
     root.classList.add('is-dragging')
   }
 
