@@ -1516,7 +1516,7 @@
       "slug": "show-more",
       "seo": {
         "title": "Show more",
-        "description": "Show more over an ordinary pagination: the next page fetched as it is, its items added to the list, the address and the links following; the links of the pages alone, too."
+        "description": "Show more over an ordinary pagination: the next page added to the list, the address and the links following it."
       },
       "blocks": [
         {
@@ -1577,7 +1577,7 @@
       "slug": "notice-bar",
       "seo": {
         "title": "Notice bar",
-        "description": "An announcement bar above the header: named for a screen reader, closed by a button, remembered closed by the version of its words, with no flash on the next page."
+        "description": "An announcement bar above the header: closed by a button, remembered by the version of its words, no flash."
       },
       "blocks": [
         {

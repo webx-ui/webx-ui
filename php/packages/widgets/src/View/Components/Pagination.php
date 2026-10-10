@@ -27,6 +27,7 @@ final class Pagination extends Component
 
     public ?int $last;
 
+    /** @param  Paginator<array-key, mixed>  $paginator */
     public function __construct(
         public Paginator $paginator,
         public int $around = 2,
