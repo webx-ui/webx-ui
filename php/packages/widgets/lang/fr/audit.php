@@ -13,6 +13,7 @@ return [
     'compare-range' => 'Avant/après sans curseur : :count',
     'toc-target' => 'Table des matières qui ne mène nulle part : :count',
     'load-more-link' => '« Afficher plus » sans lien vers la page suivante : :count',
+    'zoom-link' => 'Zoom sans lien : :count',
     'on' => 'Activé',
     'off' => 'Désactivé',
 ];

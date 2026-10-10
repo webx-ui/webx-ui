@@ -64,5 +64,11 @@ return [
             'why' => 'Search engines do not press buttons, and a page without JavaScript cannot either: the items past the first page are not found.',
             'fix' => 'The package prints the links of the pages under the list and the button only covers them: a theme’s override of webx-widgets::components.load-more, or an empty links slot, lost them. Put them back, or remove the override.',
         ],
+        'zoom_link' => [
+            'title' => 'Zoom without a link',
+            'found' => 'A picture magnified under the mouse is no link and holds none: a keyboard cannot open it.',
+            'why' => 'A keyboard and a screen reader have no hover: the link to the picture, opened in the lightbox, is their only way to see it closer.',
+            'fix' => 'The package’s view makes the picture a link to the original: a theme’s override of webx-widgets::components.zoom lost it, or data-webx-zoom was written on a bare picture. Put the attribute on the picture’s lightbox link, or remove the override.',
+        ],
     ],
 ];

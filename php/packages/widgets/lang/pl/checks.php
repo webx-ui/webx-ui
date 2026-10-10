@@ -64,5 +64,11 @@ return [
             'why' => 'Wyszukiwarki nie naciskają przycisków, strona bez JavaScriptu też nie: to, co jest za pierwszą stroną, nie zostaje znalezione.',
             'fix' => 'Pakiet drukuje linki do stron pod listą, a przycisk tylko je zasłania: nadpisanie webx-widgets::components.load-more w motywie lub pusty slot links je zgubiło. Przywróć je albo usuń nadpisanie.',
         ],
+        'zoom_link' => [
+            'title' => 'Powiększenie bez linku',
+            'found' => 'Obraz powiększany pod myszą nie jest linkiem i nie zawiera linku: klawiatura nie może go otworzyć.',
+            'why' => 'Klawiatura i czytnik ekranu nie mają najechania: link do obrazu, otwarty w przeglądarce zdjęć, to ich jedyny sposób, by obejrzeć go z bliska.',
+            'fix' => 'Widok pakietu robi z obrazu link do oryginału: nadpisanie webx-widgets::components.zoom w motywie go zgubiło albo data-webx-zoom napisano na gołym obrazie. Umieść atrybut na linku przeglądarki zdjęć albo usuń nadpisanie.',
+        ],
     ],
 ];

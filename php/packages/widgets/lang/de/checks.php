@@ -64,5 +64,11 @@ return [
             'why' => 'Suchmaschinen drücken keine Buttons, und eine Seite ohne JavaScript kann es auch nicht: Was nach der ersten Seite kommt, wird nicht gefunden.',
             'fix' => 'Das Paket druckt die Links zu den Seiten unter der Liste, der Button verdeckt sie nur: Eine Überschreibung von webx-widgets::components.load-more im Theme oder ein leerer links-Slot hat sie verloren. Setzen Sie sie zurück oder entfernen Sie die Überschreibung.',
         ],
+        'zoom_link' => [
+            'title' => 'Zoom ohne Link',
+            'found' => 'Ein Bild, das unter der Maus vergrößert wird, ist kein Link und enthält keinen: Mit der Tastatur lässt es sich nicht öffnen.',
+            'why' => 'Tastatur und Screenreader kennen kein Überfahren: Der Link zum Bild, in der Bildansicht geöffnet, ist ihr einziger Weg, es näher zu sehen.',
+            'fix' => 'Die Ansicht des Pakets macht das Bild zu einem Link auf das Original: Eine Überschreibung von webx-widgets::components.zoom im Theme hat ihn verloren, oder data-webx-zoom steht auf einem nackten Bild. Setzen Sie das Attribut auf den Lightbox-Link des Bildes oder entfernen Sie die Überschreibung.',
+        ],
     ],
 ];

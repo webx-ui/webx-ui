@@ -64,5 +64,11 @@ return [
             'why' => 'Os motores de busca não carregam em botões, e uma página sem JavaScript também não: o que vem depois da primeira página não é encontrado.',
             'fix' => 'O pacote imprime as ligações das páginas por baixo da lista e o botão apenas as cobre: uma substituição de webx-widgets::components.load-more no tema, ou um slot links vazio, perdeu-as. Reponha-as ou retire a substituição.',
         ],
+        'zoom_link' => [
+            'title' => 'Zoom sem ligação',
+            'found' => 'Uma imagem ampliada sob o rato não é uma ligação nem contém uma: o teclado não a consegue abrir.',
+            'why' => 'O teclado e os leitores de ecrã não têm passagem do rato: a ligação para a imagem, aberta no visualizador, é a sua única forma de a ver de perto.',
+            'fix' => 'A vista do pacote faz da imagem uma ligação para o original: uma substituição de webx-widgets::components.zoom no tema perdeu-a, ou data-webx-zoom foi escrito numa imagem sem ligação. Ponha o atributo na ligação do visualizador ou retire a substituição.',
+        ],
     ],
 ];

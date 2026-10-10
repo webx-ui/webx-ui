@@ -13,6 +13,7 @@ return [
     'compare-range' => 'Antes e depois sem controle deslizante: :count',
     'toc-target' => 'Índice que não leva a lado nenhum: :count',
     'load-more-link' => '«Mostrar mais» sem ligação para a página seguinte: :count',
+    'zoom-link' => 'Zoom sem ligação: :count',
     'on' => 'Ligado',
     'off' => 'Desligado',
 ];

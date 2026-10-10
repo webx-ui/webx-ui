@@ -35,6 +35,7 @@ use WebxUi\Widgets\Audit\TocTarget;
 use WebxUi\Widgets\Audit\VideoPause;
 use WebxUi\Widgets\Audit\WaitForConsent;
 use WebxUi\Widgets\Audit\WidgetsPageReader;
+use WebxUi\Widgets\Audit\ZoomLink;
 use WebxUi\Widgets\Video\Posters;
 use WebxUi\Widgets\Video\VideoProviders;
 use WebxUi\Widgets\View\Components\BackToTop;
@@ -252,7 +253,7 @@ class WidgetsServiceProvider extends ServiceProvider
 
         $checks = $this->app->make(AuditChecks::class);
 
-        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth, new VideoPause, new CounterNumber, new CompareRange, new TocTarget, new LoadMoreLink] as $check) {
+        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth, new VideoPause, new CounterNumber, new CompareRange, new TocTarget, new LoadMoreLink, new ZoomLink] as $check) {
             $checks->register($check);
         }
 

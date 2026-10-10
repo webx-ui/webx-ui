@@ -64,5 +64,11 @@ return [
             'why' => 'Arama motorları düğmelere basmaz, JavaScript olmayan bir sayfa da basamaz: ilk sayfadan sonrakiler bulunmaz.',
             'fix' => 'Paket sayfa bağlantılarını listenin altına basar, düğme yalnızca onları örter: temadaki webx-widgets::components.load-more geçersiz kılması ya da boş bir links yuvası onları kaybetti. Geri koyun ya da geçersiz kılmayı kaldırın.',
         ],
+        'zoom_link' => [
+            'title' => 'Bağlantısız yakınlaştırma',
+            'found' => 'Fareyle büyütülen bir görsel bağlantı değil ve bağlantı içermiyor: klavye onu açamaz.',
+            'why' => 'Klavye ve ekran okuyucuların üzerine gelme hareketi yoktur: görsele giden ve görüntüleyicide açılan bağlantı, onu yakından görmenin tek yoludur.',
+            'fix' => 'Paketin görünümü görseli orijinale bağlantı yapar: temadaki webx-widgets::components.zoom geçersiz kılması bunu kaybetti ya da data-webx-zoom çıplak bir görsele yazıldı. Özniteliği görselin görüntüleyici bağlantısına koyun veya geçersiz kılmayı kaldırın.',
+        ],
     ],
 ];

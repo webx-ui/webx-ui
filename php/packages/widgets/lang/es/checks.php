@@ -64,5 +64,11 @@ return [
             'why' => 'Los buscadores no pulsan botones, y una página sin JavaScript tampoco: lo que viene después de la primera página no se encuentra.',
             'fix' => 'El paquete imprime los enlaces de las páginas bajo la lista y el botón solo los tapa: una sobrescritura de webx-widgets::components.load-more en el tema, o un slot links vacío, los perdió. Vuelva a ponerlos o quite la sobrescritura.',
         ],
+        'zoom_link' => [
+            'title' => 'Zoom sin enlace',
+            'found' => 'Una imagen que se amplía bajo el ratón no es un enlace ni contiene uno: el teclado no puede abrirla.',
+            'why' => 'El teclado y los lectores de pantalla no tienen paso del ratón: el enlace a la imagen, abierto en el visor, es su única forma de verla de cerca.',
+            'fix' => 'La vista del paquete convierte la imagen en un enlace al original: una sobrescritura de webx-widgets::components.zoom en el tema lo perdió, o data-webx-zoom está en una imagen sin enlace. Ponga el atributo en el enlace del visor de la imagen o quite la sobrescritura.',
+        ],
     ],
 ];

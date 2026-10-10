@@ -13,6 +13,7 @@ return [
     'compare-range' => 'Prima e dopo senza cursore: :count',
     'toc-target' => 'Indice che non porta da nessuna parte: :count',
     'load-more-link' => '«Mostra altro» senza link alla pagina successiva: :count',
+    'zoom-link' => 'Zoom senza link: :count',
     'on' => 'Acceso',
     'off' => 'Spento',
 ];

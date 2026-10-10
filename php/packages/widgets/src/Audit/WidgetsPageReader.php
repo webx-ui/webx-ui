@@ -24,6 +24,7 @@ use WebxUi\Audit\Crawl\PageParser;
  *     compare_rangeless  before and after without its range input: no keyboard, no screen reader
  *     toc_dangling       a link of a table of contents to a section the page does not have
  *     load_more_linkless "Show more" with a next page and no link to it: a button only
+ *     zoom_linkless      a zoom that is no link and holds none: no keyboard, no screen reader
  *     contact_both       the quick-contact button and the bottom bar on one page
  *
  * Only what is there: a page with none of it stores nothing.
@@ -52,6 +53,7 @@ final class WidgetsPageReader implements AuditPageReader
             'compare_rangeless' => $this->rangeless($document),
             'toc_dangling' => $this->dangling($document),
             'load_more_linkless' => $this->linkless($document, $url),
+            'zoom_linkless' => $this->unlinked($document),
         ]);
 
         if ($document->querySelector('.webx-contact-button') !== null && $document->querySelector('.webx-contact-bar') !== null) {
@@ -265,6 +267,31 @@ final class WidgetsPageReader implements AuditPageReader
 
             if (count($found['markup']) < self::EXCERPTS) {
                 $found['markup'][] = self::opening($compare);
+            }
+        }
+
+        return $found['count'] === 0 ? [] : $found;
+    }
+
+    /**
+     * Zooms a keyboard cannot reach: `data-webx-zoom` on an element that is no link to the
+     * picture and holds none — the lightbox is their way in (§14).
+     *
+     * @return array{count: int, markup: list<string>}|array{}
+     */
+    private function unlinked(HTMLDocument $document): array
+    {
+        $found = ['count' => 0, 'markup' => []];
+
+        foreach ($document->querySelectorAll('[data-webx-zoom]') as $zoom) {
+            if ($zoom->matches('a[href]') || $zoom->querySelector('a[href]') !== null) {
+                continue;
+            }
+
+            $found['count']++;
+
+            if (count($found['markup']) < self::EXCERPTS) {
+                $found['markup'][] = self::opening($zoom);
             }
         }
 

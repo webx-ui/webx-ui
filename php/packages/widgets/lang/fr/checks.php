@@ -64,5 +64,11 @@ return [
             'why' => 'Les moteurs de recherche n’appuient pas sur les boutons, et une page sans JavaScript non plus : ce qui suit la première page n’est pas trouvé.',
             'fix' => 'Le paquet imprime les liens des pages sous la liste et le bouton ne fait que les couvrir : une surcharge de webx-widgets::components.load-more dans le thème, ou un slot links vide, les a perdus. Remettez-les, ou retirez la surcharge.',
         ],
+        'zoom_link' => [
+            'title' => 'Zoom sans lien',
+            'found' => 'Une image agrandie sous la souris n’est pas un lien et n’en contient pas : le clavier ne peut pas l’ouvrir.',
+            'why' => 'Le clavier et les lecteurs d’écran n’ont pas de survol : le lien vers l’image, ouvert dans la visionneuse, est leur seul moyen de la voir de plus près.',
+            'fix' => 'La vue du paquet fait de l’image un lien vers l’original : une surcharge de webx-widgets::components.zoom dans le thème l’a perdu, ou data-webx-zoom est écrit sur une image nue. Placez l’attribut sur le lien de visionneuse de l’image, ou retirez la surcharge.',
+        ],
     ],
 ];

@@ -13,6 +13,7 @@ return [
     'compare-range' => 'Vorher-nachher ohne Schieberegler: :count',
     'toc-target' => 'Inhaltsverzeichnis führt ins Leere: :count',
     'load-more-link' => '„Mehr anzeigen“ ohne Link zur nächsten Seite: :count',
+    'zoom-link' => 'Zoom ohne Link: :count',
     'on' => 'An',
     'off' => 'Aus',
 ];

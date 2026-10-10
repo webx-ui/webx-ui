@@ -163,6 +163,13 @@ final class AuditTest extends TestCase
         $this->assertStringStartsWith('<div class="webx-load-more" id="buttoned"', (string) $more->details['table']['rows'][0]['markup']);
         $this->assertSame('Show more without a link to the next page: 1', __($more->details['summary']['key'], $more->details['summary']['params']));
 
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.zoom_link')), 'a link, or a link inside, is the way in');
+        $zoom = AuditIssue::query()->where('check', 'widgets.zoom_link')->firstOrFail();
+        $this->assertSame('warning', $zoom->severity);
+        $this->assertSame(['count' => 1], $zoom->details['summary']['params']);
+        $this->assertStringStartsWith('<div class="slide" id="unlinked"', (string) $zoom->details['table']['rows'][0]['markup']);
+        $this->assertSame('Zoom without a link: 1', __($zoom->details['summary']['key'], $zoom->details['summary']['params']));
+
         // What the reader keeps of a page: only what is there.
         $home = AuditPage::query()->where('url', self::BASE.'/')->firstOrFail();
         $this->assertSame(['waits' => ['media' => 2, 'statistics' => 1]], $home->fact('widgets'));
@@ -353,7 +360,8 @@ final class AuditTest extends TestCase
                 .'<figure class="webx-compare" id="bare" data-webx-compare><div class="webx-compare__frame"></div></figure>'
                 .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#intro">Intro</a><a class="webx-toc__link" href="#gone">Gone</a></nav><h2 id="intro">Intro</h2></div>'
                 // Show more whose links an override lost: a button and nothing a crawler follows.
-                .'<div class="webx-load-more" id="buttoned" data-webx-load-more="page" data-next="/slider?page=2"><div data-webx-load-more-list><p>1</p></div><a href="/slider?page=3">3</a><button type="button">Show more</button></div>'),
+                .'<div class="webx-load-more" id="buttoned" data-webx-load-more="page" data-next="/slider?page=2"><div data-webx-load-more-list><p>1</p></div><a href="/slider?page=3">3</a><button type="button">Show more</button></div>'
+                .'<div class="slide" id="unlinked" data-webx-zoom="/big.jpg"><img src="/small.jpg" alt=""></div><a href="/big.jpg" data-webx-zoom data-webx-lightbox="g" data-width="1800" data-height="1200"><img src="/big.jpg" alt=""></a><figure data-webx-zoom><a href="/big.jpg"><img src="/big.jpg" alt=""></a></figure>'),
             '/contacts' => $page('Contacts', '<div class="webx-contact-button"></div><div class="webx-contact-bar"></div>'),
             '/plain' => $page('Plain', '<p>Nothing of the widgets here.</p>'),
         ];

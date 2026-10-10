@@ -64,5 +64,11 @@ return [
             'why' => 'I motori di ricerca non premono pulsanti, e nemmeno una pagina senza JavaScript: ciò che segue la prima pagina non viene trovato.',
             'fix' => 'Il pacchetto stampa i link delle pagine sotto l’elenco e il pulsante li copre soltanto: una sovrascrittura di webx-widgets::components.load-more nel tema, o uno slot links vuoto, li ha persi. Rimetteteli o togliete la sovrascrittura.',
         ],
+        'zoom_link' => [
+            'title' => 'Zoom senza link',
+            'found' => 'Un’immagine ingrandita sotto il mouse non è un link e non ne contiene: la tastiera non può aprirla.',
+            'why' => 'Tastiera e screen reader non hanno il passaggio del mouse: il link all’immagine, aperto nel visualizzatore, è il loro unico modo per vederla da vicino.',
+            'fix' => 'La vista del pacchetto rende l’immagine un link all’originale: una sovrascrittura di webx-widgets::components.zoom nel tema l’ha perso, oppure data-webx-zoom è scritto su un’immagine senza link. Mettete l’attributo sul link del visualizzatore o togliete la sovrascrittura.',
+        ],
     ],
 ];

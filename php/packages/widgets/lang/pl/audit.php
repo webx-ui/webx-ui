@@ -13,6 +13,7 @@ return [
     'compare-range' => 'Przed i po bez suwaka: :count',
     'toc-target' => 'Spis treści prowadzi donikąd: :count',
     'load-more-link' => '„Pokaż więcej” bez linku do następnej strony: :count',
+    'zoom-link' => 'Powiększenie bez linku: :count',
     'on' => 'Wł.',
     'off' => 'Wył.',
 ];

@@ -13,6 +13,7 @@ return [
     'compare-range' => 'Kaydırıcısız önce ve sonra: :count',
     'toc-target' => 'Hiçbir yere gitmeyen içindekiler: :count',
     'load-more-link' => 'Sonraki sayfaya bağlantısı olmayan “Daha fazla göster”: :count',
+    'zoom-link' => 'Bağlantısız yakınlaştırma: :count',
     'on' => 'Açık',
     'off' => 'Kapalı',
 ];
