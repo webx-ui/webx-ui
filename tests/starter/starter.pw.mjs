@@ -3743,3 +3743,356 @@ test.describe('notice bar', () => {
     }
   })
 })
+
+test.describe('zoom', () => {
+  const PATH = '/kitchen-sink/zoom'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  async function open(browser, width, context = {}) {
+    const made = await browser.newContext({
+      viewport: { width, height: width === 375 ? 812 : 900 },
+      ...context,
+    })
+    await made.addCookies([answered])
+    const page = await made.newPage()
+    await page.goto(PATH)
+    if (context.javaScriptEnabled !== false) await still(page)
+    return { context: made, page }
+  }
+
+  // The zoom of a block: its picture, the view over it, the lens, the panel and where the large
+  // picture stands — all as the screen has them.
+  const state = (root) =>
+    root.evaluate((el) => {
+      const rect = (node) => {
+        if (!node) return null
+        const r = node.getBoundingClientRect()
+        const style = getComputedStyle(node)
+        return {
+          left: r.left,
+          top: r.top,
+          right: r.right,
+          bottom: r.bottom,
+          width: r.width,
+          height: r.height,
+          shown: style.display !== 'none' && Number(style.opacity) > 0,
+        }
+      }
+      const panel = document.querySelector('.webx-zoom__panel')
+      return {
+        classes: el.className,
+        picture: rect(el.querySelector('.webx-zoom__picture, img')),
+        view: rect(el.querySelector('.webx-zoom__view')),
+        large: rect(el.querySelector('.webx-zoom__view .webx-zoom__large')),
+        lens: rect(el.querySelector('.webx-zoom__lens')),
+        panel: rect(panel),
+        panelLarge: rect(panel?.querySelector('.webx-zoom__large')),
+        src: el.querySelector('.webx-zoom__view .webx-zoom__large')?.currentSrc ?? null,
+        window: document.documentElement.clientWidth,
+      }
+    })
+
+  test('a mouse magnifies inside the frame, the point under the cursor staying under it', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280)
+    const root = page.locator('[data-wx-block="gallery"] [data-webx-zoom]').first()
+    await root.scrollIntoViewIfNeeded()
+    const box = await root.locator('img').first().boundingBox()
+
+    for (const [fx, fy] of [
+      [0.3, 0.4],
+      [0.75, 0.6],
+    ]) {
+      const x = box.x + box.width * fx
+      const y = box.y + box.height * fy
+      await page.mouse.move(x, y, { steps: 3 })
+      const s = await state(root)
+      expect(s.classes).toContain('is-active')
+      expect(s.view.shown, 'the view over the picture').toBe(true)
+      expect(
+        Math.abs(s.view.left - s.picture.left) + Math.abs(s.view.width - s.picture.width),
+      ).toBeLessThan(1)
+      expect(s.large.width / s.picture.width, 'the scale').toBeCloseTo(2.5, 1)
+      // The same point of the picture under the cursor, at its size and magnified.
+      expect((x - s.large.left) / s.large.width).toBeCloseTo(
+        (x - s.picture.left) / s.picture.width,
+        2,
+      )
+      expect((y - s.large.top) / s.large.height).toBeCloseTo(
+        (y - s.picture.top) / s.picture.height,
+        2,
+      )
+    }
+
+    // Out of the picture: as it was.
+    await page.mouse.move(box.x + box.width / 2, box.y - 60)
+    const out = await state(root)
+    expect(out.classes).not.toContain('is-active')
+    expect(out.view.shown).toBe(false)
+    await context.close()
+  })
+
+  test('the original is asked for on the first hover only, the smaller copy shown until then', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280)
+    const asked = []
+    page.on('request', (request) => asked.push(request.url()))
+    const root = page.locator('[data-wx-block="showcase-zoom"] [data-webx-zoom]').first()
+    const original = new URL(await root.getAttribute('data-webx-zoom'), site).href
+    const shown = await root.locator('img').evaluate((img) => img.currentSrc)
+    expect(shown).not.toBe(original)
+    await root.scrollIntoViewIfNeeded()
+    await page.waitForLoadState('networkidle')
+    expect(asked.filter((url) => url === original)).toEqual([])
+
+    const box = await root.boundingBox()
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 2 })
+    await expect.poll(() => asked.filter((url) => url === original).length).toBe(1)
+    await expect
+      .poll(() =>
+        root.evaluate(
+          (el) => document.querySelector('.webx-zoom__panel .webx-zoom__large')?.currentSrc,
+        ),
+      )
+      .toBe(original)
+
+    await page.mouse.move(box.x + box.width / 2, box.y - 80)
+    await page.mouse.move(box.x + box.width / 3, box.y + box.height / 3, { steps: 2 })
+    await page.waitForTimeout(200)
+    expect(asked.filter((url) => url === original).length).toBe(1)
+    await context.close()
+  })
+
+  test('beside: a lens on the picture, the panel right of it in the window; no room — inside', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280)
+    const [product, narrow] = await page
+      .locator('[data-wx-block="showcase-zoom"] [data-webx-zoom]')
+      .all()
+    await product.scrollIntoViewIfNeeded()
+    const box = await product.locator('img').first().boundingBox()
+    const x = box.x + box.width * 0.4
+    const y = box.y + box.height * 0.55
+    await page.mouse.move(x, y, { steps: 3 })
+
+    const s = await state(product)
+    expect(s.classes).toContain('is-side')
+    expect(s.view.shown, 'not inside the frame').toBe(false)
+    expect(s.lens.shown && s.panel.shown).toBe(true)
+    // The panel: the frame's height, right of it by the gap, inside the window.
+    expect(s.panel.left - s.picture.right).toBeCloseTo(16, 0)
+    expect(s.panel.top).toBeCloseTo(s.picture.top, 0)
+    expect(s.panel.height).toBeCloseTo(s.picture.height, 0)
+    expect(s.panel.width).toBeGreaterThanOrEqual(s.picture.width * 0.6 - 1)
+    expect(s.panel.right).toBeLessThanOrEqual(s.window)
+    // The lens on the picture, centred on the cursor, its size the panel's by the scale.
+    expect(s.lens.left).toBeGreaterThanOrEqual(s.picture.left - 0.5)
+    expect(s.lens.right).toBeLessThanOrEqual(s.picture.right + 0.5)
+    expect(s.lens.width * 2.5).toBeCloseTo(s.panel.width, 0)
+    expect((s.lens.left + s.lens.right) / 2).toBeCloseTo(x, 0)
+    // The middle of the panel shows the middle of the lens.
+    const cx = (s.panel.left + s.panel.right) / 2
+    const cy = (s.panel.top + s.panel.bottom) / 2
+    expect((cx - s.panelLarge.left) / s.panelLarge.width).toBeCloseTo(
+      ((s.lens.left + s.lens.right) / 2 - s.picture.left) / s.picture.width,
+      2,
+    )
+    expect((cy - s.panelLarge.top) / s.panelLarge.height).toBeCloseTo(
+      ((s.lens.top + s.lens.bottom) / 2 - s.picture.top) / s.picture.height,
+      2,
+    )
+    expect(await sideways(page)).toBe(0)
+
+    // A column 20rem wide has no room beside: inside the frame.
+    await narrow.scrollIntoViewIfNeeded()
+    const small = await narrow.locator('img').first().boundingBox()
+    expect(small.width).toBeLessThanOrEqual(20 * 16)
+    await page.mouse.move(small.x + small.width / 2, small.y + small.height / 2, { steps: 3 })
+    const n = await state(narrow)
+    expect(n.classes).not.toContain('is-side')
+    expect(n.view.shown).toBe(true)
+    expect(n.panel.shown).toBe(false)
+    await context.close()
+
+    // At 375 the product page puts its text under the picture: no room beside either.
+    const phone = await open(browser, 375)
+    const first = phone.page.locator('[data-wx-block="showcase-zoom"] [data-webx-zoom]').first()
+    await first.scrollIntoViewIfNeeded()
+    const at = await first.locator('img').first().boundingBox()
+    await phone.page.mouse.move(at.x + at.width / 2, at.y + at.height / 2, { steps: 3 })
+    const p = await state(first)
+    expect(p.classes).not.toContain('is-side')
+    expect(p.view.shown).toBe(true)
+    expect(await sideways(phone.page)).toBe(0)
+    await phone.context.close()
+  })
+
+  test('two fingers pinch and pan inside the frame; one finger still scrolls and swipes; a double tap is 2× and back', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 375, { hasTouch: true, isMobile: true })
+    const cdp = await context.newCDPSession(page)
+    const touch = (type, points) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: points.map(([x, y], id) => ({ x: Math.round(x), y: Math.round(y), id })),
+      })
+    const gallery = page.locator('[data-wx-block="gallery"]')
+    const root = gallery.locator('[data-webx-zoom]').first()
+    await root.scrollIntoViewIfNeeded()
+    const index = () =>
+      gallery.locator('.webx-slider__viewport').evaluate((el) => el.swiper.activeIndex)
+    const ratio = async () => {
+      const s = await state(root)
+      return s.large && s.view.shown ? s.large.width / s.picture.width : 1
+    }
+
+    // Two fingers apart: twice the distance, twice the size.
+    let box = await root.locator('img').first().boundingBox()
+    const cx = box.x + box.width / 2
+    const cy = box.y + box.height / 2
+    await touch('touchStart', [
+      [cx - 40, cy],
+      [cx + 40, cy],
+    ])
+    for (const spread of [50, 60, 70, 80]) {
+      await touch('touchMove', [
+        [cx - spread, cy],
+        [cx + spread, cy],
+      ])
+    }
+    await touch('touchEnd', [])
+    expect(await root.evaluate((el) => el.classList.contains('is-zoomed'))).toBe(true)
+    expect(await ratio()).toBeCloseTo(2, 1)
+    expect(await index(), 'the slider held still').toBe(0)
+
+    // One finger now pans the picture, and neither the page nor the slider moves.
+    const scrolled = await page.evaluate(() => scrollY)
+    const before = (await state(root)).large
+    await touch('touchStart', [[cx, cy]])
+    for (const step of [1, 2, 3, 4]) await touch('touchMove', [[cx - step * 15, cy - step * 10]])
+    await touch('touchEnd', [])
+    const after = (await state(root)).large
+    expect(after.left).toBeLessThan(before.left - 20)
+    expect(await page.evaluate(() => scrollY)).toBe(scrolled)
+    expect(await index()).toBe(0)
+
+    // Pinched back: as it was.
+    await touch('touchStart', [
+      [cx - 80, cy],
+      [cx + 80, cy],
+    ])
+    for (const spread of [60, 40, 20]) {
+      await touch('touchMove', [
+        [cx - spread, cy],
+        [cx + spread, cy],
+      ])
+    }
+    await touch('touchEnd', [])
+    expect(await root.evaluate((el) => el.classList.contains('is-zoomed'))).toBe(false)
+    expect(await ratio()).toBe(1)
+
+    // One finger at its own size: up and down is the page's, sideways the slider's.
+    box = await root.locator('img').first().boundingBox()
+    const y0 = await page.evaluate(() => scrollY)
+    await touch('touchStart', [[box.x + box.width / 2, box.y + box.height * 0.8]])
+    for (const step of [1, 2, 3, 4, 5, 6]) {
+      await touch('touchMove', [[box.x + box.width / 2, box.y + box.height * 0.8 - step * 25]])
+    }
+    await touch('touchEnd', [])
+    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(y0 + 50)
+    await root.scrollIntoViewIfNeeded()
+    box = await root.locator('img').first().boundingBox()
+    await touch('touchStart', [[box.x + box.width * 0.8, box.y + box.height / 2]])
+    for (const step of [1, 2, 3, 4, 5, 6]) {
+      await touch('touchMove', [[box.x + box.width * 0.8 - step * 30, box.y + box.height / 2]])
+    }
+    await touch('touchEnd', [])
+    await expect.poll(index).toBe(1)
+    expect(await sideways(page)).toBe(0)
+
+    // A double tap on the slide now in view: 2× and back, and no lightbox for either.
+    const second = gallery.locator('[data-webx-zoom]').nth(1)
+    box = await second.locator('img').first().boundingBox()
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+    expect(await second.evaluate((el) => el.classList.contains('is-zoomed'))).toBe(true)
+    await page.waitForTimeout(500)
+    expect(await page.locator('.pswp').count()).toBe(0)
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+    expect(await second.evaluate((el) => el.classList.contains('is-zoomed'))).toBe(false)
+    await page.waitForTimeout(500)
+    expect(await page.locator('.pswp').count()).toBe(0)
+
+    // A single tap is still the lightbox's, a moment later.
+    await page.waitForTimeout(400)
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+    await expect(page.locator('.pswp')).toBeVisible()
+    expect(await sideways(page)).toBe(0)
+    await context.close()
+  })
+
+  test('a keyboard opens the lightbox, Esc gives the focus back; the link says what it does', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280)
+    // PhotoSwipe closes on the end of its animation, which `still` would never let come.
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    const root = page.locator('[data-wx-block="showcase-zoom"] [data-webx-zoom]').first()
+    expect(await root.getAttribute('aria-label')).toBe(
+      'Zoom: A watch on a grid, a label of small print and a ruler',
+    )
+    await root.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.locator('.pswp')).toBeVisible()
+    await expect(page.locator('.pswp')).toHaveAttribute('aria-modal', 'true')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.pswp')).toHaveCount(0)
+    await expect(root).toBeFocused()
+    expect(await root.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('solid')
+    await context.close()
+  })
+
+  test('without JavaScript the picture is a link to the original, and nothing scrolls sideways', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, { javaScriptEnabled: false })
+      const roots = await page.locator('[data-webx-zoom]').evaluateAll((all) =>
+        all.map((el) => ({
+          href:
+            el.closest('a')?.getAttribute('href') ?? el.querySelector('a')?.getAttribute('href'),
+          large: el.getAttribute('data-webx-zoom'),
+          shown: el.querySelector('img').getBoundingClientRect().width > 0,
+          view: el.querySelectorAll('.webx-zoom__view').length,
+        })),
+      )
+      expect(roots.length, `${width}`).toBe(2 + 6)
+      for (const r of roots) {
+        expect(r.href).toBeTruthy()
+        if (r.large) expect(r.href).toBe(r.large)
+        expect(r.view).toBe(0)
+      }
+      expect(roots[0].shown).toBe(true)
+      const response = await page.request.get(roots[0].href)
+      expect(response.status()).toBe(200)
+      expect(response.headers()['content-type']).toMatch(/^image\//)
+      expect(await sideways(page)).toBe(0)
+      await context.close()
+    }
+  })
+})
