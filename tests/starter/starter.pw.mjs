@@ -2590,3 +2590,386 @@ test.describe('page tools', () => {
     await context.close()
   })
 })
+
+test.describe('background video', () => {
+  const PATH = '/kitchen-sink/background-video'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  /** Requests for the video file, and anything not the site refused and written down. */
+  async function watch(context) {
+    const asked = { clip: [], outside: [] }
+    context.on('request', (request) => {
+      if (/\.(mp4|webm)(\?|$)/.test(request.url())) asked.clip.push(request.url())
+    })
+    await context.route(
+      (url) => url.protocol.startsWith('http') && url.origin !== site,
+      (route) => {
+        asked.outside.push(route.request().url())
+        return route.abort()
+      },
+    )
+    return asked
+  }
+
+  const frames = (page) =>
+    page.locator('[data-webx-video-background]').evaluateAll((all) =>
+      all.map((root) => {
+        const box = root.getBoundingClientRect()
+        const video = root.querySelector('.webx-video__background')
+        const cover = video.getBoundingClientRect()
+        const button = root.querySelector('.webx-video__pause')
+        const knob = button.getBoundingClientRect()
+        const over = root.querySelector('.webx-video__over')
+        const [w, h] = getComputedStyle(root)
+          .getPropertyValue('--webx-video-ratio')
+          .split('/')
+          .map(Number)
+        const middle = document.elementFromPoint(
+          knob.left + knob.width / 2,
+          knob.top + knob.height / 2,
+        )
+        return {
+          width: box.width,
+          height: box.height,
+          least: (box.width * h) / w,
+          covered:
+            Math.abs(cover.left - box.left) < 1 &&
+            Math.abs(cover.right - box.right) < 1 &&
+            Math.abs(cover.top - box.top) < 1 &&
+            Math.abs(cover.bottom - box.bottom) < 1,
+          overInside: over
+            ? over.getBoundingClientRect().top >= box.top - 0.5 &&
+              over.getBoundingClientRect().bottom <= box.bottom + 0.5
+            : null,
+          button: {
+            width: knob.width,
+            height: knob.height,
+            inside:
+              knob.right <= box.right &&
+              knob.bottom <= box.bottom &&
+              knob.left >= box.left &&
+              knob.top >= box.top,
+          },
+          // In view, the button is what a finger at its middle reaches — not the text over the video.
+          reachable: knob.top >= 0 && knob.bottom <= innerHeight ? button.contains(middle) : null,
+          playing: !video.paused,
+          shown: video.classList.contains('is-playing'),
+          label: button.getAttribute('aria-label'),
+          hidden: root.querySelector('.webx-video__backdrop').getAttribute('aria-hidden'),
+        }
+      }),
+    )
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  test('the frame keeps its ratio or grows to its text, the video covers it, the pause button is in reach', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const context = await browser.newContext({
+        viewport: { width, height: width === 375 ? 812 : 900 },
+      })
+      await context.addCookies([answered])
+      const asked = await watch(context)
+      const page = await context.newPage()
+      await page.goto(PATH)
+      await page.locator('[data-webx-video-background]').first().scrollIntoViewIfNeeded()
+      // The first plays: its first frame comes up over the poster.
+      await expect(page.locator('.webx-video__background.is-playing').first()).toBeAttached({
+        timeout: 10_000,
+      })
+      await still(page)
+
+      const found = await frames(page)
+      expect(found, `${width}`).toHaveLength(3)
+      for (const [i, frame] of found.entries()) {
+        expect(frame.height, `${width} #${i} keeps at least its ratio`).toBeGreaterThanOrEqual(
+          frame.least - 1,
+        )
+        expect(frame.covered, `${width} #${i} the video covers the frame`).toBe(true)
+        expect(frame.button.width, `${width} #${i}`).toBeGreaterThanOrEqual(44)
+        expect(frame.button.height, `${width} #${i}`).toBeGreaterThanOrEqual(44)
+        expect(frame.button.inside, `${width} #${i} the button is in its frame`).toBe(true)
+        expect(frame.hidden).toBe('true')
+      }
+      // Text over two of them: inside the frame; the narrow one grew past its ratio to hold it.
+      expect(found[0].overInside).toBe(true)
+      expect(found[1].overInside).toBe(true)
+      expect(found[2].overInside).toBeNull()
+      expect(found[0].reachable, `${width} the first button is reached at its middle`).toBe(true)
+      expect(found[0].playing).toBe(true)
+      expect(found[0].shown).toBe(true)
+      expect(found[0].label).toBe('Pause the background video')
+      expect(await sideways(page)).toBe(0)
+      expect(
+        asked.clip.every((url) => url.startsWith(site)),
+        'the video is the site’s',
+      ).toBe(true)
+      expect(asked.outside).toEqual([])
+      await context.close()
+    }
+  })
+
+  test('it rests off screen, and the pause button stops it, for the next page too', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await context.addCookies([answered])
+    await watch(context)
+    const page = await context.newPage()
+    await page.goto(PATH)
+    const first = page.locator('[data-webx-video-background]').first()
+    const last = page.locator('[data-webx-video-background]').last()
+    await first.scrollIntoViewIfNeeded()
+    await expect(first.locator('.webx-video__background.is-playing')).toBeAttached({
+      timeout: 10_000,
+    })
+
+    // Scrolled away the first rests and the last plays; back again, the other way round.
+    await last.scrollIntoViewIfNeeded()
+    await expect
+      .poll(async () => (await frames(page)).map((f) => f.playing))
+      .toEqual([false, false, true])
+    await first.scrollIntoViewIfNeeded()
+    await expect.poll(async () => (await frames(page))[0].playing).toBe(true)
+
+    await first.locator('.webx-video__pause').click()
+    await expect.poll(async () => (await frames(page))[0].playing).toBe(false)
+    expect((await frames(page))[0].label).toBe('Play the background video')
+
+    // The next page: paused from the start — the visitor said so.
+    await page.reload()
+    await first.scrollIntoViewIfNeeded()
+    await page.waitForTimeout(1500)
+    expect((await frames(page))[0].playing).toBe(false)
+    expect((await frames(page))[0].label).toBe('Play the background video')
+
+    await first.locator('.webx-video__pause').click()
+    await expect.poll(async () => (await frames(page))[0].playing).toBe(true)
+    expect(await page.evaluate(() => localStorage.getItem('webx-video-background'))).toBeNull()
+    await context.close()
+  })
+
+  test('with reduced motion nothing plays and the file is not even asked for, until the button', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 900 },
+      reducedMotion: 'reduce',
+    })
+    await context.addCookies([answered])
+    const asked = await watch(context)
+    const page = await context.newPage()
+    await page.goto(PATH)
+    const first = page.locator('[data-webx-video-background]').first()
+    await first.scrollIntoViewIfNeeded()
+    await page.waitForTimeout(1500)
+
+    const found = await frames(page)
+    expect(found.map((f) => f.playing)).toEqual([false, false, false])
+    expect(found.map((f) => f.label)).toEqual(Array(3).fill('Play the background video'))
+    expect(asked.clip, 'preload="none" and no play: no byte of the video').toEqual([])
+    await expect(first.locator('.webx-video__poster')).toBeVisible()
+
+    await first.locator('.webx-video__pause').click()
+    await expect.poll(async () => (await frames(page))[0].playing).toBe(true)
+    expect(asked.clip.length).toBeGreaterThan(0)
+    await context.close()
+  })
+
+  test('without JavaScript the posters, no button, nothing moving', async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 375, height: 812 },
+      javaScriptEnabled: false,
+    })
+    await context.addCookies([answered])
+    const asked = await watch(context)
+    const page = await context.newPage()
+    await page.goto(PATH)
+    await page.waitForLoadState('networkidle')
+
+    await expect(
+      page.locator('[data-webx-video-background] .webx-video__poster').first(),
+    ).toBeVisible()
+    await expect(page.locator('.webx-video__pause').first()).toBeHidden()
+    const playing = await page
+      .locator('.webx-video__background')
+      .evaluateAll((all) => all.map((v) => !v.paused))
+    expect(playing).toEqual([false, false, false])
+    expect(asked.clip).toEqual([])
+    expect(await sideways(page)).toBe(0)
+    await context.close()
+  })
+})
+
+test.describe('counters and countdown', () => {
+  const PATH = '/kitchen-sink/counters-and-countdown'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  const numbers = (page) =>
+    page.locator('.b-counters .webx-counter').evaluateAll((all) =>
+      all.map((el) => ({
+        text: el.querySelector('.webx-counter__number').textContent,
+        counting: el.classList.contains('is-counting'),
+        hidden: el.querySelector('.webx-counter__number').getAttribute('aria-hidden'),
+        said: el.querySelector('.webx-counter__final')?.textContent ?? null,
+        width: el.querySelector('.webx-counter__number').getBoundingClientRect().width,
+      })),
+    )
+
+  const timers = (page) =>
+    page.locator('.webx-countdown').evaluateAll((all) =>
+      all.map((root) => {
+        const tiles = Array.from(root.querySelectorAll('.webx-countdown__unit'), (el) =>
+          el.getBoundingClientRect(),
+        )
+        const date = root.querySelector('.webx-countdown__date')
+        const block = root.closest('[data-wx-block]').getBoundingClientRect()
+        return {
+          block: root.closest('[data-wx-block]').getAttribute('data-wx-block'),
+          over: root.classList.contains('is-over'),
+          ended: root.querySelector('.webx-countdown__ended:not([hidden])')?.textContent ?? null,
+          digits: Array.from(
+            root.querySelectorAll('.webx-countdown__value'),
+            (el) => el.textContent,
+          ),
+          rows: new Set(tiles.map((t) => Math.round(t.top))).size,
+          tileHeight: Math.max(0, ...tiles.map((t) => t.height)),
+          inside: tiles.every((t) => t.left >= block.left - 0.5 && t.right <= block.right + 0.5),
+          dateWidth: date ? date.getBoundingClientRect().width : null,
+          datetime: root.querySelector('time')?.getAttribute('datetime') ?? null,
+        }
+      }),
+    )
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  test('counters below the screen wait at zero and count up in view to the number the server printed', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const waiting = await numbers(page)
+    expect(waiting.map((n) => n.text)).toEqual(['0', '0', '0.0', '0'])
+    expect(waiting.every((n) => n.counting && n.hidden === 'true')).toBe(true)
+    expect(waiting.map((n) => n.said)).toEqual(['15', '3,000', '4.9', '98'])
+
+    await page.locator('.b-counters').scrollIntoViewIfNeeded()
+    await page.waitForTimeout(700)
+    const midway = await numbers(page)
+    // As wide as the final number all the way: the row does not shiver.
+    for (const [i, n] of midway.entries())
+      expect(n.width, `#${i}`).toBeGreaterThanOrEqual(waiting[i].width - 0.5)
+
+    await expect
+      .poll(async () => (await numbers(page)).map((n) => n.text), { timeout: 5000 })
+      .toEqual(['15', '3,000', '4.9', '98'])
+    const done = await numbers(page)
+    expect(done.every((n) => !n.counting && n.hidden === null && n.said === null)).toBe(true)
+    await context.close()
+  })
+
+  test('the countdown ticks every second, its tiles in a row — two by two in a narrow column — and says the date to a screen reader', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const context = await browser.newContext({ viewport: { width, height: 900 } })
+      await context.addCookies([answered])
+      const page = await context.newPage()
+      await page.goto(PATH)
+      await still(page)
+
+      const found = await timers(page)
+      // The block to 2030, the minute one, the narrow one, the one over with its text; the hidden one is not there.
+      expect(
+        found.map((t) => t.block),
+        `${width}`,
+      ).toEqual(['countdown', 'showcase-numbers', 'showcase-numbers', 'countdown'])
+      expect(await page.getByRole('heading', { name: 'Over, hidden' }).count()).toBe(0)
+      expect(found[3].over).toBe(true)
+      expect(found[3].ended).toBe('The winter sale is over — see you next year.')
+      expect(found[3].digits).toEqual([])
+
+      const [decade, , narrow] = found
+      expect(decade.datetime).toMatch(/^2030-01-01T00:00:00[+-]\d\d:\d\d$/)
+      expect(decade.dateWidth, 'the date is for screen readers').toBeLessThanOrEqual(1)
+      expect(decade.rows, `${width} four tiles in a row`).toBe(1)
+      expect(narrow.rows, `${width} two by two in 20rem`).toBe(2)
+      expect(found.every((t) => t.inside)).toBe(true)
+      expect(await sideways(page)).toBe(0)
+
+      const before = decade.digits.join(':')
+      await page.waitForTimeout(1200)
+      expect((await timers(page))[0].digits.join(':'), 'a second later').not.toBe(before)
+      await context.close()
+    }
+  })
+
+  test('at the end it says its text, the tiles gone', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.clock.install()
+    await page.goto(PATH)
+
+    const soon = page.locator('[data-wx-block="showcase-numbers"]').first()
+    await expect(soon.locator('.webx-countdown__unit')).toHaveCount(4)
+    await page.clock.fastForward('02:00')
+    await expect(soon.locator('.webx-countdown__ended')).toHaveText('This one is over.')
+    await expect(soon.locator('.webx-countdown__ended')).toBeVisible()
+    await expect(soon.locator('.webx-countdown__unit')).toHaveCount(0)
+    expect(
+      await soon.locator('.webx-countdown').evaluate((el) => el.classList.contains('is-over')),
+    ).toBe(true)
+    await context.close()
+  })
+
+  test('with reduced motion and without JavaScript the numbers are final at once; without it a countdown is its date', async ({
+    browser,
+  }) => {
+    for (const options of [{ reducedMotion: 'reduce' }, { javaScriptEnabled: false }]) {
+      const context = await browser.newContext({
+        viewport: { width: 1280, height: 900 },
+        ...options,
+      })
+      await context.addCookies([answered])
+      const page = await context.newPage()
+      await page.goto(PATH)
+      await page.waitForLoadState('networkidle')
+
+      const found = await numbers(page)
+      expect(
+        found.map((n) => n.text),
+        JSON.stringify(options),
+      ).toEqual(['15', '3,000', '4.9', '98'])
+      expect(found.every((n) => !n.counting)).toBe(true)
+
+      if (options.javaScriptEnabled === false) {
+        const timer = (await timers(page))[0]
+        expect(timer.dateWidth, 'the date line instead of frozen digits').toBeGreaterThan(100)
+        expect(timer.tileHeight).toBe(0)
+        await expect(page.locator('.webx-countdown__date').first()).toContainText('Ends on')
+      }
+      await context.close()
+    }
+  })
+})

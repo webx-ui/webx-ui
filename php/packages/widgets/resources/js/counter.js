@@ -26,7 +26,12 @@ function settings(root) {
 export function counter(root) {
   const number = root.querySelector('.webx-counter__number')
   const { value, decimals = 0, duration = 2000 } = settings(root)
-  if (!number || !Number.isFinite(value) || reduced() || typeof IntersectionObserver === 'undefined')
+  if (
+    !number ||
+    !Number.isFinite(value) ||
+    reduced() ||
+    typeof IntersectionObserver === 'undefined'
+  )
     return
   if (root.getBoundingClientRect().top < window.innerHeight) return
 

@@ -1135,6 +1135,241 @@
           }
         }
       ]
+    },
+    {
+      "title": "Background video",
+      "slug": "background-video",
+      "seo": {
+        "title": "Background video",
+        "description": "The background video of a first screen: a file of the site, muted and looping, its pause button, the poster under reduced motion and off screen."
+      },
+      "blocks": [
+        {
+          "key": "showcase-background-intro",
+          "type": "text",
+          "values": {
+            "heading": "Background video",
+            "body": "A video behind a first screen is the video widget’s background variant: a file of the site — never YouTube or Vimeo, which would be asked on every showing — muted, looping, without controls, behind whatever the tag wraps. The text over it is the page’s, not the video’s: the video is decor, and a screen reader is not told of it.\nIt plays only while it is on screen and the tab is in front, and never by itself under reduced motion or on a connection saving data: then the poster is all there is, as it is without JavaScript. The poster stays until the first frame is up, so the screen never empties while the file loads. The round button in the corner pauses it — it is always there, because motion that lasts more than five seconds must have a way to stop it."
+          }
+        },
+        {
+          "key": "showcase-background-hero",
+          "type": "showcase-background",
+          "values": {
+            "heading": "A first screen",
+            "note": "A title, a line and a button over the video, a poster from the library.",
+            "title": "Made to move",
+            "text": "The words are the page’s markup; the video behind them is decor.",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": {
+              "path": "demo:showcase-photo-6",
+              "alt": ""
+            },
+            "ratio": "21/9",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-background-narrow",
+          "type": "showcase-background",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "The text makes the frame taller than its ratio; the video covers it all.",
+            "title": "Narrow",
+            "text": "A column 20rem wide.",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": {
+              "path": "demo:showcase-photo-3",
+              "alt": ""
+            },
+            "ratio": "16/9",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-background-bare",
+          "type": "showcase-background",
+          "values": {
+            "heading": "Nothing over it, no poster",
+            "note": "The frame keeps its ratio alone, on its own background until the first frame.",
+            "title": "",
+            "text": "",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": null,
+            "ratio": "16/9",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-background-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Pause a video with the button in its corner, then open another page with one: it stays paused — the choice is remembered. Play it again with the same button.\nScroll a video off the screen: it rests, and goes on when it comes back. Switch to another tab: the same.\nTurn on reduced motion in the system, or a data saver: every video stays on its poster; the button plays one if you want it.\nSwitch JavaScript off: the posters, and no button — nothing moves that nothing could stop."
+          }
+        },
+        {
+          "key": "showcase-background-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-video variant=\"background\" :file=\"$video\" :poster=\"$image\" ratio=\"21/9\", around the first screen — what the tag wraps stands over the video, the ratio is the least the frame takes. The pause button is .webx-video__pause; the colours of it are --webx-video-pause-bg, --webx-video-pause-color and --webx-video-pause-border."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Counters and countdown",
+      "slug": "counters-and-countdown",
+      "seo": {
+        "title": "Counters and countdown",
+        "description": "The Counters and Countdown blocks: numbers that count up in view, a timer to a moment of the site’s time zone, what it says at the end."
+      },
+      "blocks": [
+        {
+          "key": "showcase-numbers-intro",
+          "type": "text",
+          "values": {
+            "heading": "Counters and countdown",
+            "body": "A counter prints its final number in the page — that is what search engines index, what a screen reader says and what a page without JavaScript shows — and counts up to it when it comes into view. Only a counter below the screen when the page opens counts: one already in view keeps its number rather than flash it and drop to zero.\nA countdown runs to a date and a time of the site’s time zone, the one of the opening hours in Settings › Contacts, wherever the visitor reads it. The server prints the time left; the script counts it down every second, since the page may have waited in a cache. At the end it says what it was given, or the block goes."
+          }
+        },
+        {
+          "key": "showcase-numbers-countdown",
+          "type": "countdown",
+          "values": {
+            "heading": "Until the new decade",
+            "text": "The Countdown block, to 1 January 2030, 00:00 in the site’s time zone.",
+            "date": "2030-01-01",
+            "time": "00:00",
+            "end": "text",
+            "ended": "Happy new decade!"
+          }
+        },
+        {
+          "key": "showcase-numbers-soon",
+          "type": "showcase-numbers",
+          "values": {
+            "heading": "Ending in a minute",
+            "note": "Made to end 75 seconds after the page was: watch it say its text. Reload for another minute.",
+            "kind": "countdown",
+            "seconds": 75,
+            "ended": "This one is over.",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-numbers-narrow-countdown",
+          "type": "showcase-numbers",
+          "values": {
+            "heading": "A countdown in a narrow column",
+            "note": "Four tiles do not fit in a row in 20rem: two by two.",
+            "kind": "countdown",
+            "seconds": 400000,
+            "ended": "",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-numbers-over",
+          "type": "countdown",
+          "values": {
+            "heading": "Over, with something to say",
+            "text": "A Countdown block whose date has passed: its text instead of the timer.",
+            "date": "2026-01-01",
+            "time": "09:00",
+            "end": "text",
+            "ended": "The winter sale is over — see you next year."
+          }
+        },
+        {
+          "key": "showcase-numbers-hidden",
+          "type": "countdown",
+          "values": {
+            "heading": "Over, hidden",
+            "text": "Not on the page: a Countdown block set to hide at the end, whose date has passed.",
+            "date": "2026-01-01",
+            "time": "09:00",
+            "end": "hide",
+            "ended": ""
+          }
+        },
+        {
+          "key": "showcase-numbers-spacer",
+          "type": "text",
+          "values": {
+            "heading": "Below the screen",
+            "body": "The counters below are further down than a first screen reaches, so they wait at zero and count up when you scroll to them.\nThe Counters block is a row of numbers, each with what it counts; it wraps to two in a narrow column. The numbers are typed as the editor writes them — 3000, 3,000 or 3 000 are three thousand, 4,9 is four point nine — and count in the decimals they were written with.\nA counter knows nothing of the page around it: size, weight and colour are the block’s."
+          }
+        },
+        {
+          "key": "showcase-numbers-counters",
+          "type": "counters",
+          "values": {
+            "heading": "In numbers",
+            "items": [
+              {
+                "value": "15",
+                "prefix": "",
+                "suffix": "",
+                "label": "years on the market"
+              },
+              {
+                "value": "3000",
+                "prefix": "",
+                "suffix": "+",
+                "label": "clients"
+              },
+              {
+                "value": "4.9",
+                "prefix": "",
+                "suffix": "",
+                "label": "average rating"
+              },
+              {
+                "value": "98",
+                "prefix": "",
+                "suffix": "%",
+                "label": "come back"
+              }
+            ]
+          }
+        },
+        {
+          "key": "showcase-numbers-narrow-counters",
+          "type": "showcase-numbers",
+          "values": {
+            "heading": "Counters in a narrow column",
+            "note": "Four counters inline in 20rem, a million among them.",
+            "kind": "counters",
+            "seconds": 0,
+            "ended": "",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-numbers-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Reload at the top of the page and scroll down slowly: each counter counts up as it comes into view, once. Reload half way down: the counters already in view keep their numbers.\nTurn on reduced motion in the system: every number is final at once.\nLeave the page in a background tab for a while and come back: the countdown is right — it works the time out from the clock, not from the seconds it counted.\nSwitch JavaScript off: the counters show their numbers, a countdown says the date it ends on rather than digits that would stand still."
+          }
+        },
+        {
+          "key": "showcase-numbers-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-counter :value=\"3000\" suffix=\"+\" — decimals as written (value=\"4.9\"), prefix, duration in milliseconds.\n<x-webx-countdown to=\"2026-12-31 18:00\" ended=\"The sale is over\" /> — a wall time of the site’s zone, or a moment with its offset; without ended the timer goes at the end, and so does the nearest [data-webx-countdown-scope] around it."
+          }
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,95 @@
+{
+  "slug": "showcase-background",
+  "title": "Showcase: background video",
+  "description": "One <x-webx-video variant=\"background\"> with a first screen over it, for the kitchen sink of the default theme: no block of the theme has a background video, and a block cannot stand in a narrow column.",
+  "icon": null,
+  "group": "content",
+  "sort": 95,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Title over the video",
+      "help": "Empty: nothing over it, the frame keeps its ratio alone."
+    },
+    {
+      "id": "text",
+      "type": "wx-textarea",
+      "label": "Text over the video",
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "file",
+      "type": "wx-media",
+      "label": "Video of the library",
+      "props": {
+        "accept": "video"
+      }
+    },
+    {
+      "id": "poster",
+      "type": "wx-media",
+      "label": "Poster",
+      "props": {
+        "accept": "image"
+      }
+    },
+    {
+      "id": "ratio",
+      "type": "wx-input",
+      "label": "Ratio",
+      "props": {
+        "placeholder": "16/9"
+      }
+    },
+    {
+      "id": "width",
+      "type": "wx-select",
+      "label": "Width",
+      "props": {
+        "options": [
+          {
+            "label": "Full",
+            "value": "full"
+          },
+          {
+            "label": "Narrow column",
+            "value": "narrow"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "@php\n    $clip = is_array($file) && ! empty($file['url']) ? $file : null;\n    $picture = is_array($poster) && ! empty($poster['url']) ? $poster : null;\n    $shape = is_string($ratio) && trim($ratio) !== '' ? trim($ratio) : null;\n@endphp\n<section class=\"b-showcase-background b-showcase-background--{{ $width === 'narrow' ? 'narrow' : 'full' }}\" data-wx-block=\"showcase-background\">\n    @if ($heading)\n        <h2 class=\"b-showcase-background__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-background__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-background__frame\">\n        @if ($clip)\n            <x-webx-video variant=\"background\" :file=\"$clip\" :poster=\"$picture\" :ratio=\"$shape\" class=\"b-showcase-background__video\">\n                @if ($title)\n                    <div class=\"b-showcase-background__screen\">\n                        <p class=\"b-showcase-background__title\">{{ $title }}</p>\n                        @if ($text)\n                            <p class=\"b-showcase-background__text\">{{ $text }}</p>\n                        @endif\n                        <a class=\"b-showcase-background__button\" href=\"#showcase-background-try\">What to try</a>\n                    </div>\n                @endif\n            </x-webx-video>\n        @endif\n    </div>\n</section>\n",
+  "styles": ".b-showcase-background {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-background__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-background__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-background--narrow .b-showcase-background__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n\n/* The first screen over the video: its own shade, so the words read on any frame of it. */\n.b-showcase-background__screen {\n    display: flex;\n    flex-direction: column;\n    align-items: flex-start;\n    justify-content: flex-end;\n    gap: var(--site-space-3);\n    box-sizing: border-box;\n    min-height: 100%;\n    padding: var(--site-space-6) var(--site-space-6) calc(var(--site-space-6) + 44px);\n    background: linear-gradient(to top, color-mix(in srgb, var(--site-color-text) 70%, transparent), transparent);\n    color: var(--site-color-bg);\n}\n\n.b-showcase-background__title {\n    margin: 0;\n    font-family: var(--site-font-heading);\n    font-size: var(--site-font-size-1);\n    font-weight: 700;\n    line-height: 1.1;\n}\n\n.b-showcase-background__text {\n    max-width: 36em;\n    margin: 0;\n}\n\n.b-showcase-background__button {\n    display: inline-flex;\n    align-items: center;\n    min-height: 44px;\n    padding: 0 var(--site-space-4);\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-accent);\n    color: var(--site-color-accent-contrast);\n    text-decoration: none;\n}\n\n.b-showcase-background--narrow .b-showcase-background__screen {\n    padding: var(--site-space-3) var(--site-space-3) calc(var(--site-space-3) + 44px);\n}\n\n.b-showcase-background--narrow .b-showcase-background__title {\n    font-size: var(--site-font-size-3);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "A background video",
+    "note": "",
+    "title": "A first screen",
+    "text": "",
+    "file": null,
+    "poster": null,
+    "ratio": "",
+    "width": "full"
+  }
+}

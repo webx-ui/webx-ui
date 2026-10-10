@@ -78,7 +78,14 @@ async function start(html, file, before = () => {}) {
 }
 
 const at = (el, top, height = 100) => {
-  el.getBoundingClientRect = () => ({ top, bottom: top + height, height, left: 0, right: 0, width: 48 })
+  el.getBoundingClientRect = () => ({
+    top,
+    bottom: top + height,
+    height,
+    left: 0,
+    right: 0,
+    width: 48,
+  })
 }
 
 /** Runs the animation frames queued so far, at the given time. */
@@ -169,7 +176,9 @@ describe('background video', () => {
   })
 
   it('shows itself paused when the browser refuses even a muted play, and stops when unmounted', async () => {
-    HTMLMediaElement.prototype.play.mockImplementationOnce(() => Promise.reject(new Error('NotAllowed')))
+    HTMLMediaElement.prototype.play.mockImplementationOnce(() =>
+      Promise.reject(new Error('NotAllowed')),
+    )
     await start(page, 'video')
     const { video, button } = parts()
     watched.at(-1).show()
@@ -257,7 +266,10 @@ describe('countdown', () => {
   const START = Date.UTC(2026, 11, 30, 12, 0, 0)
   const END = START + 86400000 + 3600000 + 60000 + 5000
 
-  const page = (ended = '<p class="webx-countdown__ended" hidden>The sale is over</p>', over = '') => `
+  const page = (
+    ended = '<p class="webx-countdown__ended" hidden>The sale is over</p>',
+    over = '',
+  ) => `
     <section data-webx-countdown-scope>
       <div class="webx-countdown ${over}" data-webx-countdown='{"end":${END}}'>
         <p class="webx-countdown__date"><time>Ends on …</time></p>
@@ -272,7 +284,9 @@ describe('countdown', () => {
     </section>`
 
   const digits = () =>
-    Array.from(document.querySelectorAll('.webx-countdown__value'), (el) => el.textContent).join(' ')
+    Array.from(document.querySelectorAll('.webx-countdown__value'), (el) => el.textContent).join(
+      ' ',
+    )
 
   it('works the time out again at once — the page may have waited in a cache — and on every second', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
