@@ -2976,3 +2976,468 @@ test.describe('counters and countdown', () => {
     }
   })
 })
+
+test.describe('before and after', () => {
+  const PATH = '/kitchen-sink/before-and-after'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  // Each compare: its frame, where its divider and its cut stand, its labels, its slider.
+  const compares = (page) =>
+    page.locator('[data-webx-compare]').evaluateAll((all) =>
+      all.map((root) => {
+        const frame = root.querySelector('.webx-compare__frame').getBoundingClientRect()
+        const handle = root.querySelector('.webx-compare__handle').getBoundingClientRect()
+        const after = root.querySelector('.webx-compare__side--after')
+        const pictures = Array.from(root.querySelectorAll('.webx-compare__picture'))
+        const labels = Array.from(root.querySelectorAll('.webx-compare__label'), (el) => {
+          const box = el.getBoundingClientRect()
+          return {
+            text: el.textContent,
+            inside:
+              box.left >= frame.left - 0.5 &&
+              box.right <= frame.right + 0.5 &&
+              box.top >= frame.top - 0.5 &&
+              box.bottom <= frame.bottom + 0.5,
+          }
+        })
+        const range = root.querySelector('.webx-compare__range')
+        const block = root.closest('[data-wx-block]').getBoundingClientRect()
+        return {
+          block: root.closest('[data-wx-block]').getAttribute('data-wx-block'),
+          width: frame.width,
+          ratio: frame.width / frame.height,
+          divider: ((handle.left + handle.width / 2 - frame.left) / frame.width) * 100,
+          cut: getComputedStyle(after).clipPath,
+          labels,
+          value: range.value,
+          said: range.getAttribute('aria-valuetext'),
+          name: range.getAttribute('aria-label'),
+          loaded: pictures.every((img) => img.complete && img.naturalWidth > 0),
+          sized: pictures.every((img) => img.getAttribute('width') && img.getAttribute('height')),
+          inside: frame.left >= block.left - 0.5 && frame.right <= block.right + 0.5,
+        }
+      }),
+    )
+
+  test('the frame has the pictures’ shape, the divider stands where it starts, the labels inside', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const context = await browser.newContext({ viewport: { width, height: 900 } })
+      await context.addCookies([answered])
+      const asked = []
+      await context.route(
+        (url) => url.protocol.startsWith('http') && url.origin !== site,
+        (route) => {
+          asked.push(route.request().url())
+          return route.abort()
+        },
+      )
+      const page = await context.newPage()
+      await page.goto(PATH)
+      await still(page)
+      for (const img of await page.locator('.webx-compare__picture').all()) {
+        await img.scrollIntoViewIfNeeded()
+      }
+      await page.waitForLoadState('networkidle')
+
+      const found = await compares(page)
+      expect(
+        found.map((c) => c.block),
+        `${width}`,
+      ).toEqual(['compare', 'compare', 'showcase-compare'])
+      for (const [i, c] of found.entries()) {
+        expect(c.ratio, `${width} #${i} 1800 × 1200`).toBeCloseTo(1.5, 1)
+        expect(c.loaded && c.sized && c.inside, `${width} #${i}`).toBe(true)
+        expect(
+          c.labels.every((l) => l.inside),
+          `${width} #${i} labels in the frame`,
+        ).toBe(true)
+      }
+      expect(found[0].divider).toBeCloseTo(50, 0)
+      expect(found[1].divider).toBeCloseTo(25, 0)
+      expect(found[1].cut).toBe('inset(0px 0px 0px 25%)')
+      expect(found[0].labels.map((l) => l.text)).toEqual(['Before', 'After'])
+      expect(found[1].labels.map((l) => l.text)).toEqual(['2019', '2026'])
+      expect(found[1].name).toBe('Divider between 2019 and 2026')
+      expect(found[2].width, 'a column 20rem wide').toBeLessThanOrEqual(20 * 16)
+      expect(await sideways(page)).toBe(0)
+      expect(asked).toEqual([])
+      await context.close()
+    }
+  })
+
+  test('the divider follows a mouse, the arrow keys and a sideways finger', async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 900 },
+      hasTouch: true,
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(PATH)
+    await still(page)
+
+    const room = page.locator('[data-wx-block="compare"]').first()
+    const frame = room.locator('.webx-compare__frame')
+    const range = room.locator('.webx-compare__range')
+    await frame.scrollIntoViewIfNeeded()
+    const box = await frame.boundingBox()
+    const at = (share) => box.x + box.width * share
+    const divider = async () => (await compares(page))[0]
+
+    // A mouse: where it presses, then where it drags.
+    await page.mouse.move(at(0.3), box.y + box.height / 2)
+    await page.mouse.down()
+    expect((await divider()).divider).toBeCloseTo(30, 0)
+    await page.mouse.move(at(0.8), box.y + box.height / 3, { steps: 5 })
+    await page.mouse.up()
+    const dragged = await divider()
+    expect(dragged.divider).toBeCloseTo(80, 0)
+    expect(Number(dragged.value)).toBeCloseTo(80, 0)
+    expect(dragged.said).toBe('80%')
+    await expect(range).toBeFocused()
+
+    // The keys, from where the mouse left it.
+    await page.keyboard.press('ArrowLeft')
+    expect(Math.round(Number((await divider()).value))).toBe(75)
+    await page.keyboard.press('Shift+ArrowLeft')
+    expect(Math.round(Number((await divider()).value))).toBe(74)
+    await page.keyboard.press('Home')
+    expect((await divider()).divider).toBeCloseTo(0, 0)
+    await page.keyboard.press('End')
+    const end = await divider()
+    expect(end.divider).toBeCloseTo(100, 0)
+    expect(end.said).toBe('100%')
+
+    // From the keyboard: the ring on the knob.
+    await range.blur()
+    await range.focus()
+    expect(
+      await room
+        .locator('.webx-compare__handle')
+        .evaluate((el) => el.classList.contains('is-focused')),
+    ).toBe(true)
+
+    // A finger: a few pixels do not move it, sideways does; a tap puts it there.
+    const finger = async (type, x, id) =>
+      frame.dispatchEvent(type, {
+        pointerId: id,
+        pointerType: 'touch',
+        isPrimary: true,
+        clientX: x,
+        clientY: box.y + box.height / 2,
+        bubbles: true,
+      })
+    await finger('pointerdown', at(0.5), 11)
+    await finger('pointermove', at(0.5) + 3, 11)
+    expect((await divider()).divider).toBeCloseTo(100, 0)
+    await finger('pointermove', at(0.4), 11)
+    expect((await divider()).divider).toBeCloseTo(40, 0)
+    await finger('pointerup', at(0.4), 11)
+    const now = await frame.boundingBox()
+    await page.touchscreen.tap(now.x + now.width * 0.6, now.y + now.height / 2)
+    expect((await divider()).divider).toBeCloseTo(60, 0)
+    await context.close()
+  })
+
+  test('on a phone the divider is in reach and the page does not scroll sideways', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      viewport: { width: 375, height: 812 },
+      isMobile: true,
+      hasTouch: true,
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(PATH)
+    await still(page)
+
+    const room = page.locator('[data-wx-block="compare"]').first()
+    await room.scrollIntoViewIfNeeded()
+    const knob = await room
+      .locator('.webx-compare__handle')
+      .evaluate((el) => getComputedStyle(el, '::before').width)
+    expect(parseFloat(knob), 'the knob is a finger wide').toBeGreaterThanOrEqual(44)
+    expect(
+      await room.locator('.webx-compare__frame').evaluate((el) => getComputedStyle(el).touchAction),
+    ).toBe('pan-y')
+    expect(await sideways(page)).toBe(0)
+    await context.close()
+  })
+
+  test('without JavaScript the two pictures stand side by side, one under the other in a column', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const context = await browser.newContext({
+        viewport: { width, height: 900 },
+        javaScriptEnabled: false,
+      })
+      await context.addCookies([answered])
+      const page = await context.newPage()
+      await page.goto(PATH)
+
+      const sides = await page.locator('[data-webx-compare]').evaluateAll((all) =>
+        all.map((root) => {
+          const [before, after] = Array.from(root.querySelectorAll('.webx-compare__side'), (el) =>
+            el.getBoundingClientRect(),
+          )
+          return {
+            beside: Math.abs(before.top - after.top) < 1 && after.left >= before.right - 0.5,
+            under: after.top >= before.bottom - 0.5,
+            ratio: before.width / before.height,
+            handle: root.querySelector('.webx-compare__handle').getBoundingClientRect().width,
+            range: root.querySelector('.webx-compare__range').getBoundingClientRect().width,
+            labels: Array.from(
+              root.querySelectorAll('.webx-compare__label'),
+              (el) => el.getBoundingClientRect().width > 0,
+            ),
+          }
+        }),
+      )
+      expect(sides[0].beside, `${width}`).toBe(width === 1280)
+      expect(sides[0].under, `${width}`).toBe(width === 375)
+      expect(sides[2].under, `${width} the column 20rem wide`).toBe(true)
+      for (const s of sides) {
+        expect(s.ratio).toBeCloseTo(1.5, 1)
+        expect(s.handle + s.range).toBe(0)
+        expect(s.labels).toEqual([true, true])
+      }
+      expect(await sideways(page)).toBe(0)
+      await context.close()
+    }
+  })
+})
+
+test.describe('table of contents', () => {
+  const PATH = '/kitchen-sink/table-of-contents'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  const header = (page) =>
+    page.evaluate(() =>
+      parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--webx-header-height'),
+      ),
+    )
+
+  const policy = (page) => page.locator('.b-toc--text').first()
+
+  async function open(width, options = {}) {
+    const context = await options.browser.newContext({
+      viewport: { width, height: width === 375 ? 812 : 900 },
+      ...(options.context ?? {}),
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(PATH)
+    // A style tag is put in by a script: none without JavaScript, and nothing moves there anyway.
+    if (options.context?.javaScriptEnabled !== false) await still(page)
+    return { context, page }
+  }
+
+  test('every link of every list lands on a heading of the page, each id once', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(1280, { browser })
+
+    const found = await page.evaluate(() => {
+      const ids = Array.from(document.querySelectorAll('[id]'), (el) => el.id)
+      return {
+        lists: Array.from(document.querySelectorAll('[data-webx-toc]'), (root) =>
+          Array.from(root.querySelectorAll('.webx-toc__link'), (a) => {
+            const target = document.getElementById(decodeURIComponent(a.hash.slice(1)))
+            return { text: a.textContent, heading: target?.localName ?? null }
+          }),
+        ),
+        duplicates: ids.filter((id, i) => ids.indexOf(id) !== i),
+      }
+    })
+    expect(found.duplicates).toEqual([])
+    // The page's list, the policy's, the one before its text, the narrow column's.
+    expect(found.lists.map((list) => list.length)).toEqual([15, 11, 3, 3])
+    expect(found.lists.flat().every((link) => /^h[23]$/.test(link.heading))).toBe(true)
+    expect(found.lists[0].map((l) => l.text).slice(0, 3)).toEqual([
+      'Of the whole page',
+      'Who we are',
+      'What we collect',
+    ])
+    expect(found.lists[1].map((l) => l.text).slice(0, 4)).toEqual([
+      'Who we are',
+      'Our address',
+      'What we collect',
+      'When you write to us',
+    ])
+    await context.close()
+  })
+
+  test('at 1280 the list stands beside the text, sticks under the header and marks the section read', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(1280, { browser })
+    const top = await header(page)
+    expect(top, 'the header sticks').toBeGreaterThan(0)
+
+    const place = () =>
+      policy(page).evaluate((block) => {
+        const nav = block.querySelector('.webx-toc__nav').getBoundingClientRect()
+        const content = block.querySelector('.webx-toc__content').getBoundingClientRect()
+        return {
+          beside: nav.left >= content.right,
+          top: nav.top,
+          toggle: block.querySelector('.webx-toc__toggle').getBoundingClientRect().height,
+          current: Array.from(block.querySelectorAll('.webx-toc__link.is-current'), (a) => [
+            a.textContent,
+            a.getAttribute('aria-current'),
+          ]),
+        }
+      })
+
+    const first = await place()
+    expect(first.beside).toBe(true)
+    expect(first.toggle, 'no bar on a wide screen').toBe(0)
+
+    // Down the policy: the list stays under the header, the section under the line is marked.
+    const heading = policy(page).getByRole('heading', { name: 'Cookies' })
+    await heading.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - 200))
+    await expect.poll(async () => (await place()).current).toEqual([['Cookies', 'true']])
+    const stuck = await place()
+    expect(stuck.top).toBeGreaterThanOrEqual(top - 0.5)
+    expect(stuck.top).toBeLessThanOrEqual(top + 24)
+
+    // The list before its text, on the other side.
+    expect(
+      await page
+        .locator('.b-toc--text')
+        .nth(1)
+        .evaluate((block) => {
+          const nav = block.querySelector('.webx-toc__nav').getBoundingClientRect()
+          return nav.right <= block.querySelector('.webx-toc__content').getBoundingClientRect().left
+        }),
+    ).toBe(true)
+
+    // The column 20rem wide folds as a phone does.
+    expect(
+      await page
+        .locator('[data-wx-block="showcase-toc"] .webx-toc__toggle')
+        .evaluate((el) => el.getBoundingClientRect().height),
+    ).toBeGreaterThanOrEqual(44)
+    expect(await sideways(page)).toBe(0)
+    await context.close()
+  })
+
+  test('a link of the list leaves its heading below the sticky header, on a phone below the bar too', async ({
+    browser,
+  }) => {
+    for (const width of [1280, 375]) {
+      const { context, page } = await open(width, { browser })
+      const top = await header(page)
+      const nav = policy(page).locator('.webx-toc__nav')
+
+      if (width === 375) {
+        await policy(page).scrollIntoViewIfNeeded()
+        await nav.locator('.webx-toc__toggle').click()
+      }
+      await nav.getByRole('link', { name: 'Your rights' }).click()
+      await expect.poll(() => page.evaluate(() => location.hash)).toBe('#your-rights')
+      await page.waitForTimeout(300)
+
+      const where = await page.evaluate(() => {
+        const h = document.getElementById('your-rights').getBoundingClientRect()
+        const bar = document.querySelector('.b-toc--text .webx-toc__nav').getBoundingClientRect()
+        return { top: h.top, bar: bar.bottom }
+      })
+      expect(where.top, `${width} below the header`).toBeGreaterThanOrEqual(top - 0.5)
+      if (width === 375) {
+        expect(where.top, 'below the bar').toBeGreaterThanOrEqual(where.bar - 0.5)
+        expect(
+          await nav.locator('.webx-toc__panel').evaluate((el) => el.classList.contains('is-open')),
+        ).toBe(false)
+      }
+      expect(where.top, `${width} and not far below`).toBeLessThan(top + 140)
+      await context.close()
+    }
+  })
+
+  test('at 375 the list folds into a bar under the header that says the section and opens the list', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(375, { browser })
+    const top = await header(page)
+    const nav = policy(page).locator('.webx-toc__nav')
+    const toggle = nav.locator('.webx-toc__toggle')
+
+    expect(await nav.locator('.webx-toc__title').isVisible()).toBe(false)
+    expect(await nav.locator('.webx-toc__panel').isVisible()).toBe(false)
+    const bar = await toggle.boundingBox()
+    expect(bar.height).toBeGreaterThanOrEqual(44)
+    expect(await toggle.getAttribute('aria-expanded')).toBe('false')
+
+    // Into the policy: the bar sticks under the header and names the section.
+    const heading = policy(page).getByRole('heading', { name: 'How long we keep it' })
+    await heading.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - 150))
+    await expect
+      .poll(() => nav.locator('.webx-toc__current').textContent())
+      .toBe('How long we keep it')
+    const stuck = await nav.boundingBox()
+    expect(Math.abs(stuck.y - top)).toBeLessThanOrEqual(1)
+
+    await toggle.click()
+    expect(await toggle.getAttribute('aria-expanded')).toBe('true')
+    const panel = await nav.locator('.webx-toc__panel').boundingBox()
+    expect(panel.x).toBeGreaterThanOrEqual(0)
+    expect(panel.x + panel.width).toBeLessThanOrEqual(375)
+    expect(panel.y + panel.height).toBeLessThanOrEqual(812)
+    await page.keyboard.press('Escape')
+    expect(await nav.locator('.webx-toc__panel').isVisible()).toBe(false)
+    await expect(toggle).toBeFocused()
+
+    // The page's own list, at the top: folded too.
+    expect(await page.locator('.b-toc:not(.b-toc--text) .webx-toc__toggle').isVisible()).toBe(true)
+    expect(await sideways(page)).toBe(0)
+    await context.close()
+  })
+
+  test('without JavaScript every list is open and its links still land', async ({ browser }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(width, {
+        browser,
+        context: { javaScriptEnabled: false },
+      })
+      const lists = await page.locator('[data-webx-toc]').evaluateAll((all) =>
+        all.map((root) => ({
+          toggle: root.querySelector('.webx-toc__toggle').getBoundingClientRect().height,
+          list: root.querySelector('.webx-toc__list').getBoundingClientRect().height,
+          sticky: getComputedStyle(root.querySelector('.webx-toc__nav')).position,
+        })),
+      )
+      expect(lists.every((l) => l.toggle === 0 && l.list > 0)).toBe(true)
+      if (width === 375) expect(lists.every((l) => l.sticky !== 'sticky')).toBe(true)
+
+      await policy(page).getByRole('link', { name: 'Cookies' }).first().click()
+      expect(new URL(page.url()).hash).toBe('#cookies')
+      expect(await sideways(page)).toBe(0)
+      await context.close()
+    }
+  })
+})
