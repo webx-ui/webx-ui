@@ -11,6 +11,7 @@ use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeManifest;
+use WebxUi\Widgets\Prose\Contents;
 use WebxUi\Widgets\Prose\Tables;
 use WebxUi\Widgets\View\Components\Lightbox;
 
@@ -47,6 +48,9 @@ final class Widgets implements HeadPart
     private array $forms = [];
 
     private bool $dialogsDone = false;
+
+    /** @var array<string, int> */
+    private array $sequences = [];
 
     public function __construct(
         private readonly BottomLayers $layers,
@@ -97,6 +101,15 @@ final class Widgets implements HeadPart
         return array_keys($this->forms);
     }
 
+    /**
+     * 1, 2, 3… per name for this page: an id two widgets of a kind on one page do not share, and
+     * the same on every rendering of it.
+     */
+    public function sequence(string $name): int
+    {
+        return $this->sequences[$name] = ($this->sequences[$name] ?? 0) + 1;
+    }
+
     /** @return list<string> What this page claimed, in the order it did. */
     public function claimed(): array
     {
@@ -127,6 +140,12 @@ final class Widgets implements HeadPart
 
         if ($tables > 0) {
             $this->need('table');
+        }
+
+        // The lists of `<x-webx-toc>`, made of headings that may be printed after them, by any
+        // module: the headings get their ids here, so the links work without JavaScript (§14).
+        if (str_contains($html, '<!--webx-toc:')) {
+            [$html] = Contents::fill($html, static fn (array $list): string => view('webx-widgets::toc', $list)->render(), app()->getLocale());
         }
 
         $at = (int) strpos($html, self::MARKER);
@@ -217,6 +236,7 @@ final class Widgets implements HeadPart
         $this->claimed = [];
         $this->forms = [];
         $this->dialogsDone = false;
+        $this->sequences = [];
     }
 
     private function built(string $widget, string $extension): bool

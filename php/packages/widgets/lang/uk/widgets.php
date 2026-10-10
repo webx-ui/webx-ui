@@ -141,4 +141,12 @@ return [
         'minutes' => 'Хвилин',
         'seconds' => 'Секунд',
     ],
+    'compare' => [
+        'before' => 'До',
+        'after' => 'Після',
+        'label' => 'Межа між «:before» і «:after»',
+    ],
+    'toc' => [
+        'title' => 'На цій сторінці',
+    ],
 ];

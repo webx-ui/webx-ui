@@ -46,5 +46,17 @@ return [
             'why' => 'Search engines, screen readers and a page without JavaScript read the markup: they get a zero or nothing instead of the number.',
             'fix' => 'The package’s view prints the final number and the script counts up to it: a theme’s override of webx-widgets::components.counter prints something else. Print the number, or remove the override.',
         ],
+        'compare_range' => [
+            'title' => 'Before and after without its slider',
+            'found' => 'A before-and-after divider has no range input: only a mouse and a finger can move it.',
+            'why' => 'A keyboard cannot reach the divider and a screen reader cannot name it: part of the picture stays hidden from those visitors.',
+            'fix' => 'The package’s view makes the divider an <input type="range">: a theme’s override of webx-widgets::components.compare lost it. Put it back, or remove the override.',
+        ],
+        'toc_target' => [
+            'title' => 'Table of contents links to nowhere',
+            'found' => 'A link of a table of contents leads to a section the page does not have.',
+            'why' => 'A visitor clicks a section and nothing happens: the page does not move, and the list looks broken.',
+            'fix' => 'The server makes the list from the page’s headings and gives them their ids. A list written by hand, or a theme’s override of the list, points at an id that is gone: use <x-webx-toc>, or fix the link.',
+        ],
     ],
 ];

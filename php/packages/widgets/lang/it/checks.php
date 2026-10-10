@@ -46,5 +46,17 @@ return [
             'why' => 'Motori di ricerca, lettori di schermo e una pagina senza JavaScript leggono il markup: ottengono uno zero o niente al posto del numero.',
             'fix' => 'La vista del pacchetto stampa il numero finale e lo script conta fino a esso: una sovrascrittura di webx-widgets::components.counter nel tema stampa altro. Stampate il numero o rimuovete la sovrascrittura.',
         ],
+        'compare_range' => [
+            'title' => 'Prima e dopo senza cursore',
+            'found' => 'Un divisore prima/dopo non ha un campo range: solo il mouse e il dito possono spostarlo.',
+            'why' => 'La tastiera non raggiunge il divisore e uno screen reader non può nominarlo: una parte dell’immagine resta nascosta a quei visitatori.',
+            'fix' => 'La vista del pacchetto rende il divisore un <input type="range">: una sovrascrittura di webx-widgets::components.compare nel tema l’ha perso. Rimettetelo o togliete la sovrascrittura.',
+        ],
+        'toc_target' => [
+            'title' => 'Indice che non porta da nessuna parte',
+            'found' => 'Un link dell’indice porta a una sezione che la pagina non ha.',
+            'why' => 'Il visitatore clicca una sezione e non succede nulla: la pagina non si muove e l’indice sembra rotto.',
+            'fix' => 'Il server costruisce l’indice dai titoli della pagina e assegna loro gli id. Un indice scritto a mano, o una sovrascrittura dell’elenco nel tema, punta a un id sparito: usate <x-webx-toc> o correggete il link.',
+        ],
     ],
 ];

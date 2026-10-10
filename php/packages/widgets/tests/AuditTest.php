@@ -145,6 +145,18 @@ final class AuditTest extends TestCase
         $this->assertSame('notice', $counter->severity);
         $this->assertStringContainsString('<span class="webx-counter__number">0</span>', (string) $counter->details['table']['rows'][0]['markup']);
 
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.compare_range')));
+        $compare = AuditIssue::query()->where('check', 'widgets.compare_range')->firstOrFail();
+        $this->assertSame('warning', $compare->severity);
+        $this->assertStringStartsWith('<figure class="webx-compare" id="bare"', (string) $compare->details['table']['rows'][0]['markup']);
+
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.toc_target')), 'an encoded id lands');
+        $toc = AuditIssue::query()->where('check', 'widgets.toc_target')->firstOrFail();
+        $this->assertSame('warning', $toc->severity);
+        $this->assertSame(['count' => 1], $toc->details['summary']['params']);
+        $this->assertStringContainsString('href="#gone"', (string) $toc->details['table']['rows'][0]['markup']);
+        $this->assertSame('Table of contents links to nowhere: 1', __($toc->details['summary']['key'], $toc->details['summary']['params']));
+
         // What the reader keeps of a page: only what is there.
         $home = AuditPage::query()->where('url', self::BASE.'/')->firstOrFail();
         $this->assertSame(['waits' => ['media' => 2, 'statistics' => 1]], $home->fact('widgets'));
@@ -309,7 +321,10 @@ final class AuditTest extends TestCase
                 // A background video with its pause button; counters that hold their numbers, however the language writes them.
                 .'<div class="webx-video webx-video--background" data-webx-video-background><video class="webx-video__background" muted loop></video><button type="button" class="webx-video__pause">Pause</button></div>'
                 .'<span class="webx-counter" data-webx-counter=\'{"value":3000,"decimals":0}\'><span class="webx-counter__number">3 000</span><span class="webx-counter__suffix">+</span></span>'
-                .'<span class="webx-counter" data-webx-counter=\'{"value":4.9,"decimals":1}\'><span class="webx-counter__number">4,9</span></span>'),
+                .'<span class="webx-counter" data-webx-counter=\'{"value":4.9,"decimals":1}\'><span class="webx-counter__number">4,9</span></span>'
+                // Before and after with its slider; a table of contents whose links all land, one by an encoded id.
+                .'<figure class="webx-compare" data-webx-compare><div class="webx-compare__frame"><input class="webx-compare__range" type="range"></div></figure>'
+                .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#who">Who</a><a class="webx-toc__link" href="#%D0%B4%D0%B0">Да</a></nav><h2 id="who">Who</h2><h2 id="да">Да</h2></div>'),
             '/raw' => $page('Raw', self::PASTED.self::SNIPPET
                 .'<iframe src="https://www.google.com/maps/embed?pb=1" title="Map"></iframe>'
                 .'<script src="https://www.youtube.com/s/player.js"></script>'
@@ -324,7 +339,10 @@ final class AuditTest extends TestCase
                 .'<section class="webx-slider webx-slider--hero" data-webx-slider=\'{"autoplay":6000}\'><div class="webx-slider__slide">Only one</div></section>'
                 // An override that lost the pause button, and one that leaves the number to the script.
                 .'<div class="webx-video webx-video--background" id="still" data-webx-video-background><video class="webx-video__background" muted loop></video></div>'
-                .'<span class="webx-counter" data-webx-counter=\'{"value":3000,"decimals":0}\'><span class="webx-counter__number">0</span></span>'),
+                .'<span class="webx-counter" data-webx-counter=\'{"value":3000,"decimals":0}\'><span class="webx-counter__number">0</span></span>'
+                // An override that lost the slider of before and after, and a list written by hand to a heading that is gone.
+                .'<figure class="webx-compare" id="bare" data-webx-compare><div class="webx-compare__frame"></div></figure>'
+                .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#intro">Intro</a><a class="webx-toc__link" href="#gone">Gone</a></nav><h2 id="intro">Intro</h2></div>'),
             '/contacts' => $page('Contacts', '<div class="webx-contact-button"></div><div class="webx-contact-bar"></div>'),
             '/plain' => $page('Plain', '<p>Nothing of the widgets here.</p>'),
         ];

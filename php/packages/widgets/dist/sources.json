@@ -3,6 +3,7 @@
   "files": {
     "resources/css/back-to-top.css": "3b598d7be852bba98b89f0d8e8737bc3d7ba16bff83f1da43e362275681c08a4",
     "resources/css/base.css": "f6a6b9c8a1c3479f68d4f3164147d651a18daacbc3330fdcb248917e80448135",
+    "resources/css/compare.css": "1367c9d08fab875717f577572a06a0b24d2928ecbedacbd8653c8c28b8ad239a",
     "resources/css/consent.css": "6f89e8898761ed2e4f4c43bc2cbe05e572b46e3317f01979b0286c059f6093fa",
     "resources/css/contacts.css": "9f416bae3e12047335b44fe109bb82c4e984d7af44848e957e227e5f5b5d3815",
     "resources/css/countdown.css": "7eceb2bb984caeb9c99613f4913b13debf883e04b2c9e3e7b0783261f88d0e7c",
@@ -21,6 +22,7 @@
     "resources/css/slider.css": "fb4f136f0351af6f04fdb6737a5eca58c083a33f4618da498669fda2ffa04fc2",
     "resources/css/table.css": "5a40db7440ec35ed6a6a5351ad5ed977b8ac6e502415879878a9a8a903e3b6dd",
     "resources/css/tabs.css": "d65263249c29025b907b52733f10e6969382a3eb35e4e024baf3a02053ccee39",
+    "resources/css/toc.css": "8a13215797cb632aaa4c2918cbea9446d76555414b29ca39e99c53e490e974b9",
     "resources/css/video.css": "412359c25706bd25f5585c02d4b89ff61c86936cec2bd149034bd1b600ae65ca",
     "resources/js/back-to-top.js": "2b29a49db20ee2e8b42e630d950a3aff918a1606c4cd58237e9422d243e0e60b",
     "resources/js/behaviours/accordion.js": "dbaa803462d843a07713df1367d7bea3d0b526a32da80e255e9f8f3c1daaff94",
@@ -35,6 +37,7 @@
     "resources/js/behaviours/mobile-nav.js": "94db709e8334ddccee27a21499af8a59066a0eda421841b8a37f5730dcccb8b7",
     "resources/js/behaviours/reveal.js": "c43d96b28a81b3cdb5422bad690e14b1deab55b0f85d3a2912ede12a5c9de848",
     "resources/js/behaviours/tabs.js": "ac551bfcb9eed90dfd6b21f5fc0ffea916accedf7279999dce72675825a91d42",
+    "resources/js/compare.js": "7374728e51a622d535e0afdf4e536ceed3162cb21f7a5bb2f29c773c42a255dd",
     "resources/js/consent.js": "d6973c5e753388f54a8a40279d629b01cd613223f8375d618083bef1adcc9868",
     "resources/js/contacts.js": "172226370a7c4bc341fc76f7382264e4bfdb4686a66b3ae8dd35878650a09d06",
     "resources/js/core.js": "cd0590b2429e6fc14169b3cea90b0f2eebe0a05758adb71ff428947ce5677b3b",
@@ -46,6 +49,7 @@
     "resources/js/share.js": "63a7a3fb5fcc1c450376e6056ecd2dcccea788fcee760bae8bae484401db9cb4",
     "resources/js/slider.js": "7a003633b9587c602c0f95f1e078410ff1c082047a24e031253ade04aa0bde08",
     "resources/js/table.js": "613febd1e614347335958291c4e5f2f40c23f56f1b6d0aca89baf83e3f8d2b3e",
+    "resources/js/toc.js": "b03e1ccbcfea6f7ab6af9b4175394920c5ac879c647c6f473dc6390715c92d85",
     "resources/js/video.js": "092d508fef2e6709bb70d527b719985cb461abf1be67f3813fa8428786906720"
   }
 }

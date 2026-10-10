@@ -46,5 +46,17 @@ return [
             'why' => 'Los buscadores, los lectores de pantalla y una página sin JavaScript leen el marcado: reciben un cero o nada en lugar del número.',
             'fix' => 'La vista del paquete imprime el número final y el script cuenta hasta él: una sobrescritura de webx-widgets::components.counter en el tema imprime otra cosa. Imprima el número o elimine la sobrescritura.',
         ],
+        'compare_range' => [
+            'title' => 'Antes y después sin deslizador',
+            'found' => 'Un divisor de antes y después no tiene campo range: solo el ratón y el dedo pueden moverlo.',
+            'why' => 'El teclado no llega al divisor y un lector de pantalla no puede nombrarlo: parte de la imagen queda oculta para esos visitantes.',
+            'fix' => 'La vista del paquete convierte el divisor en un <input type="range">: una sobrescritura de webx-widgets::components.compare en el tema lo perdió. Vuelva a ponerlo o quite la sobrescritura.',
+        ],
+        'toc_target' => [
+            'title' => 'Índice que no lleva a ninguna parte',
+            'found' => 'Un enlace del índice lleva a una sección que la página no tiene.',
+            'why' => 'El visitante pulsa una sección y no pasa nada: la página no se mueve y el índice parece roto.',
+            'fix' => 'El servidor arma el índice con los títulos de la página y les da sus id. Un índice escrito a mano, o una sobrescritura de la lista en el tema, apunta a un id que ya no existe: use <x-webx-toc> o corrija el enlace.',
+        ],
     ],
 ];

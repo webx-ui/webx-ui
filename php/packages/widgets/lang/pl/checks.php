@@ -46,5 +46,17 @@ return [
             'why' => 'Wyszukiwarki, czytniki ekranu i strona bez JavaScriptu czytają znaczniki: zamiast liczby dostają zero albo nic.',
             'fix' => 'Widok pakietu wypisuje liczbę końcową, a skrypt do niej odlicza: nadpisanie webx-widgets::components.counter w motywie wypisuje coś innego. Wypisz liczbę lub usuń nadpisanie.',
         ],
+        'compare_range' => [
+            'title' => 'Przed i po bez suwaka',
+            'found' => 'Linia podziału przed i po nie ma pola range: przesunąć ją można tylko myszą i palcem.',
+            'why' => 'Klawiatura nie dosięga linii podziału, a czytnik ekranu nie może jej nazwać: część obrazu pozostaje dla tych odwiedzających ukryta.',
+            'fix' => 'Widok pakietu robi z linii podziału <input type="range">: nadpisanie webx-widgets::components.compare w motywie je zgubiło. Przywróć pole albo usuń nadpisanie.',
+        ],
+        'toc_target' => [
+            'title' => 'Spis treści prowadzi donikąd',
+            'found' => 'Link spisu treści prowadzi do sekcji, której na stronie nie ma.',
+            'why' => 'Odwiedzający klika sekcję i nic się nie dzieje: strona się nie przesuwa, a spis wygląda na zepsuty.',
+            'fix' => 'Serwer buduje spis z nagłówków strony i sam nadaje im id. Spis napisany ręcznie albo nadpisanie listy w motywie wskazuje na id, którego już nie ma: użyj <x-webx-toc> albo popraw link.',
+        ],
     ],
 ];

@@ -21,6 +21,8 @@ use WebxUi\Audit\Crawl\PageParser;
  *     slider_unpaused    a slider that moves by itself with no pause button in it
  *     video_unpaused     a background video with no pause button in it
  *     counter_empty      a counter whose markup does not hold its number
+ *     compare_rangeless  before and after without its range input: no keyboard, no screen reader
+ *     toc_dangling       a link of a table of contents to a section the page does not have
  *     contact_both       the quick-contact button and the bottom bar on one page
  *
  * Only what is there: a page with none of it stores nothing.
@@ -46,6 +48,8 @@ final class WidgetsPageReader implements AuditPageReader
             'slider_unpaused' => $this->unpaused($document),
             'video_unpaused' => $this->stillless($document),
             'counter_empty' => $this->numberless($document),
+            'compare_rangeless' => $this->rangeless($document),
+            'toc_dangling' => $this->dangling($document),
         ]);
 
         if ($document->querySelector('.webx-contact-button') !== null && $document->querySelector('.webx-contact-bar') !== null) {
@@ -234,6 +238,58 @@ final class WidgetsPageReader implements AuditPageReader
 
             if (count($found['markup']) < self::EXCERPTS) {
                 $found['markup'][] = PageParser::quote($document, $counter);
+            }
+        }
+
+        return $found['count'] === 0 ? [] : $found;
+    }
+
+    /**
+     * Before and after with no range input in it: the divider then moves for a mouse and a finger
+     * only — no keyboard, nothing a screen reader can name.
+     *
+     * @return array{count: int, markup: list<string>}|array{}
+     */
+    private function rangeless(HTMLDocument $document): array
+    {
+        $found = ['count' => 0, 'markup' => []];
+
+        foreach ($document->querySelectorAll('[data-webx-compare]') as $compare) {
+            if ($compare->querySelector('input[type="range"]') !== null) {
+                continue;
+            }
+
+            $found['count']++;
+
+            if (count($found['markup']) < self::EXCERPTS) {
+                $found['markup'][] = self::opening($compare);
+            }
+        }
+
+        return $found['count'] === 0 ? [] : $found;
+    }
+
+    /**
+     * Links of a table of contents to a section the page does not have: the server gives the
+     * headings their ids, so a link to nowhere is a list written or overridden by hand.
+     *
+     * @return array{count: int, markup: list<string>}|array{}
+     */
+    private function dangling(HTMLDocument $document): array
+    {
+        $found = ['count' => 0, 'markup' => []];
+
+        foreach ($document->querySelectorAll('[data-webx-toc] a[href^="#"]') as $link) {
+            $id = rawurldecode(substr((string) $link->getAttribute('href'), 1));
+
+            if ($id !== '' && $document->getElementById($id) !== null) {
+                continue;
+            }
+
+            $found['count']++;
+
+            if (count($found['markup']) < self::EXCERPTS) {
+                $found['markup'][] = PageParser::quote($document, $link);
             }
         }
 

@@ -46,5 +46,17 @@ return [
             'why' => 'Suchmaschinen, Screenreader und eine Seite ohne JavaScript lesen das Markup: Sie bekommen eine Null oder nichts statt der Zahl.',
             'fix' => 'Die Ansicht des Pakets gibt die Endzahl aus, und das Skript zählt bis dahin: Eine Überschreibung von webx-widgets::components.counter im Theme gibt etwas anderes aus. Geben Sie die Zahl aus oder entfernen Sie die Überschreibung.',
         ],
+        'compare_range' => [
+            'title' => 'Vorher-nachher ohne Schieberegler',
+            'found' => 'Eine Vorher-nachher-Trennlinie hat kein Range-Feld: Nur Maus und Finger können sie bewegen.',
+            'why' => 'Mit der Tastatur ist die Trennlinie nicht erreichbar, und ein Screenreader kann sie nicht benennen: Ein Teil des Bildes bleibt diesen Besuchern verborgen.',
+            'fix' => 'Die Ansicht des Pakets macht die Trennlinie zu einem <input type="range">: Eine Überschreibung von webx-widgets::components.compare im Theme hat es verloren. Fügen Sie es wieder ein oder entfernen Sie die Überschreibung.',
+        ],
+        'toc_target' => [
+            'title' => 'Inhaltsverzeichnis führt ins Leere',
+            'found' => 'Ein Link des Inhaltsverzeichnisses führt zu einem Abschnitt, den die Seite nicht hat.',
+            'why' => 'Ein Besucher klickt auf einen Abschnitt und nichts passiert: Die Seite bewegt sich nicht, und das Verzeichnis wirkt kaputt.',
+            'fix' => 'Der Server baut das Verzeichnis aus den Überschriften der Seite und vergibt ihre IDs. Ein von Hand geschriebenes Verzeichnis oder eine Überschreibung der Liste im Theme verweist auf eine verschwundene ID: Nutzen Sie <x-webx-toc> oder korrigieren Sie den Link.',
+        ],
     ],
 ];

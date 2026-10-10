@@ -141,4 +141,12 @@ return [
         'minutes' => 'Dakika',
         'seconds' => 'Saniye',
     ],
+    'compare' => [
+        'before' => 'Önce',
+        'after' => 'Sonra',
+        'label' => '“:before” ile “:after” arasındaki ayırıcı',
+    ],
+    'toc' => [
+        'title' => 'Bu sayfada',
+    ],
 ];

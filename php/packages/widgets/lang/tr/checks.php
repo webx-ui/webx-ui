@@ -46,5 +46,17 @@ return [
             'why' => 'Arama motorları, ekran okuyucular ve JavaScript’siz bir sayfa işaretlemeyi okur: sayı yerine sıfır ya da hiçbir şey alır.',
             'fix' => 'Paketin görünümü son sayıyı yazar ve betik ona kadar sayar: temadaki webx-widgets::components.counter geçersiz kılması başka bir şey yazıyor. Sayıyı yazın ya da geçersiz kılmayı kaldırın.',
         ],
+        'compare_range' => [
+            'title' => 'Kaydırıcısız önce ve sonra',
+            'found' => 'Bir önce-sonra ayırıcısının range alanı yok: onu yalnızca fare ve parmak hareket ettirebilir.',
+            'why' => 'Klavye ayırıcıya ulaşamaz, ekran okuyucu da onu adlandıramaz: resmin bir kısmı bu ziyaretçilerden gizli kalır.',
+            'fix' => 'Paketin görünümü ayırıcıyı bir <input type="range"> yapar: temadaki webx-widgets::components.compare geçersiz kılması onu kaybetmiş. Geri ekleyin ya da geçersiz kılmayı kaldırın.',
+        ],
+        'toc_target' => [
+            'title' => 'Hiçbir yere gitmeyen içindekiler',
+            'found' => 'İçindekiler bağlantısı, sayfada olmayan bir bölüme gidiyor.',
+            'why' => 'Ziyaretçi bir bölüme tıklar ve hiçbir şey olmaz: sayfa kımıldamaz, liste bozuk görünür.',
+            'fix' => 'Sunucu listeyi sayfanın başlıklarından kurar ve onlara id verir. Elle yazılmış bir liste ya da temadaki liste geçersiz kılması artık olmayan bir id’yi gösteriyor: <x-webx-toc> kullanın ya da bağlantıyı düzeltin.',
+        ],
     ],
 ];

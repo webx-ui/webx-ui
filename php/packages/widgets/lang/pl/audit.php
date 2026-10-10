@@ -10,6 +10,8 @@ return [
     'contact-both' => 'Oba widżety szybkiego kontaktu na stronie',
     'video-pause' => 'Wideo w tle bez przycisku pauzy: :count',
     'counter-number' => 'Liczniki bez swojej liczby: :count',
+    'compare-range' => 'Przed i po bez suwaka: :count',
+    'toc-target' => 'Spis treści prowadzi donikąd: :count',
     'on' => 'Wł.',
     'off' => 'Wył.',
 ];

@@ -10,6 +10,8 @@ return [
     'contact-both' => 'Sayfada iki hızlı iletişim bileşeni birden',
     'video-pause' => 'Duraklatma düğmesi olmayan arka plan videoları: :count',
     'counter-number' => 'Sayısı olmayan sayaçlar: :count',
+    'compare-range' => 'Kaydırıcısız önce ve sonra: :count',
+    'toc-target' => 'Hiçbir yere gitmeyen içindekiler: :count',
     'on' => 'Açık',
     'off' => 'Kapalı',
 ];

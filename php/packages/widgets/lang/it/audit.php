@@ -10,6 +10,8 @@ return [
     'contact-both' => 'Entrambi i widget di contatto rapido sulla pagina',
     'video-pause' => 'Video di sfondo senza pulsante di pausa: :count',
     'counter-number' => 'Contatori senza il loro numero: :count',
+    'compare-range' => 'Prima e dopo senza cursore: :count',
+    'toc-target' => 'Indice che non porta da nessuna parte: :count',
     'on' => 'Acceso',
     'off' => 'Spento',
 ];

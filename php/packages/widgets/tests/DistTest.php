@@ -46,6 +46,9 @@ final class DistTest extends PlainTestCase
     /** Each of the small widgets of §14 with a file of its own: a table's shadows, back to top, share, counter, countdown. */
     private const int PAGE_TOOL_BUDGET = 2 * 1024;
 
+    /** Before and after, and the table of contents: 3 KB gzip each — a layout of their own as well as a few lines of script. */
+    private const int CONTENT_WIDGET_BUDGET = 3 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -84,7 +87,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'map.css', 'map.js', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'video.css', 'video.js'], $built);
+        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'map.css', 'map.js', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js'], $built);
     }
 
     /**
@@ -98,6 +101,16 @@ final class DistTest extends PlainTestCase
             $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
 
             $this->assertLessThanOrEqual(self::PAGE_TOOL_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));
+        }
+    }
+
+    #[Test]
+    public function the_content_widgets_stay_inside_their_budgets(): void
+    {
+        foreach (['compare', 'toc'] as $widget) {
+            $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
+
+            $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));
         }
     }
 

@@ -46,5 +46,17 @@ return [
             'why' => 'Motores de busca, leitores de ecrã e uma página sem JavaScript leem a marcação: recebem um zero ou nada em vez do número.',
             'fix' => 'A vista do pacote imprime o número final e o script conta até ele: uma substituição de webx-widgets::components.counter no tema imprime outra coisa. Imprima o número ou remova a substituição.',
         ],
+        'compare_range' => [
+            'title' => 'Antes e depois sem controle deslizante',
+            'found' => 'Uma divisória de antes e depois não tem campo range: só o rato e o dedo a podem mover.',
+            'why' => 'O teclado não chega à divisória e um leitor de ecrã não a consegue nomear: parte da imagem fica escondida para esses visitantes.',
+            'fix' => 'A vista do pacote faz da divisória um <input type="range">: uma substituição de webx-widgets::components.compare no tema perdeu-o. Reponha-o ou remova a substituição.',
+        ],
+        'toc_target' => [
+            'title' => 'Índice que não leva a lado nenhum',
+            'found' => 'Uma ligação do índice leva a uma secção que a página não tem.',
+            'why' => 'O visitante clica numa secção e nada acontece: a página não se move e o índice parece avariado.',
+            'fix' => 'O servidor monta o índice com os títulos da página e dá-lhes os seus id. Um índice escrito à mão, ou uma substituição da lista no tema, aponta para um id que desapareceu: use <x-webx-toc> ou corrija a ligação.',
+        ],
     ],
 ];

@@ -141,4 +141,12 @@ return [
         'minutes' => 'Minuten',
         'seconds' => 'Sekunden',
     ],
+    'compare' => [
+        'before' => 'Vorher',
+        'after' => 'Nachher',
+        'label' => 'Trennlinie zwischen „:before“ und „:after“',
+    ],
+    'toc' => [
+        'title' => 'Auf dieser Seite',
+    ],
 ];

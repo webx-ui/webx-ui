@@ -105,6 +105,10 @@ export default {
         // Counts up in view; the number itself is the server's.
         counter: join(root, 'resources/js/counter.js'),
         countdown: join(root, 'resources/js/countdown.js'),
+        // Before and after: the divider for a mouse and a finger; the keyboard has its range input.
+        compare: join(root, 'resources/js/compare.js'),
+        // The section being read and the fold; the list and the ids are the server's.
+        toc: join(root, 'resources/js/toc.js'),
       },
       output: {
         entryFileNames: '[name].js',

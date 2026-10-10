@@ -10,6 +10,8 @@ return [
     'contact-both' => 'Both quick-contact widgets on the page',
     'video-pause' => 'Background videos without a pause button: :count',
     'counter-number' => 'Counters without their number: :count',
+    'compare-range' => 'Before and after without a slider: :count',
+    'toc-target' => 'Table of contents links to nowhere: :count',
     'on' => 'On',
     'off' => 'Off',
 ];
