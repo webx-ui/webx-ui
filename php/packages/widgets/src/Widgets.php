@@ -15,6 +15,7 @@ use WebxUi\Widgets\Prose\Contents;
 use WebxUi\Widgets\Prose\Tables;
 use WebxUi\Widgets\View\Components\Lightbox;
 use WebxUi\Widgets\View\Components\NoticeBar;
+use WebxUi\Widgets\View\Components\Zoom;
 
 /**
  * What the page asked for, and the tags that load it (spec §4).
@@ -181,6 +182,11 @@ final class Widgets implements HeadPart
         // a block, a module's view, a theme's partial — as a form's opener claims its dialog (§8).
         if (Lightbox::wanted($html) && $this->built('lightbox', 'js')) {
             $this->need('lightbox');
+        }
+
+        // A picture with `data-webx-zoom` claims the zoom the same way: a gallery's link, a slide (§14).
+        if (Zoom::wanted($html) && $this->built('zoom', 'js')) {
+            $this->need('zoom');
         }
 
         if (isset($this->claimed['lightbox']) && $this->url('lightbox', 'js') !== null) {

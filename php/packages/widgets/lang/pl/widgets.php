@@ -166,4 +166,8 @@ return [
         'label' => 'Ogłoszenie',
         'close' => 'Zamknij ogłoszenie',
     ],
+    'zoom' => [
+        'label' => 'Powiększ',
+        'named' => 'Powiększ: :name',
+    ],
 ];

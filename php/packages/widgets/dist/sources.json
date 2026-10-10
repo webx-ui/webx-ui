@@ -27,6 +27,7 @@
     "resources/css/tabs.css": "d65263249c29025b907b52733f10e6969382a3eb35e4e024baf3a02053ccee39",
     "resources/css/toc.css": "8a13215797cb632aaa4c2918cbea9446d76555414b29ca39e99c53e490e974b9",
     "resources/css/video.css": "412359c25706bd25f5585c02d4b89ff61c86936cec2bd149034bd1b600ae65ca",
+    "resources/css/zoom.css": "f65536c8a80fccdfcf1b79f2c86c8ad10d915dbaacc0aa88e1e4ccf48de3358c",
     "resources/js/back-to-top.js": "2b29a49db20ee2e8b42e630d950a3aff918a1606c4cd58237e9422d243e0e60b",
     "resources/js/behaviours/accordion.js": "dbaa803462d843a07713df1367d7bea3d0b526a32da80e255e9f8f3c1daaff94",
     "resources/js/behaviours/corridor.js": "bfb52d7fcc48846ee8cbf32afe0450b5971f060d24d84f9d57d5c49494c7dd2d",
@@ -55,6 +56,7 @@
     "resources/js/slider.js": "7a003633b9587c602c0f95f1e078410ff1c082047a24e031253ade04aa0bde08",
     "resources/js/table.js": "613febd1e614347335958291c4e5f2f40c23f56f1b6d0aca89baf83e3f8d2b3e",
     "resources/js/toc.js": "b03e1ccbcfea6f7ab6af9b4175394920c5ac879c647c6f473dc6390715c92d85",
-    "resources/js/video.js": "092d508fef2e6709bb70d527b719985cb461abf1be67f3813fa8428786906720"
+    "resources/js/video.js": "092d508fef2e6709bb70d527b719985cb461abf1be67f3813fa8428786906720",
+    "resources/js/zoom.js": "7f608505754dacdeb2db0b55714bebf511726a7f86c10dbb491778da246205dc"
   }
 }

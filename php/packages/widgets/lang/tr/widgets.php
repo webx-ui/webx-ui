@@ -166,4 +166,8 @@ return [
         'label' => 'Duyuru',
         'close' => 'Duyuruyu kapat',
     ],
+    'zoom' => [
+        'label' => 'Yakınlaştır',
+        'named' => 'Yakınlaştır: :name',
+    ],
 ];

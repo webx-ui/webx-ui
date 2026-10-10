@@ -166,4 +166,8 @@ return [
         'label' => 'Avviso',
         'close' => 'Chiudi l’avviso',
     ],
+    'zoom' => [
+        'label' => 'Ingrandisci',
+        'named' => 'Ingrandisci: :name',
+    ],
 ];

@@ -166,4 +166,8 @@ return [
         'label' => 'Hinweis',
         'close' => 'Hinweis schließen',
     ],
+    'zoom' => [
+        'label' => 'Vergrößern',
+        'named' => 'Vergrößern: :name',
+    ],
 ];

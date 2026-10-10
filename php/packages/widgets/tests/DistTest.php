@@ -87,7 +87,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js'], $built);
+        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
@@ -107,7 +107,7 @@ final class DistTest extends PlainTestCase
     #[Test]
     public function the_content_widgets_stay_inside_their_budgets(): void
     {
-        foreach (['compare', 'toc', 'load-more'] as $widget) {
+        foreach (['compare', 'toc', 'load-more', 'zoom'] as $widget) {
             $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
 
             $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));

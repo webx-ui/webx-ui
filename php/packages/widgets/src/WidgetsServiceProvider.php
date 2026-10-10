@@ -68,6 +68,7 @@ use WebxUi\Widgets\View\Components\Tabs;
 use WebxUi\Widgets\View\Components\TabsPanel;
 use WebxUi\Widgets\View\Components\Toc;
 use WebxUi\Widgets\View\Components\Video;
+use WebxUi\Widgets\View\Components\Zoom;
 use WebxUi\Widgets\View\HeaderNavigation;
 use WebxUi\Widgets\View\Sliders;
 
@@ -154,6 +155,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-pagination', Pagination::class);
         Blade::component('webx-load-more', LoadMore::class);
         Blade::component('webx-notice-bar', NoticeBar::class);
+        Blade::component('webx-zoom', Zoom::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');

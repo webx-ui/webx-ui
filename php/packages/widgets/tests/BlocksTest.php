@@ -146,6 +146,23 @@ final class BlocksTest extends TestCase
 
         // Two galleries on a page page through their own pictures.
         $this->assertStringContainsString('data-webx-lightbox="gallery-k2"', $this->render('gallery', ['pictures' => $pictures, 'view' => 'slider']));
+        $this->assertStringNotContainsString('data-webx-zoom', $html, 'no magnifying unless asked');
+    }
+
+    #[Test]
+    public function the_slider_magnifies_its_pictures_through_the_lightboxs_link_when_asked(): void
+    {
+        $pictures = array_map(fn (int $n): array => ['path' => $this->picture("photo-{$n}")->path], [1, 2, 3]);
+
+        $html = $this->render('gallery', ['pictures' => $pictures, 'view' => 'slider', 'magnify' => 'side']);
+
+        // The attribute on the link: a mouse magnifies, a click and a key still open the lightbox.
+        $this->assertSame(3, preg_match_all('~<a [^>]*data-webx-lightbox="gallery-k1"[^>]* data-webx-zoom="" data-zoom-mode="side">~', $html));
+        $this->assertSame(1, substr_count($this->render('gallery', ['pictures' => [$pictures[0]], 'view' => 'slider', 'magnify' => 'inner']), 'data-zoom-mode="inner"'));
+
+        // A grid's cells are too small to magnify; without the lightbox a keyboard would have no way in.
+        $this->assertStringNotContainsString('data-webx-zoom', $this->render('gallery', ['pictures' => $pictures, 'magnify' => 'side']));
+        $this->assertStringNotContainsString('data-webx-zoom', $this->render('gallery', ['pictures' => $pictures, 'view' => 'slider', 'magnify' => 'side', 'zoom' => false]));
     }
 
     #[Test]
