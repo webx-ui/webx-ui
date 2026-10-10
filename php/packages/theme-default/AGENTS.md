@@ -14,7 +14,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   `font-heading`.
 - **`views/components/layout`** — the document every module page is printed in (`<x-layout>`):
   `@webxTheme`, the page's `head` slot (or `@webxSeo` + `@webxBlocks` when there is none),
-  `@stack('head')`, the `header` and `footer` regions, `<main id="content" class="site-main">`,
+  `@stack('head')`, `<x-webx-notice-bar>` above the header (a `notice` banner, else `@stack('notice')`), the `header` and `footer` regions, `<main id="content" class="site-main">`,
   `@stack('scripts')`.
 - **`views/components/header`**, **`views/components/footer`** — the regions' fallbacks:
   `config('app.name')` and `menu('header')` (the pages under the home page until the menu has
@@ -32,7 +32,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   the library by the media demo and named in a page as `"path": "demo:<file name>"`. Nothing
   under `demo/` is published on a site. A page per widget under "Kitchen sink": Header and menu,
   Cookie consent, Dropdown and form in a dialog, Contacts, Language switcher, Slider, Lightbox,
-  Video, Map, Page tools, Background video, Counters and countdown, Before and after, Table of contents — every variant, a narrow column, what to try; the place to look before changing one.
+  Video, Map, Page tools, Background video, Counters and countdown, Before and after, Table of contents, Show more, Notice bar (with Same words and New words under it) — every variant, a narrow column, what to try; the place to look before changing one.
 - **`src/css/`** — `base.css`, `shell.css`, `prose.css`, joined by `theme.css`; every selector
   inside `:where()` (no specificity). **`dist/theme.css`** — the committed build that
   `webx:theme:sync` publishes.

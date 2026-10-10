@@ -297,6 +297,42 @@ What a long page needs, each loading only where it stands:
   list. `fold="never"` keeps it open. The section being read is marked `is-current` as the page
   scrolls.
 
+## Pages of a list, "Show more", the notice bar
+
+```blade
+<x-webx-pagination :paginator="$articles" />
+
+<x-webx-load-more :paginator="$articles" pages="shown">
+    <ul class="cards" data-webx-load-more-list>
+        @foreach ($articles as $article) <li>…</li> @endforeach
+    </ul>
+</x-webx-load-more>
+
+<x-webx-notice-bar />
+```
+
+- **Pagination** — what `->paginate()` answered, as it is: previous, the numbers around this page
+  (`around`, 2 by default) with the first and the last always there, next. `->simplePaginate()`
+  gets previous and next. The first page links to the list's own address, not `?page=1` — one
+  address per page. A stylesheet, no script.
+- **Show more** — the list and its pagination, which is what a page without JavaScript and a search
+  engine get. The script shows a button: it fetches the next page as any visitor gets it, takes the
+  items of the list with the same page parameter out of its HTML and adds them, focuses the first
+  new item, says "Page 2 of 4 loaded." to a screen reader and replaces the address with
+  `?page=2`. Back leaves the list; a reload lands on the page last loaded, whose links lead back. No
+  endpoint and no JSON: an item is what the module prints, a theme's override included. The list
+  is the element marked `data-webx-load-more-list` (its children are the items); without one the
+  slot is the items. `pages="covered"` (the default) — the button stands in for the links;
+  `pages="shown"` — both, the pages already on the screen marked. A module's own links go in the
+  `links` slot. A failure says so and uncovers the links.
+- **Notice bar** — above the header (the default theme's layout prints it after "Skip to
+  content"), a region named "Announcement" with a close button. It says the first banner of the
+  place `notice` of `webx-ui/module-banners` — a place of words, where a banner needs no
+  picture — else its slot, else nothing. Closing it remembers the version of its words in
+  `localStorage` (`version` names one of your own); new words come back for everybody. A closed bar
+  is hidden by a line in the head before the page is painted, so it never flashes. It is in the
+  flow and does not stick: the sticky header and `--webx-header-height` are what they were.
+
 ## Blocks
 
 On a site with `module-blocks` and `module-media` the package offers eight block types — `webx:setup`
@@ -347,6 +383,7 @@ promise:
 | `widgets.counter_number` | notice   | a counter whose markup does not hold its number — an override that left it to the script           | —                                                  |
 | `widgets.compare_range`  | warning  | before and after without its range input — an override that lost it: no keyboard, no screen reader | —                                                  |
 | `widgets.toc_target`     | warning  | a link of a table of contents to an id the page does not have                                      | —                                                  |
+| `widgets.load_more_link` | warning  | "Show more" with a next page and no link to it — only a button, which no search engine presses     | —                                                  |
 | `widgets.contact_both`   | notice   | the quick-contact button and the bottom bar on one page                                            | —                                                  |
 
 "Pasted into content" means a text block, a page's body or any field a module hands to the audit:
@@ -361,6 +398,6 @@ third party the audit does not know is added in `webx-widgets.audit.third-party`
 `theme-default` brings a showcase, seeded by `php artisan webx:demo` and removed with it: under
 **Kitchen sink** a page per widget — Header and menu, Cookie consent, Dropdown and form in a
 dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map, Page tools, Background video,
-Counters and countdown, Before and after, Table of contents — with every variant, a narrow
+Counters and countdown, Before and after, Table of contents, Show more, Notice bar — with every variant, a narrow
 column, what to try and the markup to copy. It is the place to look at a change in the theme
 before a real page does, and the pages the starter site's browser tests measure.

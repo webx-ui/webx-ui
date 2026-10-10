@@ -142,6 +142,41 @@ id (`for`) or of `<main>` — and the headings get their ids there, so every lin
 JavaScript. Wide, the list stands beside the text and sticks under the header; narrow, it folds
 into a bar above the text that names the section being read.
 
+## Lists: pages and "Show more"
+
+```blade
+<x-webx-load-more :paginator="$articles">
+    @foreach ($articles as $article) <article>…</article> @endforeach
+</x-webx-load-more>
+
+<x-webx-pagination :paginator="$articles" />
+```
+
+Both take what `->paginate()` answered as it is. The pagination is the links of the pages —
+previous, the numbers around this one with the first and the last, next — with a stylesheet and
+no script; the first page is the list's own address, not `?page=1`.
+
+"Show more" prints the list and those links, and its script puts a button over them: it fetches the
+next page as any visitor gets it, adds the items of the same list to this one, moves the focus to
+the first new item and the address to that page (`replaceState`: Back leaves the list, a reload
+lands on the page last loaded). No endpoint: an item is printed by the module's view, a theme's
+override included. `pages="shown"` keeps the links under the button. Without JavaScript, and for a
+search engine, the links are all there is. A list of the slot's own is marked
+`data-webx-load-more-list`; a module's own links go in the `links` slot.
+
+## Notice bar
+
+```blade
+<x-webx-notice-bar />                       {{-- in the layout, before the header --}}
+<x-webx-notice-bar>Free delivery until Sunday</x-webx-notice-bar>
+```
+
+A bar above the header with a close button. It says the first banner of the place `notice` of
+`webx-ui/module-banners` (a banner of words only, changed in the panel), else its slot, else
+nothing. Closed, it stays closed by the version of its words — a new text comes back for
+everybody — and a closed bar is hidden by a line in the head before the page is painted. It stands
+in the flow, so the sticky header measures what it always did.
+
 ## Blocks
 
 On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers eight block
@@ -183,7 +218,8 @@ With `webx-ui/module-audit` every crawled page is also read for what the widgets
   setting of the Cookie tab, which wins over the config.
 - **Lightbox link without the picture size**, **moving slider without a pause button**, **background
   video without a pause button**, **before and after without its slider** (a theme's override that
-  lost it), **a table of contents linking to a heading the page does not have** — warnings; **a counter without
+  lost it), **a table of contents linking to a heading the page does not have**, **"Show more" without a link
+  to its next page** (search engines do not press buttons) — warnings; **a counter without
   its number** (an override that left it to the script) and **both quick-contact widgets on one
   page** — notices.
 

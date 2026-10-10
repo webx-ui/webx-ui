@@ -12,9 +12,11 @@ for those.
 
 - **Tables** `banner_places` and `banners` (`WebxUi\Banners\Models\Place`, `Banner`). A banner is
   off when created (`enabled`); words are translatable, media are not.
-- **Places**: those declared in `config('webx-banners.places')` (`hero`, `promo` by default)
-  exist from day one and cannot be renamed or deleted in the panel; an administrator adds and
-  deletes places of their own. An unknown place is an empty list, never an exception.
+- **Places**: those declared in `config('webx-banners.places')` (`hero`, `promo`, `notice` by
+  default) exist from day one and cannot be renamed or deleted in the panel; an administrator adds and
+  deletes places of their own. An unknown place is an empty list, never an exception. A banner
+  needs a picture, except in a declared place with `'image' => false` — `notice`, the words of the
+  announcement bar `<x-webx-notice-bar>` of `webx-ui/widgets` prints (title, text, buttons).
 - **Helpers** `banners('hero')->get()`, `->first()`, `->take(3)`, `->only([...])`,
   `->except($banner)`, `->locale('uk')` — the cards; `banners_layout('hero')` — the layout
   (`single`, `random`, `slider`) merged with `webx-banners.options` and the place's `options`.
