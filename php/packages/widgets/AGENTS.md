@@ -14,8 +14,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   shows/hides `#<id>` (Esc, a click outside close); `data-webx-dialog="<id>"` opens `<dialog id>` as
   a modal (`[data-webx-dialog-close]` inside closes it, a URL ending in `#<id>` opens it on load);
   `data-webx-tabs` on a container of `[data-webx-tab]` panels (label: the value or the first heading;
-  `data-webx-tab-selected` first shown); `data-webx-accordion="single"` on `<details>` — one open.
-- **Components** — `<x-webx-dialog id title close>`, `<x-webx-tabs label>` with `<x-webx-tabs.panel title selected level>`.
+  `data-webx-tab-selected` first shown); `data-webx-accordion="single"` on `<details>` — one open. Components: `<x-webx-dialog id title close>`, `<x-webx-tabs label>` with `<x-webx-tabs.panel title selected level>`.
 - **Header** — `<x-webx-header>` with slots `topbar`, `brand`, the default (the navigation),
   `actions`, `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` | a width in px |
   `never`), `breakpoint` (where `auto` folds without JavaScript, 960), `sticky` (`none` |
@@ -72,7 +71,7 @@ variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3
 - **Video** — `dist/video.js|css`, only where one stands: `<x-webx-video src="<YouTube or Vimeo>"
 :poster="$picture" title ratio="16/9">` — a poster and a play button, the player (youtube-nocookie)
   only on a click; before consent to `media` the server prints the notice with "Load" / "Always load
-  videos". No poster: its preview, fetched once into the library ("Video posters"). `:file="$media"` — `<video preload="none">`.
+  videos". No poster: its preview, fetched once into the library ("Video posters"). `:file="$media"` — `<video preload="none">`; `variant="background"` (a file only) — a first screen's backdrop behind what the tag wraps: muted loop, a pause button always, played only on screen, the poster under reduced motion / saveData / without JavaScript.
 - **Map** — `dist/map.js|css` (Leaflet), only where one stands: `<x-webx-map :lat :lng :zoom marker height title link>`
   or `<x-webx-map from="settings">` (main address of the Contacts tab; no coordinates — the address alone). The server
   prints the address, "Open in maps" and, before consent to `media`, "Load" / "Always load maps"; tiles only after. The
@@ -81,12 +80,13 @@ variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3
   (`__caption` above `__frame` > `__scroller` > `__table`; `dist/table.js` adds the shadows `is-more-left|right`);
   `data-webx-reveal="up|fade|scale"`, or `"stagger"` + `data-webx-reveal-effect` (runtime; only the script hides, below the
   fold); `<x-webx-back-to-top corner :after>`; `<x-webx-share title url :networks>` — plain links, Copy link, a phone's sheet.
+- **Numbers** — `<x-webx-counter :value prefix suffix decimals duration>` (`dist/counter.*`): the final number printed, counted up to only below the fold; `<x-webx-countdown to ended>` (`dist/countdown.*`): a wall time of the site's zone (the Contacts tab's, else `app.timezone`) or a moment with its offset; ticks each second; at the end `ended`, or it goes with the nearest `[data-webx-countdown-scope]`; without JavaScript the date.
 - **Blocks** — offered with `module-media` (`webx:setup`, or `webx:blocks:offered --install --module=widgets`),
   then the site's: `gallery` (library pictures, grid or slider, zoom = lightbox, a group per block, title = caption),
-  `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16), `map` (contacts or coordinates, zoom, height); nothing to show prints nothing.
+  `logos` (name, logo, link each, a strip), `video` (link or file by a switch, poster, caption, 16:9|4:3|1:1|9:16), `map` (contacts or coordinates, zoom, height), `counters` (number, before, after, label each), `countdown` (date, time of the site's zone, at the end: a text or hide); nothing to show prints nothing.
 - **Audit** (with `module-audit`): `widgets.before_consent` (a known player, map, counter or pixel asked at once —
   fix `widgets.wait-for-consent` rewrites it where content stores it), `widgets.banner_off` (fix `widgets.banner-on`),
-  `widgets.lightbox_size`, `widgets.slider_pause`, `widgets.contact_both`. Own third parties: `webx-widgets.audit.third-party`.
+  `widgets.lightbox_size`, `widgets.slider_pause`, `widgets.video_pause`, `widgets.counter_number`, `widgets.contact_both`. Own third parties: `webx-widgets.audit.third-party`.
 - **Classes** — public contract: `webx-<name>`, `webx-<name>__<element>`, states `is-*`
   (`webx-dialog__header|title|close|body`, `webx-tabs__list|tab|panel|title`, `is-enhanced`;
   `webx-header`, `--sticky|--hide-on-scroll|--overlay`, `__skip|topbar|bar|brand|nav|actions|trigger`,
@@ -102,7 +102,7 @@ body|done`, `is-sent`; `webx-phones__*`, `webx-hours__*` (`is-open|is-closed|is-
   `__viewport|track|slide|controls|button|prev|next|pause|pagination|bullet|thumbs|thumb`,
   `is-ready|is-active`; `webx-lightbox-link`, `__image`, `is-ready`, the viewer PhotoSwipe's `.pswp`
   with `webx-lightbox`; `webx-video`, `--youtube|vimeo|file`, `__facade|poster|play|consent|notice|
-button|frame|player`, `is-blocked|is-ready|is-playing`; `webx-map`, `--place`, `__place|address|open|notice|button|attribution|canvas|marker|hint`, `is-loaded|is-active` — in each view). `html.webx-js` once the runtime runs; `html.webx-scroll-locked`
+button|frame|player|backdrop|background|over|pause`, `is-blocked|is-ready|is-playing|is-paused`; `webx-counter__prefix|number|suffix|final`, `is-counting`; `webx-countdown__date|units|unit|value|label|ended`, `is-over`; `webx-map`, `--place`, `__place|address|open|notice|button|attribution|canvas|marker|hint`, `is-loaded|is-active` — in each view). `html.webx-js` once the runtime runs; `html.webx-scroll-locked`
   while a modal is open; `html.webx-header-sticky` while a header sticks (scroll padding = its height).
 - **Local tokens** — `--webx-<name>-*` of each widget (`--webx-slider-per-view`, `--webx-lightbox-backdrop`…),
   on `:root` from `--site-*`; `--webx-header-height|-topbar-height` kept live by the runtime — `top` of anything sticky.

@@ -2733,13 +2733,16 @@ test.describe('background video', () => {
       timeout: 10_000,
     })
 
-    // Scrolled away the first rests and the last plays; back again, the other way round.
+    // Scrolled away the first rests and the last plays; back again, the other way round. The
+    // narrow one between them may be on the screen with either.
     await last.scrollIntoViewIfNeeded()
     await expect
-      .poll(async () => (await frames(page)).map((f) => f.playing))
-      .toEqual([false, false, true])
+      .poll(async () => (await frames(page)).map((f) => f.playing).filter((_, i) => i !== 1))
+      .toEqual([false, true])
     await first.scrollIntoViewIfNeeded()
-    await expect.poll(async () => (await frames(page))[0].playing).toBe(true)
+    await expect
+      .poll(async () => (await frames(page)).map((f) => f.playing).filter((_, i) => i !== 1))
+      .toEqual([true, false])
 
     await first.locator('.webx-video__pause').click()
     await expect.poll(async () => (await frames(page))[0].playing).toBe(false)

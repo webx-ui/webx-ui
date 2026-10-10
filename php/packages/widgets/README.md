@@ -64,6 +64,19 @@ fetches once into its media library (folder "Video posters") after the first pag
 video. A file of the site is a `<video preload="none">` with no consent to ask for. The frame keeps
 its ratio (16/9 unless told) before anything loads; without JavaScript the video is a link.
 
+```blade
+<x-webx-video variant="background" :file="$media" :poster="$picture" ratio="21/9">
+    <h1>Made to move</h1>
+</x-webx-video>
+```
+
+The background of a first screen is a file of the site only — YouTube behind a hero would be asked
+on every showing — muted, looping, without controls, behind what the tag wraps; the ratio is the
+least the frame takes, the text makes it taller. It plays only on screen and with the tab in front,
+never by itself under reduced motion or on a connection saving data; the poster stays until the
+first frame. A pause button is always in its corner (WCAG 2.2.2), and a pause is remembered for the
+next page. Without JavaScript: the poster, nothing moving.
+
 ## Map
 
 ```blade
@@ -97,9 +110,24 @@ reduced motion it is simply there. Share is plain links to each network, Copy li
 share sheet on a phone — no network's script. Back to top comes after two screens and stands above
 the cookie banner and the quick contact of its corner.
 
+## Counter and countdown
+
+```blade
+<x-webx-counter :value="3000" suffix="+" />
+<x-webx-countdown to="2026-12-31 18:00" ended="The sale is over" />
+```
+
+A counter prints its final number, as the page's language writes it — what search engines and
+screen readers read — and counts up to it when it comes into view; one already on the screen when
+the page opens, or under reduced motion, keeps its number. A countdown runs to a wall time of the
+site's time zone (the one of the opening hours on the Contacts tab, else the application's) or to a
+moment with its offset, and ticks every second from the clock, so a page from a cache is right. At
+the end it says `ended`, or goes — with the nearest `[data-webx-countdown-scope]` around it. Without
+JavaScript it is the line "Ends on …" rather than digits standing still.
+
 ## Blocks
 
-On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers four block
+On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers six block
 types — `webx:setup` installs them, or `php artisan webx:blocks:offered --install --module=widgets`:
 
 - **Gallery** — pictures of the media library as a grid (as many columns as the column has room
@@ -112,6 +140,11 @@ types — `webx:setup` installs them, or `php artisan webx:blocks:offered --inst
   an address of no known provider, a file gone from the library or nothing at all prints nothing.
 - **Map** — the main address of the Contacts tab or coordinates with an address of their own (a
   switch says which), a zoom and a height: low, medium or tall. Nowhere to show prints nothing.
+- **Counters** — a number (3000, 3,000 and 3 000 alike; 4,9 or 4.9), what stands before and after
+  it, and what it counts, each; a row that wraps to two in a narrow column.
+- **Countdown** — a heading, a line, a date and a time of the site's time zone, and at the end a
+  text or nothing: a countdown over with nothing to say is not printed, and goes from the page the
+  second it ends.
 
 Installed once, they belong to the site: change them in the panel, an update never overwrites them.
 
@@ -127,8 +160,10 @@ With `webx-ui/module-audit` every crawled page is also read for what the widgets
   video and map blocks. A site's own third parties: `webx-widgets.audit.third-party`.
 - **Banner off with third parties on the site** (warning) — "Turn the cookie banner on" writes the
   setting of the Cookie tab, which wins over the config.
-- **Lightbox link without the picture size**, **moving slider without a pause button** (a theme's
-  override that lost it) — warnings; **both quick-contact widgets on one page** — a notice.
+- **Lightbox link without the picture size**, **moving slider without a pause button**, **background
+  video without a pause button** (a theme's override that lost it) — warnings; **a counter without
+  its number** (an override that left it to the script) and **both quick-contact widgets on one
+  page** — notices.
 
 ## How a page gets it
 

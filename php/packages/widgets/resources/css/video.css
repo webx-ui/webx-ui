@@ -187,9 +187,12 @@ html:not(.webx-js) .webx-video__consent {
  * The background of a first screen (variant="background"): the poster and the video behind what
  * the tag wraps. The ratio is the least it takes — the content makes it taller (an aspect-ratio
  * box grows to its content while it does not clip), so the root does not hide its overflow: the
- * backdrop does, and keeps the corners.
+ * backdrop does, and keeps the corners. One grid cell: what the tag wraps fills the frame.
  */
 .webx-video--background {
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   isolation: isolate;
   overflow: visible;
 }
@@ -223,7 +226,7 @@ html:not(.webx-js) .webx-video__consent {
 .webx-video__over {
   position: relative;
   box-sizing: border-box;
-  min-height: 100%;
+  min-width: 0;
 }
 
 /* WCAG 2.2.2: motion that lasts gets a way to stop it — quiet, in the corner, but always there. */
