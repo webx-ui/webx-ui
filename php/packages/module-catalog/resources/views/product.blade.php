@@ -11,12 +11,18 @@
     and puts the player in on a click, so nothing of YouTube loads and no cookie is set before; a
     file of the site is a <video preload="none">. Without JS a video of YouTube is a link to it.
 
+    Any other picture is shown as a smaller copy and magnified under the mouse and two fingers
+    (<x-webx-zoom>, `images.zoom` in the config): the original comes only when someone looks closer,
+    and a click — or Enter — opens it over the page, paging through the product's pictures.
+
     Two points for the satellites: `catalog.product.aside` beside the price (the stock, the brand)
     and `catalog.product.tabs` under the description (properties, related products).
 --}}
 @php($priced = (bool) config('webx-catalog.price.enabled', true))
 @php($images = $product->images)
 @php($videos = (bool) config('webx-catalog.fields.video', true))
+@php($zoom = in_array(config('webx-catalog.images.zoom'), ['inner', 'side'], true) ? config('webx-catalog.images.zoom') : null)
+@php($shown = max(320, (int) config('webx-catalog.images.shown', 1200)))
 
 <x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
     <x-slot:head>
@@ -49,6 +55,14 @@
                                 <x-webx-video :src="$video['url']" :poster="$poster" :title="$name" :ratio="$shape" />
                             @endif
                         </figure>
+                    @elseif ($zoom !== null)
+                        <x-webx-zoom :image="$image"
+                                     :src="$image->thumbUrl($shown) ?? $image->url()"
+                                     :alt="$image->getTranslation('alt') ?: $product->displayName()"
+                                     :mode="$zoom"
+                                     :group="'product-'.$product->id"
+                                     :eager="$loop->first"
+                                     :title="$image->getTranslation('title') ?: null" />
                     @else
                         <img src="{{ $image->url() }}"
                              alt="{{ $image->getTranslation('alt') ?: $product->displayName() }}"

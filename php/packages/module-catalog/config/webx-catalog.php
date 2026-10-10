@@ -125,11 +125,19 @@ return [
     | Straight onto this disk under `catalog/{id div 1000}/{id}/`, not into the
     | media library: half a million product photos belong to no editor's tree.
     |
+    | On the product's page a picture is shown `shown` pixels wide at most and
+    | magnified under the mouse and two fingers (`<x-webx-zoom>`, widgets §14):
+    | `zoom` is `inner` (in the picture's frame), `side` (in a panel beside
+    | it, where the page has room) or `off`. The original is fetched only when
+    | someone looks closer; a click opens it over the page either way.
+    |
     */
 
     'images' => [
         'disk' => env('WEBX_CATALOG_IMAGES_DISK', 'public'),
         'max_size_kb' => 10240,
+        'zoom' => env('WEBX_CATALOG_IMAGES_ZOOM', 'inner'),
+        'shown' => 1200,
     ],
 
     /*
