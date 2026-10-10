@@ -58,5 +58,11 @@ return [
             'why' => 'O visitante clica numa secção e nada acontece: a página não se move e o índice parece avariado.',
             'fix' => 'O servidor monta o índice com os títulos da página e dá-lhes os seus id. Um índice escrito à mão, ou uma substituição da lista no tema, aponta para um id que desapareceu: use <x-webx-toc> ou corrija a ligação.',
         ],
+        'load_more_link' => [
+            'title' => '«Mostrar mais» sem ligação para a página seguinte',
+            'found' => 'Uma lista com «Mostrar mais» tem uma página seguinte, mas nenhuma ligação para ela: só o botão leva até lá.',
+            'why' => 'Os motores de busca não carregam em botões, e uma página sem JavaScript também não: o que vem depois da primeira página não é encontrado.',
+            'fix' => 'O pacote imprime as ligações das páginas por baixo da lista e o botão apenas as cobre: uma substituição de webx-widgets::components.load-more no tema, ou um slot links vazio, perdeu-as. Reponha-as ou retire a substituição.',
+        ],
     ],
 ];

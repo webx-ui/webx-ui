@@ -157,6 +157,12 @@ final class AuditTest extends TestCase
         $this->assertStringContainsString('href="#gone"', (string) $toc->details['table']['rows'][0]['markup']);
         $this->assertSame('Table of contents links to nowhere: 1', __($toc->details['summary']['key'], $toc->details['summary']['params']));
 
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.load_more_link')), 'a link written whole is the same address; no next page, nothing to link');
+        $more = AuditIssue::query()->where('check', 'widgets.load_more_link')->firstOrFail();
+        $this->assertSame('warning', $more->severity);
+        $this->assertStringStartsWith('<div class="webx-load-more" id="buttoned"', (string) $more->details['table']['rows'][0]['markup']);
+        $this->assertSame('Show more without a link to the next page: 1', __($more->details['summary']['key'], $more->details['summary']['params']));
+
         // What the reader keeps of a page: only what is there.
         $home = AuditPage::query()->where('url', self::BASE.'/')->firstOrFail();
         $this->assertSame(['waits' => ['media' => 2, 'statistics' => 1]], $home->fact('widgets'));
@@ -324,7 +330,10 @@ final class AuditTest extends TestCase
                 .'<span class="webx-counter" data-webx-counter=\'{"value":4.9,"decimals":1}\'><span class="webx-counter__number">4,9</span></span>'
                 // Before and after with its slider; a table of contents whose links all land, one by an encoded id.
                 .'<figure class="webx-compare" data-webx-compare><div class="webx-compare__frame"><input class="webx-compare__range" type="range"></div></figure>'
-                .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#who">Who</a><a class="webx-toc__link" href="#%D0%B4%D0%B0">Да</a></nav><h2 id="who">Who</h2><h2 id="да">Да</h2></div>'),
+                .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#who">Who</a><a class="webx-toc__link" href="#%D0%B4%D0%B0">Да</a></nav><h2 id="who">Who</h2><h2 id="да">Да</h2></div>'
+                // Show more with its link to the next page, written whole; and one on its last page.
+                .'<div class="webx-load-more" data-webx-load-more="page" data-next="/?page=2"><div data-webx-load-more-list><p>1</p></div><nav><a rel="next" href="https://shop.example.com/?page=2">Next</a></nav></div>'
+                .'<div class="webx-load-more" data-webx-load-more="reviews"><div data-webx-load-more-list><p>1</p></div></div>'),
             '/raw' => $page('Raw', self::PASTED.self::SNIPPET
                 .'<iframe src="https://www.google.com/maps/embed?pb=1" title="Map"></iframe>'
                 .'<script src="https://www.youtube.com/s/player.js"></script>'
@@ -342,7 +351,9 @@ final class AuditTest extends TestCase
                 .'<span class="webx-counter" data-webx-counter=\'{"value":3000,"decimals":0}\'><span class="webx-counter__number">0</span></span>'
                 // An override that lost the slider of before and after, and a list written by hand to a heading that is gone.
                 .'<figure class="webx-compare" id="bare" data-webx-compare><div class="webx-compare__frame"></div></figure>'
-                .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#intro">Intro</a><a class="webx-toc__link" href="#gone">Gone</a></nav><h2 id="intro">Intro</h2></div>'),
+                .'<div class="webx-toc" data-webx-toc><nav class="webx-toc__nav"><a class="webx-toc__link" href="#intro">Intro</a><a class="webx-toc__link" href="#gone">Gone</a></nav><h2 id="intro">Intro</h2></div>'
+                // Show more whose links an override lost: a button and nothing a crawler follows.
+                .'<div class="webx-load-more" id="buttoned" data-webx-load-more="page" data-next="/slider?page=2"><div data-webx-load-more-list><p>1</p></div><a href="/slider?page=3">3</a><button type="button">Show more</button></div>'),
             '/contacts' => $page('Contacts', '<div class="webx-contact-button"></div><div class="webx-contact-bar"></div>'),
             '/plain' => $page('Plain', '<p>Nothing of the widgets here.</p>'),
         ];

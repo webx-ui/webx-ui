@@ -58,5 +58,11 @@ return [
             'why' => 'Le visiteur clique sur une section et rien ne se passe : la page ne bouge pas et la table semble cassée.',
             'fix' => 'Le serveur construit la table à partir des titres de la page et leur donne leurs id. Une table écrite à la main, ou une surcharge de la liste dans le thème, vise un id disparu : utilisez <x-webx-toc> ou corrigez le lien.',
         ],
+        'load_more_link' => [
+            'title' => '« Afficher plus » sans lien vers la page suivante',
+            'found' => 'Une liste « Afficher plus » a une page suivante mais aucun lien vers elle : seul son bouton y mène.',
+            'why' => 'Les moteurs de recherche n’appuient pas sur les boutons, et une page sans JavaScript non plus : ce qui suit la première page n’est pas trouvé.',
+            'fix' => 'Le paquet imprime les liens des pages sous la liste et le bouton ne fait que les couvrir : une surcharge de webx-widgets::components.load-more dans le thème, ou un slot links vide, les a perdus. Remettez-les, ou retirez la surcharge.',
+        ],
     ],
 ];

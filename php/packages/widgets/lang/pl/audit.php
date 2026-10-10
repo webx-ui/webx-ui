@@ -12,6 +12,7 @@ return [
     'counter-number' => 'Liczniki bez swojej liczby: :count',
     'compare-range' => 'Przed i po bez suwaka: :count',
     'toc-target' => 'Spis treści prowadzi donikąd: :count',
+    'load-more-link' => '„Pokaż więcej” bez linku do następnej strony: :count',
     'on' => 'Wł.',
     'off' => 'Wył.',
 ];

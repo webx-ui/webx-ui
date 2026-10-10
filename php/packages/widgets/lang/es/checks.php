@@ -58,5 +58,11 @@ return [
             'why' => 'El visitante pulsa una sección y no pasa nada: la página no se mueve y el índice parece roto.',
             'fix' => 'El servidor arma el índice con los títulos de la página y les da sus id. Un índice escrito a mano, o una sobrescritura de la lista en el tema, apunta a un id que ya no existe: use <x-webx-toc> o corrija el enlace.',
         ],
+        'load_more_link' => [
+            'title' => '«Mostrar más» sin enlace a la página siguiente',
+            'found' => 'Una lista con «Mostrar más» tiene una página siguiente pero ningún enlace a ella: solo lleva allí su botón.',
+            'why' => 'Los buscadores no pulsan botones, y una página sin JavaScript tampoco: lo que viene después de la primera página no se encuentra.',
+            'fix' => 'El paquete imprime los enlaces de las páginas bajo la lista y el botón solo los tapa: una sobrescritura de webx-widgets::components.load-more en el tema, o un slot links vacío, los perdió. Vuelva a ponerlos o quite la sobrescritura.',
+        ],
     ],
 ];

@@ -149,4 +149,21 @@ return [
     'toc' => [
         'title' => 'Na tej stronie',
     ],
+    'pagination' => [
+        'label' => 'Strony',
+        'previous' => 'Poprzednia',
+        'next' => 'Następna',
+    ],
+    'load_more' => [
+        'label' => 'Pokaż więcej',
+        'loading' => 'Wczytywanie…',
+        'loaded' => 'Wczytano stronę :page z :last.',
+        'loaded_page' => 'Wczytano stronę :page.',
+        'end' => 'To wszystko.',
+        'failed' => 'Nie udało się wczytać następnej strony. Spróbuj ponownie albo użyj linków do stron.',
+    ],
+    'notice_bar' => [
+        'label' => 'Ogłoszenie',
+        'close' => 'Zamknij ogłoszenie',
+    ],
 ];

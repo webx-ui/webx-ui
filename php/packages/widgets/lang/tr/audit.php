@@ -12,6 +12,7 @@ return [
     'counter-number' => 'Sayısı olmayan sayaçlar: :count',
     'compare-range' => 'Kaydırıcısız önce ve sonra: :count',
     'toc-target' => 'Hiçbir yere gitmeyen içindekiler: :count',
+    'load-more-link' => 'Sonraki sayfaya bağlantısı olmayan “Daha fazla göster”: :count',
     'on' => 'Açık',
     'off' => 'Kapalı',
 ];

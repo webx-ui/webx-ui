@@ -149,4 +149,21 @@ return [
     'toc' => [
         'title' => 'Auf dieser Seite',
     ],
+    'pagination' => [
+        'label' => 'Seiten',
+        'previous' => 'Zurück',
+        'next' => 'Weiter',
+    ],
+    'load_more' => [
+        'label' => 'Mehr anzeigen',
+        'loading' => 'Wird geladen…',
+        'loaded' => 'Seite :page von :last geladen.',
+        'loaded_page' => 'Seite :page geladen.',
+        'end' => 'Das ist alles.',
+        'failed' => 'Die nächste Seite konnte nicht geladen werden. Versuchen Sie es erneut oder nutzen Sie die Links zu den Seiten.',
+    ],
+    'notice_bar' => [
+        'label' => 'Hinweis',
+        'close' => 'Hinweis schließen',
+    ],
 ];

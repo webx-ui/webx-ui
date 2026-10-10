@@ -149,4 +149,21 @@ return [
     'toc' => [
         'title' => 'Nesta página',
     ],
+    'pagination' => [
+        'label' => 'Páginas',
+        'previous' => 'Anterior',
+        'next' => 'Seguinte',
+    ],
+    'load_more' => [
+        'label' => 'Mostrar mais',
+        'loading' => 'A carregar…',
+        'loaded' => 'Página :page de :last carregada.',
+        'loaded_page' => 'Página :page carregada.',
+        'end' => 'É tudo.',
+        'failed' => 'Não foi possível carregar a página seguinte. Tente de novo ou use as ligações para as páginas.',
+    ],
+    'notice_bar' => [
+        'label' => 'Aviso',
+        'close' => 'Fechar o aviso',
+    ],
 ];

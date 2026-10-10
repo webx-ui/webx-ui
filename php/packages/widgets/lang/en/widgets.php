@@ -149,4 +149,21 @@ return [
     'toc' => [
         'title' => 'On this page',
     ],
+    'pagination' => [
+        'label' => 'Pages',
+        'previous' => 'Previous',
+        'next' => 'Next',
+    ],
+    'load_more' => [
+        'label' => 'Show more',
+        'loading' => 'Loading…',
+        'loaded' => 'Page :page of :last loaded.',
+        'loaded_page' => 'Page :page loaded.',
+        'end' => 'That is everything.',
+        'failed' => 'The next page could not be loaded. Try again, or use the links to the pages.',
+    ],
+    'notice_bar' => [
+        'label' => 'Announcement',
+        'close' => 'Close the announcement',
+    ],
 ];

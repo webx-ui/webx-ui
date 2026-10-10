@@ -58,5 +58,11 @@ return [
             'why' => 'Ein Besucher klickt auf einen Abschnitt und nichts passiert: Die Seite bewegt sich nicht, und das Verzeichnis wirkt kaputt.',
             'fix' => 'Der Server baut das Verzeichnis aus den Überschriften der Seite und vergibt ihre IDs. Ein von Hand geschriebenes Verzeichnis oder eine Überschreibung der Liste im Theme verweist auf eine verschwundene ID: Nutzen Sie <x-webx-toc> oder korrigieren Sie den Link.',
         ],
+        'load_more_link' => [
+            'title' => '„Mehr anzeigen“ ohne Link zur nächsten Seite',
+            'found' => 'Eine Liste mit „Mehr anzeigen“ hat eine nächste Seite, aber keinen Link dorthin: Nur der Button führt hin.',
+            'why' => 'Suchmaschinen drücken keine Buttons, und eine Seite ohne JavaScript kann es auch nicht: Was nach der ersten Seite kommt, wird nicht gefunden.',
+            'fix' => 'Das Paket druckt die Links zu den Seiten unter der Liste, der Button verdeckt sie nur: Eine Überschreibung von webx-widgets::components.load-more im Theme oder ein leerer links-Slot hat sie verloren. Setzen Sie sie zurück oder entfernen Sie die Überschreibung.',
+        ],
     ],
 ];

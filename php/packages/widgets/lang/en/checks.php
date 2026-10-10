@@ -58,5 +58,11 @@ return [
             'why' => 'A visitor clicks a section and nothing happens: the page does not move, and the list looks broken.',
             'fix' => 'The server makes the list from the page’s headings and gives them their ids. A list written by hand, or a theme’s override of the list, points at an id that is gone: use <x-webx-toc>, or fix the link.',
         ],
+        'load_more_link' => [
+            'title' => 'Show more without a link to the next page',
+            'found' => 'A “Show more” list has a next page but no link to it: only its button leads there.',
+            'why' => 'Search engines do not press buttons, and a page without JavaScript cannot either: the items past the first page are not found.',
+            'fix' => 'The package prints the links of the pages under the list and the button only covers them: a theme’s override of webx-widgets::components.load-more, or an empty links slot, lost them. Put them back, or remove the override.',
+        ],
     ],
 ];

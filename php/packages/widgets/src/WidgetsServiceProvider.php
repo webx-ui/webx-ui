@@ -29,6 +29,7 @@ use WebxUi\Widgets\Audit\CompareRange;
 use WebxUi\Widgets\Audit\ContactBoth;
 use WebxUi\Widgets\Audit\CounterNumber;
 use WebxUi\Widgets\Audit\LightboxSize;
+use WebxUi\Widgets\Audit\LoadMoreLink;
 use WebxUi\Widgets\Audit\SliderPause;
 use WebxUi\Widgets\Audit\TocTarget;
 use WebxUi\Widgets\Audit\VideoPause;
@@ -51,10 +52,13 @@ use WebxUi\Widgets\View\Components\HeaderNav;
 use WebxUi\Widgets\View\Components\Icon;
 use WebxUi\Widgets\View\Components\LanguageSwitcher;
 use WebxUi\Widgets\View\Components\Lightbox;
+use WebxUi\Widgets\View\Components\LoadMore;
 use WebxUi\Widgets\View\Components\Map;
 use WebxUi\Widgets\View\Components\MobileMenu;
 use WebxUi\Widgets\View\Components\MobileMenuNav;
+use WebxUi\Widgets\View\Components\NoticeBar;
 use WebxUi\Widgets\View\Components\OpeningHours;
+use WebxUi\Widgets\View\Components\Pagination;
 use WebxUi\Widgets\View\Components\Phones;
 use WebxUi\Widgets\View\Components\Share;
 use WebxUi\Widgets\View\Components\Slide;
@@ -147,6 +151,9 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-countdown', Countdown::class);
         Blade::component('webx-compare', Compare::class);
         Blade::component('webx-toc', Toc::class);
+        Blade::component('webx-pagination', Pagination::class);
+        Blade::component('webx-load-more', LoadMore::class);
+        Blade::component('webx-notice-bar', NoticeBar::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');
@@ -229,9 +236,9 @@ class WidgetsServiceProvider extends ServiceProvider
      * The checks of §15.2, when the site has `module-audit`: what loads before consent, the banner
      * switched off with something third-party on the site, a lightbox link without the picture's
      * size, a moving slider or a background video without its pause button, a counter without its
-     * number, before and after without its slider, a table of contents linking nowhere, both
-     * quick-contact widgets on one page. The page's HTML is not kept by the audit, so the reader
-     * takes what they need while it parses.
+     * number, before and after without its slider, a table of contents linking nowhere, show more
+     * without a link to its next page, both quick-contact widgets on one page. The page's HTML is
+     * not kept by the audit, so the reader takes what they need while it parses.
      */
     private function registerAudit(): void
     {
@@ -243,7 +250,7 @@ class WidgetsServiceProvider extends ServiceProvider
 
         $checks = $this->app->make(AuditChecks::class);
 
-        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth, new VideoPause, new CounterNumber, new CompareRange, new TocTarget] as $check) {
+        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth, new VideoPause, new CounterNumber, new CompareRange, new TocTarget, new LoadMoreLink] as $check) {
             $checks->register($check);
         }
 

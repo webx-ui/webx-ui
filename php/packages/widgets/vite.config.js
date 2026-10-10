@@ -109,6 +109,12 @@ export default {
         compare: join(root, 'resources/js/compare.js'),
         // The section being read and the fold; the list and the ids are the server's.
         toc: join(root, 'resources/js/toc.js'),
+        // The links of the pages: a stylesheet, no script.
+        pagination: join(root, 'resources/css/pagination.css'),
+        // Show more: the next page fetched as it is, its items taken out of its HTML.
+        'load-more': join(root, 'resources/js/load-more.js'),
+        // The close button; the head hides a closed bar before this arrives.
+        'notice-bar': join(root, 'resources/js/notice-bar.js'),
       },
       output: {
         entryFileNames: '[name].js',

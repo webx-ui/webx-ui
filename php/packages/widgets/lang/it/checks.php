@@ -58,5 +58,11 @@ return [
             'why' => 'Il visitatore clicca una sezione e non succede nulla: la pagina non si muove e l’indice sembra rotto.',
             'fix' => 'Il server costruisce l’indice dai titoli della pagina e assegna loro gli id. Un indice scritto a mano, o una sovrascrittura dell’elenco nel tema, punta a un id sparito: usate <x-webx-toc> o correggete il link.',
         ],
+        'load_more_link' => [
+            'title' => '«Mostra altro» senza link alla pagina successiva',
+            'found' => 'Un elenco con «Mostra altro» ha una pagina successiva ma nessun link verso di essa: ci porta solo il pulsante.',
+            'why' => 'I motori di ricerca non premono pulsanti, e nemmeno una pagina senza JavaScript: ciò che segue la prima pagina non viene trovato.',
+            'fix' => 'Il pacchetto stampa i link delle pagine sotto l’elenco e il pulsante li copre soltanto: una sovrascrittura di webx-widgets::components.load-more nel tema, o uno slot links vuoto, li ha persi. Rimetteteli o togliete la sovrascrittura.',
+        ],
     ],
 ];

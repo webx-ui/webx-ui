@@ -23,6 +23,7 @@ use WebxUi\Audit\Crawl\PageParser;
  *     counter_empty      a counter whose markup does not hold its number
  *     compare_rangeless  before and after without its range input: no keyboard, no screen reader
  *     toc_dangling       a link of a table of contents to a section the page does not have
+ *     load_more_linkless "Show more" with a next page and no link to it: a button only
  *     contact_both       the quick-contact button and the bottom bar on one page
  *
  * Only what is there: a page with none of it stores nothing.
@@ -50,6 +51,7 @@ final class WidgetsPageReader implements AuditPageReader
             'counter_empty' => $this->numberless($document),
             'compare_rangeless' => $this->rangeless($document),
             'toc_dangling' => $this->dangling($document),
+            'load_more_linkless' => $this->linkless($document, $url),
         ]);
 
         if ($document->querySelector('.webx-contact-button') !== null && $document->querySelector('.webx-contact-bar') !== null) {
@@ -294,6 +296,59 @@ final class WidgetsPageReader implements AuditPageReader
         }
 
         return $found['count'] === 0 ? [] : $found;
+    }
+
+    /**
+     * "Show more" with a next page and no link to it inside: the items past this page are then
+     * behind a button only — no search engine presses it. The link is compared as an address, so
+     * `/news?page=2` and `https://site/news?page=2` are one.
+     *
+     * @return array{count: int, markup: list<string>}|array{}
+     */
+    private function linkless(HTMLDocument $document, string $url): array
+    {
+        $found = ['count' => 0, 'markup' => []];
+        $address = static fn (string $href): string => self::address($href, $url);
+
+        foreach ($document->querySelectorAll('[data-webx-load-more][data-next]') as $list) {
+            $next = $address((string) $list->getAttribute('data-next'));
+
+            foreach ($list->querySelectorAll('a[href]') as $link) {
+                if ($address((string) $link->getAttribute('href')) === $next) {
+                    continue 2;
+                }
+            }
+
+            $found['count']++;
+
+            if (count($found['markup']) < self::EXCERPTS) {
+                $found['markup'][] = self::opening($list);
+            }
+        }
+
+        return $found['count'] === 0 ? [] : $found;
+    }
+
+    /** A link as the path and query it leads to on this site; another site's stays whole. */
+    private static function address(string $href, string $base): string
+    {
+        $href = html_entity_decode(trim($href));
+        $parts = parse_url($href);
+        $here = parse_url($base);
+
+        if ($parts === false || (isset($parts['host']) && strcasecmp((string) $parts['host'], (string) ($here['host'] ?? '')) !== 0)) {
+            return $href;
+        }
+
+        $path = $parts['path'] ?? '';
+
+        if ($path === '') {
+            $path = (string) ($here['path'] ?? '/');
+        } elseif (! str_starts_with($path, '/')) {
+            $path = rtrim(dirname((string) ($here['path'] ?? '/').'x'), '/').'/'.$path;
+        }
+
+        return $path.(isset($parts['query']) ? '?'.$parts['query'] : '');
     }
 
     /** The opening tag alone: a slider quoted whole is its first slide, not the place to look. */

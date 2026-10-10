@@ -12,6 +12,7 @@ return [
     'counter-number' => 'Zähler ohne ihre Zahl: :count',
     'compare-range' => 'Vorher-nachher ohne Schieberegler: :count',
     'toc-target' => 'Inhaltsverzeichnis führt ins Leere: :count',
+    'load-more-link' => '„Mehr anzeigen“ ohne Link zur nächsten Seite: :count',
     'on' => 'An',
     'off' => 'Aus',
 ];

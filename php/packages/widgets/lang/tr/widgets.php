@@ -149,4 +149,21 @@ return [
     'toc' => [
         'title' => 'Bu sayfada',
     ],
+    'pagination' => [
+        'label' => 'Sayfalar',
+        'previous' => 'Önceki',
+        'next' => 'Sonraki',
+    ],
+    'load_more' => [
+        'label' => 'Daha fazla göster',
+        'loading' => 'Yükleniyor…',
+        'loaded' => 'Sayfa :page / :last yüklendi.',
+        'loaded_page' => 'Sayfa :page yüklendi.',
+        'end' => 'Hepsi bu kadar.',
+        'failed' => 'Sonraki sayfa yüklenemedi. Yeniden deneyin ya da sayfa bağlantılarını kullanın.',
+    ],
+    'notice_bar' => [
+        'label' => 'Duyuru',
+        'close' => 'Duyuruyu kapat',
+    ],
 ];

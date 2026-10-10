@@ -58,5 +58,11 @@ return [
             'why' => 'Ziyaretçi bir bölüme tıklar ve hiçbir şey olmaz: sayfa kımıldamaz, liste bozuk görünür.',
             'fix' => 'Sunucu listeyi sayfanın başlıklarından kurar ve onlara id verir. Elle yazılmış bir liste ya da temadaki liste geçersiz kılması artık olmayan bir id’yi gösteriyor: <x-webx-toc> kullanın ya da bağlantıyı düzeltin.',
         ],
+        'load_more_link' => [
+            'title' => 'Sonraki sayfaya bağlantısı olmayan “Daha fazla göster”',
+            'found' => '“Daha fazla göster” listesinin sonraki bir sayfası var ama ona bağlantı yok: oraya yalnızca düğmesi götürüyor.',
+            'why' => 'Arama motorları düğmelere basmaz, JavaScript olmayan bir sayfa da basamaz: ilk sayfadan sonrakiler bulunmaz.',
+            'fix' => 'Paket sayfa bağlantılarını listenin altına basar, düğme yalnızca onları örter: temadaki webx-widgets::components.load-more geçersiz kılması ya da boş bir links yuvası onları kaybetti. Geri koyun ya da geçersiz kılmayı kaldırın.',
+        ],
     ],
 ];

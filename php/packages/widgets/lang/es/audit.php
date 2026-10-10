@@ -12,6 +12,7 @@ return [
     'counter-number' => 'Contadores sin su número: :count',
     'compare-range' => 'Antes y después sin deslizador: :count',
     'toc-target' => 'Índice que no lleva a ninguna parte: :count',
+    'load-more-link' => '«Mostrar más» sin enlace a la página siguiente: :count',
     'on' => 'Activado',
     'off' => 'Desactivado',
 ];

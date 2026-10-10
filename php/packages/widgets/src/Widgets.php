@@ -14,6 +14,7 @@ use WebxUi\Themes\ThemeManifest;
 use WebxUi\Widgets\Prose\Contents;
 use WebxUi\Widgets\Prose\Tables;
 use WebxUi\Widgets\View\Components\Lightbox;
+use WebxUi\Widgets\View\Components\NoticeBar;
 
 /**
  * What the page asked for, and the tags that load it (spec §4).
@@ -154,6 +155,12 @@ final class Widgets implements HeadPart
 
         if ($this->assets->current($this->layer()) === null) {
             $styles[] = $this->config->get('app.debug') ? '<!-- webx-widgets: not published: php artisan webx:theme:sync -->' : '';
+        }
+
+        // An announcement bar the visitor closed is hidden before the body is painted (§14): its
+        // script comes at the end of the page, too late not to flash it.
+        if (isset($this->claimed['notice-bar']) && preg_match_all('/data-webx-notice-bar="([A-Za-z0-9-]+)"/', $html, $bars) > 0) {
+            $styles[] = NoticeBar::head(array_values(array_unique($bars[1])));
         }
 
         // The consent banner is on every page (§9): it asks until answered, and its script is

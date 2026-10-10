@@ -12,6 +12,7 @@ return [
     'counter-number' => 'Counters without their number: :count',
     'compare-range' => 'Before and after without a slider: :count',
     'toc-target' => 'Table of contents links to nowhere: :count',
+    'load-more-link' => 'Show more without a link to the next page: :count',
     'on' => 'On',
     'off' => 'Off',
 ];

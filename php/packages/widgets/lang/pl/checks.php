@@ -58,5 +58,11 @@ return [
             'why' => 'Odwiedzający klika sekcję i nic się nie dzieje: strona się nie przesuwa, a spis wygląda na zepsuty.',
             'fix' => 'Serwer buduje spis z nagłówków strony i sam nadaje im id. Spis napisany ręcznie albo nadpisanie listy w motywie wskazuje na id, którego już nie ma: użyj <x-webx-toc> albo popraw link.',
         ],
+        'load_more_link' => [
+            'title' => '„Pokaż więcej” bez linku do następnej strony',
+            'found' => 'Lista z „Pokaż więcej” ma następną stronę, ale nie ma do niej linku: prowadzi tam tylko przycisk.',
+            'why' => 'Wyszukiwarki nie naciskają przycisków, strona bez JavaScriptu też nie: to, co jest za pierwszą stroną, nie zostaje znalezione.',
+            'fix' => 'Pakiet drukuje linki do stron pod listą, a przycisk tylko je zasłania: nadpisanie webx-widgets::components.load-more w motywie lub pusty slot links je zgubiło. Przywróć je albo usuń nadpisanie.',
+        ],
     ],
 ];
