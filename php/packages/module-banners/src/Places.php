@@ -142,6 +142,18 @@ final class Places
     }
 
     /**
+     * Whether a banner of this place needs a picture (decision 8). It does everywhere but in a
+     * declared place whose configuration says `'image' => false` — the words of an announcement
+     * bar (`notice`, the widgets' `<x-webx-notice-bar>`) have no picture to stand on. A place
+     * of somebody's own always needs one: its template is a site's, and decision 8 is what it
+     * was written against.
+     */
+    public function needsPicture(?string $key): bool
+    {
+        return $key === null || ($this->declared()[$key]['image'] ?? true) !== false;
+    }
+
+    /**
      * The layout of a place: its own when the configuration gives it a known one, else the
      * site's, else a slider.
      */

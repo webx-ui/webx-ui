@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use WebxUi\Admin\Collections\RecordQuery;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Models\Place;
+use WebxUi\Banners\Places;
 use WebxUi\Media\Screens\MediaFiles;
 
 /**
@@ -62,7 +63,8 @@ final class BannerQuery extends RecordQuery
 
     /**
      * The records, without the ones whose picture is gone from the library — before the limit,
-     * so that "the first three" are three that will be printed.
+     * so that "the first three" are three that will be printed. A place of words only
+     * (`'image' => false`) keeps every banner: a picture is not what it stands on.
      *
      * @return EloquentCollection<int, Banner>
      */
@@ -76,6 +78,7 @@ final class BannerQuery extends RecordQuery
 
         $banners = parent::models()->all();
         $files = Container::getInstance()->make(MediaFiles::class);
+        $places = Container::getInstance()->make(Places::class);
 
         $files->load(array_values(array_filter(array_map(
             static fn (Banner $banner): ?string => $banner->mediaPath('image'),
@@ -84,10 +87,11 @@ final class BannerQuery extends RecordQuery
 
         return new EloquentCollection(array_values(array_filter(
             $banners,
-            static function (Banner $banner) use ($files): bool {
+            static function (Banner $banner) use ($files, $places): bool {
                 $path = $banner->mediaPath('image');
 
-                return $path !== null && $files->find($path) !== null;
+                // A place of words only shows its banner without the picture it has not got.
+                return ($path !== null && $files->find($path) !== null) || ! $places->needsPicture($banner->place?->key);
             },
         )));
     }

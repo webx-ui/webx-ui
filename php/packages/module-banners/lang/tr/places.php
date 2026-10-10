@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'hero' => 'Ana sayfa kaydırıcısı',
     'promo' => 'Tanıtım şeridi',
+    'notice' => 'Duyuru çubuğu',
     'list' => 'Yerler',
     'new' => 'Yeni yer',
     'title' => 'Ad',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'hero' => 'Home page slider',
     'promo' => 'Promo strip',
+    'notice' => 'Announcement bar',
     'list' => 'Places',
     'new' => 'New place',
     'title' => 'Name',

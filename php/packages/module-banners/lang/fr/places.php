@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'hero' => 'Carrousel de la page d’accueil',
     'promo' => 'Bandeau promotionnel',
+    'notice' => 'Bandeau d’annonce',
     'list' => 'Emplacements',
     'new' => 'Nouvel emplacement',
     'title' => 'Nom',

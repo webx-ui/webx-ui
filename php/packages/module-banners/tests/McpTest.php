@@ -54,7 +54,7 @@ final class McpTest extends TestCase
 
         $this->assertSame(['single', 'random', 'slider'], $places['layouts']);
         $this->assertSame(['primary', 'secondary', 'link'], $places['variants']);
-        $this->assertSame(['hero', 'promo'], array_column($places['places'], 'key'));
+        $this->assertSame(['hero', 'promo', 'notice'], array_column($places['places'], 'key'));
 
         $created = $this->content($this->agent('banners_place_create', ['key' => 'sidebar', 'title' => 'Sidebar']));
         $this->assertSame('sidebar', $created['place']['key']);
@@ -64,7 +64,7 @@ final class McpTest extends TestCase
         $this->agent('banners_place_create', ['key' => '9lives', 'title' => 'Bad'])->assertHasErrors(['key:']);
 
         $this->agent('banners_place_delete', ['place' => 'hero'])->assertHasErrors(['declared']);
-        $this->agent('banners_place_delete', ['place' => 'nowhere'])->assertHasErrors(['no place [nowhere]', 'hero, promo, sidebar']);
+        $this->agent('banners_place_delete', ['place' => 'nowhere'])->assertHasErrors(['no place [nowhere]', 'hero, promo, notice, sidebar']);
 
         // The bin counts: a banner somebody meant to bring back would go with the place.
         $this->picture();
@@ -220,7 +220,7 @@ final class McpTest extends TestCase
         $catalog = ($this->resource('banners://catalog')->handler)();
 
         $this->assertSame('Primary', $catalog['variants']['primary']);
-        $this->assertSame(['hero', 'promo'], array_column($catalog['places'], 'key'));
+        $this->assertSame(['hero', 'promo', 'notice'], array_column($catalog['places'], 'key'));
         $this->assertSame([$spring->id, $off->id], array_column($catalog['places'][0]['banners'], 'id'));
         $this->assertSame(['en', 'ru'], $catalog['places'][0]['banners'][0]['written_in']);
         $this->assertTrue($catalog['places'][0]['banners'][0]['has_video']);

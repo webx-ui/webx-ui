@@ -17,13 +17,14 @@ use WebxUi\Pages\Models\Page;
 use WebxUi\Routing\Models\Route;
 
 /**
- * The two declared places, filled (§5.8 of the banners spec).
+ * The declared places, filled (§5.8 of the banners spec).
  *
  * `hero` gets a slider's worth: three banners that are on, and each past the first shows a rule —
  * one would carry a video if the library had one (the demo library has pictures only, so it
  * carries none and the picture stands in, which is what a phone sees anyway), one has no Russian
  * words and so is not on the Russian pages (decision 12). A fourth is switched off: in the panel,
- * not on the site. `promo` gets one banner, a single layout's worth.
+ * not on the site. `promo` gets one banner, a single layout's worth. `notice` gets one of words
+ * only, switched off: switched on, it would stand above the header of every page of the site.
  *
  * Pictures are the library demo's, found through the ledger — somebody's own picture is not the
  * place to hang an example. A button "to a page" points at a page by entity — the pages demo's,
@@ -107,7 +108,8 @@ final class BannersDemo
     {
         $image = $media[pathinfo((string) ($input['image'] ?? ''), PATHINFO_FILENAME)] ?? null;
 
-        if (! $image instanceof MediaFile) {
+        // Only a place of words only (`notice`) takes a banner without its picture.
+        if (! $image instanceof MediaFile && $this->places->needsPicture($place->key)) {
             return;
         }
 
@@ -123,7 +125,7 @@ final class BannersDemo
         }
 
         $banner = new Banner([
-            'image' => ['path' => $image->path],
+            'image' => $image instanceof MediaFile ? ['path' => $image->path] : null,
             'image_mobile' => $mobile instanceof MediaFile ? ['path' => $mobile->path] : null,
             'video' => ($input['video'] ?? false) === true && $video instanceof MediaFile ? ['path' => $video->path] : null,
             'title' => $this->words($input['title'] ?? null),
