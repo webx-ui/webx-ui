@@ -200,7 +200,7 @@ class WidgetsServiceProvider extends ServiceProvider
     }
 
     /**
-     * The blocks `gallery`, `logos` and `video` (§15.1), offered to `module-blocks` when the site
+     * The blocks `gallery`, `logos`, `video`, `map`, `counters` and `countdown` (§15.1, §14), offered to `module-blocks` when the site
      * has it: the slider, the lightbox and the video are what they are made of, and a site would
      * otherwise put them together again in a block of its own. Offered, not installed —
      * `webx:blocks:offered --install --module=widgets` (and `webx:setup`) puts them on the site

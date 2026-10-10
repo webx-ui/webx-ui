@@ -223,7 +223,7 @@ final class WidgetsPageReader implements AuditPageReader
 
             $places = max(0, min(6, (int) ($config['decimals'] ?? 0)));
             $expected = ltrim((string) preg_replace('/\D/', '', number_format(abs((float) $config['value']), $places, '.', '')), '0');
-            $printed = $counter->querySelector('.webx-counter__number')?->textContent ?? $counter->textContent;
+            $printed = $counter->querySelector('.webx-counter__number')->textContent ?? $counter->textContent;
             $digits = ltrim((string) preg_replace('/\D/', '', (string) $printed), '0');
 
             if ($digits === $expected) {

@@ -35,7 +35,7 @@ bring. The panel shell, screens and permissions are `webx-ui/module-admin`, the 
   the type does not define) with the fix `blocks.prune-stray`, and the shortcode checks
   `blocks.unknown_shortcodes` and `blocks.hardcoded_values`; `webx-ui/widgets` brings
   `widgets.before_consent` (fix `widgets.wait-for-consent`), `widgets.banner_off` (fix
-  `widgets.banner-on`), `widgets.lightbox_size`, `widgets.slider_pause`, `widgets.contact_both`.
+  `widgets.banner-on`), `widgets.lightbox_size`, `widgets.slider_pause`, `widgets.video_pause`, `widgets.counter_number`, `widgets.contact_both`.
 - **Page readers**: `WebxUi\Audit\Crawl\PageReaders` — a module's `AuditPageReader` reads its own
   facts off each crawled page (the HTML is not kept); its checks find them in `$page->fact('<id>')`.
 

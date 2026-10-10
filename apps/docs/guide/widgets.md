@@ -179,6 +179,20 @@ and "Always load videos" (consent). With no poster set, the video's own preview 
 into the media library, so the visitor never asks YouTube even for the picture. A file of the site
 is a `<video preload="none">` and needs no consent.
 
+```blade
+<x-webx-video variant="background" :file="$media" :poster="$image" ratio="21/9">
+    <h1>Made to move</h1>
+</x-webx-video>
+```
+
+The **background** of a first screen is a file of the site only — a provider's video behind a hero
+would be asked on every showing — muted, looping, without controls, behind whatever the tag wraps;
+the ratio is the least the frame takes. It plays only while on screen and with the tab in front,
+and never by itself under reduced motion or on a connection saving data: then the poster stays, as
+it does without JavaScript, and the file is not even asked for. A pause button is always in its
+corner (WCAG 2.2.2); a pause is remembered for the next page. The video is decor, hidden from screen
+readers: what it says, the page's markup over it says.
+
 The map is Leaflet over OpenStreetMap tiles, with no key. Before consent it is the address, "Open
 in maps" and the same two buttons; the wheel scrolls the page until the map is clicked. Another
 provider of tiles is a config entry:
@@ -235,18 +249,41 @@ What a long page needs, each loading only where it stands:
   above the cookie banner, the contact bar and the quick contact of its corner. Without JavaScript
   it is a link to `#top` where the template put it.
 
+## Counters and countdown
+
+```blade
+<x-webx-counter :value="3000" suffix="+" />
+<x-webx-counter value="4.9" prefix="★ " :duration="1500" />
+<x-webx-countdown to="2026-12-31 18:00" ended="The sale is over" />
+```
+
+- **Counter** — the server prints the final number the way the page's language writes it (3,000;
+  3.000 in German): that is what search engines index, a screen reader says and a page without
+  JavaScript shows. The script counts up to it when the counter comes into view — only a counter
+  below the screen when the page opens; one already in view keeps its number rather than flash and
+  drop to zero. Decimals are the ones the value was written with. Reduced motion: final at once.
+- **Countdown** — to a wall time of the **site's** time zone (the one of the opening hours on the
+  Contacts tab, else `app.timezone`): the sale ends at six where the shop is, wherever it is read.
+  A moment with its offset, or a `DateTimeInterface`, is that moment. The server prints the time
+  left, the script counts down every second from the clock — a page out of a cache is right. At the
+  end the `ended` text takes its place; without one the timer goes, and so does the nearest
+  `[data-webx-countdown-scope]` around it (the Countdown block is one). Without JavaScript it is the
+  line "Ends on …" rather than digits standing still; with it, that line is what a screen reader hears.
+
 ## Blocks
 
-On a site with `module-blocks` and `module-media` the package offers four block types — `webx:setup`
+On a site with `module-blocks` and `module-media` the package offers six block types — `webx:setup`
 installs them, or `php artisan webx:blocks:offered --install --module=widgets`. Installed, they
 belong to the site: an update never overwrites them.
 
-| Block     | Fields                                                                         | Inside                     |
-| --------- | ------------------------------------------------------------------------------ | -------------------------- |
-| `gallery` | heading, pictures of the library, grid or slider, columns, zoom                | slider `gallery`, lightbox |
-| `logos`   | heading, a name, a logo and a link each                                        | slider `logos`             |
-| `video`   | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16 | `<x-webx-video>`           |
-| `map`     | heading, the contacts or coordinates with an address, zoom, height             | `<x-webx-map>`             |
+| Block       | Fields                                                                         | Inside                     |
+| ----------- | ------------------------------------------------------------------------------ | -------------------------- |
+| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom                | slider `gallery`, lightbox |
+| `logos`     | heading, a name, a logo and a link each                                        | slider `logos`             |
+| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16 | `<x-webx-video>`           |
+| `map`       | heading, the contacts or coordinates with an address, zoom, height             | `<x-webx-map>`             |
+| `counters`  | heading, a number, what stands before and after it, a label each               | `<x-webx-counter>`         |
+| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide | `<x-webx-countdown>`       |
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 
@@ -277,6 +314,8 @@ promise:
 | `widgets.banner_off`     | warning  | the banner off while something third-party is on the site                                     | turns the banner on                                |
 | `widgets.lightbox_size`  | warning  | a lightbox link without `data-width` / `data-height`                                          | —                                                  |
 | `widgets.slider_pause`   | warning  | a slider that moves with no pause button — a theme's override that lost it                    | —                                                  |
+| `widgets.video_pause`    | warning  | a background video with no pause button — an override that lost it                            | —                                                  |
+| `widgets.counter_number` | notice   | a counter whose markup does not hold its number — an override that left it to the script      | —                                                  |
 | `widgets.contact_both`   | notice   | the quick-contact button and the bottom bar on one page                                       | —                                                  |
 
 "Pasted into content" means a text block, a page's body or any field a module hands to the audit:
@@ -290,6 +329,7 @@ third party the audit does not know is added in `webx-widgets.audit.third-party`
 
 `theme-default` brings a showcase, seeded by `php artisan webx:demo` and removed with it: under
 **Kitchen sink** a page per widget — Header and menu, Cookie consent, Dropdown and form in a
-dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map, Page tools — with every variant, a narrow
+dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map, Page tools, Background video,
+Counters and countdown — with every variant, a narrow
 column, what to try and the markup to copy. It is the place to look at a change in the theme
 before a real page does, and the pages the starter site's browser tests measure.

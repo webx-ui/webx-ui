@@ -309,7 +309,7 @@ final class BlocksTest extends TestCase
     #[Test]
     public function the_counters_count_each_number_with_its_words_and_skip_a_row_without_one(): void
     {
-        $html = $this->render('counters', ['heading' => 'In numbers', 'items' => [
+        $html = $this->render('counters', ['heading' => 'In numbers', 'numbers' => [
             ['value' => '15', 'prefix' => '', 'suffix' => ' years', 'label' => 'on the market'],
             ['value' => '3,000', 'prefix' => '', 'suffix' => '+', 'label' => 'clients'],
             ['value' => '4,9', 'label' => 'average rating'],
@@ -329,7 +329,7 @@ final class BlocksTest extends TestCase
         $this->assertStringNotContainsString('not a number', $html);
         $this->assertContains('counter', Widgets::claimed());
 
-        $this->assertStringNotContainsString('b-counters', $this->render('counters', ['heading' => 'Nothing', 'items' => [['value' => 'x']]]));
+        $this->assertStringNotContainsString('b-counters', $this->render('counters', ['heading' => 'Nothing', 'numbers' => [['value' => 'x']]]));
         $this->assertStringNotContainsString('b-counters', $this->render('counters', ['heading' => 'Nothing']));
     }
 

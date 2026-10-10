@@ -1313,7 +1313,7 @@
           "type": "counters",
           "values": {
             "heading": "In numbers",
-            "items": [
+            "numbers": [
               {
                 "value": "15",
                 "prefix": "",
