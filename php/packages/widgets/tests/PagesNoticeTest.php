@@ -45,6 +45,7 @@ final class PagesNoticeTest extends TestCase
         $this->assertStringContainsString('<a class="webx-pagination__link webx-pagination__link--prev" rel="prev" href="/news?page=4">Previous</a>', $html);
         $this->assertStringContainsString('<span class="webx-pagination__link is-current" aria-current="page" data-page="5">5</span>', $html);
         $this->assertStringContainsString('<a class="webx-pagination__link webx-pagination__link--next" rel="next" href="/news?page=6">Next</a>', $html);
+        $this->assertStringContainsString('<a class="webx-pagination__link" href="/news" data-page="1">1</a>', $html, 'not ?page=1: one address for the first page');
         // 1, then 2 rather than a gap of one page, 3–7 around 5, a gap, the last.
         $this->assertSame(['1', '2', '3', '4', '5', '6', '7', '…', '10'], self::numbers($html));
         $this->assertSame(['pagination'], Widgets::claimed());
@@ -55,7 +56,7 @@ final class PagesNoticeTest extends TestCase
         // ->simplePaginate() knows no last page: previous and next only.
         $simple = Blade::render('<x-webx-pagination :paginator="$p" />', ['p' => new Paginator(range(1, 13), 12, 2, ['path' => '/news'])]);
         $this->assertSame([], self::numbers($simple));
-        $this->assertStringContainsString('rel="prev" href="/news?page=1"', $simple);
+        $this->assertStringContainsString('rel="prev" href="/news"', $simple, 'the first page is the address of the list');
         $this->assertStringContainsString('rel="next" href="/news?page=3"', $simple);
 
         // One page: nothing to lead to.

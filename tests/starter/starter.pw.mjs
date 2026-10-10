@@ -3441,3 +3441,305 @@ test.describe('table of contents', () => {
     }
   })
 })
+
+test.describe('show more', () => {
+  const PATH = '/kitchen-sink/show-more'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  const cards = (page, list) =>
+    page
+      .locator(`#showcase-${list} .webx-load-more [data-webx-load-more-list] > article h3`)
+      .allTextContents()
+
+  const numbers = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => `Card ${from + i}`)
+
+  async function open(width, options = {}) {
+    const context = await options.browser.newContext({
+      viewport: { width, height: width === 375 ? 812 : 900 },
+      ...(options.context ?? {}),
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(options.path ?? PATH)
+    if (options.context?.javaScriptEnabled !== false) await still(page)
+    return { context, page }
+  }
+
+  test('the button adds the next page in order, moves the focus and the address, and goes on the last page', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(width, { browser })
+      const root = page.locator('#showcase-page .webx-load-more')
+      const button = root.locator('.webx-load-more__button')
+
+      // The links are covered by the button; the button is the size of a finger.
+      await expect(button).toBeVisible()
+      expect((await button.boundingBox()).height).toBeGreaterThanOrEqual(44)
+      expect(await root.locator('.webx-load-more__pages').isVisible()).toBe(false)
+      expect(await root.locator('a[rel="next"]').getAttribute('href')).toContain('page=2')
+      expect(await cards(page, 'page')).toEqual(numbers(1, 6))
+
+      await button.click()
+      await expect.poll(() => cards(page, 'page')).toEqual(numbers(1, 12))
+      // The focus on the first new card, the address on the page just loaded, its links next.
+      expect(
+        await page.evaluate(() => document.activeElement?.querySelector('h3')?.textContent),
+      ).toBe('Card 7')
+      expect(new URL(page.url()).searchParams.get('page')).toBe('2')
+      expect(await root.getAttribute('data-next')).toContain('page=3')
+      expect(await root.locator('a[rel="next"]').getAttribute('href')).toContain('page=3')
+      expect(await root.locator('.webx-load-more__status').textContent()).toBe(
+        'Page 2 of 4 loaded.',
+      )
+
+      await button.click()
+      await expect.poll(() => cards(page, 'page')).toEqual(numbers(1, 18))
+      await button.click()
+      await expect.poll(() => cards(page, 'page')).toEqual(numbers(1, 23))
+      await expect(button).toBeHidden()
+      expect(await root.locator('.webx-load-more__status').textContent()).toBe(
+        'Page 4 of 4 loaded. That is everything.',
+      )
+      expect(new URL(page.url()).searchParams.get('page')).toBe('4')
+      // The other lists kept their pages.
+      expect(await cards(page, 'more')).toEqual(numbers(1, 6))
+      expect(await sideways(page)).toBe(0)
+
+      // A reload lands on the page last loaded: its cards, no button, a link back.
+      await page.reload()
+      expect(await cards(page, 'page')).toEqual(numbers(19, 23))
+      expect(await root.locator('.webx-load-more__button').count()).toBe(0)
+      await expect(root.locator('a[rel="prev"]')).toBeVisible()
+      expect(await root.locator('a[rel="prev"]').getAttribute('href')).toContain('page=3')
+      await context.close()
+    }
+  })
+
+  test('Back leaves the list, Forward comes back to the page last loaded', async ({ browser }) => {
+    const { context, page } = await open(1280, { browser, path: '/kitchen-sink' })
+    await page.goto(PATH)
+    await page.locator('#showcase-page .webx-load-more__button').click()
+    await expect.poll(() => cards(page, 'page')).toEqual(numbers(1, 12))
+
+    await page.goBack()
+    expect(new URL(page.url()).pathname).toBe('/kitchen-sink')
+    await page.goForward()
+    expect(new URL(page.url()).searchParams.get('page')).toBe('2')
+    // Restored as it was, or loaded anew from its address: card 7 is there either way.
+    expect(await cards(page, 'page')).toContain('Card 7')
+    await context.close()
+  })
+
+  test('shown: the links stay under the button and mark the pages on the screen', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(1280, { browser })
+    const root = page.locator('#showcase-more .webx-load-more')
+    await expect(root.locator('.webx-pagination')).toBeVisible()
+    await root.locator('.webx-load-more__button').click()
+    await expect.poll(() => cards(page, 'more')).toEqual(numbers(1, 12))
+
+    await expect(root.locator('.webx-pagination')).toBeVisible()
+    expect(await root.locator('[data-page="1"]').getAttribute('class')).toContain('is-loaded')
+    expect(await root.locator('[data-page="2"]').getAttribute('aria-current')).toBe('page')
+    expect(new URL(page.url()).searchParams.get('more')).toBe('2')
+    for (const link of await root.locator('.webx-pagination__link').all()) {
+      const box = await link.boundingBox()
+      expect(box.height).toBeGreaterThanOrEqual(44)
+      expect(box.width).toBeGreaterThanOrEqual(44)
+    }
+    await context.close()
+  })
+
+  test('a page that cannot be loaded says so and gives the links back', async ({ browser }) => {
+    const { context, page } = await open(375, { browser })
+    await page.route(/[?&]page=2/, (route) => route.abort())
+    const root = page.locator('#showcase-page .webx-load-more')
+    await root.locator('.webx-load-more__button').click()
+
+    await expect(root.locator('.webx-load-more__status')).toHaveText(
+      'The next page could not be loaded. Try again, or use the links to the pages.',
+    )
+    await expect(root.locator('.webx-load-more__pages')).toBeVisible()
+    expect(await cards(page, 'page')).toEqual(numbers(1, 6))
+    expect(new URL(page.url()).search).toBe('')
+
+    await page.unroute(/[?&]page=2/)
+    await root.locator('a[rel="next"]').click()
+    await page.waitForURL(/page=2/)
+    expect(await cards(page, 'page')).toEqual(numbers(7, 12))
+    await context.close()
+  })
+
+  test('without JavaScript the links of the pages lead on, and no button', async ({ browser }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(width, {
+        browser,
+        context: { javaScriptEnabled: false },
+      })
+      expect(await page.locator('.webx-load-more__button:visible').count()).toBe(0)
+      expect(await page.locator('.webx-pagination:visible').count()).toBe(3)
+
+      await page.locator('#showcase-page a[rel="next"]').click()
+      await page.waitForURL(/page=2/)
+      expect(await cards(page, 'page')).toEqual(numbers(7, 12))
+      expect(await sideways(page)).toBe(0)
+      await context.close()
+    }
+  })
+})
+
+test.describe('notice bar', () => {
+  const PATH = '/kitchen-sink/notice-bar'
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-09', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  const sideways = (page) =>
+    page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+
+  const headerHeight = (page) =>
+    page.evaluate(() =>
+      parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--webx-header-height'),
+      ),
+    )
+
+  async function open(width, options = {}) {
+    const context = await options.browser.newContext({
+      viewport: { width, height: width === 375 ? 812 : 900 },
+      ...(options.context ?? {}),
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(options.path ?? PATH)
+    if (options.context?.javaScriptEnabled !== false) await still(page)
+    return { context, page }
+  }
+
+  test('stands above the header, named, and the sticky header measures what it did', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      // The same page without the bar: what the header and the corner measure there.
+      const { context, page } = await open(width, { browser, path: '/kitchen-sink' })
+      expect(await page.locator('[data-webx-notice-bar]').count()).toBe(0)
+      const plain = {
+        height: await headerHeight(page),
+        corner: await page.locator('.webx-contact-button__toggle').boundingBox(),
+      }
+
+      await page.goto(PATH)
+      await still(page)
+      const bar = page.getByRole('region', { name: 'Announcement' })
+      await expect(bar).toBeVisible()
+      await expect(bar).toContainText('Open on Saturdays from November.')
+      const box = await bar.boundingBox()
+      const header = await page.locator('.webx-header').boundingBox()
+      expect(box.y).toBe(0)
+      expect(Math.abs(header.y - (box.y + box.height))).toBeLessThanOrEqual(1)
+      expect(box.width).toBe(width)
+
+      const close = bar.getByRole('button', { name: 'Close the announcement' })
+      const target = await close.boundingBox()
+      expect(target.height).toBeGreaterThanOrEqual(44)
+      expect(target.width).toBeGreaterThanOrEqual(44)
+      expect(target.x + target.width).toBeLessThanOrEqual(width)
+
+      expect(await headerHeight(page)).toBe(plain.height)
+      expect(await page.locator('.webx-contact-button__toggle').boundingBox()).toEqual(plain.corner)
+
+      // Scrolled past: the bar goes, the header sticks at the top as it always did.
+      await page.evaluate(() => window.scrollTo(0, 600))
+      await expect
+        .poll(async () => (await page.locator('.webx-header__bar').boundingBox()).y)
+        .toBeLessThanOrEqual(1)
+      expect((await bar.boundingBox()).y + box.height).toBeLessThanOrEqual(0)
+      expect(await headerHeight(page)).toBe(plain.height)
+      expect(await sideways(page)).toBe(0)
+      await context.close()
+    }
+  })
+
+  test('closed, it stays closed on the next page without a flash; new words come back', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(375, { browser })
+    const bar = page.locator('[data-webx-notice-bar]')
+    const version = await bar.getAttribute('data-webx-notice-bar')
+
+    await bar.getByRole('button', { name: 'Close the announcement' }).click()
+    await expect(bar).toBeHidden()
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('webx-notice-bar')))).toEqual([
+      version,
+    ])
+    // The header moved up to the top of the page.
+    expect((await page.locator('.webx-header').boundingBox()).y).toBe(0)
+
+    // The next page with the same words, its script held back: the head alone hides the bar,
+    // so it is never painted, not even before the script arrives.
+    await page.route(/notice-bar\.js/, (route) => route.abort())
+    await page.goto('/kitchen-sink/notice-bar/same-words')
+    const same = page.locator('[data-webx-notice-bar]')
+    expect(await same.getAttribute('data-webx-notice-bar')).toBe(version)
+    expect(await same.evaluate((el) => getComputedStyle(el).display)).toBe('none')
+    expect((await page.locator('.webx-header').boundingBox()).y).toBe(0)
+    await page.unroute(/notice-bar\.js/)
+
+    // Other words are another version: back.
+    await page.goto('/kitchen-sink/notice-bar/new-words')
+    const fresh = page.getByRole('region', { name: 'Announcement' })
+    await expect(fresh).toBeVisible()
+    await expect(fresh).toContainText('free delivery until Sunday')
+    expect(await fresh.getAttribute('data-webx-notice-bar')).not.toBe(version)
+    await context.close()
+  })
+
+  test('closed from the keyboard, the next Tab is "Skip to content"', async ({ browser }) => {
+    const { context, page } = await open(1280, { browser })
+    const close = page.getByRole('button', { name: 'Close the announcement' })
+    await close.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.locator('[data-webx-notice-bar]')).toBeHidden()
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true)
+    await page.keyboard.press('Tab')
+    await expect(page.locator('.site-skip')).toBeFocused()
+    await context.close()
+  })
+
+  test('without JavaScript the bar says its words, with no button to close it', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(width, {
+        browser,
+        context: { javaScriptEnabled: false },
+      })
+      const bar = page.locator('[data-webx-notice-bar]')
+      await expect(bar).toBeVisible()
+      expect(await bar.locator('.webx-notice-bar__close').isVisible()).toBe(false)
+      const box = await bar.boundingBox()
+      expect(
+        Math.abs((await page.locator('.webx-header').boundingBox()).y - box.height),
+      ).toBeLessThanOrEqual(1)
+      expect(await sideways(page)).toBe(0)
+      await context.close()
+    }
+  })
+})

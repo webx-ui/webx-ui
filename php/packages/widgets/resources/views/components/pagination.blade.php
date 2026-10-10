@@ -6,7 +6,7 @@
 --}}
 <nav {{ $attributes->class(['webx-pagination']) }} aria-label="{{ $labelText }}">
     @if ($paginator->previousPageUrl() !== null)
-        <a class="webx-pagination__link webx-pagination__link--prev" rel="prev" href="{{ $paginator->previousPageUrl() }}">{{ __('webx-widgets::widgets.pagination.previous') }}</a>
+        <a class="webx-pagination__link webx-pagination__link--prev" rel="prev" href="{{ $href($page - 1) }}">{{ __('webx-widgets::widgets.pagination.previous') }}</a>
     @endif
     @foreach ($numbers() as $number)
         @if ($number === null)
@@ -14,7 +14,7 @@
         @elseif ($number === $page)
             <span class="webx-pagination__link is-current" aria-current="page" data-page="{{ $number }}">{{ $number }}</span>
         @else
-            <a class="webx-pagination__link" href="{{ $paginator->url($number) }}" data-page="{{ $number }}">{{ $number }}</a>
+            <a class="webx-pagination__link" href="{{ $href($number) }}" data-page="{{ $number }}">{{ $number }}</a>
         @endif
     @endforeach
     @if ($paginator->hasMorePages())

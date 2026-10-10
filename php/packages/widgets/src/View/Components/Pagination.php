@@ -7,6 +7,7 @@ namespace WebxUi\Widgets\View\Components;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Contracts\View\View;
+use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\View\Component;
 use InvalidArgumentException;
 use WebxUi\Widgets\Facades\Widgets;
@@ -51,6 +52,25 @@ final class Pagination extends Component
         return view('webx-widgets::components.pagination', [
             'labelText' => $this->label ?? __('webx-widgets::widgets.pagination.label'),
         ]);
+    }
+
+    /**
+     * The address of a page. The first is the list's own address, without `?page=1`: the same
+     * page under two addresses is a duplicate to a search engine, and a crawler that follows the
+     * links would meet it on every page.
+     */
+    public function href(int $number): string
+    {
+        $url = $this->paginator->url($number);
+
+        if ($number !== 1 || ! $this->paginator instanceof AbstractPaginator) {
+            return $url;
+        }
+
+        $name = preg_quote($this->paginator->getPageName(), '/');
+        $url = (string) preg_replace('/([?&])'.$name.'=1(?:&|$)/', '$1', $url);
+
+        return rtrim($url, '?&');
     }
 
     /**
