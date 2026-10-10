@@ -108,6 +108,8 @@ return [
         'notice' => 'Video :provider üzerinden yüklenir ve çerez bırakabilir.',
         'load' => 'Yükle',
         'always' => 'Videoları her zaman yükle',
+        'pause' => 'Arka plan videosunu duraklat',
+        'resume' => 'Arka plan videosunu oynat',
     ],
     'map' => [
         'untitled' => 'Harita',
@@ -131,5 +133,12 @@ return [
         'copy' => 'Bağlantıyı kopyala',
         'copied' => 'Bağlantı kopyalandı',
         'failed' => 'Bağlantı kopyalanamadı',
+    ],
+    'countdown' => [
+        'ends' => ':date tarihinde sona eriyor',
+        'days' => 'Gün',
+        'hours' => 'Saat',
+        'minutes' => 'Dakika',
+        'seconds' => 'Saniye',
     ],
 ];

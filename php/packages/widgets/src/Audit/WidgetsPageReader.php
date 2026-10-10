@@ -19,6 +19,8 @@ use WebxUi\Audit\Crawl\PageParser;
  *                        of `text/plain`, an iframe with `data-src`, a template, a video or a map
  *     lightbox_unsized   `a[data-webx-lightbox]` without `data-width` and `data-height`
  *     slider_unpaused    a slider that moves by itself with no pause button in it
+ *     video_unpaused     a background video with no pause button in it
+ *     counter_empty      a counter whose markup does not hold its number
  *     contact_both       the quick-contact button and the bottom bar on one page
  *
  * Only what is there: a page with none of it stores nothing.
@@ -42,6 +44,8 @@ final class WidgetsPageReader implements AuditPageReader
             'waits' => $this->waits($document),
             'lightbox_unsized' => $this->unsized($document),
             'slider_unpaused' => $this->unpaused($document),
+            'video_unpaused' => $this->stillless($document),
+            'counter_empty' => $this->numberless($document),
         ]);
 
         if ($document->querySelector('.webx-contact-button') !== null && $document->querySelector('.webx-contact-bar') !== null) {
@@ -169,6 +173,67 @@ final class WidgetsPageReader implements AuditPageReader
 
             if (count($found['markup']) < self::EXCERPTS) {
                 $found['markup'][] = self::opening($slider);
+            }
+        }
+
+        return $found['count'] === 0 ? [] : $found;
+    }
+
+    /**
+     * Background videos with no pause button (WCAG 2.2.2).
+     *
+     * @return array{count: int, markup: list<string>}|array{}
+     */
+    private function stillless(HTMLDocument $document): array
+    {
+        $found = ['count' => 0, 'markup' => []];
+
+        foreach ($document->querySelectorAll('[data-webx-video-background]') as $video) {
+            if ($video->querySelector('.webx-video__pause') !== null) {
+                continue;
+            }
+
+            $found['count']++;
+
+            if (count($found['markup']) < self::EXCERPTS) {
+                $found['markup'][] = self::opening($video);
+            }
+        }
+
+        return $found['count'] === 0 ? [] : $found;
+    }
+
+    /**
+     * Counters whose markup does not hold the number they count to: the digits of the number
+     * printed against those of the value in `data-webx-counter`, so `3,000`, `3 000` and `3.000`
+     * are all 3000 and the language's way of writing it does not matter.
+     *
+     * @return array{count: int, markup: list<string>}|array{}
+     */
+    private function numberless(HTMLDocument $document): array
+    {
+        $found = ['count' => 0, 'markup' => []];
+
+        foreach ($document->querySelectorAll('[data-webx-counter]') as $counter) {
+            $config = json_decode((string) $counter->getAttribute('data-webx-counter'), true);
+
+            if (! is_array($config) || ! is_numeric($config['value'] ?? null)) {
+                continue;
+            }
+
+            $places = max(0, min(6, (int) ($config['decimals'] ?? 0)));
+            $expected = ltrim((string) preg_replace('/\D/', '', number_format(abs((float) $config['value']), $places, '.', '')), '0');
+            $printed = $counter->querySelector('.webx-counter__number')?->textContent ?? $counter->textContent;
+            $digits = ltrim((string) preg_replace('/\D/', '', (string) $printed), '0');
+
+            if ($digits === $expected) {
+                continue;
+            }
+
+            $found['count']++;
+
+            if (count($found['markup']) < self::EXCERPTS) {
+                $found['markup'][] = PageParser::quote($document, $counter);
             }
         }
 

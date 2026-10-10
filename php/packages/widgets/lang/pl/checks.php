@@ -34,5 +34,17 @@ return [
             'why' => 'Dwa razy proponują te same połączenia i czaty, a na telefonie przycisk zasłania pasek.',
             'fix' => 'Zostaw w układzie motywu jedno z nich.',
         ],
+        'video_pause' => [
+            'title' => 'Wideo w tle bez przycisku pauzy',
+            'found' => 'Wideo w tle odtwarza się samo i nie ma przycisku pauzy.',
+            'why' => 'Ruch trwający dłużej niż pięć sekund musi dać się zatrzymać (WCAG 2.2.2): rozprasza, a niektórzy odwiedzający nie mogą przeczytać tekstu na nim.',
+            'fix' => 'Widok pakietu zawsze ma przycisk: nadpisanie webx-widgets::components.video w motywie zgubiło .webx-video__pause. Przywróć go lub usuń nadpisanie.',
+        ],
+        'counter_number' => [
+            'title' => 'Liczniki bez swojej liczby',
+            'found' => 'Znaczniki licznika nie zawierają liczby, do której liczy.',
+            'why' => 'Wyszukiwarki, czytniki ekranu i strona bez JavaScriptu czytają znaczniki: zamiast liczby dostają zero albo nic.',
+            'fix' => 'Widok pakietu wypisuje liczbę końcową, a skrypt do niej odlicza: nadpisanie webx-widgets::components.counter w motywie wypisuje coś innego. Wypisz liczbę lub usuń nadpisanie.',
+        ],
     ],
 ];

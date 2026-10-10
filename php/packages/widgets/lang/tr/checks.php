@@ -34,5 +34,17 @@ return [
             'why' => 'Aynı aramaları ve sohbetleri iki kez sunarlar, telefonda düğme çubuğun üstüne biner.',
             'fix' => 'Temanın düzeninde ikisinden birini bırakın.',
         ],
+        'video_pause' => [
+            'title' => 'Duraklatma düğmesi olmayan arka plan videoları',
+            'found' => 'Bir arka plan videosu kendiliğinden oynuyor ve duraklatma düğmesi yok.',
+            'why' => 'Beş saniyeden uzun süren hareketin durdurulabilmesi gerekir (WCAG 2.2.2): dikkat dağıtır ve bazı ziyaretçiler üzerindeki metni okuyamaz.',
+            'fix' => 'Paketin görünümünde düğme her zaman vardır: temadaki webx-widgets::components.video geçersiz kılması .webx-video__pause öğesini kaybetmiş. Geri ekleyin ya da geçersiz kılmayı kaldırın.',
+        ],
+        'counter_number' => [
+            'title' => 'Sayısı olmayan sayaçlar',
+            'found' => 'Bir sayacın işaretlemesinde saydığı sayı yok.',
+            'why' => 'Arama motorları, ekran okuyucular ve JavaScript’siz bir sayfa işaretlemeyi okur: sayı yerine sıfır ya da hiçbir şey alır.',
+            'fix' => 'Paketin görünümü son sayıyı yazar ve betik ona kadar sayar: temadaki webx-widgets::components.counter geçersiz kılması başka bir şey yazıyor. Sayıyı yazın ya da geçersiz kılmayı kaldırın.',
+        ],
     ],
 ];

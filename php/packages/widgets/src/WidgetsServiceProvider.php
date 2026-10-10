@@ -26,8 +26,10 @@ use WebxUi\Widgets\Audit\BannerOff;
 use WebxUi\Widgets\Audit\BannerOn;
 use WebxUi\Widgets\Audit\BeforeConsent;
 use WebxUi\Widgets\Audit\ContactBoth;
+use WebxUi\Widgets\Audit\CounterNumber;
 use WebxUi\Widgets\Audit\LightboxSize;
 use WebxUi\Widgets\Audit\SliderPause;
+use WebxUi\Widgets\Audit\VideoPause;
 use WebxUi\Widgets\Audit\WaitForConsent;
 use WebxUi\Widgets\Audit\WidgetsPageReader;
 use WebxUi\Widgets\Video\Posters;
@@ -37,6 +39,8 @@ use WebxUi\Widgets\View\Components\ConsentGate;
 use WebxUi\Widgets\View\Components\ConsentLink;
 use WebxUi\Widgets\View\Components\ContactBar;
 use WebxUi\Widgets\View\Components\ContactButton;
+use WebxUi\Widgets\View\Components\Countdown;
+use WebxUi\Widgets\View\Components\Counter;
 use WebxUi\Widgets\View\Components\Dialog;
 use WebxUi\Widgets\View\Components\Dropdown;
 use WebxUi\Widgets\View\Components\Header;
@@ -135,6 +139,8 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-map', Map::class);
         Blade::component('webx-back-to-top', BackToTop::class);
         Blade::component('webx-share', Share::class);
+        Blade::component('webx-counter', Counter::class);
+        Blade::component('webx-countdown', Countdown::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');
@@ -215,7 +221,8 @@ class WidgetsServiceProvider extends ServiceProvider
     /**
      * The checks of §15.2, when the site has `module-audit`: what loads before consent, the banner
      * switched off with something third-party on the site, a lightbox link without the picture's
-     * size, a moving slider without its pause button, both quick-contact widgets on one page. The
+     * size, a moving slider or a background video without its pause button, a counter without its
+     * number, both quick-contact widgets on one page. The
      * page's HTML is not kept by the audit, so the reader takes what they need while it parses.
      */
     private function registerAudit(): void
@@ -228,7 +235,7 @@ class WidgetsServiceProvider extends ServiceProvider
 
         $checks = $this->app->make(AuditChecks::class);
 
-        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth] as $check) {
+        foreach ([new BeforeConsent, new BannerOff, new LightboxSize, new SliderPause, new ContactBoth, new VideoPause, new CounterNumber] as $check) {
             $checks->register($check);
         }
 

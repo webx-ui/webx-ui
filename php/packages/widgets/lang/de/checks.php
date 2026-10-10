@@ -34,5 +34,17 @@ return [
             'why' => 'Beide bieten dieselben Anrufe und Chats doppelt an, und auf dem Telefon liegt die Schaltfläche über der Leiste.',
             'fix' => 'Behalten Sie eines der beiden im Layout des Themes.',
         ],
+        'video_pause' => [
+            'title' => 'Hintergrundvideos ohne Pause-Schaltfläche',
+            'found' => 'Ein Hintergrundvideo läuft von selbst und hat keine Pause-Schaltfläche.',
+            'why' => 'Bewegung, die länger als fünf Sekunden dauert, muss sich anhalten lassen (WCAG 2.2.2): Sie lenkt ab, und manche Besucher können den Text darüber nicht lesen.',
+            'fix' => 'Die Ansicht des Pakets hat die Schaltfläche immer: Eine Überschreibung von webx-widgets::components.video im Theme hat .webx-video__pause verloren. Ergänzen Sie sie wieder oder entfernen Sie die Überschreibung.',
+        ],
+        'counter_number' => [
+            'title' => 'Zähler ohne ihre Zahl',
+            'found' => 'Das Markup eines Zählers enthält nicht die Zahl, bis zu der er zählt.',
+            'why' => 'Suchmaschinen, Screenreader und eine Seite ohne JavaScript lesen das Markup: Sie bekommen eine Null oder nichts statt der Zahl.',
+            'fix' => 'Die Ansicht des Pakets gibt die Endzahl aus, und das Skript zählt bis dahin: Eine Überschreibung von webx-widgets::components.counter im Theme gibt etwas anderes aus. Geben Sie die Zahl aus oder entfernen Sie die Überschreibung.',
+        ],
     ],
 ];

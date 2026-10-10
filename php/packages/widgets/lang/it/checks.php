@@ -34,5 +34,17 @@ return [
             'why' => 'Offrono due volte le stesse chiamate e chat, e sul telefono il pulsante copre la barra.',
             'fix' => 'Tieni uno dei due nel layout del tema.',
         ],
+        'video_pause' => [
+            'title' => 'Video di sfondo senza pulsante di pausa',
+            'found' => 'Un video di sfondo si riproduce da solo e non ha un pulsante di pausa.',
+            'why' => 'Un movimento che dura più di cinque secondi deve poter essere fermato (WCAG 2.2.2): distrae, e alcuni visitatori non riescono a leggere il testo sopra.',
+            'fix' => 'La vista del pacchetto ha sempre il pulsante: una sovrascrittura di webx-widgets::components.video nel tema ha perso .webx-video__pause. Rimettetelo o rimuovete la sovrascrittura.',
+        ],
+        'counter_number' => [
+            'title' => 'Contatori senza il loro numero',
+            'found' => 'Il markup di un contatore non contiene il numero fino a cui conta.',
+            'why' => 'Motori di ricerca, lettori di schermo e una pagina senza JavaScript leggono il markup: ottengono uno zero o niente al posto del numero.',
+            'fix' => 'La vista del pacchetto stampa il numero finale e lo script conta fino a esso: una sovrascrittura di webx-widgets::components.counter nel tema stampa altro. Stampate il numero o rimuovete la sovrascrittura.',
+        ],
     ],
 ];

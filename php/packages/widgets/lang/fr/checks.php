@@ -34,5 +34,17 @@ return [
             'why' => 'Ils proposent deux fois les mêmes appels et messageries, et sur un téléphone le bouton recouvre la barre.',
             'fix' => 'Gardez l’un des deux dans la mise en page du thème.',
         ],
+        'video_pause' => [
+            'title' => 'Vidéos d’arrière-plan sans bouton pause',
+            'found' => 'Une vidéo d’arrière-plan se lit d’elle-même et n’a pas de bouton pause.',
+            'why' => 'Un mouvement qui dure plus de cinq secondes doit pouvoir être arrêté (WCAG 2.2.2) : il distrait, et certains visiteurs ne peuvent pas lire le texte par-dessus.',
+            'fix' => 'La vue du paquet a toujours le bouton : une surcharge de webx-widgets::components.video dans le thème a perdu .webx-video__pause. Remettez-le ou supprimez la surcharge.',
+        ],
+        'counter_number' => [
+            'title' => 'Compteurs sans leur nombre',
+            'found' => 'Le balisage d’un compteur ne contient pas le nombre jusqu’auquel il compte.',
+            'why' => 'Les moteurs de recherche, les lecteurs d’écran et une page sans JavaScript lisent le balisage : ils obtiennent un zéro ou rien au lieu du nombre.',
+            'fix' => 'La vue du paquet affiche le nombre final et le script compte jusqu’à lui : une surcharge de webx-widgets::components.counter dans le thème affiche autre chose. Affichez le nombre ou supprimez la surcharge.',
+        ],
     ],
 ];

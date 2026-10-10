@@ -8,6 +8,8 @@ return [
     'lightbox-size' => 'Boyutsuz bağlantı: :count',
     'slider-pause' => 'Duraklat düğmesi olmayan slider: :count',
     'contact-both' => 'Sayfada iki hızlı iletişim bileşeni birden',
+    'video-pause' => 'Duraklatma düğmesi olmayan arka plan videoları: :count',
+    'counter-number' => 'Sayısı olmayan sayaçlar: :count',
     'on' => 'Açık',
     'off' => 'Kapalı',
 ];

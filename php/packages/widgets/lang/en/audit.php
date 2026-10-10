@@ -8,6 +8,8 @@ return [
     'lightbox-size' => 'Links without the size: :count',
     'slider-pause' => 'Sliders without a pause button: :count',
     'contact-both' => 'Both quick-contact widgets on the page',
+    'video-pause' => 'Background videos without a pause button: :count',
+    'counter-number' => 'Counters without their number: :count',
     'on' => 'On',
     'off' => 'Off',
 ];

@@ -108,6 +108,8 @@ return [
         'notice' => 'El vídeo se carga desde :provider, que puede instalar cookies.',
         'load' => 'Cargar',
         'always' => 'Cargar siempre los vídeos',
+        'pause' => 'Pausar el vídeo de fondo',
+        'resume' => 'Reproducir el vídeo de fondo',
     ],
     'map' => [
         'untitled' => 'Mapa',
@@ -131,5 +133,12 @@ return [
         'copy' => 'Copiar enlace',
         'copied' => 'Enlace copiado',
         'failed' => 'No se pudo copiar el enlace',
+    ],
+    'countdown' => [
+        'ends' => 'Termina el :date',
+        'days' => 'Días',
+        'hours' => 'Horas',
+        'minutes' => 'Minutos',
+        'seconds' => 'Segundos',
     ],
 ];

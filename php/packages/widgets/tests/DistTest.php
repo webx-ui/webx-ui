@@ -43,7 +43,7 @@ final class DistTest extends PlainTestCase
     /** The map, Leaflet built in: 50 KB gzip without the tiles (§4), only where a map stands. */
     private const int MAP_BUDGET = 50 * 1024;
 
-    /** Each of the page tools of §14 with a file of its own: a table's shadows, back to top, share. */
+    /** Each of the small widgets of §14 with a file of its own: a table's shadows, back to top, share, counter, countdown. */
     private const int PAGE_TOOL_BUDGET = 2 * 1024;
 
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
@@ -84,17 +84,17 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'map.css', 'map.js', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'video.css', 'video.js'], $built);
+        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'map.css', 'map.js', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'video.css', 'video.js'], $built);
     }
 
     /**
-     * The small page tools of §14 — the shadows of a table of prose, back to top, share: 2 KB gzip
-     * each. §4 names no budget for them; this one says they stay what they are, a few lines.
+     * The small page tools of §14 — the shadows of a table of prose, back to top, share, the counter
+     * and the countdown: 2 KB gzip each. §4 names no budget for them; this one says they stay what they are, a few lines.
      */
     #[Test]
     public function the_page_tools_stay_inside_their_budgets(): void
     {
-        foreach (['table', 'back-to-top', 'share'] as $widget) {
+        foreach (['table', 'back-to-top', 'share', 'counter', 'countdown'] as $widget) {
             $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
 
             $this->assertLessThanOrEqual(self::PAGE_TOOL_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));

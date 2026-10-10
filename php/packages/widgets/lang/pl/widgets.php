@@ -108,6 +108,8 @@ return [
         'notice' => 'Wideo załaduje się z serwisu :provider, który może zapisywać pliki cookie.',
         'load' => 'Załaduj',
         'always' => 'Zawsze ładuj wideo',
+        'pause' => 'Zatrzymaj wideo w tle',
+        'resume' => 'Odtwórz wideo w tle',
     ],
     'map' => [
         'untitled' => 'Mapa',
@@ -131,5 +133,12 @@ return [
         'copy' => 'Kopiuj link',
         'copied' => 'Link skopiowany',
         'failed' => 'Nie udało się skopiować linku',
+    ],
+    'countdown' => [
+        'ends' => 'Kończy się :date',
+        'days' => 'Dni',
+        'hours' => 'Godziny',
+        'minutes' => 'Minuty',
+        'seconds' => 'Sekundy',
     ],
 ];

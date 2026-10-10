@@ -34,5 +34,17 @@ return [
             'why' => 'They offer the same calls and chats twice, and on a phone the button sits over the bar.',
             'fix' => 'Keep one of the two in the theme’s layout.',
         ],
+        'video_pause' => [
+            'title' => 'Background videos without a pause button',
+            'found' => 'A background video plays by itself and has no pause button.',
+            'why' => 'Motion that lasts more than five seconds must have a way to stop it (WCAG 2.2.2): it distracts, and some visitors cannot read the text over it.',
+            'fix' => 'The package’s view always has the button: a theme’s override of webx-widgets::components.video lost .webx-video__pause. Put it back, or remove the override.',
+        ],
+        'counter_number' => [
+            'title' => 'Counters without their number',
+            'found' => 'A counter’s markup does not hold the number it counts to.',
+            'why' => 'Search engines, screen readers and a page without JavaScript read the markup: they get a zero or nothing instead of the number.',
+            'fix' => 'The package’s view prints the final number and the script counts up to it: a theme’s override of webx-widgets::components.counter prints something else. Print the number, or remove the override.',
+        ],
     ],
 ];

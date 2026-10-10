@@ -93,6 +93,7 @@ export default {
         // PhotoSwipe, the same way: only where a picture opens over the page.
         lightbox: join(root, 'resources/js/lightbox.js'),
         // The facade and the notice before consent: no player library, the provider's is in its iframe.
+        // The background variant too: a few lines more, and a hero claims one file, not two.
         video: join(root, 'resources/js/video.js'),
         // Leaflet, built in here and only here: tiles wait for consent to media (§11).
         map: join(root, 'resources/js/map.js'),
@@ -101,6 +102,9 @@ export default {
         'back-to-top': join(root, 'resources/js/back-to-top.js'),
         // Plain links: no network's script, and nothing to ask consent for.
         share: join(root, 'resources/js/share.js'),
+        // Counts up in view; the number itself is the server's.
+        counter: join(root, 'resources/js/counter.js'),
+        countdown: join(root, 'resources/js/countdown.js'),
       },
       output: {
         entryFileNames: '[name].js',

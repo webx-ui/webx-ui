@@ -134,6 +134,17 @@ final class AuditTest extends TestCase
         $this->assertSame(['count' => 1], $slider->details['summary']['params']);
         $this->assertStringStartsWith('<section class="webx-slider webx-slider--hero" id="lost"', (string) $slider->details['table']['rows'][0]['markup']);
 
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.video_pause')));
+        $video = AuditIssue::query()->where('check', 'widgets.video_pause')->firstOrFail();
+        $this->assertSame('warning', $video->severity);
+        $this->assertSame(['count' => 1], $video->details['summary']['params']);
+        $this->assertStringStartsWith('<div class="webx-video webx-video--background" id="still"', (string) $video->details['table']['rows'][0]['markup']);
+
+        $this->assertSame(['/slider'], array_keys($this->keys('widgets.counter_number')), '3 000 and 4,9 are their numbers; 0 is not 3000.');
+        $counter = AuditIssue::query()->where('check', 'widgets.counter_number')->firstOrFail();
+        $this->assertSame('notice', $counter->severity);
+        $this->assertStringContainsString('<span class="webx-counter__number">0</span>', (string) $counter->details['table']['rows'][0]['markup']);
+
         // What the reader keeps of a page: only what is there.
         $home = AuditPage::query()->where('url', self::BASE.'/')->firstOrFail();
         $this->assertSame(['waits' => ['media' => 2, 'statistics' => 1]], $home->fact('widgets'));
@@ -294,7 +305,11 @@ final class AuditTest extends TestCase
                 .'<a href="/a.jpg" data-webx-lightbox="g" data-width="1800" data-height="1200">A</a>'
                 .'<section class="webx-slider webx-slider--logos" data-webx-slider=\'{"autoplay":0,"continuous":true}\'>'.$slide.$pause.'</section>'
                 .'<section class="webx-slider webx-slider--cards" data-webx-slider=\'{"autoplay":0,"continuous":false}\'>'.$slide.'</section>'
-                .'<div class="webx-contact-button"></div>'),
+                .'<div class="webx-contact-button"></div>'
+                // A background video with its pause button; counters that hold their numbers, however the language writes them.
+                .'<div class="webx-video webx-video--background" data-webx-video-background><video class="webx-video__background" muted loop></video><button type="button" class="webx-video__pause">Pause</button></div>'
+                .'<span class="webx-counter" data-webx-counter=\'{"value":3000,"decimals":0}\'><span class="webx-counter__number">3 000</span><span class="webx-counter__suffix">+</span></span>'
+                .'<span class="webx-counter" data-webx-counter=\'{"value":4.9,"decimals":1}\'><span class="webx-counter__number">4,9</span></span>'),
             '/raw' => $page('Raw', self::PASTED.self::SNIPPET
                 .'<iframe src="https://www.google.com/maps/embed?pb=1" title="Map"></iframe>'
                 .'<script src="https://www.youtube.com/s/player.js"></script>'
@@ -306,7 +321,10 @@ final class AuditTest extends TestCase
             '/lightbox' => $page('Lightbox', '<a href="/a.jpg" data-webx-lightbox="g">A</a> <a href="/b.jpg" data-webx-lightbox="g" data-width="0" data-height="900">B</a>'
                 .'<a href="/c.jpg" data-webx-lightbox="g" data-width="900" data-height="600">C</a>'),
             '/slider' => $page('Slider', '<section class="webx-slider webx-slider--hero" id="lost" data-webx-slider=\'{"autoplay":6000,"continuous":false}\'>'.$slide.'</section>'
-                .'<section class="webx-slider webx-slider--hero" data-webx-slider=\'{"autoplay":6000}\'><div class="webx-slider__slide">Only one</div></section>'),
+                .'<section class="webx-slider webx-slider--hero" data-webx-slider=\'{"autoplay":6000}\'><div class="webx-slider__slide">Only one</div></section>'
+                // An override that lost the pause button, and one that leaves the number to the script.
+                .'<div class="webx-video webx-video--background" id="still" data-webx-video-background><video class="webx-video__background" muted loop></video></div>'
+                .'<span class="webx-counter" data-webx-counter=\'{"value":3000,"decimals":0}\'><span class="webx-counter__number">0</span></span>'),
             '/contacts' => $page('Contacts', '<div class="webx-contact-button"></div><div class="webx-contact-bar"></div>'),
             '/plain' => $page('Plain', '<p>Nothing of the widgets here.</p>'),
         ];

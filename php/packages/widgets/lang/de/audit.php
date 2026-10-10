@@ -8,6 +8,8 @@ return [
     'lightbox-size' => 'Links ohne Größe: :count',
     'slider-pause' => 'Slider ohne Pause-Schaltfläche: :count',
     'contact-both' => 'Beide Schnellkontakt-Widgets auf der Seite',
+    'video-pause' => 'Hintergrundvideos ohne Pause-Schaltfläche: :count',
+    'counter-number' => 'Zähler ohne ihre Zahl: :count',
     'on' => 'An',
     'off' => 'Aus',
 ];

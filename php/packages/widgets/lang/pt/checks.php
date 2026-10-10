@@ -34,5 +34,17 @@ return [
             'why' => 'Oferecem duas vezes as mesmas chamadas e conversas, e no telemóvel o botão tapa a barra.',
             'fix' => 'Mantenha apenas um dos dois no layout do tema.',
         ],
+        'video_pause' => [
+            'title' => 'Vídeos de fundo sem botão de pausa',
+            'found' => 'Um vídeo de fundo reproduz-se sozinho e não tem botão de pausa.',
+            'why' => 'Um movimento que dura mais de cinco segundos tem de poder ser parado (WCAG 2.2.2): distrai, e alguns visitantes não conseguem ler o texto por cima.',
+            'fix' => 'A vista do pacote tem sempre o botão: uma substituição de webx-widgets::components.video no tema perdeu .webx-video__pause. Reponha-o ou remova a substituição.',
+        ],
+        'counter_number' => [
+            'title' => 'Contadores sem o seu número',
+            'found' => 'A marcação de um contador não contém o número até ao qual conta.',
+            'why' => 'Motores de busca, leitores de ecrã e uma página sem JavaScript leem a marcação: recebem um zero ou nada em vez do número.',
+            'fix' => 'A vista do pacote imprime o número final e o script conta até ele: uma substituição de webx-widgets::components.counter no tema imprime outra coisa. Imprima o número ou remova a substituição.',
+        ],
     ],
 ];

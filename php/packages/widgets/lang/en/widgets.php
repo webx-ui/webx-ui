@@ -108,6 +108,8 @@ return [
         'notice' => 'The video loads from :provider, which may set cookies.',
         'load' => 'Load',
         'always' => 'Always load videos',
+        'pause' => 'Pause the background video',
+        'resume' => 'Play the background video',
     ],
     'map' => [
         'untitled' => 'Map',
@@ -131,5 +133,12 @@ return [
         'copy' => 'Copy link',
         'copied' => 'Link copied',
         'failed' => 'The link could not be copied',
+    ],
+    'countdown' => [
+        'ends' => 'Ends on :date',
+        'days' => 'Days',
+        'hours' => 'Hours',
+        'minutes' => 'Minutes',
+        'seconds' => 'Seconds',
     ],
 ];
