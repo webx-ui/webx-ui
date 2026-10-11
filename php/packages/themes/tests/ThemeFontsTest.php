@@ -157,7 +157,7 @@ final class ThemeFontsTest extends TestCase
         $this->app['config']->set('app.locale', 'en');
 
         $this->artisan('webx:theme:check')
-            ->expectsOutputToContain('every script of en.')
+            ->expectsOutputToContain('every script of en;')
             ->assertSuccessful();
     }
 

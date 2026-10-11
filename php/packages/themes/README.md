@@ -211,7 +211,12 @@ Where a CSS variable does not reach — mail, an inline SVG:
 ```php
 theme_token('color-accent');            // '#0e6b5c'
 theme_token('color-danger', '#e11d48'); // the default when the chain gives no value
+theme_token('font-heading');            // 'Inter, system-ui, …' — a reference to another token resolved
 ```
+
+A letter writes these values into `style="…"`: mail clients read no CSS variable and often no
+`<style>`. `webx:theme:check` reads the views under `mail/` of every layer and
+`resources/views/mail/` of every installed module, and names a `var(` or a literal colour there.
 
 ## PHP
 

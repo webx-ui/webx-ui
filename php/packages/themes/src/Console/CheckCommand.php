@@ -22,7 +22,8 @@ use WebxUi\Themes\ThemeManifest;
  * icons the chain has, and `theme_asset()` only files a layer has (§13.2); and the words of the layout
  * have every key of `en` in each language a layer declares (§15.2, rule 26); and the fonts of the
  * layers are their own files with a file for every script the site's languages need (§15.3, rule
- * 27). The rest of §17's list joins with the stages that build what it checks.
+ * 27); and the letters take their colours from theme_token(), never var() or a literal (§7.5, rule
+ * 25). The rest of §17's list joins with the stages that build what it checks.
  *
  * A refusal, not advice: a finding is a line naming the file, the line, what and why, and the
  * exit code is non-zero, so a build or a script can stop on it.
@@ -33,7 +34,7 @@ class CheckCommand extends Command
         {path? : A theme to check instead of the site\'s: a directory with theme.json, or a package directory}
         {--locales= : The languages the fonts have to draw, comma-separated, instead of the site\'s}';
 
-    protected $description = 'Check that the theme chain knows only tokens: tokens.json, src/css of the layers, CSS of the modules and widgets, block types of the layers; and that its icons follow the text and exist, and that the assets its templates name exist, that its words have the keys of en in every declared locale, and that its fonts cover the scripts of the site\'s languages';
+    protected $description = 'Check that the theme chain knows only tokens: tokens.json, src/css of the layers, CSS of the modules and widgets, block types of the layers; and that its icons follow the text and exist, and that the assets its templates name exist, that its words have the keys of en in every declared locale, that its fonts cover the scripts of the site\'s languages, and that its letters take their colours from theme_token()';
 
     public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeLocator $locator, ModuleStyles $modules): int
     {
@@ -70,7 +71,7 @@ class CheckCommand extends Command
         }
 
         $this->components->info(sprintf(
-            'The chain %s knows only tokens: %d stylesheets, %d block %s and the tokens.json of every layer; %d %s, every one its templates name; %s; %s; %s.',
+            'The chain %s knows only tokens: %d stylesheets, %d block %s and the tokens.json of every layer; %d %s, every one its templates name; %s; %s; %s; %s.',
             $layers,
             count($check->read()),
             $check->blocks(),
@@ -86,6 +87,11 @@ class CheckCommand extends Command
                 ? 'no layer declares locales for words of its own'
                 : 'words of the layout in '.$check->locales().' '.($check->locales() === 1 ? 'locale' : 'locales').', every one with the keys of en',
             $this->fonts($check, $locales),
+            match ($check->letters()) {
+                0 => 'no letters to read',
+                1 => '1 letter, its colours from theme_token()',
+                default => $check->letters().' letters, every colour from theme_token()',
+            },
         ));
 
         return self::SUCCESS;

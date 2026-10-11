@@ -33,7 +33,9 @@ use WebxUi\Themes\Vocabulary;
  * are files under `assets/` of a layer (§13.2, {@see AssetCheck}). And every language a layer
  * declares in `locales` has the words of the layout that `en` has (§15.2, {@see LineCheck}). And
  * the fonts of the layers are files of their own that cover the scripts of the site's languages
- * and of the languages the layer declares (§15.3, {@see FontCheck}).
+ * and of the languages the layer declares (§15.3, {@see FontCheck}). And the letters of the
+ * layers and of the modules take their colours from `theme_token()`, never from `var()` or a
+ * literal (§7.5, {@see MailCheck}).
  *
  * Built files are not read: `dist/` is what the sources became, plus the stylesheets of the
  * libraries a widget builds in (Swiper, PhotoSwipe, Leaflet), which are not ours to rewrite.
@@ -53,6 +55,8 @@ final class ChainCheck
     private int $assets = 0;
 
     private int $locales = 0;
+
+    private int $letters = 0;
 
     /** @var list<array{family: string, weight: string, style: string, files: array<string, string>, layer: ThemeManifest}> */
     private array $faces = [];
@@ -80,6 +84,7 @@ final class ChainCheck
         $this->icons = 0;
         $this->assets = 0;
         $this->locales = 0;
+        $this->letters = 0;
         $this->faces = [];
 
         try {
@@ -103,6 +108,7 @@ final class ChainCheck
 
         $this->layerBlocks($vocabulary);
         $this->checkIcons();
+        $this->checkLetters();
 
         // And the words of the layout (§15.2, rule 26): each layer, in each language it declares.
         foreach ($this->chain->layers as $layer) {
@@ -204,6 +210,62 @@ final class ChainCheck
         }
 
         return $templates;
+    }
+
+    /**
+     * The letters (§7.5, rule 25): the views under `mail/` of every layer — its own frame and its
+     * overrides of the modules' letters, `views/vendor/<ns>/mail/` — and `resources/views/mail/` of
+     * the installed modules, which are the bottom of the chain for the letters they send.
+     */
+    private function checkLetters(): void
+    {
+        $directories = [];
+
+        foreach ($this->chain->viewPaths() as $directory) {
+            $directories[] = $directory;
+        }
+
+        foreach ($this->modules ?? ModuleStyles::installed() as $module) {
+            $directories[] = rtrim(str_replace('\\', '/', $module), '/').'/resources/views/mail';
+        }
+
+        $files = [];
+
+        foreach (array_unique($directories) as $directory) {
+            if (! is_dir($directory)) {
+                continue;
+            }
+
+            $base = rtrim(str_replace('\\', '/', $directory), '/');
+
+            /** @var SplFileInfo $file */
+            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
+                $path = str_replace('\\', '/', $file->getPathname());
+                $inside = substr($path, strlen($base) + 1);
+
+                // A module's directory is mail/ already; a layer's views have one somewhere below.
+                if (str_ends_with($path, '.blade.php') && (str_ends_with($base, '/views/mail') || preg_match('~(?:^|/)mail/~', $inside) === 1)) {
+                    $files[] = $path;
+                }
+            }
+        }
+
+        $files = array_values(array_unique($files));
+        sort($files, SORT_STRING);
+
+        foreach ($files as $path) {
+            $this->letters++;
+
+            foreach (MailCheck::check((string) file_get_contents($path)) as $finding) {
+                $this->findings[] = ['file' => $path, 'line' => $finding['line'], 'message' => $finding['message']];
+            }
+        }
+    }
+
+    /** How many views of letters the last run read. */
+    public function letters(): int
+    {
+        return $this->letters;
     }
 
     /** How many `theme_asset()` calls with a literal path the templates of the chain make. */

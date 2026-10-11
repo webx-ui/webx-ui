@@ -21,11 +21,14 @@ and the site's `theme/`).
   under `vocabulary` in tokens.json. **`Tokens`** — the merged values (`app(Tokens::class)`):
   layers bottom up → preset → the owner's edits of `editable` tokens (`Contracts\Appearance`).
 - **`@webxTheme`** — `<style>:root { --site-… }</style>`, the fonts' `@font-face`, the widgets, the modules' base look, then
-  every layer's stylesheet bottom up; nothing without a theme. **`theme_token($name, $default)`** — a merged value, for mail.
+  every layer's stylesheet bottom up; nothing without a theme. **`theme_token($name, $default)`** — a merged value, for mail;
+  a value that refers to another token (`var(--site-font-body)`) comes with that token's value.
 - **`webx:theme:check [path]`** — CSS knows only tokens (spec §8): the tokens.json of every
   layer, `src/css` of the layers, `resources/css` and `resources/theme` of the widgets and modules.
   A line per finding (file:line, what, why) and a non-zero exit; `Checks\CssCheck::check($css,
-$vocabulary)` is the same rule for one stylesheet, and the block editor warns with it.
+$vocabulary)` is the same rule for one stylesheet, and the block editor warns with it. Letters
+  too (`Checks\MailCheck`): views under `mail/` of the layers and `resources/views/mail/` of the
+  modules take colours from `theme_token()` in `style="…"` — `var(` or a literal is a finding.
 - **`webx:theme:sync [--force] [--dry-run]`** — copies the packaged layers' `dist/` and `assets/`
   to `public/themes/` (a local theme's `assets/` to `public/themes/local-<directory>/`), the installed modules' `resources/theme/*.css` as one
   `public/themes/modules/<hash>/modules.css` (`ModuleStyles`), the layers' icons as one sprite
@@ -111,6 +114,8 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
 - Do not load a font from Google Fonts or any other CDN, nor with `<link rel="preload">`: the
   files go in `assets/fonts/` (a CDN hands every visitor's address to a third party), and a
   preload downloads a script whatever the page's language.
+- Do not write `var(` or a literal colour into a letter: mail reads no CSS variable, and a literal
+  does not repaint with the site — `style="color:{{ theme_token('color-text') }}"` (rule 25).
 - Do not call `View::prependNamespace()` for a theme yourself: it puts the theme above the site's
   `resources/views/vendor/<ns>`.
 

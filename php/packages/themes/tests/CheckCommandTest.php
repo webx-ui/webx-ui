@@ -103,6 +103,28 @@ final class CheckCommandTest extends TestCase
     }
 
     #[Test]
+    public function a_letter_takes_its_colours_from_theme_token_never_from_var_or_a_literal(): void
+    {
+        $this->artisan('webx:theme:check', ['path' => self::fixture('mail-theme')])
+            ->expectsOutputToContain('views/mail/layout.blade.php:2  literal colour #f4f5f7 in a letter')
+            ->expectsOutputToContain('views/mail/layout.blade.php:3  literal colour #ffffff in a letter')
+            ->expectsOutputToContain('views/mail/layout.blade.php:3  var(--site-color-text) in a letter — mail clients do not read CSS variables')
+            ->expectsOutputToContain('views/mail/layout.blade.php:4  literal colour #2563eb in a letter')
+            ->expectsOutputToContain('views/mail/layout.blade.php:5  literal colour red in a letter')
+            ->expectsOutputToContain('views/mail/layout.blade.php:8  literal colour rgb(…) in a letter')
+            ->expectsOutputToContain('6 findings')
+            ->assertFailed();
+    }
+
+    #[Test]
+    public function the_letters_of_the_layers_and_of_the_modules_are_counted_when_clean(): void
+    {
+        $this->artisan('webx:theme:check')
+            ->expectsOutputToContain('1 letter, its colours from theme_token()')
+            ->assertSuccessful();
+    }
+
+    #[Test]
     public function the_css_of_the_layers_below_the_themes_is_read_too(): void
     {
         $this->app->make(BottomLayers::class)->add('webx-ui/widgets-fixture', self::fixture('dirty-widgets'));

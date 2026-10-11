@@ -80,6 +80,39 @@ class Tokens
         return $this->values()[$name] ?? null;
     }
 
+    /**
+     * The value with every `var(--site-…)` in it replaced by that token's value, for where no CSS
+     * variable reaches — a letter (§7.5): `font-heading` of theme-default is
+     * `var(--site-font-body)`, and a letter that printed it would have no font at all. A
+     * reference to a token without a value, or one that comes back to itself, gives null.
+     */
+    public function resolved(string $name): ?string
+    {
+        return $this->resolve($name, []);
+    }
+
+    /** @param array<string, true> $seen */
+    private function resolve(string $name, array $seen): ?string
+    {
+        $value = $this->get($name);
+
+        if ($value === null || isset($seen[$name])) {
+            return null;
+        }
+
+        $seen[$name] = true;
+        $broken = false;
+
+        $resolved = (string) preg_replace_callback('/var\(\s*--site-([A-Za-z0-9_-]+)\s*\)/', function (array $reference) use ($seen, &$broken): string {
+            $value = $this->resolve($reference[1], $seen);
+            $broken = $broken || $value === null;
+
+            return $value ?? '';
+        }, $value);
+
+        return $broken ? null : $resolved;
+    }
+
     /** The preset in force: the owner's choice if the chain has such a preset, otherwise none. */
     public function preset(): ?string
     {
