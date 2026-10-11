@@ -8,6 +8,7 @@ use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Localization\Locales;
 use WebxUi\Media\Models\MediaFile;
@@ -83,16 +84,18 @@ final class ServicesDemo
 
         $cover = is_int($input['cover'] ?? null) ? ($covers[$input['cover']] ?? null) : null;
 
+        $title = $this->words($input['title'] ?? null) ?? $this->words($slug) ?? [];
+
         $service = Service::query()->create([
-            'title' => $this->words($input['title'] ?? $slug),
-            'slug' => $this->words($slug),
+            'title' => $title,
+            'slug' => $this->slugs($title, $slug),
             'lead' => $this->words($input['lead'] ?? null),
             'cover_id' => $cover?->getKey(),
             // The keys of a block are unique within the entity it lives in, not across the site,
             // but a prefix keeps them readable in blocks_get_content all the same.
             'blocks' => array_map(
                 static fn (array $block): array => ['key' => $slug.'-'.$block['key']] + $block,
-                $blocks,
+                (new DemoWords($this->locales))->in($blocks),
             ),
         ]);
 
@@ -116,9 +119,11 @@ final class ServicesDemo
             return;
         }
 
+        $title = $this->words($input['title'] ?? null) ?? $this->words($slug) ?? [];
+
         $category = ServiceCategory::query()->create([
-            'title' => $this->words($input['title'] ?? $slug),
-            'slug' => $this->words($slug),
+            'title' => $title,
+            'slug' => $this->slugs($title, $slug),
             'lead' => $this->words($input['lead'] ?? null),
             'is_visible' => true,
             'position' => $position,
@@ -180,13 +185,25 @@ final class ServicesDemo
     }
 
     /**
+     * A text as the map a translatable column keeps — one string or a map of languages, through
+     * the rule every demo keeps ({@see DemoWords}).
+     *
      * @return array<string, string>|null
      */
     private function words(mixed $text): ?array
     {
-        $text = is_string($text) ? trim($text) : '';
+        return (new DemoWords($this->locales))->of($text);
+    }
 
-        return $text === '' ? null : [$this->locales->defaultCode() => $text];
+    /**
+     * The same slug in every language the title is written in: no slug, no address there.
+     *
+     * @param  array<string, string>  $title
+     * @return array<string, string>
+     */
+    private function slugs(array $title, string $slug): array
+    {
+        return array_fill_keys(array_keys($title), $slug);
     }
 
     /**

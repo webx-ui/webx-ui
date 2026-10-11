@@ -8,6 +8,7 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Carbon;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Rubric;
@@ -61,9 +62,11 @@ final class BlogDemo
     {
         $input = is_array($input) ? $input : [];
 
+        $title = $this->words($input['title'] ?? null) ?? $this->words('Notes') ?? [];
+
         $rubric = Rubric::query()->create([
-            'title' => $this->words($input['title'] ?? 'Notes'),
-            'slug' => $this->words($input['slug'] ?? 'notes'),
+            'title' => $title,
+            'slug' => $this->slugs($title, (string) ($input['slug'] ?? 'notes')),
             'lead' => $this->words($input['lead'] ?? null),
             'is_visible' => true,
             'position' => 0,
@@ -87,9 +90,11 @@ final class BlogDemo
                 continue;
             }
 
+            $title = $this->words($one['title'] ?? null) ?? $this->words($one['slug']) ?? [];
+
             $tag = Tag::query()->create([
-                'title' => $this->words($one['title'] ?? $one['slug']),
-                'slug' => $this->words($one['slug']),
+                'title' => $title,
+                'slug' => $this->slugs($title, $one['slug']),
                 // Out of the index until somebody writes a rule for its address (§9 of the
                 // blog spec), which is the module's own default and worth showing as such.
                 'noindex' => true,
@@ -114,13 +119,16 @@ final class BlogDemo
             return;
         }
 
+        $title = $this->words($input['title'] ?? null) ?? $this->words($slug) ?? [];
+
         $article = Article::query()->create([
-            'title' => $this->words($input['title'] ?? $slug),
-            'slug' => $this->words($slug),
+            'title' => $title,
+            'slug' => $this->slugs($title, $slug),
             'lead' => $this->words($input['lead'] ?? null),
             'cover_id' => ($input['cover'] ?? false) === true ? $cover?->getKey() : null,
             'pinned' => (bool) ($input['pinned'] ?? false),
-            'blocks' => is_array($input['blocks'] ?? null) ? $input['blocks'] : [],
+            // A field's words may be a map too; it is cut to the site's languages like a title.
+            'blocks' => (new DemoWords($this->locales))->in(is_array($input['blocks'] ?? null) ? $input['blocks'] : []),
         ]);
 
         $ledger->created($article, $slug);
@@ -157,13 +165,25 @@ final class BlogDemo
     }
 
     /**
+     * A text as the map a translatable column keeps — one string or a map of languages, through
+     * the rule every demo keeps ({@see DemoWords}).
+     *
      * @return array<string, string>|null
      */
     private function words(mixed $text): ?array
     {
-        $text = is_string($text) ? trim($text) : '';
+        return (new DemoWords($this->locales))->of($text);
+    }
 
-        return $text === '' ? null : [$this->locales->defaultCode() => $text];
+    /**
+     * The same slug in every language the title is written in: no slug, no address there.
+     *
+     * @param  array<string, string>  $title
+     * @return array<string, string>
+     */
+    private function slugs(array $title, string $slug): array
+    {
+        return array_fill_keys(array_keys($title), $slug);
     }
 
     /**

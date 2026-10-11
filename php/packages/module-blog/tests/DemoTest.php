@@ -77,6 +77,33 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
+    public function the_demo_speaks_the_languages_of_the_site_and_the_default_one_whatever_it_is(): void
+    {
+        // German is not in the demo: the default language gets the English, Polish is dropped.
+        $this->useLocales('de', 'ru');
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        $article = Article::query()->where('slug->de', 'a-site-made-of-blocks')->firstOrFail();
+
+        $this->assertSame(['de' => 'A site made of blocks', 'ru' => 'Сайт из блоков'], $article->getTranslations('title'));
+        // The same slug in every language the title is in: no slug, no address there.
+        $this->assertSame(['de' => 'a-site-made-of-blocks', 'ru' => 'a-site-made-of-blocks'], $article->getTranslations('slug'));
+        $this->assertSame(['de', 'ru'], array_keys($article->blocks[0]['values']['heading']));
+        $this->assertSame(['de', 'ru'], array_keys(Rubric::query()->firstOrFail()->getTranslations('title')));
+    }
+
+    #[Test]
+    public function the_demo_is_written_in_polish_too(): void
+    {
+        $this->useLocales('en', 'ru', 'pl');
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        foreach ([Article::query()->firstOrFail(), Rubric::query()->firstOrFail(), Tag::query()->firstOrFail()] as $model) {
+            $this->assertSame(['en', 'ru', 'pl'], array_keys($model->getTranslations('title')), $model::class);
+        }
+    }
+
+    #[Test]
     public function removing_takes_the_bytes_with_the_rows(): void
     {
         $this->artisan('webx:demo')->assertSuccessful();

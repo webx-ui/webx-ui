@@ -135,6 +135,19 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
+    public function the_demo_is_written_in_polish_too(): void
+    {
+        $this->useLocales('en', 'ru', 'pl');
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        $titles = Vacancy::query()->get()->map(static fn (Vacancy $vacancy): array => array_keys($vacancy->getTranslations('title')))->all();
+
+        // All but the one written in English only, on purpose.
+        $this->assertCount(6, array_filter($titles, static fn (array $codes): bool => $codes === ['en', 'ru', 'pl']));
+        $this->assertSame(['en', 'ru', 'pl'], array_keys(VacancyCategory::query()->firstOrFail()->getTranslations('title')));
+    }
+
+    #[Test]
     public function the_demo_is_removed_whole(): void
     {
         $this->artisan('webx:demo')->assertSuccessful();

@@ -124,6 +124,20 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
+    public function the_demo_is_written_in_polish_too(): void
+    {
+        $this->useLocales('en', 'ru', 'pl');
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        $oatmeal = $this->named('oatmeal-with-berries');
+
+        $this->assertSame(['en', 'ru', 'pl'], array_keys($oatmeal->getTranslations('method')));
+        $this->assertSame(['en', 'ru', 'pl'], array_keys(RecipeNutrient::query()->firstOrFail()->getTranslations('title')));
+        // Written in English only on purpose: no Polish address either.
+        $this->assertSame(['en'], array_keys($this->named('pumpkin-soup')->getTranslations('title')));
+    }
+
+    #[Test]
     public function removing_takes_everything_back_out(): void
     {
         $this->artisan('webx:demo')->assertSuccessful();

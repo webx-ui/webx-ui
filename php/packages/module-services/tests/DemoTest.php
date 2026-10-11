@@ -66,6 +66,21 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
+    public function the_demo_is_written_in_english_russian_and_polish(): void
+    {
+        $this->useLocales('en', 'ru', 'pl');
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        $service = Service::query()->where('slug->en', 'landing-page')->firstOrFail();
+
+        $this->assertSame(['en', 'ru', 'pl'], array_keys($service->getTranslations('title')));
+        $this->assertSame(['en', 'ru', 'pl'], array_keys($service->getTranslations('lead')));
+        $this->assertSame('landing-page', $service->getTranslation('slug', 'pl'));
+        $this->assertSame(['en', 'ru', 'pl'], array_keys($service->blocks[0]['values']['body']));
+        $this->assertSame(['en', 'ru', 'pl'], array_keys(ServiceCategory::query()->firstOrFail()->getTranslations('lead')));
+    }
+
+    #[Test]
     public function removing_takes_everything_back_out(): void
     {
         $this->artisan('webx:demo')->assertSuccessful();

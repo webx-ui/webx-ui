@@ -2,70 +2,158 @@
   "categories": [
     {
       "slug": "websites",
-      "title": "Websites",
-      "lead": "<p>Sites built from blocks, so the people who write them never wait for a release.</p>",
+      "title": {
+        "en": "Websites",
+        "ru": "Сайты",
+        "pl": "Strony internetowe"
+      },
+      "lead": {
+        "en": "<p>Sites built from blocks, so the people who write them never wait for a release.</p>",
+        "ru": "<p>Сайты из блоков: тем, кто их наполняет, не нужно ждать релиза.</p>",
+        "pl": "<p>Strony zbudowane z bloków, więc ci, którzy je piszą, nigdy nie czekają na wydanie.</p>"
+      },
       "services": ["landing-page", "company-website", "online-catalogue", "site-maintenance"]
     },
     {
       "slug": "design",
-      "title": "Design",
-      "lead": "<p>How a site looks, and the rules that keep it looking that way.</p>",
+      "title": {
+        "en": "Design",
+        "ru": "Дизайн",
+        "pl": "Projektowanie"
+      },
+      "lead": {
+        "en": "<p>How a site looks, and the rules that keep it looking that way.</p>",
+        "ru": "<p>Как выглядит сайт и правила, благодаря которым он таким и остаётся.</p>",
+        "pl": "<p>Jak wygląda strona i zasady, dzięki którym tak zostaje.</p>"
+      },
       "services": ["brand-identity", "design-system"]
     },
     {
       "slug": "support",
-      "title": "Support",
-      "lead": "<p>What happens after launch.</p>",
+      "title": {
+        "en": "Support",
+        "ru": "Поддержка",
+        "pl": "Wsparcie"
+      },
+      "lead": {
+        "en": "<p>What happens after launch.</p>",
+        "ru": "<p>Что происходит после запуска.</p>",
+        "pl": "<p>Co dzieje się po uruchomieniu.</p>"
+      },
       "services": ["site-maintenance", "seo-audit", "content-editing"]
     }
   ],
   "services": [
     {
       "slug": "landing-page",
-      "title": "Landing page",
-      "lead": "One page, one offer, one button — ready in a week.",
+      "title": {
+        "en": "Landing page",
+        "ru": "Лендинг",
+        "pl": "Landing page"
+      },
+      "lead": {
+        "en": "One page, one offer, one button — ready in a week.",
+        "ru": "Одна страница, одно предложение, одна кнопка — готово за неделю.",
+        "pl": "Jedna strona, jedna oferta, jeden przycisk — gotowe w tydzień."
+      },
       "cover": 0
     },
     {
       "slug": "company-website",
-      "title": "Company website",
-      "lead": "Pages, a blog and a catalogue of services, all edited in one panel.",
+      "title": {
+        "en": "Company website",
+        "ru": "Сайт компании",
+        "pl": "Strona firmowa"
+      },
+      "lead": {
+        "en": "Pages, a blog and a catalogue of services, all edited in one panel.",
+        "ru": "Страницы, блог и каталог услуг — всё редактируется в одной панели.",
+        "pl": "Podstrony, blog i katalog usług, wszystko edytowane w jednym panelu."
+      },
       "cover": 1
     },
     {
       "slug": "online-catalogue",
-      "title": "Online catalogue",
-      "lead": "Every product or service on its own page, grouped the way customers look for them.",
+      "title": {
+        "en": "Online catalogue",
+        "ru": "Онлайн-каталог",
+        "pl": "Katalog online"
+      },
+      "lead": {
+        "en": "Every product or service on its own page, grouped the way customers look for them.",
+        "ru": "Каждый товар или услуга — на своей странице, а сгруппированы они так, как их ищут клиенты.",
+        "pl": "Każdy produkt lub usługa na osobnej stronie, pogrupowane tak, jak szukają ich klienci."
+      },
       "cover": 0
     },
     {
       "slug": "site-maintenance",
-      "title": "Site maintenance",
-      "lead": "Updates, backups and small fixes, every month. Filed under two categories, and in a different place in each.",
+      "title": {
+        "en": "Site maintenance",
+        "ru": "Сопровождение сайта",
+        "pl": "Opieka nad stroną"
+      },
+      "lead": {
+        "en": "Updates, backups and small fixes, every month. Filed under two categories, and in a different place in each.",
+        "ru": "Обновления, резервные копии и мелкие правки каждый месяц. Входит в две категории и в каждой стоит на своём месте.",
+        "pl": "Aktualizacje, kopie zapasowe i drobne poprawki co miesiąc. Należy do dwóch kategorii i w każdej stoi na innym miejscu."
+      },
       "cover": 1
     },
     {
       "slug": "brand-identity",
-      "title": "Brand identity",
-      "lead": "A logo, a palette and a typeface, with a page on how to use them.",
+      "title": {
+        "en": "Brand identity",
+        "ru": "Фирменный стиль",
+        "pl": "Identyfikacja wizualna"
+      },
+      "lead": {
+        "en": "A logo, a palette and a typeface, with a page on how to use them.",
+        "ru": "Логотип, палитра и шрифт, а к ним — страница о том, как ими пользоваться.",
+        "pl": "Logo, paleta i krój pisma, a do tego strona o tym, jak ich używać."
+      },
       "cover": 0
     },
     {
       "slug": "design-system",
-      "title": "Design system",
-      "lead": "Components and tokens a team builds every screen from.",
+      "title": {
+        "en": "Design system",
+        "ru": "Дизайн-система",
+        "pl": "System projektowy"
+      },
+      "lead": {
+        "en": "Components and tokens a team builds every screen from.",
+        "ru": "Компоненты и токены, из которых команда собирает каждый экран.",
+        "pl": "Komponenty i tokeny, z których zespół buduje każdy ekran."
+      },
       "cover": 1
     },
     {
       "slug": "seo-audit",
-      "title": "SEO audit",
-      "lead": "What stands between the site and the first page of results, and the order to fix it in.",
+      "title": {
+        "en": "SEO audit",
+        "ru": "SEO-аудит",
+        "pl": "Audyt SEO"
+      },
+      "lead": {
+        "en": "What stands between the site and the first page of results, and the order to fix it in.",
+        "ru": "Что отделяет сайт от первой страницы выдачи и в каком порядке это исправлять.",
+        "pl": "Co dzieli stronę od pierwszej strony wyników i w jakiej kolejności to naprawić."
+      },
       "cover": 0
     },
     {
       "slug": "content-editing",
-      "title": "Content editing",
-      "lead": "Texts for the pages the site already has, written for the people who read them.",
+      "title": {
+        "en": "Content editing",
+        "ru": "Редактура текстов",
+        "pl": "Redakcja treści"
+      },
+      "lead": {
+        "en": "Texts for the pages the site already has, written for the people who read them.",
+        "ru": "Тексты для страниц, которые на сайте уже есть, написанные для тех, кто их читает.",
+        "pl": "Teksty do stron, które serwis już ma, pisane dla ludzi, którzy je czytają."
+      },
       "cover": 1
     }
   ],
@@ -74,16 +162,32 @@
       "key": "intro",
       "type": "text",
       "values": {
-        "heading": "What is included",
-        "body": "This service was seeded by php artisan webx:demo, and it is an ordinary service: edit it, reorder it, publish it, delete it.\nIts content is blocks — the same block types the pages of the site are made of."
+        "heading": {
+          "en": "What is included",
+          "ru": "Что входит в услугу",
+          "pl": "Co obejmuje usługa"
+        },
+        "body": {
+          "en": "This service was seeded by php artisan webx:demo, and it is an ordinary service: edit it, reorder it, publish it, delete it.\nIts content is blocks — the same block types the pages of the site are made of.",
+          "ru": "Эту услугу создала команда php artisan webx:demo, и это обычная услуга: её можно править, переставлять, публиковать и удалять.\nЕё содержимое — блоки, те же типы блоков, из которых собраны страницы сайта.",
+          "pl": "Tę usługę utworzyło polecenie php artisan webx:demo i jest to zwykła usługa: można ją edytować, przestawiać, opublikować i usunąć.\nJej treść to bloki — te same typy bloków, z których zbudowane są strony serwisu."
+        }
       }
     },
     {
       "key": "order",
       "type": "text",
       "values": {
-        "heading": "Two orders",
-        "body": "The list of services has an order of its own, and every category has another. Drag a service in the panel with a category chosen and only that category changes."
+        "heading": {
+          "en": "Two orders",
+          "ru": "Два порядка",
+          "pl": "Dwie kolejności"
+        },
+        "body": {
+          "en": "The list of services has an order of its own, and every category has another. Drag a service in the panel with a category chosen and only that category changes.",
+          "ru": "У списка услуг свой порядок, а у каждой категории — ещё один. Перетащите услугу в панели, выбрав категорию, — и изменится только эта категория.",
+          "pl": "Lista usług ma własną kolejność, a każda kategoria — jeszcze inną. Przeciągnij usługę w panelu przy wybranej kategorii, a zmieni się tylko ta kategoria."
+        }
       }
     }
   ]
