@@ -20,7 +20,7 @@ and the site's `theme/`).
 - **`Vocabulary`** — the token names and their types (`Vocabulary::base()`); a theme adds its own
   under `vocabulary` in tokens.json. **`Tokens`** — the merged values (`app(Tokens::class)`):
   layers bottom up → preset → the owner's edits of `editable` tokens (`Contracts\Appearance`).
-- **`@webxTheme`** — `<style>:root { --site-… }</style>`, the widgets, the modules' base look, then
+- **`@webxTheme`** — `<style>:root { --site-… }</style>`, the fonts' `@font-face`, the widgets, the modules' base look, then
   every layer's stylesheet bottom up; nothing without a theme. **`theme_token($name, $default)`** — a merged value, for mail.
 - **`webx:theme:check [path]`** — CSS knows only tokens (spec §8): the tokens.json of every
   layer, `src/css` of the layers, `resources/css` and `resources/theme` of the widgets and modules.
@@ -59,27 +59,36 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
   layer that has it, as sync published it (`public/themes/<name>/<hash>/assets/…`, cached
   forever). A path no layer has, or a layer not synced since it got the file, is `''` (the log
   says which in debug); the check names a literal `theme_asset('…')` no layer answers.
+- **Fonts**: `fonts` in the manifest — `{ "family": "Inter", "weight": "100 900", "style":
+"normal", "files": { "latin": "fonts/inter-latin.woff2", "cyrillic": "…" } }`, a file per script
+  under `assets/` (`latin`, `latin-ext`, `cyrillic`, `cyrillic-ext`, `greek`, `greek-ext`,
+  `vietnamese`). `@webxTheme` prints an `@font-face` per file with its script's `unicode-range`
+  (`ThemeFonts`), so a page downloads only the scripts its letters need. A family of a higher
+  layer replaces the same family below. The check and `webx:doctor` compare the scripts with the
+  site's languages (`ru`/`uk` need `cyrillic`, `pl`/`tr` `latin-ext`; `ThemeFonts::LANGUAGES`)
+  and with the layer's own `locales`; `webx:theme:check --locales=pl,ru` for other ones.
 
 ## Change it without forking
 
-| You want                                            | Do this                                                      |
-| --------------------------------------------------- | ------------------------------------------------------------ |
-| Change the site's look                              | edit `theme/` — never the packaged theme in `vendor/`        |
-| Restyle a module's page                             | `theme/src/css` on its classes (its `AGENTS.md`, «Classes»)  |
-| Add to a module's page at a point                   | `theme/views/parts/<point>.blade.php`                        |
-| Override a module's page (the expensive door)       | `theme/views/vendor/<ns>/<view>.blade.php`                   |
-| Override a view for this site only, above any theme | `resources/views/…` — it always wins                         |
-| Change a word of the layout                         | `theme/lang/<locale>/theme.php`, the same key                |
-| Add a word of the layout                            | the key in `theme/lang/en` and every language of `locales`   |
-| Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json`        |
-| Change a colour, a font, a radius                   | `theme/tokens.json` → `defaults`                             |
-| A token the vocabulary does not have                | `theme/tokens.json` → `vocabulary`, then `defaults`          |
-| Another palette the site can switch to              | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`         |
-| Another look of a block the theme brings            | `theme/blocks/<same slug>.json` — add fields, never drop one |
-| Keep a block made in the panel in git               | `php artisan webx:blocks:export <slug> --path=theme/blocks`  |
-| Add an icon, or redraw one of the theme's           | `theme/icons/<name>.svg`, then `php artisan webx:theme:sync` |
-| Add a picture, or replace one of the theme's        | `theme/assets/<path>`, then `php artisan webx:theme:sync`    |
-| Publish the config                                  | `php artisan vendor:publish --tag=webx-themes-config`        |
+| You want                                            | Do this                                                                           |
+| --------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Change the site's look                              | edit `theme/` — never the packaged theme in `vendor/`                             |
+| Restyle a module's page                             | `theme/src/css` on its classes (its `AGENTS.md`, «Classes»)                       |
+| Add to a module's page at a point                   | `theme/views/parts/<point>.blade.php`                                             |
+| Override a module's page (the expensive door)       | `theme/views/vendor/<ns>/<view>.blade.php`                                        |
+| Override a view for this site only, above any theme | `resources/views/…` — it always wins                                              |
+| Change a word of the layout                         | `theme/lang/<locale>/theme.php`, the same key                                     |
+| Add a word of the layout                            | the key in `theme/lang/en` and every language of `locales`                        |
+| Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json`                             |
+| Change a colour, a font, a radius                   | `theme/tokens.json` → `defaults`                                                  |
+| A token the vocabulary does not have                | `theme/tokens.json` → `vocabulary`, then `defaults`                               |
+| Another palette the site can switch to              | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`                              |
+| Another look of a block the theme brings            | `theme/blocks/<same slug>.json` — add fields, never drop one                      |
+| Keep a block made in the panel in git               | `php artisan webx:blocks:export <slug> --path=theme/blocks`                       |
+| Add an icon, or redraw one of the theme's           | `theme/icons/<name>.svg`, then `php artisan webx:theme:sync`                      |
+| Add a picture, or replace one of the theme's        | `theme/assets/<path>`, then `php artisan webx:theme:sync`                         |
+| A font of the site's own                            | `theme/assets/fonts/`, `fonts` in `theme.json`, its family in `tokens.json`, sync |
+| Publish the config                                  | `php artisan vendor:publish --tag=webx-themes-config`                             |
 
 ## Do not
 
@@ -99,6 +108,9 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
   no preset repaints it. Size an icon in CSS (`width`/`height` on its class), not by attributes.
 - Do not write a word a visitor reads into a template — text, `aria-label`, `alt`, `title`:
   `{{ __('theme::theme.<key>') }}`, or it stays English on every other language of the site.
+- Do not load a font from Google Fonts or any other CDN, nor with `<link rel="preload">`: the
+  files go in `assets/fonts/` (a CDN hands every visitor's address to a third party), and a
+  preload downloads a script whatever the page's language.
 - Do not call `View::prependNamespace()` for a theme yourself: it puts the theme above the site's
   `resources/views/vendor/<ns>`.
 

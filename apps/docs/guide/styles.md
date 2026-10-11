@@ -27,6 +27,7 @@ pages (a page, an article, a product) stand inside the theme's layout.
 | The header and the footer             | the same, `components/header.blade.php` and `footer.blade.php` — shown while the region is empty     |
 | The menu items                        | the panel («Menus»), not the view — the header prints `menu('header')`                               |
 | A picture of the theme (a background) | `theme/assets/img/` and `theme_asset('img/…')`; see [Assets](#assets)                                |
+| A font of the site's own              | `theme/assets/fonts/` and `fonts` in `theme/theme.json`; see [Fonts](#fonts)                         |
 | The favicon, files of the site's own  | `public/` — `public/favicon.ico`, your own folders such as `public/documents/`                       |
 | A module's page (article, page…)      | its classes in `theme/src/css` first; see [below](#a-module-s-page)                                  |
 | The start page before real content    | `resources/views/demo.blade.php` — delete it with its route when the site has a home page            |
@@ -177,6 +178,48 @@ shows one picture twice — as it is and as a mask over the accent — under Kit
   and the browser keeps the old one after you change it. A photo the owner changes goes in the
   media library, not in the theme. `webx:theme:check` names a `theme_asset('…')` no layer has.
 
+### Fonts
+
+The default theme draws its text in Inter, and the font's files are the theme's own, under
+`assets/fonts/`. No page asks a font service for anything, so no visitor's address goes to a third
+party — for a site in the EU that would be a question of consent. The font is cut by script, and
+the theme's manifest says which file covers which:
+
+```json
+"fonts": [
+  {
+    "family": "Inter",
+    "weight": "100 900",
+    "style": "normal",
+    "files": {
+      "latin": "fonts/inter-latin.woff2",
+      "latin-ext": "fonts/inter-latin-ext.woff2",
+      "cyrillic": "fonts/inter-cyrillic.woff2"
+    }
+  }
+]
+```
+
+`@webxTheme` prints an `@font-face` for each file with the range of letters of its script, and a
+browser downloads a file only when the page has a letter in that range: an English page takes the
+Latin file alone, a Polish one adds Latin Extended for `ą` and `ł`, a Russian one adds Cyrillic.
+Kitchen sink › Fonts on the starter site draws a line in each script, and one in Greek, which
+Inter has no file for here — that is what the fallback looks like.
+
+- **A font of your own:** its `.woff2` files in `theme/assets/fonts/`, one per script
+  (`latin`, `latin-ext`, `cyrillic`, `cyrillic-ext`, `greek`, `greek-ext`, `vietnamese` — the
+  way Google Fonts and Fontsource cut them, so a download from either fits), `fonts` in
+  `theme/theme.json` as above, the family at the head of `font-body` or `font-heading` in
+  `theme/tokens.json`, and `php artisan webx:theme:sync`. A family the site declares replaces the
+  same family of the theme below, so Inter with Greek added is `"family": "Inter"` with all four
+  files. Keep the font's licence beside the files.
+- **Which scripts:** each language of the site needs `latin`, and some one more — `ru` and `uk`
+  `cyrillic`, `pl`, `tr`, `cs` `latin-ext` ([Languages](./languages.md#scripts-and-fonts)).
+  `webx:theme:check` compares the files with the site's languages and names a script that has no
+  file; `webx:doctor` warns the same on a deploy after a language was added in the panel.
+- **Not:** a `<link>` to Google Fonts or another CDN, and no `<link rel="preload">` for a font —
+  a preload downloads the file on every page, whatever its language.
+
 ### Words of the layout
 
 The few words a theme prints itself — "Skip to content", the labels of the contact block, the page
@@ -300,6 +343,7 @@ means, is in [Theming](./theming.md). Check the result in the dark theme too.
 | A block type                                | its preview in the panel, then publish it                                                                                                                  |
 | An icon in `theme/icons/`                   | `php artisan webx:theme:sync`, then reload                                                                                                                 |
 | A picture in `theme/assets/`                | `php artisan webx:theme:sync`, then reload                                                                                                                 |
+| A font in `theme/assets/fonts/`             | `php artisan webx:theme:sync`, then reload                                                                                                                 |
 | Anything, on the server                     | `npm run build` (in Docker: `docker compose up -d --build`)                                                                                                |
 
 Not changing? `php artisan view:clear` clears cached views, and `php artisan webx:doctor` says

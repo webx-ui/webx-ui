@@ -17,8 +17,8 @@ Part of [WebX UI](https://github.com/webx-ui/webx-ui). The mechanism — the cha
 vocabulary, `@webxTheme` — is [`webx-ui/themes`](https://github.com/webx-ui/themes).
 
 > Early days: this release holds the tokens, the layout with its header and footer, the shell and
-> prose stylesheet, six block types, the icons, the 404 page and every word of the layout in ten
-> languages. Fonts and mail arrive in the next releases.
+> prose stylesheet, six block types, the icons, Inter in Latin, Latin Extended and Cyrillic, the
+> 404 page and every word of the layout in ten languages. Mail arrives in the next release.
 
 ## What is in it
 
@@ -32,6 +32,7 @@ vocabulary, `@webxTheme` — is [`webx-ui/themes`](https://github.com/webx-ui/th
 | `dist/theme.css`          | the build of `src/`, committed: a site installs this theme with no Node                |
 | `icons/`                  | 27 icons, 24×24 strokes in `currentColor`: `<x-theme::icon name="phone" />`            |
 | `assets/img/`             | pictures of the theme: `theme_asset('img/wave.svg')`                                   |
+| `assets/fonts/`           | Inter, a variable file per script and style; `@webxTheme` prints its `@font-face`      |
 | `lang/<locale>/theme.php` | the words of the layout in the ten `locales`: `__('theme::theme.shell.skip')`          |
 
 Every rule is written on `var(--site-…)` tokens only and inside `:where()`, so it carries no
@@ -61,4 +62,6 @@ fails when `src/` and `dist/` disagree.
 
 ## License
 
-MIT
+MIT. The font in `assets/fonts/` is [Inter](https://github.com/rsms/inter) by The Inter Project
+Authors, under the SIL Open Font License 1.1 — `assets/fonts/OFL.txt`, which goes wherever the
+files go.

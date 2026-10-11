@@ -145,6 +145,26 @@ languages the site has; a language it lacks gets the default language's words, a
 gets the English. `webx:setup` names such a language before it installs — see
 [demo content](./new-site.md#demo-content).
 
+### Scripts and fonts
+
+A language is also a set of letters. German, French or Spanish fit in the Latin file of a font;
+Polish `ą ł`, Turkish `ğ ş` and Czech `ř` are past it, in Latin Extended; Russian and Ukrainian
+are Cyrillic. A theme declares which scripts its font files cover, and a page in a language
+whose script has no file draws those letters in the fallback font — the rest of the word in the
+theme's, which only a reader notices. So after adding a language in the panel:
+
+```bash
+php artisan webx:doctor
+```
+
+warns when the theme's font has no file for it, and `php artisan webx:theme:check` names the
+script and the manifest to add it to — see [Fonts](./styles.md#fonts). The default theme covers
+Latin, Latin Extended and Cyrillic: every language of the panel.
+
+The language switcher names each language in itself — "Polski", "Русский". It sets the names of
+the other languages in the reader's own font, so «Русский» does not make every English page
+download the Cyrillic file.
+
 ::: warning A field's languages are not the panel's
 `localized` switches between _content_ languages. The panel being in English has no bearing on
 which languages a page is published in, and an editor routinely writes Ukrainian copy in an

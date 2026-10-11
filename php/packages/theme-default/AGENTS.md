@@ -56,7 +56,9 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   variant, then the block in a narrow column. Kitchen sink › Icons: every icon of the chain
   (`showcase-icons`), then icons in a line, at four sizes, in buttons, on the accent. Kitchen
   sink › Assets: `assets/img/wave.svg` through `theme_asset()` as a picture and as a mask over the
-  accent (`showcase-assets`). A page per widget under "Kitchen sink": Header and menu,
+  accent (`showcase-assets`). Kitchen sink › Fonts: a line in every script Inter covers and one
+  in Greek, which it does not (the fallback, on purpose), the weights and the italic
+  (`showcase-fonts`). A page per widget under "Kitchen sink": Header and menu,
   Cookie consent, Dropdown and form in a dialog, Contacts, Language switcher, Slider, Lightbox,
   Video, Map, Page tools, Background video, Counters and countdown, Before and after, Table of contents, Show more, Notice bar (with Same words and New words under it), Zoom — every variant, a narrow column, what to try; the place to look before changing one.
   Written in English, Russian and Polish: a page's `title`, `slug` and SEO card, and every
@@ -79,22 +81,30 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   on the text's line (`base.css`).
 - **`assets/img/`** — pictures for `theme_asset('img/…')`: `wave.svg` (two grey waves, 1200×120,
   stretched; as a mask it takes any colour).
+- **`assets/fonts/`** — Inter, the theme's own files (no CDN): a variable file per script —
+  `latin`, `latin-ext`, `cyrillic` — upright and italic, weights 100–900, declared under `fonts`
+  in `composer.json`; `OFL.txt` beside them is its licence and travels with it. `font-body` is
+  `Inter, system-ui, …`, so a script without a file falls to the system font. An English page
+  downloads only `inter-latin.woff2`. Other scripts (Greek, Vietnamese) — a local theme declares
+  `Inter` again with them, or its own family.
 
 ## Change it without forking
 
-| You want                                 | Do this                                                                                        |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Another accent, font, radius, spacing    | `theme/tokens.json` → `defaults`                                                               |
-| Another palette to switch to             | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`                                           |
-| Restyle the header, footer or prose      | `theme/src/css/theme.css`, on the `site-*` classes above                                       |
-| Other markup in the header or footer     | `theme/views/components/header.blade.php` (or `footer`)                                        |
-| A different document                     | `theme/views/components/layout.blade.php`, copied from here                                    |
-| Another look of one of the six blocks    | `theme/blocks/<slug>.json` by the same slug, every field kept with its type; `webx:theme:sync` |
-| A section of a page full width           | class `site-bleed` on the direct child of `<main>`                                             |
-| Another drawing of an icon, or a new one | `theme/icons/<name>.svg` in `currentColor`, then `webx:theme:sync`                             |
-| Another picture of the theme             | `theme/assets/<same path>`, then `webx:theme:sync`                                             |
-| Prose typography outside `<main>`        | class `site-prose` on the wrapper                                                              |
-| The header and footer as blocks          | arrange the `header`/`footer` regions in the panel; no code                                    |
+| You want                                 | Do this                                                                                             |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Another accent, font, radius, spacing    | `theme/tokens.json` → `defaults`                                                                    |
+| Another palette to switch to             | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`                                                |
+| Restyle the header, footer or prose      | `theme/src/css/theme.css`, on the `site-*` classes above                                            |
+| Other markup in the header or footer     | `theme/views/components/header.blade.php` (or `footer`)                                             |
+| A different document                     | `theme/views/components/layout.blade.php`, copied from here                                         |
+| Another look of one of the six blocks    | `theme/blocks/<slug>.json` by the same slug, every field kept with its type; `webx:theme:sync`      |
+| A section of a page full width           | class `site-bleed` on the direct child of `<main>`                                                  |
+| Another drawing of an icon, or a new one | `theme/icons/<name>.svg` in `currentColor`, then `webx:theme:sync`                                  |
+| Another picture of the theme             | `theme/assets/<same path>`, then `webx:theme:sync`                                                  |
+| Another font                             | files in `theme/assets/fonts/`, `fonts` in `theme/theme.json`, the family in `font-body`/`-heading` |
+| Inter with another script (Greek)        | `fonts` in `theme/theme.json` with family `Inter` and every script — it replaces this one whole     |
+| Prose typography outside `<main>`        | class `site-prose` on the wrapper                                                                   |
+| The header and footer as blocks          | arrange the `header`/`footer` regions in the panel; no code                                         |
 
 ## Do not
 
