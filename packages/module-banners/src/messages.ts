@@ -13,6 +13,7 @@ export const bannersMessages: Record<string, Messages> = {
   places: {
     hero: 'Home page slider',
     promo: 'Promo strip',
+    notice: 'Announcement bar',
     list: 'Places',
     new: 'New place',
     title: 'Name',

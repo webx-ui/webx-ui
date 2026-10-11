@@ -605,7 +605,7 @@ return [
     'sorts' => ['default', 'price_asc', 'price_desc', 'popular', 'new', 'name'],
     'default_sort' => ['priority' => 'desc', 'score' => 'desc', 'created_at' => 'desc'],
     'popularity' => ['views' => true, 'decay' => 0.9, 'weights' => ['views' => 1], 'touch_threshold' => 0.05],
-    'images' => ['disk' => 'public', 'max_size_kb' => 10240],
+    'images' => ['disk' => 'public', 'max_size_kb' => 10240, 'zoom' => 'inner', 'shown' => 1200], // zoom: inner | side | off (WIDGETS §14)
     'videos' => ['max_size_mb' => 2048, 'types' => ['video/mp4', 'video/webm']],
     'bulk' => ['chunk' => 500, 'sync_limit' => 50],
     'exchange' => [/* спека обмена */],

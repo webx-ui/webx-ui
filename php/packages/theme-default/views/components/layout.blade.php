@@ -33,6 +33,14 @@
     <a class="site-skip" href="#content">{{ __('Skip to content') }}</a>
 
     {{--
+        The announcement bar (WIDGETS §14): the place `notice` of the banners when it has one to
+        show, else what a page pushed onto the stack `notice`; nothing at all without either.
+        After "Skip to content", so a keyboard still meets that first; in the flow above the
+        header, so the sticky header measures what it always did.
+    --}}
+    <x-webx-notice-bar>@stack('notice')</x-webx-notice-bar>
+
+    {{--
         Regions: trees of blocks an editor arranges in the panel, with the view in `fallback`
         printed while a region is empty or unpublished. `components.header` is looked up through
         the chain like any view, so a local theme replaces the fallback by having the file.

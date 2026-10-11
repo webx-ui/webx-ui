@@ -1,0 +1,46 @@
+{
+  "slug": "showcase-notice",
+  "title": "Showcase: an announcement bar",
+  "description": "Puts an announcement bar above the header of the page it stands on — words and a link — for the kitchen sink of the default theme; a site fills the place notice of the banners instead.",
+  "icon": null,
+  "group": "content",
+  "sort": 99,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "text",
+      "type": "wx-input",
+      "label": "Words of the bar"
+    },
+    {
+      "id": "link_label",
+      "type": "wx-input",
+      "label": "Link"
+    },
+    {
+      "id": "link_url",
+      "type": "wx-input",
+      "label": "Address of the link"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note on the page",
+      "props": {
+        "rows": 3
+      }
+    }
+  ],
+  "template": "{{-- The layout of the theme prints <x-webx-notice-bar> with the stack \"notice\" as its slot. --}}\n@if (is_string($text) && trim($text) !== '')\n    @push('notice')\n        {{ $text }}@if (is_string($link_url) && $link_url !== '') <a href=\"{{ $link_url }}\">{{ $link_label ?: $link_url }}</a>@endif\n    @endpush\n@endif\n@if ($note)\n    <section class=\"b-showcase-notice\" data-wx-block=\"showcase-notice\">\n        <p class=\"b-showcase-notice__note\">{{ $note }}</p>\n    </section>\n@endif\n",
+  "styles": ".b-showcase-notice {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-4) var(--site-gutter) 0;\n}\n\n.b-showcase-notice__note {\n    margin: 0;\n    color: var(--site-color-text-muted);\n}\n",
+  "script": null,
+  "sample": {
+    "text": "Open on Saturdays from November.",
+    "link_label": "Opening hours",
+    "link_url": "/",
+    "note": ""
+  }
+}

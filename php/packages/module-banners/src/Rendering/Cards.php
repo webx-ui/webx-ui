@@ -9,6 +9,7 @@ use WebxUi\Admin\Links\LinkCandidate;
 use WebxUi\Admin\Links\LinkTarget;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Banners\Models\Banner;
+use WebxUi\Banners\Places;
 use WebxUi\Banners\Variants;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Screens\MediaValues;
@@ -18,7 +19,8 @@ use WebxUi\Media\Screens\MediaValues;
  *
  *     id, anchor, place        the banner, `banner-5`, and the key of its place
  *     title, text              in the language asked for, else '' — no fallback (decision 12)
- *     image                    what a `wx-media` field hands over: url, thumb, width, height, alt…
+ *     image                    what a `wx-media` field hands over: url, thumb, width, height, alt…;
+ *                              null only in a place of words only (`'image' => false`)
  *     image_mobile             the same, or null — the template then takes `image`
  *     video                    url and mime, or null — the picture stays as the poster
  *     buttons                  label, url, new_tab, rel, variant — in the editor's order
@@ -39,6 +41,7 @@ final class Cards
         private readonly MediaValues $media,
         private readonly LinkUrls $urls,
         private readonly Variants $variants,
+        private readonly Places $places,
     ) {}
 
     /**
@@ -90,7 +93,7 @@ final class Cards
     {
         $image = $this->picture($banner->image, $locale);
 
-        if ($image === null) {
+        if ($image === null && $this->places->needsPicture($banner->place?->key)) {
             return null;
         }
 

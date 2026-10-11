@@ -25,7 +25,7 @@ final class PlacesTest extends TestCase
 
         $response = $this->actingAs($this->editor(), 'cms')->getJson($this->api('places'))->assertOk();
 
-        $this->assertSame(['hero', 'promo', 'zeta', 'alpha'], array_column((array) $response->json('data'), 'key'));
+        $this->assertSame(['hero', 'promo', 'notice', 'zeta', 'alpha'], array_column((array) $response->json('data'), 'key'));
 
         $hero = (array) $response->json('data.0');
         $this->assertSame(['id', 'key', 'title', 'declared', 'layout', 'count'], array_keys($hero));
@@ -40,14 +40,14 @@ final class PlacesTest extends TestCase
         $this->assertSame('single', $promo['layout']);
         $this->assertSame(0, $promo['count']);
 
-        $zeta = (array) $response->json('data.2');
+        $zeta = (array) $response->json('data.3');
         $this->assertFalse($zeta['declared']);
         $this->assertSame('Aardvark', $zeta['title']);
         $this->assertSame('slider', $zeta['layout']);
 
         $inRussian = $this->actingAs($this->editor(), 'cms')->getJson($this->api('places'), ['X-Webx-Locale' => 'ru'])->assertOk();
         $this->assertSame('Слайдер на главной', $inRussian->json('data.0.title'));
-        $this->assertSame('Aardvark', $inRussian->json('data.2.title'), 'not in Russian — the default language');
+        $this->assertSame('Aardvark', $inRussian->json('data.3.title'), 'not in Russian — the default language');
     }
 
     #[Test]
@@ -83,6 +83,42 @@ final class PlacesTest extends TestCase
 
         $this->assertSame(0, Place::query()->count());
         $this->assertSame(0, Banner::query()->withTrashed()->count());
+    }
+
+    /**
+     * `notice` is a place of words only (`'image' => false`): the announcement bar of the widgets
+     * prints its title, text and buttons. Everywhere else a picture is still required.
+     */
+    #[Test]
+    public function a_place_of_words_only_takes_a_banner_without_a_picture(): void
+    {
+        $this->actingAs($this->editor(), 'cms')
+            ->postJson($this->api('places/notice/banners'), ['values' => ['title' => ['en' => 'Open on Saturdays'], 'enabled' => true]])
+            ->assertCreated()
+            ->assertJsonPath('data.banner.place', 'notice');
+
+        $card = banners('notice')->first();
+        $this->assertIsArray($card);
+        $this->assertSame('Open on Saturdays', $card['title']);
+        $this->assertNull($card['image']);
+
+        // A video still needs its poster.
+        $this->picture('media/ab/cd/clip.mp4', 'video/mp4');
+        $this->actingAs($this->editor(), 'cms')
+            ->postJson($this->api('places/notice/banners'), ['values' => ['title' => ['en' => 'Clip'], 'video' => ['path' => 'media/ab/cd/clip.mp4']]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['image']);
+
+        // Moved to a place that stands on pictures, it is refused there.
+        $id = (int) Banner::query()->value('id');
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($id), ['values' => [], 'place' => 'hero'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['image']);
+
+        // A banner of a picture place whose picture is gone is still left out.
+        $this->banner('hero', attributes: ['image' => ['path' => 'media/ab/cd/gone.jpg']]);
+        $this->assertSame([], banners('hero')->get());
     }
 
     #[Test]

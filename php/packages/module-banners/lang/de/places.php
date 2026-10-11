@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'hero' => 'Slider auf der Startseite',
     'promo' => 'Aktionsleiste',
+    'notice' => 'Hinweisleiste',
     'list' => 'Plätze',
     'new' => 'Neuer Platz',
     'title' => 'Name',

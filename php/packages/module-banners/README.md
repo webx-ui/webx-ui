@@ -47,10 +47,14 @@ php artisan vendor:publish --tag=webx-banners-config
         'layout' => 'single',
         'options' => ['ratio' => '3/1', 'ratio_mobile' => '3/2'],
     ],
+    // Words only: the announcement bar of webx-ui/widgets prints its first banner.
+    'notice' => ['title' => 'webx-banners::places.notice', 'layout' => 'single', 'image' => false],
 ],
 ```
 
-A title is a plain string or a translation key. A place asked for that does not exist is an empty
+A title is a plain string or a translation key. A banner needs a picture, except in a declared
+place with `'image' => false`: a place of words only, such as `notice`, which
+`<x-webx-notice-bar>` of [`webx-ui/widgets`](../widgets/README.md) shows above the header. A place asked for that does not exist is an empty
 list, not an exception: a header without a banner is better than a white page.
 
 ## A banner

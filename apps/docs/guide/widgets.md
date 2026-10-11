@@ -179,6 +179,20 @@ and "Always load videos" (consent). With no poster set, the video's own preview 
 into the media library, so the visitor never asks YouTube even for the picture. A file of the site
 is a `<video preload="none">` and needs no consent.
 
+```blade
+<x-webx-video variant="background" :file="$media" :poster="$image" ratio="21/9">
+    <h1>Made to move</h1>
+</x-webx-video>
+```
+
+The **background** of a first screen is a file of the site only — a provider's video behind a hero
+would be asked on every showing — muted, looping, without controls, behind whatever the tag wraps;
+the ratio is the least the frame takes. It plays only while on screen and with the tab in front,
+and never by itself under reduced motion or on a connection saving data: then the poster stays, as
+it does without JavaScript, and the file is not even asked for. A pause button is always in its
+corner (WCAG 2.2.2); a pause is remembered for the next page. The video is decor, hidden from screen
+readers: what it says, the page's markup over it says.
+
 The map is Leaflet over OpenStreetMap tiles, with no key. Before consent it is the address, "Open
 in maps" and the same two buttons; the wheel scrolls the page until the map is clicked. Another
 provider of tiles is a config entry:
@@ -204,18 +218,168 @@ provider of tiles is a config entry:
 `{key}` is replaced by the entry's `key`; a provider named but not described, or a `{key}` with no
 key, is an error at once rather than a map that silently asks for tiles without one.
 
+## Page tools
+
+What a long page needs, each loading only where it stands:
+
+```blade
+<x-webx-share title="Our new workshop" />
+<x-webx-back-to-top />
+
+<div class="cards" data-webx-reveal="stagger" data-webx-reveal-effect="up">…</div>
+<section data-webx-reveal="fade">…</section>
+```
+
+- **Tables of prose** — nothing to write. Every `<table>` without a class on a page — what a rich
+  text field stores, whichever module prints it — is put by the server in a frame that scrolls
+  sideways when the table is wider than the column. Its caption is taken out above the frame, so it
+  stays in place while the table scrolls, and still names the table. A shadow shows the side there
+  is more behind; a table that fits is no tab stop. A table a template wrote has a class and is
+  left alone.
+- **Reveal on scroll** — `data-webx-reveal="up"`, `fade` or `scale` on any element, or `stagger`
+  on a container to bring its children in one after another. In the runtime, no component. Only
+  the script hides anything, and only what is below the screen when the page opens: without
+  JavaScript or with reduced motion everything is simply there.
+- **Share** — each network's own address for sharing as a plain link (Facebook, X, LinkedIn,
+  Telegram, WhatsApp, e-mail by default; also Viber, Reddit, Pinterest, Threads, Bluesky, VK) and
+  Copy link. No network's script, so nothing to ask consent for. On a phone one Share button opens
+  the system's share sheet instead. `url` is the page by default.
+- **Back to top** — a round button in a corner that comes after two screens (`:after`), goes up
+  smoothly unless the visitor asked for reduced motion and leaves the focus at the top. It stands
+  above the cookie banner, the contact bar and the quick contact of its corner. Without JavaScript
+  it is a link to `#top` where the template put it.
+
+## Counters and countdown
+
+```blade
+<x-webx-counter :value="3000" suffix="+" />
+<x-webx-counter value="4.9" prefix="★ " :duration="1500" />
+<x-webx-countdown to="2026-12-31 18:00" ended="The sale is over" />
+```
+
+- **Counter** — the server prints the final number the way the page's language writes it (3,000;
+  3.000 in German): that is what search engines index, a screen reader says and a page without
+  JavaScript shows. The script counts up to it when the counter comes into view — only a counter
+  below the screen when the page opens; one already in view keeps its number rather than flash and
+  drop to zero. Decimals are the ones the value was written with. Reduced motion: final at once.
+- **Countdown** — to a wall time of the **site's** time zone (the one of the opening hours on the
+  Contacts tab, else `app.timezone`): the sale ends at six where the shop is, wherever it is read.
+  A moment with its offset, or a `DateTimeInterface`, is that moment. The server prints the time
+  left, the script counts down every second from the clock — a page out of a cache is right. At the
+  end the `ended` text takes its place; without one the timer goes, and so does the nearest
+  `[data-webx-countdown-scope]` around it (the Countdown block is one). Without JavaScript it is the
+  line "Ends on …" rather than digits standing still; with it, that line is what a screen reader hears.
+
+## Before and after, table of contents
+
+```blade
+<x-webx-compare :before="$old" :after="$new" :start="30">Two weeks apart</x-webx-compare>
+
+<x-webx-toc>…a long text with h2 and h3…</x-webx-toc>
+<x-webx-toc for="terms" :depth="2" title="Contents" />
+```
+
+- **Before and after** — `before` and `after` are what `<x-webx-lightbox :image>` takes: a media
+  field's value, an object with `url()`, an address. The frame has the shape of the first picture
+  with sizes (or `ratio`), so nothing below it moves while they load; the after picture lies over
+  the before one, cut at the divider. The divider is an `<input type="range">`: the arrows move it
+  (5%, 1% with Shift, Home and End), a screen reader hears a slider; a mouse drags it, a finger too
+  once it moves sideways — up and down still scrolls the page. Labels are `before-label` and
+  `after-label`, "Before" and "After" in the page's language by default. Without JavaScript the
+  two pictures stand side by side, or one under the other in a narrow column.
+- **Table of contents** — the list is made by the server from the finished page: of the tag's own
+  slot, of the element `for` names (an id, without `#`) or of `<main>`. Headings without an id get
+  one from their words, unique on the page, so every link works without JavaScript and can be
+  shared; an id you gave is kept, a heading with `data-webx-toc-skip` is left out. `depth` 2 lists
+  the `h2`, 3 (the default) the `h3` under them. With a slot, a wide container puts the list beside
+  the text (`side="end"` or `start`), sticky under the header; a narrow one — a phone, a column
+  20rem wide — puts it above, folded into a bar that names the section being read and opens the
+  list. `fold="never"` keeps it open. The section being read is marked `is-current` as the page
+  scrolls.
+
+## Zoom
+
+```blade
+<x-webx-zoom :image="$photo" :src="$photo->thumbUrl(1200)" mode="side" group="product-{{ $product->id }}" />
+
+<x-webx-lightbox :image="$picture" group="g" data-webx-zoom data-zoom-mode="inner" />
+```
+
+- **The picture is a link to the original** that opens the lightbox: that is the way in for a
+  keyboard and a screen reader, which have no hover, and without JavaScript the link opens the file.
+  `image` is what `<x-webx-lightbox :image>` takes; its address is the large picture, `src` the one
+  shown — a smaller copy where you have one (a product photo's `thumbUrl()`), else the original
+  itself. The original is fetched on the first hover or touch only; until it comes the shown picture
+  stands in, magnified.
+- **A mouse** magnifies it `scale` times (2.5 by default): `mode="inner"` inside its own frame,
+  following the cursor — the point under the cursor stays under it; `mode="side"` as a lens on the
+  picture and the magnified part in a panel to its right, the frame's height. The panel needs room
+  inside the picture's **container** — the nearest ancestor with a `container-type` that is not a
+  widget's own, else the page — for at least 60% of the frame's width; where there is none (a
+  narrow column, a phone, a gallery as wide as its column) `side` is `inner`. A press hides it:
+  a click is the lightbox's, a drag the slider's.
+- **Fingers** — two pinch it (up to 4×) and move it about inside the frame; one finger pans a
+  magnified picture and holds the slider under it still; a double tap is 2× around the point and
+  back; pinched back to its size it is as it was. One finger on a picture at its own size is the
+  page's and the slider's, as before. A single tap still opens the lightbox, 300ms later — the time
+  a second tap has to come. Reduced motion: no easing.
+- **`data-webx-zoom`** on any element that holds a picture and a link — usually the lightbox's own
+  link — does the same without the component; its value is the large picture (empty: the link's
+  address), `data-zoom-mode` and `data-zoom-scale` the rest. The Gallery block's slider uses it
+  (its field "Magnify under the mouse"), and so does `module-catalog`'s product page.
+
+## Pages of a list, "Show more", the notice bar
+
+```blade
+<x-webx-pagination :paginator="$articles" />
+
+<x-webx-load-more :paginator="$articles" pages="shown">
+    <ul class="cards" data-webx-load-more-list>
+        @foreach ($articles as $article) <li>…</li> @endforeach
+    </ul>
+</x-webx-load-more>
+
+<x-webx-notice-bar />
+```
+
+- **Pagination** — what `->paginate()` answered, as it is: previous, the numbers around this page
+  (`around`, 2 by default) with the first and the last always there, next. `->simplePaginate()`
+  gets previous and next. The first page links to the list's own address, not `?page=1` — one
+  address per page. A stylesheet, no script.
+- **Show more** — the list and its pagination, which is what a page without JavaScript and a search
+  engine get. The script shows a button: it fetches the next page as any visitor gets it, takes the
+  items of the list with the same page parameter out of its HTML and adds them, focuses the first
+  new item, says "Page 2 of 4 loaded." to a screen reader and replaces the address with
+  `?page=2`. Back leaves the list; a reload lands on the page last loaded, whose links lead back. No
+  endpoint and no JSON: an item is what the module prints, a theme's override included. The list
+  is the element marked `data-webx-load-more-list` (its children are the items); without one the
+  slot is the items. `pages="covered"` (the default) — the button stands in for the links;
+  `pages="shown"` — both, the pages already on the screen marked. A module's own links go in the
+  `links` slot. A failure says so and uncovers the links.
+- **Notice bar** — above the header (the default theme's layout prints it after "Skip to
+  content"), a region named "Announcement" with a close button. It says the first banner of the
+  place `notice` of `webx-ui/module-banners` — a place of words, where a banner needs no
+  picture — else its slot, else nothing. Closing it remembers the version of its words in
+  `localStorage` (`version` names one of your own); new words come back for everybody. A closed bar
+  is hidden by a line in the head before the page is painted, so it never flashes. It is in the
+  flow and does not stick: the sticky header and `--webx-header-height` are what they were.
+
 ## Blocks
 
-On a site with `module-blocks` and `module-media` the package offers four block types — `webx:setup`
+On a site with `module-blocks` and `module-media` the package offers eight block types — `webx:setup`
 installs them, or `php artisan webx:blocks:offered --install --module=widgets`. Installed, they
 belong to the site: an update never overwrites them.
 
-| Block     | Fields                                                                         | Inside                     |
-| --------- | ------------------------------------------------------------------------------ | -------------------------- |
-| `gallery` | heading, pictures of the library, grid or slider, columns, zoom                | slider `gallery`, lightbox |
-| `logos`   | heading, a name, a logo and a link each                                        | slider `logos`             |
-| `video`   | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16 | `<x-webx-video>`           |
-| `map`     | heading, the contacts or coordinates with an address, zoom, height             | `<x-webx-map>`             |
+| Block       | Fields                                                                         | Inside                     |
+| ----------- | ------------------------------------------------------------------------------ | -------------------------- |
+| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom, magnify       | slider `gallery`, lightbox |
+| `logos`     | heading, a name, a logo and a link each                                        | slider `logos`             |
+| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16 | `<x-webx-video>`           |
+| `map`       | heading, the contacts or coordinates with an address, zoom, height             | `<x-webx-map>`             |
+| `counters`  | heading, a number, what stands before and after it, a label each               | `<x-webx-counter>`         |
+| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide | `<x-webx-countdown>`       |
+| `compare`   | heading, before, after, their labels, where the divider starts, caption        | `<x-webx-compare>`         |
+| `toc`       | title, the whole page or a text of its own (a switch), side, depth             | `<x-webx-toc>`             |
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 
@@ -240,13 +404,19 @@ view promised — a slider that moves needs its pause button, and the audit chec
 With `webx-ui/module-audit` installed, every crawled page is also read for what the widgets
 promise:
 
-| Check                    | Severity | Finds                                                                                         | Fix by a button                                    |
-| ------------------------ | -------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `widgets.before_consent` | error    | a YouTube, Vimeo, Google Maps or OpenStreetMap iframe, a known counter or pixel asked at once | pasted into content: rewritten to wait for consent |
-| `widgets.banner_off`     | warning  | the banner off while something third-party is on the site                                     | turns the banner on                                |
-| `widgets.lightbox_size`  | warning  | a lightbox link without `data-width` / `data-height`                                          | —                                                  |
-| `widgets.slider_pause`   | warning  | a slider that moves with no pause button — a theme's override that lost it                    | —                                                  |
-| `widgets.contact_both`   | notice   | the quick-contact button and the bottom bar on one page                                       | —                                                  |
+| Check                    | Severity | Finds                                                                                                | Fix by a button                                    |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `widgets.before_consent` | error    | a YouTube, Vimeo, Google Maps or OpenStreetMap iframe, a known counter or pixel asked at once        | pasted into content: rewritten to wait for consent |
+| `widgets.banner_off`     | warning  | the banner off while something third-party is on the site                                            | turns the banner on                                |
+| `widgets.lightbox_size`  | warning  | a lightbox link without `data-width` / `data-height`                                                 | —                                                  |
+| `widgets.slider_pause`   | warning  | a slider that moves with no pause button — a theme's override that lost it                           | —                                                  |
+| `widgets.video_pause`    | warning  | a background video with no pause button — an override that lost it                                   | —                                                  |
+| `widgets.counter_number` | notice   | a counter whose markup does not hold its number — an override that left it to the script             | —                                                  |
+| `widgets.compare_range`  | warning  | before and after without its range input — an override that lost it: no keyboard, no screen reader   | —                                                  |
+| `widgets.toc_target`     | warning  | a link of a table of contents to an id the page does not have                                        | —                                                  |
+| `widgets.load_more_link` | warning  | "Show more" with a next page and no link to it — only a button, which no search engine presses       | —                                                  |
+| `widgets.zoom_link`      | warning  | a zoom that is no link and holds none — an override that lost it, or the attribute on a bare picture | —                                                  |
+| `widgets.contact_both`   | notice   | the quick-contact button and the bottom bar on one page                                              | —                                                  |
 
 "Pasted into content" means a text block, a page's body or any field a module hands to the audit:
 the fix finds the code there and rewrites it — an iframe's `src` becomes `data-src`, a script
@@ -259,6 +429,7 @@ third party the audit does not know is added in `webx-widgets.audit.third-party`
 
 `theme-default` brings a showcase, seeded by `php artisan webx:demo` and removed with it: under
 **Kitchen sink** a page per widget — Header and menu, Cookie consent, Dropdown and form in a
-dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map — with every variant, a narrow
+dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map, Page tools, Background video,
+Counters and countdown, Before and after, Table of contents, Show more, Notice bar, Zoom — with every variant, a narrow
 column, what to try and the markup to copy. It is the place to look at a change in the theme
 before a real page does, and the pages the starter site's browser tests measure.

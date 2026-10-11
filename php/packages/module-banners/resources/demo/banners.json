@@ -73,6 +73,24 @@
         ],
         "enabled": true
       }
+    ],
+    "notice": [
+      {
+        "key": "notice",
+        "title": { "en": "Open on Saturdays from November", "ru": "С ноября работаем по субботам" },
+        "text": {
+          "en": "Switched off: turn it on in the panel to see the bar above the header.",
+          "ru": "Выключено: включите в панели, чтобы увидеть полосу над шапкой."
+        },
+        "buttons": [
+          {
+            "label": { "en": "Opening hours", "ru": "Часы работы" },
+            "link": "/contact",
+            "variant": "link"
+          }
+        ],
+        "enabled": false
+      }
     ]
   }
 }

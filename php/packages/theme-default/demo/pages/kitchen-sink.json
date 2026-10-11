@@ -973,6 +973,803 @@
           }
         }
       ]
+    },
+    {
+      "title": "Page tools",
+      "slug": "page-tools",
+      "seo": {
+        "title": "Page tools",
+        "description": "Tables of prose that scroll inside themselves, blocks that reveal on scroll, share links without a network’s script, and back to top."
+      },
+      "blocks": [
+        {
+          "key": "showcase-tools-intro",
+          "type": "text",
+          "values": {
+            "heading": "Page tools",
+            "body": "The small things a long page needs. A table an editor wrote in a rich text field scrolls inside itself, with a shadow on the side there is more behind and its caption standing still. Blocks come in as the page scrolls to them — and with reduced motion, or without JavaScript, they are simply there. Share is plain links to each network, no script of theirs. Back to top waits in the corner until the page is two screens down."
+          }
+        },
+        {
+          "key": "showcase-tools-wide",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "A table wider than the column",
+            "note": "Nine columns: on a phone the table scrolls inside its frame, on a desktop it fits. The caption stays above it either way.",
+            "tool": "prose",
+            "body": "<p>A comparison of plans, as an editor would paste it.</p><table><caption>Plans compared, per month</caption><thead><tr><th>Plan</th><th>Price</th><th>Pages</th><th>Languages</th><th>Storage</th><th>Backups</th><th>Support</th><th>Custom domain</th><th>Audit</th></tr></thead><tbody><tr><td>Start</td><td>€9</td><td>20</td><td>1</td><td>2 GB</td><td>Weekly</td><td>E-mail</td><td>No</td><td>Monthly</td></tr><tr><td>Business</td><td>€29</td><td>200</td><td>3</td><td>20 GB</td><td>Daily</td><td>E-mail and chat</td><td>Yes</td><td>Weekly</td></tr><tr><td>Enterprise</td><td>€99</td><td>Unlimited</td><td>Unlimited</td><td>200 GB</td><td>Hourly</td><td>A manager of your own</td><td>Yes</td><td>Daily</td></tr></tbody></table><p>The paragraph after the table starts where it always would.</p>",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-narrow",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "The same table in a column 20rem wide, and a small one that fits: it has no tab stop and no shadow.",
+            "tool": "prose",
+            "body": "<table><caption>Plans compared, per month</caption><thead><tr><th>Plan</th><th>Price</th><th>Pages</th><th>Languages</th><th>Storage</th><th>Backups</th><th>Support</th><th>Custom domain</th><th>Audit</th></tr></thead><tbody><tr><td>Start</td><td>€9</td><td>20</td><td>1</td><td>2 GB</td><td>Weekly</td><td>E-mail</td><td>No</td><td>Monthly</td></tr><tr><td>Business</td><td>€29</td><td>200</td><td>3</td><td>20 GB</td><td>Daily</td><td>E-mail and chat</td><td>Yes</td><td>Weekly</td></tr><tr><td>Enterprise</td><td>€99</td><td>Unlimited</td><td>Unlimited</td><td>200 GB</td><td>Hourly</td><td>A manager of your own</td><td>Yes</td><td>Daily</td></tr></tbody></table><table><caption>Opening of the office</caption><tbody><tr><th>Weekdays</th><td>9:00–18:00</td></tr><tr><th>Saturday</th><td>10:00–14:00</td></tr></tbody></table>",
+            "effect": "up",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-tools-bare",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Without a caption",
+            "note": "A screen reader calls the scroller “Table”.",
+            "tool": "prose",
+            "body": "<table><thead><tr><th>Code</th><th>Country</th><th>Currency</th><th>Language</th><th>Time zone</th><th>Calling code</th></tr></thead><tbody><tr><td>DE</td><td>Germany</td><td>Euro</td><td>German</td><td>Europe/Berlin</td><td>+49</td></tr><tr><td>PL</td><td>Poland</td><td>Złoty</td><td>Polish</td><td>Europe/Warsaw</td><td>+48</td></tr></tbody></table>",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-intro",
+          "type": "text",
+          "values": {
+            "heading": "Reveal on scroll",
+            "body": "The rows of cards below come in as they reach the screen, once each: up, fade, scale, and stagger — the cards of a row one after another. What is on the screen when the page opens is never hidden first."
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-up",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Up",
+            "note": "",
+            "tool": "reveal",
+            "body": "",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-fade",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Fade",
+            "note": "",
+            "tool": "reveal",
+            "body": "",
+            "effect": "fade",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-scale",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Scale",
+            "note": "",
+            "tool": "reveal",
+            "body": "",
+            "effect": "scale",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-reveal-stagger",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Stagger",
+            "note": "",
+            "tool": "reveal",
+            "body": "",
+            "effect": "stagger",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-share",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Share this page",
+            "note": "Each network’s own address for sharing, in a new tab; e-mail; Copy link. On a phone, one Share button opens the system’s share sheet.",
+            "tool": "share",
+            "body": "",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-share-narrow",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Share in a narrow column",
+            "note": "The row wraps; every link stays 44px.",
+            "tool": "share",
+            "body": "",
+            "effect": "up",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-tools-back-to-top",
+          "type": "showcase-page-tools",
+          "values": {
+            "heading": "Back to top",
+            "note": "The round button in the corner of the window: it came once this page was two screens down, and stands above the cookie banner while that is on the screen.",
+            "tool": "back-to-top",
+            "body": "",
+            "effect": "up",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-tools-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Scroll the wide table with a finger, the trackpad or the keyboard — Tab reaches its frame, the arrows scroll it — and watch the shadows follow. Make the window narrow: the small table starts to scroll, and only then gets a tab stop.\nScroll down slowly to see each row come in; switch on reduced motion in the system and reload — nothing is hidden. Switch JavaScript off — the cards are there, the tables still scroll, Copy link is gone and back to top is a link at the end of the page.\nPress back to top with the keyboard: the page goes up and the next Tab is the skip link."
+          }
+        },
+        {
+          "key": "showcase-tools-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "Tables: nothing to write. Every table without a class on a page — what a rich text field stores — is put in a scroller by the server; a table a template wrote has a class and is left alone. Classes: webx-table, __caption, __frame, __scroller, __table; is-more-left, is-more-right. Tokens: --webx-table-shadow, --webx-table-shadow-size, --webx-table-caption-color.\ndata-webx-reveal=\"up\" (fade, scale) on any element; data-webx-reveal=\"stagger\" with data-webx-reveal-effect on a container. Tokens: --webx-reveal-duration, --webx-reveal-distance, --webx-reveal-scale, --webx-reveal-stagger.\nx-webx-share title=\"…\" :networks=\"['facebook', 'x', 'linkedin', 'telegram', 'whatsapp', 'email', 'copy']\" — also viber, reddit, pinterest, threads, bluesky, vk; url is the page by default.\nx-webx-back-to-top corner=\"bottom-end\" :after=\"2\" — the screens scrolled before it shows."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Background video",
+      "slug": "background-video",
+      "seo": {
+        "title": "Background video",
+        "description": "The background video of a first screen: a file of the site, muted and looping, its pause button, the poster under reduced motion and off screen."
+      },
+      "blocks": [
+        {
+          "key": "showcase-background-intro",
+          "type": "text",
+          "values": {
+            "heading": "Background video",
+            "body": "A video behind a first screen is the video widget’s background variant: a file of the site — never YouTube or Vimeo, which would be asked on every showing — muted, looping, without controls, behind whatever the tag wraps. The text over it is the page’s, not the video’s: the video is decor, and a screen reader is not told of it.\nIt plays only while it is on screen and the tab is in front, and never by itself under reduced motion or on a connection saving data: then the poster is all there is, as it is without JavaScript. The poster stays until the first frame is up, so the screen never empties while the file loads. The round button in the corner pauses it — it is always there, because motion that lasts more than five seconds must have a way to stop it."
+          }
+        },
+        {
+          "key": "showcase-background-hero",
+          "type": "showcase-background",
+          "values": {
+            "heading": "A first screen",
+            "note": "A title, a line and a button over the video, a poster from the library.",
+            "title": "Made to move",
+            "text": "The words are the page’s markup; the video behind them is decor.",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": {
+              "path": "demo:showcase-photo-6",
+              "alt": ""
+            },
+            "ratio": "21/9",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-background-narrow",
+          "type": "showcase-background",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "The text makes the frame taller than its ratio; the video covers it all.",
+            "title": "Narrow",
+            "text": "A column 20rem wide.",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": {
+              "path": "demo:showcase-photo-3",
+              "alt": ""
+            },
+            "ratio": "16/9",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-background-bare",
+          "type": "showcase-background",
+          "values": {
+            "heading": "Nothing over it, no poster",
+            "note": "The frame keeps its ratio alone, on its own background until the first frame.",
+            "title": "",
+            "text": "",
+            "file": {
+              "path": "demo:showcase-clip"
+            },
+            "poster": null,
+            "ratio": "16/9",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-background-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Pause a video with the button in its corner, then open another page with one: it stays paused — the choice is remembered. Play it again with the same button.\nScroll a video off the screen: it rests, and goes on when it comes back. Switch to another tab: the same.\nTurn on reduced motion in the system, or a data saver: every video stays on its poster; the button plays one if you want it.\nSwitch JavaScript off: the posters, and no button — nothing moves that nothing could stop."
+          }
+        },
+        {
+          "key": "showcase-background-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-video variant=\"background\" :file=\"$video\" :poster=\"$image\" ratio=\"21/9\", around the first screen — what the tag wraps stands over the video, the ratio is the least the frame takes. The pause button is .webx-video__pause; the colours of it are --webx-video-pause-bg, --webx-video-pause-color and --webx-video-pause-border."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Counters and countdown",
+      "slug": "counters-and-countdown",
+      "seo": {
+        "title": "Counters and countdown",
+        "description": "The Counters and Countdown blocks: numbers that count up in view, a timer to a moment of the site’s time zone, what it says at the end."
+      },
+      "blocks": [
+        {
+          "key": "showcase-numbers-intro",
+          "type": "text",
+          "values": {
+            "heading": "Counters and countdown",
+            "body": "A counter prints its final number in the page — that is what search engines index, what a screen reader says and what a page without JavaScript shows — and counts up to it when it comes into view. Only a counter below the screen when the page opens counts: one already in view keeps its number rather than flash it and drop to zero.\nA countdown runs to a date and a time of the site’s time zone, the one of the opening hours in Settings › Contacts, wherever the visitor reads it. The server prints the time left; the script counts it down every second, since the page may have waited in a cache. At the end it says what it was given, or the block goes."
+          }
+        },
+        {
+          "key": "showcase-numbers-countdown",
+          "type": "countdown",
+          "values": {
+            "heading": "Until the new decade",
+            "text": "The Countdown block, to 1 January 2030, 00:00 in the site’s time zone.",
+            "date": "2030-01-01",
+            "time": "00:00",
+            "end": "text",
+            "ended": "Happy new decade!"
+          }
+        },
+        {
+          "key": "showcase-numbers-soon",
+          "type": "showcase-numbers",
+          "values": {
+            "heading": "Ending in a minute",
+            "note": "Made to end 75 seconds after the page was: watch it say its text. Reload for another minute.",
+            "kind": "countdown",
+            "seconds": 75,
+            "ended": "This one is over.",
+            "width": "full"
+          }
+        },
+        {
+          "key": "showcase-numbers-narrow-countdown",
+          "type": "showcase-numbers",
+          "values": {
+            "heading": "A countdown in a narrow column",
+            "note": "Four tiles do not fit in a row in 20rem: two by two.",
+            "kind": "countdown",
+            "seconds": 400000,
+            "ended": "",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-numbers-over",
+          "type": "countdown",
+          "values": {
+            "heading": "Over, with something to say",
+            "text": "A Countdown block whose date has passed: its text instead of the timer.",
+            "date": "2026-01-01",
+            "time": "09:00",
+            "end": "text",
+            "ended": "The winter sale is over — see you next year."
+          }
+        },
+        {
+          "key": "showcase-numbers-hidden",
+          "type": "countdown",
+          "values": {
+            "heading": "Over, hidden",
+            "text": "Not on the page: a Countdown block set to hide at the end, whose date has passed.",
+            "date": "2026-01-01",
+            "time": "09:00",
+            "end": "hide",
+            "ended": ""
+          }
+        },
+        {
+          "key": "showcase-numbers-spacer",
+          "type": "text",
+          "values": {
+            "heading": "Below the screen",
+            "body": "The counters below are further down than a first screen reaches, so they wait at zero and count up when you scroll to them.\nThe Counters block is a row of numbers, each with what it counts; it wraps to two in a narrow column. The numbers are typed as the editor writes them — 3000, 3,000 or 3 000 are three thousand, 4,9 is four point nine — and count in the decimals they were written with.\nA counter knows nothing of the page around it: size, weight and colour are the block’s."
+          }
+        },
+        {
+          "key": "showcase-numbers-counters",
+          "type": "counters",
+          "values": {
+            "heading": "In numbers",
+            "numbers": [
+              {
+                "value": "15",
+                "prefix": "",
+                "suffix": "",
+                "label": "years on the market"
+              },
+              {
+                "value": "3000",
+                "prefix": "",
+                "suffix": "+",
+                "label": "clients"
+              },
+              {
+                "value": "4.9",
+                "prefix": "",
+                "suffix": "",
+                "label": "average rating"
+              },
+              {
+                "value": "98",
+                "prefix": "",
+                "suffix": "%",
+                "label": "come back"
+              }
+            ]
+          }
+        },
+        {
+          "key": "showcase-numbers-narrow-counters",
+          "type": "showcase-numbers",
+          "values": {
+            "heading": "Counters in a narrow column",
+            "note": "Four counters inline in 20rem, a million among them.",
+            "kind": "counters",
+            "seconds": 0,
+            "ended": "",
+            "width": "narrow"
+          }
+        },
+        {
+          "key": "showcase-numbers-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Reload at the top of the page and scroll down slowly: each counter counts up as it comes into view, once. Reload half way down: the counters already in view keep their numbers.\nTurn on reduced motion in the system: every number is final at once.\nLeave the page in a background tab for a while and come back: the countdown is right — it works the time out from the clock, not from the seconds it counted.\nSwitch JavaScript off: the counters show their numbers, a countdown says the date it ends on rather than digits that would stand still."
+          }
+        },
+        {
+          "key": "showcase-numbers-code",
+          "type": "text",
+          "values": {
+            "heading": "For the site",
+            "body": "x-webx-counter :value=\"3000\" suffix=\"+\" — decimals as written (value=\"4.9\"), prefix, duration in milliseconds.\n<x-webx-countdown to=\"2026-12-31 18:00\" ended=\"The sale is over\" /> — a wall time of the site’s zone, or a moment with its offset; without ended the timer goes at the end, and so does the nearest [data-webx-countdown-scope] around it."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Before and after",
+      "slug": "before-and-after",
+      "seo": {
+        "title": "Before and after",
+        "description": "The Before and after block: two pictures of the media library and a divider moved by a mouse, a finger and the arrow keys."
+      },
+      "blocks": [
+        {
+          "key": "showcase-compare-intro",
+          "type": "text",
+          "values": {
+            "heading": "Before and after",
+            "body": "Two pictures of one thing, the after one over the before one, and a divider between them. Drag it with a mouse or a finger — a finger that moves up and down still scrolls the page — or focus it with Tab and use the arrows: 5% a press, 1% with Shift, Home and End for the ends.\nThe frame has the shape of the pictures before they load, from the sizes the media library stored at upload, so nothing below it moves. Without JavaScript the two pictures stand side by side, each under its label, and one under the other in a narrow column."
+          }
+        },
+        {
+          "key": "showcase-compare-room",
+          "type": "compare",
+          "values": {
+            "heading": "A living room",
+            "before": {
+              "path": "demo:showcase-before",
+              "alt": "The living room before: grey walls, a crack, an old sofa"
+            },
+            "after": {
+              "path": "demo:showcase-after",
+              "alt": "The living room after: warm walls, a picture, a plant"
+            },
+            "before_label": "",
+            "after_label": "",
+            "start": 50,
+            "caption": "The Before and after block, its labels in the language of the page."
+          }
+        },
+        {
+          "key": "showcase-compare-start",
+          "type": "compare",
+          "values": {
+            "heading": "Labels of its own, the divider at a quarter",
+            "before": {
+              "path": "demo:showcase-photo-3",
+              "alt": "Photo 3"
+            },
+            "after": {
+              "path": "demo:showcase-photo-4",
+              "alt": "Photo 4"
+            },
+            "before_label": "2019",
+            "after_label": "2026",
+            "start": 25,
+            "caption": ""
+          }
+        },
+        {
+          "key": "showcase-compare-narrow",
+          "type": "showcase-compare",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "The labels move closer to the corners; without JavaScript the pictures stand one under the other.",
+            "before": {
+              "path": "demo:showcase-before",
+              "alt": "The living room before"
+            },
+            "after": {
+              "path": "demo:showcase-after",
+              "alt": "The living room after"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Table of contents",
+      "slug": "table-of-contents",
+      "seo": {
+        "title": "Table of contents",
+        "description": "The Table of contents block: the sections of the whole page where it stands, or of a text of its own beside it, sticky under the header."
+      },
+      "blocks": [
+        {
+          "key": "showcase-toc-page",
+          "type": "toc",
+          "values": {
+            "heading": "",
+            "source": "page",
+            "body": "",
+            "side": "end",
+            "depth": "2"
+          }
+        },
+        {
+          "key": "showcase-toc-intro",
+          "type": "text",
+          "values": {
+            "heading": "Of the whole page",
+            "body": "The list above is a Table of contents block at the top of the page: it lists every heading of the second level on the page, whichever block printed it. The server gives each heading an id from its words, so the links work without JavaScript and a link to a section can be shared.\nOn a wide screen it is an open list; in a narrow container it folds into one line that names the section being read and opens the list."
+          }
+        },
+        {
+          "key": "showcase-toc-policy",
+          "type": "toc",
+          "values": {
+            "heading": "In this policy",
+            "source": "text",
+            "body": "<h2>Who we are</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><h3>Our address</h3><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>What we collect</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h3>When you write to us</h3><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><h3>When you browse</h3><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>Cookies</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><h2>How long we keep it</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>Who else sees it</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><h3>Services we use</h3><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>Your rights</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p><p>The list marks the section being read as the page scrolls past its heading, and a link of the list scrolls the heading to just below the header — not under it.</p><h2>Changes to this policy</h2><p>Every visitor of the site reads this part the same way: what is collected, why, and for how long it is kept. The sentences are long on purpose, so that the page scrolls and the list beside it has something to follow.</p><p>Nothing here is legal advice; it is a text of the right length and shape. A real policy is written by the site, with its own lawyer, in every language the site speaks.</p>",
+            "side": "end",
+            "depth": "3"
+          }
+        },
+        {
+          "key": "showcase-toc-start",
+          "type": "toc",
+          "values": {
+            "heading": "",
+            "source": "text",
+            "body": "<h2>Prices</h2><p>What a visit costs and what it includes.</p><h2>Booking</h2><p>How to book, change or cancel a visit.</p><h2>Payment</h2><p>Cards, transfers, and when to pay.</p>",
+            "side": "start",
+            "depth": "2"
+          }
+        },
+        {
+          "key": "showcase-toc-narrow",
+          "type": "showcase-toc",
+          "values": {
+            "heading": "Beside a text in a narrow column",
+            "note": "A column 20rem wide folds the list as a phone does: the width is the container’s, not the window’s.",
+            "body": "<h2>Prices</h2><p>What a visit costs and what it includes.</p><h2>Booking</h2><p>How to book, change or cancel a visit.</p><h2>Payment</h2><p>Cards, transfers, and when to pay.</p>"
+          }
+        },
+        {
+          "key": "showcase-toc-end",
+          "type": "text",
+          "values": {
+            "heading": "Below the texts",
+            "body": "A heading the block on top lists too: the end of the page. Scroll here and the list on top, and the one beside the policy, have moved on with you."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Show more",
+      "slug": "show-more",
+      "seo": {
+        "title": "Show more",
+        "description": "Show more over an ordinary pagination: the next page added to the list, the address and the links following it."
+      },
+      "blocks": [
+        {
+          "key": "showcase-more-intro",
+          "type": "text",
+          "values": {
+            "heading": "Show more",
+            "body": "Each list below is paginated the way ->paginate() does it: 23 cards, six a page. The links of the pages under it are what a page without JavaScript and a search engine get.\nWith JavaScript a button takes their place: it fetches the next page, adds its cards to the list, moves the focus to the first new card and the address to that page. A reload lands on the page last loaded; its links lead back."
+          }
+        },
+        {
+          "key": "showcase-more-covered",
+          "type": "showcase-load-more",
+          "values": {
+            "heading": "The button covers the links",
+            "note": "pages=\"covered\", the default: the links come back only when the next page cannot be loaded.",
+            "pages": "covered"
+          }
+        },
+        {
+          "key": "showcase-more-shown",
+          "type": "showcase-load-more",
+          "values": {
+            "heading": "The button and the links",
+            "note": "pages=\"shown\": the links stay under the button, follow what was loaded and mark the pages already on the screen.",
+            "pages": "shown"
+          }
+        },
+        {
+          "key": "showcase-more-links",
+          "type": "showcase-load-more",
+          "values": {
+            "heading": "The links alone",
+            "note": "<x-webx-pagination>: previous, the numbers around this page with the first and the last, next — no script at all.",
+            "pages": "links"
+          }
+        },
+        {
+          "key": "showcase-more-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Press Show more twice: six cards come each time, the focus lands on the first of them, the address says ?page=3. On the last page the button goes. Reload: the page last loaded, with its links back to the first. Switch JavaScript off: the links of the pages, nothing else."
+          }
+        },
+        {
+          "key": "showcase-more-markup",
+          "type": "text",
+          "values": {
+            "heading": "For a site",
+            "body": "<x-webx-load-more :paginator=\"$articles\"> around the items, or around a list marked data-webx-load-more-list. A module with links of its own puts them in the links slot. <x-webx-pagination :paginator=\"$articles\"> alone is the links without a button."
+          }
+        }
+      ]
+    },
+    {
+      "title": "Notice bar",
+      "slug": "notice-bar",
+      "seo": {
+        "title": "Notice bar",
+        "description": "An announcement bar above the header: closed by a button, remembered by the version of its words, no flash."
+      },
+      "blocks": [
+        {
+          "key": "showcase-notice-a",
+          "type": "showcase-notice",
+          "values": {
+            "text": "Open on Saturdays from November.",
+            "link_label": "The same words on another page",
+            "link_url": "/kitchen-sink/notice-bar/same-words",
+            "note": ""
+          }
+        },
+        {
+          "key": "showcase-notice-intro",
+          "type": "text",
+          "values": {
+            "heading": "Notice bar",
+            "body": "The bar above the header is <x-webx-notice-bar> of the layout. On a site it says the first banner of the place notice; here a block of the page puts its words there, since a banner would stand on every page.\nIt is in the flow above the header and does not stick: scrolled past, the header sticks as it always did."
+          }
+        },
+        {
+          "key": "showcase-notice-try",
+          "type": "text",
+          "values": {
+            "heading": "What to try",
+            "body": "Close the bar and follow its link: the next page has the same words, and the bar is not there — not even for a moment. The page New words has other words: the bar is back. Close it with the keyboard: the next Tab is Skip to content."
+          }
+        },
+        {
+          "key": "showcase-notice-markup",
+          "type": "text",
+          "values": {
+            "heading": "For a site",
+            "body": "<x-webx-notice-bar /> in the layout, before the header. The words are the place notice of the banners, a banner of words only; without the module, the slot. A version of its own: version=\"sale-2026\"."
+          }
+        }
+      ],
+      "children": [
+        {
+          "title": "Same words",
+          "slug": "same-words",
+          "seo": {
+            "title": "Notice bar, the same words",
+            "description": "The announcement bar with the same words as on the page before: closed there, it is not here."
+          },
+          "blocks": [
+            {
+              "key": "showcase-notice-same",
+              "type": "showcase-notice",
+              "values": {
+                "text": "Open on Saturdays from November.",
+                "link_label": "The same words on another page",
+                "link_url": "/kitchen-sink/notice-bar/same-words",
+                "note": ""
+              }
+            },
+            {
+              "key": "showcase-notice-same-text",
+              "type": "text",
+              "values": {
+                "heading": "The same words",
+                "body": "Closed on the page before, the bar is not here: the version of its words is remembered in this browser."
+              }
+            }
+          ]
+        },
+        {
+          "title": "New words",
+          "slug": "new-words",
+          "seo": {
+            "title": "Notice bar, new words",
+            "description": "The announcement bar with other words: a new version, back for everybody who closed the old one."
+          },
+          "blocks": [
+            {
+              "key": "showcase-notice-new",
+              "type": "showcase-notice",
+              "values": {
+                "text": "New words: free delivery until Sunday.",
+                "link_label": "Back to the first",
+                "link_url": "/kitchen-sink/notice-bar",
+                "note": ""
+              }
+            },
+            {
+              "key": "showcase-notice-new-text",
+              "type": "text",
+              "values": {
+                "heading": "New words",
+                "body": "Other words are another version: the bar is back for everybody who closed the old one."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Zoom",
+      "slug": "zoom",
+      "seo": {
+        "title": "Zoom",
+        "description": "The zoom of a picture: magnified under the mouse inside its frame or beside it, pinched with two fingers, and opened over the page by a click or a key."
+      },
+      "blocks": [
+        {
+          "key": "showcase-zoom-intro",
+          "type": "text",
+          "values": {
+            "heading": "Zoom",
+            "body": "A picture whose details matter — a product, a fabric, a plan. With a mouse, hover it: the picture comes closer inside its own frame, following the cursor, or a lens on it shows the magnified part in a panel beside it, where the column has room for one. On a phone, pinch with two fingers and move about; double tap for twice the size and back. One finger still scrolls the page and swipes a slider.\nA click, a tap or Enter opens the picture over the page, as a lightbox, for a keyboard and a screen reader too. The large picture is the original of the media library, fetched only when someone looks closer. Without JavaScript the picture is a link to the original."
+          }
+        },
+        {
+          "key": "showcase-zoom-product",
+          "type": "showcase-zoom",
+          "values": {
+            "heading": "Beside the picture",
+            "note": "A product page: the panel opens over the text column. On a phone the text goes under the picture, there is no room beside it, and the picture is magnified in its own frame.",
+            "picture": {
+              "path": "demo:showcase-zoom",
+              "alt": "A watch on a grid, a label of small print and a ruler"
+            },
+            "shown": {
+              "path": "demo:showcase-zoom-small",
+              "alt": ""
+            },
+            "layout": "product",
+            "mode": "side"
+          }
+        },
+        {
+          "key": "showcase-zoom-gallery",
+          "type": "gallery",
+          "values": {
+            "heading": "A gallery slider",
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-1",
+                "alt": "Photo 1",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-2",
+                "alt": "Photo 2",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-3",
+                "alt": "Photo 3",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-4",
+                "alt": "Photo 4",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": "Photo 5",
+                "title": ""
+              },
+              {
+                "path": "demo:showcase-photo-6",
+                "alt": "Photo 6",
+                "title": ""
+              }
+            ],
+            "view": "slider",
+            "columns": 3,
+            "zoom": true,
+            "magnify": "inner"
+          }
+        },
+        {
+          "key": "showcase-zoom-narrow",
+          "type": "showcase-zoom",
+          "values": {
+            "heading": "In a narrow column",
+            "note": "Asked to magnify beside, but the column has no room beside the picture: inside its frame then.",
+            "picture": {
+              "path": "demo:showcase-zoom",
+              "alt": "A watch on a grid"
+            },
+            "shown": {
+              "path": "demo:showcase-zoom-small",
+              "alt": ""
+            },
+            "layout": "narrow",
+            "mode": "side"
+          }
+        }
+      ]
     }
   ]
 }

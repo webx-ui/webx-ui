@@ -121,7 +121,7 @@ final class BannerForm
             $errors = [...$errors, ...$buttonErrors];
         }
 
-        $errors = [...$errors, ...$this->pictureErrors($banner, $input)];
+        $errors = [...$errors, ...$this->pictureErrors($banner, $input, $place ?? $banner->place?->key)];
 
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
@@ -174,12 +174,14 @@ final class BannerForm
     /**
      * The picture is the one required field (decision 8): the three layouts stand on it, and a
      * video without one has no poster and nothing to fall back to. Checked against what the
-     * banner will hold after the save — what came in, else what it has.
+     * banner will hold after the save — what came in, else what it has. A place of words only
+     * (`'image' => false` in the config, {@see Places::needsPicture()}) takes a banner without
+     * one, though not a video without its poster.
      *
      * @param  array<string, mixed>  $input
      * @return array<string, list<string>>
      */
-    private function pictureErrors(Banner $banner, array $input): array
+    private function pictureErrors(Banner $banner, array $input, ?string $place): array
     {
         $image = array_key_exists('image', $input) ? $this->media->store($input['image']) : $banner->image;
 
@@ -188,6 +190,10 @@ final class BannerForm
         }
 
         $video = array_key_exists('video', $input) ? $this->media->store($input['video']) : $banner->video;
+
+        if ($video === null && ! $this->places->needsPicture($place)) {
+            return [];
+        }
 
         return ['image' => [(string) __($video !== null ? 'webx-banners::errors.video-without-image' : 'webx-banners::errors.image-required')]];
     }

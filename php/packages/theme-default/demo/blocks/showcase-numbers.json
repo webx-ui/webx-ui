@@ -1,0 +1,85 @@
+{
+  "slug": "showcase-numbers",
+  "title": "Showcase: counters and countdown",
+  "description": "Counters and a countdown in a column 20rem wide, and a countdown that ends a minute after the page was made, for the kitchen sink of the default theme: the Counters and Countdown blocks show every other case.",
+  "icon": null,
+  "group": "content",
+  "sort": 96,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading"
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "kind",
+      "type": "wx-select",
+      "label": "What",
+      "props": {
+        "options": [
+          {
+            "label": "Countdown",
+            "value": "countdown"
+          },
+          {
+            "label": "Counters",
+            "value": "counters"
+          }
+        ]
+      }
+    },
+    {
+      "id": "seconds",
+      "type": "wx-input-number",
+      "label": "Ends in, seconds after the page was made",
+      "props": {
+        "min": 0
+      }
+    },
+    {
+      "id": "ended",
+      "type": "wx-input",
+      "label": "Text at the end"
+    },
+    {
+      "id": "width",
+      "type": "wx-select",
+      "label": "Width",
+      "props": {
+        "options": [
+          {
+            "label": "Full",
+            "value": "full"
+          },
+          {
+            "label": "Narrow column",
+            "value": "narrow"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "<section class=\"b-showcase-numbers b-showcase-numbers--{{ $width === 'narrow' ? 'narrow' : 'full' }}\" data-wx-block=\"showcase-numbers\" data-webx-countdown-scope>\n    @if ($heading)\n        <h2 class=\"b-showcase-numbers__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-numbers__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-numbers__frame\">\n        @if ($kind === 'counters')\n            <ul class=\"b-showcase-numbers__list\" role=\"list\">\n                <li><x-webx-counter :value=\"15\" class=\"b-showcase-numbers__number\" /> years</li>\n                <li><x-webx-counter :value=\"3000\" suffix=\"+\" class=\"b-showcase-numbers__number\" /> clients</li>\n                <li><x-webx-counter value=\"4.9\" class=\"b-showcase-numbers__number\" /> rating</li>\n                <li><x-webx-counter :value=\"1250000\" prefix=\"$\" class=\"b-showcase-numbers__number\" /> saved</li>\n            </ul>\n        @else\n            <x-webx-countdown :to=\"now()->addSeconds(max(0, (int) $seconds))\" :ended=\"$ended ?: null\" />\n        @endif\n    </div>\n</section>\n",
+  "styles": ".b-showcase-numbers {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-numbers__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-numbers__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-numbers--narrow .b-showcase-numbers__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n\n.b-showcase-numbers__list {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--site-space-4);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-showcase-numbers__number {\n    font-size: var(--site-font-size-2);\n    font-weight: 700;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Numbers",
+    "note": "",
+    "kind": "countdown",
+    "seconds": 75,
+    "ended": "It is over.",
+    "width": "full"
+  }
+}

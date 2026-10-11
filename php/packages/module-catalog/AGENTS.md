@@ -26,7 +26,9 @@ question is about one of them.
 - **Gallery videos** on the product page are `<x-webx-video>` of `webx-ui/widgets`, the picture
   its poster and shape: YouTube waits for consent to `media`, a file is `<video preload="none">`.
   `VideoProviders` here decides what a row stores; a provider registered only here is handed to
-  the widgets' registry (`PlayedByWidgets`), so its videos play there too.
+  the widgets' registry (`PlayedByWidgets`), so its videos play there too. Every other picture is
+  `<x-webx-zoom>`: a copy `images.shown` (1200) wide, the original magnified under the mouse and
+  two fingers (`images.zoom`: `inner`, `side` or `off`), a click opening the product's pictures.
 - **Storefront points** that satellites print into: `catalog.card.badges`, `catalog.card.meta`,
   `catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`,
   `catalog.listing.top`, `catalog.listing.bottom`.

@@ -15,7 +15,8 @@ return [
     | places of their own in the panel.
     |
     | A title is a plain string or a translation key. `layout` and `options`
-    | override the ones below for this place only.
+    | override the ones below for this place only. `'image' => false` lets a
+    | banner of the place go without a picture — a place of words only.
     |
     */
 
@@ -28,6 +29,14 @@ return [
             'title' => 'webx-banners::places.promo',
             'layout' => 'single',
             'options' => ['ratio' => '3/1', 'ratio_mobile' => '3/2'],
+        ],
+        // The announcement bar above the header: <x-webx-notice-bar> of webx-ui/widgets prints
+        // the first banner of it — its title, text and buttons. Words only, so no picture is
+        // required here (`'image' => false`); everywhere else a banner needs one.
+        'notice' => [
+            'title' => 'webx-banners::places.notice',
+            'layout' => 'single',
+            'image' => false,
         ],
     ],
 

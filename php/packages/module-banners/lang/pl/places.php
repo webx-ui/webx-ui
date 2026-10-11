@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'hero' => 'Slider na stronie głównej',
     'promo' => 'Pasek promocyjny',
+    'notice' => 'Pasek ogłoszeń',
     'list' => 'Miejsca',
     'new' => 'Nowe miejsce',
     'title' => 'Nazwa',

@@ -61,12 +61,13 @@ const STAMP = '2026-09-28T09:00:00+00:00'
 const DEFAULT = 'ru'
 
 /**
- * `webx-banners.places` of this demo site: the package's two, as its config ships them. Their
+ * `webx-banners.places` of this demo site: the package's three, as its config ships them. Their
  * names are translation keys the panel reads in its own language.
  */
 export const DECLARED: Record<string, { title: string; layout: string }> = {
   hero: { title: 'places.hero', layout: 'slider' },
   promo: { title: 'places.promo', layout: 'single' },
+  notice: { title: 'places.notice', layout: 'single' },
 }
 
 /** `webx-banners.layout`: the layout of a place that names none. */
