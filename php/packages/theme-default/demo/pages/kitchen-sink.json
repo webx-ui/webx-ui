@@ -1315,6 +1315,162 @@
     },
     {
       "title": {
+        "en": "Modules",
+        "ru": "Модули",
+        "pl": "Moduły"
+      },
+      "slug": {
+        "en": "modules",
+        "ru": "moduli",
+        "pl": "moduly"
+      },
+      "seo": {
+        "title": {
+          "en": "Modules",
+          "ru": "Модули",
+          "pl": "Moduły"
+        },
+        "description": {
+          "en": "What the modules print on a page, in their base look under the default theme: the form of the Inbox and the trail of SEO.",
+          "ru": "То, что модули выводят на странице, в их базовом виде под темой по умолчанию: форма заявок и хлебные крошки SEO.",
+          "pl": "To, co moduły wyświetlają na stronie, w ich podstawowym wyglądzie pod domyślnym motywem: formularz skrzynki i okruszki SEO."
+        }
+      },
+      "blocks": [
+        {
+          "key": "showcase-modules-intro",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "What the modules bring",
+              "ru": "Что приносят модули",
+              "pl": "Co przynoszą moduły"
+            },
+            "body": {
+              "en": "<p>The theme knows no module. Each module with public pages brings its own base look on the tokens of the site and its own classes, and a theme restyles those classes without overriding a view.</p><p>The trail above this text is the SEO module’s. The page under this one is the Inbox’s form with every kind of field, in the main column and in a narrow one.</p>",
+              "ru": "<p>Тема не знает ни одного модуля. Каждый модуль с публичными страницами приносит свой базовый вид на токенах сайта и свои классы, а тема перекрашивает эти классы, не перекрывая вьюх.</p><p>Цепочка ссылок над этим текстом — модуля SEO. На странице ниже — форма модуля заявок со всеми видами полей, в основной колонке и в узкой.</p>",
+              "pl": "<p>Motyw nie zna żadnego modułu. Każdy moduł ze stronami publicznymi przynosi własny podstawowy wygląd na tokenach strony i własne klasy, a motyw przemalowuje te klasy bez nadpisywania widoków.</p><p>Okruszki nad tym tekstem pochodzą z modułu SEO. Na stronie poniżej jest formularz skrzynki z każdym rodzajem pola, w głównej kolumnie i w wąskiej.</p>"
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "title": {
+            "en": "Form",
+            "ru": "Форма",
+            "pl": "Formularz"
+          },
+          "slug": {
+            "en": "form",
+            "ru": "forma",
+            "pl": "formularz"
+          },
+          "seo": {
+            "title": {
+              "en": "Form",
+              "ru": "Форма",
+              "pl": "Formularz"
+            },
+            "description": {
+              "en": "The form of the Inbox in its base look: every kind of field, half and full width, in the main column and in a narrow one.",
+              "ru": "Форма модуля заявок в базовом виде: все виды полей, в половину и во всю ширину, в основной колонке и в узкой.",
+              "pl": "Formularz skrzynki w podstawowym wyglądzie: każdy rodzaj pola, na pół i na całą szerokość, w głównej kolumnie i w wąskiej."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-modules-form",
+              "type": "contact",
+              "values": {
+                "heading": {
+                  "en": "Every kind of field",
+                  "ru": "Все виды полей",
+                  "pl": "Każdy rodzaj pola"
+                },
+                "text": {
+                  "en": "Two to a row where the panel marked a field half width and the form has the room; one under another where it has not.",
+                  "ru": "По два в ряд, где поле отмечено в панели как половинное и форме хватает места; одно под другим, где не хватает.",
+                  "pl": "Po dwa w rzędzie, gdzie pole oznaczono w panelu jako połówkowe, a formularz ma miejsce; jedno pod drugim, gdzie go nie ma."
+                },
+                "show_contacts": false,
+                "form": "showcase"
+              }
+            },
+            {
+              "key": "showcase-modules-form-narrow",
+              "type": "showcase-column",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same form in a column 20rem wide: the width of the form decides the rows, not the window’s.",
+                  "ru": "Та же форма в колонке шириной 20rem: ряды решает ширина формы, а не окна.",
+                  "pl": "Ten sam formularz w kolumnie szerokiej na 20rem: o rzędach decyduje szerokość formularza, nie okna."
+                },
+                "items": [
+                  {
+                    "key": "showcase-modules-form-in-column",
+                    "type": "contact",
+                    "values": {
+                      "heading": {
+                        "en": "Write to us",
+                        "ru": "Напишите нам",
+                        "pl": "Napisz do nas"
+                      },
+                      "show_contacts": false,
+                      "form": "showcase"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "A trail that does not fit on one line of a phone, because this page has a very long title",
+            "ru": "Цепочка ссылок, которая не помещается в одну строку телефона, потому что у этой страницы очень длинное название",
+            "pl": "Okruszki, które nie mieszczą się w jednym wierszu telefonu, bo ta strona ma bardzo długi tytuł"
+          },
+          "slug": {
+            "en": "long-trail",
+            "ru": "dlinnaya-tsepochka",
+            "pl": "dlugie-okruszki"
+          },
+          "seo": {
+            "title": {
+              "en": "A long trail",
+              "ru": "Длинная цепочка",
+              "pl": "Długie okruszki"
+            },
+            "description": {
+              "en": "The trail of SEO when the title of a page is longer than a line: it wraps between the links and inside the title, and nothing goes sideways.",
+              "ru": "Хлебные крошки, когда название страницы длиннее строки: они переносятся между ссылками и внутри названия, и ничего не уходит вбок.",
+              "pl": "Okruszki, gdy tytuł strony jest dłuższy niż wiersz: zawijają się między linkami i wewnątrz tytułu, i nic nie ucieka w bok."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-modules-long-trail",
+              "type": "text",
+              "values": {
+                "body": {
+                  "en": "<p>The trail above wraps between its links and inside the last item; the separators stay with the item they stand before.</p>",
+                  "ru": "<p>Цепочка выше переносится между ссылками и внутри последнего пункта; разделители остаются у пункта, перед которым стоят.</p>",
+                  "pl": "<p>Okruszki powyżej zawijają się między linkami i wewnątrz ostatniego elementu; separatory zostają przy elemencie, przed którym stoją.</p>"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": {
         "en": "Header and menu",
         "ru": "Шапка и меню",
         "pl": "Nagłówek i menu"
