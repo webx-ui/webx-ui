@@ -64,15 +64,18 @@ class CheckCommand extends Command
         }
 
         $this->components->info(sprintf(
-            'The chain %s knows only tokens: %d stylesheets, %d block %s and the tokens.json of every layer; %d %s, every one its templates name; %d theme_asset() %s, every one a file of the chain.',
+            'The chain %s knows only tokens: %d stylesheets, %d block %s and the tokens.json of every layer; %d %s, every one its templates name; %s.',
             $layers,
             count($check->read()),
             $check->blocks(),
             $check->blocks() === 1 ? 'type' : 'types',
             $check->icons(),
             $check->icons() === 1 ? 'icon' : 'icons',
-            $check->assets(),
-            $check->assets() === 1 ? 'call' : 'calls',
+            match ($check->assets()) {
+                0 => 'no theme_asset() with a path to look up',
+                1 => '1 theme_asset() call, a file of the chain',
+                default => $check->assets().' theme_asset() calls, every one a file of the chain',
+            },
         ));
 
         return self::SUCCESS;

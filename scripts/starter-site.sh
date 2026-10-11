@@ -202,14 +202,12 @@ if [ -f "$OSP_NGINX" ] && ! grep -q 'location /themes/' "$OSP_NGINX"; then
 
 # scripts/starter-site.sh: named by their content, cached forever — as the skeleton's docker/nginx.conf.
 location /build/ {
-  expires 1y;
-  add_header Cache-Control "public, immutable";
+  add_header Cache-Control "public, max-age=31536000, immutable";
   try_files $uri =404;
 }
 
 location /themes/ {
-  expires 1y;
-  add_header Cache-Control "public, immutable";
+  add_header Cache-Control "public, max-age=31536000, immutable";
   try_files $uri =404;
 }
 NGINX
