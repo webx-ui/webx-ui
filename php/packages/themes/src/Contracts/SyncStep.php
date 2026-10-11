@@ -26,7 +26,11 @@ interface SyncStep
      * One line per thing the step looked at. A refused line makes the command fail; a kept one
      * does not — it is the site's own work, left alone on purpose.
      *
+     * `$adopt` is what the person running the command named with `--adopt`: things of the site's
+     * own the step may hand to the layers, which it never does unasked.
+     *
+     * @param  list<string>  $adopt
      * @return list<SyncLine>
      */
-    public function sync(ThemeChain $chain, bool $force, bool $dryRun): array;
+    public function sync(ThemeChain $chain, bool $force, bool $dryRun, array $adopt = []): array;
 }

@@ -20,13 +20,16 @@ use WebxUi\Themes\ThemeManifest;
  *
  * Idempotent: `webx:setup`, the site's `post-update-cmd` and whoever updates many sites at once
  * all call it. A refused line — a block type that breaks §8, a slug the site already uses for a
- * type of its own — makes it exit non-zero after doing everything else.
+ * type of its own — makes it exit non-zero after doing everything else. `--adopt` names what the
+ * steps may take over from the site, which they never do unasked: for the block types, only a
+ * copy of the blocks demo that nobody changed.
  */
 class SyncCommand extends Command
 {
     protected $signature = 'webx:theme:sync
         {--force : Copy the files again even if they have not changed, and overwrite block types changed on this site}
-        {--dry-run : Say what would be done without touching public/ or the database}';
+        {--dry-run : Say what would be done without touching public/ or the database}
+        {--adopt=* : Hand these block types of the site to the theme — only an untouched copy of the blocks demo (comma-separated or repeated)}';
 
     protected $description = 'Publish the built files of the packaged theme layers to public/themes, and put the block types of the layers on the site';
 
@@ -49,10 +52,11 @@ class SyncCommand extends Command
         }
 
         $refused = 0;
+        $adopt = $this->adopt();
 
         /** @var SyncStep $step */
         foreach ($this->laravel->tagged(SyncStep::TAG) as $step) {
-            $lines = $step->sync($chain, (bool) $this->option('force'), (bool) $this->option('dry-run'));
+            $lines = $step->sync($chain, (bool) $this->option('force'), (bool) $this->option('dry-run'), $adopt);
 
             if ($lines === []) {
                 continue;
@@ -79,6 +83,26 @@ class SyncCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * `--adopt=hero,text` and `--adopt=hero --adopt=text` alike.
+     *
+     * @return list<string>
+     */
+    private function adopt(): array
+    {
+        $named = [];
+
+        foreach ((array) $this->option('adopt') as $value) {
+            foreach (explode(',', (string) $value) as $slug) {
+                if (trim($slug) !== '') {
+                    $named[] = trim($slug);
+                }
+            }
+        }
+
+        return array_values(array_unique($named));
     }
 
     private function sync(ThemeManifest $layer, ThemeAssets $assets): string

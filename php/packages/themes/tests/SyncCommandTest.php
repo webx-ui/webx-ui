@@ -29,12 +29,13 @@ final class SyncCommandTest extends TestCase
     {
         $step = $this->step([new SyncLine('hero', 'created from webx-ui/theme-fixture')]);
 
-        $this->artisan('webx:theme:sync', ['--force' => true, '--dry-run' => true])
+        $this->artisan('webx:theme:sync', ['--force' => true, '--dry-run' => true, '--adopt' => ['hero,text', ' text', 'cta']])
             ->expectsOutputToContain('Fake step')
             ->expectsOutputToContain('created from webx-ui/theme-fixture')
             ->assertSuccessful();
 
-        $this->assertSame([[true, true]], $step->calls);
+        // --adopt comma-separated and repeated alike, each name once.
+        $this->assertSame([[true, true, ['hero', 'text', 'cta']]], $step->calls);
     }
 
     #[Test]

@@ -11,7 +11,7 @@ use WebxUi\Themes\ThemeChain;
 /** A step that says what it was given and answers with lines fixed in advance. */
 final class FakeSyncStep implements SyncStep
 {
-    /** @var list<array{bool, bool}> */
+    /** @var list<array{bool, bool, list<string>}> */
     public array $calls = [];
 
     /**
@@ -24,9 +24,9 @@ final class FakeSyncStep implements SyncStep
         return 'Fake step';
     }
 
-    public function sync(ThemeChain $chain, bool $force, bool $dryRun): array
+    public function sync(ThemeChain $chain, bool $force, bool $dryRun, array $adopt = []): array
     {
-        $this->calls[] = [$force, $dryRun];
+        $this->calls[] = [$force, $dryRun, $adopt];
 
         return $this->lines;
     }
