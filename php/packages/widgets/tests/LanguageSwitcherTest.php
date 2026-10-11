@@ -79,10 +79,11 @@ final class LanguageSwitcherTest extends TestCase
         $this->assertStringContainsString('<nav class="webx-language-switcher webx-language-switcher--list" aria-label="Language">', $html);
         $this->assertStringContainsString('<a class="webx-language-switcher__link is-current" href="https://example.test/about-us" hreflang="en" lang="en" aria-current="page">', $html);
         $this->assertStringContainsString('<a class="webx-language-switcher__link" href="https://example.test/de/ueber-uns" hreflang="de" lang="de">', $html);
-        // Each language is named in itself.
+        // Each language is named in itself; the others are marked, to be set in the reader's font
+        // rather than download a script of the theme's for one word.
         $this->assertStringContainsString('<span class="webx-language-switcher__name">English</span>', $html);
-        $this->assertStringContainsString('<span class="webx-language-switcher__name">Deutsch</span>', $html);
-        $this->assertStringContainsString('<span class="webx-language-switcher__name">Polski</span>', $html);
+        $this->assertStringContainsString('<span class="webx-language-switcher__name is-other">Deutsch</span>', $html);
+        $this->assertStringContainsString('<span class="webx-language-switcher__name is-other">Polski</span>', $html);
         $this->assertSame(1, substr_count($html, 'aria-current'));
         $this->assertContains('language-switcher', app(Widgets::class)->claimed());
     }
