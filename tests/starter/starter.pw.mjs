@@ -916,7 +916,8 @@ test.describe('language switcher', () => {
           .pathname,
         `${link.path} does not point at the original`,
       ).toBe(UNTRANSLATED)
-      expect(html, `${link.path} names alternates`).not.toContain('hreflang="')
+      // The head names no alternates; the switcher's own links carry hreflang, and are meant to.
+      expect(html, `${link.path} names alternates`).not.toMatch(/<link[^>]+hreflang=/)
     }
 
     // On the untranslated page the switcher marks its own language and leads back.
