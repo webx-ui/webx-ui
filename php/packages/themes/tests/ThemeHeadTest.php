@@ -105,7 +105,7 @@ class ThemeHeadTest extends TestCase
         $html = Blade::render('@webxTheme');
         $tokens = strpos($html, '<style data-webx-theme>');
         $part = strpos($html, '<!-- the widgets -->');
-        $layer = strpos($html, '/themes/webx-ui/theme-fixture/');
+        $layer = strpos($html, '<link rel="stylesheet" href="http://localhost/themes/webx-ui/theme-fixture/');
 
         $this->assertNotFalse($tokens);
         $this->assertNotFalse($part);
@@ -187,7 +187,7 @@ class ThemeHeadTest extends TestCase
         $html = Blade::render('@webxTheme');
         $part = strpos($html, '<!-- the widgets -->');
         $link = strpos($html, "<link rel=\"stylesheet\" href=\"http://localhost/themes/modules/{$hash}/modules.css\">");
-        $layer = strpos($html, '/themes/webx-ui/theme-fixture/');
+        $layer = strpos($html, '<link rel="stylesheet" href="http://localhost/themes/webx-ui/theme-fixture/');
 
         $this->assertNotFalse($part);
         $this->assertNotFalse($link);

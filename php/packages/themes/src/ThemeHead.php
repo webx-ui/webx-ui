@@ -13,6 +13,7 @@ use WebxUi\Themes\Contracts\HeadPart;
  * What `@webxTheme` prints in `<head>` (spec §7.3, §13.2):
  *
  *     <style>:root { --site-…: … }</style>     the merged tokens, inline
+ *     <style>@font-face { … }</style>           the fonts of the layers, a face per script (§15.3)
  *     each Contracts\HeadPart                   the packages below the themes: widgets
  *     <link rel="stylesheet" href="/themes/modules/…">  the modules' base look (§10.2), one file
  *     <link rel="stylesheet" href="/themes/…">  each packaged layer's theme.css, bottom first
@@ -37,6 +38,7 @@ class ThemeHead
         private readonly Tokens $tokens,
         private readonly ThemeAssets $assets,
         private readonly ModuleStyles $modules,
+        private readonly ThemeFonts $fonts,
     ) {}
 
     public function render(): string
@@ -52,6 +54,8 @@ class ThemeHead
             $html[] = "<style data-webx-theme>\n{$css}\n</style>";
         }
 
+        $html[] = $this->fonts();
+
         foreach ($this->app->tagged(HeadPart::TAG) as $part) {
             if ($part instanceof HeadPart) {
                 $html[] = $part->head();
@@ -65,6 +69,23 @@ class ThemeHead
         }
 
         return implode("\n", array_filter($html));
+    }
+
+    /**
+     * The fonts of the chain (§15.3): a face per script, each with its `unicode-range`, so the
+     * browser downloads only the files the letters on this page need. No `<link rel=preload>`:
+     * preloading a file is downloading it whatever the page says.
+     */
+    private function fonts(): string
+    {
+        $missing = [];
+        $css = $this->fonts->css($this->app->make(UrlGenerator::class), function (string $file) use (&$missing): void {
+            $missing[] = $file;
+        });
+
+        $hint = $missing === [] ? '' : $this->hint('fonts are not published ('.implode(', ', $missing).'): php artisan webx:theme:sync');
+
+        return $css === '' ? $hint : trim("<style data-webx-fonts>\n{$css}\n</style>\n{$hint}");
     }
 
     /** The base look of the installed modules (§10.2): under every theme layer, so any of them restyles it. */

@@ -14,10 +14,12 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Themes\Console\CheckCommand;
 use WebxUi\Themes\Console\MakeCommand;
 use WebxUi\Themes\Console\SyncCommand;
 use WebxUi\Themes\Contracts\Appearance;
+use WebxUi\Themes\Doctor\FontsCheck;
 use WebxUi\Themes\View\Components\Icon;
 
 /**
@@ -95,6 +97,14 @@ class ThemeServiceProvider extends ServiceProvider
 
         if ($this->reference() === null) {
             return;
+        }
+
+        // The fonts against the site's languages, in the frame's `webx:doctor` (§15.3) — where
+        // the frame is installed; the engine does not need it.
+        if (class_exists(DoctorChecks::class)) {
+            $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
+                $checks->register(FontsCheck::class);
+            });
         }
 
         // Booted, not boot: a module registers its namespace in its own boot(), and the order

@@ -9,6 +9,16 @@
         "requires": [
           "module-pages",
           "module-blocks"
+        ],
+        "fonts": [
+          {
+            "family": "Fixture Sans",
+            "weight": "100 900",
+            "files": {
+              "cyrillic": "fonts/sans-cyrillic.woff2",
+              "latin": "fonts/sans-latin.woff2"
+            }
+          }
         ]
       }
     }

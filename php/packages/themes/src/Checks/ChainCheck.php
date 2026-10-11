@@ -31,7 +31,9 @@ use WebxUi\Themes\Vocabulary;
  * colour of the text, and the views and block templates of the layers name only icons the chain
  * has, never an inline `<svg>` ({@see IconCheck}); the pictures they ask for with `theme_asset()`
  * are files under `assets/` of a layer (§13.2, {@see AssetCheck}). And every language a layer
- * declares in `locales` has the words of the layout that `en` has (§15.2, {@see LineCheck}).
+ * declares in `locales` has the words of the layout that `en` has (§15.2, {@see LineCheck}). And
+ * the fonts of the layers are files of their own that cover the scripts of the site's languages
+ * and of the languages the layer declares (§15.3, {@see FontCheck}).
  *
  * Built files are not read: `dist/` is what the sources became, plus the stylesheets of the
  * libraries a widget builds in (Swiper, PhotoSwipe, Leaflet), which are not ours to rewrite.
@@ -52,14 +54,19 @@ final class ChainCheck
 
     private int $locales = 0;
 
+    /** @var list<array{family: string, weight: string, style: string, files: array<string, string>, layer: ThemeManifest}> */
+    private array $faces = [];
+
     /**
      * @param  list<ThemeManifest>  $bottom  The packages below the themes ({@see BottomLayers}).
      * @param  list<string>  $modules  Directories of modules whose `resources/theme` is read; null asks Composer.
+     * @param  list<string>  $siteLocales  The languages the site publishes in, which its fonts have to draw.
      */
     public function __construct(
         private readonly ThemeChain $chain,
         private readonly array $bottom = [],
         private readonly ?array $modules = null,
+        private readonly array $siteLocales = [],
     ) {}
 
     /**
@@ -73,6 +80,7 @@ final class ChainCheck
         $this->icons = 0;
         $this->assets = 0;
         $this->locales = 0;
+        $this->faces = [];
 
         try {
             $vocabulary = Vocabulary::forChain($this->chain);
@@ -103,6 +111,11 @@ final class ChainCheck
             array_push($this->findings, ...$lines['findings']);
         }
 
+        // And the fonts (§15.3, rule 27): files of the layers, one per script the languages need.
+        $fonts = FontCheck::check($this->chain, $this->siteLocales);
+        $this->faces = $fonts['faces'];
+        array_push($this->findings, ...$fonts['findings']);
+
         return $this->findings;
     }
 
@@ -110,6 +123,16 @@ final class ChainCheck
     public function locales(): int
     {
         return $this->locales;
+    }
+
+    /**
+     * The faces of the chain the last run read, after a higher layer replaced a family.
+     *
+     * @return list<array{family: string, weight: string, style: string, files: array<string, string>, layer: ThemeManifest}>
+     */
+    public function faces(): array
+    {
+        return $this->faces;
     }
 
     /** How many icons the chain has, after the higher layer won by name. */
