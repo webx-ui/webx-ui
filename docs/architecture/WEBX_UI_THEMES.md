@@ -11,7 +11,7 @@
 проверка CSS на токены (`CssCheck`, `webx:theme:check`, предупреждения блоков) — 11.10.2026; TH2.2 —
 блоки в слоях и sync (`LayerBlocks`, `theme_source`/`theme_hash`, шаги §9.2 в `webx:theme:sync`) —
 11.10.2026; TH2.3 — шесть блоков `theme-default`, демо `module-blocks` уступает им, `--adopt`,
-витрина «Kitchen sink › Blocks» — 11.10.2026. TH2 закрыт. TH3 разбит на TH3.1–TH3.4 (§19); TH3.1 — базовый вид модулей на странице (`ModuleStyles`), контракт модуля (`ModuleThemeContract`), уступка предложенного блока, точки расширения из темы, форма `module-inbox` и крошки `module-seo`, витрина «Kitchen sink › Modules» — 11.10.2026; TH3.2 — классы `webx-blog-*`/`webx-services-*`, базовый вид блога, услуг и меню, точки `blog.card`/`services.card`, `webx:setup --modules=+…` и `starter-site.sh --with=` — 11.10.2026; TH3.3 — базовый вид событий, вакансий и прессы на их `wx-*`, точки `events.card`/`vacancies.card`, `theme_active()`, проверки Playwright страниц модулей — 11.10.2026. TH3.4 — базовый вид рецептов на их `wx-*`, колонки блока классом, FAQ и перелинковка `module-seo` в конце `<main>` лэйаута `theme-default` и страница «Kitchen sink › Modules › FAQ and links» с ними — 11.10.2026. TH3 закрыт. TH4 разбит на TH4.1–TH4.6 (§19); TH4.1 — иконки: спрайт цепочки (`ThemeIcons`), `<x-theme::icon>`, проверка файлов и шаблонов в `webx:theme:check`, набор `theme-default` и витрина «Kitchen sink › Icons» — 11.10.2026; следующий — TH4.2. Пакеты — новые `webx-ui/themes` и
+витрина «Kitchen sink › Blocks» — 11.10.2026. TH2 закрыт. TH3 разбит на TH3.1–TH3.4 (§19); TH3.1 — базовый вид модулей на странице (`ModuleStyles`), контракт модуля (`ModuleThemeContract`), уступка предложенного блока, точки расширения из темы, форма `module-inbox` и крошки `module-seo`, витрина «Kitchen sink › Modules» — 11.10.2026; TH3.2 — классы `webx-blog-*`/`webx-services-*`, базовый вид блога, услуг и меню, точки `blog.card`/`services.card`, `webx:setup --modules=+…` и `starter-site.sh --with=` — 11.10.2026; TH3.3 — базовый вид событий, вакансий и прессы на их `wx-*`, точки `events.card`/`vacancies.card`, `theme_active()`, проверки Playwright страниц модулей — 11.10.2026. TH3.4 — базовый вид рецептов на их `wx-*`, колонки блока классом, FAQ и перелинковка `module-seo` в конце `<main>` лэйаута `theme-default` и страница «Kitchen sink › Modules › FAQ and links» с ними — 11.10.2026. TH3 закрыт. TH4 разбит на TH4.1–TH4.6 (§19); TH4.1 — иконки: спрайт цепочки (`ThemeIcons`), `<x-theme::icon>`, проверка файлов и шаблонов в `webx:theme:check`, набор `theme-default` и витрина «Kitchen sink › Icons» — 11.10.2026; TH4.2 — ассеты: `theme_asset()` по цепочке, `assets/` локальной темы публикует sync (`public/themes/local-<каталог>/`), проверка `theme_asset('…')` в `webx:theme:check`, `/themes/` с вечным кешем в конфигах скелета и витрина «Kitchen sink › Assets» — 11.10.2026; следующий — TH4.3. Пакеты — новые `webx-ui/themes` и
 `webx-ui/theme-default` (§3), правки в `module-admin` (§14), `module-blocks` (§8, §9),
 `module-settings` (§7.4) и в модулях с публичными страницами (§10). Соседние спеки: новый сайт —
 [`WEBX_UI_NEW_SITE.md`](WEBX_UI_NEW_SITE.md), блоки — [`WEBX_UI_MODULE_BLOCKS.md`](WEBX_UI_MODULE_BLOCKS.md),
@@ -559,15 +559,17 @@ cookie» в подвале, вид баннера согласия.
 `webx:theme:sync` кладёт `dist/` и `assets/` пакетных слоёв в `public/themes/<имя>/<версия>/`; их
 отдаёт веб-сервер как статику с вечным кешем (`/themes/` → `immutable` в конфиге сервера скелета).
 Новая версия — новый путь, сбрасывать кеш не нужно; sync оставляет одну предыдущую версию для
-страниц, отданных за секунду до обновления. Локальная тема собирается в `public/build` тем же Vite
-сайта, что и сегодня.
+страниц, отданных за секунду до обновления. CSS и JS локальной темы собирает в `public/build` тот же
+Vite сайта, что и сегодня, а её `assets/` sync публикует так же, как у пакета, — в
+`public/themes/local-<каталог>/<хеш>/assets/` (TH4.2, §23).
 
 ```blade
 <img src="{{ theme_asset('img/wave.svg') }}" alt="">
 ```
 
-`theme_asset()` ищет файл по цепочке сверху вниз. `public/themes/` — в `.gitignore` скелета: это
-производное от `vendor/`, как `public/build`.
+`theme_asset()` ищет файл по цепочке сверху вниз: отвечает самый верхний слой, у которого есть
+`assets/<путь>`, адресом его опубликованной копии. `public/themes/` — в `.gitignore` скелета: это
+производное от `vendor/` и `theme/`, как `public/build`.
 
 ## 14. Новый сайт
 
@@ -792,7 +794,7 @@ Vite пересобирает `theme/src` на лету. Правка `theme-def
   «unchanged», «kept», отказ). Отказ — код 1 после того, как сделано всё остальное; «kept» — не
   отказ. `--force` перезаписывает и правленные на сайте типы, чужой slug — никогда. `--link` пока
   нет. **С TH2.3** — `--adopt=<slug>[,…]`: отдать теме тип сайта, названный по имени, — только
-  копию демо `module-blocks`, которую никто не менял (§23, TH2.3). **С TH3.1** — между ассетами слоёв и шагами: `resources/theme/*.css` установленных модулей одним файлом `public/themes/modules/<хеш>/modules.css` (строка «modules — their base look», §10.2). **С TH4.1** — следом `icons/*.svg` слоёв одним спрайтом `public/themes/icons/<хеш>/icons.svg` (строка «icons — the sprite of the chain … (N icons)», §13.1).
+  копию демо `module-blocks`, которую никто не менял (§23, TH2.3). **С TH3.1** — между ассетами слоёв и шагами: `resources/theme/*.css` установленных модулей одним файлом `public/themes/modules/<хеш>/modules.css` (строка «modules — their base look», §10.2). **С TH4.1** — следом `icons/*.svg` слоёв одним спрайтом `public/themes/icons/<хеш>/icons.svg` (строка «icons — the sprite of the chain … (N icons)», §13.1). **С TH4.2** — и `assets/` локального слоя, в `public/themes/local-<каталог>/<хеш>/assets/` (строка слоя «local, built by the site's Vite; assets/ published <хеш>», §13.2).
 - **`webx:theme:check [<путь>]`** — без установки: манифест, цепочка, обязательные вьюхи, значения
   токенов, CSS блоков, `src/` и модулей (§8), совместимость перекрытых схем (§9.2; **с TH2.2** — и
   `blocks/*.json` слоёв: документ ли это, CSS на токенах, схема перекрытия), стили блоков вне
@@ -804,7 +806,9 @@ Vite пересобирает `theme/src` на лету. Правка `theme-def
   **С TH4.1** — иконки: каждый `icons/*.svg` слоя (имя строчными через дефис, `viewBox`, цвет
   только `currentColor`/`none`, без скрипта, `<style>` и обработчиков) и вьюхи и шаблоны блоков
   слоёв — `<x-theme::icon name="…">` с именем, которого нет в цепочке, и инлайновый `<svg>`
-  (правило 24; PHP и комментарии Blade не читаются).
+  (правило 24; PHP и комментарии Blade не читаются). **С TH4.2** — там же `theme_asset('…')` с
+  буквальным путём, которого нет в `assets/` ни одного слоя, и путь, выходящий из `assets/`
+  (`..`, схема); PHP читается, комментарии Blade — нет.
   Остальные пункты списка приходят с этапами, которые строят то, что они проверяют.
 - **`webx:theme:extract <vendor/имя>`**, **`webx:theme:eject`** — §14.3.
 
@@ -1881,3 +1885,60 @@ aria-hidden="true" focusable="false"><use href="…/icons.svg#<имя>"/></svg>`
   контактов по середине строки (расхождение 1px), акцентом, в `night` — акцентом `night`.
   Playwright — 4 новых теста в «icons» (спрайт один и каждая иконка рисуется; буква в строке,
   цвет текста, подписи; пресет перекрашивает; иконки подписей контактов по середине строки).
+
+### TH4.2 — ассеты
+
+- **`theme_asset('img/wave.svg')` — `ThemeAssets::asset()` движка.** Слои цепочки сверху вниз:
+  отвечает первый, у которого есть `assets/img/wave.svg`, адресом его опубликованной копии
+  (`ThemeAssets::url`, как `theme.css`). Путь — относительно `assets/`; ведущий `/` снимается,
+  `..`, пустой сегмент, схема, `?` и `#` — не путь. Имя файла кодируется по сегментам
+  (`hero image.png` → `hero%20image.png`).
+- **Решение — как `assets/` локальной темы доезжают до `public/`: их публикует `webx:theme:sync`,
+  тем же `ThemeAssets`, что и у пакета** — в `public/themes/local-<каталог>/<хеш>/assets/`
+  (у стартового сайта и любого из скелета — `local-theme`). `dist/` у локального слоя не
+  копируется: его CSS и JS по-прежнему собирает Vite сайта в `public/build`. Почему не Vite:
+  `Vite::asset()` знает только файлы, которые импортировал какой-то вход сборки, — картинку из
+  шаблона Blade пришлось бы заводить в `import.meta.glob` локальной темы, а без `npm run build`
+  её бы не было вовсе; и `theme_asset()` получил бы два разных пути поиска для двух видов слоя.
+  Так же решили иконки в TH4.1 (спрайт из исходников sync'ом для обоих видов слоя). Цена — новая
+  картинка локальной темы видна после `webx:theme:sync`, как новая иконка. Каталог —
+  `local-<имя каталога>`: имя локального слоя — путь в сайте (в тестах — абсолютный), а одним
+  сегментом он не встречается ни с `vendor/name` пакета, ни с `icons` и `modules` движка.
+- **Нет файла — пустая строка, не исключение.** Пути нет ни в одном слое — `''`; файл есть в
+  верхнем слое, но sync с тех пор не запускали — тоже `''`, а **не копия нижнего слоя**: это была
+  бы другая картинка, и ошибка выглядела бы как «тема не перекрылась». В debug обе причины пишутся
+  в лог (`theme_asset('…'): no layer of the theme has assets/…` / `… is not published: php artisan
+webx:theme:sync`) — комментарий HTML в атрибут `src` не вставить.
+- **Строка sync для локального слоя** — «local, built by the site's Vite; assets/ published
+  <хеш>» (или «unchanged»); без `assets/` — прежняя «local, built by the site's Vite».
+- **Проверка (правило 24, вторая половина) — `Checks\AssetCheck` и шаг в `ChainCheck`.** Те же
+  шаблоны, что у иконок (вьюхи слоёв и `template` их типов блоков, обход вынесен в
+  `ChainCheck::templates()`): `theme_asset('…')` с буквальным путём, которого нет в `assets/` ни
+  одного слоя, и путь, выходящий из `assets/`. В отличие от иконок PHP читается: `@php $wave =
+theme_asset('…') @endphp` просит файл так же, как `{{ }}`; комментарии Blade — нет.
+  `theme_asset('img/'.$name)` и строка с `$` не читаются — путь решается на странице. Итог
+  проверки — «…; N theme_asset() calls, every one a file of the chain» (без вызовов — «no
+  theme_asset() with a path to look up»). Демо-типы витрины (`demo/blocks`) не слой и не
+  читаются — как и у иконок.
+- **Кеш — в конфигах скелета.** `docker/nginx.conf`: `location /themes/` рядом с `/build/`,
+  оба — один заголовок `Cache-Control: public, max-age=31536000, immutable` (`expires` убран: он
+  добавлял второй `Cache-Control` с одним `max-age`). `public/.htaccess` — то же для Apache через
+  `mod_headers` и `<If>` по `/build/` и `/themes/` на существующий файл. `public/themes/` уже был в
+  `.gitignore` скелета с TH1. README скелета: `theme/assets/` в таблице и абзац про кеш.
+- **Стартовый сайт.** У OSPanel блок `server` — хоста, в `.osp/`, и конфиги скелета он не читает:
+  `starter-site.sh` дописывает `/build/` и `/themes/` в `.osp/nginx/<хост>.conf`, если их там нет,
+  и перезапускает nginx (`osp restart nginx`). `.osp/` переживает пересборку — дописывается один раз.
+- **`theme-default`** получает `assets/img/wave.svg` (две серые волны 1200×120, растягиваются).
+  Своих вьюх и блоков с `theme_asset()` у темы пока нет: картинка — для витрины и для перекрытия.
+- **Витрина — «Kitchen sink › Assets»** (en/ru/pl, сразу после «Icons»): тип `showcase-assets` в
+  `demo/blocks` — та же волна картинкой (цвета файла) и маской CSS поверх акцента (форма из файла,
+  краска темы: `night` перекрашивает вторую и не трогает первую), адрес под картинкой.
+
+Отступления и находки:
+
+- **Проверено на пересобранном стартовом сайте:** sync — «webx-ui/theme-default … published
+  3799bb3e3660», картинка — `/themes/webx-ui/theme-default/3799bb3e3660/assets/img/wave.svg`, 200,
+  `image/svg+xml`, `Cache-Control: public, max-age=31536000, immutable`. В браузере: картинка
+  рисуется, маска — цветом акцента, в `night` — акцентом `night`; без боковой прокрутки. Playwright —
+  2 новых теста в «assets» (адрес с хешем, 200 и вечный кеш; маска на акценте, `night`
+  перекрашивает).

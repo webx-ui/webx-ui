@@ -31,6 +31,7 @@ vocabulary, `@webxTheme` — is [`webx-ui/themes`](https://github.com/webx-ui/th
 | `src/css/`                | `base.css`, `shell.css` (`site-*` classes), `prose.css` (headings, lists, tables…)     |
 | `dist/theme.css`          | the build of `src/`, committed: a site installs this theme with no Node                |
 | `icons/`                  | 27 icons, 24×24 strokes in `currentColor`: `<x-theme::icon name="phone" />`            |
+| `assets/img/`             | pictures of the theme: `theme_asset('img/wave.svg')`                                   |
 
 Every rule is written on `var(--site-…)` tokens only and inside `:where()`, so it carries no
 specificity: a local theme, a module or a block overrides it by writing the rule at all.

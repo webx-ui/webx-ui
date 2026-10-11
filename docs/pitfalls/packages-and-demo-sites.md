@@ -231,6 +231,14 @@ vendor/composer/autoload_files.php`.
   передав путь отдельным аргументом. **И путь после префикса в аргументе:**
   `curl -F "fields[attachment]=@/c/Users/…"` — `curl.exe` получает `/c/…` как есть и выходит с
   кодом 26 без единой строки. Путь для Windows-программ — в виде `C:/…` (`cygpath -m`).
+- **Файл из `/themes/` на сайте OSPanel приходит без вечного кеша, хотя в скелете он есть.**
+  OSPanel не читает ни `docker/nginx.conf`, ни `public/.htaccess` скелета: блок `server` — хоста,
+  в `.osp/nginx/<хост>.conf`, и там только `location /` и PHP. Стартовому сайту `/build/` и
+  `/themes/` дописывает `scripts/starter-site.sh` (и перезапускает nginx: `osp restart nginx`);
+  другому сайту OSPanel — руками туда же. И не `expires 1y` вместе с `add_header Cache-Control`:
+  nginx отдаёт тогда два заголовка `Cache-Control` — один `max-age`, второй `public, immutable`.
+  Один `add_header Cache-Control "public, max-age=31536000, immutable"`. Проверка —
+  `curl -sI <адрес из /themes/> | grep -i cache-control`: ровно одна строка.
 - **PHP-часть проверяется настоящим PHP.** Локально есть модули OSPanel
   (`C:\Work\OSPanel\modules\PHP-8.3\php.exe` и `PHP-8.4`); composer в PATH нет, phar кладётся в
   скретчпад. Гейт php-половины — `composer lint && composer analyse && composer test` из `php/`.

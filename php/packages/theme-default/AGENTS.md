@@ -52,7 +52,9 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   the library by the media demo and named in a page as `"path": "demo:<file name>"`. Nothing
   under `demo/` is published on a site. Kitchen sink › Blocks: a page per block above — every
   variant, then the block in a narrow column. Kitchen sink › Icons: every icon of the chain
-  (`showcase-icons`), then icons in a line, at four sizes, in buttons, on the accent. A page per widget under "Kitchen sink": Header and menu,
+  (`showcase-icons`), then icons in a line, at four sizes, in buttons, on the accent. Kitchen
+  sink › Assets: `assets/img/wave.svg` through `theme_asset()` as a picture and as a mask over the
+  accent (`showcase-assets`). A page per widget under "Kitchen sink": Header and menu,
   Cookie consent, Dropdown and form in a dialog, Contacts, Language switcher, Slider, Lightbox,
   Video, Map, Page tools, Background video, Counters and countdown, Before and after, Table of contents, Show more, Notice bar (with Same words and New words under it), Zoom — every variant, a narrow column, what to try; the place to look before changing one.
   Written in English, Russian and Polish: a page's `title`, `slug` and SEO card, and every
@@ -69,6 +71,8 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   `mail`, `map-pin`, `clock`, `calendar`, `user`, `share`, `link`, `download`, `globe`, `info`,
   `alert`, `star`, `play` — 24×24, stroke 2, round ends, `currentColor`. `theme-icon` is one em,
   on the text's line (`base.css`).
+- **`assets/img/`** — pictures for `theme_asset('img/…')`: `wave.svg` (two grey waves, 1200×120,
+  stretched; as a mask it takes any colour).
 
 ## Change it without forking
 
@@ -82,6 +86,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 | Another look of one of the six blocks    | `theme/blocks/<slug>.json` by the same slug, every field kept with its type; `webx:theme:sync` |
 | A section of a page full width           | class `site-bleed` on the direct child of `<main>`                                             |
 | Another drawing of an icon, or a new one | `theme/icons/<name>.svg` in `currentColor`, then `webx:theme:sync`                             |
+| Another picture of the theme             | `theme/assets/<same path>`, then `webx:theme:sync`                                             |
 | Prose typography outside `<main>`        | class `site-prose` on the wrapper                                                              |
 | The header and footer as blocks          | arrange the `header`/`footer` regions in the panel; no code                                    |
 

@@ -120,6 +120,28 @@ app(ThemeIcons::class)->names();      // every icon of the chain
 app(ThemeIcons::class)->has('phone');
 ```
 
+## Assets
+
+A picture that belongs to a theme — a background, a decoration, a placeholder — lives in the
+`assets/` folder of a layer, and a template asks for it by its path there:
+
+```blade
+<img src="{{ theme_asset('img/wave.svg') }}" alt="">
+```
+
+```html
+<img src="/themes/webx-ui/theme-default/3b9c0e1f2a47/assets/img/wave.svg" alt="" />
+```
+
+The highest layer with the file answers, so a local theme replaces a picture of the theme below
+by putting a file at the same path. `webx:theme:sync` publishes the files of every layer — a
+package's under `public/themes/<vendor>/<name>/<hash>/`, a local theme's `assets/` under
+`public/themes/local-<directory>/<hash>/` — and the hash is of the content, so the server may
+cache `/themes/` forever. A path no layer has, or one a layer got after the last sync, is an empty
+string — never an exception on a page — and in debug the log says which; `webx:theme:check` names
+a `theme_asset('…')` with a literal path no layer answers, in the layers' views and block
+templates.
+
 ## How views are looked up
 
 | Kind               | Order                                                                                      |

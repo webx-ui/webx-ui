@@ -27,7 +27,7 @@ and the site's `theme/`).
   A line per finding (file:line, what, why) and a non-zero exit; `Checks\CssCheck::check($css,
 $vocabulary)` is the same rule for one stylesheet, and the block editor warns with it.
 - **`webx:theme:sync [--force] [--dry-run]`** — copies the packaged layers' `dist/` and `assets/`
-  to `public/themes/`, the installed modules' `resources/theme/*.css` as one
+  to `public/themes/` (a local theme's `assets/` to `public/themes/local-<directory>/`), the installed modules' `resources/theme/*.css` as one
   `public/themes/modules/<hash>/modules.css` (`ModuleStyles`), the layers' icons as one sprite
   (`ThemeIcons`), then runs the steps packages tag `webx-themes.sync` (`Contracts\SyncStep`):
   `module-blocks` puts the layers' block types on the site. A refused line exits non-zero.
@@ -53,6 +53,10 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
   with a `<use>`; `label="…"` makes it `role="img"` with that name. An unknown name or an
   unpublished sprite is an empty `<svg>` (a comment says why in debug). The check reads every
   icon file and the `<x-theme::icon>` and inline `<svg>` in the layers' views and block templates.
+- **Assets**: `theme_asset('img/wave.svg')` — the URL of `assets/img/wave.svg` of the highest
+  layer that has it, as sync published it (`public/themes/<name>/<hash>/assets/…`, cached
+  forever). A path no layer has, or a layer not synced since it got the file, is `''` (the log
+  says which in debug); the check names a literal `theme_asset('…')` no layer answers.
 
 ## Change it without forking
 
@@ -71,6 +75,7 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
 | Another look of a block the theme brings            | `theme/blocks/<same slug>.json` — add fields, never drop one |
 | Keep a block made in the panel in git               | `php artisan webx:blocks:export <slug> --path=theme/blocks`  |
 | Add an icon, or redraw one of the theme's           | `theme/icons/<name>.svg`, then `php artisan webx:theme:sync` |
+| Add a picture, or replace one of the theme's        | `theme/assets/<path>`, then `php artisan webx:theme:sync`    |
 | Publish the config                                  | `php artisan vendor:publish --tag=webx-themes-config`        |
 
 ## Do not

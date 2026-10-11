@@ -26,7 +26,8 @@ pages (a page, an article, a product) stand inside the theme's layout.
 | The frame of every page, the `<head>` | copy `components/layout.blade.php` from `vendor/webx-ui/theme-default/views/` into `theme/views/`    |
 | The header and the footer             | the same, `components/header.blade.php` and `footer.blade.php` — shown while the region is empty     |
 | The menu items                        | the panel («Menus»), not the view — the header prints `menu('header')`                               |
-| Images, the favicon, fonts            | `public/` — `public/favicon.ico`, your own folders such as `public/images/`                          |
+| A picture of the theme (a background) | `theme/assets/img/` and `theme_asset('img/…')`; see [Assets](#assets)                                |
+| The favicon, files of the site's own  | `public/` — `public/favicon.ico`, your own folders such as `public/documents/`                       |
 | A module's page (article, page…)      | its classes in `theme/src/css` first; see [below](#a-module-s-page)                                  |
 | The start page before real content    | `resources/views/demo.blade.php` — delete it with its route when the site has a home page            |
 
@@ -154,6 +155,28 @@ Kitchen sink › Icons.
   can redraw the first, no preset repaints the second; `webx:theme:check` lists both, and an icon a
   template names that no layer has (the page shows an empty space in its place).
 
+### Assets
+
+A picture that belongs to the theme rather than to the content — a background, a decoration, a
+placeholder — lives in the `assets/` folder of a theme layer, and a template asks for it by its
+path there:
+
+```blade
+<img src="{{ theme_asset('img/wave.svg') }}" alt="">
+```
+
+The highest layer that has the file answers, so the site's own theme replaces a picture of
+`webx-ui/theme-default` by putting a file at the same path in `theme/assets/`. `php artisan
+webx:theme:sync` publishes the files to `public/themes/`, in a folder named by their content: the
+address changes when the file does, and the server caches `/themes/` forever. The starter site
+shows one picture twice — as it is and as a mask over the accent — under Kitchen sink › Assets.
+
+- **A new picture:** `theme/assets/img/<file>`, then `webx:theme:sync` — until then the page
+  prints an empty address.
+- **Not:** a file under `public/` for what is part of the look. A layer above cannot replace it,
+  and the browser keeps the old one after you change it. A photo the owner changes goes in the
+  media library, not in the theme. `webx:theme:check` names a `theme_asset('…')` no layer has.
+
 ## Blocks
 
 A block type — its fields, its template, its CSS and its script — is made in the panel under
@@ -260,6 +283,7 @@ means, is in [Theming](./theming.md). Check the result in the dark theme too.
 | `theme/src`, `admin.css`, `admin.ts`        | the development server rebuilds as you save: `npm run dev` on a local site, the `vite` container under [Docker](./docker.md). Without it — `npm run build` |
 | A block type                                | its preview in the panel, then publish it                                                                                                                  |
 | An icon in `theme/icons/`                   | `php artisan webx:theme:sync`, then reload                                                                                                                 |
+| A picture in `theme/assets/`                | `php artisan webx:theme:sync`, then reload                                                                                                                 |
 | Anything, on the server                     | `npm run build` (in Docker: `docker compose up -d --build`)                                                                                                |
 
 Not changing? `php artisan view:clear` clears cached views, and `php artisan webx:doctor` says
