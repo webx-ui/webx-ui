@@ -76,7 +76,7 @@ their guides when the question is about one of those.
 | No redirects, no sitemap, own sitemap             | `WEBX_SEO_REDIRECTS=false`, `WEBX_SEO_SITEMAP=false`; `sitemap.per_file`, `WEBX_SEO_SITEMAP_TTL`                                                               |
 | Own `robots.txt` route                            | `robots_txt.enabled` to `false` in the published config                                                                                                        |
 | One address per page (www, https, slash, case)    | the `normalise-*` settings on the SEO tab; slashes, case and the trailing slash start on (the registry's spelling), the rest off; one 301 for every difference |
-| Restyle crumbs, links, FAQ or the head            | `php artisan vendor:publish --tag=webx-seo-views`, keep only the files you change                                                                              |
+| Restyle crumbs, links or FAQ                      | CSS on their classes (below) in the theme; other markup: `vendor:publish --tag=webx-seo-views`, keep only the files you change                                   |
 | Other words in the panel                          | `php artisan vendor:publish --tag=webx-seo-lang`                                                                                                               |
 | The SEO card on your own entity                   | `use HasSeo;` on the model, a patch putting a `wx-seo` node on its screen                                                                                      |
 | A page's kind for social networks (`article`)     | implement `HasOpenGraph` on the model: `openGraphType()`, `openGraphProperties($locale)` (`article:*` lines)                                                   |
@@ -89,6 +89,17 @@ their guides when the question is about one of those.
 | Sitemap addresses no registry row stands behind   | implement `SitemapSource`, `app(SitemapSources::class)->register(...)`                                                                                         |
 | A redirecting type out of the sitemap             | implement `WebxUi\Routing\Contracts\NotAPage` on the handler you bound over the module's                                                                       |
 | A field on the SEO tab                            | a patch: `Screens::extend('settings.index', [...])` against the ids above                                                                                      |
+
+### Classes
+
+The theme's contract (THEMES §10): the base look `resources/theme/seo.css` styles them under any
+theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a breaking change.
+
+- Trail: `webx-breadcrumbs`, `webx-breadcrumbs__list`, `webx-breadcrumbs__item`,
+  `webx-breadcrumbs__item--current`, `webx-breadcrumbs__link`.
+- FAQ: `webx-faq`, `webx-faq__heading`, `webx-faq__item`, `webx-faq__question`, `webx-faq__answer`.
+- Interlinking: `webx-links`, `webx-links__heading`, `webx-links__list`, `webx-links__item`,
+  `webx-links__link`.
 
 ## Do not
 

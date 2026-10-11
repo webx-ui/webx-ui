@@ -5,7 +5,7 @@
     <h2 id="{{ $id }}" class="webx-links__heading">{{ $heading }}</h2>
     <ul class="webx-links__list">
         @foreach ($links as $link)
-            <li><a href="{{ $link['href'] }}">{{ $link['anchor'] }}</a></li>
+            <li class="webx-links__item"><a class="webx-links__link" href="{{ $link['href'] }}">{{ $link['anchor'] }}</a></li>
         @endforeach
     </ul>
 </nav>

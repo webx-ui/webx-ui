@@ -23,8 +23,8 @@ final class BreadcrumbsTest extends TestCase
 
         $this->assertSame(['Home', 'About', 'Team'], $this->names($page));
         $this->assertStringEndsWith('/about', (string) $this->items($page)[1]['item']);
-        $this->assertStringContainsString('<li><a href="http://localhost/about">About</a></li>', $page);
-        $this->assertStringContainsString('<li aria-current="page">Team</li>', $page);
+        $this->assertStringContainsString('<li class="webx-breadcrumbs__item"><a class="webx-breadcrumbs__link" href="http://localhost/about">About</a></li>', $page);
+        $this->assertStringContainsString('<li class="webx-breadcrumbs__item webx-breadcrumbs__item--current" aria-current="page">Team</li>', $page);
     }
 
     #[Test]

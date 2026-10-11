@@ -77,8 +77,8 @@ final class EntityHeadTest extends TestCase
 
         $this->assertStringContainsString('aria-label="Хлебные крошки"', $crumbs);
         $this->assertStringContainsString('>Главная</a>', $crumbs);
-        $this->assertStringContainsString('<li>Section</li>', $crumbs);
-        $this->assertStringContainsString('<li aria-current="page">О нас</li>', $crumbs);
+        $this->assertStringContainsString('<li class="webx-breadcrumbs__item">Section</li>', $crumbs);
+        $this->assertStringContainsString('<li class="webx-breadcrumbs__item webx-breadcrumbs__item--current" aria-current="page">О нас</li>', $crumbs);
     }
 
     #[Test]
