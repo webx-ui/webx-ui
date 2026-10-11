@@ -161,6 +161,31 @@ foreach (CssCheck::check($css, Vocabulary::base()) as $finding) {
 }
 ```
 
+## Modules in the theme
+
+A module with public pages carries its base look in `resources/theme/*.css` — site tokens of the
+engine's vocabulary and its own classes, listed under «Classes» of its `AGENTS.md`. `webx:theme:sync`
+writes every installed module's stylesheets into one file, `public/themes/modules/<hash>/modules.css`
+(`ModuleStyles`), and `@webxTheme` links it under the theme layers, so a theme restyles a module by
+writing the same class later in the cascade. `webx:theme:check` reads the same files.
+
+A module's own test checks the contract with a trait:
+
+```php
+use WebxUi\Themes\Testing\ModuleThemeContract;
+
+final class ThemeContractTest extends \PHPUnit\Framework\TestCase
+{
+    use ModuleThemeContract;
+
+    protected function modulePath(): string { return dirname(__DIR__); }
+}
+```
+
+A theme adds to a module's page without overriding it at the module's extension points:
+`@webxPart('recipe-card', …)` prints `views/parts/recipe-card.blade.php` of the first layer that has
+it, before the module's partial (a point with dots is directories: `parts/catalog/card/badges`).
+
 A theme under development that Composer does not know about can be pointed at directly:
 
 ```php

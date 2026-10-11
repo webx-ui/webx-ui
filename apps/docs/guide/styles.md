@@ -77,12 +77,23 @@ loaded on such a site.
 
 ### A module's page
 
-A module prints its public pages with views of its own, and they carry semantic markup and a few
-`wx-<module>` classes. Two ways to change one, the first one first:
+A module prints its public pages with views of its own, with semantic markup and classes that are
+its public contract — listed under «Classes» in the module's `AGENTS.md`. On a site with a theme
+the module also brings its **base look**: `resources/theme/*.css` on the site tokens, so a form of
+the Inbox or the trail of SEO looks decent under any theme from the first page.
+`php artisan webx:theme:sync` writes the base look of every installed module into one file,
+`public/themes/modules/<hash>/modules.css`, and `@webxTheme` links it **under** the theme: the
+theme restyles a module by writing the same class, later in the cascade.
 
-1. **Style it from `theme/src/css`** by its class — nothing to publish, nothing to keep
-   up to date.
-2. **Change its markup**: copy the views into the site and edit the copy.
+Four doors, the cheapest first:
+
+1. **Tokens** — a module's base look follows `theme/tokens.json` like everything else.
+2. **Style it from `theme/src/css`** by its classes — nothing to publish, nothing to keep up to
+   date. Not by tags and not by nesting: the markup inside may change, the classes will not.
+3. **Add a piece at an extension point** — where a module's view calls `@webxPart('recipe-card', …)`,
+   the theme puts `theme/views/parts/recipe-card.blade.php` and it is printed instead of the
+   module's partial (a card customised in the panel still wins).
+4. **Change its markup**: copy the views into the site and edit the copy.
 
 ```bash
 php artisan vendor:publish --tag=webx-blog-views
@@ -90,8 +101,13 @@ php artisan vendor:publish --tag=webx-blog-views
 
 The copies land in `resources/views/vendor/` and win over the package's. **Keep only the file
 you changed and delete the rest**: the ones you did not touch then keep arriving fresh with each
-release. The tag is `webx-<module>-views` — `webx-pages-views`, `webx-blog-views`,
-`webx-catalog-views` and so on; a module without public pages has none.
+release, and the copies you kept get no fixes. The tag is `webx-<module>-views` —
+`webx-pages-views`, `webx-blog-views`, `webx-catalog-views` and so on; a module without public
+pages has none.
+
+Which modules have their base look today: the Inbox's form (`wx-form*`) and SEO's trail, FAQ and
+interlinking block (`webx-breadcrumbs*`, `webx-faq*`, `webx-links*`). The rest come stage by stage
+(the themes spec, §19).
 
 ## Blocks
 

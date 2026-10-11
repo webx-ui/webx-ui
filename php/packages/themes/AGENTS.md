@@ -20,14 +20,15 @@ and the site's `theme/`).
 - **`Vocabulary`** — the token names and their types (`Vocabulary::base()`); a theme adds its own
   under `vocabulary` in tokens.json. **`Tokens`** — the merged values (`app(Tokens::class)`):
   layers bottom up → preset → the owner's edits of `editable` tokens (`Contracts\Appearance`).
-- **`@webxTheme`** — `<style>:root { --site-… }</style>` and every layer's stylesheet; nothing
-  without a theme. **`theme_token($name, $default)`** — a merged value, for mail.
+- **`@webxTheme`** — `<style>:root { --site-… }</style>`, the widgets, the modules' base look, then
+  every layer's stylesheet bottom up; nothing without a theme. **`theme_token($name, $default)`** — a merged value, for mail.
 - **`webx:theme:check [path]`** — CSS knows only tokens (spec §8): the tokens.json of every
   layer, `src/css` of the layers, `resources/css` and `resources/theme` of the widgets and modules.
   A line per finding (file:line, what, why) and a non-zero exit; `Checks\CssCheck::check($css,
 $vocabulary)` is the same rule for one stylesheet, and the block editor warns with it.
 - **`webx:theme:sync [--force] [--dry-run]`** — copies the packaged layers' `dist/` and `assets/`
-  to `public/themes/`, then runs the steps packages tag `webx-themes.sync` (`Contracts\SyncStep`):
+  to `public/themes/`, the installed modules' `resources/theme/*.css` as one
+  `public/themes/modules/<hash>/modules.css` (`ModuleStyles`), then runs the steps packages tag `webx-themes.sync` (`Contracts\SyncStep`):
   `module-blocks` puts the layers' block types on the site. A refused line exits non-zero.
 - **Block types of a layer** — `blocks/<slug>.json` in the `webx:blocks:export` format
   (`Blocks\LayerBlocks::of($chain)`): an upper layer replaces a lower one's type with the same
@@ -38,6 +39,10 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
   `resources/views/vendor/<ns>`, then each layer's `views/vendor/<ns>`, then the module's own.
 - **Error pages**: an HTML request that ends in an HTTP error gets `errors.<status>` from that same
   order (`ErrorPages`); no such view, JSON, or a view that fails to render — Laravel's page.
+- **Extension points**: `@webxPart('<point>', …)` in a module's view prints `parts/<point>.blade.php`
+  from the chain of views when one has it (dots are directories), before the module's partial.
+- **`Testing\ModuleThemeContract`** — a module's test: its base look knows only tokens and styles
+  only the classes `### Classes` of its `AGENTS.md` lists, which its views print.
 - **Words of the layout**: `__('theme::theme.<key>')` — each layer's `lang/<locale>/theme.php`
   bottom up, then the site's `lang/vendor/theme/<locale>/theme.php` (`ThemeLines`).
 
@@ -46,7 +51,9 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
 | You want                                            | Do this                                                      |
 | --------------------------------------------------- | ------------------------------------------------------------ |
 | Change the site's look                              | edit `theme/` — never the packaged theme in `vendor/`        |
-| Override a module's page                            | `theme/views/vendor/<ns>/<view>.blade.php`                   |
+| Restyle a module's page                             | `theme/src/css` on its classes (its `AGENTS.md`, «Classes»)  |
+| Add to a module's page at a point                   | `theme/views/parts/<point>.blade.php`                        |
+| Override a module's page (the expensive door)       | `theme/views/vendor/<ns>/<view>.blade.php`                   |
 | Override a view for this site only, above any theme | `resources/views/…` — it always wins                         |
 | Change a word of the layout                         | `theme/lang/<locale>/theme.php`, the same key                |
 | Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json`        |

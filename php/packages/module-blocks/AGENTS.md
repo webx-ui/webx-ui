@@ -60,7 +60,7 @@ their guides when the question is about one of those.
 | The site's types in git                     | `php artisan webx:blocks:export` writes `resources/blocks/{slug}.json`; `webx:blocks:import --publish` reads them back   |
 | Blocks from another site or a catalogue     | «Blocks» → Export (a pack with the components they call), Import there; the command reads the same pack                  |
 | The block types of the site's theme         | `theme/blocks/<slug>.json`, then `php artisan webx:theme:sync` — not import; a type edited in the panel is kept          |
-| The types a module offers (FAQ accordion…)  | `php artisan webx:blocks:offered --install`; a slug the site already has is never touched                                |
+| The types a module offers (FAQ accordion…)  | `php artisan webx:blocks:offered --install`; a slug the site has, or the theme carries, is not touched                   |
 | A region in the layout                      | declare it under `regions` in `config/webx-blocks.php` and print `<x-webx-blocks::region>` with a `fallback`             |
 | A type only for one region                  | `"region:header"` in the type's `allowed_in`; `allow` and `max` on the region limit what it takes                        |
 | Another group in the picker                 | add it to `groups` in `config/webx-blocks.php` and translate it in the panel's dictionary                                |
