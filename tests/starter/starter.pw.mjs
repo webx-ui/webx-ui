@@ -5391,3 +5391,48 @@ test.describe('assets', () => {
     expect(after.paint).not.toBe(before.paint)
   })
 })
+
+test.describe('words of the layout', () => {
+  // The words the shell can print: the theme's own (THEMES §15.2) and those of the widgets it is
+  // built of. Read from the dictionaries themselves, so a word added later is checked too.
+  const words = (file) =>
+    [
+      ...readFileSync(new URL(`../../php/packages/${file}`, import.meta.url), 'utf8').matchAll(
+        /=>\s*'((?:[^'\\]|\\.)*)'/g,
+      ),
+    ].map(([, value]) => value.replace(/\\'/g, "'"))
+  const dictionary = (locale) => [
+    ...words(`theme-default/lang/${locale}/theme.php`),
+    ...words(`widgets/lang/${locale}/widgets.php`),
+  ]
+
+  test('a page in Russian or Polish prints no English word of the shell', async ({ page }) => {
+    const english = dictionary('en').filter((w) => w.length >= 4 && !w.includes(':'))
+    for (const [path, locale] of [
+      ['/ru', 'ru'],
+      ['/pl', 'pl'],
+      ['/ru/no-such-page', 'ru'],
+      ['/pl/no-such-page', 'pl'],
+    ]) {
+      await page.goto(path)
+      await still(page)
+      const own = new Set(dictionary(locale))
+      // Everything but the page's own content: the shell, the banner, the dialogs, an error.
+      const shell = await page.evaluate(() => {
+        const body = document.body.cloneNode(true)
+        body.querySelectorAll('script, style, template').forEach((node) => node.remove())
+        body.querySelectorAll('main > :not(.site-error)').forEach((node) => node.remove())
+        const attributes = [...body.querySelectorAll('[aria-label], [title], [alt], [placeholder]')]
+          .flatMap((node) =>
+            ['aria-label', 'title', 'alt', 'placeholder'].map((a) => node.getAttribute(a)),
+          )
+          .filter(Boolean)
+        return [body.textContent, ...attributes].join('\n')
+      })
+      const left = english.filter((w) => !own.has(w) && shell.includes(w))
+      expect(left, `${path} prints English words of the shell`).toEqual([])
+      expect(await page.locator('.site-skip').textContent(), path).not.toBe('Skip to content')
+      expect(shell, `${path} prints a key instead of a word`).not.toMatch(/\btheme\.[a-z_]+\./)
+    }
+  })
+})
