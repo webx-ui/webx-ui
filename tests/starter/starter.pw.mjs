@@ -4184,3 +4184,235 @@ test.describe('zoom', () => {
     }
   })
 })
+
+test.describe('blocks of the theme', () => {
+  const BASE = '/kitchen-sink/blocks'
+  const PAGES = ['hero', 'text', 'media-text', 'cards', 'cta', 'contact']
+  const SIX = PAGES.map((slug) => `[data-wx-block="${slug}"]`).join(', ')
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-11', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  async function open(browser, width, path) {
+    const context = await browser.newContext({
+      viewport: { width, height: width === 375 ? 812 : 900 },
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(path)
+    await still(page)
+    return { context, page }
+  }
+
+  // Where each block of a kind stands on the page, and its parts, as the screen has them — the
+  // one in the narrow column of the showcase marked `narrow`.
+  const layout = (page, slug, parts) =>
+    page.locator(`[data-wx-block="${slug}"]`).evaluateAll(
+      (all, parts) =>
+        all.map((el) => {
+          const rect = (node) => {
+            if (!node) return null
+            const r = node.getBoundingClientRect()
+            return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width }
+          }
+          const found = Object.fromEntries(parts.map((p) => [p, rect(el.querySelector(p))]))
+          const grid = el.querySelector('.b-cards__grid')
+          const title = el.querySelector('.b-hero__title')
+          return {
+            narrow: !!el.closest('.b-showcase-column__frame'),
+            classes: el.className,
+            width: el.getBoundingClientRect().width,
+            columns: grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').length : null,
+            title: title ? parseFloat(getComputedStyle(title).fontSize) : null,
+            ...found,
+          }
+        }),
+      parts,
+    )
+
+  // Side by side: the second starts where the first ends, on the same rows.
+  const beside = (a, b) => b.left >= a.right - 1 && b.top < a.bottom
+  const under = (a, b) => b.top >= a.bottom - 1
+
+  test('every page of a block opens and nothing on it scrolls sideways at 360, 375 and 1280', async ({
+    browser,
+  }) => {
+    for (const width of [360, 375, 1280]) {
+      for (const path of [BASE, ...PAGES.map((p) => `${BASE}/${p}`)]) {
+        const { context, page } = await open(browser, width, path)
+        const { scroll, client, blocks } = await page.evaluate(
+          (six) => ({
+            scroll: document.documentElement.scrollWidth,
+            client: document.documentElement.clientWidth,
+            blocks: document.querySelectorAll(six).length,
+          }),
+          SIX,
+        )
+        expect(blocks, `${path}: the blocks of the theme are on it`).toBeGreaterThan(0)
+        expect(scroll, `${path} at ${width}`).toBeLessThanOrEqual(client)
+        await context.close()
+      }
+    }
+  })
+
+  test('the cards take as many columns as their column has room for', async ({ browser }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/cards`)
+      const grids = await layout(page, 'cards', [])
+      expect(grids.length).toBe(4)
+      for (const grid of grids) {
+        const across = Number(/b-cards--(\d)/.exec(grid.classes)[1])
+        // 1280: the column of the page has room for each block's own most; 375 and the narrow
+        // column of the showcase: one card a row, whatever the block asks for.
+        const expected = width === 1280 && !grid.narrow ? across : 1
+        const label = `${width} ${grid.classes}${grid.narrow ? ' narrow' : ''}`
+        expect(grid.columns, label).toBe(expected)
+      }
+      await context.close()
+    }
+  })
+
+  test('picture and text stand side by side in a wide column, one under the other in a narrow one', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/media-text`)
+      const blocks = await layout(page, 'media-text', [
+        '.b-media-text__figure',
+        '.b-media-text__words',
+      ])
+      expect(blocks.length).toBe(4)
+      for (const b of blocks) {
+        const figure = b['.b-media-text__figure']
+        const words = b['.b-media-text__words']
+        if (!figure) continue
+        const end = b.classes.includes('b-media-text--end')
+        const label = `${width} ${b.classes}${b.narrow ? ' narrow' : ''}`
+        if (width === 1280 && !b.narrow)
+          expect(end ? beside(words, figure) : beside(figure, words), label).toBe(true)
+        else expect(under(figure, words), label).toBe(true)
+      }
+      await context.close()
+    }
+  })
+
+  test('the call to action puts its buttons beside the words only where there is room', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/cta`)
+      const bands = await layout(page, 'cta', ['.b-cta__words', '.b-cta__actions'])
+      expect(bands.length).toBe(4)
+      for (const b of bands) {
+        const label = `${width} ${b.classes}${b.narrow ? ' narrow' : ''}`
+        if (width === 1280 && !b.narrow)
+          expect(beside(b['.b-cta__words'], b['.b-cta__actions']), label).toBe(true)
+        else expect(under(b['.b-cta__words'], b['.b-cta__actions']), label).toBe(true)
+      }
+      await context.close()
+    }
+  })
+
+  test('the contacts and the form stand side by side in a wide column, the form under them in a narrow one', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/contact`)
+      const blocks = await layout(page, 'contact', ['.b-contact__details', '.b-contact__form'])
+      const both = blocks.filter((b) => b['.b-contact__details'] && b['.b-contact__form'])
+      expect(both.length, 'the starter has contacts and the form named contact').toBe(2)
+      for (const b of both) {
+        const label = `${width}${b.narrow ? ' narrow' : ''}`
+        if (width === 1280 && !b.narrow)
+          expect(beside(b['.b-contact__details'], b['.b-contact__form']), label).toBe(true)
+        else expect(under(b['.b-contact__details'], b['.b-contact__form']), label).toBe(true)
+      }
+      await expect(page.locator('[data-wx-block="contact"] form').first()).toBeVisible()
+      await context.close()
+    }
+  })
+
+  test('the hero sets a smaller headline in a narrow column, and edge to edge is the window', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280, `${BASE}/hero`)
+    const heroes = await layout(page, 'hero', [])
+    const wide = heroes.find((h) => !h.narrow && h.classes.includes('b-hero--accent'))
+    const narrow = heroes.find((h) => h.narrow)
+    expect(narrow.title).toBeLessThan(wide.title)
+    const bleed = heroes.find((h) => h.classes.includes('site-bleed'))
+    expect(bleed.width).toBe(await page.evaluate(() => document.documentElement.clientWidth))
+    expect(heroes.find((h) => h.classes.includes('b-hero--plain')).width).toBeLessThan(bleed.width)
+    await context.close()
+  })
+
+  test('every word of every block reads in every preset, the night one included', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280, BASE)
+    for (const path of PAGES.map((p) => `${BASE}/${p}`)) {
+      await page.goto(path)
+      // A new page has lost the style that stops transitions: a colour would be measured half way.
+      await still(page)
+      for (const preset of Object.keys(presets)) {
+        await paint(page, preset)
+        const low = await page.evaluate((six) => {
+          const canvas = document
+            .createElement('canvas')
+            .getContext('2d', { willReadFrequently: true })
+          // Whatever form the computed colour takes (rgb, oklch, color-mix), as sRGB bytes.
+          const rgba = (color) => {
+            canvas.clearRect(0, 0, 1, 1)
+            canvas.fillStyle = color
+            canvas.fillRect(0, 0, 1, 1)
+            return Array.from(canvas.getImageData(0, 0, 1, 1).data)
+          }
+          const luminance = (color) => {
+            const [r, g, b] = rgba(color)
+              .slice(0, 3)
+              .map((v) => {
+                v /= 255
+                return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+              })
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+          }
+          const ratio = (a, b) => {
+            const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+            return (x + 0.05) / (y + 0.05)
+          }
+          // The first painted background up the tree is what the words stand on.
+          const behind = (el) => {
+            for (let node = el; node; node = node.parentElement) {
+              const bg = getComputedStyle(node).backgroundColor
+              if (rgba(bg)[3] > 0) return bg
+            }
+            return 'white'
+          }
+          // The form and the widgets inside the contacts are the inbox's and the widgets' own,
+          // checked where they live.
+          return [
+            ...document.querySelectorAll(`:is(${six}) :is(h1, h2, h3, p, li, a, address, span)`),
+          ]
+            .filter((el) => {
+              if (el.closest('form, .webx-hours, .webx-phones, .webx-socials')) return false
+              if (el.querySelector('h1, h2, h3, p, li, a, address, span')) return false
+              const r = el.getBoundingClientRect()
+              return r.width > 0 && r.height > 0 && el.textContent.trim() !== ''
+            })
+            .map((el) => ({
+              what: `${el.className || el.tagName} "${el.textContent.trim().slice(0, 30)}"`,
+              ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
+            }))
+            .filter((w) => w.ratio < 4.5)
+        }, SIX)
+        expect(low, `${path} ${preset}`).toEqual([])
+      }
+    }
+    await context.close()
+  })
+})
