@@ -130,6 +130,30 @@ page's main column: the page's own content first, the questions next, the links 
 until a project turns them on (`WEBX_SEO_FAQ`, `WEBX_SEO_LINKS`) and print nothing on a page that
 has none; a theme that wants them elsewhere overrides `components/layout`.
 
+### Icons
+
+An icon on the public site comes from one sprite — the `icons/` folders of every theme layer put
+together by `php artisan webx:theme:sync`, the higher layer winning by file name:
+
+```blade
+<x-theme::icon name="phone" />
+<x-theme::icon name="arrow-right" class="b-hero__arrow" />
+<x-theme::icon name="star" label="Favourite" />
+```
+
+An icon is one letter wide and the colour of the text around it, so a preset or the accent
+repaints it with the words; give its class a `width` and `height` for another size. It is hidden
+from a screen reader unless it has a `label`. `webx-ui/theme-default` brings 27 — arrows and
+chevrons, check, close, plus and minus, menu, search, phone, mail, map pin, clock, calendar, user,
+share, link, download, globe, info, alert, star, play — and shows them on the starter site under
+Kitchen sink › Icons.
+
+- **Another icon, or another drawing of one of the theme's:** `theme/icons/<name>.svg` — lowercase
+  and dashes, a `viewBox`, `currentColor` wherever the file paints — then `webx:theme:sync`.
+- **Not:** an `<svg>` pasted into a template, nor a colour written into the file. No layer above
+  can redraw the first, no preset repaints the second; `webx:theme:check` lists both, and an icon a
+  template names that no layer has (the page shows an empty space in its place).
+
 ## Blocks
 
 A block type — its fields, its template, its CSS and its script — is made in the panel under
@@ -235,6 +259,7 @@ means, is in [Theming](./theming.md). Check the result in the dark theme too.
 | A view (`.blade.php`), the inline `<style>` | reload the page                                                                                                                                            |
 | `theme/src`, `admin.css`, `admin.ts`        | the development server rebuilds as you save: `npm run dev` on a local site, the `vite` container under [Docker](./docker.md). Without it — `npm run build` |
 | A block type                                | its preview in the panel, then publish it                                                                                                                  |
+| An icon in `theme/icons/`                   | `php artisan webx:theme:sync`, then reload                                                                                                                 |
 | Anything, on the server                     | `npm run build` (in Docker: `docker compose up -d --build`)                                                                                                |
 
 Not changing? `php artisan view:clear` clears cached views, and `php artisan webx:doctor` says

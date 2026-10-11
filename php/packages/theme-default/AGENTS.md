@@ -38,11 +38,11 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   - `media-text` — `image`, `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
   - `cards` — `heading`, `intro`, `columns` `2|3|4` (at most; the container decides), `pictures`
     `photo|icon`, repeater `cards` (`image`, `title`, `text`, `link_label`, `link_url`: the
-    whole card is the link);
+    whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
   - `cta` — `heading`, `text`, two buttons, `tone` `accent|surface|plain`;
   - `contact` — `heading`, `text`, `show_contacts`/`show_hours` (Settings › Contacts through
     `contacts()` and the phones, hours and socials widgets), `form` (an Inbox form's slug) and
-    `form_heading`; labels `theme::theme.blocks.contact.*`.
+    `form_heading`; labels `theme::theme.blocks.contact.*`, each after its icon (`b-contact__icon`).
     Classes are BEM under `b-<slug>` (`b-hero__title`, `b-cards__card`, `b-cta__actions` …).
 - **`demo/pages/`** — the showcase ("Kitchen sink" and the pages under it), seeded by
   `webx:demo` beside the pages demo and removed with it. Its blocks use the six above, the
@@ -51,7 +51,8 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   the `gallery`, `logos`, `video`, `map`, `counters`, `countdown`, `compare` and `toc` blocks of `webx-ui/widgets`; their pictures are `demo/media/`, put in
   the library by the media demo and named in a page as `"path": "demo:<file name>"`. Nothing
   under `demo/` is published on a site. Kitchen sink › Blocks: a page per block above — every
-  variant, then the block in a narrow column. A page per widget under "Kitchen sink": Header and menu,
+  variant, then the block in a narrow column. Kitchen sink › Icons: every icon of the chain
+  (`showcase-icons`), then icons in a line, at four sizes, in buttons, on the accent. A page per widget under "Kitchen sink": Header and menu,
   Cookie consent, Dropdown and form in a dialog, Contacts, Language switcher, Slider, Lightbox,
   Video, Map, Page tools, Background video, Counters and countdown, Before and after, Table of contents, Show more, Notice bar (with Same words and New words under it), Zoom — every variant, a narrow column, what to try; the place to look before changing one.
   Written in English, Russian and Polish: a page's `title`, `slug` and SEO card, and every
@@ -63,20 +64,26 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 - **`src/css/`** — `base.css`, `shell.css`, `prose.css`, joined by `theme.css`; every selector
   inside `:where()` (no specificity). **`dist/theme.css`** — the committed build that
   `webx:theme:sync` publishes.
+- **`icons/`** — 27 icons for `<x-theme::icon name="…">`: `arrow-left|right|up-right`,
+  `chevron-up|down|left|right`, `check`, `close`, `plus`, `minus`, `menu`, `search`, `phone`,
+  `mail`, `map-pin`, `clock`, `calendar`, `user`, `share`, `link`, `download`, `globe`, `info`,
+  `alert`, `star`, `play` — 24×24, stroke 2, round ends, `currentColor`. `theme-icon` is one em,
+  on the text's line (`base.css`).
 
 ## Change it without forking
 
-| You want                              | Do this                                                                                        |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Another accent, font, radius, spacing | `theme/tokens.json` → `defaults`                                                               |
-| Another palette to switch to          | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`                                           |
-| Restyle the header, footer or prose   | `theme/src/css/theme.css`, on the `site-*` classes above                                       |
-| Other markup in the header or footer  | `theme/views/components/header.blade.php` (or `footer`)                                        |
-| A different document                  | `theme/views/components/layout.blade.php`, copied from here                                    |
-| Another look of one of the six blocks | `theme/blocks/<slug>.json` by the same slug, every field kept with its type; `webx:theme:sync` |
-| A section of a page full width        | class `site-bleed` on the direct child of `<main>`                                             |
-| Prose typography outside `<main>`     | class `site-prose` on the wrapper                                                              |
-| The header and footer as blocks       | arrange the `header`/`footer` regions in the panel; no code                                    |
+| You want                                 | Do this                                                                                        |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Another accent, font, radius, spacing    | `theme/tokens.json` → `defaults`                                                               |
+| Another palette to switch to             | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`                                           |
+| Restyle the header, footer or prose      | `theme/src/css/theme.css`, on the `site-*` classes above                                       |
+| Other markup in the header or footer     | `theme/views/components/header.blade.php` (or `footer`)                                        |
+| A different document                     | `theme/views/components/layout.blade.php`, copied from here                                    |
+| Another look of one of the six blocks    | `theme/blocks/<slug>.json` by the same slug, every field kept with its type; `webx:theme:sync` |
+| A section of a page full width           | class `site-bleed` on the direct child of `<main>`                                             |
+| Another drawing of an icon, or a new one | `theme/icons/<name>.svg` in `currentColor`, then `webx:theme:sync`                             |
+| Prose typography outside `<main>`        | class `site-prose` on the wrapper                                                              |
+| The header and footer as blocks          | arrange the `header`/`footer` regions in the panel; no code                                    |
 
 ## Do not
 

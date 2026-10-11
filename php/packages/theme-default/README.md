@@ -16,9 +16,9 @@ theme/                   ← the site's local theme: its differences
 Part of [WebX UI](https://github.com/webx-ui/webx-ui). The mechanism — the chain, the token
 vocabulary, `@webxTheme` — is [`webx-ui/themes`](https://github.com/webx-ui/themes).
 
-> Early days: this release holds the tokens, the layout with its header and footer, and the shell
-> and prose stylesheet. Block types, icons, fonts, layout words, mail and error pages arrive in the
-> next releases.
+> Early days: this release holds the tokens, the layout with its header and footer, the shell and
+> prose stylesheet, six block types, the icons and the 404 page. Fonts, the rest of the layout
+> words and mail arrive in the next releases.
 
 ## What is in it
 
@@ -30,6 +30,7 @@ vocabulary, `@webxTheme` — is [`webx-ui/themes`](https://github.com/webx-ui/th
 | `views/components/footer` | the footer region's fallback: `menu('footer')` and the copyright line                  |
 | `src/css/`                | `base.css`, `shell.css` (`site-*` classes), `prose.css` (headings, lists, tables…)     |
 | `dist/theme.css`          | the build of `src/`, committed: a site installs this theme with no Node                |
+| `icons/`                  | 27 icons, 24×24 strokes in `currentColor`: `<x-theme::icon name="phone" />`            |
 
 Every rule is written on `var(--site-…)` tokens only and inside `:where()`, so it carries no
 specificity: a local theme, a module or a block overrides it by writing the rule at all.

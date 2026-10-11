@@ -82,6 +82,44 @@ render half-styled.
 Views live in the theme's `views/`: `views/components/layout.blade.php` is what `<x-layout>`
 renders, `views/vendor/webx-pages/show.blade.php` overrides the pages module's `show` view.
 
+## Icons
+
+Each layer's `icons/<name>.svg` — a lowercase, dashed name, a `viewBox`, `currentColor` for its
+paint — becomes a `<symbol>` of one sprite, the higher layer winning by name. `webx:theme:sync`
+publishes it to `public/themes/icons/<hash>/icons.svg`; a template points at it:
+
+```blade
+<x-theme::icon name="phone" />
+<x-theme::icon name="arrow-right" class="b-hero__arrow" />
+<x-theme::icon name="star" label="Favourite" />
+```
+
+```html
+<svg
+  class="theme-icon"
+  width="1em"
+  height="1em"
+  fill="currentColor"
+  aria-hidden="true"
+  focusable="false"
+>
+  <use href="/themes/icons/1f2de5e15fe7/icons.svg#phone" />
+</svg>
+```
+
+One em and the colour of the text; a stylesheet sizes it by class. With `label` it is
+`role="img"` with that name instead of `aria-hidden`. An unknown name, or a sprite sync has not
+published, is an empty `<svg>` — never an exception on a page — and `webx:theme:check` names it
+in the layers' views and block templates, along with an inline `<svg>` and an icon file that
+paints in a literal colour. A new icon in a local theme shows after `webx:theme:sync`.
+
+```php
+use WebxUi\Themes\ThemeIcons;
+
+app(ThemeIcons::class)->names();      // every icon of the chain
+app(ThemeIcons::class)->has('phone');
+```
+
 ## How views are looked up
 
 | Kind               | Order                                                                                      |

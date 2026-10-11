@@ -431,6 +431,13 @@ $value` не отличает «типа нет» от «тип сказал н�
 
 ## Тесты: Testbench и PHPUnit
 
+- **Вдруг падают все тесты, которые сверяют адрес: `http://localhost:8000/themes/…` вместо
+  `http://localhost/themes/…`, в пакетах, которых никто не трогал.** Кто-то запустил команду через
+  `vendor/bin/testbench <команда>` (не `package:discover`) — Testbench при этом пишет
+  `php/vendor/orchestra/testbench-core/laravel/.env` с `APP_URL=http://localhost:8000`, и с тех пор
+  его читает каждый тест. Лечится удалением этого `.env`; команду пакета смотреть тестом или на
+  стартовом сайте, а не через `testbench`.
+
 - **`config()->set('webx-widgets.consent.enabled', false)` в тесте ничего не выключает.** Если
   среди провайдеров теста есть `module-settings`, баннер читает вкладку «Cookie» (`consent.*`), и
   она главнее конфига — заглушка видео или карты остаётся. Выключать сохранением настройки:

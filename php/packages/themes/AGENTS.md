@@ -28,7 +28,8 @@ and the site's `theme/`).
 $vocabulary)` is the same rule for one stylesheet, and the block editor warns with it.
 - **`webx:theme:sync [--force] [--dry-run]`** — copies the packaged layers' `dist/` and `assets/`
   to `public/themes/`, the installed modules' `resources/theme/*.css` as one
-  `public/themes/modules/<hash>/modules.css` (`ModuleStyles`), then runs the steps packages tag `webx-themes.sync` (`Contracts\SyncStep`):
+  `public/themes/modules/<hash>/modules.css` (`ModuleStyles`), the layers' icons as one sprite
+  (`ThemeIcons`), then runs the steps packages tag `webx-themes.sync` (`Contracts\SyncStep`):
   `module-blocks` puts the layers' block types on the site. A refused line exits non-zero.
 - **Block types of a layer** — `blocks/<slug>.json` in the `webx:blocks:export` format
   (`Blocks\LayerBlocks::of($chain)`): an upper layer replaces a lower one's type with the same
@@ -45,6 +46,13 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
   only the classes `### Classes` of its `AGENTS.md` lists, which its views print.
 - **Words of the layout**: `__('theme::theme.<key>')` — each layer's `lang/<locale>/theme.php`
   bottom up, then the site's `lang/vendor/theme/<locale>/theme.php` (`ThemeLines`).
+- **Icons**: each layer's `icons/<name>.svg` (lowercase, dashed) is a `<symbol>` of one sprite,
+  the higher layer winning by name (`ThemeIcons`); sync publishes it to
+  `public/themes/icons/<hash>/icons.svg`. `<x-theme::icon name="phone" />` prints
+  `<svg class="theme-icon" width="1em" height="1em" fill="currentColor" aria-hidden="true">`
+  with a `<use>`; `label="…"` makes it `role="img"` with that name. An unknown name or an
+  unpublished sprite is an empty `<svg>` (a comment says why in debug). The check reads every
+  icon file and the `<x-theme::icon>` and inline `<svg>` in the layers' views and block templates.
 
 ## Change it without forking
 
@@ -62,6 +70,7 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
 | Another palette the site can switch to              | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`         |
 | Another look of a block the theme brings            | `theme/blocks/<same slug>.json` — add fields, never drop one |
 | Keep a block made in the panel in git               | `php artisan webx:blocks:export <slug> --path=theme/blocks`  |
+| Add an icon, or redraw one of the theme's           | `theme/icons/<name>.svg`, then `php artisan webx:theme:sync` |
 | Publish the config                                  | `php artisan vendor:publish --tag=webx-themes-config`        |
 
 ## Do not
@@ -77,6 +86,9 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
 - Do not invent a prefix or mix the three: `--site-*` is a token of the vocabulary, `--webx-*` a
   package's own variable (`--webx-slider-gap`), `--wx-*` the panel — never on the public site.
 - Do not edit files under `public/themes/`: they are copies, and the next sync replaces them.
+- Do not paste an `<svg>` into a template, nor write a colour into an icon file: put the file in
+  `icons/` with `currentColor` and write `<x-theme::icon>`, or no layer above can redraw it and
+  no preset repaints it. Size an icon in CSS (`width`/`height` on its class), not by attributes.
 - Do not call `View::prependNamespace()` for a theme yourself: it puts the theme above the site's
   `resources/views/vendor/<ns>`.
 
