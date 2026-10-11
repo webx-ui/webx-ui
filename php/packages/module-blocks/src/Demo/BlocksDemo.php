@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks\Demo;
 
+use Illuminate\Container\Container;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
@@ -19,6 +20,9 @@ use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\RegionWriter;
 use WebxUi\Blocks\Regions;
+use WebxUi\Blocks\Themes\TypeHash;
+use WebxUi\Themes\Blocks\LayerBlocks;
+use WebxUi\Themes\ThemeChain;
 
 /**
  * Three block types, so that a fresh site has something to build a page out of: a hero, a
@@ -33,6 +37,12 @@ use WebxUi\Blocks\Regions;
  * The site's theme may bring its own in `demo/blocks/` (§15.1 of the themes spec): its copy of
  * one of the three wins, and the types it adds are seeded after them — the showcase of
  * `theme-default`, whose pages stand on them.
+ *
+ * A type the theme carries in `blocks/` is not the demo's to seed at all (THEMES §23, TH2.3):
+ * `webx:theme:sync` puts it on the site, and a demo copy under the same slug would be a type of
+ * the site's own that every later sync refuses to take over (§9.2, step 6). `webx:setup` syncs
+ * before the demo runs, so the slug is usually taken by then anyway; this is for the demo run on
+ * a site whose theme was never synced.
  */
 final class BlocksDemo
 {
@@ -60,7 +70,17 @@ final class BlocksDemo
 
     public function seed(DemoLedger $ledger): void
     {
+        $carried = self::carried();
+
         foreach ([...self::TYPES, ...$this->themeTypes()] as $slug) {
+            if (in_array($slug, $carried, true)) {
+                if (! Block::query()->where('slug', $slug)->exists()) {
+                    $ledger->note("The block type {$slug} comes with the theme: php artisan webx:theme:sync puts it on the site.");
+                }
+
+                continue;
+            }
+
             $this->type($ledger, $slug);
         }
 
@@ -150,7 +170,7 @@ final class BlocksDemo
             return;
         }
 
-        $document = $this->read($slug);
+        $document = self::document($slug) ?? throw new RuntimeException("{$slug}.json is not a block document.");
 
         $block = new Block;
         $block->fill(BlockInput::values($document));
@@ -159,7 +179,42 @@ final class BlocksDemo
         $ledger->created($block, $slug);
 
         $block->saveVersion(BlockInput::content($document), BlockVersion::SOURCE_IMPORT, null, 'Demo content');
-        $block->publish();
+
+        try {
+            $block->publish();
+        } catch (BlocksException $refused) {
+            // `columns` allows `text`: on a site where the theme's text is not synced yet, there is no text to allow.
+            $ledger->note("The block type {$slug} is left as a draft: {$refused->getMessage()}");
+        }
+    }
+
+    /**
+     * Whether a type on the site is still exactly what the demo seeded under its slug — nobody's
+     * work, so `webx:theme:sync --adopt` may hand it to the theme (THEMES §23, TH2.3).
+     */
+    public static function untouched(Block $block): bool
+    {
+        $document = in_array($block->slug, [...self::TYPES, ...array_column(self::REGIONS, 'type')], true) ? self::document($block->slug) : null;
+
+        return $document !== null
+            && $block->draft_version_id === null
+            && TypeHash::ofPublished($block) === TypeHash::ofDocument($document);
+    }
+
+    /**
+     * Slugs of the block types the theme layers carry in `blocks/`; none without `webx-ui/themes`.
+     *
+     * @return list<string>
+     */
+    private static function carried(): array
+    {
+        $container = Container::getInstance();
+
+        if (! class_exists(LayerBlocks::class) || ! $container->bound(ThemeChain::class)) {
+            return [];
+        }
+
+        return array_map('strval', array_keys(LayerBlocks::of($container->make(ThemeChain::class))->set()));
     }
 
     /**
@@ -242,21 +297,25 @@ final class BlocksDemo
     }
 
     /**
-     * @return array<string, mixed>
+     * What the demo seeds under a slug, or null for one it has no file of.
+     *
+     * @return array<string, mixed>|null
      */
-    private function read(string $slug): array
+    private static function document(string $slug): ?array
     {
         // The theme's copy of a type wins; the module's own fills in what it leaves out.
         $theme = ThemeDemo::directory('blocks');
-        $path = $theme !== null && $this->files->exists("{$theme}/{$slug}.json")
+        $path = $theme !== null && is_file("{$theme}/{$slug}.json")
             ? "{$theme}/{$slug}.json"
             : __DIR__."/../../resources/demo/{$slug}.json";
-        $document = json_decode((string) $this->files->get($path), true);
 
-        if (! is_array($document)) {
-            throw new RuntimeException("{$slug}.json is not a block document.");
+        if (! is_file($path)) {
+            return null;
         }
 
-        return $document;
+        $document = json_decode((string) file_get_contents($path), true);
+
+        /** @var array<string, mixed>|null */
+        return is_array($document) ? $document : null;
     }
 }

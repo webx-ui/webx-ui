@@ -8,6 +8,7 @@ use Illuminate\Contracts\Validation\Factory as ValidatorFactory;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
+use WebxUi\Blocks\Demo\BlocksDemo;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
@@ -33,6 +34,10 @@ use WebxUi\Themes\Vocabulary;
  * the site's own — taking it over would overwrite somebody's work on the next update. A type a
  * layer stopped carrying is not deleted: pages may stand on it.
  *
+ * The one exception is asked for by name: `--adopt=hero` hands the theme a type the blocks demo
+ * seeded and nobody has changed since — a site that got the demo before its theme carried the
+ * same slug. Anything else under the slug stays refused, adopt or not.
+ *
  * Registered as a {@see SyncStep} only when `webx-ui/themes` is installed: the engine does not
  * know this package, this package knows the engine.
  */
@@ -48,7 +53,7 @@ final class LayerSync implements SyncStep
         return 'Block types';
     }
 
-    public function sync(ThemeChain $chain, bool $force, bool $dryRun): array
+    public function sync(ThemeChain $chain, bool $force, bool $dryRun, array $adopt = []): array
     {
         $layers = LayerBlocks::of($chain);
         $lines = [];
@@ -77,7 +82,7 @@ final class LayerSync implements SyncStep
         }
 
         foreach ($this->order($set) as $block) {
-            $lines[] = $this->one($block, $vocabulary, $incompatible[$block->slug] ?? [], $force, $dryRun);
+            $lines[] = $this->one($block, $vocabulary, $incompatible[$block->slug] ?? [], $force, $dryRun, in_array($block->slug, $adopt, true));
         }
 
         return [...$lines, ...$this->leftTheLayers($set)];
@@ -86,7 +91,7 @@ final class LayerSync implements SyncStep
     /**
      * @param  list<string>  $incompatible
      */
-    private function one(LayerBlock $block, Vocabulary $vocabulary, array $incompatible, bool $force, bool $dryRun): SyncLine
+    private function one(LayerBlock $block, Vocabulary $vocabulary, array $incompatible, bool $force, bool $dryRun, bool $adopt): SyncLine
     {
         // 1. The checks: the rules of the panel's save, §8, and a schema the type below can live in.
         $existing = Block::query()->with(['draftVersion', 'publishedVersion'])->where('slug', $block->slug)->first();
@@ -108,12 +113,34 @@ final class LayerSync implements SyncStep
             return $this->write(new Block, $block, $hash, 'created');
         }
 
-        // 6. The site's own type, or one a module offered, under the same slug.
+        // 6. The site's own type, or one a module offered, under the same slug. Never taken over
+        // unasked; asked, only the demo's copy nobody touched — the one type of the site's that
+        // holds nobody's work (THEMES §23, TH2.3).
         if ($existing->theme_source === null) {
+            $demo = BlocksDemo::untouched($existing);
+
+            if ($adopt && $demo) {
+                if ($dryRun) {
+                    return new SyncLine($block->slug, "would be adopted from {$block->layer} (the blocks demo's, untouched)");
+                }
+
+                return $this->write($existing, $block, $hash, 'adopted');
+            }
+
+            if ($adopt) {
+                return SyncLine::refused(
+                    $block->slug,
+                    'not adopted — --adopt takes only the blocks demo\'s copy nobody has changed, and this one is the site\'s own work. '
+                    .'Rename or delete it in the panel, then sync again',
+                );
+            }
+
             return SyncLine::refused(
                 $block->slug,
                 "this site has a type of its own by this slug — {$block->layer} does not take it over. "
-                .'Rename or delete it in the panel, then sync again; or keep it and leave the layer\'s one out',
+                .($demo
+                    ? "It is the blocks demo's {$block->slug}, unchanged: webx:theme:sync --adopt={$block->slug} hands it to the theme"
+                    : 'Rename or delete it in the panel, then sync again; or keep it and leave the layer\'s one out'),
             );
         }
 
