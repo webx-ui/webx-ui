@@ -4420,7 +4420,7 @@ test.describe('blocks of the theme', () => {
 test.describe('modules in the theme', () => {
   // THEMES §10.2, TH3.1: what the modules print, in their own base look under theme-default.
   const BASE = '/kitchen-sink/modules'
-  const PAGES = [BASE, `${BASE}/form`, `${BASE}/long-trail`]
+  const PAGES = [BASE, `${BASE}/form`, `${BASE}/faq-and-links`, `${BASE}/long-trail`]
   const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
 
   const answered = {
@@ -4609,74 +4609,164 @@ test.describe('modules in the theme', () => {
     }
   })
 
+  test('the FAQ and then the links close the page, in its column, every target 44px tall', async ({
+    browser,
+  }) => {
+    for (const width of [360, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/faq-and-links`)
+      const m = await page.evaluate(() => {
+        const main = document.querySelector('.site-main')
+        const children = [...main.children].filter((el) => el.getBoundingClientRect().height > 0)
+        const faq = main.querySelector(':scope > .webx-faq')
+        const links = main.querySelector(':scope > .webx-links')
+        const height = (selector) =>
+          Math.min(
+            ...[...main.querySelectorAll(selector)].map((n) => n.getBoundingClientRect().height),
+          )
+        return {
+          order: children.slice(-2).map((el) => el.className),
+          lefts: children.map((el) => Math.round(el.getBoundingClientRect().left)),
+          questions: main.querySelectorAll('.webx-faq__question').length,
+          question: height('.webx-faq__question'),
+          link: height('.webx-links__link'),
+          list: getComputedStyle(main.querySelector('.webx-links__list')).display,
+          marker: getComputedStyle(main.querySelector('.webx-links__item')).listStyleType,
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+          both: !!faq && !!links,
+        }
+      })
+      const label = `at ${width}`
+      expect(m.both, `${label}: both under the page`).toBe(true)
+      expect(m.order, `${label}: the FAQ, then the links, last in the column`).toEqual([
+        'webx-faq',
+        'webx-links',
+      ])
+      for (const left of m.lefts) expect(left, `${label}: in the column`).toBe(m.lefts[0])
+      expect(m.questions, label).toBe(3)
+      expect(m.question, `${label}: a question a finger can open`).toBeGreaterThanOrEqual(44)
+      expect(m.link, `${label}: links a finger can hit`).toBeGreaterThanOrEqual(44)
+      expect(m.list).toBe('flex')
+      expect(m.marker).toBe('none')
+      expect(m.scroll, label).toBeLessThanOrEqual(m.client)
+      await context.close()
+    }
+  })
+
+  test('a question opens without a script, and night repaints the links', async ({ browser }) => {
+    const { context, page } = await open(browser, 1280, `${BASE}/faq-and-links`)
+    const answer = page.locator('.webx-faq__answer').first()
+    await expect(answer).toBeHidden()
+    await page.locator('.webx-faq__question').first().click()
+    await expect(answer).toBeVisible()
+    const read = () =>
+      page.evaluate(() => {
+        const token = (name) => {
+          const probe = document.createElement('i')
+          probe.style.color = `var(--site-${name})`
+          document.body.append(probe)
+          const value = getComputedStyle(probe).color
+          probe.remove()
+          return value
+        }
+        return {
+          link: getComputedStyle(document.querySelector('.webx-links__link')).backgroundColor,
+          line: getComputedStyle(document.querySelector('.webx-faq__item')).borderBottomColor,
+          surface: token('color-surface'),
+          border: token('color-border'),
+        }
+      })
+    const before = await read()
+    expect(before.link).toBe(before.surface)
+    expect(before.line).toBe(before.border)
+    await paint(page, 'night')
+    const after = await read()
+    expect(after.link).toBe(after.surface)
+    expect(after.line).toBe(after.border)
+    expect(after.link).not.toBe(before.link)
+    await context.close()
+  })
+
   test('every word of the form and the trail reads in every preset, the night one included', async ({
     browser,
   }) => {
-    const { context, page } = await open(browser, 1280, `${BASE}/form`)
-    await showErrors(page)
-    for (const preset of Object.keys(presets)) {
-      await paint(page, preset)
-      const low = await page.evaluate(() => {
-        const canvas = document
-          .createElement('canvas')
-          .getContext('2d', { willReadFrequently: true })
-        const rgba = (color) => {
-          canvas.clearRect(0, 0, 1, 1)
-          canvas.fillStyle = color
-          canvas.fillRect(0, 0, 1, 1)
-          return Array.from(canvas.getImageData(0, 0, 1, 1).data)
-        }
-        const luminance = (color) => {
-          const [r, g, b] = rgba(color)
-            .slice(0, 3)
-            .map((v) => {
-              v /= 255
-              return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
-            })
-          return 0.2126 * r + 0.7152 * g + 0.0722 * b
-        }
-        const ratio = (a, b) => {
-          const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
-          return (x + 0.05) / (y + 0.05)
-        }
-        const behind = (el) => {
-          for (let node = el; node; node = node.parentElement) {
-            const bg = getComputedStyle(node).backgroundColor
-            if (rgba(bg)[3] > 0) return bg
+    for (const path of [`${BASE}/form`, `${BASE}/faq-and-links`]) {
+      const { context, page } = await open(browser, 1280, path)
+      await showErrors(page)
+      // Every answer open, so its words are measured too.
+      await page.evaluate(() =>
+        document.querySelectorAll('.webx-faq__item').forEach((d) => (d.open = true)),
+      )
+      for (const preset of Object.keys(presets)) {
+        await paint(page, preset)
+        const low = await page.evaluate(() => {
+          const canvas = document
+            .createElement('canvas')
+            .getContext('2d', { willReadFrequently: true })
+          const rgba = (color) => {
+            canvas.clearRect(0, 0, 1, 1)
+            canvas.fillStyle = color
+            canvas.fillRect(0, 0, 1, 1)
+            return Array.from(canvas.getImageData(0, 0, 1, 1).data)
           }
-          return 'white'
-        }
-        const words = [
-          '.wx-form__label',
-          '.wx-form__help',
-          '.wx-form__error',
-          '.wx-form__choice-label',
-          '.wx-form__consent-text',
-          '.wx-form__submit',
-          '.wx-form__control',
-          '.webx-breadcrumbs__link',
-          '.webx-breadcrumbs__item--current',
-        ]
-        return [...document.querySelectorAll(words.join(', '))]
-          .filter((el) => {
-            const r = el.getBoundingClientRect()
-            return r.width > 0 && r.height > 0
-          })
-          .map((el) => ({
-            what: `${el.className} "${(el.textContent || el.value || '').trim().slice(0, 30)}"`,
-            ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
-          }))
-          .filter((w) => w.ratio < 4.5)
-      })
-      expect(low, preset).toEqual([])
+          const luminance = (color) => {
+            const [r, g, b] = rgba(color)
+              .slice(0, 3)
+              .map((v) => {
+                v /= 255
+                return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+              })
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+          }
+          const ratio = (a, b) => {
+            const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+            return (x + 0.05) / (y + 0.05)
+          }
+          const behind = (el) => {
+            for (let node = el; node; node = node.parentElement) {
+              const bg = getComputedStyle(node).backgroundColor
+              if (rgba(bg)[3] > 0) return bg
+            }
+            return 'white'
+          }
+          const words = [
+            '.wx-form__label',
+            '.wx-form__help',
+            '.wx-form__error',
+            '.wx-form__choice-label',
+            '.wx-form__consent-text',
+            '.wx-form__submit',
+            '.wx-form__control',
+            '.webx-breadcrumbs__link',
+            '.webx-breadcrumbs__item--current',
+            '.webx-faq__heading',
+            '.webx-faq__question',
+            '.webx-faq__answer',
+            '.webx-links__heading',
+            '.webx-links__link',
+          ]
+          return [...document.querySelectorAll(words.join(', '))]
+            .filter((el) => {
+              const r = el.getBoundingClientRect()
+              return r.width > 0 && r.height > 0
+            })
+            .map((el) => ({
+              what: `${el.className} "${(el.textContent || el.value || '').trim().slice(0, 30)}"`,
+              ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
+            }))
+            .filter((w) => w.ratio < 4.5)
+        })
+        expect(low, `${path} in ${preset}`).toEqual([])
+      }
+      await context.close()
     }
-    await context.close()
   })
 })
 
 test.describe('module pages in the theme', () => {
   // THEMES §10.2, TH3.2–TH3.3: the pages a module prints itself, in its base look under
-  // theme-default — on a starter built with --with=blog,services,events,vacancies,press. A module
+  // theme-default — on a starter built with --with=blog,services,events,vacancies,press,recipes
+  // (recipes since TH3.4). A module
   // the starter was built without is skipped, not failed.
   const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
 
@@ -4791,6 +4881,35 @@ test.describe('module pages in the theme', () => {
       ],
       targets: ['.wx-press-outlet__website', '.wx-press-article__read', '.wx-press-article__file'],
     },
+    {
+      name: 'recipes',
+      index: '/recipes',
+      list: '.wx-recipes__grid',
+      card: '.wx-recipes__card',
+      grid: true,
+      detail: '.wx-recipes__link',
+      words: [
+        '.wx-recipes__name',
+        '.wx-recipes__meta',
+        '.wx-recipes__nav-link',
+        '.wx-recipes__chip',
+        '.wx-recipe__lead',
+        '.wx-recipe__fact',
+        '.wx-recipe__chip',
+        '.wx-recipe__nutrient',
+        '.wx-recipe__amount',
+        '.wx-recipe__service-link',
+      ],
+      targets: [
+        '.wx-recipes__nav-link',
+        '.wx-recipes__chip',
+        '.wx-recipes__category',
+        '.wx-recipes__service',
+        '.wx-recipes__page-link',
+        '.wx-recipe__category',
+        '.wx-recipe__service-link',
+      ],
+    },
   ]
 
   async function open(browser, width, path) {
@@ -4852,7 +4971,9 @@ test.describe('module pages in the theme', () => {
               lefts,
               inline: [...document.querySelectorAll('style')]
                 .map((style) => style.textContent)
-                .filter((css) => /\.wx-(events|event|vacancies|vacancy|press)[-_]/.test(css)),
+                .filter((css) =>
+                  /\.wx-(events|event|vacancies|vacancy|press|recipes|recipe)[-_]/.test(css),
+                ),
             }
           })
           const label = `${path} at ${width}`
@@ -4930,7 +5051,7 @@ test.describe('module pages in the theme', () => {
     }
   })
 
-  test('a preset repaints an event, a vacancy and an outlet: buttons, frames and lines on tokens', async ({
+  test('a preset repaints an event, a vacancy, an outlet and a recipe: buttons, frames and lines on tokens', async ({
     browser,
   }) => {
     const modules = await installed(browser)
@@ -4940,6 +5061,9 @@ test.describe('module pages in the theme', () => {
       ['vacancies', '.wx-vacancies__card', 'backgroundColor', 'color-surface'],
       ['vacancies', '.wx-vacancy__facts', 'borderTopColor', 'color-border'],
       ['press', '.wx-press-article', 'borderBottomColor', 'color-border'],
+      ['recipes', '.wx-recipes__chip[aria-current]', 'backgroundColor', 'color-accent'],
+      ['recipes', '.wx-recipe__facts', 'backgroundColor', 'color-surface'],
+      ['recipes', '.wx-recipe__row', 'borderBottomColor', 'color-border'],
     ]
     let checked = 0
     for (const module of modules) {
@@ -4976,7 +5100,33 @@ test.describe('module pages in the theme', () => {
         await context.close()
       }
     }
-    test.skip(checked === 0, 'the starter was built without events, vacancies and press')
+    test.skip(checked === 0, 'the starter was built without events, vacancies, press and recipes')
+  })
+
+  test('a recipes block keeps to the columns it asks for, and a phone gets one', async ({
+    browser,
+  }) => {
+    // The demo's page of blocks: a showcase of three (the default) and a catalogue of two
+    // (wx-recipes__grid--2) — as many to a row as asked at 1280 and never more, one at 375.
+    for (const width of [375, 1280]) {
+      const { context, page, status } = await open(browser, width, '/recipes-showcase')
+      test.skip(status !== 200, 'the starter was built without recipes')
+      const grids = await page.evaluate(() =>
+        [...document.querySelectorAll('.wx-recipes__grid')].map((grid) => ({
+          two: grid.classList.contains('wx-recipes__grid--2'),
+          tops: [...grid.children].map((c) => Math.round(c.getBoundingClientRect().top)),
+        })),
+      )
+      expect(grids.length, 'the showcase and the catalogue').toBe(2)
+      expect(grids.filter((grid) => grid.two).length, 'the catalogue asks for two').toBe(1)
+      for (const grid of grids) {
+        const label = `${grid.two ? 'two' : 'three'} at ${width}`
+        const first = grid.tops.filter((top) => top === grid.tops[0]).length
+        if (width === 1280) expect(first, label).toBe(Math.min(grid.two ? 2 : 3, grid.tops.length))
+        else expect(first, label).toBe(1)
+      }
+      await context.close()
+    }
   })
 
   test('every word of a module page reads in every preset, the night one included', async ({

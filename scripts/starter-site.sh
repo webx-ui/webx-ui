@@ -13,6 +13,7 @@
 #
 #   scripts/starter-site.sh                        rebuild
 #   scripts/starter-site.sh --with=blog,services   rebuild with these modules on top of the company set
+#                                                  (the showcase: --with=blog,services,events,vacancies,press,recipes)
 #   scripts/starter-site.sh --down                 tear down only: the directory (but the host config) and the database
 #
 # The defaults are an OSPanel machine; every one of them can be overridden:
@@ -49,9 +50,9 @@ NAME="$(basename "$SITE")"
 URL="${STARTER_URL:-http://$NAME}"
 MODE=build
 # The modules on top of the default set of a company site, with their demo: the blog, the
-# services, events, vacancies and press have pages of their own that a theme dresses (THEMES §10,
-# TH3.2–TH3.3), and a starter without them would never show those pages. The showcase is built
-# with --with=blog,services,events,vacancies,press.
+# services, events, vacancies, press and recipes have pages of their own that a theme dresses
+# (THEMES §10, TH3.2–TH3.4), and a starter without them would never show those pages. The showcase
+# is built with --with=blog,services,events,vacancies,press,recipes.
 WITH="${STARTER_WITH:-}"
 for argument in "$@"; do
     case "$argument" in
@@ -212,6 +213,10 @@ node -e '
 
 step 'Environment'
 cp "$SITE/.env.example" "$SITE/.env"
+# The page FAQ and the interlinking of module-seo are off on a new site — a project's brief turns
+# them on. The starter shows everything a theme dresses, so it turns them on, before setup boots:
+# Kitchen sink › Modules › FAQ and links is seeded with both (THEMES §23, TH3.4).
+printf '\nWEBX_SEO_FAQ=true\nWEBX_SEO_LINKS=true\n' >> "$SITE/.env"
 artisan key:generate --no-interaction
 
 step "Database $DB_DATABASE on $DB_HOST"
@@ -279,11 +284,17 @@ else
     case ",$WITH," in *,events,*) paths+=(/events) ;; esac
     case ",$WITH," in *,vacancies,*) paths+=(/careers) ;; esac
     case ",$WITH," in *,press,*) paths+=(/press) ;; esac
+    case ",$WITH," in *,recipes,*) paths+=(/recipes) ;; esac
     for path in "${paths[@]}"; do
         code="$(curl -s -o /dev/null -w '%{http_code}' "$URL$path")"
         [ "$code" = "200" ] || fail "GET $URL$path answered $code"
         note "GET $URL$path — 200"
     done
+    # The theme's layout prints the page's FAQ and links; the showcase page has both.
+    faq="$(curl -s "$URL/kitchen-sink/modules/faq-and-links")"
+    grep -q 'class="webx-faq"' <<< "$faq" || fail 'Kitchen sink › Modules › FAQ and links prints no FAQ'
+    grep -q 'class="webx-links"' <<< "$faq" || fail 'Kitchen sink › Modules › FAQ and links prints no links'
+    note "GET $URL/kitchen-sink/modules/faq-and-links — the FAQ and the links under the page"
 fi
 rm -f "$home"
 
