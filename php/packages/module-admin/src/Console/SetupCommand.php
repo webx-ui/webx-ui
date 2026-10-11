@@ -113,6 +113,7 @@ final class SetupCommand extends Command
             $this->installTheme($files);
             $this->wireThePanel($files);
             $this->migrate();
+            $this->syncTheme($files);
             $this->installOfferedBlocks();
             $this->createAdministrator();
             $this->build();
@@ -488,10 +489,64 @@ final class SetupCommand extends Command
         } else {
             $this->components->twoColumnDetail('Theme', $this->theme->why);
         }
+    }
 
-        // The packaged layers' built CSS reaches a page only from public/themes. Not fatal: the
-        // site still opens, with less style, and the command is one line to run again.
+    /**
+     * The layers onto the site (THEMES §9.2): their built CSS, which reaches a page only from
+     * public/themes, and their block types, which go into the tables — so after `migrate`, and
+     * before the modules' offers, so that a slug the chain carries is the chain's type rather
+     * than the one a module offers (§10.3). And once more after every `composer update`, which
+     * is when a new release of a layer arrives: the line goes into the site's `post-update-cmd`.
+     *
+     * Not fatal: the site still opens, with less style, and the command is one line to run again.
+     */
+    private function syncTheme(Filesystem $files): void
+    {
+        if (! $this->theme->themed) {
+            return;
+        }
+
         $this->artisan(['webx:theme:sync'], 'webx:theme:sync', fatal: false);
+        $this->syncAfterUpdates($files);
+    }
+
+    /**
+     * Adds `webx:theme:sync` to the site's `post-update-cmd`, once. The skeleton cannot ship the
+     * line: a site set up without a theme has no such command, and a script that fails would
+     * fail every `composer update` of it.
+     */
+    private function syncAfterUpdates(Filesystem $files): void
+    {
+        $path = $this->laravel->basePath('composer.json');
+
+        if (! $files->exists($path)) {
+            return;
+        }
+
+        // Objects, not arrays: an empty `{}` of the file has to stay one.
+        $composer = json_decode((string) $files->get($path));
+
+        if (! $composer instanceof \stdClass) {
+            return;
+        }
+
+        $scripts = $composer->scripts ?? null;
+        $scripts = $scripts instanceof \stdClass ? $scripts : new \stdClass;
+        $after = $scripts->{'post-update-cmd'} ?? [];
+        $after = is_array($after) ? array_values($after) : [$after];
+
+        foreach ($after as $line) {
+            if (is_string($line) && str_contains($line, 'webx:theme:sync')) {
+                return;
+            }
+        }
+
+        $after[] = '@php artisan webx:theme:sync --ansi';
+        $scripts->{'post-update-cmd'} = $after;
+        $composer->scripts = $scripts;
+
+        $files->put($path, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
+        $this->components->twoColumnDetail('composer.json', 'post-update-cmd runs webx:theme:sync');
     }
 
     /**

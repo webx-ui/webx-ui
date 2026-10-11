@@ -29,6 +29,8 @@ final class SetupThemeTest extends TestCase
 
     private string $installed;
 
+    private string $composer = '';
+
     /** @var list<string> */
     private array $ran = [];
 
@@ -59,6 +61,9 @@ final class SetupThemeTest extends TestCase
         ];
 
         $this->files->put($this->app->basePath('.env'), "APP_NAME=Laravel\nDB_CONNECTION=sqlite\n");
+
+        // Testbench's own skeleton: setup adds a script to it, and it is put back as it was.
+        $this->composer = (string) $this->files->get($this->app->basePath('composer.json'));
     }
 
     protected function tearDown(): void
@@ -66,6 +71,8 @@ final class SetupThemeTest extends TestCase
         foreach ($this->written as $path) {
             $this->files->delete($path);
         }
+
+        $this->files->put($this->app->basePath('composer.json'), $this->composer);
 
         parent::tearDown();
     }
@@ -132,16 +139,13 @@ final class SetupThemeTest extends TestCase
 
         $this->assertTrue($this->required('webx-ui/theme-default:^0.28.0'));
         $make = array_search('artisan webx:theme:make theme --uses=webx-ui/theme-default --local', $this->ran, true);
-        $sync = array_search('artisan webx:theme:sync', $this->ran, true);
         $panel = array_search('artisan webx:panel --sync', $this->ran, true);
 
         $this->assertIsInt($make);
-        $this->assertIsInt($sync);
         $this->assertIsInt($panel);
         // The panel points the modules at <x-layout> only when it finds one, and with a theme
         // the layout is the theme's: the theme has to exist and be named first.
         $this->assertLessThan($panel, $make);
-        $this->assertLessThan($panel, $sync);
 
         $this->assertStringContainsString("WEBX_THEME=theme\n", (string) $this->files->get($this->app->basePath('.env')));
         $this->assertFileDoesNotExist($this->app->resourcePath('views/components/layout.blade.php'));
@@ -163,6 +167,7 @@ final class SetupThemeTest extends TestCase
 
         $this->assertEmpty(array_filter($this->ran, fn (string $line): bool => str_contains($line, 'theme')));
         $this->assertStringNotContainsString('WEBX_THEME', (string) $this->files->get($this->app->basePath('.env')));
+        $this->assertStringNotContainsString('webx:theme:sync', (string) $this->files->get($this->app->basePath('composer.json')));
 
         foreach (self::OWN_LAYOUT as $file) {
             $this->assertFileExists($this->app->resourcePath($file));
@@ -184,6 +189,31 @@ final class SetupThemeTest extends TestCase
         $this->assertEmpty(array_filter($this->ran, fn (string $line): bool => str_contains($line, 'theme')));
         $this->assertSame('<html>{{ $slot }}</html>', $this->files->get($this->app->resourcePath('views/components/layout.blade.php')));
         $this->assertFileDoesNotExist($this->app->resourcePath('css/app.css'));
+    }
+
+    #[Test]
+    public function the_layers_are_synced_after_migrate_and_before_the_offers_and_after_every_update(): void
+    {
+        $this->runSetup()->assertSuccessful();
+
+        $migrate = array_search('artisan migrate --force', $this->ran, true);
+        $sync = array_search('artisan webx:theme:sync', $this->ran, true);
+        $this->assertIsInt($migrate);
+        $this->assertIsInt($sync);
+        // Block types go into the tables, and a slug the chain carries is the chain's, not an offer's.
+        $this->assertLessThan($sync, $migrate);
+
+        foreach ($this->ran as $index => $line) {
+            if (str_contains($line, 'webx:blocks:offered')) {
+                $this->assertLessThan($index, $sync);
+            }
+        }
+
+        $composer = (string) $this->files->get($this->app->basePath('composer.json'));
+        $this->assertSame(1, substr_count($composer, '@php artisan webx:theme:sync --ansi'));
+
+        $this->runSetup()->assertSuccessful();
+        $this->assertSame(1, substr_count((string) $this->files->get($this->app->basePath('composer.json')), 'webx:theme:sync'), 'added once');
     }
 
     #[Test]
