@@ -8,4 +8,13 @@ return [
         'text' => 'There is no page at this address. It may have moved, or the address has a typo.',
         'home' => 'Go to the home page',
     ],
+    'blocks' => [
+        'contact' => [
+            'phone' => 'Phone',
+            'email' => 'E-mail',
+            'address' => 'Address',
+            'hours' => 'Opening hours',
+            'socials' => 'Elsewhere',
+        ],
+    ],
 ];

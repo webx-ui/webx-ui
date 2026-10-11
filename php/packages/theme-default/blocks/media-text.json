@@ -1,0 +1,96 @@
+{
+  "slug": "media-text",
+  "title": "Picture and text",
+  "description": "A picture beside a heading, a text and a button — on the side of your choice; one under the other in a narrow column.",
+  "icon": null,
+  "group": "content",
+  "sort": 30,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "image",
+      "type": "wx-media",
+      "label": "Picture",
+      "props": {
+        "accept": "image"
+      }
+    },
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "body",
+      "type": "wx-rich-text",
+      "label": "Text",
+      "localized": true
+    },
+    {
+      "id": "button_label",
+      "type": "wx-input",
+      "label": "Button",
+      "localized": true
+    },
+    {
+      "id": "button_url",
+      "type": "wx-input",
+      "label": "Button address",
+      "props": {
+        "placeholder": "/contacts"
+      }
+    },
+    {
+      "id": "side",
+      "type": "wx-segmented",
+      "label": "Picture on the",
+      "default": "start",
+      "props": {
+        "options": [
+          {
+            "value": "start",
+            "label": "Left"
+          },
+          {
+            "value": "end",
+            "label": "Right"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tone",
+      "type": "wx-segmented",
+      "label": "Background",
+      "default": "plain",
+      "props": {
+        "options": [
+          {
+            "value": "plain",
+            "label": "Page"
+          },
+          {
+            "value": "surface",
+            "label": "Tint"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "@php\n    $picture = is_array($image) && ! empty($image['url']) ? $image : null;\n    $html = is_string($body) ? trim($body) : '';\n    if ($html !== '' && ! str_starts_with($html, '<')) {\n        $html = implode('', array_map(static fn (string $line): string => '<p>'.e(trim($line)).'</p>', preg_split('/\\R+/u', $html) ?: []));\n    }\n@endphp\n@if ($picture || $heading || $html !== '')\n<section @class(['b-media-text', 'b-media-text--end' => $side === 'end', 'b-media-text--surface' => $tone === 'surface', 'b-media-text--alone' => ! $picture]) data-wx-block=\"media-text\">\n    <div class=\"b-media-text__grid\">\n        @if ($picture)\n            <figure class=\"b-media-text__figure\">\n                <img class=\"b-media-text__image\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" loading=\"lazy\" @if (! empty($picture['width'])) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n            </figure>\n        @endif\n        <div class=\"b-media-text__words site-prose\">\n            @if ($heading)\n                <h2 class=\"b-media-text__heading\">{{ $heading }}</h2>\n            @endif\n            @if ($html !== '')\n                <div class=\"b-media-text__body\">{!! $html !!}</div>\n            @endif\n            @if ($button_label && $button_url)\n                <p class=\"b-media-text__actions\"><a class=\"b-media-text__button\" href=\"{{ $button_url }}\">{{ $button_label }}</a></p>\n            @endif\n        </div>\n    </div>\n</section>\n@endif\n",
+  "styles": ".b-media-text {\n    --media-text-ring: var(--site-color-accent);\n    container-type: inline-size;\n    padding-block: var(--site-space-6);\n}\n\n.b-media-text--surface {\n    padding: var(--site-space-5);\n    border-radius: var(--site-radius-lg);\n    background: var(--site-color-surface);\n}\n\n.b-media-text__grid {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr);\n    align-items: center;\n    gap: var(--site-space-5);\n}\n\n.b-media-text__figure {\n    margin: 0;\n}\n\n.b-media-text__image {\n    width: 100%;\n    height: auto;\n    border-radius: var(--site-radius-md);\n}\n\n.b-media-text__heading {\n    margin: 0 0 var(--site-space-3);\n    font-size: var(--site-font-size-3);\n}\n\n.b-media-text__body > :first-child {\n    margin-top: 0;\n}\n\n.b-media-text__body > :last-child {\n    margin-bottom: 0;\n}\n\n.b-media-text__actions {\n    margin: var(--site-space-5) 0 0;\n}\n\n.b-media-text__button {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    min-height: 44px;\n    padding: 0 var(--site-space-5);\n    border: 1px solid transparent;\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-accent);\n    color: var(--site-color-accent-contrast);\n    font-weight: 600;\n    line-height: 1.2;\n    text-align: center;\n    text-decoration: none;\n    transition: background-color var(--site-duration) var(--site-easing), color var(--site-duration) var(--site-easing);\n}\n\n.b-media-text__button:hover {\n    background: color-mix(in srgb, var(--site-color-accent) 85%, var(--site-color-text));\n}\n\n.b-media-text__button:focus-visible {\n    outline: 2px solid var(--media-text-ring);\n    outline-offset: 2px;\n}\n\n.b-media-text__button--quiet,\n.b-media-text__button--quiet:hover {\n    border-color: currentColor;\n    background: transparent;\n    color: inherit;\n}\n\n@container (min-width: 40rem) {\n    .b-media-text__grid {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n        gap: var(--site-space-7);\n    }\n\n    .b-media-text--alone .b-media-text__grid {\n        grid-template-columns: minmax(0, 42rem);\n    }\n\n    .b-media-text--end .b-media-text__figure {\n        order: 2;\n    }\n\n    .b-media-text--surface {\n        padding: var(--site-space-6);\n    }\n}\n",
+  "script": null,
+  "sample": {
+    "image": null,
+    "heading": "A picture and its words",
+    "body": "<p>Side by side on a wide screen, one under the other in a narrow column.</p>",
+    "button_label": "Read more",
+    "button_url": "/about",
+    "side": "start",
+    "tone": "plain"
+  }
+}

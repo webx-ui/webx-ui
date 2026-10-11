@@ -8,4 +8,13 @@ return [
         'text' => 'Unter dieser Adresse gibt es keine Seite. Vielleicht wurde sie verschoben, oder die Adresse enthält einen Tippfehler.',
         'home' => 'Zur Startseite',
     ],
+    'blocks' => [
+        'contact' => [
+            'phone' => 'Telefon',
+            'email' => 'E-Mail',
+            'address' => 'Adresse',
+            'hours' => 'Öffnungszeiten',
+            'socials' => 'Auch hier',
+        ],
+    ],
 ];

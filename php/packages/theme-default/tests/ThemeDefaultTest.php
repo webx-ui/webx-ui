@@ -115,10 +115,11 @@ class ThemeDefaultTest extends TestCase
 
     /** dist/ is committed; an edit to src/ without a build would ship yesterday's CSS. */
     /**
-     * The showcase pages are seeded by module-pages, and their blocks by the block types of the
-     * module-blocks demo, the theme's own `demo/blocks/` (THEMES §15.1) and the blocks the
-     * widgets offer (WIDGETS §15.1), which the blocks demo installs for the pages that stand on
-     * them. Any other type is a page the seed writes and the site cannot print.
+     * The showcase pages are seeded by module-pages, and their blocks by the six blocks of the
+     * theme (synced before the demo), the `columns` of the module-blocks demo — its `hero` and
+     * `text` yield to the theme's —, the theme's own `demo/blocks/` (THEMES §15.1) and the blocks
+     * the widgets offer (WIDGETS §15.1), which the blocks demo installs for the pages that stand
+     * on them. Any other type is a page the seed writes and the site cannot print.
      *
      * A picture is named `demo:<file>` and the media demo stores `demo/media/<file>.*` under that
      * name; a name with no file is a hole in a gallery.
@@ -129,9 +130,9 @@ class ThemeDefaultTest extends TestCase
         $pages = glob(self::path().'/demo/pages/*.json') ?: [];
         $this->assertNotSame([], $pages);
 
-        $types = ['hero', 'text', 'columns', ...array_map(
+        $types = ['columns', ...array_map(
             static fn (string $file): string => basename($file, '.json'),
-            [...glob(self::path().'/demo/blocks/*.json') ?: [], ...glob(Widgets::path().'/resources/blocks/*.json') ?: []],
+            [...glob(self::path().'/blocks/*.json') ?: [], ...glob(self::path().'/demo/blocks/*.json') ?: [], ...glob(Widgets::path().'/resources/blocks/*.json') ?: []],
         )];
         $pictures = array_map(static fn (string $file): string => 'demo:'.pathinfo($file, PATHINFO_FILENAME), glob(self::path().'/demo/media/*') ?: []);
         $named = [];
@@ -243,6 +244,91 @@ class ThemeDefaultTest extends TestCase
             $this->assertStringContainsString("data-wx-block=\"{$slug}\"", (string) ($type['template'] ?? ''), $file);
             $this->assertSame([], self::findings((string) ($type['styles'] ?? ''), $file));
         }
+    }
+
+    /**
+     * The six blocks of THEMES §9.1, in the format `webx:blocks:export` writes, that sync puts on
+     * every site with this theme: §8 — the check that refuses a type at sync —, the width from
+     * the container, every selector under the block, every word a visitor reads a translatable
+     * field (rule 18) and every fixed label a word of this theme.
+     */
+    #[Test]
+    public function the_six_blocks_are_block_documents_on_the_site_tokens(): void
+    {
+        $files = glob(self::path().'/blocks/*.json') ?: [];
+        $this->assertSame(['cards', 'contact', 'cta', 'hero', 'media-text', 'text'], array_map(static fn (string $file): string => basename($file, '.json'), $files));
+
+        $words = Arr::dot(require self::path().'/lang/en/theme.php');
+
+        foreach ($files as $file) {
+            $type = json_decode((string) file_get_contents($file), true, flags: JSON_THROW_ON_ERROR);
+            $slug = basename($file, '.json');
+            $styles = (string) ($type['styles'] ?? '');
+            $template = (string) ($type['template'] ?? '');
+
+            $this->assertIsArray($type, $file);
+            $this->assertSame($slug, $type['slug'] ?? null, $file);
+            $this->assertStringContainsString("data-wx-block=\"{$slug}\"", $template, $file);
+            $this->assertSame([], self::findings($styles, "blocks/{$slug}.json"));
+            $this->assertStringNotContainsString('@media', $styles, $file);
+            $this->assertStringNotContainsString('!important', $styles, $file);
+
+            // Every rule's selectors, outside the at-rules' own lines, start with the block's class.
+            foreach (explode('}', (string) preg_replace('#/\*.*?\*/#s', '', $styles)) as $rule) {
+                if (! str_contains($rule, '{')) {
+                    continue;
+                }
+
+                // What stands before the rule's brace, after an `@container (…) {` that opens it.
+                $head = substr($rule, 0, (int) strrpos($rule, '{'));
+                $selector = trim(substr($head, str_contains($head, '{') ? (int) strrpos($head, '{') + 1 : 0));
+
+                foreach ($selector === '' ? [] : explode(',', $selector) as $one) {
+                    $this->assertStringStartsWith(".b-{$slug}", trim($one), "{$file}: \"{$one}\" is outside the block");
+                }
+            }
+
+            foreach (self::fieldsOf($type['schema'] ?? []) as $id => $field) {
+                $visible = in_array($field['type'] ?? null, ['wx-input', 'wx-textarea', 'wx-rich-text'], true)
+                    && ! str_ends_with($id, '_url') && $id !== 'form';
+                $this->assertSame($visible, ($field['localized'] ?? false) === true, "{$file}: {$id} is ".($visible ? 'read by a visitor' : 'not words'));
+            }
+
+            preg_match_all("/__\\('theme::([a-z0-9_-]+)\\.([a-z0-9_.-]+)'\\)/", $template, $labels, PREG_SET_ORDER);
+
+            foreach ($labels as [, $group, $key]) {
+                $this->assertSame('theme', $group, "{$file}: the words of the theme are lang/<locale>/theme.php");
+                $this->assertArrayHasKey($key, $words, "{$file}: theme::{$group}.{$key}");
+            }
+        }
+    }
+
+    /** What sync refuses a type for is what `webx:theme:check` lists — and here it lists nothing. */
+    #[Test]
+    public function the_check_of_the_engine_passes_on_the_theme(): void
+    {
+        $this->artisan('webx:theme:check', ['path' => self::path()])
+            ->expectsOutputToContain('6 block types')
+            ->assertSuccessful();
+    }
+
+    /**
+     * Key → node of every field, the fields of a repeater under their own ids.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function fieldsOf(mixed $nodes): array
+    {
+        $fields = [];
+
+        foreach (is_array($nodes) ? $nodes : [] as $node) {
+            if (is_array($node) && is_string($node['id'] ?? null)) {
+                $fields[$node['id']] = $node;
+                $fields += self::fieldsOf($node['children'] ?? []);
+            }
+        }
+
+        return $fields;
     }
 
     /** @return list<string> */

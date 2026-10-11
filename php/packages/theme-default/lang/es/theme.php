@@ -8,4 +8,13 @@ return [
         'text' => 'No hay ninguna página en esta dirección. Puede que se haya movido o que la dirección tenga un error.',
         'home' => 'Ir a la página de inicio',
     ],
+    'blocks' => [
+        'contact' => [
+            'phone' => 'Teléfono',
+            'email' => 'Correo',
+            'address' => 'Dirección',
+            'hours' => 'Horario',
+            'socials' => 'También en',
+        ],
+    ],
 ];

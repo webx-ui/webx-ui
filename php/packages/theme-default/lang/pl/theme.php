@@ -8,4 +8,13 @@ return [
         'text' => 'Pod tym adresem nie ma strony. Mogła zostać przeniesiona albo w adresie jest literówka.',
         'home' => 'Na stronę główną',
     ],
+    'blocks' => [
+        'contact' => [
+            'phone' => 'Telefon',
+            'email' => 'E-mail',
+            'address' => 'Adres',
+            'hours' => 'Godziny otwarcia',
+            'socials' => 'Znajdziesz nas też',
+        ],
+    ],
 ];
