@@ -1,18 +1,11 @@
 {{--
-    One card per service, used by the index and by a category page.
+    The cards of a listing, used by the index and by a category page.
+
+    Each card goes through `@webxPart`, so a theme's `parts/services/card.blade.php` replaces the
+    card without replacing the listing.
 --}}
-<ul>
+<ul class="webx-services-cards">
     @foreach ($services as $service)
-        <li>
-            <a href="{{ $service->url() }}">
-                @if ($url = $service->coverUrl())
-                    <img src="{{ $url }}" alt="{{ $service->title }}" loading="lazy">
-                @endif
-                <h3>{{ $service->title }}</h3>
-            </a>
-            @if ($service->lead)
-                <p>{{ $service->lead }}</p>
-            @endif
-        </li>
+        @webxPart('services.card', ['service' => $service], 'webx-services::partials.card')
     @endforeach
 </ul>

@@ -125,7 +125,7 @@ final class OrderTest extends TestCase
      */
     private function cards(string $page): array
     {
-        preg_match_all('#<h3>([^<]+)</h3>#', $page, $matches);
+        preg_match_all('#<h3 class="webx-services-card__title">([^<]+)</h3>#', $page, $matches);
 
         return $matches[1];
     }

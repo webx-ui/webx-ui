@@ -14,12 +14,12 @@
         <x-webx-seo::breadcrumbs :for="$tag" />
     @endif
 
-    <header>
-        <h1>{{ $tag->title }}</h1>
+    <header class="webx-blog-header">
+        <h1 class="webx-blog-header__title">{{ $tag->title }}</h1>
     </header>
 
     @if ($articles->isEmpty())
-        <p>{{ trans('webx-blog::blog.empty') }}</p>
+        <p class="webx-blog-empty">{{ trans('webx-blog::blog.empty') }}</p>
     @else
         @include('webx-blog::partials.cards')
         @include('webx-blog::partials.pages')

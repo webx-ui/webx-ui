@@ -12,17 +12,17 @@
         <x-webx-seo::breadcrumbs :for="$rubric" />
     @endif
 
-    <header>
-        <h1>{{ $rubric->title }}</h1>
+    <header class="webx-blog-header">
+        <h1 class="webx-blog-header__title">{{ $rubric->title }}</h1>
         {{-- A document and not a line since the panel grew an editor for it: printed raw, because
              what is stored has already been through the allowlist of its field type. --}}
         @if ($lead !== '')
-            <div class="rubric-lead">{!! $lead !!}</div>
+            <div class="rubric-lead webx-blog-header__lead">{!! $lead !!}</div>
         @endif
     </header>
 
     @if ($articles->isEmpty())
-        <p>{{ trans('webx-blog::blog.empty') }}</p>
+        <p class="webx-blog-empty">{{ trans('webx-blog::blog.empty') }}</p>
     @else
         @include('webx-blog::partials.cards')
         @include('webx-blog::partials.pages')

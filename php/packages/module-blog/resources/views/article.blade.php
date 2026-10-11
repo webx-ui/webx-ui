@@ -13,31 +13,35 @@
         <link rel="alternate" type="application/rss+xml" title="{{ trans('webx-blog::blog.rss') }}" href="{{ route('webx.blog.rss') }}">
     </x-slot:head>
 
-    <article>
-        <header>
+    <article class="webx-blog-article">
+        <header class="webx-blog-article__header">
             {{-- Feed, main rubric, the article: the same list as the BreadcrumbList in the <head>. --}}
             @if (config('webx-blog.breadcrumbs', true))
                 <x-webx-seo::breadcrumbs :for="$article" />
             @endif
-            <h1>{{ $article->title }}</h1>
-            @if ($article->published_at)
-                <time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->locale(app()->getLocale())->isoFormat('LL') }}</time>
-            @endif
-            @if ($article->author)
-                <p>{{ $article->author->name }}</p>
+            <h1 class="webx-blog-article__title">{{ $article->title }}</h1>
+            @if ($article->published_at || $article->author)
+                <p class="webx-blog-article__meta">
+                    @if ($article->published_at)
+                        <time class="webx-blog-article__date" datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->locale(app()->getLocale())->isoFormat('LL') }}</time>
+                    @endif
+                    @if ($article->author)
+                        <span class="webx-blog-article__author">{{ $article->author->name }}</span>
+                    @endif
+                </p>
             @endif
             @if ($url = $article->coverUrl())
-                <img src="{{ $url }}" alt="{{ $article->title }}">
+                <img class="webx-blog-article__cover" src="{{ $url }}" alt="{{ $article->title }}">
             @endif
         </header>
 
         {!! $content !!}
 
         @if ($article->tags->isNotEmpty())
-            <footer>
-                <ul>
+            <footer class="webx-blog-article__footer">
+                <ul class="webx-blog-tags">
                     @foreach ($article->tags as $tag)
-                        <li><a href="{{ $tag->url() }}">{{ $tag->title }}</a></li>
+                        <li class="webx-blog-tags__item"><a class="webx-blog-tags__link" href="{{ $tag->url() }}">{{ $tag->title }}</a></li>
                     @endforeach
                 </ul>
             </footer>
@@ -45,8 +49,8 @@
     </article>
 
     @if ($related->isNotEmpty())
-        <aside>
-            <h2>{{ trans('webx-blog::blog.related') }}</h2>
+        <aside class="webx-blog-related">
+            <h2 class="webx-blog-related__title">{{ trans('webx-blog::blog.related') }}</h2>
             @include('webx-blog::partials.cards', ['articles' => $related])
         </aside>
     @endif
