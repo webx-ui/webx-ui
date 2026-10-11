@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-`webx-ui/widgets`: the zoom of a picture (spec §14, W5.5). **`<x-webx-zoom :image src large mode scale group>`** — a link to the original that opens the lightbox (the way in for a keyboard and a screen reader; without JavaScript the file itself), whose picture a mouse magnifies inside its frame following the cursor (`inner`) or as a lens and a panel beside it (`side`, which is `inner` where its container has no room beside); two fingers pinch and pan it on a phone, a double tap is 2× and back, one finger at its own size still scrolls the page and swipes a slider. The original is fetched on the first hover or touch only. `data-webx-zoom` on a gallery's lightbox link does the same; the offered block **`gallery`** gets the field `magnify` for its slider (for blocks installed from now on: an installed type is the site's). Audit check `widgets.zoom_link` (a zoom no keyboard can open). Words in ten languages. `webx-ui/module-catalog`: the product page shows a copy 1200 wide and magnifies the original (`images.zoom`: `inner` by default, `side` or `off`). `webx-ui/theme-default`: Kitchen sink › Zoom.

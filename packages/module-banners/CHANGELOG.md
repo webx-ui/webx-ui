@@ -1,5 +1,11 @@
 # @webx-ui/module-banners
 
+## 0.1.12
+
+### Patch Changes
+
+- 6bf63a1: The name of the declared place `notice` — the announcement bar of the site widgets, a place of words where a banner needs no picture.
+
 ## 0.1.11
 
 ### Patch Changes
