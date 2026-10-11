@@ -4416,3 +4416,260 @@ test.describe('blocks of the theme', () => {
     await context.close()
   })
 })
+
+test.describe('modules in the theme', () => {
+  // THEMES §10.2, TH3.1: what the modules print, in their own base look under theme-default.
+  const BASE = '/kitchen-sink/modules'
+  const PAGES = [BASE, `${BASE}/form`, `${BASE}/long-trail`]
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-11', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  async function open(browser, width, path) {
+    const context = await browser.newContext({
+      viewport: { width, height: width === 1280 ? 900 : 812 },
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(path)
+    await still(page)
+    return { context, page }
+  }
+
+  // The error of a field is on the page before anything is wrong, hidden: shown to be measured.
+  const showErrors = (page) =>
+    page.evaluate(() => {
+      for (const error of document.querySelectorAll('.wx-form__error')) {
+        error.hidden = false
+        error.textContent = 'Fill this in.'
+      }
+    })
+
+  // Each form of the showcase: the boxes of its name and e-mail fields (both half width), the
+  // smallest height of a control and of a choice, and whether it stands in the narrow column.
+  const forms = (page) =>
+    page.locator('form.wx-form[data-webx-form="showcase"]').evaluateAll((all) =>
+      all.map((form) => {
+        const box = (node) => {
+          const r = node.getBoundingClientRect()
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }
+        }
+        const field = (key) => box(form.querySelector(`[data-webx-field="${key}"]`))
+        const lowest = (selector) =>
+          Math.min(
+            ...[...form.querySelectorAll(selector)].map((n) => n.getBoundingClientRect().height),
+          )
+        return {
+          narrow: !!form.closest('.b-showcase-column__frame'),
+          name: field('name'),
+          email: field('email'),
+          message: field('message'),
+          control: lowest('.wx-form__control:not([type="file"])'),
+          choice: lowest('.wx-form__choice, .wx-form__consent'),
+          submit: form.querySelector('.wx-form__submit').getBoundingClientRect().height,
+        }
+      }),
+    )
+
+  test('the modules stylesheet is linked under the theme, and nothing scrolls sideways at 360, 375 and 1280', async ({
+    browser,
+  }) => {
+    for (const width of [360, 375, 1280]) {
+      for (const path of PAGES) {
+        const { context, page } = await open(browser, width, path)
+        const { scroll, client, links } = await page.evaluate(() => ({
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+          links: [...document.querySelectorAll('link[rel="stylesheet"]')].map((l) => l.href),
+        }))
+        expect(scroll, `${path} at ${width}`).toBeLessThanOrEqual(client)
+        const modules = links.findIndex((href) =>
+          /\/themes\/modules\/[0-9a-f]{12}\/modules\.css$/.test(href),
+        )
+        const theme = links.findIndex((href) => href.includes('/themes/webx-ui/theme-default/'))
+        expect(modules, `${path}: the modules' base look is linked`).toBeGreaterThan(-1)
+        expect(modules, 'and before the theme, which restyles it by coming later').toBeLessThan(
+          theme,
+        )
+        await context.close()
+      }
+    }
+  })
+
+  test('the form puts half-width fields side by side only where it has room, every target 44px tall', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/form`)
+      const all = await forms(page)
+      expect(all.length, 'the form in the column of the page and in the narrow one').toBe(2)
+      for (const f of all) {
+        const label = `${width}${f.narrow ? ' narrow' : ''}`
+        if (width === 1280 && !f.narrow) {
+          expect(f.email.left, `${label}: e-mail beside the name`).toBeGreaterThanOrEqual(
+            f.name.right - 1,
+          )
+          expect(f.email.top, label).toBe(f.name.top)
+        } else {
+          expect(f.email.top, `${label}: e-mail under the name`).toBeGreaterThanOrEqual(
+            f.name.bottom - 1,
+          )
+        }
+        expect(f.control, `${label}: controls`).toBeGreaterThanOrEqual(44)
+        expect(f.choice, `${label}: choices`).toBeGreaterThanOrEqual(44)
+        expect(f.submit, `${label}: the button`).toBeGreaterThanOrEqual(44)
+      }
+      await context.close()
+    }
+  })
+
+  test('a preset repaints the form: its controls, its button and its error', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280, `${BASE}/form`)
+    await showErrors(page)
+    const read = () =>
+      page.evaluate(() => {
+        const style = (selector) => getComputedStyle(document.querySelector(selector))
+        // A token as the browser resolves a colour, so the two compare as the same string.
+        const token = (name) => {
+          const probe = document.createElement('i')
+          probe.style.color = `var(--site-${name})`
+          document.body.append(probe)
+          const value = getComputedStyle(probe).color
+          probe.remove()
+          return value
+        }
+        return {
+          control: style('.wx-form__control').backgroundColor,
+          border: style('.wx-form__control').borderTopColor,
+          submit: style('.wx-form__submit').backgroundColor,
+          error: style('.wx-form__error').color,
+          bg: token('color-bg'),
+          line: token('color-border'),
+          accent: token('color-accent'),
+          danger: token('color-danger'),
+        }
+      })
+    const before = await read()
+    expect(before.control).toBe(before.bg)
+    expect(before.border).toBe(before.line)
+    expect(before.submit).toBe(before.accent)
+    expect(before.error).toBe(before.danger)
+    await paint(page, 'night')
+    const after = await read()
+    expect(after.control).toBe(after.bg)
+    expect(after.submit).toBe(after.accent)
+    expect(after.control).not.toBe(before.control)
+    expect(after.submit).not.toBe(before.submit)
+    await context.close()
+  })
+
+  test('the trail is one line of links without markers, and wraps on a phone without going sideways', async ({
+    browser,
+  }) => {
+    for (const [width, path] of [
+      [1280, `${BASE}/form`],
+      [360, `${BASE}/long-trail`],
+    ]) {
+      const { context, page } = await open(browser, width, path)
+      const trail = await page.locator('.webx-breadcrumbs').evaluate((nav) => {
+        const list = nav.querySelector('.webx-breadcrumbs__list')
+        const items = [...list.querySelectorAll('.webx-breadcrumbs__item')]
+        const links = [...list.querySelectorAll('.webx-breadcrumbs__link')]
+        return {
+          marker: getComputedStyle(items[0]).listStyleType,
+          display: getComputedStyle(list).display,
+          // By the middle: a link is as tall as a finger, the current page's name only as its words.
+          rows: items.map((item) => {
+            const r = item.getBoundingClientRect()
+            return Math.round((r.top + r.bottom) / 2)
+          }),
+          right: Math.max(...items.map((item) => item.getBoundingClientRect().right)),
+          link: Math.min(...links.map((a) => a.getBoundingClientRect().height)),
+          client: document.documentElement.clientWidth,
+          current: list
+            .querySelector('[aria-current="page"]')
+            .classList.contains('webx-breadcrumbs__item--current'),
+        }
+      })
+      expect(trail.marker, path).toBe('none')
+      expect(trail.display, path).toBe('flex')
+      expect(trail.current, path).toBe(true)
+      expect(trail.link, `${path}: a link a finger can hit`).toBeGreaterThanOrEqual(44)
+      expect(trail.right, path).toBeLessThanOrEqual(trail.client)
+      if (width === 1280) expect(new Set(trail.rows).size, `${path}: one line`).toBe(1)
+      else expect(new Set(trail.rows).size, `${path}: the long one wraps`).toBeGreaterThan(1)
+      await context.close()
+    }
+  })
+
+  test('every word of the form and the trail reads in every preset, the night one included', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280, `${BASE}/form`)
+    await showErrors(page)
+    for (const preset of Object.keys(presets)) {
+      await paint(page, preset)
+      const low = await page.evaluate(() => {
+        const canvas = document
+          .createElement('canvas')
+          .getContext('2d', { willReadFrequently: true })
+        const rgba = (color) => {
+          canvas.clearRect(0, 0, 1, 1)
+          canvas.fillStyle = color
+          canvas.fillRect(0, 0, 1, 1)
+          return Array.from(canvas.getImageData(0, 0, 1, 1).data)
+        }
+        const luminance = (color) => {
+          const [r, g, b] = rgba(color)
+            .slice(0, 3)
+            .map((v) => {
+              v /= 255
+              return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+            })
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        }
+        const ratio = (a, b) => {
+          const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+          return (x + 0.05) / (y + 0.05)
+        }
+        const behind = (el) => {
+          for (let node = el; node; node = node.parentElement) {
+            const bg = getComputedStyle(node).backgroundColor
+            if (rgba(bg)[3] > 0) return bg
+          }
+          return 'white'
+        }
+        const words = [
+          '.wx-form__label',
+          '.wx-form__help',
+          '.wx-form__error',
+          '.wx-form__choice-label',
+          '.wx-form__consent-text',
+          '.wx-form__submit',
+          '.wx-form__control',
+          '.webx-breadcrumbs__link',
+          '.webx-breadcrumbs__item--current',
+        ]
+        return [...document.querySelectorAll(words.join(', '))]
+          .filter((el) => {
+            const r = el.getBoundingClientRect()
+            return r.width > 0 && r.height > 0
+          })
+          .map((el) => ({
+            what: `${el.className} "${(el.textContent || el.value || '').trim().slice(0, 30)}"`,
+            ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
+          }))
+          .filter((w) => w.ratio < 4.5)
+      })
+      expect(low, preset).toEqual([])
+    }
+    await context.close()
+  })
+})
