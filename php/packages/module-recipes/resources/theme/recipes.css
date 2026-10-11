@@ -394,8 +394,12 @@
   max-width: 42rem;
 }
 
-/* Nutrition: a narrow two-column table, the amounts aligned as numbers. */
+/*
+ * Nutrition: a narrow two-column table, the amounts aligned as numbers. A table again: prose
+ * makes every table a block that scrolls sideways, and its rows then shrink to their words.
+ */
 .wx-recipe__table {
+  display: table;
   width: 100%;
   max-width: 28rem;
   margin: 0;
