@@ -38,17 +38,17 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
-    public function it_seeds_a_rubric_two_tags_and_two_articles_one_of_them_scheduled(): void
+    public function it_seeds_a_rubric_two_tags_and_five_articles_one_of_them_scheduled(): void
     {
         $this->artisan('webx:demo')->assertSuccessful();
 
         $this->assertSame(1, Rubric::query()->count());
         $this->assertSame(2, Tag::query()->count());
-        $this->assertSame(2, Article::query()->count());
+        $this->assertSame(5, Article::query()->count());
 
         $live = Article::query()->published()->get();
 
-        $this->assertCount(1, $live, 'One of the two is dated ahead of today.');
+        $this->assertCount(4, $live, 'One of the five is dated ahead of today.');
         $this->assertTrue(Article::query()->where('slug->en', 'what-comes-next-week')->firstOrFail()->isScheduled());
     }
 

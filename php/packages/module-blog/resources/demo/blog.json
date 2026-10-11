@@ -5,8 +5,14 @@
     "lead": "Short pieces about how this site is put together."
   },
   "tags": [
-    { "slug": "blocks", "title": "Blocks" },
-    { "slug": "demo", "title": "Demo" }
+    {
+      "slug": "blocks",
+      "title": "Blocks"
+    },
+    {
+      "slug": "demo",
+      "title": "Demo"
+    }
   ],
   "articles": [
     {
@@ -49,6 +55,59 @@
           "values": {
             "heading": "A date instead of a scheduler",
             "body": "There is no job waiting to publish this. The date is the whole of it: before it the article is not on the site, after it it is."
+          }
+        }
+      ]
+    },
+    {
+      "slug": "addresses-that-survive-a-rename",
+      "title": "Addresses that survive a rename",
+      "lead": "Rename an article and its old address keeps answering — with a redirect to the new one, kept by the routing registry rather than by hand.",
+      "published_in_days": -5,
+      "cover": true,
+      "tags": ["demo"],
+      "blocks": [
+        {
+          "key": "demo-article-three-intro",
+          "type": "text",
+          "values": {
+            "heading": "One table of addresses",
+            "body": "Every page, article and rubric takes its address from one registry. A rename writes the new address and keeps the old one as an alias, so a link somebody shared last year still arrives."
+          }
+        }
+      ]
+    },
+    {
+      "slug": "why-an-article-has-no-template-of-its-own",
+      "title": "Why an article has no template of its own, and why that is the reason it can look like anything",
+      "lead": "A title this long wraps on a phone and in a narrow card — which is the point of it being here.",
+      "published_in_days": -9,
+      "tags": ["blocks"],
+      "blocks": [
+        {
+          "key": "demo-article-four-intro",
+          "type": "text",
+          "values": {
+            "heading": "Blocks all the way down",
+            "body": "The look of an article is the look of its blocks, and the look of a listing is the theme’s. Neither needs a template written for one article."
+          }
+        }
+      ]
+    },
+    {
+      "slug": "a-rubric-is-a-shelf",
+      "title": "A rubric is a shelf, a tag is a label",
+      "lead": "An article stands on one shelf first and may carry as many labels as it needs.",
+      "published_in_days": -14,
+      "cover": true,
+      "tags": ["demo", "blocks"],
+      "blocks": [
+        {
+          "key": "demo-article-five-intro",
+          "type": "text",
+          "values": {
+            "heading": "Where it is found",
+            "body": "The first rubric is the article’s main one: its trail and its address go through it. Tags only gather articles; an empty tag page never reaches a search engine."
           }
         }
       ]

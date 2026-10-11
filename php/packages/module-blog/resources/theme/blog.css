@@ -6,6 +6,10 @@
  * where prose styles every heading and list; each class here undoes what a listing does not
  * want from prose. Only site tokens of the engine's vocabulary, one class per rule: a theme
  * restyles any of it by writing the same class later.
+ *
+ * A listing and an article are direct children of the theme's main column, which centres them
+ * with `margin-inline: auto` at no specificity: a class here sets `margin-block` only, or the
+ * element leaves the column for the left edge of the page.
  */
 
 .webx-blog-header {
@@ -66,7 +70,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: var(--site-space-6) var(--site-space-5);
-  margin: 0 0 var(--site-space-6);
+  margin-block: 0 var(--site-space-6);
   padding: 0;
   list-style: none;
 }
@@ -149,11 +153,7 @@
   margin-inline-start: auto;
 }
 
-/* The article: a reading column, its header above the blocks. */
-.webx-blog-article {
-  max-width: 48rem;
-}
-
+/* The article: its header above the blocks. */
 .webx-blog-article__header {
   margin-block-end: var(--site-space-6);
 }

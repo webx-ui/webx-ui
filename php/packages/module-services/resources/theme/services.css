@@ -7,6 +7,10 @@
  * list; each class here undoes what a listing does not want from prose. Only site tokens of the
  * engine's vocabulary, one class per rule: a theme restyles any of it by writing the same class
  * later.
+ *
+ * A listing is a direct child of the theme's main column on a category page, which centres it
+ * with `margin-inline: auto` at no specificity: a class here sets `margin-block` only, or the
+ * list leaves the column for the left edge of the page.
  */
 
 .webx-services-header {
@@ -51,7 +55,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
   gap: var(--site-space-5);
-  margin: 0;
+  margin-block: 0;
   padding: 0;
   list-style: none;
 }
