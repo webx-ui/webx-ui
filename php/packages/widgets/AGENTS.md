@@ -55,10 +55,9 @@ layout="status|table">` — "Open until 19:00" in the site's time zone, the week
   Write / Request" on a phone, no script; `<x-webx-socials>`; `<x-webx-icon name>` — networks,
   messengers (Simple Icons, CC0), `phone chat mail clock link form close globe zoom`.
 - **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes placement label fallback-label>`:
-  each language named in itself, a link to the same page in it (`routing`, `hreflang`) — an untranslated page of a
-  type that shows it (pages) under that language's prefix (`Untranslated::path()`) — or to its home page with
-  `is-fallback` (a 404, a hidden entity, an article without a translation); nothing with one language or no
-  language in the path. CSS only. `LanguageLinks::current()`.
+  each language named in itself, a link to the same page in it (`routing`; untranslated pages via `Untranslated::path()`)
+  or to its home page with `is-fallback` (a 404, a hidden entity, an untranslated article); nothing with one
+  language or no language in the path. CSS only. `LanguageLinks::current()`.
 - **Slider** — `dist/slider.js|css` (Swiper built in), only where one stands: `<x-webx-slider
 variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'md' => 2, 'lg' => 3]">` with
   `<x-webx-slide thumb>` inside. Per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280
