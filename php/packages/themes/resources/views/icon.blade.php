@@ -1,0 +1,1 @@
+@if ($hint !== null)<!-- webx-themes: {{ $hint }} -->@endif<svg {{ $attributes->merge(['class' => 'theme-icon', 'width' => '1em', 'height' => '1em', 'fill' => 'currentColor', ...($label !== null && $label !== '' ? ['role' => 'img', 'aria-label' => $label] : ['aria-hidden' => 'true']), 'focusable' => 'false']) }}>@if ($href !== null)<use href="{{ $href }}"/>@endif</svg>

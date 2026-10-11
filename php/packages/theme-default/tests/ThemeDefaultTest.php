@@ -6,6 +6,7 @@ namespace WebxUi\ThemeDefault\Tests;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Orchestra\Testbench\TestCase;
@@ -15,6 +16,8 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 use WebxUi\Themes\Checks\CssCheck;
 use WebxUi\Themes\Checks\CssFinding;
+use WebxUi\Themes\Checks\IconCheck;
+use WebxUi\Themes\ThemeIcons;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\ThemeServiceProvider;
@@ -308,9 +311,28 @@ class ThemeDefaultTest extends TestCase
     #[Test]
     public function the_check_of_the_engine_passes_on_the_theme(): void
     {
-        $this->artisan('webx:theme:check', ['path' => self::path()])
-            ->expectsOutputToContain('6 block types')
-            ->assertSuccessful();
+        $code = Artisan::call('webx:theme:check', ['path' => self::path()]);
+        // The words wrapped at the width of the terminal, joined back.
+        $said = (string) preg_replace('/\s+/', ' ', Artisan::output());
+
+        $this->assertSame(0, $code, $said);
+        $this->assertStringContainsString('6 block types', $said);
+        $this->assertStringContainsString('27 icons, every one its templates name', $said);
+    }
+
+    /** The check reads the layer's templates; the showcase's own block types are not a layer's, so they are read here. */
+    #[Test]
+    public function the_showcase_names_only_icons_the_theme_has(): void
+    {
+        $names = array_keys(ThemeIcons::files($this->manifest()));
+        $this->assertContains('arrow-right', $names);
+
+        foreach (glob(self::path().'/demo/blocks/*.json') ?: [] as $file) {
+            $document = json_decode((string) file_get_contents($file), true);
+            $template = is_array($document) && is_string($document['template'] ?? null) ? $document['template'] : '';
+
+            $this->assertSame([], IconCheck::check($template, $names), basename($file));
+        }
     }
 
     /**

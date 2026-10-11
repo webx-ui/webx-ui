@@ -12,6 +12,7 @@ use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Exceptions\ThemeException;
 use WebxUi\Themes\ModuleStyles;
 use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\ThemeIcons;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\Vocabulary;
 
@@ -25,6 +26,10 @@ use WebxUi\Themes\Vocabulary;
  * styles know only tokens — a type that does not is refused by sync, so it is said here first —
  * and a type that overrides one of a lower layer keeps every field of it, with the same type.
  *
+ * And the icons (§13.1): each `icons/*.svg` of a layer can become a symbol that follows the
+ * colour of the text, and the views and block templates of the layers name only icons the chain
+ * has, never an inline `<svg>` ({@see IconCheck}).
+ *
  * Built files are not read: `dist/` is what the sources became, plus the stylesheets of the
  * libraries a widget builds in (Swiper, PhotoSwipe, Leaflet), which are not ours to rewrite.
  */
@@ -37,6 +42,8 @@ final class ChainCheck
     private array $read = [];
 
     private int $blocks = 0;
+
+    private int $icons = 0;
 
     /**
      * @param  list<ThemeManifest>  $bottom  The packages below the themes ({@see BottomLayers}).
@@ -56,6 +63,7 @@ final class ChainCheck
         $this->findings = [];
         $this->read = [];
         $this->blocks = 0;
+        $this->icons = 0;
 
         try {
             $vocabulary = Vocabulary::forChain($this->chain);
@@ -77,8 +85,59 @@ final class ChainCheck
         }
 
         $this->layerBlocks($vocabulary);
+        $this->checkIcons();
 
         return $this->findings;
+    }
+
+    /** How many icons the chain has, after the higher layer won by name. */
+    public function icons(): int
+    {
+        return $this->icons;
+    }
+
+    /**
+     * The icons of the layers and the templates that name them (§13.1, rule 24): each file can
+     * become a symbol that follows the colour of the text, and each `<x-theme::icon>` in a view
+     * or a block template of a layer names one the chain has.
+     */
+    private function checkIcons(): void
+    {
+        $names = [];
+
+        foreach ($this->chain->layers as $layer) {
+            foreach (ThemeIcons::files($layer) as $name => $file) {
+                foreach (ThemeIcons::problems($name, (string) file_get_contents($file)) as $problem) {
+                    $this->findings[] = ['file' => $file, 'line' => null, 'message' => $problem];
+                }
+
+                if (preg_match(ThemeIcons::NAME_PATTERN, $name) === 1) {
+                    $names[$name] = true;
+                }
+            }
+        }
+
+        $names = array_keys($names);
+        $this->icons = count($names);
+
+        foreach ($this->chain->viewPaths() as $directory) {
+            /** @var SplFileInfo $file */
+            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
+                if (str_ends_with($file->getFilename(), '.blade.php')) {
+                    $path = str_replace('\\', '/', $file->getPathname());
+
+                    foreach (IconCheck::check((string) file_get_contents($path), $names) as $finding) {
+                        $this->findings[] = ['file' => $path, 'line' => $finding['line'], 'message' => $finding['message']];
+                    }
+                }
+            }
+        }
+
+        foreach (LayerBlocks::of($this->chain)->all() as $block) {
+            foreach (IconCheck::check($block->template(), $names) as $finding) {
+                $this->findings[] = ['file' => $block->file, 'line' => $block->templateLine(), 'message' => "template, line {$finding['line']}: {$finding['message']}"];
+            }
+        }
     }
 
     /** How many block documents of the layers the last run read. */

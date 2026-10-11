@@ -116,6 +116,108 @@
     },
     {
       "title": {
+        "en": "Icons",
+        "ru": "Иконки",
+        "pl": "Ikony"
+      },
+      "slug": {
+        "en": "icons",
+        "ru": "ikonki",
+        "pl": "ikony"
+      },
+      "seo": {
+        "title": {
+          "en": "Icons",
+          "ru": "Иконки",
+          "pl": "Ikony"
+        },
+        "description": {
+          "en": "The icons of the theme: one sprite from the icons/ of every layer, in the colour of the text, at any size.",
+          "ru": "Иконки темы: один спрайт из icons/ всех слоёв, цветом текста, любого размера.",
+          "pl": "Ikony motywu: jeden sprite z icons/ każdej warstwy, w kolorze tekstu, w dowolnym rozmiarze."
+        }
+      },
+      "blocks": [
+        {
+          "key": "showcase-icons-intro",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "Icons",
+              "ru": "Иконки",
+              "pl": "Ikony"
+            },
+            "body": {
+              "en": "Every icon here comes from one sprite that webx:theme:sync builds from the icons/ folder of each theme layer; a layer above replaces an icon by giving a file the same name. A template writes <x-theme::icon name=\"phone\" />. An icon is one letter wide and takes the colour of the text around it, so a preset or the accent repaints it with the words — switch to the night preset and look again.\nAn icon is decoration and is hidden from a screen reader, unless it is given a label: the largest star below has one.",
+              "ru": "Каждая иконка здесь — из одного спрайта, который webx:theme:sync собирает из папки icons/ каждого слоя темы; слой выше заменяет иконку файлом с тем же именем. В шаблоне пишут <x-theme::icon name=\"phone\" />. Иконка шириной в одну букву и цветом окружающего текста, поэтому пресет или акцент перекрашивают её вместе со словами — включите пресет night и посмотрите ещё раз.\nИконка — украшение и скрыта от экранного диктора, если ей не дали подпись: у самой большой звезды ниже она есть.",
+              "pl": "Każda ikona tutaj pochodzi z jednego sprite’a, który webx:theme:sync składa z folderu icons/ każdej warstwy motywu; warstwa wyżej zastępuje ikonę plikiem o tej samej nazwie. Szablon pisze <x-theme::icon name=\"phone\" />. Ikona ma szerokość jednej litery i kolor otaczającego tekstu, więc preset albo akcent przemalowuje ją razem ze słowami — włącz preset night i spójrz jeszcze raz.\nIkona jest ozdobą i czytnik ekranu jej nie czyta, chyba że dostanie podpis: ma go największa gwiazdka poniżej."
+            }
+          }
+        },
+        {
+          "key": "showcase-icons-grid",
+          "type": "showcase-icons",
+          "values": {
+            "heading": {
+              "en": "Every icon of the chain",
+              "ru": "Все иконки цепочки",
+              "pl": "Wszystkie ikony łańcucha"
+            },
+            "note": {
+              "en": "The default theme’s set, and whatever the site’s own theme adds or redraws.",
+              "ru": "Набор темы по умолчанию и то, что добавляет или перерисовывает тема сайта.",
+              "pl": "Zestaw motywu domyślnego i to, co motyw strony dodaje albo rysuje od nowa."
+            },
+            "view": "grid"
+          }
+        },
+        {
+          "key": "showcase-icons-cases",
+          "type": "showcase-icons",
+          "values": {
+            "heading": {
+              "en": "In a line, at four sizes, in buttons, on the accent",
+              "ru": "В строке, четырёх размеров, в кнопках, на акценте",
+              "pl": "W wierszu, w czterech rozmiarach, w przyciskach, na akcencie"
+            },
+            "view": "cases",
+            "line": {
+              "en": "Call us any weekday from nine to six",
+              "ru": "Звоните в будни с девяти до шести",
+              "pl": "Zadzwoń w dni robocze od dziewiątej do osiemnastej"
+            },
+            "button": {
+              "en": "Download the price list",
+              "ru": "Скачать прайс-лист",
+              "pl": "Pobierz cennik"
+            },
+            "label": {
+              "en": "Favourite",
+              "ru": "В избранном",
+              "pl": "Ulubione"
+            }
+          }
+        },
+        {
+          "key": "showcase-icons-try",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "What to try",
+              "ru": "Что попробовать",
+              "pl": "Co wypróbować"
+            },
+            "body": {
+              "en": "Put a file phone.svg in theme/icons/ of the site and run php artisan webx:theme:sync: the phone above and in the contacts block is now yours. Write a colour into the file instead of currentColor and webx:theme:check says the icon will not follow the text. Name an icon the chain does not have in a template: the page shows nothing in its place, and the check names the file and the line.",
+              "ru": "Положите файл phone.svg в theme/icons/ сайта и выполните php artisan webx:theme:sync: телефон выше и в блоке контактов теперь ваш. Впишите в файл цвет вместо currentColor — webx:theme:check скажет, что иконка не будет следовать за текстом. Назовите в шаблоне иконку, которой нет в цепочке: страница не покажет ничего на её месте, а проверка назовёт файл и строку.",
+              "pl": "Połóż plik phone.svg w theme/icons/ strony i uruchom php artisan webx:theme:sync: telefon powyżej i w bloku kontaktów jest teraz twój. Wpisz do pliku kolor zamiast currentColor, a webx:theme:check powie, że ikona nie będzie podążać za tekstem. Podaj w szablonie nazwę ikony, której łańcuch nie ma: strona nie pokaże nic w jej miejscu, a sprawdzenie wskaże plik i wiersz."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": {
         "en": "Blocks",
         "ru": "Блоки",
         "pl": "Bloki"

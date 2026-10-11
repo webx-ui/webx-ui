@@ -26,6 +26,11 @@ final readonly class LayerBlock
         return is_string($this->document['styles'] ?? null) ? $this->document['styles'] : '';
     }
 
+    public function template(): string
+    {
+        return is_string($this->document['template'] ?? null) ? $this->document['template'] : '';
+    }
+
     /**
      * @return list<mixed>
      */
@@ -37,8 +42,19 @@ final readonly class LayerBlock
     /** The 1-based line of the file where the `styles` value starts, to turn a line inside it into one of the file. */
     public function stylesLine(): ?int
     {
+        return $this->line('styles');
+    }
+
+    /** The same for the `template` value. */
+    public function templateLine(): ?int
+    {
+        return $this->line('template');
+    }
+
+    private function line(string $key): ?int
+    {
         $source = (string) @file_get_contents($this->file);
-        $at = strpos($source, '"styles"');
+        $at = strpos($source, '"'.$key.'"');
 
         return $at === false ? null : substr_count($source, "\n", 0, $at) + 1;
     }

@@ -29,6 +29,16 @@
   display: block;
 }
 
+/* An icon of the sprite (<x-theme::icon>): a letter wide, on the line of the text, in its
+   colour. Sized here and not by its attributes, which the height: auto above would undo. */
+:where(.site) :where(.theme-icon) {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+}
+
 :where(.site) :where(a) {
   color: var(--site-color-accent);
   text-underline-offset: 0.15em;

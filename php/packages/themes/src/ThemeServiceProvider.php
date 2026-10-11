@@ -18,6 +18,7 @@ use WebxUi\Themes\Console\CheckCommand;
 use WebxUi\Themes\Console\MakeCommand;
 use WebxUi\Themes\Console\SyncCommand;
 use WebxUi\Themes\Contracts\Appearance;
+use WebxUi\Themes\View\Components\Icon;
 
 /**
  * Slots the theme chain into Blade's lookup (spec §7.1):
@@ -28,7 +29,8 @@ use WebxUi\Themes\Contracts\Appearance;
  *     modules    their own resources/views
  *
  * and gives the page its tokens: `@webxTheme`, `theme_token()` (§7.3); the words of the layout,
- * `theme::` (§15.2), the same way; and the error pages of the chain, `views/errors/` (§4).
+ * `theme::` (§15.2), the same way; the error pages of the chain, `views/errors/` (§4); and the
+ * icons of the chain, `<x-theme::icon>` (§13.1).
  *
  * With `webx-themes.theme` empty it does nothing at all, so a site without a theme behaves
  * exactly as it did before the package was installed: `@webxTheme` is still there for a layout
@@ -61,6 +63,9 @@ class ThemeServiceProvider extends ServiceProvider
         // If: a test points it at fixtures instead of what Composer installed.
         $this->app->singletonIf(ModuleStyles::class, fn (Application $app) => new ModuleStyles($app->make(ThemeAssets::class)));
 
+        // Scoped: it remembers what it read of the icons, and a long-lived worker should see a sync.
+        $this->app->scoped(ThemeIcons::class, fn (Application $app) => new ThemeIcons($app->make(ThemeChain::class), $app->make(ThemeAssets::class)));
+
         // Extended rather than replaced: whatever loader the site or another package set up stays
         // the one that answers every namespace but `theme`.
         $this->app->extend('translation.loader', fn (Loader $loader, Application $app) => new ThemeLines(
@@ -83,6 +88,10 @@ class ThemeServiceProvider extends ServiceProvider
         // `var_export` rather than a literal class name: the compiled string has to carry the
         // namespace separators.
         Blade::directive('webxTheme', static fn (): string => sprintf('<?php echo app(%s)->render(); ?>', var_export(ThemeHead::class, true)));
+
+        // Without a theme too: a template that names an icon still compiles, and prints an empty <svg>.
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-themes');
+        Blade::component('theme::icon', Icon::class);
 
         if ($this->reference() === null) {
             return;

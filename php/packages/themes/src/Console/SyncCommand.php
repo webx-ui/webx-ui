@@ -10,12 +10,14 @@ use WebxUi\Themes\Contracts\SyncStep;
 use WebxUi\Themes\ModuleStyles;
 use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\ThemeIcons;
 use WebxUi\Themes\ThemeManifest;
 
 /**
  * Brings the site up to date with its layers (spec §17): their built files and assets (§13.2) —
  * the themes' and those of the packages below them, the widgets — the base look of the installed
- * modules as one stylesheet (§10.2), and then whatever the packages
+ * modules as one stylesheet (§10.2), the icons of the chain as one sprite (§13.1), and then
+ * whatever the packages
  * registered as a {@see SyncStep}: the block types of the layers, when `webx-ui/module-blocks` is
  * installed (§9.2). Run it after `composer update` — a theme update that was installed but not
  * synced still renders with the old stylesheet and the old blocks.
@@ -35,7 +37,7 @@ class SyncCommand extends Command
 
     protected $description = 'Publish the built files of the packaged theme layers to public/themes, and put the block types of the layers on the site';
 
-    public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeAssets $assets, ModuleStyles $modules): int
+    public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeAssets $assets, ModuleStyles $modules, ThemeIcons $icons): int
     {
         if ($chain->isEmpty()) {
             $this->components->info('No theme is configured (webx-themes.theme), nothing to sync.');
@@ -54,6 +56,7 @@ class SyncCommand extends Command
         }
 
         $this->components->twoColumnDetail('modules — their base look', $this->modules($modules));
+        $this->components->twoColumnDetail('icons — the sprite of the chain', $this->icons($icons));
 
         $refused = 0;
         $adopt = $this->adopt();
@@ -129,6 +132,29 @@ class SyncCommand extends Command
             'published' => "published {$modules->current()} ({$count})",
             'unchanged' => 'unchanged',
             'nothing' => 'no module carries one',
+        };
+    }
+
+    /** The `icons/*.svg` of the layers, as one sprite (§13.1). */
+    private function icons(ThemeIcons $icons): string
+    {
+        $count = count($icons->names());
+        $count .= $count === 1 ? ' icon' : ' icons';
+
+        if ($this->option('dry-run')) {
+            $hash = $icons->hash();
+
+            return match (true) {
+                $hash === null => 'no layer has icons/',
+                $hash === $icons->current() && ! $this->option('force') => 'unchanged',
+                default => "would publish {$hash} ({$count})",
+            };
+        }
+
+        return match ($icons->publish((bool) $this->option('force'))) {
+            'published' => "published {$icons->current()} ({$count})",
+            'unchanged' => 'unchanged',
+            'nothing' => 'no layer has icons/',
         };
     }
 
