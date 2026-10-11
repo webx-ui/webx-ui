@@ -159,6 +159,85 @@ final class ModulesCommandTest extends TestCase
     }
 
     #[Test]
+    public function the_languages_of_the_demo_are_the_ones_its_fixtures_are_written_in(): void
+    {
+        $catalogue = new Catalogue($this->files, $this->installed);
+        $root = dirname(__DIR__, 2);
+
+        foreach ($catalogue->ids() as $id) {
+            $package = $root.'/'.substr($catalogue->packageFor($id), strlen('webx-ui/'));
+            $written = $this->languagesIn($package.'/resources/demo');
+            $declared = $catalogue->demoOf($id);
+
+            if (! is_dir($package.'/src/Demo')) {
+                $this->assertSame([], $declared, "{$id}: seeds no demo, so it speaks no language");
+            } elseif ($written === []) {
+                // Plain strings, or no words at all: which one is not something a file can say.
+                $this->assertContains($declared, [[], ['en']], "{$id}: a demo without language maps is English or wordless");
+            } else {
+                $this->assertSame($written, $declared, "{$id}: demo is not what resources/demo is written in");
+            }
+        }
+
+        foreach ($catalogue->themeDemos() as $theme => $demo) {
+            $path = $root.'/'.substr($theme, strlen('webx-ui/')).'/demo';
+            $modules = array_values(array_filter(
+                array_map(basename(...), $this->files->directories($path)),
+                $catalogue->knows(...),
+            ));
+            sort($modules);
+
+            $this->assertSame($modules, $demo['modules'], "{$theme}: not the modules it has a demo/<module>/ for");
+            $this->assertSame($this->languagesIn($path), $demo['demo'], "{$theme}: demo is not what demo/ is written in");
+        }
+    }
+
+    /**
+     * Every language a map of languages names anywhere in the JSON under a directory — a map
+     * being an object with `en` whose keys are all language codes and whose values all strings.
+     *
+     * @return list<string>
+     */
+    private function languagesIn(string $directory): array
+    {
+        if (! is_dir($directory)) {
+            return [];
+        }
+
+        $found = [];
+        $walk = function (mixed $value) use (&$walk, &$found): void {
+            if (! is_array($value)) {
+                return;
+            }
+
+            $isMap = array_key_exists('en', $value);
+
+            foreach ($value as $key => $one) {
+                $isMap = $isMap && is_string($key) && preg_match('/^[a-z]{2}(-[A-Za-z]{2,4})?$/', $key) === 1 && is_string($one);
+            }
+
+            if ($isMap) {
+                $found += array_fill_keys(array_keys($value), true);
+
+                return;
+            }
+
+            array_map($walk, $value);
+        };
+
+        foreach ($this->files->allFiles($directory) as $file) {
+            if ($file->getExtension() === 'json') {
+                $walk(json_decode((string) $file->getContents(), true));
+            }
+        }
+
+        $languages = array_map(strval(...), array_keys($found));
+        sort($languages);
+
+        return $languages;
+    }
+
+    #[Test]
     public function modules_after_a_plus_come_on_top_of_the_suggested_ones(): void
     {
         $catalogue = new Catalogue($this->files, $this->installed);

@@ -107,6 +107,7 @@ final class SetupCommand extends Command
 
         try {
             $this->gather();
+            $this->warnAboutTheDemo();
             $this->writeEnvironment();
             $this->prepareDatabase();
             $this->installModules();
@@ -334,6 +335,30 @@ final class SetupCommand extends Command
         }
 
         return confirm(label: 'Fill it with demo content to look at', default: true);
+    }
+
+    /**
+     * A language of the site the demo is not written in (spec WEBX_UI_THEMES.md §15.2), said
+     * before anything is installed, while leaving it out of `--locales` is still one word away.
+     * Only a warning: the demo seeds all the same, and a site that will translate it in the panel
+     * has nothing to change.
+     */
+    private function warnAboutTheDemo(): void
+    {
+        if ($this->answers['demo'] !== 'yes') {
+            return;
+        }
+
+        $codes = LocalesConfig::codes($this->answers['locales']);
+        $default = $codes[0] ?? 'en';
+
+        foreach ($this->catalogue->demoGaps($codes, $this->modules, $this->theme->package) as $locale => $ids) {
+            $this->components->warn(sprintf('The demo is not written in %s for: %s.', $locale, implode(', ', $ids)));
+            // A line of its own: the warning box wraps at the terminal's width, wherever it falls.
+            $this->line('  '.($locale === $default
+                ? 'It seeds in English there, under the default language.'
+                : "Those pages show the {$default} words in {$locale} until somebody translates them."));
+        }
     }
 
     // -- The steps -------------------------------------------------------------------------

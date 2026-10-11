@@ -33,9 +33,12 @@ final class Catalogue
      * that block is on disk only once the package is installed, and this list is mostly about
      * packages that are not. `requires` is the package's own `require` read as panel ids —
      * Composer installs those anyway, and saying so lets whoever chooses see it before they
-     * do. `CatalogueTest` holds both to the packages of the monorepo.
+     * do. `demo` is the languages the module's demo content is written in — for the same reason:
+     * `webx:setup` warns about a language it lacks before the package is there to be read (spec
+     * WEBX_UI_THEMES.md §15.2); a demo of plain strings is `en`, a module that seeds no words has
+     * none. `ModulesCommandTest` holds all three to the packages of the monorepo.
      *
-     * @var array<string, array{package: string, npm: string, label: string, default: bool, requires: list<string>}>
+     * @var array<string, array{package: string, npm: string, label: string, default: bool, requires: list<string>, demo: list<string>}>
      */
     private const MODULES = [
         'pages' => [
@@ -44,6 +47,7 @@ final class Catalogue
             'label' => 'Pages — the page tree, its editor and the home page',
             'default' => true,
             'requires' => ['admins', 'blocks', 'seo'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'media' => [
             'package' => 'webx-ui/module-media',
@@ -51,6 +55,7 @@ final class Catalogue
             'label' => 'Media — the file library',
             'default' => true,
             'requires' => ['admins'],
+            'demo' => [],
         ],
         'blocks' => [
             'package' => 'webx-ui/module-blocks',
@@ -58,6 +63,7 @@ final class Catalogue
             'label' => 'Blocks — the block types a page is built out of',
             'default' => true,
             'requires' => ['admins'],
+            'demo' => ['en'],
         ],
         'seo' => [
             'package' => 'webx-ui/module-seo',
@@ -65,6 +71,7 @@ final class Catalogue
             'label' => 'SEO — metatags, redirects and the sitemap',
             'default' => true,
             'requires' => ['admins', 'settings'],
+            'demo' => ['en'],
         ],
         'settings' => [
             'package' => 'webx-ui/module-settings',
@@ -72,6 +79,7 @@ final class Catalogue
             'label' => 'Settings — the screens a site keeps its own settings on',
             'default' => true,
             'requires' => ['admins'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'audit' => [
             'package' => 'webx-ui/module-audit',
@@ -79,6 +87,7 @@ final class Catalogue
             'label' => 'Audit — the production config, the host, and links to a development stand in the content',
             'default' => true,
             'requires' => ['admins', 'settings'],
+            'demo' => [],
         ],
         'inbox' => [
             'package' => 'webx-ui/module-inbox',
@@ -86,6 +95,7 @@ final class Catalogue
             'label' => 'Inbox — forms and what visitors send through them',
             'default' => true,
             'requires' => ['admins'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'blog' => [
             'package' => 'webx-ui/module-blog',
@@ -93,6 +103,7 @@ final class Catalogue
             'label' => 'Blog — articles, rubrics and tags',
             'default' => false,
             'requires' => ['admins', 'blocks', 'media', 'seo'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'services' => [
             'package' => 'webx-ui/module-services',
@@ -100,6 +111,7 @@ final class Catalogue
             'label' => 'Services — a catalogue of services with categories, each a page of the site',
             'default' => false,
             'requires' => ['blocks', 'media', 'seo'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'faq' => [
             'package' => 'webx-ui/module-faq',
@@ -107,6 +119,7 @@ final class Catalogue
             'label' => 'FAQ — questions and answers, shown on any page as a block',
             'default' => false,
             'requires' => ['blocks'],
+            'demo' => ['en', 'ru'],
         ],
         'reviews' => [
             'package' => 'webx-ui/module-reviews',
@@ -114,6 +127,7 @@ final class Catalogue
             'label' => 'Reviews — what clients say, shown on any page as a block',
             'default' => false,
             'requires' => ['blocks', 'media'],
+            'demo' => ['en', 'ru'],
         ],
         'recipes' => [
             'package' => 'webx-ui/module-recipes',
@@ -121,6 +135,7 @@ final class Catalogue
             'label' => 'Recipes — recipes with categories, nutrition and schema.org markup, each a page of the site',
             'default' => false,
             'requires' => ['media', 'seo'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'events' => [
             'package' => 'webx-ui/module-events',
@@ -128,6 +143,7 @@ final class Catalogue
             'label' => 'Events — workshops and meetings with a date, a place and a link to book, each a page of the site',
             'default' => false,
             'requires' => ['media', 'seo'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'press' => [
             'package' => 'webx-ui/module-press',
@@ -135,6 +151,7 @@ final class Catalogue
             'label' => 'Press — the outlets that wrote about the site and their articles, a page per outlet and a strip of logos',
             'default' => false,
             'requires' => ['blocks', 'media', 'seo'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'team' => [
             'package' => 'webx-ui/module-team',
@@ -142,6 +159,7 @@ final class Catalogue
             'label' => 'Team — the people of the organisation with their photos and social links, shown on any page as a block',
             'default' => false,
             'requires' => ['blocks', 'media'],
+            'demo' => ['en', 'ru'],
         ],
         'banners' => [
             'package' => 'webx-ui/module-banners',
@@ -149,6 +167,7 @@ final class Catalogue
             'label' => 'Banners — pictures with words and buttons in named places, printed by the site\'s templates',
             'default' => false,
             'requires' => ['media'],
+            'demo' => ['en', 'ru'],
         ],
         'tariffs' => [
             'package' => 'webx-ui/module-tariffs',
@@ -156,6 +175,7 @@ final class Catalogue
             'label' => 'Tariffs — price cards with what each plan includes, shown on any page as a block',
             'default' => false,
             'requires' => ['blocks'],
+            'demo' => ['en', 'ru'],
         ],
         'vacancies' => [
             'package' => 'webx-ui/module-vacancies',
@@ -163,6 +183,7 @@ final class Catalogue
             'label' => 'Vacancies — open positions with terms and salary, each a page of the site with schema.org JobPosting',
             'default' => false,
             'requires' => ['seo'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'catalog' => [
             'package' => 'webx-ui/module-catalog',
@@ -170,6 +191,7 @@ final class Catalogue
             'label' => 'Catalog — products with prices and pictures in a tree of categories, a filter and bulk actions',
             'default' => false,
             'requires' => ['media', 'seo'],
+            'demo' => ['en'],
         ],
         'catalog-brands' => [
             'package' => 'webx-ui/module-catalog-brands',
@@ -177,6 +199,7 @@ final class Catalogue
             'label' => 'Catalog brands — a brand per product with its own page, logo and description, and a filter (needs the catalog)',
             'default' => false,
             'requires' => ['catalog', 'media', 'seo'],
+            'demo' => ['en'],
         ],
         'catalog-labels' => [
             'package' => 'webx-ui/module-catalog-labels',
@@ -184,6 +207,7 @@ final class Catalogue
             'label' => 'Catalog labels — top, sale, new: badges on the cards and a filter (needs the catalog)',
             'default' => false,
             'requires' => ['catalog'],
+            'demo' => ['en'],
         ],
         'catalog-stock' => [
             'package' => 'webx-ui/module-catalog-stock',
@@ -191,6 +215,7 @@ final class Catalogue
             'label' => 'Catalog stock — in stock, out of stock, on order, and whether it can be bought (needs the catalog)',
             'default' => false,
             'requires' => ['catalog'],
+            'demo' => ['en'],
         ],
         'catalog-properties' => [
             'package' => 'webx-ui/module-catalog-properties',
@@ -198,6 +223,7 @@ final class Catalogue
             'label' => 'Catalog properties — colour, material, weight: sets per category, specifications on the page and filters (needs the catalog)',
             'default' => false,
             'requires' => ['catalog', 'media'],
+            'demo' => ['en'],
         ],
         'catalog-landings' => [
             'package' => 'webx-ui/module-catalog-landings',
@@ -205,6 +231,7 @@ final class Catalogue
             'label' => 'Catalog landings — «Apple laptops», «under 50 000»: a list with filters chosen in advance under its own address, texts and SEO, made one by one or in bulk (needs the catalog)',
             'default' => false,
             'requires' => ['catalog', 'seo'],
+            'demo' => ['en'],
         ],
         'catalog-manticore' => [
             'package' => 'webx-ui/module-catalog-manticore',
@@ -212,6 +239,7 @@ final class Catalogue
             'label' => 'Catalog on Manticore — search, filters and counts for tens of thousands of products, on a Manticore server you run (needs the catalog)',
             'default' => false,
             'requires' => ['catalog'],
+            'demo' => [],
         ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
@@ -219,6 +247,7 @@ final class Catalogue
             'label' => 'Menus — the header and the footer, and what each entry points at',
             'default' => true,
             'requires' => [],
+            'demo' => ['en', 'pl', 'ru'],
         ],
         'admins' => [
             'package' => 'webx-ui/module-auth',
@@ -226,6 +255,22 @@ final class Catalogue
             'label' => 'Administrators — signing in, roles and permissions',
             'default' => true,
             'requires' => [],
+            'demo' => [],
+        ],
+    ];
+
+    /**
+     * The demo a packaged theme brings in place of a module's own (spec WEBX_UI_THEMES.md §15.1):
+     * the modules it has a `demo/<module>/` for, and the languages it is written in. Written down
+     * for the reason `demo` above is; only the themes of the monorepo — nobody has said what a
+     * stranger's theme speaks, and its modules then count with their own demo.
+     *
+     * @var array<string, array{modules: list<string>, demo: list<string>}>
+     */
+    private const THEMES = [
+        'webx-ui/theme-default' => [
+            'modules' => ['blocks', 'inbox', 'media', 'pages', 'seo'],
+            'demo' => ['en', 'pl', 'ru'],
         ],
     ];
 
@@ -315,6 +360,62 @@ final class Catalogue
         }
 
         return $closed;
+    }
+
+    /**
+     * The site's languages the demo of these modules is not written in, each with the modules
+     * that lack it. Under a theme of the monorepo its demo stands in for the modules it covers,
+     * as it does when the demo is seeded. A module that seeds no words lacks nothing.
+     *
+     * Such a module still seeds: a missing default language gets the English, a missing other
+     * one shows the default language's words under its prefix — which is what the warning says.
+     *
+     * @param  list<string>  $locales
+     * @param  list<string>  $ids
+     * @return array<string, list<string>>
+     */
+    public function demoGaps(array $locales, array $ids, ?string $theme = null): array
+    {
+        $themed = self::THEMES[$theme ?? ''] ?? null;
+        $gaps = [];
+
+        foreach ($ids as $id) {
+            $demo = $themed !== null && in_array($id, $themed['modules'], true)
+                ? $themed['demo']
+                : (self::MODULES[$id]['demo'] ?? []);
+
+            if ($demo === []) {
+                continue;
+            }
+
+            foreach ($locales as $locale) {
+                if (! in_array($locale, $demo, true)) {
+                    $gaps[$locale][] = $id;
+                }
+            }
+        }
+
+        return $gaps;
+    }
+
+    /**
+     * The languages a module's own demo is written in.
+     *
+     * @return list<string>
+     */
+    public function demoOf(string $id): array
+    {
+        return self::MODULES[$id]['demo'] ?? [];
+    }
+
+    /**
+     * What a theme of the monorepo brings as demo — for the test that holds it to the theme.
+     *
+     * @return array<string, array{modules: list<string>, demo: list<string>}>
+     */
+    public function themeDemos(): array
+    {
+        return self::THEMES;
     }
 
     /** @return array<string, string> */

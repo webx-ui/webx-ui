@@ -228,6 +228,44 @@ final class SetupThemeTest extends TestCase
         $this->assertContains('artisan webx:theme:sync', $this->ran);
     }
 
+    #[Test]
+    public function a_language_the_demo_is_not_written_in_is_warned_about_before_anything_is_installed(): void
+    {
+        $this->runSetup([
+            '--modules' => 'pages,admins,faq',
+            '--locales' => 'de,ru,pl',
+            '--no-demo' => false,
+            '--demo' => true,
+        ])
+            // The default language: the theme's demo stands in for the pages, so all three lack it.
+            ->expectsOutputToContain('The demo is not written in de for: pages, faq')
+            ->expectsOutputToContain('It seeds in English there')
+            // Another language: only what is not written in it — the FAQ is in en and ru.
+            ->expectsOutputToContain('The demo is not written in pl for: faq.')
+            ->doesntExpectOutputToContain('The demo is not written in ru')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function no_demo_no_warning(): void
+    {
+        $this->runSetup(['--modules' => 'pages,admins,faq', '--locales' => 'de'])
+            ->doesntExpectOutputToContain('The demo is not written in')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function a_theme_of_the_monorepo_answers_for_the_modules_it_has_a_demo_for(): void
+    {
+        $catalogue = new Catalogue($this->files, $this->installed);
+
+        // Blocks and SEO seed plain English of their own; under theme-default its demo is theirs.
+        $this->assertSame(['pl' => ['blocks', 'seo']], $catalogue->demoGaps(['en', 'pl'], ['blocks', 'seo', 'media'], null));
+        $this->assertSame([], $catalogue->demoGaps(['en', 'pl'], ['blocks', 'seo', 'media'], ThemeChoice::DEFAULT));
+        // A stranger's theme says nothing; its modules count with their own demo.
+        $this->assertSame(['pl' => ['blocks']], $catalogue->demoGaps(['en', 'pl'], ['blocks'], 'acme/theme-harbour'));
+    }
+
     /** @param  array<string, mixed>  $options */
     private function runSetup(array $options = []): PendingCommand
     {
