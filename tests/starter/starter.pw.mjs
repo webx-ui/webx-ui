@@ -5525,6 +5525,61 @@ test.describe('fonts', () => {
   })
 })
 
+test.describe('mail', () => {
+  // THEMES §7.5: the letter module-inbox sends, in the theme's frame, every colour a token's value
+  // written on the server — the showcase builds it for answers nobody sent.
+  async function letter(page, path) {
+    await page.goto(path)
+    await still(page)
+    const frame = page.locator('iframe.b-showcase-mail__letter')
+    await frame.scrollIntoViewIfNeeded()
+    const srcdoc = await frame.getAttribute('srcdoc')
+    const inside = page.frameLocator('iframe.b-showcase-mail__letter')
+    await inside.locator('a[href*="inbox/submissions"]').waitFor()
+    return { srcdoc, inside }
+  }
+
+  test('the letter stands in the theme’s frame, painted with the values of the tokens', async ({
+    page,
+  }) => {
+    const { srcdoc, inside } = await letter(page, '/kitchen-sink/mail')
+    expect(srcdoc, 'no CSS variable reaches a mail client').not.toContain('var(')
+    expect(srcdoc).not.toMatch(/<link\b|class="/)
+    const accent = await page.evaluate(() => {
+      const probe = document.createElement('span')
+      probe.style.color = 'var(--site-color-accent)'
+      document.body.append(probe)
+      const value = getComputedStyle(probe).color
+      probe.remove()
+      return value
+    })
+    const m = await inside.locator('body').evaluate((body) => {
+      const button = body.querySelector('a[href*="inbox/submissions"]')
+      const brand = body.querySelector('a')
+      return {
+        button: getComputedStyle(button).backgroundColor,
+        brand: getComputedStyle(brand).color,
+        text: body.innerText,
+        width: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      }
+    })
+    expect(m.button, 'the button is the accent of the site').toBe(accent)
+    expect(m.brand, 'so is the name of the site above').toBe(accent)
+    expect(m.text).toContain('Ada Lovelace')
+    expect(m.text).toContain('ada@example.com')
+    expect(m.text).toContain('Sent from')
+    expect(m.width, 'the letter fits its frame').toBeLessThanOrEqual(0)
+  })
+
+  test('the letter speaks the language of the page', async ({ page }) => {
+    const { inside } = await letter(page, '/pl/witryna/poczta')
+    const text = await inside.locator('body').innerText()
+    expect(text).toContain('Wysłano ze strony')
+    expect(text).toContain('Otwórz w panelu')
+    expect(text).not.toContain('Sent from')
+  })
+})
+
 test.describe('words of the layout', () => {
   // The words the shell can print: the theme's own (THEMES §15.2) and those of the widgets it is
   // built of. Read from the dictionaries themselves, so a word added later is checked too.
