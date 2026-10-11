@@ -1,0 +1,100 @@
+{
+  "slug": "showcase-fonts",
+  "title": "Showcase: fonts",
+  "description": "A line of every script the fonts of the theme cover, and one they do not, the weights of a variable font and its italic — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 99,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "latin",
+      "type": "wx-input",
+      "label": "Latin sample, English"
+    },
+    {
+      "id": "latin_ext",
+      "type": "wx-input",
+      "label": "Latin Extended sample, Polish"
+    },
+    {
+      "id": "turkish",
+      "type": "wx-input",
+      "label": "Latin Extended sample, Turkish"
+    },
+    {
+      "id": "cyrillic",
+      "type": "wx-input",
+      "label": "Cyrillic sample, Russian"
+    },
+    {
+      "id": "ukrainian",
+      "type": "wx-input",
+      "label": "Cyrillic sample, Ukrainian"
+    },
+    {
+      "id": "greek",
+      "type": "wx-input",
+      "label": "Greek sample — a script the theme has no file for"
+    },
+    {
+      "id": "missing",
+      "type": "wx-input",
+      "label": "Caption under the sample without a file",
+      "localized": true
+    },
+    {
+      "id": "weights",
+      "type": "wx-input",
+      "label": "Caption of the weights",
+      "localized": true
+    },
+    {
+      "id": "word",
+      "type": "wx-input",
+      "label": "Word shown at each weight",
+      "localized": true
+    },
+    {
+      "id": "italic",
+      "type": "wx-input",
+      "label": "Line in italic",
+      "localized": true
+    }
+  ],
+  "template": "<section class=\"b-showcase-fonts\" data-wx-block=\"showcase-fonts\">\n    @if ($heading)\n        <h2 class=\"b-showcase-fonts__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-fonts__note\">{{ $note }}</p>\n    @endif\n    @php\n        $rows = [\n            ['script' => 'latin', 'lang' => 'en', 'text' => $latin, 'own' => true],\n            ['script' => 'latin-ext', 'lang' => 'pl', 'text' => $latin_ext, 'own' => true],\n            ['script' => 'latin-ext', 'lang' => 'tr', 'text' => $turkish, 'own' => true],\n            ['script' => 'cyrillic', 'lang' => 'ru', 'text' => $cyrillic, 'own' => true],\n            ['script' => 'cyrillic', 'lang' => 'uk', 'text' => $ukrainian, 'own' => true],\n            ['script' => 'greek', 'lang' => 'el', 'text' => $greek, 'own' => false],\n        ];\n    @endphp\n    <dl class=\"b-showcase-fonts__scripts\">\n        @foreach ($rows as $row)\n            @if ($row['text'])\n                <div @class(['b-showcase-fonts__row', 'is-fallback' => ! $row['own']]) data-script=\"{{ $row['script'] }}\">\n                    <dt class=\"b-showcase-fonts__script\"><code>{{ $row['script'] }}</code> <span class=\"b-showcase-fonts__lang\">{{ $row['lang'] }}</span></dt>\n                    <dd class=\"b-showcase-fonts__sample\" lang=\"{{ $row['lang'] }}\">{{ $row['text'] }}</dd>\n                    @if (! $row['own'] && $missing)\n                        <dd class=\"b-showcase-fonts__caption\">{{ $missing }}</dd>\n                    @endif\n                </div>\n            @endif\n        @endforeach\n    </dl>\n    @if ($weights)\n        <p class=\"b-showcase-fonts__caption\">{{ $weights }}</p>\n        <div class=\"b-showcase-fonts__weights\">\n            @foreach ([300, 400, 500, 600, 700, 800] as $weight)\n                <span class=\"b-showcase-fonts__weight b-showcase-fonts__weight--{{ $weight }}\"><span class=\"b-showcase-fonts__number\">{{ $weight }}</span> {{ $word }}</span>\n            @endforeach\n            <span class=\"b-showcase-fonts__weight b-showcase-fonts__weight--italic\">{{ $italic }}</span>\n        </div>\n    @endif\n</section>\n",
+  "styles": ".b-showcase-fonts {\n    padding-block: var(--site-space-6);\n}\n\n.b-showcase-fonts__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-fonts__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-fonts__scripts {\n    display: grid;\n    gap: var(--site-space-3);\n    margin: 0 0 var(--site-space-5);\n}\n\n.b-showcase-fonts__row {\n    display: grid;\n    gap: var(--site-space-1);\n    padding: var(--site-space-3) var(--site-space-4);\n    border: 1px solid var(--site-color-border);\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-surface);\n}\n\n.b-showcase-fonts__row.is-fallback {\n    border-style: dashed;\n}\n\n.b-showcase-fonts__script {\n    color: var(--site-color-text-muted);\n    font-size: 0.875em;\n}\n\n.b-showcase-fonts__lang {\n    text-transform: uppercase;\n    letter-spacing: 0.05em;\n}\n\n.b-showcase-fonts__sample {\n    margin: 0;\n    font-size: var(--site-font-size-4);\n    overflow-wrap: anywhere;\n}\n\n.b-showcase-fonts__caption {\n    margin: 0;\n    color: var(--site-color-text-muted);\n    font-size: 0.875em;\n}\n\n.b-showcase-fonts__weights {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--site-space-2) var(--site-space-5);\n    margin-top: var(--site-space-2);\n    font-size: var(--site-font-size-4);\n}\n\n.b-showcase-fonts__number {\n    color: var(--site-color-text-muted);\n    font-size: 0.75em;\n    font-variant-numeric: tabular-nums;\n}\n\n.b-showcase-fonts__weight--300 { font-weight: 300; }\n.b-showcase-fonts__weight--400 { font-weight: 400; }\n.b-showcase-fonts__weight--500 { font-weight: 500; }\n.b-showcase-fonts__weight--600 { font-weight: 600; }\n.b-showcase-fonts__weight--700 { font-weight: 700; }\n.b-showcase-fonts__weight--800 { font-weight: 800; }\n\n.b-showcase-fonts__weight--italic {\n    font-style: italic;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Fonts",
+    "note": "",
+    "latin": "The quick brown fox jumps over the lazy dog",
+    "latin_ext": "Zażółć gęślą jaźń",
+    "turkish": "Pijamalı hasta yağız şoföre çabucak güvendi",
+    "cyrillic": "Съешь же ещё этих мягких французских булок",
+    "ukrainian": "Чуєш їх, доцю, га? Кумедна ж ти, прощайся без ґольфів!",
+    "greek": "Ταχίστη αλώπηξ βαφής ψημένη γη",
+    "missing": "",
+    "weights": "",
+    "word": "Harbor",
+    "italic": ""
+  }
+}

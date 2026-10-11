@@ -16,8 +16,11 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 use WebxUi\Themes\Checks\CssCheck;
 use WebxUi\Themes\Checks\CssFinding;
+use WebxUi\Themes\Checks\FontCheck;
 use WebxUi\Themes\Checks\IconCheck;
 use WebxUi\Themes\Checks\LineCheck;
+use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\ThemeFonts;
 use WebxUi\Themes\ThemeIcons;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
@@ -482,6 +485,34 @@ class ThemeDefaultTest extends TestCase
         $this->assertEqualsCanonicalizing(['de', 'en', 'es', 'fr', 'it', 'pl', 'pt', 'ru', 'tr', 'uk'], $languages);
         $this->assertEqualsCanonicalizing($languages, $this->manifest()->locales);
         $this->assertSame(['findings' => [], 'locales' => 10], LineCheck::check($this->manifest()));
+    }
+
+    /**
+     * Inter as the theme's own files (§15.3, decision of 11.10.2026): latin, latin-ext and
+     * cyrillic, upright and italic, with the OFL beside them — the licence travels with the font.
+     * They cover every language the theme speaks, and the body's stack starts with them.
+     */
+    #[Test]
+    public function inter_is_the_themes_own_and_draws_every_language_it_speaks(): void
+    {
+        $chain = ThemeChain::resolve('webx-ui/theme-default', $this->app->make(ThemeLocator::class));
+        $check = FontCheck::check($chain, []);
+
+        $this->assertSame([], $check['findings']);
+        $this->assertSame(['Inter', 'Inter'], array_column($check['faces'], 'family'));
+        $this->assertSame(['normal', 'italic'], array_column($check['faces'], 'style'));
+
+        foreach ($check['faces'] as $face) {
+            $this->assertSame(['latin-ext', 'latin', 'cyrillic'], array_values(array_intersect(['latin-ext', 'latin', 'cyrillic'], array_keys($face['files']))));
+            $this->assertSame([], ThemeFonts::gaps([$face], $this->manifest()->locales));
+
+            foreach ($face['files'] as $file) {
+                $this->assertStringStartsWith('wOF2', (string) file_get_contents(self::path().'/assets/'.$file, length: 4), $file);
+            }
+        }
+
+        $this->assertStringContainsString('SIL Open Font License, Version 1.1', (string) file_get_contents(self::path().'/assets/fonts/OFL.txt'));
+        $this->assertStringStartsWith('Inter, ', json_decode((string) file_get_contents(self::path().'/tokens.json'), true)['defaults']['font-body']);
     }
 
     /**

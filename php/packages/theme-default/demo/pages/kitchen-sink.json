@@ -302,6 +302,106 @@
     },
     {
       "title": {
+        "en": "Fonts",
+        "ru": "Шрифты",
+        "pl": "Fonty"
+      },
+      "slug": {
+        "en": "fonts",
+        "ru": "shrifty",
+        "pl": "fonty"
+      },
+      "seo": {
+        "title": {
+          "en": "Fonts",
+          "ru": "Шрифты",
+          "pl": "Fonty"
+        },
+        "description": {
+          "en": "The fonts of the theme are its own files, split by script: a page downloads only the scripts its letters need.",
+          "ru": "Шрифты темы — её собственные файлы, разрезанные по письменностям: страница скачивает только те, что нужны её буквам.",
+          "pl": "Fonty motywu to jego własne pliki, podzielone według pism: strona pobiera tylko te, których potrzebują jej litery."
+        }
+      },
+      "blocks": [
+        {
+          "key": "showcase-fonts-intro",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "Fonts",
+              "ru": "Шрифты",
+              "pl": "Fonty"
+            },
+            "body": {
+              "en": "The default theme draws its text in Inter, and the files of the font are the theme’s own: no request to a font service, so no visitor’s address is handed to anyone. The font is cut by script — latin, latin-ext, cyrillic — and each file is declared with the range of letters it covers. A browser downloads a file only when the page has a letter in its range: an English page takes the Latin file alone, a Polish one adds Latin Extended for ą and ł, a Russian one adds Cyrillic.\nThis page has every script at once, so it downloads all three. Open the network panel of the browser on the home page and you will see one.",
+              "ru": "Тема по умолчанию пишет текст шрифтом Inter, и файлы шрифта — её собственные: ни одного запроса к сервису шрифтов, ничей адрес никому не передаётся. Шрифт разрезан по письменностям — latin, latin-ext, cyrillic, — и каждый файл объявлен с диапазоном букв, которые он покрывает. Браузер скачивает файл, только когда на странице есть буква из его диапазона: английская страница берёт один латинский файл, польская добавляет расширенную латиницу для ą и ł, русская — кириллицу.\nНа этой странице есть все письменности сразу, поэтому она скачивает все три. Откройте сетевую панель браузера на главной — там будет один.",
+              "pl": "Motyw domyślny pisze tekst krojem Inter, a pliki fontu są jego własne: żadnego zapytania do serwisu z fontami, niczyj adres nie trafia do nikogo. Font jest pocięty według pism — latin, latin-ext, cyrillic — a każdy plik zadeklarowano z zakresem liter, które obejmuje. Przeglądarka pobiera plik tylko wtedy, gdy na stronie jest litera z jego zakresu: strona angielska bierze sam plik łaciński, polska dodaje rozszerzoną łacinę dla ą i ł, rosyjska — cyrylicę.\nNa tej stronie są wszystkie pisma naraz, więc pobiera wszystkie trzy. Otwórz panel sieci przeglądarki na stronie głównej — zobaczysz jeden."
+            }
+          }
+        },
+        {
+          "key": "showcase-fonts-scripts",
+          "type": "showcase-fonts",
+          "values": {
+            "heading": {
+              "en": "Every script, one font",
+              "ru": "Все письменности, один шрифт",
+              "pl": "Wszystkie pisma, jeden font"
+            },
+            "note": {
+              "en": "Each line is in the language named beside it. The last one is Greek, which the theme ships no file for: its letters come from the fallback font of the stack, and the line looks different — that is what a site in a language the theme does not cover would look like everywhere.",
+              "ru": "Каждая строка — на языке, названном рядом. Последняя — греческая, для неё у темы нет файла: её буквы берутся из запасного шрифта стека, и строка выглядит иначе — так выглядел бы везде сайт на языке, который тема не покрывает.",
+              "pl": "Każdy wiersz jest w języku podanym obok. Ostatni jest po grecku, dla którego motyw nie ma pliku: jego litery pochodzą z zapasowego fontu stosu i wiersz wygląda inaczej — tak wyglądałaby wszędzie strona w języku, którego motyw nie obejmuje."
+            },
+            "latin": "The quick brown fox jumps over the lazy dog",
+            "latin_ext": "Zażółć gęślą jaźń — pchnąć w tę łódź jeża lub ośm skrzyń fig",
+            "turkish": "Pijamalı hasta yağız şoföre çabucak güvendi",
+            "cyrillic": "Съешь же ещё этих мягких французских булок, да выпей чаю",
+            "ukrainian": "Чуєш їх, доцю, га? Кумедна ж ти, прощайся без ґольфів!",
+            "greek": "Ταχίστη αλώπηξ βαφής ψημένη γη, δρασκελίζει υπέρ νωθρού κυνός",
+            "missing": {
+              "en": "No file for greek: the fallback font draws it. webx:theme:check names the gap on a site that publishes in Greek.",
+              "ru": "Нет файла для greek: рисует запасной шрифт. На сайте с греческим webx:theme:check назовёт этот пробел.",
+              "pl": "Brak pliku dla greek: rysuje go font zapasowy. Na stronie po grecku webx:theme:check wskaże tę lukę."
+            },
+            "weights": {
+              "en": "One variable file per script carries every weight from 100 to 900, and the italic is its own file:",
+              "ru": "Один переменный файл на письменность несёт все начертания от 100 до 900, а курсив — отдельный файл:",
+              "pl": "Jeden zmienny plik na pismo niesie każdą grubość od 100 do 900, a kursywa to osobny plik:"
+            },
+            "word": {
+              "en": "Harbor",
+              "ru": "Гавань",
+              "pl": "Przystań"
+            },
+            "italic": {
+              "en": "and the italic, for emphasis",
+              "ru": "и курсив, для выделения",
+              "pl": "i kursywa, dla wyróżnienia"
+            }
+          }
+        },
+        {
+          "key": "showcase-fonts-try",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "What to try",
+              "ru": "Что попробовать",
+              "pl": "Co wypróbować"
+            },
+            "body": {
+              "en": "Give the site a font of its own: put its files in theme/assets/fonts/, declare them under \"fonts\" in theme/theme.json — a file per script, \"files\": { \"latin\": \"fonts/serif-latin.woff2\", … } — name the family in font-heading, and run php artisan webx:theme:sync. A family the site declares replaces the same family of the default theme.\nAdd a language in the panel that your font has no file for, and php artisan webx:doctor says so on the next deploy, before a visitor sees the letters in another font.",
+              "ru": "Дайте сайту свой шрифт: положите файлы в theme/assets/fonts/, объявите их в \"fonts\" в theme/theme.json — по файлу на письменность, \"files\": { \"latin\": \"fonts/serif-latin.woff2\", … }, — назовите семейство в font-heading и выполните php artisan webx:theme:sync. Семейство, которое объявил сайт, заменяет то же семейство темы по умолчанию.\nДобавьте в панели язык, для письменности которого у шрифта нет файла, и php artisan webx:doctor скажет об этом при следующем развёртывании — раньше, чем посетитель увидит буквы другим шрифтом.",
+              "pl": "Daj stronie własny font: połóż jego pliki w theme/assets/fonts/, zadeklaruj je w \"fonts\" w theme/theme.json — plik na pismo, \"files\": { \"latin\": \"fonts/serif-latin.woff2\", … } — podaj rodzinę w font-heading i uruchom php artisan webx:theme:sync. Rodzina zadeklarowana przez stronę zastępuje tę samą rodzinę motywu domyślnego.\nDodaj w panelu język, dla którego pisma font nie ma pliku, a php artisan webx:doctor powie o tym przy następnym wdrożeniu — zanim odwiedzający zobaczy litery innym fontem."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": {
         "en": "Blocks",
         "ru": "Блоки",
         "pl": "Bloki"
