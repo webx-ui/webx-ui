@@ -17,7 +17,8 @@ theme/                   ← the site's local theme: its differences
 Part of [WebX UI](https://github.com/webx-ui/webx-ui). No tables, no JavaScript.
 
 > Early days: this release resolves the chain, the order Blade looks views up in, the token
-> vocabulary, `@webxTheme`, `webx:theme:sync` and `webx:theme:make --local`. Block types, icons,
+> vocabulary, `@webxTheme`, `webx:theme:sync`, `webx:theme:make --local` and `webx:theme:check` (CSS knows
+> only tokens). Block types, icons,
 > the panel tab and the rest of the `webx:theme:*` commands arrive in the next releases — see the
 > specification.
 
@@ -145,6 +146,19 @@ $chain->layers;      // list<ThemeManifest>, top first
 $chain->top();       // the theme the site configured, or null
 $chain->viewPaths(); // every layer's views/ directory
 $chain->requires();  // the modules the chain cannot render without
+```
+
+The token rule for one stylesheet — what `webx:theme:check` runs on every file of the chain:
+
+```php
+use WebxUi\Themes\Checks\CssCheck;
+use WebxUi\Themes\Vocabulary;
+
+foreach (CssCheck::check($css, Vocabulary::base()) as $finding) {
+    $finding->line;      // where
+    $finding->problem;   // CssProblem: literal colour or font, unknown token, fallback, @media by width
+    $finding->message(); // what and why, in a line
+}
 ```
 
 A theme under development that Composer does not know about can be pointed at directly:

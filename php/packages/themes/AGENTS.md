@@ -22,6 +22,10 @@ and the site's `theme/`).
   layers bottom up → preset → the owner's edits of `editable` tokens (`Contracts\Appearance`).
 - **`@webxTheme`** — `<style>:root { --site-… }</style>` and every layer's stylesheet; nothing
   without a theme. **`theme_token($name, $default)`** — a merged value, for mail.
+- **`webx:theme:check [path]`** — CSS knows only tokens (spec §8): the tokens.json of every
+  layer, `src/css` of the layers, `resources/css` and `resources/theme` of the widgets and modules.
+  A line per finding (file:line, what, why) and a non-zero exit; `Checks\CssCheck::check($css,
+$vocabulary)` is the same rule for one stylesheet, and the block editor warns with it.
 - **`webx:theme:sync`** — copies the packaged layers' `dist/` and `assets/` to `public/themes/`.
 - **`webx:theme:make theme --local --uses=<vendor/name>`** — a local theme: `theme.json`, an empty
   `tokens.json`, `src/css/theme.css`, `src/js/theme.js` and a test. `webx:setup` runs it on a new site.
@@ -54,13 +58,15 @@ and the site's `theme/`).
   the rest never reach the site.
 - Do not make two themes `use` each other: the site refuses to boot with the loop in the message.
 - Do not write a colour or a font literally in CSS: use `var(--site-…)`, or the value stops
-  following presets and the panel.
+  following presets and the panel. No fallback in `var(--site-x, …)` and no `@media` by width
+  (`@container`) either; `tokens.json` is the one place a literal value goes.
 - Do not edit files under `public/themes/`: they are copies, and the next sync replaces them.
 - Do not call `View::prependNamespace()` for a theme yourself: it puts the theme above the site's
   `resources/views/vendor/<ns>`.
 
 ## Check your work
 
+- `php artisan webx:theme:check` — no findings before you say the theme is done.
 - `php artisan tinker` → `app(\WebxUi\Themes\ThemeChain::class)->layers` — the chain as resolved.
 - Open a page: the layout and the module views come from the layer you expect.
 - `php artisan tinker` → `app(\WebxUi\Themes\Tokens::class)->css()` — the tokens as the page

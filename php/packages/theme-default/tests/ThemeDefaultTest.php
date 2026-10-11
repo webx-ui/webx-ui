@@ -12,6 +12,8 @@ use PHPUnit\Framework\Attributes\Test;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use WebxUi\Themes\Checks\CssCheck;
+use WebxUi\Themes\Checks\CssFinding;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\ThemeServiceProvider;
@@ -239,8 +241,17 @@ class ThemeDefaultTest extends TestCase
             $this->assertIsArray($type, $file);
             $this->assertSame($slug, $type['slug'] ?? null, $file);
             $this->assertStringContainsString("data-wx-block=\"{$slug}\"", (string) ($type['template'] ?? ''), $file);
-            $this->assertDoesNotMatchRegularExpression('/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?)\(/i', (string) ($type['styles'] ?? ''), "{$file}: a literal colour.");
+            $this->assertSame([], self::findings((string) ($type['styles'] ?? ''), $file));
         }
+    }
+
+    /** @return list<string> */
+    private static function findings(string $css, string $file): array
+    {
+        return array_map(
+            static fn (CssFinding $finding): string => "{$file}:{$finding->line} {$finding->message()}",
+            CssCheck::check($css, Vocabulary::base()),
+        );
     }
 
     #[Test]
@@ -254,29 +265,14 @@ class ThemeDefaultTest extends TestCase
         $this->assertSame(self::sources(), $built['files'] ?? null, 'src/ changed since dist/ was built: run `npx vite build` in php/packages/theme-default and commit dist/.');
     }
 
-    /** The part of the token rule (spec §8) a stylesheet can break without anyone noticing. */
+    /** The token rule (spec §8) — the engine's check, the one `webx:theme:check` runs. */
     #[Test]
     public function the_stylesheets_know_only_site_tokens(): void
     {
-        $vocabulary = Vocabulary::base();
-
         foreach (array_keys(self::sources()) as $relative) {
-            if (! str_ends_with($relative, '.css')) {
-                continue;
+            if (str_ends_with($relative, '.css')) {
+                $this->assertSame([], self::findings((string) file_get_contents(self::path().'/'.$relative), $relative));
             }
-
-            $css = (string) preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(self::path().'/'.$relative));
-
-            preg_match_all('/var\(\s*--([a-z0-9-]+)\s*([,)])/i', $css, $references, PREG_SET_ORDER);
-
-            foreach ($references as [, $variable, $after]) {
-                $this->assertStringStartsWith('site-', $variable, "{$relative}: --{$variable} is not a site token.");
-                $this->assertTrue($vocabulary->has(substr($variable, 5)), "{$relative}: --{$variable} is not in the vocabulary.");
-                $this->assertSame(')', $after, "{$relative}: var(--{$variable}, …) has a fallback that no preset repaints.");
-            }
-
-            $this->assertDoesNotMatchRegularExpression('/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(/i', $css, "{$relative}: a literal colour.");
-            $this->assertDoesNotMatchRegularExpression('/@media[^{]*width/i', $css, "{$relative}: width is the container's to decide (@container).");
         }
     }
 

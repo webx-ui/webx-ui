@@ -126,7 +126,7 @@ button|frame|player|backdrop|background|over|pause`, `is-blocked|is-ready|is-pla
 ## Do not
 
 - Do not edit `vendor/webx-ui/widgets` or `public/themes/webx-ui/widgets`: an update or a sync replaces them.
-- Do not write a colour literally or with a fallback (`var(--site-x, #fff)`): presets skip it.
+- Do not write a colour literally or with a fallback (`var(--site-x, #fff)`): presets skip it; `webx:theme:check` says where.
 - Do not add `hidden` to a disclosure's panel in markup: without JavaScript it would never show.
 - Do not style a widget through a chain (`.site-main .webx-dialog__title`): one class matches the
   package and wins by order; a longer chain starts a specificity race with the next theme.

@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase as PlainTestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use WebxUi\Themes\Checks\CssCheck;
+use WebxUi\Themes\Checks\CssFinding;
 use WebxUi\Themes\Vocabulary;
 use WebxUi\Widgets\Widgets;
 
@@ -215,19 +217,27 @@ final class DistTest extends PlainTestCase
     }
 
     /**
-     * Site tokens of the vocabulary and the widgets' own `--webx-<name>-*`, declared here; no
-     * literal colour, no fallback in var(), no width @media, one flat class per rule.
+     * The rule of every stylesheet of the chain — the engine's check (THEMES §8): no literal
+     * colour or font, no token outside the vocabulary, no fallback in var(), no width @media.
+     * And the widgets' own on top: a variable is a site token or a `--webx-<name>-*` declared
+     * here, and a rule is one flat class.
      */
     #[Test]
     public function the_stylesheets_know_only_tokens(): void
     {
-        $vocabulary = Vocabulary::base();
         $stylesheets = [];
 
         foreach (array_keys(self::sources()) as $relative) {
             if (str_ends_with($relative, '.css')) {
-                $stylesheets[$relative] = (string) preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(Widgets::path().'/'.$relative));
+                $stylesheets[$relative] = (string) file_get_contents(Widgets::path().'/'.$relative);
             }
+        }
+
+        foreach ($stylesheets as $relative => $css) {
+            $findings = array_map(static fn (CssFinding $finding): string => "{$relative}:{$finding->line} {$finding->message()}", CssCheck::check($css, Vocabulary::base()));
+            $this->assertSame([], $findings);
+
+            $stylesheets[$relative] = (string) preg_replace('~/\*.*?\*/~s', '', $css);
         }
 
         preg_match_all('/(--webx-[a-z0-9-]+)\s*:/', implode("\n", $stylesheets), $declared);
@@ -240,14 +250,12 @@ final class DistTest extends PlainTestCase
                     $this->assertContains("--{$variable}", $declared[1], "{$relative}: --{$variable} is declared nowhere.");
                 } else {
                     $this->assertStringStartsWith('site-', $variable, "{$relative}: --{$variable} is neither a site token nor a widget's own.");
-                    $this->assertTrue($vocabulary->has(substr($variable, 5)), "{$relative}: --{$variable} is not in the vocabulary.");
                 }
 
-                $this->assertSame(')', $after, "{$relative}: var(--{$variable}, …) has a fallback that no preset repaints.");
+                // Stricter than the engine, which lets a block's own variable keep a default: a
+                // widget declares every one of its own, so a fallback here has nothing to fall to.
+                $this->assertSame(')', $after, "{$relative}: var(--{$variable}, …) has a fallback.");
             }
-
-            $this->assertDoesNotMatchRegularExpression('/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(/i', $css, "{$relative}: a literal colour.");
-            $this->assertDoesNotMatchRegularExpression('/@media[^{]*width/i', $css, "{$relative}: width is the container's to decide (@container).");
 
             preg_match_all('/(?:^|[;{}])\s*([^;{}@]+?)\s*\{/', $css, $rules);
 
