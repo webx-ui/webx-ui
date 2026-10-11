@@ -9,6 +9,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\HtmlString;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RecursiveDirectoryIterator;
@@ -19,6 +20,7 @@ use WebxUi\Themes\Checks\CssFinding;
 use WebxUi\Themes\Checks\FontCheck;
 use WebxUi\Themes\Checks\IconCheck;
 use WebxUi\Themes\Checks\LineCheck;
+use WebxUi\Themes\Checks\MailCheck;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeFonts;
 use WebxUi\Themes\ThemeIcons;
@@ -322,6 +324,31 @@ class ThemeDefaultTest extends TestCase
         $this->assertSame(0, $code, $said);
         $this->assertStringContainsString('6 block types', $said);
         $this->assertStringContainsString('27 icons, every one its templates name', $said);
+        $this->assertMatchesRegularExpression('/\d+ letters, every colour from theme_token\(\)/', $said);
+    }
+
+    /**
+     * The frame of the letters (§7.5): every value a token's, taken on the server — no var(), no
+     * colour of its own — and the line below in the language of the letter.
+     */
+    #[Test]
+    public function the_letters_stand_in_a_frame_painted_with_the_values_of_the_tokens(): void
+    {
+        $this->app->setLocale('pl');
+
+        $html = view('mail.layout', ['title' => 'A letter', 'slot' => new HtmlString('<p>Body of the letter</p>')])->render();
+
+        $this->assertStringContainsString('<html lang="pl">', $html);
+        $this->assertStringContainsString('<body style="margin:0;padding:0;background-color:#f6f7f9;">', $html);
+        $this->assertStringContainsString('background-color:#ffffff;border:1px solid #dde1e6;border-radius:8px;font-family:Inter, system-ui, -apple-system,&quot;Segoe UI&quot;', $html);
+        $this->assertStringContainsString('style="color:#1f5fbf;text-decoration:none;">Harbor Logistics</a>', $html);
+        $this->assertStringContainsString('<p>Body of the letter</p>', $html);
+        $this->assertStringContainsString('Wysłano ze strony Harbor Logistics', $html);
+        $this->assertStringNotContainsString('var(', $html);
+        $this->assertSame([], MailCheck::check((string) file_get_contents(self::path().'/views/mail/layout.blade.php')));
+
+        // A token that refers to another comes with its value: a letter has no variables to follow.
+        $this->assertSame(theme_token('font-body'), theme_token('font-heading'));
     }
 
     /** The check reads the layer's templates; the showcase's own block types are not a layer's, so they are read here. */
@@ -542,7 +569,7 @@ class ThemeDefaultTest extends TestCase
             $templates['demo/blocks/'.basename($file)] = (string) (json_decode((string) file_get_contents($file), true)['template'] ?? '');
         }
 
-        $this->assertCount(27, $templates);
+        $this->assertCount(29, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);

@@ -402,6 +402,92 @@
     },
     {
       "title": {
+        "en": "Mail",
+        "ru": "Письма",
+        "pl": "Poczta"
+      },
+      "slug": {
+        "en": "mail",
+        "ru": "pisma",
+        "pl": "poczta"
+      },
+      "seo": {
+        "title": {
+          "en": "Mail",
+          "ru": "Письма",
+          "pl": "Poczta"
+        },
+        "description": {
+          "en": "The letters of the site stand in the theme’s frame and take their colours from its tokens, so they repaint with the site.",
+          "ru": "Письма сайта стоят в рамке темы и берут цвета из её токенов, поэтому перекрашиваются вместе с сайтом.",
+          "pl": "Wiadomości strony stoją w ramie motywu i biorą kolory z jego tokenów, więc zmieniają kolory razem ze stroną."
+        }
+      },
+      "blocks": [
+        {
+          "key": "showcase-mail-intro",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "Mail",
+              "ru": "Письма",
+              "pl": "Poczta"
+            },
+            "body": {
+              "en": "A mail client is not a browser: it reads no CSS variable, often no stylesheet, and no file of the theme’s font. So a letter takes the values of the tokens on the server and writes them into the style of each element — the accent of the button, the colour of the text, the lines between the answers. A preset or a colour the owner picks in the panel repaints the letters along with the pages.\nThe frame is the theme’s: the name of the site above, the sheet with the letter, a line below saying who sent it. A local theme that overrides it re-dresses every letter of the site at once.",
+              "ru": "Почтовый клиент — не браузер: он не читает CSS-переменных, часто не читает стилей вовсе и не грузит файлы шрифта темы. Поэтому письмо берёт значения токенов на сервере и пишет их в стиль каждого элемента — акцент кнопки, цвет текста, линии между ответами. Пресет или цвет, который владелец выбрал в панели, перекрашивает письма вместе со страницами.\nРамка — темы: название сайта сверху, лист с письмом, строка внизу о том, кто его отправил. Локальная тема, которая её перекрывает, переодевает сразу все письма сайта.",
+              "pl": "Klient poczty to nie przeglądarka: nie czyta zmiennych CSS, często w ogóle nie czyta arkuszy stylów i nie pobiera plików fontu motywu. Dlatego wiadomość bierze wartości tokenów na serwerze i wpisuje je w styl każdego elementu — akcent przycisku, kolor tekstu, linie między odpowiedziami. Preset albo kolor wybrany przez właściciela w panelu zmienia kolory wiadomości razem ze stronami.\nRama należy do motywu: nazwa strony u góry, kartka z wiadomością, wiersz na dole o tym, kto ją wysłał. Lokalny motyw, który ją nadpisuje, zmienia od razu wszystkie wiadomości strony."
+            }
+          }
+        },
+        {
+          "key": "showcase-mail-letter",
+          "type": "showcase-mail",
+          "values": {
+            "heading": {
+              "en": "A new submission, as the team reads it",
+              "ru": "Новая заявка — как её читает команда",
+              "pl": "Nowe zgłoszenie — tak, jak czyta je zespół"
+            },
+            "note": {
+              "en": "The letter module-inbox sends when somebody fills in the form, for the answers below. Nothing is sent: the letter is built for this page only.",
+              "ru": "Письмо, которое module-inbox отправляет, когда кто-то заполнил форму, — для ответов ниже. Ничего не отправляется: письмо собрано только для этой страницы.",
+              "pl": "Wiadomość, którą module-inbox wysyła, gdy ktoś wypełni formularz, — dla odpowiedzi poniżej. Nic nie jest wysyłane: wiadomość powstaje tylko na potrzeby tej strony."
+            },
+            "name": "Ada Lovelace",
+            "email": "ada@example.com",
+            "message": {
+              "en": "Hello! We are moving the office in spring.\nCould you send an estimate for twelve workplaces?",
+              "ru": "Здравствуйте! Весной мы переезжаем в новый офис.\nПришлёте смету на двенадцать рабочих мест?",
+              "pl": "Dzień dobry! Wiosną przeprowadzamy biuro.\nCzy możecie przesłać wycenę na dwanaście stanowisk?"
+            },
+            "caption": {
+              "en": "The letter about a new submission",
+              "ru": "Письмо о новой заявке",
+              "pl": "Wiadomość o nowym zgłoszeniu"
+            }
+          }
+        },
+        {
+          "key": "showcase-mail-check",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "What the check holds",
+              "ru": "Что держит проверка",
+              "pl": "Czego pilnuje sprawdzenie"
+            },
+            "body": {
+              "en": "webx:theme:check reads every letter of the theme and of the modules: a colour written by hand or a var() in a letter is a finding. A colour by hand does not repaint with the site; a variable is an empty value in the mail client, and nothing says so.",
+              "ru": "webx:theme:check читает каждое письмо темы и модулей: цвет, написанный руками, или var() в письме — находка. Цвет руками не перекрашивается вместе с сайтом; переменная в почтовом клиенте — пустое значение, и ничто об этом не скажет.",
+              "pl": "webx:theme:check czyta każdą wiadomość motywu i modułów: kolor wpisany ręcznie albo var() w wiadomości to znalezisko. Kolor wpisany ręcznie nie zmienia się razem ze stroną; zmienna w kliencie poczty to pusta wartość i nic o tym nie powie."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": {
         "en": "Blocks",
         "ru": "Блоки",
         "pl": "Bloki"

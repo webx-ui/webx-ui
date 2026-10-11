@@ -18,7 +18,7 @@ vocabulary, `@webxTheme` — is [`webx-ui/themes`](https://github.com/webx-ui/th
 
 > Early days: this release holds the tokens, the layout with its header and footer, the shell and
 > prose stylesheet, six block types, the icons, Inter in Latin, Latin Extended and Cyrillic, the
-> 404 page and every word of the layout in ten languages. Mail arrives in the next release.
+> 404 page, the frame of the letters and every word of the layout in ten languages.
 
 ## What is in it
 
@@ -28,6 +28,7 @@ vocabulary, `@webxTheme` — is [`webx-ui/themes`](https://github.com/webx-ui/th
 | `views/components/layout` | the document: `@webxTheme`, the head, the `header` and `footer` regions, `<main>`      |
 | `views/components/header` | the header region's fallback: the site name and `menu('header')`                       |
 | `views/components/footer` | the footer region's fallback: `menu('footer')` and the copyright line                  |
+| `views/mail/layout`       | the frame of every letter: values from `theme_token()` in `style="…"`, no `var()`      |
 | `src/css/`                | `base.css`, `shell.css` (`site-*` classes), `prose.css` (headings, lists, tables…)     |
 | `dist/theme.css`          | the build of `src/`, committed: a site installs this theme with no Node                |
 | `icons/`                  | 27 icons, 24×24 strokes in `currentColor`: `<x-theme::icon name="phone" />`            |

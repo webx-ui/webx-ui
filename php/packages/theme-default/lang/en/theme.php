@@ -20,4 +20,7 @@ return [
             'socials' => 'Elsewhere',
         ],
     ],
+    'mail' => [
+        'sent' => 'Sent from :site',
+    ],
 ];

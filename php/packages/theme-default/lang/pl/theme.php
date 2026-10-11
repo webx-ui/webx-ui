@@ -20,4 +20,7 @@ return [
             'socials' => 'Znajdziesz nas też',
         ],
     ],
+    'mail' => [
+        'sent' => 'Wysłano ze strony :site',
+    ],
 ];

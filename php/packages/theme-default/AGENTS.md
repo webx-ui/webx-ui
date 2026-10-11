@@ -24,7 +24,12 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   (`<title>`, `noindex`, `@webxBlocks`, no `@webxSeo`), the code, a line and a link to the
   language's home page. **`lang/<10 languages>/theme.php`** — every word of the shell and the
   blocks, `locales` in the manifest: `shell.skip` ("Skip to content"), `shell.footer` (the
-  footer navigation's `aria-label`), `not_found.*`, `blocks.contact.*`. No template writes a word.
+  footer navigation's `aria-label`), `not_found.*`, `blocks.contact.*`, `mail.sent`. No template
+  writes a word.
+- **`views/mail/layout`** — the frame of every letter of the site: the site name, the sheet with
+  the letter (`$slot`), a "Sent from" line. A module's letter asks for it with
+  `@component('mail.layout', ['title' => …])` (module-inbox does). Tables and `style="…"` with
+  values from `theme_token()`, sizes in px: mail reads no CSS variable and no class.
 - **Classes** (the contract a local theme restyles): `site` on `<body>`, `site-container`,
   `site-skip`, `site-header`, `site-header__inner|title|nav|link`, `site-main`, `site-bleed` (a
   direct child of `<main>` that spans the page), `site-footer`,
@@ -105,6 +110,8 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 | Inter with another script (Greek)        | `fonts` in `theme/theme.json` with family `Inter` and every script — it replaces this one whole     |
 | Prose typography outside `<main>`        | class `site-prose` on the wrapper                                                                   |
 | The header and footer as blocks          | arrange the `header`/`footer` regions in the panel; no code                                         |
+| Another frame for every letter           | `theme/views/mail/layout.blade.php`, copied from here; colours from `theme_token()` only            |
+| Another inbox letter                     | `theme/views/vendor/webx-inbox/mail/submission.blade.php`, copied from module-inbox                 |
 
 ## Do not
 
@@ -116,6 +123,8 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   already send both in the `head` slot, and twice means two `<title>` tags.
 - Do not write a literal colour, a font name or `var(--site-x, fallback)` in CSS; do not use
   `@media` for width — `@container`.
+- Do not write `var(`, a class or a literal colour into a letter: the mail client paints nothing
+  there, or the letter stops repainting with the site; `webx:theme:check` names both (rule 25).
 - Do not raise specificity or add `!important` to beat this theme: its rules have none.
 - Do not make a new block with a similar name for another look of one of the six (`hero-2`):
   override the slug, so the pages already on it change with it.

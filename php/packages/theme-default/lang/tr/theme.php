@@ -20,4 +20,7 @@ return [
             'socials' => 'Bizi takip edin',
         ],
     ],
+    'mail' => [
+        'sent' => ':site tarafından gönderildi',
+    ],
 ];
