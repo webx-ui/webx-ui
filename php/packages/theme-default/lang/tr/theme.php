@@ -13,7 +13,6 @@ return [
             'phone' => 'Telefon',
             'email' => 'E-posta',
             'address' => 'Adres',
-            'hours' => 'Çalışma saatleri',
             'socials' => 'Bizi takip edin',
         ],
     ],

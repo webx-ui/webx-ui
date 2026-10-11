@@ -13,7 +13,6 @@ return [
             'phone' => 'Telefono',
             'email' => 'E-mail',
             'address' => 'Indirizzo',
-            'hours' => 'Orari',
             'socials' => 'Anche su',
         ],
     ],
