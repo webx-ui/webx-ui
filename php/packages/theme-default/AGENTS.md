@@ -14,7 +14,8 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   `font-heading`.
 - **`views/components/layout`** — the document every module page is printed in (`<x-layout>`):
   `@webxTheme`, the page's `head` slot (or `@webxSeo` + `@webxBlocks` when there is none),
-  `@stack('head')`, `<x-webx-notice-bar>` above the header (a `notice` banner, else `@stack('notice')`), the `header` and `footer` regions, `<main id="content" class="site-main">`,
+  `@stack('head')`, `<x-webx-notice-bar>` above the header (a `notice` banner, else `@stack('notice')`), the `header` and `footer` regions, `<main id="content" class="site-main">`
+  closed by module-seo's `<x-webx-seo::faq />` and `<x-webx-seo::links />` (empty while off),
   `@stack('scripts')`.
 - **`views/components/header`**, **`views/components/footer`** — the regions' fallbacks:
   `config('app.name')` and `menu('header')` (the pages under the home page until the menu has

@@ -4625,7 +4625,10 @@ test.describe('modules in the theme', () => {
           )
         return {
           order: children.slice(-2).map((el) => el.className),
-          lefts: children.map((el) => Math.round(el.getBoundingClientRect().left)),
+          // The trail, the FAQ and the links: the column's edge (the narrow text block is inset by design).
+          lefts: [main.querySelector('.webx-breadcrumbs'), faq, links]
+            .filter(Boolean)
+            .map((el) => Math.round(el.getBoundingClientRect().left)),
           questions: main.querySelectorAll('.webx-faq__question').length,
           question: height('.webx-faq__question'),
           link: height('.webx-links__link'),
@@ -4642,6 +4645,7 @@ test.describe('modules in the theme', () => {
         'webx-faq',
         'webx-links',
       ])
+      expect(m.lefts.length, label).toBe(3)
       for (const left of m.lefts) expect(left, `${label}: in the column`).toBe(m.lefts[0])
       expect(m.questions, label).toBe(3)
       expect(m.question, `${label}: a question a finger can open`).toBeGreaterThanOrEqual(44)
