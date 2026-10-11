@@ -45,7 +45,9 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
 - **`Testing\ModuleThemeContract`** — a module's test: its base look knows only tokens and styles
   only the classes `### Classes` of its `AGENTS.md` lists, which its views print.
 - **Words of the layout**: `__('theme::theme.<key>')` — each layer's `lang/<locale>/theme.php`
-  bottom up, then the site's `lang/vendor/theme/<locale>/theme.php` (`ThemeLines`).
+  bottom up, then the site's `lang/vendor/theme/<locale>/theme.php` (`ThemeLines`). Every
+  language a layer lists in `locales` has the keys of its `en`, no more and no fewer; the check
+  says which are missing or extra (`Checks\LineCheck`). A language not listed is not compared.
 - **Icons**: each layer's `icons/<name>.svg` (lowercase, dashed) is a `<symbol>` of one sprite,
   the higher layer winning by name (`ThemeIcons`); sync publishes it to
   `public/themes/icons/<hash>/icons.svg`. `<x-theme::icon name="phone" />` prints
@@ -68,6 +70,7 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
 | Override a module's page (the expensive door)       | `theme/views/vendor/<ns>/<view>.blade.php`                   |
 | Override a view for this site only, above any theme | `resources/views/…` — it always wins                         |
 | Change a word of the layout                         | `theme/lang/<locale>/theme.php`, the same key                |
+| Add a word of the layout                            | the key in `theme/lang/en` and every language of `locales`   |
 | Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json`        |
 | Change a colour, a font, a radius                   | `theme/tokens.json` → `defaults`                             |
 | A token the vocabulary does not have                | `theme/tokens.json` → `vocabulary`, then `defaults`          |
@@ -94,6 +97,8 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
 - Do not paste an `<svg>` into a template, nor write a colour into an icon file: put the file in
   `icons/` with `currentColor` and write `<x-theme::icon>`, or no layer above can redraw it and
   no preset repaints it. Size an icon in CSS (`width`/`height` on its class), not by attributes.
+- Do not write a word a visitor reads into a template — text, `aria-label`, `alt`, `title`:
+  `{{ __('theme::theme.<key>') }}`, or it stays English on every other language of the site.
 - Do not call `View::prependNamespace()` for a theme yourself: it puts the theme above the site's
   `resources/views/vendor/<ns>`.
 

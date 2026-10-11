@@ -11,7 +11,7 @@
 проверка CSS на токены (`CssCheck`, `webx:theme:check`, предупреждения блоков) — 11.10.2026; TH2.2 —
 блоки в слоях и sync (`LayerBlocks`, `theme_source`/`theme_hash`, шаги §9.2 в `webx:theme:sync`) —
 11.10.2026; TH2.3 — шесть блоков `theme-default`, демо `module-blocks` уступает им, `--adopt`,
-витрина «Kitchen sink › Blocks» — 11.10.2026. TH2 закрыт. TH3 разбит на TH3.1–TH3.4 (§19); TH3.1 — базовый вид модулей на странице (`ModuleStyles`), контракт модуля (`ModuleThemeContract`), уступка предложенного блока, точки расширения из темы, форма `module-inbox` и крошки `module-seo`, витрина «Kitchen sink › Modules» — 11.10.2026; TH3.2 — классы `webx-blog-*`/`webx-services-*`, базовый вид блога, услуг и меню, точки `blog.card`/`services.card`, `webx:setup --modules=+…` и `starter-site.sh --with=` — 11.10.2026; TH3.3 — базовый вид событий, вакансий и прессы на их `wx-*`, точки `events.card`/`vacancies.card`, `theme_active()`, проверки Playwright страниц модулей — 11.10.2026. TH3.4 — базовый вид рецептов на их `wx-*`, колонки блока классом, FAQ и перелинковка `module-seo` в конце `<main>` лэйаута `theme-default` и страница «Kitchen sink › Modules › FAQ and links» с ними — 11.10.2026. TH3 закрыт. TH4 разбит на TH4.1–TH4.6 (§19); TH4.1 — иконки: спрайт цепочки (`ThemeIcons`), `<x-theme::icon>`, проверка файлов и шаблонов в `webx:theme:check`, набор `theme-default` и витрина «Kitchen sink › Icons» — 11.10.2026; TH4.2 — ассеты: `theme_asset()` по цепочке, `assets/` локальной темы публикует sync (`public/themes/local-<каталог>/`), проверка `theme_asset('…')` в `webx:theme:check`, `/themes/` с вечным кешем в конфигах скелета и витрина «Kitchen sink › Assets» — 11.10.2026; следующий — TH4.3. Пакеты — новые `webx-ui/themes` и
+витрина «Kitchen sink › Blocks» — 11.10.2026. TH2 закрыт. TH3 разбит на TH3.1–TH3.4 (§19); TH3.1 — базовый вид модулей на странице (`ModuleStyles`), контракт модуля (`ModuleThemeContract`), уступка предложенного блока, точки расширения из темы, форма `module-inbox` и крошки `module-seo`, витрина «Kitchen sink › Modules» — 11.10.2026; TH3.2 — классы `webx-blog-*`/`webx-services-*`, базовый вид блога, услуг и меню, точки `blog.card`/`services.card`, `webx:setup --modules=+…` и `starter-site.sh --with=` — 11.10.2026; TH3.3 — базовый вид событий, вакансий и прессы на их `wx-*`, точки `events.card`/`vacancies.card`, `theme_active()`, проверки Playwright страниц модулей — 11.10.2026. TH3.4 — базовый вид рецептов на их `wx-*`, колонки блока классом, FAQ и перелинковка `module-seo` в конце `<main>` лэйаута `theme-default` и страница «Kitchen sink › Modules › FAQ and links» с ними — 11.10.2026. TH3 закрыт. TH4 разбит на TH4.1–TH4.6 (§19); TH4.1 — иконки: спрайт цепочки (`ThemeIcons`), `<x-theme::icon>`, проверка файлов и шаблонов в `webx:theme:check`, набор `theme-default` и витрина «Kitchen sink › Icons» — 11.10.2026; TH4.2 — ассеты: `theme_asset()` по цепочке, `assets/` локальной темы публикует sync (`public/themes/local-<каталог>/`), проверка `theme_asset('…')` в `webx:theme:check`, `/themes/` с вечным кешем в конфигах скелета и витрина «Kitchen sink › Assets» — 11.10.2026; TH4.3 — слова вёрстки: оболочка и блоки `theme-default` только на `theme::` в десяти языках, `locales` в манифесте, паритет ключей по `locales` каждого слоя в `webx:theme:check` (`LineCheck`) — 11.10.2026; следующий — TH4.4. Пакеты — новые `webx-ui/themes` и
 `webx-ui/theme-default` (§3), правки в `module-admin` (§14), `module-blocks` (§8, §9),
 `module-settings` (§7.4) и в модулях с публичными страницами (§10). Соседние спеки: новый сайт —
 [`WEBX_UI_NEW_SITE.md`](WEBX_UI_NEW_SITE.md), блоки — [`WEBX_UI_MODULE_BLOCKS.md`](WEBX_UI_MODULE_BLOCKS.md),
@@ -808,7 +808,10 @@ Vite пересобирает `theme/src` на лету. Правка `theme-def
   слоёв — `<x-theme::icon name="…">` с именем, которого нет в цепочке, и инлайновый `<svg>`
   (правило 24; PHP и комментарии Blade не читаются). **С TH4.2** — там же `theme_asset('…')` с
   буквальным путём, которого нет в `assets/` ни одного слоя, и путь, выходящий из `assets/`
-  (`..`, схема); PHP читается, комментарии Blade — нет.
+  (`..`, схема); PHP читается, комментарии Blade — нет. **С TH4.3** — слова вёрстки: каждый язык
+  из `locales` слоя имеет в `lang/<язык>/<группа>.php` ключи `en` этого слоя, ни больше ни меньше
+  (правило 26); язык, которого нет в `locales`, не сверяется. Итог — «…; words of the layout in N
+  locales, every one with the keys of en».
   Остальные пункты списка приходят с этапами, которые строят то, что они проверяют.
 - **`webx:theme:extract <vendor/имя>`**, **`webx:theme:eject`** — §14.3.
 
@@ -971,7 +974,7 @@ TH4 делится на шесть этапов (решение 11.10.2026), т�
 | TH4.1 | Иконки (§13.1): `icons/*.svg` слоёв — один спрайт, верхний слой побеждает по имени; `webx:theme:sync` публикует; `<x-theme::icon name label>` — `currentColor`, `aria-hidden` без `label`; неизвестное имя — пустой `<svg>`. `webx:theme:check`: файл иконки (имя, `viewBox`, буквальный цвет, скрипт) и шаблоны слоёв (неизвестная иконка, инлайновый `<svg>`, правило 24). Набор `theme-default`, иконки в его блоках; витрина «Kitchen sink › Icons» |
 | TH4.2 | Ассеты (§13.2): `theme_asset()` по цепочке — пакетный слой через `ThemeAssets`, локальная тема через её сборку; check — `theme_asset('…')` на файл, которого нет ни в одном слое; `/themes/` — `immutable` в конфиге сервера скелета, `public/themes/` — в `.gitignore`                                                                                                                                                                                 |
 | TH4.3 | Слова вёрстки (§15.2, правило 26): все слова оболочки и шаблонов блоков `theme-default` — на `theme::`, десять языков; `locales` в манифесте; check — паритет ключей по `locales` каждого слоя                                                                                                                                                                                                                                                          |
-| TH4.4 | Демо на трёх языках: демо остальных модулей (`--with=…`) — en/ru/pl; `webx:setup` до установки предупреждает о языке сайта, которого нет в демо; правило 28 — глазами по `demo/media`                                                                                                                                                                                                                                                                   |
+| TH4.4 | Демо на трёх языках: демо остальных модулей (`--with=…`) — en/ru/pl; надписи в шаблонах демо-типов витрины (`demo/blocks`) — на поля `localized` (из TH4.3); `webx:setup` до установки предупреждает о языке сайта, которого нет в демо; правило 28 — глазами по `demo/media`                                                                                                                                                                           |
 | TH4.5 | Шрифты (§15.3): `fonts` в манифесте, файлы в `assets/fonts/`, `@font-face` с `unicode-range` в `@webxTheme`; check и `webx:doctor` сверяют письменности с языками сайта; `theme-default` получает Inter своими файлами (OFL; latin, latin-ext, cyrillic — решение 11.10.2026); в прогоне — кириллица не грузится на английской странице                                                                                                                 |
 | TH4.6 | Письма (§7.5): почтовый лэйаут `views/mail/` у `theme-default`, письмо `module-inbox` на `theme_token()` в `style=""`; check — буквальный цвет в письме; закрытие TH4                                                                                                                                                                                                                                                                                   |
 
@@ -1372,7 +1375,7 @@ Laravel — `<html lang="en">`, без шапки, подвала, стилей 
   снизу вверх по `lang/` слоёв, сверху — `lang/vendor/theme/` сайта, остальные пространства — как
   были. У `theme-default` — `lang/<10 языков>/theme.php`, пока только `not_found.*`; тест паритета
   ключей — в `ThemeDefaultTest`. «Skip to content» и прочие `__()` оболочки на `theme::` ещё не
-  переведены — TH4.
+  переведены — TH4 (переведены в TH4.3).
 - **Проверка:** PHP — `ErrorPagesTest`, `ThemeLinesTest` движка и 404 в оболочке в
   `ThemeDefaultTest`; в прогоне стартового сайта — `/no-such-page` и `/ru/no-such-page`: 404,
   `<html lang>` префикса, `noindex`, подвал, ссылки на `/`, `/ru`, `/pl` с `is-fallback` и
@@ -1942,3 +1945,51 @@ theme_asset('…') @endphp` просит файл так же, как `{{ }}`; �
   рисуется, маска — цветом акцента, в `night` — акцентом `night`; без боковой прокрутки. Playwright —
   2 новых теста в «assets» (адрес с хешем, 200 и вечный кеш; маска на акценте, `night`
   перекрашивает).
+
+### TH4.3 — слова вёрстки
+
+- **Что было не на `theme::`.** Слов, написанных в шаблонах, у `theme-default` оказалось два:
+  «Skip to content» лэйаута и `aria-label="Footer"` навигации подвала — оба через голый `__()`,
+  то есть английские на любом языке сайта. Шесть блоков уже были чистыми: подписи `contact` — на
+  `theme::theme.blocks.contact.*` с TH4.1, остальное — поля блока (`localized`), настройки
+  (`contacts()`) и виджеты, у которых свой словарь на десяти языках (`webx-widgets::`). `alt=""`
+  у фото `hero` и `cards` — декоративные картинки, им слово не положено. Новые ключи —
+  `shell.skip` и `shell.footer` в `lang/<10 языков>/theme.php`.
+- **`locales` в манифесте** `theme-default` — десять языков панели (`en ru uk de fr es it pl pt
+tr`), в порядке §5. `ThemeManifest` читал ключ с TH1.1; теперь его читает проверка.
+- **Проверка (правило 26) — `Checks\LineCheck` и шаг в `ChainCheck`.** Для каждого слоя: каждый
+  язык из `locales`, кроме `en`, имеет файл каждой группы `lang/en/*.php` (по соглашению одна —
+  `theme.php`) с теми же ключами через точку, что у `en`. Находки — нет файла («declares "pl" in
+  locales, but has no lang/pl/theme.php»), недостающие ключи («missing: …»), лишние («not in en:
+  …»; первые пять и «and N more»), файл, который не возвращает массив. Слой без `lang/en/` не
+  сверяется, но язык из `locales` со словами при нём — находка: сверять не с чем.
+- **Решение — сверяются только объявленные языки.** Локальная тема может перекрыть одно слово в
+  языке, который не обещает целиком (`lang/pl/theme.php` с одним ключом, остальное — снизу по
+  цепочке, как фикстура `theme-fixture` движка), и это не ошибка. Обещание — строка в `locales`.
+  Итог `webx:theme:check` — «…; words of the layout in 10 locales, every one with the keys of en»
+  (без `locales` у слоёв — «no layer declares locales for words of its own»).
+- **Тесты.** Движок — `CheckCommandTest`: фикстура `lines-theme` (недостающий и лишний ключ,
+  нет файла, не словарь — 4 находки), итог без `locales` и с ними. `ThemeDefaultTest`: `locales`
+  совпадают с каталогами `lang/`, `LineCheck` чист; **ни одного слова в шаблоне** — во вьюхах и
+  `template` шести блоков после вычёркивания комментариев, `@php`, эхо и директив нет текстового
+  узла с буквами и `aria-label`/`alt`/`title`/`placeholder` с буквами, каждый `__()` —
+  `theme::theme.<ключ>`, который есть в `en`; лэйаут на en/ru/pl/tr печатает «Skip to content» на
+  своём языке.
+- **Playwright** — «words of the layout»: `/ru`, `/pl`, `/ru/no-such-page`, `/pl/no-such-page`
+  не печатают ни одного английского слова словарей `theme-default` и `widgets` (кроме совпадающих
+  с переводом и строк с `:`-подстановкой) в оболочке — всё, кроме содержимого `<main>`, плюс
+  страница ошибки, текст и атрибуты, — и ни одного ключа вместо слова.
+
+Отступления и находки:
+
+- **Слова демо-типов витрины не тронуты.** В `demo/blocks` остались английские надписи в шаблонах
+  (`showcase-background` «What to try», `showcase-numbers` «years/clients/rating/saved»,
+  `showcase-toc` «In this column», `showcase-compare`, `showcase-zoom`) — это содержимое витрины,
+  а не оболочка и не блоки темы; переходят в TH4.4 вместе с демо на трёх языках.
+- **«Skip to content» у темы свой, а не `webx-widgets::widgets.header.skip`:** ссылку печатает
+  лэйаут (её место — первым в `<body>`, даже когда зону `header` заменили в панели), а слова
+  лэйаута — слова темы, которые локальная тема перекрывает своим ключом.
+- **Проверено на пересобранном стартовом сайте:** `webx:theme:check` — «…; words of the layout in
+  10 locales, every one with the keys of en»; `/ru` — «Перейти к содержимому», подвал `/pl` —
+  `aria-label="Stopka"`. Playwright — 122 теста, новый сверяет 102 английских слова словарей на
+  каждой из четырёх страниц.

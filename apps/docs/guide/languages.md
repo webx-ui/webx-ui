@@ -50,6 +50,17 @@ t('webx-admin::editor.back') // a line from another namespace, borrowed rather t
 Words a screen is described with are translated on the server instead, with
 `trans::webx-pages::page.save` in the JSON — see [Screens](/guide/screens).
 
+### Words of the public site's theme
+
+The words the theme of the public site prints itself — "Skip to content", the labels of the
+contact block, the page for a missing address — are the namespace `theme::`, and that one has
+more than one directory: each layer of the theme chain brings `lang/<locale>/theme.php`, a key is
+looked up from the bottom layer up, and the site's `lang/vendor/theme/<locale>/theme.php` wins
+over all of them. `webx-ui/theme-default` carries all ten languages; a local theme adds or renames
+only its own keys. Instead of a test, a theme lists its languages in `locales` of its manifest
+and `php artisan webx:theme:check` compares each listed one with `en` — see
+[Styles](/guide/styles#words-of-the-layout).
+
 ## Which language wins
 
 For one line, in order: the language asked for, then the site's `fallback`, then the built-in

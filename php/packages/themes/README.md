@@ -142,6 +142,24 @@ string — never an exception on a page — and in debug the log says which; `we
 a `theme_asset('…')` with a literal path no layer answers, in the layers' views and block
 templates.
 
+### Words of the layout
+
+"Skip to content", the label of a contact block, the 404 page — the words a theme's templates
+print rather than take from a field — live in `lang/<locale>/theme.php` of a layer and are read as
+`theme::theme.<key>`:
+
+```blade
+<a class="site-skip" href="#content">{{ __('theme::theme.shell.skip') }}</a>
+```
+
+A key is looked up through the chain: each layer's file bottom up, then the site's
+`lang/vendor/theme/<locale>/theme.php`, so a local theme renames one word by having that key
+alone. A layer lists the languages it covers in `locales` of its manifest, and
+`webx:theme:check` holds it to them: every listed language has the keys of the layer's `en`, no
+more and no fewer — a key added in English and forgotten in Polish would print
+`theme.shell.skip` on a Polish page. A language the layer does not list is not compared: it only
+overrides a word or two there.
+
 ## How views are looked up
 
 | Kind               | Order                                                                                      |

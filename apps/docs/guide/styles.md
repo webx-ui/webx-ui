@@ -177,6 +177,22 @@ shows one picture twice — as it is and as a mask over the accent — under Kit
   and the browser keeps the old one after you change it. A photo the owner changes goes in the
   media library, not in the theme. `webx:theme:check` names a `theme_asset('…')` no layer has.
 
+### Words of the layout
+
+The few words a theme prints itself — "Skip to content", the labels of the contact block, the page
+for a missing address — come from `lang/<locale>/theme.php` of a theme layer, never from the
+template: `{{ __('theme::theme.shell.skip') }}`. `webx-ui/theme-default` has every one of them in
+the ten languages of the panel (en, ru, uk, de, fr, es, it, pl, pt, tr) and lists them in `locales`
+of its manifest; everything else a visitor reads comes from a field, the settings or a module.
+
+- **Another word for one of the theme's:** the same key in `theme/lang/<locale>/theme.php` — only
+  that key; the rest still comes from below.
+- **A new word of your own:** the key in `theme/lang/en/theme.php` and in every language of
+  `locales` in `theme/theme.json`; `webx:theme:check` names a key a listed language lacks, or has
+  and `en` does not.
+- **Not:** a word written into a template, an `aria-label` or an `alt`. It stays English on every
+  other language of the site.
+
 ## Blocks
 
 A block type — its fields, its template, its CSS and its script — is made in the panel under

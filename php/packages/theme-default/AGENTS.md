@@ -22,7 +22,9 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   entries); `menu('footer')` and the copyright line.
 - **`views/errors/404`** — a missing address in the site's frame: `<x-layout>` with its own head
   (`<title>`, `noindex`, `@webxBlocks`, no `@webxSeo`), the code, a line and a link to the
-  language's home page. **`lang/<10 languages>/theme.php`** — its words, `theme::theme.not_found.*`.
+  language's home page. **`lang/<10 languages>/theme.php`** — every word of the shell and the
+  blocks, `locales` in the manifest: `shell.skip` ("Skip to content"), `shell.footer` (the
+  footer navigation's `aria-label`), `not_found.*`, `blocks.contact.*`. No template writes a word.
 - **Classes** (the contract a local theme restyles): `site` on `<body>`, `site-container`,
   `site-skip`, `site-header`, `site-header__inner|title|nav|link`, `site-main`, `site-bleed` (a
   direct child of `<main>` that spans the page), `site-footer`,
