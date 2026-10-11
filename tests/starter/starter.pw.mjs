@@ -4142,7 +4142,7 @@ test.describe('zoom', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     const root = page.locator('[data-wx-block="showcase-zoom"] [data-webx-zoom]').first()
     expect(await root.getAttribute('aria-label')).toBe(
-      'Zoom: A watch on a grid, a label of small print and a ruler',
+      'Zoom: A watch on a grid, a card of fine lines and a ruler',
     )
     await root.focus()
     await page.keyboard.press('Enter')

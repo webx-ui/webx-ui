@@ -2437,6 +2437,41 @@
               "ru": "Три в кадре на всю ширину, две на планшете, одна с небольшим на телефоне. Стрелки сдвигают на целый кадр; точки — это страницы.",
               "pl": "Trzy na widok na pełnej szerokości, dwie na tablecie, jedna z kawałkiem na telefonie. Strzałki przesuwają o cały widok; kropki to strony."
             },
+            "titles": {
+              "en": "Strategy\nDesign\nDevelopment\nSupport\nHosting\nAnalytics\nTraining\nAudit\nContent\nSearch\nMobile\nSecurity",
+              "ru": "Стратегия\nДизайн\nРазработка\nПоддержка\nХостинг\nАналитика\nОбучение\nАудит\nКонтент\nПоиск\nМобильная версия\nБезопасность",
+              "pl": "Strategia\nProjektowanie\nProgramowanie\nWsparcie\nHosting\nAnalityka\nSzkolenia\nAudyt\nTreści\nWyszukiwanie\nWersja mobilna\nBezpieczeństwo"
+            },
+            "hero": {
+              "en": ":word that lasts",
+              "ru": ":word надолго",
+              "pl": ":word na lata"
+            },
+            "slide": {
+              "en": "Slide :n of :count",
+              "ru": "Слайд :n из :count",
+              "pl": "Slajd :n z :count"
+            },
+            "photo": {
+              "en": "Photo :n of :count",
+              "ru": "Фото :n из :count",
+              "pl": "Zdjęcie :n z :count"
+            },
+            "card": {
+              "en": "Card :n of :count.",
+              "ru": "Карточка :n из :count.",
+              "pl": "Karta :n z :count."
+            },
+            "longer": {
+              "en": "A longer line of text, so that the cards of one strip differ in height and the strip shows whether they still line up.",
+              "ru": "Строка подлиннее, чтобы карточки одной ленты были разной высоты и было видно, выравниваются ли они.",
+              "pl": "Dłuższy wiersz tekstu, żeby karty jednego paska różniły się wysokością i było widać, czy nadal się wyrównują."
+            },
+            "more": {
+              "en": "More about :word",
+              "ru": "Подробнее: :word",
+              "pl": "Więcej: :word"
+            },
             "variant": "cards",
             "width": "full",
             "slides": "8"
@@ -2456,6 +2491,41 @@
               "ru": "Те же карточки в колонке шириной 20rem: одна с небольшим в кадре при любой ширине окна.",
               "pl": "Te same karty w kolumnie o szerokości 20rem: jedna z kawałkiem na widok, niezależnie od szerokości okna."
             },
+            "titles": {
+              "en": "Strategy\nDesign\nDevelopment\nSupport\nHosting\nAnalytics\nTraining\nAudit\nContent\nSearch\nMobile\nSecurity",
+              "ru": "Стратегия\nДизайн\nРазработка\nПоддержка\nХостинг\nАналитика\nОбучение\nАудит\nКонтент\nПоиск\nМобильная версия\nБезопасность",
+              "pl": "Strategia\nProjektowanie\nProgramowanie\nWsparcie\nHosting\nAnalityka\nSzkolenia\nAudyt\nTreści\nWyszukiwanie\nWersja mobilna\nBezpieczeństwo"
+            },
+            "hero": {
+              "en": ":word that lasts",
+              "ru": ":word надолго",
+              "pl": ":word na lata"
+            },
+            "slide": {
+              "en": "Slide :n of :count",
+              "ru": "Слайд :n из :count",
+              "pl": "Slajd :n z :count"
+            },
+            "photo": {
+              "en": "Photo :n of :count",
+              "ru": "Фото :n из :count",
+              "pl": "Zdjęcie :n z :count"
+            },
+            "card": {
+              "en": "Card :n of :count.",
+              "ru": "Карточка :n из :count.",
+              "pl": "Karta :n z :count."
+            },
+            "longer": {
+              "en": "A longer line of text, so that the cards of one strip differ in height and the strip shows whether they still line up.",
+              "ru": "Строка подлиннее, чтобы карточки одной ленты были разной высоты и было видно, выравниваются ли они.",
+              "pl": "Dłuższy wiersz tekstu, żeby karty jednego paska różniły się wysokością i było widać, czy nadal się wyrównują."
+            },
+            "more": {
+              "en": "More about :word",
+              "ru": "Подробнее: :word",
+              "pl": "Więcej: :word"
+            },
             "variant": "cards",
             "width": "narrow",
             "slides": "8"
@@ -2474,6 +2544,41 @@
               "en": "One slide to the width, fading, turning on its own every six seconds. It stops while the pointer or the focus is inside, and the first button stops it for good; with reduced motion it does not start.",
               "ru": "Один слайд на всю ширину, смена с затуханием, сама листается каждые шесть секунд. Останавливается, пока внутри курсор или фокус, а первая кнопка останавливает её насовсем; при ограничении анимации она не запускается.",
               "pl": "Jeden slajd na całą szerokość, z przenikaniem, przełączany sam co sześć sekund. Zatrzymuje się, gdy kursor lub fokus jest w środku, a pierwszy przycisk zatrzymuje go na dobre; przy ograniczonym ruchu w ogóle nie rusza."
+            },
+            "titles": {
+              "en": "Strategy\nDesign\nDevelopment\nSupport\nHosting\nAnalytics\nTraining\nAudit\nContent\nSearch\nMobile\nSecurity",
+              "ru": "Стратегия\nДизайн\nРазработка\nПоддержка\nХостинг\nАналитика\nОбучение\nАудит\nКонтент\nПоиск\nМобильная версия\nБезопасность",
+              "pl": "Strategia\nProjektowanie\nProgramowanie\nWsparcie\nHosting\nAnalityka\nSzkolenia\nAudyt\nTreści\nWyszukiwanie\nWersja mobilna\nBezpieczeństwo"
+            },
+            "hero": {
+              "en": ":word that lasts",
+              "ru": ":word надолго",
+              "pl": ":word na lata"
+            },
+            "slide": {
+              "en": "Slide :n of :count",
+              "ru": "Слайд :n из :count",
+              "pl": "Slajd :n z :count"
+            },
+            "photo": {
+              "en": "Photo :n of :count",
+              "ru": "Фото :n из :count",
+              "pl": "Zdjęcie :n z :count"
+            },
+            "card": {
+              "en": "Card :n of :count.",
+              "ru": "Карточка :n из :count.",
+              "pl": "Karta :n z :count."
+            },
+            "longer": {
+              "en": "A longer line of text, so that the cards of one strip differ in height and the strip shows whether they still line up.",
+              "ru": "Строка подлиннее, чтобы карточки одной ленты были разной высоты и было видно, выравниваются ли они.",
+              "pl": "Dłuższy wiersz tekstu, żeby karty jednego paska różniły się wysokością i było widać, czy nadal się wyrównują."
+            },
+            "more": {
+              "en": "More about :word",
+              "ru": "Подробнее: :word",
+              "pl": "Więcej: :word"
             },
             "variant": "hero",
             "width": "full",
@@ -2556,6 +2661,41 @@
               "en": "The thumbnails scroll when they do not fit.",
               "ru": "Миниатюры прокручиваются, когда не помещаются.",
               "pl": "Miniatury przewijają się, gdy się nie mieszczą."
+            },
+            "titles": {
+              "en": "Strategy\nDesign\nDevelopment\nSupport\nHosting\nAnalytics\nTraining\nAudit\nContent\nSearch\nMobile\nSecurity",
+              "ru": "Стратегия\nДизайн\nРазработка\nПоддержка\nХостинг\nАналитика\nОбучение\nАудит\nКонтент\nПоиск\nМобильная версия\nБезопасность",
+              "pl": "Strategia\nProjektowanie\nProgramowanie\nWsparcie\nHosting\nAnalityka\nSzkolenia\nAudyt\nTreści\nWyszukiwanie\nWersja mobilna\nBezpieczeństwo"
+            },
+            "hero": {
+              "en": ":word that lasts",
+              "ru": ":word надолго",
+              "pl": ":word na lata"
+            },
+            "slide": {
+              "en": "Slide :n of :count",
+              "ru": "Слайд :n из :count",
+              "pl": "Slajd :n z :count"
+            },
+            "photo": {
+              "en": "Photo :n of :count",
+              "ru": "Фото :n из :count",
+              "pl": "Zdjęcie :n z :count"
+            },
+            "card": {
+              "en": "Card :n of :count.",
+              "ru": "Карточка :n из :count.",
+              "pl": "Karta :n z :count."
+            },
+            "longer": {
+              "en": "A longer line of text, so that the cards of one strip differ in height and the strip shows whether they still line up.",
+              "ru": "Строка подлиннее, чтобы карточки одной ленты были разной высоты и было видно, выравниваются ли они.",
+              "pl": "Dłuższy wiersz tekstu, żeby karty jednego paska różniły się wysokością i było widać, czy nadal się wyrównują."
+            },
+            "more": {
+              "en": "More about :word",
+              "ru": "Подробнее: :word",
+              "pl": "Więcej: :word"
             },
             "variant": "gallery",
             "width": "narrow",
@@ -2676,6 +2816,41 @@
               "en": "Nothing to move: no arrows, no dots.",
               "ru": "Листать нечего: ни стрелок, ни точек.",
               "pl": "Nie ma czego przesuwać: bez strzałek i bez kropek."
+            },
+            "titles": {
+              "en": "Strategy\nDesign\nDevelopment\nSupport\nHosting\nAnalytics\nTraining\nAudit\nContent\nSearch\nMobile\nSecurity",
+              "ru": "Стратегия\nДизайн\nРазработка\nПоддержка\nХостинг\nАналитика\nОбучение\nАудит\nКонтент\nПоиск\nМобильная версия\nБезопасность",
+              "pl": "Strategia\nProjektowanie\nProgramowanie\nWsparcie\nHosting\nAnalityka\nSzkolenia\nAudyt\nTreści\nWyszukiwanie\nWersja mobilna\nBezpieczeństwo"
+            },
+            "hero": {
+              "en": ":word that lasts",
+              "ru": ":word надолго",
+              "pl": ":word na lata"
+            },
+            "slide": {
+              "en": "Slide :n of :count",
+              "ru": "Слайд :n из :count",
+              "pl": "Slajd :n z :count"
+            },
+            "photo": {
+              "en": "Photo :n of :count",
+              "ru": "Фото :n из :count",
+              "pl": "Zdjęcie :n z :count"
+            },
+            "card": {
+              "en": "Card :n of :count.",
+              "ru": "Карточка :n из :count.",
+              "pl": "Karta :n z :count."
+            },
+            "longer": {
+              "en": "A longer line of text, so that the cards of one strip differ in height and the strip shows whether they still line up.",
+              "ru": "Строка подлиннее, чтобы карточки одной ленты были разной высоты и было видно, выравниваются ли они.",
+              "pl": "Dłuższy wiersz tekstu, żeby karty jednego paska różniły się wysokością i było widać, czy nadal się wyrównują."
+            },
+            "more": {
+              "en": "More about :word",
+              "ru": "Подробнее: :word",
+              "pl": "Więcej: :word"
             },
             "variant": "cards",
             "width": "narrow",
@@ -3744,6 +3919,11 @@
               "ru": "Заголовок, строка и кнопка поверх видео, постер из медиатеки.",
               "pl": "Tytuł, linijka i przycisk nad wideo, plakat z biblioteki."
             },
+            "button": {
+              "en": "What to try",
+              "ru": "Что попробовать",
+              "pl": "Co wypróbować"
+            },
             "title": {
               "en": "Made to move",
               "ru": "Создано для движения",
@@ -3779,6 +3959,11 @@
               "ru": "Из-за текста рамка выше своих пропорций; видео закрывает её целиком.",
               "pl": "Tekst sprawia, że ramka jest wyższa niż jej proporcje; wideo pokrywa ją całą."
             },
+            "button": {
+              "en": "What to try",
+              "ru": "Что попробовать",
+              "pl": "Co wypróbować"
+            },
             "title": {
               "en": "Narrow",
               "ru": "Узко",
@@ -3813,6 +3998,11 @@
               "en": "The frame keeps its ratio alone, on its own background until the first frame.",
               "ru": "Рамка сама держит пропорции и до первого кадра стоит на собственном фоне.",
               "pl": "Ramka sama trzyma proporcje, na własnym tle aż do pierwszej klatki."
+            },
+            "button": {
+              "en": "What to try",
+              "ru": "Что попробовать",
+              "pl": "Co wypróbować"
             },
             "title": "",
             "text": "",
@@ -3936,6 +4126,26 @@
               "ru": "Настроен закончиться через 75 секунд после того, как собрана страница: посмотрите, как он покажет свой текст. Перезагрузите — будет ещё минута.",
               "pl": "Ustawione tak, by skończyć się 75 sekund po wygenerowaniu strony: zobacz, jak wyświetla swój tekst. Odśwież, by dostać kolejną minutę."
             },
+            "years": {
+              "en": "years",
+              "ru": "лет",
+              "pl": "lat"
+            },
+            "clients": {
+              "en": "clients",
+              "ru": "клиентов",
+              "pl": "klientów"
+            },
+            "rating": {
+              "en": "rating",
+              "ru": "рейтинг",
+              "pl": "ocena"
+            },
+            "saved": {
+              "en": "saved",
+              "ru": "сэкономлено",
+              "pl": "zaoszczędzone"
+            },
             "kind": "countdown",
             "seconds": 75,
             "ended": {
@@ -3959,6 +4169,26 @@
               "en": "Four tiles do not fit in a row in 20rem: two by two.",
               "ru": "Четыре плитки не помещаются в ряд в 20rem: два на два.",
               "pl": "Cztery kafelki nie mieszczą się w rzędzie w 20rem: dwa na dwa."
+            },
+            "years": {
+              "en": "years",
+              "ru": "лет",
+              "pl": "lat"
+            },
+            "clients": {
+              "en": "clients",
+              "ru": "клиентов",
+              "pl": "klientów"
+            },
+            "rating": {
+              "en": "rating",
+              "ru": "рейтинг",
+              "pl": "ocena"
+            },
+            "saved": {
+              "en": "saved",
+              "ru": "сэкономлено",
+              "pl": "zaoszczędzone"
             },
             "kind": "countdown",
             "seconds": 400000,
@@ -4092,6 +4322,26 @@
               "en": "Four counters inline in 20rem, a million among them.",
               "ru": "Четыре счётчика в 20rem, среди них миллион.",
               "pl": "Cztery liczniki w linii w 20rem, wśród nich milion."
+            },
+            "years": {
+              "en": "years",
+              "ru": "лет",
+              "pl": "lat"
+            },
+            "clients": {
+              "en": "clients",
+              "ru": "клиентов",
+              "pl": "klientów"
+            },
+            "rating": {
+              "en": "rating",
+              "ru": "рейтинг",
+              "pl": "ocena"
+            },
+            "saved": {
+              "en": "saved",
+              "ru": "сэкономлено",
+              "pl": "zaoszczędzone"
             },
             "kind": "counters",
             "seconds": 0,
@@ -4253,6 +4503,11 @@
               "ru": "Подписи придвигаются к углам; без JavaScript картинки стоят одна под другой.",
               "pl": "Etykiety przesuwają się bliżej rogów; bez JavaScript zdjęcia stoją jedno pod drugim."
             },
+            "caption": {
+              "en": "A column 20rem wide",
+              "ru": "Колонка шириной 20rem",
+              "pl": "Kolumna o szerokości 20rem"
+            },
             "before": {
               "path": "demo:showcase-before",
               "alt": {
@@ -4372,6 +4627,11 @@
               "ru": "Колонка шириной 20rem сворачивает список так же, как телефон: решает ширина контейнера, а не окна.",
               "pl": "Kolumna o szerokości 20rem zwija listę tak jak telefon: liczy się szerokość kontenera, nie okna."
             },
+            "contents": {
+              "en": "In this column",
+              "ru": "В этой колонке",
+              "pl": "W tej kolumnie"
+            },
             "body": {
               "en": "<h2>Prices</h2><p>What a visit costs and what it includes.</p><h2>Booking</h2><p>How to book, change or cancel a visit.</p><h2>Payment</h2><p>Cards, transfers, and when to pay.</p>",
               "ru": "<h2>Цены</h2><p>Сколько стоит визит и что в него входит.</p><h2>Запись</h2><p>Как записаться, перенести или отменить визит.</p><h2>Оплата</h2><p>Карты, переводы и когда платить.</p>",
@@ -4451,6 +4711,16 @@
               "ru": "pages=\"covered\", по умолчанию: ссылки возвращаются, только если следующую страницу не удалось загрузить.",
               "pl": "pages=\"covered\", domyślnie: linki wracają tylko wtedy, gdy nie da się wczytać następnej strony."
             },
+            "card": {
+              "en": "Card :n",
+              "ru": "Карточка :n",
+              "pl": "Karta :n"
+            },
+            "page_of": {
+              "en": "Page :page of :pages.",
+              "ru": "Страница :page из :pages.",
+              "pl": "Strona :page z :pages."
+            },
             "pages": "covered"
           }
         },
@@ -4468,6 +4738,16 @@
               "ru": "pages=\"shown\": ссылки остаются под кнопкой, следуют за загруженным и отмечают страницы, которые уже на экране.",
               "pl": "pages=\"shown\": linki zostają pod przyciskiem, nadążają za tym, co wczytano, i zaznaczają strony, które już są na ekranie."
             },
+            "card": {
+              "en": "Card :n",
+              "ru": "Карточка :n",
+              "pl": "Karta :n"
+            },
+            "page_of": {
+              "en": "Page :page of :pages.",
+              "ru": "Страница :page из :pages.",
+              "pl": "Strona :page z :pages."
+            },
             "pages": "shown"
           }
         },
@@ -4484,6 +4764,16 @@
               "en": "<x-webx-pagination>: previous, the numbers around this page with the first and the last, next — no script at all.",
               "ru": "<x-webx-pagination>: «Назад», номера вокруг текущей страницы вместе с первой и последней, «Вперёд» — и никакого скрипта.",
               "pl": "<x-webx-pagination>: poprzednia, numery wokół bieżącej strony razem z pierwszą i ostatnią, następna – bez żadnego skryptu."
+            },
+            "card": {
+              "en": "Card :n",
+              "ru": "Карточка :n",
+              "pl": "Karta :n"
+            },
+            "page_of": {
+              "en": "Page :page of :pages.",
+              "ru": "Страница :page из :pages.",
+              "pl": "Strona :page z :pages."
             },
             "pages": "links"
           }
@@ -4790,12 +5080,27 @@
               "ru": "Страница товара: панель открывается поверх колонки с текстом. На телефоне текст уходит под картинку — места рядом нет, — и картинка увеличивается в своей рамке.",
               "pl": "Strona produktu: panel otwiera się nad kolumną z tekstem. Na telefonie tekst schodzi pod zdjęcie, obok nie ma miejsca, więc zdjęcie powiększa się we własnej ramce."
             },
+            "product": {
+              "en": "Showcase watch",
+              "ru": "Часы с витрины",
+              "pl": "Zegarek z witryny"
+            },
+            "description": {
+              "en": "Steel, sapphire glass, an automatic movement. Hover the picture: the magnified view opens over this column, where a shop has its price and its button.",
+              "ru": "Сталь, сапфировое стекло, автоматический механизм. Наведите на картинку: увеличение откроется поверх этой колонки — там, где у магазина цена и кнопка.",
+              "pl": "Stal, szkło szafirowe, mechanizm automatyczny. Najedź na zdjęcie: powiększenie otworzy się nad tą kolumną, tam gdzie sklep ma cenę i przycisk."
+            },
+            "price": {
+              "en": "€ 420",
+              "ru": "420 €",
+              "pl": "420 €"
+            },
             "picture": {
               "path": "demo:showcase-zoom",
               "alt": {
-                "en": "A watch on a grid, a label of small print and a ruler",
-                "ru": "Часы на сетке, этикетка с мелким шрифтом и линейка",
-                "pl": "Zegarek na siatce, etykieta drobnym drukiem i linijka"
+                "en": "A watch on a grid, a card of fine lines and a ruler",
+                "ru": "Часы на сетке, карточка из тонких линий и линейка",
+                "pl": "Zegarek na siatce, karta z cienkich linii i linijka"
               }
             },
             "shown": {
@@ -4890,6 +5195,21 @@
               "en": "Asked to magnify beside, but the column has no room beside the picture: inside its frame then.",
               "ru": "Просили увеличивать рядом, но в колонке рядом с картинкой нет места: значит, внутри рамки.",
               "pl": "Ustawione na powiększanie obok, ale w kolumnie nie ma miejsca obok zdjęcia: wtedy powiększa się w swojej ramce."
+            },
+            "product": {
+              "en": "Showcase watch",
+              "ru": "Часы с витрины",
+              "pl": "Zegarek z witryny"
+            },
+            "description": {
+              "en": "Steel, sapphire glass, an automatic movement. Hover the picture: the magnified view opens over this column, where a shop has its price and its button.",
+              "ru": "Сталь, сапфировое стекло, автоматический механизм. Наведите на картинку: увеличение откроется поверх этой колонки — там, где у магазина цена и кнопка.",
+              "pl": "Stal, szkło szafirowe, mechanizm automatyczny. Najedź na zdjęcie: powiększenie otworzy się nad tą kolumną, tam gdzie sklep ma cenę i przycisk."
+            },
+            "price": {
+              "en": "€ 420",
+              "ru": "420 €",
+              "pl": "420 €"
             },
             "picture": {
               "path": "demo:showcase-zoom",

@@ -491,7 +491,7 @@ class ThemeDefaultTest extends TestCase
      * on a Polish page. Every `__()` names a key `en` has.
      */
     #[Test]
-    public function no_word_of_the_shell_or_of_a_block_is_written_into_its_template(): void
+    public function no_word_of_the_shell_or_of_a_block_or_of_the_showcase_is_written_into_its_template(): void
     {
         $words = Arr::dot(require self::path().'/lang/en/theme.php');
         $templates = [];
@@ -505,7 +505,13 @@ class ThemeDefaultTest extends TestCase
             $templates['blocks/'.basename($file)] = (string) (json_decode((string) file_get_contents($file), true)['template'] ?? '');
         }
 
-        $this->assertCount(10, $templates);
+        // The showcase's own block types too (TH4.4): a word in their templates is English on the Russian
+        // and the Polish showcase, which is what the showcase is there to show.
+        foreach (glob(self::path().'/demo/blocks/*.json') ?: [] as $file) {
+            $templates['demo/blocks/'.basename($file)] = (string) (json_decode((string) file_get_contents($file), true)['template'] ?? '');
+        }
+
+        $this->assertCount(26, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);
@@ -521,7 +527,8 @@ class ThemeDefaultTest extends TestCase
             preg_match_all('/>([^<>]*\p{L}{2,}[^<>]*)</u', $markup, $texts);
             $this->assertSame([], array_values(array_filter(array_map('trim', $texts[1]), static fn (string $text): bool => preg_match('/^&\w+;$/', $text) !== 1)), "{$name}: words in the template");
 
-            preg_match_all('/\b(aria-label|alt|title|placeholder)="([^"]*\p{L}[^"]*)"/u', $markup, $attributes);
+            // A bound attribute (:title="$heading") is PHP, not a word.
+            preg_match_all('/(?<![:\w-])(aria-label|alt|title|placeholder)="([^"]*\p{L}[^"]*)"/u', $markup, $attributes);
             $this->assertSame([], $attributes[0], "{$name}: words in an attribute");
         }
     }
