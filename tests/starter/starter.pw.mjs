@@ -3863,7 +3863,7 @@ test.describe('zoom', () => {
     await expect
       .poll(() =>
         root.evaluate(
-          (el) => document.querySelector('.webx-zoom__panel .webx-zoom__large')?.currentSrc,
+          () => document.querySelector('.webx-zoom__panel .webx-zoom__large')?.currentSrc,
         ),
       )
       .toBe(original)

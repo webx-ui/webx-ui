@@ -375,7 +375,13 @@ menu attaches a file or a link to it. Uploads belong to the editor, not the tab:
 filled in meanwhile, leaving the page asks first, and an interrupted upload is offered again the
 next time the product is opened — the same file continues from where the server stopped.
 
-**On the storefront**, `product.blade.php` prints each video with `<x-webx-video>` of
+**On the storefront**, a picture without a video is `<x-webx-zoom>` of the widgets: a copy
+`images.shown` pixels wide (1200) is shown, and the original comes only when someone looks closer —
+magnified inside the picture's frame under the mouse (`images.zoom` = `inner`, the default), in a
+panel beside it where the page has room (`side`), or not at all (`off`); two fingers pinch it on a
+phone. A click, a tap or Enter opens the product's pictures over the page.
+
+Each video is printed with `<x-webx-video>` of
 [`webx-ui/widgets`](https://github.com/webx-ui/webx-ui/tree/main/php/packages/widgets), the picture as its poster and in its shape. A
 YouTube video waits for the visitor's consent to media: before it, a notice over the poster with
 **Load** and **Always load videos**; after it, a play button that puts the `youtube-nocookie.com`

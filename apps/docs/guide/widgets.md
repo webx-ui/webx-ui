@@ -297,6 +297,37 @@ What a long page needs, each loading only where it stands:
   list. `fold="never"` keeps it open. The section being read is marked `is-current` as the page
   scrolls.
 
+## Zoom
+
+```blade
+<x-webx-zoom :image="$photo" :src="$photo->thumbUrl(1200)" mode="side" group="product-{{ $product->id }}" />
+
+<x-webx-lightbox :image="$picture" group="g" data-webx-zoom data-zoom-mode="inner" />
+```
+
+- **The picture is a link to the original** that opens the lightbox: that is the way in for a
+  keyboard and a screen reader, which have no hover, and without JavaScript the link opens the file.
+  `image` is what `<x-webx-lightbox :image>` takes; its address is the large picture, `src` the one
+  shown — a smaller copy where you have one (a product photo's `thumbUrl()`), else the original
+  itself. The original is fetched on the first hover or touch only; until it comes the shown picture
+  stands in, magnified.
+- **A mouse** magnifies it `scale` times (2.5 by default): `mode="inner"` inside its own frame,
+  following the cursor — the point under the cursor stays under it; `mode="side"` as a lens on the
+  picture and the magnified part in a panel to its right, the frame's height. The panel needs room
+  inside the picture's **container** — the nearest ancestor with a `container-type` that is not a
+  widget's own, else the page — for at least 60% of the frame's width; where there is none (a
+  narrow column, a phone, a gallery as wide as its column) `side` is `inner`. A press hides it:
+  a click is the lightbox's, a drag the slider's.
+- **Fingers** — two pinch it (up to 4×) and move it about inside the frame; one finger pans a
+  magnified picture and holds the slider under it still; a double tap is 2× around the point and
+  back; pinched back to its size it is as it was. One finger on a picture at its own size is the
+  page's and the slider's, as before. A single tap still opens the lightbox, 300ms later — the time
+  a second tap has to come. Reduced motion: no easing.
+- **`data-webx-zoom`** on any element that holds a picture and a link — usually the lightbox's own
+  link — does the same without the component; its value is the large picture (empty: the link's
+  address), `data-zoom-mode` and `data-zoom-scale` the rest. The Gallery block's slider uses it
+  (its field "Magnify under the mouse"), and so does `module-catalog`'s product page.
+
 ## Pages of a list, "Show more", the notice bar
 
 ```blade
@@ -341,7 +372,7 @@ belong to the site: an update never overwrites them.
 
 | Block       | Fields                                                                         | Inside                     |
 | ----------- | ------------------------------------------------------------------------------ | -------------------------- |
-| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom                | slider `gallery`, lightbox |
+| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom, magnify       | slider `gallery`, lightbox |
 | `logos`     | heading, a name, a logo and a link each                                        | slider `logos`             |
 | `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16 | `<x-webx-video>`           |
 | `map`       | heading, the contacts or coordinates with an address, zoom, height             | `<x-webx-map>`             |
@@ -373,18 +404,19 @@ view promised — a slider that moves needs its pause button, and the audit chec
 With `webx-ui/module-audit` installed, every crawled page is also read for what the widgets
 promise:
 
-| Check                    | Severity | Finds                                                                                              | Fix by a button                                    |
-| ------------------------ | -------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `widgets.before_consent` | error    | a YouTube, Vimeo, Google Maps or OpenStreetMap iframe, a known counter or pixel asked at once      | pasted into content: rewritten to wait for consent |
-| `widgets.banner_off`     | warning  | the banner off while something third-party is on the site                                          | turns the banner on                                |
-| `widgets.lightbox_size`  | warning  | a lightbox link without `data-width` / `data-height`                                               | —                                                  |
-| `widgets.slider_pause`   | warning  | a slider that moves with no pause button — a theme's override that lost it                         | —                                                  |
-| `widgets.video_pause`    | warning  | a background video with no pause button — an override that lost it                                 | —                                                  |
-| `widgets.counter_number` | notice   | a counter whose markup does not hold its number — an override that left it to the script           | —                                                  |
-| `widgets.compare_range`  | warning  | before and after without its range input — an override that lost it: no keyboard, no screen reader | —                                                  |
-| `widgets.toc_target`     | warning  | a link of a table of contents to an id the page does not have                                      | —                                                  |
-| `widgets.load_more_link` | warning  | "Show more" with a next page and no link to it — only a button, which no search engine presses     | —                                                  |
-| `widgets.contact_both`   | notice   | the quick-contact button and the bottom bar on one page                                            | —                                                  |
+| Check                    | Severity | Finds                                                                                                | Fix by a button                                    |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `widgets.before_consent` | error    | a YouTube, Vimeo, Google Maps or OpenStreetMap iframe, a known counter or pixel asked at once        | pasted into content: rewritten to wait for consent |
+| `widgets.banner_off`     | warning  | the banner off while something third-party is on the site                                            | turns the banner on                                |
+| `widgets.lightbox_size`  | warning  | a lightbox link without `data-width` / `data-height`                                                 | —                                                  |
+| `widgets.slider_pause`   | warning  | a slider that moves with no pause button — a theme's override that lost it                           | —                                                  |
+| `widgets.video_pause`    | warning  | a background video with no pause button — an override that lost it                                   | —                                                  |
+| `widgets.counter_number` | notice   | a counter whose markup does not hold its number — an override that left it to the script             | —                                                  |
+| `widgets.compare_range`  | warning  | before and after without its range input — an override that lost it: no keyboard, no screen reader   | —                                                  |
+| `widgets.toc_target`     | warning  | a link of a table of contents to an id the page does not have                                        | —                                                  |
+| `widgets.load_more_link` | warning  | "Show more" with a next page and no link to it — only a button, which no search engine presses       | —                                                  |
+| `widgets.zoom_link`      | warning  | a zoom that is no link and holds none — an override that lost it, or the attribute on a bare picture | —                                                  |
+| `widgets.contact_both`   | notice   | the quick-contact button and the bottom bar on one page                                              | —                                                  |
 
 "Pasted into content" means a text block, a page's body or any field a module hands to the audit:
 the fix finds the code there and rewrites it — an iframe's `src` becomes `data-src`, a script
@@ -398,6 +430,6 @@ third party the audit does not know is added in `webx-widgets.audit.third-party`
 `theme-default` brings a showcase, seeded by `php artisan webx:demo` and removed with it: under
 **Kitchen sink** a page per widget — Header and menu, Cookie consent, Dropdown and form in a
 dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map, Page tools, Background video,
-Counters and countdown, Before and after, Table of contents, Show more, Notice bar — with every variant, a narrow
+Counters and countdown, Before and after, Table of contents, Show more, Notice bar, Zoom — with every variant, a narrow
 column, what to try and the markup to copy. It is the place to look at a change in the theme
 before a real page does, and the pages the starter site's browser tests measure.

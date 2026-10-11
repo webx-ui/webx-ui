@@ -142,6 +142,19 @@ id (`for`) or of `<main>` — and the headings get their ids there, so every lin
 JavaScript. Wide, the list stands beside the text and sticks under the header; narrow, it folds
 into a bar above the text that names the section being read.
 
+## Zoom
+
+```blade
+<x-webx-zoom :image="$photo" :src="$photo->thumbUrl(1200)" mode="side" />
+```
+
+A picture whose details matter: a mouse magnifies it inside its frame, or in a panel beside it where
+its container has room; two fingers pinch it on a phone, a double tap is twice the size and back,
+and one finger still scrolls the page and swipes a slider. The picture is a link to the original
+that opens the lightbox — the way in for a keyboard — and the original is fetched only when someone
+looks closer. `data-webx-zoom` on a gallery's lightbox link does the same; the Gallery block's
+slider and the catalog's product page use it.
+
 ## Lists: pages and "Show more"
 
 ```blade
