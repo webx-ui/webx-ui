@@ -5336,3 +5336,58 @@ test.describe('icons', () => {
     }
   })
 })
+
+test.describe('assets', () => {
+  test('a picture of the theme answers 200 from a hashed path, cached forever', async ({
+    page,
+  }) => {
+    await page.goto('/kitchen-sink/assets')
+    await still(page)
+    const m = await page.evaluate(() => {
+      const picture = document.querySelector('.b-showcase-assets__picture')
+      return {
+        src: picture.src,
+        loaded: picture.complete && picture.naturalWidth > 0,
+        address: document.querySelector('.b-showcase-assets__address').textContent.trim(),
+      }
+    })
+    expect(m.src).toMatch(/\/themes\/webx-ui\/theme-default\/[0-9a-f]{12}\/assets\/img\/wave\.svg$/)
+    expect(m.loaded, 'the browser drew it').toBe(true)
+    expect(m.address).toBe(m.src)
+    const response = await page.request.get(m.src)
+    expect(response.status()).toBe(200)
+    expect(response.headers()['content-type']).toContain('image/svg+xml')
+    const cache = response.headers()['cache-control'] ?? ''
+    expect(cache, 'cached forever').toContain('immutable')
+    expect(Number(/max-age=(\d+)/.exec(cache)?.[1] ?? 0)).toBeGreaterThanOrEqual(31_536_000)
+  })
+
+  test('the same file as a mask takes the accent, and night repaints it', async ({ page }) => {
+    await page.goto('/kitchen-sink/assets')
+    await still(page)
+    const colours = async () =>
+      page.evaluate(() => {
+        const mask = document.querySelector('.b-showcase-assets__mask')
+        const probe = document.createElement('span')
+        probe.style.color = 'var(--site-color-accent)'
+        document.body.append(probe)
+        const accent = getComputedStyle(probe).color
+        probe.remove()
+        const style = getComputedStyle(mask)
+        return {
+          paint: style.backgroundColor,
+          accent,
+          image: style.maskImage || style.webkitMaskImage,
+          height: mask.getBoundingClientRect().height,
+        }
+      })
+    const before = await colours()
+    expect(before.image).toMatch(/assets\/img\/wave\.svg/)
+    expect(before.height).toBeGreaterThan(0)
+    expect(before.paint).toBe(before.accent)
+    await paint(page, 'night')
+    const after = await colours()
+    expect(after.paint).toBe(after.accent)
+    expect(after.paint).not.toBe(before.paint)
+  })
+})
