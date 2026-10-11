@@ -450,6 +450,13 @@ $value` не отличает «типа нет» от «тип сказал н�
   выключен. Поэтому поломки автодискавери, миграций на настоящей СУБД, входа через CSRF и, самое
   неприятное, «панель открылась после `config:cache`» там невидимы. Для этого есть
   `scripts/php-smoke.sh` — ставит пакеты в настоящее Laravel-приложение.
+- **`basePath('composer.json')` в тесте — это файл Testbench в `vendor/`, и правка в нём живёт
+  дольше теста.** `webx:setup` дописывает сайту `post-update-cmd`; в Testbench «сайт» —
+  `vendor/orchestra/testbench-core/laravel`, и тест, который гоняет setup с темой, молча правит
+  `composer.json` пакета Testbench. Следующие прогоны видят строку уже на месте («добавлено один
+  раз» зеленеет без кода), а чистый CI — нет. Содержимое читать в `setUp()` и класть обратно в
+  `tearDown()`, как `.env`. У нас: `SetupThemeTest`. Проверка — `grep theme:sync
+vendor/orchestra/testbench-core/laravel/composer.json` пуст после прогона.
 - **sqlite в Testbench игнорирует внешние ключи, пока его не попросишь.** `restrictOnDelete`
   не отказывает, `cascadeOnDelete` ничего не уносит — то есть половина обещаний миграции в
   тестах просто не существует. Лечится `database.connections.testing.foreign_key_constraints =>

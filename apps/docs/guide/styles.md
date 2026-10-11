@@ -49,6 +49,18 @@ CSS of the modules and the widgets under it — uses `var(--site-…)` and nothi
 | `var(--site-color-border, #ccc)`               | `var(--site-color-border)` — every token has a value                        |
 | `@media (min-width: 40rem)`                    | `@container (min-width: 40rem)`                                             |
 
+Three prefixes, each for its own thing — a fourth one is a mistake, and so is mixing them up,
+because the check tells them apart by the prefix:
+
+| Prefix     | What it is                                                               | Rule                                                                                            |
+| ---------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `--site-*` | a token of the site's vocabulary: its value comes from the theme         | only names the chain knows, never a fallback; a new name goes under `vocabulary` in tokens.json |
+| `--webx-*` | a package's own variable, a widget's or a module's (`--webx-slider-gap`) | declared by the package on `--site-*`; a theme overrides it to tune that one widget             |
+| `--wx-*`   | the panel and the core components                                        | never on the public site: it is not loaded there, and `var(--wx-…)` is silently empty           |
+
+A block's own variable (`--team-columns`, set inline from a field) is none of these: it lives under
+`.b-<slug>` and may have a default.
+
 `tokens.json` is the one place a literal value belongs. `php artisan webx:theme:check` reads the
 whole chain — every layer's `tokens.json` and `src/css`, the CSS of the modules and the widgets —
 and prints a line per finding (file, line, what, why), exiting non-zero; run it before saying the
@@ -93,6 +105,27 @@ styles travel with it and reach only the pages that show it.
   saving warns of a literal colour or font, a `--site-*` the theme lacks and a fallback inside one.
 - Keep the site's types in git: `php artisan webx:blocks:export` writes `resources/blocks/<slug>.json`,
   `php artisan webx:blocks:import --publish` reads them back on another machine.
+
+### Blocks of the theme
+
+A theme carries block types too, as `blocks/<slug>.json` — the files `webx:blocks:export` writes. A
+type of an upper layer replaces the one of a lower layer with the same slug, whole; its schema may
+add fields but keeps every field below with the same type, or the content filled in for the lower
+type is lost. `php artisan webx:theme:sync` puts the resulting set on the site, and is run by
+`webx:setup` and by `composer update` (the site's `post-update-cmd`):
+
+| What the site has                              | What sync does                                                 |
+| ---------------------------------------------- | -------------------------------------------------------------- |
+| no type by that slug                           | creates it from the layer and publishes it                     |
+| the theme's type, not edited here since        | publishes a new version from the file; the same file — nothing |
+| the theme's type, edited in the panel since    | keeps the edit and says so; `--force` overwrites it            |
+| a type of its own (or a module's) by that slug | refuses: taking it over would overwrite somebody's work        |
+| a type a layer stopped carrying                | keeps it — pages may stand on it                               |
+
+A type whose CSS breaks [the tokens rule](#css-knows-only-tokens) is refused by sync, not just
+warned of — `webx:theme:check` lists the same findings first. The usual path of a site's own block:
+make it in the panel, then `php artisan webx:blocks:export hero --path=theme/blocks` and commit —
+the site's look is then all in git, not only in its database.
 
 The rules a block type has to follow are in [Blocks](./blocks.md).
 
@@ -156,4 +189,5 @@ when the built front end is older than its sources ("has changed since the bundl
    a theme, `php artisan webx:theme:check`.
 6. Look at a phone width as well as a wide one; for the panel, the dark theme too.
 7. Commit what the site owns: `theme/`, `resources/`, `public/` (not `public/build`, `public/themes`), `config/`, and the
-   block types after `php artisan webx:blocks:export`.
+   block types after `php artisan webx:blocks:export` (on a site with a theme,
+   `--path=theme/blocks`).

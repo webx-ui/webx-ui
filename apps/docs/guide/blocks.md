@@ -512,6 +512,12 @@ so a file from the panel can go into `resources/blocks` as it is.
 Export needs only to see the section; import is `blocks.manage` and a site with editing on, like
 making a type by hand.
 
+On a site with a theme the same files have a third home: `theme/blocks/`, and the `blocks/` of every
+theme layer below it. Those are put on the site by `php artisan webx:theme:sync`, not by import —
+it remembers which layer put a type there and keeps whatever the site changed since
+([Styles › Blocks of the theme](./styles.md#blocks-of-the-theme)). A version it writes says «theme»
+in the history.
+
 The two drift apart quietly, so export on the day you edit. A type changed in the panel and not
 written back leaves the file describing the release before: the site is fine, because the site
 reads the database — what breaks is the next fresh install, the next deploy that seeds from the
