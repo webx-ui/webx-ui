@@ -266,7 +266,9 @@ final class ThemeDefaultBlocksTest extends TestCase
     {
         $directory = storage_path('framework/testing/offer-'.bin2hex(random_bytes(4)));
         File::ensureDirectoryExists($directory);
-        $this->beforeApplicationDestroyed(static fn () => File::deleteDirectory($directory));
+        $this->beforeApplicationDestroyed(static function () use ($directory): void {
+            File::deleteDirectory($directory);
+        });
 
         File::put($directory."/{$slug}.json", (string) json_encode([
             'slug' => $slug,

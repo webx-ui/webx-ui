@@ -155,7 +155,9 @@ final class CardTest extends TestCase
         $theme = storage_path('framework/testing/theme-'.bin2hex(random_bytes(4)));
         File::ensureDirectoryExists($theme.'/parts');
         File::put($theme.'/parts/recipe-card.blade.php', '<li class="theme-card">{{ $card[\'title\'] }}</li>');
-        $this->beforeApplicationDestroyed(static fn () => File::deleteDirectory($theme));
+        $this->beforeApplicationDestroyed(static function () use ($theme): void {
+            File::deleteDirectory($theme);
+        });
         View::addLocation($theme);
 
         $index = (string) $this->get('/recipes')->assertOk()->getContent();
