@@ -48,6 +48,16 @@ when the question is about one of those.
 A published config replaces the whole `cache` section if it names one key inside it
 (`mergeConfigFrom` merges one level deep); both values have a default of their own when read.
 
+### Classes
+
+The theme's contract (THEMES §10) for `<x-webx-menu::menu>`: the base look
+`resources/theme/menu.css` — every level on the page, an item with children a column — styles
+them under any theme. Nothing drops down: that is the widgets' header. Renaming one is breaking.
+
+- `wx-menu`, `wx-menu__list`, `wx-menu__list--<depth>` (1, 2, …), `wx-menu__item`,
+  `wx-menu__item--<variant>`, `wx-menu__item--heading`, `wx-menu__item--parent`, `is-active`,
+  `is-current`, `wx-menu__link` (`aria-current="page"` on the current one), `wx-menu__label`.
+
 ## Do not
 
 - Do not edit anything in `vendor/webx-ui/module-menu`, and do not copy the package into the
