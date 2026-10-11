@@ -144,7 +144,8 @@ final class ThemeDefaultBlocksTest extends TestCase
         $html = $this->render([$this->node('contact', ['heading' => 'Write to us', 'form' => 'contact', 'form_heading' => 'Or here'])]);
 
         $this->assertStringContainsString('class="b-contact b-contact--both"', $html);
-        $this->assertStringContainsString('<h3 class="b-contact__label">Phone</h3>', $html);
+        // The label after its icon of the theme's sprite (THEMES §13.1).
+        $this->assertMatchesRegularExpression('#<h3 class="b-contact__label"><svg class="theme-icon b-contact__icon"[^>]*>.*?</svg>Phone</h3>#s', $html);
         $this->assertStringContainsString('href="tel:+44-20-7946-0958"', $html);
         $this->assertStringContainsString('href="mailto:hello@example.com"', $html);
         $this->assertStringContainsString('1 Example Street, London', $html);
