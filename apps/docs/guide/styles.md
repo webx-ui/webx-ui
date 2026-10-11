@@ -35,6 +35,25 @@ Never edit the packaged theme in `vendor/`: `composer update` brings its fixes, 
 `resources/views/components/` sits above every theme layer and wins over it — that is why the
 skeleton has no `layout`, `header` or `footer` there.
 
+### CSS knows only tokens
+
+A colour or a font written in a stylesheet is out of reach of the presets and of the owner's
+edits in the panel: the page stops repainting wherever it stands. So `theme/src/css` — like the
+CSS of the modules and the widgets under it — uses `var(--site-…)` and nothing else:
+
+| Not this                                       | But this                                                                    |
+| ---------------------------------------------- | --------------------------------------------------------------------------- |
+| `color: #0e6b5c`, `rgb()`, `oklch()`, `white`  | `var(--site-color-accent)` — a role; `transparent`, `currentColor` are fine |
+| `font-family: Georgia, serif`                  | `var(--site-font-heading)`; a generic family (`serif`, `monospace`) is fine |
+| `var(--site-color-olive)` that the theme lacks | a name of the vocabulary, or add it under `vocabulary` in `tokens.json`     |
+| `var(--site-color-border, #ccc)`               | `var(--site-color-border)` — every token has a value                        |
+| `@media (min-width: 40rem)`                    | `@container (min-width: 40rem)`                                             |
+
+`tokens.json` is the one place a literal value belongs. `php artisan webx:theme:check` reads the
+whole chain — every layer's `tokens.json` and `src/css`, the CSS of the modules and the widgets —
+and prints a line per finding (file, line, what, why), exiting non-zero; run it before saying the
+theme is done.
+
 ### A site without a theme
 
 `php artisan webx:setup --no-theme` writes the layout, the header and the footer into
@@ -70,6 +89,8 @@ styles travel with it and reach only the pages that show it.
 
 - Every selector starts with `.b-<slug>` (the type's slug), and sizes respond to `@container`
   rather than `@media`: a bare `h2 {}` or a media query in a block reaches the whole site.
+- On a site with a theme, a block's CSS knows only tokens too ([above](#css-knows-only-tokens)):
+  saving warns of a literal colour or font, a `--site-*` the theme lacks and a fallback inside one.
 - Keep the site's types in git: `php artisan webx:blocks:export` writes `resources/blocks/<slug>.json`,
   `php artisan webx:blocks:import --publish` reads them back on another machine.
 
@@ -131,7 +152,8 @@ when the built front end is older than its sources ("has changed since the bundl
    change, and delete every published file you did not edit.
 4. Use only variables that exist: `--site-*` on the public site, `--wx-*` from `tokens.css` in the
    panel. In a block, prefix every selector with `.b-<slug>` and use `@container`.
-5. Show the change: reload, or `npm run build`; run `php artisan webx:doctor`.
+5. Show the change: reload, or `npm run build`; run `php artisan webx:doctor` and, on a site with
+   a theme, `php artisan webx:theme:check`.
 6. Look at a phone width as well as a wide one; for the panel, the dark theme too.
 7. Commit what the site owns: `theme/`, `resources/`, `public/` (not `public/build`, `public/themes`), `config/`, and the
    block types after `php artisan webx:blocks:export`.
