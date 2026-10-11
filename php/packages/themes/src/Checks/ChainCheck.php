@@ -30,7 +30,8 @@ use WebxUi\Themes\Vocabulary;
  * And the icons (§13.1): each `icons/*.svg` of a layer can become a symbol that follows the
  * colour of the text, and the views and block templates of the layers name only icons the chain
  * has, never an inline `<svg>` ({@see IconCheck}); the pictures they ask for with `theme_asset()`
- * are files under `assets/` of a layer (§13.2, {@see AssetCheck}).
+ * are files under `assets/` of a layer (§13.2, {@see AssetCheck}). And every language a layer
+ * declares in `locales` has the words of the layout that `en` has (§15.2, {@see LineCheck}).
  *
  * Built files are not read: `dist/` is what the sources became, plus the stylesheets of the
  * libraries a widget builds in (Swiper, PhotoSwipe, Leaflet), which are not ours to rewrite.
@@ -48,6 +49,8 @@ final class ChainCheck
     private int $icons = 0;
 
     private int $assets = 0;
+
+    private int $locales = 0;
 
     /**
      * @param  list<ThemeManifest>  $bottom  The packages below the themes ({@see BottomLayers}).
@@ -69,6 +72,7 @@ final class ChainCheck
         $this->blocks = 0;
         $this->icons = 0;
         $this->assets = 0;
+        $this->locales = 0;
 
         try {
             $vocabulary = Vocabulary::forChain($this->chain);
@@ -92,7 +96,20 @@ final class ChainCheck
         $this->layerBlocks($vocabulary);
         $this->checkIcons();
 
+        // And the words of the layout (§15.2, rule 26): each layer, in each language it declares.
+        foreach ($this->chain->layers as $layer) {
+            $lines = LineCheck::check($layer);
+            $this->locales += $lines['locales'];
+            array_push($this->findings, ...$lines['findings']);
+        }
+
         return $this->findings;
+    }
+
+    /** How many languages the layers declare for their words, summed over the layers that have words. */
+    public function locales(): int
+    {
+        return $this->locales;
     }
 
     /** How many icons the chain has, after the higher layer won by name. */

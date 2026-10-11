@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Themes\Tests;
 
+use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\ThemeChain;
@@ -56,6 +57,49 @@ final class CheckCommandTest extends TestCase
             ->expectsOutputToContain('field "buttons.url" (wx-input) is gone')
             ->expectsOutputToContain('4 findings')
             ->assertFailed();
+    }
+
+    /**
+     * Rule 26: every language a layer declares in `locales` has the keys of `en`, no more and no
+     * fewer; a language it only overrides a word in (theme-fixture's partial `pl`) is not compared.
+     */
+    #[Test]
+    public function the_words_of_a_layer_have_the_keys_of_en_in_every_declared_locale(): void
+    {
+        $this->artisan('webx:theme:check', ['path' => self::fixture('lines-theme')])
+            ->expectsOutputToContain('lang/ru/theme.php  missing: contact.email — "ru" in locales has every key of en, and only those')
+            ->expectsOutputToContain('lang/ru/theme.php  not in en: old')
+            ->expectsOutputToContain('lang/pl/theme.php  the theme declares "pl" in locales, but has no lang/pl/theme.php')
+            ->expectsOutputToContain('lang/uk/theme.php  not a words file')
+            ->expectsOutputToContain('4 findings')
+            ->assertFailed();
+    }
+
+    #[Test]
+    public function a_chain_whose_layers_declare_no_locales_says_so(): void
+    {
+        $this->artisan('webx:theme:check')
+            ->expectsOutputToContain('no layer declares locales for words of its own')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function the_declared_locales_are_counted_when_clean(): void
+    {
+        $directory = sys_get_temp_dir().'/webx-lines-'.uniqid();
+        mkdir($directory.'/lang/en', 0777, true);
+        mkdir($directory.'/lang/pl', 0777, true);
+        file_put_contents($directory.'/theme.json', json_encode(['theme' => ['uses' => ['webx-ui/theme-fixture'], 'locales' => ['en', 'pl']]]));
+        file_put_contents($directory.'/lang/en/theme.php', "<?php return ['more' => 'More'];");
+        file_put_contents($directory.'/lang/pl/theme.php', "<?php return ['more' => 'Więcej'];");
+
+        try {
+            $this->artisan('webx:theme:check', ['path' => $directory])
+                ->expectsOutputToContain('words of the layout in 2 locales, every one with the keys of en')
+                ->assertSuccessful();
+        } finally {
+            (new Filesystem)->deleteDirectory($directory);
+        }
     }
 
     #[Test]

@@ -18,7 +18,8 @@ use WebxUi\Themes\ThemeManifest;
  * stylesheets know only tokens, and tokens.json holds valid values — and §9.2: the block types
  * of the layers know only tokens too, and an override keeps the schema of the type below it; and
  * §13.1 — the icons of the layers follow the colour of the text, and the templates name only
- * icons the chain has, and `theme_asset()` only files a layer has (§13.2). The rest of §17's list joins with the stages that build what it checks.
+ * icons the chain has, and `theme_asset()` only files a layer has (§13.2); and the words of the layout
+ * have every key of `en` in each language a layer declares (§15.2, rule 26). The rest of §17's list joins with the stages that build what it checks.
  *
  * A refusal, not advice: a finding is a line naming the file, the line, what and why, and the
  * exit code is non-zero, so a build or a script can stop on it.
@@ -28,7 +29,7 @@ class CheckCommand extends Command
     protected $signature = 'webx:theme:check
         {path? : A theme to check instead of the site\'s: a directory with theme.json, or a package directory}';
 
-    protected $description = 'Check that the theme chain knows only tokens: tokens.json, src/css of the layers, CSS of the modules and widgets, block types of the layers; and that its icons follow the text and exist, and that the assets its templates name exist';
+    protected $description = 'Check that the theme chain knows only tokens: tokens.json, src/css of the layers, CSS of the modules and widgets, block types of the layers; and that its icons follow the text and exist, and that the assets its templates name exist, and that its words have the keys of en in every declared locale';
 
     public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeLocator $locator, ModuleStyles $modules): int
     {
@@ -64,7 +65,7 @@ class CheckCommand extends Command
         }
 
         $this->components->info(sprintf(
-            'The chain %s knows only tokens: %d stylesheets, %d block %s and the tokens.json of every layer; %d %s, every one its templates name; %s.',
+            'The chain %s knows only tokens: %d stylesheets, %d block %s and the tokens.json of every layer; %d %s, every one its templates name; %s; %s.',
             $layers,
             count($check->read()),
             $check->blocks(),
@@ -76,6 +77,9 @@ class CheckCommand extends Command
                 1 => '1 theme_asset() call, a file of the chain',
                 default => $check->assets().' theme_asset() calls, every one a file of the chain',
             },
+            $check->locales() === 0
+                ? 'no layer declares locales for words of its own'
+                : 'words of the layout in '.$check->locales().' '.($check->locales() === 1 ? 'locale' : 'locales').', every one with the keys of en',
         ));
 
         return self::SUCCESS;

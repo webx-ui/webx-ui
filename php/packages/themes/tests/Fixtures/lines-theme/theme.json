@@ -1,0 +1,7 @@
+{
+  "theme": {
+    "title": "Words gone wrong",
+    "uses": ["webx-ui/theme-fixture"],
+    "locales": ["en", "ru", "pl", "de", "uk"]
+  }
+}
