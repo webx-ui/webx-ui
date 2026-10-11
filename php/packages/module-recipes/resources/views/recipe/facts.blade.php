@@ -2,20 +2,20 @@
 @if ($minutes || $servings || $categories !== [] || $nutrients !== [])
     <ul class="wx-recipe__facts">
         @if ($minutes)
-            <li>{{ trans('webx-recipes::site.time') }}: {{ WebxUi\Recipes\Rendering\Duration::format($minutes) }}</li>
+            <li class="wx-recipe__fact wx-recipe__fact--time">{{ trans('webx-recipes::site.time') }}: {{ WebxUi\Recipes\Rendering\Duration::format($minutes) }}</li>
         @endif
         @if ($servings)
-            <li>{{ trans('webx-recipes::site.servings', ['count' => $servings]) }}</li>
+            <li class="wx-recipe__fact wx-recipe__fact--servings">{{ trans('webx-recipes::site.servings', ['count' => $servings]) }}</li>
         @endif
         @if ($categories !== [])
-            <li>
+            <li class="wx-recipe__fact wx-recipe__fact--categories">
                 @foreach ($categories as $category)
-                    <a href="{{ $category['url'] }}">{{ $category['title'] }}</a>@if (! $loop->last), @endif
+                    <a class="wx-recipe__category" href="{{ $category['url'] }}">{{ $category['title'] }}</a>@if (! $loop->last), @endif
                 @endforeach
             </li>
         @endif
         @if ($nutrients !== [])
-            <li>{{ trans('webx-recipes::site.nutrients') }}:
+            <li class="wx-recipe__fact wx-recipe__fact--nutrients">{{ trans('webx-recipes::site.nutrients') }}:
                 @foreach ($nutrients as $nutrient)
                     <span class="wx-recipe__chip">{{ $nutrient['title'] }}</span>
                 @endforeach

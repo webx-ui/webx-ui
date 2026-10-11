@@ -79,7 +79,7 @@ final class CardTest extends TestCase
         $page = (string) $this->get('/recipes')->assertOk()->getContent();
 
         $this->assertStringContainsString('<a class="wx-recipes__category" href="http://localhost/recipes/soups">Soups</a>', $page);
-        $this->assertStringContainsString('<a href="http://localhost/services/diet">Diet</a>', $page);
+        $this->assertStringContainsString('<a class="wx-recipes__service" href="http://localhost/services/diet">Diet</a>', $page);
         $this->assertStringContainsString('class="wx-recipes__time"', $page);
     }
 

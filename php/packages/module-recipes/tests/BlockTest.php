@@ -54,6 +54,21 @@ final class BlockTest extends TestCase
         $this->assertStringContainsString('All recipes', $html);
     }
 
+    /** THEMES §10.2: the columns a block asks for are a class, never a `style` a theme cannot beat. */
+    #[Test]
+    public function the_columns_of_a_block_are_a_class_on_the_grid(): void
+    {
+        $this->installBlock();
+        $this->recipe('a');
+
+        $three = $this->render([$this->node(['recipes' => ['limit' => 1]])]);
+        $two = $this->render([$this->node(['recipes' => ['limit' => 1], 'columns' => 2])]);
+
+        $this->assertStringContainsString('<ul class="wx-recipes__grid">', $three);
+        $this->assertStringContainsString('<ul class="wx-recipes__grid wx-recipes__grid--2">', $two);
+        $this->assertStringNotContainsString('style="', $two);
+    }
+
     #[Test]
     public function the_catalogue_on_a_page_has_pages_and_a_filter_and_keeps_the_filtered_copy_out_of_the_index(): void
     {

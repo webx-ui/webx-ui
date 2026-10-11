@@ -38,7 +38,7 @@ final class PageTest extends TestCase
         $page = $this->get('/recipes/porridge')->assertOk()->getContent();
         $this->assertIsString($page);
 
-        $this->assertStringContainsString('<h1>Porridge</h1>', $page);
+        $this->assertStringContainsString('<h1 class="wx-recipe__title">Porridge</h1>', $page);
         $this->assertStringContainsString('Warm and quick.', $page);
         $this->assertStringContainsString('1 h 15 min', $page);
         $this->assertStringContainsString('Servings: 2', $page);
