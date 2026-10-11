@@ -2205,3 +2205,10 @@ sans-serif` (родовые семейства §8 разрешены); теку
   конце файла, далеко от комментария (`docs/pitfalls/laravel-and-php.md`).
 - **Larastan про `$views->exists('mail.layout')`** говорит «always false»: вьюх темы он не видит.
   `Look::frame()` спрашивает `getFinder()->find()` в `try`.
+- **Проверено на пересобранном стартовом сайте:** `webx:theme:check` — «…; 3 letters, every
+  colour from theme_token()» (рамка темы, рамка и письмо `module-inbox`). В браузере
+  «Kitchen sink › Mail» — письмо о заявке на форму «Every kind of field» в рамке темы: название
+  сайта и кнопка цветом акцента, линии между ответами `color-border`, строка «Sent from WebX
+  Starter» под листом; на `/pl/witryna/poczta` — «Wysłano ze strony», «Otwórz w panelu».
+  Playwright — 135 тестов, 2 новых в «mail» (кнопка и название — акцент страницы, в `srcdoc` нет
+  `var(`, `<link>` и классов, письмо без боковой прокрутки; язык страницы).

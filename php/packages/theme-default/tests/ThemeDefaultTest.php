@@ -336,7 +336,7 @@ class ThemeDefaultTest extends TestCase
     {
         $this->app->setLocale('pl');
 
-        $html = view('mail.layout', ['title' => 'A letter', 'slot' => new HtmlString('<p>Body of the letter</p>')])->render();
+        $html = View::file(self::path().'/views/mail/layout.blade.php', ['title' => 'A letter', 'slot' => new HtmlString('<p>Body of the letter</p>')])->render();
 
         $this->assertStringContainsString('<html lang="pl">', $html);
         $this->assertStringContainsString('<body style="margin:0;padding:0;background-color:#f6f7f9;">', $html);
