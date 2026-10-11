@@ -114,7 +114,10 @@
     minmax(
       max(
         min(100%, 14rem),
-        calc((100% - (var(--webx-recipes-columns) - 1) * var(--webx-recipes-gap)) / var(--webx-recipes-columns))
+        calc(
+          (100% - (var(--webx-recipes-columns) - 1) * var(--webx-recipes-gap)) /
+            var(--webx-recipes-columns)
+        )
       ),
       1fr
     )

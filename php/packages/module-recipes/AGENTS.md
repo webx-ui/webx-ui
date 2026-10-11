@@ -55,7 +55,7 @@ read their guides when the question is about one of those.
 | An author's note, a call to action      | a patch: `Screens::extend('recipes.form', [...])` into `project-fields`, and `$recipe->extra()` in the part |
 | Recipes in a template or a block        | `recipes()->in('breakfasts')->nutrients([3])->relatedTo('service', $service)->take(6)`                      |
 | Other words in the panel or the site    | `php artisan vendor:publish --tag=webx-recipes-lang`                                                        |
-| Another card in every list              | `views/parts/recipe-card.blade.php` in the theme: the point `recipe-card`, given `$card`, prints one `<li>`  |
+| Another card in every list              | `views/parts/recipe-card.blade.php` in the theme: the point `recipe-card`, given `$card`, prints one `<li>` |
 
 All keys live in `config/webx-recipes.php` (`vendor:publish --tag=webx-recipes-config`). A screen
 patch whose target is gone throws when the screen is first built.
