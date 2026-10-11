@@ -33,6 +33,12 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   under `demo/` is published on a site. A page per widget under "Kitchen sink": Header and menu,
   Cookie consent, Dropdown and form in a dialog, Contacts, Language switcher, Slider, Lightbox,
   Video, Map, Page tools, Background video, Counters and countdown, Before and after, Table of contents, Show more, Notice bar (with Same words and New words under it), Zoom — every variant, a narrow column, what to try; the place to look before changing one.
+  Written in English, Russian and Polish: a page's `title`, `slug` and SEO card, and every
+  field a visitor reads (an `alt` too), are `{ "en": …, "ru": …, "pl": … }`; the demo keeps the
+  languages the site has and gives its default one the English where it is missing. A plain
+  string still works — the site's default language. Language switcher › English only stays
+  untranslated on purpose: the switcher's answer to a page with no translation. `ThemeDefaultTest`
+  fails on a visitor's word left as one string on a translated page.
 - **`src/css/`** — `base.css`, `shell.css`, `prose.css`, joined by `theme.css`; every selector
   inside `:where()` (no specificity). **`dist/theme.css`** — the committed build that
   `webx:theme:sync` publishes.

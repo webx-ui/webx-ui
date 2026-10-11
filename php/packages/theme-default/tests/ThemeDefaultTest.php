@@ -27,6 +27,9 @@ class ThemeDefaultTest extends TestCase
 {
     private const string NAME = 'webx-ui/theme-default';
 
+    /** The languages of the starter site, which the showcase is written in. */
+    private const array LANGUAGES = ['en', 'ru', 'pl'];
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -140,8 +143,23 @@ class ThemeDefaultTest extends TestCase
 
         $keys = [];
         $walk = function (array $page, string $file) use (&$walk, &$keys, $types): void {
-            $this->assertIsString($page['title'] ?? null, $file);
-            $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', (string) ($page['slug'] ?? ''), $file);
+            // In the three languages of the starter site, every page but the one left in English on
+            // purpose: the language switcher has a translation to lead to (§13 of the widgets spec).
+            $languages = ($page['slug'] ?? null) === 'english-only' ? null : self::LANGUAGES;
+
+            foreach (['title', 'slug'] as $field) {
+                $value = $page[$field] ?? null;
+                $this->assertSame($languages, is_array($value) ? array_keys($value) : null, "{$file}: {$field} of ".json_encode($value));
+
+                foreach ((array) $value as $one) {
+                    $this->assertIsString($one, $file);
+                    $this->assertNotSame('', $one, $file);
+                }
+            }
+
+            foreach ((array) $page['slug'] as $slug) {
+                $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', $slug, $file);
+            }
 
             $blocks = $page['blocks'] ?? [];
             while ($blocks !== []) {
@@ -161,6 +179,48 @@ class ThemeDefaultTest extends TestCase
             $page = json_decode((string) file_get_contents($file), true);
             $this->assertIsArray($page, $file);
             $walk($page, basename($file));
+        }
+    }
+
+    /**
+     * Every word a visitor reads on a translated showcase page is there in all three languages:
+     * a text left as one string would be English under the Russian and the Polish address, and
+     * nothing else would say so. Code-like values — a ratio, a width, an address — stay strings.
+     */
+    #[Test]
+    public function the_showcase_is_written_in_three_languages(): void
+    {
+        $words = ['heading', 'note', 'body', 'title', 'subtitle', 'text', 'button_label', 'caption', 'ended', 'before_label', 'after_label', 'link_label', 'label', 'alt'];
+
+        $walk = function (mixed $value, string $at, bool $translated) use (&$walk, $words): void {
+            if (! is_array($value)) {
+                return;
+            }
+
+            foreach ($value as $key => $one) {
+                $here = "{$at}.{$key}";
+
+                if (is_array($one) && array_key_exists('en', $one)) {
+                    $this->assertSame(self::LANGUAGES, array_keys($one), $here);
+                    $this->assertNotContains('', $one, $here);
+                } elseif ($translated && is_string($one) && in_array($key, $words, true) && preg_match('/\p{L}/u', $one) === 1) {
+                    $this->fail("{$here} is in English only: \"{$one}\"");
+                } else {
+                    $walk($one, $here, $translated && $key !== 'children');
+                }
+            }
+        };
+
+        foreach (glob(self::path().'/demo/pages/*.json') ?: [] as $file) {
+            $page = json_decode((string) file_get_contents($file), true);
+            $pages = [$page];
+
+            while ($pages !== []) {
+                $one = array_shift($pages);
+                array_push($pages, ...($one['children'] ?? []));
+                unset($one['children']);
+                $walk($one, basename($file).':'.json_encode($one['slug']), is_array($one['slug']));
+            }
         }
     }
 

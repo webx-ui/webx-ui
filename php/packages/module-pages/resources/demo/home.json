@@ -1,17 +1,33 @@
 {
   "title": "Home",
   "seo": {
-    "title": "A site made of blocks",
-    "description": "The demo content of a fresh WebX UI site: a page built out of block types made in the panel."
+    "title": {
+      "en": "A site made of blocks",
+      "ru": "Сайт из блоков",
+      "pl": "Strona zbudowana z bloków"
+    },
+    "description": {
+      "en": "The demo content of a fresh WebX UI site: a page built out of block types made in the panel.",
+      "ru": "Демо-содержимое нового сайта на WebX UI: страница, собранная из типов блоков, созданных в панели.",
+      "pl": "Treść demonstracyjna nowej strony na WebX UI: strona zbudowana z typów bloków utworzonych w panelu."
+    }
   },
   "blocks": [
     {
       "key": "demo-hero",
       "type": "hero",
       "values": {
-        "title": "A site made of blocks",
-        "subtitle": "Every block on this page is a type made in the panel: its fields, its Blade, its styles. Nothing here is written into the layout.",
-        "button_label": "Open the panel",
+        "title": {
+          "en": "A site made of blocks",
+          "ru": "Сайт из блоков",
+          "pl": "Strona zbudowana z bloków"
+        },
+        "subtitle": {
+          "en": "Every block on this page is a type made in the panel: its fields, its Blade, its styles. Nothing here is written into the layout.",
+          "ru": "Каждый блок на этой странице — тип, созданный в панели: его поля, его Blade, его стили. В шаблон сайта здесь ничего не зашито.",
+          "pl": "Każdy blok na tej stronie to typ utworzony w panelu: jego pola, jego Blade, jego style. Nic tu nie jest wpisane na sztywno w szablon."
+        },
+        "button_label": { "en": "Open the panel", "ru": "Открыть панель", "pl": "Otwórz panel" },
         "button_url": "/cms"
       }
     },
@@ -19,8 +35,16 @@
       "key": "demo-home-text",
       "type": "text",
       "values": {
-        "heading": "What you are looking at",
-        "body": "This page, the one beside it and the block types behind them came from the command php artisan webx:demo.\nEdit any of it in the panel, or run php artisan webx:demo --remove and the site is empty again — still working, still yours."
+        "heading": {
+          "en": "What you are looking at",
+          "ru": "Что перед вами",
+          "pl": "Co tu widać"
+        },
+        "body": {
+          "en": "This page, the one beside it and the block types behind them came from the command php artisan webx:demo.\nEdit any of it in the panel, or run php artisan webx:demo --remove and the site is empty again — still working, still yours.",
+          "ru": "Эта страница, соседние с ней и типы блоков, из которых они собраны, появились от команды php artisan webx:demo.\nМеняйте в панели что угодно — или выполните php artisan webx:demo --remove, и сайт снова опустеет, оставаясь рабочим и вашим.",
+          "pl": "Ta strona, strony obok niej i typy bloków, z których są zbudowane, pochodzą z polecenia php artisan webx:demo.\nZmieniaj w panelu, co chcesz, albo uruchom php artisan webx:demo --remove – strona znów będzie pusta, ale nadal działająca i nadal Twoja."
+        }
       }
     },
     {
@@ -33,16 +57,32 @@
             "key": "demo-home-column-left",
             "type": "text",
             "values": {
-              "heading": "Blocks inside blocks",
-              "body": "A container block prints its children, so a layout is content rather than a template a developer has to deploy."
+              "heading": {
+                "en": "Blocks inside blocks",
+                "ru": "Блоки внутри блоков",
+                "pl": "Bloki w blokach"
+              },
+              "body": {
+                "en": "A container block prints its children, so a layout is content rather than a template a developer has to deploy.",
+                "ru": "Блок-контейнер выводит вложенные в него блоки, поэтому раскладка страницы — это содержимое, а не шаблон, который разработчику нужно выкладывать на сервер.",
+                "pl": "Blok-kontener wyświetla zagnieżdżone w nim bloki, więc układ strony jest treścią, a nie szablonem, który programista musi wdrożyć."
+              }
             }
           },
           {
             "key": "demo-home-column-right",
             "type": "text",
             "values": {
-              "heading": "Addresses come from the registry",
-              "body": "Renaming this page rewrites its address and leaves a redirect behind it. Nothing in the layout has to know."
+              "heading": {
+                "en": "Addresses come from the registry",
+                "ru": "Адреса берутся из реестра",
+                "pl": "Adresy pochodzą z rejestru"
+              },
+              "body": {
+                "en": "Renaming this page rewrites its address and leaves a redirect behind it. Nothing in the layout has to know.",
+                "ru": "Переименуйте страницу — её адрес перепишется, а на старом останется переадресация. Шаблону об этом знать не нужно.",
+                "pl": "Zmiana nazwy strony przepisuje jej adres i zostawia na starym przekierowanie. Szablon nie musi nic o tym wiedzieć."
+              }
             }
           }
         ]

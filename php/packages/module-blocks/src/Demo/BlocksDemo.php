@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Demo;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Admin\Demo\ThemeDemo;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\BlockOffers;
@@ -41,10 +42,11 @@ final class BlocksDemo
     /**
      * The regions the demo fills, each with the type made for it and the values it is placed
      * with. Empty values on purpose: the header takes its name from the settings and the footer
-     * its line from the application, so renaming the site renames both.
+     * its line from the application, so renaming the site renames both. The button's words are
+     * in each language the site may speak; {@see DemoWords} keeps the ones it does.
      */
     private const REGIONS = [
-        'header' => ['type' => 'demo-header', 'values' => ['button_label' => 'Get in touch', 'button_url' => '/contacts']],
+        'header' => ['type' => 'demo-header', 'values' => ['button_label' => ['en' => 'Get in touch', 'ru' => 'Связаться с нами', 'pl' => 'Napisz do nas'], 'button_url' => '/contacts']],
         'footer' => ['type' => 'demo-footer', 'values' => []],
     ];
 
@@ -53,6 +55,7 @@ final class BlocksDemo
         private readonly Regions $regions,
         private readonly RegionWriter $writer,
         private readonly BlockOffers $offers,
+        private readonly DemoWords $words,
     ) {}
 
     public function seed(DemoLedger $ledger): void
@@ -200,7 +203,7 @@ final class BlocksDemo
         try {
             // Through the writer, as the panel saves and publishes: the region's `allow` and
             // `max`, and the render that refuses a publication in which a block throws.
-            $region = $this->writer->save($name, [['key' => "demo-{$name}", 'type' => $type, 'values' => $values]], null, null, EntityVersion::SOURCE_IMPORT);
+            $region = $this->writer->save($name, [['key' => "demo-{$name}", 'type' => $type, 'values' => $this->words->in($values)]], null, null, EntityVersion::SOURCE_IMPORT);
         } catch (RegionRefused $refused) {
             $ledger->note("The {$name} region did not take the demo block: {$refused->sentence()}");
 

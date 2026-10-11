@@ -7,6 +7,7 @@ namespace WebxUi\Pages\Demo;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Admin\Demo\ThemeDemo;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Versions\EntityVersion;
@@ -44,6 +45,7 @@ final class PagesDemo
         private readonly Locales $locales,
         private readonly Reserved $reserved,
         private readonly ModuleRegistry $modules,
+        private readonly DemoWords $words,
     ) {}
 
     public function seed(DemoLedger $ledger): void
@@ -93,7 +95,7 @@ final class PagesDemo
 
         $ledger->changed($home, ['blocks', 'draft', 'published_at'], 'the home page');
 
-        $home->setAttribute('blocks', $this->pictures($document['blocks'] ?? [], $ledger));
+        $home->setAttribute('blocks', $this->pictures($this->words->in($document['blocks'] ?? []), $ledger));
         $home->save();
         $home->publish(null, EntityVersion::SOURCE_IMPORT, 'Demo content');
 
@@ -108,12 +110,15 @@ final class PagesDemo
      */
     private function addPage(array $document, Page $parent, DemoLedger $ledger): void
     {
-        $slug = (string) ($document['slug'] ?? 'about');
+        // A title, a slug and a field may each be one string — the site's default language — or
+        // a map of languages: the page is then translated, with an address in each of them.
+        $slugs = $this->words->of($document['slug'] ?? null) ?? [$this->locale() => 'about'];
+        $slug = $slugs[$this->locale()];
 
         $page = new Page([
-            'title' => [$this->locale() => (string) ($document['title'] ?? ucfirst($slug))],
-            'slug' => [$this->locale() => $slug],
-            'blocks' => $this->pictures($document['blocks'] ?? [], $ledger),
+            'title' => $this->words->of($document['title'] ?? null) ?? [$this->locale() => ucfirst($slug)],
+            'slug' => $slugs,
+            'blocks' => $this->pictures($this->words->in($document['blocks'] ?? []), $ledger),
         ]);
 
         // Through the tree rather than through `save()`: the bounds are what put the page
@@ -188,8 +193,10 @@ final class PagesDemo
         $card = [];
 
         foreach (Fields::TRANSLATED as $field) {
-            if (is_string($seo[$field] ?? null) && $seo[$field] !== '') {
-                $card[$field] = [$this->locale() => $seo[$field]];
+            $words = $this->words->of($seo[$field] ?? null);
+
+            if ($words !== null) {
+                $card[$field] = $words;
             }
         }
 
@@ -270,7 +277,7 @@ final class PagesDemo
         return $file instanceof MediaFile ? $file->path : null;
     }
 
-    /** The language the demo is written in: one, and the site's own default. */
+    /** The site's default language: the one a document's single string is written in. */
     private function locale(): string
     {
         return $this->locales->defaultCode();

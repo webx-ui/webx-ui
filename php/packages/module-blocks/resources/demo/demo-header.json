@@ -19,7 +19,8 @@
     {
       "id": "button_label",
       "type": "wx-input",
-      "label": "Button"
+      "label": "Button",
+      "localized": true
     },
     {
       "id": "button_url",

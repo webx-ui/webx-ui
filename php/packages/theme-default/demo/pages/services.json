@@ -1,161 +1,377 @@
 {
-  "title": "Services",
-  "slug": "services",
+  "title": {
+    "en": "Services",
+    "ru": "Услуги",
+    "pl": "Usługi"
+  },
+  "slug": {
+    "en": "services",
+    "ru": "uslugi",
+    "pl": "uslugi"
+  },
   "seo": {
-    "title": "Services",
-    "description": "A long dropdown and a long branch of the mobile menu: eight services under one item."
+    "title": {
+      "en": "Services",
+      "ru": "Услуги",
+      "pl": "Usługi"
+    },
+    "description": {
+      "en": "A long dropdown and a long branch of the mobile menu: eight services under one item.",
+      "ru": "Длинный выпадающий список и длинная ветка мобильного меню: восемь услуг под одним пунктом.",
+      "pl": "Długa lista rozwijana i długa gałąź menu mobilnego: osiem usług pod jedną pozycją."
+    }
   },
   "blocks": [
     {
       "key": "showcase-services-intro",
       "type": "text",
       "values": {
-        "heading": "Services",
-        "body": "Eight pages under one item of the header: a dropdown taller than most, and a branch of the mobile menu that scrolls in its own body."
+        "heading": {
+          "en": "Services",
+          "ru": "Услуги",
+          "pl": "Usługi"
+        },
+        "body": {
+          "en": "Eight pages under one item of the header: a dropdown taller than most, and a branch of the mobile menu that scrolls in its own body.",
+          "ru": "Восемь страниц под одним пунктом шапки: выпадающий список выше обычного и ветка мобильного меню, которая прокручивается внутри себя.",
+          "pl": "Osiem stron pod jedną pozycją nagłówka: lista rozwijana wyższa niż większość innych i gałąź menu mobilnego, która przewija się we własnym obszarze."
+        }
       }
     }
   ],
   "children": [
     {
-      "title": "Freight forwarding",
-      "slug": "freight-forwarding",
+      "title": {
+        "en": "Freight forwarding",
+        "ru": "Экспедирование грузов",
+        "pl": "Spedycja"
+      },
+      "slug": {
+        "en": "freight-forwarding",
+        "ru": "ekspedirovanie",
+        "pl": "spedycja"
+      },
       "seo": {
-        "title": "Freight forwarding",
-        "description": "Moving goods by road, rail, sea and air under one contract."
+        "title": {
+          "en": "Freight forwarding",
+          "ru": "Экспедирование грузов",
+          "pl": "Spedycja"
+        },
+        "description": {
+          "en": "Moving goods by road, rail, sea and air under one contract.",
+          "ru": "Перевозка грузов автомобилем, по железной дороге, морем и самолётом по одному договору.",
+          "pl": "Przewóz towarów drogą lądową, kolejową, morską i lotniczą w ramach jednej umowy."
+        }
       },
       "blocks": [
         {
           "key": "showcase-services-freight-forwarding",
           "type": "text",
           "values": {
-            "heading": "Freight forwarding",
-            "body": "Moving goods by road, rail, sea and air under one contract."
+            "heading": {
+              "en": "Freight forwarding",
+              "ru": "Экспедирование грузов",
+              "pl": "Spedycja"
+            },
+            "body": {
+              "en": "Moving goods by road, rail, sea and air under one contract.",
+              "ru": "Перевозка грузов автомобилем, по железной дороге, морем и самолётом по одному договору.",
+              "pl": "Przewóz towarów drogą lądową, kolejową, morską i lotniczą w ramach jednej umowy."
+            }
           }
         }
       ]
     },
     {
-      "title": "Customs clearance",
-      "slug": "customs-clearance",
+      "title": {
+        "en": "Customs clearance",
+        "ru": "Таможенное оформление",
+        "pl": "Odprawa celna"
+      },
+      "slug": {
+        "en": "customs-clearance",
+        "ru": "tamozhennoe-oformlenie",
+        "pl": "odprawa-celna"
+      },
       "seo": {
-        "title": "Customs clearance",
-        "description": "Declarations, duties and the papers a border asks for."
+        "title": {
+          "en": "Customs clearance",
+          "ru": "Таможенное оформление",
+          "pl": "Odprawa celna"
+        },
+        "description": {
+          "en": "Declarations, duties and the papers a border asks for.",
+          "ru": "Декларации, пошлины и все документы, которые требуют на границе.",
+          "pl": "Zgłoszenia celne, cła i dokumenty, których wymaga granica."
+        }
       },
       "blocks": [
         {
           "key": "showcase-services-customs-clearance",
           "type": "text",
           "values": {
-            "heading": "Customs clearance",
-            "body": "Declarations, duties and the papers a border asks for."
+            "heading": {
+              "en": "Customs clearance",
+              "ru": "Таможенное оформление",
+              "pl": "Odprawa celna"
+            },
+            "body": {
+              "en": "Declarations, duties and the papers a border asks for.",
+              "ru": "Декларации, пошлины и все документы, которые требуют на границе.",
+              "pl": "Zgłoszenia celne, cła i dokumenty, których wymaga granica."
+            }
           }
         }
       ]
     },
     {
-      "title": "Warehousing",
-      "slug": "warehousing",
+      "title": {
+        "en": "Warehousing",
+        "ru": "Складское хранение",
+        "pl": "Magazynowanie"
+      },
+      "slug": {
+        "en": "warehousing",
+        "ru": "skladskoe-hranenie",
+        "pl": "magazynowanie"
+      },
       "seo": {
-        "title": "Warehousing",
-        "description": "Storage by the pallet and by the shelf, with stock counted daily."
+        "title": {
+          "en": "Warehousing",
+          "ru": "Складское хранение",
+          "pl": "Magazynowanie"
+        },
+        "description": {
+          "en": "Storage by the pallet and by the shelf, with stock counted daily.",
+          "ru": "Хранение на паллетах и на стеллажах, остатки пересчитываем каждый день.",
+          "pl": "Składowanie na paletach i na półkach, ze stanami liczonymi codziennie."
+        }
       },
       "blocks": [
         {
           "key": "showcase-services-warehousing",
           "type": "text",
           "values": {
-            "heading": "Warehousing",
-            "body": "Storage by the pallet and by the shelf, with stock counted daily."
+            "heading": {
+              "en": "Warehousing",
+              "ru": "Складское хранение",
+              "pl": "Magazynowanie"
+            },
+            "body": {
+              "en": "Storage by the pallet and by the shelf, with stock counted daily.",
+              "ru": "Хранение на паллетах и на стеллажах, остатки пересчитываем каждый день.",
+              "pl": "Składowanie na paletach i na półkach, ze stanami liczonymi codziennie."
+            }
           }
         }
       ]
     },
     {
-      "title": "Cold chain",
-      "slug": "cold-chain",
+      "title": {
+        "en": "Cold chain",
+        "ru": "Холодовая цепь",
+        "pl": "Łańcuch chłodniczy"
+      },
+      "slug": {
+        "en": "cold-chain",
+        "ru": "holodovaya-tsep",
+        "pl": "lancuch-chlodniczy"
+      },
       "seo": {
-        "title": "Cold chain",
-        "description": "Goods that must stay between two and eight degrees all the way."
+        "title": {
+          "en": "Cold chain",
+          "ru": "Холодовая цепь",
+          "pl": "Łańcuch chłodniczy"
+        },
+        "description": {
+          "en": "Goods that must stay between two and eight degrees all the way.",
+          "ru": "Грузы, которые всю дорогу должны оставаться при температуре от двух до восьми градусов.",
+          "pl": "Towary, które przez całą drogę muszą mieć od dwóch do ośmiu stopni."
+        }
       },
       "blocks": [
         {
           "key": "showcase-services-cold-chain",
           "type": "text",
           "values": {
-            "heading": "Cold chain",
-            "body": "Goods that must stay between two and eight degrees all the way."
+            "heading": {
+              "en": "Cold chain",
+              "ru": "Холодовая цепь",
+              "pl": "Łańcuch chłodniczy"
+            },
+            "body": {
+              "en": "Goods that must stay between two and eight degrees all the way.",
+              "ru": "Грузы, которые всю дорогу должны оставаться при температуре от двух до восьми градусов.",
+              "pl": "Towary, które przez całą drogę muszą mieć od dwóch do ośmiu stopni."
+            }
           }
         }
       ]
     },
     {
-      "title": "Project cargo",
-      "slug": "project-cargo",
+      "title": {
+        "en": "Project cargo",
+        "ru": "Проектные грузы",
+        "pl": "Ładunki ponadgabarytowe"
+      },
+      "slug": {
+        "en": "project-cargo",
+        "ru": "proektnye-gruzy",
+        "pl": "ladunki-ponadgabarytowe"
+      },
       "seo": {
-        "title": "Project cargo",
-        "description": "Loads too long, too heavy or too wide for an ordinary truck."
+        "title": {
+          "en": "Project cargo",
+          "ru": "Проектные грузы",
+          "pl": "Ładunki ponadgabarytowe"
+        },
+        "description": {
+          "en": "Loads too long, too heavy or too wide for an ordinary truck.",
+          "ru": "Грузы слишком длинные, тяжёлые или широкие для обычного грузовика.",
+          "pl": "Ładunki za długie, za ciężkie lub za szerokie na zwykłą ciężarówkę."
+        }
       },
       "blocks": [
         {
           "key": "showcase-services-project-cargo",
           "type": "text",
           "values": {
-            "heading": "Project cargo",
-            "body": "Loads too long, too heavy or too wide for an ordinary truck."
+            "heading": {
+              "en": "Project cargo",
+              "ru": "Проектные грузы",
+              "pl": "Ładunki ponadgabarytowe"
+            },
+            "body": {
+              "en": "Loads too long, too heavy or too wide for an ordinary truck.",
+              "ru": "Грузы слишком длинные, тяжёлые или широкие для обычного грузовика.",
+              "pl": "Ładunki za długie, za ciężkie lub za szerokie na zwykłą ciężarówkę."
+            }
           }
         }
       ]
     },
     {
-      "title": "Last-mile delivery",
-      "slug": "last-mile-delivery",
+      "title": {
+        "en": "Last-mile delivery",
+        "ru": "Доставка последней мили",
+        "pl": "Dostawa ostatniej mili"
+      },
+      "slug": {
+        "en": "last-mile-delivery",
+        "ru": "poslednyaya-milya",
+        "pl": "ostatnia-mila"
+      },
       "seo": {
-        "title": "Last-mile delivery",
-        "description": "From the warehouse to the door, with a time window the buyer chose."
+        "title": {
+          "en": "Last-mile delivery",
+          "ru": "Доставка последней мили",
+          "pl": "Dostawa ostatniej mili"
+        },
+        "description": {
+          "en": "From the warehouse to the door, with a time window the buyer chose.",
+          "ru": "От склада до двери — в интервал, который выбрал покупатель.",
+          "pl": "Z magazynu pod same drzwi, w przedziale czasowym wybranym przez kupującego."
+        }
       },
       "blocks": [
         {
           "key": "showcase-services-last-mile-delivery",
           "type": "text",
           "values": {
-            "heading": "Last-mile delivery",
-            "body": "From the warehouse to the door, with a time window the buyer chose."
+            "heading": {
+              "en": "Last-mile delivery",
+              "ru": "Доставка последней мили",
+              "pl": "Dostawa ostatniej mili"
+            },
+            "body": {
+              "en": "From the warehouse to the door, with a time window the buyer chose.",
+              "ru": "От склада до двери — в интервал, который выбрал покупатель.",
+              "pl": "Z magazynu pod same drzwi, w przedziale czasowym wybranym przez kupującego."
+            }
           }
         }
       ]
     },
     {
-      "title": "Returns handling",
-      "slug": "returns-handling",
+      "title": {
+        "en": "Returns handling",
+        "ru": "Обработка возвратов",
+        "pl": "Obsługa zwrotów"
+      },
+      "slug": {
+        "en": "returns-handling",
+        "ru": "vozvraty",
+        "pl": "obsluga-zwrotow"
+      },
       "seo": {
-        "title": "Returns handling",
-        "description": "Taking goods back, checking them and putting them on sale again."
+        "title": {
+          "en": "Returns handling",
+          "ru": "Обработка возвратов",
+          "pl": "Obsługa zwrotów"
+        },
+        "description": {
+          "en": "Taking goods back, checking them and putting them on sale again.",
+          "ru": "Принимаем товар обратно, проверяем его и снова выставляем на продажу.",
+          "pl": "Przyjmowanie zwróconych towarów, ich sprawdzanie i ponowne wystawianie na sprzedaż."
+        }
       },
       "blocks": [
         {
           "key": "showcase-services-returns-handling",
           "type": "text",
           "values": {
-            "heading": "Returns handling",
-            "body": "Taking goods back, checking them and putting them on sale again."
+            "heading": {
+              "en": "Returns handling",
+              "ru": "Обработка возвратов",
+              "pl": "Obsługa zwrotów"
+            },
+            "body": {
+              "en": "Taking goods back, checking them and putting them on sale again.",
+              "ru": "Принимаем товар обратно, проверяем его и снова выставляем на продажу.",
+              "pl": "Przyjmowanie zwróconych towarów, ich sprawdzanie i ponowne wystawianie na sprzedaż."
+            }
           }
         }
       ]
     },
     {
-      "title": "Insurance of cargo",
-      "slug": "insurance-of-cargo",
+      "title": {
+        "en": "Insurance of cargo",
+        "ru": "Страхование грузов",
+        "pl": "Ubezpieczenie ładunku"
+      },
+      "slug": {
+        "en": "insurance-of-cargo",
+        "ru": "strahovanie-gruzov",
+        "pl": "ubezpieczenie-ladunku"
+      },
       "seo": {
-        "title": "Insurance of cargo",
-        "description": "Cover for the value of the goods while they travel."
+        "title": {
+          "en": "Insurance of cargo",
+          "ru": "Страхование грузов",
+          "pl": "Ubezpieczenie ładunku"
+        },
+        "description": {
+          "en": "Cover for the value of the goods while they travel.",
+          "ru": "Покрытие стоимости груза на всё время в пути.",
+          "pl": "Ochrona wartości towarów na czas transportu."
+        }
       },
       "blocks": [
         {
           "key": "showcase-services-insurance-of-cargo",
           "type": "text",
           "values": {
-            "heading": "Insurance of cargo",
-            "body": "Cover for the value of the goods while they travel."
+            "heading": {
+              "en": "Insurance of cargo",
+              "ru": "Страхование грузов",
+              "pl": "Ubezpieczenie ładunku"
+            },
+            "body": {
+              "en": "Cover for the value of the goods while they travel.",
+              "ru": "Покрытие стоимости груза на всё время в пути.",
+              "pl": "Ochrona wartości towarów na czas transportu."
+            }
           }
         }
       ]

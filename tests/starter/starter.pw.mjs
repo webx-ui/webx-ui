@@ -802,9 +802,16 @@ test.describe('contacts', () => {
 
 test.describe('language switcher', () => {
   const PATH = '/kitchen-sink/language-switcher'
+  // The same page in the other two languages: the showcase is written in all three.
+  const TRANSLATED = {
+    ru: '/ru/vitrina/pereklyuchatel-yazykov',
+    pl: '/pl/witryna/przelacznik-jezykow',
+  }
+  // The one page of the showcase left in English on purpose.
+  const UNTRANSLATED = `${PATH}/english-only`
 
-  // The starter site speaks English, Russian and Polish. The home page is in all three; the
-  // showcase pages are in English only.
+  // The starter site speaks English, Russian and Polish, and so do the home page and the showcase
+  // — all but the page under this one.
   const header = (page) => page.locator('.webx-header__actions .webx-language-switcher')
 
   const inWindow = async (locator) => {
@@ -859,43 +866,71 @@ test.describe('language switcher', () => {
     const back = await links(header(page))
     expect(back.find((l) => l.hreflang === 'en').path).toBe('/')
     expect(back.find((l) => l.current === 'page').hreflang).toBe('pl')
+
+    // A showcase page too: each language at its own address, in its own words.
+    await page.goto(PATH)
+    const here = await links(header(page))
+    expect(here.map((l) => l.path)).toEqual([PATH, TRANSLATED.ru, TRANSLATED.pl])
+    for (const link of here) {
+      expect(link.fallback).toBe(false)
+      await answers(page, link)
+    }
+    await page.goto(TRANSLATED.ru)
+    await expect(page.locator('h1').first()).toHaveText('Одна страница, все языки')
+    expect((await links(header(page))).find((l) => l.hreflang === 'pl').path).toBe(TRANSLATED.pl)
   })
 
   // ROUTING §8.7: a page with no translation stays a page — the chosen language's frame around
   // the default language's text, closed to the index and pointing at the original.
   test('stays on the same page in a language without a translation', async ({ page }) => {
-    const original = await (await page.request.get(PATH)).text()
-    const h1 = (html) => html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '').trim()
+    const original = await (await page.request.get(UNTRANSLATED)).text()
+    const h1 = (html) =>
+      html
+        .match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1]
+        .replace(/<[^>]+>/g, '')
+        .trim()
     expect(h1(original), 'the original has no heading to compare').toMatch(/\S/)
 
-    await page.goto(PATH)
+    await page.goto(UNTRANSLATED)
     const all = await links(header(page))
     expect(all.find((l) => l.hreflang === 'en')).toMatchObject({
-      path: PATH,
+      path: UNTRANSLATED,
       current: 'page',
       fallback: false,
     })
     for (const code of ['ru', 'pl']) {
       const link = all.find((l) => l.hreflang === code)
-      expect(link).toMatchObject({ path: `/${code}${PATH}`, fallback: false, current: null, title: null })
+      expect(link).toMatchObject({
+        path: `/${code}${UNTRANSLATED}`,
+        fallback: false,
+        current: null,
+        title: null,
+      })
       await answers(page, link)
 
       const html = await (await page.request.get(link.path)).text()
       expect(h1(html), `${link.path} is not the original's text`).toBe(h1(original))
       expect(html).toContain('<meta name="robots" content="noindex, follow">')
       expect(
-        new URL(html.match(/<link rel="canonical" href="([^"]+)">/)?.[1] ?? 'http://x/none').pathname,
+        new URL(html.match(/<link rel="canonical" href="([^"]+)">/)?.[1] ?? 'http://x/none')
+          .pathname,
         `${link.path} does not point at the original`,
-      ).toBe(PATH)
+      ).toBe(UNTRANSLATED)
       expect(html, `${link.path} names alternates`).not.toContain('hreflang="')
     }
 
     // On the untranslated page the switcher marks its own language and leads back.
-    await page.goto(`/pl${PATH}`)
+    await page.goto(`/pl${UNTRANSLATED}`)
     const back = await links(header(page))
     expect(back.find((l) => l.current === 'page').hreflang).toBe('pl')
-    expect(back.find((l) => l.hreflang === 'en')).toMatchObject({ path: PATH, fallback: false })
-    expect(back.find((l) => l.hreflang === 'ru')).toMatchObject({ path: `/ru${PATH}`, fallback: false })
+    expect(back.find((l) => l.hreflang === 'en')).toMatchObject({
+      path: UNTRANSLATED,
+      fallback: false,
+    })
+    expect(back.find((l) => l.hreflang === 'ru')).toMatchObject({
+      path: `/ru${UNTRANSLATED}`,
+      fallback: false,
+    })
   })
 
   test('leads to the home page of each language from a page that does not exist, and marks it', async ({

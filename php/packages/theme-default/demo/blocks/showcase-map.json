@@ -13,12 +13,14 @@
     {
       "id": "heading",
       "type": "wx-input",
-      "label": "Heading"
+      "label": "Heading",
+      "localized": true
     },
     {
       "id": "note",
       "type": "wx-textarea",
       "label": "Note",
+      "localized": true,
       "props": {
         "rows": 3
       }

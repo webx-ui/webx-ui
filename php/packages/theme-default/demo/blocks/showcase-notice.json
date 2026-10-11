@@ -13,12 +13,14 @@
     {
       "id": "text",
       "type": "wx-input",
-      "label": "Words of the bar"
+      "label": "Words of the bar",
+      "localized": true
     },
     {
       "id": "link_label",
       "type": "wx-input",
-      "label": "Link"
+      "label": "Link",
+      "localized": true
     },
     {
       "id": "link_url",
@@ -29,6 +31,7 @@
       "id": "note",
       "type": "wx-textarea",
       "label": "Note on the page",
+      "localized": true,
       "props": {
         "rows": 3
       }

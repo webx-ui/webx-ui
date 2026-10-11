@@ -7,6 +7,7 @@ namespace WebxUi\Inbox\Demo;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Panel\FormOptions;
@@ -86,7 +87,7 @@ final class InboxDemo
     private function options(array $options): array
     {
         foreach (FormOptions::TRANSLATED as $key) {
-            if (isset($options[$key]) && is_string($options[$key])) {
+            if (isset($options[$key]) && (is_string($options[$key]) || is_array($options[$key]))) {
                 $options[$key] = $this->words($options[$key]);
             }
         }
@@ -99,9 +100,7 @@ final class InboxDemo
      */
     private function words(mixed $text): ?array
     {
-        $text = is_string($text) ? trim($text) : '';
-
-        return $text === '' ? null : [$this->locales->defaultCode() => $text];
+        return (new DemoWords($this->locales))->of($text);
     }
 
     /**

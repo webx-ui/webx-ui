@@ -227,6 +227,10 @@ Each module brings its own and knows nothing about the others': `blocks` seeds t
 rubric and two articles — one dated ahead, so that "Scheduled" is visible. A module whose
 requirements are not installed is skipped with the reason said out loud rather than silently.
 
+The demo is written in English, Russian and Polish — pages with an address in each, menus, the
+contact form, the settings — and keeps the languages your site publishes in. If your main language
+is not among them it gets the English, so a site in German still has a demo it can read.
+
 Removal follows a journal in `storage/app/webx-demo.json`, backwards, and knows nothing else:
 what the demo wrote down is what comes out, and everything you have written since stays. Rows
 that existed before the demo filled them — the home page arrives with a migration — are put back

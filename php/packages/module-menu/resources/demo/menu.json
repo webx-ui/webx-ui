@@ -1,7 +1,7 @@
 {
   "header": {
     "external": {
-      "title": "Documentation",
+      "title": { "en": "Documentation", "ru": "Документация", "pl": "Dokumentacja" },
       "url": "https://webx-ui.github.io/webx-ui/",
       "variant": "button",
       "new_tab": true,
@@ -9,6 +9,6 @@
     }
   },
   "footer": {
-    "heading": "About the site"
+    "heading": { "en": "About the site", "ru": "О сайте", "pl": "O stronie" }
   }
 }

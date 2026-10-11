@@ -13,12 +13,14 @@
     {
       "id": "heading",
       "type": "wx-input",
-      "label": "Heading"
+      "label": "Heading",
+      "localized": true
     },
     {
       "id": "note",
       "type": "wx-textarea",
       "label": "Note",
+      "localized": true,
       "props": {
         "rows": 3
       }
@@ -51,7 +53,8 @@
     {
       "id": "ended",
       "type": "wx-input",
-      "label": "Text at the end"
+      "label": "Text at the end",
+      "localized": true
     },
     {
       "id": "width",

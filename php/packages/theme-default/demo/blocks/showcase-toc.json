@@ -13,12 +13,14 @@
     {
       "id": "heading",
       "type": "wx-input",
-      "label": "Heading"
+      "label": "Heading",
+      "localized": true
     },
     {
       "id": "note",
       "type": "wx-textarea",
       "label": "Note",
+      "localized": true,
       "props": {
         "rows": 3
       }
@@ -26,7 +28,8 @@
     {
       "id": "body",
       "type": "wx-rich-text",
-      "label": "Text"
+      "label": "Text",
+      "localized": true
     }
   ],
   "template": "<section class=\"b-showcase-toc\" data-wx-block=\"showcase-toc\">\n    @if ($heading)\n        <p class=\"b-showcase-toc__heading\">{{ $heading }}</p>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-toc__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-toc__frame\">\n        @if (is_string($body) && trim($body) !== '')\n            <x-webx-toc title=\"In this column\">{!! $body !!}</x-webx-toc>\n        @endif\n    </div>\n</section>\n",

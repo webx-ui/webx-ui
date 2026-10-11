@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Pages\Models\Page;
+use WebxUi\Routing\Models\Route;
 use WebxUi\Seo\Models\SeoMeta;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeManifest;
@@ -54,6 +55,42 @@ final class DemoTest extends TestCase
         // name in the tree — and an untitled front page is the wrong first impression.
         $this->assertSame('A site made of blocks', $home->seoData()?->title);
         $this->assertSame('About this demo', $about->seoData()?->title);
+    }
+
+    #[Test]
+    public function a_translated_document_gives_the_page_every_language_the_site_has(): void
+    {
+        $this->useLocales('ru', 'en', 'de');
+
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        $about = Page::query()->where('parent_id', $this->home()->getKey())->firstOrFail();
+
+        // Russian and English, each at its own address; the Polish the document also brings is
+        // not a language of this site, and German is not in the document at all.
+        $this->assertEquals(['ru' => 'О сайте', 'en' => 'About'], $about->getTranslations('title'));
+        $this->assertSame('o-saite', $about->routePath('ru'));
+        $this->assertSame('about', $about->routePath('en'));
+        $this->assertEqualsCanonicalizing(['ru', 'en'], Route::query()->forEntity($about)->pluck('locale')->all());
+        $this->assertEqualsCanonicalizing(['ru', 'en'], array_keys($about->seo()->firstOrFail()->getTranslations('title')));
+
+        // A field of a block keeps a map of the same languages, read in the one being shown.
+        $this->assertEqualsCanonicalizing(['ru', 'en'], array_keys($about->blocksTree()[0]['values']['heading']));
+    }
+
+    #[Test]
+    public function a_document_in_one_language_is_the_default_language_of_any_site(): void
+    {
+        // German first: the document has no German, so its English stands in for it — as the one
+        // string of a document written before translations always did.
+        $this->useLocales('de', 'en');
+
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        $about = Page::query()->where('parent_id', $this->home()->getKey())->firstOrFail();
+
+        $this->assertSame(['de' => 'About', 'en' => 'About'], $about->getTranslations('title'));
+        $this->assertSame('about', $about->routePath('de'));
     }
 
     #[Test]
