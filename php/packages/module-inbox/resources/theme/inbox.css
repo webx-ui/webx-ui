@@ -1,0 +1,196 @@
+/*
+ * module-inbox: the base look of a form on the site (THEMES §10.2).
+ *
+ * Decent under any theme rather than beautiful: fields one under another, two to a row where the
+ * panel marked them half width and the form has the room, controls a finger can hit, a visible
+ * error and a visible thank-you. Only site tokens of the engine's vocabulary, one class per
+ * rule, so a theme restyles any of it by writing the same class — its stylesheet comes later.
+ *
+ * The width of the form decides the columns, not the window's: a form in the footer, in a
+ * dialog and in the main column of the same page each get what fits them.
+ */
+
+.wx-form {
+  container-type: inline-size;
+  display: grid;
+  gap: var(--site-space-4);
+  min-width: 0;
+}
+
+.wx-form__fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--site-space-4);
+}
+
+.wx-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-1);
+  min-width: 0;
+}
+
+.wx-form__label {
+  color: var(--site-color-text);
+  font-weight: 600;
+}
+
+.wx-form__required {
+  margin-inline-start: var(--site-space-1);
+  color: var(--site-color-danger);
+  text-decoration: none;
+  cursor: help;
+}
+
+.wx-form__control {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--site-space-2) var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-bg);
+  color: var(--site-color-text);
+  transition: border-color var(--site-duration) var(--site-easing);
+  /* Only a textarea can be resized: it grows down, never sideways out of its column. */
+  resize: vertical;
+}
+
+.wx-form__control::placeholder {
+  color: var(--site-color-text-muted);
+  opacity: 1;
+}
+
+.wx-form__control:hover {
+  border-color: var(--site-color-text-muted);
+}
+
+.wx-form__control:focus-visible {
+  border-color: var(--site-color-accent);
+}
+
+.wx-form__control--file {
+  padding: var(--site-space-2);
+}
+
+.wx-form__control[aria-invalid='true'] {
+  border-color: var(--site-color-danger);
+}
+
+.wx-form__choices {
+  display: flex;
+  flex-direction: column;
+}
+
+/* A row as tall as a finger: the label is the target, not the tick. */
+.wx-form__choice,
+.wx-form__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--site-space-2);
+  min-height: 44px;
+  padding-block: var(--site-space-2);
+  cursor: pointer;
+}
+
+.wx-form__choice-input,
+.wx-form__consent-input {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0.2em 0 0;
+  accent-color: var(--site-color-accent);
+}
+
+.wx-form__consent-text {
+  color: var(--site-color-text-muted);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+}
+
+.wx-form__help {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+}
+
+.wx-form__error {
+  margin: 0;
+  color: var(--site-color-danger);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+}
+
+/* The refusal that belongs to no field, and the thank-you: a box each, beside the button. */
+.wx-form__error--form,
+.wx-form__message {
+  margin: 0;
+  padding: var(--site-space-3) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-inline-start: 4px solid var(--site-color-danger);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-bg);
+  color: var(--site-color-text);
+  font-size: var(--site-font-size-base);
+}
+
+.wx-form__message {
+  border-inline-start-color: var(--site-color-success);
+}
+
+.wx-form__message-heading {
+  margin: 0;
+  font-weight: 600;
+}
+
+.wx-form__message-text > :first-child {
+  margin-block-start: var(--site-space-1);
+}
+
+.wx-form__message-text > :last-child {
+  margin-block-end: 0;
+}
+
+.wx-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-3);
+}
+
+.wx-form__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-5);
+  border: 1px solid transparent;
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color var(--site-duration) var(--site-easing);
+}
+
+.wx-form__submit:hover {
+  background: color-mix(in srgb, var(--site-color-accent) 85%, var(--site-color-text));
+}
+
+/* Sending: the script disables the button and puts the busy words on it. */
+.wx-form__submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+@container (min-width: 32rem) {
+  .wx-form__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wx-form__field {
+    grid-column: 1 / -1;
+  }
+
+  .wx-form__field--half {
+    grid-column: auto;
+  }
+}

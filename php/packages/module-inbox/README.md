@@ -128,9 +128,15 @@ php artisan vendor:publish --tag=webx-inbox-views
 ```
 
 What ships is the least markup that works: `wx-form`, `wx-form__field`, `wx-form__control`,
-`is-invalid`, and no colours, no spacing and no stylesheet at all. The package's own design
-tokens are not pulled onto the site — a site is not obliged to have them. After publishing, the
-views belong to the site:
+`is-invalid` — the full list of classes is in `AGENTS.md`, «Classes», and they are a public
+contract. On a site with a theme (`webx-ui/themes`) the package also brings its base look,
+`resources/theme/inbox.css`: site tokens only, fields two to a row where the form is wide enough,
+a visible error and thank-you. `webx:theme:sync` publishes it with the other modules' and
+`@webxTheme` links it under the theme, so the theme restyles the same classes without
+publishing a view. A site without a theme gets no stylesheet at all.
+
+Restyling is the cheap door; a different markup is the expensive one. After publishing, the
+views belong to the site and no longer get the package's fixes:
 
 ```
 resources/views/vendor/webx-inbox/form.blade.php          the frame

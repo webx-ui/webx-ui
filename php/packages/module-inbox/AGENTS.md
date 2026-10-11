@@ -76,32 +76,30 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 | Anything else once a submission is stored | a listener of `WebxUi\Inbox\Events\SubmissionStored`, `ShouldQueue` if it calls out    |
 | A letter sent again                       | the submission's menu in the panel; MCP `inbox_notify` (`dry_run` first)               |
 
+### Classes
+
+The theme's contract (THEMES §10): the base look `resources/theme/inbox.css` styles them, under
+any theme; restyle them in the theme's `src/css` — not by tags, not by nesting. Renaming one is
+a breaking change.
+
+- `wx-form` (+ `wx-form--<placement>`), `wx-form__fields`, `wx-form__field`,
+  `wx-form__field--<type>`, `wx-form__field--half`, `is-invalid` (set by the script too).
+- `wx-form__label`, `wx-form__required`, `wx-form__control`, `wx-form__control--file`,
+  `wx-form__help`, `wx-form__error`, `wx-form__error--form`.
+- `wx-form__choices`, `wx-form__choice`, `wx-form__choice-input`, `wx-form__choice-label`,
+  `wx-form__consent`, `wx-form__consent-input`, `wx-form__consent-text`, `wx-form__captcha`.
+- `wx-form__message`, `wx-form__message-heading`, `wx-form__message-text`, `wx-form__actions`,
+  `wx-form__submit` (disabled while sending), `wx-form__honeypot` (hidden inline — leave it).
+
 ### Send submissions to a CRM
 
-`SubmissionStored` comes once the submission, its answers and files are written (after commit),
-for the site's form and one typed in by hand; never for what the antispam stopped. `repeated` is
-a double click inside the duplicate window. For "this form goes to that service", name handlers:
-
-```php
-// config/webx-inbox.php
-'handlers' => ['*' => [App\Inbox\SyncToCrm::class], 'gift' => [App\Inbox\SendGift::class]],
-
-// app/Inbox/SyncToCrm.php — uses Http, WebxUi\Inbox\Contracts\SubmissionHandler, Models\Submission
-final class SyncToCrm implements SubmissionHandler
-{
-    public function handle(Submission $submission): void
-    {
-        Http::withToken(config('services.crm.token'))->post('https://crm.example/api/subscribers', [
-            'email' => $submission->value('email')?->value,
-            'group' => config('services.crm.groups.'.$submission->form->slug),
-        ])->throw();
-    }
-}
-```
-
-Each handler is a queued job of its own, tried once; throwing is failing and becomes a
-`handler_error` line in the submission's log (`handled` on success) — the visitor and the other
-handlers never notice. Not run again for `repeated`.
+`SubmissionStored` comes once the submission, its answers and files are written (after commit);
+never for what the antispam stopped, `repeated` for a double click. Name handlers per slug —
+`'handlers' => ['*' => [App\Inbox\SyncToCrm::class], 'gift' => [...]]` — each a
+`SubmissionHandler` (`handle(Submission $submission)`, `$submission->value('email')?->value`),
+a queued job of its own, tried once: throwing becomes a `handler_error` line in the submission's
+log (`handled` on success), and the visitor and the other handlers never notice. Not run again
+for `repeated`. A full example — README, «After a submission is stored».
 
 ## Do not
 
