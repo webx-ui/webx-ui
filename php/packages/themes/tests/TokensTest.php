@@ -114,6 +114,7 @@ class TokensTest extends TestCase
         $this->assertSame('#c0392b', theme_token('color-accent'));
         $this->assertSame('#e11d48', theme_token('color-danger', '#e11d48'));
         $this->assertNull(theme_token('color-danger'));
+        $this->assertTrue(theme_active());
     }
 
     #[Test]
