@@ -5392,6 +5392,139 @@ test.describe('assets', () => {
   })
 })
 
+test.describe('fonts', () => {
+  // The font files the document downloaded, once the browser has settled which faces it needs.
+  async function fontFiles(page) {
+    await page.evaluate(() => document.fonts.ready)
+    return page.evaluate(() =>
+      performance
+        .getEntriesByType('resource')
+        .map((entry) => new URL(entry.name).pathname)
+        .filter((path) => /\/assets\/fonts\/[^/]+\.woff2$/.test(path))
+        .map((path) => path.split('/').pop()),
+    )
+  }
+
+  // What actually draws the text of an element: the fonts Chromium picked for its glyphs.
+  async function drawnWith(page, selector) {
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('DOM.enable')
+    await cdp.send('CSS.enable')
+    const { root } = await cdp.send('DOM.getDocument', { depth: -1 })
+    const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector })
+    const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
+    await cdp.detach()
+    return fonts
+  }
+
+  test('an English page downloads no Cyrillic and no Latin Extended; Russian and Polish add theirs', async ({
+    browser,
+  }) => {
+    for (const [path, wanted, unwanted] of [
+      ['/', ['inter-latin.woff2'], ['inter-cyrillic.woff2', 'inter-latin-ext.woff2']],
+      ['/ru', ['inter-latin.woff2', 'inter-cyrillic.woff2'], ['inter-latin-ext.woff2']],
+      ['/pl', ['inter-latin.woff2', 'inter-latin-ext.woff2'], ['inter-cyrillic.woff2']],
+    ]) {
+      // A context of its own each: nothing in the memory cache from the page before.
+      const context = await browser.newContext()
+      const page = await context.newPage()
+      await page.goto(path)
+      await still(page)
+      const files = await fontFiles(page)
+      for (const file of wanted) expect(files, `${path} downloads ${file}`).toContain(file)
+      for (const file of unwanted)
+        expect(files, `${path} does not download ${file}`).not.toContain(file)
+      await context.close()
+    }
+  })
+
+  test('the faces come from the theme, a file per script, cached forever', async ({ page }) => {
+    await page.goto('/kitchen-sink/fonts')
+    await still(page)
+    const faces = await page.evaluate(() =>
+      [...document.querySelectorAll('style[data-webx-fonts]')]
+        .map((style) => style.textContent)
+        .join(''),
+    )
+    expect(faces.match(/@font-face/g)?.length, 'three scripts, upright and italic').toBe(6)
+    expect(faces).not.toMatch(/fonts\.googleapis|fonts\.gstatic|https?:\/\/(?!webx-starter\.local)/)
+    const files = await fontFiles(page)
+    // Every script on the page at once: the three upright files.
+    for (const file of ['inter-latin.woff2', 'inter-latin-ext.woff2', 'inter-cyrillic.woff2']) {
+      expect(files).toContain(file)
+    }
+    const url = /url\("([^"]+inter-cyrillic\.woff2)"\)/.exec(faces)?.[1]
+    expect(url).toMatch(/\/themes\/webx-ui\/theme-default\/[0-9a-f]{12}\/assets\/fonts\//)
+    const response = await page.request.get(url)
+    expect(response.status()).toBe(200)
+    expect(response.headers()['cache-control'] ?? '').toContain('immutable')
+  })
+
+  test('Polish ą ł, Turkish ğ ş and Cyrillic are drawn in Inter; Greek, which has no file, is not', async ({
+    page,
+  }) => {
+    await page.goto('/pl/witryna/fonty')
+    await still(page)
+    await page.evaluate(() => document.fonts.ready)
+    const inter = (fonts) =>
+      fonts.every((font) => font.isCustomFont && /inter/i.test(font.familyName))
+    for (const lang of ['pl', 'tr', 'ru', 'uk', 'en']) {
+      const fonts = await drawnWith(page, `.b-showcase-fonts__sample[lang="${lang}"]`)
+      expect(fonts.length, lang).toBeGreaterThan(0)
+      expect(inter(fonts), `${lang}: ${JSON.stringify(fonts)}`).toBe(true)
+    }
+    // The control: the same measurement says "not Inter" where the theme has no file.
+    const greek = await drawnWith(page, '.b-showcase-fonts__sample[lang="el"]')
+    expect(
+      greek.some((font) => !font.isCustomFont),
+      JSON.stringify(greek),
+    ).toBe(true)
+
+    // And the Polish of the page itself, not only the sample.
+    await page.goto('/pl')
+    await still(page)
+    await page.evaluate(() => document.fonts.ready)
+    const marked = await page.evaluate(() => {
+      const walker = document.createTreeWalker(
+        document.querySelector('main') ?? document.body,
+        NodeFilter.SHOW_TEXT,
+      )
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (
+          /[ąęłńśźżó]/.test(node.textContent) &&
+          node.parentElement.closest('[hidden]') === null
+        ) {
+          node.parentElement.setAttribute('data-latin-ext-probe', '')
+          return node.textContent.trim().slice(0, 40)
+        }
+      }
+      return null
+    })
+    expect(marked, 'the Polish home page has a letter past U+00FF').not.toBeNull()
+    const fonts = await drawnWith(page, '[data-latin-ext-probe]')
+    expect(inter(fonts), `"${marked}": ${JSON.stringify(fonts)}`).toBe(true)
+  })
+
+  test('the switcher names another language in the reader font, the current one in the theme font', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await still(page)
+    const m = await page.evaluate(() => {
+      const family = (selector) => {
+        const element = document.querySelector(selector)
+        return element ? getComputedStyle(element).fontFamily : null
+      }
+      return {
+        other: family('.webx-language-switcher__name.is-other'),
+        current: family('.webx-language-switcher__link.is-current .webx-language-switcher__name'),
+      }
+    })
+    expect(m.other).toMatch(/^system-ui/)
+    expect(m.current).toMatch(/^Inter/)
+  })
+})
+
 test.describe('words of the layout', () => {
   // The words the shell can print: the theme's own (THEMES §15.2) and those of the widgets it is
   // built of. Read from the dictionaries themselves, so a word added later is checked too.
