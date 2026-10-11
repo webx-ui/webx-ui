@@ -72,6 +72,18 @@
   padding: var(--site-space-2);
 }
 
+/* The browser's own button would stay light on a dark preset. */
+.wx-form__control--file::file-selector-button {
+  margin-inline-end: var(--site-space-3);
+  padding: var(--site-space-1) var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
 .wx-form__control[aria-invalid='true'] {
   border-color: var(--site-color-danger);
 }
