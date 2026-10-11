@@ -11,7 +11,7 @@
 проверка CSS на токены (`CssCheck`, `webx:theme:check`, предупреждения блоков) — 11.10.2026; TH2.2 —
 блоки в слоях и sync (`LayerBlocks`, `theme_source`/`theme_hash`, шаги §9.2 в `webx:theme:sync`) —
 11.10.2026; TH2.3 — шесть блоков `theme-default`, демо `module-blocks` уступает им, `--adopt`,
-витрина «Kitchen sink › Blocks» — 11.10.2026. TH2 закрыт. TH3 разбит на TH3.1–TH3.4 (§19); TH3.1 — базовый вид модулей на странице (`ModuleStyles`), контракт модуля (`ModuleThemeContract`), уступка предложенного блока, точки расширения из темы, форма `module-inbox` и крошки `module-seo`, витрина «Kitchen sink › Modules» — 11.10.2026; TH3.2 — классы `webx-blog-*`/`webx-services-*`, базовый вид блога, услуг и меню, точки `blog.card`/`services.card`, `webx:setup --modules=+…` и `starter-site.sh --with=` — 11.10.2026; TH3.3 — базовый вид событий, вакансий и прессы на их `wx-*`, точки `events.card`/`vacancies.card`, `theme_active()`, проверки Playwright страниц модулей — 11.10.2026. TH3.4 — базовый вид рецептов на их `wx-*`, колонки блока классом, FAQ и перелинковка `module-seo` в конце `<main>` лэйаута `theme-default` и страница «Kitchen sink › Modules › FAQ and links» с ними — 11.10.2026. TH3 закрыт. TH4 разбит на TH4.1–TH4.6 (§19); TH4.1 — иконки: спрайт цепочки (`ThemeIcons`), `<x-theme::icon>`, проверка файлов и шаблонов в `webx:theme:check`, набор `theme-default` и витрина «Kitchen sink › Icons» — 11.10.2026; TH4.2 — ассеты: `theme_asset()` по цепочке, `assets/` локальной темы публикует sync (`public/themes/local-<каталог>/`), проверка `theme_asset('…')` в `webx:theme:check`, `/themes/` с вечным кешем в конфигах скелета и витрина «Kitchen sink › Assets» — 11.10.2026; TH4.3 — слова вёрстки: оболочка и блоки `theme-default` только на `theme::` в десяти языках, `locales` в манифесте, паритет ключей по `locales` каждого слоя в `webx:theme:check` (`LineCheck`) — 11.10.2026; TH4.4 — демо на трёх языках: демо модулей сверх набора по умолчанию через `DemoWords`, предупреждение `webx:setup` о языке, которого нет в демо (`Catalogue::demoGaps`), надписи демо-типов витрины — на полях `localized`, картинки витрины без текста — 11.10.2026; TH4.5 — шрифты: `fonts` в манифесте с файлом на письменность, `@font-face` с `unicode-range` в `@webxTheme` (`ThemeFonts`), сверка письменностей с языками сайта в `webx:theme:check` (`FontCheck`) и `webx:doctor`, Inter своими файлами в `theme-default`, витрина «Kitchen sink › Fonts» — 11.10.2026; следующий — TH4.6. Пакеты — новые `webx-ui/themes` и
+витрина «Kitchen sink › Blocks» — 11.10.2026. TH2 закрыт. TH3 разбит на TH3.1–TH3.4 (§19); TH3.1 — базовый вид модулей на странице (`ModuleStyles`), контракт модуля (`ModuleThemeContract`), уступка предложенного блока, точки расширения из темы, форма `module-inbox` и крошки `module-seo`, витрина «Kitchen sink › Modules» — 11.10.2026; TH3.2 — классы `webx-blog-*`/`webx-services-*`, базовый вид блога, услуг и меню, точки `blog.card`/`services.card`, `webx:setup --modules=+…` и `starter-site.sh --with=` — 11.10.2026; TH3.3 — базовый вид событий, вакансий и прессы на их `wx-*`, точки `events.card`/`vacancies.card`, `theme_active()`, проверки Playwright страниц модулей — 11.10.2026. TH3.4 — базовый вид рецептов на их `wx-*`, колонки блока классом, FAQ и перелинковка `module-seo` в конце `<main>` лэйаута `theme-default` и страница «Kitchen sink › Modules › FAQ and links» с ними — 11.10.2026. TH3 закрыт. TH4 разбит на TH4.1–TH4.6 (§19); TH4.1 — иконки: спрайт цепочки (`ThemeIcons`), `<x-theme::icon>`, проверка файлов и шаблонов в `webx:theme:check`, набор `theme-default` и витрина «Kitchen sink › Icons» — 11.10.2026; TH4.2 — ассеты: `theme_asset()` по цепочке, `assets/` локальной темы публикует sync (`public/themes/local-<каталог>/`), проверка `theme_asset('…')` в `webx:theme:check`, `/themes/` с вечным кешем в конфигах скелета и витрина «Kitchen sink › Assets» — 11.10.2026; TH4.3 — слова вёрстки: оболочка и блоки `theme-default` только на `theme::` в десяти языках, `locales` в манифесте, паритет ключей по `locales` каждого слоя в `webx:theme:check` (`LineCheck`) — 11.10.2026; TH4.4 — демо на трёх языках: демо модулей сверх набора по умолчанию через `DemoWords`, предупреждение `webx:setup` о языке, которого нет в демо (`Catalogue::demoGaps`), надписи демо-типов витрины — на полях `localized`, картинки витрины без текста — 11.10.2026; TH4.5 — шрифты: `fonts` в манифесте с файлом на письменность, `@font-face` с `unicode-range` в `@webxTheme` (`ThemeFonts`), сверка письменностей с языками сайта в `webx:theme:check` (`FontCheck`) и `webx:doctor`, Inter своими файлами в `theme-default`, витрина «Kitchen sink › Fonts» — 11.10.2026; TH4.6 — письма: рамка `views/mail/layout` у `theme-default` на значениях `theme_token()` (ссылка на другой токен раскрывается), письмо `module-inbox` в этой рамке (`Mail\Look`, без темы — своя рамка и значения `theme-default`), проверка писем слоёв и модулей в `webx:theme:check` (`MailCheck`: `var(` и буквальный цвет), витрина «Kitchen sink › Mail» — 11.10.2026. TH4 закрыт; дальше — формы спеки виджетов (W6.1–W6.4), потом TH5. Пакеты — новые `webx-ui/themes` и
 `webx-ui/theme-default` (§3), правки в `module-admin` (§14), `module-blocks` (§8, §9),
 `module-settings` (§7.4) и в модулях с публичными страницами (§10). Соседние спеки: новый сайт —
 [`WEBX_UI_NEW_SITE.md`](WEBX_UI_NEW_SITE.md), блоки — [`WEBX_UI_MODULE_BLOCKS.md`](WEBX_UI_MODULE_BLOCKS.md),
@@ -355,8 +355,10 @@ theme/
 
 Почтовые клиенты не понимают CSS-переменных, а многие — и `<style>` в `<head>`. Поэтому в письмах
 токены — **значения**, подставленные на сервере: `theme_token('color-accent')` возвращает итог
-слияния §7.3, и вьюхи `views/mail/` пишут его в `style="…"`. Шрифт — семейство из токена и общий
-запасной: свои файлы шрифта почта не грузит. `webx:theme:check` предупреждает о буквальном цвете в
+слияния §7.3 (значение, которое ссылается на другой токен, — со значением того на месте ссылки),
+и вьюхи `views/mail/` пишут его в `style="…"`. Шрифт — семейство из токена и общий
+запасной: свои файлы шрифта почта не грузит. Письмо модуля стоит в рамке темы
+`views/mail/layout` (§23, TH4.6). `webx:theme:check` предупреждает о буквальном цвете в
 письме, который не пришёл из `theme_token()`: письмо тогда не перекрашивается вместе с сайтом.
 
 ## 8. CSS знает только токены
@@ -835,6 +837,11 @@ Fonts и Fontsource (`latin`, `latin-ext`, `cyrillic`, `cyrillic-ext`, `greek`, 
   `locales`, иначе `app.locale`; `--locales=pl,ru` — свои) и `locales` её слоя. Итог — «…; fonts
   Inter in latin, latin-ext, cyrillic, every script of en, ru, pl» (без шрифтов — «no fonts of its
   own — the reader's fonts draw every script»).
+  **С TH4.6** — письма (правило 25, §7.5): вьюхи под `mail/` каждого слоя (своя рамка и
+  перекрытия писем модулей, `views/vendor/<ns>/mail/`) и `resources/views/mail/` установленных
+  модулей — `var(` и буквальный цвет в `style="…"`, в `<style>`, в `bgcolor`/`color` и других
+  старых атрибутах и строкой в PHP шаблона (`theme_token('color-accent', '#2563eb')`). Итог —
+  «…; N letters, every colour from theme_token()».
   Остальные пункты списка приходят с этапами, которые строят то, что они проверяют.
 - **`webx:theme:extract <vendor/имя>`**, **`webx:theme:eject`** — §14.3.
 
@@ -1003,6 +1010,7 @@ TH4 делится на шесть этапов (решение 11.10.2026), т�
 
 После TH4.6 — формы спеки виджетов (W6.1–W6.4, §17 и §18 там; решение 11.10.2026), потом TH5:
 полям и оболочке форм нужны токены и витрина темы, а «Внешний вид» в настройках от них не зависит.
+**TH4 закрыт 11.10.2026** (TH4.6 — §23); следующий этап — W6.1.
 
 Иконки виджетов (`webx-widgets::icons.*`) в TH4.1 остаются своими (решение 11.10.2026): виджеты не
 зависят от движка тем, и стрелки слайдера на сайте без темы должны рисоваться; брать иконку из
@@ -2144,3 +2152,56 @@ sans-serif` (родовые семейства §8 разрешены); теку
   `inter-latin-ext.woff2` (83 KB). `CSS.getPlatformFontsForNode`: образцы en, pl, tr, ru, uk —
   целиком Inter (`isCustomFont`), греческий — 52 глифа Segoe UI и 9 (пробелы, запятая) Inter.
   Playwright — 4 новых теста в «fonts».
+
+### TH4.6 — письма; TH4 закрыт
+
+- **Рамка писем — `views/mail/layout.blade.php` `theme-default`.** Название сайта ссылкой цвета
+  акцента, лист `color-bg` с рамкой `color-border` и радиусом `radius-md`, под ним строка
+  `theme::theme.mail.sent` («Sent from :site», десять языков) и адрес сайта; фон вокруг —
+  `color-surface`, шрифт — `font-body`. Таблицы и `style="…"`, значения — `theme_token()` в
+  `@php` в начале вьюхи. Размеры — в пикселях, а не `rem` и `clamp()` темы: корневой размер
+  почтового клиента неизвестен. Письмо модуля просит рамку по имени:
+  `@component('mail.layout', ['title' => …])`, тело — в слоте. Имя без пространства: рамка ищется
+  по цепочке, как `components/layout`, так что локальная тема и `resources/views/mail/` сайта её
+  перекрывают.
+- **`theme_token()` раскрывает ссылки на токены** (`Tokens::resolved`): у `theme-default`
+  `font-heading` — `var(--site-font-body)`, и письмо, напечатавшее это значение, осталось бы без
+  шрифта. Ссылка на токен без значения или по кругу — `null` (и умолчание вызова). `Tokens::get` и
+  `:root` страницы не тронуты — там переменная работает.
+- **Письмо `module-inbox` — в рамке темы, цвета — `Mail\Look`.** `module-inbox` не требует движка
+  тем, поэтому вьюха письма зовёт не `theme_token()`, а `$look('color-…')`: под темой это
+  `theme_token()`, без темы — значения `theme-default`, записанные в `Look` (в PHP, а не во
+  вьюхе: проверка читает и письма модулей). `Look::frame()` — `mail.layout`, если тема стоит и
+  вьюха находится, иначе своя рамка пакета `webx-inbox::mail.frame` той же формы без слов.
+  Содержимое письма прежнее (поля, вложения, детали, кнопка в панель); заголовок — тот же
+  `plain()` шорткодов.
+- **Кто ещё шлёт письма — никто** (решение 11.10.2026: рамка — у `theme-default`, общая
+  обёртка не заводится). Mailable и `Notification` в `php/packages/*/src` есть только у
+  `module-inbox`; `module-auth` писем не шлёт (сброс пароля — не в панели), `module-audit` только
+  проверяет настройки почты. Следующий модуль с письмом (заказы магазина, пользователи сайта)
+  берёт рамку по имени и `Look` — тогда `Look` переезжает в `module-admin`, а не копируется.
+- **Проверка (правило 25) — `Checks\MailCheck` и шаг в `ChainCheck`.** Читаются вьюхи под
+  `mail/` каждого слоя (на любой глубине: `views/mail/`, `views/vendor/<ns>/mail/`) и
+  `resources/views/mail/` установленных модулей — модули здесь нижний слой цепочки, как для CSS.
+  Находки: `var(` где угодно вне комментариев Blade; буквальный цвет — в `style="…"` и в
+  `<style>` (их CSS читает `CssCheck`, берётся только цвет: свой запасной шрифт письму можно), в
+  старых атрибутах `bgcolor`, `color`, `text`, `link`, `bordercolor`… и строкой-цветом в PHP шаблона
+  — запасное значение `theme_token('color-accent', '#2563eb')` та же дыра, что `var(--x, #fff)`.
+  Эхо, `@php` и аргументы директив вычеркиваются из разметки, так что
+  `style="color:{{ $accent }}"` — пустое значение, а не находка.
+- **Витрина — «Kitchen sink › Mail»** (en/ru/pl, сразу после «Fonts»): тип `showcase-mail` в
+  `demo/blocks` строит **настоящее** письмо `module-inbox` для демо-формы темы `showcase` —
+  `SubmissionReceived::sample($form, $answers)`: заявка в памяти, ничего не сохраняется и не
+  отправляется — и показывает его в `<iframe srcdoc sandbox>`. Ответы — поля блока (имя и адрес —
+  как есть, сообщение — `localized`), слова письма — на языке страницы.
+
+Отступления и находки:
+
+- **Пресет в витрине письма не перекрашивается на лету.** Значения в письме — с сервера, а
+  Playwright красит пресет переменными на `:root` страницы; поэтому прогон сверяет кнопку и
+  название с акцентом страницы, а перекраску пресетом держит `LetterLookTest` (`module-inbox`,
+  тема-фикстура со своими значениями) — строкой в HTML письма.
+- **Ловушка — `?>` в однострочном комментарии PHP закрывает PHP**, и ошибка — «Unclosed '{'» в
+  конце файла, далеко от комментария (`docs/pitfalls/laravel-and-php.md`).
+- **Larastan про `$views->exists('mail.layout')`** говорит «always false»: вьюх темы он не видит.
+  `Look::frame()` спрашивает `getFinder()->find()` в `try`.

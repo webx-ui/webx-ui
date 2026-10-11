@@ -298,6 +298,13 @@ worker still holds the old ones: `php artisan queue:restart`. Then send it again
 submission's menu, or with the MCP tool `inbox_notify` (`dry_run` first). With the site audit
 installed, the check «Notifications about submissions that did not leave» lists both cases.
 
+**The letter wears the site's theme.** It stands in the theme's frame — the site's name, the
+letter on a sheet, a line below — and every colour in it is a token's value written on the
+server, because a mail client reads no CSS variable: a preset or the accent picked in the panel
+repaints the letter with the site. Without a theme it has a frame of its own in the default
+theme's colours. A theme rewrites the letter in `views/vendor/webx-inbox/mail/submission.blade.php`
+(the styles guide, «Letters»); the starter site's «Kitchen sink › Mail» shows it.
+
 ## After a submission is stored
 
 Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor

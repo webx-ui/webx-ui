@@ -236,6 +236,28 @@ of its manifest; everything else a visitor reads comes from a field, the setting
 - **Not:** a word written into a template, an `aria-label` or an `alt`. It stays English on every
   other language of the site.
 
+### Letters
+
+A mail client is not a browser: it reads no CSS variable, often no `<style>`, and no file of the
+theme's font. So a letter takes the values of the tokens on the server — `theme_token('color-accent')`
+is the value after the layers, the preset and the owner's edits — and writes them into
+`style="…"` of each element. A preset or an accent changed in the panel repaints the letters with
+the pages.
+
+Every letter of the site stands in one frame, `views/mail/layout.blade.php` of the theme: the
+site's name above, the letter on a sheet, a "Sent from" line below. `webx-ui/theme-default` has
+it; a module's letter asks for it by name (`@component('mail.layout', ['title' => …])`), and the
+letter about a new form submission of `module-inbox` does. "Kitchen sink › Mail" on the starter
+site shows that letter in the theme's frame and colours.
+
+- **Another frame for every letter:** `theme/views/mail/layout.blade.php`, copied from the theme;
+  tables, inline styles, sizes in px.
+- **Another letter of a module:** `theme/views/vendor/webx-inbox/mail/submission.blade.php`,
+  copied from the module.
+- **Not:** `var(--site-…)`, a class or a colour written by hand in a letter — the client paints
+  nothing there, or the letter stops repainting with the site. `webx:theme:check` reads the
+  letters of the layers and of the modules and names both.
+
 ## Blocks
 
 A block type — its fields, its template, its CSS and its script — is made in the panel under
