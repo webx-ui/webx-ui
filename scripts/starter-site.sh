@@ -239,6 +239,8 @@ node -e '
 
 step 'Check'
 artisan webx:doctor
+# CSS knows only tokens (THEMES §8): every layer of the chain, the modules and the widgets.
+artisan webx:theme:check || fail 'webx:theme:check found what is listed above'
 artisan test
 
 home="$(mktemp)"
