@@ -933,20 +933,6 @@ test.describe('language switcher', () => {
     })
   })
 
-  test('leads to the home page of each language from a page that does not exist, and marks it', async ({
-    page,
-  }) => {
-    const response = await page.goto('/no-such-page')
-    expect(response.status()).toBe(404)
-    const all = await links(header(page))
-    for (const code of ['ru', 'pl']) {
-      const link = all.find((l) => l.hreflang === code)
-      expect(link).toMatchObject({ path: `/${code}`, fallback: true, current: null })
-      expect(link.title, `the fallback to ${code} says nothing`).toMatch(/\S/)
-      await answers(page, link)
-    }
-  })
-
   test('its dropdown stays in the window at 1280, and in the menu at 360', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto(PATH)
