@@ -19,10 +19,13 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 - **`views/components/header`**, **`views/components/footer`** — the regions' fallbacks:
   `config('app.name')` and `menu('header')` (the pages under the home page until the menu has
   entries); `menu('footer')` and the copyright line.
+- **`views/errors/404`** — a missing address in the site's frame: `<x-layout>` with its own head
+  (`<title>`, `noindex`, `@webxBlocks`, no `@webxSeo`), the code, a line and a link to the
+  language's home page. **`lang/<10 languages>/theme.php`** — its words, `theme::theme.not_found.*`.
 - **Classes** (the contract a local theme restyles): `site` on `<body>`, `site-container`,
   `site-skip`, `site-header`, `site-header__inner|title|nav|link`, `site-main`, `site-bleed` (a
   direct child of `<main>` that spans the page), `site-footer`,
-  `site-footer__inner|nav|link|copy`, `site-prose` (prose typography outside `<main>`, and
+  `site-footer__inner|nav|link|copy`, `site-error`, `site-error__code|home`, `site-prose` (prose typography outside `<main>`, and
   the muted colours of quotes, captions and `small` inside a block, which otherwise keep the
   block's own colour).
 - **`demo/pages/`** — the showcase ("Kitchen sink" and the pages under it), seeded by

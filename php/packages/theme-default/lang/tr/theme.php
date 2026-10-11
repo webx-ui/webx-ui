@@ -1,0 +1,11 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'not_found' => [
+        'title' => 'Sayfa bulunamadı',
+        'text' => 'Bu adreste bir sayfa yok. Taşınmış olabilir ya da adreste bir yazım hatası var.',
+        'home' => 'Ana sayfaya git',
+    ],
+];

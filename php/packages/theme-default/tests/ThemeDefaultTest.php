@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\ThemeDefault\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
@@ -308,8 +309,8 @@ class ThemeDefaultTest extends TestCase
     {
         $this->stubModules();
 
-        foreach (['header', 'footer', 'layout'] as $view) {
-            $compiled = Blade::compileString((string) file_get_contents(self::path()."/views/components/{$view}.blade.php"));
+        foreach (['components/header', 'components/footer', 'components/layout', 'errors/404'] as $view) {
+            $compiled = Blade::compileString((string) file_get_contents(self::path()."/views/{$view}.blade.php"));
 
             $this->assertNotEmpty(token_get_all($compiled, TOKEN_PARSE), "{$view} does not compile.");
         }
@@ -326,6 +327,39 @@ class ThemeDefaultTest extends TestCase
         $this->assertStringContainsString('<title>From the page</title>', $html);
         $this->assertStringNotContainsString('<!-- seo', $html);
         $this->assertStringNotContainsString('<!-- blocks -->', $html);
+    }
+
+    /** A missing address in the site's frame (THEMES §4): the header, the head of an error, the words in the request's language. */
+    #[Test]
+    public function a_missing_address_gets_the_404_page_in_the_shell(): void
+    {
+        $this->stubModules();
+        $this->app->setLocale('pl');
+
+        $html = (string) $this->get('/no-such-page')->assertNotFound()->getContent();
+
+        $this->assertStringContainsString('<html lang="pl">', $html);
+        $this->assertStringContainsString('<meta name="robots" content="noindex">', $html);
+        $this->assertStringContainsString('<title>Nie znaleziono strony — Harbor Logistics</title>', $html);
+        $this->assertStringContainsString('<!-- blocks -->', $html);
+        $this->assertStringNotContainsString('<!-- seo', $html);
+        $this->assertStringContainsString("<header class=\"site-header\">The site's own header</header>", $html);
+        $this->assertStringContainsString('<h1>Nie znaleziono strony</h1>', $html);
+    }
+
+    /** The words of the layout: the same keys in every language of the panel. */
+    #[Test]
+    public function the_words_have_the_same_keys_in_every_language(): void
+    {
+        $keys = static fn (array $lines): array => array_keys(Arr::dot($lines));
+        $english = $keys(require self::path().'/lang/en/theme.php');
+        $languages = array_map('basename', glob(self::path().'/lang/*', GLOB_ONLYDIR) ?: []);
+
+        $this->assertEqualsCanonicalizing(['de', 'en', 'es', 'fr', 'it', 'pl', 'pt', 'ru', 'tr', 'uk'], $languages);
+
+        foreach ($languages as $code) {
+            $this->assertSame($english, $keys(require self::path()."/lang/{$code}/theme.php"), "lang/{$code}/theme.php");
+        }
     }
 
     #[Test]

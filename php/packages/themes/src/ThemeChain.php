@@ -82,6 +82,16 @@ final readonly class ThemeChain
     }
 
     /**
+     * The `lang/` directory of every layer that has one, top first.
+     *
+     * @return list<string>
+     */
+    public function langPaths(): array
+    {
+        return array_values(array_filter(array_map(fn (ThemeManifest $layer) => $layer->lang(), $this->layers)));
+    }
+
+    /**
      * Every layer's overrides of one module namespace, top first.
      *
      * @return list<string>

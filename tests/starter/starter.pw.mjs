@@ -934,6 +934,39 @@ test.describe('language switcher', () => {
     })
   })
 
+  // THEMES §4: a missing address is answered in the site's frame — theme-default's errors/404 —
+  // so the switcher is there, and leads to each language's home page, saying so.
+  test('leads to the home page of each language from a page that does not exist, and marks it', async ({
+    page,
+  }) => {
+    for (const [path, lang, home] of [
+      ['/no-such-page', 'en', '/'],
+      ['/ru/no-such-page', 'ru', '/ru'],
+    ]) {
+      const response = await page.goto(path)
+      expect(response.status(), path).toBe(404)
+      expect(await page.locator('html').getAttribute('lang'), path).toBe(lang)
+      await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
+      await expect(page.locator('.site-footer')).toHaveCount(1)
+      expect(new URL(await page.locator('.site-error__home').getAttribute('href')).pathname).toBe(
+        home,
+      )
+
+      const all = await links(header(page))
+      expect(all.map((l) => l.hreflang)).toEqual(['en', 'ru', 'pl'])
+      expect(all.find((l) => l.current === 'page')).toMatchObject({ hreflang: lang, path })
+      for (const link of all.filter((l) => l.hreflang !== lang)) {
+        expect(link).toMatchObject({
+          path: link.hreflang === 'en' ? '/' : `/${link.hreflang}`,
+          fallback: true,
+          current: null,
+        })
+        expect(link.title, `the fallback to ${link.hreflang} says nothing`).toMatch(/\S/)
+        await answers(page, link)
+      }
+    }
+  })
+
   test('its dropdown stays in the window at 1280, and in the menu at 360', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto(PATH)

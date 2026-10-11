@@ -154,3 +154,36 @@
 :where(.site-footer__address) {
   font-style: normal;
 }
+
+/* An error page (views/errors): the code, a heading, a line and the way back home. */
+
+:where(.site-error) {
+  padding-block: var(--site-space-8);
+  text-align: center;
+}
+
+:where(.site-error__code) {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-1);
+  font-weight: 600;
+  line-height: 1;
+}
+
+:where(.site-error__home) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-4);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+:where(.site-error__home:hover) {
+  background: var(--site-color-text);
+  color: var(--site-color-bg);
+}

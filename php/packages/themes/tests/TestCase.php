@@ -34,6 +34,7 @@ abstract class TestCase extends Orchestra
     protected function defineEnvironment($app): void
     {
         $app['config']->set('view.paths', [self::fixture('site/resources/views')]);
+        $app->useLangPath(self::fixture('site/lang'));
         $app['config']->set('webx-themes.theme', $this->theme());
 
         // The fixtures are not installed by Composer, so the locator is told where they are.

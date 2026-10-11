@@ -75,6 +75,12 @@ final readonly class ThemeManifest
         return is_dir($this->path.'/views') ? $this->path.'/views' : null;
     }
 
+    /** The directory of the words of the layout, `lang/<locale>/theme.php` (§15.2), if the theme has one. */
+    public function lang(): ?string
+    {
+        return is_dir($this->path.'/lang') ? $this->path.'/lang' : null;
+    }
+
     /** The theme's overrides of a module namespace: `views/vendor/<ns>`, if it has any. */
     public function namespaceViews(string $namespace): ?string
     {

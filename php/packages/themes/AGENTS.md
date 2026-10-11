@@ -27,6 +27,10 @@ and the site's `theme/`).
   `tokens.json`, `src/css/theme.css`, `src/js/theme.js` and a test. `webx:setup` runs it on a new site.
 - **View order**: plain views — `resources/views`, then each layer's `views/`; `<ns>::` views —
   `resources/views/vendor/<ns>`, then each layer's `views/vendor/<ns>`, then the module's own.
+- **Error pages**: an HTML request that ends in an HTTP error gets `errors.<status>` from that same
+  order (`ErrorPages`); no such view, JSON, or a view that fails to render — Laravel's page.
+- **Words of the layout**: `__('theme::theme.<key>')` — each layer's `lang/<locale>/theme.php`
+  bottom up, then the site's `lang/vendor/theme/<locale>/theme.php` (`ThemeLines`).
 
 ## Change it without forking
 
@@ -35,6 +39,7 @@ and the site's `theme/`).
 | Change the site's look                              | edit `theme/` — never the packaged theme in `vendor/` |
 | Override a module's page                            | `theme/views/vendor/<ns>/<view>.blade.php`            |
 | Override a view for this site only, above any theme | `resources/views/…` — it always wins                  |
+| Change a word of the layout                         | `theme/lang/<locale>/theme.php`, the same key         |
 | Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json` |
 | Change a colour, a font, a radius                   | `theme/tokens.json` → `defaults`                      |
 | A token the vocabulary does not have                | `theme/tokens.json` → `vocabulary`, then `defaults`   |
