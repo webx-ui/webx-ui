@@ -1,19 +1,19 @@
 {
   "title": {
-    "en": "Services",
-    "ru": "Услуги",
-    "pl": "Usługi"
+    "en": "What we do",
+    "ru": "Что мы делаем",
+    "pl": "Co robimy"
   },
   "slug": {
-    "en": "services",
-    "ru": "uslugi",
-    "pl": "uslugi"
+    "en": "what-we-do",
+    "ru": "chto-my-delaem",
+    "pl": "co-robimy"
   },
   "seo": {
     "title": {
-      "en": "Services",
-      "ru": "Услуги",
-      "pl": "Usługi"
+      "en": "What we do",
+      "ru": "Что мы делаем",
+      "pl": "Co robimy"
     },
     "description": {
       "en": "A long dropdown and a long branch of the mobile menu: eight services under one item.",
@@ -27,9 +27,9 @@
       "type": "text",
       "values": {
         "heading": {
-          "en": "Services",
-          "ru": "Услуги",
-          "pl": "Usługi"
+          "en": "What we do",
+          "ru": "Что мы делаем",
+          "pl": "Co robimy"
         },
         "body": {
           "en": "Eight pages under one item of the header: a dropdown taller than most, and a branch of the mobile menu that scrolls in its own body.",

@@ -1331,9 +1331,9 @@
           "pl": "Moduły"
         },
         "description": {
-          "en": "What the modules print on a page, in their base look under the default theme: the form of the Inbox and the trail of SEO.",
-          "ru": "То, что модули выводят на странице, в их базовом виде под темой по умолчанию: форма заявок и хлебные крошки SEO.",
-          "pl": "To, co moduły wyświetlają na stronie, w ich podstawowym wyglądzie pod domyślnym motywem: formularz skrzynki i okruszki SEO."
+          "en": "What the modules print on a page, in their base look under the default theme: the form of the Inbox, the trail of SEO and the menu component.",
+          "ru": "То, что модули выводят на странице, в их базовом виде под темой по умолчанию: форма заявок, хлебные крошки SEO и компонент меню.",
+          "pl": "To, co moduły wyświetlają na stronie, w ich podstawowym wyglądzie pod domyślnym motywem: formularz skrzynki, okruszki SEO i komponent menu."
         }
       },
       "blocks": [
@@ -1347,9 +1347,9 @@
               "pl": "Co przynoszą moduły"
             },
             "body": {
-              "en": "<p>The theme knows no module. Each module with public pages brings its own base look on the tokens of the site and its own classes, and a theme restyles those classes without overriding a view.</p><p>The trail above this text is the SEO module’s. The page under this one is the Inbox’s form with every kind of field, in the main column and in a narrow one.</p>",
-              "ru": "<p>Тема не знает ни одного модуля. Каждый модуль с публичными страницами приносит свой базовый вид на токенах сайта и свои классы, а тема перекрашивает эти классы, не перекрывая вьюх.</p><p>Цепочка ссылок над этим текстом — модуля SEO. На странице ниже — форма модуля заявок со всеми видами полей, в основной колонке и в узкой.</p>",
-              "pl": "<p>Motyw nie zna żadnego modułu. Każdy moduł ze stronami publicznymi przynosi własny podstawowy wygląd na tokenach strony i własne klasy, a motyw przemalowuje te klasy bez nadpisywania widoków.</p><p>Okruszki nad tym tekstem pochodzą z modułu SEO. Na stronie poniżej jest formularz skrzynki z każdym rodzajem pola, w głównej kolumnie i w wąskiej.</p>"
+              "en": "<p>The theme knows no module. Each module with public pages brings its own base look on the tokens of the site and its own classes, and a theme restyles those classes without overriding a view.</p><p>The trail above this text is the SEO module’s. Under this page: the Inbox’s form with every kind of field, in the main column and in a narrow one, and the menu component of the menus module. The blog and the services are their own showcase: on a starter built with them, their pages are at /blog and /services.</p>",
+              "ru": "<p>Тема не знает ни одного модуля. Каждый модуль с публичными страницами приносит свой базовый вид на токенах сайта и свои классы, а тема перекрашивает эти классы, не перекрывая вьюх.</p><p>Цепочка ссылок над этим текстом — модуля SEO. Под этой страницей — форма модуля заявок со всеми видами полей, в основной колонке и в узкой, и компонент модуля меню. Блог и услуги — сами себе витрина: на стартовом сайте, собранном с ними, их страницы — /blog и /services.</p>",
+              "pl": "<p>Motyw nie zna żadnego modułu. Każdy moduł ze stronami publicznymi przynosi własny podstawowy wygląd na tokenach strony i własne klasy, a motyw przemalowuje te klasy bez nadpisywania widoków.</p><p>Okruszki nad tym tekstem pochodzą z modułu SEO. Pod tą stroną: formularz skrzynki z każdym rodzajem pola, w głównej kolumnie i w wąskiej, oraz komponent modułu menu. Blog i usługi same są swoją witryną: na stronie startowej zbudowanej z nimi ich strony są pod /blog i /services.</p>"
             }
           }
         }
@@ -1426,6 +1426,86 @@
                     }
                   }
                 ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Menu",
+            "ru": "Меню",
+            "pl": "Menu"
+          },
+          "slug": {
+            "en": "menu",
+            "ru": "menyu",
+            "pl": "menu"
+          },
+          "seo": {
+            "title": {
+              "en": "Menu",
+              "ru": "Меню",
+              "pl": "Menu"
+            },
+            "description": {
+              "en": "The component of the menus module in its base look: every level on the page, an item with children a column, the button variant, a heading.",
+              "ru": "Компонент модуля меню в базовом виде: все уровни на странице, пункт с детьми — колонка, вариант-кнопка, заголовок.",
+              "pl": "Komponent modułu menu w podstawowym wyglądzie: każdy poziom na stronie, pozycja z dziećmi jako kolumna, wariant przycisku, nagłówek."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-modules-menu-header",
+              "type": "showcase-menu",
+              "values": {
+                "heading": {
+                  "en": "The header menu",
+                  "ru": "Меню шапки",
+                  "pl": "Menu nagłówka"
+                },
+                "note": {
+                  "en": "The same menu the header prints, as <x-webx-menu::menu> prints it where a site has no markup of its own. Nothing drops down: every branch is a column under its item, and the button variant is a button.",
+                  "ru": "То же меню, что в шапке, так, как его печатает <x-webx-menu::menu>, где у сайта нет своей разметки. Ничего не выпадает: каждая ветка — колонка под своим пунктом, а вариант-кнопка — кнопка.",
+                  "pl": "To samo menu, które drukuje nagłówek, tak jak drukuje je <x-webx-menu::menu> tam, gdzie strona nie ma własnych znaczników. Nic się nie rozwija: każda gałąź to kolumna pod swoją pozycją, a wariant przycisku to przycisk."
+                },
+                "menu": "header",
+                "width": "full"
+              }
+            },
+            {
+              "key": "showcase-modules-menu-footer",
+              "type": "showcase-menu",
+              "values": {
+                "heading": {
+                  "en": "The footer menu",
+                  "ru": "Меню подвала",
+                  "pl": "Menu stopki"
+                },
+                "note": {
+                  "en": "A heading with links under it: the heading is not a link and does not look like one.",
+                  "ru": "Заголовок со ссылками под ним: заголовок — не ссылка и не похож на неё.",
+                  "pl": "Nagłówek z linkami pod nim: nagłówek nie jest linkiem i nie wygląda jak link."
+                },
+                "menu": "footer",
+                "width": "full"
+              }
+            },
+            {
+              "key": "showcase-modules-menu-narrow",
+              "type": "showcase-menu",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The header menu in a column 20rem wide: the row wraps, and nothing goes sideways.",
+                  "ru": "Меню шапки в колонке шириной 20rem: ряд переносится, и ничего не уходит вбок.",
+                  "pl": "Menu nagłówka w kolumnie szerokiej na 20rem: rząd się zawija i nic nie ucieka w bok."
+                },
+                "menu": "header",
+                "width": "narrow"
               }
             }
           ]

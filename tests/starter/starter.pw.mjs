@@ -81,7 +81,7 @@ test.describe('mobile menu at 375px', () => {
   test.beforeEach(async ({ page }) => {
     // Short, so that the menu's body has more than it can show.
     await page.setViewportSize({ width: 375, height: 520 })
-    await page.goto('/services')
+    await page.goto('/what-we-do')
     await still(page)
   })
 

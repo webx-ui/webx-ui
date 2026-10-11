@@ -1,0 +1,61 @@
+{
+  "slug": "showcase-menu",
+  "title": "Showcase: a menu",
+  "description": "One <x-webx-menu::menu> in a frame, for the kitchen sink of the default theme: the component a site prints where it has no markup of its own, in the base look of module-menu. The header of the theme prints its menu through the widgets instead.",
+  "icon": null,
+  "group": "layout",
+  "sort": 98,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "menu",
+      "type": "wx-input",
+      "label": "Menu",
+      "help": "The key a template asks for: header, footer. Empty is the header."
+    },
+    {
+      "id": "width",
+      "type": "wx-select",
+      "label": "Width",
+      "props": {
+        "options": [
+          {
+            "label": "Full",
+            "value": "full"
+          },
+          {
+            "label": "Narrow column",
+            "value": "narrow"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "<section class=\"b-showcase-menu b-showcase-menu--{{ $width === 'narrow' ? 'narrow' : 'full' }}\" data-wx-block=\"showcase-menu\">\n    @if ($heading)\n        <h2 class=\"b-showcase-menu__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-menu__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-menu__frame\">\n        {{-- By name at runtime: on a site without the menus module there is no component to compile against. --}}\n        @if (function_exists('menu'))\n            <x-dynamic-component component=\"webx-menu::menu\" :name=\"$menu ?: 'header'\" />\n        @endif\n    </div>\n</section>\n",
+  "styles": ".b-showcase-menu {\n    padding-block: var(--site-space-6);\n}\n\n.b-showcase-menu__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-menu__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-menu__frame {\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n\n.b-showcase-menu--narrow .b-showcase-menu__frame {\n    max-width: 20rem;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "A menu",
+    "note": "",
+    "menu": "header",
+    "width": "full"
+  }
+}

@@ -11,14 +11,16 @@
 # repository (vendor/webx-ui/* are links into php/packages), npm through `file:` specifiers.
 # The npm packages are taken as built — run `pnpm build` here first when they changed.
 #
-#   scripts/starter-site.sh            rebuild
-#   scripts/starter-site.sh --down     tear down only: the directory (but the host config) and the database
+#   scripts/starter-site.sh                        rebuild
+#   scripts/starter-site.sh --with=blog,services   rebuild with these modules on top of the company set
+#   scripts/starter-site.sh --down                 tear down only: the directory (but the host config) and the database
 #
 # The defaults are an OSPanel machine; every one of them can be overridden:
 #
 #   STARTER_PATH      ../webx-starter.local, beside this checkout
 #   STARTER_URL       http://<directory name>
 #   STARTER_ADMIN     the email of the first administrator; default: git config user.email
+#   STARTER_WITH      modules on top of the company set, as --with takes them (blog,services)
 #   PHP_BIN           php, or OSPanel's PHP-8.4 when it is there
 #   COMPOSER_PHAR     composer.phar; default: the `composer` on the PATH
 #   DB_HOST DB_PORT DB_USERNAME DB_PASSWORD DB_DATABASE    OSPanel's MariaDB, webx_starter
@@ -45,7 +47,18 @@ fi
 SITE="${STARTER_PATH:-$(cd "$MONOREPO/.." && pwd)/webx-starter.local}"
 NAME="$(basename "$SITE")"
 URL="${STARTER_URL:-http://$NAME}"
-MODE="${1:-build}"
+MODE=build
+# The modules on top of the default set of a company site, with their demo: the blog and the
+# services have pages of their own that a theme dresses (THEMES §10, TH3.2), and a starter
+# without them would never show those pages.
+WITH="${STARTER_WITH:-}"
+for argument in "$@"; do
+    case "$argument" in
+        --down) MODE=--down ;;
+        --with=*) WITH="${argument#--with=}" ;;
+        *) printf 'Unknown argument: %s\n' "$argument" >&2; exit 2 ;;
+    esac
+done
 
 OSPANEL_PHP=/c/Work/OSPanel/modules/PHP-8.4/php.exe
 if [ -z "${PHP_BIN:-}" ]; then
@@ -212,6 +225,7 @@ setup=(
     --db-username="$DB_USERNAME" --db-password="$DB_PASSWORD" --db="$DB_DATABASE"
     --admin-name=Owner --demo --no-build
 )
+[ -n "$WITH" ] && setup+=(--modules="+$WITH")
 [ -n "$ADMIN" ] && setup+=(--admin="$ADMIN")
 [ -n "${COMPOSER_PHAR:-}" ] && setup+=(--composer="$(native "$COMPOSER_PHAR")")
 artisan "${setup[@]}"
@@ -257,7 +271,10 @@ else
         || fail 'the home page does not load the widgets runtime'
     ! grep -q '<!--webx-widgets-->' "$home" || fail 'the widgets marker was left on the page'
     note "GET $URL/ — the widgets runtime is loaded"
-    for path in /ru /pl /cms /kitchen-sink; do
+    paths=(/ru /pl /cms /kitchen-sink)
+    case ",$WITH," in *,blog,*) paths+=(/blog) ;; esac
+    case ",$WITH," in *,services,*) paths+=(/services) ;; esac
+    for path in "${paths[@]}"; do
         code="$(curl -s -o /dev/null -w '%{http_code}' "$URL$path")"
         [ "$code" = "200" ] || fail "GET $URL$path answered $code"
         note "GET $URL$path — 200"
