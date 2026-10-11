@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Panel;
 use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Filesystem\Filesystem;
 use InvalidArgumentException;
+use WebxUi\Admin\Support\Parts;
 use WebxUi\Blocks\BlockComponents;
 use WebxUi\Blocks\Models\Block;
 
@@ -41,7 +42,9 @@ final class Customiser
     {
         $declared = $this->components->get($slug) ?? throw new InvalidArgumentException("Nothing declares [{$slug}].");
 
-        $template = $this->files->get($this->views->getFinder()->find($declared['fallback']));
+        // What the site prints today: the theme's view for the point when it has one (§10.4).
+        $view = Parts::view($slug, $declared['fallback']);
+        $template = $this->files->get($this->views->getFinder()->find($view));
 
         $block = Block::query()->create([
             'slug' => $slug,
@@ -58,7 +61,7 @@ final class Customiser
             ],
             $source,
             $authorId,
-            (string) __('webx-blocks::calls.customised-from', ['view' => $declared['fallback']]),
+            (string) __('webx-blocks::calls.customised-from', ['view' => $view]),
         );
 
         return $block->refresh()->loadMissing(['draftVersion', 'publishedVersion']);
