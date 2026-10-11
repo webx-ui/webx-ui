@@ -1,7 +1,7 @@
 import type { EditingChange } from '@webx-ui/module-admin'
 import type { ScreenNode } from '@webx-ui/schema'
 
-export type BlockSource = 'panel' | 'mcp' | 'import'
+export type BlockSource = 'panel' | 'mcp' | 'import' | 'theme'
 
 /** One version, as the history lists it. */
 export interface BlockVersionMeta {

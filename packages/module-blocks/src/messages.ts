@@ -119,6 +119,7 @@ export const blocksMessages: Record<string, Messages> = {
     'source-panel': 'panel',
     'source-mcp': 'agent',
     'source-import': 'import',
+    'source-theme': 'theme',
     'allow-help-none':
       'The schema has no field of type wx-blocks, so the block holds nothing; this list applies once it has one.',
     'allow-from-fields':

@@ -51,6 +51,8 @@ use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
 use WebxUi\Blocks\Rendering\Thumbnails;
 use WebxUi\Blocks\Tags\BlockTag;
+use WebxUi\Blocks\Themes\LayerSync;
+use WebxUi\Themes\Contracts\SyncStep;
 
 /**
  * Two halves of one package. `Rendering\` is what a public page uses: the registry of types,
@@ -88,6 +90,12 @@ class BlocksServiceProvider extends ServiceProvider
         // components spec). Filled from their providers, like the offers above.
         $this->app->singleton(BlockShapes::class);
         $this->app->singleton(BlockComponents::class);
+
+        // The block types of the theme layers, put on the site by webx:theme:sync (THEMES §9.2) —
+        // only where the engine is installed: it does not know this package, this one knows it.
+        if (interface_exists(SyncStep::class)) {
+            $this->app->tag([LayerSync::class], SyncStep::TAG);
+        }
 
         $this->app->singleton(PreviewToken::class, static function (Application $app): PreviewToken {
             $key = (string) $app->make('config')->get('app.key', '');

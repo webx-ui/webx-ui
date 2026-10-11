@@ -16,6 +16,7 @@ use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Rendering\Calls;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\Thumbnails;
+use WebxUi\Blocks\Themes\TypeHash;
 
 /**
  * A block type: what it is called, where it may go, and two pointers into its own history.
@@ -33,6 +34,8 @@ use WebxUi\Blocks\Rendering\Thumbnails;
  * @property int $id
  * @property string $slug
  * @property list<string>|null $former_slugs Slugs it had before a rename, oldest first.
+ * @property string|null $theme_source The theme layer that put the type here (THEMES §9.2); null — the site's own.
+ * @property string|null $theme_hash What that layer put, hashed — {@see TypeHash}.
  * @property string $kind
  * @property string $title
  * @property string|null $description

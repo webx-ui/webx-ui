@@ -46,7 +46,9 @@ their guides when the question is about one of those.
   `blocks.stray_values` (one finding per entity whose blocks hold values for fields their type
   does not define, repeater items included, live and draft) and its fix `blocks.prune-stray` —
   the same `StrayValues` that `webx:blocks:prune` runs; a block of an unknown type is never
-  touched.
+  touched. With `webx-ui/themes` installed: the sync step `Themes\LayerSync` — `webx:theme:sync`
+  creates and updates the block types of the theme layers, marking each with `theme_source` (the
+  layer) and `theme_hash`; a slug whose `theme_source` is empty is the site's and is refused.
 
 ## Change it without forking
 
@@ -55,6 +57,7 @@ their guides when the question is about one of those.
 | A block type of the site's own              | make it in the panel's «Blocks», or `blocks_create` → `blocks_render` → `blocks_publish` over MCP                        |
 | The site's types in git                     | `php artisan webx:blocks:export` writes `resources/blocks/{slug}.json`; `webx:blocks:import --publish` reads them back   |
 | Blocks from another site or a catalogue     | «Blocks» → Export (a pack with the components they call), Import there; the command reads the same pack                  |
+| The block types of the site's theme         | `theme/blocks/<slug>.json`, then `php artisan webx:theme:sync` — not import; a type edited in the panel is kept          |
 | The types a module offers (FAQ accordion…)  | `php artisan webx:blocks:offered --install`; a slug the site already has is never touched                                |
 | A region in the layout                      | declare it under `regions` in `config/webx-blocks.php` and print `<x-webx-blocks::region>` with a `fallback`             |
 | A type only for one region                  | `"region:header"` in the type's `allowed_in`; `allow` and `max` on the region limit what it takes                        |

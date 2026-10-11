@@ -38,6 +38,9 @@ class BlockVersion extends Model
 
     public const SOURCE_IMPORT = 'import';
 
+    /** Put on the site by `webx:theme:sync` from a theme layer (THEMES §9.2). */
+    public const SOURCE_THEME = 'theme';
+
     /** The fields a version is made of, in the order the editor shows them. */
     public const CONTENT = ['schema', 'template', 'styles', 'script', 'sample'];
 

@@ -103,6 +103,7 @@ return [
     'source-panel' => 'panel',
     'source-mcp' => 'agente',
     'source-import' => 'importación',
+    'source-theme' => 'tema',
     'drops-translations' => 'Esta versión deja :fields en un solo idioma. Hay páginas (:count) con texto en varios idiomas ahí, y solo se conservaría el principal: :pages. Publique de nuevo aceptando eliminar los otros idiomas, o mueva antes el texto.',
     'localized-changes' => 'Publicar esta versión cambia la forma de idioma de :fields: los valores que ya hay en páginas (:count) se convertirán.',
     'rename-called' => 'Otros tipos llaman a este por su identificador: :types. Cambie primero sus plantillas y luego renómbrelo.',

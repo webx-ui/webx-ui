@@ -103,6 +103,7 @@ return [
     'source-panel' => 'panneau',
     'source-mcp' => 'agent',
     'source-import' => 'import',
+    'source-theme' => 'thème',
     'drops-translations' => 'Cette version rend :fields monolingues. Des pages (:count) y ont du texte en plusieurs langues, et seule la langue principale serait gardée : :pages. Publiez à nouveau en acceptant de supprimer les autres langues, ou déplacez d\'abord le texte.',
     'localized-changes' => 'Publier cette version change la forme linguistique de :fields : les valeurs déjà présentes sur des pages (:count) seront converties.',
     'rename-called' => 'D\'autres types appellent celui-ci par son identifiant : :types. Modifiez d\'abord leurs modèles, puis renommez-le.',
