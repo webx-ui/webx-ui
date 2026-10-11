@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Checks\ChainCheck;
 use WebxUi\Themes\Exceptions\ThemeException;
+use WebxUi\Themes\ModuleStyles;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
@@ -28,7 +29,7 @@ class CheckCommand extends Command
 
     protected $description = 'Check that the theme chain knows only tokens: tokens.json, src/css of the layers, CSS of the modules and widgets, block types of the layers';
 
-    public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeLocator $locator): int
+    public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeLocator $locator, ModuleStyles $modules): int
     {
         try {
             $chain = $this->chain($chain, $locator);
@@ -44,7 +45,7 @@ class CheckCommand extends Command
             return self::SUCCESS;
         }
 
-        $check = new ChainCheck($chain, $bottom->all());
+        $check = new ChainCheck($chain, $bottom->all(), $modules->modules());
         $findings = $check->run();
 
         foreach ($findings as $finding) {

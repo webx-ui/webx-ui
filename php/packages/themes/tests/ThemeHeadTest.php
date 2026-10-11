@@ -6,10 +6,12 @@ namespace WebxUi\Themes\Tests;
 
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
+use WebxUi\Themes\ModuleStyles;
 use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeManifest;
@@ -155,6 +157,55 @@ class ThemeHeadTest extends TestCase
         $this->assertNotFalse($package);
         $this->assertNotFalse($local);
         $this->assertLessThan($local, $package, 'the local theme comes later in the cascade');
+    }
+
+    /** §10.2: the modules' base look is one file, under every theme layer and above the packages below them. */
+    #[Test]
+    public function the_modules_stylesheets_are_published_as_one_file_under_the_themes(): void
+    {
+        $this->assertStringContainsString('<!-- webx-themes: the modules&#039; stylesheets are not published: php artisan webx:theme:sync -->', Blade::render('@webxTheme'));
+
+        $this->assertSame(0, Artisan::call('webx:theme:sync'));
+        $this->assertMatchesRegularExpression('/modules — their base look \.+ published [0-9a-f]{12} \(1 stylesheet\)/u', Artisan::output());
+
+        $modules = $this->app->make(ModuleStyles::class);
+        $hash = (string) $modules->current();
+        $file = "{$this->public}/themes/modules/{$hash}/modules.css";
+        $this->assertFileExists($file);
+        $this->assertStringStartsWith("/* module/fixture.css */\n/* The fixture module's base look", (string) file_get_contents($file));
+        $this->assertSame('unchanged', $modules->publish());
+
+        $this->app->instance('fixture.head', new class implements HeadPart
+        {
+            public function head(): string
+            {
+                return '<!-- the widgets -->';
+            }
+        });
+        $this->app->tag(['fixture.head'], HeadPart::TAG);
+
+        $html = Blade::render('@webxTheme');
+        $part = strpos($html, '<!-- the widgets -->');
+        $link = strpos($html, "<link rel=\"stylesheet\" href=\"http://localhost/themes/modules/{$hash}/modules.css\">");
+        $layer = strpos($html, '/themes/webx-ui/theme-fixture/');
+
+        $this->assertNotFalse($part);
+        $this->assertNotFalse($link);
+        $this->assertNotFalse($layer);
+        $this->assertLessThan($link, $part);
+        $this->assertLessThan($layer, $link, 'a theme restyles a module by coming later');
+    }
+
+    #[Test]
+    public function without_a_stylesheet_in_any_module_nothing_is_linked(): void
+    {
+        $this->app->instance(ModuleStyles::class, new ModuleStyles($this->app->make(ThemeAssets::class), [self::fixture('site')]));
+
+        $this->artisan('webx:theme:sync')->expectsOutputToContain('no module carries one')->assertSuccessful();
+
+        $html = Blade::render('@webxTheme');
+        $this->assertStringNotContainsString('/themes/modules/', $html);
+        $this->assertStringNotContainsString('modules&#039; stylesheets', $html);
     }
 
     #[Test]

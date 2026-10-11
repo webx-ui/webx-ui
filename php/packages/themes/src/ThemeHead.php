@@ -14,6 +14,7 @@ use WebxUi\Themes\Contracts\HeadPart;
  *
  *     <style>:root { --site-…: … }</style>     the merged tokens, inline
  *     each Contracts\HeadPart                   the packages below the themes: widgets
+ *     <link rel="stylesheet" href="/themes/modules/…">  the modules' base look (§10.2), one file
  *     <link rel="stylesheet" href="/themes/…">  each packaged layer's theme.css, bottom first
  *     Vite tags                                 each local layer's src/css/theme.css and src/js/theme.js
  *
@@ -35,6 +36,7 @@ class ThemeHead
         private readonly ThemeChain $chain,
         private readonly Tokens $tokens,
         private readonly ThemeAssets $assets,
+        private readonly ModuleStyles $modules,
     ) {}
 
     public function render(): string
@@ -56,11 +58,26 @@ class ThemeHead
             }
         }
 
+        $html[] = $this->modules();
+
         foreach (array_reverse($this->chain->layers) as $layer) {
             $html[] = $layer->local ? $this->local($layer) : $this->packaged($layer);
         }
 
         return implode("\n", array_filter($html));
+    }
+
+    /** The base look of the installed modules (§10.2): under every theme layer, so any of them restyles it. */
+    private function modules(): string
+    {
+        $url = $this->modules->url($this->app->make(UrlGenerator::class));
+
+        if ($url !== null) {
+            return '<link rel="stylesheet" href="'.e($url).'">';
+        }
+
+        // Read the stylesheets only to say what was forgotten, not on every page that has them.
+        return $this->modules->hash() === null ? '' : $this->hint('the modules\' stylesheets are not published: php artisan webx:theme:sync');
     }
 
     private function packaged(ThemeManifest $layer): string

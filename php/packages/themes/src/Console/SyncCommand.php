@@ -7,13 +7,15 @@ namespace WebxUi\Themes\Console;
 use Illuminate\Console\Command;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\SyncStep;
+use WebxUi\Themes\ModuleStyles;
 use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeManifest;
 
 /**
  * Brings the site up to date with its layers (spec §17): their built files and assets (§13.2) —
- * the themes' and those of the packages below them, the widgets — and then whatever the packages
+ * the themes' and those of the packages below them, the widgets — the base look of the installed
+ * modules as one stylesheet (§10.2), and then whatever the packages
  * registered as a {@see SyncStep}: the block types of the layers, when `webx-ui/module-blocks` is
  * installed (§9.2). Run it after `composer update` — a theme update that was installed but not
  * synced still renders with the old stylesheet and the old blocks.
@@ -33,7 +35,7 @@ class SyncCommand extends Command
 
     protected $description = 'Publish the built files of the packaged theme layers to public/themes, and put the block types of the layers on the site';
 
-    public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeAssets $assets): int
+    public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeAssets $assets, ModuleStyles $modules): int
     {
         if ($chain->isEmpty()) {
             $this->components->info('No theme is configured (webx-themes.theme), nothing to sync.');
@@ -50,6 +52,8 @@ class SyncCommand extends Command
 
             $this->components->twoColumnDetail($layer->name, $this->sync($layer, $assets));
         }
+
+        $this->components->twoColumnDetail('modules — their base look', $this->modules($modules));
 
         $refused = 0;
         $adopt = $this->adopt();
@@ -103,6 +107,29 @@ class SyncCommand extends Command
         }
 
         return array_values(array_unique($named));
+    }
+
+    /** The `resources/theme` stylesheets of the installed modules, as one file (§10.2). */
+    private function modules(ModuleStyles $modules): string
+    {
+        $count = count($modules->sources());
+        $count .= $count === 1 ? ' stylesheet' : ' stylesheets';
+
+        if ($this->option('dry-run')) {
+            $hash = $modules->hash();
+
+            return match (true) {
+                $hash === null => 'no module carries one',
+                $hash === $modules->current() && ! $this->option('force') => 'unchanged',
+                default => "would publish {$hash} ({$count})",
+            };
+        }
+
+        return match ($modules->publish((bool) $this->option('force'))) {
+            'published' => "published {$modules->current()} ({$count})",
+            'unchanged' => 'unchanged',
+            'nothing' => 'no module carries one',
+        };
     }
 
     private function sync(ThemeManifest $layer, ThemeAssets $assets): string

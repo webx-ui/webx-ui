@@ -58,6 +58,9 @@ class ThemeServiceProvider extends ServiceProvider
 
         $this->app->singleton(ThemeAssets::class, fn (Application $app) => new ThemeAssets($app->publicPath()));
 
+        // If: a test points it at fixtures instead of what Composer installed.
+        $this->app->singletonIf(ModuleStyles::class, fn (Application $app) => new ModuleStyles($app->make(ThemeAssets::class)));
+
         // Extended rather than replaced: whatever loader the site or another package set up stays
         // the one that answers every namespace but `theme`.
         $this->app->extend('translation.loader', fn (Loader $loader, Application $app) => new ThemeLines(

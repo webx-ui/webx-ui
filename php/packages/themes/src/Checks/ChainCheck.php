@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\Themes\Checks;
 
-use Composer\InstalledVersions;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use WebxUi\Themes\Blocks\LayerBlocks;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Exceptions\ThemeException;
+use WebxUi\Themes\ModuleStyles;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\Vocabulary;
@@ -173,7 +173,7 @@ final class ChainCheck
             $directories[] = $layer->path.'/resources/theme';
         }
 
-        foreach ($this->modules ?? self::installedModules() as $module) {
+        foreach ($this->modules ?? ModuleStyles::installed() as $module) {
             $directories[] = rtrim(str_replace('\\', '/', $module), '/').'/resources/theme';
         }
 
@@ -196,23 +196,5 @@ final class ChainCheck
         sort($files, SORT_STRING);
 
         return $files;
-    }
-
-    /** @return list<string> */
-    private static function installedModules(): array
-    {
-        $paths = [];
-
-        foreach (InstalledVersions::getInstalledPackages() as $package) {
-            if (str_starts_with($package, 'webx-ui/module-')) {
-                $path = InstalledVersions::getInstallPath($package);
-
-                if ($path !== null) {
-                    $paths[] = $path;
-                }
-            }
-        }
-
-        return $paths;
     }
 }

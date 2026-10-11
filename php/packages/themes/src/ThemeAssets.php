@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Themes;
 
+use Closure;
 use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Filesystem\Filesystem;
 
@@ -85,6 +86,24 @@ class ThemeAssets
             return 'nothing';
         }
 
+        return $this->place($layer, $hash, function (string $staging) use ($layer): void {
+            foreach ($this->sources($layer) as $relative => $source) {
+                $this->files->ensureDirectoryExists(dirname($staging.'/'.$relative));
+                $this->files->copy($source, $staging.'/'.$relative);
+            }
+        }, $force);
+    }
+
+    /**
+     * Put what `$write` makes into the layer's directory for `$hash` and point `current` at it:
+     * the copy of a packaged layer, or files made on the spot — the modules' stylesheets, one
+     * file of many ({@see ModuleStyles}). `$write` fills an empty staging directory.
+     *
+     * @param  Closure(string): void  $write
+     * @return 'published'|'unchanged'
+     */
+    public function place(ThemeManifest $layer, string $hash, Closure $write, bool $force = false): string
+    {
         $previous = $this->current($layer);
         $target = $this->directory($layer).'/'.$hash;
 
@@ -92,14 +111,12 @@ class ThemeAssets
             return 'unchanged';
         }
 
-        // Copied next to the target and renamed into place, so a page never links to half a theme.
+        // Written next to the target and renamed into place, so a page never links to half a theme.
         $staging = $target.'.tmp';
         $this->files->deleteDirectory($staging);
+        $this->files->ensureDirectoryExists($staging);
 
-        foreach ($this->sources($layer) as $relative => $source) {
-            $this->files->ensureDirectoryExists(dirname($staging.'/'.$relative));
-            $this->files->copy($source, $staging.'/'.$relative);
-        }
+        $write($staging);
 
         $this->files->deleteDirectory($target);
         $this->files->move($staging, $target);
