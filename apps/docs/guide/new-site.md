@@ -65,7 +65,8 @@ php artisan webx:setup --no-interaction \
 ```
 
 `--no-scripts` is what skips the interactive run, and the two lines after it are the rest of
-what that script would have done.
+what that script would have done. `--modules` takes a list, `all`, or a list after `+` — the
+modules a company site gets by default and these on top: `--modules=+blog,services`.
 
 ## The same command, six months later
 

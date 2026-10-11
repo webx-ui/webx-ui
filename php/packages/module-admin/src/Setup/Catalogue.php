@@ -342,6 +342,39 @@ final class Catalogue
     }
 
     /**
+     * What `--modules` asks for, closed over requirements, plus whatever is installed: `all`,
+     * a list of ids, or a list after `+` — the suggested set and those on top of it, which is
+     * how the starter site gets a blog without naming every module of a company site.
+     *
+     * Whatever is installed stays installed: setup adds, it does not uninstall. What the chosen
+     * ones require comes along, as Composer would bring it anyway.
+     *
+     * @return list<string>
+     *
+     * @throws SetupFailed when an id is not in the catalogue.
+     */
+    public function chosen(string $given): array
+    {
+        $given = trim($given);
+        $added = str_starts_with($given, '+');
+
+        $ids = $given === 'all'
+            ? $this->ids()
+            : array_values(array_filter(array_map(trim(...), explode(',', ltrim($given, '+')))));
+
+        foreach ($ids as $id) {
+            if (! $this->knows($id)) {
+                throw SetupFailed::unknownModule($id, implode(', ', $this->ids()));
+            }
+        }
+
+        return array_values(array_unique([
+            ...$this->withRequirements($added ? [...$this->suggested(), ...$ids] : $ids),
+            ...$this->installed(),
+        ]));
+    }
+
+    /**
      * The ids whose package is in `vendor` right now.
      *
      * @return list<string>

@@ -45,7 +45,7 @@ final class SetupCommand extends Command
     protected $signature = 'webx:setup
                             {--name= : What the site is called}
                             {--domain= : The domain it answers on}
-                            {--modules= : Which modules to install, comma separated, or "all"}
+                            {--modules= : Which modules to install, comma separated, "all", or "+blog,services" for the suggested ones and these}
                             {--locales= : The languages it publishes in, comma separated; the first is the default}
                             {--db= : The database name}
                             {--db-connection= : mysql, mariadb, pgsql or sqlite}
@@ -302,22 +302,7 @@ final class SetupCommand extends Command
         $given = $this->option('modules');
 
         if (is_string($given) && $given !== '') {
-            $ids = $given === 'all'
-                ? $this->catalogue->ids()
-                : array_values(array_filter(array_map(trim(...), explode(',', $given))));
-
-            foreach ($ids as $id) {
-                if (! $this->catalogue->knows($id)) {
-                    throw SetupFailed::unknownModule($id, implode(', ', $this->catalogue->ids()));
-                }
-            }
-
-            // Whatever is installed stays installed: this command adds, it does not uninstall.
-            // What the chosen ones require comes along, as Composer would bring it anyway.
-            return array_values(array_unique([
-                ...$this->catalogue->withRequirements($ids),
-                ...$this->catalogue->installed(),
-            ]));
+            return $this->catalogue->chosen($given);
         }
 
         if (! $this->input->isInteractive()) {

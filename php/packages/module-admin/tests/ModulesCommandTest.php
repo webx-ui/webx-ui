@@ -159,6 +159,30 @@ final class ModulesCommandTest extends TestCase
     }
 
     #[Test]
+    public function modules_after_a_plus_come_on_top_of_the_suggested_ones(): void
+    {
+        $catalogue = new Catalogue($this->files, $this->installed);
+
+        $added = $catalogue->chosen('+blog, services');
+        foreach ([...$catalogue->suggested(), 'blog', 'services'] as $id) {
+            $this->assertContains($id, $added);
+        }
+        $this->assertNotContains('faq', $added);
+
+        // Without the plus, a list is the list: closed over requirements, and what is installed stays.
+        $listed = $catalogue->chosen('services');
+        $this->assertContains('services', $listed);
+        $this->assertContains('seo', $listed, 'services requires seo');
+        $this->assertContains('pages', $listed, 'installed');
+        $this->assertNotContains('inbox', $listed);
+
+        $this->assertSame($catalogue->withRequirements($catalogue->ids()), array_slice($catalogue->chosen('all'), 0, count($catalogue->ids())));
+
+        $this->expectExceptionMessage('There is no module called [shop]');
+        $catalogue->chosen('+shop');
+    }
+
+    #[Test]
     public function every_package_that_wires_the_panel_is_in_the_catalogue(): void
     {
         // The registration that is easiest to forget: without it `webx:setup` never offers the
