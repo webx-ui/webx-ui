@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Blocks\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Blocks\BlockOffers;
 use WebxUi\Blocks\Demo\BlocksDemo;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
@@ -226,6 +228,58 @@ final class ThemeDefaultBlocksTest extends TestCase
         $this->assertTrue($asked->refused);
         $this->assertStringContainsString('not adopted — --adopt takes only the blocks demo\'s copy nobody has changed', $asked->detail);
         $this->assertNull($hero->fresh()?->theme_source);
+    }
+
+    /**
+     * §10.3: a module's offer stands back from a slug the chain carries — on a new site the
+     * theme's type is the one put there — and a type already on the site is still left alone.
+     */
+    #[Test]
+    public function an_offer_yields_to_a_slug_the_theme_carries(): void
+    {
+        $offer = $this->offered('cta');
+        $offers = $this->app->make(BlockOffers::class);
+
+        $this->assertSame(self::THEME, $offers->carriedBy('cta'));
+        $this->assertNull($offers->carriedBy('faq'));
+
+        $this->artisan('webx:blocks:offered', ['--module' => ['tariffs']])
+            ->expectsOutputToContain(self::THEME.' carries it')
+            ->assertSuccessful();
+
+        $this->assertSame(BlockOffers::CARRIED, $offers->install($offer));
+        $this->artisan('webx:blocks:offered', ['--install' => true, '--module' => ['tariffs']])->assertSuccessful();
+        $this->assertSame(0, Block::query()->count(), 'nothing is installed from the offer');
+
+        // The theme's type is the one sync puts there; afterwards the slug is simply taken.
+        $this->assertLine('cta', 'created from '.self::THEME, $this->sync());
+        $this->assertSame(BlockOffers::PRESENT, $offers->install($offer));
+        $this->assertNotSame(BlockVersion::SOURCE_IMPORT, Block::query()->where('slug', 'cta')->firstOrFail()->publishedVersion?->source);
+    }
+
+    /**
+     * The `cta` a module would offer: the same slug as the theme's, a markup of its own.
+     *
+     * @return array{module: string, slug: string, file: string, document: array<string, mixed>}
+     */
+    private function offered(string $slug): array
+    {
+        $directory = storage_path('framework/testing/offer-'.bin2hex(random_bytes(4)));
+        File::ensureDirectoryExists($directory);
+        $this->beforeApplicationDestroyed(static fn () => File::deleteDirectory($directory));
+
+        File::put($directory."/{$slug}.json", (string) json_encode([
+            'slug' => $slug,
+            'title' => 'Offered',
+            'schema' => [['id' => 'title', 'type' => 'wx-input']],
+            'template' => "<section data-wx-block=\"{$slug}\">{{ \$title }}</section>",
+            'sample' => ['title' => 'Offered'],
+        ]));
+
+        $offers = $this->app->make(BlockOffers::class);
+        $offers->offer('tariffs', $directory);
+
+        return $offers->documents(['tariffs'])[0];
     }
 
     /** A demo type as the demo seeded it before the theme carried the slug. */

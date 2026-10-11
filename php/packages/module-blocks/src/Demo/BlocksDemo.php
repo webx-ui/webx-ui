@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks\Demo;
 
-use Illuminate\Container\Container;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
@@ -21,8 +20,6 @@ use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\RegionWriter;
 use WebxUi\Blocks\Regions;
 use WebxUi\Blocks\Themes\TypeHash;
-use WebxUi\Themes\Blocks\LayerBlocks;
-use WebxUi\Themes\ThemeChain;
 
 /**
  * Three block types, so that a fresh site has something to build a page out of: a hero, a
@@ -111,6 +108,12 @@ final class BlocksDemo
                 $status = $this->offers->install($offer);
             } catch (BlocksException $refused) {
                 $ledger->note("The offered block type {$offer['slug']} was refused: {$refused->getMessage()}");
+
+                continue;
+            }
+
+            if ($status === BlockOffers::CARRIED) {
+                $ledger->note("The block type {$offer['slug']} comes with the theme: php artisan webx:theme:sync puts it on the site.");
 
                 continue;
             }
@@ -208,13 +211,7 @@ final class BlocksDemo
      */
     private static function carried(): array
     {
-        $container = Container::getInstance();
-
-        if (! class_exists(LayerBlocks::class) || ! $container->bound(ThemeChain::class)) {
-            return [];
-        }
-
-        return array_map('strval', array_keys(LayerBlocks::of($container->make(ThemeChain::class))->set()));
+        return array_map('strval', array_keys(BlockOffers::carried()));
     }
 
     /**
