@@ -1,0 +1,50 @@
+{
+  "slug": "showcase-assets",
+  "title": "Showcase: assets",
+  "description": "A picture of the theme from assets/ through theme_asset(): as it is, and as a mask painted with the accent — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 99,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "picture",
+      "type": "wx-input",
+      "label": "Caption of the picture",
+      "localized": true
+    },
+    {
+      "id": "mask",
+      "type": "wx-input",
+      "label": "Caption of the mask",
+      "localized": true
+    }
+  ],
+  "template": "<section class=\"b-showcase-assets\" data-wx-block=\"showcase-assets\">\n    @if ($heading)\n        <h2 class=\"b-showcase-assets__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-assets__note\">{{ $note }}</p>\n    @endif\n    <figure class=\"b-showcase-assets__case\">\n        <img class=\"b-showcase-assets__picture\" src=\"{{ theme_asset('img/wave.svg') }}\" alt=\"\" width=\"1200\" height=\"120\">\n        <figcaption class=\"b-showcase-assets__caption\">{{ $picture }} <code class=\"b-showcase-assets__address\">{{ theme_asset('img/wave.svg') }}</code></figcaption>\n    </figure>\n    <figure class=\"b-showcase-assets__case\">\n        <div class=\"b-showcase-assets__mask\" style=\"--b-showcase-assets-wave: url('{{ theme_asset('img/wave.svg') }}')\"></div>\n        <figcaption class=\"b-showcase-assets__caption\">{{ $mask }}</figcaption>\n    </figure>\n</section>\n",
+  "styles": ".b-showcase-assets {\n    padding-block: var(--site-space-6);\n}\n\n.b-showcase-assets__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-assets__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-assets__case {\n    display: grid;\n    gap: var(--site-space-2);\n    margin: 0 0 var(--site-space-4);\n    padding: var(--site-space-4);\n    border: 1px solid var(--site-color-border);\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-surface);\n}\n\n.b-showcase-assets__picture {\n    display: block;\n    width: 100%;\n    height: 4rem;\n}\n\n/* The same file as a mask: the shape comes from the picture, the paint from the theme. */\n.b-showcase-assets__mask {\n    height: 4rem;\n    background: var(--site-color-accent);\n    -webkit-mask: var(--b-showcase-assets-wave) center / 100% 100% no-repeat;\n    mask: var(--b-showcase-assets-wave) center / 100% 100% no-repeat;\n}\n\n.b-showcase-assets__caption {\n    color: var(--site-color-text-muted);\n    font-size: 0.875em;\n}\n\n.b-showcase-assets__address {\n    overflow-wrap: anywhere;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Assets",
+    "note": "",
+    "picture": "",
+    "mask": ""
+  }
+}

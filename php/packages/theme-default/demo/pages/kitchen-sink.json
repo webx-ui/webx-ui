@@ -218,6 +218,90 @@
     },
     {
       "title": {
+        "en": "Assets",
+        "ru": "Ассеты",
+        "pl": "Zasoby"
+      },
+      "slug": {
+        "en": "assets",
+        "ru": "assety",
+        "pl": "zasoby"
+      },
+      "seo": {
+        "title": {
+          "en": "Assets",
+          "ru": "Ассеты",
+          "pl": "Zasoby"
+        },
+        "description": {
+          "en": "The pictures of the theme: a file under assets/ of any layer, by one address that is cached forever.",
+          "ru": "Картинки темы: файл из assets/ любого слоя по одному адресу с вечным кешем.",
+          "pl": "Obrazy motywu: plik z assets/ dowolnej warstwy pod jednym adresem z wiecznym cache."
+        }
+      },
+      "blocks": [
+        {
+          "key": "showcase-assets-intro",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "Assets",
+              "ru": "Ассеты",
+              "pl": "Zasoby"
+            },
+            "body": {
+              "en": "A picture that belongs to the theme — a background, a decoration, a placeholder — lives in the assets/ folder of a layer, and a template asks for it by its path there: theme_asset('img/wave.svg'). The highest layer that has the file answers, so the site’s own theme replaces a picture of the default theme by putting a file at the same path.\nwebx:theme:sync publishes the files under public/themes/, in a folder named by their content: the address changes when a file does, so the browser may keep it forever.",
+              "ru": "Картинка, которая принадлежит теме, — фон, украшение, заглушка — лежит в папке assets/ слоя, и шаблон просит её по пути оттуда: theme_asset('img/wave.svg'). Отвечает самый верхний слой, у которого файл есть, поэтому тема сайта заменяет картинку темы по умолчанию файлом по тому же пути.\nwebx:theme:sync публикует файлы в public/themes/, в папку, названную по их содержимому: адрес меняется вместе с файлом, поэтому браузер может хранить его вечно.",
+              "pl": "Obraz, który należy do motywu — tło, ozdoba, zaślepka — leży w folderze assets/ warstwy, a szablon prosi o niego ścieżką stamtąd: theme_asset('img/wave.svg'). Odpowiada najwyższa warstwa, która ma plik, więc motyw strony zastępuje obraz motywu domyślnego plikiem pod tą samą ścieżką.\nwebx:theme:sync publikuje pliki w public/themes/, w folderze nazwanym według ich zawartości: adres zmienia się razem z plikiem, więc przeglądarka może go trzymać na zawsze."
+            }
+          }
+        },
+        {
+          "key": "showcase-assets-wave",
+          "type": "showcase-assets",
+          "values": {
+            "heading": {
+              "en": "One file, two uses",
+              "ru": "Один файл, два применения",
+              "pl": "Jeden plik, dwa zastosowania"
+            },
+            "note": {
+              "en": "As a picture it keeps the colours drawn into it. As a mask it gives only the shape, and the theme paints it — switch to the night preset and the second wave changes, the first does not.",
+              "ru": "Картинкой он сохраняет цвета, которые в нём нарисованы. Маской он даёт только форму, а красит тема — включите пресет night: вторая волна изменится, первая нет.",
+              "pl": "Jako obraz zachowuje kolory, które w nim narysowano. Jako maska daje tylko kształt, a maluje go motyw — włącz preset night: druga fala się zmieni, pierwsza nie."
+            },
+            "picture": {
+              "en": "theme_asset('img/wave.svg') in <img>, at the address",
+              "ru": "theme_asset('img/wave.svg') в <img>, по адресу",
+              "pl": "theme_asset('img/wave.svg') w <img>, pod adresem"
+            },
+            "mask": {
+              "en": "The same file as a CSS mask over the accent colour",
+              "ru": "Тот же файл маской CSS поверх акцентного цвета",
+              "pl": "Ten sam plik jako maska CSS na kolorze akcentu"
+            }
+          }
+        },
+        {
+          "key": "showcase-assets-try",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "What to try",
+              "ru": "Что попробовать",
+              "pl": "Co wypróbować"
+            },
+            "body": {
+              "en": "Put your own wave.svg in theme/assets/img/ of the site and run php artisan webx:theme:sync: both waves above are now yours, at a new address. Ask a template for a file no layer has — theme_asset('img/none.svg') — and the page prints an empty address, while webx:theme:check names the file and the line.",
+              "ru": "Положите свой wave.svg в theme/assets/img/ сайта и выполните php artisan webx:theme:sync: обе волны выше теперь ваши, по новому адресу. Попросите в шаблоне файл, которого нет ни в одном слое, — theme_asset('img/none.svg'): страница выведет пустой адрес, а webx:theme:check назовёт файл и строку.",
+              "pl": "Połóż własny wave.svg w theme/assets/img/ strony i uruchom php artisan webx:theme:sync: obie fale powyżej są teraz twoje, pod nowym adresem. Poproś w szablonie o plik, którego nie ma żadna warstwa — theme_asset('img/none.svg') — a strona wypisze pusty adres, a webx:theme:check wskaże plik i wiersz."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": {
         "en": "Blocks",
         "ru": "Блоки",
         "pl": "Bloki"

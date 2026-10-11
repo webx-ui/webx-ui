@@ -11,6 +11,7 @@ use WebxUi\Themes\Blocks\LayerBlocks;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Exceptions\ThemeException;
 use WebxUi\Themes\ModuleStyles;
+use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeIcons;
 use WebxUi\Themes\ThemeManifest;
@@ -28,7 +29,8 @@ use WebxUi\Themes\Vocabulary;
  *
  * And the icons (§13.1): each `icons/*.svg` of a layer can become a symbol that follows the
  * colour of the text, and the views and block templates of the layers name only icons the chain
- * has, never an inline `<svg>` ({@see IconCheck}).
+ * has, never an inline `<svg>` ({@see IconCheck}); the pictures they ask for with `theme_asset()`
+ * are files under `assets/` of a layer (§13.2, {@see AssetCheck}).
  *
  * Built files are not read: `dist/` is what the sources became, plus the stylesheets of the
  * libraries a widget builds in (Swiper, PhotoSwipe, Leaflet), which are not ours to rewrite.
@@ -44,6 +46,8 @@ final class ChainCheck
     private int $blocks = 0;
 
     private int $icons = 0;
+
+    private int $assets = 0;
 
     /**
      * @param  list<ThemeManifest>  $bottom  The packages below the themes ({@see BottomLayers}).
@@ -64,6 +68,7 @@ final class ChainCheck
         $this->read = [];
         $this->blocks = 0;
         $this->icons = 0;
+        $this->assets = 0;
 
         try {
             $vocabulary = Vocabulary::forChain($this->chain);
@@ -120,24 +125,51 @@ final class ChainCheck
         $names = array_keys($names);
         $this->icons = count($names);
 
+        // And the pictures they ask for (§13.2): a file under assets/ of some layer.
+        $exists = fn (string $path): bool => ThemeAssets::source($this->chain, $path) !== null;
+
+        foreach ($this->templates() as ['file' => $path, 'line' => $offset, 'source' => $template]) {
+            $this->assets += count(AssetCheck::calls($template));
+
+            foreach ([...IconCheck::check($template, $names), ...AssetCheck::check($template, $exists)] as $finding) {
+                $this->findings[] = $offset === null
+                    ? ['file' => $path, 'line' => $finding['line'], 'message' => $finding['message']]
+                    : ['file' => $path, 'line' => $offset, 'message' => "template, line {$finding['line']}: {$finding['message']}"];
+            }
+        }
+    }
+
+    /**
+     * The views of the layers and the templates of their block types; `line` is where a block's
+     * template starts in its document, null for a view.
+     *
+     * @return list<array{file: string, line: int|null, source: string}>
+     */
+    private function templates(): array
+    {
+        $templates = [];
+
         foreach ($this->chain->viewPaths() as $directory) {
             /** @var SplFileInfo $file */
             foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
                 if (str_ends_with($file->getFilename(), '.blade.php')) {
                     $path = str_replace('\\', '/', $file->getPathname());
-
-                    foreach (IconCheck::check((string) file_get_contents($path), $names) as $finding) {
-                        $this->findings[] = ['file' => $path, 'line' => $finding['line'], 'message' => $finding['message']];
-                    }
+                    $templates[] = ['file' => $path, 'line' => null, 'source' => (string) file_get_contents($path)];
                 }
             }
         }
 
         foreach (LayerBlocks::of($this->chain)->all() as $block) {
-            foreach (IconCheck::check($block->template(), $names) as $finding) {
-                $this->findings[] = ['file' => $block->file, 'line' => $block->templateLine(), 'message' => "template, line {$finding['line']}: {$finding['message']}"];
-            }
+            $templates[] = ['file' => $block->file, 'line' => $block->templateLine(), 'source' => $block->template()];
         }
+
+        return $templates;
+    }
+
+    /** How many `theme_asset()` calls with a literal path the templates of the chain make. */
+    public function assets(): int
+    {
+        return $this->assets;
     }
 
     /** How many block documents of the layers the last run read. */

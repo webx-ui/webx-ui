@@ -192,6 +192,36 @@ if [ -d "$HOST_CONFIG/.osp" ]; then
 fi
 rm -rf "$HOST_CONFIG"
 
+# What `webx:theme:sync` publishes and Vite builds is named by its content and cached forever
+# (THEMES §13.2): the skeleton says so in docker/nginx.conf and public/.htaccess, but OSPanel's
+# nginx reads neither — its server block is the host's, in .osp/. Said there once, kept by the
+# rebuild like the rest of .osp/; the browser checks of the showcase measure the header.
+OSP_NGINX="$SITE/.osp/nginx/$NAME.conf"
+if [ -f "$OSP_NGINX" ] && ! grep -q 'location /themes/' "$OSP_NGINX"; then
+    cat >> "$OSP_NGINX" <<'NGINX'
+
+# scripts/starter-site.sh: named by their content, cached forever — as the skeleton's docker/nginx.conf.
+location /build/ {
+  expires 1y;
+  add_header Cache-Control "public, immutable";
+  try_files $uri =404;
+}
+
+location /themes/ {
+  expires 1y;
+  add_header Cache-Control "public, immutable";
+  try_files $uri =404;
+}
+NGINX
+    OSP_BAT="$(dirname "$(dirname "$SITE")")/bin/osp.bat"
+    if [ -f "$OSP_BAT" ]; then
+        cmd //c "$(native "$OSP_BAT")" restart nginx > /dev/null 2>&1 || true
+        note "/build/ and /themes/ cached forever in $OSP_NGINX; nginx restarted"
+    else
+        note "/build/ and /themes/ cached forever in $OSP_NGINX; restart nginx to apply"
+    fi
+fi
+
 step 'Point Composer at this checkout'
 # What `scripts/packages.mjs local` does on the other demo sites: the registry for everything but
 # webx-ui/*, and the packages of this checkout under the version the monorepo gives them.

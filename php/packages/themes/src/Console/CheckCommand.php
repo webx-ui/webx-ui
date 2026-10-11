@@ -18,7 +18,7 @@ use WebxUi\Themes\ThemeManifest;
  * stylesheets know only tokens, and tokens.json holds valid values — and §9.2: the block types
  * of the layers know only tokens too, and an override keeps the schema of the type below it; and
  * §13.1 — the icons of the layers follow the colour of the text, and the templates name only
- * icons the chain has. The rest of §17's list joins with the stages that build what it checks.
+ * icons the chain has, and `theme_asset()` only files a layer has (§13.2). The rest of §17's list joins with the stages that build what it checks.
  *
  * A refusal, not advice: a finding is a line naming the file, the line, what and why, and the
  * exit code is non-zero, so a build or a script can stop on it.
@@ -28,7 +28,7 @@ class CheckCommand extends Command
     protected $signature = 'webx:theme:check
         {path? : A theme to check instead of the site\'s: a directory with theme.json, or a package directory}';
 
-    protected $description = 'Check that the theme chain knows only tokens: tokens.json, src/css of the layers, CSS of the modules and widgets, block types of the layers; and that its icons follow the text and exist';
+    protected $description = 'Check that the theme chain knows only tokens: tokens.json, src/css of the layers, CSS of the modules and widgets, block types of the layers; and that its icons follow the text and exist, and that the assets its templates name exist';
 
     public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeLocator $locator, ModuleStyles $modules): int
     {
@@ -64,13 +64,15 @@ class CheckCommand extends Command
         }
 
         $this->components->info(sprintf(
-            'The chain %s knows only tokens: %d stylesheets, %d block %s and the tokens.json of every layer; %d %s, every one its templates name.',
+            'The chain %s knows only tokens: %d stylesheets, %d block %s and the tokens.json of every layer; %d %s, every one its templates name; %d theme_asset() %s, every one a file of the chain.',
             $layers,
             count($check->read()),
             $check->blocks(),
             $check->blocks() === 1 ? 'type' : 'types',
             $check->icons(),
             $check->icons() === 1 ? 'icon' : 'icons',
+            $check->assets(),
+            $check->assets() === 1 ? 'call' : 'calls',
         ));
 
         return self::SUCCESS;

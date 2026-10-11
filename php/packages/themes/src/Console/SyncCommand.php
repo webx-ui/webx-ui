@@ -15,7 +15,8 @@ use WebxUi\Themes\ThemeManifest;
 
 /**
  * Brings the site up to date with its layers (spec §17): their built files and assets (§13.2) —
- * the themes' and those of the packages below them, the widgets — the base look of the installed
+ * the themes' and those of the packages below them, the widgets; of a local theme only its
+ * `assets/`, since the site's Vite builds the rest — the base look of the installed
  * modules as one stylesheet (§10.2), the icons of the chain as one sprite (§13.1), and then
  * whatever the packages
  * registered as a {@see SyncStep}: the block types of the layers, when `webx-ui/module-blocks` is
@@ -35,7 +36,7 @@ class SyncCommand extends Command
         {--dry-run : Say what would be done without touching public/ or the database}
         {--adopt=* : Hand these block types of the site to the theme — only an untouched copy of the blocks demo (comma-separated or repeated)}';
 
-    protected $description = 'Publish the built files of the packaged theme layers to public/themes, and put the block types of the layers on the site';
+    protected $description = 'Publish the built files and assets of the theme layers to public/themes, and put the block types of the layers on the site';
 
     public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeAssets $assets, ModuleStyles $modules, ThemeIcons $icons): int
     {
@@ -47,7 +48,11 @@ class SyncCommand extends Command
 
         foreach ([...$chain->layers, ...$bottom->all()] as $layer) {
             if ($layer->local) {
-                $this->components->twoColumnDetail($layer->name, 'local, built by the site\'s Vite');
+                // Its CSS and JS are the site's Vite's; its assets/ are published like a package's (§13.2).
+                $published = $this->sync($layer, $assets);
+                $detail = $published === 'nothing to publish' ? 'local, built by the site\'s Vite' : "local, built by the site's Vite; assets/ {$published}";
+
+                $this->components->twoColumnDetail($layer->name, $detail);
 
                 continue;
             }
