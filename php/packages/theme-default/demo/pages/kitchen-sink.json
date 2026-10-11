@@ -1331,9 +1331,9 @@
           "pl": "Moduły"
         },
         "description": {
-          "en": "What the modules print on a page, in their base look under the default theme: the form of the Inbox, the trail of SEO and the menu component; the pages of the blog, services, events, vacancies and press are their own.",
-          "ru": "То, что модули выводят на странице, в их базовом виде под темой по умолчанию: форма заявок, хлебные крошки SEO и компонент меню; страницы блога, услуг, событий, вакансий и прессы — свои.",
-          "pl": "To, co moduły wyświetlają na stronie, w ich podstawowym wyglądzie pod domyślnym motywem: formularz skrzynki, okruszki SEO i komponent menu; strony bloga, usług, wydarzeń, ofert pracy i prasy są własne."
+          "en": "What the modules print on a page, in their base look under the default theme: the form of the Inbox, the trail of SEO and the menu component; the FAQ and interlinking of SEO; the pages of the blog, services, events, vacancies, press and recipes are their own.",
+          "ru": "То, что модули выводят на странице, в их базовом виде под темой по умолчанию: форма заявок, хлебные крошки SEO и компонент меню; вопросы и перелинковка SEO; страницы блога, услуг, событий, вакансий, прессы и рецептов — свои.",
+          "pl": "To, co moduły wyświetlają na stronie, w ich podstawowym wyglądzie pod domyślnym motywem: formularz skrzynki, okruszki SEO i komponent menu; pytania i linkowanie SEO; strony bloga, usług, wydarzeń, ofert pracy, prasy i przepisów są własne."
         }
       },
       "blocks": [
@@ -1347,9 +1347,9 @@
               "pl": "Co przynoszą moduły"
             },
             "body": {
-              "en": "<p>The theme knows no module. Each module with public pages brings its own base look on the tokens of the site and its own classes, and a theme restyles those classes without overriding a view.</p><p>The trail above this text is the SEO module’s. Under this page: the Inbox’s form with every kind of field, in the main column and in a narrow one, and the menu component of the menus module. The blog, the services, events, vacancies and press are their own showcase: on a starter built with them, their pages are at /blog, /services, /events, /careers and /press — an outlet of the press has a page of its own.</p>",
-              "ru": "<p>Тема не знает ни одного модуля. Каждый модуль с публичными страницами приносит свой базовый вид на токенах сайта и свои классы, а тема перекрашивает эти классы, не перекрывая вьюх.</p><p>Цепочка ссылок над этим текстом — модуля SEO. Под этой страницей — форма модуля заявок со всеми видами полей, в основной колонке и в узкой, и компонент модуля меню. Блог, услуги, события, вакансии и пресса — сами себе витрина: на стартовом сайте, собранном с ними, их страницы — /blog, /services, /events, /careers и /press, а у каждого издания прессы — своя страница.</p>",
-              "pl": "<p>Motyw nie zna żadnego modułu. Każdy moduł ze stronami publicznymi przynosi własny podstawowy wygląd na tokenach strony i własne klasy, a motyw przemalowuje te klasy bez nadpisywania widoków.</p><p>Okruszki nad tym tekstem pochodzą z modułu SEO. Pod tą stroną: formularz skrzynki z każdym rodzajem pola, w głównej kolumnie i w wąskiej, oraz komponent modułu menu. Blog, usługi, wydarzenia, oferty pracy i prasa same są swoją witryną: na stronie startowej zbudowanej z nimi ich strony są pod /blog, /services, /events, /careers i /press, a każde wydawnictwo prasowe ma własną stronę.</p>"
+              "en": "<p>The theme knows no module. Each module with public pages brings its own base look on the tokens of the site and its own classes, and a theme restyles those classes without overriding a view.</p><p>The trail above this text is the SEO module’s. Under this page: the Inbox’s form with every kind of field, in the main column and in a narrow one, the menu component of the menus module, and a page whose FAQ and interlinking the SEO module prints under it. The blog, the services, events, vacancies, press and recipes are their own showcase: on a starter built with them, their pages are at /blog, /services, /events, /careers, /press and /recipes — an outlet of the press has a page of its own.</p>",
+              "ru": "<p>Тема не знает ни одного модуля. Каждый модуль с публичными страницами приносит свой базовый вид на токенах сайта и свои классы, а тема перекрашивает эти классы, не перекрывая вьюх.</p><p>Цепочка ссылок над этим текстом — модуля SEO. Под этой страницей — форма модуля заявок со всеми видами полей, в основной колонке и в узкой, компонент модуля меню и страница, под которой модуль SEO печатает её вопросы и ответы и перелинковку. Блог, услуги, события, вакансии, пресса и рецепты — сами себе витрина: на стартовом сайте, собранном с ними, их страницы — /blog, /services, /events, /careers, /press и /recipes, а у каждого издания прессы — своя страница.</p>",
+              "pl": "<p>Motyw nie zna żadnego modułu. Każdy moduł ze stronami publicznymi przynosi własny podstawowy wygląd na tokenach strony i własne klasy, a motyw przemalowuje te klasy bez nadpisywania widoków.</p><p>Okruszki nad tym tekstem pochodzą z modułu SEO. Pod tą stroną: formularz skrzynki z każdym rodzajem pola, w głównej kolumnie i w wąskiej, komponent modułu menu oraz strona, pod którą moduł SEO drukuje jej pytania i odpowiedzi oraz linkowanie wewnętrzne. Blog, usługi, wydarzenia, oferty pracy, prasa i przepisy same są swoją witryną: na stronie startowej zbudowanej z nimi ich strony są pod /blog, /services, /events, /careers, /press i /recipes, a każde wydawnictwo prasowe ma własną stronę.</p>"
             }
           }
         }
@@ -1506,6 +1506,48 @@
                 },
                 "menu": "header",
                 "width": "narrow"
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "FAQ and links",
+            "ru": "Вопросы и ссылки",
+            "pl": "Pytania i linki"
+          },
+          "slug": {
+            "en": "faq-and-links",
+            "ru": "voprosy-i-ssylki",
+            "pl": "pytania-i-linki"
+          },
+          "seo": {
+            "title": {
+              "en": "FAQ and links",
+              "ru": "Вопросы и ссылки",
+              "pl": "Pytania i linki"
+            },
+            "description": {
+              "en": "The page FAQ and the interlinking block of the SEO module in their base look, where the default theme prints them: after the page, before the footer.",
+              "ru": "Вопросы и ответы страницы и блок перелинковки модуля SEO в базовом виде, там, где их печатает тема по умолчанию: после страницы, перед подвалом.",
+              "pl": "Pytania i odpowiedzi strony oraz blok linkowania modułu SEO w podstawowym wyglądzie, tam gdzie drukuje je domyślny motyw: po stronie, przed stopką."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-modules-faq-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "After the page, before the footer",
+                  "ru": "После страницы, перед подвалом",
+                  "pl": "Po stronie, przed stopką"
+                },
+                "body": {
+                  "en": "<p>The questions and the links below are not blocks of this page. They belong to the SEO rule of its address, written in the SEO section of the panel or by an agent, and the default theme prints them at the end of every page that has them — the page’s own content first, the questions next, the links last.</p><p>Both are off on a new site: a developer turns them on for a project with <code>WEBX_SEO_FAQ</code> and <code>WEBX_SEO_LINKS</code>. The starter site turns them on to show them here.</p>",
+                  "ru": "<p>Вопросы и ссылки ниже — не блоки этой страницы. Они принадлежат SEO-правилу её адреса, которое пишут в разделе SEO панели или агентом, и тема по умолчанию печатает их в конце любой страницы, у которой они есть: сначала содержимое страницы, потом вопросы, последними — ссылки.</p><p>На новом сайте обе функции выключены: разработчик включает их для проекта переменными <code>WEBX_SEO_FAQ</code> и <code>WEBX_SEO_LINKS</code>. Стартовый сайт включает их, чтобы показать здесь.</p>",
+                  "pl": "<p>Pytania i linki poniżej nie są blokami tej strony. Należą do reguły SEO jej adresu, pisanej w sekcji SEO panelu lub przez agenta, a domyślny motyw drukuje je na końcu każdej strony, która je ma: najpierw treść strony, potem pytania, na końcu linki.</p><p>Na nowej stronie obie funkcje są wyłączone: programista włącza je dla projektu zmiennymi <code>WEBX_SEO_FAQ</code> i <code>WEBX_SEO_LINKS</code>. Strona startowa włącza je, żeby pokazać je tutaj.</p>"
+                }
               }
             }
           ]

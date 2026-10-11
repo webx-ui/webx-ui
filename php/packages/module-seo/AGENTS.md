@@ -32,7 +32,8 @@ their guides when the question is about one of those.
   `WEBX_SEO_OG_FIELDS=true`; stored values are still honoured.
 - **Components** `<x-webx-seo::breadcrumbs />` (the same list as the `BreadcrumbList`),
   `<x-webx-seo::links />`, `<x-webx-seo::faq />`; views `webx-seo::head`, `breadcrumbs`, `links`,
-  `faq`. The last two print nothing while their feature is off.
+  `faq`. The last two print nothing while their feature is off; `theme-default` prints both at
+  the end of every page's main column, the FAQ first.
 - **Global middleware** `NormaliseAddress` then `RedirectRequests` (aliases `webx.normalise`,
   `webx.redirects`): they run before routing, so they answer addresses that have no route.
   The resolver's spelling (routing's `Contracts\Spelling`) is bound to the same settings
@@ -62,7 +63,8 @@ their guides when the question is about one of those.
   `seo_links_import`, `seo_links_heading`; with page FAQ `seo_faq_get`, `seo_faq_set`,
   `seo_faq_import`. Scopes `seo:read`, `seo:write`.
 - **Command** `php artisan webx:seo:sitemap`. Also registered: the field type `wx-seo`, audit
-  checks and fixes when `webx-ui/module-audit` is installed, demo content (`resources/demo`).
+  checks and fixes when `webx-ui/module-audit` is installed, demo content (`resources/demo`; a theme's
+  `demo/seo/pages.json` gives its own demo pages a FAQ and links in every language).
 
 ## Change it without forking
 

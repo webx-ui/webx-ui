@@ -1,0 +1,26 @@
+[
+  {
+    "page": "/about",
+    "faq": [
+      {
+        "question": { "ru": "Ru question?", "uk": "Uk question?" },
+        "answer": { "ru": "<p>Ru answer.</p>", "uk": "<p>Uk answer.</p>" }
+      },
+      {
+        "question": { "ru": "Only in ru?" },
+        "answer": { "ru": "<p>Only in ru.</p>" }
+      }
+    ],
+    "links": {
+      "heading": { "ru": "Ru read on", "uk": "Uk read on" },
+      "items": [
+        { "to": "/contacts", "anchor": { "ru": "Ru contacts", "uk": "Uk contacts" } },
+        { "to": "/nowhere", "anchor": { "ru": "Nothing answers it", "uk": "Nothing answers it" } }
+      ]
+    }
+  },
+  {
+    "page": "/not-seeded",
+    "faq": [{ "question": { "ru": "Never?" }, "answer": { "ru": "<p>Never.</p>" } }]
+  }
+]

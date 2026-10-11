@@ -7,6 +7,7 @@ namespace WebxUi\ThemeDefault\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\View;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RecursiveDirectoryIterator;
@@ -373,11 +374,28 @@ class ThemeDefaultTest extends TestCase
         $this->assertStringContainsString('--site-color-accent: #1f5fbf;', $html);
         $this->assertStringContainsString('<!-- seo:null -->', $html);
         $this->assertStringContainsString('<!-- blocks -->', $html);
-        $this->assertStringContainsString('<main id="content" class="site-main"><p>Body of the page</p></main>', $html);
+        $this->assertMatchesRegularExpression('~<main id="content" class="site-main">\s*<p>Body of the page</p>\s*</main>~', $html);
 
         // The regions' fallbacks are looked up through the chain, so the site's own files win.
         $this->assertStringContainsString("<header class=\"site-header\">The site's own header</header>", $html);
         $this->assertStringContainsString("<footer class=\"site-footer\">The site's own footer</footer>", $html);
+    }
+
+    /** THEMES §23, TH3.4: module-seo's FAQ, then its interlinking, close the page's column. */
+    #[Test]
+    public function the_layout_closes_the_page_with_its_faq_and_its_links(): void
+    {
+        $this->stubModules();
+        $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures/webx-seo';
+        View::addNamespace('webx-seo', $fixtures);
+        Blade::anonymousComponentPath($fixtures, 'webx-seo');
+
+        $html = Blade::render('<x-layout><p>Body of the page</p></x-layout>');
+
+        $this->assertMatchesRegularExpression(
+            '~<main id="content" class="site-main">\s*<p>Body of the page</p>\s*<section class="webx-faq">FAQ of the page</section>\s*<nav class="webx-links">Links of the page</nav>\s*</main>~',
+            $html,
+        );
     }
 
     /**

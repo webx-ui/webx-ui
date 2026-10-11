@@ -13,6 +13,7 @@ use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
 use WebxUi\Seo\Demo\SeoDemo;
+use WebxUi\Seo\Demo\ThemePagesDemo;
 use WebxUi\Seo\Features;
 use WebxUi\Seo\Mcp\SeoTools;
 
@@ -27,7 +28,10 @@ final class SeoModule extends AbstractModule implements HasNavSection, ProvidesD
 {
     use ProvidesMcpDefaults;
 
-    public function __construct(private readonly SeoDemo $demo) {}
+    public function __construct(
+        private readonly SeoDemo $demo,
+        private readonly ThemePagesDemo $themePages,
+    ) {}
 
     public function id(): string
     {
@@ -69,13 +73,14 @@ final class SeoModule extends AbstractModule implements HasNavSection, ProvidesD
 
     /**
      * The blog: the demo rule is a mask over its addresses, and a rule for a shape of address
-     * nothing answers would be a rule nobody can see working (§9).
+     * nothing answers would be a rule nobody can see working (§9). The pages too when the theme
+     * writes a FAQ and links for pages of its own demo: those pages have to be there first.
      *
      * @return list<string>
      */
     public function requires(): array
     {
-        return ['articles'];
+        return ThemePagesDemo::exists() ? ['articles', 'pages'] : ['articles'];
     }
 
     /**
@@ -96,6 +101,7 @@ final class SeoModule extends AbstractModule implements HasNavSection, ProvidesD
     public function seed(DemoLedger $ledger): void
     {
         $this->demo->seed($ledger);
+        $this->themePages->seed($ledger);
     }
 
     /**
