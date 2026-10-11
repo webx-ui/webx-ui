@@ -1,0 +1,8 @@
+{
+  "slug": "loud",
+  "title": "Loud",
+  "schema": [],
+  "template": "<div class=\"b-loud\" data-wx-block=\"loud\"></div>\n",
+  "styles": ".b-loud {\n    padding: 1em;\n    color: #ff0000;\n}\n",
+  "sample": {}
+}

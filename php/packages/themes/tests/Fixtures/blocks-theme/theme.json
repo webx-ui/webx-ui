@@ -1,0 +1,6 @@
+{
+  "theme": {
+    "title": "Blocks that break the rules",
+    "uses": ["webx-ui/theme-fixture"]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "slug": "hero",
+  "title": "Hero of the site",
+  "group": "content",
+  "schema": [
+    {
+      "id": "main",
+      "type": "wx-row",
+      "children": [
+        { "id": "title", "type": "wx-input", "label": "Title" },
+        { "id": "subtitle", "type": "wx-input", "label": "Subtitle" }
+      ]
+    },
+    {
+      "id": "buttons",
+      "type": "wx-repeater",
+      "label": "Buttons",
+      "children": [
+        { "id": "label", "type": "wx-input", "label": "Label" },
+        { "id": "url", "type": "wx-input", "label": "Address" },
+        { "id": "style", "type": "wx-select", "label": "Style" }
+      ]
+    }
+  ],
+  "template": "<section class=\"b-hero\" data-wx-block=\"hero\"><h1>{{ $title }}</h1><p>{{ $subtitle }}</p></section>\n",
+  "styles": ".b-hero {\n    color: var(--site-color-accent);\n}\n",
+  "script": null,
+  "sample": { "title": "Hello", "subtitle": "World", "buttons": [] }
+}

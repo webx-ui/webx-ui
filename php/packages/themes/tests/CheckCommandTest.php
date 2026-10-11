@@ -39,6 +39,26 @@ final class CheckCommandTest extends TestCase
     }
 
     #[Test]
+    public function the_block_types_of_the_layers_are_counted_when_clean(): void
+    {
+        $this->artisan('webx:theme:check')
+            ->expectsOutputToContain('3 block types')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function a_block_type_of_a_layer_is_checked_for_tokens_shape_and_schema(): void
+    {
+        $this->artisan('webx:theme:check', ['path' => self::fixture('blocks-theme')])
+            ->expectsOutputToContain('blocks/list.json  not a block document')
+            ->expectsOutputToContain('blocks/loud.json:6  styles, line 3: literal colour #ff0000')
+            ->expectsOutputToContain('blocks/hero.json  hero overrides the type of webx-ui/theme-fixture: field "title" was wx-input, is wx-textarea')
+            ->expectsOutputToContain('field "buttons.url" (wx-input) is gone')
+            ->expectsOutputToContain('4 findings')
+            ->assertFailed();
+    }
+
+    #[Test]
     public function the_css_of_the_layers_below_the_themes_is_read_too(): void
     {
         $this->app->make(BottomLayers::class)->add('webx-ui/widgets-fixture', self::fixture('dirty-widgets'));

@@ -8,6 +8,7 @@ use Composer\InstalledVersions;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use WebxUi\Themes\Blocks\LayerBlocks;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Exceptions\ThemeException;
 use WebxUi\Themes\ThemeChain;
@@ -20,6 +21,10 @@ use WebxUi\Themes\Vocabulary;
  * against {@see CssCheck}: `src/css` of the theme layers, `resources/css` and `resources/theme` of
  * the packages below them (the widgets), `resources/theme` of the installed modules (§10.2).
  *
+ * And the block types of the layers (§9.2): each `blocks/*.json` is a block document, its
+ * styles know only tokens — a type that does not is refused by sync, so it is said here first —
+ * and a type that overrides one of a lower layer keeps every field of it, with the same type.
+ *
  * Built files are not read: `dist/` is what the sources became, plus the stylesheets of the
  * libraries a widget builds in (Swiper, PhotoSwipe, Leaflet), which are not ours to rewrite.
  */
@@ -30,6 +35,8 @@ final class ChainCheck
 
     /** @var list<string> */
     private array $read = [];
+
+    private int $blocks = 0;
 
     /**
      * @param  list<ThemeManifest>  $bottom  The packages below the themes ({@see BottomLayers}).
@@ -48,6 +55,7 @@ final class ChainCheck
     {
         $this->findings = [];
         $this->read = [];
+        $this->blocks = 0;
 
         try {
             $vocabulary = Vocabulary::forChain($this->chain);
@@ -68,7 +76,15 @@ final class ChainCheck
             }
         }
 
+        $this->layerBlocks($vocabulary);
+
         return $this->findings;
+    }
+
+    /** How many block documents of the layers the last run read. */
+    public function blocks(): int
+    {
+        return $this->blocks;
     }
 
     /**
@@ -79,6 +95,27 @@ final class ChainCheck
     public function read(): array
     {
         return $this->read;
+    }
+
+    private function layerBlocks(Vocabulary $vocabulary): void
+    {
+        $blocks = LayerBlocks::of($this->chain);
+
+        foreach ($blocks->problems() as $problem) {
+            $this->findings[] = $problem;
+        }
+
+        foreach ($blocks->all() as $block) {
+            $this->blocks++;
+
+            foreach (CssCheck::check($block->styles(), $vocabulary) as $finding) {
+                $this->findings[] = ['file' => $block->file, 'line' => $block->stylesLine(), 'message' => "styles, line {$finding->line}: {$finding->message()}"];
+            }
+        }
+
+        foreach ($blocks->incompatible() as $finding) {
+            $this->findings[] = $finding;
+        }
     }
 
     /** Every value of the layer's defaults and presets: a name the vocabulary has, a value of its type. */
