@@ -2,7 +2,7 @@
 // on the starter site that `scripts/starter-site.sh` builds. The pages are the ones the header
 // links to — the showcase included — so a page the demo adds is checked without being listed.
 
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 
 const tokens = JSON.parse(
@@ -5433,6 +5433,123 @@ test.describe('words of the layout', () => {
       expect(left, `${path} prints English words of the shell`).toEqual([])
       expect(await page.locator('.site-skip').textContent(), path).not.toBe('Skip to content')
       expect(shell, `${path} prints a key instead of a word`).not.toMatch(/\btheme\.[a-z_]+\./)
+    }
+  })
+
+  // The demo of the modules beyond the default set (THEMES §15.2, TH4.4): a module page under
+  // /ru or /pl reads in that language — none of the demo's English where the demo has the
+  // language, none of the module's English words, and some of the demo's own words in it.
+  const demoWords = (pkg, locale) => {
+    const english = []
+    const own = []
+    const walk = (value) => {
+      if (Array.isArray(value)) return value.forEach(walk)
+      if (!value || typeof value !== 'object') return
+      if (typeof value.en === 'string' && typeof value[locale] === 'string') {
+        // Words a reader sees, not markup: tags dropped, the first line of a longer text.
+        const plain = (text) =>
+          text
+            .replace(/<[^>]+>/g, ' ')
+            .split('\n')[0]
+            .trim()
+        if (plain(value.en) !== plain(value[locale])) {
+          english.push(plain(value.en))
+          own.push(plain(value[locale]))
+        }
+        return
+      }
+      Object.values(value).forEach(walk)
+    }
+    const dir = new URL(`../../php/packages/${pkg}/resources/demo/`, import.meta.url)
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+      walk(JSON.parse(readFileSync(new URL(file, dir), 'utf8')))
+    }
+    return { english: english.filter((w) => w.length >= 6), own }
+  }
+  const moduleWords = (pkg, locale) => {
+    const dir = new URL(`../../php/packages/${pkg}/lang/${locale}/`, import.meta.url)
+    return readdirSync(dir)
+      .filter((f) => f.endsWith('.php') && f !== 'panel.php')
+      .flatMap((f) => words(`${pkg}/lang/${locale}/${f}`))
+  }
+
+  for (const [pkg, index] of [
+    ['module-blog', '/blog'],
+    ['module-services', '/services'],
+    ['module-events', '/events'],
+    ['module-vacancies', '/careers'],
+    ['module-press', '/press'],
+    ['module-recipes', '/recipes'],
+  ]) {
+    test(`${index} in Russian and Polish reads in them, the index and a record`, async ({
+      page,
+    }) => {
+      for (const locale of ['ru', 'pl']) {
+        const demo = demoWords(pkg, locale)
+        const own = new Set([...moduleWords(pkg, locale), ...dictionary(locale)])
+        const english = [
+          ...demo.english,
+          ...moduleWords(pkg, 'en').filter((w) => w.length >= 6 && !w.includes(':')),
+        ].filter((w) => !own.has(w))
+        await page.goto(`/${locale}${index}`)
+        await still(page)
+        const record = await page
+          .locator(`.site-main a[href*="/${locale}${index}/"]`)
+          .first()
+          .getAttribute('href')
+        expect(record, `${locale}${index} links a record in its language`).toBeTruthy()
+        for (const path of [`/${locale}${index}`, record]) {
+          if (path !== `/${locale}${index}`) {
+            await page.goto(path)
+            await still(page)
+          }
+          const main = await page.locator('main').innerText()
+          const left = english.filter((w) => main.includes(w))
+          expect(left, `${path} prints English`).toEqual([])
+          expect(
+            demo.own.some((w) => main.includes(w)),
+            `${path} prints the demo in ${locale}`,
+          ).toBe(true)
+        }
+      }
+    })
+  }
+
+  test('the showcase prints no English of its own types in Russian or Polish', async ({ page }) => {
+    // The words the showcase types used to print from their templates, now fields (TH4.4).
+    const english = [
+      'What to try',
+      'In this column',
+      'A column 20rem wide',
+      'Showcase watch',
+      'that lasts',
+      'More about',
+      'Card 7',
+      'Page 1 of',
+    ]
+    for (const locale of ['ru', 'pl']) {
+      for (const path of [
+        'background-video',
+        'table-of-contents',
+        'before-and-after',
+        'zoom',
+        'slider',
+        'show-more',
+        'counters-and-countdown',
+      ]) {
+        // The showcase's slugs are translated: the address in that language is the one the
+        // English page names as its alternate.
+        await page.goto(`/kitchen-sink/${path}`)
+        const there = await page
+          .locator(`link[rel="alternate"][hreflang="${locale}"]`)
+          .getAttribute('href')
+        expect(there, `/kitchen-sink/${path} has a page in ${locale}`).toBeTruthy()
+        await page.goto(there)
+        await still(page)
+        const main = await page.locator('main').innerText()
+        const left = english.filter((w) => main.includes(w))
+        expect(left, `${there} prints English`).toEqual([])
+      }
     }
   })
 })
