@@ -26,7 +26,9 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
   `WEBX_INBOX_RECAPTCHA_TYPE` `checkbox|invisible|v3`, `WEBX_INBOX_TURNSTILE_MODE` `managed|invisible`.
 - **Attachments** on `config('webx-inbox.disk')`, never in the media library, served only through
   the panel API to `inbox.view`.
-- **Letters**: `SubmissionReceived`, queued, `Reply-To` from the form's e-mail field. The
+- **Letters**: `SubmissionReceived`, queued, `Reply-To` from the form's e-mail field; in the
+  theme's frame `mail.layout` with colours from `theme_token()` (`Mail\Look`; without a theme its
+  own `mail/frame` and theme-default's values), `::sample($form, $answers)` for a preview. The
   submission is saved first; a failed letter is recorded as `notify_error`. Through a real queue,
   pushing is not sending: the submission stays `queued` (`notify_queued_at`) until the worker's
   letter reports to `Mail\Delivery` — delivered or failed, per recipient in `notify_recipients`.
@@ -67,7 +69,7 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 | Rate limit, duplicate window              | `antispam.throttle` (accepted), `antispam.attempts` (all), `duplicate_window`          |
 | Visitors' IPs not kept whole              | `WEBX_INBOX_ANONYMISE_IP=true`                                                         |
 | Forget old submissions                    | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site           |
-| A different letter                        | publish the views and rewrite `mail/submission.blade.php`                              |
+| A different letter                        | `theme/views/vendor/webx-inbox/mail/submission.blade.php`; colours via `$look('…')`    |
 | Somebody told about a form                | `inbox_form_save` with `options.recipients`, or the editor's Notifications tab         |
 | A form read only in the panel             | leave it without recipients and ignore `inbox.no_recipients` in the audit              |
 | Other words                               | `php artisan vendor:publish --tag=webx-inbox-lang`                                     |

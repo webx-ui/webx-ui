@@ -272,10 +272,27 @@ installed, the check `inbox.notification` lists letters that failed in the last
 `thresholds.inbox_failed_days` (30) days or have been queued for over
 `thresholds.inbox_queued_minutes` (30).
 
-The letter is a published view:
+The letter stands in the frame of the site's theme — `mail.layout` of
+[`webx-ui/theme-default`](https://github.com/webx-ui/theme-default) or of the site's own theme:
+the site name above, the letter on a sheet, a line below — and every colour in it is a token's
+value from `theme_token()`, written into `style="…"` on the server. A mail client reads no CSS
+variable, so this is how a preset or the owner's accent in the panel reaches the letter. On a
+site without a theme the letter has a frame of its own and theme-default's colours
+(`WebxUi\Inbox\Mail\Look`).
+
+A theme rewrites the letter in `views/vendor/webx-inbox/mail/submission.blade.php`; a site
+without one publishes the views:
 
 ```bash
 php artisan vendor:publish --tag=webx-inbox-views
+```
+
+Take colours from `$look('color-…')` (or `theme_token()`), never `var(` or a literal:
+`php artisan webx:theme:check` reads the letters and names both. A preview of the letter for a
+form, with answers nobody sent and nothing saved — what the kitchen sink of theme-default shows:
+
+```php
+SubmissionReceived::sample($form, ['name' => 'Ada', 'message' => 'Hello'])->render();
 ```
 
 ## After a submission is stored

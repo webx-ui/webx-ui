@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Mail\Factory as MailFactory;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -17,7 +18,10 @@ use Illuminate\Mail\SentMessage;
 use Illuminate\Queue\SerializesModels;
 use Throwable;
 use WebxUi\Admin\Shortcodes\Shortcodes;
+use WebxUi\Inbox\Models\Field;
+use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Submission;
+use WebxUi\Inbox\Models\SubmissionValue;
 
 /**
  * What a recipient gets when a submission arrives (§9).
@@ -52,6 +56,36 @@ class SubmissionReceived extends Mailable implements ShouldQueue
     private bool $missing = false;
 
     public function __construct(public readonly Submission $submission) {}
+
+    /**
+     * The letter a submission of this form with these answers would bring — nothing saved,
+     * nothing sent. For a preview: the kitchen sink of theme-default shows the letter in the
+     * site's frame and colours (THEMES §7.5, §18.3) without a real submission to read.
+     *
+     * Answers by the field's machine name, as the visitor would type them; a field without one
+     * is left out, as an empty answer is.
+     *
+     * @param  array<string, string>  $answers
+     * @param  array<string, mixed>  $meta
+     */
+    public static function sample(Form $form, array $answers, array $meta = []): self
+    {
+        $submission = new Submission(['meta' => $meta]);
+        $submission->created_at = now();
+        $submission->setRelation('form', $form);
+        $submission->setRelation('files', new Collection);
+        $submission->setRelation('values', $form->liveFields()->get()
+            ->filter(static fn (Field $field): bool => ($answers[$field->key()] ?? '') !== '')
+            ->map(static fn (Field $field): SubmissionValue => new SubmissionValue([
+                'name' => $field->key(),
+                'label' => (string) $field->title,
+                'type' => $field->type->value,
+                'value' => $answers[$field->key()],
+            ]))
+            ->values());
+
+        return new self($submission);
+    }
 
     /**
      * Back out of the queue — or, for a submission deleted in the meantime, a letter with
