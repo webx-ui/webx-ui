@@ -4673,3 +4673,398 @@ test.describe('modules in the theme', () => {
     await context.close()
   })
 })
+
+test.describe('module pages in the theme', () => {
+  // THEMES §10.2, TH3.2–TH3.3: the pages a module prints itself, in its base look under
+  // theme-default — on a starter built with --with=blog,services,events,vacancies,press. A module
+  // the starter was built without is skipped, not failed.
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-11', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  // `list` — the list of cards on the index; `grid` — whether it puts several to a row;
+  // `detail` — the link from the index to the first page of one record; `words` — what has to
+  // read in every preset; `targets` — what a finger has to hit.
+  const MODULES = [
+    {
+      name: 'blog',
+      index: '/blog',
+      list: '.webx-blog-cards',
+      card: '.webx-blog-card',
+      grid: true,
+      detail: '.webx-blog-card__link',
+      words: [
+        '.webx-blog-card__title',
+        '.webx-blog-card__date',
+        '.webx-blog-card__lead',
+        '.webx-blog-rubrics__link',
+        '.webx-blog-article__meta',
+        '.webx-blog-tags__link',
+      ],
+      targets: ['.webx-blog-rubrics__link', '.webx-blog-tags__link', '.webx-blog-pager__link'],
+    },
+    {
+      name: 'services',
+      index: '/services',
+      list: '.webx-services-cards',
+      card: '.webx-services-card',
+      grid: true,
+      detail: '.webx-services-card__link',
+      words: [
+        '.webx-services-card__title',
+        '.webx-services-card__lead',
+        '.webx-services-group__link',
+        '.webx-services-header__lead',
+      ],
+      targets: [],
+    },
+    {
+      name: 'events',
+      index: '/events',
+      list: '.wx-events__grid',
+      card: '.wx-events__card',
+      grid: true,
+      detail: '.wx-events__link',
+      words: [
+        '.wx-events__name',
+        '.wx-events__meta',
+        '.wx-events__nav-link',
+        '.wx-event__lead',
+        '.wx-event__term',
+        '.wx-event__value',
+        '.wx-event__book',
+        '.wx-event__calendar',
+        '.wx-event__highlight-title',
+        '.wx-event__highlight-text',
+        '.wx-event__service-link',
+      ],
+      targets: [
+        '.wx-events__nav-link',
+        '.wx-events__category',
+        '.wx-events__page-link',
+        '.wx-event__book',
+        '.wx-event__calendar',
+        '.wx-event__map',
+        '.wx-event__service-link',
+      ],
+    },
+    {
+      name: 'vacancies',
+      index: '/careers',
+      list: '.wx-vacancies__list',
+      card: '.wx-vacancies__card',
+      grid: false,
+      detail: '.wx-vacancies__link',
+      words: [
+        '.wx-vacancies__link',
+        '.wx-vacancies__meta',
+        '.wx-vacancies__lead',
+        '.wx-vacancies__filter-link',
+        '.wx-vacancy__closed',
+        '.wx-vacancy__lead',
+        '.wx-vacancy__term',
+        '.wx-vacancy__value',
+      ],
+      targets: ['.wx-vacancies__filter-link'],
+    },
+    {
+      name: 'press',
+      // The index is a page of blocks; the module's own page is an outlet's.
+      index: '/press',
+      list: null,
+      card: null,
+      grid: false,
+      detail: '.site-main a[href*="/press/"]',
+      words: [
+        '.wx-press-outlet__summary',
+        '.wx-press-outlet__facts',
+        '.wx-press-article__link',
+        '.wx-press-article__pdf',
+        '.wx-press-article__meta',
+        '.wx-press-article__excerpt',
+        '.wx-press-article__links',
+      ],
+      targets: ['.wx-press-outlet__website', '.wx-press-article__read', '.wx-press-article__file'],
+    },
+  ]
+
+  async function open(browser, width, path) {
+    const context = await browser.newContext({
+      viewport: { width, height: width === 1280 ? 900 : 812 },
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    const response = await page.goto(path)
+    await still(page)
+    return { context, page, status: response?.status() ?? 0 }
+  }
+
+  let found = null
+
+  /** The modules the starter has, each with its index and the address of one of its records. */
+  async function installed(browser) {
+    if (found) return found
+    found = []
+    for (const module of MODULES) {
+      const { context, page, status } = await open(browser, 1280, module.index)
+      if (status === 200) {
+        const href = await page
+          .locator(module.detail)
+          .first()
+          .getAttribute('href')
+          .catch(() => null)
+        const detail = href ? new URL(href, site).pathname : null
+        found.push({ ...module, pages: detail ? [module.index, detail] : [module.index] })
+      }
+      await context.close()
+    }
+    return found
+  }
+
+  test('every page of a module keeps to the main column, prints no style inline and scrolls nothing sideways', async ({
+    browser,
+  }) => {
+    const modules = await installed(browser)
+    test.skip(modules.length === 0, 'the starter was built without --with')
+    for (const width of [360, 375, 1280]) {
+      for (const module of modules) {
+        for (const path of module.pages) {
+          const { context, page } = await open(browser, width, path)
+          const m = await page.evaluate(() => {
+            const main = document.querySelector('.site-main')
+            // A child of the column centred by margin-inline: auto; one with `margin: 0` of a
+            // module's class stands at the left edge of the page instead.
+            const lefts = [...main.children]
+              .filter((el) => !el.classList.contains('site-bleed'))
+              .filter((el) => el.getBoundingClientRect().height > 0)
+              .map((el) => ({
+                what: el.className || el.tagName,
+                left: Math.round(el.getBoundingClientRect().left),
+              }))
+            return {
+              scroll: document.documentElement.scrollWidth,
+              client: document.documentElement.clientWidth,
+              lefts,
+              inline: [...document.querySelectorAll('style')]
+                .map((style) => style.textContent)
+                .filter((css) => /\.wx-(events|event|vacancies|vacancy|press)[-_]/.test(css)),
+            }
+          })
+          const label = `${path} at ${width}`
+          expect(m.scroll, label).toBeLessThanOrEqual(m.client)
+          expect(m.lefts.length, label).toBeGreaterThan(0)
+          for (const { what, left } of m.lefts) {
+            expect(left, `${label}: ${what} in the column`).toBe(m.lefts[0].left)
+          }
+          expect(m.inline, `${label}: the module's inline look stays off under a theme`).toEqual([])
+          await context.close()
+        }
+      }
+    }
+  })
+
+  test('cards stand several to a row at 1280 and one under another at 375', async ({ browser }) => {
+    const modules = (await installed(browser)).filter((m) => m.list)
+    test.skip(modules.length === 0, 'the starter was built without --with')
+    for (const module of modules) {
+      for (const width of [375, 1280]) {
+        const { context, page } = await open(browser, width, module.index)
+        const rows = await page.evaluate(
+          ({ list, card }) => {
+            const first = document.querySelector(list)
+            const cards = [...first.querySelectorAll(card)].slice(0, 3)
+            const style = getComputedStyle(first)
+            return {
+              marker: cards.length ? getComputedStyle(cards[0]).listStyleType : 'none',
+              padding: style.paddingInlineStart,
+              tops: cards.map((c) => Math.round(c.getBoundingClientRect().top)),
+            }
+          },
+          { list: module.list, card: module.card },
+        )
+        const label = `${module.index} at ${width}`
+        expect(rows.marker, `${label}: no list markers`).toBe('none')
+        expect(rows.padding, label).toBe('0px')
+        if (rows.tops.length < 2) {
+          await context.close()
+          continue
+        }
+        if (width === 1280 && module.grid) {
+          expect(rows.tops[1], `${label}: the second card beside the first`).toBe(rows.tops[0])
+        } else {
+          expect(rows.tops[1], `${label}: the second card under the first`).toBeGreaterThan(
+            rows.tops[0],
+          )
+        }
+        await context.close()
+      }
+    }
+  })
+
+  test('every link a finger reaches on a module page is at least 44px tall', async ({
+    browser,
+  }) => {
+    const modules = (await installed(browser)).filter((m) => m.targets.length)
+    test.skip(modules.length === 0, 'the starter was built without --with')
+    for (const module of modules) {
+      for (const path of module.pages) {
+        const { context, page } = await open(browser, 375, path)
+        const low = await page.evaluate(
+          (selectors) =>
+            [...document.querySelectorAll(selectors.join(', '))]
+              .map((el) => ({
+                what: `${el.className} "${el.textContent.trim().slice(0, 30)}"`,
+                height: el.getBoundingClientRect().height,
+              }))
+              .filter((t) => t.height > 0 && t.height < 44),
+          module.targets,
+        )
+        expect(low, path).toEqual([])
+        await context.close()
+      }
+    }
+  })
+
+  test('a preset repaints an event, a vacancy and an outlet: buttons, frames and lines on tokens', async ({
+    browser,
+  }) => {
+    const modules = await installed(browser)
+    const checks = [
+      ['events', '.wx-event__book', 'backgroundColor', 'color-accent'],
+      ['events', '.wx-event__facts', 'backgroundColor', 'color-surface'],
+      ['vacancies', '.wx-vacancies__card', 'backgroundColor', 'color-surface'],
+      ['vacancies', '.wx-vacancy__facts', 'borderTopColor', 'color-border'],
+      ['press', '.wx-press-article', 'borderBottomColor', 'color-border'],
+    ]
+    let checked = 0
+    for (const module of modules) {
+      for (const path of module.pages) {
+        const mine = checks.filter(([name]) => name === module.name)
+        if (!mine.length) continue
+        const { context, page } = await open(browser, 1280, path)
+        const read = () =>
+          page.evaluate((mine) => {
+            const token = (name) => {
+              const probe = document.createElement('i')
+              probe.style.color = `var(--site-${name})`
+              document.body.append(probe)
+              const value = getComputedStyle(probe).color
+              probe.remove()
+              return value
+            }
+            return mine
+              .map(([, selector, property, name]) => {
+                const el = document.querySelector(selector)
+                return el && { selector, value: getComputedStyle(el)[property], token: token(name) }
+              })
+              .filter(Boolean)
+          }, mine)
+        const before = await read()
+        await paint(page, 'night')
+        const after = await read()
+        for (const [i, b] of before.entries()) {
+          expect(b.value, `${path} ${b.selector}`).toBe(b.token)
+          expect(after[i].value, `${path} ${b.selector} at night`).toBe(after[i].token)
+          expect(after[i].value, `${path} ${b.selector} changes`).not.toBe(b.value)
+          checked++
+        }
+        await context.close()
+      }
+    }
+    test.skip(checked === 0, 'the starter was built without events, vacancies and press')
+  })
+
+  test('every word of a module page reads in every preset, the night one included', async ({
+    browser,
+  }) => {
+    const modules = await installed(browser)
+    test.skip(modules.length === 0, 'the starter was built without --with')
+    for (const module of modules) {
+      for (const path of module.pages) {
+        const { context, page } = await open(browser, 1280, path)
+        for (const preset of Object.keys(presets)) {
+          await paint(page, preset)
+          const low = await page.evaluate((selectors) => {
+            const canvas = document
+              .createElement('canvas')
+              .getContext('2d', { willReadFrequently: true })
+            const rgba = (color) => {
+              canvas.clearRect(0, 0, 1, 1)
+              canvas.fillStyle = color
+              canvas.fillRect(0, 0, 1, 1)
+              return Array.from(canvas.getImageData(0, 0, 1, 1).data)
+            }
+            const luminance = (color) => {
+              const [r, g, b] = rgba(color)
+                .slice(0, 3)
+                .map((v) => {
+                  v /= 255
+                  return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+                })
+              return 0.2126 * r + 0.7152 * g + 0.0722 * b
+            }
+            const ratio = (a, b) => {
+              const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+              return (x + 0.05) / (y + 0.05)
+            }
+            const behind = (el) => {
+              for (let node = el; node; node = node.parentElement) {
+                const bg = getComputedStyle(node).backgroundColor
+                if (rgba(bg)[3] > 0) return bg
+              }
+              return 'white'
+            }
+            return [...document.querySelectorAll(selectors.join(', '))]
+              .filter((el) => {
+                const r = el.getBoundingClientRect()
+                return r.width > 0 && r.height > 0 && el.textContent.trim() !== ''
+              })
+              .map((el) => ({
+                what: `${el.className} "${el.textContent.trim().slice(0, 30)}"`,
+                ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
+              }))
+              .filter((w) => w.ratio < 4.5)
+          }, module.words)
+          expect(low, `${path} in ${preset}`).toEqual([])
+        }
+        await context.close()
+      }
+    }
+  })
+
+  test('the menu component keeps every level on the page, links 44px tall, nothing sideways at 360', async ({
+    browser,
+  }) => {
+    for (const width of [360, 1280]) {
+      const { context, page, status } = await open(browser, width, '/kitchen-sink/modules/menu')
+      test.skip(status !== 200, 'the showcase has no menu page')
+      const m = await page.evaluate(() => {
+        const menu = document.querySelector('.wx-menu')
+        if (!menu) return null
+        const links = [...menu.querySelectorAll('.wx-menu__link')].filter(
+          (a) => a.getBoundingClientRect().height > 0,
+        )
+        return {
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+          display: getComputedStyle(menu).display,
+          marker: getComputedStyle(menu.querySelector('.wx-menu__item')).listStyleType,
+          hidden: [...menu.querySelectorAll('.wx-menu__link')].length - links.length,
+          low: links.map((a) => a.getBoundingClientRect().height).filter((h) => h < 44),
+        }
+      })
+      test.skip(m === null, 'the starter has no menus module')
+      expect(m.scroll, `at ${width}`).toBeLessThanOrEqual(m.client)
+      expect(m.display).toBe('flex')
+      expect(m.marker).toBe('none')
+      expect(m.hidden, 'every level on the page').toBe(0)
+      expect(m.low, 'links a finger can hit').toEqual([])
+      await context.close()
+    }
+  })
+})
