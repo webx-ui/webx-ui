@@ -1,10 +1,13 @@
 import type { ScreenNode } from '@webx-ui/schema'
+import { cssFindings, type CssProblem } from './css-tokens'
 import type { Lint } from './types'
 
 /**
  * The checks under the editor, live (§15): the same four the server runs on saving, plus the
  * one that would refuse publication — a variable the schema does not declare. None locks a
  * save; every one is a habit that bites later, on another block or another page.
+ *
+ * On a site with a theme, the styles also know only its tokens (`tokenLints`).
  *
  * Mirrors `Panel\Lints` in the composer package, message for message.
  */
@@ -22,6 +25,7 @@ export function lintBlock(
   slug: string,
   content: { template: string; styles: string; schema: ScreenNode[] },
   t: Translate,
+  tokens: string[] | null = null,
 ): Lint[] {
   const lints: Lint[] = []
 
@@ -102,6 +106,50 @@ export function lintBlock(
       line: lineAt(source, media.index),
       message: t('checks.media-query'),
     })
+  }
+
+  return [...lints, ...tokenLints(content.styles, tokens, t)]
+}
+
+/**
+ * CSS knows only tokens (THEMES §8), as warnings: a literal colour or font, a `--site-*` the
+ * theme does not have, a fallback inside one — one line per kind, on the first place it stands.
+ * Only on a site with a theme (`tokens` is its vocabulary, null without one). `Lints::tokens()`.
+ */
+export function tokenLints(styles: string, tokens: string[] | null, t: Translate): Lint[] {
+  if (tokens === null || styles.trim() === '') return []
+
+  const codes: Record<CssProblem, [string, 'values' | 'tokens']> = {
+    'literal-color': ['literal-colors', 'values'],
+    'literal-font': ['literal-fonts', 'values'],
+    'unknown-token': ['unknown-tokens', 'tokens'],
+    'token-fallback': ['token-fallbacks', 'tokens'],
+  }
+  const grouped = new Map<CssProblem, [string, number][]>()
+
+  for (const finding of cssFindings(styles, tokens)) {
+    grouped.set(finding.problem, [
+      ...(grouped.get(finding.problem) ?? []),
+      [finding.subject, finding.line],
+    ])
+  }
+
+  const lints: Lint[] = []
+
+  for (const [problem, [code, param]] of Object.entries(codes) as [
+    CssProblem,
+    [string, 'values' | 'tokens'],
+  ][]) {
+    const subjects = grouped.get(problem)
+
+    if (subjects) {
+      lints.push({
+        file: 'styles',
+        code,
+        line: subjects[0]![1],
+        message: t(`checks.${code}`, { [param]: few(subjects) }),
+      })
+    }
   }
 
   return lints

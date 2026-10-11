@@ -13,6 +13,9 @@ use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\Calls;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
 use WebxUi\Blocks\Schema;
+use WebxUi\Themes\Checks\CssCheck;
+use WebxUi\Themes\Checks\CssProblem;
+use WebxUi\Themes\Vocabulary;
 
 /**
  * What is said on saving and never refused (§15): selectors outside the block's prefix,
@@ -26,6 +29,7 @@ use WebxUi\Blocks\Schema;
  * refuse publication above all: a variable the schema does not declare, and a template that does
  * not compile. Two more are about the schema: a field of a type this site does not know (the form
  * draws a warning in its place and nothing checks its value) and an id that cannot be a key.
+ * On a site with a theme, the styles also know only its tokens ({@see self::tokens()}).
  */
 final class Lints
 {
@@ -109,6 +113,50 @@ final class Lints
 
         if (preg_match('/@media\b/', self::withoutComments($styles), $match, PREG_OFFSET_CAPTURE)) {
             $lints[] = self::lint('styles', 'media-query', self::lineAt($styles, (int) $match[0][1]));
+        }
+
+        return [...$lints, ...self::tokens($styles, SiteTokens::vocabulary())];
+    }
+
+    /**
+     * CSS knows only tokens (THEMES §8) — the engine's check, said here as warnings: a literal
+     * colour or font, a `--site-*` the chain's vocabulary does not have, a fallback inside one.
+     * Only on a site with a theme: without one there are no tokens to write in. A width `@media`
+     * is already `media-query`, which says it of any `@media`. `tokenLints()` in `lint.ts`.
+     *
+     * @return list<array{file: string, code: string, line: int|null, message: string}>
+     */
+    public static function tokens(string $styles, ?Vocabulary $vocabulary): array
+    {
+        if ($vocabulary === null || trim($styles) === '') {
+            return [];
+        }
+
+        $codes = [
+            CssProblem::LiteralColor->value => ['literal-colors', 'values'],
+            CssProblem::LiteralFont->value => ['literal-fonts', 'values'],
+            CssProblem::UnknownToken->value => ['unknown-tokens', 'tokens'],
+            CssProblem::Fallback->value => ['token-fallbacks', 'tokens'],
+        ];
+
+        /** @var array<string, array{line: int, subjects: list<array{string, int}>}> $grouped */
+        $grouped = [];
+
+        foreach (CssCheck::check($styles, $vocabulary) as $finding) {
+            if (! isset($codes[$finding->problem->value])) {
+                continue;
+            }
+
+            $grouped[$finding->problem->value] ??= ['line' => $finding->line, 'subjects' => []];
+            $grouped[$finding->problem->value]['subjects'][] = [$finding->subject, $finding->line];
+        }
+
+        $lints = [];
+
+        foreach ($codes as $problem => [$code, $param]) {
+            if (isset($grouped[$problem])) {
+                $lints[] = self::lint('styles', $code, $grouped[$problem]['line'], [$param => self::few($grouped[$problem]['subjects'])]);
+            }
         }
 
         return $lints;

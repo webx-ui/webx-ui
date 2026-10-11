@@ -343,6 +343,14 @@ export const blocksMessages: Record<string, Messages> = {
     'unknown-field-type':
       'Fields of a type this site does not know: :fields. The form draws a warning in their place and nothing checks their values.',
     'field-id': 'Field ids must be letters, digits, _ and -, starting with a letter: :ids.',
+    'literal-colors':
+      'Literal colours: :values. No preset and no edit in the panel repaints them: use a colour role, var(--site-color-…).',
+    'literal-fonts':
+      'Literal font families: :values. The owner’s font never reaches them: use var(--site-font-body) or var(--site-font-heading), or a generic family.',
+    'unknown-tokens':
+      'Not among the theme’s tokens: :tokens. A variable nobody declares is an empty value — no colour, no border, no error.',
+    'token-fallbacks':
+      'A fallback inside :tokens is a literal value no preset repaints. Every token of the theme has a value: write var() without one.',
   },
   exchange: {
     export: 'Export',

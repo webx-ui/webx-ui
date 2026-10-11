@@ -15,6 +15,7 @@ use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\Graph;
 use WebxUi\Blocks\Panel\Lints;
 use WebxUi\Blocks\Panel\Publisher;
+use WebxUi\Blocks\Panel\SiteTokens;
 use WebxUi\Blocks\Rendering\Thumbnails;
 
 /**
@@ -92,6 +93,9 @@ final class BlockResource extends JsonResource
 
             $payload['content'] = $content;
             $payload['warnings'] = Lints::check($block->slug, $content['template'], $content['styles'], $content['schema']);
+
+            // The theme's vocabulary for the editor's live token lints; null without a theme.
+            $payload['tokens'] = SiteTokens::names();
 
             // What the editor of a component shows under the template: the module's place, when
             // one declared it, and the fields of every data shape its input names.

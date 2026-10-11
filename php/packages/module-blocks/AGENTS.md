@@ -109,7 +109,8 @@ whose type has no `wx-blocks` field is refused as "not a container".
   publish check refuses the last two. `blocks_render`
   shows both before you publish.
 - Do not style with bare element selectors or `@media`: they reach the whole site. Prefix every
-  selector with `.b-{slug}` and size with `@container`.
+  selector with `.b-{slug}` and size with `@container`. On a site with a theme, no literal colour
+  or font either — `var(--site-…)` of the theme's vocabulary, no fallback: saving warns.
 - Do not delete a type that stands on pages or that other types call: the API answers `409` or
   `422`, `blocks_delete` refuses. `blocks_usage` lists where it stands; remove it there first, or disable it.
 - Do not switch a field's `localized` on a type pages already use without reading the warning:

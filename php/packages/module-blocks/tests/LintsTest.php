@@ -6,6 +6,11 @@ namespace WebxUi\Blocks\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Blocks\Panel\Lints;
+use WebxUi\Themes\ConfigAppearance;
+use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\ThemeManifest;
+use WebxUi\Themes\Tokens;
+use WebxUi\Themes\Vocabulary;
 
 final class LintsTest extends TestCase
 {
@@ -41,6 +46,47 @@ final class LintsTest extends TestCase
 
         $this->assertStringContainsString('.promo, #x', $lints[1]['message']);
         $this->assertStringContainsString('h2, a', $lints[2]['message']);
+    }
+
+    /*
+     * THEMES §8, said as warnings on saving: on a site with a theme, a block type's CSS knows
+     * only the theme's tokens. Without a theme — the clean block above paints its CTA red — it
+     * is not said at all.
+     */
+    #[Test]
+    public function on_a_site_with_a_theme_literal_values_and_unknown_tokens_are_named(): void
+    {
+        $this->app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('theme', __DIR__.'/Fixtures', true)]));
+        $this->app->instance(Tokens::class, new Tokens($this->app->make(ThemeChain::class), new ConfigAppearance($this->app->make('config'))));
+
+        $styles = <<<'CSS'
+        .b-hero { color: #fff; background: var(--site-color-accent); }
+        .b-hero__title { font-family: Georgia, serif; border-color: black; }
+        .b-hero__text { color: var(--site-color-olive); gap: var(--site-space-2, 8px); }
+        .b-hero { grid-template-columns: repeat(var(--hero-columns, 3), 1fr); }
+        CSS;
+
+        $lints = Lints::check('hero', '<div data-wx-block="hero"></div>', $styles);
+
+        $this->assertSame(
+            [['styles', 'literal-colors', 1], ['styles', 'literal-fonts', 2], ['styles', 'unknown-tokens', 3], ['styles', 'token-fallbacks', 3]],
+            array_map(static fn (array $lint): array => [$lint['file'], $lint['code'], $lint['line']], $lints),
+        );
+
+        $this->assertStringContainsString('#fff, black', $lints[0]['message']);
+        $this->assertStringContainsString('Georgia', $lints[1]['message']);
+        $this->assertStringContainsString('--site-color-olive', $lints[2]['message']);
+        $this->assertStringContainsString('var(--site-space-2, …)', $lints[3]['message']);
+
+        // Clean on the theme's tokens: nothing more to say.
+        $this->assertSame([], Lints::check('hero', '<div data-wx-block="hero"></div>', '.b-hero { color: var(--site-color-text); font: inherit; }'));
+    }
+
+    #[Test]
+    public function the_token_lints_need_a_vocabulary(): void
+    {
+        $this->assertSame([], Lints::tokens('.b-x { color: red; }', null));
+        $this->assertSame(['literal-colors'], array_column(Lints::tokens('.b-x { color: red; }', Vocabulary::base()), 'code'));
     }
 
     /*
