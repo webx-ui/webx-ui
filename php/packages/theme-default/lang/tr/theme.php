@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 return [
+    'shell' => [
+        'skip' => 'İçeriğe geç',
+        'footer' => 'Alt bilgi',
+    ],
     'not_found' => [
         'title' => 'Sayfa bulunamadı',
         'text' => 'Bu adreste bir sayfa yok. Taşınmış olabilir ya da adreste bir yazım hatası var.',

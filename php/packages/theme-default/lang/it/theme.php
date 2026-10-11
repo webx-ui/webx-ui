@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 return [
+    'shell' => [
+        'skip' => 'Vai al contenuto',
+        'footer' => 'Piè di pagina',
+    ],
     'not_found' => [
         'title' => 'Pagina non trovata',
         'text' => 'Non c’è nessuna pagina a questo indirizzo. Potrebbe essere stata spostata, o l’indirizzo contiene un errore.',

@@ -30,7 +30,7 @@
     @stack('head')
 </head>
 <body class="site">
-    <a class="site-skip" href="#content">{{ __('Skip to content') }}</a>
+    <a class="site-skip" href="#content">{{ __('theme::theme.shell.skip') }}</a>
 
     {{--
         The announcement bar (WIDGETS §14): the place `notice` of the banners when it has one to

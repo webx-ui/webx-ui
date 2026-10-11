@@ -17,6 +17,7 @@ use SplFileInfo;
 use WebxUi\Themes\Checks\CssCheck;
 use WebxUi\Themes\Checks\CssFinding;
 use WebxUi\Themes\Checks\IconCheck;
+use WebxUi\Themes\Checks\LineCheck;
 use WebxUi\Themes\ThemeIcons;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
@@ -469,18 +470,74 @@ class ThemeDefaultTest extends TestCase
         $this->assertStringContainsString('<h1>Nie znaleziono strony</h1>', $html);
     }
 
-    /** The words of the layout: the same keys in every language of the panel. */
+    /**
+     * The words of the layout (rule 26): the ten languages of the panel, declared in `locales` and
+     * each a directory of words with the keys of `en` — what `webx:theme:check` holds every layer to.
+     */
     #[Test]
-    public function the_words_have_the_same_keys_in_every_language(): void
+    public function the_words_have_the_same_keys_in_every_declared_language(): void
     {
-        $keys = static fn (array $lines): array => array_keys(Arr::dot($lines));
-        $english = $keys(require self::path().'/lang/en/theme.php');
         $languages = array_map('basename', glob(self::path().'/lang/*', GLOB_ONLYDIR) ?: []);
 
         $this->assertEqualsCanonicalizing(['de', 'en', 'es', 'fr', 'it', 'pl', 'pt', 'ru', 'tr', 'uk'], $languages);
+        $this->assertEqualsCanonicalizing($languages, $this->manifest()->locales);
+        $this->assertSame(['findings' => [], 'locales' => 10], LineCheck::check($this->manifest()));
+    }
 
-        foreach ($languages as $code) {
-            $this->assertSame($english, $keys(require self::path()."/lang/{$code}/theme.php"), "lang/{$code}/theme.php");
+    /**
+     * No word of the shell or of a block is written into its template (§15.2): every text a
+     * visitor reads there comes from a field, from the settings or from `theme::` — a text node or
+     * an `aria-label`, `alt`, `title` or `placeholder` with letters of its own would stay English
+     * on a Polish page. Every `__()` names a key `en` has.
+     */
+    #[Test]
+    public function no_word_of_the_shell_or_of_a_block_is_written_into_its_template(): void
+    {
+        $words = Arr::dot(require self::path().'/lang/en/theme.php');
+        $templates = [];
+
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(self::path().'/views', RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
+            /** @var SplFileInfo $file */
+            $templates['views/'.str_replace('\\', '/', substr($file->getPathname(), strlen(self::path().'/views/')))] = (string) file_get_contents($file->getPathname());
+        }
+
+        foreach (glob(self::path().'/blocks/*.json') ?: [] as $file) {
+            $templates['blocks/'.basename($file)] = (string) (json_decode((string) file_get_contents($file), true)['template'] ?? '');
+        }
+
+        $this->assertCount(10, $templates);
+
+        foreach ($templates as $name => $template) {
+            preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);
+
+            foreach ($calls[1] as $key) {
+                $this->assertStringStartsWith('theme::theme.', $key, "{$name}: a word of the theme is theme::theme.<key>");
+                $this->assertArrayHasKey(substr($key, strlen('theme::theme.')), $words, "{$name}: {$key}");
+            }
+
+            // What the page prints of the template itself: no comments, no PHP, no echoes.
+            $markup = (string) preg_replace(['/\{\{--.*?--\}\}/s', '/@php.*?@endphp/s', '/\{\{.*?\}\}/s', '/\{!!.*?!!\}/s', '/@\w+(\s*\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\))?/'], ' ', $template);
+
+            preg_match_all('/>([^<>]*\p{L}{2,}[^<>]*)</u', $markup, $texts);
+            $this->assertSame([], array_values(array_filter(array_map('trim', $texts[1]), static fn (string $text): bool => preg_match('/^&\w+;$/', $text) !== 1)), "{$name}: words in the template");
+
+            preg_match_all('/\b(aria-label|alt|title|placeholder)="([^"]*\p{L}[^"]*)"/u', $markup, $attributes);
+            $this->assertSame([], $attributes[0], "{$name}: words in an attribute");
+        }
+    }
+
+    /** The shell in the request's language: "Skip to content" is the first thing a keyboard meets. */
+    #[Test]
+    public function the_shell_speaks_the_language_of_the_page(): void
+    {
+        $this->stubModules();
+
+        foreach (['en' => 'Skip to content', 'ru' => 'Перейти к содержимому', 'pl' => 'Przejdź do treści', 'tr' => 'İçeriğe geç'] as $locale => $skip) {
+            $this->app->setLocale($locale);
+            $html = Blade::render('<x-layout><p>Body</p></x-layout>');
+
+            $this->assertStringContainsString("<a class=\"site-skip\" href=\"#content\">{$skip}</a>", $html, $locale);
+            $this->assertStringNotContainsString('theme.shell', $html, $locale);
         }
     }
 

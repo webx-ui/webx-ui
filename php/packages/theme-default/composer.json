@@ -45,6 +45,18 @@
                     "module-blocks",
                     "module-seo"
                 ],
+                "locales": [
+                    "en",
+                    "ru",
+                    "uk",
+                    "de",
+                    "fr",
+                    "es",
+                    "it",
+                    "pl",
+                    "pt",
+                    "tr"
+                ],
                 "editable": [
                     "color-accent",
                     "color-accent-contrast",

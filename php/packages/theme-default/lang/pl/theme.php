@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 return [
+    'shell' => [
+        'skip' => 'Przejdź do treści',
+        'footer' => 'Stopka',
+    ],
     'not_found' => [
         'title' => 'Nie znaleziono strony',
         'text' => 'Pod tym adresem nie ma strony. Mogła zostać przeniesiona albo w adresie jest literówka.',
