@@ -116,9 +116,9 @@
     },
     {
       "title": {
-        "en": "Blocks in the column",
-        "ru": "Блоки в колонке",
-        "pl": "Bloki w kolumnie"
+        "en": "Blocks",
+        "ru": "Блоки",
+        "pl": "Bloki"
       },
       "slug": {
         "en": "blocks",
@@ -127,52 +127,30 @@
       },
       "seo": {
         "title": {
-          "en": "Blocks in the column",
-          "ru": "Блоки в колонке",
-          "pl": "Bloki w kolumnie"
+          "en": "Blocks",
+          "ru": "Блоки",
+          "pl": "Bloki"
         },
         "description": {
-          "en": "A dark block, text and columns one after another in the main column of the page.",
-          "ru": "Тёмный блок, текст и колонки друг за другом в основной колонке страницы.",
-          "pl": "Ciemny blok, tekst i kolumny jeden po drugim w głównej kolumnie strony."
+          "en": "The six blocks of the default theme, a page each, every variant and a narrow column.",
+          "ru": "Шесть блоков темы по умолчанию, по странице на каждый: все варианты и узкая колонка.",
+          "pl": "Sześć bloków domyślnego motywu, po stronie na każdy: wszystkie warianty i wąska kolumna."
         }
       },
       "blocks": [
         {
-          "key": "showcase-blocks-hero",
-          "type": "hero",
-          "values": {
-            "title": {
-              "en": "A dark block in the main column",
-              "ru": "Тёмный блок в основной колонке",
-              "pl": "Ciemny blok w głównej kolumnie"
-            },
-            "subtitle": {
-              "en": "The prose of the theme reaches every block inside the page, so its colours must not assume a light background: this heading and this line stay readable on navy.",
-              "ru": "Стили текста темы действуют на каждый блок внутри страницы, поэтому их цвета не могут рассчитывать на светлый фон: этот заголовок и эта строка остаются читаемыми на тёмно-синем.",
-              "pl": "Style tekstu motywu docierają do każdego bloku na stronie, więc ich kolory nie mogą zakładać jasnego tła: ten nagłówek i ta linijka pozostają czytelne na granacie."
-            },
-            "button_label": {
-              "en": "Back to the kitchen sink",
-              "ru": "Назад к витрине",
-              "pl": "Wróć do witryny"
-            },
-            "button_url": "/kitchen-sink"
-          }
-        },
-        {
-          "key": "showcase-blocks-text",
+          "key": "showcase-blocks-intro",
           "type": "text",
           "values": {
             "heading": {
-              "en": "Text right after it",
-              "ru": "Текст сразу после него",
-              "pl": "Tekst tuż za nim"
+              "en": "Six blocks to build a page of",
+              "ru": "Шесть блоков, из которых собирается страница",
+              "pl": "Sześć bloków, z których składa się strona"
             },
             "body": {
-              "en": "The column and the blocks share one left edge, and nothing on this page scrolls sideways at 360 pixels.",
-              "ru": "У колонки и блоков общий левый край, и при ширине 360 пикселей на этой странице ничего не прокручивается вбок.",
-              "pl": "Kolumna i bloki mają wspólną lewą krawędź, a przy 360 pikselach nic na tej stronie nie przewija się na boki."
+              "en": "<p>The default theme brings six blocks: a hero, text, a picture beside text, cards, a call to action and contacts. Their styles know only the tokens of the site, so a preset or the owner’s accent repaints every one of them.</p><p>Each page under this one shows a block in every variant and then once more in a narrow column: the layout of a block follows the width it is given, not the width of the window.</p>",
+              "ru": "<p>Тема по умолчанию приносит шесть блоков: первый экран, текст, картинку рядом с текстом, карточки, призыв и контакты. Их стили знают только токены сайта, поэтому пресет или акцент владельца перекрашивают каждый из них.</p><p>Каждая страница в этом разделе показывает блок во всех вариантах и ещё раз в узкой колонке: раскладка блока следует за шириной, которую ему дали, а не за шириной окна.</p>",
+              "pl": "<p>Domyślny motyw przynosi sześć bloków: baner, tekst, zdjęcie obok tekstu, karty, wezwanie do działania i kontakty. Ich style znają tylko tokeny strony, więc preset albo akcent właściciela przemalowuje każdy z nich.</p><p>Każda strona poniżej pokazuje blok we wszystkich wariantach, a potem jeszcze raz w wąskiej kolumnie: układ bloku idzie za szerokością, którą dostał, a nie za szerokością okna.</p>"
             }
           }
         },
@@ -187,14 +165,14 @@
                 "type": "text",
                 "values": {
                   "heading": {
-                    "en": "One",
-                    "ru": "Один",
-                    "pl": "Jeden"
+                    "en": "Columns",
+                    "ru": "Колонки",
+                    "pl": "Kolumny"
                   },
                   "body": {
-                    "en": "Three columns on a wide screen, one under another on a phone.",
-                    "ru": "Три колонки на широком экране, одна под другой на телефоне.",
-                    "pl": "Trzy kolumny na szerokim ekranie, jedna pod drugą na telefonie."
+                    "en": "The columns of the blocks demo hold the text of the theme.",
+                    "ru": "Колонки из демо блоков держат текст темы.",
+                    "pl": "Kolumny z demo bloków trzymają tekst motywu."
                   }
                 }
               },
@@ -203,14 +181,14 @@
                 "type": "text",
                 "values": {
                   "heading": {
-                    "en": "Two",
-                    "ru": "Два",
-                    "pl": "Dwa"
+                    "en": "Three across",
+                    "ru": "Три в ряд",
+                    "pl": "Trzy w rzędzie"
                   },
                   "body": {
-                    "en": "A column with a longer text in it, so that the three are not the same height and the grid has to say what it does about that.",
-                    "ru": "Колонка с текстом подлиннее, чтобы все три были разной высоты и сетке пришлось решать, что с этим делать.",
-                    "pl": "Kolumna z dłuższym tekstem, żeby wszystkie trzy nie miały tej samej wysokości i siatka musiała pokazać, co z tym robi."
+                    "en": "Three on a wide screen, one under another on a phone; the column with the longer text says what the grid does about heights.",
+                    "ru": "Три на широком экране, одна под другой на телефоне; колонка с текстом подлиннее показывает, что сетка делает с высотой.",
+                    "pl": "Trzy na szerokim ekranie, jedna pod drugą na telefonie; kolumna z dłuższym tekstem pokazuje, co siatka robi z wysokością."
                   }
                 }
               },
@@ -219,9 +197,9 @@
                 "type": "text",
                 "values": {
                   "heading": {
-                    "en": "Three",
-                    "ru": "Три",
-                    "pl": "Trzy"
+                    "en": "Short",
+                    "ru": "Коротко",
+                    "pl": "Krótko"
                   },
                   "body": {
                     "en": "Short.",
@@ -232,6 +210,1106 @@
               }
             ]
           }
+        }
+      ],
+      "children": [
+        {
+          "title": {
+            "en": "Hero",
+            "ru": "Первый экран",
+            "pl": "Baner"
+          },
+          "slug": {
+            "en": "hero",
+            "ru": "pervyy-ekran",
+            "pl": "baner"
+          },
+          "seo": {
+            "title": {
+              "en": "Hero",
+              "ru": "Первый экран",
+              "pl": "Baner"
+            },
+            "description": {
+              "en": "The hero block of the default theme on the page, on a tint, on the accent and over a picture.",
+              "ru": "Блок первого экрана темы по умолчанию: на странице, на подложке, на акценте и поверх картинки.",
+              "pl": "Blok banera domyślnego motywu: na stronie, na tle, na akcencie i na zdjęciu."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-hero-plain",
+              "type": "hero",
+              "values": {
+                "title": {
+                  "en": "On the page itself",
+                  "ru": "Прямо на странице",
+                  "pl": "Na samej stronie"
+                },
+                "subtitle": {
+                  "en": "The plain hero keeps to the left edge of the column, like the text under it, and takes the colours of the page.",
+                  "ru": "Простой первый экран держится левого края колонки, как текст под ним, и берёт цвета страницы.",
+                  "pl": "Zwykły baner trzyma się lewej krawędzi kolumny, jak tekst pod nim, i bierze kolory strony."
+                },
+                "button_label": {
+                  "en": "Back to the blocks",
+                  "ru": "Назад к блокам",
+                  "pl": "Wróć do bloków"
+                },
+                "button_url": "/kitchen-sink/blocks",
+                "second_label": {
+                  "en": "The kitchen sink",
+                  "ru": "Витрина",
+                  "pl": "Witryna"
+                },
+                "second_url": "/kitchen-sink",
+                "tone": "plain",
+                "align": "start",
+                "width": "column"
+              }
+            },
+            {
+              "key": "showcase-hero-surface",
+              "type": "hero",
+              "values": {
+                "title": {
+                  "en": "On a tint, in the middle",
+                  "ru": "На подложке, по центру",
+                  "pl": "Na tle, pośrodku"
+                },
+                "subtitle": {
+                  "en": "A tinted hero has the inner spacing of a card; centred, its buttons gather under the line.",
+                  "ru": "У первого экрана на подложке внутренние отступы карточки; по центру кнопки собираются под строкой.",
+                  "pl": "Baner na tle ma wewnętrzne odstępy karty; wyśrodkowany zbiera przyciski pod linijką."
+                },
+                "button_label": {
+                  "en": "Get in touch",
+                  "ru": "Связаться",
+                  "pl": "Napisz do nas"
+                },
+                "button_url": "/kitchen-sink/blocks/contact",
+                "tone": "surface",
+                "align": "center",
+                "width": "column"
+              }
+            },
+            {
+              "key": "showcase-hero-accent",
+              "type": "hero",
+              "values": {
+                "title": {
+                  "en": "On the accent, edge to edge",
+                  "ru": "На акценте, от края до края",
+                  "pl": "Na akcencie, od krawędzi do krawędzi"
+                },
+                "subtitle": {
+                  "en": "Edge to edge, the band leaves the column and its words come back to it. The buttons turn round to stay readable on the accent.",
+                  "ru": "От края до края полоса выходит из колонки, а слова возвращаются в неё. Кнопки меняют цвета, чтобы читаться на акценте.",
+                  "pl": "Od krawędzi do krawędzi pas wychodzi z kolumny, a słowa wracają do niej. Przyciski odwracają kolory, by były czytelne na akcencie."
+                },
+                "button_label": {
+                  "en": "First button",
+                  "ru": "Первая кнопка",
+                  "pl": "Pierwszy przycisk"
+                },
+                "button_url": "/kitchen-sink/blocks",
+                "second_label": {
+                  "en": "Second button",
+                  "ru": "Вторая кнопка",
+                  "pl": "Drugi przycisk"
+                },
+                "second_url": "/kitchen-sink",
+                "tone": "accent",
+                "align": "start",
+                "width": "bleed"
+              }
+            },
+            {
+              "key": "showcase-hero-image",
+              "type": "hero",
+              "values": {
+                "title": {
+                  "en": "Over a picture",
+                  "ru": "Поверх картинки",
+                  "pl": "Na zdjęciu"
+                },
+                "subtitle": {
+                  "en": "The picture lies under a shade of the text colour, so the words read on any photo — and in the night preset both turn round together.",
+                  "ru": "Картинка лежит под тенью цвета текста, поэтому слова читаются на любом фото — а в пресете «Ночь» обе меняются местами вместе.",
+                  "pl": "Zdjęcie leży pod cieniem w kolorze tekstu, więc słowa są czytelne na każdym zdjęciu — a w presecie „Noc” oba odwracają się razem."
+                },
+                "button_label": {
+                  "en": "Look at the cards",
+                  "ru": "Посмотреть карточки",
+                  "pl": "Zobacz karty"
+                },
+                "button_url": "/kitchen-sink/blocks/cards",
+                "second_label": {
+                  "en": "Or the text",
+                  "ru": "Или текст",
+                  "pl": "Albo tekst"
+                },
+                "second_url": "/kitchen-sink/blocks/text",
+                "tone": "image",
+                "image": {
+                  "path": "demo:showcase-photo-3",
+                  "alt": {
+                    "en": "A street at dusk",
+                    "ru": "Улица в сумерках",
+                    "pl": "Ulica o zmierzchu"
+                  }
+                },
+                "align": "start",
+                "width": "column"
+              }
+            },
+            {
+              "key": "showcase-hero-narrow",
+              "type": "showcase-column",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same block in a column 20rem wide, the way it stands in a sidebar or a phone: its layout follows the column, not the window.",
+                  "ru": "Тот же блок в колонке шириной 20rem — так он стоит в боковой колонке или на телефоне: раскладка следует за колонкой, а не за окном.",
+                  "pl": "Ten sam blok w kolumnie szerokiej na 20rem — tak stoi w kolumnie bocznej albo na telefonie: układ idzie za kolumną, nie za oknem."
+                },
+                "items": [
+                  {
+                    "key": "showcase-hero-narrow-accent",
+                    "type": "hero",
+                    "values": {
+                      "title": {
+                        "en": "A headline long enough to wrap in a narrow column",
+                        "ru": "Заголовок достаточно длинный, чтобы переноситься в узкой колонке",
+                        "pl": "Nagłówek na tyle długi, że zawija się w wąskiej kolumnie"
+                      },
+                      "subtitle": {
+                        "en": "Smaller type, less padding.",
+                        "ru": "Шрифт меньше, отступы меньше.",
+                        "pl": "Mniejsze litery, mniejsze odstępy."
+                      },
+                      "button_label": {
+                        "en": "A button",
+                        "ru": "Кнопка",
+                        "pl": "Przycisk"
+                      },
+                      "button_url": "/kitchen-sink/blocks",
+                      "second_label": {
+                        "en": "Another",
+                        "ru": "Ещё одна",
+                        "pl": "Kolejny"
+                      },
+                      "second_url": "/kitchen-sink",
+                      "tone": "accent",
+                      "align": "start",
+                      "width": "column"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Text",
+            "ru": "Текст",
+            "pl": "Tekst"
+          },
+          "slug": {
+            "en": "text",
+            "ru": "tekst",
+            "pl": "tekst"
+          },
+          "seo": {
+            "title": {
+              "en": "Text",
+              "ru": "Текст",
+              "pl": "Tekst"
+            },
+            "description": {
+              "en": "The text block of the default theme: prose in a reading column and across the column.",
+              "ru": "Блок текста темы по умолчанию: проза в колонке для чтения и на всю колонку.",
+              "pl": "Blok tekstu domyślnego motywu: proza w kolumnie do czytania i na całą kolumnę."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-text-narrow",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "In a reading column",
+                  "ru": "В колонке для чтения",
+                  "pl": "W kolumnie do czytania"
+                },
+                "body": {
+                  "en": "<p>The text block is the prose of the theme: the same headings, lists and quotes as an article, with <a href=\"/kitchen-sink\">links</a> in the accent colour.</p><h3>A heading of the third level</h3><ul><li>A list of things,</li><li>each on a line of its own,</li><li>with the spacing of the theme.</li></ul><blockquote><p>A quote stands apart in the muted colour, and inside a block only where the block asks for it.</p></blockquote><ol><li>First,</li><li>then.</li></ol>",
+                  "ru": "<p>Блок текста — это проза темы: те же заголовки, списки и цитаты, что в статье, и <a href=\"/ru/kitchen-sink\">ссылки</a> цветом акцента.</p><h3>Заголовок третьего уровня</h3><ul><li>Список вещей,</li><li>каждая на своей строке,</li><li>с отступами темы.</li></ul><blockquote><p>Цитата стоит отдельно приглушённым цветом, а внутри блока — только там, где блок об этом просит.</p></blockquote><ol><li>Сначала,</li><li>потом.</li></ol>",
+                  "pl": "<p>Blok tekstu to proza motywu: te same nagłówki, listy i cytaty co w artykule, z <a href=\"/pl/kitchen-sink\">linkami</a> w kolorze akcentu.</p><h3>Nagłówek trzeciego poziomu</h3><ul><li>Lista rzeczy,</li><li>każda w osobnej linii,</li><li>z odstępami motywu.</li></ul><blockquote><p>Cytat stoi osobno w przygaszonym kolorze, a w bloku — tylko tam, gdzie blok o to prosi.</p></blockquote><ol><li>Najpierw,</li><li>potem.</li></ol>"
+                },
+                "width": "narrow"
+              }
+            },
+            {
+              "key": "showcase-text-wide",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Across the whole column",
+                  "ru": "На всю колонку",
+                  "pl": "Na całą kolumnę"
+                },
+                "body": {
+                  "en": "<p>The wide text takes the column the page has, for a table or a long line that wants the room. It keeps the left edge of the reading column above it, so the two read as one page.</p>",
+                  "ru": "<p>Широкий текст занимает всю колонку страницы — для таблицы или длинной строки, которой нужно место. Левый край у него тот же, что у колонки для чтения выше, и обе читаются как одна страница.</p>",
+                  "pl": "<p>Szeroki tekst zajmuje całą kolumnę strony — dla tabeli albo długiej linijki, która potrzebuje miejsca. Lewą krawędź ma tę samą co kolumna do czytania wyżej, więc obie czytają się jak jedna strona.</p>"
+                },
+                "width": "wide"
+              }
+            },
+            {
+              "key": "showcase-text-plain",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Written as plain lines",
+                  "ru": "Написан простыми строками",
+                  "pl": "Napisany zwykłymi liniami"
+                },
+                "body": {
+                  "en": "A text written before the field was rich text — the demo of the blocks module, or one typed through MCP — is plain lines.\nEach line is a paragraph of its own.",
+                  "ru": "Текст, написанный до того, как поле стало форматированным, — демо модуля блоков или набранный через MCP — это простые строки.\nКаждая строка — отдельный абзац.",
+                  "pl": "Tekst napisany, zanim pole stało się sformatowane — demo modułu bloków albo wpisany przez MCP — to zwykłe linie.\nKażda linia to osobny akapit."
+                },
+                "width": "narrow"
+              }
+            },
+            {
+              "key": "showcase-text-narrow-column",
+              "type": "showcase-column",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same block in a column 20rem wide, the way it stands in a sidebar or a phone: its layout follows the column, not the window.",
+                  "ru": "Тот же блок в колонке шириной 20rem — так он стоит в боковой колонке или на телефоне: раскладка следует за колонкой, а не за окном.",
+                  "pl": "Ten sam blok w kolumnie szerokiej na 20rem — tak stoi w kolumnie bocznej albo na telefonie: układ idzie za kolumną, nie za oknem."
+                },
+                "items": [
+                  {
+                    "key": "showcase-text-in-column",
+                    "type": "text",
+                    "values": {
+                      "heading": {
+                        "en": "Prose, narrow",
+                        "ru": "Проза, узко",
+                        "pl": "Proza, wąsko"
+                      },
+                      "body": {
+                        "en": "<p>The text block is the prose of the theme: the same headings, lists and quotes as an article, with <a href=\"/kitchen-sink\">links</a> in the accent colour.</p><h3>A heading of the third level</h3><ul><li>A list of things,</li><li>each on a line of its own,</li><li>with the spacing of the theme.</li></ul><blockquote><p>A quote stands apart in the muted colour, and inside a block only where the block asks for it.</p></blockquote><ol><li>First,</li><li>then.</li></ol>",
+                        "ru": "<p>Блок текста — это проза темы: те же заголовки, списки и цитаты, что в статье, и <a href=\"/ru/kitchen-sink\">ссылки</a> цветом акцента.</p><h3>Заголовок третьего уровня</h3><ul><li>Список вещей,</li><li>каждая на своей строке,</li><li>с отступами темы.</li></ul><blockquote><p>Цитата стоит отдельно приглушённым цветом, а внутри блока — только там, где блок об этом просит.</p></blockquote><ol><li>Сначала,</li><li>потом.</li></ol>",
+                        "pl": "<p>Blok tekstu to proza motywu: te same nagłówki, listy i cytaty co w artykule, z <a href=\"/pl/kitchen-sink\">linkami</a> w kolorze akcentu.</p><h3>Nagłówek trzeciego poziomu</h3><ul><li>Lista rzeczy,</li><li>każda w osobnej linii,</li><li>z odstępami motywu.</li></ul><blockquote><p>Cytat stoi osobno w przygaszonym kolorze, a w bloku — tylko tam, gdzie blok o to prosi.</p></blockquote><ol><li>Najpierw,</li><li>potem.</li></ol>"
+                      },
+                      "width": "narrow"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Picture and text",
+            "ru": "Картинка и текст",
+            "pl": "Zdjęcie i tekst"
+          },
+          "slug": {
+            "en": "media-text",
+            "ru": "kartinka-i-tekst",
+            "pl": "zdjecie-i-tekst"
+          },
+          "seo": {
+            "title": {
+              "en": "Picture and text",
+              "ru": "Картинка и текст",
+              "pl": "Zdjęcie i tekst"
+            },
+            "description": {
+              "en": "The picture-and-text block of the default theme on either side, on a tint and without a picture.",
+              "ru": "Блок «картинка и текст» темы по умолчанию с любой стороны, на подложке и без картинки.",
+              "pl": "Blok „zdjęcie i tekst” domyślnego motywu z obu stron, na tle i bez zdjęcia."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-media-start",
+              "type": "media-text",
+              "values": {
+                "image": {
+                  "path": "demo:showcase-photo-1",
+                  "alt": {
+                    "en": "A harbour in the morning",
+                    "ru": "Гавань утром",
+                    "pl": "Port o poranku"
+                  }
+                },
+                "heading": {
+                  "en": "The picture on the left",
+                  "ru": "Картинка слева",
+                  "pl": "Zdjęcie po lewej"
+                },
+                "body": {
+                  "en": "<p>A picture beside its words on a wide screen; in a narrow column the picture goes first and the words under it.</p><ul><li>The side is a field.</li><li>So is the tint.</li></ul>",
+                  "ru": "<p>Картинка рядом со своими словами на широком экране; в узкой колонке картинка идёт первой, а слова под ней.</p><ul><li>Сторона — поле блока.</li><li>Подложка — тоже.</li></ul>",
+                  "pl": "<p>Zdjęcie obok swoich słów na szerokim ekranie; w wąskiej kolumnie zdjęcie idzie pierwsze, a słowa pod nim.</p><ul><li>Strona to pole bloku.</li><li>Tło też.</li></ul>"
+                },
+                "button_label": {
+                  "en": "Read on",
+                  "ru": "Читать дальше",
+                  "pl": "Czytaj dalej"
+                },
+                "button_url": "/kitchen-sink/blocks/text",
+                "side": "start",
+                "tone": "plain"
+              }
+            },
+            {
+              "key": "showcase-media-end",
+              "type": "media-text",
+              "values": {
+                "image": {
+                  "path": "demo:showcase-photo-2",
+                  "alt": {
+                    "en": "Boxes on shelves",
+                    "ru": "Коробки на полках",
+                    "pl": "Pudła na półkach"
+                  }
+                },
+                "heading": {
+                  "en": "On the right, on a tint",
+                  "ru": "Справа, на подложке",
+                  "pl": "Po prawej, na tle"
+                },
+                "body": {
+                  "en": "<p>A picture beside its words on a wide screen; in a narrow column the picture goes first and the words under it.</p><ul><li>The side is a field.</li><li>So is the tint.</li></ul>",
+                  "ru": "<p>Картинка рядом со своими словами на широком экране; в узкой колонке картинка идёт первой, а слова под ней.</p><ul><li>Сторона — поле блока.</li><li>Подложка — тоже.</li></ul>",
+                  "pl": "<p>Zdjęcie obok swoich słów na szerokim ekranie; w wąskiej kolumnie zdjęcie idzie pierwsze, a słowa pod nim.</p><ul><li>Strona to pole bloku.</li><li>Tło też.</li></ul>"
+                },
+                "side": "end",
+                "tone": "surface"
+              }
+            },
+            {
+              "key": "showcase-media-alone",
+              "type": "media-text",
+              "values": {
+                "heading": {
+                  "en": "Without a picture",
+                  "ru": "Без картинки",
+                  "pl": "Bez zdjęcia"
+                },
+                "body": {
+                  "en": "<p>With no picture the words keep to a reading column rather than half of an empty grid.</p>",
+                  "ru": "<p>Без картинки слова держатся колонки для чтения, а не половины пустой сетки.</p>",
+                  "pl": "<p>Bez zdjęcia słowa trzymają się kolumny do czytania, a nie połowy pustej siatki.</p>"
+                },
+                "side": "start",
+                "tone": "plain"
+              }
+            },
+            {
+              "key": "showcase-media-narrow",
+              "type": "showcase-column",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same block in a column 20rem wide, the way it stands in a sidebar or a phone: its layout follows the column, not the window.",
+                  "ru": "Тот же блок в колонке шириной 20rem — так он стоит в боковой колонке или на телефоне: раскладка следует за колонкой, а не за окном.",
+                  "pl": "Ten sam blok w kolumnie szerokiej na 20rem — tak stoi w kolumnie bocznej albo na telefonie: układ idzie za kolumną, nie za oknem."
+                },
+                "items": [
+                  {
+                    "key": "showcase-media-in-column",
+                    "type": "media-text",
+                    "values": {
+                      "image": {
+                        "path": "demo:showcase-photo-4",
+                        "alt": {
+                          "en": "A road through fields",
+                          "ru": "Дорога через поля",
+                          "pl": "Droga przez pola"
+                        }
+                      },
+                      "heading": {
+                        "en": "One under the other",
+                        "ru": "Одно под другим",
+                        "pl": "Jedno pod drugim"
+                      },
+                      "body": {
+                        "en": "<p>A picture beside its words on a wide screen; in a narrow column the picture goes first and the words under it.</p><ul><li>The side is a field.</li><li>So is the tint.</li></ul>",
+                        "ru": "<p>Картинка рядом со своими словами на широком экране; в узкой колонке картинка идёт первой, а слова под ней.</p><ul><li>Сторона — поле блока.</li><li>Подложка — тоже.</li></ul>",
+                        "pl": "<p>Zdjęcie obok swoich słów na szerokim ekranie; w wąskiej kolumnie zdjęcie idzie pierwsze, a słowa pod nim.</p><ul><li>Strona to pole bloku.</li><li>Tło też.</li></ul>"
+                      },
+                      "button_label": {
+                        "en": "A button",
+                        "ru": "Кнопка",
+                        "pl": "Przycisk"
+                      },
+                      "button_url": "/kitchen-sink/blocks",
+                      "side": "end",
+                      "tone": "surface"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Cards",
+            "ru": "Карточки",
+            "pl": "Karty"
+          },
+          "slug": {
+            "en": "cards",
+            "ru": "kartochki",
+            "pl": "karty"
+          },
+          "seo": {
+            "title": {
+              "en": "Cards",
+              "ru": "Карточки",
+              "pl": "Karty"
+            },
+            "description": {
+              "en": "The cards block of the default theme: photos, icons and words alone, two to four across.",
+              "ru": "Блок карточек темы по умолчанию: фото, иконки и одни слова, от двух до четырёх в ряд.",
+              "pl": "Blok kart domyślnego motywu: zdjęcia, ikony i same słowa, od dwóch do czterech w rzędzie."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-cards-photo",
+              "type": "cards",
+              "values": {
+                "heading": {
+                  "en": "Three across, with photos",
+                  "ru": "Три в ряд, с фото",
+                  "pl": "Trzy w rzędzie, ze zdjęciami"
+                },
+                "intro": {
+                  "en": "The whole card is the link; a narrow column takes two, then one.",
+                  "ru": "Вся карточка — ссылка; узкая колонка берёт две, потом одну.",
+                  "pl": "Cała karta jest linkiem; wąska kolumna bierze dwie, potem jedną."
+                },
+                "columns": "3",
+                "pictures": "photo",
+                "cards": [
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-5",
+                      "alt": {
+                        "en": "Planning",
+                        "ru": "Планирование",
+                        "pl": "Planowanie"
+                      }
+                    },
+                    "title": {
+                      "en": "Planning",
+                      "ru": "Планирование",
+                      "pl": "Planowanie"
+                    },
+                    "text": {
+                      "en": "A route and a date before anything moves.",
+                      "ru": "Маршрут и дата — до того, как что-то поедет.",
+                      "pl": "Trasa i data, zanim cokolwiek ruszy."
+                    },
+                    "link_label": {
+                      "en": "Read more",
+                      "ru": "Подробнее",
+                      "pl": "Więcej"
+                    },
+                    "link_url": "/kitchen-sink/blocks/media-text"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-6",
+                      "alt": {
+                        "en": "Delivery",
+                        "ru": "Доставка",
+                        "pl": "Dostawa"
+                      }
+                    },
+                    "title": {
+                      "en": "Delivery",
+                      "ru": "Доставка",
+                      "pl": "Dostawa"
+                    },
+                    "text": {
+                      "en": "Door to door, with one person who answers for it from the first call to the signature.",
+                      "ru": "От двери до двери, и один человек отвечает за неё от первого звонка до подписи.",
+                      "pl": "Od drzwi do drzwi, z jedną osobą odpowiedzialną od pierwszego telefonu do podpisu."
+                    },
+                    "link_label": {
+                      "en": "Read more",
+                      "ru": "Подробнее",
+                      "pl": "Więcej"
+                    },
+                    "link_url": "/kitchen-sink/blocks/cta"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-7",
+                      "alt": {
+                        "en": "Storage",
+                        "ru": "Хранение",
+                        "pl": "Magazynowanie"
+                      }
+                    },
+                    "title": {
+                      "en": "Storage",
+                      "ru": "Хранение",
+                      "pl": "Magazynowanie"
+                    },
+                    "text": {
+                      "en": "For a week or a season.",
+                      "ru": "На неделю или на сезон.",
+                      "pl": "Na tydzień albo na sezon."
+                    },
+                    "link_label": {
+                      "en": "Read more",
+                      "ru": "Подробнее",
+                      "pl": "Więcej"
+                    },
+                    "link_url": "/kitchen-sink/blocks/contact"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-cards-icons",
+              "type": "cards",
+              "values": {
+                "heading": {
+                  "en": "Four across, with icons",
+                  "ru": "Четыре в ряд, с иконками",
+                  "pl": "Cztery w rzędzie, z ikonami"
+                },
+                "columns": "4",
+                "pictures": "icon",
+                "cards": [
+                  {
+                    "image": {
+                      "path": "demo:showcase-logo-1",
+                      "alt": {
+                        "en": "Fast",
+                        "ru": "Быстро",
+                        "pl": "Szybko"
+                      }
+                    },
+                    "title": {
+                      "en": "Fast",
+                      "ru": "Быстро",
+                      "pl": "Szybko"
+                    },
+                    "text": {
+                      "en": "An answer within the hour.",
+                      "ru": "Ответ в течение часа.",
+                      "pl": "Odpowiedź w ciągu godziny."
+                    },
+                    "link_label": "",
+                    "link_url": ""
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-logo-2",
+                      "alt": {
+                        "en": "Careful",
+                        "ru": "Бережно",
+                        "pl": "Starannie"
+                      }
+                    },
+                    "title": {
+                      "en": "Careful",
+                      "ru": "Бережно",
+                      "pl": "Starannie"
+                    },
+                    "text": {
+                      "en": "Packed as if it were ours.",
+                      "ru": "Упаковано, как своё.",
+                      "pl": "Zapakowane jak nasze."
+                    },
+                    "link_label": "",
+                    "link_url": ""
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-logo-3",
+                      "alt": {
+                        "en": "Insured",
+                        "ru": "Застраховано",
+                        "pl": "Ubezpieczone"
+                      }
+                    },
+                    "title": {
+                      "en": "Insured",
+                      "ru": "Застраховано",
+                      "pl": "Ubezpieczone"
+                    },
+                    "text": {
+                      "en": "Every load, every kilometre.",
+                      "ru": "Каждый груз, каждый километр.",
+                      "pl": "Każdy ładunek, każdy kilometr."
+                    },
+                    "link_label": "",
+                    "link_url": ""
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-logo-4",
+                      "alt": {
+                        "en": "Tracked",
+                        "ru": "Отслеживается",
+                        "pl": "Śledzone"
+                      }
+                    },
+                    "title": {
+                      "en": "Tracked",
+                      "ru": "Отслеживается",
+                      "pl": "Śledzone"
+                    },
+                    "text": {
+                      "en": "Where it is, at any moment.",
+                      "ru": "Где он сейчас — в любой момент.",
+                      "pl": "Gdzie jest, w każdej chwili."
+                    },
+                    "link_label": "",
+                    "link_url": ""
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-cards-words",
+              "type": "cards",
+              "values": {
+                "heading": {
+                  "en": "Two across, words alone",
+                  "ru": "Две в ряд, одни слова",
+                  "pl": "Dwie w rzędzie, same słowa"
+                },
+                "columns": "2",
+                "pictures": "photo",
+                "cards": [
+                  {
+                    "title": {
+                      "en": "Questions before an order",
+                      "ru": "Вопросы до заказа",
+                      "pl": "Pytania przed zamówieniem"
+                    },
+                    "text": {
+                      "en": "Prices, dates, what we carry and what we do not.",
+                      "ru": "Цены, сроки, что мы возим и чего не возим.",
+                      "pl": "Ceny, terminy, co wozimy, a czego nie."
+                    },
+                    "link_label": "",
+                    "link_url": ""
+                  },
+                  {
+                    "title": {
+                      "en": "After the delivery",
+                      "ru": "После доставки",
+                      "pl": "Po dostawie"
+                    },
+                    "text": {
+                      "en": "Documents, claims and the return of the pallets.",
+                      "ru": "Документы, претензии и возврат поддонов.",
+                      "pl": "Dokumenty, reklamacje i zwrot palet."
+                    },
+                    "link_label": "",
+                    "link_url": ""
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-cards-narrow",
+              "type": "showcase-column",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same block in a column 20rem wide, the way it stands in a sidebar or a phone: its layout follows the column, not the window.",
+                  "ru": "Тот же блок в колонке шириной 20rem — так он стоит в боковой колонке или на телефоне: раскладка следует за колонкой, а не за окном.",
+                  "pl": "Ten sam blok w kolumnie szerokiej na 20rem — tak stoi w kolumnie bocznej albo na telefonie: układ idzie za kolumną, nie za oknem."
+                },
+                "items": [
+                  {
+                    "key": "showcase-cards-in-column",
+                    "type": "cards",
+                    "values": {
+                      "heading": {
+                        "en": "One a row",
+                        "ru": "По одной в ряд",
+                        "pl": "Po jednej w rzędzie"
+                      },
+                      "columns": "3",
+                      "pictures": "photo",
+                      "cards": [
+                        {
+                          "image": {
+                            "path": "demo:showcase-photo-5",
+                            "alt": {
+                              "en": "Planning",
+                              "ru": "Планирование",
+                              "pl": "Planowanie"
+                            }
+                          },
+                          "title": {
+                            "en": "Planning",
+                            "ru": "Планирование",
+                            "pl": "Planowanie"
+                          },
+                          "text": {
+                            "en": "A route and a date before anything moves.",
+                            "ru": "Маршрут и дата — до того, как что-то поедет.",
+                            "pl": "Trasa i data, zanim cokolwiek ruszy."
+                          },
+                          "link_label": {
+                            "en": "Read more",
+                            "ru": "Подробнее",
+                            "pl": "Więcej"
+                          },
+                          "link_url": "/kitchen-sink/blocks/media-text"
+                        },
+                        {
+                          "image": {
+                            "path": "demo:showcase-photo-6",
+                            "alt": {
+                              "en": "Delivery",
+                              "ru": "Доставка",
+                              "pl": "Dostawa"
+                            }
+                          },
+                          "title": {
+                            "en": "Delivery",
+                            "ru": "Доставка",
+                            "pl": "Dostawa"
+                          },
+                          "text": {
+                            "en": "Door to door, with one person who answers for it from the first call to the signature.",
+                            "ru": "От двери до двери, и один человек отвечает за неё от первого звонка до подписи.",
+                            "pl": "Od drzwi do drzwi, z jedną osobą odpowiedzialną od pierwszego telefonu do podpisu."
+                          },
+                          "link_label": {
+                            "en": "Read more",
+                            "ru": "Подробнее",
+                            "pl": "Więcej"
+                          },
+                          "link_url": "/kitchen-sink/blocks/cta"
+                        },
+                        {
+                          "image": {
+                            "path": "demo:showcase-photo-7",
+                            "alt": {
+                              "en": "Storage",
+                              "ru": "Хранение",
+                              "pl": "Magazynowanie"
+                            }
+                          },
+                          "title": {
+                            "en": "Storage",
+                            "ru": "Хранение",
+                            "pl": "Magazynowanie"
+                          },
+                          "text": {
+                            "en": "For a week or a season.",
+                            "ru": "На неделю или на сезон.",
+                            "pl": "Na tydzień albo na sezon."
+                          },
+                          "link_label": {
+                            "en": "Read more",
+                            "ru": "Подробнее",
+                            "pl": "Więcej"
+                          },
+                          "link_url": "/kitchen-sink/blocks/contact"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Call to action",
+            "ru": "Призыв",
+            "pl": "Wezwanie do działania"
+          },
+          "slug": {
+            "en": "cta",
+            "ru": "prizyv",
+            "pl": "wezwanie"
+          },
+          "seo": {
+            "title": {
+              "en": "Call to action",
+              "ru": "Призыв",
+              "pl": "Wezwanie do działania"
+            },
+            "description": {
+              "en": "The call-to-action band of the default theme on the accent, on a tint and on the page.",
+              "ru": "Полоса призыва темы по умолчанию на акценте, на подложке и на странице.",
+              "pl": "Pas wezwania do działania domyślnego motywu na akcencie, na tle i na stronie."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-cta-accent",
+              "type": "cta",
+              "values": {
+                "heading": {
+                  "en": "Ready when you are",
+                  "ru": "Готовы, когда вы готовы",
+                  "pl": "Gotowi, kiedy Ty jesteś"
+                },
+                "text": {
+                  "en": "One line on what happens after the click: who answers, and how soon.",
+                  "ru": "Одна строка о том, что будет после нажатия: кто ответит и как скоро.",
+                  "pl": "Jedna linijka o tym, co się stanie po kliknięciu: kto odpowie i jak szybko."
+                },
+                "button_label": {
+                  "en": "Get in touch",
+                  "ru": "Связаться",
+                  "pl": "Napisz do nas"
+                },
+                "button_url": "/kitchen-sink/blocks/contact",
+                "second_label": {
+                  "en": "See the prices",
+                  "ru": "Посмотреть цены",
+                  "pl": "Zobacz ceny"
+                },
+                "second_url": "/kitchen-sink/blocks/cards",
+                "tone": "accent"
+              }
+            },
+            {
+              "key": "showcase-cta-surface",
+              "type": "cta",
+              "values": {
+                "heading": {
+                  "en": "On a tint",
+                  "ru": "На подложке",
+                  "pl": "Na tle"
+                },
+                "text": {
+                  "en": "One line on what happens after the click: who answers, and how soon.",
+                  "ru": "Одна строка о том, что будет после нажатия: кто ответит и как скоро.",
+                  "pl": "Jedna linijka o tym, co się stanie po kliknięciu: kto odpowie i jak szybko."
+                },
+                "button_label": {
+                  "en": "Get in touch",
+                  "ru": "Связаться",
+                  "pl": "Napisz do nas"
+                },
+                "button_url": "/kitchen-sink/blocks/contact",
+                "tone": "surface"
+              }
+            },
+            {
+              "key": "showcase-cta-plain",
+              "type": "cta",
+              "values": {
+                "heading": {
+                  "en": "On the page, with a border",
+                  "ru": "На странице, с рамкой",
+                  "pl": "Na stronie, z obramowaniem"
+                },
+                "button_label": {
+                  "en": "Get in touch",
+                  "ru": "Связаться",
+                  "pl": "Napisz do nas"
+                },
+                "button_url": "/kitchen-sink/blocks/contact",
+                "tone": "plain"
+              }
+            },
+            {
+              "key": "showcase-cta-narrow",
+              "type": "showcase-column",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same block in a column 20rem wide, the way it stands in a sidebar or a phone: its layout follows the column, not the window.",
+                  "ru": "Тот же блок в колонке шириной 20rem — так он стоит в боковой колонке или на телефоне: раскладка следует за колонкой, а не за окном.",
+                  "pl": "Ten sam blok w kolumnie szerokiej na 20rem — tak stoi w kolumnie bocznej albo na telefonie: układ idzie za kolumną, nie za oknem."
+                },
+                "items": [
+                  {
+                    "key": "showcase-cta-in-column",
+                    "type": "cta",
+                    "values": {
+                      "heading": {
+                        "en": "The buttons go under the words",
+                        "ru": "Кнопки уходят под слова",
+                        "pl": "Przyciski schodzą pod słowa"
+                      },
+                      "text": {
+                        "en": "One line on what happens after the click: who answers, and how soon.",
+                        "ru": "Одна строка о том, что будет после нажатия: кто ответит и как скоро.",
+                        "pl": "Jedna linijka o tym, co się stanie po kliknięciu: kto odpowie i jak szybko."
+                      },
+                      "button_label": {
+                        "en": "Get in touch",
+                        "ru": "Связаться",
+                        "pl": "Napisz do nas"
+                      },
+                      "button_url": "/kitchen-sink/blocks/contact",
+                      "second_label": {
+                        "en": "Later",
+                        "ru": "Позже",
+                        "pl": "Później"
+                      },
+                      "second_url": "/kitchen-sink/blocks",
+                      "tone": "accent"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Contacts block",
+            "ru": "Блок контактов",
+            "pl": "Blok kontaktów"
+          },
+          "slug": {
+            "en": "contact",
+            "ru": "kontakty",
+            "pl": "kontakt"
+          },
+          "seo": {
+            "title": {
+              "en": "Contacts block",
+              "ru": "Блок контактов",
+              "pl": "Blok kontaktów"
+            },
+            "description": {
+              "en": "The contacts block of the default theme: the contacts of the settings and a form of the Inbox.",
+              "ru": "Блок контактов темы по умолчанию: контакты из настроек и форма модуля заявок.",
+              "pl": "Blok kontaktów domyślnego motywu: kontakty z ustawień i formularz skrzynki."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-contact-both",
+              "type": "contact",
+              "values": {
+                "heading": {
+                  "en": "Write, call or come by",
+                  "ru": "Напишите, позвоните или заходите",
+                  "pl": "Napisz, zadzwoń albo wpadnij"
+                },
+                "text": {
+                  "en": "The numbers, the e-mails, the addresses, the hours and the networks come from Settings › Contacts; the form is the Inbox’s form named contact.",
+                  "ru": "Номера, почта, адреса, часы и сети берутся из Настройки › Контакты; форма — форма заявок с именем contact.",
+                  "pl": "Numery, e-maile, adresy, godziny i sieci pochodzą z Ustawienia › Kontakty; formularz to formularz skrzynki o nazwie contact."
+                },
+                "show_contacts": true,
+                "show_hours": true,
+                "form": "contact",
+                "form_heading": {
+                  "en": "Or leave a message",
+                  "ru": "Или оставьте сообщение",
+                  "pl": "Albo zostaw wiadomość"
+                }
+              }
+            },
+            {
+              "key": "showcase-contact-only",
+              "type": "contact",
+              "values": {
+                "heading": {
+                  "en": "Contacts alone, without the hours",
+                  "ru": "Только контакты, без часов",
+                  "pl": "Same kontakty, bez godzin"
+                },
+                "show_contacts": true,
+                "show_hours": false,
+                "form": ""
+              }
+            },
+            {
+              "key": "showcase-contact-form",
+              "type": "contact",
+              "values": {
+                "heading": {
+                  "en": "The form alone",
+                  "ru": "Только форма",
+                  "pl": "Sam formularz"
+                },
+                "show_contacts": false,
+                "form": "contact"
+              }
+            },
+            {
+              "key": "showcase-contact-narrow",
+              "type": "showcase-column",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same block in a column 20rem wide, the way it stands in a sidebar or a phone: its layout follows the column, not the window.",
+                  "ru": "Тот же блок в колонке шириной 20rem — так он стоит в боковой колонке или на телефоне: раскладка следует за колонкой, а не за окном.",
+                  "pl": "Ten sam blok w kolumnie szerokiej na 20rem — tak stoi w kolumnie bocznej albo na telefonie: układ idzie za kolumną, nie za oknem."
+                },
+                "items": [
+                  {
+                    "key": "showcase-contact-in-column",
+                    "type": "contact",
+                    "values": {
+                      "heading": {
+                        "en": "Contacts",
+                        "ru": "Контакты",
+                        "pl": "Kontakty"
+                      },
+                      "show_contacts": true,
+                      "show_hours": true,
+                      "form": "contact"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
         }
       ]
     },
