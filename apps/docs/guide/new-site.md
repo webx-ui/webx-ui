@@ -229,8 +229,23 @@ rubric and two articles — one dated ahead, so that "Scheduled" is visible. A m
 requirements are not installed is skipped with the reason said out loud rather than silently.
 
 The demo is written in English, Russian and Polish — pages with an address in each, menus, the
-contact form, the settings — and keeps the languages your site publishes in. If your main language
-is not among them it gets the English, so a site in German still has a demo it can read.
+contact form, the settings, the blog, services, events, vacancies, press and recipes — and keeps
+the languages your site publishes in. If your main language is not among them it gets the English,
+so a site in German still has a demo it can read. The FAQ, reviews, team, tariffs and banners are
+in English and Russian so far.
+
+`webx:setup --demo` says so before it installs anything, one line per language the chosen modules
+and theme do not speak:
+
+```
+WARN  The demo is not written in de for: pages, faq, blocks, seo, settings.
+      It seeds in English there, under the default language.
+WARN  The demo is not written in pl for: faq.
+      Those pages show the de words in pl until somebody translates them.
+```
+
+It is a warning and nothing more: the demo seeds all the same. Leave the language out of
+`--locales` for now, or translate those records in the panel.
 
 Removal follows a journal in `storage/app/webx-demo.json`, backwards, and knows nothing else:
 what the demo wrote down is what comes out, and everything you have written since stays. Rows

@@ -140,6 +140,11 @@ particular language is `localizedValue(value, code, fallback)`. A field written 
 had a second language holds a plain string, and both halves read that as the default language's
 value rather than as a mistake.
 
+The demo content (`webx:demo`) is written in English, Russian and Polish and keeps only the
+languages the site has; a language it lacks gets the default language's words, and the default one
+gets the English. `webx:setup` names such a language before it installs — see
+[demo content](./new-site.md#demo-content).
+
 ::: warning A field's languages are not the panel's
 `localized` switches between _content_ languages. The panel being in English has no bearing on
 which languages a page is published in, and an editor routinely writes Ukrainian copy in an

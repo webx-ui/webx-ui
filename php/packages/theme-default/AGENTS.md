@@ -64,7 +64,11 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   languages the site has and gives its default one the English where it is missing. A plain
   string still works — the site's default language. Language switcher › English only stays
   untranslated on purpose: the switcher's answer to a page with no translation. `ThemeDefaultTest`
-  fails on a visitor's word left as one string on a translated page.
+  fails on a visitor's word left as one string on a translated page. The showcase's own types in
+  `demo/blocks/` print no word of their own either — a button, a caption, a card's title are
+  `localized` fields (`:n`, `:count`, `:word` where a number goes), and the test reads their
+  templates as it reads the shell's. Pictures in `demo/media/` carry no text (rule 28): a word in a
+  picture cannot be translated; a logo is a name and stays.
 - **`src/css/`** — `base.css`, `shell.css`, `prose.css`, joined by `theme.css`; every selector
   inside `:where()` (no specificity). **`dist/theme.css`** — the committed build that
   `webx:theme:sync` publishes.
