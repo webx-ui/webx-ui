@@ -1,0 +1,392 @@
+/*
+ * module-events: the base look of the index, a category and an event (THEMES §10.2).
+ *
+ * Not beauty — "decent under any theme": cards in a grid that decides its own columns, the facts
+ * of an event as a framed list, a booking button a finger can hit. The pages stand in the theme's
+ * main column, where prose styles every heading and list; each class here undoes what a listing
+ * does not want from prose. Only site tokens of the engine's vocabulary, one class per rule: a
+ * theme restyles any of it by writing the same class later.
+ *
+ * The header, the categories, the list and the event are direct children of the theme's main
+ * column, which centres them with `margin-inline: auto` at no specificity: a class here sets
+ * `margin-block` only, or the element leaves the column for the left edge of the page.
+ */
+
+.wx-events__header {
+  margin-block-end: var(--site-space-6);
+}
+
+.wx-events__title {
+  margin-block-end: var(--site-space-3);
+  overflow-wrap: anywhere;
+}
+
+.wx-events__picture {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-block: var(--site-space-4);
+  border-radius: var(--site-radius-lg);
+}
+
+.wx-events-lead {
+  max-width: 42rem;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-5);
+}
+
+.wx-events__empty {
+  color: var(--site-color-text-muted);
+}
+
+/* The categories of the index: a row of chips that wraps. */
+.wx-events__nav {
+  margin-block: 0 var(--site-space-6);
+}
+
+.wx-events__nav-list,
+.wx-event__service-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-events__nav-item,
+.wx-event__service {
+  margin: 0;
+}
+
+.wx-events__nav-link,
+.wx-event__service-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: border-color var(--site-duration) var(--site-easing);
+}
+
+.wx-events__nav-link:hover,
+.wx-event__service-link:hover {
+  border-color: var(--site-color-accent);
+  color: var(--site-color-accent);
+}
+
+/* Cards: as many columns as fit at 17rem, one on a phone — the grid decides, not the window. */
+.wx-events {
+  margin-block: 0;
+}
+
+.wx-events__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: var(--site-space-6) var(--site-space-5);
+  margin: 0 0 var(--site-space-6);
+  padding: 0;
+  list-style: none;
+}
+
+.wx-events__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-2);
+  min-width: 0;
+  margin: 0;
+}
+
+.wx-events__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-3);
+  color: var(--site-color-text);
+  text-decoration: none;
+  transition: color var(--site-duration) var(--site-easing);
+}
+
+.wx-events__link:hover {
+  color: var(--site-color-accent);
+}
+
+.wx-events__cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface-muted);
+}
+
+.wx-events__name {
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-4);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+/* When, where and the category: secondary, and the category a link a finger can hit. */
+.wx-events__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--site-space-3);
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+.wx-events__category {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--site-color-text-muted);
+}
+
+.wx-events__category:hover {
+  color: var(--site-color-accent);
+}
+
+/* The pages: squares of 44px, the current one filled. */
+.wx-events__pager {
+  margin-block: var(--site-space-6);
+}
+
+.wx-events__pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-events__page {
+  margin: 0;
+}
+
+.wx-events__page-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  color: var(--site-color-text);
+  text-decoration: none;
+}
+
+.wx-events__page-link:hover {
+  border-color: var(--site-color-accent);
+  color: var(--site-color-accent);
+}
+
+.wx-events__page-link[aria-current='page'] {
+  border-color: var(--site-color-accent);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+}
+
+/* The event: a container, so the facts decide their columns by the article's width. */
+.wx-event {
+  container-type: inline-size;
+  margin-block: 0;
+}
+
+.wx-event__gallery {
+  margin: 0 0 var(--site-space-6);
+}
+
+.wx-event__photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--site-radius-lg);
+}
+
+.wx-event__strip {
+  display: flex;
+  gap: var(--site-space-2);
+  margin: var(--site-space-2) 0 0;
+  padding: 0 0 var(--site-space-1);
+  list-style: none;
+  overflow-x: auto;
+}
+
+.wx-event__strip-item {
+  flex: none;
+  margin: 0;
+}
+
+.wx-event__strip-link {
+  display: block;
+  border-radius: var(--site-radius-sm);
+}
+
+.wx-event__thumb {
+  display: block;
+  width: 7.5rem;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--site-radius-sm);
+}
+
+.wx-event__heading {
+  margin-block-end: var(--site-space-5);
+}
+
+.wx-event__title {
+  margin-block-end: var(--site-space-3);
+  overflow-wrap: anywhere;
+}
+
+/* Over: a label, not a warning — the page is still the report of it. */
+.wx-event__past {
+  display: inline-block;
+  margin: 0 0 var(--site-space-3);
+  padding: var(--site-space-1) var(--site-space-3);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text);
+}
+
+.wx-event__lead {
+  max-width: 42rem;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-5);
+}
+
+/* When, where, how much: terms beside their values, under them in a narrow column. */
+.wx-event__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--site-space-3) var(--site-space-5);
+  margin: 0 0 var(--site-space-6);
+  padding: var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+}
+
+.wx-event__term {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  font-weight: 600;
+}
+
+.wx-event__value {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wx-event__venue,
+.wx-event__address {
+  display: block;
+}
+
+.wx-event__map {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* A later rule than the term and the value, which would otherwise undo it. */
+@container (max-width: 30rem) {
+  .wx-event__facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--site-space-1);
+  }
+
+  .wx-event__value {
+    margin-block-end: var(--site-space-3);
+  }
+}
+
+/* Book first and filled, the calendar file beside it in a frame. */
+.wx-event__booking {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-3);
+  margin: 0 0 var(--site-space-6);
+}
+
+.wx-event__book,
+.wx-event__calendar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-5);
+  border: 1px solid var(--site-color-accent);
+  border-radius: var(--site-radius-md);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color var(--site-duration) var(--site-easing),
+    color var(--site-duration) var(--site-easing);
+}
+
+.wx-event__book {
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+}
+
+.wx-event__book:hover {
+  border-color: var(--site-color-text);
+  background: var(--site-color-text);
+  color: var(--site-color-bg);
+}
+
+.wx-event__calendar {
+  background: var(--site-color-bg);
+  color: var(--site-color-accent);
+}
+
+.wx-event__calendar:hover {
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+}
+
+.wx-event__highlights,
+.wx-event__services {
+  margin-block-start: var(--site-space-7);
+}
+
+.wx-event__section-title {
+  margin-block: 0 var(--site-space-4);
+}
+
+/* What to expect: tinted cards that decide their own columns. */
+.wx-event__highlight-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: var(--site-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-event__highlight {
+  margin: 0;
+  padding: var(--site-space-5);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface-muted);
+}
+
+.wx-event__highlight-title {
+  margin: 0 0 var(--site-space-2);
+  font-size: var(--site-font-size-5);
+}
+
+.wx-event__highlight-text {
+  margin: 0;
+}

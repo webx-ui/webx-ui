@@ -2,15 +2,15 @@
 @if ($when !== '' || $online || $venue !== '' || $address !== '' || $price !== '' || $categories !== [])
     <dl class="wx-event__facts">
         @if ($when !== '')
-            <dt>{{ trans('webx-events::site.when') }}</dt>
-            <dd>{{ $when }}</dd>
+            <dt class="wx-event__term">{{ trans('webx-events::site.when') }}</dt>
+            <dd class="wx-event__value">{{ $when }}</dd>
         @endif
         @if ($online)
-            <dt>{{ trans('webx-events::site.where') }}</dt>
-            <dd>{{ trans('webx-events::site.online') }}</dd>
+            <dt class="wx-event__term">{{ trans('webx-events::site.where') }}</dt>
+            <dd class="wx-event__value">{{ trans('webx-events::site.online') }}</dd>
         @elseif ($venue !== '' || $address !== '')
-            <dt>{{ trans('webx-events::site.where') }}</dt>
-            <dd>
+            <dt class="wx-event__term">{{ trans('webx-events::site.where') }}</dt>
+            <dd class="wx-event__value">
                 @if ($venue !== '')
                     <span class="wx-event__venue">{{ $venue }}</span>
                 @endif
@@ -23,14 +23,14 @@
             </dd>
         @endif
         @if ($price !== '')
-            <dt>{{ trans('webx-events::site.price') }}</dt>
-            <dd>{{ $price }}</dd>
+            <dt class="wx-event__term">{{ trans('webx-events::site.price') }}</dt>
+            <dd class="wx-event__value">{{ $price }}</dd>
         @endif
         @if ($categories !== [])
-            <dt>{{ trans('webx-events::site.categories') }}</dt>
-            <dd>
+            <dt class="wx-event__term">{{ trans('webx-events::site.categories') }}</dt>
+            <dd class="wx-event__value">
                 @foreach ($categories as $category)
-                    <a href="{{ $category['url'] }}">{{ $category['title'] }}</a>@if (! $loop->last), @endif
+                    <a class="wx-event__category" href="{{ $category['url'] }}">{{ $category['title'] }}</a>@if (! $loop->last), @endif
                 @endforeach
             </dd>
         @endif

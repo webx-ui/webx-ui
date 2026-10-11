@@ -2,16 +2,16 @@
      body, and what the list pushes (its styles) has to be pushed by then. --}}
 
 @php(ob_start())
-    <header>
-        <h1>{{ trans('webx-events::site.title') }}</h1>
+    <header class="wx-events__header">
+        <h1 class="wx-events__title">{{ trans('webx-events::site.title') }}</h1>
     </header>
 
     {{-- The categories are pages of their own, each listing its own events to come. --}}
     @if ($categories !== [])
-        <nav aria-label="{{ trans('webx-events::site.categories') }}">
-            <ul>
+        <nav class="wx-events__nav" aria-label="{{ trans('webx-events::site.categories') }}">
+            <ul class="wx-events__nav-list">
                 @foreach ($categories as $category)
-                    <li><a href="{{ $category->url() }}">{{ $category->title }}</a></li>
+                    <li class="wx-events__nav-item"><a class="wx-events__nav-link" href="{{ $category->url() }}">{{ $category->title }}</a></li>
                 @endforeach
             </ul>
         </nav>

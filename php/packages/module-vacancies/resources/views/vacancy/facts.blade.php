@@ -3,8 +3,8 @@
 @if ($place !== '' || $workplace === 'hybrid' || $employment !== [] || $salary !== '' || $valid_through !== '' || $categories !== [])
     <dl class="wx-vacancy__facts">
         @if ($place !== '' || $workplace === 'hybrid')
-            <dt>{{ trans('webx-vacancies::vacancy.where') }}</dt>
-            <dd>
+            <dt class="wx-vacancy__term">{{ trans('webx-vacancies::vacancy.where') }}</dt>
+            <dd class="wx-vacancy__value">
                 @if ($place !== '')
                     <span class="wx-vacancy__place">{{ $place }}</span>
                 @endif
@@ -14,20 +14,20 @@
             </dd>
         @endif
         @if ($employment !== [])
-            <dt>{{ trans('webx-vacancies::vacancy.employment-label') }}</dt>
-            <dd>{{ implode(', ', $employment) }}</dd>
+            <dt class="wx-vacancy__term">{{ trans('webx-vacancies::vacancy.employment-label') }}</dt>
+            <dd class="wx-vacancy__value">{{ implode(', ', $employment) }}</dd>
         @endif
         @if ($salary !== '')
-            <dt>{{ trans('webx-vacancies::vacancy.salary') }}</dt>
-            <dd>{{ $salary }}</dd>
+            <dt class="wx-vacancy__term">{{ trans('webx-vacancies::vacancy.salary') }}</dt>
+            <dd class="wx-vacancy__value">{{ $salary }}</dd>
         @endif
         @if ($valid_through !== '')
-            <dt>{{ trans('webx-vacancies::vacancy.valid-through') }}</dt>
-            <dd>{{ $valid_through }}</dd>
+            <dt class="wx-vacancy__term">{{ trans('webx-vacancies::vacancy.valid-through') }}</dt>
+            <dd class="wx-vacancy__value">{{ $valid_through }}</dd>
         @endif
         @if ($categories !== [])
-            <dt>{{ trans('webx-vacancies::vacancy.categories') }}</dt>
-            <dd>{{ implode(', ', $categories) }}</dd>
+            <dt class="wx-vacancy__term">{{ trans('webx-vacancies::vacancy.categories') }}</dt>
+            <dd class="wx-vacancy__value">{{ implode(', ', $categories) }}</dd>
         @endif
     </dl>
 @endif

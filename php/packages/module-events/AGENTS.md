@@ -38,19 +38,20 @@ photos `webx-ui/module-media`; the languages `webx-ui/localization`; the Service
 
 ## Change it without forking
 
-| You want                             | Do this                                                                                         |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Events inside the site's header      | `'layout' => 'layout'` in `config/webx-events.php` (`<x-layout>`), or `WEBX_EVENTS_LAYOUT`      |
-| A page of your own at `/events`      | `WEBX_EVENTS_INDEX=false`, then a page of `module-pages` with the slug `events`                 |
-| Another first segment                | `WEBX_EVENTS_PREFIX`, then `php artisan webx:routes:rebuild --type=event --type=event-category` |
-| Prices as a number in the markup     | `WEBX_EVENTS_CURRENCY` (`EUR`, …); without it the markup carries no price                       |
-| Another page size                    | `WEBX_EVENTS_PER_PAGE` (24 by default)                                                          |
-| One part of the event page different | `php artisan vendor:publish --tag=webx-events-views`, keep only `event/<part>.blade.php`        |
-| A page printed by another view       | `WEBX_EVENTS_VIEW_INDEX`, `WEBX_EVENTS_VIEW_CATEGORY`, `WEBX_EVENTS_VIEW_EVENT`                 |
-| A field of the project on an event   | a patch: `Screens::extend('events.form', [...])`, printed with `$event->extra('<key>')`         |
-| No visible breadcrumbs               | `WEBX_EVENTS_BREADCRUMBS=false` (the BreadcrumbList in `<head>` is module-seo's and stays)      |
-| Other words in the panel             | `php artisan vendor:publish --tag=webx-events-lang`                                             |
-| A list of events on another page     | `events()` in the template, or a block type that calls it                                       |
+| You want                             | Do this                                                                                                     |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Events inside the site's header      | `'layout' => 'layout'` in `config/webx-events.php` (`<x-layout>`), or `WEBX_EVENTS_LAYOUT`                  |
+| A page of your own at `/events`      | `WEBX_EVENTS_INDEX=false`, then a page of `module-pages` with the slug `events`                             |
+| Another first segment                | `WEBX_EVENTS_PREFIX`, then `php artisan webx:routes:rebuild --type=event --type=event-category`             |
+| Prices as a number in the markup     | `WEBX_EVENTS_CURRENCY` (`EUR`, …); without it the markup carries no price                                   |
+| Another page size                    | `WEBX_EVENTS_PER_PAGE` (24 by default)                                                                      |
+| One part of the event page different | `php artisan vendor:publish --tag=webx-events-views`, keep only `event/<part>.blade.php`                    |
+| A page printed by another view       | `WEBX_EVENTS_VIEW_INDEX`, `WEBX_EVENTS_VIEW_CATEGORY`, `WEBX_EVENTS_VIEW_EVENT`                             |
+| A field of the project on an event   | a patch: `Screens::extend('events.form', [...])`, printed with `$event->extra('<key>')`                     |
+| No visible breadcrumbs               | `WEBX_EVENTS_BREADCRUMBS=false` (the BreadcrumbList in `<head>` is module-seo's and stays)                  |
+| Other words in the panel             | `php artisan vendor:publish --tag=webx-events-lang`                                                         |
+| A list of events on another page     | `events()` in the template, or a block type that calls it                                                   |
+| Another card in every list           | `views/parts/events/card.blade.php` in the theme: the point `events.card`, given `$card`, prints one `<li>` |
 
 The layout component's contract is two slots, `head` and the default one, plus `@stack('head')`
 beside `{{ $head }}`; `php artisan webx:panel --sync` sets `layout` when the site has
@@ -63,6 +64,29 @@ A screen patch addresses nodes by `id`. Event editor: `event`, `when`, `all-day`
 `categories`, `services`, `project-fields`, `seo`, `history`, `versions`. Category editor:
 `content`, `naming`, `title`, `slug`, `is-visible`, `lead`, `presentation`, `cover`,
 `project-fields`, `seo`. Patch a project's fields into `project-fields`.
+
+### Classes
+
+The theme's contract (THEMES §10): the base look `resources/theme/events.css` styles them under
+any theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a breaking change.
+Without a theme the list prints a smaller look of its own inline.
+
+- Index and category: `wx-events__header`, `wx-events__title`, `wx-events__picture`,
+  `wx-events-lead`, `wx-events__nav`, `wx-events__nav-list`, `wx-events__nav-item`,
+  `wx-events__nav-link`.
+- List: `wx-events`, `wx-events__empty`, `wx-events__grid`, `wx-events__card`, `wx-events__link`,
+  `wx-events__cover`, `wx-events__name`, `wx-events__meta`, `wx-events__when`, `wx-events__venue`,
+  `wx-events__category`, `wx-events__pager`, `wx-events__pages`, `wx-events__page`,
+  `wx-events__page-link`.
+- Event: `wx-event`, `wx-event__gallery`, `wx-event__photo`, `wx-event__strip`,
+  `wx-event__strip-item`, `wx-event__strip-link`, `wx-event__thumb`, `wx-event__heading`,
+  `wx-event__title`, `wx-event__past`, `wx-event__lead`, `wx-event__facts`, `wx-event__term`,
+  `wx-event__value`, `wx-event__venue`, `wx-event__address`, `wx-event__map`,
+  `wx-event__category`, `wx-event__booking`, `wx-event__book`, `wx-event__calendar`,
+  `wx-event__description`, `wx-event__highlights`, `wx-event__services`,
+  `wx-event__section-title`, `wx-event__highlight-list`, `wx-event__highlight`,
+  `wx-event__highlight-title`, `wx-event__highlight-text`, `wx-event__service-list`,
+  `wx-event__service`, `wx-event__service-link`.
 
 ## Do not
 

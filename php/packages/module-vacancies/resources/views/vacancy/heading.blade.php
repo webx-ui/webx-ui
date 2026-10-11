@@ -1,5 +1,5 @@
 <header class="wx-vacancy__heading">
-    <h1>{{ $title }}</h1>
+    <h1 class="wx-vacancy__title">{{ $title }}</h1>
     {{-- Still a page when it is closed (decision 4); expired or closed by hand, the reader is told
          the same thing. --}}
     @if ($closed)

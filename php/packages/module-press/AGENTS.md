@@ -55,6 +55,21 @@ A screen patch addresses nodes by `id`: `general`, `outlet`, `logo`, `title`, `s
 `article-published-on`, `article-date-precision`, `article-url`, `article-file`,
 `article-hidden`), `seo`.
 
+### Classes
+
+The theme's contract (THEMES §10): the base look `resources/theme/press.css` styles an outlet's
+page under any theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a
+breaking change. The offered blocks carry their own look under `.b-press-*`.
+
+- Outlet: `wx-press-outlet`, `wx-press-outlet__heading`, `wx-press-outlet__title`,
+  `wx-press-outlet__logo`, `wx-press-outlet__logo-image`, `wx-press-outlet__summary`,
+  `wx-press-outlet__facts`, `wx-press-outlet__count`, `wx-press-outlet__website`,
+  `wx-press-outlet__articles`.
+- Article: `wx-press-article`, `wx-press-article__title`, `wx-press-article__link`,
+  `wx-press-article__pdf`, `wx-press-article__meta`, `wx-press-article__kind`,
+  `wx-press-article__date`, `wx-press-article__excerpt`, `wx-press-article__links`,
+  `wx-press-article__read`, `wx-press-article__file`.
+
 ## Do not
 
 - Do not edit anything in `vendor/webx-ui/module-press` or copy it into the site. The rows above
