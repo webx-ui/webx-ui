@@ -1331,9 +1331,9 @@
           "pl": "Moduły"
         },
         "description": {
-          "en": "What the modules print on a page, in their base look under the default theme: the form of the Inbox, the trail of SEO and the menu component.",
-          "ru": "То, что модули выводят на странице, в их базовом виде под темой по умолчанию: форма заявок, хлебные крошки SEO и компонент меню.",
-          "pl": "To, co moduły wyświetlają na stronie, w ich podstawowym wyglądzie pod domyślnym motywem: formularz skrzynki, okruszki SEO i komponent menu."
+          "en": "What the modules print on a page, in their base look under the default theme: the form of the Inbox, the trail of SEO and the menu component; the pages of the blog, services, events, vacancies and press are their own.",
+          "ru": "То, что модули выводят на странице, в их базовом виде под темой по умолчанию: форма заявок, хлебные крошки SEO и компонент меню; страницы блога, услуг, событий, вакансий и прессы — свои.",
+          "pl": "To, co moduły wyświetlają na stronie, w ich podstawowym wyglądzie pod domyślnym motywem: formularz skrzynki, okruszki SEO i komponent menu; strony bloga, usług, wydarzeń, ofert pracy i prasy są własne."
         }
       },
       "blocks": [
@@ -1347,9 +1347,9 @@
               "pl": "Co przynoszą moduły"
             },
             "body": {
-              "en": "<p>The theme knows no module. Each module with public pages brings its own base look on the tokens of the site and its own classes, and a theme restyles those classes without overriding a view.</p><p>The trail above this text is the SEO module’s. Under this page: the Inbox’s form with every kind of field, in the main column and in a narrow one, and the menu component of the menus module. The blog and the services are their own showcase: on a starter built with them, their pages are at /blog and /services.</p>",
-              "ru": "<p>Тема не знает ни одного модуля. Каждый модуль с публичными страницами приносит свой базовый вид на токенах сайта и свои классы, а тема перекрашивает эти классы, не перекрывая вьюх.</p><p>Цепочка ссылок над этим текстом — модуля SEO. Под этой страницей — форма модуля заявок со всеми видами полей, в основной колонке и в узкой, и компонент модуля меню. Блог и услуги — сами себе витрина: на стартовом сайте, собранном с ними, их страницы — /blog и /services.</p>",
-              "pl": "<p>Motyw nie zna żadnego modułu. Każdy moduł ze stronami publicznymi przynosi własny podstawowy wygląd na tokenach strony i własne klasy, a motyw przemalowuje te klasy bez nadpisywania widoków.</p><p>Okruszki nad tym tekstem pochodzą z modułu SEO. Pod tą stroną: formularz skrzynki z każdym rodzajem pola, w głównej kolumnie i w wąskiej, oraz komponent modułu menu. Blog i usługi same są swoją witryną: na stronie startowej zbudowanej z nimi ich strony są pod /blog i /services.</p>"
+              "en": "<p>The theme knows no module. Each module with public pages brings its own base look on the tokens of the site and its own classes, and a theme restyles those classes without overriding a view.</p><p>The trail above this text is the SEO module’s. Under this page: the Inbox’s form with every kind of field, in the main column and in a narrow one, and the menu component of the menus module. The blog, the services, events, vacancies and press are their own showcase: on a starter built with them, their pages are at /blog, /services, /events, /careers and /press — an outlet of the press has a page of its own.</p>",
+              "ru": "<p>Тема не знает ни одного модуля. Каждый модуль с публичными страницами приносит свой базовый вид на токенах сайта и свои классы, а тема перекрашивает эти классы, не перекрывая вьюх.</p><p>Цепочка ссылок над этим текстом — модуля SEO. Под этой страницей — форма модуля заявок со всеми видами полей, в основной колонке и в узкой, и компонент модуля меню. Блог, услуги, события, вакансии и пресса — сами себе витрина: на стартовом сайте, собранном с ними, их страницы — /blog, /services, /events, /careers и /press, а у каждого издания прессы — своя страница.</p>",
+              "pl": "<p>Motyw nie zna żadnego modułu. Każdy moduł ze stronami publicznymi przynosi własny podstawowy wygląd na tokenach strony i własne klasy, a motyw przemalowuje te klasy bez nadpisywania widoków.</p><p>Okruszki nad tym tekstem pochodzą z modułu SEO. Pod tą stroną: formularz skrzynki z każdym rodzajem pola, w głównej kolumnie i w wąskiej, oraz komponent modułu menu. Blog, usługi, wydarzenia, oferty pracy i prasa same są swoją witryną: na stronie startowej zbudowanej z nimi ich strony są pod /blog, /services, /events, /careers i /press, a każde wydawnictwo prasowe ma własną stronę.</p>"
             }
           }
         }

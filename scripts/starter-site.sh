@@ -48,9 +48,10 @@ SITE="${STARTER_PATH:-$(cd "$MONOREPO/.." && pwd)/webx-starter.local}"
 NAME="$(basename "$SITE")"
 URL="${STARTER_URL:-http://$NAME}"
 MODE=build
-# The modules on top of the default set of a company site, with their demo: the blog and the
-# services have pages of their own that a theme dresses (THEMES §10, TH3.2), and a starter
-# without them would never show those pages.
+# The modules on top of the default set of a company site, with their demo: the blog, the
+# services, events, vacancies and press have pages of their own that a theme dresses (THEMES §10,
+# TH3.2–TH3.3), and a starter without them would never show those pages. The showcase is built
+# with --with=blog,services,events,vacancies,press.
 WITH="${STARTER_WITH:-}"
 for argument in "$@"; do
     case "$argument" in
@@ -272,8 +273,12 @@ else
     ! grep -q '<!--webx-widgets-->' "$home" || fail 'the widgets marker was left on the page'
     note "GET $URL/ — the widgets runtime is loaded"
     paths=(/ru /pl /cms /kitchen-sink)
+    # A module asked for on top answers at its prefix; press's /press is the page its demo seeds.
     case ",$WITH," in *,blog,*) paths+=(/blog) ;; esac
     case ",$WITH," in *,services,*) paths+=(/services) ;; esac
+    case ",$WITH," in *,events,*) paths+=(/events) ;; esac
+    case ",$WITH," in *,vacancies,*) paths+=(/careers) ;; esac
+    case ",$WITH," in *,press,*) paths+=(/press) ;; esac
     for path in "${paths[@]}"; do
         code="$(curl -s -o /dev/null -w '%{http_code}' "$URL$path")"
         [ "$code" = "200" ] || fail "GET $URL$path answered $code"
