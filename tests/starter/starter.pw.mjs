@@ -5222,3 +5222,117 @@ test.describe('module pages in the theme', () => {
     }
   })
 })
+
+test.describe('icons', () => {
+  test('every icon of the sprite draws, from one published file', async ({ page }) => {
+    await page.goto('/kitchen-sink/icons')
+    await still(page)
+    const icons = await page.$$eval('.b-showcase-icons__item', (items) =>
+      items.map((item) => {
+        const use = item.querySelector('.theme-icon use')
+        return {
+          name: item.querySelector('.b-showcase-icons__name').textContent.trim(),
+          href: use?.getAttribute('href') ?? null,
+          // A line has no height (minus), so either side will do.
+          drawn: use ? use.getBBox().width + use.getBBox().height > 0 : false,
+        }
+      }),
+    )
+    expect(icons.length, 'the default set').toBeGreaterThanOrEqual(27)
+    const files = new Set(icons.map((icon) => icon.href?.split('#')[0]))
+    expect(files.size, 'one sprite').toBe(1)
+    const [file] = files
+    expect(file).toMatch(/\/themes\/icons\/[0-9a-f]{12}\/icons\.svg$/)
+    for (const icon of icons) {
+      expect(icon.href, icon.name).toBe(`${file}#${icon.name}`)
+      expect(icon.drawn, `${icon.name} draws`).toBe(true)
+    }
+    const sprite = await page.request.get(file)
+    expect(sprite.status()).toBe(200)
+    expect(sprite.headers()['content-type']).toContain('image/svg+xml')
+  })
+
+  test('an icon is a letter wide on the line, in the colour of the text, and decoration unless named', async ({
+    page,
+  }) => {
+    await page.goto('/kitchen-sink/icons')
+    await still(page)
+    const m = await page.evaluate(() => {
+      const box = (el) => el.getBoundingClientRect()
+      const line = document.querySelector('.b-showcase-icons__line')
+      const icon = line.querySelector('.theme-icon')
+      const font = parseFloat(getComputedStyle(line).fontSize)
+      const sizes = [...document.querySelectorAll('.b-showcase-icons__sizes .theme-icon')]
+      return {
+        font,
+        width: box(icon).width,
+        height: box(icon).height,
+        // The icon sits inside the line box of the words around it.
+        inside: box(icon).top >= box(line).top - 1 && box(icon).bottom <= box(line).bottom + 1,
+        colour: getComputedStyle(icon).color === getComputedStyle(line).color,
+        sizes: sizes.map((s) => Math.round((box(s).width / font) * 4) / 4),
+        named: sizes.map((s) => [
+          s.getAttribute('role'),
+          s.getAttribute('aria-label'),
+          s.getAttribute('aria-hidden'),
+        ]),
+      }
+    })
+    expect(Math.abs(m.width - m.font)).toBeLessThanOrEqual(0.5)
+    expect(Math.abs(m.height - m.font)).toBeLessThanOrEqual(0.5)
+    expect(m.inside).toBe(true)
+    expect(m.colour).toBe(true)
+    expect(m.sizes).toEqual([1, 1.5, 2, 3])
+    expect(m.named.slice(0, 3)).toEqual([
+      [null, null, 'true'],
+      [null, null, 'true'],
+      [null, null, 'true'],
+    ])
+    expect(m.named[3][0]).toBe('img')
+    expect(m.named[3][1]).toBeTruthy()
+    expect(m.named[3][2]).toBeNull()
+  })
+
+  test('a preset repaints the icons with the words', async ({ page }) => {
+    await page.goto('/kitchen-sink/blocks/contact')
+    await still(page)
+    const colours = async () =>
+      page.evaluate(() => ({
+        label: getComputedStyle(document.querySelector('.b-contact__label .theme-icon')).color,
+        accent: (() => {
+          const probe = document.createElement('span')
+          probe.style.color = 'var(--site-color-accent)'
+          document.body.append(probe)
+          const colour = getComputedStyle(probe).color
+          probe.remove()
+          return colour
+        })(),
+      }))
+    const before = await colours()
+    expect(before.label, 'the contacts block draws its labels in the accent').toBe(before.accent)
+    await paint(page, 'night')
+    const after = await colours()
+    expect(after.label).toBe(after.accent)
+    expect(after.label).not.toBe(before.label)
+  })
+
+  test('the labels of the contacts block carry their icon on the middle of the line', async ({
+    page,
+  }) => {
+    await page.goto('/kitchen-sink/blocks/contact')
+    await still(page)
+    const labels = await page.$$eval('.b-contact__label', (all) =>
+      all.map((label) => {
+        const icon = label.querySelector('.theme-icon')
+        const a = icon?.getBoundingClientRect()
+        const b = label.getBoundingClientRect()
+        return icon ? Math.abs(a.top + a.height / 2 - (b.top + b.height / 2)) : null
+      }),
+    )
+    expect(labels.length).toBeGreaterThan(0)
+    for (const offset of labels) {
+      expect(offset, 'an icon in every label').not.toBeNull()
+      expect(offset).toBeLessThanOrEqual(2)
+    }
+  })
+})
