@@ -48,7 +48,9 @@ their guides when the question is about one of those.
   the same `StrayValues` that `webx:blocks:prune` runs; a block of an unknown type is never
   touched. With `webx-ui/themes` installed: the sync step `Themes\LayerSync` — `webx:theme:sync`
   creates and updates the block types of the theme layers, marking each with `theme_source` (the
-  layer) and `theme_hash`; a slug whose `theme_source` is empty is the site's and is refused.
+  layer) and `theme_hash`; a slug whose `theme_source` is empty is the site's and is refused —
+  except the demo's `hero`/`text`/… left exactly as seeded, which `--adopt=<slug>` hands to the
+  theme. The demo never seeds a slug the theme layers carry (theme-default's `hero`, `text`).
 
 ## Change it without forking
 

@@ -114,13 +114,40 @@ add fields but keeps every field below with the same type, or the content filled
 type is lost. `php artisan webx:theme:sync` puts the resulting set on the site, and is run by
 `webx:setup` and by `composer update` (the site's `post-update-cmd`):
 
-| What the site has                              | What sync does                                                 |
-| ---------------------------------------------- | -------------------------------------------------------------- |
-| no type by that slug                           | creates it from the layer and publishes it                     |
-| the theme's type, not edited here since        | publishes a new version from the file; the same file — nothing |
-| the theme's type, edited in the panel since    | keeps the edit and says so; `--force` overwrites it            |
-| a type of its own (or a module's) by that slug | refuses: taking it over would overwrite somebody's work        |
-| a type a layer stopped carrying                | keeps it — pages may stand on it                               |
+| What the site has                               | What sync does                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------- |
+| no type by that slug                            | creates it from the layer and publishes it                     |
+| the theme's type, not edited here since         | publishes a new version from the file; the same file — nothing |
+| the theme's type, edited in the panel since     | keeps the edit and says so; `--force` overwrites it            |
+| a type of its own (or a module's) by that slug  | refuses: taking it over would overwrite somebody's work        |
+| the blocks demo's type, exactly as it seeded it | refuses and says so; `--adopt=<slug>` hands it to the theme    |
+| a type a layer stopped carrying                 | keeps it — pages may stand on it                               |
+
+The blocks demo does not seed a slug the theme carries, so on a new site the theme's `hero` and
+`text` are the ones that stand. A site that got the demo before its theme carried them hears it
+from sync — «It is the blocks demo's hero, unchanged» — and `php artisan webx:theme:sync
+--adopt=hero,text` gives them to the theme: a new version from the theme's file, the demo's in the
+history, the pages on them keeping their content. Only a copy nobody changed is adopted; anything
+else under the slug stays the site's.
+
+### The six blocks of the default theme
+
+`webx-ui/theme-default` brings the primitives a company page is built of — the same on every new
+site, restyled by the tokens, overridden by slug:
+
+| Block        | What                                                                           | Variants                                                                   |
+| ------------ | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| `hero`       | a headline, a line under it, one or two buttons                                | page, tint, accent, over a picture; left or centre; column or edge to edge |
+| `text`       | prose in the theme's typography — headings, lists, quotes, tables              | a reading column or the whole column                                       |
+| `media-text` | a picture beside a heading, a text and a button                                | picture left or right; page or tint                                        |
+| `cards`      | a grid of cards — a photo or an icon, a title, a text, the card as a link      | two, three or four across at most                                          |
+| `cta`        | a band asking for one thing, with one or two buttons                           | accent, tint, page with a border                                           |
+| `contact`    | the contacts of Settings › Contacts and a form of the Inbox, named by its slug | contacts, a form, or both                                                  |
+
+Every one lays itself out by its container: in a narrow column the cards go one a row and the
+picture of `media-text` goes above its words, whatever the window. Their pages, every variant and
+a narrow column each, are on the starter site under Kitchen sink › Blocks. Another look of one of
+them is the same slug in `theme/blocks/` with every field kept — not a `hero-2`.
 
 A type whose CSS breaks [the tokens rule](#css-knows-only-tokens) is refused by sync, not just
 warned of — `webx:theme:check` lists the same findings first. The usual path of a site's own block:

@@ -28,12 +28,29 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   `site-footer__inner|nav|link|copy`, `site-error`, `site-error__code|home`, `site-prose` (prose typography outside `<main>`, and
   the muted colours of quotes, captions and `small` inside a block, which otherwise keep the
   block's own colour).
+- **`blocks/`** — the six block types every site with this theme gets from `webx:theme:sync`
+  (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only:
+  - `hero` — `title`, `subtitle`, two buttons (`button_*`, `second_*`), `tone`
+    `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`;
+  - `text` — `heading`, `body` (rich text, under `site-prose`; a body of plain lines prints as
+    paragraphs), `width` `narrow|wide`;
+  - `media-text` — `image`, `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
+  - `cards` — `heading`, `intro`, `columns` `2|3|4` (at most; the container decides), `pictures`
+    `photo|icon`, repeater `cards` (`image`, `title`, `text`, `link_label`, `link_url`: the
+    whole card is the link);
+  - `cta` — `heading`, `text`, two buttons, `tone` `accent|surface|plain`;
+  - `contact` — `heading`, `text`, `show_contacts`/`show_hours` (Settings › Contacts through
+    `contacts()` and the phones, hours and socials widgets), `form` (an Inbox form's slug) and
+    `form_heading`; labels `theme::theme.blocks.contact.*`.
+    Classes are BEM under `b-<slug>` (`b-hero__title`, `b-cards__card`, `b-cta__actions` …).
 - **`demo/pages/`** — the showcase ("Kitchen sink" and the pages under it), seeded by
-  `webx:demo` beside the pages demo and removed with it. Its blocks use the demo block types
-  (`hero`, `text`, `columns`), the showcase's own in `demo/blocks/` (what no real block shows) and
+  `webx:demo` beside the pages demo and removed with it. Its blocks use the six above, the
+  `columns` of the module-blocks demo, the showcase's own in `demo/blocks/` (what no real block
+  shows — `showcase-column` is a 20rem column to put a block in) and
   the `gallery`, `logos`, `video`, `map`, `counters`, `countdown`, `compare` and `toc` blocks of `webx-ui/widgets`; their pictures are `demo/media/`, put in
   the library by the media demo and named in a page as `"path": "demo:<file name>"`. Nothing
-  under `demo/` is published on a site. A page per widget under "Kitchen sink": Header and menu,
+  under `demo/` is published on a site. Kitchen sink › Blocks: a page per block above — every
+  variant, then the block in a narrow column. A page per widget under "Kitchen sink": Header and menu,
   Cookie consent, Dropdown and form in a dialog, Contacts, Language switcher, Slider, Lightbox,
   Video, Map, Page tools, Background video, Counters and countdown, Before and after, Table of contents, Show more, Notice bar (with Same words and New words under it), Zoom — every variant, a narrow column, what to try; the place to look before changing one.
   Written in English, Russian and Polish: a page's `title`, `slug` and SEO card, and every
@@ -48,16 +65,17 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 
 ## Change it without forking
 
-| You want                              | Do this                                                     |
-| ------------------------------------- | ----------------------------------------------------------- |
-| Another accent, font, radius, spacing | `theme/tokens.json` → `defaults`                            |
-| Another palette to switch to          | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`        |
-| Restyle the header, footer or prose   | `theme/src/css/theme.css`, on the `site-*` classes above    |
-| Other markup in the header or footer  | `theme/views/components/header.blade.php` (or `footer`)     |
-| A different document                  | `theme/views/components/layout.blade.php`, copied from here |
-| A section of a page full width        | class `site-bleed` on the direct child of `<main>`          |
-| Prose typography outside `<main>`     | class `site-prose` on the wrapper                           |
-| The header and footer as blocks       | arrange the `header`/`footer` regions in the panel; no code |
+| You want                              | Do this                                                                                        |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Another accent, font, radius, spacing | `theme/tokens.json` → `defaults`                                                               |
+| Another palette to switch to          | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`                                           |
+| Restyle the header, footer or prose   | `theme/src/css/theme.css`, on the `site-*` classes above                                       |
+| Other markup in the header or footer  | `theme/views/components/header.blade.php` (or `footer`)                                        |
+| A different document                  | `theme/views/components/layout.blade.php`, copied from here                                    |
+| Another look of one of the six blocks | `theme/blocks/<slug>.json` by the same slug, every field kept with its type; `webx:theme:sync` |
+| A section of a page full width        | class `site-bleed` on the direct child of `<main>`                                             |
+| Prose typography outside `<main>`     | class `site-prose` on the wrapper                                                              |
+| The header and footer as blocks       | arrange the `header`/`footer` regions in the panel; no code                                    |
 
 ## Do not
 
@@ -70,6 +88,8 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 - Do not write a literal colour, a font name or `var(--site-x, fallback)` in CSS; do not use
   `@media` for width — `@container`.
 - Do not raise specificity or add `!important` to beat this theme: its rules have none.
+- Do not make a new block with a similar name for another look of one of the six (`hero-2`):
+  override the slug, so the pages already on it change with it.
 
 ## Check your work
 
