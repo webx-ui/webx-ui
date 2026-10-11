@@ -93,6 +93,9 @@ class PagesServiceProvider extends ServiceProvider
             handler: PageHandler::class,
             acceptsTail: false,
             onConflict: OnConflict::Fail,
+            // A page is part of how the site is laid out: read in the default language under the
+            // chosen prefix, it beats being sent to the home page (ROUTING §8.7).
+            showsUntranslated: true,
         ));
     }
 

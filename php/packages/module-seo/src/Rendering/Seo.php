@@ -6,12 +6,14 @@ namespace WebxUi\Seo\Rendering;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\View\Factory as ViewFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Resolution;
+use WebxUi\Routing\Untranslated;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Contracts\HasOpenGraph;
 use WebxUi\Seo\Contracts\HasStructuredData;
@@ -93,6 +95,8 @@ final class Seo
             jsonLd: $data->jsonLd,
             images: array_values(array_unique($images)),
         );
+
+        $data = $this->untranslated($data, $subject, $locale ?? $this->locale());
 
         return $this->finish($data, $url, $subject, $locale, $titled instanceof FallbackSource);
     }
@@ -457,6 +461,23 @@ final class Seo
         $request = app()->bound('request') ? app('request') : null;
 
         return $request instanceof Request ? $request : null;
+    }
+
+    /**
+     * An entity shown in a language it has no translation in (ROUTING §8.7) is the original's
+     * text at a second address: closed to the index, its canonical the original — over the card
+     * and the rules, which were written for the original. Asked of the entity and the language
+     * rather than of the request, so that `/test-url` gets the same answer as the page.
+     */
+    private function untranslated(SeoData $data, ?object $subject, string $locale): SeoData
+    {
+        if (! $subject instanceof Model) {
+            return $data;
+        }
+
+        $original = app(Untranslated::class)->original($subject, $locale);
+
+        return $original === null ? $data : $data->with(canonical: self::root().$original, robots: 'noindex, follow');
     }
 
     /**

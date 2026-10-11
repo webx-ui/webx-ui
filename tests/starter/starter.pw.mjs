@@ -861,9 +861,13 @@ test.describe('language switcher', () => {
     expect(back.find((l) => l.current === 'page').hreflang).toBe('pl')
   })
 
-  test('leads to the home page of a language without a translation, and marks it', async ({
-    page,
-  }) => {
+  // ROUTING §8.7: a page with no translation stays a page — the chosen language's frame around
+  // the default language's text, closed to the index and pointing at the original.
+  test('stays on the same page in a language without a translation', async ({ page }) => {
+    const original = await (await page.request.get(PATH)).text()
+    const h1 = (html) => html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '').trim()
+    expect(h1(original), 'the original has no heading to compare').toMatch(/\S/)
+
     await page.goto(PATH)
     const all = await links(header(page))
     expect(all.find((l) => l.hreflang === 'en')).toMatchObject({
@@ -871,6 +875,35 @@ test.describe('language switcher', () => {
       current: 'page',
       fallback: false,
     })
+    for (const code of ['ru', 'pl']) {
+      const link = all.find((l) => l.hreflang === code)
+      expect(link).toMatchObject({ path: `/${code}${PATH}`, fallback: false, current: null, title: null })
+      await answers(page, link)
+
+      const html = await (await page.request.get(link.path)).text()
+      expect(h1(html), `${link.path} is not the original's text`).toBe(h1(original))
+      expect(html).toContain('<meta name="robots" content="noindex, follow">')
+      expect(
+        new URL(html.match(/<link rel="canonical" href="([^"]+)">/)?.[1] ?? 'http://x/none').pathname,
+        `${link.path} does not point at the original`,
+      ).toBe(PATH)
+      expect(html, `${link.path} names alternates`).not.toContain('hreflang="')
+    }
+
+    // On the untranslated page the switcher marks its own language and leads back.
+    await page.goto(`/pl${PATH}`)
+    const back = await links(header(page))
+    expect(back.find((l) => l.current === 'page').hreflang).toBe('pl')
+    expect(back.find((l) => l.hreflang === 'en')).toMatchObject({ path: PATH, fallback: false })
+    expect(back.find((l) => l.hreflang === 'ru')).toMatchObject({ path: `/ru${PATH}`, fallback: false })
+  })
+
+  test('leads to the home page of each language from a page that does not exist, and marks it', async ({
+    page,
+  }) => {
+    const response = await page.goto('/no-such-page')
+    expect(response.status()).toBe(404)
+    const all = await links(header(page))
     for (const code of ['ru', 'pl']) {
       const link = all.find((l) => l.hreflang === code)
       expect(link).toMatchObject({ path: `/${code}`, fallback: true, current: null })

@@ -229,6 +229,39 @@ final class EntityHeadTest extends TestCase
     }
 
     #[Test]
+    public function an_entity_shown_untranslated_is_closed_and_names_the_original(): void
+    {
+        // ROUTING §8.7: a type that shows its untranslated entities under the other prefix.
+        app(RouteTypes::class)->register(new RouteType(type: 'crumbed', model: CrumbedEntity::class, formatter: Slug::class, showsUntranslated: true));
+        $entity = $this->entity(['ru' => 'Только по-русски'], ['ru' => 'only-ru']);
+        // An editor's card for the original must not open the copy or point it at itself.
+        SeoUrl::query()->create(['match_type' => UrlMatcher::EXACT, 'pattern' => '/uk/only-ru', 'robots' => 'index, follow', 'canonical' => 'http://localhost/uk/only-ru']);
+
+        $head = $this->headOf($entity, '/uk/only-ru', 'uk');
+
+        $this->assertStringContainsString('<meta name="robots" content="noindex, follow">', $head);
+        $this->assertStringContainsString('<link rel="canonical" href="http://localhost/only-ru">', $head);
+        $this->assertSame([], $this->alternates($head));
+
+        // The original is untouched: open, its own canonical, no Ukrainian alternate to name.
+        $original = $this->headOf($entity);
+        $this->assertStringNotContainsString('noindex', $original);
+        $this->assertStringContainsString('<link rel="canonical" href="http://localhost/only-ru">', $original);
+        $this->assertSame([], $this->alternates($original));
+
+        // And the map has no Ukrainian line for it.
+        $this->assertStringNotContainsString('/uk/only-ru', (string) $this->get('/sitemap-crumbed.xml')->getContent());
+    }
+
+    #[Test]
+    public function an_entity_whose_type_did_not_ask_is_not_marked_untranslated(): void
+    {
+        $entity = $this->entity(['ru' => 'Только по-русски'], ['ru' => 'only-ru']);
+
+        $this->assertStringNotContainsString('noindex', $this->headOf($entity, '/uk/only-ru', 'uk'));
+    }
+
+    #[Test]
     public function with_the_language_in_a_header_there_are_no_alternates_at_all(): void
     {
         config()->set('webx-localization.strategy', 'header');

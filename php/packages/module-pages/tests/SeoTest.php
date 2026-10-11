@@ -44,6 +44,27 @@ final class SeoTest extends TestCase
     }
 
     #[Test]
+    public function an_untranslated_page_is_shown_under_the_other_prefix_closed_to_the_index(): void
+    {
+        $this->useLocales('en', 'uk');
+        $page = $this->page('about');
+        $this->save($page, ['title' => ['en' => 'About us']]);
+
+        // ROUTING §8.7: no Ukrainian slug, so no Ukrainian row — and yet the page, in English.
+        $response = $this->get('/uk/about');
+
+        $response->assertOk();
+        $response->assertSee('<title>About us</title>', false);
+        $response->assertSee('<meta name="robots" content="noindex, follow">', false);
+        $response->assertSee('<link rel="canonical" href="http://localhost/about">', false);
+        $response->assertDontSee('hreflang', false);
+
+        // The original stays what it was.
+        $this->get('/about')->assertOk()->assertDontSee('noindex', false);
+        $this->assertSame(['en'], $page->routes()->pluck('locale')->all());
+    }
+
+    #[Test]
     public function the_card_is_not_part_of_the_draft(): void
     {
         $page = $this->page('about');
