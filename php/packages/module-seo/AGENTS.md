@@ -19,7 +19,10 @@ their guides when the question is about one of those.
   `seo_meta` through the `HasSeo` trait), `FallbackSource` (30, the entity's own name, lead and
   picture through `HasSeoFallback::seoFallback()`, or `@webxSeo(fallback: [...])` from a view),
   `DefaultsSource` (10, `settings('seo.*')`). The title template applies to every title except one
-  that already names the site; a view never prints `<title>` of its own.
+  that already names the site; a view never prints `<title>` of its own. An entity shown in a
+  language it has no translation in (`webx-ui/routing`'s `Untranslated`, a page under `/pl/…`) is
+  `noindex, follow` with its canonical on the original, over the card and the rules; it has no
+  `hreflang` and no line in the sitemap.
 - **Social cards** (`Rendering\SocialTags`): every `og:*`, `article:*` and `twitter:*` line is
   derived from the merged values — never typed. `og:type` from `Contracts\HasOpenGraph` (blog
   articles and recipes are `article`, the rest `website`); `og:image` is the first source picture

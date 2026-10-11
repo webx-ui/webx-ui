@@ -564,6 +564,13 @@ php vendor/bin/testbench package:discover` из `php/`, убрать `bootstrap/
   пути он ищет `vendor/autoload.php` внутри самого testbench. **Новый пакет в `php/` — это
   `composer update webx-ui/<пакет>`**, после которого манифест прогревается заново: до этого тест
   отвечает «Class …ServiceProvider not found».
+- **`instanceof` с неимпортированным классом — всегда `false`, молча.** `$subject instanceof
+Model` в файле без `use Illuminate\Database\Eloquent\Model` сравнивает с несуществующим
+  `<namespace файла>\Model`: PHP не ругается, тест просто видит, что новая ветка не выполнилась, —
+  похоже на то, что не сработало условие внутри (видимость, язык, тип). Ловит это только
+  PHPStan («Class … not found»), а он в гейте после тестов. Проверка —
+  `grep -n "^use .*\\\\Model;" <файл>` до отладки условий; новый `instanceof` в чужом файле —
+  повод сразу посмотреть его `use`.
 - **`phpstan analyse packages/<пакет>` падает на конфигах, которых никто не трогал.** Путь в
   командной строке заменяет `paths` из `phpstan.neon.dist`, а вместе с ними и то, как Larastan
   отличает каталог `config/` пакета, — и каждый `env()` в `config/*.php` становится ошибкой

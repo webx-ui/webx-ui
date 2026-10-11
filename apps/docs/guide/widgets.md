@@ -142,8 +142,12 @@ is empty.
 ## Language switcher
 
 `<x-webx-language-switcher />` names each language in itself and leads to the **same page** in it —
-the addresses come from the routing registry, like `hreflang`. A page not translated yet leads to
-that language's home page and is marked `is-fallback`. A one-language site prints nothing.
+the addresses come from the routing registry, like `hreflang`. A page not translated yet stays a
+page: the link leads to the same path under that language's prefix, where the page is shown in the
+default language inside the chosen language's header and footer, closed to the index. Where that
+is not possible — a 404, an entity hidden in the language, a type that does not show its
+untranslated entities, such as blog articles — the link leads to that language's home page and is
+marked `is-fallback`. A one-language site prints nothing.
 
 ## Slider and lightbox
 

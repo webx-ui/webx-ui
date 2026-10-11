@@ -10,7 +10,10 @@ from scratch: the tree is `webx-ui/nested-set`, the address `webx-ui/routing`, t
 ## What it owns
 
 - **Table** `pages` (`WebxUi\Pages\Models\Page`); the migration also creates the home page. `title`
-  and `slug` are translatable: a page without a slug in a language has no address there.
+  and `slug` are translatable: a page without a slug in a language has no address of its own there,
+  and is shown under that language's prefix at its default-language path (`showsUntranslated`):
+  the header and footer in that language, the page in the default one, `noindex` with its
+  canonical on the original. No notice is printed; translate the slug to give it its own address.
 - **Address type** `page` in the routing registry, formatter `TreePath`, `OnConflict::Fail` — a
   taken address is an error on the slug field, never a quiet `about-2`. Moving a branch rewrites
   every address below and leaves a 301 alias on each old one.
