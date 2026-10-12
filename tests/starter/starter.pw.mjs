@@ -6898,6 +6898,255 @@ test.describe('inbox on the form engine', () => {
   })
 })
 
+test.describe('suggestions', () => {
+  // WIDGETS §18, W6.5: Kitchen sink › Forms › Suggestions — a search box asking the showcase's
+  // door, which answers HTML from the block's goods; a city field inside a delivery form.
+  const PATH = '/kitchen-sink/forms/suggestions'
+  const SEARCH = '.b-showcase-suggest[data-mode="search"]'
+  const FIELD = '.b-showcase-suggest[data-mode="field"]'
+  const DOOR = '**/webx/widgets/showcase/suggest?**'
+
+  const aria = (page, scope) =>
+    page.evaluate((scope) => {
+      const input = document.querySelector(`${scope} .webx-suggest__input`)
+      const panel = document.getElementById(input.getAttribute('aria-controls'))
+      const active = document.getElementById(input.getAttribute('aria-activedescendant') || '')
+      const group = panel.querySelector('[role="group"]')
+      return {
+        role: input.getAttribute('role'),
+        expanded: input.getAttribute('aria-expanded'),
+        autocomplete: input.getAttribute('aria-autocomplete'),
+        listbox: panel.getAttribute('role'),
+        options: [...panel.querySelectorAll('[role="option"]')].map((o) => o.textContent.trim()),
+        selected: [...panel.querySelectorAll('[aria-selected="true"]')].map((o) => o.id),
+        active: active?.id ?? null,
+        activeText: active?.textContent.trim() ?? null,
+        group: group
+          ? document.getElementById(group.getAttribute('aria-labelledby'))?.textContent
+          : null,
+        status: document.querySelector(`${scope} .webx-suggest__status`).textContent,
+        focused: document.activeElement === input,
+      }
+    }, scope)
+
+  test('the keyboard alone: the combobox opens, walks, jumps, closes and takes an option', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    await input.focus()
+    await page.keyboard.type('oak')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+
+    let a = await aria(page, SEARCH)
+    expect(a.role).toBe('combobox')
+    expect(a.autocomplete).toBe('list')
+    expect(a.expanded).toBe('true')
+    expect(a.listbox).toBe('listbox')
+    expect(a.group).toBe('Products (8)')
+    // Five cards with their price, and «see all» — every one an option.
+    expect(a.options).toHaveLength(6)
+    expect(a.options[0]).toContain('€')
+    expect(a.options[5]).toBe('See all results: 8')
+    expect(a.status).toBe('Suggestions: 6')
+    expect(a.active).toBeNull()
+
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('ArrowDown')
+    a = await aria(page, SEARCH)
+    expect(a.selected).toEqual([a.active])
+    expect(a.activeText).toContain('Oak desk 160 cm')
+    expect(a.focused, 'the focus stays in the field').toBe(true)
+    await page.keyboard.press('End')
+    expect((await aria(page, SEARCH)).activeText).toBe('See all results: 8')
+    await page.keyboard.press('Home')
+    expect((await aria(page, SEARCH)).activeText).toContain('Oak desk 120 cm')
+
+    await page.keyboard.press('Escape')
+    a = await aria(page, SEARCH)
+    expect(a.expanded).toBe('false')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeHidden()
+    await expect(input).toHaveValue('oak')
+
+    await page.keyboard.press('ArrowDown')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+    await page.waitForURL(/\?q=Oak%20desk%20120%20cm/)
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__item`)).toHaveCount(1)
+  })
+
+  test('a stale question is cancelled and its late answer dropped', async ({ page }) => {
+    await page.goto(PATH)
+    await still(page)
+    const asked = []
+    const failed = []
+    page.on('requestfailed', (request) => failed.push(new URL(request.url()).searchParams.get('q')))
+    await page.route(DOOR, async (route) => {
+      const q = new URL(route.request().url()).searchParams.get('q')
+      asked.push(q)
+      // The first question answers slowly: the next one overtakes it.
+      if (q === 'oak') await new Promise((resolve) => setTimeout(resolve, 1500))
+      try {
+        await route.continue()
+      } catch {
+        // Cancelled by the page while it waited.
+      }
+    })
+
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    await input.focus()
+    await page.keyboard.type('oak')
+    await expect.poll(() => asked).toEqual(['oak'])
+    await input.fill('')
+    await page.keyboard.type('lamp')
+    await expect(page.locator(`${SEARCH} [data-webx-heading]`)).toHaveText('Products (4)')
+    await page.waitForTimeout(1800)
+
+    expect(asked).toEqual(['oak', 'lamp'])
+    expect(failed, 'the stale request aborted').toContain('oak')
+    await expect(page.locator(`${SEARCH} [data-webx-heading]`)).toHaveText('Products (4)')
+    expect(await page.locator(`${SEARCH} .webx-suggest__panel`).textContent()).not.toContain('Oak')
+  })
+
+  test('nothing found is said, and a screen reader hears it', async ({ page }) => {
+    await page.goto(PATH)
+    await still(page)
+    await page.locator(`${SEARCH} .webx-suggest__input`).focus()
+    await page.keyboard.type('zebra')
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__nothing`)).toHaveText(
+      'Nothing found for “zebra”.',
+    )
+    expect((await aria(page, SEARCH)).status).toBe('Nothing found')
+    expect((await aria(page, SEARCH)).options).toEqual([])
+  })
+
+  test('recent searches are kept in the browser, shown in an empty field and cleared', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    await input.focus()
+    await page.keyboard.type('lamp')
+    await page.keyboard.press('Enter')
+    await page.waitForURL(/\?q=lamp/)
+    await still(page)
+
+    await input.fill('')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+    const a = await aria(page, SEARCH)
+    expect(a.group).toBe('Recent searches')
+    expect(a.options).toEqual(['lamp', 'Clear recent searches'])
+
+    await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('Enter')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeHidden()
+    expect(
+      await page.evaluate(() =>
+        Object.keys(localStorage).filter((k) => k.startsWith('webx-suggest:')),
+      ),
+    ).toEqual([])
+  })
+
+  test('at 360 the panel stays inside the screen and every target is 44px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 })
+    await page.goto(PATH)
+    await still(page)
+    await page.locator(`${SEARCH} .webx-suggest__input`).focus()
+    await page.keyboard.type('o')
+    await page.keyboard.type('a')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+
+    const m = await page.evaluate((scope) => {
+      const root = document.querySelector(scope)
+      const panel = root.querySelector('.webx-suggest__panel').getBoundingClientRect()
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        width: document.documentElement.clientWidth,
+        height: window.visualViewport.height,
+        panel: { left: panel.left, right: panel.right, bottom: panel.bottom },
+        input: root.querySelector('.webx-suggest__input').getBoundingClientRect().height,
+        submit: root.querySelector('.webx-suggest__submit').getBoundingClientRect(),
+        options: [...root.querySelectorAll('[role="option"]')].map(
+          (o) => o.getBoundingClientRect().height,
+        ),
+      }
+    }, SEARCH)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    expect(m.panel.left).toBeGreaterThanOrEqual(0)
+    expect(m.panel.right).toBeLessThanOrEqual(m.width)
+    expect(m.panel.bottom, 'the panel ends above the bottom of the screen').toBeLessThanOrEqual(
+      m.height,
+    )
+    expect(m.input).toBeGreaterThanOrEqual(44)
+    expect(m.submit.height).toBeGreaterThanOrEqual(44)
+    expect(m.submit.width).toBeGreaterThanOrEqual(44)
+    expect(m.options.length).toBeGreaterThan(0)
+    for (const height of m.options) expect(height).toBeGreaterThanOrEqual(44)
+  })
+
+  test('without JavaScript it is a search: Enter opens the results page', async ({ browser }) => {
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const page = await plain.newPage()
+    await page.goto(PATH)
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    expect(await input.getAttribute('role'), 'no combobox without its script').toBeNull()
+    await input.fill('oak')
+    await input.press('Enter')
+    await page.waitForURL(/\?q=oak/)
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__results-heading`)).toHaveText(
+      'Found for “oak”: 8',
+    )
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__item`)).toHaveCount(8)
+    await plain.close()
+  })
+
+  test('inside another form a value fills the field and sends nothing; the form sends it', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const asked = []
+    page.on('request', (request) => {
+      if (request.url().includes('/webx/widgets/showcase/suggest')) asked.push(request.url())
+    })
+    const input = page.locator(`${FIELD} .webx-suggest__input`)
+    expect(await page.locator(`${FIELD} form`).count(), 'one form, the delivery’s').toBe(1)
+    await input.focus()
+    await page.keyboard.type('kra')
+    await expect(page.locator(`${FIELD} [role="option"]`)).toHaveText(['Kraków'])
+    expect(new URL(asked[0]).searchParams.get('as')).toBe('values')
+
+    const url = page.url()
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+    await expect(input).toHaveValue('Kraków')
+    await expect(page.locator(`${FIELD} .webx-suggest__panel`)).toBeHidden()
+    expect(page.url(), 'chosen, not sent').toBe(url)
+
+    await page.locator(`${FIELD} .webx-form__submit`).click()
+    await page.waitForURL(/city=Krak/)
+    await expect(page.locator(`${FIELD} .b-showcase-suggest__chosen`)).toHaveText(
+      'Delivery to Kraków.',
+    )
+  })
+
+  test('on the Polish page the panel speaks Polish', async ({ page }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="pl"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+    await page.locator(`${SEARCH} .webx-suggest__input`).focus()
+    await page.keyboard.type('lamp')
+    await expect(page.locator(`${SEARCH} [data-webx-heading]`)).toHaveText('Produkty (4)')
+    const a = await aria(page, SEARCH)
+    expect(a.status).toBe('Podpowiedzi: 5')
+    expect(a.options.at(-1)).toBe('Wszystkie wyniki: 4')
+  })
+})
+
 test.describe('words of the layout', () => {
   // The words the shell can print: the theme's own (THEMES §15.2) and those of the widgets it is
   // built of. Read from the dictionaries themselves, so a word added later is checked too.
