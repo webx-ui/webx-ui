@@ -18,13 +18,15 @@
 #
 # The defaults are an OSPanel machine; every one of them can be overridden:
 #
-#   STARTER_PATH      ../webx-starter.local, beside this checkout
+#   STARTER_PATH      ../webx-starter-test.local, beside this checkout — never a site you keep:
+#                     a directory under git (webx-starter.local is a clone of the starter on the
+#                     hosting) is refused, since the rebuild deletes it whole
 #   STARTER_URL       http://<directory name>
 #   STARTER_ADMIN     the email of the first administrator; default: git config user.email
 #   STARTER_WITH      modules on top of the company set, as --with takes them (blog,services)
 #   PHP_BIN           php, or OSPanel's PHP-8.4 when it is there
 #   COMPOSER_PHAR     composer.phar; default: the `composer` on the PATH
-#   DB_HOST DB_PORT DB_USERNAME DB_PASSWORD DB_DATABASE    OSPanel's MariaDB, webx_starter
+#   DB_HOST DB_PORT DB_USERNAME DB_PASSWORD DB_DATABASE    OSPanel's MariaDB, webx_starter_test
 #   WEBX_ADMIN_PASSWORD  the administrator's password; without it setup makes one and prints it
 #
 # Any of them can live in .env.starter at the root of this checkout (ignored by git), one
@@ -45,7 +47,7 @@ if [ -f "$STARTER_ENV" ]; then
     set +a
 fi
 
-SITE="${STARTER_PATH:-$(cd "$MONOREPO/.." && pwd)/webx-starter.local}"
+SITE="${STARTER_PATH:-$(cd "$MONOREPO/.." && pwd)/webx-starter-test.local}"
 NAME="$(basename "$SITE")"
 URL="${STARTER_URL:-http://$NAME}"
 MODE=build
@@ -71,7 +73,7 @@ DB_HOST="${DB_HOST:-MariaDB-11.8.local}"
 DB_PORT="${DB_PORT:-3306}"
 DB_USERNAME="${DB_USERNAME:-root}"
 DB_PASSWORD="${DB_PASSWORD:-}"
-DB_DATABASE="${DB_DATABASE:-webx_starter}"
+DB_DATABASE="${DB_DATABASE:-webx_starter_test}"
 
 ADMIN="${STARTER_ADMIN:-$(git -C "$MONOREPO" config user.email || true)}"
 
@@ -131,6 +133,12 @@ HOST_CONFIG="$(mktemp -d)"
 
 teardown() {
     step "Tear down $SITE"
+
+    # A site with its own history is somebody's work, not a build of this script: the clone of the
+    # starter that deploys to the hosting lived at the old default path and went with the rebuild.
+    if [ -e "$SITE/.git" ]; then
+        fail "$SITE is a git checkout; this script only rebuilds a throwaway site. Point STARTER_PATH elsewhere."
+    fi
 
     if [ -d "$SITE" ]; then
         [ -d "$SITE/.osp" ] && cp -a "$SITE/.osp" "$HOST_CONFIG/"
