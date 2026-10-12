@@ -45,6 +45,14 @@ const emit = defineEmits<AutocompleteEmits>()
 /** The model is the text in the field — an autocomplete suggests, it does not constrain. */
 const model = defineModel<string>({ default: '' })
 
+/*
+ * The text as a string, whatever came in. The default covers a missing value, not a null one —
+ * and a record says null for a field it has no text in (a screen's row that reads a setting, then
+ * switched to it). Reading `.length` of that threw in render, and Vue drew the root without its
+ * input until something else re-rendered it. The model stays typed as text: that is what goes out.
+ */
+const text = computed<string>(() => (model.value as string | null) ?? '')
+
 const field = useFormField(props)
 const open = ref(false)
 
@@ -58,7 +66,7 @@ function cancelSearch() {
   debounceTimer = undefined
 }
 
-watch(model, (value) => {
+watch(text, (value) => {
   emit('change', value)
 
   if (picking) {
@@ -86,11 +94,11 @@ watch(open, (value) => {
 
 onBeforeUnmount(cancelSearch)
 
-const showClear = computed(() => props.clearable && !field.disabled.value && model.value.length > 0)
+const showClear = computed(() => props.clearable && !field.disabled.value && text.value.length > 0)
 
 /** Nothing to drop down yet: below `min-length`, or still waiting on the first response. */
 const hasList = computed(
-  () => props.options.length > 0 || props.loading || model.value.length >= props.minLength,
+  () => props.options.length > 0 || props.loading || text.value.length >= props.minLength,
 )
 
 const classes = computed(() => [

@@ -129,7 +129,9 @@ no consent — the [site audit](./audit) notices it when something third-party i
 
 The phones, e-mails, addresses, hours and networks live once, on the **Contacts** tab of the
 settings; the widgets, the map and the SEO markup read them from there, and print nothing while it
-is empty.
+is empty. The tab draws phones, e-mails and addresses unless the site asks for more: a site with
+`<x-webx-hours>` or `<x-webx-socials>` adds `hours`, `messengers` or `socials` to
+`webx-settings.contacts.sections` ([Settings](/guide/settings#the-contacts-tab-and-which-parts-of-it-a-site-draws)).
 
 | Component                 | What it shows                                                                               |
 | ------------------------- | ------------------------------------------------------------------------------------------- |

@@ -5,8 +5,9 @@
  *
  *  - `webx:form:submit` — before the form goes, the captcha's answer: a checkbox nobody ticked
  *    stops it with the sentence the intake would send back; an invisible one (reCAPTCHA or
- *    Turnstile) is run now, and its answer sends the form again; reCAPTCHA v3 asks for a score
- *    for this form's action and sends the form with it;
+ *    Turnstile) is run now, and reCAPTCHA v3 asks for a score for this form's action — both
+ *    holding the form with the engine's `detail.wait(promise)`, so it is busy from the press to
+ *    the answer and a second press does nothing; a captcha that failed lets it go with its word;
  *  - `webx:form:success`, `webx:form:error` — a captcha answer is good once: the widget is reset,
  *    so a visitor told their e-mail is wrong is not refused by a captcha they already passed.
  *
@@ -41,19 +42,33 @@
     box.hidden = !message
   }
 
-  /** The same press of the same button once more — now with the captcha's answer in the form. */
-  function resend(form, submitter) {
-    var button = submitter && submitter.form === form ? submitter : undefined
-
-    if (typeof form.requestSubmit === 'function') form.requestSubmit(button)
-    else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
-  }
-
   /** reCAPTCHA numbers its widgets, Turnstile names them. */
   function widgetId(widget, provider) {
     var id = widget.dataset.webxWidget
 
     return provider === 'recaptcha' ? Number(id) : id
+  }
+
+  /**
+   * How long a captcha may take before the form is let go. A reCAPTCHA challenge the visitor
+   * closes says nothing at all, and one left open expires in two minutes.
+   */
+  var LIMIT = 120000
+
+  /** The promise, or what `late` makes of it when it has not settled in time. */
+  function within(promise, late) {
+    var timer
+
+    return Promise.race([
+      promise,
+      new Promise(function (resolve, reject) {
+        timer = setTimeout(function () {
+          late(resolve, reject)
+        }, LIMIT)
+      }),
+    ]).finally(function () {
+      clearTimeout(timer)
+    })
   }
 
   document.addEventListener('webx:form:submit', function (event) {
@@ -62,17 +77,9 @@
 
     if (!widget) return
 
-    // Answered a moment ago and sent again by the answer itself: let it go.
-    if (widget.dataset.webxCaptchaState === 'answered') return
-
     var provider = widget.getAttribute('data-webx-captcha')
     var type = widget.getAttribute('data-webx-captcha-type') || 'checkbox'
     var key = widget.getAttribute('data-webx-captcha-key') || ''
-    var submitter = (event.detail && event.detail.submitter) || null
-    var answered = function () {
-      widget.dataset.webxCaptchaState = 'answered'
-      resend(form, submitter)
-    }
 
     if (type === 'checkbox') {
       var answer = widget.querySelector(
@@ -89,22 +96,40 @@
       return
     }
 
+    // The engine holds the form while the captcha runs — busy, another press ignored — and reads
+    // it again, the answer in it, when the promise resolves. An engine that cannot hold it sends
+    // it as it is, and the intake's refusal says what is missing.
+    var wait = event.detail && typeof event.detail.wait === 'function' ? event.detail.wait : null
+
+    if (!wait) return
+
     if (provider === 'recaptcha' && type === 'v3') {
       var grecaptcha = window.grecaptcha
 
       if (!grecaptcha || typeof grecaptcha.ready !== 'function') return
 
-      event.preventDefault()
-      grecaptcha.ready(function () {
-        grecaptcha
-          .execute(key, { action: widget.getAttribute('data-webx-captcha-action') || 'submit' })
-          .then(function (token) {
-            var input = widget.querySelector('[name="g-recaptcha-response"]')
+      // No score — refused, or never come — is the intake's to judge: the form goes either way.
+      wait(
+        within(
+          new Promise(function (resolve) {
+            grecaptcha.ready(function () {
+              grecaptcha
+                .execute(key, {
+                  action: widget.getAttribute('data-webx-captcha-action') || 'submit',
+                })
+                .then(function (token) {
+                  var input = widget.querySelector('[name="g-recaptcha-response"]')
 
-            if (input) input.value = token
-            answered()
-          }, answered)
-      })
+                  if (input) input.value = token
+                  resolve()
+                }, resolve)
+            })
+          }),
+          function (resolve) {
+            resolve()
+          },
+        ),
+      )
 
       return
     }
@@ -118,15 +143,16 @@
 
     if (!api || typeof api.render !== 'function' || !box) return
 
-    event.preventDefault()
-    widget.webxAnswered = answered
-
     // A provider that could not vouch for this browser leaves no answer, and posting without one
-    // only earns a refusal that says less than this does. The next press tries once more.
+    // only earns a refusal that says less than this does. The form is let go; the next press
+    // tries once more.
     var failed = function () {
+      var pending = widget.webxPending
+
+      widget.webxPending = null
       widget.dataset.webxCaptchaState = 'error'
-      widget.webxAnswered = null
       say(widget, widget.getAttribute('data-webx-captcha-unavailable'))
+      if (pending) pending.reject(new Error('captcha'))
 
       // Handled: Turnstile throws an uncaught error for every one it is not told about.
       return true
@@ -137,13 +163,17 @@
         var settings = {
           sitekey: key,
           callback: function () {
-            var next = widget.webxAnswered
+            var pending = widget.webxPending
 
-            widget.webxAnswered = null
-            if (next) next()
+            widget.webxPending = null
+            widget.dataset.webxCaptchaState = 'answered'
+            if (pending) pending.resolve()
           },
           'error-callback': failed,
+          // A challenge left until it went stale is no answer: the form is let go. An answer that
+          // went stale after it was sent is only marked — the next press draws a fresh one.
           'expired-callback': function () {
+            if (widget.webxPending) return failed()
             widget.dataset.webxCaptchaState = 'expired'
           },
         }
@@ -156,12 +186,14 @@
           settings.execution = 'execute'
           settings.retry = 'never'
           settings['timeout-callback'] = failed
+          settings['unsupported-callback'] = failed
         } else {
           settings.size = 'invisible'
         }
 
         widget.dataset.webxWidget = String(api.render(box, settings))
-      } else if (widget.dataset.webxCaptchaState === 'error') {
+      } else if (widget.dataset.webxCaptchaState) {
+        // Anything but a widget fresh from its reset: failed, expired, answered and never sent.
         api.reset(widgetId(widget, provider))
       }
 
@@ -169,9 +201,32 @@
       api.execute(widgetId(widget, provider))
     }
 
-    // reCAPTCHA has to be asked whether it is ready; Turnstile is, once its script is here.
-    if (provider === 'recaptcha' && typeof api.ready === 'function') api.ready(run)
-    else run()
+    var guarded = function () {
+      try {
+        run()
+      } catch {
+        failed()
+      }
+    }
+
+    wait(
+      within(
+        new Promise(function (resolve, reject) {
+          widget.webxPending = { resolve: resolve, reject: reject }
+
+          // A turn later, not now: the engine clears the form's errors right after this event,
+          // and a provider that throws at once has to say so after that, not before.
+          Promise.resolve().then(function () {
+            // reCAPTCHA has to be asked whether it is ready; Turnstile is, once its script is here.
+            if (provider === 'recaptcha' && typeof api.ready === 'function') api.ready(guarded)
+            else guarded()
+          })
+        }),
+        function () {
+          failed()
+        },
+      ),
+    )
   })
 
   /**

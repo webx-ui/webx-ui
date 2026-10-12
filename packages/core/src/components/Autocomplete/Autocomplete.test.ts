@@ -37,6 +37,15 @@ describe('WxAutocomplete', () => {
     expect(input.attributes('role')).toBe('combobox')
   })
 
+  it('draws its input for a null value, as a record without the text sends it', () => {
+    const wrapper = factory({ modelValue: null, clearable: true, placeholder: 'City' })
+    const input = wrapper.get('.wx-autocomplete__input')
+
+    expect((input.element as HTMLInputElement).value).toBe('')
+    expect(input.attributes('placeholder')).toBe('City')
+    expect(wrapper.find('.wx-autocomplete__clear').exists()).toBe(false)
+  })
+
   it('emits the search term once typing settles', async () => {
     const wrapper = factory({ debounce: 200 })
 

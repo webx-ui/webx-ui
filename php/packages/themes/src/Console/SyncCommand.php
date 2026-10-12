@@ -40,8 +40,20 @@ class SyncCommand extends Command
 
     public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeAssets $assets, ModuleStyles $modules, ThemeIcons $icons): int
     {
+        // Without a theme only the packages below the themes: the widgets' scripts, which
+        // `@webxWidgets` links on a site that has none. Nothing else of a chain is there to sync.
         if ($chain->isEmpty()) {
-            $this->components->info('No theme is configured (webx-themes.theme), nothing to sync.');
+            if ($bottom->all() === []) {
+                $this->components->info('No theme is configured (webx-themes.theme), nothing to sync.');
+
+                return self::SUCCESS;
+            }
+
+            $this->components->info('No theme is configured (webx-themes.theme): only the packages below the themes.');
+
+            foreach ($bottom->all() as $layer) {
+                $this->components->twoColumnDetail($layer->name, $this->sync($layer, $assets));
+            }
 
             return self::SUCCESS;
         }

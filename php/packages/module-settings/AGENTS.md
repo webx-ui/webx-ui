@@ -55,22 +55,27 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   `php artisan webx:settings:contacts --from=<key> [--as=phones|emails|addresses] [--dry-run]`
   moves contacts kept under a key of the site's own; `webx-settings.contacts.legacy` names such
   keys so they are read until then.
+  Which sections the tab draws is `webx-settings.contacts.sections` — `phones`, `emails`,
+  `addresses` (the default), `hours` (with special dates and the time zone), `messengers`,
+  `socials`; one left out is hidden (`visible: false`), not cut out: its keys stay writable, `contacts()`
+  still reads them, a patch aimed at its card still applies. A misspelt section stops the boot.
 - Demo content (`resources/demo`), the content rules and the contacts included.
 
 ## Change it without forking
 
-| You want                              | Do this                                                                                                                                         |
-| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| A setting of the site's own           | a patch: `Screens::extend('settings.index', resource_path('screens/settings.json'))` in `AppServiceProvider::boot()`, adding a tab under `tabs` |
-| Read it on the site                   | `settings('<tab>.<field>', 'fallback')` (e.g. `settings('branding.logo')`) — current language, media resolved to its address                    |
-| A setting per language                | `"localized": true` on the field in the patch                                                                                                   |
-| A content rule of the site's own      | a patch on `settings.content` adding a field under `content-card` named `content.<name>`; it comes out in `more`                                |
-| A phone, an e-mail typed once         | «Settings» → «Contacts»; in a template `contacts()->primaryPhone()`, in content a shortcode row holding the value — `[phone]`                   |
-| React when settings change            | listen to `WebxUi\Settings\Events\SettingsSaved`                                                                                                |
-| The panel's brand from somewhere else | bind your own `WebxUi\Admin\Contracts\BrandingSource`                                                                                           |
-| No cache while debugging              | `WEBX_SETTINGS_CACHE=false`                                                                                                                     |
-| Other words in the panel              | `php artisan vendor:publish --tag=webx-settings-lang`                                                                                           |
-| Publish the config                    | `php artisan vendor:publish --tag=webx-settings-config`                                                                                         |
+| You want                                | Do this                                                                                                                                         |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| A setting of the site's own             | a patch: `Screens::extend('settings.index', resource_path('screens/settings.json'))` in `AppServiceProvider::boot()`, adding a tab under `tabs` |
+| Read it on the site                     | `settings('<tab>.<field>', 'fallback')` (e.g. `settings('branding.logo')`) — current language, media resolved to its address                    |
+| A setting per language                  | `"localized": true` on the field in the patch                                                                                                   |
+| A content rule of the site's own        | a patch on `settings.content` adding a field under `content-card` named `content.<name>`; it comes out in `more`                                |
+| A phone, an e-mail typed once           | «Settings» → «Contacts»; in a template `contacts()->primaryPhone()`, in content a shortcode row holding the value — `[phone]`                   |
+| Hours, messengers or socials on the tab | list them in `webx-settings.contacts.sections` (publish `webx-settings-config`), not a screen patch                                             |
+| React when settings change              | listen to `WebxUi\Settings\Events\SettingsSaved`                                                                                                |
+| The panel's brand from somewhere else   | bind your own `WebxUi\Admin\Contracts\BrandingSource`                                                                                           |
+| No cache while debugging                | `WEBX_SETTINGS_CACHE=false`                                                                                                                     |
+| Other words in the panel                | `php artisan vendor:publish --tag=webx-settings-lang`                                                                                           |
+| Publish the config                      | `php artisan vendor:publish --tag=webx-settings-config`                                                                                         |
 
 A patch addresses nodes by the `id`s above; a patch whose target is gone throws when the screen is first built. A
 server-side patch both draws a field and opens its key for writing; a client-side patch in

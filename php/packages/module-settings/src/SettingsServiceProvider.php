@@ -14,6 +14,7 @@ use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Settings\Console\MoveContactsCommand;
 use WebxUi\Settings\Contacts\Contacts;
+use WebxUi\Settings\Contacts\ContactSections;
 use WebxUi\Settings\Events\SettingsSaved;
 
 class SettingsServiceProvider extends ServiceProvider
@@ -62,6 +63,12 @@ class SettingsServiceProvider extends ServiceProvider
         // The reference screen. A project lays its own tabs over it from its provider, which
         // boots after this one — `Screens::extend('settings.index', ...)`.
         $this->app->make(ScreenRegistry::class)->register(Settings::SCREEN, __DIR__.'/../resources/screens/index.json');
+        // The Contacts sections this site does not use are hidden by a patch of the section's own,
+        // laid before the project's: the cards stay in the tree, so a project patch that targets one
+        // still applies.
+        $this->app->make(ScreenRegistry::class)->extend(Settings::SCREEN, ContactSections::patch(
+            ContactSections::configured(config('webx-settings.contacts.sections')),
+        ));
         $this->app->make(ScreenRegistry::class)->register(Settings::CONTENT_SCREEN, __DIR__.'/../resources/screens/content.json');
 
         // The shortcodes defined in the panel, read when a page asks rather than at boot: they

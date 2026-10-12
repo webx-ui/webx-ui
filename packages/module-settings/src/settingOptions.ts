@@ -27,6 +27,8 @@ export function settingOptions(
 
   const walk = (nodes: ScreenNode[], trail: string[]): void => {
     for (const node of nodes) {
+      // Hidden for good — a Contacts section the site does not draw — so not a setting to offer.
+      if (node.visible === false) continue
       // A repeater's children are fields of its rows, not settings.
       if (node.type === 'wx-repeater') continue
 

@@ -27,8 +27,8 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
   widgets' own), checked in the browser by the intake's own rules in the validator's words
   (`FormRules`), sent in place, the thank-you in place — in a dialog too. **The inbox's own**:
   the builder, the intake, the honeypot and the timestamp, the captcha (its place has
-  `data-webx-field="captcha"`) and `{path}/inbox.js` — only the captcha, printed only with one.
-  Hook analytics on `webx:form:success` of `form[data-webx-form="<slug>"]`.
+  `data-webx-field="captcha"`) and `{path}/inbox.js` — only the captcha, printed only with one;
+  the form is busy while it runs (`detail.wait`). Hook analytics on `webx:form:success` of `form[data-webx-form="<slug>"]`.
 - **Antispam**, in order: honeypot, timestamp, origin, captcha (only if the form asks), rate limit. A
   refusal logs its `reason` and the provider's `error-codes`/`score`. Kind of captcha, in `.env`:
   `WEBX_INBOX_RECAPTCHA_TYPE` `checkbox|invisible|v3`, `WEBX_INBOX_TURNSTILE_MODE` `managed|invisible`.
@@ -56,31 +56,32 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 
 ## Change it without forking
 
-| You want                                  | Do this                                                                                |
-| ----------------------------------------- | -------------------------------------------------------------------------------------- |
-| A form on a page                          | `<x-webx-inbox::form slug="..." />` in the view, or a block type that prints that tag  |
-| Which page or product it came from        | a hidden field on the form, filled with `:values="['product' => ...]"`                 |
-| A form restyled                           | classes `webx-field-*`, `webx-form-*` in the theme's CSS — like every form of the site |
-| The same form styled per place            | `placement="footer"`, then style `.webx-inbox-form--footer` in the theme's CSS         |
-| Another control for one type              | the widgets' view `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`  |
-| Different frame of the form               | `theme/views/vendor/webx-inbox/form.blade.php`, built on `<x-webx-form>` — see Do not  |
-| Bundle the captcha script yourself        | `php artisan vendor:publish --tag=webx-inbox-assets`, then `WEBX_INBOX_SCRIPT=false`   |
-| A reCAPTCHA                               | `WEBX_INBOX_RECAPTCHA_KEY`, `_SECRET` and `_TYPE` matching the key kind; then the form |
-| A Turnstile                               | `WEBX_INBOX_TURNSTILE_KEY`, `WEBX_INBOX_TURNSTILE_SECRET`; then turn it on in the form |
-| Another intake path or disk               | `WEBX_INBOX_PATH`, `WEBX_INBOX_DISK`                                                   |
-| Larger uploads                            | `WEBX_INBOX_MAX_SIZE` (KB); `upload.extensions`, `upload.max_files` in the config      |
-| Posts from another domain of the site     | `antispam.origins` in `config/webx-inbox.php` (`--tag=webx-inbox-config`)              |
-| Rate limit, duplicate window              | `antispam.throttle` (accepted), `antispam.attempts` (all), `duplicate_window`          |
-| Visitors' IPs not kept whole              | `WEBX_INBOX_ANONYMISE_IP=true`                                                         |
-| Forget old submissions                    | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site           |
-| A different letter                        | `theme/views/vendor/webx-inbox/mail/submission.blade.php`; colours via `$look('…')`    |
-| Somebody told about a form                | `inbox_form_save` with `options.recipients`, or the editor's Notifications tab         |
-| A form read only in the panel             | leave it without recipients and ignore `inbox.no_recipients` in the audit              |
-| Other words                               | `php artisan vendor:publish --tag=webx-inbox-lang`                                     |
-| Send submissions to a CRM or mailing list | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below              |
-| Write back to the visitor (a gift, a PDF) | the same: a handler on that form's slug that sends a mailable to its e-mail field      |
-| Anything else once a submission is stored | a listener of `WebxUi\Inbox\Events\SubmissionStored`, `ShouldQueue` if it calls out    |
-| A letter sent again                       | the submission's menu in the panel; MCP `inbox_notify` (`dry_run` first)               |
+| You want                                  | Do this                                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------- |
+| A form on a page                          | `<x-webx-inbox::form slug="..." />` in the view, or a block type that prints that tag    |
+| Sent in place on a site without a theme   | `@webxWidgets` before `</body>` in the site's layout, then `php artisan webx:theme:sync` |
+| Which page or product it came from        | a hidden field on the form, filled with `:values="['product' => ...]"`                   |
+| A form restyled                           | classes `webx-field-*`, `webx-form-*` in the theme's CSS — like every form of the site   |
+| The same form styled per place            | `placement="footer"`, then style `.webx-inbox-form--footer` in the theme's CSS           |
+| Another control for one type              | the widgets' view `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`    |
+| Different frame of the form               | `theme/views/vendor/webx-inbox/form.blade.php`, built on `<x-webx-form>` — see Do not    |
+| Bundle the captcha script yourself        | `php artisan vendor:publish --tag=webx-inbox-assets`, then `WEBX_INBOX_SCRIPT=false`     |
+| A reCAPTCHA                               | `WEBX_INBOX_RECAPTCHA_KEY`, `_SECRET` and `_TYPE` matching the key kind; then the form   |
+| A Turnstile                               | `WEBX_INBOX_TURNSTILE_KEY`, `WEBX_INBOX_TURNSTILE_SECRET`; then turn it on in the form   |
+| Another intake path or disk               | `WEBX_INBOX_PATH`, `WEBX_INBOX_DISK`                                                     |
+| Larger uploads                            | `WEBX_INBOX_MAX_SIZE` (KB); `upload.extensions`, `upload.max_files` in the config        |
+| Posts from another domain of the site     | `antispam.origins` in `config/webx-inbox.php` (`--tag=webx-inbox-config`)                |
+| Rate limit, duplicate window              | `antispam.throttle` (accepted), `antispam.attempts` (all), `duplicate_window`            |
+| Visitors' IPs not kept whole              | `WEBX_INBOX_ANONYMISE_IP=true`                                                           |
+| Forget old submissions                    | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site             |
+| A different letter                        | `theme/views/vendor/webx-inbox/mail/submission.blade.php`; colours via `$look('…')`      |
+| Somebody told about a form                | `inbox_form_save` with `options.recipients`, or the editor's Notifications tab           |
+| A form read only in the panel             | leave it without recipients and ignore `inbox.no_recipients` in the audit                |
+| Other words                               | `php artisan vendor:publish --tag=webx-inbox-lang`                                       |
+| Send submissions to a CRM or mailing list | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below                |
+| Write back to the visitor (a gift, a PDF) | the same: a handler on that form's slug that sends a mailable to its e-mail field        |
+| Anything else once a submission is stored | a listener of `WebxUi\Inbox\Events\SubmissionStored`, `ShouldQueue` if it calls out      |
+| A letter sent again                       | the submission's menu in the panel; MCP `inbox_notify` (`dry_run` first)                 |
 
 ### Classes
 

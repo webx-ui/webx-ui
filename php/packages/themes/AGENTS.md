@@ -34,7 +34,8 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
 - **`webx:theme:sync [--force] [--dry-run] [--adopt=<slug>]`** — the packaged layers' `dist/` and
   `assets/` to `public/themes/`, the modules' base look as one file, the icons as one sprite, then
   the steps tagged `webx-themes.sync` (`Contracts\SyncStep`): `module-blocks` puts the layers'
-  block types on the site. A refused line exits non-zero.
+  block types on the site. A refused line exits non-zero. Without a theme it publishes only the
+  packages below the themes (`BottomLayers`: the widgets' scripts, which `@webxWidgets` links).
 - **`webx:theme:make <name> --local [--uses=…]`** — the local theme `webx:setup` gives every site:
   `theme.json`, empty `tokens.json`, `src/css/theme.css`, `src/js/theme.js`, a test.
   **`webx:theme:make <vendor/name> [--uses=…] [--path=…]`** — a packaged theme (over
