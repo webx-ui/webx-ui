@@ -236,6 +236,13 @@ final readonly class ThemeReport
     private function relative(string $path): string
     {
         $path = str_replace('\\', '/', $path);
+
+        // Composer names an installed package `vendor/composer/../<vendor>/<name>`: said plainly,
+        // without resolving the link a path repository puts there.
+        do {
+            $path = (string) preg_replace('~/(?!\.\./)[^/]+/\.\./~', '/', $path, 1, $count);
+        } while ($count > 0);
+
         $base = rtrim(str_replace('\\', '/', $this->app->basePath()), '/').'/';
 
         return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
