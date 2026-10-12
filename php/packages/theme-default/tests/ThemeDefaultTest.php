@@ -253,6 +253,9 @@ class ThemeDefaultTest extends TestCase
             $this->assertSame($slug, $type['slug'] ?? null, $file);
             $this->assertStringContainsString("data-wx-block=\"{$slug}\"", (string) ($type['template'] ?? ''), $file);
             $this->assertSame([], self::findings((string) ($type['styles'] ?? ''), $file));
+            // The columns of module-blocks: a longer one stops webx:demo halfway, at the insert.
+            $this->assertLessThanOrEqual(255, mb_strlen((string) ($type['description'] ?? '')), "{$file}: the description is over 255 characters");
+            $this->assertLessThanOrEqual(255, mb_strlen((string) ($type['title'] ?? '')), "{$file}: the title is over 255 characters");
         }
     }
 

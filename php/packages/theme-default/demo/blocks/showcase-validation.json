@@ -1,7 +1,7 @@
 {
   "slug": "showcase-validation",
   "title": "Showcase: checks in the browser",
-  "description": "A form checked in the browser by the server’s own rules and words through FormRules, and by the server again with a second button that skips the browser — the phone mask and files dropped, listed and refused before sending — for the kitchen sink of the default theme.",
+  "description": "A form checked in the browser by the server’s rules and words, and by the server again past the browser; the phone mask and files — for the kitchen sink of the default theme.",
   "icon": null,
   "group": "content",
   "sort": 99,
