@@ -6610,6 +6610,82 @@
               }
             }
           ]
+        },
+        {
+          "title": {
+            "en": "Inbox",
+            "ru": "Заявки",
+            "pl": "Zgłoszenia"
+          },
+          "slug": {
+            "en": "inbox",
+            "ru": "zayavki",
+            "pl": "zgloszenia"
+          },
+          "seo": {
+            "title": {
+              "en": "Inbox",
+              "ru": "Заявки",
+              "pl": "Zgłoszenia"
+            },
+            "description": {
+              "en": "A form built in the panel, drawn by the same fields and the same shell as every form of the site: checked in the browser by the intake’s own rules, answered in place.",
+              "ru": "Форма, собранная в панели, нарисована теми же полями и той же оболочкой, что любая форма сайта: проверка в браузере правилами самого приёма, ответ на месте.",
+              "pl": "Formularz zbudowany w panelu, narysowany tymi samymi polami i tą samą powłoką co każdy formularz strony: sprawdzany w przeglądarce regułami samego przyjęcia, z odpowiedzią na miejscu."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-inbox-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "A form of the panel",
+                  "ru": "Форма из панели",
+                  "pl": "Formularz z panelu"
+                },
+                "body": {
+                  "en": "An administrator builds this form in the Inbox from fields, and the site prints it with one tag. It is drawn the way every form of the site is: the same fields, the same messages, the same checks before anything is sent — made from the rules the intake will check by, in the words it would answer with. What stays the inbox’s is inside: the hidden field a robot fills in, the timestamp, the captcha when the form asks for one.",
+                  "ru": "Администратор собирает эту форму в разделе «Заявки» из полей, а сайт печатает её одним тегом. Нарисована она так же, как любая форма сайта: те же поля, те же сообщения, те же проверки до отправки — из правил, по которым проверит приём, и его же словами. Внутри остаётся то, что принадлежит заявкам: скрытое поле, которое заполняет робот, метка времени, капча, если форма её просит.",
+                  "pl": "Administrator buduje ten formularz w Zgłoszeniach z pól, a strona drukuje go jednym tagiem. Jest narysowany tak samo jak każdy formularz strony: te same pola, te same komunikaty, te same sprawdzenia przed wysłaniem – z reguł, według których sprawdzi przyjęcie, i jego słowami. W środku zostaje to, co należy do zgłoszeń: ukryte pole wypełniane przez robota, znacznik czasu, captcha, jeśli formularz o nią prosi."
+                }
+              }
+            },
+            {
+              "key": "showcase-inbox-form",
+              "type": "contact",
+              "values": {
+                "heading": {
+                  "en": "Every kind of field",
+                  "ru": "Все виды полей",
+                  "pl": "Każdy rodzaj pola"
+                },
+                "text": {
+                  "en": "Send it empty: the browser says what the intake would. Fill it in and send: the thank-you comes in place, and the submission is in the panel.",
+                  "ru": "Отправьте пустой: браузер скажет то же, что сказал бы приём. Заполните и отправьте: «спасибо» появится на месте, а заявка — в панели.",
+                  "pl": "Wyślij pusty: przeglądarka powie to samo, co powiedziałoby przyjęcie. Wypełnij i wyślij: podziękowanie pojawi się na miejscu, a zgłoszenie – w panelu."
+                },
+                "show_contacts": false,
+                "form": "showcase"
+              }
+            },
+            {
+              "key": "showcase-inbox-markup",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "For the site",
+                  "ru": "Для сайта",
+                  "pl": "Dla strony"
+                },
+                "body": {
+                  "en": "<x-webx-inbox::form slug=\"showcase\" /> prints an <x-webx-form :csrf=\"false\"> — the intake guards itself — with an <x-webx-field> per field of the panel. A theme restyles it by webx-field-* and webx-form-*, like any form; webx-inbox-form-* only lays the fields out two to a row and holds the captcha. The intake answers with FormResponse, so a script of the site listens to webx:form:success on form[data-webx-form=\"showcase\"].",
+                  "ru": "<x-webx-inbox::form slug=\"showcase\" /> печатает <x-webx-form :csrf=\"false\"> — приём защищён сам — с <x-webx-field> на каждое поле из панели. Тема перекрашивает её классами webx-field-* и webx-form-*, как любую форму; webx-inbox-form-* только ставит поля по два в ряд и держит капчу. Приём отвечает FormResponse, поэтому скрипт сайта слушает webx:form:success на form[data-webx-form=\"showcase\"].",
+                  "pl": "<x-webx-inbox::form slug=\"showcase\" /> drukuje <x-webx-form :csrf=\"false\"> – przyjęcie chroni się samo – z <x-webx-field> dla każdego pola z panelu. Motyw przemalowuje go klasami webx-field-* i webx-form-*, jak każdy formularz; webx-inbox-form-* tylko układa pola po dwa w rzędzie i trzyma captchę. Przyjęcie odpowiada FormResponse, więc skrypt strony słucha webx:form:success na form[data-webx-form=\"showcase\"]."
+                }
+              }
+            }
+          ]
         }
       ]
     }
