@@ -1,5 +1,19 @@
 # @webx-ui/php
 
+## 0.70.0
+
+### Minor Changes
+
+- 53da455: The Contacts tab draws only the sections a site uses. `webx-ui/module-settings`: **`webx-settings.contacts.sections`** lists them — `phones`, `emails`, `addresses`, `hours` (with special dates and the time zone), `messengers`, `socials` — and defaults to `['phones', 'emails', 'addresses']`, so an editor is no longer asked about hours and networks the site never prints. A section left out is hidden (`visible: false`, a patch the section lays before the project's), not cut out: a card with nothing drawn is hidden whole, an empty list hides the tab, the keys stay writable from the panel and MCP, and `contacts()` returns whatever is stored. A misspelt section stops the boot with the known names. `@webx-ui/module-settings`: the shortcode key picker does not offer a hidden field.
+
+  **Upgrading.** A site that prints the hours or the networks — `<x-webx-hours>`, `<x-webx-socials>`, the chats of `<x-webx-contact-button>`, the header's socials — publishes the config (`php artisan vendor:publish --tag=webx-settings-config`, or adds `'sections'` under `'contacts'` of a config it already published) and lists `hours`, `messengers`, `socials` as it needs. A site that hid the cards with a screen patch (`{"op": "remove", "target": "contacts-hours-card"}`, the same for `contacts-channels-card`) keeps working — the nodes are still there — and can drop those operations.
+
+- 53da455: The form engine's scripts on a site without a theme. `@webxTheme` prints nothing there, so every `<x-webx-form>` — an inbox form among them — fell back to a plain POST with a reload. `webx-ui/widgets`: a layout writes **`@webxWidgets`** before `</body>`, and the page is finished as under a theme with the runtime and the claimed widgets' scripts (`form.js`, `field.js`, `files.js`, `mask.js`…), without stylesheets (made of a theme's tokens) and without the consent banner; under a theme the directive adds nothing. New audit check **`widgets.form_script`** (warning, ten languages): a form that sends in place on a page loading no `form.js`. `webx-ui/themes`: `webx:theme:sync` without a theme publishes the packages below the themes (the widgets) and nothing else. `webx-ui/module-admin`: `webx:setup` and the boot plan run the sync without a theme when `webx-ui/widgets` is installed (and add it to `post-update-cmd`), and the layout of `webx:setup --no-theme` carries `@webxWidgets`. A site set up before: add the line to its layout and run `php artisan webx:theme:sync` once — and drop any import of `vendor/webx-ui/widgets/dist/*.js` from its own bundle.
+
+### Patch Changes
+
+- 53da455: A form with an invisible captcha is busy from the press to the answer. Before, a press of Send did nothing visible while the invisible Turnstile or reCAPTCHA (or a reCAPTCHA v3 score) ran, and a second press then started another run. `webx-ui/widgets`: a `webx:form:submit` listener can hold the form with `event.detail.wait(promise)` — `is-sending`, `aria-busy` and the held-back buttons from that moment, further presses ignored; resolved, the form is read again (what the listener put into it goes along) and sent; rejected, it is let go with nothing sent and the listener's word left where it put it. `webx-ui/module-inbox`: `inbox.js` uses it for invisible captchas and v3 instead of cancelling and pressing the button again; a Turnstile that fails, times out, is unsupported or expires before answering lets the form go with its sentence, and a captcha that never answers (a reCAPTCHA challenge closed) does so after two minutes.
+
 ## 0.69.0
 
 ### Minor Changes

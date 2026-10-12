@@ -1,5 +1,13 @@
 # @webx-ui/admin
 
+## 0.25.1
+
+### Patch Changes
+
+- 53da455: Settings wait in the shape of what comes: a card with lines, while the values load and then while the screen does, instead of bare lines on the page's background. `WxScreen` (the panel's screen by name) takes a `loading` slot for that; without one it draws the lines as before.
+- Updated dependencies [53da455]
+  - @webx-ui/core@0.40.1
+
 ## 0.25.0
 
 ### Minor Changes
