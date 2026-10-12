@@ -5580,6 +5580,342 @@ test.describe('mail', () => {
   })
 })
 
+test.describe('fields', () => {
+  // WIDGETS §17.2, W6.1: the fields of a form — Kitchen sink › Forms › Fields shows each type in
+  // each state, long German and Polish labels, and a column 20rem wide.
+  const PATH = '/kitchen-sink/forms/fields'
+  const TYPES = ['text', 'email', 'tel', 'url', 'password', 'number', 'textarea', 'select']
+  const GROUPS = ['radio', 'checkbox', 'consent', 'date', 'file']
+
+  /** The same page in another language: the address the English page names as its alternate. */
+  async function inLanguage(page, locale) {
+    await page.goto(PATH)
+    const there = await page
+      .locator(`link[rel="alternate"][hreflang="${locale}"]`)
+      .getAttribute('href')
+    expect(there, `${PATH} has a page in ${locale}`).toBeTruthy()
+    await page.goto(there)
+    await still(page)
+  }
+
+  test('every type stands in every state, and nothing scrolls sideways at 360', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+
+    const m = await page.evaluate(() => {
+      const block = document.querySelector('[data-wx-block="showcase-fields"]')
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        states: [...block.querySelectorAll('.b-showcase-fields__state')].map((state) => ({
+          state: state.dataset.state,
+          types: [...state.querySelectorAll('.webx-field')].map((f) =>
+            [...f.classList].find((c) => c.startsWith('webx-field--')).slice(12),
+          ),
+          hidden: state.querySelectorAll('input[type=hidden][name$="[page]"]').length,
+          invalid: state.querySelectorAll('.webx-field.is-invalid').length,
+          disabled: state.querySelectorAll('.webx-field.is-disabled').length,
+        })),
+        // Wider than its field: a label or an error that pushed out of its column.
+        wide: [...document.querySelectorAll('.webx-field *')]
+          .filter((el) => {
+            const field = el.closest('.webx-field').getBoundingClientRect()
+            const r = el.getBoundingClientRect()
+            return r.width > 0 && r.right > field.right + 1
+          })
+          .map((el) => el.className || el.tagName),
+      }
+    })
+
+    expect(m.scroll, 'no horizontal scroll at 360').toBeLessThanOrEqual(0)
+    expect(m.wide, 'everything of a field stays inside it').toEqual([])
+    expect(m.states.map((s) => s.state)).toEqual(['empty', 'filled', 'invalid', 'disabled'])
+    for (const s of m.states) {
+      // Fourteen frames — a checkbox twice, a group and one tick — and the hidden input alone.
+      expect(new Set(s.types), s.state).toEqual(new Set([...TYPES, ...GROUPS]))
+      expect(s.types.filter((t) => t === 'checkbox').length, s.state).toBe(2)
+      expect(s.hidden, `${s.state}: the hidden field`).toBe(1)
+    }
+    expect(m.states[2].invalid, 'every field but the one tick has an error to show').toBe(13)
+    expect(m.states[3].disabled).toBe(14)
+  })
+
+  test('a control, a choice and a button are 44px at least on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+
+    const low = await page.evaluate(() =>
+      [
+        ...document.querySelectorAll(
+          '.webx-field__control:not(.webx-field__control--file), .webx-field__choice, .webx-field__show, .webx-field__file-button, .webx-field__file',
+        ),
+      ]
+        .map((el) => ({ what: el.className, height: el.getBoundingClientRect().height }))
+        .filter((el) => el.height > 0 && el.height < 44),
+    )
+    expect(low).toEqual([])
+
+    // The password's Show is the script's: here, and named.
+    const show = page.locator('.webx-field__show').first()
+    await expect(show).toBeVisible()
+    await expect(show).toHaveAttribute('aria-label', 'Show password')
+  })
+
+  test('the focus is visible on a control, a box and a button', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(PATH)
+    await still(page)
+
+    // From the keyboard, as :focus-visible wants it: into the first field, then Tab along.
+    await page
+      .locator('.b-showcase-fields__state[data-state="empty"] input[type=text]')
+      .first()
+      .focus()
+    const seen = new Map()
+    for (let i = 0; i < 40 && seen.size < 5; i++) {
+      const m = await page.evaluate(() => {
+        const el = document.activeElement
+        const target = el.matches('input[type=file]') ? el.closest('.webx-field__file') : el
+        const s = getComputedStyle(target)
+        return {
+          kind: el.matches('input[type=file]')
+            ? 'file'
+            : el.matches('.webx-field__check')
+              ? 'check'
+              : el.matches('.webx-field__show')
+                ? 'show'
+                : el.matches('select')
+                  ? 'select'
+                  : el.matches('.webx-field__control')
+                    ? 'control'
+                    : 'other',
+          style: s.outlineStyle,
+          width: parseFloat(s.outlineWidth),
+        }
+      })
+      if (m.kind !== 'other' && !seen.has(m.kind)) seen.set(m.kind, m)
+      await page.keyboard.press('Tab')
+    }
+    expect([...seen.keys()].sort()).toEqual(['check', 'control', 'file', 'select', 'show'])
+    for (const [kind, m] of seen) {
+      expect(m.style, `${kind}: an outline`).not.toBe('none')
+      expect(m.width, `${kind}: 2px at least`).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  test('an error is words under its field, told to a screen reader, and reads in every preset', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(PATH)
+    await still(page)
+
+    const wiring = await page.evaluate(() =>
+      [
+        // The first block: every type once in each state.
+        ...document
+          .querySelector('[data-wx-block="showcase-fields"]')
+          .querySelectorAll(
+            '.b-showcase-fields__state[data-state="invalid"] .webx-field.is-invalid',
+          ),
+      ].map((field) => {
+        const error = field.querySelector('.webx-field__error')
+        const group = field.matches('fieldset')
+        const described = group ? field : field.querySelector('[aria-describedby]')
+        const controls = [...field.querySelectorAll('input, select, textarea')]
+        return {
+          text: error.textContent.trim(),
+          shown: !error.hidden && error.getBoundingClientRect().height > 0,
+          described: (described?.getAttribute('aria-describedby') ?? '')
+            .split(' ')
+            .includes(error.id),
+          invalid: controls.every((c) => c.getAttribute('aria-invalid') === 'true'),
+          legend: group ? field.querySelector(':scope > legend')?.textContent.trim() : null,
+        }
+      }),
+    )
+    expect(wiring.length).toBe(13)
+    for (const w of wiring) {
+      expect(w.text.length, 'the error is words').toBeGreaterThan(3)
+      expect(w.shown).toBe(true)
+      expect(w.described, `"${w.text}" is the field's description`).toBe(true)
+      expect(w.invalid, `"${w.text}": the control says it is wrong`).toBe(true)
+      if (w.legend !== null) expect(w.legend.length).toBeGreaterThan(0)
+    }
+
+    for (const preset of Object.keys(presets)) {
+      await paint(page, preset)
+      const low = await page.evaluate(() => {
+        const canvas = document
+          .createElement('canvas')
+          .getContext('2d', { willReadFrequently: true })
+        const rgba = (color) => {
+          canvas.clearRect(0, 0, 1, 1)
+          canvas.fillStyle = color
+          canvas.fillRect(0, 0, 1, 1)
+          return Array.from(canvas.getImageData(0, 0, 1, 1).data)
+        }
+        const luminance = (color) => {
+          const [r, g, b] = rgba(color)
+            .slice(0, 3)
+            .map((v) => {
+              v /= 255
+              return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+            })
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        }
+        const ratio = (a, b) => {
+          const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+          return (x + 0.05) / (y + 0.05)
+        }
+        const behind = (el) => {
+          for (let node = el; node; node = node.parentElement) {
+            const bg = getComputedStyle(node).backgroundColor
+            if (rgba(bg)[3] > 0) return bg
+          }
+          return 'white'
+        }
+        return [
+          ...document.querySelectorAll(
+            '.webx-field__error:not([hidden]), .webx-field__label, .webx-field__hint, .webx-field__choice-label, .webx-field__control:not(.webx-field__control--file)',
+          ),
+        ]
+          .filter((el) => el.getBoundingClientRect().height > 0 && !el.closest('.is-disabled'))
+          .map((el) => ({
+            what: `${el.className} "${(el.value || el.textContent).trim().slice(0, 30)}"`,
+            ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
+          }))
+          .filter((w) => w.ratio < 4.5)
+      })
+      expect(low, preset).toEqual([])
+    }
+  })
+
+  test('Show turns a password to text and back; a file is named in the page’s language', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await inLanguage(page, 'pl')
+
+    const field = page
+      .locator('[data-wx-block="showcase-fields"]')
+      .first()
+      .locator('.b-showcase-fields__state[data-state="empty"] .webx-field--password')
+    const input = field.locator('input')
+    const show = field.locator('.webx-field__show')
+    await expect(show).toHaveText('Pokaż')
+    await expect(show).toHaveAttribute('aria-label', 'Pokaż hasło')
+    await show.click()
+    await expect(input).toHaveAttribute('type', 'text')
+    await expect(show).toHaveAttribute('aria-pressed', 'true')
+    await show.click()
+    await expect(input).toHaveAttribute('type', 'password')
+
+    const file = page
+      .locator('[data-wx-block="showcase-fields"]')
+      .first()
+      .locator('.b-showcase-fields__state[data-state="empty"] .webx-field--file')
+    await expect(file.locator('.webx-field__file-button')).toHaveText('Wybierz pliki')
+    await expect(file.locator('.webx-field__file-name')).toHaveText('Nie wybrano pliku')
+    const blob = { mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4') }
+    await file.locator('input[type=file]').setInputFiles([{ name: 'umowa.pdf', ...blob }])
+    await expect(file.locator('.webx-field__file-name')).toHaveText('umowa.pdf')
+    await file.locator('input[type=file]').setInputFiles([
+      { name: 'a.pdf', ...blob },
+      { name: 'b.pdf', ...blob },
+    ])
+    await expect(file.locator('.webx-field__file-name')).toHaveText('Wybrane pliki: 2')
+    // The words beside a label too.
+    await expect(page.locator('.webx-field__optional').first()).toHaveText('(opcjonalnie)')
+  })
+
+  test('the words of a field are Russian on the Russian page', async ({ page }) => {
+    await inLanguage(page, 'ru')
+    const main = await page.locator('main').innerText()
+    for (const word of ['Показать', 'необязательно', 'Выбрать файлы', 'Выберите…']) {
+      expect(main, word).toContain(word)
+    }
+    for (const word of ['Show', 'optional', 'Choose a file', 'Choose files', 'No file chosen']) {
+      expect(main, word).not.toContain(word)
+    }
+  })
+
+  test('long labels break inside the word; a narrow column puts row choices one under another', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(PATH)
+    await still(page)
+
+    const m = await page.evaluate(() => {
+      const blocks = [...document.querySelectorAll('[data-wx-block="showcase-fields"]')]
+      const choices = (b, type) =>
+        [
+          ...blocks[b].querySelectorAll(
+            `.b-showcase-fields__state[data-state="${b === 2 ? 'invalid' : 'empty'}"] .webx-field--${type} .webx-field__choice`,
+          ),
+        ].map((el) => {
+          const r = el.getBoundingClientRect()
+          return { top: Math.round(r.top), left: Math.round(r.left) }
+        })
+      return {
+        wide: choices(0, 'radio'),
+        narrow: choices(2, 'radio'),
+        column: blocks[2].querySelector('.b-showcase-fields__states').getBoundingClientRect().width,
+      }
+    })
+
+    // At 1280 the radios that stand in a row share their top; in 20rem they stand one under another.
+    expect(new Set(m.wide.map((c) => c.top)).size).toBe(1)
+    expect(m.wide.length).toBe(3)
+    expect(m.column).toBeLessThanOrEqual(20 * 16 + 1)
+    expect(new Set(m.narrow.map((c) => c.left)).size).toBe(1)
+    expect(new Set(m.narrow.map((c) => c.top)).size).toBe(m.narrow.length)
+
+    await page.setViewportSize({ width: 360, height: 740 })
+    const scroll = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(scroll, 'the German word breaks rather than push the page').toBeLessThanOrEqual(0)
+  })
+
+  test('without JavaScript: no Show, and the file input is the browser’s own', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 375, height: 812 },
+    })
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const m = await page.evaluate(() => {
+      const file = document.querySelector('.webx-field--file input[type=file]')
+      return {
+        show: [...document.querySelectorAll('.webx-field__show')].some(
+          (b) => b.getBoundingClientRect().height > 0,
+        ),
+        fileOpacity: getComputedStyle(file).opacity,
+        filePosition: getComputedStyle(file).position,
+        button: getComputedStyle(document.querySelector('.webx-field__file-button')).display,
+        errors: document.querySelectorAll('.webx-field__error:not([hidden])').length,
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      }
+    })
+    expect(m.show).toBe(false)
+    expect(m.fileOpacity).toBe('1')
+    expect(m.filePosition).toBe('static')
+    expect(m.button).toBe('none')
+    // The server's errors are HTML: they stand without a script.
+    expect(m.errors).toBeGreaterThan(13)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    await context.close()
+  })
+})
+
 test.describe('words of the layout', () => {
   // The words the shell can print: the theme's own (THEMES §15.2) and those of the widgets it is
   // built of. Read from the dictionaries themselves, so a word added later is checked too.
