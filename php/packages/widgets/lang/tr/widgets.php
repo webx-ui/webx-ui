@@ -170,4 +170,14 @@ return [
         'label' => 'Yakınlaştır',
         'named' => 'Yakınlaştır: :name',
     ],
+    'field' => [
+        'optional' => 'isteğe bağlı',
+        'show' => 'Göster',
+        'show_password' => 'Parolayı göster',
+        'choose' => 'Seçin…',
+        'choose_file' => 'Dosya seçin',
+        'choose_files' => 'Dosyaları seçin',
+        'no_file' => 'Dosya seçilmedi',
+        'files' => 'Seçilen dosya: :count',
+    ],
 ];

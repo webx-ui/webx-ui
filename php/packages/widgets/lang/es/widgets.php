@@ -170,4 +170,14 @@ return [
         'label' => 'Ampliar',
         'named' => 'Ampliar: :name',
     ],
+    'field' => [
+        'optional' => 'opcional',
+        'show' => 'Mostrar',
+        'show_password' => 'Mostrar contraseña',
+        'choose' => 'Elija…',
+        'choose_file' => 'Elegir un archivo',
+        'choose_files' => 'Elegir archivos',
+        'no_file' => 'Ningún archivo elegido',
+        'files' => 'Archivos elegidos: :count',
+    ],
 ];

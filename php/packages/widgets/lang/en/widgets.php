@@ -170,4 +170,14 @@ return [
         'label' => 'Zoom',
         'named' => 'Zoom: :name',
     ],
+    'field' => [
+        'optional' => 'optional',
+        'show' => 'Show',
+        'show_password' => 'Show password',
+        'choose' => 'Choose…',
+        'choose_file' => 'Choose a file',
+        'choose_files' => 'Choose files',
+        'no_file' => 'No file chosen',
+        'files' => 'Files chosen: :count',
+    ],
 ];

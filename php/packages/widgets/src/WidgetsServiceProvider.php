@@ -48,6 +48,7 @@ use WebxUi\Widgets\View\Components\Countdown;
 use WebxUi\Widgets\View\Components\Counter;
 use WebxUi\Widgets\View\Components\Dialog;
 use WebxUi\Widgets\View\Components\Dropdown;
+use WebxUi\Widgets\View\Components\Field;
 use WebxUi\Widgets\View\Components\Header;
 use WebxUi\Widgets\View\Components\HeaderNav;
 use WebxUi\Widgets\View\Components\Icon;
@@ -157,6 +158,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-load-more', LoadMore::class);
         Blade::component('webx-notice-bar', NoticeBar::class);
         Blade::component('webx-zoom', Zoom::class);
+        Blade::component('webx-field', Field::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');

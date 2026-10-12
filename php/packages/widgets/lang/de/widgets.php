@@ -170,4 +170,14 @@ return [
         'label' => 'Vergrößern',
         'named' => 'Vergrößern: :name',
     ],
+    'field' => [
+        'optional' => 'optional',
+        'show' => 'Anzeigen',
+        'show_password' => 'Passwort anzeigen',
+        'choose' => 'Bitte wählen…',
+        'choose_file' => 'Datei auswählen',
+        'choose_files' => 'Dateien auswählen',
+        'no_file' => 'Keine Datei ausgewählt',
+        'files' => 'Ausgewählte Dateien: :count',
+    ],
 ];

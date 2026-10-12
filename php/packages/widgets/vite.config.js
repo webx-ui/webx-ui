@@ -117,6 +117,8 @@ export default {
         'notice-bar': join(root, 'resources/js/notice-bar.js'),
         // A picture magnified under the mouse or two fingers; the keyboard's way in is the lightbox.
         zoom: join(root, 'resources/js/zoom.js'),
+        // The fields of a form: Show on a password, the line beside a file — the rest is HTML.
+        field: join(root, 'resources/js/field.js'),
       },
       output: {
         entryFileNames: '[name].js',

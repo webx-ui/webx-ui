@@ -170,4 +170,14 @@ return [
         'label' => 'Agrandir',
         'named' => 'Agrandir : :name',
     ],
+    'field' => [
+        'optional' => 'facultatif',
+        'show' => 'Afficher',
+        'show_password' => 'Afficher le mot de passe',
+        'choose' => 'Choisissez…',
+        'choose_file' => 'Choisir un fichier',
+        'choose_files' => 'Choisir des fichiers',
+        'no_file' => 'Aucun fichier choisi',
+        'files' => 'Fichiers choisis : :count',
+    ],
 ];
