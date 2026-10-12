@@ -306,7 +306,9 @@ With `webx-ui/module-audit` every crawled page is also read for what the widgets
 - **Lightbox link without the picture size**, **moving slider without a pause button**, **background
   video without a pause button**, **before and after without its slider** (a theme's override that
   lost it), **a table of contents linking to a heading the page does not have**, **"Show more" without a link
-  to its next page** (search engines do not press buttons) — warnings; **a counter without
+  to its next page** (search engines do not press buttons), **a form without its script** (a
+  form that sends in place on a page loading no `form.js` — a layout with neither `@webxTheme` nor
+  `@webxWidgets`, or files never synced) — warnings; **a counter without
   its number** (an override that left it to the script) and **both quick-contact widgets on one
   page** — notices.
 
@@ -321,6 +323,30 @@ rendered too — the marker becomes the stylesheets and the scripts go before `<
 
 The files are published by `php artisan webx:theme:sync` next to the themes', under
 `public/themes/webx-ui/widgets/<hash>/`.
+
+### On a site without a theme
+
+`@webxTheme` prints nothing there, so the marker never stands on the page — and every
+`<x-webx-form>`, an inbox form among them, falls back to a plain POST with a reload. The layout
+asks for the scripts with one line before `</body>`:
+
+```blade
+    @webxWidgets
+</body>
+```
+
+The page is then finished the same way, with the scripts — the runtime, `form.js`, `field.js`,
+and whatever else a component on it claimed — and without a stylesheet: those are made of a
+theme's tokens, which the site does not have, so the forms wear the site's own CSS on the same
+`webx-field-*` and `webx-form-*` classes. No cookie banner either: an unstyled one over the page
+would be worse than none. Under a theme the directive adds nothing, so a layout that keeps it
+after adopting one loses nothing.
+
+`webx:theme:sync` publishes the widgets without a theme too (and nothing else);
+`webx:setup` runs it, adds it to `post-update-cmd`, and writes `@webxWidgets` into the layout of
+`--no-theme`. A site set up before: add the line and run the sync once. Do not import
+`vendor/webx-ui/widgets/dist/*.js` into the site's own bundle — the package is not on npm, the
+files change with every update, and a bundled copy outlives the one the page links.
 
 In the browser `webx.mount(root)` starts whatever is new inside `root` — the same call the blocks
 runtime answers — and `webx.unmount(root)` lets it go. `webx.widget(name, selector, setup)`

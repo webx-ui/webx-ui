@@ -164,6 +164,14 @@ HTML and works as it is.
 `<x-webx-form>` is the `<form>` with what every form of the site needs, and `dist/form.js|css`
 (about 3 KB gzip) only on the pages where one stands.
 
+::: tip A site without a theme
+The scripts come with `@webxTheme`, which prints nothing on a site without a theme. Such a site
+writes `@webxWidgets` before `</body>` in its layout and runs `php artisan webx:theme:sync` once:
+the forms get their scripts — not the stylesheets, which are made of a theme's tokens; the site
+styles `webx-field-*` and `webx-form-*` itself. Without the line every form still works, with a
+reload, and the audit's `widgets.form_script` names the page. `webx:setup --no-theme` writes both.
+:::
+
 - **The token and the method** are printed by the form: `@csrf`, `@method` for `method="put"`,
   `patch` or `delete`. `:csrf="false"` is for a door that guards itself otherwise — Inbox's
   intake checks the Origin, a honeypot and a rate instead. `method="get"` — a search — is a plain

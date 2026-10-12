@@ -125,7 +125,9 @@ is what a machine name is for.
 
 **It works without JavaScript.** The form posts, the intake answers with a redirect, and the page
 comes back with the errors under their fields or the thank-you under them — through the session,
-which is why the intake keeps one. With JavaScript the widgets' `form.js` does the same in place.
+which is why the intake keeps one. With JavaScript the widgets' `form.js` does the same in place
+— linked by `@webxTheme`, or on a site without a theme by `@webxWidgets` before `</body>` in its
+layout ([Forms](./forms#the-form)).
 The Inbox's own script, `inbox.js`, is only the captcha's half — it runs an invisible captcha on
 `webx:form:submit` and resets it after the answer — and is linked only by a form with a captcha.
 

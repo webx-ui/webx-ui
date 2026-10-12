@@ -71,8 +71,10 @@ class NoThemeTest extends TestCase
         $html = (string) $this->get('/asked')->assertOk()->getContent();
 
         foreach (['runtime', 'form', 'field'] as $widget) {
-            $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/themes/webx-ui/widgets/[0-9a-f]{12}/'.$widget.'\.js"></script>\n</body>~', $html);
+            $this->assertMatchesRegularExpression('~<script type="module" src="[^"]+/themes/webx-ui/widgets/[0-9a-f]{12}/'.$widget.'\.js"></script>~', $html);
         }
+
+        $this->assertLessThan(strpos($html, '</body>'), (int) strpos($html, 'field.js'));
 
         $this->assertStringNotContainsString(Widgets::SCRIPTS, $html);
         $this->assertStringNotContainsString('<link rel="stylesheet"', $html);

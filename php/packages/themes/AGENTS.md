@@ -40,6 +40,8 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
   `public/themes/modules/<hash>/modules.css` (`ModuleStyles`), the layers' icons as one sprite
   (`ThemeIcons`), then runs the steps packages tag `webx-themes.sync` (`Contracts\SyncStep`):
   `module-blocks` puts the layers' block types on the site. A refused line exits non-zero.
+  Without a theme it publishes only the packages below the themes (`BottomLayers`: the widgets'
+  scripts, which `@webxWidgets` links on such a site).
 - **Block types of a layer** — `blocks/<slug>.json` in the `webx:blocks:export` format
   (`Blocks\LayerBlocks::of($chain)`): an upper layer replaces a lower one's type with the same
   slug whole; its schema keeps every field below with the same type (`webx:theme:check` says so).

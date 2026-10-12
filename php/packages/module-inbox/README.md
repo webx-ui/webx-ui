@@ -106,6 +106,13 @@ JavaScript the form posts, the intake answers with a redirect, and the page come
 errors under their fields or the thank-you under them — through the session, which is why the
 intake keeps one.
 
+The engine's scripts (`form.js`, `field.js`, and `files.js`/`mask.js` when a field needs them)
+come with the page's finish: `@webxTheme` links them on a site with a theme. **A site without a
+theme writes `@webxWidgets` before `</body>` in its layout** and runs
+`php artisan webx:theme:sync` once (after that, `composer update` does; `webx:setup --no-theme`
+writes both) — otherwise every form still works, but reloads the page to answer and is checked
+by the server only, and the audit's `widgets.form_script` says so.
+
 The inbox's own script, `{path}/inbox.js`, is only the captcha's half of sending: it runs an
 invisible captcha on `webx:form:submit` and resets every captcha after `webx:form:success` and
 `webx:form:error`. A form without a captcha does not link it.
@@ -143,7 +150,8 @@ The fields, the messages and the button are the widgets' `webx-field-*` and `web
 same classes as every form of the site. On a site with a theme (`webx-ui/themes`) the package
 brings only its layout, `resources/theme/inbox.css`: fields two to a row where the panel marked
 them half width (`webx-inbox-form__field--half`) and the form is at least 32rem wide. The theme
-restyles all of it without publishing a view. A site without a theme gets no stylesheet of ours.
+restyles all of it without publishing a view. A site without a theme gets no stylesheet of ours —
+only the scripts, through `@webxWidgets` (above) — and styles the same classes in its own CSS.
 
 Restyling is the cheap door; a different frame is the expensive one. After publishing, the views
 belong to the site and no longer get the package's fixes:
