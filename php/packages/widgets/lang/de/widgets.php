@@ -187,4 +187,14 @@ return [
         'failed' => 'Das Formular konnte nicht gesendet werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.',
         'expired' => 'Die Seite ist schon zu lange geöffnet. Laden Sie sie neu und senden Sie das Formular noch einmal.',
     ],
+    'suggest' => [
+        'label' => 'Suche',
+        'placeholder' => 'Suchen',
+        'submit' => 'Suchen',
+        'nothing' => 'Nichts gefunden',
+        'recent' => 'Letzte Suchanfragen',
+        'clear' => 'Letzte Suchanfragen löschen',
+        'count' => 'Vorschläge: :count',
+        'failed' => 'Vorschläge sind gerade nicht verfügbar. Drücken Sie die Eingabetaste, um zu suchen.',
+    ],
 ];

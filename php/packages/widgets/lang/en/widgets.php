@@ -187,4 +187,14 @@ return [
         'failed' => 'The form could not be sent. Check the connection and try again.',
         'expired' => 'The page has been open too long. Reload it and send the form again.',
     ],
+    'suggest' => [
+        'label' => 'Search',
+        'placeholder' => 'Search',
+        'submit' => 'Search',
+        'nothing' => 'Nothing found',
+        'recent' => 'Recent searches',
+        'clear' => 'Clear recent searches',
+        'count' => 'Suggestions: :count',
+        'failed' => 'Suggestions are not available right now. Press Enter to search.',
+    ],
 ];

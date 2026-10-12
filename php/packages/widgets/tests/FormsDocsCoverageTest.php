@@ -87,6 +87,26 @@ final class FormsDocsCoverageTest extends PlainTestCase
         $this->assertSame([], $missing, 'Events of form.js named nowhere in the docs.');
     }
 
+    /** The suggestions while typing (W6.5): their events and the marks a site's HTML carries. */
+    #[Test]
+    public function every_event_and_mark_of_the_suggestions_is_named(): void
+    {
+        $docs = self::docs();
+        $script = (string) file_get_contents(dirname(__DIR__).'/resources/js/suggest.js');
+        preg_match_all("/emit\\('([a-z]+)'/", $script, $events);
+        preg_match_all('/\[(data-webx-[a-z-]+)\]/', $script, $marks);
+
+        $this->assertNotSame([], $events[1]);
+        $this->assertContains('data-webx-option', $marks[1]);
+        $missing = [
+            ...array_map(static fn (string $event): string => 'webx:suggest:'.$event, array_unique($events[1])),
+            ...array_unique($marks[1]),
+            '<x-webx-suggest',
+        ];
+
+        $this->assertSame([], array_values(array_filter($missing, static fn (string $word): bool => ! str_contains($docs, $word))), 'Events and marks of suggest.js named nowhere in the docs.');
+    }
+
     /**
      * What FormRules understands, as the validator spells it: its lists of rules and every rule its
      * `check()` matches by name.

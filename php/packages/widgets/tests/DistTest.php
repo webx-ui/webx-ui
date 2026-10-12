@@ -54,6 +54,9 @@ final class DistTest extends PlainTestCase
     /** The shell of a form and, from W6.3, its checks in the browser: 8 KB gzip (§17.6), only where a form stands. */
     private const int FORM_BUDGET = 8 * 1024;
 
+    /** Suggestions while typing (W6.5): the combobox and the panel's frame, 4 KB gzip — the HTML inside is the site's. */
+    private const int SUGGEST_BUDGET = 4 * 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -92,7 +95,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
@@ -131,6 +134,20 @@ final class DistTest extends PlainTestCase
         $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, self::gzipped('mask.js'), 'The phone mask is over its budget.');
         $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, self::gzipped('files.js') + self::gzipped('files.css'), 'The files of a field are over their budget.');
         $this->assertStringNotContainsString('mask', (string) file_get_contents(Widgets::path().'/dist/form.js'));
+    }
+
+    /**
+     * Suggestions while typing (W6.5): their own file, claimed by `<x-webx-suggest>` only — a page
+     * with a search box and no form does not load the form, nor a form the combobox.
+     */
+    #[Test]
+    public function the_suggestions_stay_inside_their_budget(): void
+    {
+        $size = self::gzipped('suggest.js') + self::gzipped('suggest.css');
+
+        $this->assertLessThanOrEqual(self::SUGGEST_BUDGET, $size, sprintf('The suggestions are %.1f KB gzip.', $size / 1024));
+        $this->assertStringNotContainsString('webx:suggest', (string) file_get_contents(Widgets::path().'/dist/form.js'));
+        $this->assertStringNotContainsString('webx:form', (string) file_get_contents(Widgets::path().'/dist/suggest.js'));
     }
 
     #[Test]

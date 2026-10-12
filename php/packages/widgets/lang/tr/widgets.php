@@ -187,4 +187,14 @@ return [
         'failed' => 'Form gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.',
         'expired' => 'Sayfa çok uzun süredir açık. Sayfayı yenileyip formu tekrar gönderin.',
     ],
+    'suggest' => [
+        'label' => 'Arama',
+        'placeholder' => 'Ara',
+        'submit' => 'Ara',
+        'nothing' => 'Hiçbir şey bulunamadı',
+        'recent' => 'Son aramalar',
+        'clear' => 'Son aramaları temizle',
+        'count' => 'Öneriler: :count',
+        'failed' => 'Öneriler şu anda kullanılamıyor. Aramak için Enter tuşuna basın.',
+    ],
 ];

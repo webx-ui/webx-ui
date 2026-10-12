@@ -187,4 +187,14 @@ return [
         'failed' => 'Nie udało się wysłać formularza. Sprawdź połączenie i spróbuj ponownie.',
         'expired' => 'Strona jest otwarta zbyt długo. Odśwież ją i wyślij formularz ponownie.',
     ],
+    'suggest' => [
+        'label' => 'Wyszukiwanie',
+        'placeholder' => 'Szukaj',
+        'submit' => 'Szukaj',
+        'nothing' => 'Nic nie znaleziono',
+        'recent' => 'Ostatnie wyszukiwania',
+        'clear' => 'Wyczyść ostatnie wyszukiwania',
+        'count' => 'Podpowiedzi: :count',
+        'failed' => 'Podpowiedzi są teraz niedostępne. Naciśnij Enter, aby wyszukać.',
+    ],
 ];
