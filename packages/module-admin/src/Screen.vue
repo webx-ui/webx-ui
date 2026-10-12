@@ -76,7 +76,8 @@ defineExpose({ reload: load })
 <template>
   <div class="wx-screen-host">
     <wx-alert v-if="failed" type="danger" :title="t('shell.error-title')" :description="failed" />
-    <wx-skeleton v-else-if="root === null" :rows="4" />
+    <!-- A page that knows the shape of its screen — tabs, a card — draws the wait in that shape. -->
+    <slot v-else-if="root === null" name="loading"><wx-skeleton :rows="4" /></slot>
     <wx-screen-renderer
       v-else
       v-model="model"

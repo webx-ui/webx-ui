@@ -9,7 +9,7 @@ import {
   WxScreenHead,
   type ScreenAction,
 } from '@webx-ui/module-admin'
-import { toast, WxActionBar, WxButton, WxSkeleton } from '@webx-ui/core'
+import { toast, WxActionBar, WxButton, WxCard, WxSkeleton } from '@webx-ui/core'
 import type { Patch, ScreenModel, ScreenNode } from '@webx-ui/schema'
 import { createSettingsApi } from './api'
 import { settingOptions } from './settingOptions'
@@ -122,7 +122,9 @@ const actions = computed<ScreenAction[]>(() =>
   <div class="wx-settings">
     <wx-screen-head :title="title" :actions="actions" />
 
-    <wx-skeleton v-if="loading" :rows="4" />
+    <!-- The wait looks like what comes: the fields sit in cards. Twice — while the values load,
+         then while the screen does — so the shape does not change between the two. -->
+    <wx-card v-if="loading"><wx-skeleton :rows="6" /></wx-card>
     <wx-screen
       v-else
       v-model="values"
@@ -131,7 +133,11 @@ const actions = computed<ScreenAction[]>(() =>
       :errors="errors"
       :disabled="!canManage"
       @loaded="tree = $event"
-    />
+    >
+      <template #loading>
+        <wx-card><wx-skeleton :rows="6" /></wx-card>
+      </template>
+    </wx-screen>
 
     <!--
       Where the panel says when the database was last dumped (§6 of the backups spec). It is
