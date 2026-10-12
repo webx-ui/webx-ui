@@ -402,8 +402,8 @@ class CatalogServiceProvider extends ServiceProvider
     }
 
     /**
-     * The storefront's SEO and its two routes (§4, §10): the search always, the root of the
-     * catalogue only when it is switched on (decision 25 of the architecture).
+     * The storefront's SEO and its routes (§4, §10): the search and its suggestions always, the
+     * root of the catalogue only when it is switched on (decision 25 of the architecture).
      *
      * Ordinary routes, so they win before the registry's fallback is reached and `Reserved`
      * closes their addresses to pages. The search is registered first: the root takes a tail,
@@ -424,7 +424,11 @@ class CatalogServiceProvider extends ServiceProvider
             return;
         }
 
-        $routes = [['path' => $prefix.'/search/{tail?}', 'action' => 'search', 'name' => 'webx.catalog.search']];
+        // The suggestions of the search box (WIDGETS W6.5) before the root, whose tail would take them.
+        $routes = [
+            ['path' => $prefix.'/suggest', 'action' => 'suggest', 'name' => 'webx.catalog.suggest'],
+            ['path' => $prefix.'/search/{tail?}', 'action' => 'search', 'name' => 'webx.catalog.search'],
+        ];
 
         if ((bool) $this->config()->get('webx-catalog.root.enabled', false)) {
             $routes[] = ['path' => $prefix.'/{tail?}', 'action' => 'root', 'name' => 'webx.catalog.root'];
