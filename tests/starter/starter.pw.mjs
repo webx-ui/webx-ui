@@ -5827,7 +5827,8 @@ test.describe('fields', () => {
       { name: 'a.pdf', ...blob },
       { name: 'b.pdf', ...blob },
     ])
-    await expect(file.locator('.webx-field__file-name')).toHaveText('Wybrane pliki: 2')
+    // Choosing again in a field of several adds to what was chosen (files.js, W6.3).
+    await expect(file.locator('.webx-field__file-name')).toHaveText('Wybrane pliki: 3')
     // The words beside a label too.
     await expect(page.locator('.webx-field__optional').first()).toHaveText('(opcjonalnie)')
   })
