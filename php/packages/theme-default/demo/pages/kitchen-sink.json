@@ -6426,6 +6426,190 @@
               }
             }
           ]
+        },
+        {
+          "title": {
+            "en": "Validation",
+            "ru": "Проверка",
+            "pl": "Walidacja"
+          },
+          "slug": {
+            "en": "validation",
+            "ru": "proverka",
+            "pl": "walidacja"
+          },
+          "seo": {
+            "title": {
+              "en": "Validation",
+              "ru": "Проверка",
+              "pl": "Walidacja"
+            },
+            "description": {
+              "en": "A form checked in the browser by the server’s own rules, in the validator’s own words; the phone mask; files dropped, listed and refused before they are sent.",
+              "ru": "Форма, проверенная в браузере правилами самого сервера и словами его валидатора; маска телефона; файлы — перетаскивание, список и отказ до отправки.",
+              "pl": "Formularz sprawdzany w przeglądarce regułami samego serwera i słowami jego walidatora; maska telefonu; pliki przeciągnięte, wypisane i odrzucone przed wysłaniem."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-validation-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Validation",
+                  "ru": "Проверка",
+                  "pl": "Walidacja"
+                },
+                "body": {
+                  "en": "The rules of a form are written once, on the server. The part a browser understands it checks before anything is sent — required, an address, a length, a pattern, a file’s type and size — and says what is wrong in the very words the server would use, in the language of the page. Everything else, and everything again, the server checks.\nThe phone field puts a number in international form as it is typed, pasted or filled in. The photos field takes pictures dropped on it, lists them with their size, and lets one go before sending.",
+                  "ru": "Правила формы пишутся один раз — на сервере. Ту часть, которую понимает браузер, он проверяет до отправки — обязательность, адрес, длину, шаблон, тип и размер файла — и говорит, что не так, ровно теми словами, какими сказал бы сервер, на языке страницы. Всё остальное, и всё ещё раз, проверяет сервер.\nПоле телефона приводит номер к международному виду, пока его набирают, вставляют или заполняют автоматически. Поле фотографий принимает перетащенные картинки, показывает их с размером и позволяет убрать лишнюю до отправки.",
+                  "pl": "Reguły formularza pisze się raz – na serwerze. Część, którą rozumie przeglądarka, sprawdza ona przed wysłaniem – wymagalność, adres, długość, wzorzec, typ i rozmiar pliku – i mówi, co jest nie tak, dokładnie tymi słowami, których użyłby serwer, w języku strony. Wszystko inne, i wszystko jeszcze raz, sprawdza serwer.\nPole telefonu doprowadza numer do postaci międzynarodowej podczas pisania, wklejania lub autouzupełniania. Pole zdjęć przyjmuje przeciągnięte obrazy, pokazuje je z rozmiarem i pozwala usunąć zbędne przed wysłaniem."
+                }
+              }
+            },
+            {
+              "key": "showcase-validation-form",
+              "type": "showcase-validation",
+              "values": {
+                "heading": {
+                  "en": "One form, checked twice",
+                  "ru": "Одна форма, проверенная дважды",
+                  "pl": "Jeden formularz, sprawdzony dwa razy"
+                },
+                "note": {
+                  "en": "Leave a field you typed in and it is checked; Send checks them all and sends nothing while one is wrong. Ask the server skips the browser: the same words come back from the server. The name admin passes the browser and not the server — that rule is the server’s alone.",
+                  "ru": "Покиньте поле, в котором что-то набрали, — оно проверится; «Отправить» проверяет все поля и ничего не отправляет, пока одно неверно. «Спросить сервер» идёт мимо браузера — и сервер возвращает те же слова. Имя admin браузер пропустит, а сервер — нет: это правило знает только сервер.",
+                  "pl": "Opuść pole, w którym coś wpisano – zostanie sprawdzone; Wyślij sprawdza wszystkie pola i nic nie wysyła, dopóki jedno jest błędne. Zapytaj serwer omija przeglądarkę – serwer zwraca te same słowa. Imię admin przeglądarka przepuści, a serwer nie: tę regułę zna tylko serwer."
+                },
+                "label_name": {
+                  "en": "Your name",
+                  "ru": "Ваше имя",
+                  "pl": "Twoje imię"
+                },
+                "hint_name": {
+                  "en": "Two to sixty letters.",
+                  "ru": "От двух до шестидесяти букв.",
+                  "pl": "Od dwóch do sześćdziesięciu liter."
+                },
+                "label_email": {
+                  "en": "Email",
+                  "ru": "Электронная почта",
+                  "pl": "E-mail"
+                },
+                "label_phone": {
+                  "en": "Phone",
+                  "ru": "Телефон",
+                  "pl": "Telefon"
+                },
+                "hint_phone": {
+                  "en": "With the country code: +48 512 345 678. Paste it in any form.",
+                  "ru": "С кодом страны: +48 512 345 678. Можно вставить в любом виде.",
+                  "pl": "Z kodem kraju: +48 512 345 678. Można wkleić w dowolnej postaci."
+                },
+                "label_age": {
+                  "en": "Age",
+                  "ru": "Возраст",
+                  "pl": "Wiek"
+                },
+                "label_website": {
+                  "en": "Website",
+                  "ru": "Сайт",
+                  "pl": "Strona internetowa"
+                },
+                "label_day": {
+                  "en": "Start date",
+                  "ru": "Дата начала",
+                  "pl": "Data rozpoczęcia"
+                },
+                "label_password": {
+                  "en": "Password",
+                  "ru": "Пароль",
+                  "pl": "Hasło"
+                },
+                "hint_password": {
+                  "en": "Eight characters or more.",
+                  "ru": "Восемь символов или больше.",
+                  "pl": "Osiem znaków lub więcej."
+                },
+                "label_confirmation": {
+                  "en": "The password again",
+                  "ru": "Пароль ещё раз",
+                  "pl": "Hasło ponownie"
+                },
+                "label_plan": {
+                  "en": "Plan",
+                  "ru": "Тариф",
+                  "pl": "Plan"
+                },
+                "plan_basic": {
+                  "en": "Basic",
+                  "ru": "Базовый",
+                  "pl": "Podstawowy"
+                },
+                "plan_team": {
+                  "en": "Team",
+                  "ru": "Командный",
+                  "pl": "Zespołowy"
+                },
+                "label_photos": {
+                  "en": "Photos",
+                  "ru": "Фотографии",
+                  "pl": "Zdjęcia"
+                },
+                "hint_photos": {
+                  "en": "Up to three pictures, 2 MB each.",
+                  "ru": "До трёх картинок, по 2 МБ каждая.",
+                  "pl": "Do trzech zdjęć, po 2 MB każde."
+                },
+                "label_agree": {
+                  "en": "I agree that this demo form sends what I typed to the site and forgets it",
+                  "ru": "Я согласен, что эта демонстрационная форма отправит написанное на сайт и забудет его",
+                  "pl": "Zgadzam się, że ten formularz demonstracyjny wyśle wpisany tekst na stronę i o nim zapomni"
+                },
+                "optional": {
+                  "en": "optional",
+                  "ru": "необязательно",
+                  "pl": "opcjonalnie"
+                },
+                "button": {
+                  "en": "Send",
+                  "ru": "Отправить",
+                  "pl": "Wyślij"
+                },
+                "button_server": {
+                  "en": "Ask the server",
+                  "ru": "Спросить сервер",
+                  "pl": "Zapytaj serwer"
+                },
+                "thanks_heading": {
+                  "en": "Everything is right",
+                  "ru": "Всё верно",
+                  "pl": "Wszystko się zgadza"
+                },
+                "thanks_message": {
+                  "en": "The browser and the server agree. Nothing was kept: this is the showcase.",
+                  "ru": "Браузер и сервер согласны. Ничего не сохранено: это витрина.",
+                  "pl": "Przeglądarka i serwer się zgadzają. Nic nie zostało zapisane: to jest witryna."
+                }
+              }
+            },
+            {
+              "key": "showcase-validation-markup",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "For the site",
+                  "ru": "Для сайта",
+                  "pl": "Dla strony"
+                },
+                "body": {
+                  "en": "The form takes the rules the controller validates by: <x-webx-form :rules=\"FormRules::for($rules, $attributes)\">. Each <x-webx-field> inside takes its own part — the checks with the validator’s lines, required, the limits of a number or a date, the files a picker offers. unique, exists and closures stay the server’s. A phone field asks for the mask with mask; a file field lists, drops and removes by itself.",
+                  "ru": "Форма берёт правила, по которым проверяет контроллер: <x-webx-form :rules=\"FormRules::for($rules, $attributes)\">. Каждое <x-webx-field> внутри берёт свою часть — проверки со строками валидатора, обязательность, пределы числа или даты, файлы, которые предложит выбор. unique, exists и замыкания остаются серверу. Поле телефона просит маску атрибутом mask; поле файла само показывает список, принимает перетаскивание и убирает лишнее.",
+                  "pl": "Formularz bierze reguły, według których sprawdza kontroler: <x-webx-form :rules=\"FormRules::for($rules, $attributes)\">. Każde <x-webx-field> w środku bierze swoją część – sprawdzenia z wierszami walidatora, wymagalność, granice liczby lub daty, pliki proponowane przez wybór. unique, exists i domknięcia zostają serwerowi. Pole telefonu prosi o maskę atrybutem mask; pole pliku samo pokazuje listę, przyjmuje przeciąganie i usuwa zbędne."
+                }
+              }
+            }
+          ]
         }
       ]
     }
