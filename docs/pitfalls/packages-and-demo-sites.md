@@ -273,6 +273,9 @@ vendor/composer/autoload_files.php`.
   «висит» без дочернего процесса. Либо каталог
   `php.exe` в PATH, либо сами бинарники: `php.exe vendor/bin/pint --test`, `… phpstan analyse`,
   `… phpunit`.
+- **`composer test` обрывается на середине с «The process "phpunit" exceeded the timeout of 300
+  seconds».** Похоже на зависший тест, а это таймаут скриптов composer: полный PHPUnit локально идёт
+  около девяти минут. `COMPOSER_PROCESS_TIMEOUT=0` перед `composer test` или сам `vendor/bin/phpunit`.
 - Было: dev-корень `php/` не запускался на 8.3 при пакетах на `^8.3` (PHPUnit 13 требует 8.4.1).
   Нижняя версия пакетов поднята до `^8.4`, матрица CI — 8.4 и 8.5.
 
