@@ -131,10 +131,17 @@ webx:theme:sync`. Случайную запись снимать `git -C <осн
   пакеты самого worktree. Проверка — `ls -la packages/<пакет>/node_modules/@webx-ui` показывает
   путь worktree. Сборку пакета из worktree `npx vite build` делает в его каталоге; без junction'а
   на `node_modules` пакета она падает «Cannot find package 'vite-plugin-dts'».
+- **`starter-site.sh` снёс клон сайта вместе с `.git`.** Скрипт по определению одноразовый: удаляет
+  каталог целиком, кроме `.osp/`. Раньше его каталогом по умолчанию был `webx-starter.local`, а под
+  этим именем теперь живёт клон `sites/starter` с хостинга, где правится `theme/` под дизайн. Каталог
+  по умолчанию — `webx-starter-test.local` (база `webx_starter_test`), и скрипт падает «is a git
+  checkout», если в `STARTER_PATH` есть `.git`. Хост `webx-starter-test.local` в OSPanel заводится
+  один раз (`.osp/project.ini` в каталоге сайта, его пересборка сохраняет). Проверка —
+  `STARTER_PATH=<клон> scripts/starter-site.sh --down` отказывает, не тронув ни файла.
 - **Стартовый сайт показывает не твою ветку, хотя пересобран только что.** `starter-site.sh`
   линкует тот чекаут, из которого запущен (`MONOREPO` — родитель скрипта), а в основном чекауте
   может стоять ветка другой сессии. PHP из worktree проверяется запуском скрипта из worktree с
-  `STARTER_PATH=/c/Work/OSPanel/home/webx-starter.local`, `STARTER_URL=http://webx-starter.local`
+  `STARTER_PATH=/c/Work/OSPanel/home/webx-starter-test.local`, `STARTER_URL=http://webx-starter-test.local`
   и `STARTER_ENV=<основной чекаут>/.env.starter` — без них сайт соберётся рядом с worktree и без
   `.env.starter`; шаг npm требует `packages/core/dist`, его и
   остальные `packages/*/dist` взять junction'ами из основного чекаута, если npm-пакеты не

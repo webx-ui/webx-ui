@@ -1017,7 +1017,7 @@ test.describe('slider', () => {
 
   // Answered already: the banner would stand over the sliders at the bottom of a phone.
   const answered = async (context) => {
-    const url = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local')
+    const url = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local')
     await context.addCookies([
       {
         name: 'webx_consent',
@@ -1295,7 +1295,7 @@ test.describe('lightbox', () => {
 
   // Answered already: the banner would stand over the pictures at the bottom of a phone.
   const answered = async (context) => {
-    const url = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local')
+    const url = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local')
     await context.addCookies([
       {
         name: 'webx_consent',
@@ -1405,7 +1405,7 @@ test.describe('lightbox', () => {
     context,
   }) => {
     await answered(context)
-    const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+    const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
     const outside = []
     page.on('request', (request) => {
       const url = request.url()
@@ -1509,7 +1509,7 @@ test.describe('lightbox', () => {
 })
 
 test.describe('gallery and logos blocks', () => {
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   // Answered already: the banner would stand over the blocks at the bottom of a phone.
   const answered = async (context) => {
@@ -1775,7 +1775,7 @@ test.describe('gallery and logos blocks', () => {
 
 test.describe('video', () => {
   const PATH = '/kitchen-sink/video'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
   const THIRD =
     /(^|\.)(youtube\.com|youtube-nocookie\.com|youtu\.be|ytimg\.com|googlevideo\.com|vimeo\.com|vimeocdn\.com)$/
 
@@ -2089,7 +2089,7 @@ test.describe('video', () => {
 
 test.describe('map', () => {
   const PATH = '/kitchen-sink/map'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
   // A tile, answered here: the run does not depend on the network, and every tile is written down.
   const TILE = Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
@@ -2328,7 +2328,7 @@ test.describe('map', () => {
 
 test.describe('page tools', () => {
   const PATH = '/kitchen-sink/page-tools'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
   const CAPTION = 'Plans compared, per month'
 
   const answered = {
@@ -2681,7 +2681,7 @@ test.describe('page tools', () => {
 
 test.describe('background video', () => {
   const PATH = '/kitchen-sink/background-video'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -2903,7 +2903,7 @@ test.describe('background video', () => {
 
 test.describe('counters and countdown', () => {
   const PATH = '/kitchen-sink/counters-and-countdown'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -3067,7 +3067,7 @@ test.describe('counters and countdown', () => {
 
 test.describe('before and after', () => {
   const PATH = '/kitchen-sink/before-and-after'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -3310,7 +3310,7 @@ test.describe('before and after', () => {
 
 test.describe('table of contents', () => {
   const PATH = '/kitchen-sink/table-of-contents'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -3532,7 +3532,7 @@ test.describe('table of contents', () => {
 
 test.describe('show more', () => {
   const PATH = '/kitchen-sink/show-more'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -3690,7 +3690,7 @@ test.describe('show more', () => {
 
 test.describe('notice bar', () => {
   const PATH = '/kitchen-sink/notice-bar'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -3834,7 +3834,7 @@ test.describe('notice bar', () => {
 
 test.describe('zoom', () => {
   const PATH = '/kitchen-sink/zoom'
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -4189,7 +4189,7 @@ test.describe('blocks of the theme', () => {
   const BASE = '/kitchen-sink/blocks'
   const PAGES = ['hero', 'text', 'media-text', 'cards', 'cta', 'contact']
   const SIX = PAGES.map((slug) => `[data-wx-block="${slug}"]`).join(', ')
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -4421,7 +4421,7 @@ test.describe('modules in the theme', () => {
   // THEMES §10.2, TH3.1: what the modules print, in their own base look under theme-default.
   const BASE = '/kitchen-sink/modules'
   const PAGES = [BASE, `${BASE}/form`, `${BASE}/faq-and-links`, `${BASE}/long-trail`]
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -4771,7 +4771,7 @@ test.describe('module pages in the theme', () => {
   // theme-default — on a starter built with --with=blog,services,events,vacancies,press,recipes
   // (recipes since TH3.4). A module
   // the starter was built without is skipped, not failed.
-  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
 
   const answered = {
     name: 'webx_consent',
@@ -5446,7 +5446,12 @@ test.describe('fonts', () => {
         .join(''),
     )
     expect(faces.match(/@font-face/g)?.length, 'three scripts, upright and italic').toBe(6)
-    expect(faces).not.toMatch(/fonts\.googleapis|fonts\.gstatic|https?:\/\/(?!webx-starter\.local)/)
+    expect(faces).not.toMatch(/fonts\.googleapis|fonts\.gstatic/)
+    // Any absolute address in the faces is the site's own, whichever host the run points at.
+    const own = new URL(process.env.STARTER_URL ?? 'http://webx-starter-test.local').origin
+    for (const address of faces.match(/https?:\/\/[^\s)'"]+/g) ?? []) {
+      expect(address.startsWith(own), address).toBe(true)
+    }
     const files = await fontFiles(page)
     // Every script on the page at once: the three upright files.
     for (const file of ['inter-latin.woff2', 'inter-latin-ext.woff2', 'inter-cyrillic.woff2']) {

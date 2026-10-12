@@ -1,6 +1,6 @@
 // `pnpm test:starter` — the browser checks of the starter site and its showcase (THEMES §18.4,
 // WIDGETS §16). Local only, not in CI: it needs the site that `scripts/starter-site.sh` builds
-// (http://webx-starter.local by default, STARTER_URL to point elsewhere), and the gate already
+// (http://webx-starter-test.local by default, STARTER_URL to point elsewhere), and the gate already
 // runs into memory and time.
 //
 // The browser is the Edge every Windows machine has, so the run downloads nothing; elsewhere,
@@ -22,7 +22,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list'], ['html', { outputFolder: './report', open: 'never' }]],
   use: {
-    baseURL: process.env.STARTER_URL ?? 'http://webx-starter.local',
+    baseURL: process.env.STARTER_URL ?? 'http://webx-starter-test.local',
     channel: channel === 'chromium' ? undefined : channel,
     ignoreHTTPSErrors: true,
   },
