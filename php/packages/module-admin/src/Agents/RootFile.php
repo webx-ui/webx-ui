@@ -26,6 +26,9 @@ final class RootFile
      */
     public const STYLES_GUIDE = 'https://webx-ui.github.io/webx-ui/guide/styles';
 
+    /** How every form of the site is built: the fields, the shell, the answer, the checks (WIDGETS §17.7). */
+    public const FORMS_GUIDE = 'https://webx-ui.github.io/webx-ui/guide/forms';
+
     /** What a new file carries below the block, for the project to fill in. */
     public const PROJECT = <<<'MD'
         ## This project
@@ -64,6 +67,10 @@ final class RootFile
             '2. Views — `--tag=webx-<module>-views`, then keep only the files you actually change.',
             '3. Panel screens — a patch, `Screens::extend(\'<screen>\', [...])` in `AppServiceProvider::boot()`.',
             '4. Registries and services — register your own beside the package\'s, or bind a replacement in the container.',
+            '',
+            '**Any form of the site is `<x-webx-form>` with `<x-webx-field>` inside**, and its controller answers with',
+            '`WebxUi\Widgets\Forms\FormResponse` — a sign-in, a checkout step, a request of the Inbox alike. No markup',
+            'of a field, no `fetch` and no check rules in JavaScript of your own: '.self::FORMS_GUIDE,
             '',
             'If none of these reaches what is needed, the module is missing a seam: say so and propose it at',
             'https://github.com/webx-ui/webx-ui/issues rather than working around it.',
