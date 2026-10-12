@@ -170,8 +170,9 @@ of saying so.
 The same run keeps `AGENTS.md` in the site root — the file Claude Code, Codex and Cursor read
 first. Between `<!-- webx:agents -->` and `<!-- /webx:agents -->` it says what the site is
 built on, the first rule (never fork a module or edit `vendor/`; configure, publish a view,
-patch a screen, register or replace a service instead) and links every installed package that
-explains itself:
+patch a screen, register or replace a service instead; any form is `<x-webx-form>` with
+`<x-webx-field>`, answered by `FormResponse` — [Forms](./forms)) and links every installed package
+that explains itself:
 
 ```md
 - [webx-ui/module-pages](vendor/webx-ui/module-pages/AGENTS.md) — Pages for the WebX UI admin panel: …

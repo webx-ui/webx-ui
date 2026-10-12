@@ -109,17 +109,17 @@ pages has none.
 
 Which modules have their base look today:
 
-| Module             | Its pages and parts                            | Classes                                         | Extension points |
-| ------------------ | ---------------------------------------------- | ----------------------------------------------- | ---------------- |
-| `module-inbox`     | the form                                       | `wx-form*`                                      | —                |
-| `module-seo`       | the trail, the page FAQ, interlinking          | `webx-breadcrumbs*`, `webx-faq*`, `webx-links*` | —                |
-| `module-blog`      | the feed, a rubric, a tag, an article          | `webx-blog-*`                                   | `blog.card`      |
-| `module-services`  | the index, a category, a service               | `webx-services-*`                               | `services.card`  |
-| `module-menu`      | `<x-webx-menu::menu>`                          | `wx-menu*`                                      | —                |
-| `module-events`    | the index, a category, an event                | `wx-events*`, `wx-event*`                       | `events.card`    |
-| `module-vacancies` | the index, a vacancy                           | `wx-vacancies*`, `wx-vacancy*`                  | `vacancies.card` |
-| `module-press`     | an outlet's page                               | `wx-press-outlet*`, `wx-press-article*`         | —                |
-| `module-recipes`   | the index, a category, the catalogue, a recipe | `wx-recipes*`, `wx-recipe*`                     | `recipe-card`    |
+| Module             | Its pages and parts                            | Classes                                              | Extension points |
+| ------------------ | ---------------------------------------------- | ---------------------------------------------------- | ---------------- |
+| `module-inbox`     | the form — fields and messages are the widgets | `webx-inbox-form*` (+ `webx-field-*`, `webx-form-*`) | —                |
+| `module-seo`       | the trail, the page FAQ, interlinking          | `webx-breadcrumbs*`, `webx-faq*`, `webx-links*`      | —                |
+| `module-blog`      | the feed, a rubric, a tag, an article          | `webx-blog-*`                                        | `blog.card`      |
+| `module-services`  | the index, a category, a service               | `webx-services-*`                                    | `services.card`  |
+| `module-menu`      | `<x-webx-menu::menu>`                          | `wx-menu*`                                           | —                |
+| `module-events`    | the index, a category, an event                | `wx-events*`, `wx-event*`                            | `events.card`    |
+| `module-vacancies` | the index, a vacancy                           | `wx-vacancies*`, `wx-vacancy*`                       | `vacancies.card` |
+| `module-press`     | an outlet's page                               | `wx-press-outlet*`, `wx-press-article*`              | —                |
+| `module-recipes`   | the index, a category, the catalogue, a recipe | `wx-recipes*`, `wx-recipe*`                          | `recipe-card`    |
 
 A module whose classes shipped as `wx-*` keeps them: classes are a contract, and renaming them
 would break the themes already written. A module that prints a style of its own inline — the

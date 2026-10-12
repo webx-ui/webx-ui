@@ -131,6 +131,17 @@ webx:theme:sync`. Случайную запись снимать `git -C <осн
   пакеты самого worktree. Проверка — `ls -la packages/<пакет>/node_modules/@webx-ui` показывает
   путь worktree. Сборку пакета из worktree `npx vite build` делает в его каталоге; без junction'а
   на `node_modules` пакета она падает «Cannot find package 'vite-plugin-dts'».
+- **Стартовый сайт показывает не твою ветку, хотя пересобран только что.** `starter-site.sh`
+  линкует тот чекаут, из которого запущен (`MONOREPO` — родитель скрипта), а в основном чекауте
+  может стоять ветка другой сессии. PHP из worktree проверяется запуском скрипта из worktree с
+  `STARTER_PATH=/c/Work/OSPanel/home/webx-starter.local`, `STARTER_URL=http://webx-starter.local`
+  и `STARTER_ENV=<основной чекаут>/.env.starter` — без них сайт соберётся рядом с worktree и без
+  `.env.starter`; шаг npm требует `packages/core/dist`, его и
+  остальные `packages/*/dist` взять junction'ами из основного чекаута, если npm-пакеты не
+  менялись. Проверка — `ls -la vendor/webx-ui` на сайте показывает путь worktree. Сайт остаётся
+  слинкован с worktree: перед удалением worktree пересобрать сайт из основного. (Шаг «Check»
+  падал «Test directory tests/Feature not found» в любом свежем чекауте — пустой каталог скелета
+  не попадал в git; починено `.gitkeep` в W6.4.)
 - **Удалять отработавший worktree — сначала ссылки, потом каталог.** В нём junction'ы
   `node_modules` на основной чекаут, симлинки `php/vendor/webx-ui/*` и тысячи ссылок pnpm, и
   удаление, которое пойдёт за ссылку, снесёт чужое. Порядок: обойти дерево, не заходя в точки

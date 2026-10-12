@@ -11,13 +11,13 @@ that a module draws its form from the same parts and a theme paints one set of c
 | **widgets** — the form         | CSRF, sending in place over a plain POST, errors by field, one answer for all forms |
 | **widgets** — checks           | the server's rules in the browser, with the server's words; masks; file uploads     |
 | **the owner of the form**      | where it goes, the rules on the server, what to do with the data                    |
-| **Inbox**                      | the form builder in the panel, intake, spam protection, letters                     |
+| **Inbox**                      | the form builder in the panel, intake, spam protection, captcha, letters            |
 | **sign-in, account, checkout** | their own forms in Blade from the same fields                                       |
 
-This page grows with the parts. Today: **the fields**, **the form** around them — sending in
-place over a plain POST, the errors by field, one answer for every form — and **the checks in the
-browser** by the server's own rules and words, the phone mask and the files; a sign-in and a
-checkout step written out in full.
+This page is the whole of it: **the fields**, **the form** around them — sending in place over a
+plain POST, the errors by field, one answer for every form — and **the checks in the browser** by
+the server's own rules and words, the phone mask and the files; then three forms written out in
+full — a sign-in, a checkout step and a form of the Inbox, which is drawn by the same parts.
 
 The specification is §17 of
 [`docs/architecture/WEBX_UI_WIDGETS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md).
@@ -239,7 +239,7 @@ document.querySelector('#checkout').addEventListener('webx:form:success', (event
 
 ### In a dialog
 
-Any form in `<x-webx-dialog>` behaves as Inbox's does there: the thank-you takes the place of the
+Any form in `<x-webx-dialog>` — and the Inbox's forms a button opens (`data-webx-form="<slug>"`) — behaves the same: the thank-you takes the place of the
 fields with a «Close» button that gets the focus — the dialog never closes by itself, there has to
 be time to read — and closed, it is a fresh form again. Without JavaScript a page that comes back
 from a form in a dialog prints the dialog `open`, over the page; with it, the dialog opens again as
@@ -558,6 +558,63 @@ same place and the same look. The payment step takes the fields' place, its own 
 working (`webx.mount`). A module that recomputes the delivery cost listens to `change` on the
 radios and `webx:form:success` on the form, and writes no sending of its own.
 
+## Example: a form of the Inbox
+
+A request built in the panel's Inbox from fields, printed with one tag. Nothing of it is written by
+hand, and that is the point: it is the same engine as the two forms above.
+
+```blade
+<x-webx-inbox::form slug="contact" :values="['product' => $product->id]" placement="footer" />
+```
+
+What it prints, in short:
+
+```blade
+<x-webx-form :action="url('webx/forms/contact')" :csrf="false" id="webx-inbox-contact"
+    :rules="FormRules::for($intakeRules, $labels)" data-webx-form="contact"
+    class="webx-inbox-form webx-inbox-form--footer">
+    {{-- the inbox's own: which form, the page, its language, the honeypot, the timestamp --}}
+    <div class="webx-inbox-form__fields">
+        <x-webx-field type="text" name="fields.name" :label="…" class="webx-inbox-form__field webx-inbox-form__field--half" />
+        <x-webx-field type="email" name="fields.email" :label="…" class="webx-inbox-form__field webx-inbox-form__field--half" />
+        <x-webx-field type="consent" name="fields.terms" :label="…">{!! $consentWithALink !!}</x-webx-field>
+    </div>
+    {{-- the captcha, when the form asks for one: data-webx-field="captcha" --}}
+    <div class="webx-inbox-form__actions"><x-webx-form.submit>Send</x-webx-form.submit></div>
+</x-webx-form>
+```
+
+- **The fields** are `<x-webx-field>` named `fields.<machine name>` — the eleven types of the panel
+  are the widgets' own (`text`, `email`, `tel`, `textarea`, `select`, `radio`, `checkbox`,
+  `consent`, `date`, `file`, `hidden`); «half width» in the panel is
+  `webx-inbox-form__field--half`, two to a row from 32rem of the form.
+- **No token:** `:csrf="false"` — the intake guards itself (the origin, the honeypot, the
+  timestamp, the limit per address), so a page cached whole for a day still sends.
+- **The checks** are the intake's own rules — `required`, `email`, `max` of a line, `in` of the
+  choices, `accepted` of a consent, `mimes` and `max` of a file, the dates' bounds, a phone's
+  pattern — through `FormRules`, with each field's label: the browser says what a 422 would.
+- **The answer** is `FormResponse`: the form's thank-you (`::message()`), or its address
+  (`::redirect()`) when the form has one; an antispam refusal in the form's alert, a captcha's
+  under the captcha.
+- **The Inbox's own** stays the Inbox's: the builder, the intake, the honeypot, the timestamp and
+  the captcha — reCAPTCHA or Turnstile, run by `inbox.js` on `webx:form:submit` and reset after
+  `webx:form:success` or `webx:form:error`; the script comes only with a captcha.
+- **Analytics** of a request: `webx:form:success` on `form[data-webx-form="contact"]`, the way
+  `webx:form:*` is heard on any form.
+
+```js
+document.addEventListener('webx:form:success', (event) => {
+  const slug = event.target.dataset.webxForm
+  if (slug && window.webx.consent?.has('statistics'))
+    window.dataLayer?.push({ event: 'request', form: slug })
+})
+```
+
+**A site that painted the Inbox's form before W6.4** (`wx-form*`, a published `form.blade.php`):
+its view keeps working for an alias period — the module still hands it what it used to and its old
+script — and the audit's `inbox.legacy_views` names it until it is moved. The classes map one to
+one: [the table in the Inbox guide](./inbox#the-look-of-the-form).
+
 ## See it
 
 **Kitchen sink › Forms › Fields** of the default theme's showcase: every type empty, filled, with
@@ -573,3 +630,7 @@ JavaScript off and on: the same words in the same places.
 and, with «Ask the server», past it — the same words both ways, in English, Russian and Polish.
 The name `admin` passes the browser and not the server: that rule is the server's alone. The phone
 mask, and photos dropped, listed, refused by type and size and removed before sending.
+
+**Kitchen sink › Forms › Inbox**: a form built in the panel, with a field of every kind of the
+Inbox, on the same engine — send it empty with JavaScript on and off: the same words under the same
+fields, the browser's the intake's.
