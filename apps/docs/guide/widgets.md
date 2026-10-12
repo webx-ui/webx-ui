@@ -370,7 +370,7 @@ What a long page needs, each loading only where it stands:
 
 ## Forms
 
-The fields of every form of the site — `<x-webx-field>` of fifteen types, its value from `old()` and its error from `$errors` by a dotted name, the ARIA, the hints for an autofill — and, stage by stage, the form around them: [Forms](./forms).
+The fields of every form of the site — `<x-webx-field>` of fifteen types, its value from `old()` and its error from `$errors` by a dotted name, the ARIA, the hints for an autofill — and the form around them, `<x-webx-form>`, sent in place over a plain POST with one answer for every form, `FormResponse`: [Forms](./forms).
 
 ## Blocks
 

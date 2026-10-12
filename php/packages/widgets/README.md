@@ -204,8 +204,31 @@ One markup for every form of the site: `text`, `email`, `tel`, `url`, `password`
 `$errors->first($name)`; a dotted name is sent with brackets (`fields[email]`) and its error found
 by the dots, so a form posted without JavaScript comes back with each error under its field.
 `autocomplete`, `inputmode` and `enterkeyhint` default by type. The error is described
-(`aria-describedby`) and `aria-invalid`; a group is a `<fieldset>` with a `<legend>`. The form
-around the fields, its sending and its checks in the browser are the next stages — the guide:
+(`aria-describedby`) and `aria-invalid`; a group is a `<fieldset>` with a `<legend>`.
+
+## The form
+
+```blade
+<x-webx-form :action="route('login')" class="sign-in">
+    <x-webx-field type="email" name="email" :label="__('auth.email')" required />
+    <x-webx-field type="password" name="password" :label="__('auth.password')" required />
+    <x-webx-form.submit>{{ __('auth.sign_in') }}</x-webx-form.submit>
+</x-webx-form>
+```
+
+```php
+return FormResponse::redirect(route('account'));            // or ::message($heading, $html), ::html($view), ::ok()
+```
+
+`@csrf` and `@method` are printed by the form (`:csrf="false"` for a door that guards itself).
+Without JavaScript it is a plain POST and the page comes back with the errors under the fields or
+the answer in place. With it (`dist/form.js`, only where a form stands) the same form is sent in
+place: the token from the XSRF-TOKEN cookie and one retry with a fresh one on a 419
+(`GET webx/widgets/csrf`), the errors of a 422 into their fields and the rest into the form's
+alert, no second submission while the first is on its way, the answer in a live region, files
+with progress. `FormResponse` answers JSON to the script and a redirect to the plain POST, so a
+controller writes one line. A module hooks `webx:form:submit` (cancelable), `webx:form:success`
+and `webx:form:error` on the form. The checks in the browser are the next stage — the guide:
 https://webx-ui.github.io/webx-ui/guide/forms.
 
 ## Blocks

@@ -272,7 +272,9 @@ Every form of the site — a request, a sign-in, a checkout — is drawn from th
 first, then `--webx-field-*` on `:root`, then the same classes in `theme/src/css`; another control
 of one type is `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`. The classes and
 the variables are listed in [Forms](./forms#the-look); "Kitchen sink › Forms › Fields" shows each
-type in each state.
+type in each state. The form around them (`<x-webx-form>`) adds `webx-form`, `__submit`, the
+answer `__answer` and the refusal `__refusals`, `is-sending` and `--webx-form-*`
+([The look of the form](./forms#the-look-of-the-form)); "Kitchen sink › Forms › Sending" sends one.
 
 ## Blocks
 
