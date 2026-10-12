@@ -190,6 +190,24 @@ nothing. Closed, it stays closed by the version of its words — a new text come
 everybody — and a closed bar is hidden by a line in the head before the page is painted. It stands
 in the flow, so the sticky header measures what it always did.
 
+## Fields of a form
+
+```blade
+<x-webx-field type="email" name="fields.email" label="Email" required />
+<x-webx-field type="radio" name="delivery" label="Delivery" :choices="$methods" inline />
+<x-webx-field type="consent" name="terms" required>I agree to <a href="/terms">the terms</a></x-webx-field>
+```
+
+One markup for every form of the site: `text`, `email`, `tel`, `url`, `password` (with Show),
+`number`, `textarea`, `select`, `radio`, `checkbox` (a group with `:choices`, one tick without),
+`consent`, `date`, `file`, `hidden`. The value is `old($name)` and the error
+`$errors->first($name)`; a dotted name is sent with brackets (`fields[email]`) and its error found
+by the dots, so a form posted without JavaScript comes back with each error under its field.
+`autocomplete`, `inputmode` and `enterkeyhint` default by type. The error is described
+(`aria-describedby`) and `aria-invalid`; a group is a `<fieldset>` with a `<legend>`. The form
+around the fields, its sending and its checks in the browser are the next stages — the guide:
+https://webx-ui.github.io/webx-ui/guide/forms.
+
 ## Blocks
 
 On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers eight block

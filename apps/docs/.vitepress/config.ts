@@ -64,6 +64,7 @@ export default defineConfig({
             { text: 'Layout regions', link: '/guide/layout-regions' },
             { text: 'Shortcodes', link: '/guide/shortcodes' },
             { text: 'Site widgets', link: '/guide/widgets' },
+            { text: 'Forms', link: '/guide/forms' },
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },

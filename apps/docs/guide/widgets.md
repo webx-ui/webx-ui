@@ -368,6 +368,10 @@ What a long page needs, each loading only where it stands:
   is hidden by a line in the head before the page is painted, so it never flashes. It is in the
   flow and does not stick: the sticky header and `--webx-header-height` are what they were.
 
+## Forms
+
+The fields of every form of the site — `<x-webx-field>` of fifteen types, its value from `old()` and its error from `$errors` by a dotted name, the ARIA, the hints for an autofill — and, stage by stage, the form around them: [Forms](./forms).
+
 ## Blocks
 
 On a site with `module-blocks` and `module-media` the package offers eight block types — `webx:setup`
@@ -434,6 +438,6 @@ third party the audit does not know is added in `webx-widgets.audit.third-party`
 `theme-default` brings a showcase, seeded by `php artisan webx:demo` and removed with it: under
 **Kitchen sink** a page per widget — Header and menu, Cookie consent, Dropdown and form in a
 dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map, Page tools, Background video,
-Counters and countdown, Before and after, Table of contents, Show more, Notice bar, Zoom — with every variant, a narrow
+Counters and countdown, Before and after, Table of contents, Show more, Notice bar, Zoom, Forms › Fields — with every variant, a narrow
 column, what to try and the markup to copy. It is the place to look at a change in the theme
 before a real page does, and the pages the starter site's browser tests measure.

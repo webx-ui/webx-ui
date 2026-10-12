@@ -160,7 +160,11 @@ MCP-сервер, движок Manticore. Всё ниже однажды сто�
   InvokableComponentVariable as array».** Публичный метод класса компонента виден во вьюхе
   переменной с тем же именем и перекрывает то, что `render()` передал в `view(..., [...])`:
   `public static function words()` и `'words' => …` — во вьюхе `$words` уже не массив. Методы,
-  которые вьюхе не нужны, — `private`.
+  которые вьюхе не нужны, — `private`. Публичное **свойство** метод перекрывает так же
+  (`Component::data()` кладёт методы поверх свойств), и тогда симптом другой —
+  «htmlspecialchars(): Argument #1 must be of type string, Closure given» на `{{ $inputName }}`
+  при `public string $inputName` и `public static function inputName()`. Статический помощник,
+  нужный снаружи, называть иначе, чем свойство (`Field::nameOf()`).
 
 - **Ответ, дописанный в `RequestHandled`, не видит flash сессии.** К этому событию `StartSession`
   уже сохранил сессию и выбросил flash прошлого запроса — «спасибо» и ошибки формы, отправленной

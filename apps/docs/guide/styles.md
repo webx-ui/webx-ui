@@ -258,6 +258,16 @@ site shows that letter in the theme's frame and colours.
   nothing there, or the letter stops repainting with the site. `webx:theme:check` reads the
   letters of the layers and of the modules and names both.
 
+### Forms
+
+Every form of the site — a request, a sign-in, a checkout — is drawn from the fields of
+`webx-ui/widgets` (`<x-webx-field>`), so one set of classes paints them all: `webx-field`,
+`__label`, `__control`, `__hint`, `__error`, `is-invalid`. Repaint them like any widget — tokens
+first, then `--webx-field-*` on `:root`, then the same classes in `theme/src/css`; another control
+of one type is `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`. The classes and
+the variables are listed in [Forms](./forms#the-look); "Kitchen sink › Forms › Fields" shows each
+type in each state.
+
 ## Blocks
 
 A block type — its fields, its template, its CSS and its script — is made in the panel under
