@@ -103,7 +103,7 @@ final class Form extends Component
     {
         $request = request();
 
-        return $request->hasSession() && $request->old(FormResponse::FORM) === $this->formId && $this->bag()?->any() === true;
+        return $request->hasSession() && $request->old(FormResponse::FORM) === $this->formId && $this->bag()?->isNotEmpty() === true;
     }
 
     /**
