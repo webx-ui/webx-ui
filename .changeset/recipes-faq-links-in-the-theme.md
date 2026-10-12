@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-Recipes, the page FAQ and interlinking in the theme (THEMES §10, TH3.4 — the last stage of TH3). `webx-ui/module-recipes` keeps its `wx-recipes*`/`wx-recipe*` classes, adds the ones its views lacked and carries a base look on site tokens (`resources/theme/recipes.css`); the catalogue's and the gallery's own inline look is printed only on a site without a theme. The columns a recipes block asks for are a class now, `wx-recipes__grid--<n>`, instead of an inline `style="--wx-recipes-columns: …"`. Markup beyond classes: the ingredients and the method stand in a `wx-recipe__text` wrapper. `webx-ui/theme-default`: the layout closes `<main>` with module-seo's `<x-webx-seo::faq />` and `<x-webx-seo::links />` — empty while their features are off; showcase «Kitchen sink › Modules › FAQ and links». `webx-ui/module-seo`: a theme's `demo/seo/pages.json` gives pages of its demo a FAQ and links in every language they have. A site that published the recipes views keeps its copies; a site without a theme sees no change.

@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-Assets of the theme chain (THEMES §13.2, TH4.2). `webx-ui/themes`: **`theme_asset('img/wave.svg')`** answers with the file under `assets/` of the highest layer that has it, as `webx:theme:sync` published it — a package under `public/themes/<vendor>/<name>/<hash>/assets/`, and now a local theme too: **sync publishes `theme/assets/`** to `public/themes/local-<directory>/<hash>/assets/` («local, built by the site's Vite; assets/ published …»), while its CSS and JS stay with the site's Vite. A path no layer has, or one a layer got after the last sync, is an empty string — never a lower layer's copy, never an exception — and in debug the log says which. **`webx:theme:check`** names a `theme_asset('…')` with a literal path no layer has, or one that leaves `assets/`, in the layers' views and block templates. The skeleton `webx-ui/site` caches `/themes/` (and `/build/`) forever: one `Cache-Control: public, max-age=31536000, immutable` in `docker/nginx.conf` and in `public/.htaccess`. `webx-ui/theme-default`: `assets/img/wave.svg` and the page Kitchen sink › Assets.
