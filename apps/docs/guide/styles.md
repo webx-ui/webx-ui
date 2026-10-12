@@ -222,11 +222,17 @@ Inter has no file for here — that is what the fallback looks like.
 
 ### Words of the layout
 
+<!-- v-pre: the mustaches below are Blade, and Vue would try to read them. -->
+
+::: v-pre
+
 The few words a theme prints itself — "Skip to content", the labels of the contact block, the page
 for a missing address — come from `lang/<locale>/theme.php` of a theme layer, never from the
 template: `{{ __('theme::theme.shell.skip') }}`. `webx-ui/theme-default` has every one of them in
 the ten languages of the panel (en, ru, uk, de, fr, es, it, pl, pt, tr) and lists them in `locales`
 of its manifest; everything else a visitor reads comes from a field, the settings or a module.
+
+:::
 
 - **Another word for one of the theme's:** the same key in `theme/lang/<locale>/theme.php` — only
   that key; the rest still comes from below.
