@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-The demo speaks English, Russian and Polish. A demo document may now give any text as a map of languages, `{ "en": …, "ru": …, "pl": … }`, beside the one string it always took: `DemoWords` in `module-admin` keeps the languages the site has, and gives its default language the English where the map has none. Pages take it for the title, the slug (a translated page gets an address in each language), the SEO card and every value of their blocks — a picture's `alt` and a repeater row's label included; the menu, the settings (the project name, the contacts' labels and address), the inbox form and the header region's button take it too. The showcase of `theme-default` (Kitchen sink and its pages, Services) and the demo of the default set of modules are translated, so the language switcher of the starter site leads to real translations; Language switcher › English only stays in English on purpose. The text fields of the demo block types (`hero`, `text`, `demo-header`, the showcase's own) are `localized` now, so the panel edits them per language; a site that already has these types keeps its copy.

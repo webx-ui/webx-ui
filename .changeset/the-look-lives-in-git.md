@@ -1,6 +1,0 @@
----
-'@webx-ui/php': minor
-'@webx-ui/module-blocks': patch
----
-
-The look of a site lives in git, and the panel does not edit it (THEMES §2, decision 12; TH5). `webx-ui/themes`: a layer names the preset the site draws in with **`"preset"` in its manifest** (`"preset": "night"` in `theme/theme.json`) — the highest layer that names one decides, and a name no `tokens.json` of the chain declares throws on the page and is a finding of `webx:theme:check`. **`php artisan webx:theme:show [--json]`** prints what the chain gives and where each piece comes from: the layers, every token with its type, value and the layer or preset that set it, every view of the layers with what serves it and what it hides (the site, a lower layer, the module), the block types, icons, fonts and module stylesheets (`ThemeReport`); `Tokens::sources()` gives the same for the tokens. Removed with the panel tab that was never built: `Contracts\Appearance`, `ConfigAppearance`, the `editable` manifest key, `Tokens::editable()`, the `webx-themes.preset` config and `WEBX_THEME_PRESET` — a site that set the variable names the preset in `theme/theme.json` instead. Messages that promised an edit in the panel (`literal-colors` of `module-blocks` in ten languages, the CSS check, the showcase) now say `tokens.json`.
