@@ -18,9 +18,13 @@ question is about one of them.
 - **Address types** `catalog.category` (`/{slug}`, flat at any depth, `OnConflict::Fail`) and
   `catalog.product` (`/{slug}-{id}`, `OnConflict::Suffix`). Filters are path segments after a
   category (`/laptops/brand_apple/price_100-500`). The only query parameter is `?sort=`.
-- **Routes** `webx.catalog.search` (`/catalog/search`, always on) and `webx.catalog.root`
-  (`/catalog`, only with `root.enabled`). With a language prefix, each is registered a second time.
-- **Views** `webx-catalog::category`, `root`, `search`, `product`, `product-unavailable`, `filter`
+- **Routes** `webx.catalog.search` (`/catalog/search`, always on), `webx.catalog.suggest`
+  (`/catalog/suggest?q=`, always on: HTML of the view `webx-catalog::suggest` — the first
+  `suggest.limit` products found (6) with a price, their count, «see all»; 204 for nothing asked;
+  `noindex`, `no-store`) and `webx.catalog.root` (`/catalog`, only with `root.enabled`). With a
+  language prefix, each is registered a second time. The search page's box is the widgets'
+  `<x-webx-suggest>` over it — a plain GET search without JavaScript.
+- **Views** `webx-catalog::category`, `root`, `search`, `suggest`, `product`, `product-unavailable`, `filter`
   and `filter/*`, `grid`, `card`, `sort`, `pagination`, `breadcrumbs`. They render inside
   `config('webx-catalog.layout')`.
 - **Gallery videos** on the product page are `<x-webx-video>` of `webx-ui/widgets`, the picture
@@ -54,25 +58,26 @@ question is about one of them.
 
 ## Change it without forking
 
-| You want                                  | Do this                                                                                                        |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| The storefront inside the site's layout   | `WEBX_CATALOG_LAYOUT=layout` (`<x-layout>`); `webx:panel --sync` sets it                                       |
-| Different markup of a catalogue page      | `php artisan vendor:publish --tag=webx-catalog-views`, keep only the files you change                          |
-| A catalogue without prices                | `WEBX_CATALOG_PRICE=false` (form, facet, sorts, exchange and markup all go)                                    |
-| `Offer` in the product's structured data  | `WEBX_CATALOG_CURRENCY` (ISO 4217)                                                                             |
-| No barcode / no videos                    | `WEBX_CATALOG_BARCODE=false` / `WEBX_CATALOG_VIDEO=false`                                                      |
-| Each category picks its own filters       | `WEBX_CATALOG_CATEGORY_FACETS=true` (the «Filters» tab)                                                        |
-| A `/catalog` page over everything         | `WEBX_CATALOG_ROOT=true`; `WEBX_CATALOG_ROOT_PREFIX` moves it and the search                                   |
-| Translated filter codes in addresses      | `facet_codes` in `config/webx-catalog.php` (`--tag=webx-catalog-config`)                                       |
-| Another unit, sort order, page size       | `units` (+ its word via `--tag=webx-catalog-lang`), `sorts`, `default_sort`, `per_page`                        |
-| Popularity counted differently            | bind your own `PopularityFormula` in the container                                                             |
-| Thousands of products                     | `webx-ui/module-catalog-manticore` and `WEBX_CATALOG_ENGINE=manticore`                                         |
-| Other disks for pictures / exchange files | `WEBX_CATALOG_IMAGES_DISK` / `WEBX_CATALOG_EXCHANGE_DISK`                                                      |
-| A field on the product form               | a patch `Screens::extend('catalog.product-form', [...])` plus a `ProductPart` in `ProductParts`                |
-| A dictionary of your own (a filter)       | a table keyed by `product_id`, then `ProductParts`, `Facets`, `Documents`, `ProductColumns`, `ExchangeColumns` |
-| Something in a card or on a product page  | a `StorefrontPart` registered at one of the points above                                                       |
-| A shelf of products in any template       | `products()->category('laptops')->sort('popular')->take(8)`; narrow it with `ProductQuery::macro`              |
-| A refusal to sell                         | a `PurchaseRule` in `Purchasability`                                                                           |
+| You want                                  | Do this                                                                                                                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The storefront inside the site's layout   | `WEBX_CATALOG_LAYOUT=layout` (`<x-layout>`); `webx:panel --sync` sets it                                                                                                 |
+| Different markup of a catalogue page      | `php artisan vendor:publish --tag=webx-catalog-views`, keep only the files you change                                                                                    |
+| A catalogue without prices                | `WEBX_CATALOG_PRICE=false` (form, facet, sorts, exchange and markup all go)                                                                                              |
+| `Offer` in the product's structured data  | `WEBX_CATALOG_CURRENCY` (ISO 4217)                                                                                                                                       |
+| No barcode / no videos                    | `WEBX_CATALOG_BARCODE=false` / `WEBX_CATALOG_VIDEO=false`                                                                                                                |
+| Each category picks its own filters       | `WEBX_CATALOG_CATEGORY_FACETS=true` (the «Filters» tab)                                                                                                                  |
+| A `/catalog` page over everything         | `WEBX_CATALOG_ROOT=true`; `WEBX_CATALOG_ROOT_PREFIX` moves it and the search                                                                                             |
+| Translated filter codes in addresses      | `facet_codes` in `config/webx-catalog.php` (`--tag=webx-catalog-config`)                                                                                                 |
+| Other suggestions under the search box    | override `webx-catalog::suggest` — keep `data-webx-option` on what can be chosen and `data-webx-section` + `data-webx-heading` on a group; `suggest.limit` in the config |
+| Another unit, sort order, page size       | `units` (+ its word via `--tag=webx-catalog-lang`), `sorts`, `default_sort`, `per_page`                                                                                  |
+| Popularity counted differently            | bind your own `PopularityFormula` in the container                                                                                                                       |
+| Thousands of products                     | `webx-ui/module-catalog-manticore` and `WEBX_CATALOG_ENGINE=manticore`                                                                                                   |
+| Other disks for pictures / exchange files | `WEBX_CATALOG_IMAGES_DISK` / `WEBX_CATALOG_EXCHANGE_DISK`                                                                                                                |
+| A field on the product form               | a patch `Screens::extend('catalog.product-form', [...])` plus a `ProductPart` in `ProductParts`                                                                          |
+| A dictionary of your own (a filter)       | a table keyed by `product_id`, then `ProductParts`, `Facets`, `Documents`, `ProductColumns`, `ExchangeColumns`                                                           |
+| Something in a card or on a product page  | a `StorefrontPart` registered at one of the points above                                                                                                                 |
+| A shelf of products in any template       | `products()->category('laptops')->sort('popular')->take(8)`; narrow it with `ProductQuery::macro`                                                                        |
+| A refusal to sell                         | a `PurchaseRule` in `Purchasability`                                                                                                                                     |
 
 Fields that are switched off are removed from the screen at boot, and so are never validated or
 saved. A satellite's fields on `catalog.product-form` are named `<part key>.<field>`. The core

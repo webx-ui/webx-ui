@@ -16,7 +16,8 @@ that a module draws its form from the same parts and a theme paints one set of c
 
 This page is the whole of it: **the fields**, **the form** around them — sending in place over a
 plain POST, the errors by field, one answer for every form — and **the checks in the browser** by
-the server's own rules and words, the phone mask and the files; then three forms written out in
+the server's own rules and words, the phone mask and the files; **suggestions while typing** in a
+search box or a field; then three forms written out in
 full — a sign-in, a checkout step and a form of the Inbox, which is drawn by the same parts.
 
 The specification is §17 of
@@ -359,6 +360,142 @@ rows. Sent with a file, the form goes by `XMLHttpRequest` with its progress bar.
 Words: `widgets.field.remove`, `drop_file`, `drop_files` (props `remove-label`, `drop-label`);
 `--webx-files-preview` is the preview's size.
 
+## Suggestions while typing
+
+```blade
+<x-webx-suggest :action="route('webx.catalog.search')" :source="route('webx.catalog.suggest')" :recent="5" />
+```
+
+`<x-webx-suggest>` is a search box that asks the site as the visitor types (`dist/suggest.js`,
+claimed only by the component). The server prints an ordinary GET form to the results page — with
+JavaScript off, or before it runs, it is a search like any other: Enter opens the results. The
+script makes the field an ARIA combobox, waits for a pause (`delay`, 250 ms) after `min` characters
+(2), asks `source?q=…`, cancels a request the next key made stale and drops an answer that still
+comes late, and puts what came under the field.
+
+**The content of the panel is the site's.** `source` answers HTML from a view of the site — sections,
+headings, counts, cards with a price, «see all» — and the panel shows it as it is. The shell needs
+only two marks in it:
+
+| Mark                                                 | What the shell does with it                                                                                                                                          |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data-webx-option`                                   | an option: `role="option"`, an id, reached by the arrows; a link inside it (or the option itself as `<a>`) is followed; `data-webx-option="<value>"` is searched for |
+| `data-webx-section` with a `data-webx-heading` in it | a named group (`role="group"`, `aria-labelledby` the heading; an `<h2>`–`<h6>` will do)                                                                              |
+
+An answer that is empty, or a 204, says «nothing found» in the widget's words; an answer without
+an option shows the site's own words and the screen reader hears «nothing found». A failed answer
+says so and leaves the search to Enter. Everything else in the answer is the site's to style.
+
+**Keys** — the focus stays in the field: ↓/↑ walk the options (and open the panel), Home/End jump
+to the first or the last once an option is chosen (before that they move the caret), Enter takes
+the option chosen (without one it sends the form), Escape closes the panel (the second clears the
+field, as a search field does), Tab leaves. A screen reader hears `aria-expanded`, the option by
+`aria-activedescendant` and, in a status line, «Suggestions: 5». The panel is the width of the box
+and never taller than the room above a phone's keyboard.
+
+**Recent searches** — `:recent="5"` keeps the last five in the visitor's browser (`localStorage`,
+per results page) and shows them while the field is empty, with «Clear recent searches». Nothing
+is kept without it.
+
+**Inside another form** — leave out `action`: the component prints no form of its own (forms do
+not nest), only the field, named as any field (`name="delivery[city]"`, `old()` kept). An option
+with a value then fills the field and fires `change` on it — the form's checks hear it — and sends
+nothing; Enter without a choice is the form's. `param` names the query parameter `source` gets
+(`q` by default).
+
+```blade
+<x-webx-form :action="route('checkout.delivery')" :rules="$rules">
+    <x-webx-suggest :source="route('cities.suggest')" name="delivery[city]" param="city"
+                    :label="__('checkout.city')" :show-label="true" />
+    <x-webx-form.submit>{{ __('checkout.continue') }}</x-webx-form.submit>
+</x-webx-form>
+```
+
+The address answers values: `<li data-webx-option="Kraków">Kraków</li>`. The field has no
+`webx-field` frame: an error of the server about it comes into the form's alert.
+
+| Prop                                                                                                                  | What                                              |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `source`                                                                                                              | the address of suggestions, this site's           |
+| `action`                                                                                                              | the results page; without it — a field            |
+| `name`, `param`, `value`, `id`                                                                                        | the field; the query parameter; its value; its id |
+| `min`, `delay`, `recent`                                                                                              | 2 characters, 250 ms, 0 kept                      |
+| `show-label`                                                                                                          | the label shown, not only read                    |
+| `label`, `placeholder`, `submit-label`, `nothing-label`, `recent-label`, `clear-label`, `count-label`, `failed-label` | the words (`widgets.suggest.*`, ten languages)    |
+
+**Events** on the component's root: `webx:suggest:select` — cancelable, before an option is taken
+(`detail.option`, `value`, `href`, `query`: what was typed); `webx:suggest:results` — the panel
+filled (`detail.query`, `count`). A counter of the analytics listens there, with consent. The root carries
+`data-webx-suggest="<source>"` and the settings in `data-*`: an overridden view of the component keeps them.
+
+| Classes                                                                  | What                                      |
+| ------------------------------------------------------------------------ | ----------------------------------------- |
+| `webx-suggest` (`--field`), `is-open`, `is-loading`                      | the box, the panel open, a question asked |
+| `__label` (`--shown`), `__box`, `__input` (`--alone`), `__submit`        | its parts                                 |
+| `__panel`, `__status`                                                    | the panel, the line a screen reader hears |
+| `__section`, `__heading`, `__option` (`aria-selected="true"`), `__clear` | what the shell marks or builds in it      |
+| `__empty`                                                                | «nothing found» and «not available»       |
+
+Tokens `--webx-suggest-height`, `-radius`, `-border`, `-bg`, `-focus`, `-panel-bg`,
+`-panel-shadow`, `-active-bg`, `-max` (the panel's height), `-z`.
+
+### Example: the catalogue's search
+
+`module-catalog` is the first to use it. Its search page prints the box over its own address:
+
+```blade
+{{-- webx-catalog::search --}}
+<x-webx-suggest :action="$action" :source="$suggest" :value="$term"
+                :label="__('webx-catalog::storefront.search')"
+                :placeholder="__('webx-catalog::storefront.search-placeholder')"
+                :submit-label="__('webx-catalog::storefront.search-submit')" />
+```
+
+`$action` and `$suggest` are `/catalog/search` and `/catalog/suggest` in the page's language.
+`GET /catalog/suggest?q=` (`webx.catalog.suggest`) asks the same engine the search page asks — what
+is not on the site is not found, a correction is said — and answers the view
+`webx-catalog::suggest` (`noindex`, `no-store`; 204 for nothing asked):
+
+```php
+// WebxUi\Catalog\Storefront\Suggestions, in short
+$result = $this->catalog->engine()->search(new CatalogQuery(
+    locale: $locale, context: FilterContext::SEARCH, search: $term, perPage: $limit, filter: $context,
+));
+
+return response(view('webx-catalog::suggest', [
+    'term' => $term,
+    'products' => $this->listing->products($result->ids),
+    'total' => $result->total,
+    'corrected' => $result->corrected,
+    'all' => $searchPageFor($result->corrected ?? $term),
+    'priced' => config('webx-catalog.price.enabled'),
+])->render());
+```
+
+```blade
+{{-- webx-catalog::suggest — a theme overrides it --}}
+@if ($products->isEmpty())
+    <p class="webx-catalog-suggest__nothing">{{ __('webx-catalog::storefront.suggest-nothing', ['q' => $term]) }}</p>
+@else
+    <div class="webx-catalog-suggest" data-webx-section="products">
+        <p class="webx-catalog-suggest__heading" data-webx-heading>{{ __('webx-catalog::storefront.suggest-products', ['count' => $total]) }}</p>
+        @foreach ($products as $product)
+            <a class="webx-catalog-suggest__product" href="{{ $product->listedUrl() }}" data-webx-option>
+                <img class="webx-catalog-suggest__picture" src="…" alt="" width="48" height="48">
+                <span class="webx-catalog-suggest__name">{{ $product->displayName() }}</span>
+                <span class="webx-catalog-suggest__price"><strong>{{ $product->price }}</strong></span>
+            </a>
+        @endforeach
+    </div>
+    <a class="webx-catalog-suggest__all" href="{{ $all }}" data-webx-option>{{ __('webx-catalog::storefront.suggest-all', ['count' => $total]) }}</a>
+@endif
+```
+
+«Products (52)», five cards with a picture and a price, «See all results: 52» — every card and
+«see all» an option. `suggest.limit` (`WEBX_CATALOG_SUGGEST_LIMIT`, 6) is how many cards. A header
+of the site puts the same box anywhere: `<x-webx-suggest :action="route('webx.catalog.search')"
+:source="route('webx.catalog.suggest')" :recent="5" />`.
+
 ## Example: a sign-in
 
 The whole of it — the route, the controller, the view. The rate of attempts and the session belong
@@ -634,3 +771,8 @@ mask, and photos dropped, listed, refused by type and size and removed before se
 **Kitchen sink › Forms › Inbox**: a form built in the panel, with a field of every kind of the
 Inbox, on the same engine — send it empty with JavaScript on and off: the same words under the same
 fields, the browser's the intake's.
+
+**Kitchen sink › Forms › Suggestions**: a search box over goods of the demo — type «oak», walk the
+panel with the arrows, Enter; leave it empty for the recent searches; with JavaScript off, Enter
+opens the results — and a city field inside a delivery form, which a suggestion fills without
+sending it.

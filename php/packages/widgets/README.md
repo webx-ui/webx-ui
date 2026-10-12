@@ -250,6 +250,20 @@ without refusing a paste or an autofill; a file field takes files dropped on it,
 their size and a preview, and lets one go before sending. The guide:
 https://webx-ui.github.io/webx-ui/guide/forms.
 
+## Suggestions while typing
+
+```blade
+<x-webx-suggest :action="route('webx.catalog.search')" :source="route('webx.catalog.suggest')" :recent="5" />
+```
+
+A search box that asks the site as the visitor types. Without JavaScript it is a GET search to
+the results page; with it, an ARIA combobox over the HTML the site answers — its own sections,
+counts and cards — where `data-webx-option` marks what can be chosen and `data-webx-section` with a
+`data-webx-heading` a group. Arrows, Home/End, Enter, Escape; the stale request is aborted;
+recent searches in the browser with `:recent`. Without `action` it is a field to put inside another
+form: a value chosen fills it. `module-catalog` answers at `/catalog/suggest`. The guide:
+https://webx-ui.github.io/webx-ui/guide/forms#suggestions-while-typing.
+
 ## Blocks
 
 On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers eight block
