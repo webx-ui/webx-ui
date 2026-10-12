@@ -97,7 +97,9 @@ export function files(root) {
         remove.addEventListener('click', () => {
           chosen.splice(index, 1)
           set()
-          const next = list.querySelectorAll('.webx-field__files-remove')[index] ?? list.querySelectorAll('.webx-field__files-remove')[index - 1]
+          const next =
+            list.querySelectorAll('.webx-field__files-remove')[index] ??
+            list.querySelectorAll('.webx-field__files-remove')[index - 1]
           ;(next ?? input).focus()
         })
 
