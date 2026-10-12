@@ -5875,11 +5875,24 @@ test.describe('fields', () => {
     expect(new Set(m.narrow.map((c) => c.left)).size).toBe(1)
     expect(new Set(m.narrow.map((c) => c.top)).size).toBe(m.narrow.length)
 
+    // Loaded at 360, not shrunk from 1280: under the load of the whole run a page measured right
+    // after the window narrowed has not always laid itself out again.
     await page.setViewportSize({ width: 360, height: 740 })
-    const scroll = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    )
-    expect(scroll, 'the German word breaks rather than push the page').toBeLessThanOrEqual(0)
+    await page.goto(PATH)
+    await still(page)
+    const long = await page.evaluate(() => {
+      const block = document.querySelectorAll('[data-wx-block="showcase-fields"]')[1]
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        wide: [...block.querySelectorAll('.webx-field *')]
+          .filter(
+            (el) => el.getBoundingClientRect().right > block.getBoundingClientRect().right + 1,
+          )
+          .map((el) => el.className || el.tagName),
+      }
+    })
+    expect(long.wide, 'the German word breaks inside its field').toEqual([])
+    expect(long.scroll, 'and does not push the page').toBeLessThanOrEqual(0)
   })
 
   test('without JavaScript: no Show, and the file input is the browser’s own', async ({
