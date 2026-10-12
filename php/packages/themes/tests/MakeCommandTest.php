@@ -6,6 +6,7 @@ namespace WebxUi\Themes\Tests;
 
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Themes\Testing\ThemeProbe;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeHead;
 use WebxUi\Themes\ThemeLocator;
@@ -116,10 +117,66 @@ final class MakeCommandTest extends TestCase
     }
 
     #[Test]
-    public function a_packaged_theme_is_not_scaffolded_yet(): void
+    public function a_packaged_theme_is_named_like_a_composer_package(): void
     {
         $this->artisan('webx:theme:make', ['name' => 'made-theme'])->assertFailed();
 
         $this->assertDirectoryDoesNotExist($this->app->basePath('made-theme'));
+        $this->assertDirectoryDoesNotExist($this->app->basePath('packages/made-theme'));
+    }
+
+    /**
+     * A packaged theme (§17) over theme-default — the default when nothing is named — green by
+     * the contract its own test runs, before anyone has built it: an agent starts from a theme
+     * that works, and the first red line is the first rule it broke.
+     */
+    #[Test]
+    public function a_packaged_theme_keeps_the_contract_from_the_first_run(): void
+    {
+        $this->artisan('webx:theme:make', ['name' => 'acme/theme-made', '--path' => 'made-theme'])
+            ->expectsOutputToContain('standing on webx-ui/theme-default')
+            ->assertSuccessful();
+
+        $path = $this->app->basePath('made-theme');
+
+        foreach (['composer.json', 'package.json', 'vite.config.js', 'phpunit.xml.dist', '.gitignore', 'README.md',
+            '.github/workflows/theme.yml', 'tokens.json', 'src/css/theme.css', 'dist/theme.css', 'dist/sources.json'] as $file) {
+            $this->assertFileExists($path.'/'.$file);
+        }
+
+        $this->assertFileDoesNotExist($path.'/theme.json', 'a packaged theme keeps its manifest in composer.json');
+
+        $composer = json_decode((string) $this->files->get($path.'/composer.json'), true);
+        $this->assertSame('webx-theme', $composer['type']);
+        $this->assertSame(['title' => 'Theme Made', 'uses' => ['webx-ui/theme-default']], $composer['extra']['webx']['theme']);
+        $this->assertArrayHasKey('webx-ui/theme-default', $composer['require']);
+        $this->assertArrayHasKey('webx-ui/themes', $composer['require']);
+        $this->assertSame(['Acme\\ThemeMade\\Tests\\' => 'tests/'], $composer['autoload-dev']['psr-4']);
+
+        $test = (string) $this->files->get($path.'/tests/ThemeTest.php');
+        $this->assertStringContainsString('namespace Acme\\ThemeMade\\Tests;', $test);
+        $this->assertStringContainsString('use ThemeContract;', $test);
+        $this->assertNotEmpty(token_get_all($test, TOKEN_PARSE));
+
+        $probe = new ThemeProbe($path, $this->app);
+
+        $this->assertSame('acme/theme-made', $probe->theme()->name);
+        $this->assertSame(['acme/theme-made', 'webx-ui/theme-default'], array_map(fn ($layer) => $layer->name, $probe->chain()->layers));
+        $this->assertSame([], $probe->unvalued());
+        $this->assertSame([], $probe->findings());
+        $this->assertSame([], $probe->unreadable());
+        $this->assertSame([], $probe->layoutProblems());
+        $this->assertSame([], $probe->uncompiled());
+        $this->assertNull($probe->staleDist());
+    }
+
+    /** The committed dist/ is held to src/: an edit without a build is a red test, not yesterday's CSS on a site. */
+    #[Test]
+    public function an_edit_of_the_sources_without_a_build_turns_the_contract_red(): void
+    {
+        $this->artisan('webx:theme:make', ['name' => 'acme/theme-made', '--path' => 'made-theme'])->assertSuccessful();
+        $this->files->append($this->app->basePath('made-theme/src/css/theme.css'), "\n:where(.site-main) { gap: var(--site-space-4); }\n");
+
+        $this->assertStringContainsString('src/ changed since dist/ was built', (string) (new ThemeProbe($this->app->basePath('made-theme'), $this->app))->staleDist());
     }
 }

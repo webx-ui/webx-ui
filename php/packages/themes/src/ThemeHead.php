@@ -16,7 +16,7 @@ use WebxUi\Themes\Contracts\HeadPart;
  *     <style>@font-face { … }</style>           the fonts of the layers, a face per script (§15.3)
  *     each Contracts\HeadPart                   the packages below the themes: widgets
  *     <link rel="stylesheet" href="/themes/modules/…">  the modules' base look (§10.2), one file
- *     <link rel="stylesheet" href="/themes/…">  each packaged layer's theme.css, bottom first
+ *     <link rel="stylesheet" href="/themes/…">  each packaged layer's theme.css (and theme.js if built), bottom first
  *     Vite tags                                 each local layer's src/css/theme.css and src/js/theme.js
  *
  * The tokens are inline so that a change of tokens.json or of the preset needs no build. The
@@ -113,7 +113,13 @@ class ThemeHead
             return $this->hint("{$layer->name} is not published: php artisan webx:theme:sync");
         }
 
-        return '<link rel="stylesheet" href="'.e($url).'">';
+        $tags = '<link rel="stylesheet" href="'.e($url).'">';
+
+        // A theme's own script is rare — widgets do the rest — but one extracted from a site's
+        // theme/src/js keeps working as a package: its build writes dist/theme.js beside the CSS.
+        $script = is_file($layer->path.'/dist/theme.js') ? $this->assets->url($layer, 'theme.js', $this->app->make(UrlGenerator::class)) : null;
+
+        return $script === null ? $tags : $tags."\n".'<script type="module" src="'.e($script).'"></script>';
     }
 
     /**

@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }}\Tests;
+
+use Illuminate\Foundation\Application;
+use Orchestra\Testbench\TestCase;
+use WebxUi\Themes\Testing\ThemeContract;
+use WebxUi\Themes\ThemeServiceProvider;
+
+/**
+ * The theme's contract (WebX UI THEMES §18): the chain builds with this theme on top, every token
+ * has a value, `webx:theme:check` finds nothing, text reads in every preset, the layout keeps
+ * what a page needs, the views compile and dist/ is built from the current src/.
+ *
+ * Green from the first run. Tests of this theme's own go below the contract.
+ */
+final class ThemeTest extends TestCase
+{
+    use ThemeContract;
+
+    /**
+     * @param  Application  $app
+     * @return list<class-string>
+     */
+    protected function getPackageProviders($app): array
+    {
+        return [ThemeServiceProvider::class];
+    }
+
+    protected function themePath(): string
+    {
+        return dirname(__DIR__);
+    }
+}

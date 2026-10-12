@@ -16,6 +16,8 @@ use Illuminate\View\FileViewFinder;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Themes\Console\CheckCommand;
+use WebxUi\Themes\Console\EjectCommand;
+use WebxUi\Themes\Console\ExtractCommand;
 use WebxUi\Themes\Console\MakeCommand;
 use WebxUi\Themes\Console\ShowCommand;
 use WebxUi\Themes\Console\SyncCommand;
@@ -80,7 +82,7 @@ class ThemeServiceProvider extends ServiceProvider
                 __DIR__.'/../config/webx-themes.php' => config_path('webx-themes.php'),
             ], 'webx-themes-config');
 
-            $this->commands([CheckCommand::class, MakeCommand::class, ShowCommand::class, SyncCommand::class]);
+            $this->commands([CheckCommand::class, EjectCommand::class, ExtractCommand::class, MakeCommand::class, ShowCommand::class, SyncCommand::class]);
         }
 
         // `var_export` rather than a literal class name: the compiled string has to carry the

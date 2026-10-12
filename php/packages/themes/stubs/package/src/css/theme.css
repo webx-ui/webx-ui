@@ -1,0 +1,18 @@
+/*
+ * This theme's look, over the theme it stands on.
+ *
+ * Empty on purpose: the layers below already draw a finished site. What goes here is what
+ * makes this theme different, and the cheapest door first:
+ *
+ *   1. a value in ../../tokens.json ("defaults": { "color-accent": "#…" }) recolours every site
+ *      that stands on this theme, blocks and module pages included, without a line of CSS;
+ *   2. a rule here, on the classes the shell and the modules print — `site-header__*`,
+ *      `site-main`, `site-footer__*`, `site-prose`, `webx-<module>-*`;
+ *   3. a copy of a view in ../../views/ only when the markup itself has to change.
+ *
+ * Colours, fonts, radii, spacing and shadows are `var(--site-…)` only; the width of the
+ * container decides (`@container`), never the window's. Write selectors inside `:where()` so
+ * the local theme of each site wins over this file by being written at all.
+ *
+ * After a change: `npm run build` and commit dist/ — sites install this theme without Node.
+ */
