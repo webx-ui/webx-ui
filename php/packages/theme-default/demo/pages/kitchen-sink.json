@@ -5414,6 +5414,788 @@
           }
         }
       ]
+    },
+    {
+      "title": {
+        "en": "Forms",
+        "ru": "Формы",
+        "pl": "Formularze"
+      },
+      "slug": {
+        "en": "forms",
+        "ru": "formy",
+        "pl": "formularze"
+      },
+      "seo": {
+        "title": {
+          "en": "Forms",
+          "ru": "Формы",
+          "pl": "Formularze"
+        },
+        "description": {
+          "en": "The fields and forms of the widgets: one markup for every form of the site, its errors in their places with JavaScript and without.",
+          "ru": "Поля и формы виджетов: одна разметка для всех форм сайта, ошибки на своих местах — с JavaScript и без него.",
+          "pl": "Pola i formularze widżetów: jeden kod dla wszystkich formularzy strony, błędy na swoich miejscach – z JavaScriptem i bez niego."
+        }
+      },
+      "blocks": [
+        {
+          "key": "showcase-forms-intro",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "Forms",
+              "ru": "Формы",
+              "pl": "Formularze"
+            },
+            "body": {
+              "en": "A sign-in, a request, an order — every form of the site is built from the same fields, so a theme paints one set of classes and a visitor meets one way of being told what went wrong. The pages below show the parts one by one.",
+              "ru": "Вход, заявка, заказ — каждая форма сайта собрана из одних и тех же полей: тема перекрашивает один набор классов, а посетитель видит один способ сказать, что пошло не так. Страницы ниже показывают части по одной.",
+              "pl": "Logowanie, zgłoszenie, zamówienie – każdy formularz strony jest zbudowany z tych samych pól, więc motyw maluje jeden zestaw klas, a odwiedzający spotyka jeden sposób informowania o błędach. Strony poniżej pokazują części po kolei."
+            }
+          }
+        }
+      ],
+      "children": [
+        {
+          "title": {
+            "en": "Fields",
+            "ru": "Поля",
+            "pl": "Pola"
+          },
+          "slug": {
+            "en": "fields",
+            "ru": "polya",
+            "pl": "pola"
+          },
+          "seo": {
+            "title": {
+              "en": "Fields",
+              "ru": "Поля",
+              "pl": "Pola"
+            },
+            "description": {
+              "en": "Every type of field in every state: empty, filled, with the server’s errors and disabled; long German and Polish labels, and a narrow column.",
+              "ru": "Все типы полей во всех состояниях: пустые, заполненные, с ошибками сервера и недоступные; длинные немецкие и польские подписи и узкая колонка.",
+              "pl": "Każdy typ pola w każdym stanie: puste, wypełnione, z błędami serwera i wyłączone; długie niemieckie i polskie etykiety oraz wąska kolumna."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-fields-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Fields",
+                  "ru": "Поля",
+                  "pl": "Pola"
+                },
+                "body": {
+                  "en": "Fifteen kinds of field — a line, an address, a phone, a password with Show, a number, a letter, a list, one of several, several of several, one tick, a consent, a date, a file and a hidden one — each with its label, its hint and the place of its error. An error is said in words, in the danger colour, under its field; the field says it is wrong to a screen reader too.\nThe words of a field — Show, optional, Choose a file — are in the language of the page. A control is at least 44 pixels high, and the focus is always visible.",
+                  "ru": "Пятнадцать видов полей — строка, адрес почты, телефон, пароль с кнопкой «Показать», число, письмо, список, один из нескольких, несколько из нескольких, одна галочка, согласие, дата, файл и скрытое — у каждого подпись, подсказка и место для ошибки. Ошибка сказана словами, цветом опасности, под своим полем; экранному диктору поле тоже говорит, что с ним не так.\nСлова поля — «Показать», «необязательно», «Выбрать файл» — на языке страницы. Каждый элемент не ниже 44 пикселей, фокус всегда виден.",
+                  "pl": "Piętnaście rodzajów pól – wiersz, adres e-mail, telefon, hasło z przyciskiem Pokaż, liczba, list, lista, jedno z kilku, kilka z kilku, jedno pole wyboru, zgoda, data, plik i pole ukryte – każde z etykietą, podpowiedzią i miejscem na błąd. Błąd jest powiedziany słowami, w kolorze ostrzeżenia, pod swoim polem; czytnik ekranu też słyszy, że pole jest błędne.\nSłowa pola – Pokaż, opcjonalnie, Wybierz plik – są w języku strony. Każdy element ma co najmniej 44 piksele wysokości, a fokus jest zawsze widoczny."
+                }
+              }
+            },
+            {
+              "key": "showcase-fields-every",
+              "type": "showcase-fields",
+              "values": {
+                "heading": {
+                  "en": "Every type, every state",
+                  "ru": "Все типы, все состояния",
+                  "pl": "Każdy typ, każdy stan"
+                },
+                "note": {
+                  "en": "The same fields four times. The errors are the ones a server sends back after a form without JavaScript.",
+                  "ru": "Одни и те же поля четыре раза. Ошибки — те, что сервер возвращает после отправки формы без JavaScript.",
+                  "pl": "Te same pola cztery razy. Błędy to te, które serwer odsyła po wysłaniu formularza bez JavaScriptu."
+                },
+                "width": "page",
+                "states": [
+                  {
+                    "state": "empty",
+                    "title": {
+                      "en": "Empty",
+                      "ru": "Пустые",
+                      "pl": "Puste"
+                    }
+                  },
+                  {
+                    "state": "filled",
+                    "title": {
+                      "en": "Filled",
+                      "ru": "Заполненные",
+                      "pl": "Wypełnione"
+                    }
+                  },
+                  {
+                    "state": "invalid",
+                    "title": {
+                      "en": "With the server’s errors",
+                      "ru": "С ошибками сервера",
+                      "pl": "Z błędami serwera"
+                    }
+                  },
+                  {
+                    "state": "disabled",
+                    "title": {
+                      "en": "Disabled",
+                      "ru": "Недоступные",
+                      "pl": "Wyłączone"
+                    }
+                  }
+                ],
+                "fields": [
+                  {
+                    "type": "text",
+                    "name": "contact.name",
+                    "label": {
+                      "en": "Full name",
+                      "ru": "Имя и фамилия",
+                      "pl": "Imię i nazwisko"
+                    },
+                    "hint": {
+                      "en": "As on your documents.",
+                      "ru": "Как в документах.",
+                      "pl": "Tak jak w dokumentach."
+                    },
+                    "error": {
+                      "en": "Write your name.",
+                      "ru": "Напишите своё имя.",
+                      "pl": "Wpisz swoje imię."
+                    },
+                    "choices": "",
+                    "value": "Anna Kowalska",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": "name"
+                  },
+                  {
+                    "type": "email",
+                    "name": "contact.email",
+                    "label": {
+                      "en": "Email",
+                      "ru": "Эл. почта",
+                      "pl": "E-mail"
+                    },
+                    "hint": {
+                      "en": "We reply to this address.",
+                      "ru": "Ответим на этот адрес.",
+                      "pl": "Odpowiemy na ten adres."
+                    },
+                    "error": {
+                      "en": "This is not an email address.",
+                      "ru": "Это не адрес электронной почты.",
+                      "pl": "To nie jest adres e-mail."
+                    },
+                    "choices": "",
+                    "value": "anna@example.com",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "tel",
+                    "name": "contact.phone",
+                    "label": {
+                      "en": "Phone",
+                      "ru": "Телефон",
+                      "pl": "Telefon"
+                    },
+                    "hint": {
+                      "en": "With the country code.",
+                      "ru": "С кодом страны.",
+                      "pl": "Z numerem kierunkowym kraju."
+                    },
+                    "error": {
+                      "en": "A phone number is digits, spaces and a plus.",
+                      "ru": "В номере только цифры, пробелы и плюс.",
+                      "pl": "Numer to cyfry, spacje i plus."
+                    },
+                    "choices": "",
+                    "value": "+48 600 100 200",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "url",
+                    "name": "contact.website",
+                    "label": {
+                      "en": "Website",
+                      "ru": "Сайт",
+                      "pl": "Strona internetowa"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Write the whole address, with https://.",
+                      "ru": "Напишите адрес целиком, с https://.",
+                      "pl": "Wpisz cały adres, z https://."
+                    },
+                    "choices": "",
+                    "value": "https://example.com",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "password",
+                    "name": "account.password",
+                    "label": {
+                      "en": "Password",
+                      "ru": "Пароль",
+                      "pl": "Hasło"
+                    },
+                    "hint": {
+                      "en": "At least 12 characters.",
+                      "ru": "Не меньше 12 символов.",
+                      "pl": "Co najmniej 12 znaków."
+                    },
+                    "error": {
+                      "en": "The password is too short.",
+                      "ru": "Пароль слишком короткий.",
+                      "pl": "Hasło jest za krótkie."
+                    },
+                    "choices": "",
+                    "value": "kitchen-sink-secret",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": "new-password"
+                  },
+                  {
+                    "type": "number",
+                    "name": "order.quantity",
+                    "label": {
+                      "en": "Quantity",
+                      "ru": "Количество",
+                      "pl": "Ilość"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "At least one.",
+                      "ru": "Не меньше одного.",
+                      "pl": "Co najmniej jeden."
+                    },
+                    "choices": "",
+                    "value": "3",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "textarea",
+                    "name": "contact.message",
+                    "label": {
+                      "en": "Message",
+                      "ru": "Сообщение",
+                      "pl": "Wiadomość"
+                    },
+                    "hint": {
+                      "en": "Up to 2,000 characters.",
+                      "ru": "До 2000 символов.",
+                      "pl": "Do 2000 znaków."
+                    },
+                    "error": {
+                      "en": "Write a few words.",
+                      "ru": "Напишите хотя бы пару слов.",
+                      "pl": "Napisz kilka słów."
+                    },
+                    "choices": "",
+                    "value": "Anna Kowalska, +48 600 100 200",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "select",
+                    "name": "order.size",
+                    "label": {
+                      "en": "Size",
+                      "ru": "Размер",
+                      "pl": "Rozmiar"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Choose a size.",
+                      "ru": "Выберите размер.",
+                      "pl": "Wybierz rozmiar."
+                    },
+                    "choices": {
+                      "en": "Small\nMedium\nLarge",
+                      "ru": "Маленький\nСредний\nБольшой",
+                      "pl": "Mały\nŚredni\nDuży"
+                    },
+                    "value": "2",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "radio",
+                    "name": "order.delivery",
+                    "label": {
+                      "en": "Delivery",
+                      "ru": "Доставка",
+                      "pl": "Dostawa"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Choose how we deliver.",
+                      "ru": "Выберите способ доставки.",
+                      "pl": "Wybierz sposób dostawy."
+                    },
+                    "choices": {
+                      "en": "Courier\nParcel locker\nPick-up at the shop",
+                      "ru": "Курьер\nПостамат\nСамовывоз из магазина",
+                      "pl": "Kurier\nPaczkomat\nOdbiór w sklepie"
+                    },
+                    "value": "2",
+                    "required": true,
+                    "multiple": false,
+                    "inline": true,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "checkbox",
+                    "name": "order.extras",
+                    "label": {
+                      "en": "Extras",
+                      "ru": "Дополнительно",
+                      "pl": "Dodatki"
+                    },
+                    "hint": {
+                      "en": "Any of them, or none.",
+                      "ru": "Любые или ни одного.",
+                      "pl": "Dowolne albo żadne."
+                    },
+                    "error": {
+                      "en": "Assembly is not offered for this size.",
+                      "ru": "Для этого размера сборки нет.",
+                      "pl": "Montaż nie jest dostępny dla tego rozmiaru."
+                    },
+                    "choices": {
+                      "en": "Gift wrap\nA card with your words\nAssembly on delivery",
+                      "ru": "Подарочная упаковка\nОткрытка с вашим текстом\nСборка при доставке",
+                      "pl": "Opakowanie na prezent\nKartka z Twoimi słowami\nMontaż przy dostawie"
+                    },
+                    "value": "1,3",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "checkbox",
+                    "name": "contact.newsletter",
+                    "label": {
+                      "en": "Send me the newsletter",
+                      "ru": "Присылать рассылку",
+                      "pl": "Wysyłaj mi newsletter"
+                    },
+                    "hint": "",
+                    "error": "",
+                    "choices": "",
+                    "value": "1",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "consent",
+                    "name": "contact.terms",
+                    "label": {
+                      "en": "I agree that my data is used to answer this message.",
+                      "ru": "Я согласен, что мои данные используются для ответа на это сообщение.",
+                      "pl": "Zgadzam się na użycie moich danych do odpowiedzi na tę wiadomość."
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Agree to send the message.",
+                      "ru": "Чтобы отправить сообщение, нужно согласие.",
+                      "pl": "Aby wysłać wiadomość, wyraź zgodę."
+                    },
+                    "choices": "",
+                    "value": "1",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "date",
+                    "name": "order.date",
+                    "label": {
+                      "en": "Delivery date",
+                      "ru": "Дата доставки",
+                      "pl": "Data dostawy"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Choose a day after today.",
+                      "ru": "Выберите день после сегодняшнего.",
+                      "pl": "Wybierz dzień po dzisiejszym."
+                    },
+                    "choices": "",
+                    "value": "2026-11-02",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "file",
+                    "name": "contact.attachment",
+                    "label": {
+                      "en": "Attachment",
+                      "ru": "Вложение",
+                      "pl": "Załącznik"
+                    },
+                    "hint": {
+                      "en": "PDF or a picture, up to 10 MB each.",
+                      "ru": "PDF или картинка, до 10 МБ каждая.",
+                      "pl": "PDF lub zdjęcie, do 10 MB każde."
+                    },
+                    "error": {
+                      "en": "The file is larger than 10 MB.",
+                      "ru": "Файл больше 10 МБ.",
+                      "pl": "Plik jest większy niż 10 MB."
+                    },
+                    "choices": "",
+                    "value": "",
+                    "required": false,
+                    "multiple": true,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "hidden",
+                    "name": "contact.page",
+                    "label": "",
+                    "hint": "",
+                    "error": "",
+                    "choices": "",
+                    "value": "kitchen-sink",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-fields-long",
+              "type": "showcase-fields",
+              "values": {
+                "heading": {
+                  "en": "Long labels",
+                  "ru": "Длинные подписи",
+                  "pl": "Długie etykiety"
+                },
+                "note": {
+                  "en": "German and Polish, whatever the language of the page: a label breaks inside a word rather than push the page sideways.",
+                  "ru": "Немецкий и польский, на любом языке страницы: подпись переносится внутри слова, а не раздвигает страницу вбок.",
+                  "pl": "Niemiecki i polski, niezależnie od języka strony: etykieta łamie się wewnątrz słowa, zamiast rozpychać stronę na boki."
+                },
+                "width": "page",
+                "states": [
+                  {
+                    "state": "empty",
+                    "title": {
+                      "en": "Empty",
+                      "ru": "Пустые",
+                      "pl": "Puste"
+                    }
+                  },
+                  {
+                    "state": "invalid",
+                    "title": {
+                      "en": "With the server’s errors",
+                      "ru": "С ошибками сервера",
+                      "pl": "Z błędami serwera"
+                    }
+                  }
+                ],
+                "fields": [
+                  {
+                    "type": "text",
+                    "name": "company.name",
+                    "label": {
+                      "en": "Vollständige Unternehmensbezeichnung laut Handelsregistereintragung",
+                      "ru": "Vollständige Unternehmensbezeichnung laut Handelsregistereintragung",
+                      "pl": "Vollständige Unternehmensbezeichnung laut Handelsregistereintragung"
+                    },
+                    "hint": {
+                      "en": "Zum Beispiel: Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz-Beratungsgesellschaft mbH",
+                      "ru": "Zum Beispiel: Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz-Beratungsgesellschaft mbH",
+                      "pl": "Zum Beispiel: Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz-Beratungsgesellschaft mbH"
+                    },
+                    "error": {
+                      "en": "Die Unternehmensbezeichnung stimmt nicht mit dem Handelsregistereintrag überein.",
+                      "ru": "Die Unternehmensbezeichnung stimmt nicht mit dem Handelsregistereintrag überein.",
+                      "pl": "Die Unternehmensbezeichnung stimmt nicht mit dem Handelsregistereintrag überein."
+                    },
+                    "choices": "",
+                    "value": "",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "text",
+                    "name": "company.city",
+                    "label": {
+                      "en": "Miejscowość zamieszkania najprawdopodobniej dziewięćdziesięciokilkuletniej współpracowniczki",
+                      "ru": "Miejscowość zamieszkania najprawdopodobniej dziewięćdziesięciokilkuletniej współpracowniczki",
+                      "pl": "Miejscowość zamieszkania najprawdopodobniej dziewięćdziesięciokilkuletniej współpracowniczki"
+                    },
+                    "hint": {
+                      "en": "Konstantynopolitańczykowianeczka",
+                      "ru": "Konstantynopolitańczykowianeczka",
+                      "pl": "Konstantynopolitańczykowianeczka"
+                    },
+                    "error": {
+                      "en": "Nie rozpoznaliśmy tej miejscowości — sprawdź pisownię.",
+                      "ru": "Nie rozpoznaliśmy tej miejscowości — sprawdź pisownię.",
+                      "pl": "Nie rozpoznaliśmy tej miejscowości — sprawdź pisownię."
+                    },
+                    "choices": "",
+                    "value": "",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "select",
+                    "name": "company.form",
+                    "label": {
+                      "en": "Rechtsform des Unternehmens",
+                      "ru": "Rechtsform des Unternehmens",
+                      "pl": "Rechtsform des Unternehmens"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Bitte wählen Sie die Rechtsform aus.",
+                      "ru": "Bitte wählen Sie die Rechtsform aus.",
+                      "pl": "Bitte wählen Sie die Rechtsform aus."
+                    },
+                    "choices": {
+                      "en": "Gesellschaft mit beschränkter Haftung\nRindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz\nEinzelunternehmen",
+                      "ru": "Gesellschaft mit beschränkter Haftung\nRindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz\nEinzelunternehmen",
+                      "pl": "Gesellschaft mit beschränkter Haftung\nRindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz\nEinzelunternehmen"
+                    },
+                    "value": "",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "checkbox",
+                    "name": "company.contact",
+                    "label": {
+                      "en": "Preferowane sposoby kontaktu ze współpracowniczką",
+                      "ru": "Preferowane sposoby kontaktu ze współpracowniczką",
+                      "pl": "Preferowane sposoby kontaktu ze współpracowniczką"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Wybierz przynajmniej jeden sposób kontaktu.",
+                      "ru": "Wybierz przynajmniej jeden sposób kontaktu.",
+                      "pl": "Wybierz przynajmniej jeden sposób kontaktu."
+                    },
+                    "choices": {
+                      "en": "Najprawdopodobniej telefonicznie\nKorespondencyjnie, za pośrednictwem poczty elektronicznej\nOsobiście w siedzibie przedsiębiorstwa",
+                      "ru": "Najprawdopodobniej telefonicznie\nKorespondencyjnie, za pośrednictwem poczty elektronicznej\nOsobiście w siedzibie przedsiębiorstwa",
+                      "pl": "Najprawdopodobniej telefonicznie\nKorespondencyjnie, za pośrednictwem poczty elektronicznej\nOsobiście w siedzibie przedsiębiorstwa"
+                    },
+                    "value": "",
+                    "required": false,
+                    "multiple": false,
+                    "inline": true,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "consent",
+                    "name": "company.terms",
+                    "label": {
+                      "en": "Ich bin mit der Datenschutzerklärung und den Allgemeinen Geschäftsbedingungen der Donaudampfschifffahrtsgesellschaft einverstanden.",
+                      "ru": "Ich bin mit der Datenschutzerklärung und den Allgemeinen Geschäftsbedingungen der Donaudampfschifffahrtsgesellschaft einverstanden.",
+                      "pl": "Ich bin mit der Datenschutzerklärung und den Allgemeinen Geschäftsbedingungen der Donaudampfschifffahrtsgesellschaft einverstanden."
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Bitte stimmen Sie der Datenschutzerklärung zu.",
+                      "ru": "Bitte stimmen Sie der Datenschutzerklärung zu.",
+                      "pl": "Bitte stimmen Sie der Datenschutzerklärung zu."
+                    },
+                    "choices": "",
+                    "value": "",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "file",
+                    "name": "company.document",
+                    "label": {
+                      "en": "Zaświadczenie o wpisie do Krajowego Rejestru Sądowego",
+                      "ru": "Zaświadczenie o wpisie do Krajowego Rejestru Sądowego",
+                      "pl": "Zaświadczenie o wpisie do Krajowego Rejestru Sądowego"
+                    },
+                    "hint": {
+                      "en": "Plik PDF, najprawdopodobniej podpisany elektronicznie.",
+                      "ru": "Plik PDF, najprawdopodobniej podpisany elektronicznie.",
+                      "pl": "Plik PDF, najprawdopodobniej podpisany elektronicznie."
+                    },
+                    "error": {
+                      "en": "Ten plik nie jest dokumentem PDF.",
+                      "ru": "Ten plik nie jest dokumentem PDF.",
+                      "pl": "Ten plik nie jest dokumentem PDF."
+                    },
+                    "choices": "",
+                    "value": "",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-fields-narrow",
+              "type": "showcase-fields",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "A sidebar 20rem wide: choices meant to stand in a row go one under another.",
+                  "ru": "Боковая колонка шириной 20rem: варианты, которые стоят в ряд, встают один под другим.",
+                  "pl": "Kolumna boczna o szerokości 20rem: wybory ustawione w rzędzie układają się jeden pod drugim."
+                },
+                "width": "narrow",
+                "states": [
+                  {
+                    "state": "invalid",
+                    "title": {
+                      "en": "With the server’s errors",
+                      "ru": "С ошибками сервера",
+                      "pl": "Z błędami serwera"
+                    }
+                  }
+                ],
+                "fields": [
+                  {
+                    "type": "email",
+                    "name": "sidebar.email",
+                    "label": {
+                      "en": "E-Mail-Adresse für Rückfragen",
+                      "ru": "E-Mail-Adresse für Rückfragen",
+                      "pl": "E-Mail-Adresse für Rückfragen"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+                      "ru": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+                      "pl": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
+                    },
+                    "choices": "",
+                    "value": "",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "password",
+                    "name": "sidebar.password",
+                    "label": {
+                      "en": "Hasło do konta współpracowniczki",
+                      "ru": "Hasło do konta współpracowniczki",
+                      "pl": "Hasło do konta współpracowniczki"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Hasło jest za krótkie.",
+                      "ru": "Hasło jest za krótkie.",
+                      "pl": "Hasło jest za krótkie."
+                    },
+                    "choices": "",
+                    "value": "",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": "current-password"
+                  },
+                  {
+                    "type": "radio",
+                    "name": "sidebar.plan",
+                    "label": {
+                      "en": "Abonnement",
+                      "ru": "Abonnement",
+                      "pl": "Abonnement"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Bitte wählen Sie ein Abonnement.",
+                      "ru": "Bitte wählen Sie ein Abonnement.",
+                      "pl": "Bitte wählen Sie ein Abonnement."
+                    },
+                    "choices": {
+                      "en": "Monatlich\nJährlich mit Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz-Rabatt",
+                      "ru": "Monatlich\nJährlich mit Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz-Rabatt",
+                      "pl": "Monatlich\nJährlich mit Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz-Rabatt"
+                    },
+                    "value": "",
+                    "required": true,
+                    "multiple": false,
+                    "inline": true,
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "file",
+                    "name": "sidebar.file",
+                    "label": {
+                      "en": "Dokument",
+                      "ru": "Dokument",
+                      "pl": "Dokument"
+                    },
+                    "hint": {
+                      "en": "PDF",
+                      "ru": "PDF",
+                      "pl": "PDF"
+                    },
+                    "error": "",
+                    "choices": "",
+                    "value": "",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
