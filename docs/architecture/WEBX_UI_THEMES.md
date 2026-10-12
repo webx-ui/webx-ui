@@ -2386,3 +2386,17 @@ sans-serif` (родовые семейства §8 разрешены); теку
 - **Гайды.** Новый `apps/docs/guide/themes.md` («Site themes»): цепочка, четыре двери, команды,
   тест темы, пакетная тема, `extract`, `eject`, шаги агента. `styles.md` уже был под тему (TH1–TH5) —
   ссылки на новый гайд, тест темы и `RULES.md`.
+- **Проверено на пересобранном стартовом сайте** (`--with=blog,services,events,vacancies,press,recipes`):
+  тест темы сайта на контракте — 8 зелёных, `webx:theme:check` чист, корневой `AGENTS.md` называет
+  цепочку `theme/` → `webx-ui/theme-default`. Круг вживую: в `theme/` — `color-accent: #7a2fb8` и
+  правило на `.site-main`; `extract acme/theme-starter` — «The same look: 40 tokens, 5 views,
+  6 block types, 27 icons, 8 assets, 2 font faces, the words of 10 languages»; `composer update`,
+  `vite build` пакета, `sync` — страница отдаёт `/themes/acme/theme-starter/<хеш>/theme.css` с тем же
+  правилом, акцент тот же, типы блоков «unchanged»; `eject` — тот же итог, пакет целиком в
+  `theme/`, `WEBX_THEME=theme`; `composer remove`, `npm run build`, `sync` — правило снова в сборке
+  сайта, тест темы зелёный. Найдено там же и исправлено: совет `extract` убрать входы из
+  `vite.config.js` — лишний для скелета, который пропускает отсутствующий вход сам
+  (`existsSync(entry)`). `composer remove` пакета печатает ошибку `pre_uninstall` — это хук
+  `pre-package-uninstall` Laravel в скелете, удаление идёт дальше. PHPUnit — 3983 теста (27
+  пропущено), Playwright — 172 из 173 после пересборки, упавший — «background video» под нагрузкой
+  (известная нестабильность с TH3.3), отдельно — 4 из 4.
