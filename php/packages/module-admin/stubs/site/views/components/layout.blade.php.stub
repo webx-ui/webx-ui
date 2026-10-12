@@ -112,6 +112,13 @@
 
     <x-webx-blocks::region name="footer" fallback="components.footer" />
 
+    {{--
+        The scripts of the site's forms (`<x-webx-inbox::form>`, `<x-webx-form>`): sent in place
+        and checked in the browser. Without this line every form still works — it reloads the
+        page to answer. Scripts only: their stylesheets are made of a theme's tokens.
+    --}}
+    @webxWidgets
+
     @stack('scripts')
 </body>
 </html>

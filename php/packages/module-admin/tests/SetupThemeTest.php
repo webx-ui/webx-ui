@@ -176,6 +176,23 @@ final class SetupThemeTest extends TestCase
         $layout = (string) $this->files->get($this->app->resourcePath('views/components/layout.blade.php'));
         $this->assertStringContainsString("@stack('head')", $layout);
         $this->assertStringContainsString('<x-webx-blocks::region name="header" fallback="components.header" />', $layout);
+        // Without the widgets nobody registers the directive, and Blade would print it as text.
+        $this->assertStringNotContainsString('@webxWidgets', $layout);
+    }
+
+    #[Test]
+    public function no_theme_with_the_widgets_links_their_scripts_and_syncs_them(): void
+    {
+        $installed = (array) json_decode((string) $this->files->get($this->installed), true);
+        $installed['packages'][] = ['name' => 'webx-ui/widgets', 'version' => '0.28.0'];
+        $this->files->put($this->installed, (string) json_encode($installed));
+
+        $this->runSetup(['--no-theme' => true])->assertSuccessful();
+
+        $this->assertStringContainsString("@webxWidgets\n", (string) $this->files->get($this->app->resourcePath('views/components/layout.blade.php')));
+        $this->assertContains('artisan webx:theme:sync', $this->ran);
+        $this->assertEmpty(array_filter($this->ran, fn (string $line): bool => str_contains($line, 'webx:theme:make')));
+        $this->assertSame(1, substr_count((string) $this->files->get($this->app->basePath('composer.json')), '@php artisan webx:theme:sync --ansi'));
     }
 
     #[Test]

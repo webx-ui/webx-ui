@@ -167,7 +167,10 @@ final class Plan
     {
         $theme = $this->config->get('webx-themes.theme');
 
-        if (! $this->catalogue->has('webx-ui/themes') || ! is_string($theme) || trim($theme) === '') {
+        $themed = is_string($theme) && trim($theme) !== '';
+
+        // Without a theme, the widgets' scripts — what `@webxWidgets` links — are all there is to sync.
+        if (! $this->catalogue->has('webx-ui/themes') || (! $themed && ! $this->catalogue->has('webx-ui/widgets'))) {
             return null;
         }
 

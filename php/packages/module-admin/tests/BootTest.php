@@ -187,6 +187,14 @@ final class BootTest extends TestCase
         $this->assertNotContains('php artisan webx:theme:sync', $this->lines($this->plan(['webx-ui/module-admin', 'webx-ui/themes'])));
     }
 
+    #[Test]
+    public function a_site_without_a_theme_syncs_the_scripts_of_its_forms(): void
+    {
+        config()->set('webx-themes.theme', '');
+
+        $this->assertContains('php artisan webx:theme:sync', $this->lines($this->plan(['webx-ui/module-admin', 'webx-ui/themes', 'webx-ui/widgets'])));
+    }
+
     // -- The first administrator ---------------------------------------------------------------
 
     #[Test]

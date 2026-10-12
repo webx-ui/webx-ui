@@ -64,6 +64,9 @@ final class SetupCommand extends Command
 
     protected $description = 'Set this application up as a WebX UI site: database, modules, panel, administrator';
 
+    /** The scripts of the site's forms: synced and linked without a theme too. */
+    private const string WIDGETS = 'webx-ui/widgets';
+
     private EnvFile $env;
 
     private Catalogue $catalogue;
@@ -509,10 +512,13 @@ final class SetupCommand extends Command
      * is when a new release of a layer arrives: the line goes into the site's `post-update-cmd`.
      *
      * Not fatal: the site still opens, with less style, and the command is one line to run again.
+     *
+     * A site without a theme syncs too when it has the widgets: the scripts of its forms, which
+     * `@webxWidgets` in its layout links, come from public/themes the same way.
      */
     private function syncTheme(Filesystem $files): void
     {
-        if (! $this->theme->themed) {
+        if (! $this->theme->themed && ! $this->catalogue->has(self::WIDGETS)) {
             return;
         }
 
@@ -591,6 +597,12 @@ final class SetupCommand extends Command
             $files->ensureDirectoryExists(dirname($target));
             $files->copy($stubs.'/'.$file.'.stub', $target);
             $written[] = 'resources/'.$file;
+
+            // Blade prints a directive nobody registered as it is: without the widgets the line
+            // would be text at the bottom of every page.
+            if ($file === 'views/components/layout.blade.php' && ! $this->catalogue->has(self::WIDGETS)) {
+                $files->put($target, (string) preg_replace('/^[ \t]*@webxWidgets\R/m', '', (string) $files->get($target)));
+            }
         }
 
         if ($written !== []) {
