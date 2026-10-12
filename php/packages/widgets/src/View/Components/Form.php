@@ -44,6 +44,14 @@ final class Form extends Component
 
     public ?FormRules $webxFormRules;
 
+    /**
+     * The name the fields inside find the form's id by: a page that came back from another of its
+     * forms is not this form's answer, and its fields keep what the page gave them.
+     */
+    public const string ID = 'webxFormId';
+
+    public string $webxFormId;
+
     public function __construct(
         public string $action,
         public string $method = 'post',
@@ -73,6 +81,7 @@ final class Form extends Component
         // The same on every rendering of the page, so the page that comes back after a POST
         // knows which of its forms was the one sent.
         $this->formId = $id ?? 'form-'.Widgets::sequence('form');
+        $this->webxFormId = $this->formId;
     }
 
     public function render(): View

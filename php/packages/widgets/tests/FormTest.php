@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\ComponentAttributeBag;
 use Illuminate\View\ViewException;
 use PHPUnit\Framework\Attributes\Test;
@@ -78,6 +80,15 @@ final class FormTest extends TestCase
                         </x-webx-form>
                     </x-webx-dialog>
                 </x-layout>
+                BLADE));
+            $router->get('/two', static fn (): string => Blade::render(<<<'BLADE'
+                <x-webx-form action="/contact" id="request">
+                    <x-webx-field name="email" type="email" label="Email" />
+                </x-webx-form>
+                <x-webx-form action="/subscribe" id="subscribe">
+                    <x-webx-field name="email" type="email" label="Email" value="you@example.test" />
+                    <x-webx-field name="news" type="checkbox" label="News" checked />
+                </x-webx-form>
                 BLADE));
             $router->post('/contact', static function (Request $request): FormResponse {
                 $request->validate([
@@ -230,6 +241,27 @@ final class FormTest extends TestCase
         $this->assertSame(1, substr_count($page, '<p class="webx-form__refusal">Prove you are not a robot.</p>'));
         // The subscription is another form: no alert of the request in it, not returned.
         $this->assertMatchesRegularExpression('~<form id="subscribe"[^>]*class="webx-form">~', $page);
+    }
+
+    #[Test]
+    public function a_field_of_another_form_keeps_what_the_page_gave_it(): void
+    {
+        // Two forms with an `email` each — a request refused in the body, a subscription in the
+        // footer: what came back is the request's, and the footer stays as the page printed it.
+        $this->withSession([
+            '_old_input' => ['_webx_form' => 'request', 'email' => 'ada@', 'news' => '1'],
+            'errors' => (new ViewErrorBag)->put('default', new MessageBag(['email' => ['Not an address.']])),
+        ]);
+
+        $page = (string) $this->get('/two')->getContent();
+
+        $this->assertMatchesRegularExpression('~<form id="request".*id="field-email" name="email" value="ada@".*Not an address\.~s', $page);
+        $footer = (string) strstr($page, '<form id="subscribe"');
+        $this->assertStringContainsString('name="email" value="you@example.test"', $footer);
+        $this->assertStringNotContainsString('Not an address.', $footer);
+        $this->assertStringNotContainsString('is-invalid', $footer);
+        // A tick the page ticks stays ticked: the subscription did not come back with it unticked.
+        $this->assertMatchesRegularExpression('~name="news" value="1" checked~', $footer);
     }
 
     #[Test]
