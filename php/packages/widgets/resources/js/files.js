@@ -33,7 +33,8 @@ export function size(bytes, locale = document.documentElement.lang || undefined)
     return new Intl.NumberFormat(locale, {
       style: 'unit',
       unit,
-      unitDisplay: 'short',
+      // 'short' says '70 byte' in English; the narrow byte is 'B' everywhere.
+      unitDisplay: unit === 'byte' ? 'narrow' : 'short',
       maximumFractionDigits: value < 10 && unit !== 'byte' ? 1 : 0,
     }).format(value)
   } catch {

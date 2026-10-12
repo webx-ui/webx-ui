@@ -6297,6 +6297,353 @@ test.describe('sending', () => {
   })
 })
 
+test.describe('validation', () => {
+  // WIDGETS §17.5, W6.3: Kitchen sink › Forms › Validation — one form checked in the browser by
+  // FormRules and by the showcase's door with the same rules; the phone mask; the files.
+  const PATH = '/kitchen-sink/forms/validation'
+  const FORM = '.b-showcase-validation form'
+
+  const errorsOf = (page) =>
+    page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return Object.fromEntries(
+        [...form.querySelectorAll('[data-webx-field].is-invalid')].map((field) => [
+          field.dataset.webxField,
+          field.querySelector('.webx-field__error').textContent.trim(),
+        ]),
+      )
+    }, FORM)
+
+  function watch(page) {
+    const seen = []
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (url.pathname.startsWith('/webx/widgets/'))
+        seen.push(`${request.method()} ${url.pathname}`)
+    })
+    page.on('response', (response) => {
+      const url = new URL(response.url())
+      if (url.pathname.startsWith('/webx/widgets/')) seen.push(response.status())
+    })
+    return seen
+  }
+
+  /** Wrong in every way the browser can tell. */
+  async function wrong(page) {
+    const form = page.locator(FORM)
+    await form.locator('input[name="check[name]"]').fill('a')
+    await form.locator('input[name="check[email]"]').fill('nope')
+    await form.locator('input[name="check[phone]"]').fill('512')
+    await form.locator('input[name="check[age]"]').fill('12')
+    await form.locator('input[name="check[website]"]').fill('example')
+    await form.locator('input[name="check[day]"]').fill('2025-06-01')
+    await form.locator('input[name="check[password]"]').fill('short')
+    await form.locator('input[name="check[password_confirmation]"]').fill('other')
+  }
+
+  /** Right in every way the browser can tell. */
+  async function right(page, name = 'Ann') {
+    const form = page.locator(FORM)
+    await form.locator('input[name="check[name]"]').fill(name)
+    await form.locator('input[name="check[email]"]').fill('ann@example.com')
+    await form.locator('input[name="check[phone]"]').fill('+48512345678')
+    await form.locator('input[name="check[age]"]').fill('')
+    await form.locator('input[name="check[website]"]').fill('')
+    await form.locator('input[name="check[day]"]').fill('2026-05-01')
+    await form.locator('input[name="check[password]"]').fill('secret12')
+    await form.locator('input[name="check[password_confirmation]"]').fill('secret12')
+    await form.locator('input[name="check[plan]"][value="team"]').check()
+    await form.locator('input[name="check[agree]"]').check()
+  }
+
+  const png = (name, bytes = 600) => ({
+    name,
+    mimeType: 'image/png',
+    // A real PNG header: the server guesses the type by what is inside.
+    buffer: Buffer.concat([
+      Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+      Buffer.alloc(Math.max(0, bytes - 70)),
+    ]),
+  })
+
+  test('the browser says what the server says, word for word, and sends nothing while one is wrong', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    await wrong(page)
+
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    const browser = await errorsOf(page)
+    expect(seen, 'nothing sent').toEqual([])
+    expect(
+      await page.evaluate(() => document.activeElement?.getAttribute('name')),
+      'the focus on the first wrong field',
+    ).toBe('check[name]')
+
+    // The same, straight to the server: the button with formnovalidate skips the browser.
+    await page.locator(`${FORM} .b-showcase-validation__server`).click()
+    await expect.poll(() => seen.length).toBe(2)
+    const server = await errorsOf(page)
+
+    expect(seen).toEqual(['POST /webx/widgets/showcase/validation', 422])
+    expect(Object.keys(browser).sort()).toEqual([
+      'check.age',
+      'check.agree',
+      'check.day',
+      'check.email',
+      'check.name',
+      'check.password',
+      'check.phone',
+      'check.plan',
+      'check.website',
+    ])
+    expect(browser, 'one word in the browser and from the server').toEqual(server)
+    expect(browser['check.password']).toContain('8')
+    expect(browser['check.password']).toContain('confirmation')
+  })
+
+  test('a field is checked when it is left after typing, and loses its error as it is put right', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const name = page.locator(`${FORM} [data-webx-field="check.name"]`)
+    const email = page.locator(`${FORM} [data-webx-field="check.email"]`)
+
+    // Through a field without typing: nothing said.
+    await email.locator('input').focus()
+    await page.keyboard.press('Tab')
+    await expect(email).not.toHaveClass(/is-invalid/)
+
+    await name.locator('input').focus()
+    await page.keyboard.type('a')
+    await expect(name, 'not while typing').not.toHaveClass(/is-invalid/)
+    await page.keyboard.press('Tab')
+    await expect(name).toHaveClass(/is-invalid/)
+    await expect(name.locator('.webx-field__error')).toContainText('Your name')
+    expect(await name.locator('input').getAttribute('aria-invalid')).toBe('true')
+
+    await name.locator('input').focus()
+    await page.keyboard.type('nn')
+    await expect(name, 'right again as it is typed').not.toHaveClass(/is-invalid/)
+
+    // The confirmation puts its password right too.
+    const password = page.locator(`${FORM} [data-webx-field="check.password"]`)
+    await password.locator('input').fill('secret12')
+    await password.locator('input').blur()
+    await expect(password).toHaveClass(/is-invalid/)
+    await page.locator(`${FORM} input[name="check[password_confirmation]"]`).fill('secret12')
+    await expect(password).not.toHaveClass(/is-invalid/)
+  })
+
+  test('what only the server knows comes from the server; all right, the thank-you', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+
+    await right(page, 'admin')
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} [data-webx-field="check.name"]`)).toHaveClass(/is-invalid/)
+    expect(seen).toEqual(['POST /webx/widgets/showcase/validation', 422])
+    expect(Object.keys(await errorsOf(page))).toEqual(['check.name'])
+
+    await page.locator(`${FORM} input[name="check[name]"]`).fill('Ann')
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-form__heading`)).toHaveText('Everything is right')
+  })
+
+  test('the phone is put in international form as it is typed, pasted and filled in', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const phone = page.locator(`${FORM} input[name="check[phone]"]`)
+
+    await phone.pressSequentially('48512345678')
+    await expect(phone).toHaveValue('+48 512 345 678')
+    expect(await phone.evaluate((input) => input.selectionStart), 'the caret at the end').toBe(15)
+
+    // Backspace right after a space takes the digit before it, not only the space.
+    await phone.press('ArrowLeft')
+    await phone.press('ArrowLeft')
+    await phone.press('ArrowLeft')
+    await phone.press('Backspace')
+    await expect(phone).toHaveValue('+48 512 346 78')
+
+    // A paste in any form, and what an autofill sets.
+    await phone.fill('')
+    await phone.focus()
+    await page.keyboard.insertText('+1 (212) 555-0123')
+    await expect(phone).toHaveValue('+1 212 555 0123')
+    await phone.evaluate((input) => {
+      input.value = '00380441234567'
+      input.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await expect(phone).toHaveValue('+380 441 234 567')
+  })
+
+  test('files are dropped, listed with their sizes, refused by type and size before sending, removed, and sent through XMLHttpRequest', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const field = page.locator(`${FORM} [data-webx-field="check.photos"]`)
+    const input = field.locator('input[type=file]')
+    const seen = watch(page)
+
+    await input.setInputFiles([
+      png('one.png'),
+      { name: 'cv.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n') },
+    ])
+    // A big one dropped on the field, as a person drags it from a folder.
+    await page.evaluate(async (scope) => {
+      const field = document.querySelector(`${scope} [data-webx-field="check.photos"]`)
+      const data = new DataTransfer()
+      data.items.add(new File([new Uint8Array(3 * 1024 * 1024)], 'huge.png', { type: 'image/png' }))
+      field.dispatchEvent(
+        new DragEvent('dragover', { dataTransfer: data, bubbles: true, cancelable: true }),
+      )
+      field.dispatchEvent(
+        new DragEvent('drop', { dataTransfer: data, bubbles: true, cancelable: true }),
+      )
+    }, FORM)
+
+    const rows = field.locator('.webx-field__files-item')
+    await expect(rows).toHaveCount(3)
+    expect(await rows.locator('.webx-field__files-name').allTextContents()).toEqual([
+      'one.png',
+      'cv.pdf',
+      'huge.png',
+    ])
+    expect(await rows.nth(2).locator('.webx-field__files-size').textContent()).toMatch(/3\s*MB/)
+    expect(
+      await rows.nth(0).locator('.webx-field__files-preview').count(),
+      'a picture shows itself',
+    ).toBe(1)
+    // Refused before anything is sent: the type of one, the size of the other, each by its row.
+    await expect(field).toHaveClass(/is-invalid/)
+    expect(
+      await rows.evaluateAll((all) => all.map((row) => row.classList.contains('is-invalid'))),
+    ).toEqual([false, true, true])
+    const said = await field.locator('.webx-field__error').textContent()
+    expect(said).toContain('Photos')
+    expect(said).toContain('2048')
+    expect(seen).toEqual([])
+
+    await rows.nth(2).locator('.webx-field__files-remove').click()
+    await rows.nth(1).locator('.webx-field__files-remove').click()
+    await expect(rows).toHaveCount(1)
+    await expect(field).not.toHaveClass(/is-invalid/)
+    expect(
+      await input.evaluate((el) => el.files.length),
+      'the input holds what the list shows',
+    ).toBe(1)
+
+    // Sent through XMLHttpRequest — the one that tells the upload's progress.
+    const kinds = []
+    page.on('request', (request) => {
+      if (request.url().includes('/showcase/validation')) kinds.push(request.resourceType())
+    })
+    await right(page)
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-form__heading`)).toHaveText('Everything is right')
+    expect(kinds).toEqual(['xhr'])
+  })
+
+  test('without JavaScript the browser checks by itself, and the server says the same words', async ({
+    browser,
+    page,
+  }) => {
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const without = await plain.newPage()
+    await without.goto(PATH)
+    expect(
+      await without.locator(FORM).getAttribute('novalidate'),
+      'the browser’s checks on',
+    ).toBeNull()
+    await without.locator(`${FORM} .b-showcase-validation__server`).click()
+    await without.waitForLoadState()
+    const back = await errorsOf(without)
+    await plain.close()
+
+    await page.goto(PATH)
+    await still(page)
+    expect(
+      await page.locator(FORM).evaluate((form) => form.noValidate),
+      'the script’s instead',
+    ).toBe(true)
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    expect(await errorsOf(page)).toEqual(back)
+  })
+
+  test('at 360 nothing scrolls sideways; the rows of files and their buttons are 44px', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+    await page
+      .locator(`${FORM} [data-webx-field="check.photos"] input[type=file]`)
+      .setInputFiles([png('a-very-long-name-of-a-photograph-taken-on-holiday-by-the-sea.png')])
+
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      const row = form.querySelector('.webx-field__files-item')
+      const outside = [...form.querySelectorAll('*')].filter((el) => {
+        const box = el.getBoundingClientRect()
+        return box.width > 0 && box.right > document.documentElement.clientWidth + 0.5
+      })
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        outside: outside.map((el) => el.className),
+        row: row.getBoundingClientRect().height,
+        remove: row.querySelector('.webx-field__files-remove').getBoundingClientRect().height,
+        buttons: [...form.querySelectorAll('.webx-form__submit')].map(
+          (b) => b.getBoundingClientRect().height,
+        ),
+      }
+    }, FORM)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    expect(m.outside).toEqual([])
+    expect(m.row).toBeGreaterThanOrEqual(44)
+    expect(m.remove).toBeGreaterThanOrEqual(44)
+    for (const height of m.buttons) expect(height).toBeGreaterThanOrEqual(44)
+  })
+
+  test('on the Polish page the names are Polish both ways, and so is the file list', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="pl"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+    const seen = watch(page)
+
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    const name = page.locator(`${FORM} [data-webx-field="check.name"] .webx-field__error`)
+    await expect(name).toContainText('Twoje imię')
+    const browser = await errorsOf(page)
+    await page.locator(`${FORM} .b-showcase-validation__server`).click()
+    await expect.poll(() => seen.length).toBe(2)
+    expect(await errorsOf(page)).toEqual(browser)
+
+    await page
+      .locator(`${FORM} [data-webx-field="check.photos"] input[type=file]`)
+      .setInputFiles([png('a.png')])
+    await expect(page.locator(`${FORM} .webx-field__files-remove`)).toHaveText('Usuń')
+    await expect(page.locator(`${FORM} .webx-field__drop`)).toHaveText('lub upuść pliki tutaj')
+  })
+})
+
 test.describe('words of the layout', () => {
   // The words the shell can print: the theme's own (THEMES §15.2) and those of the widgets it is
   // built of. Read from the dictionaries themselves, so a word added later is checked too.
