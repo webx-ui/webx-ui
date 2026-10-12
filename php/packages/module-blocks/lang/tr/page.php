@@ -103,6 +103,7 @@ return [
     'source-panel' => 'panel',
     'source-mcp' => 'ajan',
     'source-import' => 'içe aktarma',
+    'source-theme' => 'tema',
     'drops-translations' => 'Bu sürüm :fields alanlarını tek dilli yapıyor. Sayfalarda (:count) bu alanlarda birden çok dilde metin var ve yalnızca ana dil kalır: :pages. Diğer dilleri silmeyi kabul ederek yeniden yayınlayın ya da önce metni taşıyın.',
     'localized-changes' => ':fields alanlarının dil biçimi bu sürümün yayınlanmasıyla değişir: sayfalardaki (:count) mevcut değerler dönüştürülecek.',
     'rename-called' => 'Başka türler bunu kimliğiyle çağırıyor: :types. Önce onların şablonlarını değiştirin, sonra yeniden adlandırın.',

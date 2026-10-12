@@ -45,7 +45,7 @@ final class SetupCommand extends Command
     protected $signature = 'webx:setup
                             {--name= : What the site is called}
                             {--domain= : The domain it answers on}
-                            {--modules= : Which modules to install, comma separated, or "all"}
+                            {--modules= : Which modules to install, comma separated, "all", or "+blog,services" for the suggested ones and these}
                             {--locales= : The languages it publishes in, comma separated; the first is the default}
                             {--db= : The database name}
                             {--db-connection= : mysql, mariadb, pgsql or sqlite}
@@ -107,12 +107,14 @@ final class SetupCommand extends Command
 
         try {
             $this->gather();
+            $this->warnAboutTheDemo();
             $this->writeEnvironment();
             $this->prepareDatabase();
             $this->installModules();
             $this->installTheme($files);
             $this->wireThePanel($files);
             $this->migrate();
+            $this->syncTheme($files);
             $this->installOfferedBlocks();
             $this->createAdministrator();
             $this->build();
@@ -301,22 +303,7 @@ final class SetupCommand extends Command
         $given = $this->option('modules');
 
         if (is_string($given) && $given !== '') {
-            $ids = $given === 'all'
-                ? $this->catalogue->ids()
-                : array_values(array_filter(array_map(trim(...), explode(',', $given))));
-
-            foreach ($ids as $id) {
-                if (! $this->catalogue->knows($id)) {
-                    throw SetupFailed::unknownModule($id, implode(', ', $this->catalogue->ids()));
-                }
-            }
-
-            // Whatever is installed stays installed: this command adds, it does not uninstall.
-            // What the chosen ones require comes along, as Composer would bring it anyway.
-            return array_values(array_unique([
-                ...$this->catalogue->withRequirements($ids),
-                ...$this->catalogue->installed(),
-            ]));
+            return $this->catalogue->chosen($given);
         }
 
         if (! $this->input->isInteractive()) {
@@ -348,6 +335,30 @@ final class SetupCommand extends Command
         }
 
         return confirm(label: 'Fill it with demo content to look at', default: true);
+    }
+
+    /**
+     * A language of the site the demo is not written in (spec WEBX_UI_THEMES.md §15.2), said
+     * before anything is installed, while leaving it out of `--locales` is still one word away.
+     * Only a warning: the demo seeds all the same, and a site that will translate it in the panel
+     * has nothing to change.
+     */
+    private function warnAboutTheDemo(): void
+    {
+        if ($this->answers['demo'] !== 'yes') {
+            return;
+        }
+
+        $codes = LocalesConfig::codes($this->answers['locales']);
+        $default = $codes[0] ?? 'en';
+
+        foreach ($this->catalogue->demoGaps($codes, $this->modules, $this->theme->package) as $locale => $ids) {
+            $this->components->warn(sprintf('The demo is not written in %s for: %s.', $locale, implode(', ', $ids)));
+            // A line of its own: the warning box wraps at the terminal's width, wherever it falls.
+            $this->line('  '.($locale === $default
+                ? 'It seeds in English there, under the default language.'
+                : "Those pages show the {$default} words in {$locale} until somebody translates them."));
+        }
     }
 
     // -- The steps -------------------------------------------------------------------------
@@ -488,10 +499,64 @@ final class SetupCommand extends Command
         } else {
             $this->components->twoColumnDetail('Theme', $this->theme->why);
         }
+    }
 
-        // The packaged layers' built CSS reaches a page only from public/themes. Not fatal: the
-        // site still opens, with less style, and the command is one line to run again.
+    /**
+     * The layers onto the site (THEMES §9.2): their built CSS, which reaches a page only from
+     * public/themes, and their block types, which go into the tables — so after `migrate`, and
+     * before the modules' offers, so that a slug the chain carries is the chain's type rather
+     * than the one a module offers (§10.3). And once more after every `composer update`, which
+     * is when a new release of a layer arrives: the line goes into the site's `post-update-cmd`.
+     *
+     * Not fatal: the site still opens, with less style, and the command is one line to run again.
+     */
+    private function syncTheme(Filesystem $files): void
+    {
+        if (! $this->theme->themed) {
+            return;
+        }
+
         $this->artisan(['webx:theme:sync'], 'webx:theme:sync', fatal: false);
+        $this->syncAfterUpdates($files);
+    }
+
+    /**
+     * Adds `webx:theme:sync` to the site's `post-update-cmd`, once. The skeleton cannot ship the
+     * line: a site set up without a theme has no such command, and a script that fails would
+     * fail every `composer update` of it.
+     */
+    private function syncAfterUpdates(Filesystem $files): void
+    {
+        $path = $this->laravel->basePath('composer.json');
+
+        if (! $files->exists($path)) {
+            return;
+        }
+
+        // Objects, not arrays: an empty `{}` of the file has to stay one.
+        $composer = json_decode((string) $files->get($path));
+
+        if (! $composer instanceof \stdClass) {
+            return;
+        }
+
+        $scripts = $composer->scripts ?? null;
+        $scripts = $scripts instanceof \stdClass ? $scripts : new \stdClass;
+        $after = $scripts->{'post-update-cmd'} ?? [];
+        $after = is_array($after) ? array_values($after) : [$after];
+
+        foreach ($after as $line) {
+            if (is_string($line) && str_contains($line, 'webx:theme:sync')) {
+                return;
+            }
+        }
+
+        $after[] = '@php artisan webx:theme:sync --ansi';
+        $scripts->{'post-update-cmd'} = $after;
+        $composer->scripts = $scripts;
+
+        $files->put($path, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
+        $this->components->twoColumnDetail('composer.json', 'post-update-cmd runs webx:theme:sync');
     }
 
     /**

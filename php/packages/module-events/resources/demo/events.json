@@ -2,59 +2,85 @@
   "categories": [
     {
       "key": "breakfast-meetups",
-      "title": { "en": "Breakfast meetups", "ru": "Завтраки-встречи" },
+      "title": {
+        "en": "Breakfast meetups",
+        "ru": "Завтраки-встречи",
+        "pl": "Spotkania przy śniadaniu"
+      },
       "lead": {
         "en": "<p>An hour over breakfast with people who cook — and a question or two for the chef.</p>",
-        "ru": "<p>Час за завтраком с теми, кто готовит, — и пара вопросов шефу.</p>"
+        "ru": "<p>Час за завтраком с теми, кто готовит, — и пара вопросов шефу.</p>",
+        "pl": "<p>Godzina przy śniadaniu z ludźmi, którzy gotują — i pytanie lub dwa do szefa kuchni.</p>"
       }
     },
     {
       "key": "cooking-classes",
-      "title": { "en": "Cooking classes", "ru": "Кулинарные мастер-классы" },
+      "title": {
+        "en": "Cooking classes",
+        "ru": "Кулинарные мастер-классы",
+        "pl": "Warsztaty kulinarne"
+      },
       "lead": {
         "en": "<p>Aprons on: everybody cooks, everybody eats, everybody takes the recipes home.</p>",
-        "ru": "<p>Фартуки надеты: все готовят, все едят, все уносят рецепты домой.</p>"
+        "ru": "<p>Фартуки надеты: все готовят, все едят, все уносят рецепты домой.</p>",
+        "pl": "<p>Fartuchy założone: wszyscy gotują, wszyscy jedzą, wszyscy zabierają przepisy do domu.</p>"
       }
     },
     {
       "key": "private-events",
-      "title": { "en": "Private events", "ru": "Частные события" }
+      "title": { "en": "Private events", "ru": "Частные события", "pl": "Wydarzenia prywatne" }
     }
   ],
   "events": [
     {
       "slug": "spring-cooking-class",
-      "title": { "en": "Spring cooking class", "ru": "Весенний кулинарный мастер-класс" },
+      "title": {
+        "en": "Spring cooking class",
+        "ru": "Весенний кулинарный мастер-класс",
+        "pl": "Wiosenne warsztaty kulinarne"
+      },
       "lead": {
         "en": "Three spring dishes in two and a half hours, cooked together and eaten at one table.",
-        "ru": "Три весенних блюда за два с половиной часа — готовим вместе и едим за одним столом."
+        "ru": "Три весенних блюда за два с половиной часа — готовим вместе и едим за одним столом.",
+        "pl": "Trzy wiosenne dania w dwie i pół godziny — gotujemy razem i jemy przy jednym stole."
       },
       "starts": { "in_days": 7, "at": "10:00" },
       "ends": { "in_days": 7, "at": "12:30" },
-      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»" },
-      "address": { "en": "12 Harbour Road, Wan Chai", "ru": "Харбор-роуд, 12, Ван Чай" },
+      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»", "pl": "Studio „Kuchnia”" },
+      "address": {
+        "en": "12 Harbour Road, Wan Chai",
+        "ru": "Харбор-роуд, 12, Ван Чай",
+        "pl": "Harbour Road 12, Wan Chai"
+      },
       "map_url": "https://maps.example.test/studio-kitchen",
       "description": {
         "en": "<p>We start with the market: what is in season and how to tell it is good. Then each of us cooks, with the chef going from stove to stove.</p>",
-        "ru": "<p>Начинаем с рынка: что сейчас в сезоне и как понять, что оно хорошее. Потом каждый готовит сам, а шеф ходит от плиты к плите.</p>"
+        "ru": "<p>Начинаем с рынка: что сейчас в сезоне и как понять, что оно хорошее. Потом каждый готовит сам, а шеф ходит от плиты к плите.</p>",
+        "pl": "<p>Zaczynamy od targu: co jest teraz w sezonie i jak poznać, że jest dobre. Potem każdy gotuje sam, a szef kuchni chodzi od kuchenki do kuchenki.</p>"
       },
       "highlights": [
         {
-          "title": { "en": "Your own stove", "ru": "Своя плита" },
+          "title": { "en": "Your own stove", "ru": "Своя плита", "pl": "Własna kuchenka" },
           "text": {
             "en": "Nobody watches from the back: every guest cooks.",
-            "ru": "Никто не смотрит из-за спин: готовит каждый."
+            "ru": "Никто не смотрит из-за спин: готовит каждый.",
+            "pl": "Nikt nie przygląda się zza pleców innych: gotuje każdy gość."
           }
         },
         {
-          "title": { "en": "Recipes to take home", "ru": "Рецепты с собой" },
+          "title": {
+            "en": "Recipes to take home",
+            "ru": "Рецепты с собой",
+            "pl": "Przepisy na wynos"
+          },
           "text": {
             "en": "Everyone leaves with the recipe cards.",
-            "ru": "Каждый уходит с карточками рецептов."
+            "ru": "Каждый уходит с карточками рецептов.",
+            "pl": "Każdy wychodzi z kartami przepisów."
           }
         }
       ],
-      "price": { "en": "HK$480 per person", "ru": "HK$480 с человека" },
+      "price": { "en": "HK$480 per person", "ru": "HK$480 с человека", "pl": "HK$480 za osobę" },
       "price_amount": 480,
       "booking_url": "https://booking.example.test/spring-cooking-class",
       "categories": ["cooking-classes"],
@@ -62,75 +88,124 @@
     },
     {
       "slug": "fermentation-intensive",
-      "title": { "en": "Fermentation intensive", "ru": "Интенсив по ферментации" },
+      "title": {
+        "en": "Fermentation intensive",
+        "ru": "Интенсив по ферментации",
+        "pl": "Intensywny kurs fermentacji"
+      },
       "lead": {
         "en": "Three days of pickles, starters and patience.",
-        "ru": "Три дня квашения, заквасок и терпения."
+        "ru": "Три дня квашения, заквасок и терпения.",
+        "pl": "Trzy dni kiszenia, zakwasów i cierpliwości."
       },
       "starts": { "in_days": 20 },
       "ends": { "in_days": 22 },
       "all_day": true,
-      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»" },
-      "address": { "en": "12 Harbour Road, Wan Chai", "ru": "Харбор-роуд, 12, Ван Чай" },
-      "price": { "en": "HK$2,400 for three days", "ru": "HK$2 400 за три дня" },
+      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»", "pl": "Studio „Kuchnia”" },
+      "address": {
+        "en": "12 Harbour Road, Wan Chai",
+        "ru": "Харбор-роуд, 12, Ван Чай",
+        "pl": "Harbour Road 12, Wan Chai"
+      },
+      "price": {
+        "en": "HK$2,400 for three days",
+        "ru": "HK$2 400 за три дня",
+        "pl": "HK$2400 za trzy dni"
+      },
       "booking_url": "https://booking.example.test/fermentation-intensive",
       "categories": ["cooking-classes", "private-events"]
     },
     {
       "slug": "meal-planning-webinar",
-      "title": { "en": "Meal planning for a busy week", "ru": "Меню на неделю: вебинар" },
+      "title": {
+        "en": "Meal planning for a busy week",
+        "ru": "Меню на неделю: вебинар",
+        "pl": "Jadłospis na pracowity tydzień: webinar"
+      },
       "lead": {
         "en": "One Sunday hour that saves the other six evenings. Free, online.",
-        "ru": "Один час в воскресенье, который экономит шесть вечеров. Бесплатно, онлайн."
+        "ru": "Один час в воскресенье, который экономит шесть вечеров. Бесплатно, онлайн.",
+        "pl": "Jedna niedzielna godzina, która oszczędza pozostałe sześć wieczorów. Bezpłatnie, online."
       },
       "starts": { "in_days": 14, "at": "19:00" },
       "ends": { "in_days": 14, "at": "20:00" },
       "attendance": "online",
-      "price": { "en": "Free", "ru": "Бесплатно" },
+      "price": { "en": "Free", "ru": "Бесплатно", "pl": "Bezpłatnie" },
       "price_amount": 0,
       "booking_url": "https://booking.example.test/meal-planning-webinar",
       "categories": ["cooking-classes"]
     },
     {
       "slug": "saturday-breakfast-club",
-      "title": { "en": "Saturday breakfast club", "ru": "Субботний клуб завтраков" },
+      "title": {
+        "en": "Saturday breakfast club",
+        "ru": "Субботний клуб завтраков",
+        "pl": "Sobotni klub śniadaniowy"
+      },
       "lead": {
         "en": "Porridge, coffee and whoever comes. No booking needed.",
-        "ru": "Каша, кофе и все, кто придёт. Записываться не нужно."
+        "ru": "Каша, кофе и все, кто придёт. Записываться не нужно.",
+        "pl": "Owsianka, kawa i każdy, kto przyjdzie. Zapisy niepotrzebne."
       },
-      "date_note": { "en": "Every Saturday, 9:00", "ru": "Каждую субботу, 9:00" },
-      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»" },
-      "address": { "en": "12 Harbour Road, Wan Chai", "ru": "Харбор-роуд, 12, Ван Чай" },
-      "price": { "en": "HK$120 with breakfast", "ru": "HK$120 с завтраком" },
+      "date_note": {
+        "en": "Every Saturday, 9:00",
+        "ru": "Каждую субботу, 9:00",
+        "pl": "W każdą sobotę, 9:00"
+      },
+      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»", "pl": "Studio „Kuchnia”" },
+      "address": {
+        "en": "12 Harbour Road, Wan Chai",
+        "ru": "Харбор-роуд, 12, Ван Чай",
+        "pl": "Harbour Road 12, Wan Chai"
+      },
+      "price": {
+        "en": "HK$120 with breakfast",
+        "ru": "HK$120 с завтраком",
+        "pl": "HK$120 ze śniadaniem"
+      },
       "categories": ["breakfast-meetups"]
     },
     {
       "slug": "autumn-breakfast-meetup",
-      "title": { "en": "Autumn breakfast meetup", "ru": "Осенний завтрак-встреча" },
+      "title": {
+        "en": "Autumn breakfast meetup",
+        "ru": "Осенний завтрак-встреча",
+        "pl": "Jesienne spotkanie przy śniadaniu"
+      },
       "lead": {
         "en": "Pumpkin, apples and forty guests — the photos are below.",
-        "ru": "Тыква, яблоки и сорок гостей — фотографии ниже."
+        "ru": "Тыква, яблоки и сорок гостей — фотографии ниже.",
+        "pl": "Dynia, jabłka i czterdziestu gości — zdjęcia poniżej."
       },
       "starts": { "in_days": -30, "at": "09:00" },
       "ends": { "in_days": -30, "at": "11:00" },
       "gallery": [0, 1],
-      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»" },
-      "address": { "en": "12 Harbour Road, Wan Chai", "ru": "Харбор-роуд, 12, Ван Чай" },
-      "price": { "en": "HK$150", "ru": "HK$150" },
+      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»", "pl": "Studio „Kuchnia”" },
+      "address": {
+        "en": "12 Harbour Road, Wan Chai",
+        "ru": "Харбор-роуд, 12, Ван Чай",
+        "pl": "Harbour Road 12, Wan Chai"
+      },
+      "price": { "en": "HK$150", "ru": "HK$150", "pl": "HK$150" },
       "booking_url": "https://booking.example.test/autumn-breakfast-meetup",
       "categories": ["breakfast-meetups"],
       "services": ["content-editing", "seo-audit"]
     },
     {
       "slug": "chefs-table",
-      "title": { "en": "Chef's table for twelve", "ru": "Стол шефа на двенадцать гостей" },
+      "title": {
+        "en": "Chef's table for twelve",
+        "ru": "Стол шефа на двенадцать гостей",
+        "pl": "Stół szefa kuchni dla dwunastu gości"
+      },
       "lead": {
         "en": "A private dinner in the studio: seven courses, the chef at the table.",
-        "ru": "Частный ужин в студии: семь подач, шеф за столом."
+        "ru": "Частный ужин в студии: семь подач, шеф за столом.",
+        "pl": "Prywatna kolacja w studiu: siedem dań, szef kuchni przy stole."
       },
       "starts": { "in_days": 40, "at": "19:00" },
-      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»" },
-      "price": { "en": "On request", "ru": "По запросу" },
+      "venue": { "en": "Studio Kitchen", "ru": "Студия «Кухня»", "pl": "Studio „Kuchnia”" },
+      "price": { "en": "On request", "ru": "По запросу", "pl": "Na zapytanie" },
       "categories": ["private-events"],
       "draft": true
     }

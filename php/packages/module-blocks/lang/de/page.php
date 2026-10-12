@@ -103,6 +103,7 @@ return [
     'source-panel' => 'Panel',
     'source-mcp' => 'Agent',
     'source-import' => 'Import',
+    'source-theme' => 'Theme',
     'drops-translations' => 'In dieser Version halten :fields nur noch eine Sprache. Seiten (:count) haben dort Text in mehreren Sprachen, und nur die Hauptsprache bliebe: :pages. Veröffentlichen Sie erneut und stimmen Sie dem Entfernen der anderen Sprachen zu, oder verschieben Sie den Text zuerst.',
     'localized-changes' => 'Das Veröffentlichen dieser Version ändert die Sprachform von :fields: Die Werte, die schon auf Seiten (:count) stehen, werden umgewandelt.',
     'rename-called' => 'Andere Typen rufen diesen über seine Kennung auf: :types. Ändern Sie zuerst deren Vorlagen, dann benennen Sie ihn um.',

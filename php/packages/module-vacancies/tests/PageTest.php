@@ -42,7 +42,7 @@ final class PageTest extends TestCase
 
         $page = (string) $this->get('/careers/php-developer')->assertOk()->getContent();
 
-        $this->assertStringContainsString('<h1>Php developer</h1>', $page);
+        $this->assertStringContainsString('<h1 class="wx-vacancy__title">Php developer</h1>', $page);
         $this->assertStringContainsString('Build the panel.', $page);
         $this->assertStringContainsString('Full-time, Part-time', $page);
         // No words of the editor's: the numbers, said.

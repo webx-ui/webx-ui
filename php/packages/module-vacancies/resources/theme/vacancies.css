@@ -1,0 +1,215 @@
+/*
+ * module-vacancies: the base look of the index and a vacancy (THEMES §10.2).
+ *
+ * Not beauty — "decent under any theme": the open vacancies as framed rows under their category,
+ * the filter as chips, the facts of a vacancy as a framed list. The pages stand in the theme's
+ * main column, where prose styles every heading and list; each class here undoes what a listing
+ * does not want from prose. Only site tokens of the engine's vocabulary, one class per rule: a
+ * theme restyles any of it by writing the same class later.
+ *
+ * The header, the filter, the list and the vacancy are direct children of the theme's main
+ * column, which centres them with `margin-inline: auto` at no specificity: a class here sets
+ * `margin-block` only, or the element leaves the column for the left edge of the page.
+ */
+
+.wx-vacancies__header {
+  margin-block-end: var(--site-space-6);
+}
+
+.wx-vacancies__title {
+  margin-block-end: var(--site-space-3);
+  overflow-wrap: anywhere;
+}
+
+.wx-vacancies__empty {
+  color: var(--site-color-text-muted);
+}
+
+/* The filter by category: a row of chips that wraps, the current one filled. */
+.wx-vacancies__nav {
+  margin-block: 0 var(--site-space-6);
+}
+
+.wx-vacancies__filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-vacancies__filter-item {
+  margin: 0;
+}
+
+.wx-vacancies__filter-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: border-color var(--site-duration) var(--site-easing);
+}
+
+.wx-vacancies__filter-link:hover {
+  border-color: var(--site-color-accent);
+  color: var(--site-color-accent);
+}
+
+.wx-vacancies__filter-link[aria-current='page'] {
+  border-color: var(--site-color-accent);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+}
+
+.wx-vacancies {
+  margin-block: 0;
+}
+
+/* A category: its heading, then its vacancies one under another. */
+.wx-vacancies__group {
+  margin-block-end: var(--site-space-7);
+}
+
+.wx-vacancies__group-title {
+  margin-block: 0 var(--site-space-4);
+}
+
+.wx-vacancies__list {
+  display: grid;
+  gap: var(--site-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-vacancies__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+}
+
+.wx-vacancies__link {
+  align-self: flex-start;
+  color: var(--site-color-text);
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-4);
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.wx-vacancies__link:hover {
+  color: var(--site-color-accent);
+  text-decoration: underline;
+}
+
+/* Where, how and for how much: secondary, the salary in the text's own colour. */
+.wx-vacancies__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-1) var(--site-space-4);
+  color: var(--site-color-text-muted);
+}
+
+.wx-vacancies__salary {
+  color: var(--site-color-text);
+  font-weight: 600;
+}
+
+.wx-vacancies__lead {
+  margin: 0;
+}
+
+/* The vacancy: a container, so the facts decide their columns by the article's width. */
+.wx-vacancy {
+  container-type: inline-size;
+  margin-block: 0;
+}
+
+.wx-vacancy__heading {
+  margin-block-end: var(--site-space-5);
+}
+
+.wx-vacancy__title {
+  margin-block-end: var(--site-space-3);
+  overflow-wrap: anywhere;
+}
+
+/* Closed: still a page, and the first thing on it says so. */
+.wx-vacancy__closed {
+  margin: 0 0 var(--site-space-4);
+  padding: var(--site-space-3) var(--site-space-4);
+  border-inline-start: 4px solid var(--site-color-text-muted);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text);
+}
+
+.wx-vacancy__lead {
+  max-width: 42rem;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-5);
+}
+
+/* Where, how, for how much: terms beside their values, under them in a narrow column. */
+.wx-vacancy__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--site-space-3) var(--site-space-5);
+  margin: 0 0 var(--site-space-6);
+  padding: var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+}
+
+.wx-vacancy__term {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  font-weight: 600;
+}
+
+.wx-vacancy__value {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wx-vacancy__place,
+.wx-vacancy__remote {
+  display: block;
+}
+
+/* A later rule than the term and the value, which would otherwise undo it. */
+@container (max-width: 30rem) {
+  .wx-vacancy__facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--site-space-1);
+  }
+
+  .wx-vacancy__value {
+    margin-block-end: var(--site-space-3);
+  }
+}
+
+/* Duties, requirements, what we offer: prose lists, each under its own heading. */
+.wx-vacancy__section {
+  margin-block-start: var(--site-space-6);
+}
+
+.wx-vacancy__section-title {
+  margin-block: 0 var(--site-space-3);
+}

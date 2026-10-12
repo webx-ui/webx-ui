@@ -142,8 +142,12 @@ is empty.
 ## Language switcher
 
 `<x-webx-language-switcher />` names each language in itself and leads to the **same page** in it —
-the addresses come from the routing registry, like `hreflang`. A page not translated yet leads to
-that language's home page and is marked `is-fallback`. A one-language site prints nothing.
+the addresses come from the routing registry, like `hreflang`. A page not translated yet stays a
+page: the link leads to the same path under that language's prefix, where the page is shown in the
+default language inside the chosen language's header and footer, closed to the index. Where that
+is not possible — a 404, an entity hidden in the language, a type that does not show its
+untranslated entities, such as blog articles — the link leads to that language's home page and is
+marked `is-fallback`. A one-language site prints nothing.
 
 ## Slider and lightbox
 
@@ -364,6 +368,10 @@ What a long page needs, each loading only where it stands:
   is hidden by a line in the head before the page is painted, so it never flashes. It is in the
   flow and does not stick: the sticky header and `--webx-header-height` are what they were.
 
+## Forms
+
+The fields of every form of the site — `<x-webx-field>` of fifteen types, its value from `old()` and its error from `$errors` by a dotted name, the ARIA, the hints for an autofill — and the form around them, `<x-webx-form>`, sent in place over a plain POST with one answer for every form, `FormResponse`: [Forms](./forms).
+
 ## Blocks
 
 On a site with `module-blocks` and `module-media` the package offers eight block types — `webx:setup`
@@ -430,6 +438,6 @@ third party the audit does not know is added in `webx-widgets.audit.third-party`
 `theme-default` brings a showcase, seeded by `php artisan webx:demo` and removed with it: under
 **Kitchen sink** a page per widget — Header and menu, Cookie consent, Dropdown and form in a
 dialog, Contacts, Language switcher, Slider, Lightbox, Video, Map, Page tools, Background video,
-Counters and countdown, Before and after, Table of contents, Show more, Notice bar, Zoom — with every variant, a narrow
+Counters and countdown, Before and after, Table of contents, Show more, Notice bar, Zoom, Forms › Fields — with every variant, a narrow
 column, what to try and the markup to copy. It is the place to look at a change in the theme
 before a real page does, and the pages the starter site's browser tests measure.

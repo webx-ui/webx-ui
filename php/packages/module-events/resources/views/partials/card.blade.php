@@ -1,6 +1,10 @@
 {{--
     One event in a list: `$card` is what `events()` gives a template (see Rendering\Cards).
 
+    The list prints it through the point `events.card` (THEMES §10.4): a theme that wants another
+    card writes `views/parts/events/card.blade.php` — keeping the `<li>`, because the list around
+    it is still this module's.
+
     The category is a link of its own, so it sits outside the card's link — a link inside a link
     is not a link at all.
 --}}

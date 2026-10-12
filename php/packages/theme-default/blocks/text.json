@@ -1,0 +1,52 @@
+{
+  "slug": "text",
+  "title": "Text",
+  "description": "Prose in the typography of the theme: a heading and rich text — lists, quotes, tables — in a reading column or across the page.",
+  "icon": null,
+  "group": "content",
+  "sort": 20,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "body",
+      "type": "wx-rich-text",
+      "label": "Text",
+      "localized": true
+    },
+    {
+      "id": "width",
+      "type": "wx-segmented",
+      "label": "Width",
+      "default": "narrow",
+      "props": {
+        "options": [
+          {
+            "value": "narrow",
+            "label": "Reading column"
+          },
+          {
+            "value": "wide",
+            "label": "Whole column"
+          }
+        ]
+      }
+    }
+  ],
+  "template": "@php\n    $html = is_string($body) ? trim($body) : '';\n    if ($html !== '' && ! str_starts_with($html, '<')) {\n        $html = implode('', array_map(static fn (string $line): string => '<p>'.e(trim($line)).'</p>', preg_split('/\\R+/u', $html) ?: []));\n    }\n@endphp\n@if ($heading || $html !== '')\n<section class=\"b-text b-text--{{ $width === 'wide' ? 'wide' : 'narrow' }}\" data-wx-block=\"text\">\n    <div class=\"b-text__inner site-prose\">\n        @if ($heading)\n            <h2 class=\"b-text__heading\">{{ $heading }}</h2>\n        @endif\n        @if ($html !== '')\n            <div class=\"b-text__body\">{!! $html !!}</div>\n        @endif\n    </div>\n</section>\n@endif\n",
+  "styles": ".b-text {\n    padding-block: var(--site-space-5);\n}\n\n.b-text--narrow .b-text__inner {\n    max-width: 42rem;\n}\n\n.b-text__heading {\n    margin: 0 0 var(--site-space-4);\n}\n\n.b-text__body > :first-child {\n    margin-top: 0;\n}\n\n.b-text__body > :last-child {\n    margin-bottom: 0;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Why blocks",
+    "body": "<p>A page is a list of blocks, and a block is a type: its fields, its template, its styles.</p><ul><li>The editor fills the fields.</li><li>The site prints the template.</li></ul>",
+    "width": "narrow"
+  }
+}

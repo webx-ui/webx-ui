@@ -19,7 +19,7 @@
     @if (($card['service_links'] ?? []) !== [])
         <span class="wx-recipes__services">
             @foreach ($card['service_links'] as $service)
-                <a href="{{ $service['url'] }}">{{ $service['title'] }}</a>@if (! $loop->last), @endif
+                <a class="wx-recipes__service" href="{{ $service['url'] }}">{{ $service['title'] }}</a>@if (! $loop->last), @endif
             @endforeach
         </span>
     @endif

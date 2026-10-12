@@ -25,6 +25,7 @@ class NoThemeTest extends TestCase
         $this->assertCount(2, $this->finder()->getHints()['webx-fake']);
         $this->assertSame('', Blade::render('@webxTheme'), 'the directive stays registered for a layout that has it');
         $this->assertNull(theme_token('color-accent'));
+        $this->assertFalse(theme_active());
 
         $this->expectException(InvalidArgumentException::class);
         $this->finder()->find('local-wins');

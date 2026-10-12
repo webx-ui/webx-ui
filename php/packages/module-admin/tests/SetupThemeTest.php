@@ -29,6 +29,8 @@ final class SetupThemeTest extends TestCase
 
     private string $installed;
 
+    private string $composer = '';
+
     /** @var list<string> */
     private array $ran = [];
 
@@ -59,6 +61,9 @@ final class SetupThemeTest extends TestCase
         ];
 
         $this->files->put($this->app->basePath('.env'), "APP_NAME=Laravel\nDB_CONNECTION=sqlite\n");
+
+        // Testbench's own skeleton: setup adds a script to it, and it is put back as it was.
+        $this->composer = (string) $this->files->get($this->app->basePath('composer.json'));
     }
 
     protected function tearDown(): void
@@ -66,6 +71,8 @@ final class SetupThemeTest extends TestCase
         foreach ($this->written as $path) {
             $this->files->delete($path);
         }
+
+        $this->files->put($this->app->basePath('composer.json'), $this->composer);
 
         parent::tearDown();
     }
@@ -132,16 +139,13 @@ final class SetupThemeTest extends TestCase
 
         $this->assertTrue($this->required('webx-ui/theme-default:^0.28.0'));
         $make = array_search('artisan webx:theme:make theme --uses=webx-ui/theme-default --local', $this->ran, true);
-        $sync = array_search('artisan webx:theme:sync', $this->ran, true);
         $panel = array_search('artisan webx:panel --sync', $this->ran, true);
 
         $this->assertIsInt($make);
-        $this->assertIsInt($sync);
         $this->assertIsInt($panel);
         // The panel points the modules at <x-layout> only when it finds one, and with a theme
         // the layout is the theme's: the theme has to exist and be named first.
         $this->assertLessThan($panel, $make);
-        $this->assertLessThan($panel, $sync);
 
         $this->assertStringContainsString("WEBX_THEME=theme\n", (string) $this->files->get($this->app->basePath('.env')));
         $this->assertFileDoesNotExist($this->app->resourcePath('views/components/layout.blade.php'));
@@ -163,6 +167,7 @@ final class SetupThemeTest extends TestCase
 
         $this->assertEmpty(array_filter($this->ran, fn (string $line): bool => str_contains($line, 'theme')));
         $this->assertStringNotContainsString('WEBX_THEME', (string) $this->files->get($this->app->basePath('.env')));
+        $this->assertStringNotContainsString('webx:theme:sync', (string) $this->files->get($this->app->basePath('composer.json')));
 
         foreach (self::OWN_LAYOUT as $file) {
             $this->assertFileExists($this->app->resourcePath($file));
@@ -187,6 +192,31 @@ final class SetupThemeTest extends TestCase
     }
 
     #[Test]
+    public function the_layers_are_synced_after_migrate_and_before_the_offers_and_after_every_update(): void
+    {
+        $this->runSetup()->assertSuccessful();
+
+        $migrate = array_search('artisan migrate --force', $this->ran, true);
+        $sync = array_search('artisan webx:theme:sync', $this->ran, true);
+        $this->assertIsInt($migrate);
+        $this->assertIsInt($sync);
+        // Block types go into the tables, and a slug the chain carries is the chain's, not an offer's.
+        $this->assertLessThan($sync, $migrate);
+
+        foreach ($this->ran as $index => $line) {
+            if (str_contains($line, 'webx:blocks:offered')) {
+                $this->assertLessThan($index, $sync);
+            }
+        }
+
+        $composer = (string) $this->files->get($this->app->basePath('composer.json'));
+        $this->assertSame(1, substr_count($composer, '@php artisan webx:theme:sync --ansi'));
+
+        $this->runSetup()->assertSuccessful();
+        $this->assertSame(1, substr_count((string) $this->files->get($this->app->basePath('composer.json')), 'webx:theme:sync'), 'added once');
+    }
+
+    #[Test]
     public function running_it_again_keeps_the_theme_and_syncs_its_files(): void
     {
         $this->files->append($this->app->basePath('.env'), "WEBX_THEME=theme\n");
@@ -196,6 +226,44 @@ final class SetupThemeTest extends TestCase
         $this->assertFalse($this->required('webx-ui/theme-default:^0.28.0'));
         $this->assertEmpty(array_filter($this->ran, fn (string $line): bool => str_contains($line, 'webx:theme:make')));
         $this->assertContains('artisan webx:theme:sync', $this->ran);
+    }
+
+    #[Test]
+    public function a_language_the_demo_is_not_written_in_is_warned_about_before_anything_is_installed(): void
+    {
+        $this->runSetup([
+            '--modules' => 'pages,admins,faq',
+            '--locales' => 'de,ru,pl',
+            '--no-demo' => false,
+            '--demo' => true,
+        ])
+            // The default language: the theme's demo stands in for the pages, so all three lack it.
+            ->expectsOutputToContain('The demo is not written in de for: pages, faq')
+            ->expectsOutputToContain('It seeds in English there')
+            // Another language: only what is not written in it — the FAQ is in en and ru.
+            ->expectsOutputToContain('The demo is not written in pl for: faq.')
+            ->doesntExpectOutputToContain('The demo is not written in ru')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function no_demo_no_warning(): void
+    {
+        $this->runSetup(['--modules' => 'pages,admins,faq', '--locales' => 'de'])
+            ->doesntExpectOutputToContain('The demo is not written in')
+            ->assertSuccessful();
+    }
+
+    #[Test]
+    public function a_theme_of_the_monorepo_answers_for_the_modules_it_has_a_demo_for(): void
+    {
+        $catalogue = new Catalogue($this->files, $this->installed);
+
+        // Blocks and SEO seed plain English of their own; under theme-default its demo is theirs.
+        $this->assertSame(['pl' => ['blocks', 'seo']], $catalogue->demoGaps(['en', 'pl'], ['blocks', 'seo', 'media'], null));
+        $this->assertSame([], $catalogue->demoGaps(['en', 'pl'], ['blocks', 'seo', 'media'], ThemeChoice::DEFAULT));
+        // A stranger's theme says nothing; its modules count with their own demo.
+        $this->assertSame(['pl' => ['blocks']], $catalogue->demoGaps(['en', 'pl'], ['blocks'], 'acme/theme-harbour'));
     }
 
     /** @param  array<string, mixed>  $options */

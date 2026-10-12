@@ -4,21 +4,24 @@
       "key": "development",
       "title": {
         "en": "Development",
-        "ru": "Разработка"
+        "ru": "Разработка",
+        "pl": "Programowanie"
       }
     },
     {
       "key": "sales",
       "title": {
         "en": "Sales",
-        "ru": "Продажи"
+        "ru": "Продажи",
+        "pl": "Sprzedaż"
       }
     },
     {
       "key": "support",
       "title": {
         "en": "Support",
-        "ru": "Поддержка"
+        "ru": "Поддержка",
+        "pl": "Obsługa klienta"
       }
     }
   ],
@@ -26,20 +29,24 @@
     "slug": "job-application",
     "title": {
       "en": "Job application",
-      "ru": "Отклик на вакансию"
+      "ru": "Отклик на вакансию",
+      "pl": "Aplikacja na stanowisko"
     },
     "options": {
       "thank-you.heading": {
         "en": "Thank you",
-        "ru": "Спасибо"
+        "ru": "Спасибо",
+        "pl": "Dziękujemy"
       },
       "thank-you.text": {
         "en": "Your application is with us. If your experience fits, we will write within a week.",
-        "ru": "Ваш отклик у нас. Если опыт подойдёт, мы напишем в течение недели."
+        "ru": "Ваш отклик у нас. Если опыт подойдёт, мы напишем в течение недели.",
+        "pl": "Twoja aplikacja do nas dotarła. Jeśli Twoje doświadczenie będzie pasować, odezwiemy się w ciągu tygodnia."
       },
       "design.submit-text": {
         "en": "Apply",
-        "ru": "Откликнуться"
+        "ru": "Откликнуться",
+        "pl": "Aplikuj"
       },
       "email_field": "email",
       "antispam.honeypot": true,
@@ -51,7 +58,8 @@
         "type": "text",
         "title": {
           "en": "Your name",
-          "ru": "Ваше имя"
+          "ru": "Ваше имя",
+          "pl": "Imię i nazwisko"
         },
         "is_required": true,
         "is_fullsize": false,
@@ -62,11 +70,13 @@
         "type": "email",
         "title": {
           "en": "Email",
-          "ru": "Почта"
+          "ru": "Почта",
+          "pl": "E-mail"
         },
         "placeholder": {
           "en": "you@example.com",
-          "ru": "you@example.com"
+          "ru": "you@example.com",
+          "pl": "you@example.com"
         },
         "is_required": true,
         "is_fullsize": false,
@@ -77,7 +87,8 @@
         "type": "tel",
         "title": {
           "en": "Phone",
-          "ru": "Телефон"
+          "ru": "Телефон",
+          "pl": "Telefon"
         },
         "is_fullsize": false
       },
@@ -86,11 +97,13 @@
         "type": "file",
         "title": {
           "en": "CV",
-          "ru": "Резюме"
+          "ru": "Резюме",
+          "pl": "CV"
         },
         "help": {
           "en": "PDF or Word, up to 10 MB.",
-          "ru": "PDF или Word, до 10 МБ."
+          "ru": "PDF или Word, до 10 МБ.",
+          "pl": "PDF lub Word, do 10 MB."
         },
         "options": {
           "extensions": ["pdf", "doc", "docx"]
@@ -102,11 +115,13 @@
         "type": "textarea",
         "title": {
           "en": "Cover letter",
-          "ru": "Сопроводительное письмо"
+          "ru": "Сопроводительное письмо",
+          "pl": "List motywacyjny"
         },
         "help": {
           "en": "Why this job, and what you would do in your first month.",
-          "ru": "Почему эта работа и что бы вы сделали в первый месяц."
+          "ru": "Почему эта работа и что бы вы сделали в первый месяц.",
+          "pl": "Dlaczego ta praca i czym zajmiesz się w pierwszym miesiącu."
         }
       },
       {
@@ -114,7 +129,8 @@
         "type": "hidden",
         "title": {
           "en": "Vacancy",
-          "ru": "Вакансия"
+          "ru": "Вакансия",
+          "pl": "Stanowisko"
         },
         "in_table": true
       }
@@ -125,26 +141,31 @@
       "slug": "php-developer",
       "title": {
         "en": "PHP developer",
-        "ru": "PHP-разработчик"
+        "ru": "PHP-разработчик",
+        "pl": "Programista PHP"
       },
       "lead": {
         "en": "Laravel, a product of our own, and a team of five that ships every week.",
-        "ru": "Laravel, собственный продукт и команда из пяти человек, которая выпускается каждую неделю."
+        "ru": "Laravel, собственный продукт и команда из пяти человек, которая выпускается каждую неделю.",
+        "pl": "Laravel, własny produkt i pięcioosobowy zespół, który co tydzień wypuszcza nową wersję."
       },
       "workplace": "onsite",
       "city": {
         "en": "Kyiv",
-        "ru": "Киев"
+        "ru": "Киев",
+        "pl": "Kijów"
       },
       "address": {
         "en": "12 Khreshchatyk Street, 3rd floor",
-        "ru": "ул. Крещатик, 12, 3-й этаж"
+        "ru": "ул. Крещатик, 12, 3-й этаж",
+        "pl": "ul. Chreszczatyk 12, III piętro"
       },
       "country": "UA",
       "employment_types": ["FULL_TIME"],
       "salary": {
         "en": "₴60,000–90,000 a month",
-        "ru": "60 000–90 000 ₴ в месяц"
+        "ru": "60 000–90 000 ₴ в месяц",
+        "pl": "60 000–90 000 ₴ miesięcznie"
       },
       "salary_min": 60000,
       "salary_max": 90000,
@@ -152,48 +173,58 @@
       "salary_currency": "UAH",
       "description": {
         "en": "<p>We build the booking system four hundred clinics run on. You will own a part of it — from the migration to the page — and talk to the people who use it.</p>",
-        "ru": "<p>Мы делаем систему записи, на которой работают четыреста клиник. Вам достанется её часть целиком — от миграции до страницы — и разговоры с теми, кто ей пользуется.</p>"
+        "ru": "<p>Мы делаем систему записи, на которой работают четыреста клиник. Вам достанется её часть целиком — от миграции до страницы — и разговоры с теми, кто ей пользуется.</p>",
+        "pl": "<p>Tworzymy system rezerwacji wizyt, na którym pracuje czterysta klinik. Przejmiesz jego część w całości — od migracji po stronę — i będziesz rozmawiać z ludźmi, którzy z niego korzystają.</p>"
       },
       "duties": [
         {
           "en": "Write and review code in Laravel 13",
-          "ru": "Писать и ревьюить код на Laravel 13"
+          "ru": "Писать и ревьюить код на Laravel 13",
+          "pl": "Pisanie kodu w Laravel 13 i code review"
         },
         {
           "en": "Design tables and migrations",
-          "ru": "Проектировать таблицы и миграции"
+          "ru": "Проектировать таблицы и миграции",
+          "pl": "Projektowanie tabel i migracji"
         },
         {
           "en": "Take part in planning every two weeks",
-          "ru": "Участвовать в планировании раз в две недели"
+          "ru": "Участвовать в планировании раз в две недели",
+          "pl": "Udział w planowaniu co dwa tygodnie"
         }
       ],
       "requirements": [
         {
           "en": "Three years of PHP",
-          "ru": "Три года на PHP"
+          "ru": "Три года на PHP",
+          "pl": "Trzy lata doświadczenia z PHP"
         },
         {
           "en": "SQL beyond the ORM",
-          "ru": "SQL не только через ORM"
+          "ru": "SQL не только через ORM",
+          "pl": "Znajomość SQL wykraczająca poza ORM"
         },
         {
           "en": "Tests as part of the work, not after it",
-          "ru": "Тесты как часть работы, а не после неё"
+          "ru": "Тесты как часть работы, а не после неё",
+          "pl": "Testy jako część pracy, a nie dodatek na końcu"
         }
       ],
       "benefits": [
         {
           "en": "Paid courses and conferences",
-          "ru": "Оплаченные курсы и конференции"
+          "ru": "Оплаченные курсы и конференции",
+          "pl": "Opłacane kursy i konferencje"
         },
         {
           "en": "Health insurance",
-          "ru": "Медицинская страховка"
+          "ru": "Медицинская страховка",
+          "pl": "Prywatna opieka medyczna"
         },
         {
           "en": "24 days of paid leave",
-          "ru": "24 дня оплачиваемого отпуска"
+          "ru": "24 дня оплачиваемого отпуска",
+          "pl": "24 dni płatnego urlopu"
         }
       ],
       "posted_in_days": -10,
@@ -247,41 +278,49 @@
       "slug": "support-specialist",
       "title": {
         "en": "Customer support specialist",
-        "ru": "Специалист поддержки"
+        "ru": "Специалист поддержки",
+        "pl": "Specjalista ds. obsługi klienta"
       },
       "lead": {
         "en": "Answer the clinics by chat and phone, half the week at the office.",
-        "ru": "Отвечать клиникам в чате и по телефону, половину недели — в офисе."
+        "ru": "Отвечать клиникам в чате и по телефону, половину недели — в офисе.",
+        "pl": "Odpowiadanie klinikom na czacie i przez telefon, pół tygodnia w biurze."
       },
       "workplace": "hybrid",
       "city": {
         "en": "Lviv",
-        "ru": "Львов"
+        "ru": "Львов",
+        "pl": "Lwów"
       },
       "country": "UA",
       "employment_types": ["PART_TIME"],
       "salary": {
         "en": "After the interview",
-        "ru": "По результатам собеседования"
+        "ru": "По результатам собеседования",
+        "pl": "Do ustalenia po rozmowie kwalifikacyjnej"
       },
       "description": {
         "en": "<p>Four hours a day, mornings or evenings — you choose. No numbers for the salary: this vacancy shows a salary written in words only.</p>",
-        "ru": "<p>Четыре часа в день, утром или вечером — выбираете вы. Чисел у зарплаты нет: эта вакансия показывает зарплату только словами.</p>"
+        "ru": "<p>Четыре часа в день, утром или вечером — выбираете вы. Чисел у зарплаты нет: эта вакансия показывает зарплату только словами.</p>",
+        "pl": "<p>Cztery godziny dziennie, rano lub wieczorem — Ty wybierasz. Wynagrodzenie bez liczb: ta oferta pokazuje wynagrodzenie opisane wyłącznie słowami.</p>"
       },
       "duties": [
         {
           "en": "Answer the chat within ten minutes",
-          "ru": "Отвечать в чате в течение десяти минут"
+          "ru": "Отвечать в чате в течение десяти минут",
+          "pl": "Odpowiadanie na czacie w ciągu dziesięciu minut"
         },
         {
           "en": "Write down what keeps being asked",
-          "ru": "Записывать то, о чём спрашивают снова и снова"
+          "ru": "Записывать то, о чём спрашивают снова и снова",
+          "pl": "Spisywanie pytań, które ciągle się powtarzają"
         }
       ],
       "benefits": [
         {
           "en": "Hours of your choice",
-          "ru": "Удобный график"
+          "ru": "Удобный график",
+          "pl": "Elastyczne godziny pracy"
         }
       ],
       "posted_in_days": -5,
@@ -292,42 +331,50 @@
       "slug": "sales-engineer",
       "title": {
         "en": "Sales engineer",
-        "ru": "Инженер по продажам"
+        "ru": "Инженер по продажам",
+        "pl": "Inżynier sprzedaży"
       },
       "lead": {
         "en": "Between the developers and the clinics: demos, pilots and the first month of a new client.",
-        "ru": "Между разработчиками и клиниками: демонстрации, пилоты и первый месяц нового клиента."
+        "ru": "Между разработчиками и клиниками: демонстрации, пилоты и первый месяц нового клиента.",
+        "pl": "Pomiędzy programistami a klinikami: prezentacje, wdrożenia pilotażowe i pierwszy miesiąc nowego klienta."
       },
       "workplace": "onsite",
       "city": {
         "en": "Warsaw",
-        "ru": "Варшава"
+        "ru": "Варшава",
+        "pl": "Warszawa"
       },
       "address": {
         "en": "Prosta 20",
-        "ru": "ул. Проста, 20"
+        "ru": "ул. Проста, 20",
+        "pl": "ul. Prosta 20"
       },
       "country": "PL",
       "employment_types": ["FULL_TIME"],
       "salary": {
         "en": "from €2,500 a month",
-        "ru": "от 2 500 € в месяц"
+        "ru": "от 2 500 € в месяц",
+        "pl": "od 2500 € miesięcznie"
       },
       "salary_min": 2500,
       "salary_unit": "MONTH",
       "salary_currency": "EUR",
       "description": {
         "en": "<p>In two categories at once, development and sales: it stands in both groups of the careers page.</p>",
-        "ru": "<p>Сразу в двух категориях, разработке и продажах: стоит в обеих группах страницы вакансий.</p>"
+        "ru": "<p>Сразу в двух категориях, разработке и продажах: стоит в обеих группах страницы вакансий.</p>",
+        "pl": "<p>W dwóch kategoriach jednocześnie, programowaniu i sprzedaży: pojawia się w obu grupach strony z ofertami pracy.</p>"
       },
       "requirements": [
         {
           "en": "Two years of selling software",
-          "ru": "Два года продаж программного обеспечения"
+          "ru": "Два года продаж программного обеспечения",
+          "pl": "Dwa lata doświadczenia w sprzedaży oprogramowania"
         },
         {
           "en": "English and Polish",
-          "ru": "Английский и польский"
+          "ru": "Английский и польский",
+          "pl": "Angielski i polski"
         }
       ],
       "posted_in_days": -7,
@@ -339,22 +386,26 @@
       "slug": "sales-manager",
       "title": {
         "en": "Sales manager",
-        "ru": "Менеджер по продажам"
+        "ru": "Менеджер по продажам",
+        "pl": "Menedżer ds. sprzedaży"
       },
       "lead": {
         "en": "The hiring is closed by hand: the page stays, marked, out of the lists and of search.",
-        "ru": "Набор закрыт вручную: страница остаётся с пометкой, вне списков и поиска."
+        "ru": "Набор закрыт вручную: страница остаётся с пометкой, вне списков и поиска.",
+        "pl": "Rekrutację zamknięto ręcznie: strona zostaje z oznaczeniem, ale znika z list i wyszukiwania."
       },
       "workplace": "onsite",
       "city": {
         "en": "Kyiv",
-        "ru": "Киев"
+        "ru": "Киев",
+        "pl": "Kijów"
       },
       "country": "UA",
       "employment_types": ["FULL_TIME"],
       "salary": {
         "en": "₴40,000 a month plus a bonus",
-        "ru": "40 000 ₴ в месяц плюс бонус"
+        "ru": "40 000 ₴ в месяц плюс бонус",
+        "pl": "40 000 ₴ miesięcznie plus premia"
       },
       "salary_min": 40000,
       "salary_unit": "MONTH",
@@ -368,18 +419,21 @@
       "slug": "account-manager",
       "title": {
         "en": "Account manager",
-        "ru": "Аккаунт-менеджер"
+        "ru": "Аккаунт-менеджер",
+        "pl": "Account manager"
       },
       "lead": {
         "en": "Its last day was the day before yesterday: it closed by itself.",
-        "ru": "Её последний день был позавчера: она закрылась сама."
+        "ru": "Её последний день был позавчера: она закрылась сама.",
+        "pl": "Jej ostatni dzień minął przedwczoraj: zamknęła się sama."
       },
       "workplace": "remote",
       "country": "UA",
       "employment_types": ["FULL_TIME"],
       "salary": {
         "en": "$1,500 a month",
-        "ru": "1 500 $ в месяц"
+        "ru": "1 500 $ в месяц",
+        "pl": "1500 $ miesięcznie"
       },
       "salary_min": 1500,
       "salary_max": 1500,
@@ -393,22 +447,26 @@
       "slug": "office-manager",
       "title": {
         "en": "Office manager",
-        "ru": "Офис-менеджер"
+        "ru": "Офис-менеджер",
+        "pl": "Office manager"
       },
       "lead": {
         "en": "Still a draft: it waits in the panel until somebody publishes it.",
-        "ru": "Пока черновик: ждёт в панели, пока его не опубликуют."
+        "ru": "Пока черновик: ждёт в панели, пока его не опубликуют.",
+        "pl": "Na razie szkic: czeka w panelu, aż ktoś go opublikuje."
       },
       "workplace": "onsite",
       "city": {
         "en": "Kyiv",
-        "ru": "Киев"
+        "ru": "Киев",
+        "pl": "Kijów"
       },
       "country": "UA",
       "employment_types": ["FULL_TIME", "PART_TIME"],
       "salary": {
         "en": "To be agreed",
-        "ru": "По договорённости"
+        "ru": "По договорённости",
+        "pl": "Do uzgodnienia"
       },
       "draft": true,
       "categories": ["support"]

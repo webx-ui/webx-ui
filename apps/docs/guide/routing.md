@@ -168,6 +168,14 @@ What the resolver decides, in this order:
    filters.
 4. **The handler decides publication.** The entity already carries that state; a draft is a 404 from
    the handler and a preview is a 200 from the same place.
+5. **A page without a translation stays a page — where its type says so.** A request under a
+   language prefix that finds nothing is tried once more with the same path in the default
+   language. A type registered with `showsUntranslated: true` (pages are) answers it: the interface
+   in the language asked for, the entity's translatable fields falling back to the default
+   language, and `Resolution::of($request)->isUntranslated()` true. If the entity does have a row in
+   that language under another path, the answer is a 301 there. Nothing is written to the
+   registry, and `module-seo` closes such an answer to the index with its canonical on the
+   original. Other types — blog articles among them — answer 404 as before.
 
 The handler is resolved through the container, so a site changes what a module's addresses do by
 binding its own class over the module's: `$this->app->bind(EventHandler::class, EventRedirect::class)`.
@@ -183,6 +191,19 @@ WebxUi\Routing\Resolution::of($request)?->entity;
 
 `module-seo` is the first taker: with the registry installed, `@webxSeo` in a template knows what
 entity the page is about without being told.
+
+Where an untranslated entity is shown is one answer, `WebxUi\Routing\Untranslated`, so that the
+page, its `<head>` and the language switcher agree:
+
+```php
+$untranslated = app(WebxUi\Routing\Untranslated::class);
+
+$untranslated->path($page, 'pl');     // 'pl/about' — or null: translated, not shown, path taken
+$untranslated->original($page, 'pl'); // '/about' — what the canonical names
+```
+
+It answers only where the language is in the path: with one address for every language the copy
+and the original would be the same address.
 
 ## Addresses the registry must not hand out
 

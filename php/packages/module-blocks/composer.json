@@ -42,10 +42,12 @@
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-audit": "^0.68.0"
+        "webx-ui/module-audit": "^0.68.0",
+        "webx-ui/themes": "^0.68.0"
     },
     "suggest": {
-        "webx-ui/module-audit": "The site audit searches its content, drafts included, for addresses of a development stand."
+        "webx-ui/module-audit": "The site audit searches its content, drafts included, for addresses of a development stand.",
+        "webx-ui/themes": "With a theme, saving a block type warns of a literal colour or font and of a site token the theme does not have."
     },
     "autoload": {
         "psr-4": {

@@ -38,4 +38,8 @@ return [
     'unknown-field-type' => 'Sitenin tanımadığı türde alanlar: :fields. Form yerlerinde bir uyarı gösterir ve değerlerini kimse denetlemez.',
     'field-id' => 'Alan kimliği harf, rakam, _ ve - içerir ve harfle başlar: :ids.',
     'marker-slug' => 'Kök data-wx-block=":marker" ile işaretli, ancak tanımlayıcı «:slug»: betik ve panel bloğu tam tanımlayıcıyla bulur. Yayınlama reddedilecek.',
+    'literal-colors' => 'Doğrudan yazılmış renkler: :values. Hiçbir ön ayar ya da tokens.json içindeki bir değişiklik onları yeniden boyamaz: bir renk rolü kullanın, var(--site-color-…).',
+    'literal-fonts' => 'Doğrudan yazılmış yazı tipi aileleri: :values. Sahibin yazı tipi onlara hiç ulaşmaz: var(--site-font-body) ya da var(--site-font-heading) veya genel bir aile kullanın.',
+    'unknown-tokens' => 'Temanın tokenları arasında yok: :tokens. Kimsenin tanımlamadığı bir değişken boş bir değerdir: renk yok, kenarlık yok, hata yok.',
+    'token-fallbacks' => ':tokens içindeki yedek değer, hiçbir ön ayarın yeniden boyamadığı doğrudan bir değerdir. Temanın her tokenının bir değeri var: var() yazın, yedeksiz.',
 ];

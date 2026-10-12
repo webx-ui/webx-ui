@@ -9,4 +9,5 @@ return [
     'captcha-keys' => 'The form :form (:slug) asks for :provider, and the site’s .env lacks :missing',
     'captcha-unused' => 'The form :form (:slug) has no captcha, and the site has keys for :providers',
     'spam-without-captcha' => 'The form :form (:slug) has no captcha and draws spam. In :days days, marked as spam: :spam, refused: :refused',
+    'legacy-views' => 'The inbox form is overridden by a view from before the form engine: :path',
 ];

@@ -1,0 +1,6 @@
+{
+  "theme": {
+    "title": "Icons gone wrong",
+    "uses": ["webx-ui/theme-fixture"]
+  }
+}

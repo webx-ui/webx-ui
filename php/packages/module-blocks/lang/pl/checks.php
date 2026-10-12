@@ -38,4 +38,8 @@ return [
     'unknown-field-type' => 'Pola typu nieznanego stronie: :fields. Formularz pokaże w ich miejscu ostrzeżenie, a wartości nikt nie sprawdzi.',
     'field-id' => 'Identyfikator pola to litery, cyfry, _ i -, na początku litera: :ids.',
     'marker-slug' => 'Korzeń jest oznaczony data-wx-block=":marker", ale identyfikator to «:slug»: skrypt i panel znajdują blok po dokładnym identyfikatorze. Publikacja zostanie odrzucona.',
+    'literal-colors' => 'Kolory wpisane dosłownie: :values. Nie przemaluje ich żaden preset ani zmiana w tokens.json — użyj roli koloru, var(--site-color-…).',
+    'literal-fonts' => 'Kroje pisma wpisane dosłownie: :values. Czcionka właściciela nigdy do nich nie dotrze — użyj var(--site-font-body) lub var(--site-font-heading) albo rodziny ogólnej.',
+    'unknown-tokens' => 'Tych tokenów nie ma w motywie: :tokens. Zmienna, której nikt nie deklaruje, to pusta wartość — bez koloru, bez ramki, bez błędu.',
+    'token-fallbacks' => 'Wartość zapasowa w :tokens to wartość dosłowna, której nie przemaluje żaden preset. Każdy token motywu ma wartość — pisz var() bez niej.',
 ];

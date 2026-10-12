@@ -9,4 +9,5 @@ return [
     'captcha-keys' => 'Форма :form (:slug) просит :provider, а в .env сайта нет :missing',
     'captcha-unused' => 'У формы :form (:slug) нет капчи, а у сайта есть ключи для :providers',
     'spam-without-captcha' => 'Форма :form (:slug) без капчи получает спам. За :days дн. отмечено спамом: :spam, отклонено: :refused',
+    'legacy-views' => 'Форма заявки перекрыта видом, написанным до движка форм: :path',
 ];

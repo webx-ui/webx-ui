@@ -46,7 +46,11 @@ their guides when the question is about one of those.
   `blocks.stray_values` (one finding per entity whose blocks hold values for fields their type
   does not define, repeater items included, live and draft) and its fix `blocks.prune-stray` —
   the same `StrayValues` that `webx:blocks:prune` runs; a block of an unknown type is never
-  touched.
+  touched. With `webx-ui/themes` installed: the sync step `Themes\LayerSync` — `webx:theme:sync`
+  creates and updates the block types of the theme layers, marking each with `theme_source` (the
+  layer) and `theme_hash`; a slug whose `theme_source` is empty is the site's and is refused —
+  except the demo's `hero`/`text`/… left exactly as seeded, which `--adopt=<slug>` hands to the
+  theme. The demo never seeds a slug the theme layers carry (theme-default's `hero`, `text`).
 
 ## Change it without forking
 
@@ -55,7 +59,8 @@ their guides when the question is about one of those.
 | A block type of the site's own              | make it in the panel's «Blocks», or `blocks_create` → `blocks_render` → `blocks_publish` over MCP                        |
 | The site's types in git                     | `php artisan webx:blocks:export` writes `resources/blocks/{slug}.json`; `webx:blocks:import --publish` reads them back   |
 | Blocks from another site or a catalogue     | «Blocks» → Export (a pack with the components they call), Import there; the command reads the same pack                  |
-| The types a module offers (FAQ accordion…)  | `php artisan webx:blocks:offered --install`; a slug the site already has is never touched                                |
+| The block types of the site's theme         | `theme/blocks/<slug>.json`, then `php artisan webx:theme:sync` — not import; a type edited in the panel is kept          |
+| The types a module offers (FAQ accordion…)  | `php artisan webx:blocks:offered --install`; a slug the site has, or the theme carries, is not touched                   |
 | A region in the layout                      | declare it under `regions` in `config/webx-blocks.php` and print `<x-webx-blocks::region>` with a `fallback`             |
 | A type only for one region                  | `"region:header"` in the type's `allowed_in`; `allow` and `max` on the region limit what it takes                        |
 | Another group in the picker                 | add it to `groups` in `config/webx-blocks.php` and translate it in the panel's dictionary                                |
@@ -109,7 +114,8 @@ whose type has no `wx-blocks` field is refused as "not a container".
   publish check refuses the last two. `blocks_render`
   shows both before you publish.
 - Do not style with bare element selectors or `@media`: they reach the whole site. Prefix every
-  selector with `.b-{slug}` and size with `@container`.
+  selector with `.b-{slug}` and size with `@container`. On a site with a theme, no literal colour
+  or font either — `var(--site-…)` of the theme's vocabulary, no fallback: saving warns.
 - Do not delete a type that stands on pages or that other types call: the API answers `409` or
   `422`, `blocks_delete` refuses. `blocks_usage` lists where it stands; remove it there first, or disable it.
 - Do not switch a field's `localized` on a type pages already use without reading the warning:

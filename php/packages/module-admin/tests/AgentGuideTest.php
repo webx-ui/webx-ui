@@ -73,6 +73,10 @@ final class AgentGuideTest extends TestCase
 
         $this->assertStringStartsWith(RootFile::START, $guide);
         $this->assertStringContainsString('**Never fork a module and never edit `vendor/`.**', $guide);
+        // The first rule names the forms too: every one is the widgets' engine (WIDGETS §17.7).
+        $this->assertStringContainsString('**Any form of the site is `<x-webx-form>` with `<x-webx-field>` inside**', $guide);
+        $this->assertStringContainsString('`WebxUi\Widgets\Forms\FormResponse`', $guide);
+        $this->assertLessThan(strpos($guide, "## The site's look"), strpos($guide, RootFile::FORMS_GUIDE));
         $this->assertStringContainsString(
             '- [webx-ui/module-pages](vendor/webx-ui/module-pages/AGENTS.md) — Pages for the WebX UI admin panel.',
             $guide,
@@ -169,5 +173,26 @@ final class AgentGuideTest extends TestCase
 
         $this->assertStringContainsString('None of the installed packages carries an AGENTS.md yet', $block);
         $this->assertStringEndsWith(RootFile::END, $block);
+    }
+
+    /** THEMES §16: the guide names this site's chain and sends a change to its local theme, with the commands to check it. */
+    #[Test]
+    public function the_look_names_the_sites_own_chain(): void
+    {
+        $block = RootFile::block([], 'cms', [['name' => 'site-theme', 'local' => true], ['name' => 'webx-ui/theme-default', 'local' => false]]);
+
+        $this->assertStringContainsString("top first: `site-theme/` (this site's own) → `webx-ui/theme-default`.", $block);
+        $this->assertStringContainsString('a value in `site-theme/tokens.json`', $block);
+        $this->assertStringContainsString('`php artisan webx:theme:show`', $block);
+        $this->assertStringContainsString('`php artisan webx:theme:check`', $block);
+        $this->assertStringContainsString('`vendor/webx-ui/themes/RULES.md`', $block);
+        $this->assertStringContainsString(RootFile::THEMES_GUIDE, $block);
+
+        $this->assertStringContainsString('This site has no theme (`WEBX_THEME` is empty)', RootFile::block([], 'cms'));
+        $this->assertStringContainsString(
+            'webx:theme:make theme --local --uses=acme/theme-clinic',
+            RootFile::block([], 'cms', [['name' => 'acme/theme-clinic', 'local' => false]]),
+            'a site on a packaged theme alone is told how to get a local one',
+        );
     }
 }

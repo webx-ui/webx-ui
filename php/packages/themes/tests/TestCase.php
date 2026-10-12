@@ -7,7 +7,9 @@ namespace WebxUi\Themes\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\View\FileViewFinder;
 use Orchestra\Testbench\TestCase as Orchestra;
+use WebxUi\Themes\ModuleStyles;
 use WebxUi\Themes\Tests\Fixtures\FakeModuleServiceProvider;
+use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeServiceProvider;
 
@@ -34,6 +36,7 @@ abstract class TestCase extends Orchestra
     protected function defineEnvironment($app): void
     {
         $app['config']->set('view.paths', [self::fixture('site/resources/views')]);
+        $app->useLangPath(self::fixture('site/lang'));
         $app['config']->set('webx-themes.theme', $this->theme());
 
         // The fixtures are not installed by Composer, so the locator is told where they are.
@@ -45,6 +48,10 @@ abstract class TestCase extends Orchestra
                 $locator->register($name, self::fixture($dir));
             }
         });
+
+        // The modules Composer installed in the monorepo are every module there is; the tests
+        // read one fixture module instead, so a module's new stylesheet changes no count here.
+        $app->singleton(ModuleStyles::class, fn (Application $app) => new ModuleStyles($app->make(ThemeAssets::class), [self::fixture('module')]));
     }
 
     /** What `webx-themes.theme` holds for the test; absolute, because the fixture site is not the base path. */

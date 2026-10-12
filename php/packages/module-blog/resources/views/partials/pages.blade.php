@@ -6,12 +6,12 @@
     a listing actually needs, and `?page=` is where the number lives (§2.12).
 --}}
 @if ($articles->hasPages())
-    <nav>
+    <nav class="webx-blog-pager">
         @if ($articles->previousPageUrl())
-            <a rel="prev" href="{{ $articles->previousPageUrl() }}">{{ trans('webx-blog::blog.previous') }}</a>
+            <a class="webx-blog-pager__link webx-blog-pager__link--prev" rel="prev" href="{{ $articles->previousPageUrl() }}">{{ trans('webx-blog::blog.previous') }}</a>
         @endif
         @if ($articles->nextPageUrl())
-            <a rel="next" href="{{ $articles->nextPageUrl() }}">{{ trans('webx-blog::blog.next') }}</a>
+            <a class="webx-blog-pager__link webx-blog-pager__link--next" rel="next" href="{{ $articles->nextPageUrl() }}">{{ trans('webx-blog::blog.next') }}</a>
         @endif
     </nav>
 @endif

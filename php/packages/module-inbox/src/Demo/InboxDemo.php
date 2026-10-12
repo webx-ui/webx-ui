@@ -7,13 +7,20 @@ namespace WebxUi\Inbox\Demo;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
+use WebxUi\Admin\Demo\ThemeDemo;
+use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
+use WebxUi\Inbox\Panel\FieldOptions;
 use WebxUi\Inbox\Panel\FormOptions;
 use WebxUi\Localization\Locales;
 
 /**
- * One feedback form, the one every site turns out to need (§9 of the new-site spec).
+ * One feedback form, the one every site turns out to need (§9 of the new-site spec), and the
+ * forms the site's theme keeps in `demo/inbox/*.json` (THEMES §15.1) — `theme-default` shows
+ * every kind of field there, on its showcase. A theme's form by the slug `contact` replaces
+ * the module's.
  *
  * No recipients: a demo that mailed somebody the first time a visitor pressed Send would be a
  * demo that sent mail from an address nobody has set up yet. Submissions land in the panel,
@@ -28,7 +35,16 @@ final class InboxDemo
 
     public function seed(DemoLedger $ledger): void
     {
-        $document = $this->read();
+        foreach ($this->documents() as $document) {
+            $this->form($ledger, $document);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     */
+    private function form(DemoLedger $ledger, array $document): void
+    {
         $slug = (string) ($document['slug'] ?? 'contact');
 
         // A form by this name is somebody's own, answers and all.
@@ -57,10 +73,12 @@ final class InboxDemo
 
             // The fields go in the journal too: they are rows of their own, and deleting the
             // form is refused once an answer has arrived through it.
+            $type = FieldType::tryFrom((string) ($field['type'] ?? 'text')) ?? FieldType::Text;
+
             $ledger->created(Field::query()->create([
                 'form_id' => $form->getKey(),
                 'name' => $field['name'] ?? null,
-                'type' => $field['type'] ?? 'text',
+                'type' => $type->value,
                 'title' => $this->words($field['title'] ?? ''),
                 'placeholder' => $this->words($field['placeholder'] ?? ''),
                 'help' => $this->words($field['help'] ?? ''),
@@ -69,6 +87,9 @@ final class InboxDemo
                 'is_fullsize' => (bool) ($field['is_fullsize'] ?? true),
                 'in_table' => (bool) ($field['in_table'] ?? false),
                 'position' => $position,
+                // By the gate the panel's save goes through; choices and a consent's words keep
+                // their language maps, which the field reads in the language of the page.
+                'options' => FieldOptions::clean($type, is_array($field['options'] ?? null) ? $field['options'] : []),
             ]), (string) ($field['name'] ?? 'field'));
         }
     }
@@ -86,7 +107,7 @@ final class InboxDemo
     private function options(array $options): array
     {
         foreach (FormOptions::TRANSLATED as $key) {
-            if (isset($options[$key]) && is_string($options[$key])) {
+            if (isset($options[$key]) && (is_string($options[$key]) || is_array($options[$key]))) {
                 $options[$key] = $this->words($options[$key]);
             }
         }
@@ -99,22 +120,36 @@ final class InboxDemo
      */
     private function words(mixed $text): ?array
     {
-        $text = is_string($text) ? trim($text) : '';
-
-        return $text === '' ? null : [$this->locales->defaultCode() => $text];
+        return (new DemoWords($this->locales))->of($text);
     }
 
     /**
-     * @return array<string, mixed>
+     * The theme's forms first, then the module's `contact` unless the theme brought one.
+     *
+     * @return list<array<string, mixed>>
      */
-    private function read(): array
+    private function documents(): array
     {
-        $document = json_decode((string) $this->files->get(__DIR__.'/../../resources/demo/contact.json'), true);
+        $files = [];
+        $theme = ThemeDemo::directory('inbox');
 
-        if (! is_array($document)) {
-            throw new RuntimeException('contact.json is not a form document.');
+        if ($theme !== null) {
+            $files = $this->files->glob($theme.'/*.json');
+            sort($files);
         }
 
-        return $document;
+        $documents = [];
+
+        foreach ([...$files, __DIR__.'/../../resources/demo/contact.json'] as $file) {
+            $document = json_decode((string) $this->files->get($file), true);
+
+            if (! is_array($document)) {
+                throw new RuntimeException(basename($file).' is not a form document.');
+            }
+
+            $documents[(string) ($document['slug'] ?? basename($file, '.json'))] ??= $document;
+        }
+
+        return array_values($documents);
     }
 }

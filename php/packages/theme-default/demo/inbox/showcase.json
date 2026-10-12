@@ -1,0 +1,190 @@
+{
+  "slug": "showcase",
+  "title": {
+    "en": "Every kind of field",
+    "ru": "Все виды полей",
+    "pl": "Każdy rodzaj pola"
+  },
+  "options": {
+    "thank-you.heading": {
+      "en": "Thank you",
+      "ru": "Спасибо",
+      "pl": "Dziękujemy"
+    },
+    "thank-you.text": {
+      "en": "This form only shows how fields look. Nobody is told about it.",
+      "ru": "Эта форма только показывает, как выглядят поля. О ней никому не сообщается.",
+      "pl": "Ten formularz pokazuje tylko, jak wyglądają pola. Nikt nie dostaje o nim wiadomości."
+    },
+    "design.submit-text": {
+      "en": "Send",
+      "ru": "Отправить",
+      "pl": "Wyślij"
+    },
+    "email_field": "email",
+    "antispam.honeypot": true,
+    "antispam.min_seconds": 3
+  },
+  "fields": [
+    {
+      "name": "name",
+      "type": "text",
+      "title": {
+        "en": "Your name",
+        "ru": "Ваше имя",
+        "pl": "Imię"
+      },
+      "is_required": true,
+      "is_fullsize": false,
+      "in_table": true
+    },
+    {
+      "name": "email",
+      "type": "email",
+      "title": {
+        "en": "Email",
+        "ru": "Электронная почта",
+        "pl": "E-mail"
+      },
+      "placeholder": "you@example.com",
+      "is_required": true,
+      "is_fullsize": false,
+      "in_table": true
+    },
+    {
+      "name": "phone",
+      "type": "tel",
+      "title": {
+        "en": "Phone",
+        "ru": "Телефон",
+        "pl": "Telefon"
+      },
+      "placeholder": "+44 20 7946 0958",
+      "is_fullsize": false
+    },
+    {
+      "name": "date",
+      "type": "date",
+      "title": {
+        "en": "A convenient day",
+        "ru": "Удобный день",
+        "pl": "Dogodny dzień"
+      },
+      "is_fullsize": false
+    },
+    {
+      "name": "topic",
+      "type": "select",
+      "title": {
+        "en": "Topic",
+        "ru": "Тема",
+        "pl": "Temat"
+      },
+      "is_required": true,
+      "is_fullsize": true,
+      "options": {
+        "choices": [
+          { "value": "question", "label": { "en": "A question", "ru": "Вопрос", "pl": "Pytanie" } },
+          { "value": "order", "label": { "en": "An order", "ru": "Заказ", "pl": "Zamówienie" } },
+          {
+            "value": "partnership",
+            "label": {
+              "en": "Partnership and cooperation with suppliers",
+              "ru": "Партнёрство и сотрудничество с поставщиками",
+              "pl": "Partnerstwo i współpraca z dostawcami"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "reply",
+      "type": "radio",
+      "title": {
+        "en": "How to answer",
+        "ru": "Как ответить",
+        "pl": "Jak odpowiedzieć"
+      },
+      "is_fullsize": false,
+      "options": {
+        "choices": [
+          { "value": "email", "label": { "en": "By email", "ru": "Письмом", "pl": "E-mailem" } },
+          {
+            "value": "phone",
+            "label": { "en": "By phone", "ru": "По телефону", "pl": "Telefonicznie" }
+          }
+        ]
+      }
+    },
+    {
+      "name": "interests",
+      "type": "checkbox",
+      "title": {
+        "en": "Interested in",
+        "ru": "Интересует",
+        "pl": "Interesuje mnie"
+      },
+      "is_fullsize": false,
+      "options": {
+        "choices": [
+          { "value": "news", "label": { "en": "News", "ru": "Новости", "pl": "Aktualności" } },
+          { "value": "events", "label": { "en": "Events", "ru": "События", "pl": "Wydarzenia" } },
+          { "value": "offers", "label": { "en": "Offers", "ru": "Предложения", "pl": "Oferty" } }
+        ]
+      }
+    },
+    {
+      "name": "attachment",
+      "type": "file",
+      "title": {
+        "en": "Attachment",
+        "ru": "Вложение",
+        "pl": "Załącznik"
+      },
+      "help": {
+        "en": "PDF or a picture, up to 5 MB.",
+        "ru": "PDF или картинка, до 5 МБ.",
+        "pl": "PDF albo obraz, do 5 MB."
+      },
+      "is_fullsize": true,
+      "options": {
+        "extensions": ["pdf", "jpg", "png"],
+        "multiple": false
+      }
+    },
+    {
+      "name": "message",
+      "type": "textarea",
+      "title": {
+        "en": "Message",
+        "ru": "Сообщение",
+        "pl": "Wiadomość"
+      },
+      "help": {
+        "en": "What it is about, and how we can help.",
+        "ru": "О чём речь и чем мы можем помочь.",
+        "pl": "O co chodzi i jak możemy pomóc."
+      },
+      "is_required": true,
+      "is_fullsize": true
+    },
+    {
+      "name": "consent",
+      "type": "consent",
+      "title": {
+        "en": "Consent",
+        "ru": "Согласие",
+        "pl": "Zgoda"
+      },
+      "is_required": true,
+      "is_fullsize": true,
+      "options": {
+        "text": {
+          "en": "I agree that the answers above are kept to reply to me — read the <a href=\"/kitchen-sink\">privacy notice</a>.",
+          "ru": "Я согласен, что ответы выше хранятся, чтобы мне ответить, — см. <a href=\"/ru/vitrina\">политику конфиденциальности</a>.",
+          "pl": "Zgadzam się, by powyższe odpowiedzi były przechowywane w celu odpowiedzi — zob. <a href=\"/pl/witryna\">informację o prywatności</a>."
+        }
+      }
+    }
+  ]
+}

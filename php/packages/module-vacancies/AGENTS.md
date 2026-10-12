@@ -41,24 +41,42 @@ history and categories `webx-ui/module-admin`, the SEO card `webx-ui/module-seo`
 
 ## Change it without forking
 
-| You want                                  | Do this                                                                                         |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Vacancies inside the site's header/footer | `WEBX_VACANCIES_LAYOUT=layout` (`<x-layout>`, slots `head` and default, `@stack('head')` in it) |
-| One part of the page different            | `php artisan vendor:publish --tag=webx-vacancies-views`, keep only the part you rewrite         |
-| The application form on the page          | rewrite `vacancy/apply`: `<x-webx-inbox::form :slug="$form" :values="['vacancy' => $title]" />` |
-| Whole pages of your own                   | `WEBX_VACANCIES_VIEW_INDEX`, `WEBX_VACANCIES_VIEW_VACANCY`                                      |
-| Another first segment                     | `WEBX_VACANCIES_PREFIX`, then `php artisan webx:routes:rebuild --type=vacancy`                  |
-| The index page built of blocks            | `WEBX_VACANCIES_INDEX=false` and a page with the slug of the prefix in `webx-ui/module-pages`   |
-| The country of a new vacancy              | `WEBX_VACANCIES_COUNTRY` — ISO alpha-2                                                          |
-| Another salary currency                   | `currencies` in `config/webx-vacancies.php` (ISO 4217 → symbol; the first is the default)       |
-| No visible breadcrumbs                    | `WEBX_VACANCIES_BREADCRUMBS=false` (the BreadcrumbList in `<head>` stays, it is module-seo's)   |
-| A field of the site's own                 | a patch: `Screens::extend('vacancies.form', [...])` into `project-fields`; read `extra`         |
-| Vacancies in a template                   | `vacancies()->in('development')->take(6)`, or `vacancies()->groups()`                           |
-| Other words in the panel or the site      | `php artisan vendor:publish --tag=webx-vacancies-lang`                                          |
+| You want                                  | Do this                                                                                                           |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Vacancies inside the site's header/footer | `WEBX_VACANCIES_LAYOUT=layout` (`<x-layout>`, slots `head` and default, `@stack('head')` in it)                   |
+| One part of the page different            | `php artisan vendor:publish --tag=webx-vacancies-views`, keep only the part you rewrite                           |
+| The application form on the page          | rewrite `vacancy/apply`: `<x-webx-inbox::form :slug="$form" :values="['vacancy' => $title]" />`                   |
+| Whole pages of your own                   | `WEBX_VACANCIES_VIEW_INDEX`, `WEBX_VACANCIES_VIEW_VACANCY`                                                        |
+| Another first segment                     | `WEBX_VACANCIES_PREFIX`, then `php artisan webx:routes:rebuild --type=vacancy`                                    |
+| The index page built of blocks            | `WEBX_VACANCIES_INDEX=false` and a page with the slug of the prefix in `webx-ui/module-pages`                     |
+| The country of a new vacancy              | `WEBX_VACANCIES_COUNTRY` — ISO alpha-2                                                                            |
+| Another salary currency                   | `currencies` in `config/webx-vacancies.php` (ISO 4217 → symbol; the first is the default)                         |
+| No visible breadcrumbs                    | `WEBX_VACANCIES_BREADCRUMBS=false` (the BreadcrumbList in `<head>` stays, it is module-seo's)                     |
+| A field of the site's own                 | a patch: `Screens::extend('vacancies.form', [...])` into `project-fields`; read `extra`                           |
+| Vacancies in a template                   | `vacancies()->in('development')->take(6)`, or `vacancies()->groups()`                                             |
+| Other words in the panel or the site      | `php artisan vendor:publish --tag=webx-vacancies-lang`                                                            |
+| Another card in every list                | `views/parts/vacancies/card.blade.php` in the theme: the point `vacancies.card`, given `$card`, prints one `<li>` |
 
 All keys live in `config/webx-vacancies.php` (`vendor:publish --tag=webx-vacancies-config`). The
 page and the card hand over `$form` — the slug of the chosen inbox form, or `null`. A screen patch
 whose target is gone throws when the screen is first built.
+
+### Classes
+
+The theme's contract (THEMES §10): the base look `resources/theme/vacancies.css` styles them
+under any theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a breaking
+change. Without a theme the index prints a smaller look of its own inline.
+
+- Index: `wx-vacancies__header`, `wx-vacancies__title`, `wx-vacancies__nav`,
+  `wx-vacancies__filter`, `wx-vacancies__filter-item`, `wx-vacancies__filter-link`, `wx-vacancies`,
+  `wx-vacancies__empty`, `wx-vacancies__group`, `wx-vacancies__group-title`, `wx-vacancies__list`.
+- Card: `wx-vacancies__card`, `wx-vacancies__link`, `wx-vacancies__meta`, `wx-vacancies__place`,
+  `wx-vacancies__employment`, `wx-vacancies__salary`, `wx-vacancies__lead`.
+- Vacancy: `wx-vacancy`, `wx-vacancy__heading`, `wx-vacancy__title`, `wx-vacancy__closed`,
+  `wx-vacancy__lead`, `wx-vacancy__facts`, `wx-vacancy__term`, `wx-vacancy__value`,
+  `wx-vacancy__place`, `wx-vacancy__remote`, `wx-vacancy__description`, `wx-vacancy__section`,
+  `wx-vacancy__section-title`, `wx-vacancy__<list>` (`duties`, `requirements`, `benefits`),
+  `wx-vacancy__apply` (the site's own `vacancy/apply`).
 
 ## Do not
 

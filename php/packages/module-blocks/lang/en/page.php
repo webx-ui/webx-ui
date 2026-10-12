@@ -103,6 +103,7 @@ return [
     'source-panel' => 'panel',
     'source-mcp' => 'agent',
     'source-import' => 'import',
+    'source-theme' => 'theme',
     'drops-translations' => 'This version makes :fields hold one language. :count page(s) hold text in several languages there, and only the main one would be kept: :pages. Publish again agreeing to drop the other languages, or move the text first.',
     'localized-changes' => 'Publishing this version changes the language shape of :fields: the values already on :count page(s) will be converted.',
     'rename-called' => 'Other types call this one by its identifier: :types. Change their templates first, then rename it.',

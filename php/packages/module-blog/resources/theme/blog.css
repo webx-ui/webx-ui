@@ -1,0 +1,210 @@
+/*
+ * module-blog: the base look of the feed, a rubric, a tag and an article (THEMES §10.2).
+ *
+ * Not beauty — "decent under any theme": cards in a grid that decides its own columns, a date
+ * that reads as secondary, links a finger can hit. The pages stand in the theme's main column,
+ * where prose styles every heading and list; each class here undoes what a listing does not
+ * want from prose. Only site tokens of the engine's vocabulary, one class per rule: a theme
+ * restyles any of it by writing the same class later.
+ *
+ * A listing and an article are direct children of the theme's main column, which centres them
+ * with `margin-inline: auto` at no specificity: a class here sets `margin-block` only, or the
+ * element leaves the column for the left edge of the page.
+ */
+
+.webx-blog-header {
+  margin-block-end: var(--site-space-6);
+}
+
+.webx-blog-header__title {
+  margin-block-end: var(--site-space-3);
+}
+
+.webx-blog-header__lead {
+  max-width: 42rem;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-5);
+}
+
+.webx-blog-empty {
+  color: var(--site-color-text-muted);
+}
+
+/* The rubrics of the feed: a row of chips that wraps. */
+.webx-blog-rubrics__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: var(--site-space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-blog-rubrics__item {
+  margin: 0;
+}
+
+.webx-blog-rubrics__link,
+.webx-blog-tags__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: border-color var(--site-duration) var(--site-easing);
+}
+
+.webx-blog-rubrics__link:hover,
+.webx-blog-tags__link:hover {
+  border-color: var(--site-color-accent);
+  color: var(--site-color-accent);
+}
+
+/* Cards: as many columns as fit at 17rem, one on a phone — the grid decides, not the window. */
+.webx-blog-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: var(--site-space-6) var(--site-space-5);
+  margin-block: 0 var(--site-space-6);
+  padding: 0;
+  list-style: none;
+}
+
+.webx-blog-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-2);
+  min-width: 0;
+  margin: 0;
+}
+
+.webx-blog-card__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-3);
+  color: var(--site-color-text);
+  text-decoration: none;
+  transition: color var(--site-duration) var(--site-easing);
+}
+
+.webx-blog-card__cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface-muted);
+}
+
+.webx-blog-card__title {
+  margin: 0;
+  font-size: var(--site-font-size-4);
+  overflow-wrap: anywhere;
+}
+
+/* The title takes the link's colour, so the hover is one flat class. */
+.webx-blog-card__link:hover {
+  color: var(--site-color-accent);
+}
+
+.webx-blog-card__date,
+.webx-blog-article__meta {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+.webx-blog-card__lead {
+  margin: 0;
+  color: var(--site-color-text-muted);
+}
+
+/* Previous and next: two buttons, "next" at the far end even when it is alone. */
+.webx-blog-pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--site-space-3);
+  margin-block: var(--site-space-6);
+}
+
+.webx-blog-pager__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  color: var(--site-color-text);
+  text-decoration: none;
+}
+
+.webx-blog-pager__link:hover {
+  border-color: var(--site-color-accent);
+  color: var(--site-color-accent);
+}
+
+.webx-blog-pager__link--next {
+  margin-inline-start: auto;
+}
+
+/* The article: its header above the blocks. */
+.webx-blog-article__header {
+  margin-block-end: var(--site-space-6);
+}
+
+.webx-blog-article__title {
+  margin-block-end: var(--site-space-3);
+  overflow-wrap: anywhere;
+}
+
+.webx-blog-article__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-1) var(--site-space-3);
+  margin: 0 0 var(--site-space-5);
+}
+
+.webx-blog-article__date,
+.webx-blog-article__author {
+  white-space: nowrap;
+}
+
+.webx-blog-article__cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--site-radius-lg);
+}
+
+.webx-blog-article__footer {
+  margin-block-start: var(--site-space-6);
+  padding-block-start: var(--site-space-5);
+  border-block-start: 1px solid var(--site-color-border);
+}
+
+.webx-blog-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-blog-tags__item {
+  margin: 0;
+}
+
+.webx-blog-related {
+  margin-block-start: var(--site-space-8);
+}
+
+.webx-blog-related__title {
+  margin-block: 0 var(--site-space-5);
+}

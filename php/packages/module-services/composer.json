@@ -39,10 +39,12 @@
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
-        "phpunit/phpunit": "^12.0 || ^13.0"
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/themes": "^0.68.0"
     },
     "suggest": {
-        "webx-ui/module-audit": "The site audit searches its content, drafts and hidden records included, for addresses of a development stand."
+        "webx-ui/module-audit": "The site audit searches its content, drafts and hidden records included, for addresses of a development stand.",
+        "webx-ui/themes": "With a theme, the index, categories and services get their base look on site tokens (resources/theme/services.css)."
     },
     "autoload": {
         "psr-4": {

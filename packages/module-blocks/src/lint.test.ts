@@ -46,6 +46,31 @@ describe('the checks under the editor', () => {
     expect(lints[2]!.message).toContain('.promo, #x')
   })
 
+  it('names literal values and unknown tokens only on a site with a theme', () => {
+    const content = {
+      template: '<div data-wx-block="hero"></div>',
+      styles: [
+        '.b-hero { color: #fff; background: var(--site-color-accent); }',
+        '.b-hero__title { font-family: Georgia, serif; border-color: black; }',
+        '.b-hero__text { color: var(--site-color-olive); gap: var(--site-space-2, 8px); }',
+      ].join('\n'),
+      schema: [],
+    }
+
+    expect(lintBlock('hero', content, t)).toEqual([])
+
+    const lints = lintBlock('hero', content, t, ['color-accent', 'space-2'])
+
+    expect(lints.map((lint) => [lint.file, lint.code, lint.line])).toEqual([
+      ['styles', 'literal-colors', 1],
+      ['styles', 'literal-fonts', 2],
+      ['styles', 'unknown-tokens', 3],
+      ['styles', 'token-fallbacks', 3],
+    ])
+    expect(lints[0]!.message).toBe('checks.literal-colors #fff, black')
+    expect(lints[3]!.message).toContain('var(--site-space-2, …)')
+  })
+
   it('says when the marker is not the identifier, which the runtime matches exactly', () => {
     const codes = (template: string) =>
       lintBlock('quote', { template, styles: '', schema: [] }, t).map((lint) => lint.code)

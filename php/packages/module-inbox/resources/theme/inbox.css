@@ -1,0 +1,54 @@
+/*
+ * module-inbox: the base look of a form on the site (THEMES §10.2).
+ *
+ * Since W6.4 the form is the widgets' form engine: every field is an <x-webx-field> and looks the
+ * way the widgets' field.css and form.css draw `webx-field-*` and `webx-form-*` — 44px controls,
+ * a visible focus, an error in words. What is left here is the inbox's own: the fields one under
+ * another, two to a row where the panel marked them half width and the form has the room; the
+ * button's row; the captcha's place. Only site tokens of the engine's vocabulary, one class per
+ * rule, so a theme restyles any of it by writing the same class.
+ *
+ * The width of the form decides the columns, not the window's: a form in the footer, in a dialog
+ * and in the main column of the same page each get what fits them.
+ */
+
+.webx-inbox-form {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.webx-inbox-form__fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--site-space-4);
+  margin-block-end: var(--site-space-4);
+}
+
+.webx-inbox-form__field {
+  min-width: 0;
+}
+
+.webx-inbox-form__captcha {
+  margin-block-end: var(--site-space-4);
+}
+
+.webx-inbox-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-3);
+}
+
+@container (min-width: 32rem) {
+  .webx-inbox-form__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .webx-inbox-form__field {
+    grid-column: 1 / -1;
+  }
+
+  .webx-inbox-form__field--half {
+    grid-column: auto;
+  }
+}

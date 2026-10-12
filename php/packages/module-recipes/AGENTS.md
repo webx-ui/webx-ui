@@ -55,9 +55,34 @@ read their guides when the question is about one of those.
 | An author's note, a call to action      | a patch: `Screens::extend('recipes.form', [...])` into `project-fields`, and `$recipe->extra()` in the part |
 | Recipes in a template or a block        | `recipes()->in('breakfasts')->nutrients([3])->relatedTo('service', $service)->take(6)`                      |
 | Other words in the panel or the site    | `php artisan vendor:publish --tag=webx-recipes-lang`                                                        |
+| Another card in every list              | `views/parts/recipe-card.blade.php` in the theme: the point `recipe-card`, given `$card`, prints one `<li>` |
 
 All keys live in `config/webx-recipes.php` (`vendor:publish --tag=webx-recipes-config`). A screen
 patch whose target is gone throws when the screen is first built.
+
+### Classes
+
+The theme's contract (THEMES §10): the base look `resources/theme/recipes.css` styles them under
+any theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a breaking change.
+Without a theme the catalogue prints a smaller look of its own inline (`partials/look`).
+
+- Index and category: `wx-recipes__header`, `wx-recipes__title`, `wx-recipes__picture`,
+  `wx-recipes-lead`, `wx-recipes__nav`, `wx-recipes__nav-list`, `wx-recipes__nav-item`,
+  `wx-recipes__nav-link`.
+- Catalogue: `wx-recipes`, `wx-recipes__filter`, `wx-recipes__filter-item`, `wx-recipes__chip`,
+  `wx-recipes__empty`, `wx-recipes__grid`, `wx-recipes__grid--<columns>` (a block's other number
+  than 3), `wx-recipes__card`, `wx-recipes__link`, `wx-recipes__cover`, `wx-recipes__name`,
+  `wx-recipes__services`, `wx-recipes__service`, `wx-recipes__meta`, `wx-recipes__category`,
+  `wx-recipes__time`, `wx-recipes__pager`, `wx-recipes__pages`, `wx-recipes__page`,
+  `wx-recipes__page-link`, `wx-recipes__all`, `wx-recipes__more`.
+- Recipe: `wx-recipe`, `wx-recipe__gallery`, `wx-recipe__photo`, `wx-recipe__strip`,
+  `wx-recipe__strip-item`, `wx-recipe__strip-link`, `wx-recipe__thumb`, `wx-recipe__heading`,
+  `wx-recipe__title`, `wx-recipe__lead`, `wx-recipe__facts`, `wx-recipe__fact`,
+  `wx-recipe__fact--<kind>` (`time`, `servings`, `categories`, `nutrients`), `wx-recipe__category`,
+  `wx-recipe__chip`, `wx-recipe__ingredients`, `wx-recipe__method`, `wx-recipe__nutrition`,
+  `wx-recipe__services`, `wx-recipe__similar`, `wx-recipe__section-title`, `wx-recipe__text`,
+  `wx-recipe__table`, `wx-recipe__row`, `wx-recipe__nutrient`, `wx-recipe__amount`,
+  `wx-recipe__service-list`, `wx-recipe__service`, `wx-recipe__service-link`.
 
 ## Do not
 

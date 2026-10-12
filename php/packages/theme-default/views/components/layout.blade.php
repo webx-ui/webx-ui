@@ -30,7 +30,7 @@
     @stack('head')
 </head>
 <body class="site">
-    <a class="site-skip" href="#content">{{ __('Skip to content') }}</a>
+    <a class="site-skip" href="#content">{{ __('theme::theme.shell.skip') }}</a>
 
     {{--
         The announcement bar (WIDGETS §14): the place `notice` of the banners when it has one to
@@ -47,7 +47,20 @@
     --}}
     <x-webx-blocks::region name="header" fallback="components.header" />
 
-    <main id="content" class="site-main">{{ $slot }}</main>
+    {{--
+        The page's FAQ and its interlinking block (module-seo §18.4–18.5) close the page's own
+        column: they answer and link on from what was just read, so they come after it and before
+        the footer, on every page. Both print nothing while their feature is off or the page has
+        none. By name and behind `view()->exists()`: without module-seo booted there is no
+        component to compile against.
+    --}}
+    <main id="content" class="site-main">
+        {{ $slot }}
+        @if (view()->exists('webx-seo::faq'))
+            <x-dynamic-component component="webx-seo::faq" />
+            <x-dynamic-component component="webx-seo::links" />
+        @endif
+    </main>
 
     <x-webx-blocks::region name="footer" fallback="components.footer" />
 

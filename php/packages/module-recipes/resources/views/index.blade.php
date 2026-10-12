@@ -3,16 +3,16 @@
      worked out before the layout around it, the head before the body. --}}
 
 @php(ob_start())
-    <header>
-        <h1>{{ trans('webx-recipes::site.title') }}</h1>
+    <header class="wx-recipes__header">
+        <h1 class="wx-recipes__title">{{ trans('webx-recipes::site.title') }}</h1>
     </header>
 
     {{-- The categories are pages of their own; the nutrients are the filter inside the catalogue. --}}
     @if ($categories !== [])
-        <nav aria-label="{{ trans('webx-recipes::site.categories') }}">
-            <ul>
+        <nav class="wx-recipes__nav" aria-label="{{ trans('webx-recipes::site.categories') }}">
+            <ul class="wx-recipes__nav-list">
                 @foreach ($categories as $category)
-                    <li><a href="{{ $category->url() }}">{{ $category->title }}</a></li>
+                    <li class="wx-recipes__nav-item"><a class="wx-recipes__nav-link" href="{{ $category->url() }}">{{ $category->title }}</a></li>
                 @endforeach
             </ul>
         </nav>

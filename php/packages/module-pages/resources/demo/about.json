@@ -1,17 +1,29 @@
 {
-  "title": "About",
-  "slug": "about",
+  "title": { "en": "About", "ru": "О сайте", "pl": "O stronie" },
+  "slug": { "en": "about", "ru": "o-saite", "pl": "o-stronie" },
   "seo": {
-    "title": "About this demo",
-    "description": "A page under the home page, to show what the tree of addresses does."
+    "title": { "en": "About this demo", "ru": "Об этом демо", "pl": "O tym demo" },
+    "description": {
+      "en": "A page under the home page, to show what the tree of addresses does.",
+      "ru": "Страница под главной — чтобы показать, как устроено дерево адресов.",
+      "pl": "Strona pod stroną główną – pokazuje, jak działa drzewo adresów."
+    }
   },
   "blocks": [
     {
       "key": "demo-about-text",
       "type": "text",
       "values": {
-        "heading": "A page under the home page",
-        "body": "Pages are a tree: this one sits under the home page, and its address is built out of the slugs above it.\nMove it and every address under it is rewritten, with a redirect left on each of the old ones."
+        "heading": {
+          "en": "A page under the home page",
+          "ru": "Страница под главной",
+          "pl": "Strona pod stroną główną"
+        },
+        "body": {
+          "en": "Pages are a tree: this one sits under the home page, and its address is built out of the slugs above it.\nMove it and every address under it is rewritten, with a redirect left on each of the old ones.",
+          "ru": "Страницы складываются в дерево: эта лежит под главной, и её адрес собран из адресов страниц над ней.\nПеренесите её — и все адреса под ней перепишутся, а на каждом старом останется переадресация.",
+          "pl": "Strony układają się w drzewo: ta leży pod stroną główną, a jej adres składa się z adresów stron nad nią.\nPrzenieś ją, a każdy adres pod nią zostanie przepisany – na każdym starym zostanie przekierowanie."
+        }
       }
     }
   ]

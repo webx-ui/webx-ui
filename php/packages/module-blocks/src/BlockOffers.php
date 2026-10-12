@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace WebxUi\Blocks;
 
 use Closure;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Validation\Factory as ValidatorFactory;
 use Illuminate\Filesystem\Filesystem;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\BlockInput;
+use WebxUi\Themes\Blocks\LayerBlock;
+use WebxUi\Themes\Blocks\LayerBlocks;
+use WebxUi\Themes\ThemeChain;
 
 /**
  * The block types a module brings along, for a site to take once (§3.4 of the FAQ spec).
@@ -22,6 +26,11 @@ use WebxUi\Blocks\Panel\BlockInput;
  * of it. So the site installs what is offered once, and a type by that slug is never touched
  * again — it may have been rebuilt from top to bottom, exactly as {@see Demo\BlocksDemo} assumes.
  *
+ * On a site with a theme the chain comes first (THEMES §10.3): a slug a theme layer carries in
+ * `blocks/` is the theme's to put on the site, with `webx:theme:sync`, and the offer stands back —
+ * a theme that ships its own «services» is sure that is the one a new site gets. A type already
+ * on the site is still never touched: «once» is the stronger rule.
+ *
  * Offers are registered from providers by the module's id in the panel — the name `webx:setup`
  * asks about — so the installer can be pointed at the modules somebody just chose.
  */
@@ -32,6 +41,8 @@ final class BlockOffers
     public const PRESENT = 'present';
 
     public const DRAFT = 'draft';
+
+    public const CARRIED = 'carried';
 
     /** @var array<string, list<string>> module → files and directories of documents */
     private array $offers = [];
@@ -116,6 +127,31 @@ final class BlockOffers
         return $offered;
     }
 
+    /**
+     * The layer of the theme chain that carries this slug in `blocks/`, or null — and always null
+     * on a site without a theme or without `webx-ui/themes`.
+     */
+    public function carriedBy(string $slug): ?string
+    {
+        return self::carried()[$slug] ?? null;
+    }
+
+    /**
+     * Every slug the theme layers carry, with the layer that wins it.
+     *
+     * @return array<string, string>
+     */
+    public static function carried(): array
+    {
+        $container = Container::getInstance();
+
+        if (! class_exists(LayerBlocks::class) || ! $container->bound(ThemeChain::class)) {
+            return [];
+        }
+
+        return array_map(static fn (LayerBlock $block): string => $block->layer, LayerBlocks::of($container->make(ThemeChain::class))->set());
+    }
+
     /** Whether the site already has a type by this slug — its own or one taken from an offer. */
     public function present(string $slug): bool
     {
@@ -131,7 +167,7 @@ final class BlockOffers
      * its own sample — is left as a draft to be fixed in the panel.
      *
      * @param  array{module: string, slug: string, file: string, document: array<string, mixed>}  $offer
-     * @return self::PRESENT|self::INSTALLED|self::DRAFT
+     * @return self::PRESENT|self::CARRIED|self::INSTALLED|self::DRAFT
      *
      * @throws BlocksException when the document is refused
      */
@@ -139,6 +175,10 @@ final class BlockOffers
     {
         if ($this->present($offer['slug'])) {
             return self::PRESENT;
+        }
+
+        if ($this->carriedBy($offer['slug']) !== null) {
+            return self::CARRIED;
         }
 
         $document = $offer['document'];

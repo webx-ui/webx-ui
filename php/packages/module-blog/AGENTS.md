@@ -34,20 +34,21 @@ categories `webx-ui/module-admin`, the SEO card and redirects `webx-ui/module-se
 
 ## Change it without forking
 
-| You want                                | Do this                                                                                            |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| The blog inside the site's header       | `'layout' => 'layout'` in `config/webx-blog.php` (`<x-layout>`), or `WEBX_BLOG_LAYOUT`             |
-| Different markup of a page              | write `resources/views/blog/article.blade.php` (or `feed`, `rubric`, `tag`, `rss`)                 |
-| A page printed by another view          | `WEBX_BLOG_VIEW_ARTICLE`, `_FEED`, `_RUBRIC`, `_TAG`, `_RSS`                                       |
-| Change the package's own views          | `php artisan vendor:publish --tag=webx-blog-views`, keep only the files you change                 |
-| Another first segment, or none          | `WEBX_BLOG_PREFIX`, then `php artisan webx:routes:rebuild --type=article --type=rubric --type=tag` |
-| More or fewer articles per listing      | `per_page` in `config/webx-blog.php` (publish it: `--tag=webx-blog-config`)                        |
-| No automatic "read next"                | `'related' => 0` — the articles pinned by hand stay                                                |
-| New tags open to the index              | `'tags' => ['noindex' => false]`; one tag: clear its flag or write a rule in `seo_urls`            |
-| No visible breadcrumbs                  | `WEBX_BLOG_BREADCRUMBS=false` (the BreadcrumbList in `<head>` is module-seo's and stays)           |
-| A field on the article or rubric editor | a patch: `Screens::extend('blog.article-form', [...])` in `AppServiceProvider::boot()`             |
-| Other words in the panel                | `php artisan vendor:publish --tag=webx-blog-lang`                                                  |
-| What an article looks like inside       | blocks — a block type in `webx-ui/module-blocks`, not a template here                              |
+| You want                                | Do this                                                                                                    |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| The blog inside the site's header       | `'layout' => 'layout'` in `config/webx-blog.php` (`<x-layout>`), or `WEBX_BLOG_LAYOUT`                     |
+| Different markup of a page              | write `resources/views/blog/article.blade.php` (or `feed`, `rubric`, `tag`, `rss`)                         |
+| Another card in every listing           | `views/parts/blog/card.blade.php` in the theme: the point `blog.card`, given `$article`, prints one `<li>` |
+| A page printed by another view          | `WEBX_BLOG_VIEW_ARTICLE`, `_FEED`, `_RUBRIC`, `_TAG`, `_RSS`                                               |
+| Change the package's own views          | `php artisan vendor:publish --tag=webx-blog-views`, keep only the files you change                         |
+| Another first segment, or none          | `WEBX_BLOG_PREFIX`, then `php artisan webx:routes:rebuild --type=article --type=rubric --type=tag`         |
+| More or fewer articles per listing      | `per_page` in `config/webx-blog.php` (publish it: `--tag=webx-blog-config`)                                |
+| No automatic "read next"                | `'related' => 0` — the articles pinned by hand stay                                                        |
+| New tags open to the index              | `'tags' => ['noindex' => false]`; one tag: clear its flag or write a rule in `seo_urls`                    |
+| No visible breadcrumbs                  | `WEBX_BLOG_BREADCRUMBS=false` (the BreadcrumbList in `<head>` is module-seo's and stays)                   |
+| A field on the article or rubric editor | a patch: `Screens::extend('blog.article-form', [...])` in `AppServiceProvider::boot()`                     |
+| Other words in the panel                | `php artisan vendor:publish --tag=webx-blog-lang`                                                          |
+| What an article looks like inside       | blocks — a block type in `webx-ui/module-blocks`, not a template here                                      |
 
 The layout component's contract is two slots, `head` and the default one, plus `@stack('head')`
 beside `{{ $head }}`; `php artisan webx:panel --sync` sets `layout` when the site has
@@ -59,6 +60,22 @@ A screen patch addresses nodes by `id`. Article editor: `content`, `blocks`, `se
 `project-fields`, `seo`, `history`, `versions`. Rubric editor: `content`, `naming`, `title`,
 `slug`, `is-visible`, `lead`, `presentation`, `cover`, `project-fields`, `seo`. Put a project's
 own fields into `project-fields`.
+
+### Classes
+
+The theme's contract (THEMES §10): the base look `resources/theme/blog.css` styles them under any
+theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a breaking change.
+
+- Listings: `webx-blog-header`, `webx-blog-header__title`, `webx-blog-header__lead`,
+  `webx-blog-empty`, `webx-blog-rubrics`, `webx-blog-rubrics__list`, `webx-blog-rubrics__item`,
+  `webx-blog-rubrics__link`, `webx-blog-pager`, `webx-blog-pager__link`, `webx-blog-pager__link--prev`,
+  `webx-blog-pager__link--next`.
+- Cards: `webx-blog-cards`, `webx-blog-card`, `webx-blog-card__link`, `webx-blog-card__cover`,
+  `webx-blog-card__title`, `webx-blog-card__date`, `webx-blog-card__lead`.
+- Article: `webx-blog-article`, `webx-blog-article__header`, `webx-blog-article__title`,
+  `webx-blog-article__meta`, `webx-blog-article__date`, `webx-blog-article__author`,
+  `webx-blog-article__cover`, `webx-blog-article__footer`, `webx-blog-tags`, `webx-blog-tags__item`,
+  `webx-blog-tags__link`, `webx-blog-related`, `webx-blog-related__title`.
 
 ## Do not
 

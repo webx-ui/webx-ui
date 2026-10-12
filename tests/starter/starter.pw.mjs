@@ -2,7 +2,7 @@
 // on the starter site that `scripts/starter-site.sh` builds. The pages are the ones the header
 // links to — the showcase included — so a page the demo adds is checked without being listed.
 
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 
 const tokens = JSON.parse(
@@ -81,7 +81,7 @@ test.describe('mobile menu at 375px', () => {
   test.beforeEach(async ({ page }) => {
     // Short, so that the menu's body has more than it can show.
     await page.setViewportSize({ width: 375, height: 520 })
-    await page.goto('/services')
+    await page.goto('/what-we-do')
     await still(page)
   })
 
@@ -558,7 +558,7 @@ test.describe('form in a dialog', () => {
     expect(await page.locator('a[href="#webx-form-contact"]').count()).toBeGreaterThanOrEqual(2)
     expect(await page.locator('dialog#webx-form-contact').count()).toBe(1)
     expect(await page.locator('form[data-webx-form="contact"]').count()).toBe(1)
-    await expect(page.locator('#webx-form-contact form')).toHaveClass(/wx-form--modal/)
+    await expect(page.locator('#webx-form-contact form')).toHaveClass(/webx-inbox-form--modal/)
   })
 
   test('fits a 360px screen and scrolls inside, the page under it still', async ({ page }) => {
@@ -802,9 +802,16 @@ test.describe('contacts', () => {
 
 test.describe('language switcher', () => {
   const PATH = '/kitchen-sink/language-switcher'
+  // The same page in the other two languages: the showcase is written in all three.
+  const TRANSLATED = {
+    ru: '/ru/vitrina/pereklyuchatel-yazykov',
+    pl: '/pl/witryna/przelacznik-jezykow',
+  }
+  // The one page of the showcase left in English on purpose.
+  const UNTRANSLATED = `${PATH}/english-only`
 
-  // The starter site speaks English, Russian and Polish. The home page is in all three; the
-  // showcase pages are in English only.
+  // The starter site speaks English, Russian and Polish, and so do the home page and the showcase
+  // — all but the page under this one.
   const header = (page) => page.locator('.webx-header__actions .webx-language-switcher')
 
   const inWindow = async (locator) => {
@@ -859,23 +866,104 @@ test.describe('language switcher', () => {
     const back = await links(header(page))
     expect(back.find((l) => l.hreflang === 'en').path).toBe('/')
     expect(back.find((l) => l.current === 'page').hreflang).toBe('pl')
+
+    // A showcase page too: each language at its own address, in its own words.
+    await page.goto(PATH)
+    const here = await links(header(page))
+    expect(here.map((l) => l.path)).toEqual([PATH, TRANSLATED.ru, TRANSLATED.pl])
+    for (const link of here) {
+      expect(link.fallback).toBe(false)
+      await answers(page, link)
+    }
+    await page.goto(TRANSLATED.ru)
+    await expect(page.locator('h1').first()).toHaveText('Одна страница, все языки')
+    expect((await links(header(page))).find((l) => l.hreflang === 'pl').path).toBe(TRANSLATED.pl)
   })
 
-  test('leads to the home page of a language without a translation, and marks it', async ({
-    page,
-  }) => {
-    await page.goto(PATH)
+  // ROUTING §8.7: a page with no translation stays a page — the chosen language's frame around
+  // the default language's text, closed to the index and pointing at the original.
+  test('stays on the same page in a language without a translation', async ({ page }) => {
+    const original = await (await page.request.get(UNTRANSLATED)).text()
+    const h1 = (html) =>
+      html
+        .match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1]
+        .replace(/<[^>]+>/g, '')
+        .trim()
+    expect(h1(original), 'the original has no heading to compare').toMatch(/\S/)
+
+    await page.goto(UNTRANSLATED)
     const all = await links(header(page))
     expect(all.find((l) => l.hreflang === 'en')).toMatchObject({
-      path: PATH,
+      path: UNTRANSLATED,
       current: 'page',
       fallback: false,
     })
     for (const code of ['ru', 'pl']) {
       const link = all.find((l) => l.hreflang === code)
-      expect(link).toMatchObject({ path: `/${code}`, fallback: true, current: null })
-      expect(link.title, `the fallback to ${code} says nothing`).toMatch(/\S/)
+      expect(link).toMatchObject({
+        path: `/${code}${UNTRANSLATED}`,
+        fallback: false,
+        current: null,
+        title: null,
+      })
       await answers(page, link)
+
+      const html = await (await page.request.get(link.path)).text()
+      expect(h1(html), `${link.path} is not the original's text`).toBe(h1(original))
+      expect(html).toContain('<meta name="robots" content="noindex, follow">')
+      expect(
+        new URL(html.match(/<link rel="canonical" href="([^"]+)">/)?.[1] ?? 'http://x/none')
+          .pathname,
+        `${link.path} does not point at the original`,
+      ).toBe(UNTRANSLATED)
+      // The head names no alternates; the switcher's own links carry hreflang, and are meant to.
+      expect(html, `${link.path} names alternates`).not.toMatch(/<link[^>]+hreflang=/)
+    }
+
+    // On the untranslated page the switcher marks its own language and leads back.
+    await page.goto(`/pl${UNTRANSLATED}`)
+    const back = await links(header(page))
+    expect(back.find((l) => l.current === 'page').hreflang).toBe('pl')
+    expect(back.find((l) => l.hreflang === 'en')).toMatchObject({
+      path: UNTRANSLATED,
+      fallback: false,
+    })
+    expect(back.find((l) => l.hreflang === 'ru')).toMatchObject({
+      path: `/ru${UNTRANSLATED}`,
+      fallback: false,
+    })
+  })
+
+  // THEMES §4: a missing address is answered in the site's frame — theme-default's errors/404 —
+  // so the switcher is there, and leads to each language's home page, saying so.
+  test('leads to the home page of each language from a page that does not exist, and marks it', async ({
+    page,
+  }) => {
+    for (const [path, lang, home] of [
+      ['/no-such-page', 'en', '/'],
+      ['/ru/no-such-page', 'ru', '/ru'],
+    ]) {
+      const response = await page.goto(path)
+      expect(response.status(), path).toBe(404)
+      expect(await page.locator('html').getAttribute('lang'), path).toBe(lang)
+      await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
+      await expect(page.locator('.site-footer')).toHaveCount(1)
+      expect(new URL(await page.locator('.site-error__home').getAttribute('href')).pathname).toBe(
+        home,
+      )
+
+      const all = await links(header(page))
+      expect(all.map((l) => l.hreflang)).toEqual(['en', 'ru', 'pl'])
+      expect(all.find((l) => l.current === 'page')).toMatchObject({ hreflang: lang, path })
+      for (const link of all.filter((l) => l.hreflang !== lang)) {
+        expect(link).toMatchObject({
+          path: link.hreflang === 'en' ? '/' : `/${link.hreflang}`,
+          fallback: true,
+          current: null,
+        })
+        expect(link.title, `the fallback to ${link.hreflang} says nothing`).toMatch(/\S/)
+        await answers(page, link)
+      }
     }
   })
 
@@ -4054,7 +4142,7 @@ test.describe('zoom', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     const root = page.locator('[data-wx-block="showcase-zoom"] [data-webx-zoom]').first()
     expect(await root.getAttribute('aria-label')).toBe(
-      'Zoom: A watch on a grid, a label of small print and a ruler',
+      'Zoom: A watch on a grid, a card of fine lines and a ruler',
     )
     await root.focus()
     await page.keyboard.press('Enter')
@@ -4093,6 +4181,3130 @@ test.describe('zoom', () => {
       expect(response.headers()['content-type']).toMatch(/^image\//)
       expect(await sideways(page)).toBe(0)
       await context.close()
+    }
+  })
+})
+
+test.describe('blocks of the theme', () => {
+  const BASE = '/kitchen-sink/blocks'
+  const PAGES = ['hero', 'text', 'media-text', 'cards', 'cta', 'contact']
+  const SIX = PAGES.map((slug) => `[data-wx-block="${slug}"]`).join(', ')
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-11', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  async function open(browser, width, path) {
+    const context = await browser.newContext({
+      viewport: { width, height: width === 375 ? 812 : 900 },
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(path)
+    await still(page)
+    return { context, page }
+  }
+
+  // Where each block of a kind stands on the page, and its parts, as the screen has them — the
+  // one in the narrow column of the showcase marked `narrow`.
+  const layout = (page, slug, parts) =>
+    page.locator(`[data-wx-block="${slug}"]`).evaluateAll(
+      (all, parts) =>
+        all.map((el) => {
+          const rect = (node) => {
+            if (!node) return null
+            const r = node.getBoundingClientRect()
+            return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width }
+          }
+          const found = Object.fromEntries(parts.map((p) => [p, rect(el.querySelector(p))]))
+          const grid = el.querySelector('.b-cards__grid')
+          const title = el.querySelector('.b-hero__title')
+          return {
+            narrow: !!el.closest('.b-showcase-column__frame'),
+            classes: el.className,
+            width: el.getBoundingClientRect().width,
+            columns: grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').length : null,
+            title: title ? parseFloat(getComputedStyle(title).fontSize) : null,
+            ...found,
+          }
+        }),
+      parts,
+    )
+
+  // Side by side: the second starts where the first ends, on the same rows.
+  const beside = (a, b) => b.left >= a.right - 1 && b.top < a.bottom
+  const under = (a, b) => b.top >= a.bottom - 1
+
+  test('every page of a block opens and nothing on it scrolls sideways at 360, 375 and 1280', async ({
+    browser,
+  }) => {
+    for (const width of [360, 375, 1280]) {
+      for (const path of [BASE, ...PAGES.map((p) => `${BASE}/${p}`)]) {
+        const { context, page } = await open(browser, width, path)
+        const { scroll, client, blocks } = await page.evaluate(
+          (six) => ({
+            scroll: document.documentElement.scrollWidth,
+            client: document.documentElement.clientWidth,
+            blocks: document.querySelectorAll(six).length,
+          }),
+          SIX,
+        )
+        expect(blocks, `${path}: the blocks of the theme are on it`).toBeGreaterThan(0)
+        expect(scroll, `${path} at ${width}`).toBeLessThanOrEqual(client)
+        await context.close()
+      }
+    }
+  })
+
+  test('the cards take as many columns as their column has room for', async ({ browser }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/cards`)
+      const grids = await layout(page, 'cards', [])
+      expect(grids.length).toBe(4)
+      for (const grid of grids) {
+        const across = Number(/b-cards--(\d)/.exec(grid.classes)[1])
+        // 1280: the column of the page has room for each block's own most; 375 and the narrow
+        // column of the showcase: one card a row, whatever the block asks for.
+        const expected = width === 1280 && !grid.narrow ? across : 1
+        const label = `${width} ${grid.classes}${grid.narrow ? ' narrow' : ''}`
+        expect(grid.columns, label).toBe(expected)
+      }
+      await context.close()
+    }
+  })
+
+  test('picture and text stand side by side in a wide column, one under the other in a narrow one', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/media-text`)
+      const blocks = await layout(page, 'media-text', [
+        '.b-media-text__figure',
+        '.b-media-text__words',
+      ])
+      expect(blocks.length).toBe(4)
+      for (const b of blocks) {
+        const figure = b['.b-media-text__figure']
+        const words = b['.b-media-text__words']
+        if (!figure) continue
+        const end = b.classes.includes('b-media-text--end')
+        const label = `${width} ${b.classes}${b.narrow ? ' narrow' : ''}`
+        if (width === 1280 && !b.narrow)
+          expect(end ? beside(words, figure) : beside(figure, words), label).toBe(true)
+        else expect(under(figure, words), label).toBe(true)
+      }
+      await context.close()
+    }
+  })
+
+  test('the call to action puts its buttons beside the words only where there is room', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/cta`)
+      const bands = await layout(page, 'cta', ['.b-cta__words', '.b-cta__actions'])
+      expect(bands.length).toBe(4)
+      for (const b of bands) {
+        const label = `${width} ${b.classes}${b.narrow ? ' narrow' : ''}`
+        if (width === 1280 && !b.narrow)
+          expect(beside(b['.b-cta__words'], b['.b-cta__actions']), label).toBe(true)
+        else expect(under(b['.b-cta__words'], b['.b-cta__actions']), label).toBe(true)
+      }
+      await context.close()
+    }
+  })
+
+  test('the contacts and the form stand side by side in a wide column, the form under them in a narrow one', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/contact`)
+      const blocks = await layout(page, 'contact', ['.b-contact__details', '.b-contact__form'])
+      const both = blocks.filter((b) => b['.b-contact__details'] && b['.b-contact__form'])
+      expect(both.length, 'the starter has contacts and the form named contact').toBe(2)
+      for (const b of both) {
+        const label = `${width}${b.narrow ? ' narrow' : ''}`
+        if (width === 1280 && !b.narrow)
+          expect(beside(b['.b-contact__details'], b['.b-contact__form']), label).toBe(true)
+        else expect(under(b['.b-contact__details'], b['.b-contact__form']), label).toBe(true)
+      }
+      await expect(page.locator('[data-wx-block="contact"] form').first()).toBeVisible()
+      await context.close()
+    }
+  })
+
+  test('the hero sets a smaller headline in a narrow column, and edge to edge is the window', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280, `${BASE}/hero`)
+    const heroes = await layout(page, 'hero', [])
+    const wide = heroes.find((h) => !h.narrow && h.classes.includes('b-hero--accent'))
+    const narrow = heroes.find((h) => h.narrow)
+    expect(narrow.title).toBeLessThan(wide.title)
+    const bleed = heroes.find((h) => h.classes.includes('site-bleed'))
+    expect(bleed.width).toBe(await page.evaluate(() => document.documentElement.clientWidth))
+    expect(heroes.find((h) => h.classes.includes('b-hero--plain')).width).toBeLessThan(bleed.width)
+    await context.close()
+  })
+
+  test('every word of every block reads in every preset, the night one included', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280, BASE)
+    for (const path of PAGES.map((p) => `${BASE}/${p}`)) {
+      await page.goto(path)
+      // A new page has lost the style that stops transitions: a colour would be measured half way.
+      await still(page)
+      for (const preset of Object.keys(presets)) {
+        await paint(page, preset)
+        const low = await page.evaluate((six) => {
+          const canvas = document
+            .createElement('canvas')
+            .getContext('2d', { willReadFrequently: true })
+          // Whatever form the computed colour takes (rgb, oklch, color-mix), as sRGB bytes.
+          const rgba = (color) => {
+            canvas.clearRect(0, 0, 1, 1)
+            canvas.fillStyle = color
+            canvas.fillRect(0, 0, 1, 1)
+            return Array.from(canvas.getImageData(0, 0, 1, 1).data)
+          }
+          const luminance = (color) => {
+            const [r, g, b] = rgba(color)
+              .slice(0, 3)
+              .map((v) => {
+                v /= 255
+                return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+              })
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+          }
+          const ratio = (a, b) => {
+            const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+            return (x + 0.05) / (y + 0.05)
+          }
+          // The first painted background up the tree is what the words stand on.
+          const behind = (el) => {
+            for (let node = el; node; node = node.parentElement) {
+              const bg = getComputedStyle(node).backgroundColor
+              if (rgba(bg)[3] > 0) return bg
+            }
+            return 'white'
+          }
+          // The form and the widgets inside the contacts are the inbox's and the widgets' own,
+          // checked where they live.
+          return [
+            ...document.querySelectorAll(`:is(${six}) :is(h1, h2, h3, p, li, a, address, span)`),
+          ]
+            .filter((el) => {
+              if (el.closest('form, .webx-hours, .webx-phones, .webx-socials')) return false
+              if (el.querySelector('h1, h2, h3, p, li, a, address, span')) return false
+              const r = el.getBoundingClientRect()
+              return r.width > 0 && r.height > 0 && el.textContent.trim() !== ''
+            })
+            .map((el) => ({
+              what: `${el.className || el.tagName} "${el.textContent.trim().slice(0, 30)}"`,
+              ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
+            }))
+            .filter((w) => w.ratio < 4.5)
+        }, SIX)
+        expect(low, `${path} ${preset}`).toEqual([])
+      }
+    }
+    await context.close()
+  })
+})
+
+test.describe('modules in the theme', () => {
+  // THEMES §10.2, TH3.1: what the modules print, in their own base look under theme-default.
+  const BASE = '/kitchen-sink/modules'
+  const PAGES = [BASE, `${BASE}/form`, `${BASE}/faq-and-links`, `${BASE}/long-trail`]
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-11', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  async function open(browser, width, path) {
+    const context = await browser.newContext({
+      viewport: { width, height: width === 1280 ? 900 : 812 },
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    await page.goto(path)
+    await still(page)
+    return { context, page }
+  }
+
+  // The error of a field is on the page before anything is wrong, hidden: shown to be measured.
+  const showErrors = (page) =>
+    page.evaluate(() => {
+      for (const error of document.querySelectorAll('.webx-inbox-form .webx-field__error')) {
+        error.hidden = false
+        error.textContent = 'Fill this in.'
+      }
+    })
+
+  // Each form of the showcase: the boxes of its name and e-mail fields (both half width), the
+  // smallest height of a control and of a choice, and whether it stands in the narrow column.
+  const forms = (page) =>
+    page.locator('form.webx-inbox-form[data-webx-form="showcase"]').evaluateAll((all) =>
+      all.map((form) => {
+        const box = (node) => {
+          const r = node.getBoundingClientRect()
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }
+        }
+        const field = (key) => box(form.querySelector(`[data-webx-field="fields.${key}"]`))
+        const lowest = (selector) =>
+          Math.min(
+            ...[...form.querySelectorAll(selector)].map((n) => n.getBoundingClientRect().height),
+          )
+        return {
+          narrow: !!form.closest('.b-showcase-column__frame'),
+          name: field('name'),
+          email: field('email'),
+          message: field('message'),
+          control: lowest('.webx-field__control:not([type="file"])'),
+          choice: lowest('.webx-field__choice'),
+          submit: form.querySelector('.webx-form__submit').getBoundingClientRect().height,
+        }
+      }),
+    )
+
+  test('the modules stylesheet is linked under the theme, and nothing scrolls sideways at 360, 375 and 1280', async ({
+    browser,
+  }) => {
+    for (const width of [360, 375, 1280]) {
+      for (const path of PAGES) {
+        const { context, page } = await open(browser, width, path)
+        const { scroll, client, links } = await page.evaluate(() => ({
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+          links: [...document.querySelectorAll('link[rel="stylesheet"]')].map((l) => l.href),
+        }))
+        expect(scroll, `${path} at ${width}`).toBeLessThanOrEqual(client)
+        const modules = links.findIndex((href) =>
+          /\/themes\/modules\/[0-9a-f]{12}\/modules\.css$/.test(href),
+        )
+        const theme = links.findIndex((href) => href.includes('/themes/webx-ui/theme-default/'))
+        expect(modules, `${path}: the modules' base look is linked`).toBeGreaterThan(-1)
+        expect(modules, 'and before the theme, which restyles it by coming later').toBeLessThan(
+          theme,
+        )
+        await context.close()
+      }
+    }
+  })
+
+  test('the form puts half-width fields side by side only where it has room, every target 44px tall', async ({
+    browser,
+  }) => {
+    for (const width of [375, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/form`)
+      const all = await forms(page)
+      expect(all.length, 'the form in the column of the page and in the narrow one').toBe(2)
+      for (const f of all) {
+        const label = `${width}${f.narrow ? ' narrow' : ''}`
+        if (width === 1280 && !f.narrow) {
+          expect(f.email.left, `${label}: e-mail beside the name`).toBeGreaterThanOrEqual(
+            f.name.right - 1,
+          )
+          expect(f.email.top, label).toBe(f.name.top)
+        } else {
+          expect(f.email.top, `${label}: e-mail under the name`).toBeGreaterThanOrEqual(
+            f.name.bottom - 1,
+          )
+        }
+        expect(f.control, `${label}: controls`).toBeGreaterThanOrEqual(44)
+        expect(f.choice, `${label}: choices`).toBeGreaterThanOrEqual(44)
+        expect(f.submit, `${label}: the button`).toBeGreaterThanOrEqual(44)
+      }
+      await context.close()
+    }
+  })
+
+  test('a preset repaints the form: its controls, its button and its error', async ({
+    browser,
+  }) => {
+    const { context, page } = await open(browser, 1280, `${BASE}/form`)
+    await showErrors(page)
+    const read = () =>
+      page.evaluate(() => {
+        const style = (selector) => getComputedStyle(document.querySelector(selector))
+        // A token as the browser resolves a colour, so the two compare as the same string.
+        const token = (name) => {
+          const probe = document.createElement('i')
+          probe.style.color = `var(--site-${name})`
+          document.body.append(probe)
+          const value = getComputedStyle(probe).color
+          probe.remove()
+          return value
+        }
+        return {
+          control: style('.webx-inbox-form .webx-field__control').backgroundColor,
+          border: style('.webx-inbox-form .webx-field__control').borderTopColor,
+          submit: style('.webx-inbox-form .webx-form__submit').backgroundColor,
+          error: style('.webx-inbox-form .webx-field__error').color,
+          bg: token('color-bg'),
+          line: token('color-border'),
+          accent: token('color-accent'),
+          danger: token('color-danger'),
+        }
+      })
+    const before = await read()
+    expect(before.control).toBe(before.bg)
+    expect(before.border).toBe(before.line)
+    expect(before.submit).toBe(before.accent)
+    expect(before.error).toBe(before.danger)
+    await paint(page, 'night')
+    const after = await read()
+    expect(after.control).toBe(after.bg)
+    expect(after.submit).toBe(after.accent)
+    expect(after.control).not.toBe(before.control)
+    expect(after.submit).not.toBe(before.submit)
+    await context.close()
+  })
+
+  test('the trail is one line of links without markers, and wraps on a phone without going sideways', async ({
+    browser,
+  }) => {
+    for (const [width, path] of [
+      [1280, `${BASE}/form`],
+      [360, `${BASE}/long-trail`],
+    ]) {
+      const { context, page } = await open(browser, width, path)
+      const trail = await page.locator('.webx-breadcrumbs').evaluate((nav) => {
+        const list = nav.querySelector('.webx-breadcrumbs__list')
+        const items = [...list.querySelectorAll('.webx-breadcrumbs__item')]
+        const links = [...list.querySelectorAll('.webx-breadcrumbs__link')]
+        return {
+          marker: getComputedStyle(items[0]).listStyleType,
+          display: getComputedStyle(list).display,
+          // By the middle: a link is as tall as a finger, the current page's name only as its words.
+          rows: items.map((item) => {
+            const r = item.getBoundingClientRect()
+            return Math.round((r.top + r.bottom) / 2)
+          }),
+          right: Math.max(...items.map((item) => item.getBoundingClientRect().right)),
+          link: Math.min(...links.map((a) => a.getBoundingClientRect().height)),
+          client: document.documentElement.clientWidth,
+          current: list
+            .querySelector('[aria-current="page"]')
+            .classList.contains('webx-breadcrumbs__item--current'),
+        }
+      })
+      expect(trail.marker, path).toBe('none')
+      expect(trail.display, path).toBe('flex')
+      expect(trail.current, path).toBe(true)
+      expect(trail.link, `${path}: a link a finger can hit`).toBeGreaterThanOrEqual(44)
+      expect(trail.right, path).toBeLessThanOrEqual(trail.client)
+      if (width === 1280) expect(new Set(trail.rows).size, `${path}: one line`).toBe(1)
+      else expect(new Set(trail.rows).size, `${path}: the long one wraps`).toBeGreaterThan(1)
+      await context.close()
+    }
+  })
+
+  test('the FAQ and then the links close the page, in its column, every target 44px tall', async ({
+    browser,
+  }) => {
+    for (const width of [360, 1280]) {
+      const { context, page } = await open(browser, width, `${BASE}/faq-and-links`)
+      const m = await page.evaluate(() => {
+        const main = document.querySelector('.site-main')
+        const children = [...main.children].filter((el) => el.getBoundingClientRect().height > 0)
+        const faq = main.querySelector(':scope > .webx-faq')
+        const links = main.querySelector(':scope > .webx-links')
+        const height = (selector) =>
+          Math.min(
+            ...[...main.querySelectorAll(selector)].map((n) => n.getBoundingClientRect().height),
+          )
+        return {
+          order: children.slice(-2).map((el) => el.className),
+          // The trail, the FAQ and the links: the column's edge (the narrow text block is inset by design).
+          lefts: [main.querySelector('.webx-breadcrumbs'), faq, links]
+            .filter(Boolean)
+            .map((el) => Math.round(el.getBoundingClientRect().left)),
+          questions: main.querySelectorAll('.webx-faq__question').length,
+          question: height('.webx-faq__question'),
+          link: height('.webx-links__link'),
+          list: getComputedStyle(main.querySelector('.webx-links__list')).display,
+          marker: getComputedStyle(main.querySelector('.webx-links__item')).listStyleType,
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+          both: !!faq && !!links,
+        }
+      })
+      const label = `at ${width}`
+      expect(m.both, `${label}: both under the page`).toBe(true)
+      expect(m.order, `${label}: the FAQ, then the links, last in the column`).toEqual([
+        'webx-faq',
+        'webx-links',
+      ])
+      expect(m.lefts.length, label).toBe(3)
+      for (const left of m.lefts) expect(left, `${label}: in the column`).toBe(m.lefts[0])
+      expect(m.questions, label).toBe(3)
+      expect(m.question, `${label}: a question a finger can open`).toBeGreaterThanOrEqual(44)
+      expect(m.link, `${label}: links a finger can hit`).toBeGreaterThanOrEqual(44)
+      expect(m.list).toBe('flex')
+      expect(m.marker).toBe('none')
+      expect(m.scroll, label).toBeLessThanOrEqual(m.client)
+      await context.close()
+    }
+  })
+
+  test('a question opens without a script, and night repaints the links', async ({ browser }) => {
+    const { context, page } = await open(browser, 1280, `${BASE}/faq-and-links`)
+    const answer = page.locator('.webx-faq__answer').first()
+    await expect(answer).toBeHidden()
+    await page.locator('.webx-faq__question').first().click()
+    await expect(answer).toBeVisible()
+    const read = () =>
+      page.evaluate(() => {
+        const token = (name) => {
+          const probe = document.createElement('i')
+          probe.style.color = `var(--site-${name})`
+          document.body.append(probe)
+          const value = getComputedStyle(probe).color
+          probe.remove()
+          return value
+        }
+        return {
+          link: getComputedStyle(document.querySelector('.webx-links__link')).backgroundColor,
+          line: getComputedStyle(document.querySelector('.webx-faq__item')).borderBottomColor,
+          surface: token('color-surface'),
+          border: token('color-border'),
+        }
+      })
+    const before = await read()
+    expect(before.link).toBe(before.surface)
+    expect(before.line).toBe(before.border)
+    await paint(page, 'night')
+    const after = await read()
+    expect(after.link).toBe(after.surface)
+    expect(after.line).toBe(after.border)
+    expect(after.link).not.toBe(before.link)
+    await context.close()
+  })
+
+  test('every word of the form and the trail reads in every preset, the night one included', async ({
+    browser,
+  }) => {
+    for (const path of [`${BASE}/form`, `${BASE}/faq-and-links`]) {
+      const { context, page } = await open(browser, 1280, path)
+      await showErrors(page)
+      // Every answer open, so its words are measured too.
+      await page.evaluate(() =>
+        document.querySelectorAll('.webx-faq__item').forEach((d) => (d.open = true)),
+      )
+      for (const preset of Object.keys(presets)) {
+        await paint(page, preset)
+        const low = await page.evaluate(() => {
+          const canvas = document
+            .createElement('canvas')
+            .getContext('2d', { willReadFrequently: true })
+          const rgba = (color) => {
+            canvas.clearRect(0, 0, 1, 1)
+            canvas.fillStyle = color
+            canvas.fillRect(0, 0, 1, 1)
+            return Array.from(canvas.getImageData(0, 0, 1, 1).data)
+          }
+          const luminance = (color) => {
+            const [r, g, b] = rgba(color)
+              .slice(0, 3)
+              .map((v) => {
+                v /= 255
+                return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+              })
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+          }
+          const ratio = (a, b) => {
+            const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+            return (x + 0.05) / (y + 0.05)
+          }
+          const behind = (el) => {
+            for (let node = el; node; node = node.parentElement) {
+              const bg = getComputedStyle(node).backgroundColor
+              if (rgba(bg)[3] > 0) return bg
+            }
+            return 'white'
+          }
+          const words = [
+            '.webx-inbox-form .webx-field__label',
+            '.webx-inbox-form .webx-field__hint',
+            '.webx-inbox-form .webx-field__error',
+            '.webx-inbox-form .webx-field__choice-label',
+            '.webx-inbox-form .webx-form__submit',
+            '.webx-inbox-form .webx-field__control',
+            '.webx-breadcrumbs__link',
+            '.webx-breadcrumbs__item--current',
+            '.webx-faq__heading',
+            '.webx-faq__question',
+            '.webx-faq__answer',
+            '.webx-links__heading',
+            '.webx-links__link',
+          ]
+          return [...document.querySelectorAll(words.join(', '))]
+            .filter((el) => {
+              const r = el.getBoundingClientRect()
+              return r.width > 0 && r.height > 0
+            })
+            .map((el) => ({
+              what: `${el.className} "${(el.textContent || el.value || '').trim().slice(0, 30)}"`,
+              ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
+            }))
+            .filter((w) => w.ratio < 4.5)
+        })
+        expect(low, `${path} in ${preset}`).toEqual([])
+      }
+      await context.close()
+    }
+  })
+})
+
+test.describe('module pages in the theme', () => {
+  // THEMES §10.2, TH3.2–TH3.3: the pages a module prints itself, in its base look under
+  // theme-default — on a starter built with --with=blog,services,events,vacancies,press,recipes
+  // (recipes since TH3.4). A module
+  // the starter was built without is skipped, not failed.
+  const site = new URL(process.env.STARTER_URL ?? 'http://webx-starter.local').origin
+
+  const answered = {
+    name: 'webx_consent',
+    value: encodeURIComponent(JSON.stringify({ v: 1, d: '2026-10-11', c: ['necessary'] })),
+    domain: new URL(site).hostname,
+    path: '/',
+  }
+
+  // `list` — the list of cards on the index; `grid` — whether it puts several to a row;
+  // `detail` — the link from the index to the first page of one record; `words` — what has to
+  // read in every preset; `targets` — what a finger has to hit.
+  const MODULES = [
+    {
+      name: 'blog',
+      index: '/blog',
+      list: '.webx-blog-cards',
+      card: '.webx-blog-card',
+      grid: true,
+      detail: '.webx-blog-card__link',
+      words: [
+        '.webx-blog-card__title',
+        '.webx-blog-card__date',
+        '.webx-blog-card__lead',
+        '.webx-blog-rubrics__link',
+        '.webx-blog-article__meta',
+        '.webx-blog-tags__link',
+      ],
+      targets: ['.webx-blog-rubrics__link', '.webx-blog-tags__link', '.webx-blog-pager__link'],
+    },
+    {
+      name: 'services',
+      index: '/services',
+      list: '.webx-services-cards',
+      card: '.webx-services-card',
+      grid: true,
+      detail: '.webx-services-card__link',
+      words: [
+        '.webx-services-card__title',
+        '.webx-services-card__lead',
+        '.webx-services-group__link',
+        '.webx-services-header__lead',
+      ],
+      targets: [],
+    },
+    {
+      name: 'events',
+      index: '/events',
+      list: '.wx-events__grid',
+      card: '.wx-events__card',
+      grid: true,
+      detail: '.wx-events__link',
+      words: [
+        '.wx-events__name',
+        '.wx-events__meta',
+        '.wx-events__nav-link',
+        '.wx-event__lead',
+        '.wx-event__term',
+        '.wx-event__value',
+        '.wx-event__book',
+        '.wx-event__calendar',
+        '.wx-event__highlight-title',
+        '.wx-event__highlight-text',
+        '.wx-event__service-link',
+      ],
+      targets: [
+        '.wx-events__nav-link',
+        '.wx-events__category',
+        '.wx-events__page-link',
+        '.wx-event__book',
+        '.wx-event__calendar',
+        '.wx-event__map',
+        '.wx-event__service-link',
+      ],
+    },
+    {
+      name: 'vacancies',
+      index: '/careers',
+      list: '.wx-vacancies__list',
+      card: '.wx-vacancies__card',
+      grid: false,
+      detail: '.wx-vacancies__link',
+      words: [
+        '.wx-vacancies__link',
+        '.wx-vacancies__meta',
+        '.wx-vacancies__lead',
+        '.wx-vacancies__filter-link',
+        '.wx-vacancy__closed',
+        '.wx-vacancy__lead',
+        '.wx-vacancy__term',
+        '.wx-vacancy__value',
+      ],
+      targets: ['.wx-vacancies__filter-link'],
+    },
+    {
+      name: 'press',
+      // The index is a page of blocks; the module's own page is an outlet's.
+      index: '/press',
+      list: null,
+      card: null,
+      grid: false,
+      detail: '.site-main a[href*="/press/"]',
+      words: [
+        '.wx-press-outlet__summary',
+        '.wx-press-outlet__facts',
+        '.wx-press-article__link',
+        '.wx-press-article__pdf',
+        '.wx-press-article__meta',
+        '.wx-press-article__excerpt',
+        '.wx-press-article__links',
+      ],
+      targets: ['.wx-press-outlet__website', '.wx-press-article__read', '.wx-press-article__file'],
+    },
+    {
+      name: 'recipes',
+      index: '/recipes',
+      list: '.wx-recipes__grid',
+      card: '.wx-recipes__card',
+      grid: true,
+      detail: '.wx-recipes__link',
+      words: [
+        '.wx-recipes__name',
+        '.wx-recipes__meta',
+        '.wx-recipes__nav-link',
+        '.wx-recipes__chip',
+        '.wx-recipe__lead',
+        '.wx-recipe__fact',
+        '.wx-recipe__chip',
+        '.wx-recipe__nutrient',
+        '.wx-recipe__amount',
+        '.wx-recipe__service-link',
+      ],
+      targets: [
+        '.wx-recipes__nav-link',
+        '.wx-recipes__chip',
+        '.wx-recipes__category',
+        '.wx-recipes__service',
+        '.wx-recipes__page-link',
+        '.wx-recipe__category',
+        '.wx-recipe__service-link',
+      ],
+    },
+  ]
+
+  async function open(browser, width, path) {
+    const context = await browser.newContext({
+      viewport: { width, height: width === 1280 ? 900 : 812 },
+    })
+    await context.addCookies([answered])
+    const page = await context.newPage()
+    const response = await page.goto(path)
+    await still(page)
+    return { context, page, status: response?.status() ?? 0 }
+  }
+
+  let found = null
+
+  /** The modules the starter has, each with its index and the address of one of its records. */
+  async function installed(browser) {
+    if (found) return found
+    found = []
+    for (const module of MODULES) {
+      const { context, page, status } = await open(browser, 1280, module.index)
+      if (status === 200) {
+        const href = await page
+          .locator(module.detail)
+          .first()
+          .getAttribute('href')
+          .catch(() => null)
+        const detail = href ? new URL(href, site).pathname : null
+        found.push({ ...module, pages: detail ? [module.index, detail] : [module.index] })
+      }
+      await context.close()
+    }
+    return found
+  }
+
+  test('every page of a module keeps to the main column, prints no style inline and scrolls nothing sideways', async ({
+    browser,
+  }) => {
+    const modules = await installed(browser)
+    test.skip(modules.length === 0, 'the starter was built without --with')
+    for (const width of [360, 375, 1280]) {
+      for (const module of modules) {
+        for (const path of module.pages) {
+          const { context, page } = await open(browser, width, path)
+          const m = await page.evaluate(() => {
+            const main = document.querySelector('.site-main')
+            // A child of the column centred by margin-inline: auto; one with `margin: 0` of a
+            // module's class stands at the left edge of the page instead.
+            const lefts = [...main.children]
+              .filter((el) => !el.classList.contains('site-bleed'))
+              .filter((el) => el.getBoundingClientRect().height > 0)
+              .map((el) => ({
+                what: el.className || el.tagName,
+                left: Math.round(el.getBoundingClientRect().left),
+              }))
+            return {
+              scroll: document.documentElement.scrollWidth,
+              client: document.documentElement.clientWidth,
+              lefts,
+              inline: [...document.querySelectorAll('style')]
+                .map((style) => style.textContent)
+                .filter((css) =>
+                  /\.wx-(events|event|vacancies|vacancy|press|recipes|recipe)[-_]/.test(css),
+                ),
+            }
+          })
+          const label = `${path} at ${width}`
+          expect(m.scroll, label).toBeLessThanOrEqual(m.client)
+          expect(m.lefts.length, label).toBeGreaterThan(0)
+          for (const { what, left } of m.lefts) {
+            expect(left, `${label}: ${what} in the column`).toBe(m.lefts[0].left)
+          }
+          expect(m.inline, `${label}: the module's inline look stays off under a theme`).toEqual([])
+          await context.close()
+        }
+      }
+    }
+  })
+
+  test('cards stand several to a row at 1280 and one under another at 375', async ({ browser }) => {
+    const modules = (await installed(browser)).filter((m) => m.list)
+    test.skip(modules.length === 0, 'the starter was built without --with')
+    for (const module of modules) {
+      for (const width of [375, 1280]) {
+        const { context, page } = await open(browser, width, module.index)
+        const rows = await page.evaluate(
+          ({ list, card }) => {
+            const first = document.querySelector(list)
+            const cards = [...first.querySelectorAll(card)].slice(0, 3)
+            const style = getComputedStyle(first)
+            return {
+              marker: cards.length ? getComputedStyle(cards[0]).listStyleType : 'none',
+              padding: style.paddingInlineStart,
+              tops: cards.map((c) => Math.round(c.getBoundingClientRect().top)),
+            }
+          },
+          { list: module.list, card: module.card },
+        )
+        const label = `${module.index} at ${width}`
+        expect(rows.marker, `${label}: no list markers`).toBe('none')
+        expect(rows.padding, label).toBe('0px')
+        if (rows.tops.length < 2) {
+          await context.close()
+          continue
+        }
+        if (width === 1280 && module.grid) {
+          expect(rows.tops[1], `${label}: the second card beside the first`).toBe(rows.tops[0])
+        } else {
+          expect(rows.tops[1], `${label}: the second card under the first`).toBeGreaterThan(
+            rows.tops[0],
+          )
+        }
+        await context.close()
+      }
+    }
+  })
+
+  test('every link a finger reaches on a module page is at least 44px tall', async ({
+    browser,
+  }) => {
+    const modules = (await installed(browser)).filter((m) => m.targets.length)
+    test.skip(modules.length === 0, 'the starter was built without --with')
+    for (const module of modules) {
+      for (const path of module.pages) {
+        const { context, page } = await open(browser, 375, path)
+        const low = await page.evaluate(
+          (selectors) =>
+            [...document.querySelectorAll(selectors.join(', '))]
+              .map((el) => ({
+                what: `${el.className} "${el.textContent.trim().slice(0, 30)}"`,
+                height: el.getBoundingClientRect().height,
+              }))
+              .filter((t) => t.height > 0 && t.height < 44),
+          module.targets,
+        )
+        expect(low, path).toEqual([])
+        await context.close()
+      }
+    }
+  })
+
+  test('a preset repaints an event, a vacancy, an outlet and a recipe: buttons, frames and lines on tokens', async ({
+    browser,
+  }) => {
+    const modules = await installed(browser)
+    const checks = [
+      ['events', '.wx-event__book', 'backgroundColor', 'color-accent'],
+      ['events', '.wx-event__facts', 'backgroundColor', 'color-surface'],
+      ['vacancies', '.wx-vacancies__card', 'backgroundColor', 'color-surface'],
+      ['vacancies', '.wx-vacancy__facts', 'borderTopColor', 'color-border'],
+      ['press', '.wx-press-article', 'borderBottomColor', 'color-border'],
+      ['recipes', '.wx-recipes__chip[aria-current]', 'backgroundColor', 'color-accent'],
+      ['recipes', '.wx-recipe__facts', 'backgroundColor', 'color-surface'],
+      ['recipes', '.wx-recipe__row', 'borderBottomColor', 'color-border'],
+    ]
+    let checked = 0
+    for (const module of modules) {
+      for (const path of module.pages) {
+        const mine = checks.filter(([name]) => name === module.name)
+        if (!mine.length) continue
+        const { context, page } = await open(browser, 1280, path)
+        const read = () =>
+          page.evaluate((mine) => {
+            const token = (name) => {
+              const probe = document.createElement('i')
+              probe.style.color = `var(--site-${name})`
+              document.body.append(probe)
+              const value = getComputedStyle(probe).color
+              probe.remove()
+              return value
+            }
+            return mine
+              .map(([, selector, property, name]) => {
+                const el = document.querySelector(selector)
+                return el && { selector, value: getComputedStyle(el)[property], token: token(name) }
+              })
+              .filter(Boolean)
+          }, mine)
+        const before = await read()
+        await paint(page, 'night')
+        const after = await read()
+        for (const [i, b] of before.entries()) {
+          expect(b.value, `${path} ${b.selector}`).toBe(b.token)
+          expect(after[i].value, `${path} ${b.selector} at night`).toBe(after[i].token)
+          expect(after[i].value, `${path} ${b.selector} changes`).not.toBe(b.value)
+          checked++
+        }
+        await context.close()
+      }
+    }
+    test.skip(checked === 0, 'the starter was built without events, vacancies, press and recipes')
+  })
+
+  test('a recipes block keeps to the columns it asks for, and a phone gets one', async ({
+    browser,
+  }) => {
+    // The demo's page of blocks: a showcase of three (the default) and a catalogue of two
+    // (wx-recipes__grid--2) — as many to a row as asked at 1280 and never more, one at 375.
+    for (const width of [375, 1280]) {
+      const { context, page, status } = await open(browser, width, '/recipes-showcase')
+      test.skip(status !== 200, 'the starter was built without recipes')
+      const grids = await page.evaluate(() =>
+        [...document.querySelectorAll('.wx-recipes__grid')].map((grid) => ({
+          two: grid.classList.contains('wx-recipes__grid--2'),
+          tops: [...grid.children].map((c) => Math.round(c.getBoundingClientRect().top)),
+        })),
+      )
+      expect(grids.length, 'the showcase and the catalogue').toBe(2)
+      expect(grids.filter((grid) => grid.two).length, 'the catalogue asks for two').toBe(1)
+      for (const grid of grids) {
+        const label = `${grid.two ? 'two' : 'three'} at ${width}`
+        const first = grid.tops.filter((top) => top === grid.tops[0]).length
+        if (width === 1280) expect(first, label).toBe(Math.min(grid.two ? 2 : 3, grid.tops.length))
+        else expect(first, label).toBe(1)
+      }
+      await context.close()
+    }
+  })
+
+  test('every word of a module page reads in every preset, the night one included', async ({
+    browser,
+  }) => {
+    const modules = await installed(browser)
+    test.skip(modules.length === 0, 'the starter was built without --with')
+    for (const module of modules) {
+      for (const path of module.pages) {
+        const { context, page } = await open(browser, 1280, path)
+        for (const preset of Object.keys(presets)) {
+          await paint(page, preset)
+          const low = await page.evaluate((selectors) => {
+            const canvas = document
+              .createElement('canvas')
+              .getContext('2d', { willReadFrequently: true })
+            const rgba = (color) => {
+              canvas.clearRect(0, 0, 1, 1)
+              canvas.fillStyle = color
+              canvas.fillRect(0, 0, 1, 1)
+              return Array.from(canvas.getImageData(0, 0, 1, 1).data)
+            }
+            const luminance = (color) => {
+              const [r, g, b] = rgba(color)
+                .slice(0, 3)
+                .map((v) => {
+                  v /= 255
+                  return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+                })
+              return 0.2126 * r + 0.7152 * g + 0.0722 * b
+            }
+            const ratio = (a, b) => {
+              const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+              return (x + 0.05) / (y + 0.05)
+            }
+            const behind = (el) => {
+              for (let node = el; node; node = node.parentElement) {
+                const bg = getComputedStyle(node).backgroundColor
+                if (rgba(bg)[3] > 0) return bg
+              }
+              return 'white'
+            }
+            return [...document.querySelectorAll(selectors.join(', '))]
+              .filter((el) => {
+                const r = el.getBoundingClientRect()
+                return r.width > 0 && r.height > 0 && el.textContent.trim() !== ''
+              })
+              .map((el) => ({
+                what: `${el.className} "${el.textContent.trim().slice(0, 30)}"`,
+                ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
+              }))
+              .filter((w) => w.ratio < 4.5)
+          }, module.words)
+          expect(low, `${path} in ${preset}`).toEqual([])
+        }
+        await context.close()
+      }
+    }
+  })
+
+  test('the menu component keeps every level on the page, links 44px tall, nothing sideways at 360', async ({
+    browser,
+  }) => {
+    for (const width of [360, 1280]) {
+      const { context, page, status } = await open(browser, width, '/kitchen-sink/modules/menu')
+      test.skip(status !== 200, 'the showcase has no menu page')
+      const m = await page.evaluate(() => {
+        const menu = document.querySelector('.wx-menu')
+        if (!menu) return null
+        const links = [...menu.querySelectorAll('.wx-menu__link')].filter(
+          (a) => a.getBoundingClientRect().height > 0,
+        )
+        return {
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+          display: getComputedStyle(menu).display,
+          marker: getComputedStyle(menu.querySelector('.wx-menu__item')).listStyleType,
+          hidden: [...menu.querySelectorAll('.wx-menu__link')].length - links.length,
+          low: links.map((a) => a.getBoundingClientRect().height).filter((h) => h < 44),
+        }
+      })
+      test.skip(m === null, 'the starter has no menus module')
+      expect(m.scroll, `at ${width}`).toBeLessThanOrEqual(m.client)
+      expect(m.display).toBe('flex')
+      expect(m.marker).toBe('none')
+      expect(m.hidden, 'every level on the page').toBe(0)
+      expect(m.low, 'links a finger can hit').toEqual([])
+      await context.close()
+    }
+  })
+})
+
+test.describe('icons', () => {
+  test('every icon of the sprite draws, from one published file', async ({ page }) => {
+    await page.goto('/kitchen-sink/icons')
+    await still(page)
+    const icons = await page.$$eval('.b-showcase-icons__item', (items) =>
+      items.map((item) => {
+        const use = item.querySelector('.theme-icon use')
+        return {
+          name: item.querySelector('.b-showcase-icons__name').textContent.trim(),
+          href: use?.getAttribute('href') ?? null,
+          // A line has no height (minus), so either side will do.
+          drawn: use ? use.getBBox().width + use.getBBox().height > 0 : false,
+        }
+      }),
+    )
+    expect(icons.length, 'the default set').toBeGreaterThanOrEqual(27)
+    const files = new Set(icons.map((icon) => icon.href?.split('#')[0]))
+    expect(files.size, 'one sprite').toBe(1)
+    const [file] = files
+    expect(file).toMatch(/\/themes\/icons\/[0-9a-f]{12}\/icons\.svg$/)
+    for (const icon of icons) {
+      expect(icon.href, icon.name).toBe(`${file}#${icon.name}`)
+      expect(icon.drawn, `${icon.name} draws`).toBe(true)
+    }
+    const sprite = await page.request.get(file)
+    expect(sprite.status()).toBe(200)
+    expect(sprite.headers()['content-type']).toContain('image/svg+xml')
+  })
+
+  test('an icon is a letter wide on the line, in the colour of the text, and decoration unless named', async ({
+    page,
+  }) => {
+    await page.goto('/kitchen-sink/icons')
+    await still(page)
+    const m = await page.evaluate(() => {
+      const box = (el) => el.getBoundingClientRect()
+      const line = document.querySelector('.b-showcase-icons__line')
+      const icon = line.querySelector('.theme-icon')
+      const font = parseFloat(getComputedStyle(line).fontSize)
+      const sizes = [...document.querySelectorAll('.b-showcase-icons__sizes .theme-icon')]
+      return {
+        font,
+        width: box(icon).width,
+        height: box(icon).height,
+        // The icon sits inside the line box of the words around it.
+        inside: box(icon).top >= box(line).top - 1 && box(icon).bottom <= box(line).bottom + 1,
+        colour: getComputedStyle(icon).color === getComputedStyle(line).color,
+        sizes: sizes.map((s) => Math.round((box(s).width / font) * 4) / 4),
+        named: sizes.map((s) => [
+          s.getAttribute('role'),
+          s.getAttribute('aria-label'),
+          s.getAttribute('aria-hidden'),
+        ]),
+      }
+    })
+    expect(Math.abs(m.width - m.font)).toBeLessThanOrEqual(0.5)
+    expect(Math.abs(m.height - m.font)).toBeLessThanOrEqual(0.5)
+    expect(m.inside).toBe(true)
+    expect(m.colour).toBe(true)
+    expect(m.sizes).toEqual([1, 1.5, 2, 3])
+    expect(m.named.slice(0, 3)).toEqual([
+      [null, null, 'true'],
+      [null, null, 'true'],
+      [null, null, 'true'],
+    ])
+    expect(m.named[3][0]).toBe('img')
+    expect(m.named[3][1]).toBeTruthy()
+    expect(m.named[3][2]).toBeNull()
+  })
+
+  test('a preset repaints the icons with the words', async ({ page }) => {
+    await page.goto('/kitchen-sink/blocks/contact')
+    await still(page)
+    const colours = async () =>
+      page.evaluate(() => ({
+        label: getComputedStyle(document.querySelector('.b-contact__label .theme-icon')).color,
+        accent: (() => {
+          const probe = document.createElement('span')
+          probe.style.color = 'var(--site-color-accent)'
+          document.body.append(probe)
+          const colour = getComputedStyle(probe).color
+          probe.remove()
+          return colour
+        })(),
+      }))
+    const before = await colours()
+    expect(before.label, 'the contacts block draws its labels in the accent').toBe(before.accent)
+    await paint(page, 'night')
+    const after = await colours()
+    expect(after.label).toBe(after.accent)
+    expect(after.label).not.toBe(before.label)
+  })
+
+  test('the labels of the contacts block carry their icon on the middle of the line', async ({
+    page,
+  }) => {
+    await page.goto('/kitchen-sink/blocks/contact')
+    await still(page)
+    const labels = await page.$$eval('.b-contact__label', (all) =>
+      all.map((label) => {
+        const icon = label.querySelector('.theme-icon')
+        const a = icon?.getBoundingClientRect()
+        const b = label.getBoundingClientRect()
+        return icon ? Math.abs(a.top + a.height / 2 - (b.top + b.height / 2)) : null
+      }),
+    )
+    expect(labels.length).toBeGreaterThan(0)
+    for (const offset of labels) {
+      expect(offset, 'an icon in every label').not.toBeNull()
+      expect(offset).toBeLessThanOrEqual(2)
+    }
+  })
+})
+
+test.describe('assets', () => {
+  test('a picture of the theme answers 200 from a hashed path, cached forever', async ({
+    page,
+  }) => {
+    await page.goto('/kitchen-sink/assets')
+    await still(page)
+    const m = await page.evaluate(() => {
+      const picture = document.querySelector('.b-showcase-assets__picture')
+      return {
+        src: picture.src,
+        loaded: picture.complete && picture.naturalWidth > 0,
+        address: document.querySelector('.b-showcase-assets__address').textContent.trim(),
+      }
+    })
+    expect(m.src).toMatch(/\/themes\/webx-ui\/theme-default\/[0-9a-f]{12}\/assets\/img\/wave\.svg$/)
+    expect(m.loaded, 'the browser drew it').toBe(true)
+    expect(m.address).toBe(m.src)
+    const response = await page.request.get(m.src)
+    expect(response.status()).toBe(200)
+    expect(response.headers()['content-type']).toContain('image/svg+xml')
+    const cache = response.headers()['cache-control'] ?? ''
+    expect(cache, 'cached forever').toContain('immutable')
+    expect(Number(/max-age=(\d+)/.exec(cache)?.[1] ?? 0)).toBeGreaterThanOrEqual(31_536_000)
+  })
+
+  test('the same file as a mask takes the accent, and night repaints it', async ({ page }) => {
+    await page.goto('/kitchen-sink/assets')
+    await still(page)
+    const colours = async () =>
+      page.evaluate(() => {
+        const mask = document.querySelector('.b-showcase-assets__mask')
+        const probe = document.createElement('span')
+        probe.style.color = 'var(--site-color-accent)'
+        document.body.append(probe)
+        const accent = getComputedStyle(probe).color
+        probe.remove()
+        const style = getComputedStyle(mask)
+        return {
+          paint: style.backgroundColor,
+          accent,
+          image: style.maskImage || style.webkitMaskImage,
+          height: mask.getBoundingClientRect().height,
+        }
+      })
+    const before = await colours()
+    expect(before.image).toMatch(/assets\/img\/wave\.svg/)
+    expect(before.height).toBeGreaterThan(0)
+    expect(before.paint).toBe(before.accent)
+    await paint(page, 'night')
+    const after = await colours()
+    expect(after.paint).toBe(after.accent)
+    expect(after.paint).not.toBe(before.paint)
+  })
+})
+
+test.describe('fonts', () => {
+  // The font files the document downloaded, once the browser has settled which faces it needs.
+  async function fontFiles(page) {
+    await page.evaluate(() => document.fonts.ready)
+    return page.evaluate(() =>
+      performance
+        .getEntriesByType('resource')
+        .map((entry) => new URL(entry.name).pathname)
+        .filter((path) => /\/assets\/fonts\/[^/]+\.woff2$/.test(path))
+        .map((path) => path.split('/').pop()),
+    )
+  }
+
+  // What actually draws the text of an element: the fonts Chromium picked for its glyphs.
+  async function drawnWith(page, selector) {
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('DOM.enable')
+    await cdp.send('CSS.enable')
+    const { root } = await cdp.send('DOM.getDocument', { depth: -1 })
+    const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector })
+    const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
+    await cdp.detach()
+    return fonts
+  }
+
+  test('an English page downloads no Cyrillic and no Latin Extended; Russian and Polish add theirs', async ({
+    browser,
+  }) => {
+    for (const [path, wanted, unwanted] of [
+      ['/', ['inter-latin.woff2'], ['inter-cyrillic.woff2', 'inter-latin-ext.woff2']],
+      ['/ru', ['inter-latin.woff2', 'inter-cyrillic.woff2'], ['inter-latin-ext.woff2']],
+      ['/pl', ['inter-latin.woff2', 'inter-latin-ext.woff2'], ['inter-cyrillic.woff2']],
+    ]) {
+      // A context of its own each: nothing in the memory cache from the page before.
+      const context = await browser.newContext()
+      const page = await context.newPage()
+      await page.goto(path)
+      await still(page)
+      const files = await fontFiles(page)
+      for (const file of wanted) expect(files, `${path} downloads ${file}`).toContain(file)
+      for (const file of unwanted)
+        expect(files, `${path} does not download ${file}`).not.toContain(file)
+      await context.close()
+    }
+  })
+
+  test('the faces come from the theme, a file per script, cached forever', async ({ page }) => {
+    await page.goto('/kitchen-sink/fonts')
+    await still(page)
+    const faces = await page.evaluate(() =>
+      [...document.querySelectorAll('style[data-webx-fonts]')]
+        .map((style) => style.textContent)
+        .join(''),
+    )
+    expect(faces.match(/@font-face/g)?.length, 'three scripts, upright and italic').toBe(6)
+    expect(faces).not.toMatch(/fonts\.googleapis|fonts\.gstatic|https?:\/\/(?!webx-starter\.local)/)
+    const files = await fontFiles(page)
+    // Every script on the page at once: the three upright files.
+    for (const file of ['inter-latin.woff2', 'inter-latin-ext.woff2', 'inter-cyrillic.woff2']) {
+      expect(files).toContain(file)
+    }
+    const url = /url\("([^"]+inter-cyrillic\.woff2)"\)/.exec(faces)?.[1]
+    expect(url).toMatch(/\/themes\/webx-ui\/theme-default\/[0-9a-f]{12}\/assets\/fonts\//)
+    const response = await page.request.get(url)
+    expect(response.status()).toBe(200)
+    expect(response.headers()['cache-control'] ?? '').toContain('immutable')
+  })
+
+  test('Polish ą ł, Turkish ğ ş and Cyrillic are drawn in Inter; Greek, which has no file, is not', async ({
+    page,
+  }) => {
+    await page.goto('/pl/witryna/fonty')
+    await still(page)
+    await page.evaluate(() => document.fonts.ready)
+    const inter = (fonts) =>
+      fonts.every((font) => font.isCustomFont && /inter/i.test(font.familyName))
+    for (const lang of ['pl', 'tr', 'ru', 'uk', 'en']) {
+      const fonts = await drawnWith(page, `.b-showcase-fonts__sample[lang="${lang}"]`)
+      expect(fonts.length, lang).toBeGreaterThan(0)
+      expect(inter(fonts), `${lang}: ${JSON.stringify(fonts)}`).toBe(true)
+    }
+    // The control: the same measurement says "not Inter" where the theme has no file.
+    const greek = await drawnWith(page, '.b-showcase-fonts__sample[lang="el"]')
+    expect(
+      greek.some((font) => !font.isCustomFont),
+      JSON.stringify(greek),
+    ).toBe(true)
+
+    // And the Polish of the page itself, not only the sample.
+    await page.goto('/pl')
+    await still(page)
+    await page.evaluate(() => document.fonts.ready)
+    const marked = await page.evaluate(() => {
+      const walker = document.createTreeWalker(
+        document.querySelector('main') ?? document.body,
+        NodeFilter.SHOW_TEXT,
+      )
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (
+          /[ąęłńśźżó]/.test(node.textContent) &&
+          node.parentElement.closest('[hidden]') === null
+        ) {
+          node.parentElement.setAttribute('data-latin-ext-probe', '')
+          return node.textContent.trim().slice(0, 40)
+        }
+      }
+      return null
+    })
+    expect(marked, 'the Polish home page has a letter past U+00FF').not.toBeNull()
+    const fonts = await drawnWith(page, '[data-latin-ext-probe]')
+    expect(inter(fonts), `"${marked}": ${JSON.stringify(fonts)}`).toBe(true)
+  })
+
+  test('the switcher names another language in the reader font, the current one in the theme font', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await still(page)
+    const m = await page.evaluate(() => {
+      const family = (selector) => {
+        const element = document.querySelector(selector)
+        return element ? getComputedStyle(element).fontFamily : null
+      }
+      return {
+        other: family('.webx-language-switcher__name.is-other'),
+        current: family('.webx-language-switcher__link.is-current .webx-language-switcher__name'),
+      }
+    })
+    expect(m.other).toMatch(/^system-ui/)
+    expect(m.current).toMatch(/^Inter/)
+  })
+})
+
+test.describe('mail', () => {
+  // THEMES §7.5: the letter module-inbox sends, in the theme's frame, every colour a token's value
+  // written on the server — the showcase builds it for answers nobody sent.
+  async function letter(page, path) {
+    await page.goto(path)
+    await still(page)
+    const frame = page.locator('iframe.b-showcase-mail__letter')
+    await frame.scrollIntoViewIfNeeded()
+    const srcdoc = await frame.getAttribute('srcdoc')
+    const inside = page.frameLocator('iframe.b-showcase-mail__letter')
+    await inside.locator('a[href*="inbox/submissions"]').waitFor()
+    return { srcdoc, inside }
+  }
+
+  test('the letter stands in the theme’s frame, painted with the values of the tokens', async ({
+    page,
+  }) => {
+    const { srcdoc, inside } = await letter(page, '/kitchen-sink/mail')
+    expect(srcdoc, 'no CSS variable reaches a mail client').not.toContain('var(')
+    expect(srcdoc).not.toMatch(/<link\b|class="/)
+    const accent = await page.evaluate(() => {
+      const probe = document.createElement('span')
+      probe.style.color = 'var(--site-color-accent)'
+      document.body.append(probe)
+      const value = getComputedStyle(probe).color
+      probe.remove()
+      return value
+    })
+    const m = await inside.locator('body').evaluate((body) => {
+      const button = body.querySelector('a[href*="inbox/submissions"]')
+      const brand = body.querySelector('a')
+      return {
+        button: getComputedStyle(button).backgroundColor,
+        brand: getComputedStyle(brand).color,
+        text: body.innerText,
+        width: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      }
+    })
+    expect(m.button, 'the button is the accent of the site').toBe(accent)
+    expect(m.brand, 'so is the name of the site above').toBe(accent)
+    expect(m.text).toContain('Ada Lovelace')
+    expect(m.text).toContain('ada@example.com')
+    expect(m.text).toContain('Sent from')
+    expect(m.width, 'the letter fits its frame').toBeLessThanOrEqual(0)
+  })
+
+  test('the letter speaks the language of the page', async ({ page }) => {
+    const { inside } = await letter(page, '/pl/witryna/poczta')
+    const text = await inside.locator('body').innerText()
+    expect(text).toContain('Wysłano ze strony')
+    expect(text).toContain('Otwórz w panelu')
+    expect(text).not.toContain('Sent from')
+  })
+})
+
+test.describe('fields', () => {
+  // WIDGETS §17.2, W6.1: the fields of a form — Kitchen sink › Forms › Fields shows each type in
+  // each state, long German and Polish labels, and a column 20rem wide.
+  const PATH = '/kitchen-sink/forms/fields'
+  const TYPES = ['text', 'email', 'tel', 'url', 'password', 'number', 'textarea', 'select']
+  const GROUPS = ['radio', 'checkbox', 'consent', 'date', 'file']
+
+  /** The same page in another language: the address the English page names as its alternate. */
+  async function inLanguage(page, locale) {
+    await page.goto(PATH)
+    const there = await page
+      .locator(`link[rel="alternate"][hreflang="${locale}"]`)
+      .getAttribute('href')
+    expect(there, `${PATH} has a page in ${locale}`).toBeTruthy()
+    await page.goto(there)
+    await still(page)
+  }
+
+  test('every type stands in every state, and nothing scrolls sideways at 360', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+
+    const m = await page.evaluate(() => {
+      const block = document.querySelector('[data-wx-block="showcase-fields"]')
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        states: [...block.querySelectorAll('.b-showcase-fields__state')].map((state) => ({
+          state: state.dataset.state,
+          types: [...state.querySelectorAll('.webx-field')].map((f) =>
+            [...f.classList].find((c) => c.startsWith('webx-field--')).slice(12),
+          ),
+          hidden: state.querySelectorAll('input[type=hidden][name$="[page]"]').length,
+          invalid: state.querySelectorAll('.webx-field.is-invalid').length,
+          disabled: state.querySelectorAll('.webx-field.is-disabled').length,
+        })),
+        // Wider than its field: a label or an error that pushed out of its column.
+        wide: [...document.querySelectorAll('.webx-field *')]
+          .filter((el) => {
+            const field = el.closest('.webx-field').getBoundingClientRect()
+            const r = el.getBoundingClientRect()
+            return r.width > 0 && r.right > field.right + 1
+          })
+          .map((el) => el.className || el.tagName),
+      }
+    })
+
+    expect(m.scroll, 'no horizontal scroll at 360').toBeLessThanOrEqual(0)
+    expect(m.wide, 'everything of a field stays inside it').toEqual([])
+    expect(m.states.map((s) => s.state)).toEqual(['empty', 'filled', 'invalid', 'disabled'])
+    for (const s of m.states) {
+      // Fourteen frames — a checkbox twice, a group and one tick — and the hidden input alone.
+      expect(new Set(s.types), s.state).toEqual(new Set([...TYPES, ...GROUPS]))
+      expect(s.types.filter((t) => t === 'checkbox').length, s.state).toBe(2)
+      expect(s.hidden, `${s.state}: the hidden field`).toBe(1)
+    }
+    expect(m.states[2].invalid, 'every field but the one tick has an error to show').toBe(13)
+    expect(m.states[3].disabled).toBe(14)
+  })
+
+  test('a control, a choice and a button are 44px at least on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+
+    const low = await page.evaluate(() =>
+      [
+        ...document.querySelectorAll(
+          '.webx-field__control:not(.webx-field__control--file), .webx-field__choice, .webx-field__show, .webx-field__file-button, .webx-field__file',
+        ),
+      ]
+        .map((el) => ({ what: el.className, height: el.getBoundingClientRect().height }))
+        .filter((el) => el.height > 0 && el.height < 44),
+    )
+    expect(low).toEqual([])
+
+    // The password's Show is the script's: here, and named.
+    const show = page.locator('.webx-field__show').first()
+    await expect(show).toBeVisible()
+    await expect(show).toHaveAttribute('aria-label', 'Show password')
+  })
+
+  test('the focus is visible on a control, a box and a button', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(PATH)
+    await still(page)
+
+    // From the keyboard, as :focus-visible wants it: into the first field, then Tab along.
+    await page
+      .locator('.b-showcase-fields__state[data-state="empty"] input[type=text]')
+      .first()
+      .focus()
+    const seen = new Map()
+    for (let i = 0; i < 40 && seen.size < 5; i++) {
+      const m = await page.evaluate(() => {
+        const el = document.activeElement
+        const target = el.matches('input[type=file]') ? el.closest('.webx-field__file') : el
+        const s = getComputedStyle(target)
+        return {
+          kind: el.matches('input[type=file]')
+            ? 'file'
+            : el.matches('.webx-field__check')
+              ? 'check'
+              : el.matches('.webx-field__show')
+                ? 'show'
+                : el.matches('select')
+                  ? 'select'
+                  : el.matches('.webx-field__control')
+                    ? 'control'
+                    : 'other',
+          style: s.outlineStyle,
+          width: parseFloat(s.outlineWidth),
+        }
+      })
+      if (m.kind !== 'other' && !seen.has(m.kind)) seen.set(m.kind, m)
+      await page.keyboard.press('Tab')
+    }
+    expect([...seen.keys()].sort()).toEqual(['check', 'control', 'file', 'select', 'show'])
+    for (const [kind, m] of seen) {
+      expect(m.style, `${kind}: an outline`).not.toBe('none')
+      expect(m.width, `${kind}: 2px at least`).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  test('an error is words under its field, told to a screen reader, and reads in every preset', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(PATH)
+    await still(page)
+
+    const wiring = await page.evaluate(() =>
+      [
+        // The first block: every type once in each state.
+        ...document
+          .querySelector('[data-wx-block="showcase-fields"]')
+          .querySelectorAll(
+            '.b-showcase-fields__state[data-state="invalid"] .webx-field.is-invalid',
+          ),
+      ].map((field) => {
+        const error = field.querySelector('.webx-field__error')
+        const group = field.matches('fieldset')
+        const described = group ? field : field.querySelector('[aria-describedby]')
+        const controls = [...field.querySelectorAll('input, select, textarea')]
+        return {
+          text: error.textContent.trim(),
+          shown: !error.hidden && error.getBoundingClientRect().height > 0,
+          described: (described?.getAttribute('aria-describedby') ?? '')
+            .split(' ')
+            .includes(error.id),
+          invalid: controls.every((c) => c.getAttribute('aria-invalid') === 'true'),
+          legend: group ? field.querySelector(':scope > legend')?.textContent.trim() : null,
+        }
+      }),
+    )
+    expect(wiring.length).toBe(13)
+    for (const w of wiring) {
+      expect(w.text.length, 'the error is words').toBeGreaterThan(3)
+      expect(w.shown).toBe(true)
+      expect(w.described, `"${w.text}" is the field's description`).toBe(true)
+      expect(w.invalid, `"${w.text}": the control says it is wrong`).toBe(true)
+      if (w.legend !== null) expect(w.legend.length).toBeGreaterThan(0)
+    }
+
+    for (const preset of Object.keys(presets)) {
+      await paint(page, preset)
+      const low = await page.evaluate(() => {
+        const canvas = document
+          .createElement('canvas')
+          .getContext('2d', { willReadFrequently: true })
+        const rgba = (color) => {
+          canvas.clearRect(0, 0, 1, 1)
+          canvas.fillStyle = color
+          canvas.fillRect(0, 0, 1, 1)
+          return Array.from(canvas.getImageData(0, 0, 1, 1).data)
+        }
+        const luminance = (color) => {
+          const [r, g, b] = rgba(color)
+            .slice(0, 3)
+            .map((v) => {
+              v /= 255
+              return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+            })
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        }
+        const ratio = (a, b) => {
+          const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
+          return (x + 0.05) / (y + 0.05)
+        }
+        const behind = (el) => {
+          for (let node = el; node; node = node.parentElement) {
+            const bg = getComputedStyle(node).backgroundColor
+            if (rgba(bg)[3] > 0) return bg
+          }
+          return 'white'
+        }
+        return [
+          ...document.querySelectorAll(
+            '.webx-field__error:not([hidden]), .webx-field__label, .webx-field__hint, .webx-field__choice-label, .webx-field__control:not(.webx-field__control--file)',
+          ),
+        ]
+          .filter((el) => el.getBoundingClientRect().height > 0 && !el.closest('.is-disabled'))
+          .map((el) => ({
+            what: `${el.className} "${(el.value || el.textContent).trim().slice(0, 30)}"`,
+            ratio: Math.round(ratio(getComputedStyle(el).color, behind(el)) * 100) / 100,
+          }))
+          .filter((w) => w.ratio < 4.5)
+      })
+      expect(low, preset).toEqual([])
+    }
+  })
+
+  test('Show turns a password to text and back; a file is named in the page’s language', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await inLanguage(page, 'pl')
+
+    const field = page
+      .locator('[data-wx-block="showcase-fields"]')
+      .first()
+      .locator('.b-showcase-fields__state[data-state="empty"] .webx-field--password')
+    const input = field.locator('input')
+    const show = field.locator('.webx-field__show')
+    await expect(show).toHaveText('Pokaż')
+    await expect(show).toHaveAttribute('aria-label', 'Pokaż hasło')
+    await show.click()
+    await expect(input).toHaveAttribute('type', 'text')
+    await expect(show).toHaveAttribute('aria-pressed', 'true')
+    await show.click()
+    await expect(input).toHaveAttribute('type', 'password')
+
+    const file = page
+      .locator('[data-wx-block="showcase-fields"]')
+      .first()
+      .locator('.b-showcase-fields__state[data-state="empty"] .webx-field--file')
+    await expect(file.locator('.webx-field__file-button')).toHaveText('Wybierz pliki')
+    await expect(file.locator('.webx-field__file-name')).toHaveText('Nie wybrano pliku')
+    const blob = { mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4') }
+    await file.locator('input[type=file]').setInputFiles([{ name: 'umowa.pdf', ...blob }])
+    await expect(file.locator('.webx-field__file-name')).toHaveText('umowa.pdf')
+    await file.locator('input[type=file]').setInputFiles([
+      { name: 'a.pdf', ...blob },
+      { name: 'b.pdf', ...blob },
+    ])
+    // Choosing again in a field of several adds to what was chosen (files.js, W6.3).
+    await expect(file.locator('.webx-field__file-name')).toHaveText('Wybrane pliki: 3')
+    // The words beside a label too.
+    await expect(page.locator('.webx-field__optional').first()).toHaveText('(opcjonalnie)')
+  })
+
+  test('the words of a field are Russian on the Russian page', async ({ page }) => {
+    await inLanguage(page, 'ru')
+    const main = await page.locator('main').innerText()
+    for (const word of ['Показать', 'необязательно', 'Выбрать файлы', 'Выберите…']) {
+      expect(main, word).toContain(word)
+    }
+    for (const word of ['Show', 'optional', 'Choose a file', 'Choose files', 'No file chosen']) {
+      expect(main, word).not.toContain(word)
+    }
+  })
+
+  test('long labels break inside the word; a narrow column puts row choices one under another', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto(PATH)
+    await still(page)
+
+    const m = await page.evaluate(() => {
+      const blocks = [...document.querySelectorAll('[data-wx-block="showcase-fields"]')]
+      const choices = (b, type) =>
+        [
+          ...blocks[b].querySelectorAll(
+            `.b-showcase-fields__state[data-state="${b === 2 ? 'invalid' : 'empty'}"] .webx-field--${type} .webx-field__choice`,
+          ),
+        ].map((el) => {
+          const r = el.getBoundingClientRect()
+          return { top: Math.round(r.top), left: Math.round(r.left) }
+        })
+      return {
+        wide: choices(0, 'radio'),
+        narrow: choices(2, 'radio'),
+        column: blocks[2].querySelector('.b-showcase-fields__states').getBoundingClientRect().width,
+      }
+    })
+
+    // At 1280 the radios that stand in a row share their top; in 20rem they stand one under another.
+    expect(new Set(m.wide.map((c) => c.top)).size).toBe(1)
+    expect(m.wide.length).toBe(3)
+    expect(m.column).toBeLessThanOrEqual(20 * 16 + 1)
+    expect(new Set(m.narrow.map((c) => c.left)).size).toBe(1)
+    expect(new Set(m.narrow.map((c) => c.top)).size).toBe(m.narrow.length)
+
+    // Loaded at 360, not shrunk from 1280: under the load of the whole run a page measured right
+    // after the window narrowed has not always laid itself out again.
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+    const long = await page.evaluate(() => {
+      const block = document.querySelectorAll('[data-wx-block="showcase-fields"]')[1]
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        wide: [...block.querySelectorAll('.webx-field *')]
+          .filter(
+            (el) => el.getBoundingClientRect().right > block.getBoundingClientRect().right + 1,
+          )
+          .map((el) => el.className || el.tagName),
+      }
+    })
+    expect(long.wide, 'the German word breaks inside its field').toEqual([])
+    expect(long.scroll, 'and does not push the page').toBeLessThanOrEqual(0)
+  })
+
+  test('without JavaScript: no Show, and the file input is the browser’s own', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 375, height: 812 },
+    })
+    const page = await context.newPage()
+    await page.goto(PATH)
+
+    const m = await page.evaluate(() => {
+      const file = document.querySelector('.webx-field--file input[type=file]')
+      return {
+        show: [...document.querySelectorAll('.webx-field__show')].some(
+          (b) => b.getBoundingClientRect().height > 0,
+        ),
+        fileOpacity: getComputedStyle(file).opacity,
+        filePosition: getComputedStyle(file).position,
+        button: getComputedStyle(document.querySelector('.webx-field__file-button')).display,
+        errors: document.querySelectorAll('.webx-field__error:not([hidden])').length,
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      }
+    })
+    expect(m.show).toBe(false)
+    expect(m.fileOpacity).toBe('1')
+    expect(m.filePosition).toBe('static')
+    expect(m.button).toBe('none')
+    // The server's errors are HTML: they stand without a script.
+    expect(m.errors).toBeGreaterThan(13)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    await context.close()
+  })
+})
+
+test.describe('sending', () => {
+  // WIDGETS §17.3, §17.4, W6.2: the shell of a form — Kitchen sink › Forms › Sending sends one
+  // form to the showcase's door, on the page and in a dialog.
+  const PATH = '/kitchen-sink/forms/sending'
+  const PAGE_FORM = '[data-mode="page"] form'
+  const DIALOG = '#showcase-sending-2'
+
+  /** What the form shows wrong: each field's error by its validator name, and its alert. */
+  const errorsOf = (page, scope) =>
+    page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        fields: Object.fromEntries(
+          [...form.querySelectorAll('[data-webx-field].is-invalid')].map((field) => [
+            field.dataset.webxField,
+            field.querySelector('.webx-field__error').textContent.trim(),
+          ]),
+        ),
+        alert: form.querySelector('.webx-form__error').textContent.trim(),
+      }
+    }, scope)
+
+  async function fill(page, scope, answer) {
+    const form = page.locator(scope)
+    await form.locator('input[name="showcase[name]"]').fill('Ann')
+    await form.locator('input[name="showcase[email]"]').fill('ann@example.com')
+    await form.locator(`input[name="showcase[answer]"][value="${answer}"]`).check()
+    await form.locator('input[name="showcase[agree]"]').check()
+  }
+
+  /** Every request the form makes to the showcase's door or the token route, in order. */
+  function watch(page) {
+    const seen = []
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (url.pathname.startsWith('/webx/widgets/'))
+        seen.push(`${request.method()} ${url.pathname}`)
+    })
+    page.on('response', (response) => {
+      const url = new URL(response.url())
+      if (url.pathname.startsWith('/webx/widgets/')) seen.push(response.status())
+    })
+    return seen
+  }
+
+  test('an empty form comes back with the same errors with JavaScript and without', async ({
+    browser,
+    page,
+  }) => {
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const without = await plain.newPage()
+    await without.goto(PATH)
+    await without.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await without.waitForLoadState()
+    expect(new URL(without.url()).pathname, 'back on the page it was sent from').toBe(PATH)
+    const back = await errorsOf(without, PAGE_FORM)
+    const returned = await without.locator(PAGE_FORM).getAttribute('data-webx-returned')
+    await plain.close()
+
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    const inPlace = await errorsOf(page, PAGE_FORM)
+
+    expect(returned, 'the page knows which form was sent').toBe('')
+    expect(Object.keys(back.fields).sort()).toEqual([
+      'showcase.agree',
+      'showcase.email',
+      'showcase.name',
+    ])
+    expect(inPlace, 'the same words in the same places').toEqual(back)
+    expect(seen, 'sent in place, no page loaded').toEqual(['POST /webx/widgets/showcase', 422])
+    expect(new URL(page.url()).pathname).toBe(PATH)
+
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      const name = form.querySelector('input[name="showcase[name]"]')
+      return {
+        focus: document.activeElement === name,
+        invalid: name.getAttribute('aria-invalid'),
+        described: name.getAttribute('aria-describedby'),
+        errorId: form.querySelector('[data-webx-field="showcase.name"] .webx-field__error').id,
+      }
+    }, PAGE_FORM)
+    expect(m.focus, 'the focus on the first wrong field').toBe(true)
+    expect(m.invalid).toBe('true')
+    expect(m.described).toContain(m.errorId)
+
+    // Corrected, the field's error goes as it is typed.
+    await page.locator(`${PAGE_FORM} input[name="showcase[name]"]`).fill('Ann')
+    await expect(page.locator(`${PAGE_FORM} [data-webx-field="showcase.name"]`)).not.toHaveClass(
+      /is-invalid/,
+    )
+    await expect(page.locator(`${PAGE_FORM} [data-webx-field="showcase.email"]`)).toHaveClass(
+      /is-invalid/,
+    )
+  })
+
+  test('each answer: a thank-you in place, another page, the next step, or only the event', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+
+    await fill(page, PAGE_FORM, 'message')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    const answer = page.locator(`${PAGE_FORM} .webx-form__message .webx-form__answer`)
+    await expect(answer.locator('.webx-form__heading')).toHaveText('Thank you')
+    await expect(answer.locator('.webx-form__text')).toContainText('The form arrived, Ann.')
+    expect(
+      await page.locator(`${PAGE_FORM} input[name="showcase[name]"]`).inputValue(),
+      'emptied',
+    ).toBe('')
+
+    await page.goto(PATH)
+    await still(page)
+    await fill(page, PAGE_FORM, 'html')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-form__body .webx-showcase-step`)).toContainText(
+      'Step two, Ann',
+    )
+    expect(await page.locator(`${PAGE_FORM} .webx-form__body [data-webx-field]`).count()).toBe(0)
+
+    await page.goto(PATH)
+    await still(page)
+    await page.evaluate((scope) => {
+      window.__answers = []
+      document
+        .querySelector(scope)
+        .addEventListener('webx:form:success', (event) => window.__answers.push(event.detail))
+    }, PAGE_FORM)
+    await fill(page, PAGE_FORM, 'nothing')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect.poll(() => page.evaluate(() => window.__answers.length)).toBe(1)
+    const nothing = await page.evaluate(
+      (scope) => ({
+        answer: window.__answers[0],
+        region: document.querySelector(`${scope} .webx-form__message`).childElementCount,
+        busy: document.querySelector(scope).getAttribute('aria-busy'),
+      }),
+      PAGE_FORM,
+    )
+    expect(nothing.answer).toEqual({
+      status: 200,
+      response: { ok: true, heading: null, message: null, redirect: null, html: null },
+    })
+    expect(nothing.region, 'nothing to show').toBe(0)
+    expect(nothing.busy).toBeNull()
+
+    await fill(page, PAGE_FORM, 'redirect')
+    await Promise.all([
+      page.waitForURL('**/kitchen-sink/forms/fields'),
+      page.locator(`${PAGE_FORM} .webx-form__submit`).click(),
+    ])
+  })
+
+  test('a second press while the first is on its way sends nothing, and the form does not move', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    let posts = 0
+    await page.route('**/webx/widgets/showcase', async (route) => {
+      posts++
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      await route.continue()
+    })
+    const button = page.locator(`${PAGE_FORM} .webx-form__submit`)
+    // On the page, not in the window: pressing Enter in a field scrolls the field into view.
+    const place = (scope) => {
+      const r = document.querySelector(`${scope} .webx-form__submit`).getBoundingClientRect()
+      return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height }
+    }
+    const before = await page.evaluate(place, PAGE_FORM)
+
+    await button.click()
+    // Held back, the button is not enabled to Playwright either: pressed as a person would.
+    await button.click({ force: true })
+    await page.locator(`${PAGE_FORM} input[name="showcase[name]"]`).press('Enter')
+    const box = await page.evaluate(place, PAGE_FORM)
+    const during = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        sending: form.classList.contains('is-sending'),
+        busy: form.getAttribute('aria-busy'),
+        held: form.querySelector('.webx-form__submit').getAttribute('aria-disabled'),
+        focus: document.activeElement?.name ?? document.activeElement?.className,
+      }
+    }, PAGE_FORM)
+
+    expect(during.sending).toBe(true)
+    expect(during.busy).toBe('true')
+    expect(during.held).toBe('true')
+    expect(box, 'held back, the button keeps its place and size').toEqual(before)
+    await expect(page.locator(`${PAGE_FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    expect(posts, 'three presses, one submission').toBe(1)
+    expect(await page.locator(PAGE_FORM).getAttribute('aria-busy')).toBeNull()
+  })
+
+  test('an expired token is renewed and the form sent once more — once', async ({
+    page,
+    context,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    // What a page cached for hours carries: a token the session no longer knows — in place of
+    // Laravel's cookie, at its path, not beside it at the page's.
+    const expired = (page) => ({
+      name: 'XSRF-TOKEN',
+      value: 'expired',
+      domain: new URL(page.url()).hostname,
+      path: '/',
+    })
+    await context.addCookies([expired(page)])
+
+    await fill(page, PAGE_FORM, 'message')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-form__heading`)).toHaveText('Thank you')
+    expect(seen).toEqual([
+      'POST /webx/widgets/showcase',
+      419,
+      'GET /webx/widgets/csrf',
+      204,
+      'POST /webx/widgets/showcase',
+      200,
+    ])
+
+    // A token route that hands nothing new: the second 419 is said, not tried a third time.
+    await page.goto(PATH)
+    await still(page)
+    seen.length = 0
+    await context.addCookies([expired(page)])
+    await page.route('**/webx/widgets/csrf', (route) => route.fulfill({ status: 204 }))
+    await fill(page, PAGE_FORM, 'message')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-form__error`)).toContainText('open too long')
+    expect(seen.filter((s) => s === 'POST /webx/widgets/showcase')).toHaveLength(2)
+    expect(seen).not.toContain(200)
+  })
+
+  test('in a dialog the thank-you takes the place of the fields, and closed it is a fresh form', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+
+    await page.locator('[data-mode="dialog"] .b-showcase-sending__open').click()
+    const dialog = page.locator(DIALOG)
+    await expect(dialog).toBeVisible()
+    expect(await dialog.evaluate((d) => d.matches(':modal'))).toBe(true)
+
+    await dialog.locator('.webx-form__submit').click()
+    await expect(dialog.locator('.webx-field.is-invalid').first()).toBeVisible()
+    expect(
+      await page.evaluate(
+        (id) => document.querySelector(id).contains(document.activeElement),
+        DIALOG,
+      ),
+    ).toBe(true)
+
+    await fill(page, `${DIALOG} form`, 'message')
+    await dialog.locator('.webx-form__submit').click()
+    await expect(dialog.locator('.webx-form__heading')).toHaveText('Thank you')
+    const sent = await page.evaluate((id) => {
+      const d = document.querySelector(id)
+      const box = d.getBoundingClientRect()
+      return {
+        body: d.querySelector('.webx-form__body').hidden,
+        done: document.activeElement === d.querySelector('.webx-form__done'),
+        open: d.open,
+        inside: box.left >= 0 && box.right <= window.innerWidth,
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        doneHeight: d.querySelector('.webx-form__done').getBoundingClientRect().height,
+      }
+    }, DIALOG)
+    expect(sent).toEqual({
+      body: true,
+      done: true,
+      open: true,
+      inside: true,
+      scroll: expect.any(Number),
+      doneHeight: expect.any(Number),
+    })
+    expect(sent.scroll, 'nothing sideways').toBeLessThanOrEqual(0)
+    expect(sent.doneHeight).toBeGreaterThanOrEqual(44)
+
+    await dialog.locator('.webx-form__done').click()
+    await expect(dialog).toBeHidden()
+    await page.locator('[data-mode="dialog"] .b-showcase-sending__open').click()
+    await expect(dialog.locator('.webx-form__body')).toBeVisible()
+    expect(await dialog.locator('.webx-form__message').evaluate((r) => r.childElementCount)).toBe(0)
+    expect(await dialog.locator('input[name="showcase[name]"]').inputValue()).toBe('')
+  })
+
+  test('without JavaScript a form in a dialog comes back in its dialog, open over the page', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 375, height: 812 },
+    })
+    const page = await context.newPage()
+    await page.goto(`${PATH}${DIALOG}`)
+    await page.locator(`${DIALOG} .webx-form__submit`).click()
+    await page.waitForLoadState()
+
+    const m = await page.evaluate((id) => {
+      const d = document.querySelector(id)
+      return {
+        open: d.open,
+        position: getComputedStyle(d).position,
+        errors: d.querySelectorAll('.webx-field.is-invalid').length,
+        returned: d.querySelector('form').hasAttribute('data-webx-returned'),
+      }
+    }, DIALOG)
+    expect(m).toEqual({ open: true, position: 'fixed', errors: 3, returned: true })
+    await context.close()
+  })
+
+  test('at 360 nothing scrolls sideways, the button is 44px and the empty answer takes no room', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        button: form.querySelector('.webx-form__submit').getBoundingClientRect().height,
+        message: form.querySelector('.webx-form__message').getBoundingClientRect().height,
+        alert: form.querySelector('.webx-form__error').getBoundingClientRect().height,
+        live: form.querySelector('.webx-form__message').getAttribute('aria-live'),
+        role: form.querySelector('.webx-form__error').getAttribute('role'),
+      }
+    }, PAGE_FORM)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    expect(m.button).toBeGreaterThanOrEqual(44)
+    expect(m.message).toBe(0)
+    expect(m.alert).toBe(0)
+    expect(m.live).toBe('polite')
+    expect(m.role).toBe('alert')
+  })
+
+  test('on the Russian page the form, its errors and its thank-you are Russian', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="ru"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(
+      page.locator(`${PAGE_FORM} [data-webx-field="showcase.name"] .webx-field__error`),
+    ).toContainText('Ваше имя')
+
+    await fill(page, PAGE_FORM, 'message')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-form__heading`)).toHaveText('Спасибо')
+  })
+})
+
+test.describe('validation', () => {
+  // WIDGETS §17.5, W6.3: Kitchen sink › Forms › Validation — one form checked in the browser by
+  // FormRules and by the showcase's door with the same rules; the phone mask; the files.
+  const PATH = '/kitchen-sink/forms/validation'
+  const FORM = '.b-showcase-validation form'
+
+  const errorsOf = (page) =>
+    page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return Object.fromEntries(
+        [...form.querySelectorAll('[data-webx-field].is-invalid')].map((field) => [
+          field.dataset.webxField,
+          field.querySelector('.webx-field__error').textContent.trim(),
+        ]),
+      )
+    }, FORM)
+
+  function watch(page) {
+    const seen = []
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (url.pathname.startsWith('/webx/widgets/'))
+        seen.push(`${request.method()} ${url.pathname}`)
+    })
+    page.on('response', (response) => {
+      const url = new URL(response.url())
+      if (url.pathname.startsWith('/webx/widgets/')) seen.push(response.status())
+    })
+    return seen
+  }
+
+  /** Wrong in every way the browser can tell. */
+  async function wrong(page) {
+    const form = page.locator(FORM)
+    await form.locator('input[name="check[name]"]').fill('a')
+    await form.locator('input[name="check[email]"]').fill('nope')
+    await form.locator('input[name="check[phone]"]').fill('512')
+    await form.locator('input[name="check[age]"]').fill('12')
+    await form.locator('input[name="check[website]"]').fill('example')
+    await form.locator('input[name="check[day]"]').fill('2025-06-01')
+    await form.locator('input[name="check[password]"]').fill('short')
+    await form.locator('input[name="check[password_confirmation]"]').fill('other')
+  }
+
+  /** Right in every way the browser can tell. */
+  async function right(page, name = 'Ann') {
+    const form = page.locator(FORM)
+    await form.locator('input[name="check[name]"]').fill(name)
+    await form.locator('input[name="check[email]"]').fill('ann@example.com')
+    await form.locator('input[name="check[phone]"]').fill('+48512345678')
+    await form.locator('input[name="check[age]"]').fill('')
+    await form.locator('input[name="check[website]"]').fill('')
+    await form.locator('input[name="check[day]"]').fill('2026-05-01')
+    await form.locator('input[name="check[password]"]').fill('secret12')
+    await form.locator('input[name="check[password_confirmation]"]').fill('secret12')
+    await form.locator('input[name="check[plan]"][value="team"]').check()
+    await form.locator('input[name="check[agree]"]').check()
+  }
+
+  const png = (name, bytes = 600) => ({
+    name,
+    mimeType: 'image/png',
+    // A real PNG header: the server guesses the type by what is inside.
+    buffer: Buffer.concat([
+      Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+      Buffer.alloc(Math.max(0, bytes - 70)),
+    ]),
+  })
+
+  test('the browser says what the server says, word for word, and sends nothing while one is wrong', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    await wrong(page)
+
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    const browser = await errorsOf(page)
+    expect(seen, 'nothing sent').toEqual([])
+    expect(
+      await page.evaluate(() => document.activeElement?.getAttribute('name')),
+      'the focus on the first wrong field',
+    ).toBe('check[name]')
+
+    // The same, straight to the server: the button with formnovalidate skips the browser.
+    await page.locator(`${FORM} .b-showcase-validation__server`).click()
+    await expect.poll(() => seen.length).toBe(2)
+    const server = await errorsOf(page)
+
+    expect(seen).toEqual(['POST /webx/widgets/showcase/validation', 422])
+    expect(Object.keys(browser).sort()).toEqual([
+      'check.age',
+      'check.agree',
+      'check.day',
+      'check.email',
+      'check.name',
+      'check.password',
+      'check.phone',
+      'check.plan',
+      'check.website',
+    ])
+    expect(browser, 'one word in the browser and from the server').toEqual(server)
+    expect(browser['check.password']).toContain('8')
+    expect(browser['check.password']).toContain('confirmation')
+  })
+
+  test('a field is checked when it is left after typing, and loses its error as it is put right', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const name = page.locator(`${FORM} [data-webx-field="check.name"]`)
+    const email = page.locator(`${FORM} [data-webx-field="check.email"]`)
+
+    // Through a field without typing: nothing said.
+    await email.locator('input').focus()
+    await page.keyboard.press('Tab')
+    await expect(email).not.toHaveClass(/is-invalid/)
+
+    await name.locator('input').focus()
+    await page.keyboard.type('a')
+    await expect(name, 'not while typing').not.toHaveClass(/is-invalid/)
+    await page.keyboard.press('Tab')
+    await expect(name).toHaveClass(/is-invalid/)
+    await expect(name.locator('.webx-field__error')).toContainText('Your name')
+    expect(await name.locator('input').getAttribute('aria-invalid')).toBe('true')
+
+    await name.locator('input').focus()
+    await page.keyboard.type('nn')
+    await expect(name, 'right again as it is typed').not.toHaveClass(/is-invalid/)
+
+    // The confirmation puts its password right too.
+    const password = page.locator(`${FORM} [data-webx-field="check.password"]`)
+    await password.locator('input').fill('secret12')
+    await password.locator('input').blur()
+    await expect(password).toHaveClass(/is-invalid/)
+    await page.locator(`${FORM} input[name="check[password_confirmation]"]`).fill('secret12')
+    await expect(password).not.toHaveClass(/is-invalid/)
+  })
+
+  test('what only the server knows comes from the server; all right, the thank-you', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+
+    await right(page, 'admin')
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} [data-webx-field="check.name"]`)).toHaveClass(/is-invalid/)
+    expect(seen).toEqual(['POST /webx/widgets/showcase/validation', 422])
+    expect(Object.keys(await errorsOf(page))).toEqual(['check.name'])
+
+    await page.locator(`${FORM} input[name="check[name]"]`).fill('Ann')
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-form__heading`)).toHaveText('Everything is right')
+  })
+
+  test('the phone is put in international form as it is typed, pasted and filled in', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const phone = page.locator(`${FORM} input[name="check[phone]"]`)
+
+    await phone.pressSequentially('48512345678')
+    await expect(phone).toHaveValue('+48 512 345 678')
+    expect(await phone.evaluate((input) => input.selectionStart), 'the caret at the end').toBe(15)
+
+    // Backspace right after a space takes the digit before it, not only the space.
+    await phone.press('ArrowLeft')
+    await phone.press('ArrowLeft')
+    await phone.press('ArrowLeft')
+    await phone.press('Backspace')
+    await expect(phone).toHaveValue('+48 512 346 78')
+
+    // A paste in any form, and what an autofill sets.
+    await phone.fill('')
+    await phone.focus()
+    await page.keyboard.insertText('+1 (212) 555-0123')
+    await expect(phone).toHaveValue('+1 212 555 0123')
+    await phone.evaluate((input) => {
+      input.value = '00380441234567'
+      input.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await expect(phone).toHaveValue('+380 441 234 567')
+  })
+
+  test('files are dropped, listed with their sizes, refused by type and size before sending, removed, and sent through XMLHttpRequest', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const field = page.locator(`${FORM} [data-webx-field="check.photos"]`)
+    const input = field.locator('input[type=file]')
+    const seen = watch(page)
+
+    await input.setInputFiles([
+      png('one.png'),
+      { name: 'cv.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n') },
+    ])
+    // A big one dropped on the field, as a person drags it from a folder.
+    await page.evaluate(async (scope) => {
+      const field = document.querySelector(`${scope} [data-webx-field="check.photos"]`)
+      const data = new DataTransfer()
+      data.items.add(new File([new Uint8Array(3 * 1024 * 1024)], 'huge.png', { type: 'image/png' }))
+      field.dispatchEvent(
+        new DragEvent('dragover', { dataTransfer: data, bubbles: true, cancelable: true }),
+      )
+      field.dispatchEvent(
+        new DragEvent('drop', { dataTransfer: data, bubbles: true, cancelable: true }),
+      )
+    }, FORM)
+
+    const rows = field.locator('.webx-field__files-item')
+    await expect(rows).toHaveCount(3)
+    expect(await rows.locator('.webx-field__files-name').allTextContents()).toEqual([
+      'one.png',
+      'cv.pdf',
+      'huge.png',
+    ])
+    expect(await rows.nth(2).locator('.webx-field__files-size').textContent()).toMatch(/3\s*MB/)
+    expect(
+      await rows.nth(0).locator('.webx-field__files-preview').count(),
+      'a picture shows itself',
+    ).toBe(1)
+    // Refused before anything is sent: the type of one, the size of the other, each by its row.
+    await expect(field).toHaveClass(/is-invalid/)
+    expect(
+      await rows.evaluateAll((all) => all.map((row) => row.classList.contains('is-invalid'))),
+    ).toEqual([false, true, true])
+    const said = await field.locator('.webx-field__error').textContent()
+    expect(said).toContain('Photos')
+    expect(said).toContain('2048')
+    expect(seen).toEqual([])
+
+    await rows.nth(2).locator('.webx-field__files-remove').click()
+    await rows.nth(1).locator('.webx-field__files-remove').click()
+    await expect(rows).toHaveCount(1)
+    await expect(field).not.toHaveClass(/is-invalid/)
+    expect(
+      await input.evaluate((el) => el.files.length),
+      'the input holds what the list shows',
+    ).toBe(1)
+
+    // Sent through XMLHttpRequest — the one that tells the upload's progress.
+    const kinds = []
+    page.on('request', (request) => {
+      if (request.url().includes('/showcase/validation')) kinds.push(request.resourceType())
+    })
+    await right(page)
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-form__heading`)).toHaveText('Everything is right')
+    expect(kinds).toEqual(['xhr'])
+  })
+
+  test('without JavaScript the browser checks by itself, and the server says the same words', async ({
+    browser,
+    page,
+  }) => {
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const without = await plain.newPage()
+    await without.goto(PATH)
+    expect(
+      await without.locator(FORM).getAttribute('novalidate'),
+      'the browser’s checks on',
+    ).toBeNull()
+    await without.locator(`${FORM} .b-showcase-validation__server`).click()
+    await without.waitForLoadState()
+    const back = await errorsOf(without)
+    await plain.close()
+
+    await page.goto(PATH)
+    await still(page)
+    expect(
+      await page.locator(FORM).evaluate((form) => form.noValidate),
+      'the script’s instead',
+    ).toBe(true)
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    expect(await errorsOf(page)).toEqual(back)
+  })
+
+  test('at 360 nothing scrolls sideways; the rows of files and their buttons are 44px', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+    await page
+      .locator(`${FORM} [data-webx-field="check.photos"] input[type=file]`)
+      .setInputFiles([png('a-very-long-name-of-a-photograph-taken-on-holiday-by-the-sea.png')])
+
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      const row = form.querySelector('.webx-field__files-item')
+      const outside = [...form.querySelectorAll('*')].filter((el) => {
+        const box = el.getBoundingClientRect()
+        return box.width > 0 && box.right > document.documentElement.clientWidth + 0.5
+      })
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        outside: outside.map((el) => el.className),
+        row: row.getBoundingClientRect().height,
+        remove: row.querySelector('.webx-field__files-remove').getBoundingClientRect().height,
+        buttons: [...form.querySelectorAll('.webx-form__submit')].map(
+          (b) => b.getBoundingClientRect().height,
+        ),
+      }
+    }, FORM)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    expect(m.outside).toEqual([])
+    expect(m.row).toBeGreaterThanOrEqual(44)
+    expect(m.remove).toBeGreaterThanOrEqual(44)
+    for (const height of m.buttons) expect(height).toBeGreaterThanOrEqual(44)
+  })
+
+  test('on the Polish page the names are Polish both ways, and so is the file list', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="pl"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+    const seen = watch(page)
+
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    const name = page.locator(`${FORM} [data-webx-field="check.name"] .webx-field__error`)
+    await expect(name).toContainText('Twoje imię')
+    const browser = await errorsOf(page)
+    await page.locator(`${FORM} .b-showcase-validation__server`).click()
+    await expect.poll(() => seen.length).toBe(2)
+    expect(await errorsOf(page)).toEqual(browser)
+
+    await page
+      .locator(`${FORM} [data-webx-field="check.photos"] input[type=file]`)
+      .setInputFiles([png('a.png')])
+    await expect(page.locator(`${FORM} .webx-field__files-remove`)).toHaveText('Usuń')
+    await expect(page.locator(`${FORM} .webx-field__drop`)).toHaveText('lub upuść pliki tutaj')
+  })
+})
+
+test.describe('inbox on the form engine', () => {
+  // WIDGETS §17, W6.4: a form built in the panel's Inbox — Kitchen sink › Forms › Inbox — drawn by
+  // the same fields and shell as every form of the site, checked by the intake's own rules.
+  const PATH = '/kitchen-sink/forms/inbox'
+  const FORM = 'form.webx-inbox-form[data-webx-form="showcase"]'
+  // The showcase form asks a submission to wait three seconds after the page (antispam.min_seconds).
+  const WAIT = 3500
+
+  /** What the form shows wrong: each field's error by its validator name, and its alert. */
+  const errorsOf = (page) =>
+    page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        fields: Object.fromEntries(
+          [...form.querySelectorAll('[data-webx-field].is-invalid')].map((field) => [
+            field.dataset.webxField,
+            field.querySelector('.webx-field__error').textContent.trim(),
+          ]),
+        ),
+        alert: form.querySelector('.webx-form__error').textContent.trim(),
+      }
+    }, FORM)
+
+  /** Every request to the intake, and its answer, in order. */
+  function watch(page) {
+    const seen = []
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (url.pathname.startsWith('/webx/forms/')) seen.push(`${request.method()} ${url.pathname}`)
+    })
+    page.on('response', (response) => {
+      const url = new URL(response.url())
+      if (url.pathname.startsWith('/webx/forms/')) seen.push(response.status())
+    })
+    return seen
+  }
+
+  test('is the engine: fields, the shell without a token, the captcha place and no script of its own', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        send: form.hasAttribute('data-webx-send'),
+        token: !!form.querySelector('input[name="_token"]'),
+        csrf: form.hasAttribute('data-webx-csrf'),
+        id: form.querySelector('input[name="_webx_form"]')?.value,
+        fields: [...form.querySelectorAll('.webx-field[data-webx-field]')].map(
+          (field) => field.dataset.webxField,
+        ),
+        checks: form.querySelectorAll('[data-webx-rules]').length,
+        legacy: document.querySelectorAll('[class*="wx-form"]').length,
+        script: [...document.scripts].some((s) => /\/webx\/forms\/inbox/.test(s.src)),
+        novalidate: form.noValidate,
+      }
+    }, FORM)
+    expect(m.send).toBe(true)
+    expect(m.token, 'the intake guards itself').toBe(false)
+    expect(m.csrf).toBe(false)
+    expect(m.id).toMatch(/^webx-inbox-showcase/)
+    expect(m.fields).toEqual([
+      'fields.name',
+      'fields.email',
+      'fields.phone',
+      'fields.date',
+      'fields.topic',
+      'fields.reply',
+      'fields.interests',
+      'fields.attachment',
+      'fields.message',
+      'fields.consent',
+    ])
+    expect(m.checks, 'every field checks by the intake rules').toBe(10)
+    expect(m.legacy, 'no class of before W6.4').toBe(0)
+    expect(m.script, 'inbox.js comes only with a captcha').toBe(false)
+    expect(m.novalidate, 'the browser bubbles off').toBe(true)
+  })
+
+  test('an empty form gets the same errors from the browser and from the intake', async ({
+    browser,
+    page,
+  }) => {
+    // Without JavaScript and without the browser's own bubbles: the intake answers, the page
+    // comes back with its words under the fields.
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const without = await plain.newPage()
+    const seenWithout = watch(without)
+    await without.goto(PATH)
+    await without.waitForTimeout(WAIT)
+    await without.evaluate((scope) => (document.querySelector(scope).noValidate = true), FORM)
+    await without.locator(`${FORM} .webx-form__submit`).click()
+    await without.waitForLoadState()
+    expect(new URL(without.url()).pathname, 'back on the page it was sent from').toBe(PATH)
+    const server = await errorsOf(without)
+    const returned = await without.locator(FORM).getAttribute('data-webx-returned')
+    await plain.close()
+
+    // With JavaScript: the browser says it, and nothing is sent.
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    await page.locator(`${FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    const inBrowser = await errorsOf(page)
+
+    expect(seenWithout).toEqual(['POST /webx/forms/showcase', 302])
+    expect(returned).toBe('')
+    expect(Object.keys(server.fields).sort()).toEqual([
+      'fields.consent',
+      'fields.email',
+      'fields.message',
+      'fields.name',
+      'fields.topic',
+    ])
+    expect(server.fields['fields.name']).toBe('The Your name field is required.')
+    expect(inBrowser, 'the same words in the same places').toEqual(server)
+    expect(seen, 'nothing sent while one is wrong').toEqual([])
+    expect(
+      await page.evaluate(() => document.activeElement?.name),
+      'the focus on the first wrong field',
+    ).toBe('fields[name]')
+
+    // A wrong address said when the field is left, in the intake's words.
+    await page.locator(`${FORM} input[name="fields[email]"]`).fill('ann')
+    await page.locator(`${FORM} input[name="fields[name]"]`).focus()
+    await expect(
+      page.locator(`${FORM} [data-webx-field="fields.email"] .webx-field__error`),
+    ).toHaveText('The Email field must be a valid email address.')
+  })
+
+  test('filled in, it is sent in place and thanked under its fields', async ({ page }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    const form = page.locator(FORM)
+    await form.locator('input[name="fields[name]"]').fill('Ann')
+    await form.locator('input[name="fields[email]"]').fill('ann@example.com')
+    await form.locator('select[name="fields[topic]"]').selectOption('question')
+    await form.locator('textarea[name="fields[message]"]').fill('Only a showcase.')
+    await form.locator('input[name="fields[consent]"]').check()
+    await page.waitForTimeout(WAIT)
+    await page.evaluate((scope) => {
+      window.__sent = []
+      document
+        .querySelector(scope)
+        .addEventListener('webx:form:success', (event) => window.__sent.push(event.detail.response))
+    }, FORM)
+    await form.locator('.webx-form__submit').click()
+
+    await expect(form.locator('.webx-form__message .webx-form__heading')).toHaveText('Thank you')
+    await expect(form.locator('.webx-form__message .webx-form__text')).toContainText(
+      'This form only shows how fields look.',
+    )
+    expect(seen).toEqual(['POST /webx/forms/showcase', 200])
+    expect(new URL(page.url()).pathname).toBe(PATH)
+    expect(await page.evaluate(() => window.__sent)).toEqual([
+      {
+        ok: true,
+        heading: 'Thank you',
+        message: 'This form only shows how fields look. Nobody is told about it.',
+        redirect: null,
+        html: null,
+      },
+    ])
+    expect(await form.locator('input[name="fields[name]"]').inputValue(), 'emptied').toBe('')
+  })
+
+  test('at 360 nothing goes sideways, and every target is 44px tall', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 })
+    await page.goto(PATH)
+    await still(page)
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      const lowest = (selector) =>
+        Math.min(
+          ...[...form.querySelectorAll(selector)]
+            .filter((n) => n.getBoundingClientRect().height > 0)
+            .map((n) => n.getBoundingClientRect().height),
+        )
+      // The honeypot is clipped to a pixel on purpose: its input is wide and seen by no one.
+      const right = Math.max(
+        ...[...form.querySelectorAll('*')]
+          .filter((n) => !n.closest('.webx-inbox-form__honeypot'))
+          .map((n) => n.getBoundingClientRect().right),
+      )
+      return {
+        scroll: document.documentElement.scrollWidth,
+        client: document.documentElement.clientWidth,
+        right,
+        control: lowest('.webx-field__control:not([type="file"])'),
+        choice: lowest('.webx-field__choice'),
+        file: lowest('.webx-field__file'),
+        submit: form.querySelector('.webx-form__submit').getBoundingClientRect().height,
+        // Half-width fields one under another on a phone.
+        stacked:
+          form.querySelector('[data-webx-field="fields.email"]').getBoundingClientRect().top >=
+          form.querySelector('[data-webx-field="fields.name"]').getBoundingClientRect().bottom - 1,
+      }
+    }, FORM)
+    expect(m.scroll).toBeLessThanOrEqual(m.client)
+    expect(m.right, 'nothing of the form beyond the screen').toBeLessThanOrEqual(m.client + 0.5)
+    expect(m.control).toBeGreaterThanOrEqual(44)
+    expect(m.choice).toBeGreaterThanOrEqual(44)
+    expect(m.file).toBeGreaterThanOrEqual(44)
+    expect(m.submit).toBeGreaterThanOrEqual(44)
+    expect(m.stacked).toBe(true)
+  })
+
+  test('in its dialog the thank-you takes the place of the fields, with Close in the focus', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto('/kitchen-sink/dropdown-and-form')
+    await still(page)
+    await page.locator('a[href="#webx-form-contact"]').first().click()
+    const dialog = page.locator('#webx-form-contact')
+    await expect(dialog).toHaveJSProperty('open', true)
+    const form = dialog.locator('form.webx-inbox-form')
+    await form.locator('input[name="fields[name]"]').fill('Ann')
+    await form.locator('input[name="fields[email]"]').fill('ann@example.com')
+    await form.locator('textarea[name="fields[message]"]').fill('Only a showcase.')
+    await page.waitForTimeout(WAIT)
+    await form.locator('.webx-form__submit').click()
+
+    await expect(form.locator('.webx-form__heading')).toBeVisible()
+    await expect(form.locator('.webx-form__body')).toBeHidden()
+    const done = form.locator('.webx-form__done')
+    await expect(done).toBeVisible()
+    await expect(done).toBeFocused()
+    expect((await done.boundingBox()).height).toBeGreaterThanOrEqual(44)
+    // The dialog's own Close of before W6.4 is not there: the form brings its own.
+    expect(await dialog.locator('.webx-form-dialog__done').count()).toBe(0)
+
+    await done.click()
+    await expect(dialog).toHaveJSProperty('open', false)
+    await page.locator('a[href="#webx-form-contact"]').first().click()
+    await expect(form.locator('.webx-form__body')).toBeVisible()
+    await expect(form.locator('.webx-form__heading')).toHaveCount(0)
+  })
+
+  test('on the Russian page its errors are the intake’s Russian words', async ({ page }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="ru"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+    await page.locator(`${FORM} .webx-form__submit`).click()
+    await expect(
+      page.locator(`${FORM} [data-webx-field="fields.name"] .webx-field__error`),
+    ).toContainText('Ваше имя')
+    await expect(page.locator(`${FORM} .webx-form__submit`)).toHaveText('Отправить')
+  })
+})
+
+test.describe('suggestions', () => {
+  // WIDGETS §18, W6.5: Kitchen sink › Forms › Suggestions — a search box asking the showcase's
+  // door, which answers HTML from the block's goods; a city field inside a delivery form.
+  const PATH = '/kitchen-sink/forms/suggestions'
+  const SEARCH = '.b-showcase-suggest[data-mode="search"]'
+  const FIELD = '.b-showcase-suggest[data-mode="field"]'
+  const DOOR = '**/webx/widgets/showcase/suggest?**'
+
+  const aria = (page, scope) =>
+    page.evaluate((scope) => {
+      const input = document.querySelector(`${scope} .webx-suggest__input`)
+      const panel = document.getElementById(input.getAttribute('aria-controls'))
+      const active = document.getElementById(input.getAttribute('aria-activedescendant') || '')
+      const group = panel.querySelector('[role="group"]')
+      return {
+        role: input.getAttribute('role'),
+        expanded: input.getAttribute('aria-expanded'),
+        autocomplete: input.getAttribute('aria-autocomplete'),
+        listbox: panel.getAttribute('role'),
+        options: [...panel.querySelectorAll('[role="option"]')].map((o) => o.textContent.trim()),
+        selected: [...panel.querySelectorAll('[aria-selected="true"]')].map((o) => o.id),
+        active: active?.id ?? null,
+        activeText: active?.textContent.trim() ?? null,
+        group: group
+          ? document.getElementById(group.getAttribute('aria-labelledby'))?.textContent
+          : null,
+        status: document.querySelector(`${scope} .webx-suggest__status`).textContent,
+        focused: document.activeElement === input,
+      }
+    }, scope)
+
+  test('the keyboard alone: the combobox opens, walks, jumps, closes and takes an option', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    await input.focus()
+    await page.keyboard.type('oak')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+
+    let a = await aria(page, SEARCH)
+    expect(a.role).toBe('combobox')
+    expect(a.autocomplete).toBe('list')
+    expect(a.expanded).toBe('true')
+    expect(a.listbox).toBe('listbox')
+    expect(a.group).toBe('Products (8)')
+    // Five cards with their price, and «see all» — every one an option.
+    expect(a.options).toHaveLength(6)
+    expect(a.options[0]).toContain('€')
+    expect(a.options[5]).toBe('See all results: 8')
+    expect(a.status).toBe('Suggestions: 6')
+    expect(a.active).toBeNull()
+
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('ArrowDown')
+    a = await aria(page, SEARCH)
+    expect(a.selected).toEqual([a.active])
+    expect(a.activeText).toContain('Oak desk 160 cm')
+    expect(a.focused, 'the focus stays in the field').toBe(true)
+    await page.keyboard.press('End')
+    expect((await aria(page, SEARCH)).activeText).toBe('See all results: 8')
+    await page.keyboard.press('Home')
+    expect((await aria(page, SEARCH)).activeText).toContain('Oak desk 120 cm')
+
+    await page.keyboard.press('Escape')
+    a = await aria(page, SEARCH)
+    expect(a.expanded).toBe('false')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeHidden()
+    await expect(input).toHaveValue('oak')
+
+    await page.keyboard.press('ArrowDown')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+    await page.waitForURL(/\?q=Oak%20desk%20120%20cm/)
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__item`)).toHaveCount(1)
+  })
+
+  test('a stale question is cancelled and its late answer dropped', async ({ page }) => {
+    await page.goto(PATH)
+    await still(page)
+    const asked = []
+    const failed = []
+    page.on('requestfailed', (request) => failed.push(new URL(request.url()).searchParams.get('q')))
+    await page.route(DOOR, async (route) => {
+      const q = new URL(route.request().url()).searchParams.get('q')
+      asked.push(q)
+      // The first question answers slowly: the next one overtakes it.
+      if (q === 'oak') await new Promise((resolve) => setTimeout(resolve, 1500))
+      try {
+        await route.continue()
+      } catch {
+        // Cancelled by the page while it waited.
+      }
+    })
+
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    await input.focus()
+    await page.keyboard.type('oak')
+    await expect.poll(() => asked).toEqual(['oak'])
+    await input.fill('')
+    await page.keyboard.type('lamp')
+    await expect(page.locator(`${SEARCH} [data-webx-heading]`)).toHaveText('Products (4)')
+    await page.waitForTimeout(1800)
+
+    expect(asked).toEqual(['oak', 'lamp'])
+    expect(failed, 'the stale request aborted').toContain('oak')
+    await expect(page.locator(`${SEARCH} [data-webx-heading]`)).toHaveText('Products (4)')
+    expect(await page.locator(`${SEARCH} .webx-suggest__panel`).textContent()).not.toContain('Oak')
+  })
+
+  test('nothing found is said, and a screen reader hears it', async ({ page }) => {
+    await page.goto(PATH)
+    await still(page)
+    await page.locator(`${SEARCH} .webx-suggest__input`).focus()
+    await page.keyboard.type('zebra')
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__nothing`)).toHaveText(
+      'Nothing found for “zebra”.',
+    )
+    expect((await aria(page, SEARCH)).status).toBe('Nothing found')
+    expect((await aria(page, SEARCH)).options).toEqual([])
+  })
+
+  test('recent searches are kept in the browser, shown in an empty field and cleared', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    await input.focus()
+    await page.keyboard.type('lamp')
+    await page.keyboard.press('Enter')
+    await page.waitForURL(/\?q=lamp/)
+    await still(page)
+
+    await input.fill('')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+    const a = await aria(page, SEARCH)
+    expect(a.group).toBe('Recent searches')
+    expect(a.options).toEqual(['lamp', 'Clear recent searches'])
+
+    await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('Enter')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeHidden()
+    expect(
+      await page.evaluate(() =>
+        Object.keys(localStorage).filter((k) => k.startsWith('webx-suggest:')),
+      ),
+    ).toEqual([])
+  })
+
+  test('at 360 the panel stays inside the screen and every target is 44px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 })
+    await page.goto(PATH)
+    await still(page)
+    await page.locator(`${SEARCH} .webx-suggest__input`).focus()
+    await page.keyboard.type('o')
+    await page.keyboard.type('a')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+
+    const m = await page.evaluate((scope) => {
+      const root = document.querySelector(scope)
+      const panel = root.querySelector('.webx-suggest__panel').getBoundingClientRect()
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        width: document.documentElement.clientWidth,
+        height: window.visualViewport.height,
+        panel: { left: panel.left, right: panel.right, bottom: panel.bottom },
+        input: root.querySelector('.webx-suggest__input').getBoundingClientRect().height,
+        submit: root.querySelector('.webx-suggest__submit').getBoundingClientRect(),
+        options: [...root.querySelectorAll('[role="option"]')].map(
+          (o) => o.getBoundingClientRect().height,
+        ),
+      }
+    }, SEARCH)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    expect(m.panel.left).toBeGreaterThanOrEqual(0)
+    expect(m.panel.right).toBeLessThanOrEqual(m.width)
+    expect(m.panel.bottom, 'the panel ends above the bottom of the screen').toBeLessThanOrEqual(
+      m.height,
+    )
+    expect(m.input).toBeGreaterThanOrEqual(44)
+    expect(m.submit.height).toBeGreaterThanOrEqual(44)
+    expect(m.submit.width).toBeGreaterThanOrEqual(44)
+    expect(m.options.length).toBeGreaterThan(0)
+    for (const height of m.options) expect(height).toBeGreaterThanOrEqual(44)
+  })
+
+  test('without JavaScript it is a search: Enter opens the results page', async ({ browser }) => {
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const page = await plain.newPage()
+    await page.goto(PATH)
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    expect(await input.getAttribute('role'), 'no combobox without its script').toBeNull()
+    await input.fill('oak')
+    await input.press('Enter')
+    await page.waitForURL(/\?q=oak/)
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__results-heading`)).toHaveText(
+      'Found for “oak”: 8',
+    )
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__item`)).toHaveCount(8)
+    await plain.close()
+  })
+
+  test('inside another form a value fills the field and sends nothing; the form sends it', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const asked = []
+    page.on('request', (request) => {
+      if (request.url().includes('/webx/widgets/showcase/suggest')) asked.push(request.url())
+    })
+    const input = page.locator(`${FIELD} .webx-suggest__input`)
+    expect(await page.locator(`${FIELD} form`).count(), 'one form, the delivery’s').toBe(1)
+    await input.focus()
+    await page.keyboard.type('kra')
+    await expect(page.locator(`${FIELD} [role="option"]`)).toHaveText(['Kraków'])
+    expect(new URL(asked[0]).searchParams.get('as')).toBe('values')
+
+    const url = page.url()
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+    await expect(input).toHaveValue('Kraków')
+    await expect(page.locator(`${FIELD} .webx-suggest__panel`)).toBeHidden()
+    expect(page.url(), 'chosen, not sent').toBe(url)
+
+    await page.locator(`${FIELD} .webx-form__submit`).click()
+    await page.waitForURL(/city=Krak/)
+    await expect(page.locator(`${FIELD} .b-showcase-suggest__chosen`)).toHaveText(
+      'Delivery to Kraków.',
+    )
+  })
+
+  test('on the Polish page the panel speaks Polish', async ({ page }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="pl"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+    await page.locator(`${SEARCH} .webx-suggest__input`).focus()
+    await page.keyboard.type('lamp')
+    await expect(page.locator(`${SEARCH} [data-webx-heading]`)).toHaveText('Produkty (4)')
+    const a = await aria(page, SEARCH)
+    expect(a.status).toBe('Podpowiedzi: 5')
+    expect(a.options.at(-1)).toBe('Wszystkie wyniki: 4')
+  })
+})
+
+test.describe('words of the layout', () => {
+  // The words the shell can print: the theme's own (THEMES §15.2) and those of the widgets it is
+  // built of. Read from the dictionaries themselves, so a word added later is checked too.
+  const words = (file) =>
+    [
+      ...readFileSync(new URL(`../../php/packages/${file}`, import.meta.url), 'utf8').matchAll(
+        /=>\s*'((?:[^'\\]|\\.)*)'/g,
+      ),
+    ].map(([, value]) => value.replace(/\\'/g, "'"))
+  const dictionary = (locale) => [
+    ...words(`theme-default/lang/${locale}/theme.php`),
+    ...words(`widgets/lang/${locale}/widgets.php`),
+  ]
+
+  test('a page in Russian or Polish prints no English word of the shell', async ({ page }) => {
+    const english = dictionary('en').filter((w) => w.length >= 4 && !w.includes(':'))
+    for (const [path, locale] of [
+      ['/ru', 'ru'],
+      ['/pl', 'pl'],
+      ['/ru/no-such-page', 'ru'],
+      ['/pl/no-such-page', 'pl'],
+    ]) {
+      await page.goto(path)
+      await still(page)
+      const own = new Set(dictionary(locale))
+      // Everything but the page's own content: the shell, the banner, the dialogs, an error.
+      const shell = await page.evaluate(() => {
+        const body = document.body.cloneNode(true)
+        body.querySelectorAll('script, style, template').forEach((node) => node.remove())
+        body.querySelectorAll('main > :not(.site-error)').forEach((node) => node.remove())
+        const attributes = [...body.querySelectorAll('[aria-label], [title], [alt], [placeholder]')]
+          .flatMap((node) =>
+            ['aria-label', 'title', 'alt', 'placeholder'].map((a) => node.getAttribute(a)),
+          )
+          .filter(Boolean)
+        return [body.textContent, ...attributes].join('\n')
+      })
+      const left = english.filter((w) => !own.has(w) && shell.includes(w))
+      expect(left, `${path} prints English words of the shell`).toEqual([])
+      expect(await page.locator('.site-skip').textContent(), path).not.toBe('Skip to content')
+      expect(shell, `${path} prints a key instead of a word`).not.toMatch(/\btheme\.[a-z_]+\./)
+    }
+  })
+
+  // The demo of the modules beyond the default set (THEMES §15.2, TH4.4): a module page under
+  // /ru or /pl reads in that language — none of the demo's English where the demo has the
+  // language, none of the module's English words, and some of the demo's own words in it.
+  const demoWords = (pkg, locale) => {
+    const english = []
+    const own = []
+    const walk = (value) => {
+      if (Array.isArray(value)) return value.forEach(walk)
+      if (!value || typeof value !== 'object') return
+      if (typeof value.en === 'string' && typeof value[locale] === 'string') {
+        // Words a reader sees, not markup: tags dropped, the first line of a longer text.
+        const plain = (text) =>
+          text
+            .replace(/<[^>]+>/g, ' ')
+            .split('\n')[0]
+            .trim()
+        if (plain(value.en) !== plain(value[locale])) {
+          english.push(plain(value.en))
+          own.push(plain(value[locale]))
+        }
+        return
+      }
+      Object.values(value).forEach(walk)
+    }
+    const dir = new URL(`../../php/packages/${pkg}/resources/demo/`, import.meta.url)
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+      walk(JSON.parse(readFileSync(new URL(file, dir), 'utf8')))
+    }
+    return { english: english.filter((w) => w.length >= 6), own }
+  }
+  const moduleWords = (pkg, locale) => {
+    const dir = new URL(`../../php/packages/${pkg}/lang/${locale}/`, import.meta.url)
+    return readdirSync(dir)
+      .filter((f) => f.endsWith('.php') && f !== 'panel.php')
+      .flatMap((f) => words(`${pkg}/lang/${locale}/${f}`))
+  }
+
+  for (const [pkg, index] of [
+    ['module-blog', '/blog'],
+    ['module-services', '/services'],
+    ['module-events', '/events'],
+    ['module-vacancies', '/careers'],
+    ['module-press', '/press'],
+    ['module-recipes', '/recipes'],
+  ]) {
+    test(`${index} in Russian and Polish reads in them, the index and a record`, async ({
+      page,
+    }) => {
+      for (const locale of ['ru', 'pl']) {
+        const demo = demoWords(pkg, locale)
+        const own = new Set([...moduleWords(pkg, locale), ...dictionary(locale)])
+        const english = [
+          ...demo.english,
+          ...moduleWords(pkg, 'en').filter((w) => w.length >= 6 && !w.includes(':')),
+        ].filter((w) => !own.has(w))
+        await page.goto(`/${locale}${index}`)
+        await still(page)
+        const record = await page
+          .locator(`.site-main a[href*="/${locale}${index}/"]`)
+          .first()
+          .getAttribute('href')
+        expect(record, `${locale}${index} links a record in its language`).toBeTruthy()
+        for (const path of [`/${locale}${index}`, record]) {
+          if (path !== `/${locale}${index}`) {
+            await page.goto(path)
+            await still(page)
+          }
+          const main = await page.locator('main').innerText()
+          const left = english.filter((w) => main.includes(w))
+          expect(left, `${path} prints English`).toEqual([])
+          expect(
+            demo.own.some((w) => main.includes(w)),
+            `${path} prints the demo in ${locale}`,
+          ).toBe(true)
+        }
+      }
+    })
+  }
+
+  test('the showcase prints no English of its own types in Russian or Polish', async ({ page }) => {
+    // The words the showcase types used to print from their templates, now fields (TH4.4).
+    const english = [
+      'What to try',
+      'In this column',
+      'A column 20rem wide',
+      'Showcase watch',
+      'that lasts',
+      'More about',
+      'Card 7',
+      'Page 1 of',
+    ]
+    for (const locale of ['ru', 'pl']) {
+      for (const path of [
+        'background-video',
+        'table-of-contents',
+        'before-and-after',
+        'zoom',
+        'slider',
+        'show-more',
+        'counters-and-countdown',
+      ]) {
+        // The showcase's slugs are translated: the address in that language is the one the
+        // English page names as its alternate.
+        await page.goto(`/kitchen-sink/${path}`)
+        const there = await page
+          .locator(`link[rel="alternate"][hreflang="${locale}"]`)
+          .getAttribute('href')
+        expect(there, `/kitchen-sink/${path} has a page in ${locale}`).toBeTruthy()
+        await page.goto(there)
+        await still(page)
+        const main = await page.locator('main').innerText()
+        const left = english.filter((w) => main.includes(w))
+        expect(left, `${there} prints English`).toEqual([])
+      }
     }
   })
 })

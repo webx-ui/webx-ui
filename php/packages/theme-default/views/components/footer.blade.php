@@ -35,7 +35,7 @@
             </div>
         @endif
 
-        <nav class="site-footer__nav" aria-label="{{ __('Footer') }}">
+        <nav class="site-footer__nav" aria-label="{{ __('theme::theme.shell.footer') }}">
             @foreach ($items as $item)
                 <a class="site-footer__link" @foreach ($item['attrs'] as $name => $value) {{ $name }}="{{ $value }}" @endforeach>{{ $item['label'] }}</a>
             @endforeach

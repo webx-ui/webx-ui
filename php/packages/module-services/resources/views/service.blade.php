@@ -11,13 +11,13 @@
         @webxBlocks
     </x-slot:head>
 
-    <article>
-        <header>
+    <article class="webx-services-service">
+        <header class="webx-services-service__header">
             {{-- Index, main category, the service: the same list as the BreadcrumbList in the <head>. --}}
             @if (config('webx-services.breadcrumbs', true))
                 <x-webx-seo::breadcrumbs :for="$service" />
             @endif
-            <h1>{{ $service->title }}</h1>
+            <h1 class="webx-services-service__title">{{ $service->title }}</h1>
         </header>
 
         {!! $content !!}

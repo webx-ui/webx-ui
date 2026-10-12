@@ -17,10 +17,10 @@
     <article class="webx-catalog-search">
         <header>
             <h1>{{ $page?->heading ?? __('webx-catalog::storefront.search') }}</h1>
-            <form method="get" action="{{ route('webx.catalog.search') }}" role="search">
-                <input type="search" name="q" value="{{ $term }}" aria-label="{{ __('webx-catalog::storefront.search') }}" placeholder="{{ __('webx-catalog::storefront.search-placeholder') }}">
-                <button type="submit">{{ __('webx-catalog::storefront.search-submit') }}</button>
-            </form>
+            {{-- Without JavaScript a GET search to this page; with it, suggestions while typing (WIDGETS W6.5). --}}
+            <x-webx-suggest :action="$action ?? route('webx.catalog.search')" :source="$suggest ?? route('webx.catalog.suggest')" :value="$term"
+                            class="webx-catalog-search__box" :label="__('webx-catalog::storefront.search')"
+                            :placeholder="__('webx-catalog::storefront.search-placeholder')" :submit-label="__('webx-catalog::storefront.search-submit')" />
         </header>
 
         @if ($page?->result->corrected !== null)

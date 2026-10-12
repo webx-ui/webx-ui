@@ -1,0 +1,142 @@
+/*
+ * module-press: the base look of an outlet's page (THEMES §10.2). The lists of outlets and
+ * articles elsewhere on the site are blocks the module offers, and their look is in the block.
+ *
+ * Not beauty — "decent under any theme": the outlet's logo as its name, the articles it ran one
+ * under another with a line between, the links out a finger can hit. The page stands in the
+ * theme's main column, where prose styles every heading and list; each class here undoes what
+ * the list does not want from prose. Only site tokens of the engine's vocabulary, one class per
+ * rule: a theme restyles any of it by writing the same class later.
+ *
+ * The article is a direct child of the theme's main column, which centres it with
+ * `margin-inline: auto` at no specificity: a class here sets `margin-block` only, or it leaves
+ * the column for the left edge of the page.
+ */
+
+.wx-press-outlet {
+  margin-block: 0;
+}
+
+.wx-press-outlet__heading {
+  margin-block-end: var(--site-space-4);
+}
+
+.wx-press-outlet__title {
+  margin-block-end: var(--site-space-3);
+  overflow-wrap: anywhere;
+}
+
+/* The logo is the name: as tall as a heading, never wider than the column. */
+.wx-press-outlet__logo {
+  margin-block-end: var(--site-space-4);
+}
+
+.wx-press-outlet__logo-image {
+  display: block;
+  width: auto;
+  max-width: min(100%, 20rem);
+  height: auto;
+  max-height: 4rem;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.wx-press-outlet__summary {
+  max-width: 42rem;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-5);
+}
+
+/* How many, and the outlet's own site. */
+.wx-press-outlet__facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--site-space-2);
+  margin: 0 0 var(--site-space-6);
+  color: var(--site-color-text-muted);
+}
+
+.wx-press-outlet__website {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* The articles: one under another, a line between. */
+.wx-press-outlet__articles {
+  margin: 0;
+  padding: 0;
+  border-block-start: 1px solid var(--site-color-border);
+  list-style: none;
+}
+
+.wx-press-article {
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding-block: var(--site-space-5);
+  border-block-end: 1px solid var(--site-color-border);
+}
+
+.wx-press-article__title {
+  margin: 0;
+  font-size: var(--site-font-size-4);
+  overflow-wrap: anywhere;
+}
+
+.wx-press-article__link {
+  color: var(--site-color-text);
+  text-decoration: none;
+}
+
+.wx-press-article__link:hover {
+  color: var(--site-color-accent);
+  text-decoration: underline;
+}
+
+/* A scan only: the title leads to the PDF, and a label says so. */
+.wx-press-article__pdf {
+  display: inline-block;
+  margin-inline-start: var(--site-space-2);
+  padding: 0 var(--site-space-2);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text);
+  font-size: var(--site-font-size-6);
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.wx-press-article__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--site-space-3);
+  margin: 0;
+  color: var(--site-color-text-muted);
+}
+
+.wx-press-article__kind {
+  font-weight: 600;
+}
+
+.wx-press-article__excerpt {
+  margin: 0;
+}
+
+.wx-press-article__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--site-space-2);
+  margin: 0;
+  color: var(--site-color-text-muted);
+}
+
+.wx-press-article__read,
+.wx-press-article__file {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}

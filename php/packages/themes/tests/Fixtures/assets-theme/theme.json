@@ -1,0 +1,6 @@
+{
+  "theme": {
+    "title": "Assets gone wrong",
+    "uses": ["webx-ui/theme-fixture"]
+  }
+}

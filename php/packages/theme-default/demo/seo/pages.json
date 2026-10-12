@@ -1,0 +1,84 @@
+[
+  {
+    "page": "/kitchen-sink/modules/faq-and-links",
+    "faq": [
+      {
+        "question": {
+          "en": "Where does the theme print the questions?",
+          "ru": "Где тема печатает вопросы?",
+          "pl": "Gdzie motyw drukuje pytania?"
+        },
+        "answer": {
+          "en": "<p>At the end of the page’s main column, after its blocks and before the footer, on every page whose SEO rule has questions in this language.</p>",
+          "ru": "<p>В конце основной колонки страницы, после её блоков и перед подвалом, на любой странице, у SEO-правила которой есть вопросы на этом языке.</p>",
+          "pl": "<p>Na końcu głównej kolumny strony, po jej blokach i przed stopką, na każdej stronie, której reguła SEO ma pytania w tym języku.</p>"
+        }
+      },
+      {
+        "question": {
+          "en": "What happens to a question that is much longer than the line of a phone and has to wrap onto a second and a third one?",
+          "ru": "Что происходит с вопросом, который намного длиннее строки телефона и переносится на вторую и третью строку?",
+          "pl": "Co dzieje się z pytaniem, które jest znacznie dłuższe niż wiersz telefonu i musi przejść do drugiego i trzeciego wiersza?"
+        },
+        "answer": {
+          "en": "<p>It wraps, and the chevron stays at the end of the first line’s row, so the whole question is still one target to tap.</p>",
+          "ru": "<p>Он переносится, а шеврон остаётся в конце строки, так что весь вопрос — по-прежнему одна цель для нажатия.</p>",
+          "pl": "<p>Zawija się, a szewron zostaje na końcu wiersza, więc całe pytanie nadal jest jednym celem do dotknięcia.</p>"
+        }
+      },
+      {
+        "question": {
+          "en": "Can an answer hold a list?",
+          "ru": "Может ли ответ содержать список?",
+          "pl": "Czy odpowiedź może zawierać listę?"
+        },
+        "answer": {
+          "en": "<p>Yes — the answer is the editor’s rich text:</p><ul><li>a paragraph,</li><li>a list,</li><li>a <a href=\"/kitchen-sink/modules/form\">link</a>.</li></ul>",
+          "ru": "<p>Да — ответ это форматированный текст редактора:</p><ul><li>абзац,</li><li>список,</li><li><a href=\"/ru/vitrina/moduli/forma\">ссылка</a>.</li></ul>",
+          "pl": "<p>Tak — odpowiedź to sformatowany tekst edytora:</p><ul><li>akapit,</li><li>lista,</li><li><a href=\"/pl/witryna/moduly/formularz\">link</a>.</li></ul>"
+        }
+      }
+    ],
+    "links": {
+      "heading": {
+        "en": "Read on",
+        "ru": "Читайте также",
+        "pl": "Czytaj dalej"
+      },
+      "items": [
+        {
+          "to": "/kitchen-sink/modules/form",
+          "anchor": {
+            "en": "The form of the Inbox",
+            "ru": "Форма заявок",
+            "pl": "Formularz skrzynki"
+          }
+        },
+        {
+          "to": "/kitchen-sink/modules/menu",
+          "anchor": {
+            "en": "The menu component",
+            "ru": "Компонент меню",
+            "pl": "Komponent menu"
+          }
+        },
+        {
+          "to": "/kitchen-sink/blocks",
+          "anchor": {
+            "en": "The six blocks of the theme",
+            "ru": "Шесть блоков темы",
+            "pl": "Sześć bloków motywu"
+          }
+        },
+        {
+          "to": "/kitchen-sink/long-words",
+          "anchor": {
+            "en": "Long words in German and Polish",
+            "ru": "Длинные слова на немецком и польском",
+            "pl": "Długie słowa po niemiecku i polsku"
+          }
+        }
+      ]
+    }
+  }
+]

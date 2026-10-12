@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Recipes\Tests;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\View;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Blocks\BlockComponents;
 use WebxUi\Blocks\BlockShapes;
@@ -77,7 +79,7 @@ final class CardTest extends TestCase
         $page = (string) $this->get('/recipes')->assertOk()->getContent();
 
         $this->assertStringContainsString('<a class="wx-recipes__category" href="http://localhost/recipes/soups">Soups</a>', $page);
-        $this->assertStringContainsString('<a href="http://localhost/services/diet">Diet</a>', $page);
+        $this->assertStringContainsString('<a class="wx-recipes__service" href="http://localhost/services/diet">Diet</a>', $page);
         $this->assertStringContainsString('class="wx-recipes__time"', $page);
     }
 
@@ -138,6 +140,43 @@ final class CardTest extends TestCase
         $index = (string) $this->get('/recipes')->getContent();
         $this->assertStringNotContainsString('site-card', $index);
         $this->assertStringContainsString('class="wx-recipes__name"', $index);
+    }
+
+    /**
+     * THEMES §10.4: a theme answers the point with `views/parts/recipe-card.blade.php` — no
+     * provider, no overridden page. A card customised in the panel still wins, and «Customise»
+     * starts from the theme's card, which is what the site printed until then.
+     */
+    #[Test]
+    public function a_theme_answers_the_point_with_a_view_of_its_own(): void
+    {
+        $this->recipe('borscht')->syncCategories([$this->category('soups')->id]);
+
+        $theme = storage_path('framework/testing/theme-'.bin2hex(random_bytes(4)));
+        File::ensureDirectoryExists($theme.'/parts');
+        File::put($theme.'/parts/recipe-card.blade.php', '<li class="theme-card">{{ $card[\'title\'] }}</li>');
+        $this->beforeApplicationDestroyed(static function () use ($theme): void {
+            File::deleteDirectory($theme);
+        });
+        View::addLocation($theme);
+
+        $index = (string) $this->get('/recipes')->assertOk()->getContent();
+        $this->assertStringContainsString('<li class="theme-card">Borscht</li>', $index);
+        $this->assertStringNotContainsString('class="wx-recipes__name"', $index);
+
+        $editor = $this->editor(['blocks.view', 'blocks.manage']);
+        $id = (int) $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/components/recipe-card/customise')
+            ->assertCreated()
+            ->json('data.id');
+
+        $block = Block::query()->findOrFail($id);
+        $this->assertStringContainsString('theme-card', (string) $block->draftVersion?->template);
+
+        $block->saveVersion(['template' => '<li class="site-card">{{ $card[\'title\'] }}</li>']);
+        $this->actingAs($editor, 'cms')->postJson("/api/cms/blocks/{$id}/publish")->assertOk();
+
+        $this->assertStringContainsString('<li class="site-card">Borscht</li>', (string) $this->get('/recipes')->getContent());
     }
 
     #[Test]

@@ -1,7 +1,7 @@
 import type { EditingChange } from '@webx-ui/module-admin'
 import type { ScreenNode } from '@webx-ui/schema'
 
-export type BlockSource = 'panel' | 'mcp' | 'import'
+export type BlockSource = 'panel' | 'mcp' | 'import' | 'theme'
 
 /** One version, as the history lists it. */
 export interface BlockVersionMeta {
@@ -143,6 +143,11 @@ export interface BlockType {
   /** The draft's content, or the published version's without a draft. Absent in the list. */
   content?: BlockContent
   warnings?: Lint[]
+  /**
+   * The site theme's token names, without `--site-`, for the token lints (THEMES §8); null on a
+   * site without a theme. Only in `GET /blocks/{id}`.
+   */
+  tokens?: string[] | null
   /** What publishing the draft converts on pages, when it changes a field's `localized`. */
   language_changes?: LanguageChanges
   /** Only in the answer to a save that renamed the type. */

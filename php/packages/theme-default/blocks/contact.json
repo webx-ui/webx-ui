@@ -1,0 +1,72 @@
+{
+  "slug": "contact",
+  "title": "Contacts",
+  "description": "The contacts of the settings — numbers, e-mails, addresses, hours, networks — and a form of the Inbox beside them, if one is named.",
+  "icon": null,
+  "group": "content",
+  "sort": 60,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "text",
+      "type": "wx-textarea",
+      "label": "Under the heading",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "show_contacts",
+      "type": "wx-switch",
+      "label": "Contacts of the settings",
+      "default": true,
+      "help": "Numbers, e-mails, addresses and networks from Settings › Contacts."
+    },
+    {
+      "id": "show_hours",
+      "type": "wx-switch",
+      "label": "Opening hours",
+      "default": true,
+      "visible": {
+        "when": "show_contacts",
+        "is": true
+      }
+    },
+    {
+      "id": "form",
+      "type": "wx-input",
+      "label": "Form",
+      "help": "The machine name of a form of the Inbox — contact, say. Empty: no form.",
+      "props": {
+        "placeholder": "contact"
+      }
+    },
+    {
+      "id": "form_heading",
+      "type": "wx-input",
+      "label": "Heading over the form",
+      "localized": true
+    }
+  ],
+  "template": "@php\n    $book = $show_contacts !== false && function_exists('contacts') ? contacts() : null;\n    $book = $book !== null && ! $book->isEmpty() ? $book : null;\n    $emails = $book?->emails() ?? [];\n    $places = $book?->addresses() ?? [];\n    $hours = $book !== null && $show_hours !== false && ! $book->hours()->isEmpty();\n    $slug = is_string($form) ? trim($form) : '';\n    // The form is the Inbox's tag, rendered only where the module is: a block type compiles\n    // its template whole, and a tag of a package that is not installed would not compile.\n    $inbox = $slug !== '' && class_exists(\\WebxUi\\Inbox\\View\\Components\\Form::class)\n        ? trim(\\Illuminate\\Support\\Facades\\Blade::render('<x-webx-inbox::form :slug=\"$slug\" />', ['slug' => $slug]))\n        : '';\n@endphp\n@if ($heading || $book || $inbox !== '')\n<section @class(['b-contact', 'b-contact--both' => $book && $inbox !== '']) data-wx-block=\"contact\">\n    @if ($heading || $text)\n        <div class=\"b-contact__head\">\n            @if ($heading)\n                <h2 class=\"b-contact__heading\">{{ $heading }}</h2>\n            @endif\n            @if ($text)\n                <p class=\"b-contact__text\">{{ $text }}</p>\n            @endif\n        </div>\n    @endif\n    <div class=\"b-contact__grid\">\n        @if ($book)\n            <div class=\"b-contact__details\">\n                @if ($book->phones() !== [])\n                    <div class=\"b-contact__item\">\n                        <h3 class=\"b-contact__label\"><x-theme::icon name=\"phone\" class=\"b-contact__icon\" />{{ __('theme::theme.blocks.contact.phone') }}</h3>\n                        <x-webx-phones layout=\"list\" class=\"b-contact__phones\" />\n                    </div>\n                @endif\n                @if ($emails !== [])\n                    <div class=\"b-contact__item\">\n                        <h3 class=\"b-contact__label\"><x-theme::icon name=\"mail\" class=\"b-contact__icon\" />{{ __('theme::theme.blocks.contact.email') }}</h3>\n                        @foreach ($emails as $email)\n                            <a class=\"b-contact__link\" href=\"{{ $email->href() }}\">{{ $email->address }}</a>\n                        @endforeach\n                    </div>\n                @endif\n                @if ($places !== [])\n                    <div class=\"b-contact__item\">\n                        <h3 class=\"b-contact__label\"><x-theme::icon name=\"map-pin\" class=\"b-contact__icon\" />{{ __('theme::theme.blocks.contact.address') }}</h3>\n                        @foreach ($places as $place)\n                            <address class=\"b-contact__address\">\n                                @if ($place->mapUrl() !== null)\n                                    <a class=\"b-contact__link\" href=\"{{ $place->mapUrl() }}\" target=\"_blank\" rel=\"noopener\">{{ $place->text }}</a>\n                                @else\n                                    {{ $place->text }}\n                                @endif\n                            </address>\n                        @endforeach\n                    </div>\n                @endif\n                @if ($hours)\n                    {{-- The table names itself: it has a heading of its own. --}}\n                    <div class=\"b-contact__item\">\n                        <x-webx-hours layout=\"table\" class=\"b-contact__hours\" />\n                    </div>\n                @endif\n                @if ($book->socials() !== [])\n                    <div class=\"b-contact__item\">\n                        <h3 class=\"b-contact__label\"><x-theme::icon name=\"share\" class=\"b-contact__icon\" />{{ __('theme::theme.blocks.contact.socials') }}</h3>\n                        <x-webx-socials class=\"b-contact__socials\" />\n                    </div>\n                @endif\n            </div>\n        @endif\n        @if ($inbox !== '')\n            <div class=\"b-contact__form\">\n                @if ($form_heading)\n                    <h3 class=\"b-contact__form-heading\">{{ $form_heading }}</h3>\n                @endif\n                {!! $inbox !!}\n            </div>\n        @endif\n    </div>\n</section>\n@endif\n",
+  "styles": ".b-contact {\n    container-type: inline-size;\n    padding-block: var(--site-space-6);\n}\n\n.b-contact__head {\n    max-width: 42rem;\n    margin-bottom: var(--site-space-5);\n}\n\n.b-contact__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-contact__text {\n    margin: 0;\n    color: var(--site-color-text-muted);\n}\n\n.b-contact__grid {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr);\n    gap: var(--site-space-6);\n}\n\n.b-contact__details {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr);\n    align-content: start;\n    gap: var(--site-space-5);\n}\n\n.b-contact__item {\n    display: flex;\n    flex-direction: column;\n    align-items: flex-start;\n    gap: var(--site-space-1);\n    min-width: 0;\n}\n\n.b-contact__label {\n    display: flex;\n    align-items: center;\n    gap: var(--site-space-2);\n    margin: 0 0 var(--site-space-1);\n    color: var(--site-color-text-muted);\n    font-family: var(--site-font-body);\n    font-size: var(--site-font-size-6);\n    font-weight: 600;\n    letter-spacing: 0.02em;\n}\n\n.b-contact__icon {\n    color: var(--site-color-accent);\n}\n\n.b-contact__link {\n    display: inline-flex;\n    align-items: center;\n    min-height: 44px;\n    overflow-wrap: anywhere;\n}\n\n.b-contact__address {\n    font-style: normal;\n}\n\n.b-contact__form {\n    min-width: 0;\n    padding: var(--site-space-5);\n    border: 1px solid var(--site-color-border);\n    border-radius: var(--site-radius-lg);\n    background: var(--site-color-surface);\n    color: var(--site-color-text);\n}\n\n.b-contact__form-heading {\n    margin: 0 0 var(--site-space-4);\n    font-size: var(--site-font-size-4);\n}\n\n@container (min-width: 36rem) {\n    .b-contact__details {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n}\n\n@container (min-width: 56rem) {\n    .b-contact--both .b-contact__grid {\n        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);\n        align-items: start;\n    }\n\n    .b-contact--both .b-contact__details {\n        grid-template-columns: minmax(0, 1fr);\n    }\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Contacts",
+    "text": "Write, call or come by.",
+    "show_contacts": true,
+    "show_hours": true,
+    "form": "",
+    "form_heading": ""
+  }
+}

@@ -45,10 +45,39 @@
                     "module-blocks",
                     "module-seo"
                 ],
-                "editable": [
-                    "color-accent",
-                    "color-accent-contrast",
-                    "font-heading"
+                "locales": [
+                    "en",
+                    "ru",
+                    "uk",
+                    "de",
+                    "fr",
+                    "es",
+                    "it",
+                    "pl",
+                    "pt",
+                    "tr"
+                ],
+                "fonts": [
+                    {
+                        "family": "Inter",
+                        "weight": "100 900",
+                        "style": "normal",
+                        "files": {
+                            "latin": "fonts/inter-latin.woff2",
+                            "latin-ext": "fonts/inter-latin-ext.woff2",
+                            "cyrillic": "fonts/inter-cyrillic.woff2"
+                        }
+                    },
+                    {
+                        "family": "Inter",
+                        "weight": "100 900",
+                        "style": "italic",
+                        "files": {
+                            "latin": "fonts/inter-latin-italic.woff2",
+                            "latin-ext": "fonts/inter-latin-ext-italic.woff2",
+                            "cyrillic": "fonts/inter-cyrillic-italic.woff2"
+                        }
+                    }
                 ]
             }
         }

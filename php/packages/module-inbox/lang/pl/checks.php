@@ -34,5 +34,11 @@ return [
             'why' => 'Roboty znalazły formularz. To, co przechodzi, trafia do skrzynki i do powiadomień, a darmowe warstwy to właśnie to, co próbują obejść.',
             'fix' => 'Włącz captchę na karcie „Antyspam” formularza — witryna potrzebuje jej kluczy w .env — i nie wyłączaj ukrytego pola. Odrzucenia są liczone dziennie w pamięci podręcznej, więc po jej wyczyszczeniu liczą się od zera.',
         ],
+        'legacy_views' => [
+            'title' => 'Widok formularza sprzed silnika formularzy',
+            'found' => 'Strona zastępuje formularz zgłoszeń własnym form.blade.php, napisanym zanim formularze przeszły na silnik widżetów (<x-webx-form> i <x-webx-field>).',
+            'why' => 'Na razie działa: moduł przekazuje mu dawne dane i serwuje stary skrypt. Któreś z kolejnych wydań to usunie, a formularze z tego widoku przestaną się wysyłać bez przeładowania i stracą captchę.',
+            'fix' => 'Usuń kopię strony, aby dostać formularz pakietu, albo przepisz ją wokół <x-webx-form> i <x-webx-field>; pola przemaluj klasami webx-field-* i webx-form-* zamiast wx-form-* (tabela klas jest w przewodniku po zgłoszeniach).',
+        ],
     ],
 ];

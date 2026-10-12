@@ -15,18 +15,18 @@
         <x-webx-seo::breadcrumbs :for="$category" />
     @endif
 
-    <header>
-        <h1>{{ $category->title }}</h1>
+    <header class="webx-services-header">
+        <h1 class="webx-services-header__title">{{ $category->title }}</h1>
         {{-- Printed raw: what is stored has already been through the allowlist of its field type. --}}
         @if ($lead !== '')
-            <div class="services-lead">{!! $lead !!}</div>
+            <div class="services-lead webx-services-header__lead">{!! $lead !!}</div>
         @endif
     </header>
 
     {!! $content !!}
 
     @if ($services->isEmpty())
-        <p>{{ trans('webx-services::services.empty') }}</p>
+        <p class="webx-services-empty">{{ trans('webx-services::services.empty') }}</p>
     @else
         @include('webx-services::partials.cards')
     @endif

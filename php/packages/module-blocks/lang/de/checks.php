@@ -38,4 +38,8 @@ return [
     'unknown-field-type' => 'Felder eines Typs, den die Website nicht kennt: :fields. Das Formular zeigt an ihrer Stelle eine Warnung, und ihre Werte prüft niemand.',
     'field-id' => 'Feld-IDs bestehen aus Buchstaben, Ziffern, _ und -, am Anfang ein Buchstabe: :ids.',
     'marker-slug' => 'Die Wurzel ist mit data-wx-block=":marker" markiert, die Kennung lautet aber «:slug»: Skript und Panel finden den Block nur über die exakte Kennung. Die Veröffentlichung wird abgelehnt.',
+    'literal-colors' => 'Wörtlich geschriebene Farben: :values. Weder ein Preset noch eine Änderung in tokens.json färbt sie um – verwenden Sie eine Farbrolle, var(--site-color-…).',
+    'literal-fonts' => 'Wörtlich geschriebene Schriftfamilien: :values. Die Schrift des Inhabers erreicht sie nie – verwenden Sie var(--site-font-body) oder var(--site-font-heading) oder eine generische Familie.',
+    'unknown-tokens' => 'Nicht unter den Tokens des Themes: :tokens. Eine Variable, die niemand deklariert, ist ein leerer Wert – keine Farbe, kein Rahmen, kein Fehler.',
+    'token-fallbacks' => 'Ein Ersatzwert in :tokens ist ein wörtlicher Wert, den kein Preset umfärbt. Jedes Token des Themes hat einen Wert – schreiben Sie var() ohne ihn.',
 ];

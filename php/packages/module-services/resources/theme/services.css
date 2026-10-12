@@ -1,0 +1,121 @@
+/*
+ * module-services: the base look of the index, a category and a service (THEMES §10.2).
+ *
+ * Not beauty — "decent under any theme": each service a framed card in a grid that decides its
+ * own columns, the categories of the index as sections with a heading that links to the
+ * category. The pages stand in the theme's main column, where prose styles every heading and
+ * list; each class here undoes what a listing does not want from prose. Only site tokens of the
+ * engine's vocabulary, one class per rule: a theme restyles any of it by writing the same class
+ * later.
+ *
+ * A listing is a direct child of the theme's main column on a category page, which centres it
+ * with `margin-inline: auto` at no specificity: a class here sets `margin-block` only, or the
+ * list leaves the column for the left edge of the page.
+ */
+
+.webx-services-header {
+  margin-block-end: var(--site-space-6);
+}
+
+.webx-services-header__title {
+  margin-block-end: var(--site-space-3);
+}
+
+.webx-services-header__lead {
+  max-width: 42rem;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-5);
+}
+
+.webx-services-empty {
+  color: var(--site-color-text-muted);
+}
+
+/* A category of the index: its heading, then its cards. */
+.webx-services-group {
+  margin-block-end: var(--site-space-7);
+}
+
+.webx-services-group__title {
+  margin-block: 0 var(--site-space-4);
+}
+
+.webx-services-group__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.webx-services-group__link:hover {
+  color: var(--site-color-accent);
+  text-decoration: underline;
+}
+
+/* Cards: as many columns as fit at 16rem, one on a phone — the grid decides, not the window. */
+.webx-services-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: var(--site-space-5);
+  margin-block: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-services-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-lg);
+  background: var(--site-color-surface);
+  transition: border-color var(--site-duration) var(--site-easing);
+}
+
+.webx-services-card:hover {
+  border-color: var(--site-color-accent);
+}
+
+.webx-services-card__link {
+  display: flex;
+  flex-direction: column;
+  color: var(--site-color-text);
+  text-decoration: none;
+}
+
+/* The title takes the link's colour, so the hover is one flat class. */
+.webx-services-card__link:hover {
+  color: var(--site-color-accent);
+}
+
+.webx-services-card__cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  background: var(--site-color-surface-muted);
+}
+
+.webx-services-card__title {
+  margin: 0;
+  padding: var(--site-space-4) var(--site-space-4) var(--site-space-2);
+  font-size: var(--site-font-size-4);
+  overflow-wrap: anywhere;
+}
+
+.webx-services-card__lead {
+  margin: 0;
+  padding: 0 var(--site-space-4) var(--site-space-4);
+  color: var(--site-color-text-muted);
+}
+
+/* A service: its header above the blocks. */
+.webx-services-service__header {
+  margin-block-end: var(--site-space-6);
+}
+
+.webx-services-service__title {
+  margin-block-end: 0;
+  overflow-wrap: anywhere;
+}

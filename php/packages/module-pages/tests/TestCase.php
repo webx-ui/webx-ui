@@ -7,7 +7,9 @@ namespace WebxUi\Pages\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
+use Illuminate\View\DynamicComponent;
 use Orchestra\Testbench\TestCase as Orchestra;
+use ReflectionProperty;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
@@ -80,8 +82,12 @@ abstract class TestCase extends Orchestra
         // decides what `<x-dynamic-component>` can find for every test after it — in this package
         // and in the next one. A prefix is what makes that survivable: the view namespace is
         // hashed from the prefix and not from the path, so two packages registering `site` both
-        // resolve, each to its own directory.
+        // resolve, each to its own directory. It survives only a compiler that knows `site` at
+        // all, though, and a package before this one that renders a dynamic component leaves one
+        // that does not — so the cache is forgotten here, and the first page of this test fills it.
         Blade::anonymousComponentPath(__DIR__.'/Fixtures/views', 'site');
+        (new ReflectionProperty(DynamicComponent::class, 'compiler'))->setValue(null, null);
+        (new ReflectionProperty(DynamicComponent::class, 'componentClasses'))->setValue(null, []);
     }
 
     protected function tearDown(): void

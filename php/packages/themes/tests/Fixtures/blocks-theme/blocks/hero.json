@@ -1,0 +1,16 @@
+{
+  "slug": "hero",
+  "title": "Hero that lost a field",
+  "schema": [
+    { "id": "title", "type": "wx-textarea", "label": "Title" },
+    {
+      "id": "buttons",
+      "type": "wx-repeater",
+      "label": "Buttons",
+      "children": [{ "id": "label", "type": "wx-input", "label": "Label" }]
+    }
+  ],
+  "template": "<section class=\"b-hero\" data-wx-block=\"hero\">{{ $title }}</section>\n",
+  "styles": ".b-hero {\n    color: var(--site-color-text);\n}\n",
+  "sample": { "title": "Hello" }
+}

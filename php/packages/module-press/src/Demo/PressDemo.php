@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use RuntimeException;
 use Throwable;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\BlockOffers;
@@ -331,31 +332,15 @@ final class PressDemo
     }
 
     /**
-     * The languages of the demo that the site has. A site with neither gets the English under its
-     * own default, as the other demos do, rather than nameless outlets.
+     * The languages of the demo that the site has, through the one rule every demo keeps
+     * ({@see DemoWords}): the site's default language always gets a value — the English, when the
+     * demo has none in it — so a site in a language the demo does not speak still reads it.
      *
      * @return array<string, string>|null
      */
     private function words(mixed $text): ?array
     {
-        if (! is_array($text)) {
-            return null;
-        }
-
-        $codes = $this->locales->codes();
-        $words = [];
-
-        foreach ($text as $locale => $value) {
-            if (is_string($value) && trim($value) !== '' && in_array((string) $locale, $codes, true)) {
-                $words[(string) $locale] = trim($value);
-            }
-        }
-
-        if ($words === [] && is_string($text['en'] ?? null) && trim($text['en']) !== '') {
-            return [$this->locales->defaultCode() => trim($text['en'])];
-        }
-
-        return $words === [] ? null : $words;
+        return (new DemoWords($this->locales))->of($text);
     }
 
     /**

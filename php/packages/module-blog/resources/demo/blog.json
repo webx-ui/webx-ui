@@ -1,18 +1,48 @@
 {
   "rubric": {
     "slug": "notes",
-    "title": "Notes",
-    "lead": "Short pieces about how this site is put together."
+    "title": {
+      "en": "Notes",
+      "ru": "Заметки",
+      "pl": "Notatki"
+    },
+    "lead": {
+      "en": "Short pieces about how this site is put together.",
+      "ru": "Короткие заметки о том, как устроен этот сайт.",
+      "pl": "Krótkie teksty o tym, jak zbudowana jest ta strona."
+    }
   },
   "tags": [
-    { "slug": "blocks", "title": "Blocks" },
-    { "slug": "demo", "title": "Demo" }
+    {
+      "slug": "blocks",
+      "title": {
+        "en": "Blocks",
+        "ru": "Блоки",
+        "pl": "Bloki"
+      }
+    },
+    {
+      "slug": "demo",
+      "title": {
+        "en": "Demo",
+        "ru": "Демо",
+        "pl": "Demo"
+      }
+    }
   ],
   "articles": [
     {
       "slug": "a-site-made-of-blocks",
-      "title": "A site made of blocks",
-      "lead": "An article is a list of blocks, the same ones a page is made of — so a writer never waits for a deployment to get a layout.",
+      "title": {
+        "en": "A site made of blocks",
+        "ru": "Сайт из блоков",
+        "pl": "Strona złożona z bloków"
+      },
+      "lead": {
+        "en": "An article is a list of blocks, the same ones a page is made of — so a writer never waits for a deployment to get a layout.",
+        "ru": "Статья — это список блоков, тех же, из которых собраны страницы, поэтому автору не нужно ждать выкладки, чтобы получить нужную вёрстку.",
+        "pl": "Artykuł to lista bloków — tych samych, z których składa się strona — więc autor nie czeka na wdrożenie, żeby dostać potrzebny układ."
+      },
       "published_in_days": -2,
       "cover": true,
       "pinned": true,
@@ -22,24 +52,48 @@
           "key": "demo-article-one-intro",
           "type": "text",
           "values": {
-            "heading": "Written in the panel",
-            "body": "This article was seeded by the command php artisan webx:demo, and it is an ordinary article: edit it, publish it, delete it.\nIts content is blocks, which means the block types in the panel are what an article can be made of."
+            "heading": {
+              "en": "Written in the panel",
+              "ru": "Написано в панели",
+              "pl": "Napisany w panelu"
+            },
+            "body": {
+              "en": "This article was seeded by the command php artisan webx:demo, and it is an ordinary article: edit it, publish it, delete it.\nIts content is blocks, which means the block types in the panel are what an article can be made of.",
+              "ru": "Эту статью создала команда php artisan webx:demo, и это обычная статья: её можно править, публиковать и удалять.\nЕё содержимое — блоки, а значит, статья может состоять из тех типов блоков, которые есть в панели.",
+              "pl": "Ten artykuł utworzyło polecenie php artisan webx:demo i jest to zwykły artykuł: można go edytować, opublikować i usunąć.\nJego treść to bloki, więc artykuł może składać się z tych typów bloków, które są dostępne w panelu."
+            }
           }
         },
         {
           "key": "demo-article-one-more",
           "type": "text",
           "values": {
-            "heading": "Rubrics and tags",
-            "body": "It sits in a rubric and carries two tags. A tag is in the index only once a rule has been written for its address, which is why an empty tag page never reaches a search engine."
+            "heading": {
+              "en": "Rubrics and tags",
+              "ru": "Рубрики и теги",
+              "pl": "Rubryki i tagi"
+            },
+            "body": {
+              "en": "It sits in a rubric and carries two tags. A tag is in the index only once a rule has been written for its address, which is why an empty tag page never reaches a search engine.",
+              "ru": "Она лежит в рубрике и несёт два тега. Тег попадает в индекс только после того, как для его адреса написано правило, поэтому пустая страница тега никогда не доходит до поисковика.",
+              "pl": "Należy do rubryki i ma dwa tagi. Tag trafia do indeksu dopiero wtedy, gdy dla jego adresu zostanie zapisana reguła — dlatego pusta strona tagu nigdy nie dociera do wyszukiwarki."
+            }
           }
         }
       ]
     },
     {
       "slug": "what-comes-next-week",
-      "title": "What comes next week",
-      "lead": "Dated ahead of time: the site answers 404 for it and the panel says «Scheduled» until the day arrives.",
+      "title": {
+        "en": "What comes next week",
+        "ru": "Что будет на следующей неделе",
+        "pl": "Co będzie w przyszłym tygodniu"
+      },
+      "lead": {
+        "en": "Dated ahead of time: the site answers 404 for it and the panel says «Scheduled» until the day arrives.",
+        "ru": "Дата стоит наперёд: пока этот день не наступит, сайт отвечает на неё 404, а панель пишет «Запланирована».",
+        "pl": "Data jest ustawiona z wyprzedzeniem: dopóki ten dzień nie nadejdzie, strona odpowiada 404, a panel pokazuje „Zaplanowany”."
+      },
       "published_in_days": 7,
       "tags": ["demo"],
       "blocks": [
@@ -47,8 +101,117 @@
           "key": "demo-article-two-intro",
           "type": "text",
           "values": {
-            "heading": "A date instead of a scheduler",
-            "body": "There is no job waiting to publish this. The date is the whole of it: before it the article is not on the site, after it it is."
+            "heading": {
+              "en": "A date instead of a scheduler",
+              "ru": "Дата вместо планировщика",
+              "pl": "Data zamiast harmonogramu"
+            },
+            "body": {
+              "en": "There is no job waiting to publish this. The date is the whole of it: before it the article is not on the site, after it it is.",
+              "ru": "Никакая задача не ждёт, чтобы её опубликовать. Всё решает дата: до неё статьи на сайте нет, после — есть.",
+              "pl": "Żadne zadanie nie czeka, żeby go opublikować. Wszystko załatwia data: przed nią artykułu nie ma na stronie, po niej jest."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "addresses-that-survive-a-rename",
+      "title": {
+        "en": "Addresses that survive a rename",
+        "ru": "Адреса, которые переживают переименование",
+        "pl": "Adresy, które przetrwają zmianę nazwy"
+      },
+      "lead": {
+        "en": "Rename an article and its old address keeps answering — with a redirect to the new one, kept by the routing registry rather than by hand.",
+        "ru": "Переименуйте статью — и старый адрес продолжит отвечать: редиректом на новый, который ведёт реестр адресов, а не человек вручную.",
+        "pl": "Zmień nazwę artykułu, a stary adres nadal będzie odpowiadał — przekierowaniem na nowy, które prowadzi rejestr adresów, a nie ktoś ręcznie."
+      },
+      "published_in_days": -5,
+      "cover": true,
+      "tags": ["demo"],
+      "blocks": [
+        {
+          "key": "demo-article-three-intro",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "One table of addresses",
+              "ru": "Одна таблица адресов",
+              "pl": "Jedna tabela adresów"
+            },
+            "body": {
+              "en": "Every page, article and rubric takes its address from one registry. A rename writes the new address and keeps the old one as an alias, so a link somebody shared last year still arrives.",
+              "ru": "Каждая страница, статья и рубрика получает адрес из одного реестра. При переименовании записывается новый адрес, а старый остаётся алиасом, так что ссылка, которой кто-то поделился в прошлом году, по-прежнему работает.",
+              "pl": "Każda strona, artykuł i rubryka biorą adres z jednego rejestru. Zmiana nazwy zapisuje nowy adres, a stary zostaje jako alias, więc link, który ktoś udostępnił w zeszłym roku, nadal prowadzi tam, gdzie trzeba."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "why-an-article-has-no-template-of-its-own",
+      "title": {
+        "en": "Why an article has no template of its own, and why that is the reason it can look like anything",
+        "ru": "Почему у статьи нет собственного шаблона и почему именно поэтому она может выглядеть как угодно",
+        "pl": "Dlaczego artykuł nie ma własnego szablonu i dlaczego właśnie dzięki temu może wyglądać w dowolny sposób"
+      },
+      "lead": {
+        "en": "A title this long wraps on a phone and in a narrow card — which is the point of it being here.",
+        "ru": "Такой длинный заголовок переносится на телефоне и в узкой карточке — ради этого он здесь и стоит.",
+        "pl": "Tak długi tytuł łamie się na telefonie i w wąskiej karcie — i właśnie po to tu jest."
+      },
+      "published_in_days": -9,
+      "tags": ["blocks"],
+      "blocks": [
+        {
+          "key": "demo-article-four-intro",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "Blocks all the way down",
+              "ru": "Блоки и только блоки",
+              "pl": "Wszystko z bloków"
+            },
+            "body": {
+              "en": "The look of an article is the look of its blocks, and the look of a listing is the theme’s. Neither needs a template written for one article.",
+              "ru": "Статья выглядит так, как выглядят её блоки, а список статей — так, как решает тема. Ни тому, ни другому не нужен шаблон, написанный под одну статью.",
+              "pl": "Artykuł wygląda tak, jak jego bloki, a lista artykułów — tak, jak chce motyw. Ani jedno, ani drugie nie potrzebuje szablonu pisanego dla jednego artykułu."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "slug": "a-rubric-is-a-shelf",
+      "title": {
+        "en": "A rubric is a shelf, a tag is a label",
+        "ru": "Рубрика — это полка, тег — это ярлык",
+        "pl": "Rubryka to półka, tag to etykieta"
+      },
+      "lead": {
+        "en": "An article stands on one shelf first and may carry as many labels as it needs.",
+        "ru": "Статья сначала стоит на одной полке, а ярлыков может носить столько, сколько нужно.",
+        "pl": "Artykuł stoi najpierw na jednej półce, a etykiet może mieć tyle, ile potrzebuje."
+      },
+      "published_in_days": -14,
+      "cover": true,
+      "tags": ["demo", "blocks"],
+      "blocks": [
+        {
+          "key": "demo-article-five-intro",
+          "type": "text",
+          "values": {
+            "heading": {
+              "en": "Where it is found",
+              "ru": "Где её найти",
+              "pl": "Gdzie go znaleźć"
+            },
+            "body": {
+              "en": "The first rubric is the article’s main one: its trail and its address go through it. Tags only gather articles; an empty tag page never reaches a search engine.",
+              "ru": "Первая рубрика статьи — основная: через неё идут хлебные крошки и адрес. Теги только собирают статьи; пустая страница тега никогда не доходит до поисковика.",
+              "pl": "Pierwsza rubryka artykułu jest główna: przez nią prowadzą okruszki i adres. Tagi tylko zbierają artykuły; pusta strona tagu nigdy nie dociera do wyszukiwarki."
+            }
           }
         }
       ]

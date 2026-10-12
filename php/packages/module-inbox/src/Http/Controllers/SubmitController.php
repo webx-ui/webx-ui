@@ -22,13 +22,15 @@ use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Submissions\Intake;
 use WebxUi\Inbox\Submissions\Rules;
 use WebxUi\Inbox\Support\Forms;
+use WebxUi\Widgets\Forms\FormResponse;
 
 /**
  * The public door (§6).
  *
- * It answers in two shapes, because the form on the site works with and without JavaScript:
- * JSON when the request asks for it, and otherwise a redirect back to the page with either the
- * errors or the thank-you in the session. Nothing else about the two paths differs.
+ * It answers the way every form of the site is answered (WIDGETS §17.4), because the form works
+ * with and without JavaScript: `FormResponse` — JSON when the request asks for it, otherwise a
+ * redirect back to the page with the thank-you — and Laravel's own 422 or `back()->withErrors()`
+ * for a refusal. Nothing else about the two paths differs.
  */
 final class SubmitController
 {
@@ -159,29 +161,32 @@ final class SubmitController
     }
 
     /**
-     * The same answer whether the submission was written or quietly dropped.
+     * The same answer whether the submission was written or quietly dropped: the answer of every
+     * form of the site (`FormResponse`, WIDGETS §17.4) — JSON `{ ok, heading, message, redirect,
+     * html }` to the form's script, otherwise a redirect to the form's address or back to the page
+     * with the thank-you, where the form that was sent shows it.
      */
     private function accepted(Form $form, Request $request): JsonResponse|RedirectResponse
     {
-        $payload = [
-            'ok' => true,
-            // Which form this is about. A page may carry three of them, and without the name
-            // all three would show the thank-you belonging to whichever one was sent (§10).
-            'form' => $form->slug,
-            'heading' => $this->text($form, 'thank-you.heading'),
-            'message' => $this->text($form, 'thank-you.text'),
-            'redirect' => $this->redirect($form),
-        ];
+        $redirect = $this->redirect($form);
+        $heading = $this->text($form, 'thank-you.heading');
+        $message = $this->text($form, 'thank-you.text');
 
-        if ($request->expectsJson()) {
-            return new JsonResponse($payload);
+        // A form whose thank-you nobody filled in still has to say something: an answer with
+        // neither is the engine's "only the event", and the visitor would be told nothing.
+        if ($heading === null && $message === null) {
+            $heading = (string) trans('webx-inbox::form.thank-you');
         }
 
-        $redirect = $payload['redirect'];
+        $answer = $redirect !== null ? FormResponse::redirect($redirect) : FormResponse::message($heading, $message);
 
-        return $redirect !== null
-            ? redirect()->away($redirect)
-            : redirect()->back()->with('webx-inbox', $payload);
+        // A view the site published before W6.4 knows no `_webx_form`, and reads its thank-you
+        // where it always did (an alias period).
+        if (! $request->expectsJson() && $redirect === null && ! $request->filled(FormResponse::FORM) && $request->hasSession()) {
+            $request->session()->flash('webx-inbox', ['ok' => true, 'form' => $form->slug, 'heading' => $heading, 'message' => $message, 'redirect' => null]);
+        }
+
+        return $answer->toResponse($request);
     }
 
     /**

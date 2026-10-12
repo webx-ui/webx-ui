@@ -13,15 +13,38 @@
     {
       "id": "heading",
       "type": "wx-input",
-      "label": "Heading"
+      "label": "Heading",
+      "localized": true
     },
     {
       "id": "note",
       "type": "wx-textarea",
       "label": "Note",
+      "localized": true,
       "props": {
         "rows": 3
       }
+    },
+    {
+      "id": "product",
+      "type": "wx-input",
+      "label": "Product, beside the picture",
+      "localized": true
+    },
+    {
+      "id": "description",
+      "type": "wx-textarea",
+      "label": "Its description",
+      "localized": true,
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "price",
+      "type": "wx-input",
+      "label": "Its price",
+      "localized": true
     },
     {
       "id": "picture",
@@ -77,12 +100,15 @@
       }
     }
   ],
-  "template": "@php\n    $shownUrl = is_array($shown) && ! empty($shown['url']) ? $shown['url'] : null;\n    $wide = $layout === 'product';\n@endphp\n<section class=\"b-showcase-zoom b-showcase-zoom--{{ $wide ? 'product' : 'narrow' }}\" data-wx-block=\"showcase-zoom\">\n    @if ($heading)\n        <h2 class=\"b-showcase-zoom__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-zoom__note\">{{ $note }}</p>\n    @endif\n    @if (is_array($picture) && ! empty($picture['url']))\n        <div class=\"b-showcase-zoom__frame\">\n            <div class=\"b-showcase-zoom__picture\">\n                <x-webx-zoom :image=\"$picture\" :src=\"$shownUrl\" :mode=\"$mode === 'side' ? 'side' : 'inner'\" :group=\"'zoom-'.$block->key\" :eager=\"true\" />\n            </div>\n            @if ($wide)\n                <div class=\"b-showcase-zoom__text\">\n                    <h3 class=\"b-showcase-zoom__title\">Showcase watch</h3>\n                    <p>Steel, sapphire glass, an automatic movement. Hover the picture: the magnified view opens over this column, where a shop has its price and its button.</p>\n                    <p class=\"b-showcase-zoom__price\">€ 420</p>\n                </div>\n            @endif\n        </div>\n    @endif\n</section>\n",
+  "template": "@php\n    $shownUrl = is_array($shown) && ! empty($shown['url']) ? $shown['url'] : null;\n    $wide = $layout === 'product';\n@endphp\n<section class=\"b-showcase-zoom b-showcase-zoom--{{ $wide ? 'product' : 'narrow' }}\" data-wx-block=\"showcase-zoom\">\n    @if ($heading)\n        <h2 class=\"b-showcase-zoom__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-zoom__note\">{{ $note }}</p>\n    @endif\n    @if (is_array($picture) && ! empty($picture['url']))\n        <div class=\"b-showcase-zoom__frame\">\n            <div class=\"b-showcase-zoom__picture\">\n                <x-webx-zoom :image=\"$picture\" :src=\"$shownUrl\" :mode=\"$mode === 'side' ? 'side' : 'inner'\" :group=\"'zoom-'.$block->key\" :eager=\"true\" />\n            </div>\n            @if ($wide)\n                <div class=\"b-showcase-zoom__text\">\n                    @if ($product)\n                        <h3 class=\"b-showcase-zoom__title\">{{ $product }}</h3>\n                    @endif\n                    @if ($description)\n                        <p>{{ $description }}</p>\n                    @endif\n                    @if ($price)\n                        <p class=\"b-showcase-zoom__price\">{{ $price }}</p>\n                    @endif\n                </div>\n            @endif\n        </div>\n    @endif\n</section>\n",
   "styles": ".b-showcase-zoom {\n    container-type: inline-size;\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-zoom__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-zoom__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n/* The container the zoom measures its room in: the picture and the text beside it. */\n.b-showcase-zoom__frame {\n    container-type: inline-size;\n}\n\n.b-showcase-zoom--product .b-showcase-zoom__frame {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);\n    gap: var(--site-space-6);\n    align-items: start;\n}\n\n.b-showcase-zoom--narrow .b-showcase-zoom__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n\n.b-showcase-zoom__title {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-zoom__price {\n    font-size: var(--site-font-size-3);\n    font-weight: 600;\n}\n\n/* A phone: the text under the picture, and no room beside it. */\n@container (max-width: 40rem) {\n    .b-showcase-zoom--product .b-showcase-zoom__frame {\n        grid-template-columns: minmax(0, 1fr);\n    }\n}\n",
   "script": null,
   "sample": {
     "heading": "Zoom",
     "note": "",
+    "product": "Showcase watch",
+    "description": "Steel, sapphire glass, an automatic movement. Hover the picture: the magnified view opens over this column, where a shop has its price and its button.",
+    "price": "€ 420",
     "picture": null,
     "shown": null,
     "layout": "product",

@@ -1,0 +1,6 @@
+{
+  "theme": {
+    "title": "Dirty",
+    "uses": ["webx-ui/theme-fixture"]
+  }
+}

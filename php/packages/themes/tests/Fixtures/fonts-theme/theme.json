@@ -1,0 +1,33 @@
+{
+  "theme": {
+    "title": "Fonts gone wrong",
+    "uses": ["webx-ui/theme-fixture"],
+    "locales": ["en", "uk"],
+    "fonts": [
+      {
+        "family": "Inter",
+        "files": {
+          "latin": "fonts/inter-latin.woff2",
+          "latin-ext": "fonts/inter-latin-ext.woff2",
+          "klingon": "fonts/inter-klingon.woff2",
+          "cyrillic": "https://fonts.example.com/inter-cyrillic.woff2"
+        }
+      },
+      {
+        "family": "Serif\"; } body { color: red",
+        "files": { "latin": "fonts/serif.woff2" }
+      },
+      {
+        "family": "Mono",
+        "files": "fonts/mono-*.woff2",
+        "scripts": ["latin", "cyrillic"]
+      },
+      {
+        "family": "Serif",
+        "weight": "bold",
+        "style": "oblique",
+        "files": { "latin": "fonts/serif.ttf" }
+      }
+    ]
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "slug": "showcase-validation",
+  "title": "Showcase: checks in the browser",
+  "description": "A form checked in the browser by the server’s rules and words, and by the server again past the browser; the phone mask and files — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 99,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "label_name",
+      "type": "wx-input",
+      "label": "Label: name",
+      "localized": true
+    },
+    {
+      "id": "hint_name",
+      "type": "wx-input",
+      "label": "Hint: name",
+      "localized": true
+    },
+    {
+      "id": "label_email",
+      "type": "wx-input",
+      "label": "Label: email",
+      "localized": true
+    },
+    {
+      "id": "label_phone",
+      "type": "wx-input",
+      "label": "Label: phone",
+      "localized": true
+    },
+    {
+      "id": "hint_phone",
+      "type": "wx-input",
+      "label": "Hint: phone",
+      "localized": true
+    },
+    {
+      "id": "label_age",
+      "type": "wx-input",
+      "label": "Label: age",
+      "localized": true
+    },
+    {
+      "id": "label_website",
+      "type": "wx-input",
+      "label": "Label: website",
+      "localized": true
+    },
+    {
+      "id": "label_day",
+      "type": "wx-input",
+      "label": "Label: the day",
+      "localized": true
+    },
+    {
+      "id": "label_password",
+      "type": "wx-input",
+      "label": "Label: password",
+      "localized": true
+    },
+    {
+      "id": "hint_password",
+      "type": "wx-input",
+      "label": "Hint: password",
+      "localized": true
+    },
+    {
+      "id": "label_confirmation",
+      "type": "wx-input",
+      "label": "Label: the password again",
+      "localized": true
+    },
+    {
+      "id": "label_plan",
+      "type": "wx-input",
+      "label": "Label: plan",
+      "localized": true
+    },
+    {
+      "id": "plan_basic",
+      "type": "wx-input",
+      "label": "Plan: basic",
+      "localized": true
+    },
+    {
+      "id": "plan_team",
+      "type": "wx-input",
+      "label": "Plan: team",
+      "localized": true
+    },
+    {
+      "id": "label_photos",
+      "type": "wx-input",
+      "label": "Label: photos",
+      "localized": true
+    },
+    {
+      "id": "hint_photos",
+      "type": "wx-input",
+      "label": "Hint: photos",
+      "localized": true
+    },
+    {
+      "id": "label_agree",
+      "type": "wx-input",
+      "label": "Label: consent",
+      "localized": true
+    },
+    {
+      "id": "optional",
+      "type": "wx-input",
+      "label": "The word for optional",
+      "localized": true
+    },
+    {
+      "id": "button",
+      "type": "wx-input",
+      "label": "Button",
+      "localized": true
+    },
+    {
+      "id": "button_server",
+      "type": "wx-input",
+      "label": "Button: straight to the server",
+      "localized": true
+    },
+    {
+      "id": "thanks_heading",
+      "type": "wx-input",
+      "label": "Thank-you: heading",
+      "localized": true
+    },
+    {
+      "id": "thanks_message",
+      "type": "wx-input",
+      "label": "Thank-you: text",
+      "localized": true
+    }
+  ],
+  "template": "@php\n    // One form checked twice by the same rules (§17.5): in the browser through FormRules, then by\n    // the showcase's door (POST webx/widgets/showcase/validation), which checks them again with the\n    // validator. The second button has formnovalidate — it goes straight to the server, so the two\n    // can be compared word for word. Every word is the page's: the labels are the validator's\n    // names of the fields here and in the door.\n    $set = \\WebxUi\\Widgets\\Facades\\Widgets::sequence('showcase-validation');\n    $labels = [\n        'name' => (string) $label_name,\n        'email' => (string) $label_email,\n        'phone' => (string) $label_phone,\n        'age' => (string) $label_age,\n        'website' => (string) $label_website,\n        'day' => (string) $label_day,\n        'password' => (string) $label_password,\n        'plan' => (string) $label_plan,\n        'photos' => (string) $label_photos,\n        'agree' => (string) $label_agree,\n    ];\n    $rules = \\WebxUi\\Widgets\\Forms\\FormRules::for(\n        \\WebxUi\\Widgets\\Forms\\ShowcaseController::CHECKS,\n        \\WebxUi\\Widgets\\Forms\\ShowcaseController::attributes($labels),\n    );\n    $plans = array_filter(['basic' => (string) $plan_basic, 'team' => (string) $plan_team], static fn (string $label): bool => $label !== '');\n    $hidden = ['locale' => app()->getLocale(), 'words[heading]' => (string) $thanks_heading, 'words[message]' => (string) $thanks_message];\n    foreach ($labels as $short => $label) {\n        $hidden[\"labels[{$short}]\"] = $label;\n    }\n@endphp\n<section class=\"b-showcase-validation\" data-wx-block=\"showcase-validation\">\n    @if ($heading)\n        <h2 class=\"b-showcase-validation__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-validation__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-validation__frame\">\n        <x-webx-form :action=\"route('webx-widgets.showcase.validation')\" :id=\"'showcase-validation-'.$set\" :rules=\"$rules\" class=\"b-showcase-validation__form\">\n            @foreach ($hidden as $hiddenName => $hiddenValue)\n                <input type=\"hidden\" name=\"{{ $hiddenName }}\" value=\"{{ $hiddenValue }}\">\n            @endforeach\n            <x-webx-field name=\"check.name\" :label=\"$labels['name']\" :hint=\"(string) $hint_name\" autocomplete=\"name\" />\n            <x-webx-field name=\"check.email\" type=\"email\" :label=\"$labels['email']\" />\n            <x-webx-field name=\"check.phone\" type=\"tel\" :label=\"$labels['phone']\" :hint=\"(string) $hint_phone\" mask />\n            <x-webx-field name=\"check.age\" type=\"number\" :label=\"$labels['age']\" optional :optional-label=\"(string) $optional\" />\n            <x-webx-field name=\"check.website\" type=\"url\" :label=\"$labels['website']\" optional :optional-label=\"(string) $optional\" />\n            <x-webx-field name=\"check.day\" type=\"date\" :label=\"$labels['day']\" />\n            <x-webx-field name=\"check.password\" type=\"password\" :label=\"$labels['password']\" :hint=\"(string) $hint_password\" autocomplete=\"new-password\" />\n            <x-webx-field name=\"check.password_confirmation\" type=\"password\" :label=\"(string) $label_confirmation\" autocomplete=\"new-password\" />\n            @if ($plans !== [])\n                <x-webx-field name=\"check.plan\" type=\"radio\" :label=\"$labels['plan']\" :choices=\"$plans\" inline />\n            @endif\n            <x-webx-field name=\"check.photos\" type=\"file\" :label=\"$labels['photos']\" :hint=\"(string) $hint_photos\" multiple optional :optional-label=\"(string) $optional\" />\n            <x-webx-field name=\"check.agree\" type=\"consent\" :label=\"$labels['agree']\" />\n            <div class=\"b-showcase-validation__buttons\">\n                <x-webx-form.submit>{{ $button }}</x-webx-form.submit>\n                <x-webx-form.submit class=\"b-showcase-validation__server\" formnovalidate>{{ $button_server }}</x-webx-form.submit>\n            </div>\n        </x-webx-form>\n    </div>\n</section>",
+  "styles": ".b-showcase-validation {\n    container-type: inline-size;\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-validation__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-validation__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-validation__frame {\n    max-width: 36rem;\n}\n\n.b-showcase-validation__buttons {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--site-space-3);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Checks in the browser",
+    "note": ""
+  }
+}

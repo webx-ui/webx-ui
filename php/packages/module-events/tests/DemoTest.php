@@ -123,6 +123,20 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
+    public function the_demo_is_written_in_polish_too_and_a_default_it_lacks_gets_the_english(): void
+    {
+        $this->useLocales('de', 'pl');
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        $class = Event::query()->where('slug->de', 'spring-cooking-class')->firstOrFail();
+
+        $this->assertSame('Spring cooking class', $class->getTranslation('title', 'de'));
+        $this->assertNotSame('Spring cooking class', $class->getTranslation('title', 'pl'));
+        $this->assertSame(['de', 'pl'], array_keys($class->getTranslations('venue')));
+        $this->assertSame(['de', 'pl'], array_keys(EventCategory::query()->firstOrFail()->getTranslations('title')));
+    }
+
+    #[Test]
     public function removing_takes_everything_back_out(): void
     {
         $this->artisan('webx:demo')->assertSuccessful();

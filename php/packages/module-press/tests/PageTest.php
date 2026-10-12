@@ -27,13 +27,13 @@ final class PageTest extends TestCase
         $page = (string) $this->get('/press/tatler')->assertOk()->getContent();
 
         $this->assertLessThan(strpos($page, 'Earlier one'), strpos($page, 'Later one'), 'the order of the rows, not the date');
-        $this->assertStringContainsString('<h1>Tatler</h1>', $page);
+        $this->assertStringContainsString('<h1 class="wx-press-outlet__title">Tatler</h1>', $page);
         $this->assertStringContainsString('A magazine.', $page);
         $this->assertStringContainsString('Articles: 2', $page);
         $this->assertStringContainsString('href="https://tatler.example" target="_blank" rel="noopener"', $page);
         $this->assertStringContainsString('href="https://news.example/later-one" target="_blank" rel="noopener">Later one</a>', $page);
         $this->assertStringContainsString('Interview', $page);
-        $this->assertStringContainsString('<time datetime="2023-08-12">August 2023</time>', $page);
+        $this->assertStringContainsString('<time class="wx-press-article__date" datetime="2023-08-12">August 2023</time>', $page);
         $this->assertStringContainsString('About the clinic.', $page);
         $this->assertStringContainsString('<title>Tatler</title>', $page);
         $this->assertStringContainsString('<meta name="description" content="A magazine.">', $page);
@@ -50,9 +50,9 @@ final class PageTest extends TestCase
 
         $page = (string) $this->get('/press/tatler')->assertOk()->getContent();
 
-        $this->assertMatchesRegularExpression('#<a href="[^"]*/scan\.pdf[^"]*" target="_blank" rel="noopener">Only a scan</a>\s*<span class="wx-press-article__pdf">PDF</span>#', $page);
+        $this->assertMatchesRegularExpression('#<a class="wx-press-article__link" href="[^"]*/scan\.pdf[^"]*" target="_blank" rel="noopener">Only a scan</a>\s*<span class="wx-press-article__pdf">PDF</span>#', $page);
         $this->assertStringContainsString('href="https://news.example/both" target="_blank" rel="noopener">Both</a>', $page);
-        $this->assertMatchesRegularExpression('#Read the article</a>\s*· <a href="[^"]*/scan\.pdf#', $page);
+        $this->assertMatchesRegularExpression('#Read the article</a>\s*· <a class="wx-press-article__file" href="[^"]*/scan\.pdf#', $page);
     }
 
     #[Test]
@@ -114,7 +114,7 @@ final class PageTest extends TestCase
     {
         $this->outlet('Tatler', [$this->row('Both', ['title' => ['en' => 'Both', 'ru' => 'Обе']])]);
 
-        $this->get('/ru/press/tatler')->assertOk()->assertSee('<h1>Tatler</h1>', false);
+        $this->get('/ru/press/tatler')->assertOk()->assertSee('<h1 class="wx-press-outlet__title">Tatler</h1>', false);
     }
 
     #[Test]

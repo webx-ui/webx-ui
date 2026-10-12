@@ -1,0 +1,76 @@
+{
+  "slug": "showcase-icons",
+  "title": "Showcase: icons",
+  "description": "Every icon of the theme chain with its name, or icons in a line of text, at four sizes, in buttons and on the accent — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 99,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "view",
+      "type": "wx-segmented",
+      "label": "Shows",
+      "default": "grid",
+      "props": {
+        "options": [
+          {
+            "value": "grid",
+            "label": "Every icon"
+          },
+          {
+            "value": "cases",
+            "label": "In use"
+          }
+        ]
+      }
+    },
+    {
+      "id": "line",
+      "type": "wx-input",
+      "label": "A line of text",
+      "localized": true
+    },
+    {
+      "id": "button",
+      "type": "wx-input",
+      "label": "Button",
+      "localized": true
+    },
+    {
+      "id": "label",
+      "type": "wx-input",
+      "label": "Name of the largest star",
+      "localized": true
+    }
+  ],
+  "template": "@php\n    // Every icon the chain has — the sprite is whatever the layers put in icons/.\n    $names = class_exists(\\WebxUi\\Themes\\ThemeIcons::class) ? app(\\WebxUi\\Themes\\ThemeIcons::class)->names() : [];\n@endphp\n<section @class(['b-showcase-icons', 'b-showcase-icons--'.($view ?: 'grid')]) data-wx-block=\"showcase-icons\">\n    @if ($heading)\n        <h2 class=\"b-showcase-icons__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-icons__note\">{{ $note }}</p>\n    @endif\n    @if (($view ?: 'grid') === 'grid')\n        <ul class=\"b-showcase-icons__grid\">\n            @foreach ($names as $name)\n                <li class=\"b-showcase-icons__item\">\n                    <x-theme::icon :name=\"$name\" class=\"b-showcase-icons__icon\" />\n                    <code class=\"b-showcase-icons__name\">{{ $name }}</code>\n                </li>\n            @endforeach\n        </ul>\n    @else\n        <div class=\"b-showcase-icons__cases\">\n            <p class=\"b-showcase-icons__line\"><x-theme::icon name=\"phone\" /> {{ $line }} <x-theme::icon name=\"arrow-up-right\" /></p>\n            <p class=\"b-showcase-icons__sizes\">\n                <x-theme::icon name=\"star\" />\n                <x-theme::icon name=\"star\" class=\"b-showcase-icons__size-2\" />\n                <x-theme::icon name=\"star\" class=\"b-showcase-icons__size-3\" />\n                <x-theme::icon name=\"star\" class=\"b-showcase-icons__size-4\" label=\"{{ $label }}\" />\n            </p>\n            <p class=\"b-showcase-icons__actions\">\n                <a class=\"b-showcase-icons__button\" href=\"#\">{{ $button }}<x-theme::icon name=\"arrow-right\" /></a>\n                <a class=\"b-showcase-icons__button b-showcase-icons__button--quiet\" href=\"#\"><x-theme::icon name=\"download\" />{{ $button }}</a>\n            </p>\n            <div class=\"b-showcase-icons__accent\">\n                <x-theme::icon name=\"check\" /> <x-theme::icon name=\"info\" /> <x-theme::icon name=\"alert\" /> {{ $line }}\n            </div>\n        </div>\n    @endif\n</section>\n",
+  "styles": ".b-showcase-icons {\n    padding-block: var(--site-space-6);\n}\n\n.b-showcase-icons__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-icons__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-icons__grid {\n    display: grid;\n    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));\n    gap: var(--site-space-2);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-showcase-icons__item {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    gap: var(--site-space-2);\n    padding: var(--site-space-3) var(--site-space-2);\n    border: 1px solid var(--site-color-border);\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-surface);\n}\n\n.b-showcase-icons__icon {\n    width: 1.75em;\n    height: 1.75em;\n    color: var(--site-color-text);\n}\n\n.b-showcase-icons__name {\n    font-size: 0.875em;\n    color: var(--site-color-text-muted);\n    overflow-wrap: anywhere;\n    text-align: center;\n}\n\n.b-showcase-icons__cases {\n    display: grid;\n    gap: var(--site-space-4);\n}\n\n.b-showcase-icons__cases > * {\n    margin: 0;\n}\n\n.b-showcase-icons__sizes {\n    display: flex;\n    align-items: center;\n    gap: var(--site-space-3);\n    color: var(--site-color-accent);\n}\n\n.b-showcase-icons__size-2 {\n    width: 1.5em;\n    height: 1.5em;\n}\n\n.b-showcase-icons__size-3 {\n    width: 2em;\n    height: 2em;\n}\n\n.b-showcase-icons__size-4 {\n    width: 3em;\n    height: 3em;\n}\n\n.b-showcase-icons__actions {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--site-space-3);\n}\n\n.b-showcase-icons__button {\n    display: inline-flex;\n    align-items: center;\n    gap: var(--site-space-2);\n    min-height: 44px;\n    padding: var(--site-space-2) var(--site-space-4);\n    border: 1px solid var(--site-color-accent);\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-accent);\n    color: var(--site-color-accent-contrast);\n    font-weight: 600;\n    text-decoration: none;\n}\n\n.b-showcase-icons__button--quiet {\n    background: transparent;\n    color: var(--site-color-accent);\n}\n\n.b-showcase-icons__accent {\n    display: flex;\n    flex-wrap: wrap;\n    align-items: center;\n    gap: var(--site-space-2);\n    padding: var(--site-space-4);\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-accent);\n    color: var(--site-color-accent-contrast);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Icons",
+    "note": "",
+    "view": "grid",
+    "line": "",
+    "button": "",
+    "label": ""
+  }
+}

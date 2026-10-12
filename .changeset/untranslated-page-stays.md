@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+`webx-ui/routing`: a page without a translation stays a page (spec ROUTING §8.7). A request under a language prefix that finds nothing is tried with the same path in the default language; a type registered with **`showsUntranslated: true`** answers it — the interface in the language asked for, the entity's fields in the default one, `Resolution::isUntranslated()` true — or 301s to the entity's own address in that language when it has one under another path. Nothing is written to the registry. **`Untranslated`** says where such an entity is shown (`path()`) and what its original is (`original()`). `webx-ui/module-pages`: pages opt in, so `/pl/about` of a page with no Polish slug is the English page in a Polish frame, with no notice. `webx-ui/module-seo`: such an answer is `noindex, follow` with its canonical on the original, over the card and the rules; it has no `hreflang` and no line in the sitemap. `webx-ui/widgets`: the language switcher links to it instead of the language's home page, without `is-fallback`; a 404, a hidden entity and a type that did not opt in (blog articles) still lead home, marked.

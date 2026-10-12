@@ -17,6 +17,9 @@ return [
     'search-submit' => 'Find',
     'search-corrected' => 'Showing results for :corrected.',
     'search-instead' => 'Search instead for :q',
+    'suggest-products' => 'Products (:count)',
+    'suggest-all' => 'See all results: :count',
+    'suggest-nothing' => 'Nothing found for “:q”.',
     'filter-title' => ':category :value',
 
     'filter' => 'Filter',

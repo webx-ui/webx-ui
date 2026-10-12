@@ -11,14 +11,17 @@
 # repository (vendor/webx-ui/* are links into php/packages), npm through `file:` specifiers.
 # The npm packages are taken as built — run `pnpm build` here first when they changed.
 #
-#   scripts/starter-site.sh            rebuild
-#   scripts/starter-site.sh --down     tear down only: the directory (but the host config) and the database
+#   scripts/starter-site.sh                        rebuild
+#   scripts/starter-site.sh --with=blog,services   rebuild with these modules on top of the company set
+#                                                  (the showcase: --with=blog,services,events,vacancies,press,recipes)
+#   scripts/starter-site.sh --down                 tear down only: the directory (but the host config) and the database
 #
 # The defaults are an OSPanel machine; every one of them can be overridden:
 #
 #   STARTER_PATH      ../webx-starter.local, beside this checkout
 #   STARTER_URL       http://<directory name>
 #   STARTER_ADMIN     the email of the first administrator; default: git config user.email
+#   STARTER_WITH      modules on top of the company set, as --with takes them (blog,services)
 #   PHP_BIN           php, or OSPanel's PHP-8.4 when it is there
 #   COMPOSER_PHAR     composer.phar; default: the `composer` on the PATH
 #   DB_HOST DB_PORT DB_USERNAME DB_PASSWORD DB_DATABASE    OSPanel's MariaDB, webx_starter
@@ -45,7 +48,19 @@ fi
 SITE="${STARTER_PATH:-$(cd "$MONOREPO/.." && pwd)/webx-starter.local}"
 NAME="$(basename "$SITE")"
 URL="${STARTER_URL:-http://$NAME}"
-MODE="${1:-build}"
+MODE=build
+# The modules on top of the default set of a company site, with their demo: the blog, the
+# services, events, vacancies, press and recipes have pages of their own that a theme dresses
+# (THEMES §10, TH3.2–TH3.4), and a starter without them would never show those pages. The showcase
+# is built with --with=blog,services,events,vacancies,press,recipes.
+WITH="${STARTER_WITH:-}"
+for argument in "$@"; do
+    case "$argument" in
+        --down) MODE=--down ;;
+        --with=*) WITH="${argument#--with=}" ;;
+        *) printf 'Unknown argument: %s\n' "$argument" >&2; exit 2 ;;
+    esac
+done
 
 OSPANEL_PHP=/c/Work/OSPanel/modules/PHP-8.4/php.exe
 if [ -z "${PHP_BIN:-}" ]; then
@@ -177,6 +192,34 @@ if [ -d "$HOST_CONFIG/.osp" ]; then
 fi
 rm -rf "$HOST_CONFIG"
 
+# What `webx:theme:sync` publishes and Vite builds is named by its content and cached forever
+# (THEMES §13.2): the skeleton says so in docker/nginx.conf and public/.htaccess, but OSPanel's
+# nginx reads neither — its server block is the host's, in .osp/. Said there once, kept by the
+# rebuild like the rest of .osp/; the browser checks of the showcase measure the header.
+OSP_NGINX="$SITE/.osp/nginx/$NAME.conf"
+if [ -f "$OSP_NGINX" ] && ! grep -q 'location /themes/' "$OSP_NGINX"; then
+    cat >> "$OSP_NGINX" <<'NGINX'
+
+# scripts/starter-site.sh: named by their content, cached forever — as the skeleton's docker/nginx.conf.
+location /build/ {
+  add_header Cache-Control "public, max-age=31536000, immutable";
+  try_files $uri =404;
+}
+
+location /themes/ {
+  add_header Cache-Control "public, max-age=31536000, immutable";
+  try_files $uri =404;
+}
+NGINX
+    OSP_BAT="$(dirname "$(dirname "$SITE")")/bin/osp.bat"
+    if [ -f "$OSP_BAT" ]; then
+        cmd //c "$(native "$OSP_BAT")" restart nginx > /dev/null 2>&1 || true
+        note "/build/ and /themes/ cached forever in $OSP_NGINX; nginx restarted"
+    else
+        note "/build/ and /themes/ cached forever in $OSP_NGINX; restart nginx to apply"
+    fi
+fi
+
 step 'Point Composer at this checkout'
 # What `scripts/packages.mjs local` does on the other demo sites: the registry for everything but
 # webx-ui/*, and the packages of this checkout under the version the monorepo gives them.
@@ -198,6 +241,10 @@ node -e '
 
 step 'Environment'
 cp "$SITE/.env.example" "$SITE/.env"
+# The page FAQ and the interlinking of module-seo are off on a new site — a project's brief turns
+# them on. The starter shows everything a theme dresses, so it turns them on, before setup boots:
+# Kitchen sink › Modules › FAQ and links is seeded with both (THEMES §23, TH3.4).
+printf '\nWEBX_SEO_FAQ=true\nWEBX_SEO_LINKS=true\n' >> "$SITE/.env"
 artisan key:generate --no-interaction
 
 step "Database $DB_DATABASE on $DB_HOST"
@@ -212,6 +259,7 @@ setup=(
     --db-username="$DB_USERNAME" --db-password="$DB_PASSWORD" --db="$DB_DATABASE"
     --admin-name=Owner --demo --no-build
 )
+[ -n "$WITH" ] && setup+=(--modules="+$WITH")
 [ -n "$ADMIN" ] && setup+=(--admin="$ADMIN")
 [ -n "${COMPOSER_PHAR:-}" ] && setup+=(--composer="$(native "$COMPOSER_PHAR")")
 artisan "${setup[@]}"
@@ -239,6 +287,8 @@ node -e '
 
 step 'Check'
 artisan webx:doctor
+# CSS knows only tokens (THEMES §8): every layer of the chain, the modules and the widgets.
+artisan webx:theme:check || fail 'webx:theme:check found what is listed above'
 artisan test
 
 home="$(mktemp)"
@@ -255,11 +305,24 @@ else
         || fail 'the home page does not load the widgets runtime'
     ! grep -q '<!--webx-widgets-->' "$home" || fail 'the widgets marker was left on the page'
     note "GET $URL/ — the widgets runtime is loaded"
-    for path in /ru /pl /cms /kitchen-sink; do
+    paths=(/ru /pl /cms /kitchen-sink)
+    # A module asked for on top answers at its prefix; press's /press is the page its demo seeds.
+    case ",$WITH," in *,blog,*) paths+=(/blog) ;; esac
+    case ",$WITH," in *,services,*) paths+=(/services) ;; esac
+    case ",$WITH," in *,events,*) paths+=(/events) ;; esac
+    case ",$WITH," in *,vacancies,*) paths+=(/careers) ;; esac
+    case ",$WITH," in *,press,*) paths+=(/press) ;; esac
+    case ",$WITH," in *,recipes,*) paths+=(/recipes) ;; esac
+    for path in "${paths[@]}"; do
         code="$(curl -s -o /dev/null -w '%{http_code}' "$URL$path")"
         [ "$code" = "200" ] || fail "GET $URL$path answered $code"
         note "GET $URL$path — 200"
     done
+    # The theme's layout prints the page's FAQ and links; the showcase page has both.
+    faq="$(curl -s "$URL/kitchen-sink/modules/faq-and-links")"
+    grep -q 'class="webx-faq"' <<< "$faq" || fail 'Kitchen sink › Modules › FAQ and links prints no FAQ'
+    grep -q 'class="webx-links"' <<< "$faq" || fail 'Kitchen sink › Modules › FAQ and links prints no links'
+    note "GET $URL/kitchen-sink/modules/faq-and-links — the FAQ and the links under the page"
 fi
 rm -f "$home"
 

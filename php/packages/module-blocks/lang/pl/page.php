@@ -103,6 +103,7 @@ return [
     'source-panel' => 'panel',
     'source-mcp' => 'agent',
     'source-import' => 'import',
+    'source-theme' => 'motyw',
     'drops-translations' => 'W tej wersji pola :fields stają się jednojęzyczne. Strony (:count) mają w nich tekst w kilku językach i zostałby tylko główny: :pages. Opublikuj ponownie, zgadzając się na usunięcie pozostałych języków, albo najpierw przenieś tekst.',
     'localized-changes' => 'Opublikowanie tej wersji zmienia wielojęzyczność pól :fields: wartości już zapisane na stronach (:count) zostaną przekształcone.',
     'rename-called' => 'Inne typy wywołują ten po identyfikatorze: :types. Najpierw zmień ich szablony, potem zmień nazwę.',

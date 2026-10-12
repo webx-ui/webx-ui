@@ -26,6 +26,7 @@ final class Resolution
         public readonly string $tail,
         public readonly ?RouteType $type = null,
         public readonly ?Model $entity = null,
+        public readonly ?string $locale = null,
     ) {}
 
     public static function of(Request $request): ?self
@@ -41,8 +42,25 @@ final class Resolution
         return ! $this->route->isAlias();
     }
 
+    /**
+     * Whether the row is another language's: the entity has no translation in the one that was
+     * asked for, and is shown in the default language's words under its prefix (§8.7).
+     *
+     * The row is the default language's canonical; `$locale` is the language of the address.
+     */
+    public function isUntranslated(): bool
+    {
+        return $this->locale !== null && $this->locale !== $this->route->locale;
+    }
+
     public function with(RouteType $type, Model $entity): self
     {
-        return new self($this->route, $this->tail, $type, $entity);
+        return new self($this->route, $this->tail, $type, $entity, $this->locale);
+    }
+
+    /** The same find, answered in a language it has no row in. */
+    public function in(string $locale): self
+    {
+        return new self($this->route, $this->tail, $this->type, $this->entity, $locale);
     }
 }

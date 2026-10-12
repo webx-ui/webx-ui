@@ -1,0 +1,169 @@
+/*
+ * module-seo: the base look of what it prints on a page (THEMES §10.2) — the trail, the page's
+ * FAQ and its interlinking block.
+ *
+ * The trail stands inside the main column, where a theme's prose styles every list: without this
+ * it is a numbered list with a gap under each item. Here it is one line of small links with a
+ * separator the reader does not hear (it is drawn, not written). Only site tokens of the engine's
+ * vocabulary, one class per rule: a theme restyles any of it by writing the same class later.
+ */
+
+.webx-breadcrumbs {
+  margin-block: 0 var(--site-space-5);
+  color: var(--site-color-text-muted);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+}
+
+.webx-breadcrumbs__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-1) var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--site-space-2);
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The separator: drawn before every item but the first, so a reader hears a list, not slashes. */
+.webx-breadcrumbs__item + .webx-breadcrumbs__item::before {
+  content: '';
+  flex-shrink: 0;
+  width: 0.4em;
+  height: 0.4em;
+  border-block-start: 1px solid currentColor;
+  border-inline-end: 1px solid currentColor;
+  transform: rotate(45deg);
+  opacity: 0.6;
+}
+
+.webx-breadcrumbs__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--site-color-border);
+}
+
+.webx-breadcrumbs__link:hover {
+  color: var(--site-color-accent);
+  text-decoration-color: currentColor;
+}
+
+.webx-breadcrumbs__item--current {
+  color: var(--site-color-text);
+}
+
+/* The FAQ of a page: native disclosures, a line between them. */
+.webx-faq {
+  margin-block: var(--site-space-6);
+}
+
+.webx-faq__heading {
+  margin: 0 0 var(--site-space-4);
+}
+
+.webx-faq__item {
+  border-block-end: 1px solid var(--site-color-border);
+}
+
+.webx-faq__item:first-of-type {
+  border-block-start: 1px solid var(--site-color-border);
+}
+
+.webx-faq__question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--site-space-3);
+  min-height: 44px;
+  padding-block: var(--site-space-3);
+  color: var(--site-color-text);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.webx-faq__question::-webkit-details-marker {
+  display: none;
+}
+
+/* A chevron that turns when the answer is open. */
+.webx-faq__question::after {
+  content: '';
+  flex-shrink: 0;
+  width: 0.5em;
+  height: 0.5em;
+  border-block-end: 2px solid currentColor;
+  border-inline-end: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform var(--site-duration) var(--site-easing);
+}
+
+.webx-faq__item[open] > .webx-faq__question::after {
+  transform: rotate(-135deg);
+}
+
+.webx-faq__answer {
+  padding-block-end: var(--site-space-4);
+  color: var(--site-color-text-muted);
+}
+
+.webx-faq__answer > :first-child {
+  margin-block-start: 0;
+}
+
+.webx-faq__answer > :last-child {
+  margin-block-end: 0;
+}
+
+/* The interlinking block: a heading and links that wrap as a row of chips. */
+.webx-links {
+  margin-block: var(--site-space-6);
+}
+
+.webx-links__heading {
+  margin: 0 0 var(--site-space-3);
+  font-size: var(--site-font-size-4);
+}
+
+.webx-links__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-links__item {
+  margin: 0;
+}
+
+.webx-links__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: border-color var(--site-duration) var(--site-easing);
+}
+
+.webx-links__link:hover {
+  border-color: var(--site-color-accent);
+  color: var(--site-color-accent);
+}

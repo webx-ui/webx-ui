@@ -113,23 +113,26 @@ so a status renamed from New to «Не разобрано» goes on being the on
 <x-webx-inbox::form :form="$form" class="my-form" :values="['product' => $product->name]" />
 ```
 
-The tag prints the whole thing: the controls the fields ask for, the honeypot, the hidden
-timestamp, the captcha block if the form wants one, the button and the two boxes a thank-you or a
-refusal goes in. A slug nobody has a form for — or one that is switched off — prints nothing: a
+The tag prints the whole thing, on the widgets' form engine ([Forms](./forms)): an
+`<x-webx-form>` with an `<x-webx-field>` for every field of the panel, the honeypot, the hidden
+timestamp, the captcha if the form wants one, and the button. Everything a form of the site does,
+this one does: it is checked in the browser by the intake's own rules and in its words, sent in
+place, its errors under its fields, its thank-you in a live region — the same in a dialog. A slug nobody has a form for — or one that is switched off — prints nothing: a
 page that says "form not found" to a customer is worse than a page with one section missing.
 
 `:values` fills the hidden fields by machine name: which page, which product, which campaign. That
 is what a machine name is for.
 
 **It works without JavaScript.** The form posts, the intake answers with a redirect, and the page
-comes back with the errors under their inputs or the thank-you in place — through the session,
-which is why the intake keeps one. The script the tag links adds one thing: the same two boxes
-filled without the page reloading. One file, no dependencies, no build step, served straight from
-the package.
+comes back with the errors under their fields or the thank-you under them — through the session,
+which is why the intake keeps one. With JavaScript the widgets' `form.js` does the same in place.
+The Inbox's own script, `inbox.js`, is only the captcha's half — it runs an invisible captcha on
+`webx:form:submit` and resets it after the answer — and is linked only by a form with a captcha.
 
-A page may carry several forms. Each prints a hidden `webx_form`, and that is how one of them
-knows the errors in the session are its own. Two forms on one page without it both light up red
-over one refusal — and with one form on the page you will never see it.
+A page may carry several forms — a request in the body, a subscription in the footer, the same
+form again in a dialog. Each has its own `id` (`webx-inbox-<slug>`, then `-2`…), sent back as
+`_webx_form`: the errors, the old input and the thank-you in the session belong to the one that
+was sent, and the others stay as the page printed them.
 
 The form also prints a hidden `webx_locale`: the language the page came out in. The intake writes
 its own middleware stack and so runs nothing the site added to its `web` group, the language
@@ -148,8 +151,8 @@ tag, so the form works on a site with no block editor at all.
 ```
 
 One subscription form in the footer and in every article is one form, and `placement` is what
-tells the two apart. The `<form>` gets `wx-form--footer` beside `wx-form`, so the site styles each
-by CSS alone; the views of the form and of every field get `$placement`; and a hidden
+tells the two apart. The `<form>` gets `webx-inbox-form--footer` beside `webx-inbox-form`, so
+the site styles each by CSS alone; the view of the form gets `$placement`; and a hidden
 `webx_placement` makes the submission remember it — the card of a submission says
 «Placement: footer», and the list offers a filter once a form has come in from more than one
 place. `inbox_get` and `inbox_list` return it, and `inbox_list` filters by it.
@@ -159,33 +162,63 @@ warning in the log rather than an exception: the form on the page matters more t
 of its attributes. `none` is reserved; it is what the filter says for «the page did not say».
 
 This is what a footer made of blocks needs from the inbox: a block whose template prints
-`<x-webx-inbox::form :slug="$form" placement="footer" />`, styled by `.wx-form--footer` — see
+`<x-webx-inbox::form :slug="$form" placement="footer" />`, styled by `.webx-inbox-form--footer` — see
 [Layout regions](/guide/layout-regions).
 
+### The look of the form
+
+The fields, the messages and the button are the widgets' — `webx-field-*` and `webx-form-*`, the
+same classes as every form of the site ([Forms](./forms), «The look» and «The look of the form»).
+On a site with a theme the Inbox adds only its layout, `resources/theme/inbox.css` on the site
+tokens: fields two to a row where the panel marked them half width and the form is wide enough. A
+theme restyles all of it in its `src/css` ([where the styles live](./styles.md#a-module-s-page)):
+
+| Class                                                    | What                                            |
+| -------------------------------------------------------- | ----------------------------------------------- |
+| `webx-inbox-form`, `webx-inbox-form--<placement>`        | on the `<form>`, beside `webx-form`             |
+| `webx-inbox-form__fields`                                | the fields, two to a row from 32rem of the form |
+| `webx-inbox-form__field`, `webx-inbox-form__field--half` | on each `webx-field`; half width in the panel   |
+| `webx-inbox-form__captcha`                               | the captcha and its error                       |
+| `webx-inbox-form__actions`                               | the button's row                                |
+| `webx-inbox-form__honeypot`                              | the field for robots, clipped inline — leave it |
+
+**Before W6.4 the form had classes of its own, `wx-form*`.** They map like this:
+
+| Was                                                         | Now                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `wx-form`, `wx-form--<placement>`                           | `webx-form webx-inbox-form`, `webx-inbox-form--<placement>`  |
+| `wx-form__fields`, `wx-form__field`, `wx-form__field--half` | `webx-inbox-form__fields`, `__field`, `__field--half`        |
+| `wx-form__field--<type>`, `is-invalid`                      | `webx-field--<type>`, `is-invalid` on `webx-field`           |
+| `wx-form__label`, `__required`, `__help`, `__error`         | `webx-field__label`, `__required`, `__hint`, `__error`       |
+| `wx-form__control`, `wx-form__control--file`                | `webx-field__control`, `webx-field__control--file`           |
+| `wx-form__choices`, `__choice`, `__choice-input`            | `webx-field__choices`, `__choice`, `__check`                 |
+| `wx-form__choice-label`, `__consent`, `__consent-input`     | `webx-field__choice-label`, `__choice--consent`, `__check`   |
+| `wx-form__consent-text`                                     | `webx-field__choice-label` inside `__choice--consent`        |
+| `wx-form__captcha`, `__actions`, `__honeypot`               | `webx-inbox-form__captcha`, `__actions`, `__honeypot`        |
+| `wx-form__message`, `__message-heading`, `__message-text`   | `webx-form__message` > `__answer` > `__heading`, `__text`    |
+| `wx-form__error--form`                                      | `webx-form__error` > `__refusals` > `__refusal`              |
+| `wx-form__submit` (`:disabled` while sending)               | `webx-form__submit` (`aria-disabled`; the form `is-sending`) |
+
+A site that published `form.blade.php` before then keeps a working form for an alias period: a
+view without `<x-webx-form>` in it is handed what it used to be handed, the old partials stay in
+the package and its old script is served as `inbox-legacy.js` — and the audit's
+`inbox.legacy_views` names the view until it is moved. Moving it is deleting it, or rewriting it
+around `<x-webx-form>`, and repainting the classes by the table above.
+
 ### Making the markup yours
+
+Most of what a site wants is CSS. One control of one type is the widgets' view
+(`theme/views/vendor/webx-widgets/components/field/<type>.blade.php`) and changes every form of the
+site alike. The frame is the Inbox's:
 
 ```bash
 php artisan vendor:publish --tag=webx-inbox-views
 ```
 
-What ships is the least markup that works — `wx-form`, `wx-form__field`, `wx-form__control`,
-`is-invalid` — with no colours, no spacing and no stylesheet. The package's design tokens are not
-pulled onto the site: a site is not obliged to have them. A field the panel says is not full
-width adds `wx-form__field--half`, and that class is the whole of what the switch means here:
-the package has no layout to apply it to, and the site's stylesheet decides what half a row is.
-After publishing, the views belong to the project:
-
-```
-resources/views/vendor/webx-inbox/form.blade.php            the frame
-resources/views/vendor/webx-inbox/field.blade.php           the label, the hint, the error
-resources/views/vendor/webx-inbox/fields/<type>.blade.php   one control each
-resources/views/vendor/webx-inbox/message.blade.php         the thank-you and the refusal
-resources/views/vendor/webx-inbox/honeypot.blade.php · captcha.blade.php
-```
-
-The script finds its way around by `data-webx-*` attributes and by `[name]`, so a rewritten view
-keeps working as long as it keeps those. Drop them and the form still submits — it just reloads
-the page to say what happened. To bundle the script instead of linking the package's, publish it
+After it `form.blade.php` (with `form/captcha.blade.php` and `form/honeypot.blade.php`) belongs to
+the project and gets no fixes. Keep `<x-webx-form>` and the fields in it, the hidden `webx_form`,
+`webx_locale` and `webx_page`, the honeypot, the timestamp and the captcha's place
+(`data-webx-field="captcha"`). To bundle `inbox.js` instead of linking the package's, publish it
 with `--tag=webx-inbox-assets` and set `webx-inbox.script` to false.
 
 The panel's Embedding tab prints the snippet for the form you are looking at, with its machine
@@ -209,8 +242,10 @@ Validation comes from the fields, and errors come back under the names the input
 { "message": "…", "errors": { "fields.email": ["The e-mail must be a valid address."] } }
 ```
 
-A request that asks for JSON gets JSON — `{ ok, heading, message, redirect }` — and anything else
-gets a redirect with the same thing in the session.
+The answer is the one every form of the site gets, `FormResponse` of the widgets: a request
+that asks for JSON gets `{ ok, heading, message, redirect, html }` — the form's thank-you, or its
+address when it has one — and anything else a redirect: there, or back to the page with the
+thank-you in the session. A form whose thank-you nobody wrote still says «Thank you».
 
 **The same thing sent twice.** Answers are hashed, and the same hash from the same form inside
 fifteen minutes updates the submission it matches rather than making a second one. Outside that
@@ -293,6 +328,13 @@ no queue worker runs. One that failed right after the mail settings changed usua
 worker still holds the old ones: `php artisan queue:restart`. Then send it again from the
 submission's menu, or with the MCP tool `inbox_notify` (`dry_run` first). With the site audit
 installed, the check «Notifications about submissions that did not leave» lists both cases.
+
+**The letter wears the site's theme.** It stands in the theme's frame — the site's name, the
+letter on a sheet, a line below — and every colour in it is a token's value written on the
+server, because a mail client reads no CSS variable: a preset or the accent picked in the panel
+repaints the letter with the site. Without a theme it has a frame of its own in the default
+theme's colours. A theme rewrites the letter in `views/vendor/webx-inbox/mail/submission.blade.php`
+(the styles guide, «Letters»); the starter site's «Kitchen sink › Mail» shows it.
 
 ## After a submission is stored
 

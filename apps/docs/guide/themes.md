@@ -1,0 +1,205 @@
+# Site themes
+
+The public pages of a site — the frame of every page, the header and the footer, the typography,
+the look of the blocks and of the modules' pages — are drawn by a **theme**. This page is about
+the themes themselves: how a chain of them makes one look, the commands that show, check, make,
+extract and eject a theme, and the test every theme runs. Which file of the site holds what is
+in [Where the styles live](./styles.md).
+
+## A chain of layers
+
+A site stands on a chain, top first:
+
+```
+resources/views            the site's own overrides — above every theme, for the developer
+theme/                     the site's local theme: only what makes this site different
+acme/theme-clinic          a packaged theme several sites share (optional)
+webx-ui/theme-default      the bottom: a value for every token, the shell, the six blocks
+the modules                each module's own views and base look
+```
+
+A layer is a directory with the same parts, each optional — a part that is missing is inherited
+from below:
+
+| Part                         | What it is                                                              |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| `theme.json` / composer.json | the manifest: `title`, `uses`, `requires`, `locales`, `fonts`, `preset` |
+| `tokens.json`                | `defaults`, `presets` and the layer's own `vocabulary`                  |
+| `src/css`, `src/js`          | the stylesheet (and, rarely, a script) on `var(--site-…)` only          |
+| `views/`                     | Blade views: the layout, the header, an override of a module's view     |
+| `blocks/`                    | block types by slug, in the format `webx:blocks:export` writes          |
+| `icons/`, `assets/`          | the sprite's icons, pictures and fonts for `theme_asset()`              |
+| `lang/<locale>/theme.php`    | the words of the layout                                                 |
+
+A **local** theme is `theme/` inside the site; its manifest is `theme/theme.json`, and the site's
+Vite builds its `src/`. A **packaged** theme is a Composer package of `"type": "webx-theme"`; its
+manifest is `extra.webx.theme` of its composer.json, and its `dist/` is built and committed, so a
+site installs it without Node.
+
+`WEBX_THEME` in `.env` names the top of the chain — `theme` for a local theme, a Composer name for
+a packaged one; every layer below comes from the `uses` of the one above it.
+
+## Four doors, cheapest first
+
+A change goes through the cheapest door that solves it:
+
+1. **A token** — a value in `theme/tokens.json`. Every page, block and module page follows, in
+   every preset.
+2. **CSS on the classes** — `theme/src/css/theme.css`, on the classes the shell (`site-*`) and the
+   modules (`webx-<module>-*`, listed in each module's `AGENTS.md`) print.
+3. **An extension point** — `theme/views/parts/<point>.blade.php` for a point a module's view
+   offers with `@webxPart` (`parts/blog/card.blade.php`).
+4. **An override of a view** — a copy of the current version in `theme/views/…`, changed the
+   least. The expensive door: the copy stops getting the module's fixes.
+
+The 35 rules of a theme — where to work, tokens, where each style lives, blocks, views, languages
+and fonts, accessibility, what to check before saying it is done — are in the engine's
+[`RULES.md`](https://github.com/webx-ui/webx-ui/blob/main/php/packages/themes/RULES.md). The check
+and the test name a rule by its number.
+
+## The commands
+
+| Command                                  | What it does                                                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `webx:theme:show [--json]`               | the layers, every token with the layer or preset that set it, every view with what it hides, blocks, icons, fonts |
+| `webx:theme:check [path]`                | the rules a machine can hold; a line per finding (file:line, what, why), non-zero exit                            |
+| `webx:theme:sync [--dry-run]`            | publishes `dist/`, `assets/`, the sprite and the modules' base look; puts the layers' block types on the site     |
+| `webx:theme:make theme --local --uses=…` | the local theme `webx:setup` gives every new site                                                                 |
+| `webx:theme:make vendor/name [--uses=…]` | a packaged theme in `packages/<name>`, over `webx-ui/theme-default` unless told otherwise                         |
+| `webx:theme:extract vendor/name`         | the site's local theme becomes a package the site then stands on                                                  |
+| `webx:theme:eject [vendor/name]`         | a packaged theme becomes part of the site's local theme; its updates stop                                         |
+
+`show` is what to read before a change: it says which layer owns the value you are about to
+change. `check` is what to run before saying the change is done.
+
+## The test of a theme
+
+Every theme has a PHPUnit test that runs the engine's contract:
+
+```php
+use WebxUi\Themes\Testing\ThemeContract;
+
+final class ThemeTest extends TestCase
+{
+    use ThemeContract;
+
+    protected function themePath(): string
+    {
+        return dirname(__DIR__);
+    }
+}
+```
+
+`make` writes it for both kinds — the local theme's test runs with the site's (`php artisan
+test`), the package's on Testbench (`vendor/bin/phpunit`) — and it is green on the theme `make`
+just wrote. It holds the theme to:
+
+- the manifest reads and the chain builds with this theme on top;
+- every token of the vocabulary has a value somewhere in the chain;
+- `webx:theme:check` finds nothing: tokens, the preset, stylesheets, block types and their
+  schemas, icons, assets, words in every declared language, fonts, letters;
+- text reads in every preset — WCAG AA, 4.5:1 for `text` on `bg` and `surface`, `text-muted` on
+  both, `accent-contrast` on `accent`, `accent` on `bg` (hex colours; another notation is left to
+  the eye);
+- the layout of the chain keeps `@webxTheme`, `@webxSeo`, `@webxBlocks` and the `header` and
+  `footer` regions;
+- the theme's views compile (a component of a module not installed where the test runs is not
+  the theme's fault and is skipped);
+- a packaged theme's committed `dist/` is built from its current `src/`.
+
+The first red line is the first rule a change broke.
+
+## A packaged theme
+
+`php artisan webx:theme:make acme/theme-clinic` writes `packages/theme-clinic/`:
+
+```
+composer.json        "type": "webx-theme", the manifest under extra.webx.theme
+tokens.json          {"defaults": {}} — every value comes from below until you set one
+src/css/theme.css    empty, with the doors in a comment
+dist/                theme.css and sources.json, already built — the test is green at once
+package.json         npm run build — Vite builds src/ into dist/ and writes sources.json
+vite.config.js
+tests/ThemeTest.php  the contract, on Testbench
+phpunit.xml.dist
+.github/workflows/theme.yml   dist/ is rebuilt and unchanged; the contract is green
+```
+
+After every change to `src/`: `npm install && npm run build` in the package, and commit `dist/` —
+the test fails while `src/` and `dist/` disagree. A site stands on the theme with
+`"uses": ["acme/theme-clinic"]` in its `theme/theme.json` and the package required from Composer
+(a path repository while it lives beside the site, a VCS or Packagist one when it moves out).
+
+## Extract: a site's look becomes a theme
+
+A design worked out on one site, and a second site wants the same. Copying `theme/` would mean
+fixing every bug twice; instead the local theme becomes a package both sites stand on:
+
+```bash
+php artisan webx:theme:extract acme/theme-clinic
+```
+
+- `theme/` moves into `packages/theme-clinic/` (`--path` for another place); `theme.json` becomes
+  the composer.json's `extra.webx.theme`, `uses` and the rest kept.
+- The package gets what a packaged theme has: the build of `dist/`, the test on the contract, the
+  CI. The local theme's own test (a test of the site) is dropped, and the stub `src/js/theme.js`
+  that says nothing too.
+- The site stands on the package: a path repository and `"acme/theme-clinic": "@dev"` in its
+  composer.json, `WEBX_THEME=acme/theme-clinic` in `.env`, the theme's suite gone from
+  `phpunit.xml`; the entries of `theme/` in `vite.config.js` are named for you to remove.
+- The look of the chain is compared before and after — tokens and the preset, the winning file of
+  every view, picture and icon, every block type, every font face, every word. «The same look»
+  means the site draws the same pages; anything else is listed.
+
+Composer and npm are not run — the command ends with the steps:
+
+```bash
+composer update acme/theme-clinic
+```
+
+```bash
+cd packages/theme-clinic && npm install && npm run build
+```
+
+```bash
+php artisan webx:theme:sync
+```
+
+Until they run, the site has no theme stylesheet. The block types the theme brings stay on the
+site: `sync` sees the same type now carried by the package and only notes its new source. A new
+`theme/` for this site's own differences is `php artisan webx:theme:make theme --local
+--uses=acme/theme-clinic`.
+
+## Eject: a site leaves a theme
+
+A site has come to differ from its packaged theme more than it shares with it, and every update
+of the theme breaks something the site overrode. It takes the theme in and stops following it:
+
+```bash
+php artisan webx:theme:eject acme/theme-clinic
+```
+
+- On a site with a local theme over the package, the package **folds into `theme/`**: a file the
+  site already has wins, as it won in the chain; `tokens.json` merges by token (presets by name,
+  then by token), the words of the layout by key, the manifest key by key — `uses` becomes what
+  the package stood on. The package's `src/` goes under `theme/src/css/theme-clinic/` (and
+  `src/js/…`), imported first in `theme.css`, where its stylesheet used to come.
+- On a site that stood on the package itself, the package **becomes `theme/` whole**
+  (`--path` for another directory) and `WEBX_THEME` names it.
+- The look is compared before and after, as for extract.
+- `webx-ui/theme-default` is never ejected: it is the value of every token and the shell every
+  site stands on — override what you need of it in `theme/`, file by file.
+
+Then `composer remove acme/theme-clinic`, `npm run build`, `php artisan webx:theme:sync` and
+`php artisan webx:theme:check`. After a fold the check may ask for words: a language the site
+declares in `locales` now needs every key of `en`, the package's included — before, they fell
+back to English as well.
+
+## For an agent
+
+1. `php artisan webx:theme:show` — what the chain gives and which layer owns it.
+2. The change, in `theme/`, through the cheapest door; the rules in `RULES.md`.
+3. `php artisan webx:theme:check` — no findings; the theme's test — green.
+4. Screenshots in a browser: the home page, an inner page, each module's page — on a desktop and
+   at 375px, in every preset. jsdom does not check layout.
+5. A report to the person: what changed, through which door, which views are overridden.

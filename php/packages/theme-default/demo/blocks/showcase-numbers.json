@@ -13,15 +13,41 @@
     {
       "id": "heading",
       "type": "wx-input",
-      "label": "Heading"
+      "label": "Heading",
+      "localized": true
     },
     {
       "id": "note",
       "type": "wx-textarea",
       "label": "Note",
+      "localized": true,
       "props": {
         "rows": 3
       }
+    },
+    {
+      "id": "years",
+      "type": "wx-input",
+      "label": "Under the first counter",
+      "localized": true
+    },
+    {
+      "id": "clients",
+      "type": "wx-input",
+      "label": "Under the second counter",
+      "localized": true
+    },
+    {
+      "id": "rating",
+      "type": "wx-input",
+      "label": "Under the third counter",
+      "localized": true
+    },
+    {
+      "id": "saved",
+      "type": "wx-input",
+      "label": "Under the fourth counter",
+      "localized": true
     },
     {
       "id": "kind",
@@ -51,7 +77,8 @@
     {
       "id": "ended",
       "type": "wx-input",
-      "label": "Text at the end"
+      "label": "Text at the end",
+      "localized": true
     },
     {
       "id": "width",
@@ -71,12 +98,16 @@
       }
     }
   ],
-  "template": "<section class=\"b-showcase-numbers b-showcase-numbers--{{ $width === 'narrow' ? 'narrow' : 'full' }}\" data-wx-block=\"showcase-numbers\" data-webx-countdown-scope>\n    @if ($heading)\n        <h2 class=\"b-showcase-numbers__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-numbers__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-numbers__frame\">\n        @if ($kind === 'counters')\n            <ul class=\"b-showcase-numbers__list\" role=\"list\">\n                <li><x-webx-counter :value=\"15\" class=\"b-showcase-numbers__number\" /> years</li>\n                <li><x-webx-counter :value=\"3000\" suffix=\"+\" class=\"b-showcase-numbers__number\" /> clients</li>\n                <li><x-webx-counter value=\"4.9\" class=\"b-showcase-numbers__number\" /> rating</li>\n                <li><x-webx-counter :value=\"1250000\" prefix=\"$\" class=\"b-showcase-numbers__number\" /> saved</li>\n            </ul>\n        @else\n            <x-webx-countdown :to=\"now()->addSeconds(max(0, (int) $seconds))\" :ended=\"$ended ?: null\" />\n        @endif\n    </div>\n</section>\n",
+  "template": "<section class=\"b-showcase-numbers b-showcase-numbers--{{ $width === 'narrow' ? 'narrow' : 'full' }}\" data-wx-block=\"showcase-numbers\" data-webx-countdown-scope>\n    @if ($heading)\n        <h2 class=\"b-showcase-numbers__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-numbers__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-numbers__frame\">\n        @if ($kind === 'counters')\n            <ul class=\"b-showcase-numbers__list\" role=\"list\">\n                <li><x-webx-counter :value=\"15\" class=\"b-showcase-numbers__number\" /> {{ $years }}</li>\n                <li><x-webx-counter :value=\"3000\" suffix=\"+\" class=\"b-showcase-numbers__number\" /> {{ $clients }}</li>\n                <li><x-webx-counter value=\"4.9\" class=\"b-showcase-numbers__number\" /> {{ $rating }}</li>\n                <li><x-webx-counter :value=\"1250000\" prefix=\"$\" class=\"b-showcase-numbers__number\" /> {{ $saved }}</li>\n            </ul>\n        @else\n            <x-webx-countdown :to=\"now()->addSeconds(max(0, (int) $seconds))\" :ended=\"$ended ?: null\" />\n        @endif\n    </div>\n</section>\n",
   "styles": ".b-showcase-numbers {\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-numbers__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-numbers__note {\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-numbers--narrow .b-showcase-numbers__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n\n.b-showcase-numbers__list {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--site-space-4);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-showcase-numbers__number {\n    font-size: var(--site-font-size-2);\n    font-weight: 700;\n}\n",
   "script": null,
   "sample": {
     "heading": "Numbers",
     "note": "",
+    "years": "years",
+    "clients": "clients",
+    "rating": "rating",
+    "saved": "saved",
     "kind": "countdown",
     "seconds": 75,
     "ended": "It is over.",

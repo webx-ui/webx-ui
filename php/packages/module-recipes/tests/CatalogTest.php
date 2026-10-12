@@ -88,7 +88,7 @@ final class CatalogTest extends TestCase
 
         $page = (string) $this->get('/recipes/breakfasts')->assertOk()->getContent();
 
-        $this->assertStringContainsString('<h1>Breakfasts</h1>', $page);
+        $this->assertStringContainsString('<h1 class="wx-recipes__title">Breakfasts</h1>', $page);
         $this->assertLessThan(strpos($page, 'recipes/early"'), strpos($page, 'recipes/late"'));
         $this->assertStringNotContainsString('recipes/elsewhere', $page);
         $this->assertSame(['Home', 'Recipes', 'Breakfasts'], array_column($this->jsonLd($page, 'BreadcrumbList')['itemListElement'], 'name'));

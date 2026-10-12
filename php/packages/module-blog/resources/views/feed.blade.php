@@ -7,13 +7,13 @@
         <link rel="alternate" type="application/rss+xml" title="{{ trans('webx-blog::blog.rss') }}" href="{{ route('webx.blog.rss') }}">
     </x-slot:head>
 
-    <header>
-        <h1>{{ trans('webx-blog::blog.title') }}</h1>
+    <header class="webx-blog-header">
+        <h1 class="webx-blog-header__title">{{ trans('webx-blog::blog.title') }}</h1>
         @if ($rubrics->isNotEmpty())
-            <nav>
-                <ul>
+            <nav class="webx-blog-rubrics">
+                <ul class="webx-blog-rubrics__list">
                     @foreach ($rubrics as $rubric)
-                        <li><a href="{{ $rubric->url() }}">{{ $rubric->title }}</a></li>
+                        <li class="webx-blog-rubrics__item"><a class="webx-blog-rubrics__link" href="{{ $rubric->url() }}">{{ $rubric->title }}</a></li>
                     @endforeach
                 </ul>
             </nav>
@@ -21,7 +21,7 @@
     </header>
 
     @if ($articles->isEmpty())
-        <p>{{ trans('webx-blog::blog.empty') }}</p>
+        <p class="webx-blog-empty">{{ trans('webx-blog::blog.empty') }}</p>
     @else
         @include('webx-blog::partials.cards')
         @include('webx-blog::partials.pages')

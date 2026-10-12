@@ -1,5 +1,5 @@
 <header class="wx-event__heading">
-    <h1>{{ $title }}</h1>
+    <h1 class="wx-event__title">{{ $title }}</h1>
     {{-- Still a page when it is over (decision 6): the report of it, with no way to book. --}}
     @if ($past)
         <p class="wx-event__past"><strong>{{ trans('webx-events::site.past') }}</strong></p>

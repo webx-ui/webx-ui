@@ -35,12 +35,15 @@ final class DemoTest extends TestCase
 
         $this->artisan('webx:demo')->assertSuccessful();
 
-        $this->assertSame('Demo site', $settings->get('general.project-name'));
+        // The site speaks Russian first, and the demo brings its words in Russian too.
+        $this->assertSame('Демо-сайт', $settings->get('general.project-name'));
         // The house rules a content agent reads come filled in, so the resource is worth reading.
         $this->assertStringStartsWith('Plain and warm', (string) $settings->get('content.tone'));
         // The Contacts tab too, so the theme's header and footer have numbers, hours and networks to show.
         $this->assertCount(3, contacts()->phones());
-        $this->assertSame('Sales', contacts()->primaryPhone()?->label);
+        $this->assertSame('Отдел продаж', contacts()->primaryPhone()?->label);
+        // Only the languages the site has: no English or Polish left in a Russian and Ukrainian site.
+        $this->assertSame(['ru'], array_keys((array) Setting::query()->where('key', 'contacts.phones')->value('value')[0]['label']));
         $this->assertFalse(contacts()->hours()->isEmpty());
         $this->assertSame('Europe/London', contacts()->hours()->timezone()->getName());
         $this->assertCount(4, contacts()->socials());

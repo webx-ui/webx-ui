@@ -1,3 +1,5 @@
+{{-- Before W6.4 (an alias period, WIDGETS §20 W6.4): read only by a form.blade.php a site published
+     before the form moved to the widgets' engine. The form of today is form.blade.php and form/*. --}}
 {{--
     One field: the label, the control, the hint and the place an error goes.
 

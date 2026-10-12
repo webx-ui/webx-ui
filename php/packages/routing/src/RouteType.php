@@ -35,6 +35,8 @@ class RouteType
      * @param  PathFormatter|class-string<PathFormatter>  $formatter
      * @param  class-string<RouteHandler>|null  $handler  Null while a type is only written, not served.
      * @param  bool  $acceptsTail  Whether a longer address may be matched by this row's prefix.
+     * @param  bool  $showsUntranslated  Whether an entity with no row in a language is shown there anyway,
+     *                                   in the default language's words under that language's prefix (§8.7).
      */
     public function __construct(
         public readonly string $type,
@@ -43,6 +45,7 @@ class RouteType
         public readonly ?string $handler = null,
         public readonly bool $acceptsTail = false,
         public readonly OnConflict $onConflict = OnConflict::Fail,
+        public readonly bool $showsUntranslated = false,
     ) {}
 
     /**

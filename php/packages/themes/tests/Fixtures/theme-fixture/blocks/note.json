@@ -1,0 +1,8 @@
+{
+  "slug": "note",
+  "title": "Note",
+  "schema": [{ "id": "text", "type": "wx-textarea", "label": "Text" }],
+  "template": "<aside class=\"b-note\" data-wx-block=\"note\">{{ $text }}</aside>\n",
+  "styles": ".b-note {\n    background: var(--site-color-surface);\n}\n",
+  "sample": { "text": "A note" }
+}

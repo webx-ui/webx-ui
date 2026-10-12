@@ -1,0 +1,237 @@
+{
+  "slug": "showcase-fields",
+  "title": "Showcase: fields",
+  "description": "The fields of a form from the widgets — each one of the list in each state named: empty, filled, with an error, disabled — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 99,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "width",
+      "type": "wx-select",
+      "label": "Width",
+      "props": {
+        "options": [
+          {
+            "label": "The page",
+            "value": "page"
+          },
+          {
+            "label": "Narrow column",
+            "value": "narrow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "states",
+      "type": "wx-repeater",
+      "label": "States",
+      "props": {
+        "itemLabel": "title",
+        "addLabel": "Add a state",
+        "max": 4,
+        "sortable": true
+      },
+      "children": [
+        {
+          "id": "state",
+          "type": "wx-select",
+          "label": "State",
+          "props": {
+            "options": [
+              {
+                "label": "Empty",
+                "value": "empty"
+              },
+              {
+                "label": "Filled",
+                "value": "filled"
+              },
+              {
+                "label": "With an error",
+                "value": "invalid"
+              },
+              {
+                "label": "Disabled",
+                "value": "disabled"
+              }
+            ]
+          }
+        },
+        {
+          "id": "title",
+          "type": "wx-input",
+          "label": "Title",
+          "localized": true
+        }
+      ]
+    },
+    {
+      "id": "fields",
+      "type": "wx-repeater",
+      "label": "Fields",
+      "props": {
+        "itemLabel": "label",
+        "addLabel": "Add a field",
+        "max": 24,
+        "sortable": true
+      },
+      "children": [
+        {
+          "id": "type",
+          "type": "wx-select",
+          "label": "Type",
+          "props": {
+            "options": [
+              {
+                "label": "text",
+                "value": "text"
+              },
+              {
+                "label": "email",
+                "value": "email"
+              },
+              {
+                "label": "tel",
+                "value": "tel"
+              },
+              {
+                "label": "url",
+                "value": "url"
+              },
+              {
+                "label": "password",
+                "value": "password"
+              },
+              {
+                "label": "number",
+                "value": "number"
+              },
+              {
+                "label": "textarea",
+                "value": "textarea"
+              },
+              {
+                "label": "select",
+                "value": "select"
+              },
+              {
+                "label": "radio",
+                "value": "radio"
+              },
+              {
+                "label": "checkbox",
+                "value": "checkbox"
+              },
+              {
+                "label": "consent",
+                "value": "consent"
+              },
+              {
+                "label": "date",
+                "value": "date"
+              },
+              {
+                "label": "file",
+                "value": "file"
+              },
+              {
+                "label": "hidden",
+                "value": "hidden"
+              }
+            ]
+          }
+        },
+        {
+          "id": "name",
+          "type": "wx-input",
+          "label": "Name",
+          "help": "Dots for a nested name: contact.email."
+        },
+        {
+          "id": "label",
+          "type": "wx-input",
+          "label": "Label",
+          "localized": true
+        },
+        {
+          "id": "hint",
+          "type": "wx-input",
+          "label": "Hint",
+          "localized": true
+        },
+        {
+          "id": "error",
+          "type": "wx-input",
+          "label": "Error, in the state with an error",
+          "localized": true
+        },
+        {
+          "id": "choices",
+          "type": "wx-textarea",
+          "label": "Choices, one per line",
+          "localized": true,
+          "props": {
+            "rows": 3
+          }
+        },
+        {
+          "id": "value",
+          "type": "wx-input",
+          "label": "Value when filled",
+          "help": "The number of a choice; several with commas."
+        },
+        {
+          "id": "required",
+          "type": "wx-switch",
+          "label": "Required"
+        },
+        {
+          "id": "multiple",
+          "type": "wx-switch",
+          "label": "Several (a select, a file)"
+        },
+        {
+          "id": "inline",
+          "type": "wx-switch",
+          "label": "Choices in a row"
+        },
+        {
+          "id": "autocomplete",
+          "type": "wx-input",
+          "label": "Autocomplete"
+        }
+      ]
+    }
+  ],
+  "template": "@php\n    // The fields of a form, every one of the block's list in every state it names: the same field\n    // empty, filled, with the server's error and disabled, one column under another. Names are\n    // \"<state>-<n>.<name>\" — dotted, as a module writes them — so a group of radios in one state\n    // is not the same group as in the next, and two blocks on a page stay apart.\n    $set = \\WebxUi\\Widgets\\Facades\\Widgets::sequence('showcase-fields');\n    $shownStates = array_values(array_filter(is_array($states) ? $states : [], static fn ($state): bool => is_array($state) && in_array($state['state'] ?? null, ['empty', 'filled', 'invalid', 'disabled'], true)));\n    $shownFields = array_values(array_filter(is_array($fields) ? $fields : [], static fn ($field): bool => is_array($field) && in_array($field['type'] ?? null, \\WebxUi\\Widgets\\View\\Components\\Field::TYPES, true) && trim((string) ($field['name'] ?? '')) !== ''));\n@endphp\n<section @class(['b-showcase-fields', 'b-showcase-fields--narrow' => $width === 'narrow']) data-wx-block=\"showcase-fields\">\n    @if ($heading)\n        <h2 class=\"b-showcase-fields__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-fields__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-fields__states\">\n        @foreach ($shownStates as $state)\n            <div class=\"b-showcase-fields__state\" data-state=\"{{ $state['state'] }}\">\n                @if (trim((string) ($state['title'] ?? '')) !== '')\n                    <h3 class=\"b-showcase-fields__title\">{{ $state['title'] }}</h3>\n                @endif\n                <div class=\"b-showcase-fields__list\">\n                    @foreach ($shownFields as $field)\n                        @php\n                            $type = $field['type'];\n                            $lines = array_values(array_filter(array_map('trim', preg_split('/\\R/', (string) ($field['choices'] ?? '')) ?: []), static fn (string $line): bool => $line !== ''));\n                            $choices = [];\n                            foreach ($lines as $i => $line) {\n                                $choices[(string) ($i + 1)] = $line;\n                            }\n                            $filled = $state['state'] === 'filled' || $state['state'] === 'disabled';\n                            $sample = trim((string) ($field['value'] ?? ''));\n                        @endphp\n                        @if (! in_array($type, ['select', 'radio'], true) || $choices !== [])\n                            <x-webx-field\n                                :type=\"$type\"\n                                :name=\"$state['state'].'-'.$set.'.'.trim((string) $field['name'])\"\n                                :label=\"(string) ($field['label'] ?? '')\"\n                                :hint=\"(string) ($field['hint'] ?? '')\"\n                                :choices=\"$type === 'checkbox' || $type === 'select' || $type === 'radio' ? $choices : []\"\n                                :multiple=\"(bool) ($field['multiple'] ?? false)\"\n                                :value=\"$filled && $sample !== '' ? ($type === 'checkbox' && $choices !== [] ? explode(',', $sample) : $sample) : null\"\n                                :checked=\"$filled && $sample !== ''\"\n                                :error=\"$state['state'] === 'invalid' ? (string) ($field['error'] ?? '') : null\"\n                                :disabled=\"$state['state'] === 'disabled'\"\n                                :required=\"(bool) ($field['required'] ?? false)\"\n                                :optional=\"! ($field['required'] ?? false)\"\n                                :inline=\"(bool) ($field['inline'] ?? false)\"\n                                :autocomplete=\"trim((string) ($field['autocomplete'] ?? '')) !== '' ? trim((string) $field['autocomplete']) : null\"\n                            />\n                        @endif\n                    @endforeach\n                </div>\n            </div>\n        @endforeach\n    </div>\n</section>",
+  "styles": ".b-showcase-fields {\n    container-type: inline-size;\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-fields__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-fields__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-fields__states {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr);\n    gap: var(--site-space-6);\n}\n\n.b-showcase-fields__title {\n    margin: 0 0 var(--site-space-3);\n    font-size: var(--site-font-size-4);\n}\n\n.b-showcase-fields__list {\n    display: grid;\n    gap: var(--site-space-4);\n}\n\n/* A column as narrow as a sidebar's: long words have to break inside it. */\n.b-showcase-fields--narrow .b-showcase-fields__states {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n\n/* Two states side by side where the page has the room for two forms. */\n@container (min-width: 64rem) {\n    .b-showcase-fields__states {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n\n    .b-showcase-fields--narrow .b-showcase-fields__states {\n        grid-template-columns: minmax(0, 1fr);\n    }\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Fields",
+    "note": "",
+    "width": "page",
+    "states": [],
+    "fields": []
+  }
+}

@@ -111,6 +111,23 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
+    public function the_demo_is_written_in_polish_too(): void
+    {
+        $this->app['config']->set('webx-localization.locales', [
+            ['code' => 'en', 'default' => true],
+            ['code' => 'pl', 'default' => false],
+        ]);
+        $this->app->make(Locales::class)->forget();
+
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        $outlet = Outlet::query()->where('slug->en', 'health-and-style')->firstOrFail();
+
+        $this->assertSame(['en', 'pl'], array_keys($outlet->getTranslations('title')));
+        $this->assertSame(['en', 'pl'], array_keys($outlet->getTranslations('summary')));
+    }
+
+    #[Test]
     public function removing_takes_everything_back_out(): void
     {
         $this->artisan('webx:demo')->assertSuccessful();

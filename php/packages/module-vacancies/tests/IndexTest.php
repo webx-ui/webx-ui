@@ -105,7 +105,7 @@ final class IndexTest extends TestCase
     /** @return list<string> */
     private function headings(string $page): array
     {
-        preg_match_all('#<h2>(.*?)</h2>#', $page, $matches);
+        preg_match_all('#<h2[^>]*>(.*?)</h2>#', $page, $matches);
 
         return $matches[1];
     }

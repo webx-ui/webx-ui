@@ -28,6 +28,13 @@
   `/api/cms/screens/<экран>`. Собирать `npx vite build` в самом сайте: dev-сервер сайта панели
   браузера не годится — его `http://127.0.0.1:<порт>` рядом с `https://webx-cms.local` отлетает как
   `ERR_BLOCKED_BY_CLIENT`, и страница молча остаётся на старом бандле.
+- **Правка базового CSS модуля (`resources/theme/*.css`) не видна на слинкованном сайте, хотя
+  `vendor/webx-ui/<модуль>` — junction на чекаут.** Страница грузит не файл модуля, а копию:
+  `webx:theme:sync` склеивает стили всех модулей в `public/themes/modules/<хеш>/modules.css`, и
+  ссылка ведёт туда. Перезагрузка страницы показывает вчерашний вид — похоже на кеш браузера или
+  на то, что правило перебивает тема. Лечится `php artisan webx:theme:sync` в сайте после каждой
+  правки (строка «modules — their base look … published <новый хеш>»); проверка — новый хеш в
+  `<link>` страницы. То же у `dist/` тем и виджетов, но их и так пересобирают.
 - **`rm -rf` внутри `vendor/webx-ui/*` сносит исходники монорепы.** `path`-репозиторий без
   `"symlink": false` кладёт в `vendor` симлинк на чекаут, и каталог внутри него — тот же самый
   каталог. Команда выглядит как «обновить копию в тестовом сайте», а удаляет оригинал; `cp` следом
@@ -124,6 +131,17 @@ webx:theme:sync`. Случайную запись снимать `git -C <осн
   пакеты самого worktree. Проверка — `ls -la packages/<пакет>/node_modules/@webx-ui` показывает
   путь worktree. Сборку пакета из worktree `npx vite build` делает в его каталоге; без junction'а
   на `node_modules` пакета она падает «Cannot find package 'vite-plugin-dts'».
+- **Стартовый сайт показывает не твою ветку, хотя пересобран только что.** `starter-site.sh`
+  линкует тот чекаут, из которого запущен (`MONOREPO` — родитель скрипта), а в основном чекауте
+  может стоять ветка другой сессии. PHP из worktree проверяется запуском скрипта из worktree с
+  `STARTER_PATH=/c/Work/OSPanel/home/webx-starter.local`, `STARTER_URL=http://webx-starter.local`
+  и `STARTER_ENV=<основной чекаут>/.env.starter` — без них сайт соберётся рядом с worktree и без
+  `.env.starter`; шаг npm требует `packages/core/dist`, его и
+  остальные `packages/*/dist` взять junction'ами из основного чекаута, если npm-пакеты не
+  менялись. Проверка — `ls -la vendor/webx-ui` на сайте показывает путь worktree. Сайт остаётся
+  слинкован с worktree: перед удалением worktree пересобрать сайт из основного. (Шаг «Check»
+  падал «Test directory tests/Feature not found» в любом свежем чекауте — пустой каталог скелета
+  не попадал в git; починено `.gitkeep` в W6.4.)
 - **Удалять отработавший worktree — сначала ссылки, потом каталог.** В нём junction'ы
   `node_modules` на основной чекаут, симлинки `php/vendor/webx-ui/*` и тысячи ссылок pnpm, и
   удаление, которое пойдёт за ссылку, снесёт чужое. Порядок: обойти дерево, не заходя в точки
@@ -168,6 +186,13 @@ HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` 
   helpers.php в неё не попадает. Похоже на сломанную чужую ветку. Лечится `composer update
 webx-ui/<пакет>` из `php/`: path-репозиторий перечитывается. Проверка — `grep helpers.php
 vendor/composer/autoload_files.php`.
+- **Скрипт пакетной темы собирается в `dist/theme2.js`, а `@webxTheme` его не ставит.** У Vite
+  со входом-стилем (`src/css/theme.css`) и входом-скриптом рядом стилевой вход оставляет пустой
+  JS-чанк, и тот занимает имя `theme.js` первым — скрипт получает `theme2.js`, а движок ищет
+  `dist/theme.js`. Похоже на сломанный `assetFileNames`. В заготовке `webx:theme:make` входы
+  названы `theme` и `script`, а `entryFileNames` — функцией: `script` → `theme.js`, остальное —
+  `[name]-entry.js` (пустой чанк выбрасывается). Правя `vite.config.js` темы, это не трогать.
+  Проверка — `ls dist` после `npm run build`: `sources.json`, `theme.css`, `theme.js`.
 
 ## Windows, Git Bash, OSPanel
 
@@ -224,6 +249,14 @@ vendor/composer/autoload_files.php`.
   передав путь отдельным аргументом. **И путь после префикса в аргументе:**
   `curl -F "fields[attachment]=@/c/Users/…"` — `curl.exe` получает `/c/…` как есть и выходит с
   кодом 26 без единой строки. Путь для Windows-программ — в виде `C:/…` (`cygpath -m`).
+- **Файл из `/themes/` на сайте OSPanel приходит без вечного кеша, хотя в скелете он есть.**
+  OSPanel не читает ни `docker/nginx.conf`, ни `public/.htaccess` скелета: блок `server` — хоста,
+  в `.osp/nginx/<хост>.conf`, и там только `location /` и PHP. Стартовому сайту `/build/` и
+  `/themes/` дописывает `scripts/starter-site.sh` (и перезапускает nginx: `osp restart nginx`);
+  другому сайту OSPanel — руками туда же. И не `expires 1y` вместе с `add_header Cache-Control`:
+  nginx отдаёт тогда два заголовка `Cache-Control` — один `max-age`, второй `public, immutable`.
+  Один `add_header Cache-Control "public, max-age=31536000, immutable"`. Проверка —
+  `curl -sI <адрес из /themes/> | grep -i cache-control`: ровно одна строка.
 - **PHP-часть проверяется настоящим PHP.** Локально есть модули OSPanel
   (`C:\Work\OSPanel\modules\PHP-8.3\php.exe` и `PHP-8.4`); composer в PATH нет, phar кладётся в
   скретчпад. Гейт php-половины — `composer lint && composer analyse && composer test` из `php/`.
@@ -237,6 +270,14 @@ vendor/composer/autoload_files.php`.
   Нижняя версия пакетов поднята до `^8.4`, матрица CI — 8.4 и 8.5.
 
 ## Гейт и проверки локально
+
+- **После пересборки стартового сайта панель браузера показывает старый вид блока, хотя
+  `webx:theme:sync` сказал «updated», а разметка уже новая.** Стили блоков отдаются одним файлом
+  `/blocks/<хеш>.css` с `immutable` на год, а хеш назван по версиям блоков, — в свежей базе номера
+  версий начинаются заново, адрес совпадает с прошлой сборкой, и браузер берёт файл из кеша.
+  `curl` того же адреса отдаёт новое. В панели браузера — перезапросить стили мимо кеша
+  (`fetch(href, { cache: 'reload' })` для каждого `link[rel=stylesheet]`, потом `location.reload()`);
+  Playwright не задет — у каждого прогона свой пустой кеш.
 
 - **Гейт локально упирается в память, а не в ошибки.** `pnpm build` и `pnpm test` идут
   параллельно по числу ядер, dts-шаг `@webx-ui/core` и тесты с `WxCodeEditor` (CodeMirror)
@@ -260,6 +301,12 @@ vendor/composer/autoload_files.php`.
   убирать: тело из `route.fetch()` уже разжато) не помогает. Добавлять разметку не в ответ, а при
   разборе страницы: `page.addInitScript()` с `MutationObserver`, который вставляет её в `<main>`,
   как только тот появится, — до модульных скриптов (`tests/starter/starter.pw.mjs`, согласие).
+- **Полный прогон стартового сайта идёт 40 минут вместо десяти, и не видно, где.** Изредка
+  воркер виснет на тесте так, что таймаут теста (60 с) не срабатывает, а `… | tail -40` ничего не
+  печатает до конца. Прогон — `--reporter=line` в файл (не в `tail`) под `timeout 1500`; повис —
+  убить дерево процесса, тест отдельно (`-g "<describe>"`), остальное догнать одним `-g` по
+  оставшимся describe (`--list` сначала — Playwright склеивает заголовки пробелами, `›` в
+  фильтре не находит ничего).
 - **`pnpm test:starter` из worktree падает до первого теста: «Playwright Test did not expect
   test.describe() to be called here … No tests found».** Похоже на сломанный файл тестов, а это
   две копии `@playwright/test`: CLI запущен из `node_modules` основного чекаута, а
@@ -267,6 +314,20 @@ vendor/composer/autoload_files.php`.
   своими `node_modules` звать его CLI —
   `node node_modules/@playwright/test/cli.js test -c tests/starter/playwright.config.mjs`; путь
   основного чекаута годится, только пока у worktree своих `node_modules` нет.
+- **`starter-site.sh` зелёный по шагам, а главная отвечает 404 («FAILED: GET … answered 404»).**
+  Выглядит как сломанный маршрут или тема, а это `webx:demo`, остановившийся на полпути: в логе
+  выше — `Data too long for column 'description'` при вставке демо-типа блока. `module-blocks`
+  держит `title` и `description` в 255 символах; страницы витрины после остановки не созданы.
+  Укоротить описание в `theme-default/demo/blocks/<тип>.json` (`ThemeDefaultTest` теперь меряет
+  каждое), затем на сайте `php artisan webx:demo --remove && php artisan webx:demo` — пересобирать
+  весь сайт не нужно.
+- **`ThemeDefaultTest` падает «array_push() does not accept unknown named parameters» на новой
+  странице витрины.** Ключ `items` в `values` демо-блока — это вложенные блоки: тест (и сид)
+  разворачивает его как список блоков, а строка или карта языков там — не список. Поле демо-типа
+  называть иначе (`goods`, `rows`).
+- **Тег в тексте витрины пропал на странице** («`<x-webx-inbox::form …>` prints…» читается как
+  «prints…»). Тело блока `text` печатается как HTML, и браузер съедает `<x-…>` как неизвестный
+  элемент. Код в демо-тексте — `<code>&lt;x-webx-…&gt;</code>`.
 - **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` сервер надо
   перезапустить: свежий HTML тянет новые хеши, их нет в списке → 404, страница без стилей и без
   гидрации. Выглядит как «правка не помогла».

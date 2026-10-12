@@ -38,4 +38,8 @@ return [
     'unknown-field-type' => 'Campi di un tipo che il sito non conosce: :fields. Il modulo mostra un avviso al loro posto e nessuno ne controlla i valori.',
     'field-id' => 'L\'id di un campo è fatto di lettere, cifre, _ e -, e inizia con una lettera: :ids.',
     'marker-slug' => 'La radice è marcata data-wx-block=":marker", ma l’identificatore è «:slug»: lo script e il pannello trovano il blocco con l’identificatore esatto. La pubblicazione sarà rifiutata.',
+    'literal-colors' => 'Colori scritti alla lettera: :values. Nessun preset e nessuna modifica in tokens.json li ricolora: usa un ruolo di colore, var(--site-color-…).',
+    'literal-fonts' => 'Famiglie di caratteri scritte alla lettera: :values. Il carattere del proprietario non le raggiunge mai: usa var(--site-font-body) o var(--site-font-heading), o una famiglia generica.',
+    'unknown-tokens' => 'Non sono tra i token del tema: :tokens. Una variabile che nessuno dichiara è un valore vuoto: niente colore, niente bordo, nessun errore.',
+    'token-fallbacks' => 'Un valore di riserva in :tokens è un valore letterale che nessun preset ricolora. Ogni token del tema ha un valore: scrivi var() senza.',
 ];

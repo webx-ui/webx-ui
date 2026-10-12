@@ -8,10 +8,10 @@
         <x-webx-seo::breadcrumbs :for="$category" />
     @endif
 
-    <header>
-        <h1>{{ $category->title }}</h1>
+    <header class="wx-recipes__header">
+        <h1 class="wx-recipes__title">{{ $category->title }}</h1>
         @if ($picture && $picture['url'])
-            <img src="{{ $picture['url'] }}" alt="{{ $picture['alt'] ?? '' }}"
+            <img class="wx-recipes__picture" src="{{ $picture['url'] }}" alt="{{ $picture['alt'] ?? '' }}"
                  @if ($picture['width']) width="{{ $picture['width'] }}" height="{{ $picture['height'] }}" @endif>
         @endif
         {{-- Printed raw: what is stored has already been through the allowlist of its field type. --}}

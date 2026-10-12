@@ -60,10 +60,14 @@ starts empty:
 | `theme/tokens.json` | colours, fonts, radii — `"defaults": { "color-accent": "#…" }`             |
 | `theme/src/css/`    | rules on the classes the shell and the modules print, `var(--site-…)` only |
 | `theme/views/`      | a copy of a view, only when the markup itself has to change                |
+| `theme/assets/`     | pictures of the theme, asked for as `theme_asset('img/wave.svg')`          |
 | `theme/tests/`      | the theme's test, run with the site's own by `php artisan test`            |
 
 `npm run dev` rebuilds `theme/src` as you type; `php artisan webx:theme:sync` publishes the
-packaged theme's files after `composer update`. A view in `resources/views/components/` is above
+packaged theme's files after `composer update`, and `theme/assets/` and `theme/icons/` after you
+add a file there. What it publishes lands in `public/themes/` under a hash of its content — kept
+out of git like `public/build`, and cached forever by the server: `/themes/` and `/build/` are
+`immutable` in `docker/nginx.conf` and `public/.htaccess`; a server of your own needs the same. A view in `resources/views/components/` is above
 every theme layer and wins over it, so leave `layout`, `header` and `footer` out of there.
 
 A site set up with `--no-theme` has none of this: `webx:setup` writes the layout, the header and

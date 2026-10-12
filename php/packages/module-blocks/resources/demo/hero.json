@@ -13,12 +13,14 @@
     {
       "id": "title",
       "type": "wx-input",
-      "label": "Headline"
+      "label": "Headline",
+      "localized": true
     },
     {
       "id": "subtitle",
       "type": "wx-textarea",
       "label": "Under it",
+      "localized": true,
       "props": {
         "rows": 3
       }
@@ -26,7 +28,8 @@
     {
       "id": "button_label",
       "type": "wx-input",
-      "label": "Button"
+      "label": "Button",
+      "localized": true
     },
     {
       "id": "button_url",

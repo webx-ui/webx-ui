@@ -1,0 +1,21 @@
+{
+  "slug": "hero",
+  "title": "Hero",
+  "group": "content",
+  "schema": [
+    { "id": "title", "type": "wx-input", "label": "Title", "localized": true },
+    {
+      "id": "buttons",
+      "type": "wx-repeater",
+      "label": "Buttons",
+      "children": [
+        { "id": "label", "type": "wx-input", "label": "Label" },
+        { "id": "url", "type": "wx-input", "label": "Address" }
+      ]
+    }
+  ],
+  "template": "<section class=\"b-hero\" data-wx-block=\"hero\"><h1>{{ $title }}</h1></section>\n",
+  "styles": ".b-hero {\n    color: var(--site-color-text);\n}\n",
+  "script": null,
+  "sample": { "title": "Hello", "buttons": [] }
+}

@@ -71,6 +71,12 @@ class Resolver
         $resolution = $this->match($locale, $path);
 
         if ($resolution === null) {
+            $untranslated = $this->untranslated($request, $locale, $prefix, $path);
+
+            if ($untranslated !== null) {
+                return $untranslated;
+            }
+
             // Nothing holds the address. The module that owned something here may still know
             // what it was: a product under another spelling, a deleted one that is gone for good.
             return $this->misses->answer($request, $locale, $path) ?? throw new NotFoundHttpException;
@@ -172,6 +178,42 @@ class Resolver
         }
 
         return $this->redirect($request, $this->publicUrl($target, $resolution->tail));
+    }
+
+    /**
+     * The same path in the default language, for an entity that has no row in this one (§8.7).
+     *
+     * Only under a prefix that is not the default language's, and only for a type that asked for
+     * it: a page read in the language it was written in is better than the home page, an article
+     * may not be — that is the type's to say. An entity that does have a row here, under another
+     * path, is a reader who guessed the page and not its spelling: 301 to the real one.
+     */
+    private function untranslated(Request $request, string $locale, string $prefix, string $path): ?Response
+    {
+        $default = $this->locales->defaultCode();
+
+        if ($prefix === '' || $locale === $default) {
+            return null;
+        }
+
+        $found = $this->match($default, $path);
+
+        if ($found === null || $found->route->isAlias() || ! $this->types->find($found->route->entity_type)?->showsUntranslated) {
+            return null;
+        }
+
+        $own = Route::query()
+            ->canonical()
+            ->where('entity_type', $found->route->entity_type)
+            ->where('entity_id', $found->route->entity_id)
+            ->where('locale', $locale)
+            ->first();
+
+        if ($own instanceof Route) {
+            return $this->redirect($request, $this->publicUrl($own, $found->tail));
+        }
+
+        return $this->hand($request, $found->in($locale));
     }
 
     /** A canonical row: find the type, load the entity, hand both to the handler (§8.5). */

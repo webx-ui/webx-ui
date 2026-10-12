@@ -1,0 +1,12 @@
+.site-header {
+  color: #333;
+  font-family: Georgia, serif;
+  border-color: var(--site-color-olive);
+  background: var(--site-color-pink, transparent);
+}
+
+@media (max-width: 40rem) {
+  .site-header {
+    padding: var(--site-space-2);
+  }
+}

@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
+use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\ThemeManifest;
 
 /**
  * The feedback form every site turns out to need, seeded and taken out again.
@@ -35,6 +37,48 @@ final class DemoTest extends TestCase
         $this->assertSame([], $form->recipients());
         $this->assertSame(['name', 'email', 'message'], $form->liveFields()->pluck('name')->all());
         $this->assertSame('Thank you', (string) $form->option('thank-you.heading')['en']);
+    }
+
+    /** A theme's `demo/inbox/*.json` comes first: `theme-default` shows every kind of field. */
+    #[Test]
+    public function the_theme_brings_forms_of_its_own_with_their_choices(): void
+    {
+        $theme = sys_get_temp_dir().'/webx-inbox-demo-theme-'.getmypid();
+        @mkdir($theme.'/demo/inbox', 0777, true);
+        file_put_contents($theme.'/demo/inbox/showcase.json', (string) json_encode([
+            'slug' => 'showcase',
+            'title' => 'Every kind of field',
+            'fields' => [
+                ['name' => 'topic', 'type' => 'select', 'title' => 'Topic', 'options' => [
+                    'choices' => [['value' => 'a', 'label' => ['en' => 'A question']], 'B'],
+                    'rows' => 9,
+                ]],
+                ['name' => 'consent', 'type' => 'consent', 'title' => 'Consent', 'options' => ['text' => ['en' => 'I agree']]],
+                ['name' => 'odd', 'type' => 'no-such-type', 'title' => 'Odd'],
+            ],
+        ]));
+
+        try {
+            $this->app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('acme/theme', $theme, false)]));
+
+            $this->artisan('webx:demo')->assertSuccessful();
+
+            $this->assertSame(['contact', 'showcase'], Form::query()->orderBy('slug')->pluck('slug')->all(), 'the module\'s contact form stays beside the theme\'s');
+
+            $fields = Form::query()->where('slug', 'showcase')->firstOrFail()->liveFields()->get()->keyBy('name');
+            $this->assertSame(['a' => 'A question', 'B' => 'B'], $fields['topic']->choices());
+            $this->assertArrayNotHasKey('rows', $fields['topic']->options, 'options go through the panel\'s gate');
+            $this->assertSame('I agree', $fields['consent']->optionText('text'));
+            $this->assertSame('text', $fields['odd']->type->value);
+
+            $this->artisan('webx:demo', ['--remove' => true])->assertSuccessful();
+            $this->assertSame(0, Form::query()->count());
+        } finally {
+            array_map('unlink', glob($theme.'/demo/inbox/*.json') ?: []);
+            @rmdir($theme.'/demo/inbox');
+            @rmdir($theme.'/demo');
+            @rmdir($theme);
+        }
     }
 
     #[Test]

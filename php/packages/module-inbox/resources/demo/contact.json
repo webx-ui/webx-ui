@@ -1,10 +1,26 @@
 {
   "slug": "contact",
-  "title": "Contact us",
+  "title": {
+    "en": "Contact us",
+    "ru": "Связаться с нами",
+    "pl": "Skontaktuj się z nami"
+  },
   "options": {
-    "thank-you.heading": "Thank you",
-    "thank-you.text": "Your message is with us. We answer by email, usually within a day.",
-    "design.submit-text": "Send",
+    "thank-you.heading": {
+      "en": "Thank you",
+      "ru": "Спасибо",
+      "pl": "Dziękujemy"
+    },
+    "thank-you.text": {
+      "en": "Your message is with us. We answer by email, usually within a day.",
+      "ru": "Ваше сообщение у нас. Мы ответим по электронной почте — обычно в течение дня.",
+      "pl": "Twoja wiadomość do nas dotarła. Odpowiemy e-mailem, zwykle w ciągu jednego dnia."
+    },
+    "design.submit-text": {
+      "en": "Send",
+      "ru": "Отправить",
+      "pl": "Wyślij"
+    },
     "email_field": "email",
     "antispam.honeypot": true,
     "antispam.min_seconds": 3
@@ -13,7 +29,11 @@
     {
       "name": "name",
       "type": "text",
-      "title": "Your name",
+      "title": {
+        "en": "Your name",
+        "ru": "Ваше имя",
+        "pl": "Imię"
+      },
       "is_required": true,
       "is_fullsize": false,
       "in_table": true
@@ -21,7 +41,11 @@
     {
       "name": "email",
       "type": "email",
-      "title": "Email",
+      "title": {
+        "en": "Email",
+        "ru": "Электронная почта",
+        "pl": "E-mail"
+      },
       "placeholder": "you@example.com",
       "is_required": true,
       "is_fullsize": false,
@@ -30,8 +54,16 @@
     {
       "name": "message",
       "type": "textarea",
-      "title": "Message",
-      "help": "What it is about, and how we can help.",
+      "title": {
+        "en": "Message",
+        "ru": "Сообщение",
+        "pl": "Wiadomość"
+      },
+      "help": {
+        "en": "What it is about, and how we can help.",
+        "ru": "О чём речь и чем мы можем помочь.",
+        "pl": "Czego dotyczy wiadomość i jak możemy pomóc."
+      },
       "is_required": true,
       "is_fullsize": true
     }

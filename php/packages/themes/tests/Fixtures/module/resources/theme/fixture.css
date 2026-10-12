@@ -1,0 +1,4 @@
+/* The fixture module's base look: one class, on a token of the vocabulary. */
+.webx-fixture-card {
+  color: var(--site-color-text);
+}

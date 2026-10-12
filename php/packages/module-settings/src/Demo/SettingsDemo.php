@@ -7,6 +7,7 @@ namespace WebxUi\Settings\Demo;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Localization\Locales;
@@ -44,7 +45,10 @@ final class SettingsDemo
 
             $list = ($node['type'] ?? null) === 'wx-repeater' && is_array($value) && array_is_list($value);
 
-            if ($node === null || (! is_string($value) && ! $list) || Setting::query()->where('key', $key)->exists()) {
+            // A localized setting may come as a map of languages rather than one string.
+            $words = ($node['localized'] ?? false) === true && is_array($value) && ! array_is_list($value);
+
+            if ($node === null || (! is_string($value) && ! $list && ! $words) || Setting::query()->where('key', $key)->exists()) {
                 continue;
             }
 
@@ -57,14 +61,14 @@ final class SettingsDemo
 
     /**
      * The column holds a map of languages for a localized field and the value itself for
-     * anything else; the fixture holds one string either way.
+     * anything else; the fixture holds one string — the site's default language — or a map.
      *
      * @param  array<string, mixed>  $node
      */
     private function localized(array $node, mixed $value): mixed
     {
-        return ($node['localized'] ?? false) === true && is_string($value)
-            ? [$this->locales->defaultCode() => $value]
+        return ($node['localized'] ?? false) === true && (is_string($value) || is_array($value))
+            ? (new DemoWords($this->locales))->of($value)
             : $value;
     }
 

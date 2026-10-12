@@ -1,0 +1,6 @@
+{
+  "theme": {
+    "title": "Letters gone wrong",
+    "uses": ["webx-ui/theme-fixture"]
+  }
+}

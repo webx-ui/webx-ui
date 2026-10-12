@@ -18,14 +18,19 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
   Saving, moving, deleting and restoring the model keep the registry in step.
 - **Address types** registered with `app(RouteTypes::class)->register(new RouteType(...))`:
   `type` (the morph alias), `model`, `formatter`, `handler` (a `RouteHandler`), `acceptsTail`,
-  `onConflict`.
+  `onConflict`, `showsUntranslated`.
 - **Formatters** (`WebxUi\Routing\Formatters`): `Slug`, `TreePath`, `SlugId`, `SlugSku`,
   `Prefixed`; your own implements `PathFormatter` — a pure function of the entity.
 - **`OnConflict`**: `Fail` refuses the save with the error on the slug field (`PathRejected`, a
   validation error); `Suffix` takes `-2`, `-3` and writes it back into the slug.
 - **Fallback route** `webx.routing.resolve` (`ResolveController`): one spelling (301), exact
   beats prefix, an alias answers 301 with its tail, the handler decides publication. Then
-  `MissHandler`s registered on `Misses`, then 404. `Resolution::of($request)` is what was found.
+  a request under a non-default language prefix that found nothing is tried with the same path in
+  the default language — a type with `showsUntranslated: true` answers it (the entity has no row in
+  that language: shown untranslated, `Resolution::isUntranslated()`; it has one elsewhere: 301
+  there). Then `MissHandler`s registered on `Misses`, then 404. `Resolution::of($request)` is what
+  was found. `Untranslated` — where an untranslated entity is shown (`path()`) and its original
+  (`original()`); `module-seo` and the language switcher ask it.
 - **Contracts** `Visible` (shown on the site or not — the handler and the sitemap ask it),
   `RouteAliases` (the read side the SEO screen shows).
 - **Commands** `webx:routes:rebuild` (`--type=`, `--dry-run`), `webx:routes:check`.

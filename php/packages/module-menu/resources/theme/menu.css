@@ -1,0 +1,94 @@
+/*
+ * module-menu: the base look of `<x-webx-menu::menu>` (THEMES §10.2) — the nested list a site
+ * prints where it has no markup of its own.
+ *
+ * Nothing folds and nothing drops down: that is behaviour, and behaviour is the widgets' (the
+ * header of theme-default prints its menu through them). So every level stays on the page. The
+ * top level is a row that wraps; an item with children becomes a column with its branch under
+ * it, which is a footer's sitemap when a menu is nested and one line when it is flat. Only site
+ * tokens of the engine's vocabulary: a theme restyles any of it by writing the same class later.
+ */
+
+.wx-menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--site-space-2) var(--site-space-6);
+  margin-block: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-menu__item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+}
+
+.wx-menu__link,
+.wx-menu__label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+
+.wx-menu__link {
+  color: var(--site-color-text);
+  text-decoration: none;
+  transition: color var(--site-duration) var(--site-easing);
+}
+
+.wx-menu__link:hover {
+  color: var(--site-color-accent);
+  text-decoration: underline;
+}
+
+/* The page the reader is on: said by the markup (aria-current), shown by the colour. */
+.wx-menu__link[aria-current='page'] {
+  color: var(--site-color-accent);
+  font-weight: 600;
+}
+
+/* A heading groups the items under it; it is not a link and does not look like one. */
+.wx-menu__label {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wx-menu__item--parent > .wx-menu__link {
+  font-weight: 600;
+}
+
+/* A branch: a plain column under its item, a step in at every level below the second. */
+.wx-menu__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-menu__list--2,
+.wx-menu__list--3 {
+  padding-inline-start: var(--site-space-4);
+}
+
+/* The `button` variant of the header menu: an accent button among the links. */
+.wx-menu__item--button > .wx-menu__link {
+  justify-content: center;
+  padding: 0 var(--site-space-5);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font-weight: 600;
+}
+
+.wx-menu__item--button > .wx-menu__link:hover {
+  color: var(--site-color-accent-contrast);
+  text-decoration: none;
+}

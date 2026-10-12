@@ -21,6 +21,8 @@ use Illuminate\Database\Eloquent\Model;
  *
  * The language is passed for the entity that is visible in one language and not another. None
  * of the first ones is: a translation that is missing is already a missing row in the registry.
+ * A type that shows such an entity anyway (§8.7) asks this in the default language, where the
+ * row it is shown by lives.
  */
 interface Visible
 {

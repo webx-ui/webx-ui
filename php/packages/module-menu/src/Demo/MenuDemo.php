@@ -8,6 +8,7 @@ use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Contracts\LinkSource;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Localization\Locales;
 use WebxUi\Menu\Menus;
@@ -204,9 +205,7 @@ final class MenuDemo
      */
     private function words(mixed $text): ?array
     {
-        $text = is_string($text) ? trim($text) : '';
-
-        return $text === '' ? null : [$this->locale() => $text];
+        return (new DemoWords($this->locales))->of($text);
     }
 
     /** The language the demo is written in: one, and the site's own default. */

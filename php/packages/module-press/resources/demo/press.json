@@ -6,14 +6,15 @@
     "kitchen-weekly": "kitchen-weekly.svg",
     "scan": "press-scan.pdf"
   },
-  "folder": { "en": "Press", "ru": "Пресса" },
+  "folder": { "en": "Press", "ru": "Пресса", "pl": "Prasa" },
   "outlets": [
     {
       "key": "health-and-style",
-      "title": { "en": "Health & Style", "ru": "Здоровье и стиль" },
+      "title": { "en": "Health & Style", "ru": "Здоровье и стиль", "pl": "Zdrowie i Styl" },
       "summary": {
         "en": "A monthly magazine on health, food and the way we live.",
-        "ru": "Ежемесячный журнал о здоровье, питании и образе жизни."
+        "ru": "Ежемесячный журнал о здоровье, питании и образе жизни.",
+        "pl": "Miesięcznik o zdrowiu, odżywianiu i stylu życia."
       },
       "logo": "health-style",
       "website_url": "https://health-style.example",
@@ -22,11 +23,13 @@
         {
           "title": {
             "en": "Interview: planning a week of plates",
-            "ru": "Интервью: как собрать тарелку на неделю"
+            "ru": "Интервью: как собрать тарелку на неделю",
+            "pl": "Wywiad: jak zaplanować talerz na cały tydzień"
           },
           "excerpt": {
             "en": "On why a menu for the week is simpler than it looks.",
-            "ru": "Разговор о том, почему меню на неделю проще, чем кажется."
+            "ru": "Разговор о том, почему меню на неделю проще, чем кажется.",
+            "pl": "Rozmowa o tym, dlaczego jadłospis na tydzień jest prostszy, niż się wydaje."
           },
           "kind": "interview",
           "published_on": "2025-03-14",
@@ -35,7 +38,8 @@
         {
           "title": {
             "en": "Column: breakfast without sugar",
-            "ru": "Колонка: завтрак без сахара"
+            "ru": "Колонка: завтрак без сахара",
+            "pl": "Felieton: śniadanie bez cukru"
           },
           "kind": "authored",
           "published_on": "2025-03-01",
@@ -54,8 +58,12 @@
     },
     {
       "key": "business-herald",
-      "title": { "en": "Business Herald", "ru": "Деловой вестник" },
-      "summary": { "en": "The business paper of the city.", "ru": "Деловая газета города." },
+      "title": { "en": "Business Herald", "ru": "Деловой вестник", "pl": "Kurier Gospodarczy" },
+      "summary": {
+        "en": "The business paper of the city.",
+        "ru": "Деловая газета города.",
+        "pl": "Gazeta gospodarcza miasta."
+      },
       "logo": "business-herald",
       "website_url": "https://herald.example",
       "featured": true,
@@ -63,7 +71,8 @@
         {
           "title": {
             "en": "Expert comment: the market of healthy food",
-            "ru": "Комментарий эксперта: рынок здорового питания"
+            "ru": "Комментарий эксперта: рынок здорового питания",
+            "pl": "Komentarz eksperta: rynek zdrowej żywności"
           },
           "kind": "expert_comment",
           "published_on": "2023-01-01",
@@ -71,10 +80,15 @@
           "url": "https://herald.example/healthy-food-market"
         },
         {
-          "title": { "en": "Five new places for lunch", "ru": "Пять новых мест для обеда" },
+          "title": {
+            "en": "Five new places for lunch",
+            "ru": "Пять новых мест для обеда",
+            "pl": "Pięć nowych miejsc na lunch"
+          },
           "excerpt": {
             "en": "The scan of the page is the article.",
-            "ru": "Скан полосы — это и есть материал."
+            "ru": "Скан полосы — это и есть материал.",
+            "pl": "Skan strony to właśnie cały artykuł."
           },
           "kind": "mention",
           "published_on": "2024-08-12",
@@ -85,7 +99,7 @@
     },
     {
       "key": "city-portal",
-      "title": { "en": "City Portal", "ru": "Городской портал" },
+      "title": { "en": "City Portal", "ru": "Городской портал", "pl": "Portal Miejski" },
       "logo": "city-portal",
       "website_url": "https://city.example",
       "featured": false,
@@ -93,14 +107,15 @@
         {
           "title": {
             "en": "On seasonal produce",
-            "ru": "Авторская колонка о сезонных продуктах"
+            "ru": "Авторская колонка о сезонных продуктах",
+            "pl": "Felieton o produktach sezonowych"
           },
           "kind": "authored",
           "published_on": "2024-06-05",
           "url": "https://city.example/seasonal"
         },
         {
-          "title": { "en": "An old note", "ru": "Старая заметка" },
+          "title": { "en": "An old note", "ru": "Старая заметка", "pl": "Stara notka" },
           "kind": "mention",
           "published_on": "2019-02-10",
           "url": "https://city.example/old-note",
@@ -110,13 +125,13 @@
     },
     {
       "key": "kitchen-weekly",
-      "title": { "en": "Kitchen Weekly", "ru": "Кухня недели" },
+      "title": { "en": "Kitchen Weekly", "ru": "Кухня недели", "pl": "Kuchnia Tygodnia" },
       "logo": "kitchen-weekly",
       "featured": true,
       "published": false,
       "articles": [
         {
-          "title": { "en": "Recipe of the week", "ru": "Рецепт недели" },
+          "title": { "en": "Recipe of the week", "ru": "Рецепт недели", "pl": "Przepis tygodnia" },
           "kind": "interview",
           "published_on": "2025-05-02",
           "url": "https://kitchen.example/recipe"
@@ -125,17 +140,18 @@
     }
   ],
   "page": {
-    "title": { "en": "Press", "ru": "Пресса" },
+    "title": { "en": "Press", "ru": "Пресса", "pl": "Prasa" },
     "seo": {
-      "title": { "en": "Press about us", "ru": "Пресса о нас" },
+      "title": { "en": "Press about us", "ru": "Пресса о нас", "pl": "Prasa o nas" },
       "description": {
         "en": "Magazines, papers and portals that wrote about us — interviews, columns and expert comments.",
-        "ru": "Журналы, газеты и порталы, которые писали о нас, — интервью, колонки и комментарии экспертов."
+        "ru": "Журналы, газеты и порталы, которые писали о нас, — интервью, колонки и комментарии экспертов.",
+        "pl": "Magazyny, gazety i portale, które pisały o nas — wywiady, felietony i komentarze ekspertów."
       }
     },
-    "logos": { "title": { "en": "As featured in", "ru": "О нас пишут" } },
+    "logos": { "title": { "en": "As featured in", "ru": "О нас пишут", "pl": "Piszą o nas" } },
     "catalog": {
-      "title": { "en": "Press", "ru": "Пресса" },
+      "title": { "en": "Press", "ru": "Пресса", "pl": "Prasa" },
       "kinds": ["authored", "expert_comment", "interview", "mention"]
     }
   }

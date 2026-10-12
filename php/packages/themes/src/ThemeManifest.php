@@ -19,8 +19,8 @@ final readonly class ThemeManifest
      * @param  list<string>  $uses  What the theme stands on, top layer first.
      * @param  list<string>  $requires
      * @param  list<string>  $locales
-     * @param  list<string>  $editable
      * @param  list<array<string, mixed>>  $fonts
+     * @param  string|null  $preset  The preset the site draws in; the highest layer that names one decides.
      */
     public function __construct(
         public string $name,
@@ -30,8 +30,8 @@ final readonly class ThemeManifest
         public array $uses = [],
         public array $requires = [],
         public array $locales = [],
-        public array $editable = [],
         public array $fonts = [],
+        public ?string $preset = null,
     ) {}
 
     /** A packaged theme: a directory with a composer.json of `"type": "webx-theme"`. */
@@ -73,6 +73,12 @@ final readonly class ThemeManifest
     public function views(): ?string
     {
         return is_dir($this->path.'/views') ? $this->path.'/views' : null;
+    }
+
+    /** The directory of the words of the layout, `lang/<locale>/theme.php` (§15.2), if the theme has one. */
+    public function lang(): ?string
+    {
+        return is_dir($this->path.'/lang') ? $this->path.'/lang' : null;
     }
 
     /** The theme's overrides of a module namespace: `views/vendor/<ns>`, if it has any. */
@@ -186,6 +192,12 @@ final readonly class ThemeManifest
             throw ThemeException::invalidManifest($file, '"fonts" is a list of objects.');
         }
 
+        $preset = $theme['preset'] ?? null;
+
+        if ($preset !== null && (! is_string($preset) || trim($preset) === '')) {
+            throw ThemeException::invalidManifest($file, '"preset" is the name of a preset of the chain\'s tokens.json.');
+        }
+
         /** @var list<array<string, mixed>> $fonts */
         return new self(
             name: $name,
@@ -195,8 +207,8 @@ final readonly class ThemeManifest
             uses: self::strings($theme, 'uses', $file),
             requires: self::strings($theme, 'requires', $file),
             locales: self::strings($theme, 'locales', $file),
-            editable: self::strings($theme, 'editable', $file),
             fonts: $fonts,
+            preset: $preset === null ? null : trim($preset),
         );
     }
 

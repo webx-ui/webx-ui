@@ -42,23 +42,36 @@ about one of those.
 
 ## Change it without forking
 
-| You want                                 | Do this                                                                                                       |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Services inside the site's header/footer | `WEBX_SERVICES_LAYOUT=layout` (`<x-layout>`, slots `head` and default, `@stack('head')` in it)                |
-| Different markup of the three pages      | write `resources/views/services/{index,category,service}.blade.php`, or `WEBX_SERVICES_VIEW_*`                |
-| Change the package's own views           | `php artisan vendor:publish --tag=webx-services-views`, keep only the files you change                        |
-| Another first segment, or none           | `WEBX_SERVICES_PREFIX`, then `php artisan webx:routes:rebuild --type=service --type=service-category`         |
-| The index page built of blocks           | `WEBX_SERVICES_INDEX=false` and a page with the slug of the prefix in `webx-ui/module-pages`                  |
-| Category pages as landing pages          | `WEBX_SERVICES_CATEGORY_BLOCKS=true` — adds the Blocks tab; your category view must print them                |
-| No visible breadcrumbs                   | `WEBX_SERVICES_BREADCRUMBS=false` (the BreadcrumbList in `<head>` stays, it is module-seo's)                  |
-| A field or tab in the editor             | a patch: `Screens::extend('services.form', [...])` into `project-fields`; read `$service->extra()`            |
-| Service cards in a block                 | `services()->in('implants')->except($service)->take(6)`, or `webx:blocks:offered --install --module=services` |
-| Other words in the panel                 | `php artisan vendor:publish --tag=webx-services-lang`                                                         |
+| You want                                 | Do this                                                                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Services inside the site's header/footer | `WEBX_SERVICES_LAYOUT=layout` (`<x-layout>`, slots `head` and default, `@stack('head')` in it)                     |
+| Different markup of the three pages      | write `resources/views/services/{index,category,service}.blade.php`, or `WEBX_SERVICES_VIEW_*`                     |
+| Another card in both listings            | `views/parts/services/card.blade.php` in the theme: the point `services.card`, given `$service`, prints one `<li>` |
+| Change the package's own views           | `php artisan vendor:publish --tag=webx-services-views`, keep only the files you change                             |
+| Another first segment, or none           | `WEBX_SERVICES_PREFIX`, then `php artisan webx:routes:rebuild --type=service --type=service-category`              |
+| The index page built of blocks           | `WEBX_SERVICES_INDEX=false` and a page with the slug of the prefix in `webx-ui/module-pages`                       |
+| Category pages as landing pages          | `WEBX_SERVICES_CATEGORY_BLOCKS=true` — adds the Blocks tab; your category view must print them                     |
+| No visible breadcrumbs                   | `WEBX_SERVICES_BREADCRUMBS=false` (the BreadcrumbList in `<head>` stays, it is module-seo's)                       |
+| A field or tab in the editor             | a patch: `Screens::extend('services.form', [...])` into `project-fields`; read `$service->extra()`                 |
+| Service cards in a block                 | `services()->in('implants')->except($service)->take(6)`, or `webx:blocks:offered --install --module=services`      |
+| Other words in the panel                 | `php artisan vendor:publish --tag=webx-services-lang`                                                              |
 
 All keys live in `config/webx-services.php` (`vendor:publish --tag=webx-services-config`). The
 `index` view is handed `$categories` and `$uncategorised`, `category` gets `$category` and
 `$services`, `service` gets `$service` and `$category` (the main one, or null). A screen patch
 whose target is gone throws when the screen is first built.
+
+### Classes
+
+The theme's contract (THEMES §10): the base look `resources/theme/services.css` styles them under
+any theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a breaking change.
+
+- Listings: `webx-services-header`, `webx-services-header__title`, `webx-services-header__lead`,
+  `webx-services-empty`, `webx-services-group`, `webx-services-group__title`,
+  `webx-services-group__link`.
+- Cards: `webx-services-cards`, `webx-services-card`, `webx-services-card__link`,
+  `webx-services-card__cover`, `webx-services-card__title`, `webx-services-card__lead`.
+- Service: `webx-services-service`, `webx-services-service__header`, `webx-services-service__title`.
 
 ## Do not
 

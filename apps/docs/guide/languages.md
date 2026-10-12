@@ -50,6 +50,17 @@ t('webx-admin::editor.back') // a line from another namespace, borrowed rather t
 Words a screen is described with are translated on the server instead, with
 `trans::webx-pages::page.save` in the JSON — see [Screens](/guide/screens).
 
+### Words of the public site's theme
+
+The words the theme of the public site prints itself — "Skip to content", the labels of the
+contact block, the page for a missing address — are the namespace `theme::`, and that one has
+more than one directory: each layer of the theme chain brings `lang/<locale>/theme.php`, a key is
+looked up from the bottom layer up, and the site's `lang/vendor/theme/<locale>/theme.php` wins
+over all of them. `webx-ui/theme-default` carries all ten languages; a local theme adds or renames
+only its own keys. Instead of a test, a theme lists its languages in `locales` of its manifest
+and `php artisan webx:theme:check` compares each listed one with `en` — see
+[Styles](/guide/styles#words-of-the-layout).
+
 ## Which language wins
 
 For one line, in order: the language asked for, then the site's `fallback`, then the built-in
@@ -128,6 +139,31 @@ The value of such a field is a record — `{ en: 'Shoes', uk: 'Взуття' }` 
 particular language is `localizedValue(value, code, fallback)`. A field written before the site
 had a second language holds a plain string, and both halves read that as the default language's
 value rather than as a mistake.
+
+The demo content (`webx:demo`) is written in English, Russian and Polish and keeps only the
+languages the site has; a language it lacks gets the default language's words, and the default one
+gets the English. `webx:setup` names such a language before it installs — see
+[demo content](./new-site.md#demo-content).
+
+### Scripts and fonts
+
+A language is also a set of letters. German, French or Spanish fit in the Latin file of a font;
+Polish `ą ł`, Turkish `ğ ş` and Czech `ř` are past it, in Latin Extended; Russian and Ukrainian
+are Cyrillic. A theme declares which scripts its font files cover, and a page in a language
+whose script has no file draws those letters in the fallback font — the rest of the word in the
+theme's, which only a reader notices. So after adding a language in the panel:
+
+```bash
+php artisan webx:doctor
+```
+
+warns when the theme's font has no file for it, and `php artisan webx:theme:check` names the
+script and the manifest to add it to — see [Fonts](./styles.md#fonts). The default theme covers
+Latin, Latin Extended and Cyrillic: every language of the panel.
+
+The language switcher names each language in itself — "Polski", "Русский". It sets the names of
+the other languages in the reader's own font, so «Русский» does not make every English page
+download the Cyrillic file.
 
 ::: warning A field's languages are not the panel's
 `localized` switches between _content_ languages. The panel being in English has no bearing on

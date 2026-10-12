@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Demo;
 use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Admin\Demo\ThemeDemo;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\BlockOffers;
@@ -18,6 +19,7 @@ use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\RegionWriter;
 use WebxUi\Blocks\Regions;
+use WebxUi\Blocks\Themes\TypeHash;
 
 /**
  * Three block types, so that a fresh site has something to build a page out of: a hero, a
@@ -32,6 +34,12 @@ use WebxUi\Blocks\Regions;
  * The site's theme may bring its own in `demo/blocks/` (§15.1 of the themes spec): its copy of
  * one of the three wins, and the types it adds are seeded after them — the showcase of
  * `theme-default`, whose pages stand on them.
+ *
+ * A type the theme carries in `blocks/` is not the demo's to seed at all (THEMES §23, TH2.3):
+ * `webx:theme:sync` puts it on the site, and a demo copy under the same slug would be a type of
+ * the site's own that every later sync refuses to take over (§9.2, step 6). `webx:setup` syncs
+ * before the demo runs, so the slug is usually taken by then anyway; this is for the demo run on
+ * a site whose theme was never synced.
  */
 final class BlocksDemo
 {
@@ -41,10 +49,11 @@ final class BlocksDemo
     /**
      * The regions the demo fills, each with the type made for it and the values it is placed
      * with. Empty values on purpose: the header takes its name from the settings and the footer
-     * its line from the application, so renaming the site renames both.
+     * its line from the application, so renaming the site renames both. The button's words are
+     * in each language the site may speak; {@see DemoWords} keeps the ones it does.
      */
     private const REGIONS = [
-        'header' => ['type' => 'demo-header', 'values' => ['button_label' => 'Get in touch', 'button_url' => '/contacts']],
+        'header' => ['type' => 'demo-header', 'values' => ['button_label' => ['en' => 'Get in touch', 'ru' => 'Связаться с нами', 'pl' => 'Napisz do nas'], 'button_url' => '/contacts']],
         'footer' => ['type' => 'demo-footer', 'values' => []],
     ];
 
@@ -53,11 +62,22 @@ final class BlocksDemo
         private readonly Regions $regions,
         private readonly RegionWriter $writer,
         private readonly BlockOffers $offers,
+        private readonly DemoWords $words,
     ) {}
 
     public function seed(DemoLedger $ledger): void
     {
+        $carried = self::carried();
+
         foreach ([...self::TYPES, ...$this->themeTypes()] as $slug) {
+            if (in_array($slug, $carried, true)) {
+                if (! Block::query()->where('slug', $slug)->exists()) {
+                    $ledger->note("The block type {$slug} comes with the theme: php artisan webx:theme:sync puts it on the site.");
+                }
+
+                continue;
+            }
+
             $this->type($ledger, $slug);
         }
 
@@ -88,6 +108,12 @@ final class BlocksDemo
                 $status = $this->offers->install($offer);
             } catch (BlocksException $refused) {
                 $ledger->note("The offered block type {$offer['slug']} was refused: {$refused->getMessage()}");
+
+                continue;
+            }
+
+            if ($status === BlockOffers::CARRIED) {
+                $ledger->note("The block type {$offer['slug']} comes with the theme: php artisan webx:theme:sync puts it on the site.");
 
                 continue;
             }
@@ -147,7 +173,7 @@ final class BlocksDemo
             return;
         }
 
-        $document = $this->read($slug);
+        $document = self::document($slug) ?? throw new RuntimeException("{$slug}.json is not a block document.");
 
         $block = new Block;
         $block->fill(BlockInput::values($document));
@@ -156,7 +182,36 @@ final class BlocksDemo
         $ledger->created($block, $slug);
 
         $block->saveVersion(BlockInput::content($document), BlockVersion::SOURCE_IMPORT, null, 'Demo content');
-        $block->publish();
+
+        try {
+            $block->publish();
+        } catch (BlocksException $refused) {
+            // `columns` allows `text`: on a site where the theme's text is not synced yet, there is no text to allow.
+            $ledger->note("The block type {$slug} is left as a draft: {$refused->getMessage()}");
+        }
+    }
+
+    /**
+     * Whether a type on the site is still exactly what the demo seeded under its slug — nobody's
+     * work, so `webx:theme:sync --adopt` may hand it to the theme (THEMES §23, TH2.3).
+     */
+    public static function untouched(Block $block): bool
+    {
+        $document = in_array($block->slug, [...self::TYPES, ...array_column(self::REGIONS, 'type')], true) ? self::document($block->slug) : null;
+
+        return $document !== null
+            && $block->draft_version_id === null
+            && TypeHash::ofPublished($block) === TypeHash::ofDocument($document);
+    }
+
+    /**
+     * Slugs of the block types the theme layers carry in `blocks/`; none without `webx-ui/themes`.
+     *
+     * @return list<string>
+     */
+    private static function carried(): array
+    {
+        return array_map('strval', array_keys(BlockOffers::carried()));
     }
 
     /**
@@ -200,7 +255,7 @@ final class BlocksDemo
         try {
             // Through the writer, as the panel saves and publishes: the region's `allow` and
             // `max`, and the render that refuses a publication in which a block throws.
-            $region = $this->writer->save($name, [['key' => "demo-{$name}", 'type' => $type, 'values' => $values]], null, null, EntityVersion::SOURCE_IMPORT);
+            $region = $this->writer->save($name, [['key' => "demo-{$name}", 'type' => $type, 'values' => $this->words->in($values)]], null, null, EntityVersion::SOURCE_IMPORT);
         } catch (RegionRefused $refused) {
             $ledger->note("The {$name} region did not take the demo block: {$refused->sentence()}");
 
@@ -239,21 +294,25 @@ final class BlocksDemo
     }
 
     /**
-     * @return array<string, mixed>
+     * What the demo seeds under a slug, or null for one it has no file of.
+     *
+     * @return array<string, mixed>|null
      */
-    private function read(string $slug): array
+    private static function document(string $slug): ?array
     {
         // The theme's copy of a type wins; the module's own fills in what it leaves out.
         $theme = ThemeDemo::directory('blocks');
-        $path = $theme !== null && $this->files->exists("{$theme}/{$slug}.json")
+        $path = $theme !== null && is_file("{$theme}/{$slug}.json")
             ? "{$theme}/{$slug}.json"
             : __DIR__."/../../resources/demo/{$slug}.json";
-        $document = json_decode((string) $this->files->get($path), true);
 
-        if (! is_array($document)) {
-            throw new RuntimeException("{$slug}.json is not a block document.");
+        if (! is_file($path)) {
+            return null;
         }
 
-        return $document;
+        $document = json_decode((string) file_get_contents($path), true);
+
+        /** @var array<string, mixed>|null */
+        return is_array($document) ? $document : null;
     }
 }

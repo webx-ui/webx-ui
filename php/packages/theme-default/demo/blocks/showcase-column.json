@@ -1,0 +1,55 @@
+{
+  "slug": "showcase-column",
+  "title": "Showcase: a narrow column",
+  "description": "A column 20rem wide holding blocks of the theme, for the kitchen sink of the default theme: a block in it lays itself out by the column, not by the window.",
+  "icon": null,
+  "group": "layout",
+  "sort": 99,
+  "allow": ["cards", "contact", "cta", "hero", "media-text", "text"],
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "items",
+      "type": "wx-blocks",
+      "label": "In the column",
+      "props": {
+        "allow": ["cards", "contact", "cta", "hero", "media-text", "text"],
+        "max": 3
+      }
+    }
+  ],
+  "template": "<section class=\"b-showcase-column\" data-wx-block=\"showcase-column\">\n    @if ($heading)\n        <h2 class=\"b-showcase-column__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-column__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-column__frame\">\n        @blocks('items')\n    </div>\n</section>\n",
+  "styles": ".b-showcase-column {\n    padding-block: var(--site-space-6);\n}\n\n.b-showcase-column__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-column__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-column__frame {\n    max-width: 20rem;\n    padding: var(--site-space-3);\n    border: 1px dashed var(--site-color-border);\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "In a narrow column",
+    "note": "",
+    "items": [
+      {
+        "key": "sample-text",
+        "type": "text",
+        "values": {
+          "heading": "Narrow",
+          "body": "<p>A block laid out by the column.</p>"
+        }
+      }
+    ]
+  }
+}

@@ -6,7 +6,7 @@
 <li class="wx-press-article">
     <h2 class="wx-press-article__title">
         @if ($article['target'])
-            <a href="{{ $article['target'] }}" target="_blank" rel="noopener">{{ $article['title'] }}</a>
+            <a class="wx-press-article__link" href="{{ $article['target'] }}" target="_blank" rel="noopener">{{ $article['title'] }}</a>
         @else
             {{ $article['title'] }}
         @endif
@@ -20,7 +20,7 @@
                 <span class="wx-press-article__kind">{{ $article['kind_label'] }}</span>
             @endif
             @if ($article['when'] !== '')
-                <time datetime="{{ $article['date'] }}">{{ $article['when'] }}</time>
+                <time class="wx-press-article__date" datetime="{{ $article['date'] }}">{{ $article['when'] }}</time>
             @endif
         </p>
     @endif
@@ -29,8 +29,8 @@
     @endif
     @if ($article['url'] && $article['pdf'])
         <p class="wx-press-article__links">
-            <a href="{{ $article['url'] }}" target="_blank" rel="noopener">{{ trans('webx-press::site.read') }}</a>
-            · <a href="{{ $article['pdf'] }}" target="_blank" rel="noopener">{{ trans('webx-press::site.pdf') }}</a>
+            <a class="wx-press-article__read" href="{{ $article['url'] }}" target="_blank" rel="noopener">{{ trans('webx-press::site.read') }}</a>
+            · <a class="wx-press-article__file" href="{{ $article['pdf'] }}" target="_blank" rel="noopener">{{ trans('webx-press::site.pdf') }}</a>
         </p>
     @endif
 </li>

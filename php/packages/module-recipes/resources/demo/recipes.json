@@ -2,58 +2,67 @@
   "categories": [
     {
       "key": "breakfast",
-      "title": { "en": "Breakfast", "ru": "Завтраки" },
+      "title": { "en": "Breakfast", "ru": "Завтраки", "pl": "Śniadania" },
       "lead": {
         "en": "<p>Warm, quick and filling — for mornings that start early.</p>",
-        "ru": "<p>Тёплое, быстрое и сытное — для утра, которое начинается рано.</p>"
+        "ru": "<p>Тёплое, быстрое и сытное — для утра, которое начинается рано.</p>",
+        "pl": "<p>Ciepłe, szybkie i sycące — na poranki, które zaczynają się wcześnie.</p>"
       },
       "recipes": ["oatmeal-with-berries", "green-omelette", "chia-pudding"]
     },
     {
       "key": "soups",
-      "title": { "en": "Soups", "ru": "Супы" },
+      "title": { "en": "Soups", "ru": "Супы", "pl": "Zupy" },
       "lead": {
         "en": "<p>One pot, a few vegetables, and lunch for three days.</p>",
-        "ru": "<p>Одна кастрюля, немного овощей — и обед на три дня.</p>"
+        "ru": "<p>Одна кастрюля, немного овощей — и обед на три дня.</p>",
+        "pl": "<p>Jeden garnek, trochę warzyw — i obiad na trzy dni.</p>"
       },
       "recipes": ["lentil-soup", "pumpkin-soup"]
     },
     {
       "key": "salads",
-      "title": { "en": "Salads", "ru": "Салаты" },
+      "title": { "en": "Salads", "ru": "Салаты", "pl": "Sałatki" },
       "recipes": ["buckwheat-salad", "green-omelette"]
     }
   ],
   "nutrients": [
-    { "key": "iron", "title": { "en": "Iron", "ru": "Железо" } },
-    { "key": "fiber", "title": { "en": "Fibre", "ru": "Клетчатка" } },
-    { "key": "protein", "title": { "en": "Protein", "ru": "Белок" } },
-    { "key": "omega-3", "title": { "en": "Omega-3", "ru": "Омега-3" } },
-    { "key": "vitamin-c", "title": { "en": "Vitamin C", "ru": "Витамин C" } }
+    { "key": "iron", "title": { "en": "Iron", "ru": "Железо", "pl": "Żelazo" } },
+    { "key": "fiber", "title": { "en": "Fibre", "ru": "Клетчатка", "pl": "Błonnik" } },
+    { "key": "protein", "title": { "en": "Protein", "ru": "Белок", "pl": "Białko" } },
+    { "key": "omega-3", "title": { "en": "Omega-3", "ru": "Омега-3", "pl": "Omega-3" } },
+    { "key": "vitamin-c", "title": { "en": "Vitamin C", "ru": "Витамин C", "pl": "Witamina C" } }
   ],
   "recipes": [
     {
       "slug": "oatmeal-with-berries",
-      "title": { "en": "Oatmeal with berries", "ru": "Овсянка с ягодами" },
+      "title": {
+        "en": "Oatmeal with berries",
+        "ru": "Овсянка с ягодами",
+        "pl": "Owsianka z owocami leśnymi"
+      },
       "lead": {
         "en": "Creamy oats with frozen berries and a spoon of nut butter — ten minutes from pot to table.",
-        "ru": "Кремовая овсянка с замороженными ягодами и ложкой ореховой пасты — десять минут от кастрюли до стола."
+        "ru": "Кремовая овсянка с замороженными ягодами и ложкой ореховой пасты — десять минут от кастрюли до стола.",
+        "pl": "Kremowa owsianka z mrożonymi owocami leśnymi i łyżką masła orzechowego — dziesięć minut od garnka do stołu."
       },
       "gallery": [0, 1],
       "ingredients": {
         "en": "<ul><li>80 g rolled oats</li><li>250 ml milk or water</li><li>100 g frozen berries</li><li>1 tbsp nut butter</li><li>A pinch of salt</li></ul>",
-        "ru": "<ul><li>80 г овсяных хлопьев</li><li>250 мл молока или воды</li><li>100 г замороженных ягод</li><li>1 ст. л. ореховой пасты</li><li>Щепотка соли</li></ul>"
+        "ru": "<ul><li>80 г овсяных хлопьев</li><li>250 мл молока или воды</li><li>100 г замороженных ягод</li><li>1 ст. л. ореховой пасты</li><li>Щепотка соли</li></ul>",
+        "pl": "<ul><li>80 g płatków owsianych</li><li>250 ml mleka lub wody</li><li>100 g mrożonych owoców leśnych</li><li>1 łyżka masła orzechowego</li><li>Szczypta soli</li></ul>"
       },
       "method": {
         "en": "<ol><li>Bring the milk to a boil with the salt.</li><li>Stir in the oats and cook for five minutes on low heat.</li><li>Take off the heat, add the berries and cover for two minutes.</li><li>Serve with the nut butter on top.</li></ol>",
-        "ru": "<ol><li>Доведите молоко с солью до кипения.</li><li>Всыпьте хлопья и варите пять минут на слабом огне.</li><li>Снимите с огня, добавьте ягоды и накройте на две минуты.</li><li>Подавайте с ореховой пастой сверху.</li></ol>"
+        "ru": "<ol><li>Доведите молоко с солью до кипения.</li><li>Всыпьте хлопья и варите пять минут на слабом огне.</li><li>Снимите с огня, добавьте ягоды и накройте на две минуты.</li><li>Подавайте с ореховой пастой сверху.</li></ol>",
+        "pl": "<ol><li>Zagotuj mleko z solą.</li><li>Wsyp płatki, wymieszaj i gotuj pięć minut na małym ogniu.</li><li>Zdejmij z ognia, dodaj owoce i przykryj na dwie minuty.</li><li>Podawaj z masłem orzechowym na wierzchu.</li></ol>"
       },
       "nutrition": {
-        "calories": { "en": "380 kcal", "ru": "380 ккал" },
-        "protein": { "en": "13 g", "ru": "13 г" },
-        "fat": { "en": "12 g", "ru": "12 г" },
-        "carbohydrates": { "en": "55 g", "ru": "55 г" },
-        "fiber": { "en": "8 g", "ru": "8 г" }
+        "calories": { "en": "380 kcal", "ru": "380 ккал", "pl": "380 kcal" },
+        "protein": { "en": "13 g", "ru": "13 г", "pl": "13 g" },
+        "fat": { "en": "12 g", "ru": "12 г", "pl": "12 g" },
+        "carbohydrates": { "en": "55 g", "ru": "55 г", "pl": "55 g" },
+        "fiber": { "en": "8 g", "ru": "8 г", "pl": "8 g" }
       },
       "total_minutes": 10,
       "servings": 1,
@@ -63,24 +72,31 @@
     },
     {
       "slug": "lentil-soup",
-      "title": { "en": "Red lentil soup", "ru": "Суп из красной чечевицы" },
+      "title": {
+        "en": "Red lentil soup",
+        "ru": "Суп из красной чечевицы",
+        "pl": "Zupa z czerwonej soczewicy"
+      },
       "lead": {
         "en": "A thick, bright soup that needs no stock and no blender.",
-        "ru": "Густой яркий суп без бульона и без блендера."
+        "ru": "Густой яркий суп без бульона и без блендера.",
+        "pl": "Gęsta, wyrazista zupa bez bulionu i bez blendera."
       },
       "gallery": [1],
       "ingredients": {
         "en": "<ul><li>200 g red lentils</li><li>1 onion</li><li>1 carrot</li><li>2 cloves of garlic</li><li>1 tsp cumin</li><li>1 l water</li><li>Juice of half a lemon</li></ul>",
-        "ru": "<ul><li>200 г красной чечевицы</li><li>1 луковица</li><li>1 морковь</li><li>2 зубчика чеснока</li><li>1 ч. л. зиры</li><li>1 л воды</li><li>Сок половины лимона</li></ul>"
+        "ru": "<ul><li>200 г красной чечевицы</li><li>1 луковица</li><li>1 морковь</li><li>2 зубчика чеснока</li><li>1 ч. л. зиры</li><li>1 л воды</li><li>Сок половины лимона</li></ul>",
+        "pl": "<ul><li>200 g czerwonej soczewicy</li><li>1 cebula</li><li>1 marchewka</li><li>2 ząbki czosnku</li><li>1 łyżeczka kuminu</li><li>1 l wody</li><li>Sok z połowy cytryny</li></ul>"
       },
       "method": {
         "en": "<ol><li>Fry the chopped onion and carrot until soft.</li><li>Add the garlic and the cumin for one minute.</li><li>Add the lentils and the water and simmer for twenty minutes.</li><li>Season with salt and the lemon juice.</li></ol>",
-        "ru": "<ol><li>Обжарьте нарезанные лук и морковь до мягкости.</li><li>Добавьте чеснок и зиру на одну минуту.</li><li>Всыпьте чечевицу, залейте водой и варите двадцать минут.</li><li>Посолите и добавьте лимонный сок.</li></ol>"
+        "ru": "<ol><li>Обжарьте нарезанные лук и морковь до мягкости.</li><li>Добавьте чеснок и зиру на одну минуту.</li><li>Всыпьте чечевицу, залейте водой и варите двадцать минут.</li><li>Посолите и добавьте лимонный сок.</li></ol>",
+        "pl": "<ol><li>Podsmaż posiekaną cebulę i marchewkę, aż zmiękną.</li><li>Dodaj czosnek i kumin i smaż jeszcze minutę.</li><li>Wsyp soczewicę, zalej wodą i gotuj na małym ogniu dwadzieścia minut.</li><li>Dopraw solą i sokiem z cytryny.</li></ol>"
       },
       "nutrition": {
-        "calories": { "en": "290 kcal", "ru": "290 ккал" },
-        "protein": { "en": "18 g", "ru": "18 г" },
-        "fiber": { "en": "9 g", "ru": "9 г" }
+        "calories": { "en": "290 kcal", "ru": "290 ккал", "pl": "290 kcal" },
+        "protein": { "en": "18 g", "ru": "18 г", "pl": "18 g" },
+        "fiber": { "en": "9 g", "ru": "9 г", "pl": "9 g" }
       },
       "total_minutes": 35,
       "servings": 4,
@@ -89,18 +105,21 @@
     },
     {
       "slug": "green-omelette",
-      "title": { "en": "Green omelette", "ru": "Зелёный омлет" },
+      "title": { "en": "Green omelette", "ru": "Зелёный омлет", "pl": "Zielony omlet" },
       "lead": {
         "en": "Eggs with spinach and herbs: breakfast in one pan, and a salad's worth of greens.",
-        "ru": "Яйца со шпинатом и зеленью: завтрак на одной сковороде и целый салат зелени."
+        "ru": "Яйца со шпинатом и зеленью: завтрак на одной сковороде и целый салат зелени.",
+        "pl": "Jajka ze szpinakiem i ziołami: śniadanie z jednej patelni, a zieleniny tyle, co w całej sałatce."
       },
       "ingredients": {
         "en": "<ul><li>3 eggs</li><li>A handful of spinach</li><li>Dill and parsley</li><li>1 tsp olive oil</li></ul>",
-        "ru": "<ul><li>3 яйца</li><li>Горсть шпината</li><li>Укроп и петрушка</li><li>1 ч. л. оливкового масла</li></ul>"
+        "ru": "<ul><li>3 яйца</li><li>Горсть шпината</li><li>Укроп и петрушка</li><li>1 ч. л. оливкового масла</li></ul>",
+        "pl": "<ul><li>3 jajka</li><li>Garść szpinaku</li><li>Koperek i natka pietruszki</li><li>1 łyżeczka oliwy z oliwek</li></ul>"
       },
       "method": {
         "en": "<p>Wilt the spinach in the oil. Pour in the beaten eggs with the chopped herbs, cover, and cook on low heat for five minutes.</p>",
-        "ru": "<p>Прогрейте шпинат в масле. Влейте взбитые яйца с рубленой зеленью, накройте и готовьте на слабом огне пять минут.</p>"
+        "ru": "<p>Прогрейте шпинат в масле. Влейте взбитые яйца с рубленой зеленью, накройте и готовьте на слабом огне пять минут.</p>",
+        "pl": "<p>Podduś szpinak na oliwie. Wlej roztrzepane jajka z posiekanymi ziołami, przykryj i smaż na małym ogniu przez pięć minut.</p>"
       },
       "total_minutes": 75,
       "servings": 2,
@@ -108,23 +127,26 @@
     },
     {
       "slug": "chia-pudding",
-      "title": { "en": "Chia pudding", "ru": "Пудинг из чиа" },
+      "title": { "en": "Chia pudding", "ru": "Пудинг из чиа", "pl": "Pudding chia" },
       "lead": {
         "en": "Made in the evening, eaten in the morning.",
-        "ru": "Готовится вечером, съедается утром."
+        "ru": "Готовится вечером, съедается утром.",
+        "pl": "Przygotowany wieczorem, zjedzony rano."
       },
       "gallery": [0],
       "ingredients": {
         "en": "<ul><li>3 tbsp chia seeds</li><li>200 ml coconut milk</li><li>1 tsp honey</li><li>Mango to serve</li></ul>",
-        "ru": "<ul><li>3 ст. л. семян чиа</li><li>200 мл кокосового молока</li><li>1 ч. л. мёда</li><li>Манго для подачи</li></ul>"
+        "ru": "<ul><li>3 ст. л. семян чиа</li><li>200 мл кокосового молока</li><li>1 ч. л. мёда</li><li>Манго для подачи</li></ul>",
+        "pl": "<ul><li>3 łyżki nasion chia</li><li>200 ml mleka kokosowego</li><li>1 łyżeczka miodu</li><li>Mango do podania</li></ul>"
       },
       "method": {
         "en": "<ol><li>Mix the seeds, the milk and the honey.</li><li>Leave in the fridge overnight.</li><li>Serve with the mango.</li></ol>",
-        "ru": "<ol><li>Смешайте семена, молоко и мёд.</li><li>Оставьте в холодильнике на ночь.</li><li>Подавайте с манго.</li></ol>"
+        "ru": "<ol><li>Смешайте семена, молоко и мёд.</li><li>Оставьте в холодильнике на ночь.</li><li>Подавайте с манго.</li></ol>",
+        "pl": "<ol><li>Wymieszaj nasiona z mlekiem i miodem.</li><li>Odstaw do lodówki na noc.</li><li>Podawaj z mango.</li></ol>"
       },
       "nutrition": {
-        "calories": { "en": "310 kcal", "ru": "310 ккал" },
-        "fat": { "en": "21 g", "ru": "21 г" }
+        "calories": { "en": "310 kcal", "ru": "310 ккал", "pl": "310 kcal" },
+        "fat": { "en": "21 g", "ru": "21 г", "pl": "21 g" }
       },
       "total_minutes": 5,
       "servings": 1,
@@ -150,14 +172,20 @@
     },
     {
       "slug": "buckwheat-salad",
-      "title": { "en": "Warm buckwheat salad", "ru": "Тёплый салат с гречкой" },
+      "title": {
+        "en": "Warm buckwheat salad",
+        "ru": "Тёплый салат с гречкой",
+        "pl": "Ciepła sałatka z kaszą gryczaną"
+      },
       "lead": {
         "en": "Still being written: the proportions are not settled yet.",
-        "ru": "Ещё пишется: пропорции пока не выверены."
+        "ru": "Ещё пишется: пропорции пока не выверены.",
+        "pl": "Wciąż w przygotowaniu: proporcje nie są jeszcze dopracowane."
       },
       "ingredients": {
         "en": "<ul><li>150 g buckwheat</li><li>Roasted vegetables</li><li>Feta</li></ul>",
-        "ru": "<ul><li>150 г гречки</li><li>Запечённые овощи</li><li>Фета</li></ul>"
+        "ru": "<ul><li>150 г гречки</li><li>Запечённые овощи</li><li>Фета</li></ul>",
+        "pl": "<ul><li>150 g kaszy gryczanej</li><li>Pieczone warzywa</li><li>Feta</li></ul>"
       },
       "total_minutes": 30,
       "servings": 2,
@@ -167,20 +195,25 @@
   ],
   "page": {
     "slug": "recipes-showcase",
-    "title": { "en": "Recipes showcase", "ru": "Витрина рецептов" },
+    "title": { "en": "Recipes showcase", "ru": "Витрина рецептов", "pl": "Prezentacja przepisów" },
     "showcase": {
       "category": "breakfast",
-      "title": { "en": "Quick breakfasts", "ru": "Быстрые завтраки" }
+      "title": { "en": "Quick breakfasts", "ru": "Быстрые завтраки", "pl": "Szybkie śniadania" }
     },
     "catalog": {
-      "title": { "en": "Every recipe", "ru": "Все рецепты" },
+      "title": { "en": "Every recipe", "ru": "Все рецепты", "pl": "Wszystkie przepisy" },
       "per_page": 4
     },
     "seo": {
-      "title": { "en": "Recipes showcase", "ru": "Витрина рецептов" },
+      "title": {
+        "en": "Recipes showcase",
+        "ru": "Витрина рецептов",
+        "pl": "Prezentacja przepisów"
+      },
       "description": {
         "en": "Three breakfasts, then every recipe of the demo a page at a time.",
-        "ru": "Три завтрака, а ниже — все рецепты демо постранично."
+        "ru": "Три завтрака, а ниже — все рецепты демо постранично.",
+        "pl": "Trzy śniadania, a niżej wszystkie przepisy demo, strona po stronie."
       }
     }
   }

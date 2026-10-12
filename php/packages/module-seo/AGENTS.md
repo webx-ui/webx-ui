@@ -19,7 +19,10 @@ their guides when the question is about one of those.
   `seo_meta` through the `HasSeo` trait), `FallbackSource` (30, the entity's own name, lead and
   picture through `HasSeoFallback::seoFallback()`, or `@webxSeo(fallback: [...])` from a view),
   `DefaultsSource` (10, `settings('seo.*')`). The title template applies to every title except one
-  that already names the site; a view never prints `<title>` of its own.
+  that already names the site; a view never prints `<title>` of its own. An entity shown in a
+  language it has no translation in (`webx-ui/routing`'s `Untranslated`, a page under `/pl/…`) is
+  `noindex, follow` with its canonical on the original, over the card and the rules; it has no
+  `hreflang` and no line in the sitemap.
 - **Social cards** (`Rendering\SocialTags`): every `og:*`, `article:*` and `twitter:*` line is
   derived from the merged values — never typed. `og:type` from `Contracts\HasOpenGraph` (blog
   articles and recipes are `article`, the rest `website`); `og:image` is the first source picture
@@ -29,7 +32,8 @@ their guides when the question is about one of those.
   `WEBX_SEO_OG_FIELDS=true`; stored values are still honoured.
 - **Components** `<x-webx-seo::breadcrumbs />` (the same list as the `BreadcrumbList`),
   `<x-webx-seo::links />`, `<x-webx-seo::faq />`; views `webx-seo::head`, `breadcrumbs`, `links`,
-  `faq`. The last two print nothing while their feature is off.
+  `faq`. The last two print nothing while their feature is off; `theme-default` prints both at
+  the end of every page's main column, the FAQ first.
 - **Global middleware** `NormaliseAddress` then `RedirectRequests` (aliases `webx.normalise`,
   `webx.redirects`): they run before routing, so they answer addresses that have no route.
   The resolver's spelling (routing's `Contracts\Spelling`) is bound to the same settings
@@ -59,7 +63,8 @@ their guides when the question is about one of those.
   `seo_links_import`, `seo_links_heading`; with page FAQ `seo_faq_get`, `seo_faq_set`,
   `seo_faq_import`. Scopes `seo:read`, `seo:write`.
 - **Command** `php artisan webx:seo:sitemap`. Also registered: the field type `wx-seo`, audit
-  checks and fixes when `webx-ui/module-audit` is installed, demo content (`resources/demo`).
+  checks and fixes when `webx-ui/module-audit` is installed, demo content (`resources/demo`; a theme's
+  `demo/seo/pages.json` gives its own demo pages a FAQ and links in every language).
 
 ## Change it without forking
 
@@ -73,7 +78,7 @@ their guides when the question is about one of those.
 | No redirects, no sitemap, own sitemap             | `WEBX_SEO_REDIRECTS=false`, `WEBX_SEO_SITEMAP=false`; `sitemap.per_file`, `WEBX_SEO_SITEMAP_TTL`                                                               |
 | Own `robots.txt` route                            | `robots_txt.enabled` to `false` in the published config                                                                                                        |
 | One address per page (www, https, slash, case)    | the `normalise-*` settings on the SEO tab; slashes, case and the trailing slash start on (the registry's spelling), the rest off; one 301 for every difference |
-| Restyle crumbs, links, FAQ or the head            | `php artisan vendor:publish --tag=webx-seo-views`, keep only the files you change                                                                              |
+| Restyle crumbs, links or FAQ                      | CSS on their classes (below) in the theme; other markup: `vendor:publish --tag=webx-seo-views`, keep only the files you change                                 |
 | Other words in the panel                          | `php artisan vendor:publish --tag=webx-seo-lang`                                                                                                               |
 | The SEO card on your own entity                   | `use HasSeo;` on the model, a patch putting a `wx-seo` node on its screen                                                                                      |
 | A page's kind for social networks (`article`)     | implement `HasOpenGraph` on the model: `openGraphType()`, `openGraphProperties($locale)` (`article:*` lines)                                                   |
@@ -86,6 +91,17 @@ their guides when the question is about one of those.
 | Sitemap addresses no registry row stands behind   | implement `SitemapSource`, `app(SitemapSources::class)->register(...)`                                                                                         |
 | A redirecting type out of the sitemap             | implement `WebxUi\Routing\Contracts\NotAPage` on the handler you bound over the module's                                                                       |
 | A field on the SEO tab                            | a patch: `Screens::extend('settings.index', [...])` against the ids above                                                                                      |
+
+### Classes
+
+The theme's contract (THEMES §10): the base look `resources/theme/seo.css` styles them under any
+theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a breaking change.
+
+- Trail: `webx-breadcrumbs`, `webx-breadcrumbs__list`, `webx-breadcrumbs__item`,
+  `webx-breadcrumbs__item--current`, `webx-breadcrumbs__link`.
+- FAQ: `webx-faq`, `webx-faq__heading`, `webx-faq__item`, `webx-faq__question`, `webx-faq__answer`.
+- Interlinking: `webx-links`, `webx-links__heading`, `webx-links__list`, `webx-links__item`,
+  `webx-links__link`.
 
 ## Do not
 
