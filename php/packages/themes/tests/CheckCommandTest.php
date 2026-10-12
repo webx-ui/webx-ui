@@ -150,4 +150,30 @@ final class CheckCommandTest extends TestCase
             ->expectsOutputToContain('nothing to check')
             ->assertSuccessful();
     }
+
+    #[Test]
+    public function a_preset_the_chain_does_not_declare_is_a_finding(): void
+    {
+        $directory = str_replace('\\', '/', sys_get_temp_dir()).'/webx-themes-'.bin2hex(random_bytes(6));
+        mkdir($directory);
+        file_put_contents($directory.'/theme.json', json_encode(['theme' => ['uses' => ['webx-ui/theme-fixture'], 'preset' => 'dusk']]));
+
+        try {
+            $this->artisan('webx:theme:check', ['path' => $directory])
+                ->expectsOutputToContain('it names the preset "dusk", which no tokens.json of the chain declares (it has: night, warm).')
+                ->assertFailed();
+        } finally {
+            (new Filesystem)->deleteDirectory($directory);
+        }
+    }
+
+    #[Test]
+    public function without_a_theme_there_is_nothing_to_show(): void
+    {
+        $this->app->instance(ThemeChain::class, new ThemeChain);
+
+        $this->artisan('webx:theme:show')
+            ->expectsOutputToContain('No theme is configured')
+            ->assertSuccessful();
+    }
 }

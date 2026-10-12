@@ -6,7 +6,6 @@ namespace WebxUi\Themes\Tests;
 
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\Test;
-use WebxUi\Themes\Contracts\Appearance;
 use WebxUi\Themes\Exceptions\ThemeException;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeLocator;
@@ -41,58 +40,48 @@ class TokensTest extends TestCase
     }
 
     #[Test]
-    public function the_configured_preset_is_merged_down_the_chain_and_laid_over_the_values(): void
+    public function the_preset_the_manifest_names_is_merged_down_the_chain_and_laid_over_the_values(): void
     {
-        config()->set('webx-themes.preset', 'night');
-        $tokens = app(Tokens::class);
+        $tokens = $this->localOver('night');
 
         $this->assertSame('night', $tokens->preset());
         $this->assertSame('#111418', $tokens->get('color-bg'), "the package's night");
         $this->assertSame('#ff8a65', $tokens->get('color-accent'), "the local theme's addition to it");
+        $this->assertSame('4px', $tokens->get('radius-md'), 'a token no preset names keeps the layers\' value');
         $this->assertSame('Local night', $tokens->presets()['night']['title']);
         $this->assertSame(['color-bg' => '#111418', 'color-text' => '#e8eaed', 'color-accent' => '#ff8a65'], $tokens->presets()['night']['tokens']);
         $this->assertSame(['night', 'warm'], array_keys($tokens->presets()));
     }
 
     #[Test]
-    public function a_preset_the_chain_does_not_have_is_ignored(): void
+    public function each_value_says_which_layer_and_preset_gave_it(): void
     {
-        config()->set('webx-themes.preset', 'gone');
+        $sources = $this->localOver('night')->sources();
 
-        $this->assertNull(app(Tokens::class)->preset());
-        $this->assertSame('#c0392b', app(Tokens::class)->get('color-accent'));
+        $this->assertSame('webx-ui/theme-fixture, preset night', $sources['color-bg']);
+        $this->assertStringEndsWith(', preset night', $sources['color-accent']);
+        $this->assertStringNotContainsString('theme-fixture', $sources['color-accent'], 'the local layer tuned the night of the package');
+        $this->assertStringNotContainsString('preset', $sources['radius-md']);
+        $this->assertSame('webx-ui/theme-fixture', app(Tokens::class)->sources()['color-bg'], 'no preset — the layer alone');
     }
 
     #[Test]
-    public function the_owner_changes_only_editable_tokens_and_only_to_values_of_their_type(): void
+    public function a_preset_the_chain_does_not_have_is_an_error_naming_the_ones_it_has(): void
     {
-        $this->app->instance(Appearance::class, new class implements Appearance
-        {
-            public function preset(): string
-            {
-                return 'warm';
-            }
+        $this->expectException(ThemeException::class);
+        $this->expectExceptionMessage('it names the preset "gone", which no tokens.json of the chain declares (it has: night, warm).');
 
-            public function tokens(): array
-            {
-                return [
-                    'color-accent' => '#123456',
-                    'font-heading' => 'x</style><script>alert(1)</script>',
-                    'color-bg' => '#000000',
-                    'color-gone' => '#000000',
-                ];
-            }
-        });
-
-        $tokens = app(Tokens::class);
-
-        $this->assertSame(['color-accent', 'font-heading'], $tokens->editable(), 'a name the vocabulary does not know opens nothing');
-        $this->assertSame('#123456', $tokens->get('color-accent'), "the owner's edit over the preset");
-        $this->assertSame('"Inter", sans-serif', $tokens->get('font-heading'), 'a value that could close the style is dropped');
-        $this->assertSame('#ffffff', $tokens->get('color-bg'), 'a token the theme did not open stays');
-        $this->assertStringNotContainsString('</style>', $tokens->css());
+        $this->localOver('gone')->values();
     }
 
+    #[Test]
+    public function a_preset_that_is_not_a_name_is_an_invalid_manifest(): void
+    {
+        $this->expectException(ThemeException::class);
+        $this->expectExceptionMessage('"preset" is the name of a preset');
+
+        $this->localOver('');
+    }
     #[Test]
     public function the_css_is_one_root_rule_in_the_vocabulary_order(): void
     {
@@ -176,6 +165,19 @@ class TokensTest extends TestCase
         file_put_contents($directory.'/theme.json', json_encode(['theme' => ['title' => 'Temporary']]));
         file_put_contents($directory.'/tokens.json', json_encode($tokens));
 
-        return new Tokens(ThemeChain::resolve($directory, app(ThemeLocator::class)), app(Appearance::class));
+        return new Tokens(ThemeChain::resolve($directory, app(ThemeLocator::class)));
+    }
+
+    /** The local theme of the fixture site, copied into a temporary directory and naming a preset. */
+    private function localOver(string $preset): Tokens
+    {
+        $directory = str_replace('\\', '/', sys_get_temp_dir()).'/webx-themes-'.bin2hex(random_bytes(6));
+        $this->temporary[] = $directory;
+
+        mkdir($directory);
+        file_put_contents($directory.'/theme.json', json_encode(['theme' => ['title' => 'Local', 'uses' => ['webx-ui/theme-fixture'], 'preset' => $preset]]));
+        copy(__DIR__.'/Fixtures/site/theme/tokens.json', $directory.'/tokens.json');
+
+        return new Tokens(ThemeChain::resolve($directory, app(ThemeLocator::class)));
     }
 }

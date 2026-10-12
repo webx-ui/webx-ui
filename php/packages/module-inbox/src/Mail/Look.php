@@ -10,8 +10,8 @@ use InvalidArgumentException;
 /**
  * What the letters of this package are painted with and stand in (THEMES §7.5).
  *
- * On a site with a theme: the values of its tokens from `theme_token()` — a preset or the owner's
- * colour in the panel repaints the letters with the site — and its frame, `mail.layout`, found
+ * On a site with a theme: the values of its tokens from `theme_token()` — a preset or a change of
+ * the theme's tokens repaints the letters with the site — and its frame, `mail.layout`, found
  * through the chain like any view. This package does not require the theme engine, so on a site
  * without one the values below and a frame of its own, `webx-inbox::mail.frame`.
  *

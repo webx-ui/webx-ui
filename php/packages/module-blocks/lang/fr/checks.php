@@ -38,7 +38,7 @@ return [
     'unknown-field-type' => 'Champs d\'un type que le site ne connaît pas : :fields. Le formulaire affiche un avertissement à leur place et rien ne vérifie leurs valeurs.',
     'field-id' => 'Un identifiant de champ est fait de lettres, chiffres, _ et -, et commence par une lettre : :ids.',
     'marker-slug' => 'La racine est marquée data-wx-block=":marker", mais l’identifiant est «:slug» : le script et le panneau trouvent le bloc par l’identifiant exact. La publication sera refusée.',
-    'literal-colors' => 'Couleurs écrites en dur : :values. Aucun préréglage ni aucune modification dans le panneau ne les recolore — utilisez un rôle de couleur, var(--site-color-…).',
+    'literal-colors' => 'Couleurs écrites en dur : :values. Aucun préréglage ni aucune modification de tokens.json ne les recolore — utilisez un rôle de couleur, var(--site-color-…).',
     'literal-fonts' => 'Familles de polices écrites en dur : :values. La police du propriétaire ne les atteint jamais — utilisez var(--site-font-body) ou var(--site-font-heading), ou une famille générique.',
     'unknown-tokens' => 'Absents des jetons du thème : :tokens. Une variable que personne ne déclare est une valeur vide — ni couleur, ni bordure, ni erreur.',
     'token-fallbacks' => 'Une valeur de repli dans :tokens est une valeur en dur qu’aucun préréglage ne recolore. Chaque jeton du thème a une valeur : écrivez var() sans repli.',

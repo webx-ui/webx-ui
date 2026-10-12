@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace WebxUi\Themes;
 
-use WebxUi\Themes\Contracts\Appearance;
 use WebxUi\Themes\Exceptions\ThemeException;
 
 /**
  * The values the site's tokens end up with (spec §7.3), merged bottom up:
  *
- *     the bottom layer's defaults → … → the top layer's defaults → the chosen preset → the owner's edits
+ *     the bottom layer's defaults → … → the top layer's defaults → the preset the theme names
  *
  * A preset is merged down the chain the same way: a local theme may tune the base theme's
- * `night` without repeating it. What the layers ship is code, so a wrong name or a value of the
- * wrong type in a tokens.json is an exception; what the owner chose is data, so a preset that
- * does not exist or a value that does not fit is dropped and the layers' value stays.
+ * `night` without repeating it. Everything here is the theme's files, kept in git (§2, decision
+ * 12: the panel does not edit the look), so a wrong name or a value of the wrong type in a
+ * tokens.json, or a preset the chain does not have, is an exception, not a value quietly dropped.
  */
 class Tokens
 {
@@ -27,10 +26,10 @@ class Tokens
     /** @var array<string, string>|null */
     private ?array $values = null;
 
-    public function __construct(
-        private readonly ThemeChain $chain,
-        private readonly Appearance $appearance,
-    ) {}
+    /** @var array<string, string>|null */
+    private ?array $sources = null;
+
+    public function __construct(private readonly ThemeChain $chain) {}
 
     public function vocabulary(): Vocabulary
     {
@@ -49,30 +48,48 @@ class Tokens
         }
 
         $values = [];
+        $sources = [];
 
-        foreach ($this->files() as $file) {
+        foreach ($this->files() as $layer => $file) {
             $values = [...$values, ...$file->defaults];
+            $sources = [...$sources, ...array_fill_keys(array_keys($file->defaults), $layer)];
         }
 
-        $values = [...$values, ...($this->presets()[$this->preset() ?? ''] ?? ['tokens' => []])['tokens']];
+        $preset = $this->preset();
 
-        $editable = $this->editable();
-
-        foreach ($this->appearance->tokens() as $name => $value) {
-            if (in_array($name, $editable, true) && $this->vocabulary()->accepts($name, $value)) {
-                $values[$name] = trim($value);
+        if ($preset !== null) {
+            // Down the chain again, so each token says which layer's preset gave it.
+            foreach ($this->files() as $layer => $file) {
+                $tokens = $file->presets[$preset]['tokens'] ?? [];
+                $values = [...$values, ...$tokens];
+                $sources = [...$sources, ...array_fill_keys(array_keys($tokens), "{$layer}, preset {$preset}")];
             }
         }
 
         $ordered = [];
+        $this->sources = [];
 
         foreach ($this->vocabulary()->names() as $name) {
             if (isset($values[$name])) {
                 $ordered[$name] = $values[$name];
+                $this->sources[$name] = $sources[$name];
             }
         }
 
         return $this->values = $ordered;
+    }
+
+    /**
+     * Where each value of {@see values()} comes from: the layer whose tokens.json sets it, or
+     * that layer and the preset — what `webx:theme:show` tells an agent before it edits a token.
+     *
+     * @return array<string, string>
+     */
+    public function sources(): array
+    {
+        $this->values();
+
+        return $this->sources ?? [];
     }
 
     public function get(string $name): ?string
@@ -113,12 +130,31 @@ class Tokens
         return $broken ? null : $resolved;
     }
 
-    /** The preset in force: the owner's choice if the chain has such a preset, otherwise none. */
+    /**
+     * The preset in force: the one the highest layer names in its manifest (`"preset"`), or none.
+     * A name no tokens.json of the chain declares is a mistake in the theme's files and is said.
+     */
     public function preset(): ?string
     {
-        $preset = $this->appearance->preset();
+        foreach ($this->chain->layers as $layer) {
+            if ($layer->preset === null) {
+                continue;
+            }
 
-        return $preset !== null && isset($this->presets()[$preset]) ? $preset : null;
+            if (! isset($this->presets()[$layer->preset])) {
+                $known = array_keys($this->presets());
+
+                throw ThemeException::invalidManifest(
+                    $layer->path.($layer->local ? '/theme.json' : '/composer.json'),
+                    "it names the preset \"{$layer->preset}\", which no tokens.json of the chain declares"
+                        .($known === [] ? '.' : ' (it has: '.implode(', ', $known).').'),
+                );
+            }
+
+            return $layer->preset;
+        }
+
+        return null;
     }
 
     /**
@@ -143,22 +179,6 @@ class Tokens
         return $presets;
     }
 
-    /**
-     * Which tokens the owner may change: the list of the highest layer that has one (§5). Only
-     * names the vocabulary knows — a list naming a token that is gone opens nothing.
-     *
-     * @return list<string>
-     */
-    public function editable(): array
-    {
-        foreach ($this->chain->layers as $layer) {
-            if ($layer->editable !== []) {
-                return array_values(array_filter($layer->editable, fn (string $name) => $this->vocabulary()->has($name)));
-            }
-        }
-
-        return [];
-    }
 
     /**
      * `:root { --site-…: … }` for the inline `<style>` of `@webxTheme`. Every value is checked

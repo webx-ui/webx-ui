@@ -6,7 +6,6 @@ namespace WebxUi\Themes\Tests;
 
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\Test;
-use WebxUi\Themes\ConfigAppearance;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeHead;
 use WebxUi\Themes\ThemeLocator;
@@ -58,7 +57,7 @@ final class MakeCommandTest extends TestCase
         $this->assertTrue($chain->layers[0]->local);
         $this->assertSame([], $chain->layers[0]->tokens()->defaults);
 
-        $tokens = new Tokens($chain, new ConfigAppearance($this->app->make('config')));
+        $tokens = new Tokens($chain);
         $this->assertStringContainsString('--site-', $tokens->css());
     }
 

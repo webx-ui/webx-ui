@@ -295,7 +295,7 @@ The letter stands in the frame of the site's theme — `mail.layout` of
 [`webx-ui/theme-default`](https://github.com/webx-ui/theme-default) or of the site's own theme:
 the site name above, the letter on a sheet, a line below — and every colour in it is a token's
 value from `theme_token()`, written into `style="…"` on the server. A mail client reads no CSS
-variable, so this is how a preset or the owner's accent in the panel reaches the letter. On a
+variable, so this is how the theme's preset and accent reach the letter. On a
 site without a theme the letter has a frame of its own and theme-default's colours
 (`WebxUi\Inbox\Mail\Look`).
 
