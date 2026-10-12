@@ -111,6 +111,30 @@ trait ModuleThemeContract
     }
 
     /**
+     * Every extension point a view offers (`@webxPart('blog.card', …)`) is in `AGENTS.md` by the
+     * file a theme puts there, `parts/blog/card.blade.php` (THEMES §10.4, §16): a point nobody
+     * can read about is one no theme fills.
+     */
+    #[Test]
+    public function every_extension_point_of_the_views_is_in_agents_md(): void
+    {
+        $agents = (string) @file_get_contents($this->modulePath().'/AGENTS.md');
+
+        foreach ($this->files($this->modulePath().'/resources/views', 'php') as $file) {
+            preg_match_all("/@webxPart\(\s*'([a-z0-9._-]+)'/", (string) file_get_contents($file), $points);
+
+            foreach ($points[1] as $point) {
+                $part = 'parts/'.str_replace('.', '/', $point).'.blade.php';
+
+                $this->assertStringContainsString($part, $agents, basename($file).": the point {$point} is not in AGENTS.md as {$part}.");
+            }
+        }
+
+        // A module without points has nothing to name — that is a pass, not a risky test.
+        $this->addToAssertionCount(1);
+    }
+
+    /**
      * Every stylesheet of the base look, by file name.
      *
      * @return array<string, string>
