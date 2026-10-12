@@ -21,12 +21,14 @@ use WebxUi\Themes\Checks\FontCheck;
 use WebxUi\Themes\Checks\IconCheck;
 use WebxUi\Themes\Checks\LineCheck;
 use WebxUi\Themes\Checks\MailCheck;
+use WebxUi\Themes\Testing\ThemeContract;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeFonts;
 use WebxUi\Themes\ThemeIcons;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Themes\ThemeSources;
 use WebxUi\Themes\Vocabulary;
 use WebxUi\Widgets\Widgets;
 use WebxUi\Widgets\WidgetsServiceProvider;
@@ -38,6 +40,9 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 class ThemeDefaultTest extends TestCase
 {
+    // The contract every theme's test runs (THEMES §18) — on the theme every site stands on first.
+    use ThemeContract;
+
     private const string NAME = 'webx-ui/theme-default';
 
     /** The languages of the starter site, which the showcase is written in. */
@@ -102,28 +107,6 @@ class ThemeDefaultTest extends TestCase
         }
     }
 
-    /** WCAG AA for body text, on the defaults and on every preset merged over them. */
-    #[Test]
-    public function text_reads_in_every_preset(): void
-    {
-        $file = $this->manifest()->tokens();
-        $palettes = ['defaults' => $file->defaults];
-
-        foreach ($file->presets as $preset => ['tokens' => $tokens]) {
-            $palettes[$preset] = array_replace($file->defaults, $tokens);
-        }
-
-        foreach ($palettes as $palette => $values) {
-            foreach ([['color-text', 'color-bg'], ['color-text', 'color-surface'], ['color-text-muted', 'color-bg'],
-                ['color-text-muted', 'color-surface'], ['color-accent-contrast', 'color-accent'], ['color-accent', 'color-bg']] as [$fore, $back]) {
-                $ratio = self::contrast(self::resolve($values, $fore), self::resolve($values, $back));
-
-                $this->assertGreaterThanOrEqual(4.5, $ratio, sprintf('%s: %s on %s is %.2f:1.', $palette, $fore, $back, $ratio));
-            }
-        }
-    }
-
-    /** dist/ is committed; an edit to src/ without a build would ship yesterday's CSS. */
     /**
      * The showcase pages are seeded by module-pages, and their blocks by the six blocks of the
      * theme (synced before the demo), the `columns` of the module-blocks demo — its `hero` and
@@ -397,22 +380,11 @@ class ThemeDefaultTest extends TestCase
         );
     }
 
-    #[Test]
-    public function dist_is_built_from_the_current_sources(): void
-    {
-        $this->assertFileExists(self::path().'/dist/theme.css');
-
-        $built = json_decode((string) file_get_contents(self::path().'/dist/sources.json'), true, flags: JSON_THROW_ON_ERROR);
-        $this->assertIsArray($built);
-
-        $this->assertSame(self::sources(), $built['files'] ?? null, 'src/ changed since dist/ was built: run `npx vite build` in php/packages/theme-default and commit dist/.');
-    }
-
     /** The token rule (spec §8) — the engine's check, the one `webx:theme:check` runs. */
     #[Test]
     public function the_stylesheets_know_only_site_tokens(): void
     {
-        foreach (array_keys(self::sources()) as $relative) {
+        foreach (array_keys(ThemeSources::of(self::path())) as $relative) {
             if (str_ends_with($relative, '.css')) {
                 $this->assertSame([], self::findings((string) file_get_contents(self::path().'/'.$relative), $relative));
             }
@@ -631,65 +603,9 @@ class ThemeDefaultTest extends TestCase
         return ThemeManifest::fromPackage(self::path());
     }
 
-    /**
-     * Every file under src/ by sha256, line endings normalised — the walk vite.config.js does.
-     *
-     * @return array<string, string>
-     */
-    private static function sources(): array
+    protected function themePath(): string
     {
-        $files = [];
-        $root = self::path();
-
-        /** @var SplFileInfo $file */
-        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root.'/src', RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
-            $relative = substr(str_replace('\\', '/', $file->getPathname()), strlen($root) + 1);
-            $files[$relative] = hash('sha256', str_replace("\r\n", "\n", (string) file_get_contents($file->getPathname())));
-        }
-
-        ksort($files, SORT_STRING);
-
-        return $files;
-    }
-
-    /**
-     * A token's value with `var(--site-…)` references followed.
-     *
-     * @param  array<string, string>  $values
-     */
-    private static function resolve(array $values, string $name): string
-    {
-        $value = $values[$name];
-
-        for ($depth = 0; $depth < 10 && preg_match('/^var\(--site-([a-z0-9-]+)\)$/', $value, $match) === 1; $depth++) {
-            $value = $values[$match[1]];
-        }
-
-        return $value;
-    }
-
-    private static function contrast(string $fore, string $back): float
-    {
-        [$lighter, $darker] = [self::luminance($fore), self::luminance($back)];
-
-        if ($lighter < $darker) {
-            [$lighter, $darker] = [$darker, $lighter];
-        }
-
-        return ($lighter + 0.05) / ($darker + 0.05);
-    }
-
-    private static function luminance(string $hex): float
-    {
-        self::assertMatchesRegularExpression('/^#[0-9a-f]{6}$/i', $hex, 'The contrast check reads six-digit hex colours only.');
-
-        $channels = array_map(static function (string $pair): float {
-            $channel = hexdec($pair) / 255;
-
-            return $channel <= 0.04045 ? $channel / 12.92 : (($channel + 0.055) / 1.055) ** 2.4;
-        }, str_split(substr($hex, 1), 2));
-
-        return 0.2126 * $channels[0] + 0.7152 * $channels[1] + 0.0722 * $channels[2];
+        return self::path();
     }
 
     private static function path(): string
