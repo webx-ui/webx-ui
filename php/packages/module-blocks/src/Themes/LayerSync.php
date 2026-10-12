@@ -55,6 +55,16 @@ final class LayerSync implements SyncStep
 
     public function sync(ThemeChain $chain, bool $force, bool $dryRun, array $adopt = []): array
     {
+        // `webx:theme:sync` is the site's post-update-cmd, and Composer runs where the database
+        // may be out of reach — a Docker build, a host whose site talks to the database of its
+        // container. The files are published by then; this step says what it could not do
+        // instead of failing `composer update` with an SQL error.
+        try {
+            $this->db->select('select 1');
+        } catch (Throwable) {
+            return [new SyncLine('blocks', 'the database is not reachable from here — the layers\' block types were not put on the site; run php artisan webx:theme:sync where it is')];
+        }
+
         $layers = LayerBlocks::of($chain);
         $lines = [];
 

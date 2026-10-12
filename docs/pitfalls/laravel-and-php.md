@@ -646,6 +646,16 @@ Model` в файле без `use Illuminate\Database\Eloquent\Model` сравн�
   (или публикация на старте контейнера) давал дубль и «table already exists». Починено в
   `SetupCommand::missingPassportMigrations()`; публиковать такое только один раз в репозиторий.
 
+- **`composer require` на сайте падает «Access denied for user …» в `post-update-cmd`, хотя сам
+  Composer ни при чём.** С TH2.2 `webx:setup` вписывает в `composer.json` сайта
+  `php artisan webx:theme:sync`, а его шаг типов блоков идёт в базу. Composer же бегает там, где
+  базы может не быть: сборка образа, хост, чей сайт ходит в базу своего контейнера (смоук
+  платформы: `webx:module:add` на хосте, `.env` уже на базе контейнера). Шаг теперь проверяет
+  соединение первым и без базы пишет строку «the database is not reachable from here», не
+  роняя команду; файлы к тому моменту опубликованы. Смоук был красным с TH2.2 больше суток —
+  он не входит в обязательный чек очереди, поэтому его смотреть глазами перед каждым релизом:
+  `gh run list --workflow "PHP smoke" --branch <ветка> --limit 3`.
+
 ## Passport, OAuth, MCP
 
 - **Passport запекает гард в middleware маршрута, а на экране этого не видно.** Его routes-файл
