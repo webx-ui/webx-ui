@@ -361,16 +361,16 @@ lines</textarea>', "Two\nlines"];
     public function a_wrong_type_a_choice_without_choices_or_no_name_is_said_at_once(): void
     {
         foreach (['<x-webx-field type="color" name="c" />', '<x-webx-field type="select" name="s" />', '<x-webx-field type="radio" name="r" />', '<x-webx-field name="[]" />'] as $wrong) {
+            $cause = null;
+
             try {
                 Blade::render($wrong);
-                $this->fail("{$wrong} rendered");
-            } catch (ViewException|InvalidArgumentException $exception) {
-                $cause = $exception instanceof ViewException ? ($exception->getPrevious() ?? $exception) : $exception;
-                $this->assertInstanceOf(InvalidArgumentException::class, $cause);
-                $this->assertStringContainsString('<x-webx-field', $cause->getMessage());
-            } catch (Throwable $other) {
-                $this->fail($other::class.': '.$other->getMessage());
+            } catch (Throwable $error) {
+                $cause = $error instanceof ViewException ? ($error->getPrevious() ?? $error) : $error;
             }
+
+            $this->assertInstanceOf(InvalidArgumentException::class, $cause, "{$wrong} rendered");
+            $this->assertStringContainsString('<x-webx-field', $cause->getMessage());
         }
     }
 
