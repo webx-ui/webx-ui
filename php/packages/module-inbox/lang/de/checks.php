@@ -34,5 +34,11 @@ return [
             'why' => 'Roboter haben das Formular gefunden. Was durchkommt, landet im Posteingang und in den Benachrichtigungen, und die kostenlosen Schichten sind genau das, was sie zu umgehen versuchen.',
             'fix' => 'Im Reiter „Spamschutz“ des Formulars ein Captcha einschalten — die Website braucht seine Schlüssel in der .env — und das versteckte Feld eingeschaltet lassen. Ablehnungen werden pro Tag im Cache gezählt, nach dem Leeren des Caches also ab null.',
         ],
+        'legacy_views' => [
+            'title' => 'Eine Formularansicht aus der Zeit vor der Formular-Engine',
+            'found' => 'Die Website überschreibt das Anfrageformular mit einer eigenen form.blade.php, geschrieben bevor Formulare auf die Engine der Widgets umgestellt wurden (<x-webx-form> und <x-webx-field>).',
+            'why' => 'Vorerst funktioniert sie: Das Modul übergibt ihr die alten Daten und liefert das alte Skript aus. Eine spätere Version entfernt das, und die Formulare dieser Ansicht senden nicht mehr ohne Neuladen und verlieren ihr Captcha.',
+            'fix' => 'Löschen Sie die Kopie der Website, um das Formular des Pakets zu erhalten, oder schreiben Sie sie um <x-webx-form> und <x-webx-field> herum neu; gestalten Sie die Felder über webx-field-* und webx-form-* statt wx-form-* (die Tabelle der Klassen steht im Inbox-Leitfaden).',
+        ],
     ],
 ];

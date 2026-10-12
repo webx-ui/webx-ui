@@ -34,5 +34,11 @@ return [
             'why' => 'I robot hanno trovato il modulo. Ciò che passa finisce nella posta e nelle notifiche, e gli strati gratuiti sono proprio ciò che cercano di aggirare.',
             'fix' => 'Attiva un captcha nella scheda Antispam del modulo — il sito ha bisogno delle sue chiavi nel .env — e lascia attivo il campo nascosto. I rifiuti si contano per giorno nella cache, quindi dopo averla svuotata ripartono da zero.',
         ],
+        'legacy_views' => [
+            'title' => 'Una vista del modulo precedente al motore dei moduli',
+            'found' => 'Il sito sostituisce il modulo delle richieste con il proprio form.blade.php, scritto prima che i moduli passassero al motore dei widget (<x-webx-form> e <x-webx-field>).',
+            'why' => 'Per ora funziona: il modulo le passa i dati di prima e serve il vecchio script. Una versione successiva lo toglie, e i moduli di quella vista smettono di inviarsi senza ricaricare e perdono il captcha.',
+            'fix' => 'Elimini la copia del sito per avere il modulo del pacchetto, oppure la riscriva attorno a <x-webx-form> e <x-webx-field>; cambi lo stile dei campi con webx-field-* e webx-form-* invece di wx-form-* (la tabella delle classi è nella guida delle richieste).',
+        ],
     ],
 ];

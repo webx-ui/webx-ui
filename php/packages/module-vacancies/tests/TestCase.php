@@ -27,9 +27,11 @@ use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
 use WebxUi\Settings\Settings;
 use WebxUi\Settings\SettingsServiceProvider;
+use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Vacancies\Models\Vacancy;
 use WebxUi\Vacancies\Models\VacancyCategory;
 use WebxUi\Vacancies\VacanciesServiceProvider;
+use WebxUi\Widgets\WidgetsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -55,6 +57,9 @@ abstract class TestCase extends Orchestra
             SettingsServiceProvider::class,
             SeoServiceProvider::class,
             PagesServiceProvider::class,
+            // The application form is inbox's, drawn by the widgets' form engine (which stands on themes).
+            ThemeServiceProvider::class,
+            WidgetsServiceProvider::class,
             InboxServiceProvider::class,
             VacanciesServiceProvider::class,
         ];

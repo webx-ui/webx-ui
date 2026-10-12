@@ -34,5 +34,11 @@ return [
             'why' => 'Robots have found the form. What gets through lands in the inbox and in the notifications, and the free layers alone are what they keep trying to pass.',
             'fix' => 'Turn a captcha on in the form’s Antispam tab — the site needs its keys in .env — and keep the hidden field on. Refusals are counted per day in the cache, so a cleared cache starts them from zero.',
         ],
+        'legacy_views' => [
+            'title' => 'A form view from before the form engine',
+            'found' => 'The site overrides the inbox form with its own form.blade.php, written before forms moved to the widgets’ engine (<x-webx-form> and <x-webx-field>).',
+            'why' => 'It still works for now: the module hands it what it used to and serves its old script. A later release removes that, and the forms printed by that view stop sending without a reload and lose their captcha.',
+            'fix' => 'Delete the site’s copy to get the package’s form, or rewrite it around <x-webx-form> and <x-webx-field>; restyle the fields by webx-field-* and webx-form-* instead of wx-form-* (the inbox guide has the table of classes).',
+        ],
     ],
 ];

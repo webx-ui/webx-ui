@@ -18,6 +18,7 @@ use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Inbox\Antispam\Throttle;
 use WebxUi\Inbox\Audit\CaptchaKeys;
 use WebxUi\Inbox\Audit\CaptchaUnused;
+use WebxUi\Inbox\Audit\LegacyViews;
 use WebxUi\Inbox\Audit\NoRecipients;
 use WebxUi\Inbox\Audit\NotificationTrouble;
 use WebxUi\Inbox\Audit\SpamWithoutCaptcha;
@@ -91,6 +92,10 @@ class InboxServiceProvider extends ServiceProvider
             // check for a form without a captcha as such: the free layers are the default.
             $this->app->make(AuditChecks::class)->register($this->app->make(CaptchaUnused::class));
             $this->app->make(AuditChecks::class)->register($this->app->make(SpamWithoutCaptcha::class));
+
+            // A form view the site published before the widgets' engine: it works for an alias
+            // period, and this names it before the period ends (WIDGETS §20, W6.4).
+            $this->app->make(AuditChecks::class)->register($this->app->make(LegacyViews::class));
         }
 
         // Notes on a submission are the panel's own feature, not this module's (§2.17): the

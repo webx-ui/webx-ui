@@ -18,8 +18,10 @@ $prefix = trim((string) config('webx-inbox.path', 'webx/forms'), '/');
 // Outside every group: a script needs no session, and a cookie on it would only stop a proxy
 // from sharing what is meant to be shared. Declared before the intake so that `inbox.js` is
 // not read as the slug of a form (the intake is a POST and this a GET, but a route that
-// depends on that is a route waiting for somebody to add a verb).
+// depends on that is a route waiting for somebody to add a verb). `inbox-legacy.js` — the
+// script of a view published before W6.4, for an alias period.
 Route::get("{$prefix}/inbox.js", ScriptController::class)->name('webx.inbox.script');
+Route::get("{$prefix}/inbox-legacy.js", ScriptController::class)->name('webx.inbox.script.legacy');
 
 /**
  * The door a form on the site posts to (§6).

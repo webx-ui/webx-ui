@@ -1,4 +1,8 @@
 /**
+ * The script of a form view a site published before W6.4 — kept for an alias period (WIDGETS
+ * §20, W6.4; the audit's inbox.legacy_views names such a view). The form of today is drawn by
+ * the widgets' form engine and sent by its form.js; inbox.js keeps only the captcha.
+ *
  * The form on the site, answering without reloading the page (§10).
  *
  * Progressive enhancement, in the strict sense: everything below is optional. Without this

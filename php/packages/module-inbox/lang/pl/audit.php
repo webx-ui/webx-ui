@@ -9,4 +9,5 @@ return [
     'captcha-keys' => 'Formularz :form (:slug) wymaga :provider, a w .env witryny brakuje :missing',
     'captcha-unused' => 'Formularz :form (:slug) nie ma captchy, a witryna ma klucze do :providers',
     'spam-without-captcha' => 'Formularz :form (:slug) nie ma captchy i dostaje spam. W ciągu :days dni oznaczone jako spam: :spam, odrzucone: :refused',
+    'legacy-views' => 'Formularz zgłoszeń zastępuje widok sprzed silnika formularzy: :path',
 ];

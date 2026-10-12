@@ -9,4 +9,5 @@ return [
     'captcha-keys' => 'O formulário :form (:slug) pede :provider e falta no .env do site :missing',
     'captcha-unused' => 'O formulário :form (:slug) não tem captcha e o site tem chaves para :providers',
     'spam-without-captcha' => 'O formulário :form (:slug) não tem captcha e recebe spam. Em :days dias, marcados como spam: :spam, recusados: :refused',
+    'legacy-views' => 'O formulário de pedidos é substituído por uma vista anterior ao motor de formulários: :path',
 ];
