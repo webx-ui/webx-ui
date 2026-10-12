@@ -35,7 +35,9 @@ pages (a page, an article, a product) stand inside the theme's layout.
 Never edit the packaged theme in `vendor/`: `composer update` brings its fixes, and
 `php artisan webx:theme:sync` publishes its built files into `public/themes/`. Before you change
 anything, `php artisan webx:theme:show` lists what the chain already gives — every token with the
-layer that set it, every view with what it overrides, the block types, icons and fonts.
+layer that set it, every view with what it overrides, the block types, icons and fonts. How the
+chain works, the test every theme runs, and how a site's look becomes a theme of its own
+(`webx:theme:make`, `extract`, `eject`) — [Site themes](./themes.md).
 
 The look is the theme's files, in git, and nothing else: the panel has no colour picker and no
 preset switch. The site draws in a preset of the chain when its manifest names one —
@@ -405,8 +407,10 @@ when the built front end is older than its sources ("has changed since the bundl
 4. Use only variables that exist: `--site-*` on the public site, `--wx-*` from `tokens.css` in the
    panel. In a block, prefix every selector with `.b-<slug>` and use `@container`.
 5. Show the change: reload, or `npm run build`; run `php artisan webx:doctor` and, on a site with
-   a theme, `php artisan webx:theme:check`. Read `php artisan webx:theme:show` before step 2 on a
-   site with a theme: it names the layer that owns each token and view.
+   a theme, `php artisan webx:theme:check` and the theme's test (`php artisan test`, the suite
+   `Theme`). Read `php artisan webx:theme:show` before step 2 on a site with a theme: it names the
+   layer that owns each token and view. The 35 rules a theme keeps are in
+   `vendor/webx-ui/themes/RULES.md`.
 6. Look at a phone width as well as a wide one; for the panel, the dark theme too.
 7. Commit what the site owns: `theme/`, `resources/`, `public/` (not `public/build`, `public/themes`), `config/`, and the
    block types after `php artisan webx:blocks:export` (on a site with a theme,

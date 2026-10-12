@@ -186,6 +186,13 @@ HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` 
   helpers.php в неё не попадает. Похоже на сломанную чужую ветку. Лечится `composer update
 webx-ui/<пакет>` из `php/`: path-репозиторий перечитывается. Проверка — `grep helpers.php
 vendor/composer/autoload_files.php`.
+- **Скрипт пакетной темы собирается в `dist/theme2.js`, а `@webxTheme` его не ставит.** У Vite
+  со входом-стилем (`src/css/theme.css`) и входом-скриптом рядом стилевой вход оставляет пустой
+  JS-чанк, и тот занимает имя `theme.js` первым — скрипт получает `theme2.js`, а движок ищет
+  `dist/theme.js`. Похоже на сломанный `assetFileNames`. В заготовке `webx:theme:make` входы
+  названы `theme` и `script`, а `entryFileNames` — функцией: `script` → `theme.js`, остальное —
+  `[name]-entry.js` (пустой чанк выбрасывается). Правя `vite.config.js` темы, это не трогать.
+  Проверка — `ls dist` после `npm run build`: `sources.json`, `theme.css`, `theme.js`.
 
 ## Windows, Git Bash, OSPanel
 

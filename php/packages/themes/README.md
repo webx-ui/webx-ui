@@ -16,11 +16,9 @@ theme/                   ← the site's local theme: its differences
 
 Part of [WebX UI](https://github.com/webx-ui/webx-ui). No tables, no JavaScript.
 
-> Early days: this release resolves the chain, the order Blade looks views up in, the token
-> vocabulary, `@webxTheme`, `webx:theme:sync`, `webx:theme:make --local` and `webx:theme:check` (CSS knows
-> only tokens). Block types, icons,
-> the panel tab and the rest of the `webx:theme:*` commands arrive in the next releases — see the
-> specification.
+Every command of the engine is here: `webx:theme:show`, `check`, `sync`, `make` (a local theme or a
+packaged one), `extract` and `eject`, and `Testing\ThemeContract` — the test every theme runs. The
+rules a theme keeps are in [RULES.md](RULES.md).
 
 ## Requirements
 
@@ -285,8 +283,45 @@ A theme under development that Composer does not know about can be pointed at di
 app(\WebxUi\Themes\ThemeLocator::class)->register('acme/theme-north', base_path('../theme-north'));
 ```
 
+## A theme's test
+
+Every theme — the site's `theme/` and a packaged one — runs the engine's contract in its PHPUnit
+test; `webx:theme:make` writes it, green from the first run:
+
+```php
+use WebxUi\Themes\Testing\ThemeContract;
+
+final class ThemeTest extends TestCase
+{
+    use ThemeContract;
+
+    protected function themePath(): string { return dirname(__DIR__); }
+}
+```
+
+The chain builds with the theme on top, every token has a value, `webx:theme:check` finds nothing,
+text reads in every preset (WCAG AA), the layout keeps `@webxTheme`, `@webxSeo`, `@webxBlocks` and
+both regions, the theme's views compile, and a packaged `dist/` is built from `src/`
+(`ThemeSources`). The same checks as lists of what is wrong, for a script: `Testing\ThemeProbe`.
+
+## Making, extracting, ejecting
+
+- `php artisan webx:theme:make acme/theme-clinic [--uses=…] [--path=…]` — a packaged theme over
+  `webx-ui/theme-default`: the manifest in composer.json, `tokens.json`, `src/css`, an already
+  built `dist/`, the build, the test, a CI.
+- `php artisan webx:theme:extract acme/theme-clinic` — the site's `theme/` becomes that package and
+  the site stands on it (a path repository, `WEBX_THEME`).
+- `php artisan webx:theme:eject [acme/theme-clinic]` — the packaged theme under `theme/` folds into
+  it, the local side winning; never `webx-ui/theme-default`.
+
+Extract and eject compare the look of the chain before and after and name every difference —
+`ThemeLook::of($chain)` and `ThemeLook::differences($before, $after)` — and print the Composer and
+npm commands to run instead of running them.
+
 ## Read more
 
+- [RULES.md](RULES.md) — the 35 rules of a theme.
+- Guide: https://webx-ui.github.io/webx-ui/guide/themes
 - Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_THEMES.md
 
 ## License

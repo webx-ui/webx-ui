@@ -14,6 +14,7 @@ use WebxUi\Admin\Panel\PackageRegistry;
 use WebxUi\Admin\Panel\PanelPackage;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Mcp\Server\Site;
+use WebxUi\Themes\ThemeChain;
 
 /**
  * Wire the panel's front end into the application that hosts it.
@@ -474,6 +475,26 @@ final class PanelCommand extends Command
     }
 
     /**
+     * The site's theme chain for the guide, top first: a local layer by its directory under the
+     * project. Empty without the theme engine or without a theme — the guide then says so.
+     *
+     * @return list<array{name: string, local: bool}>
+     */
+    private function themeChain(): array
+    {
+        if (! class_exists(ThemeChain::class) || ! $this->laravel->bound(ThemeChain::class)) {
+            return [];
+        }
+
+        $base = rtrim(str_replace('\\', '/', $this->laravel->basePath()), '/').'/';
+
+        return array_map(static fn ($layer): array => [
+            'name' => $layer->local && str_starts_with($layer->path.'/', $base) ? rtrim(substr($layer->path.'/', strlen($base)), '/') : $layer->name,
+            'local' => $layer->local,
+        ], $this->laravel->make(ThemeChain::class)->layers);
+    }
+
+    /**
      * Keep the site's AGENTS.md pointing at the guides of what is installed.
      *
      * Only the block between the `webx:agents` markers is ours; the rest of the file is the
@@ -485,7 +506,7 @@ final class PanelCommand extends Command
         $path = $this->laravel->basePath(AgentDocs::FILE);
         $current = $files->exists($path) ? (string) $files->get($path) : null;
         $file = new RootFile($current);
-        $updated = $file->with(RootFile::block($agents->packages(), (string) config('webx-admin.path')));
+        $updated = $file->with(RootFile::block($agents->packages(), (string) config('webx-admin.path'), $this->themeChain()));
 
         if ($updated === $current) {
             $this->components->twoColumnDetail(AgentDocs::FILE, 'already lists what is installed');

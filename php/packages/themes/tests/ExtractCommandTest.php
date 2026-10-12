@@ -121,6 +121,37 @@ final class ExtractCommandTest extends TestCase
         $this->assertNotFalse(simplexml_load_string($xml));
     }
 
+    /** The skeleton's Vite config drops an entry that is not there, so only another config is told to remove them. */
+    #[Test]
+    public function the_vite_entries_are_named_only_where_the_config_does_not_skip_a_missing_one(): void
+    {
+        $config = $this->app->basePath('vite.config.js');
+
+        try {
+            $this->files->put($config, "laravel({ input: ['theme/src/css/theme.css', 'resources/js/app.js'] })\n");
+            $this->artisan('webx:theme:extract', ['name' => 'harbor/theme-harbor', '--path' => 'harbor-package'])
+                ->expectsOutputToContain("remove 'theme/src/css/theme.css'")
+                ->assertSuccessful();
+        } finally {
+            $this->files->delete($config);
+        }
+    }
+
+    #[Test]
+    public function the_skeletons_vite_config_needs_no_word(): void
+    {
+        $config = $this->app->basePath('vite.config.js');
+
+        try {
+            $this->files->put($config, "laravel({ input: ['theme/src/css/theme.css'].filter((entry) => existsSync(entry)) })\n");
+            $this->artisan('webx:theme:extract', ['name' => 'harbor/theme-harbor', '--path' => 'harbor-package'])
+                ->doesntExpectOutputToContain("from the laravel() plugin's input")
+                ->assertSuccessful();
+        } finally {
+            $this->files->delete($config);
+        }
+    }
+
     #[Test]
     public function it_refuses_a_directory_that_already_has_something_in_it(): void
     {

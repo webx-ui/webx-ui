@@ -28,6 +28,7 @@ export default defineConfig({
             { text: 'A new site', link: '/guide/new-site' },
             { text: 'Docker from zero', link: '/guide/docker' },
             { text: 'Where the styles live', link: '/guide/styles' },
+            { text: 'Site themes', link: '/guide/themes' },
             { text: 'Theming', link: '/guide/theming' },
             { text: 'Languages', link: '/guide/languages' },
           ],

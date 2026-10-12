@@ -91,6 +91,12 @@ final class SiteFiles
         $contents = $this->files->exists($config) ? (string) $this->files->get($config) : '';
         $advice = [];
 
+        // The skeleton's config lists the theme's entries and leaves out the ones that are not
+        // there (`.filter((entry) => existsSync(entry))`): an entry gone with its theme needs no edit.
+        if (! $add && str_contains($contents, 'existsSync(entry)')) {
+            return [];
+        }
+
         foreach ($entries as $entry) {
             $listed = str_contains($contents, "{$relative}/{$entry}");
 

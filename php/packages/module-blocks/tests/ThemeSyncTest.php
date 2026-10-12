@@ -245,6 +245,31 @@ final class ThemeSyncTest extends TestCase
             ->assertFailed();
     }
 
+    /**
+     * The site's post-update-cmd runs sync wherever Composer runs — a Docker build, a host whose
+     * site talks to its container's database. Out of reach, the step says so and the command
+     * passes, so `composer update` is not failed by an SQL error.
+     */
+    #[Test]
+    public function without_a_reachable_database_the_step_says_so_and_does_not_fail(): void
+    {
+        $this->layer('default', $this->hero());
+        $this->chain();
+
+        $this->app['config']->set('database.connections.unreachable', [
+            'driver' => 'sqlite',
+            'database' => $this->dir.'/no-such-directory/database.sqlite',
+        ]);
+        $this->app['config']->set('database.default', 'unreachable');
+        $this->app['db']->purge('unreachable');
+        $this->app->forgetInstance(LayerSync::class);
+        $this->app->forgetInstance('db.connection');
+
+        $this->artisan('webx:theme:sync')
+            ->expectsOutputToContain('the database is not reachable from here')
+            ->assertSuccessful();
+    }
+
     #[Test]
     public function the_engine_knows_the_same_layout_nodes_as_this_package(): void
     {

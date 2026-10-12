@@ -7,11 +7,14 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 
 ## What it owns
 
-- **`tokens.json`** — `defaults` for all forty tokens of the vocabulary (`--site-color-*`,
-  `--site-font-*`, `--site-space-1…8`, `--site-radius-*`, `--site-shadow-*`,
-  `--site-container-width`, `--site-gutter`, `--site-duration`, `--site-easing`) and the presets
-  `warm` and `night`; the site draws in one by naming it in its manifest (`"preset": "night"` in
-  `theme/theme.json`).
+- **`tokens.json`** — `defaults` for all forty tokens of the vocabulary, each a `--site-<name>`:
+  `color-bg`, `color-surface`, `color-surface-muted`, `color-text`, `color-text-muted`,
+  `color-border`, `color-accent`, `color-accent-contrast`, `color-accent-2`, `color-highlight`,
+  `color-danger`, `color-success`; `font-body`, `font-heading`, `font-size-base`,
+  `line-height-base`, `font-size-1`…`font-size-6`; `space-1`…`space-8`; `radius-sm`, `radius-md`,
+  `radius-lg`, `radius-full`; `shadow-sm`, `shadow-md`; `container-width`, `gutter`, `duration`,
+  `easing`. The presets `warm` and `night`; a site draws in one by naming it in its manifest
+  (`"preset": "night"` in `theme/theme.json`). Its test is `Testing\ThemeContract` first.
 - **`views/components/layout`** — the document every module page is printed in (`<x-layout>`):
   `@webxTheme`, the page's `head` slot (or `@webxSeo` + `@webxBlocks` when there is none),
   `@stack('head')`, `<x-webx-notice-bar>` above the header (a `notice` banner, else `@stack('notice')`), the `header` and `footer` regions, `<main id="content" class="site-main">`

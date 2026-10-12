@@ -576,6 +576,16 @@ true` в `defineEnvironment()`. На настоящей СУБД всё это �
   встаёт перевод строки с отступом — подстрока через перенос не совпадает. Длинное пояснение —
   отдельной строкой `$this->line('  …')` под коротким `warn()`, как предупреждение о языках демо в
   `webx:setup`; в тесте сверять куски, которые в одну строку помещаются точно.
+- **После теста команды, которая правит `composer.json` сайта, у Testbench чужой `composer.json`,
+  и падают соседние тесты пакетов, читающие скелет.** Базовый путь приложения Testbench —
+  `vendor/orchestra/testbench-core/laravel`, и `composer.json` там **есть** (скелет Laravel), а
+  `.env` и `phpunit.xml` — нет. Тест `webx:theme:extract`, записавший туда свой файл, без отката
+  оставляет его всем следующим прогонам того же `php/vendor`. Такие тесты берут
+  `Tests\Concerns\SiteSandbox` движка тем: содержимое трёх файлов запоминается до теста и
+  возвращается байт в байт после, каталоги тем удаляются. Каталог, который тест создаёт под
+  базовым путём, — одним уровнем (`harbor-package`, а не `packages/…`): пустой родитель иначе
+  остаётся. Проверка — `head -3 vendor/orchestra/testbench-core/laravel/composer.json` после
+  прогона: `"name": "laravel/laravel"`.
 
 ## PHPStan
 
@@ -643,6 +653,16 @@ Model` в файле без `use Illuminate\Database\Eloquent\Model` сравн�
 - Было: `vendor:publish` миграций Passport штампует копию временем публикации, и второй прогон
   (или публикация на старте контейнера) давал дубль и «table already exists». Починено в
   `SetupCommand::missingPassportMigrations()`; публиковать такое только один раз в репозиторий.
+
+- **`composer require` на сайте падает «Access denied for user …» в `post-update-cmd`, хотя сам
+  Composer ни при чём.** С TH2.2 `webx:setup` вписывает в `composer.json` сайта
+  `php artisan webx:theme:sync`, а его шаг типов блоков идёт в базу. Composer же бегает там, где
+  базы может не быть: сборка образа, хост, чей сайт ходит в базу своего контейнера (смоук
+  платформы: `webx:module:add` на хосте, `.env` уже на базе контейнера). Шаг теперь проверяет
+  соединение первым и без базы пишет строку «the database is not reachable from here», не
+  роняя команду; файлы к тому моменту опубликованы. Смоук был красным с TH2.2 больше суток —
+  он не входит в обязательный чек очереди, поэтому его смотреть глазами перед каждым релизом:
+  `gh run list --workflow "PHP smoke" --branch <ветка> --limit 3`.
 
 ## Passport, OAuth, MCP
 
