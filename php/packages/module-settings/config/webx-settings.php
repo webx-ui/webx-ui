@@ -44,9 +44,18 @@ return [
     | the list on the Contacts tab is empty. `php artisan webx:settings:contacts
     | --from=<key>` moves it over for good.
     |
+    | `sections` are the parts of the Contacts tab the site draws: phones,
+    | emails, addresses, hours (with special dates and the time zone),
+    | messengers, socials. One left out is hidden from the form, so an editor
+    | is not asked about what the site never shows; contacts() still returns
+    | whatever is stored, and a screen patch aimed at its card still applies.
+    |
     */
 
     'contacts' => [
+        'sections' => ['phones', 'emails', 'addresses'],
+        // 'sections' => ['phones', 'emails', 'addresses', 'hours', 'messengers', 'socials'],
+
         'legacy' => [
             // 'phones' => 'contacts.phone',
             // 'emails' => 'contacts.email',

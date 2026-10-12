@@ -29,6 +29,37 @@ button of its own: Save. A 422 from the server lands under the field it names.
 The tab «Shortcodes» is the list of data shortcodes: a name content writes in brackets —
 `[phone]` — reading a setting or holding its own value. See [Shortcodes](/guide/shortcodes).
 
+### The Contacts tab, and which parts of it a site draws
+
+The tab «Contacts» holds what the site's widgets, map and SEO markup print — read on the site
+through `contacts()`. Most sites print only some of it, and a field the site never shows is a
+question an editor asks every time. So the server draws only the sections named in
+`config/webx-settings.php`:
+
+```php
+'contacts' => [
+    // the default: what nearly every site prints
+    'sections' => ['phones', 'emails', 'addresses'],
+    // everything: 'phones', 'emails', 'addresses', 'hours', 'messengers', 'socials'
+],
+```
+
+| Section      | What it draws                                     | Card                      |
+| ------------ | ------------------------------------------------- | ------------------------- |
+| `phones`     | `contacts.phones`                                 | `contacts-phones-card`    |
+| `emails`     | `contacts.emails`                                 | `contacts-phones-card`    |
+| `addresses`  | `contacts.addresses`                              | `contacts-addresses-card` |
+| `hours`      | `contacts.hours`, its special dates, the timezone | `contacts-hours-card`     |
+| `messengers` | `contacts.messengers`                             | `contacts-channels-card`  |
+| `socials`    | `contacts.socials`                                | `contacts-channels-card`  |
+
+A section left out is hidden (`visible: false`), not cut out of the screen: a card with none of
+its sections drawn is hidden whole, an empty list hides the tab. The keys stay writable — from MCP
+too — and `contacts()` returns whatever is stored, so a site that prints the hours (`<x-webx-hours>`,
+the header's socials) lists `hours` or `socials` here. Because the nodes stay, a patch from before
+this setting that removed `contacts-hours-card` or `contacts-channels-card` still applies; it is
+just no longer needed. A misspelt section stops the boot with the known names.
+
 ## The screen, and what to patch
 
 Out of the box the screen is three tabs — what the panel is called, what it wears, and the house
