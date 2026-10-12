@@ -6194,6 +6194,238 @@
               }
             }
           ]
+        },
+        {
+          "title": {
+            "en": "Sending",
+            "ru": "Отправка",
+            "pl": "Wysyłanie"
+          },
+          "slug": {
+            "en": "sending",
+            "ru": "otpravka",
+            "pl": "wysylanie"
+          },
+          "seo": {
+            "title": {
+              "en": "Sending",
+              "ru": "Отправка",
+              "pl": "Wysyłanie"
+            },
+            "description": {
+              "en": "A form sent in place and without JavaScript to the same errors, a second press that sends nothing, an expired page that gets a fresh token, and a form in a dialog.",
+              "ru": "Форма, отправленная на месте и без JavaScript, приходит к одним и тем же ошибкам; второе нажатие ничего не отправляет; устаревшая страница получает свежий токен; форма в окне.",
+              "pl": "Formularz wysłany na miejscu i bez JavaScriptu dochodzi do tych samych błędów, drugie kliknięcie niczego nie wysyła, przeterminowana strona dostaje świeży token, formularz w oknie."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-sending-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Sending",
+                  "ru": "Отправка",
+                  "pl": "Wysyłanie"
+                },
+                "body": {
+                  "en": "Every form of the site is sent the same way. Without JavaScript it is a plain form: the page comes back with each error under its field, or with the answer. With it the same form is sent in place, and the errors are the same words in the same places.\nPress Send on the empty form, then fill it in and pick what the server answers. Press twice quickly: one submission goes. Leave the page open for hours and send: the expired token is renewed and the form is sent once more, by itself.",
+                  "ru": "Каждая форма сайта отправляется одинаково. Без JavaScript это обычная форма: страница возвращается с ошибкой под каждым полем или с ответом. С ним та же форма отправляется на месте, и ошибки — те же слова на тех же местах.\nНажмите «Отправить» на пустой форме, потом заполните её и выберите, что ответит сервер. Нажмите дважды быстро — уйдёт одна отправка. Оставьте страницу открытой на несколько часов и отправьте: устаревший токен обновится, и форма уйдёт ещё раз сама.",
+                  "pl": "Każdy formularz strony jest wysyłany tak samo. Bez JavaScriptu to zwykły formularz: strona wraca z błędem pod każdym polem albo z odpowiedzią. Z nim ten sam formularz jest wysyłany na miejscu, a błędy to te same słowa w tych samych miejscach.\nNaciśnij Wyślij przy pustym formularzu, potem go wypełnij i wybierz, co odpowie serwer. Naciśnij dwa razy szybko – pójdzie jedno wysłanie. Zostaw stronę otwartą na kilka godzin i wyślij: przeterminowany token się odnowi, a formularz zostanie wysłany jeszcze raz sam."
+                }
+              }
+            },
+            {
+              "key": "showcase-sending-page",
+              "type": "showcase-sending",
+              "values": {
+                "heading": {
+                  "en": "On the page",
+                  "ru": "На странице",
+                  "pl": "Na stronie"
+                },
+                "note": {
+                  "en": "The answer comes under the button, in a region a screen reader reads out; the errors come under their fields, and the first wrong field gets the focus.",
+                  "ru": "Ответ появляется под кнопкой, в области, которую читает экранный диктор; ошибки — под своими полями, фокус — на первом неверном поле.",
+                  "pl": "Odpowiedź pojawia się pod przyciskiem, w obszarze odczytywanym przez czytnik ekranu; błędy – pod swoimi polami, a fokus trafia na pierwsze błędne pole."
+                },
+                "mode": "page",
+                "label_name": {
+                  "en": "Your name",
+                  "ru": "Ваше имя",
+                  "pl": "Twoje imię"
+                },
+                "label_email": {
+                  "en": "Email",
+                  "ru": "Электронная почта",
+                  "pl": "E-mail"
+                },
+                "label_answer": {
+                  "en": "What the server answers",
+                  "ru": "Что ответит сервер",
+                  "pl": "Co odpowie serwer"
+                },
+                "answer_message": {
+                  "en": "A thank-you in place",
+                  "ru": "Благодарность на месте",
+                  "pl": "Podziękowanie na miejscu"
+                },
+                "answer_redirect": {
+                  "en": "Off to another page",
+                  "ru": "Переход на другую страницу",
+                  "pl": "Przejście na inną stronę"
+                },
+                "answer_html": {
+                  "en": "The next step in place of the fields",
+                  "ru": "Следующий шаг вместо полей",
+                  "pl": "Następny krok zamiast pól"
+                },
+                "answer_nothing": {
+                  "en": "Nothing — only the event",
+                  "ru": "Ничего — только событие",
+                  "pl": "Nic – tylko zdarzenie"
+                },
+                "label_agree": {
+                  "en": "I agree that this demo form sends what I typed to the site and forgets it",
+                  "ru": "Я согласен, что эта демонстрационная форма отправит написанное на сайт и забудет его",
+                  "pl": "Zgadzam się, że ten formularz demonstracyjny wyśle wpisany tekst na stronę i o nim zapomni"
+                },
+                "button": {
+                  "en": "Send",
+                  "ru": "Отправить",
+                  "pl": "Wyślij"
+                },
+                "thanks_heading": {
+                  "en": "Thank you",
+                  "ru": "Спасибо",
+                  "pl": "Dziękujemy"
+                },
+                "thanks_message": {
+                  "en": "The form arrived, :name. Nothing was kept: this is the showcase.",
+                  "ru": "Форма пришла, :name. Ничего не сохранено: это витрина.",
+                  "pl": "Formularz dotarł, :name. Nic nie zostało zapisane: to jest witryna."
+                },
+                "step": {
+                  "en": "Step two, :name: the server sent this paragraph in place of the fields, as a checkout sends its next step.",
+                  "ru": "Шаг второй, :name: сервер прислал этот абзац вместо полей — так оформление заказа присылает следующий шаг.",
+                  "pl": "Krok drugi, :name: serwer przysłał ten akapit zamiast pól – tak zamówienie przysyła swój następny krok."
+                },
+                "to": {
+                  "en": "/kitchen-sink/forms/fields",
+                  "ru": "/ru/vitrina/formy/polya",
+                  "pl": "/pl/witryna/formularze/pola"
+                }
+              }
+            },
+            {
+              "key": "showcase-sending-dialog",
+              "type": "showcase-sending",
+              "values": {
+                "heading": {
+                  "en": "In a dialog",
+                  "ru": "В окне",
+                  "pl": "W oknie"
+                },
+                "note": {
+                  "en": "The same form in a dialog: the thank-you takes the place of the fields, and the dialog closes only by its button — there has to be time to read. Closed, it is a fresh form again.",
+                  "ru": "Та же форма в окне: благодарность встаёт на место полей, а окно закрывается только своей кнопкой — нужно успеть прочитать. Закрытое, оно снова свежая форма.",
+                  "pl": "Ten sam formularz w oknie: podziękowanie zajmuje miejsce pól, a okno zamyka się tylko swoim przyciskiem – trzeba zdążyć przeczytać. Zamknięte znów jest świeżym formularzem."
+                },
+                "mode": "dialog",
+                "opener": {
+                  "en": "Request a call back",
+                  "ru": "Заказать звонок",
+                  "pl": "Zamów rozmowę"
+                },
+                "dialog_title": {
+                  "en": "Request a call back",
+                  "ru": "Заказать звонок",
+                  "pl": "Zamów rozmowę"
+                },
+                "label_name": {
+                  "en": "Your name",
+                  "ru": "Ваше имя",
+                  "pl": "Twoje imię"
+                },
+                "label_email": {
+                  "en": "Email",
+                  "ru": "Электронная почта",
+                  "pl": "E-mail"
+                },
+                "label_answer": {
+                  "en": "What the server answers",
+                  "ru": "Что ответит сервер",
+                  "pl": "Co odpowie serwer"
+                },
+                "answer_message": {
+                  "en": "A thank-you in place",
+                  "ru": "Благодарность на месте",
+                  "pl": "Podziękowanie na miejscu"
+                },
+                "answer_redirect": {
+                  "en": "Off to another page",
+                  "ru": "Переход на другую страницу",
+                  "pl": "Przejście na inną stronę"
+                },
+                "answer_html": {
+                  "en": "The next step in place of the fields",
+                  "ru": "Следующий шаг вместо полей",
+                  "pl": "Następny krok zamiast pól"
+                },
+                "answer_nothing": {
+                  "en": "Nothing — only the event",
+                  "ru": "Ничего — только событие",
+                  "pl": "Nic – tylko zdarzenie"
+                },
+                "label_agree": {
+                  "en": "I agree that this demo form sends what I typed to the site and forgets it",
+                  "ru": "Я согласен, что эта демонстрационная форма отправит написанное на сайт и забудет его",
+                  "pl": "Zgadzam się, że ten formularz demonstracyjny wyśle wpisany tekst na stronę i o nim zapomni"
+                },
+                "button": {
+                  "en": "Send",
+                  "ru": "Отправить",
+                  "pl": "Wyślij"
+                },
+                "thanks_heading": {
+                  "en": "Thank you",
+                  "ru": "Спасибо",
+                  "pl": "Dziękujemy"
+                },
+                "thanks_message": {
+                  "en": "The form arrived, :name. Nothing was kept: this is the showcase.",
+                  "ru": "Форма пришла, :name. Ничего не сохранено: это витрина.",
+                  "pl": "Formularz dotarł, :name. Nic nie zostało zapisane: to jest witryna."
+                },
+                "step": {
+                  "en": "Step two, :name: the server sent this paragraph in place of the fields, as a checkout sends its next step.",
+                  "ru": "Шаг второй, :name: сервер прислал этот абзац вместо полей — так оформление заказа присылает следующий шаг.",
+                  "pl": "Krok drugi, :name: serwer przysłał ten akapit zamiast pól – tak zamówienie przysyła swój następny krok."
+                },
+                "to": {
+                  "en": "/kitchen-sink/forms/fields",
+                  "ru": "/ru/vitrina/formy/polya",
+                  "pl": "/pl/witryna/formularze/pola"
+                }
+              }
+            },
+            {
+              "key": "showcase-sending-markup",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "For the site",
+                  "ru": "Для сайта",
+                  "pl": "Dla strony"
+                },
+                "body": {
+                  "en": "A form is <x-webx-form> around <x-webx-field>s and <x-webx-form.submit>; the controller answers with FormResponse — a message, a redirect, HTML or nothing — and gets both ways at once. A module listens to webx:form:submit, webx:form:success and webx:form:error on the form and never writes a fetch of its own.",
+                  "ru": "Форма — это <x-webx-form> вокруг <x-webx-field> и <x-webx-form.submit>; контроллер отвечает через FormResponse — сообщение, переход, HTML или ничего — и получает оба режима сразу. Модуль слушает на форме webx:form:submit, webx:form:success и webx:form:error и не пишет своего fetch.",
+                  "pl": "Formularz to <x-webx-form> wokół pól <x-webx-field> i <x-webx-form.submit>; kontroler odpowiada przez FormResponse – komunikat, przekierowanie, HTML albo nic – i dostaje oba tryby naraz. Moduł nasłuchuje na formularzu webx:form:submit, webx:form:success i webx:form:error i nie pisze własnego fetch."
+                }
+              }
+            }
+          ]
         }
       ]
     }

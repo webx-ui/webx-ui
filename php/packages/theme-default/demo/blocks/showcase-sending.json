@@ -1,0 +1,144 @@
+{
+  "slug": "showcase-sending",
+  "title": "Showcase: sending a form",
+  "description": "A form of the widgets sent to the showcase’s own door — the errors of an empty form, then a thank-you, a redirect, HTML in place of the fields or nothing — on the page or in a dialog, for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 99,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "mode",
+      "type": "wx-select",
+      "label": "Where the form stands",
+      "props": {
+        "options": [
+          {
+            "label": "On the page",
+            "value": "page"
+          },
+          {
+            "label": "In a dialog",
+            "value": "dialog"
+          }
+        ]
+      }
+    },
+    {
+      "id": "opener",
+      "type": "wx-input",
+      "label": "Button that opens the dialog",
+      "localized": true
+    },
+    {
+      "id": "dialog_title",
+      "type": "wx-input",
+      "label": "Title of the dialog",
+      "localized": true
+    },
+    {
+      "id": "label_name",
+      "type": "wx-input",
+      "label": "Label: name",
+      "localized": true
+    },
+    {
+      "id": "label_email",
+      "type": "wx-input",
+      "label": "Label: email",
+      "localized": true
+    },
+    {
+      "id": "label_answer",
+      "type": "wx-input",
+      "label": "Label: the answer",
+      "localized": true
+    },
+    {
+      "id": "answer_message",
+      "type": "wx-input",
+      "label": "Answer: a thank-you",
+      "localized": true
+    },
+    {
+      "id": "answer_redirect",
+      "type": "wx-input",
+      "label": "Answer: a redirect",
+      "localized": true
+    },
+    {
+      "id": "answer_html",
+      "type": "wx-input",
+      "label": "Answer: HTML in place",
+      "localized": true
+    },
+    {
+      "id": "answer_nothing",
+      "type": "wx-input",
+      "label": "Answer: nothing",
+      "localized": true
+    },
+    {
+      "id": "label_agree",
+      "type": "wx-input",
+      "label": "Label: consent",
+      "localized": true
+    },
+    {
+      "id": "button",
+      "type": "wx-input",
+      "label": "Button",
+      "localized": true
+    },
+    {
+      "id": "thanks_heading",
+      "type": "wx-input",
+      "label": "Thank-you: heading",
+      "localized": true
+    },
+    {
+      "id": "thanks_message",
+      "type": "wx-input",
+      "label": "Thank-you: text (:name is the name sent)",
+      "localized": true
+    },
+    {
+      "id": "step",
+      "type": "wx-input",
+      "label": "HTML in place: text (:name is the name sent)",
+      "localized": true
+    },
+    {
+      "id": "to",
+      "type": "wx-input",
+      "label": "Redirect: a path of this site",
+      "localized": true
+    }
+  ],
+  "template": "@php\n    // One form sent to the showcase's door (POST webx/widgets/showcase), which answers by §17.4\n    // the way a sign-in or a checkout would: the validator's errors on an empty form, then the\n    // answer the visitor picks. On the page, or in a dialog a button opens. Every word is the\n    // page's: the labels, the answers, the thank-you — the door echoes them back escaped.\n    $set = \\WebxUi\\Widgets\\Facades\\Widgets::sequence('showcase-sending');\n    $dialogId = 'showcase-sending-'.$set;\n    $answers = array_filter([\n        'message' => (string) $answer_message,\n        'redirect' => (string) $answer_redirect,\n        'html' => (string) $answer_html,\n        'nothing' => (string) $answer_nothing,\n    ], static fn (string $label): bool => $label !== '');\n    $hidden = [\n        'locale' => app()->getLocale(),\n        'labels[name]' => (string) $label_name,\n        'labels[email]' => (string) $label_email,\n        'labels[answer]' => (string) $label_answer,\n        'labels[agree]' => (string) $label_agree,\n        'words[heading]' => (string) $thanks_heading,\n        'words[message]' => (string) $thanks_message,\n        'words[step]' => (string) $step,\n        'to' => (string) $to,\n    ];\n@endphp\n@php ob_start() @endphp\n<x-webx-form :action=\"route('webx-widgets.showcase')\" :id=\"'showcase-form-'.$set\" class=\"b-showcase-sending__form\" novalidate>\n    @foreach ($hidden as $hiddenName => $hiddenValue)\n        <input type=\"hidden\" name=\"{{ $hiddenName }}\" value=\"{{ $hiddenValue }}\">\n    @endforeach\n    <x-webx-field name=\"showcase.name\" :label=\"(string) $label_name\" autocomplete=\"name\" required />\n    <x-webx-field name=\"showcase.email\" type=\"email\" :label=\"(string) $label_email\" required />\n    @if ($answers !== [])\n        <x-webx-field name=\"showcase.answer\" type=\"radio\" :label=\"(string) $label_answer\" :choices=\"$answers\" value=\"message\" required />\n    @endif\n    <x-webx-field name=\"showcase.agree\" type=\"consent\" :label=\"(string) $label_agree\" required />\n    <x-webx-form.submit>{{ $button }}</x-webx-form.submit>\n</x-webx-form>\n@php $form = ob_get_clean() @endphp\n<section class=\"b-showcase-sending\" data-wx-block=\"showcase-sending\" data-mode=\"{{ $mode === 'dialog' ? 'dialog' : 'page' }}\">\n    @if ($heading)\n        <h2 class=\"b-showcase-sending__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-sending__note\">{{ $note }}</p>\n    @endif\n    @if ($mode === 'dialog')\n        <a class=\"b-showcase-sending__open\" href=\"#{{ $dialogId }}\" data-webx-dialog=\"{{ $dialogId }}\">{{ $opener }}</a>\n        <x-webx-dialog :id=\"$dialogId\" :title=\"(string) $dialog_title\">{!! $form !!}</x-webx-dialog>\n    @else\n        <div class=\"b-showcase-sending__frame\">{!! $form !!}</div>\n    @endif\n</section>",
+  "styles": ".b-showcase-sending {\n    container-type: inline-size;\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-sending__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-sending__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-sending__frame {\n    max-width: 36rem;\n}\n\n.b-showcase-sending__open {\n    display: inline-flex;\n    align-items: center;\n    min-height: 44px;\n    padding: 0 var(--site-space-5);\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-accent);\n    color: var(--site-color-accent-contrast);\n    font-weight: 600;\n    text-decoration: none;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Sending",
+    "note": "",
+    "mode": "page"
+  }
+}
