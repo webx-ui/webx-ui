@@ -108,8 +108,6 @@ for `repeated`. A full example — README, «After a submission is stored».
   are the supported ways; if none fits, the package is missing a seam — say so.
 - Do not write a form in raw HTML posting to the intake, nor its fields, nor a `fetch`: it loses
   the honeypot, the timestamp, the captcha, the checks and the answer in place. Use the tag.
-- Do not import the widgets' `dist/*.js` into the site's bundle to make the form send in place on
-  a site without a theme: write `@webxWidgets` in the layout (audit: `widgets.form_script`).
 - Do not rewrite `form.blade.php` without `<x-webx-form>`: a view without it is taken for one
   published before W6.4 and gets the old script (the audit's `inbox.legacy_views` names it).
   Keep `webx_form`, `webx_locale`, `webx_page`, the honeypot, the timestamp and the captcha.
