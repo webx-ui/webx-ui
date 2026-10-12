@@ -27,8 +27,8 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
   widgets' own), checked in the browser by the intake's own rules in the validator's words
   (`FormRules`), sent in place, the thank-you in place — in a dialog too. **The inbox's own**:
   the builder, the intake, the honeypot and the timestamp, the captcha (its place has
-  `data-webx-field="captcha"`) and `{path}/inbox.js` — only the captcha, printed only with one.
-  Hook analytics on `webx:form:success` of `form[data-webx-form="<slug>"]`.
+  `data-webx-field="captcha"`) and `{path}/inbox.js` — only the captcha, printed only with one;
+  the form is busy while it runs (`detail.wait`). Hook analytics on `webx:form:success` of `form[data-webx-form="<slug>"]`.
 - **Antispam**, in order: honeypot, timestamp, origin, captcha (only if the form asks), rate limit. A
   refusal logs its `reason` and the provider's `error-codes`/`score`. Kind of captcha, in `.env`:
   `WEBX_INBOX_RECAPTCHA_TYPE` `checkbox|invisible|v3`, `WEBX_INBOX_TURNSTILE_MODE` `managed|invisible`.

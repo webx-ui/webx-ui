@@ -233,11 +233,11 @@ form goes where it ended.
 
 On the `<form>`, bubbling — a module hangs its own on them and never writes a `fetch` of its own:
 
-| Event               | When                         | `detail`                                         |
-| ------------------- | ---------------------------- | ------------------------------------------------ |
-| `webx:form:submit`  | before sending; cancelable   | `data` — the `FormData` (add to it), `submitter` |
-| `webx:form:success` | a 2xx                        | `status`, `response` — the JSON of the answer    |
-| `webx:form:error`   | 422, 419 twice, 5xx, offline | `status` (0 offline), `errors`, `message`        |
+| Event               | When                         | `detail`                                                          |
+| ------------------- | ---------------------------- | ----------------------------------------------------------------- |
+| `webx:form:submit`  | before sending; cancelable   | `data` — the `FormData` (add to it), `submitter`, `wait(promise)` |
+| `webx:form:success` | a 2xx                        | `status`, `response` — the JSON of the answer                     |
+| `webx:form:error`   | 422, 419 twice, 5xx, offline | `status` (0 offline), `errors`, `message`                         |
 
 ```js
 document.querySelector('#checkout').addEventListener('webx:form:success', (event) => {

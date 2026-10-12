@@ -50,99 +50,198 @@ function page({ provider = 'turnstile', type = 'checkbox', widget = true } = {})
   }
 }
 
-/** What form.js does before sending: `webx:form:submit`, cancelable. False — it was cancelled. */
-const submit = (form, submitter = null) =>
-  form.dispatchEvent(
+/**
+ * What form.js does before sending: `webx:form:submit`, cancelable, with `wait` to hold the form.
+ * `sent` false — it was cancelled; `held` — what the listener asked the engine to wait for.
+ */
+function submit(form, submitter = null) {
+  const waits = []
+  const sent = form.dispatchEvent(
     new CustomEvent('webx:form:submit', {
       bubbles: true,
       cancelable: true,
-      detail: { data: new FormData(form), submitter },
+      detail: { data: new FormData(form), submitter, wait: (promise) => waits.push(promise) },
     }),
   )
+  const outcome = waits.length
+    ? Promise.all(waits).then(
+        () => 'resolved',
+        () => 'rejected',
+      )
+    : null
+  return { sent, held: waits.length > 0, outcome }
+}
 
 const answered = (form, name) =>
   form.dispatchEvent(new CustomEvent(`webx:form:${name}`, { bubbles: true, detail: {} }))
 
+/** A turn of the microtask queue or two: where inbox.js starts the provider. */
+const turn = async () => {
+  for (let i = 0; i < 5; i++) await Promise.resolve()
+}
+
+function turnstile() {
+  const api = {
+    settings: null,
+    render: vi.fn((box, given) => {
+      api.settings = given
+      return 'w1'
+    }),
+    execute: vi.fn(),
+    reset: vi.fn(),
+  }
+  window.turnstile = api
+  return api
+}
+
 describe('inbox.js — the captcha on the form engine', () => {
   it('leaves a form without a captcha alone', () => {
     const { form } = page({ widget: false })
-    expect(submit(form)).toBe(true)
-    expect(form.requestSubmit).not.toHaveBeenCalled()
+    expect(submit(form)).toMatchObject({ sent: true, held: false })
   })
 
   it('stops a checkbox nobody ticked with the intake’s sentence, in the captcha’s place', () => {
     const { form, widget, error } = page({ provider: 'turnstile' })
-    expect(submit(form)).toBe(false)
+    expect(submit(form)).toMatchObject({ sent: false, held: false })
     expect(error.hidden).toBe(false)
     expect(error.textContent).toBe('Please confirm you are not a robot.')
     expect(widget.classList.contains('is-invalid')).toBe(true)
 
     // Ticked: it goes.
     widget.querySelector('[name="cf-turnstile-response"]').value = 'token'
-    expect(submit(form)).toBe(true)
+    expect(submit(form)).toMatchObject({ sent: true, held: false })
   })
 
-  it('asks reCAPTCHA v3 for a score for the form’s action and sends the same press again with it', async () => {
+  it('holds the form while reCAPTCHA v3 scores it, and lets it go with the token in it', async () => {
     const execute = vi.fn(() => Promise.resolve('v3-token'))
     window.grecaptcha = { ready: (run) => run(), execute }
     const { form, widget, button } = page({ provider: 'recaptcha', type: 'v3' })
 
-    expect(submit(form, button)).toBe(false)
-    await Promise.resolve()
-    await Promise.resolve()
+    const press = submit(form, button)
+    expect(press).toMatchObject({ sent: true, held: true })
+    expect(await press.outcome).toBe('resolved')
     expect(execute).toHaveBeenCalledWith('site-key', { action: 'webx_form_contact' })
     expect(widget.querySelector('[name="g-recaptcha-response"]').value).toBe('v3-token')
-    expect(form.requestSubmit).toHaveBeenCalledWith(button)
+    // The engine sends what the form holds now; nothing is pressed a second time.
+    expect(form.requestSubmit).not.toHaveBeenCalled()
 
-    // The press sent again goes through, once; the answer is good once — gone after the reply.
-    expect(submit(form, button)).toBe(true)
+    // The answer is good once — gone after the reply.
     answered(form, 'error')
     expect(widget.querySelector('[name="g-recaptcha-response"]').value).toBe('')
-    expect(submit(form, button)).toBe(false)
   })
 
-  it('draws an invisible Turnstile on the first press, runs it, and sends when it answers', () => {
-    let settings
-    window.turnstile = {
-      render: vi.fn((box, given) => {
-        settings = given
-        return 'w1'
-      }),
-      execute: vi.fn(),
-      reset: vi.fn(),
-    }
-    const { form, widget, error, button } = page({ provider: 'turnstile', type: 'invisible' })
+  it('lets a v3 form go without a score: refusing it is the intake’s word', async () => {
+    window.grecaptcha = { ready: (run) => run(), execute: () => Promise.reject(new Error('x')) }
+    const { form } = page({ provider: 'recaptcha', type: 'v3' })
+    expect(await submit(form).outcome).toBe('resolved')
+  })
 
-    expect(submit(form, button)).toBe(false)
-    expect(window.turnstile.render).toHaveBeenCalledTimes(1)
-    expect(settings).toMatchObject({
+  it('holds the form while an invisible Turnstile runs, and lets it go when it answers', async () => {
+    const api = turnstile()
+    const { form, widget, button } = page({ provider: 'turnstile', type: 'invisible' })
+
+    const press = submit(form, button)
+    expect(press).toMatchObject({ sent: true, held: true })
+    await turn()
+    expect(api.render).toHaveBeenCalledTimes(1)
+    expect(api.settings).toMatchObject({
       sitekey: 'site-key',
       appearance: 'interaction-only',
       execution: 'execute',
       retry: 'never',
     })
-    expect(window.turnstile.execute).toHaveBeenCalledWith('w1')
+    expect(api.execute).toHaveBeenCalledWith('w1')
 
-    settings.callback('token')
-    expect(form.requestSubmit).toHaveBeenCalledWith(button)
-    expect(submit(form, button)).toBe(true)
+    api.settings.callback('token')
+    expect(await press.outcome).toBe('resolved')
+    expect(form.requestSubmit).not.toHaveBeenCalled()
 
     // After the reply the widget is reset by its id; the next press runs it again, not draws it.
     answered(form, 'success')
-    expect(window.turnstile.reset).toHaveBeenCalledWith('w1')
-    expect(submit(form, button)).toBe(false)
-    expect(window.turnstile.render).toHaveBeenCalledTimes(1)
-    expect(window.turnstile.execute).toHaveBeenCalledTimes(2)
-
-    // A browser it could not vouch for: said, nothing sent, and the next press starts clean.
-    expect(settings['error-callback']()).toBe(true)
-    expect(error.textContent).toBe('The check could not run.')
-    expect(widget.dataset.webxCaptchaState).toBe('error')
-    expect(submit(form, button)).toBe(false)
-    expect(window.turnstile.reset).toHaveBeenLastCalledWith('w1')
+    expect(api.reset).toHaveBeenCalledWith('w1')
+    expect(submit(form, button).held).toBe(true)
+    await turn()
+    expect(api.render).toHaveBeenCalledTimes(1)
+    expect(api.execute).toHaveBeenCalledTimes(2)
+    expect(widget.dataset.webxCaptchaState).toBe('running')
   })
 
-  it('sizes an invisible reCAPTCHA as invisible and waits until it is ready', () => {
+  it('lets the form go with its word when Turnstile fails, times out or is not supported', async () => {
+    for (const callback of ['error-callback', 'timeout-callback', 'unsupported-callback']) {
+      const api = turnstile()
+      const { form, widget, error } = page({ provider: 'turnstile', type: 'invisible' })
+
+      const press = submit(form)
+      await turn()
+      // Handled: Turnstile would throw an uncaught error otherwise.
+      expect(api.settings[callback]()).toBe(true)
+      expect(await press.outcome).toBe('rejected')
+      expect(error.textContent).toBe('The check could not run.')
+      expect(widget.dataset.webxCaptchaState).toBe('error')
+
+      // The next press starts clean: the widget is reset, then run.
+      submit(form)
+      await turn()
+      expect(api.reset).toHaveBeenLastCalledWith('w1')
+      expect(api.execute).toHaveBeenCalledTimes(2)
+    }
+  })
+
+  it('lets the form go when the challenge expires before it is answered', async () => {
+    const api = turnstile()
+    const { form, widget, error } = page({ provider: 'turnstile', type: 'invisible' })
+
+    const press = submit(form)
+    await turn()
+    api.settings['expired-callback']()
+    expect(await press.outcome).toBe('rejected')
+    expect(error.textContent).toBe('The check could not run.')
+
+    // An answer gone stale after it was sent holds nothing: only marked, reset on the next press.
+    const again = submit(form)
+    await turn()
+    api.settings.callback('token')
+    expect(await again.outcome).toBe('resolved')
+    api.settings['expired-callback']()
+    expect(widget.dataset.webxCaptchaState).toBe('expired')
+    submit(form)
+    await turn()
+    expect(api.reset).toHaveBeenLastCalledWith('w1')
+  })
+
+  it('lets the form go when the provider throws instead of running', async () => {
+    window.turnstile = {
+      render: () => {
+        throw new Error('bad sitekey')
+      },
+      execute: vi.fn(),
+      reset: vi.fn(),
+    }
+    const { form, error } = page({ provider: 'turnstile', type: 'invisible' })
+    expect(await submit(form).outcome).toBe('rejected')
+    expect(error.textContent).toBe('The check could not run.')
+  })
+
+  it('lets the form go when no answer comes at all — a reCAPTCHA challenge closed', async () => {
+    vi.useFakeTimers()
+    try {
+      window.grecaptcha = {
+        ready: (run) => run(),
+        render: () => 0,
+        execute: vi.fn(),
+        reset: vi.fn(),
+      }
+      const { form, error } = page({ provider: 'recaptcha', type: 'invisible' })
+      const press = submit(form)
+      await vi.advanceTimersByTimeAsync(120000)
+      expect(await press.outcome).toBe('rejected')
+      expect(error.textContent).toBe('The check could not run.')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('sizes an invisible reCAPTCHA as invisible and waits until it is ready', async () => {
     let settings
     const ready = vi.fn((run) => run())
     window.grecaptcha = {
@@ -156,7 +255,8 @@ describe('inbox.js — the captcha on the form engine', () => {
     }
     const { form } = page({ provider: 'recaptcha', type: 'invisible' })
 
-    expect(submit(form)).toBe(false)
+    expect(submit(form).held).toBe(true)
+    await turn()
     expect(ready).toHaveBeenCalled()
     expect(settings.size).toBe('invisible')
     expect(window.grecaptcha.execute).toHaveBeenCalledWith(0)
@@ -164,7 +264,7 @@ describe('inbox.js — the captcha on the form engine', () => {
 
   it('does not wait for a provider whose script never came: the intake says what is missing', () => {
     const { form } = page({ provider: 'turnstile', type: 'invisible' })
-    expect(submit(form)).toBe(true)
+    expect(submit(form)).toMatchObject({ sent: true, held: false })
   })
 
   it('resets a reCAPTCHA checkbox by its place on the page after any reply', () => {

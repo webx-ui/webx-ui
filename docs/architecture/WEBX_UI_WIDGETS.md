@@ -3070,7 +3070,8 @@ $value)`, ошибка — `$errors->getBag($bag)->first($key)`, у группы
   `html:not(.webx-js) .webx-dialog[open]` стоит поверх страницы, как `:target` (правило
   `.webx-form-dialog[open]` W1.4 обобщено и переехало в `dialog.css`).
 - **С JavaScript** (`form.js`, монтируется на `form[data-webx-send]`). `webx:form:submit`
-  (отменяемое, `detail.data` — тот самый `FormData`, `submitter`) → `fetch` POST с `Accept:
+  (отменяемое, `detail.data` — тот самый `FormData`, `submitter`, `detail.wait(promise)` — держит
+  форму занятой до ответа: разрешился — форма читается заново и уходит, отвергнут — отпускается) → `fetch` POST с `Accept:
 application/json`, `X-Requested-With`, `credentials: same-origin`; есть файл — `XMLHttpRequest`
   с прогрессом в `__progress`. **Токен** — `X-XSRF-TOKEN` из cookie, и `_token` из тела
   убирается: Laravel читает `_token` первым, а он мог закэшироваться со страницей. Нет cookie —

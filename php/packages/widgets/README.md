@@ -228,7 +228,8 @@ place: the token from the XSRF-TOKEN cookie and one retry with a fresh one on a 
 alert, no second submission while the first is on its way, the answer in a live region, files
 with progress. `FormResponse` answers JSON to the script and a redirect to the plain POST, so a
 controller writes one line. A module hooks `webx:form:submit` (cancelable), `webx:form:success`
-and `webx:form:error` on the form.
+and `webx:form:error` on the form; one with something to finish first — a captcha to run — holds
+the form busy with `event.detail.wait(promise)`, and the form is sent when it resolves.
 
 ## Checks in the browser
 

@@ -129,7 +129,7 @@ which is why the intake keeps one. With JavaScript the widgets' `form.js` does t
 — linked by `@webxTheme`, or on a site without a theme by `@webxWidgets` before `</body>` in its
 layout ([Forms](./forms#the-form)).
 The Inbox's own script, `inbox.js`, is only the captcha's half — it runs an invisible captcha on
-`webx:form:submit` and resets it after the answer — and is linked only by a form with a captcha.
+`webx:form:submit`, the form busy until it answers, and resets it after the answer — and is linked only by a form with a captcha.
 
 A page may carry several forms — a request in the body, a subscription in the footer, the same
 form again in a dialog. Each has its own `id` (`webx-inbox-<slug>`, then `-2`…), sent back as

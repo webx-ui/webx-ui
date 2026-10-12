@@ -114,8 +114,9 @@ writes both) — otherwise every form still works, but reloads the page to answe
 by the server only, and the audit's `widgets.form_script` says so.
 
 The inbox's own script, `{path}/inbox.js`, is only the captcha's half of sending: it runs an
-invisible captcha on `webx:form:submit` and resets every captcha after `webx:form:success` and
-`webx:form:error`. A form without a captcha does not link it.
+invisible captcha or reCAPTCHA v3 on `webx:form:submit`, holding the form busy with the engine's
+`detail.wait()` from the press to the answer, and resets every captcha after `webx:form:success`
+and `webx:form:error`. A form without a captcha does not link it.
 
 A page may carry several forms — a request in the body, a subscription in the footer, the same
 form in a dialog. Each has its own `id` (`webx-inbox-<slug>`, then `-2`…), which comes back as
@@ -202,7 +203,10 @@ key type". A checkbox is drawn by the provider's own script, which the block loa
 page. An invisible one is drawn by `inbox.js` on the first submit (`webx:form:submit`), per form, and run
 then, so the token is fresh; a Turnstile widget set to Invisible in Cloudflare shows nothing at
 all. v3 is loaded with `?render=<key>` and asked for the action `webx_form_<slug>`. Invisible and
-v3 need `inbox.js`: without JavaScript they are refused with a sentence that says so.
+v3 need `inbox.js`: without JavaScript they are refused with a sentence that says so. While the
+captcha runs the form is busy, as while it is sent, and another press does nothing; one that
+fails, times out or expires lets the form go with its sentence, and one that never answers — a
+reCAPTCHA challenge the visitor closed — does so after two minutes.
 
 A token is good once, so the script resets the widget after every answer — otherwise a visitor
 who corrects one typo is refused by a captcha they already passed, which reads as a form that
