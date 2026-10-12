@@ -43,15 +43,15 @@ const props = withDefaults(defineProps<AutocompleteProps>(), {
 const emit = defineEmits<AutocompleteEmits>()
 
 /** The model is the text in the field — an autocomplete suggests, it does not constrain. */
-const model = defineModel<string | null>({ default: '' })
+const model = defineModel<string>({ default: '' })
 
 /*
  * The text as a string, whatever came in. The default covers a missing value, not a null one —
  * and a record says null for a field it has no text in (a screen's row that reads a setting, then
  * switched to it). Reading `.length` of that threw in render, and Vue drew the root without its
- * input until something else re-rendered it.
+ * input until something else re-rendered it. The model stays typed as text: that is what goes out.
  */
-const text = computed(() => model.value ?? '')
+const text = computed<string>(() => (model.value as string | null) ?? '')
 
 const field = useFormField(props)
 const open = ref(false)
