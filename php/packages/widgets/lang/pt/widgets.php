@@ -187,4 +187,14 @@ return [
         'failed' => 'Não foi possível enviar o formulário. Verifique a ligação e tente novamente.',
         'expired' => 'A página está aberta há demasiado tempo. Recarregue-a e envie o formulário novamente.',
     ],
+    'suggest' => [
+        'label' => 'Pesquisa',
+        'placeholder' => 'Pesquisar',
+        'submit' => 'Pesquisar',
+        'nothing' => 'Nada encontrado',
+        'recent' => 'Pesquisas recentes',
+        'clear' => 'Limpar pesquisas recentes',
+        'count' => 'Sugestões: :count',
+        'failed' => 'As sugestões não estão disponíveis agora. Prima Enter para pesquisar.',
+    ],
 ];

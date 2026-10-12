@@ -10,8 +10,8 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 - **`tokens.json`** — `defaults` for all forty tokens of the vocabulary (`--site-color-*`,
   `--site-font-*`, `--site-space-1…8`, `--site-radius-*`, `--site-shadow-*`,
   `--site-container-width`, `--site-gutter`, `--site-duration`, `--site-easing`) and the presets
-  `warm` and `night`. `editable` in the manifest: `color-accent`, `color-accent-contrast`,
-  `font-heading`.
+  `warm` and `night`; the site draws in one by naming it in its manifest (`"preset": "night"` in
+  `theme/theme.json`).
 - **`views/components/layout`** — the document every module page is printed in (`<x-layout>`):
   `@webxTheme`, the page's `head` slot (or `@webxSeo` + `@webxBlocks` when there is none),
   `@stack('head')`, `<x-webx-notice-bar>` above the header (a `notice` banner, else `@stack('notice')`), the `header` and `footer` regions, `<main id="content" class="site-main">`
@@ -98,7 +98,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 | You want                                 | Do this                                                                                             |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | Another accent, font, radius, spacing    | `theme/tokens.json` → `defaults`                                                                    |
-| Another palette to switch to             | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`                                                |
+| Draw the site in another palette         | `"preset": "night"` in `theme/theme.json`; a palette of your own in `theme/tokens.json` → `presets` |
 | Restyle the header, footer or prose      | `theme/src/css/theme.css`, on the `site-*` classes above                                            |
 | Other markup in the header or footer     | `theme/views/components/header.blade.php` (or `footer`)                                             |
 | A different document                     | `theme/views/components/layout.blade.php`, copied from here                                         |

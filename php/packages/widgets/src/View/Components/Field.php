@@ -11,6 +11,7 @@ use Illuminate\View\Component;
 use Illuminate\View\ComponentAttributeBag;
 use InvalidArgumentException;
 use WebxUi\Widgets\Facades\Widgets;
+use WebxUi\Widgets\Forms\FormResponse;
 use WebxUi\Widgets\Forms\FormRules;
 
 /**
@@ -59,6 +60,9 @@ final class Field extends Component
      * when the form gave no rules this field has.
      */
     public ?string $checks = null;
+
+    /** The page came back from another of its forms: what is in the session is not this field's. */
+    private bool $foreign = false;
 
     /** @param  array<array-key, mixed>  $choices  `value => label`, or a list of `['value', 'label', 'disabled']` */
     public function __construct(
@@ -127,6 +131,7 @@ final class Field extends Component
         // keep their labels pointing at their own controls.
         $base = $id ?? 'field-'.trim((string) preg_replace('/[^a-z0-9]+/i', '-', $this->key), '-');
         $this->fieldId = $id ?? (($n = Widgets::sequence('field:'.$base)) > 1 ? "{$base}-{$n}" : $base);
+        $this->foreign = $this->sentByAnother();
         $this->message = $type === 'hidden' ? null : ($error ?? $this->errorFromSession());
         $this->applyRules($rules);
     }
@@ -373,24 +378,47 @@ final class Field extends Component
         return $this->returned() ? ! in_array($this->old(null), [null, '', '0', false], true) : $this->checked;
     }
 
-    /** A form on this page — any — came back with what it sent. */
+    /** The form of this field — or, outside `<x-webx-form>`, any form of the page — came back with what it sent. */
     private function returned(): bool
     {
         $request = request();
 
-        return $request->hasSession() && $request->session()->hasOldInput();
+        return ! $this->foreign && $request->hasSession() && $request->session()->hasOldInput();
     }
 
     private function old(mixed $default): mixed
     {
         $request = request();
 
-        return $request->hasSession() ? $request->old($this->key, $default) : $default;
+        return $request->hasSession() && ! $this->foreign ? $request->old($this->key, $default) : $default;
+    }
+
+    /**
+     * Inside `<x-webx-form>`, and the page came back from another form of it — `_webx_form` names
+     * the one sent. A contact form refused in the page's body leaves the subscription in its footer
+     * as it was, though both have an `email`.
+     */
+    private function sentByAnother(): bool
+    {
+        $request = request();
+        $form = app('view')->getConsumableComponentData(Form::ID);
+
+        if (! is_string($form) || ! $request->hasSession()) {
+            return false;
+        }
+
+        $sent = $request->old(FormResponse::FORM);
+
+        return is_string($sent) && $sent !== $form;
     }
 
     /** The validator's word for this field — for a group, for any of its items too. */
     private function errorFromSession(): ?string
     {
+        if ($this->foreign) {
+            return null;
+        }
+
         $errors = app('view')->shared('errors');
         $request = request();
 

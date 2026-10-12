@@ -34,5 +34,11 @@ return [
             'why' => 'Robotlar formu buldu. Geçen her şey gelen kutusuna ve bildirimlere düşer ve ücretsiz katmanlar tam da aşmaya çalıştıkları şeydir.',
             'fix' => 'Formun Spam koruması sekmesinde bir captcha açın — sitenin .env dosyasında anahtarları olmalı — ve gizli alanı açık tutun. Retler önbellekte günlük sayılır, önbellek temizlenince sıfırdan başlar.',
         ],
+        'legacy_views' => [
+            'title' => 'Form motorundan önceki bir form görünümü',
+            'found' => 'Site, başvuru formunu formlar widget motoruna (<x-webx-form> ve <x-webx-field>) geçmeden önce yazılmış kendi form.blade.php dosyasıyla değiştiriyor.',
+            'why' => 'Şimdilik çalışıyor: modül ona eskiden verdiklerini veriyor ve eski betiği sunuyor. Sonraki bir sürüm bunu kaldıracak; o görünümün formları sayfa yenilenmeden gönderilemeyecek ve captcha’larını kaybedecek.',
+            'fix' => 'Paketin formunu almak için sitenin kopyasını silin ya da onu <x-webx-form> ve <x-webx-field> etrafında yeniden yazın; alanları wx-form-* yerine webx-field-* ve webx-form-* ile biçimlendirin (sınıf tablosu başvuru kılavuzunda).',
+        ],
     ],
 ];

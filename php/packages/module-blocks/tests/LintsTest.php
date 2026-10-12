@@ -6,7 +6,6 @@ namespace WebxUi\Blocks\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Blocks\Panel\Lints;
-use WebxUi\Themes\ConfigAppearance;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\Tokens;
@@ -57,7 +56,7 @@ final class LintsTest extends TestCase
     public function on_a_site_with_a_theme_literal_values_and_unknown_tokens_are_named(): void
     {
         $this->app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('theme', __DIR__.'/Fixtures', true)]));
-        $this->app->instance(Tokens::class, new Tokens($this->app->make(ThemeChain::class), new ConfigAppearance($this->app->make('config'))));
+        $this->app->instance(Tokens::class, new Tokens($this->app->make(ThemeChain::class)));
 
         $styles = <<<'CSS'
         .b-hero { color: #fff; background: var(--site-color-accent); }

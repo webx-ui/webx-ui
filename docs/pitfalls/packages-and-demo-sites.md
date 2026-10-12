@@ -131,6 +131,17 @@ webx:theme:sync`. Случайную запись снимать `git -C <осн
   пакеты самого worktree. Проверка — `ls -la packages/<пакет>/node_modules/@webx-ui` показывает
   путь worktree. Сборку пакета из worktree `npx vite build` делает в его каталоге; без junction'а
   на `node_modules` пакета она падает «Cannot find package 'vite-plugin-dts'».
+- **Стартовый сайт показывает не твою ветку, хотя пересобран только что.** `starter-site.sh`
+  линкует тот чекаут, из которого запущен (`MONOREPO` — родитель скрипта), а в основном чекауте
+  может стоять ветка другой сессии. PHP из worktree проверяется запуском скрипта из worktree с
+  `STARTER_PATH=/c/Work/OSPanel/home/webx-starter.local`, `STARTER_URL=http://webx-starter.local`
+  и `STARTER_ENV=<основной чекаут>/.env.starter` — без них сайт соберётся рядом с worktree и без
+  `.env.starter`; шаг npm требует `packages/core/dist`, его и
+  остальные `packages/*/dist` взять junction'ами из основного чекаута, если npm-пакеты не
+  менялись. Проверка — `ls -la vendor/webx-ui` на сайте показывает путь worktree. Сайт остаётся
+  слинкован с worktree: перед удалением worktree пересобрать сайт из основного. (Шаг «Check»
+  падал «Test directory tests/Feature not found» в любом свежем чекауте — пустой каталог скелета
+  не попадал в git; починено `.gitkeep` в W6.4.)
 - **Удалять отработавший worktree — сначала ссылки, потом каталог.** В нём junction'ы
   `node_modules` на основной чекаут, симлинки `php/vendor/webx-ui/*` и тысячи ссылок pnpm, и
   удаление, которое пойдёт за ссылку, снесёт чужое. Порядок: обойти дерево, не заходя в точки
@@ -283,6 +294,12 @@ vendor/composer/autoload_files.php`.
   убирать: тело из `route.fetch()` уже разжато) не помогает. Добавлять разметку не в ответ, а при
   разборе страницы: `page.addInitScript()` с `MutationObserver`, который вставляет её в `<main>`,
   как только тот появится, — до модульных скриптов (`tests/starter/starter.pw.mjs`, согласие).
+- **Полный прогон стартового сайта идёт 40 минут вместо десяти, и не видно, где.** Изредка
+  воркер виснет на тесте так, что таймаут теста (60 с) не срабатывает, а `… | tail -40` ничего не
+  печатает до конца. Прогон — `--reporter=line` в файл (не в `tail`) под `timeout 1500`; повис —
+  убить дерево процесса, тест отдельно (`-g "<describe>"`), остальное догнать одним `-g` по
+  оставшимся describe (`--list` сначала — Playwright склеивает заголовки пробелами, `›` в
+  фильтре не находит ничего).
 - **`pnpm test:starter` из worktree падает до первого теста: «Playwright Test did not expect
   test.describe() to be called here … No tests found».** Похоже на сломанный файл тестов, а это
   две копии `@playwright/test`: CLI запущен из `node_modules` основного чекаута, а
@@ -290,6 +307,20 @@ vendor/composer/autoload_files.php`.
   своими `node_modules` звать его CLI —
   `node node_modules/@playwright/test/cli.js test -c tests/starter/playwright.config.mjs`; путь
   основного чекаута годится, только пока у worktree своих `node_modules` нет.
+- **`starter-site.sh` зелёный по шагам, а главная отвечает 404 («FAILED: GET … answered 404»).**
+  Выглядит как сломанный маршрут или тема, а это `webx:demo`, остановившийся на полпути: в логе
+  выше — `Data too long for column 'description'` при вставке демо-типа блока. `module-blocks`
+  держит `title` и `description` в 255 символах; страницы витрины после остановки не созданы.
+  Укоротить описание в `theme-default/demo/blocks/<тип>.json` (`ThemeDefaultTest` теперь меряет
+  каждое), затем на сайте `php artisan webx:demo --remove && php artisan webx:demo` — пересобирать
+  весь сайт не нужно.
+- **`ThemeDefaultTest` падает «array_push() does not accept unknown named parameters» на новой
+  странице витрины.** Ключ `items` в `values` демо-блока — это вложенные блоки: тест (и сид)
+  разворачивает его как список блоков, а строка или карта языков там — не список. Поле демо-типа
+  называть иначе (`goods`, `rows`).
+- **Тег в тексте витрины пропал на странице** («`<x-webx-inbox::form …>` prints…» читается как
+  «prints…»). Тело блока `text` печатается как HTML, и браузер съедает `<x-…>` как неизвестный
+  элемент. Код в демо-тексте — `<code>&lt;x-webx-…&gt;</code>`.
 - **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` сервер надо
   перезапустить: свежий HTML тянет новые хеши, их нет в списке → 404, страница без стилей и без
   гидрации. Выглядит как «правка не помогла».

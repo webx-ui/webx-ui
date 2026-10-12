@@ -17,6 +17,9 @@ return [
     'search-submit' => 'Найти',
     'search-corrected' => 'Показаны результаты для :corrected.',
     'search-instead' => 'Искать :q',
+    'suggest-products' => 'Товары (:count)',
+    'suggest-all' => 'Все результаты: :count',
+    'suggest-nothing' => 'По запросу «:q» ничего не найдено.',
     'filter-title' => ':category :value',
 
     'filter' => 'Фильтр',

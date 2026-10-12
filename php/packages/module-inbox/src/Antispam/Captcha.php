@@ -210,7 +210,7 @@ final class Captcha
             'provider' => $provider,
             'type' => $type,
             'key' => $key,
-            'widget' => $type === self::CHECKBOX ? self::WIDGETS[$provider] : 'wx-form__captcha-widget',
+            'widget' => $type === self::CHECKBOX ? self::WIDGETS[$provider] : 'webx-inbox-form__captcha-widget',
             'field' => self::RESPONSE_FIELDS[$provider],
             'action' => $this->action($form),
         ];

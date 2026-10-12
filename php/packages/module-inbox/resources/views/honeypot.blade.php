@@ -1,3 +1,5 @@
+{{-- Before W6.4 (an alias period, WIDGETS §20 W6.4): read only by a form.blade.php a site published
+     before the form moved to the widgets' engine. The form of today is form.blade.php and form/*. --}}
 {{--
     The field a person never sees and a robot fills in (§7).
 

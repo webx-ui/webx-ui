@@ -34,5 +34,11 @@ return [
             'why' => 'Os robôs encontraram o formulário. O que passa chega à caixa e às notificações, e as camadas gratuitas são precisamente o que tentam contornar.',
             'fix' => 'Ligue um captcha no separador Antispam do formulário — o site precisa das suas chaves no .env — e mantenha o campo oculto. As recusas contam-se por dia na cache, por isso uma cache limpa recomeça do zero.',
         ],
+        'legacy_views' => [
+            'title' => 'Uma vista de formulário anterior ao motor de formulários',
+            'found' => 'O site substitui o formulário de pedidos pelo seu próprio form.blade.php, escrito antes de os formulários passarem para o motor dos widgets (<x-webx-form> e <x-webx-field>).',
+            'why' => 'Por enquanto funciona: o módulo entrega-lhe o que entregava e serve o script antigo. Uma versão posterior retira isso, e os formulários dessa vista deixam de ser enviados sem recarregar e perdem o captcha.',
+            'fix' => 'Apague a cópia do site para obter o formulário do pacote, ou reescreva-a em torno de <x-webx-form> e <x-webx-field>; altere o estilo dos campos com webx-field-* e webx-form-* em vez de wx-form-* (a tabela de classes está no guia de pedidos).',
+        ],
     ],
 ];

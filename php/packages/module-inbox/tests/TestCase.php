@@ -18,6 +18,8 @@ use WebxUi\Inbox\Models\Status;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\Mcp\McpServiceProvider;
+use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\WidgetsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -27,13 +29,16 @@ abstract class TestCase extends Orchestra
      */
     protected function getPackageProviders($app): array
     {
+        // The theme engine first: it wraps the translation loader. The widgets draw the form (W6.4).
         return [
+            ThemeServiceProvider::class,
             LocalizationServiceProvider::class,
             AdminServiceProvider::class,
             AuthServiceProvider::class,
             // The door an agent will come through in session E; the section is registered
             // into the same registry either way.
             McpServiceProvider::class,
+            WidgetsServiceProvider::class,
             InboxServiceProvider::class,
         ];
     }

@@ -228,8 +228,41 @@ place: the token from the XSRF-TOKEN cookie and one retry with a fresh one on a 
 alert, no second submission while the first is on its way, the answer in a live region, files
 with progress. `FormResponse` answers JSON to the script and a redirect to the plain POST, so a
 controller writes one line. A module hooks `webx:form:submit` (cancelable), `webx:form:success`
-and `webx:form:error` on the form. The checks in the browser are the next stage — the guide:
+and `webx:form:error` on the form.
+
+## Checks in the browser
+
+```blade
+<x-webx-form :action="route('checkout.contact')" :rules="FormRules::for($rules, $attributes)">
+    <x-webx-field type="tel" name="contact.phone" :label="__('checkout.phone')" mask />
+    <x-webx-field type="file" name="documents" :label="__('checkout.documents')" multiple />
+</x-webx-form>
+```
+
+The rules are the ones the controller validates by, written once. `FormRules` hands each field its
+part: the checks a browser can run — `required`, `email`, a length, a number, `regex`, `in`, a
+file's type and size, `confirmed`, a literal date — each with the line Laravel's validator writes
+when it fails, asked of the validator itself in the page's language. So the browser says exactly
+what the server would; `unique`, `exists` and closures stay the server's. A touched field is
+checked when it is left and every field on submit; the browser's own bubbles are off while the
+script runs. `mask` on a phone field puts the number in international form (`+48 512 345 678`)
+without refusing a paste or an autofill; a file field takes files dropped on it, lists them with
+their size and a preview, and lets one go before sending. The guide:
 https://webx-ui.github.io/webx-ui/guide/forms.
+
+## Suggestions while typing
+
+```blade
+<x-webx-suggest :action="route('webx.catalog.search')" :source="route('webx.catalog.suggest')" :recent="5" />
+```
+
+A search box that asks the site as the visitor types. Without JavaScript it is a GET search to
+the results page; with it, an ARIA combobox over the HTML the site answers — its own sections,
+counts and cards — where `data-webx-option` marks what can be chosen and `data-webx-section` with a
+`data-webx-heading` a group. Arrows, Home/End, Enter, Escape; the stale request is aborted;
+recent searches in the browser with `:recent`. Without `action` it is a field to put inside another
+form: a value chosen fills it. `module-catalog` answers at `/catalog/suggest`. The guide:
+https://webx-ui.github.io/webx-ui/guide/forms#suggestions-while-typing.
 
 ## Blocks
 

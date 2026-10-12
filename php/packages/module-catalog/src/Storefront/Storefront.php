@@ -87,9 +87,15 @@ final class Storefront
             $this->facets->all(),
         );
 
+        // The box of the page asks the suggestions in the page's language (WIDGETS W6.5).
+        $box = [
+            'action' => $this->urls->absolute($context, $context->path),
+            'suggest' => $this->urls->absolute($context, UrlNormaliser::join($this->rootPath(), 'suggest')),
+        ];
+
         $response = $term === ''
-            ? response($this->views->make('webx-catalog::search', ['page' => null, 'term' => ''])->render())
-            : $this->listing($request, $context, $tail, 'webx-catalog::search', [], null, ['term' => $term], $term, $typed);
+            ? response($this->views->make('webx-catalog::search', ['page' => null, 'term' => '', ...$box])->render())
+            : $this->listing($request, $context, $tail, 'webx-catalog::search', [], null, ['term' => $term, ...$box], $term, $typed);
 
         $response->headers->set('X-Robots-Tag', 'noindex, follow');
 

@@ -6,7 +6,7 @@
 
     A mail client is a browser from 2003: no CSS variable, often no <style>, no class, no
     @container. So every value is a token's, taken on the server with theme_token() and written
-    into style="…" — a preset or the owner's colour in the panel repaints the letters with the
+    into style="…" — a preset or a change of tokens.json repaints the letters with the
     site — and the layout is tables. Sizes are pixels rather than the theme's rem and clamp():
     a mail client's root size is anybody's guess. The font is the theme's family with its
     fallbacks; the theme's own files are not loaded by mail, so the reader's system font draws it.

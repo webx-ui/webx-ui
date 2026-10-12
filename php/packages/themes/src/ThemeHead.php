@@ -19,7 +19,7 @@ use WebxUi\Themes\Contracts\HeadPart;
  *     <link rel="stylesheet" href="/themes/…">  each packaged layer's theme.css, bottom first
  *     Vite tags                                 each local layer's src/css/theme.css and src/js/theme.js
  *
- * The tokens are inline so that a new preset or an edit in the panel needs no build. The
+ * The tokens are inline so that a change of tokens.json or of the preset needs no build. The
  * stylesheets go bottom up so the higher layer wins the cascade. Without a theme it prints
  * nothing at all: a site that has not adopted themes keeps the head it had.
  *

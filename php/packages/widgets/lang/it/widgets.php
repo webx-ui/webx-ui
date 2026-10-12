@@ -187,4 +187,14 @@ return [
         'failed' => 'Non è stato possibile inviare il modulo. Controlla la connessione e riprova.',
         'expired' => 'La pagina è aperta da troppo tempo. Ricaricala e invia di nuovo il modulo.',
     ],
+    'suggest' => [
+        'label' => 'Ricerca',
+        'placeholder' => 'Cerca',
+        'submit' => 'Cerca',
+        'nothing' => 'Nessun risultato',
+        'recent' => 'Ricerche recenti',
+        'clear' => 'Cancella le ricerche recenti',
+        'count' => 'Suggerimenti: :count',
+        'failed' => 'I suggerimenti non sono disponibili al momento. Premi Invio per cercare.',
+    ],
 ];

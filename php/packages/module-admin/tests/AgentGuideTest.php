@@ -73,6 +73,10 @@ final class AgentGuideTest extends TestCase
 
         $this->assertStringStartsWith(RootFile::START, $guide);
         $this->assertStringContainsString('**Never fork a module and never edit `vendor/`.**', $guide);
+        // The first rule names the forms too: every one is the widgets' engine (WIDGETS §17.7).
+        $this->assertStringContainsString('**Any form of the site is `<x-webx-form>` with `<x-webx-field>` inside**', $guide);
+        $this->assertStringContainsString('`WebxUi\Widgets\Forms\FormResponse`', $guide);
+        $this->assertLessThan(strpos($guide, "## The site's look"), strpos($guide, RootFile::FORMS_GUIDE));
         $this->assertStringContainsString(
             '- [webx-ui/module-pages](vendor/webx-ui/module-pages/AGENTS.md) — Pages for the WebX UI admin panel.',
             $guide,

@@ -187,4 +187,14 @@ return [
         'failed' => 'Le formulaire n’a pas pu être envoyé. Vérifiez la connexion et réessayez.',
         'expired' => 'La page est ouverte depuis trop longtemps. Rechargez-la et renvoyez le formulaire.',
     ],
+    'suggest' => [
+        'label' => 'Recherche',
+        'placeholder' => 'Rechercher',
+        'submit' => 'Rechercher',
+        'nothing' => 'Aucun résultat',
+        'recent' => 'Recherches récentes',
+        'clear' => 'Effacer les recherches récentes',
+        'count' => 'Suggestions : :count',
+        'failed' => 'Les suggestions ne sont pas disponibles pour le moment. Appuyez sur Entrée pour rechercher.',
+    ],
 ];

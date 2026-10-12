@@ -57,11 +57,6 @@
                     "pt",
                     "tr"
                 ],
-                "editable": [
-                    "color-accent",
-                    "color-accent-contrast",
-                    "font-heading"
-                ],
                 "fonts": [
                     {
                         "family": "Inter",

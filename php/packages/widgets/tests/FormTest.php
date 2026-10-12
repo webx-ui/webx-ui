@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\ComponentAttributeBag;
 use Illuminate\View\ViewException;
 use PHPUnit\Framework\Attributes\Test;
@@ -78,6 +80,15 @@ final class FormTest extends TestCase
                         </x-webx-form>
                     </x-webx-dialog>
                 </x-layout>
+                BLADE));
+            $router->get('/two', static fn (): string => Blade::render(<<<'BLADE'
+                <x-webx-form action="/contact" id="request">
+                    <x-webx-field name="email" type="email" label="Email" />
+                </x-webx-form>
+                <x-webx-form action="/subscribe" id="subscribe">
+                    <x-webx-field name="email" type="email" label="Email" value="you@example.test" />
+                    <x-webx-field name="news" type="checkbox" label="News" checked />
+                </x-webx-form>
                 BLADE));
             $router->post('/contact', static function (Request $request): FormResponse {
                 $request->validate([
@@ -233,6 +244,27 @@ final class FormTest extends TestCase
     }
 
     #[Test]
+    public function a_field_of_another_form_keeps_what_the_page_gave_it(): void
+    {
+        // Two forms with an `email` each — a request refused in the body, a subscription in the
+        // footer: what came back is the request's, and the footer stays as the page printed it.
+        $this->withSession([
+            '_old_input' => ['_webx_form' => 'request', 'email' => 'ada@', 'news' => '1'],
+            'errors' => (new ViewErrorBag)->put('default', new MessageBag(['email' => ['Not an address.']])),
+        ]);
+
+        $page = (string) $this->get('/two')->getContent();
+
+        $this->assertMatchesRegularExpression('~<form id="request".*id="field-email" name="email" value="ada@".*Not an address\.~s', $page);
+        $footer = (string) strstr($page, '<form id="subscribe"');
+        $this->assertStringContainsString('name="email" value="you@example.test"', $footer);
+        $this->assertStringNotContainsString('Not an address.', $footer);
+        $this->assertStringNotContainsString('is-invalid', $footer);
+        // A tick the page ticks stays ticked: the subscription did not come back with it unticked.
+        $this->assertMatchesRegularExpression('~name="news" value="1" checked~', $footer);
+    }
+
+    #[Test]
     public function a_dialog_whose_form_came_back_is_printed_open(): void
     {
         $closed = (string) $this->get('/contact')->getContent();
@@ -323,5 +355,39 @@ final class FormTest extends TestCase
             'words' => ['heading' => 'All right', 'message' => 'Checked twice.'],
             'check' => ['name' => 'Ann', 'email' => 'ann@example.com', 'phone' => '+48 512 345 678', 'day' => '2026-05-01', 'password' => 'secret12', 'password_confirmation' => 'secret12', 'plan' => 'team', 'agree' => '1'],
         ])->assertJson(['ok' => true, 'heading' => 'All right', 'message' => '<p>Checked twice.</p>']);
+    }
+
+    #[Test]
+    public function the_suggestions_showcase_door_answers_html_from_the_pages_goods_and_words(): void
+    {
+        $items = "Oak desk | €349\nOak <shelf> | €289\nDesk lamp | €79\n\nLinen curtains";
+        $words = ['products' => 'Products (:count)', 'all' => 'See all: :count', 'nothing' => 'Nothing for “:q”.'];
+
+        $this->get('/webx/widgets/showcase/suggest?q=oak')->assertNotFound();
+        file_put_contents($this->journal, '{"version":1,"entries":[]}');
+
+        $cards = $this->get('/webx/widgets/showcase/suggest?'.http_build_query(['q' => 'OAK', 'items' => $items, 'words' => $words, 'to' => '/kitchen-sink/forms/suggestions']))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/html; charset=UTF-8');
+        $html = (string) $cards->getContent();
+        $this->assertStringContainsString('no-store', (string) $cards->headers->get('Cache-Control'));
+        $this->assertStringContainsString('<div class="b-showcase-suggest__found" data-webx-section="products"><p class="b-showcase-suggest__found-heading" data-webx-heading>Products (2)</p>', $html);
+        $this->assertStringContainsString('<a class="b-showcase-suggest__card" href="/kitchen-sink/forms/suggestions?q=Oak%20desk" data-webx-option><span class="b-showcase-suggest__card-body"><span class="b-showcase-suggest__card-name"><mark class="b-showcase-suggest__mark">Oak</mark> desk</span><span class="b-showcase-suggest__card-price">€349</span></span></a>', $html);
+        // The page's goods are escaped, the typed words marked as they stand in the name.
+        $this->assertStringContainsString('<mark class="b-showcase-suggest__mark">Oak</mark> &lt;shelf&gt;</span>', $html);
+        $this->assertStringContainsString('<a class="b-showcase-suggest__all" href="/kitchen-sink/forms/suggestions?q=OAK" data-webx-option>See all: 2</a>', $html);
+
+        $values = (string) $this->get('/webx/widgets/showcase/suggest?'.http_build_query(['q' => 'lin', 'items' => $items, 'as' => 'values']))->assertOk()->getContent();
+        $this->assertSame('<ul class="b-showcase-suggest__values"><li class="b-showcase-suggest__value" data-webx-option="Linen curtains"><mark class="b-showcase-suggest__mark">Lin</mark>en curtains</li></ul>', $values);
+
+        $nothing = (string) $this->get('/webx/widgets/showcase/suggest?'.http_build_query(['q' => '<zebra>', 'items' => $items, 'words' => $words]))->assertOk()->getContent();
+        $this->assertSame('<p class="b-showcase-suggest__nothing">Nothing for “&lt;zebra&gt;”.</p>', $nothing);
+
+        // Another site's address is not a «see all»: the demo is not an open redirect.
+        $foreign = (string) $this->get('/webx/widgets/showcase/suggest?'.http_build_query(['q' => 'desk', 'items' => $items, 'to' => '//evil.example']))->getContent();
+        $this->assertStringContainsString('href="/?q=desk"', $foreign);
+
+        $this->get('/webx/widgets/showcase/suggest?q=+')->assertNoContent();
+        $this->assertSame([['name' => 'Oak desk', 'price' => '€349'], ['name' => 'Linen curtains', 'price' => '']], ShowcaseController::found(ShowcaseController::items("Oak desk | €349\r\nLinen curtains\n | 5"), 'e'));
     }
 }

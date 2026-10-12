@@ -33,14 +33,21 @@ pages (a page, an article, a product) stand inside the theme's layout.
 | The start page before real content    | `resources/views/demo.blade.php` — delete it with its route when the site has a home page            |
 
 Never edit the packaged theme in `vendor/`: `composer update` brings its fixes, and
-`php artisan webx:theme:sync` publishes its built files into `public/themes/`. A view in
+`php artisan webx:theme:sync` publishes its built files into `public/themes/`. Before you change
+anything, `php artisan webx:theme:show` lists what the chain already gives — every token with the
+layer that set it, every view with what it overrides, the block types, icons and fonts.
+
+The look is the theme's files, in git, and nothing else: the panel has no colour picker and no
+preset switch. The site draws in a preset of the chain when its manifest names one —
+`"preset": "night"` in `theme/theme.json` — and a palette of its own is a preset or the
+`defaults` in `theme/tokens.json`. A view in
 `resources/views/components/` sits above every theme layer and wins over it — that is why the
 skeleton has no `layout`, `header` or `footer` there.
 
 ### CSS knows only tokens
 
-A colour or a font written in a stylesheet is out of reach of the presets and of the owner's
-edits in the panel: the page stops repainting wherever it stands. So `theme/src/css` — like the
+A colour or a font written in a stylesheet is out of reach of the presets and of `tokens.json`:
+the page stops repainting wherever it stands. So `theme/src/css` — like the
 CSS of the modules and the widgets under it — uses `var(--site-…)` and nothing else:
 
 | Not this                                       | But this                                                                    |
@@ -109,17 +116,17 @@ pages has none.
 
 Which modules have their base look today:
 
-| Module             | Its pages and parts                            | Classes                                         | Extension points |
-| ------------------ | ---------------------------------------------- | ----------------------------------------------- | ---------------- |
-| `module-inbox`     | the form                                       | `wx-form*`                                      | —                |
-| `module-seo`       | the trail, the page FAQ, interlinking          | `webx-breadcrumbs*`, `webx-faq*`, `webx-links*` | —                |
-| `module-blog`      | the feed, a rubric, a tag, an article          | `webx-blog-*`                                   | `blog.card`      |
-| `module-services`  | the index, a category, a service               | `webx-services-*`                               | `services.card`  |
-| `module-menu`      | `<x-webx-menu::menu>`                          | `wx-menu*`                                      | —                |
-| `module-events`    | the index, a category, an event                | `wx-events*`, `wx-event*`                       | `events.card`    |
-| `module-vacancies` | the index, a vacancy                           | `wx-vacancies*`, `wx-vacancy*`                  | `vacancies.card` |
-| `module-press`     | an outlet's page                               | `wx-press-outlet*`, `wx-press-article*`         | —                |
-| `module-recipes`   | the index, a category, the catalogue, a recipe | `wx-recipes*`, `wx-recipe*`                     | `recipe-card`    |
+| Module             | Its pages and parts                            | Classes                                              | Extension points |
+| ------------------ | ---------------------------------------------- | ---------------------------------------------------- | ---------------- |
+| `module-inbox`     | the form — fields and messages are the widgets | `webx-inbox-form*` (+ `webx-field-*`, `webx-form-*`) | —                |
+| `module-seo`       | the trail, the page FAQ, interlinking          | `webx-breadcrumbs*`, `webx-faq*`, `webx-links*`      | —                |
+| `module-blog`      | the feed, a rubric, a tag, an article          | `webx-blog-*`                                        | `blog.card`      |
+| `module-services`  | the index, a category, a service               | `webx-services-*`                                    | `services.card`  |
+| `module-menu`      | `<x-webx-menu::menu>`                          | `wx-menu*`                                           | —                |
+| `module-events`    | the index, a category, an event                | `wx-events*`, `wx-event*`                            | `events.card`    |
+| `module-vacancies` | the index, a vacancy                           | `wx-vacancies*`, `wx-vacancy*`                       | `vacancies.card` |
+| `module-press`     | an outlet's page                               | `wx-press-outlet*`, `wx-press-article*`              | —                |
+| `module-recipes`   | the index, a category, the catalogue, a recipe | `wx-recipes*`, `wx-recipe*`                          | `recipe-card`    |
 
 A module whose classes shipped as `wx-*` keeps them: classes are a contract, and renaming them
 would break the themes already written. A module that prints a style of its own inline — the
@@ -246,9 +253,8 @@ of its manifest; everything else a visitor reads comes from a field, the setting
 
 A mail client is not a browser: it reads no CSS variable, often no `<style>`, and no file of the
 theme's font. So a letter takes the values of the tokens on the server — `theme_token('color-accent')`
-is the value after the layers, the preset and the owner's edits — and writes them into
-`style="…"` of each element. A preset or an accent changed in the panel repaints the letters with
-the pages.
+is the value after the layers and the preset — and writes them into `style="…"` of each element.
+A preset or an accent changed in `tokens.json` repaints the letters with the pages.
 
 Every letter of the site stands in one frame, `views/mail/layout.blade.php` of the theme: the
 site's name above, the letter on a sheet, a "Sent from" line below. `webx-ui/theme-default` has
@@ -399,7 +405,8 @@ when the built front end is older than its sources ("has changed since the bundl
 4. Use only variables that exist: `--site-*` on the public site, `--wx-*` from `tokens.css` in the
    panel. In a block, prefix every selector with `.b-<slug>` and use `@container`.
 5. Show the change: reload, or `npm run build`; run `php artisan webx:doctor` and, on a site with
-   a theme, `php artisan webx:theme:check`.
+   a theme, `php artisan webx:theme:check`. Read `php artisan webx:theme:show` before step 2 on a
+   site with a theme: it names the layer that owns each token and view.
 6. Look at a phone width as well as a wide one; for the panel, the dark theme too.
 7. Commit what the site owns: `theme/`, `resources/`, `public/` (not `public/build`, `public/themes`), `config/`, and the
    block types after `php artisan webx:blocks:export` (on a site with a theme,

@@ -13,6 +13,6 @@
  *
  * Every rule below this layer sits inside `:where()`, so a rule here wins by existing — no
  * `!important`, no longer selector. Colours, fonts, radii, spacing and shadows are
- * `var(--site-…)` only; a literal value belongs in tokens.json, where a preset and the panel
- * can change it.
+ * `var(--site-…)` only; a literal value belongs in tokens.json, where a preset can change it
+ * and the whole site follows.
  */

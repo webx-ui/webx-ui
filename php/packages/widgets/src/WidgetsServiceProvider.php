@@ -68,6 +68,7 @@ use WebxUi\Widgets\View\Components\Share;
 use WebxUi\Widgets\View\Components\Slide;
 use WebxUi\Widgets\View\Components\Slider;
 use WebxUi\Widgets\View\Components\Socials;
+use WebxUi\Widgets\View\Components\Suggest;
 use WebxUi\Widgets\View\Components\Tabs;
 use WebxUi\Widgets\View\Components\TabsPanel;
 use WebxUi\Widgets\View\Components\Toc;
@@ -158,6 +159,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-toc', Toc::class);
         Blade::component('webx-pagination', Pagination::class);
         Blade::component('webx-load-more', LoadMore::class);
+        Blade::component('webx-suggest', Suggest::class);
         Blade::component('webx-notice-bar', NoticeBar::class);
         Blade::component('webx-zoom', Zoom::class);
         Blade::component('webx-field', Field::class);

@@ -1,3 +1,5 @@
+{{-- Before W6.4 (an alias period, WIDGETS §20 W6.4): read only by a form.blade.php a site published
+     before the form moved to the widgets' engine. The form of today is form.blade.php and form/*. --}}
 {{--
     What the form says back: the thank-you, and the one refusal that belongs to no field.
 

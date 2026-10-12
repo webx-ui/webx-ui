@@ -69,8 +69,10 @@ Validation comes from the fields, and errors come back under the names the input
 { "message": "…", "errors": { "fields.email": ["The e-mail must be a valid address."] } }
 ```
 
-A request that asks for JSON gets JSON; anything else gets a redirect, with the thank-you or the
-errors in the session.
+The answer is the widgets' `FormResponse`, the one every form of the site gets: a request that
+asks for JSON gets `{ ok, heading, message, redirect, html }` — the thank-you, or the form's
+address when it has one; anything else a redirect, there or back with the thank-you in the
+session. A refusal is Laravel's own 422, or the errors in the session.
 
 ### The same thing sent twice
 
@@ -86,25 +88,39 @@ date with it.
 <x-webx-inbox::form :form="$form" class="my-form" :values="['product' => $product->name]" />
 ```
 
-The tag prints the whole thing: the controls the fields ask for, the honeypot, the hidden
-timestamp, the captcha block if the form wants one, the submit button and the two boxes a
-thank-you or a refusal goes in. A slug nobody has a form for — or one that is switched off —
-prints nothing, because a page that says "form not found" to a customer is worse than a page
-with one section missing.
+The tag prints the whole thing on the form engine of `webx-ui/widgets` (guide «Forms»): an
+`<x-webx-form :csrf="false">` with an `<x-webx-field>` for every field of the panel — the eleven
+types are the widgets' own —, the honeypot, the hidden timestamp, the captcha if the form wants
+one, and the button. A slug nobody has a form for — or one that is switched off — prints nothing,
+because a page that says "form not found" to a customer is worse than a page with one section
+missing.
 
 `:values` fills the hidden fields by their machine name: which page, which product, which
 campaign. That is what a machine name is for.
 
-**It works without JavaScript.** The form posts, the intake answers with a redirect, and the
-page comes back with the errors under their inputs or the thank-you in place — through the
-session, which is why the intake keeps one. The script the tag links adds one thing: the same
-two boxes are filled without the page reloading. It is one file with no dependencies and no
-build step, served straight from the package, so a site that has not rebuilt anything since
-last spring still gets it.
+What the engine does for it, it does for every form of the site: the intake's own rules
+(`Submissions\Rules`) are handed to the form through `FormRules`, so the browser checks what the
+intake will, in the validator's words and the page's language; the form is sent in place, a 422
+lands under its fields, the thank-you in a live region — in a dialog in place of the fields. Without
+JavaScript the form posts, the intake answers with a redirect, and the page comes back with the
+errors under their fields or the thank-you under them — through the session, which is why the
+intake keeps one.
 
-A page may carry several forms. Each prints a hidden `webx_form`, and that is how one of them
-knows that the errors — or the thank-you — in the session are its own. Keep it in a view you
-rewrite, or two forms will both light up red over one refusal.
+The inbox's own script, `{path}/inbox.js`, is only the captcha's half of sending: it runs an
+invisible captcha on `webx:form:submit` and resets every captcha after `webx:form:success` and
+`webx:form:error`. A form without a captcha does not link it.
+
+A page may carry several forms — a request in the body, a subscription in the footer, the same
+form in a dialog. Each has its own `id` (`webx-inbox-<slug>`, then `-2`…), which comes back as
+`_webx_form`: the errors, the old input and the thank-you belong to the form that was sent, and
+the others stay as the page printed them. For a script of the site, the `<form>` carries
+`data-webx-form="<slug>"`:
+
+```js
+document.addEventListener('webx:form:success', (event) => {
+  if (event.target.dataset.webxForm === 'contact') window.dataLayer?.push({ event: 'request' })
+})
+```
 
 ### Where the form stands
 
@@ -113,45 +129,48 @@ rewrite, or two forms will both light up red over one refusal.
 ```
 
 One form of subscription in the footer and in every article is one form, and `placement` is
-what tells the two apart. The `<form>` gets `wx-form--footer` beside `wx-form`, so the site
-styles each by CSS alone; the views of the form and of every field get `$placement`; and a
-hidden `webx_placement` makes the submission remember it — the panel shows "Placement: footer"
-in the card and offers a filter once a form has come in from more than one place. The value is
-a name (`[a-z][a-z0-9-]*`, up to 32 characters); anything else is dropped with a warning in the
-log rather than an exception, because the form on the page matters more than a typo in one of
-its attributes. `none` is reserved: it is what the filter says for "the page did not say".
+what tells the two apart. The `<form>` gets `webx-inbox-form--footer` beside `webx-inbox-form`, so
+the site styles each by CSS alone; the view of the form gets `$placement`; and a hidden
+`webx_placement` makes the submission remember it — the panel shows "Placement: footer" in the
+card and offers a filter once a form has come in from more than one place. The value is a name
+(`[a-z][a-z0-9-]*`, up to 32 characters); anything else is dropped with a warning in the log
+rather than an exception, because the form on the page matters more than a typo in one of its
+attributes. `none` is reserved: it is what the filter says for "the page did not say".
 
 ### Making it yours
+
+The fields, the messages and the button are the widgets' `webx-field-*` and `webx-form-*`, the
+same classes as every form of the site. On a site with a theme (`webx-ui/themes`) the package
+brings only its layout, `resources/theme/inbox.css`: fields two to a row where the panel marked
+them half width (`webx-inbox-form__field--half`) and the form is at least 32rem wide. The theme
+restyles all of it without publishing a view. A site without a theme gets no stylesheet of ours.
+
+Restyling is the cheap door; a different frame is the expensive one. After publishing, the views
+belong to the site and no longer get the package's fixes:
 
 ```bash
 php artisan vendor:publish --tag=webx-inbox-views
 ```
 
-What ships is the least markup that works: `wx-form`, `wx-form__field`, `wx-form__control`,
-`is-invalid` — the full list of classes is in `AGENTS.md`, «Classes», and they are a public
-contract. On a site with a theme (`webx-ui/themes`) the package also brings its base look,
-`resources/theme/inbox.css`: site tokens only, fields two to a row where the form is wide enough,
-a visible error and thank-you. `webx:theme:sync` publishes it with the other modules' and
-`@webxTheme` links it under the theme, so the theme restyles the same classes without
-publishing a view. A site without a theme gets no stylesheet at all.
-
-Restyling is the cheap door; a different markup is the expensive one. After publishing, the
-views belong to the site and no longer get the package's fixes:
-
 ```
-resources/views/vendor/webx-inbox/form.blade.php          the frame
-resources/views/vendor/webx-inbox/field.blade.php         the label, the hint, the error
-resources/views/vendor/webx-inbox/fields/<type>.blade.php one control each
-resources/views/vendor/webx-inbox/message.blade.php       the thank-you and the refusal
-resources/views/vendor/webx-inbox/honeypot.blade.php
-resources/views/vendor/webx-inbox/captcha.blade.php
+resources/views/vendor/webx-inbox/form.blade.php           the frame, on <x-webx-form>
+resources/views/vendor/webx-inbox/form/captcha.blade.php   the captcha and its error
+resources/views/vendor/webx-inbox/form/honeypot.blade.php  the field for robots
 ```
 
-The script finds its way around by `data-webx-*` attributes and `[name]`, so a rewritten view
-keeps working as long as it keeps those. Drop them and the form still submits — it just
-reloads the page to say what happened.
+Keep `<x-webx-form>` and the fields in it, the hidden `webx_form`, `webx_locale` and `webx_page`,
+the honeypot, the timestamp and the captcha's place (`data-webx-field="captcha"`). One control of
+one type for every form of the site is the widgets' view
+`webx-widgets::components.field.<type>`, not the inbox's.
 
-To bundle the script instead of linking ours:
+**Before W6.4** the form had markup and classes of its own (`wx-form*`) and `inbox.js` sent it. A
+`form.blade.php` the site published then — any view of the form without `<x-webx-form>` in it —
+keeps working for an alias period: it is handed the variables it was handed, its partials
+(`field`, `fields/<type>`, `message`, `captcha`, `honeypot`) stay in the package, and its script is
+served as `{path}/inbox-legacy.js`. The audit's `inbox.legacy_views` names it until it is moved;
+the guide «Inbox» has the table from `wx-form*` to the new classes.
+
+To bundle the captcha script instead of linking ours:
 
 ```bash
 php artisan vendor:publish --tag=webx-inbox-assets   # resources/js/vendor/webx-inbox/inbox.js
@@ -172,10 +191,10 @@ site's, in `webx-inbox.captcha.<provider>`:
 
 The type has to match the keys: a reCAPTCHA key drawn as another kind is the widget's "Invalid
 key type". A checkbox is drawn by the provider's own script, which the block loads once per
-page. An invisible one is drawn by the form's script on the first submit, per form, and run
+page. An invisible one is drawn by `inbox.js` on the first submit (`webx:form:submit`), per form, and run
 then, so the token is fresh; a Turnstile widget set to Invisible in Cloudflare shows nothing at
 all. v3 is loaded with `?render=<key>` and asked for the action `webx_form_<slug>`. Invisible and
-v3 need the form's script: without JavaScript they are refused with a sentence that says so.
+v3 need `inbox.js`: without JavaScript they are refused with a sentence that says so.
 
 A token is good once, so the script resets the widget after every answer — otherwise a visitor
 who corrects one typo is refused by a captcha they already passed, which reads as a form that
@@ -276,7 +295,7 @@ The letter stands in the frame of the site's theme — `mail.layout` of
 [`webx-ui/theme-default`](https://github.com/webx-ui/theme-default) or of the site's own theme:
 the site name above, the letter on a sheet, a line below — and every colour in it is a token's
 value from `theme_token()`, written into `style="…"` on the server. A mail client reads no CSS
-variable, so this is how a preset or the owner's accent in the panel reaches the letter. On a
+variable, so this is how the theme's preset and accent reach the letter. On a
 site without a theme the letter has a frame of its own and theme-default's colours
 (`WebxUi\Inbox\Mail\Look`).
 

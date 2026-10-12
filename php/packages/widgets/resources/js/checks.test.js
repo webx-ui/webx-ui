@@ -6,8 +6,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
  * mask with a paste, the files dropped, listed, removed and refused before anything is sent.
  */
 
-let module
-
 afterEach(() => {
   window.webx?.unmount?.()
   document.body.innerHTML = ''
@@ -21,7 +19,7 @@ async function start(html, ...scripts) {
   delete window.webx
   vi.resetModules()
   await import('./runtime.js')
-  module = await import('./form.js')
+  await import('./form.js')
   for (const script of scripts) await import(`./${script}.js`)
   return document.querySelector('form')
 }
@@ -46,7 +44,10 @@ const field = (key, rules, control) => {
   </div>`
 }
 
-const shell = (fields, buttons = '<button type="submit" class="webx-form__submit">Send</button>') => `
+const shell = (
+  fields,
+  buttons = '<button type="submit" class="webx-form__submit">Send</button>',
+) => `
   <form id="form-1" class="webx-form" action="/send" method="post" data-webx-send>
     <div class="webx-form__body">${fields}${buttons}</div>
     <progress class="webx-form__progress" max="100" value="0" hidden></progress>
@@ -164,8 +165,16 @@ describe('when the browser checks', () => {
   it('checks a confirmation against its password, and the password again as the confirmation changes', async () => {
     await start(
       shell(
-        field('password', [said('required'), said('confirmed', { other: null })], '<input type="password" name="password">') +
-          field('password_confirmation', [], '<input type="password" name="password_confirmation">'),
+        field(
+          'password',
+          [said('required'), said('confirmed', { other: null })],
+          '<input type="password" name="password">',
+        ) +
+          field(
+            'password_confirmation',
+            [],
+            '<input type="password" name="password_confirmation">',
+          ),
       ),
     )
     type('password', 'secret12')
@@ -189,13 +198,28 @@ describe('what each rule refuses', () => {
     ['numeric', [said('numeric')], '1,5', true],
     ['integer', [said('integer')], '42', false],
     ['integer', [said('integer')], '4.2', true],
-    ['min of a string counts letters, not bytes', [said('min', { as: 'string', value: 3 })], 'żółw'.slice(0, 3), false],
+    [
+      'min of a string counts letters, not bytes',
+      [said('min', { as: 'string', value: 3 })],
+      'żółw'.slice(0, 3),
+      false,
+    ],
     ['max of a number', [said('numeric'), said('max', { as: 'numeric', value: 10 })], '11', true],
     ['between', [said('between', { as: 'string', value: [2, 4] })], 'abcde', true],
     ['size', [said('size', { as: 'string', value: 2 })], 'ab', false],
-    ['regex', [said('regex', { source: '^\\+[1-9][0-9 ]{6,18}$', flags: '' })], '+48 512 345 678', false],
+    [
+      'regex',
+      [said('regex', { source: '^\\+[1-9][0-9 ]{6,18}$', flags: '' })],
+      '+48 512 345 678',
+      false,
+    ],
     ['regex', [said('regex', { source: '^\\d+$', flags: '' })], '12a', true],
-    ['regex JavaScript cannot compile — the server’s alone', [said('regex', { source: '(?<', flags: '' })], 'x', false],
+    [
+      'regex JavaScript cannot compile — the server’s alone',
+      [said('regex', { source: '(?<', flags: '' })],
+      'x',
+      false,
+    ],
     ['not_regex', [said('not_regex', { source: 'admin', flags: 'i' })], 'ADMIN', true],
     ['in', [said('in', { values: ['a', 'b'] })], 'c', true],
     ['date that cannot be', [said('date')], '2026-02-30', true],
@@ -224,7 +248,16 @@ describe('what each rule refuses', () => {
         field('agree', [said('accepted')], '<input type="checkbox" name="agree" value="1">') +
           field(
             'extras',
-            [said('required'), said('min', { as: 'array', value: 2 }), said('in', { values: ['a', 'b'], each: true, item: 'extras.0', message: 'The extras.0 is not offered.' })],
+            [
+              said('required'),
+              said('min', { as: 'array', value: 2 }),
+              said('in', {
+                values: ['a', 'b'],
+                each: true,
+                item: 'extras.0',
+                message: 'The extras.0 is not offered.',
+              }),
+            ],
             '<input type="checkbox" name="extras[]" value="a"><input type="checkbox" name="extras[]" value="z">',
           ),
       ),
@@ -279,7 +312,9 @@ describe('the phone mask', () => {
     tel.focus()
     tel.value = '4'
     tel.setSelectionRange(1, 1)
-    tel.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: '4' }))
+    tel.dispatchEvent(
+      new InputEvent('input', { bubbles: true, inputType: 'insertText', data: '4' }),
+    )
     expect(tel.value).toBe('+4')
 
     tel.value = '+48 512'
@@ -287,14 +322,20 @@ describe('the phone mask', () => {
     // The caret after the space: backspace removes the space, the mask takes the 8 before it.
     tel.value = '+48512'
     tel.setSelectionRange(3, 3)
-    tel.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' }))
+    tel.dispatchEvent(
+      new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' }),
+    )
     expect(tel.value).toBe('+45 12')
   })
 
   it('formats the value the page came back with, and the check sees the formatted value', async () => {
     const form = await start(
       shell(
-        field('phone', [said('regex', { source: '^\\+[1-9][0-9 ]{6,18}$', flags: '' })], '<input type="tel" name="phone" data-webx-mask="phone" value="+48512345678">'),
+        field(
+          'phone',
+          [said('regex', { source: '^\\+[1-9][0-9 ]{6,18}$', flags: '' })],
+          '<input type="tel" name="phone" data-webx-mask="phone" value="+48512345678">',
+        ),
       ),
       'mask',
     )
@@ -325,7 +366,9 @@ describe('the files of a field', () => {
     Object.defineProperty(el, 'files', {
       configurable: true,
       get: () => files,
-      set: (list) => (files = Array.from(list)),
+      set: (list) => {
+        files = Array.from(list)
+      },
     })
   }
 
@@ -374,29 +417,52 @@ describe('the files of a field', () => {
     expect(event.defaultPrevented).toBe(true)
     drop(zone, [new File(['y'], 'b.png', { type: 'image/png' })])
 
-    expect(rows().map((row) => row.querySelector('.webx-field__files-name').textContent)).toEqual(['a.pdf', 'b.png'])
+    expect(rows().map((row) => row.querySelector('.webx-field__files-name').textContent)).toEqual([
+      'a.pdf',
+      'b.png',
+    ])
     expect(rows()[0].querySelector('.webx-field__files-size').textContent).toMatch(/2.*kB/)
     expect(form.querySelector('input[type=file]').files).toHaveLength(2)
     // The line beside the button follows the input (field.js).
     expect(form.querySelector('.webx-field__file-name').textContent).toBe('Files chosen: 2')
-    expect(rows()[1].querySelector('.webx-field__files-remove').getAttribute('aria-label')).toBe('Remove b.png')
+    expect(rows()[1].querySelector('.webx-field__files-remove').getAttribute('aria-label')).toBe(
+      'Remove b.png',
+    )
   })
 
   it('removes one before sending, the input holding exactly what the list shows', async () => {
     const form = await mount([])
-    drop(form.querySelector('[data-webx-field="docs"]'), [new File(['1'], 'a.pdf'), new File(['2'], 'b.pdf')])
+    drop(form.querySelector('[data-webx-field="docs"]'), [
+      new File(['1'], 'a.pdf'),
+      new File(['2'], 'b.pdf'),
+    ])
 
     rows()[0].querySelector('.webx-field__files-remove').click()
 
-    expect(rows().map((row) => row.querySelector('.webx-field__files-name').textContent)).toEqual(['b.pdf'])
-    expect(Array.from(form.querySelector('input[type=file]').files).map((file) => file.name)).toEqual(['b.pdf'])
+    expect(rows().map((row) => row.querySelector('.webx-field__files-name').textContent)).toEqual([
+      'b.pdf',
+    ])
+    expect(
+      Array.from(form.querySelector('input[type=file]').files).map((file) => file.name),
+    ).toEqual(['b.pdf'])
     expect(document.activeElement).toBe(rows()[0].querySelector('.webx-field__files-remove'))
   })
 
   it('refuses a file of the wrong type or too big as soon as it is dropped, marking its row', async () => {
     const form = await mount([
-      said('mimes', { values: ['pdf'], each: true, item: 'docs.0', message: 'The docs.0 must be a PDF.' }),
-      said('max', { as: 'file', value: 1, each: true, item: 'docs.0', message: 'The docs.0 is over 1 kB.' }),
+      said('mimes', {
+        values: ['pdf'],
+        each: true,
+        item: 'docs.0',
+        message: 'The docs.0 must be a PDF.',
+      }),
+      said('max', {
+        as: 'file',
+        value: 1,
+        each: true,
+        item: 'docs.0',
+        message: 'The docs.0 is over 1 kB.',
+      }),
     ])
     globalThis.fetch = vi.fn()
     drop(form.querySelector('[data-webx-field="docs"]'), [
@@ -422,7 +488,9 @@ describe('the files of a field', () => {
     const zone = form.querySelector('[data-webx-field="docs"]')
     drop(zone, [new File(['1'], 'a.pdf')])
     drop(zone, [new File(['2'], 'b.pdf'), new File(['3'], 'c.pdf')])
-    expect(rows().map((row) => row.querySelector('.webx-field__files-name').textContent)).toEqual(['b.pdf'])
+    expect(rows().map((row) => row.querySelector('.webx-field__files-name').textContent)).toEqual([
+      'b.pdf',
+    ])
 
     window.webx.unmount()
     expect(document.querySelector('.webx-field__files').hidden).toBe(true)

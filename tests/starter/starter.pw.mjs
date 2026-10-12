@@ -558,7 +558,7 @@ test.describe('form in a dialog', () => {
     expect(await page.locator('a[href="#webx-form-contact"]').count()).toBeGreaterThanOrEqual(2)
     expect(await page.locator('dialog#webx-form-contact').count()).toBe(1)
     expect(await page.locator('form[data-webx-form="contact"]').count()).toBe(1)
-    await expect(page.locator('#webx-form-contact form')).toHaveClass(/wx-form--modal/)
+    await expect(page.locator('#webx-form-contact form')).toHaveClass(/webx-inbox-form--modal/)
   })
 
   test('fits a 360px screen and scrolls inside, the page under it still', async ({ page }) => {
@@ -4444,7 +4444,7 @@ test.describe('modules in the theme', () => {
   // The error of a field is on the page before anything is wrong, hidden: shown to be measured.
   const showErrors = (page) =>
     page.evaluate(() => {
-      for (const error of document.querySelectorAll('.wx-form__error')) {
+      for (const error of document.querySelectorAll('.webx-inbox-form .webx-field__error')) {
         error.hidden = false
         error.textContent = 'Fill this in.'
       }
@@ -4453,13 +4453,13 @@ test.describe('modules in the theme', () => {
   // Each form of the showcase: the boxes of its name and e-mail fields (both half width), the
   // smallest height of a control and of a choice, and whether it stands in the narrow column.
   const forms = (page) =>
-    page.locator('form.wx-form[data-webx-form="showcase"]').evaluateAll((all) =>
+    page.locator('form.webx-inbox-form[data-webx-form="showcase"]').evaluateAll((all) =>
       all.map((form) => {
         const box = (node) => {
           const r = node.getBoundingClientRect()
           return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }
         }
-        const field = (key) => box(form.querySelector(`[data-webx-field="${key}"]`))
+        const field = (key) => box(form.querySelector(`[data-webx-field="fields.${key}"]`))
         const lowest = (selector) =>
           Math.min(
             ...[...form.querySelectorAll(selector)].map((n) => n.getBoundingClientRect().height),
@@ -4469,9 +4469,9 @@ test.describe('modules in the theme', () => {
           name: field('name'),
           email: field('email'),
           message: field('message'),
-          control: lowest('.wx-form__control:not([type="file"])'),
-          choice: lowest('.wx-form__choice, .wx-form__consent'),
-          submit: form.querySelector('.wx-form__submit').getBoundingClientRect().height,
+          control: lowest('.webx-field__control:not([type="file"])'),
+          choice: lowest('.webx-field__choice'),
+          submit: form.querySelector('.webx-form__submit').getBoundingClientRect().height,
         }
       }),
     )
@@ -4546,10 +4546,10 @@ test.describe('modules in the theme', () => {
           return value
         }
         return {
-          control: style('.wx-form__control').backgroundColor,
-          border: style('.wx-form__control').borderTopColor,
-          submit: style('.wx-form__submit').backgroundColor,
-          error: style('.wx-form__error').color,
+          control: style('.webx-inbox-form .webx-field__control').backgroundColor,
+          border: style('.webx-inbox-form .webx-field__control').borderTopColor,
+          submit: style('.webx-inbox-form .webx-form__submit').backgroundColor,
+          error: style('.webx-inbox-form .webx-field__error').color,
           bg: token('color-bg'),
           line: token('color-border'),
           accent: token('color-accent'),
@@ -4734,13 +4734,12 @@ test.describe('modules in the theme', () => {
             return 'white'
           }
           const words = [
-            '.wx-form__label',
-            '.wx-form__help',
-            '.wx-form__error',
-            '.wx-form__choice-label',
-            '.wx-form__consent-text',
-            '.wx-form__submit',
-            '.wx-form__control',
+            '.webx-inbox-form .webx-field__label',
+            '.webx-inbox-form .webx-field__hint',
+            '.webx-inbox-form .webx-field__error',
+            '.webx-inbox-form .webx-field__choice-label',
+            '.webx-inbox-form .webx-form__submit',
+            '.webx-inbox-form .webx-field__control',
             '.webx-breadcrumbs__link',
             '.webx-breadcrumbs__item--current',
             '.webx-faq__heading',
@@ -5827,7 +5826,8 @@ test.describe('fields', () => {
       { name: 'a.pdf', ...blob },
       { name: 'b.pdf', ...blob },
     ])
-    await expect(file.locator('.webx-field__file-name')).toHaveText('Wybrane pliki: 2')
+    // Choosing again in a field of several adds to what was chosen (files.js, W6.3).
+    await expect(file.locator('.webx-field__file-name')).toHaveText('Wybrane pliki: 3')
     // The words beside a label too.
     await expect(page.locator('.webx-field__optional').first()).toHaveText('(opcjonalnie)')
   })
@@ -6294,6 +6294,856 @@ test.describe('sending', () => {
     await fill(page, PAGE_FORM, 'message')
     await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
     await expect(page.locator(`${PAGE_FORM} .webx-form__heading`)).toHaveText('Спасибо')
+  })
+})
+
+test.describe('validation', () => {
+  // WIDGETS §17.5, W6.3: Kitchen sink › Forms › Validation — one form checked in the browser by
+  // FormRules and by the showcase's door with the same rules; the phone mask; the files.
+  const PATH = '/kitchen-sink/forms/validation'
+  const FORM = '.b-showcase-validation form'
+
+  const errorsOf = (page) =>
+    page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return Object.fromEntries(
+        [...form.querySelectorAll('[data-webx-field].is-invalid')].map((field) => [
+          field.dataset.webxField,
+          field.querySelector('.webx-field__error').textContent.trim(),
+        ]),
+      )
+    }, FORM)
+
+  function watch(page) {
+    const seen = []
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (url.pathname.startsWith('/webx/widgets/'))
+        seen.push(`${request.method()} ${url.pathname}`)
+    })
+    page.on('response', (response) => {
+      const url = new URL(response.url())
+      if (url.pathname.startsWith('/webx/widgets/')) seen.push(response.status())
+    })
+    return seen
+  }
+
+  /** Wrong in every way the browser can tell. */
+  async function wrong(page) {
+    const form = page.locator(FORM)
+    await form.locator('input[name="check[name]"]').fill('a')
+    await form.locator('input[name="check[email]"]').fill('nope')
+    await form.locator('input[name="check[phone]"]').fill('512')
+    await form.locator('input[name="check[age]"]').fill('12')
+    await form.locator('input[name="check[website]"]').fill('example')
+    await form.locator('input[name="check[day]"]').fill('2025-06-01')
+    await form.locator('input[name="check[password]"]').fill('short')
+    await form.locator('input[name="check[password_confirmation]"]').fill('other')
+  }
+
+  /** Right in every way the browser can tell. */
+  async function right(page, name = 'Ann') {
+    const form = page.locator(FORM)
+    await form.locator('input[name="check[name]"]').fill(name)
+    await form.locator('input[name="check[email]"]').fill('ann@example.com')
+    await form.locator('input[name="check[phone]"]').fill('+48512345678')
+    await form.locator('input[name="check[age]"]').fill('')
+    await form.locator('input[name="check[website]"]').fill('')
+    await form.locator('input[name="check[day]"]').fill('2026-05-01')
+    await form.locator('input[name="check[password]"]').fill('secret12')
+    await form.locator('input[name="check[password_confirmation]"]').fill('secret12')
+    await form.locator('input[name="check[plan]"][value="team"]').check()
+    await form.locator('input[name="check[agree]"]').check()
+  }
+
+  const png = (name, bytes = 600) => ({
+    name,
+    mimeType: 'image/png',
+    // A real PNG header: the server guesses the type by what is inside.
+    buffer: Buffer.concat([
+      Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+      Buffer.alloc(Math.max(0, bytes - 70)),
+    ]),
+  })
+
+  test('the browser says what the server says, word for word, and sends nothing while one is wrong', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    await wrong(page)
+
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    const browser = await errorsOf(page)
+    expect(seen, 'nothing sent').toEqual([])
+    expect(
+      await page.evaluate(() => document.activeElement?.getAttribute('name')),
+      'the focus on the first wrong field',
+    ).toBe('check[name]')
+
+    // The same, straight to the server: the button with formnovalidate skips the browser.
+    await page.locator(`${FORM} .b-showcase-validation__server`).click()
+    await expect.poll(() => seen.length).toBe(2)
+    const server = await errorsOf(page)
+
+    expect(seen).toEqual(['POST /webx/widgets/showcase/validation', 422])
+    expect(Object.keys(browser).sort()).toEqual([
+      'check.age',
+      'check.agree',
+      'check.day',
+      'check.email',
+      'check.name',
+      'check.password',
+      'check.phone',
+      'check.plan',
+      'check.website',
+    ])
+    expect(browser, 'one word in the browser and from the server').toEqual(server)
+    expect(browser['check.password']).toContain('8')
+    expect(browser['check.password']).toContain('confirmation')
+  })
+
+  test('a field is checked when it is left after typing, and loses its error as it is put right', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const name = page.locator(`${FORM} [data-webx-field="check.name"]`)
+    const email = page.locator(`${FORM} [data-webx-field="check.email"]`)
+
+    // Through a field without typing: nothing said.
+    await email.locator('input').focus()
+    await page.keyboard.press('Tab')
+    await expect(email).not.toHaveClass(/is-invalid/)
+
+    await name.locator('input').focus()
+    await page.keyboard.type('a')
+    await expect(name, 'not while typing').not.toHaveClass(/is-invalid/)
+    await page.keyboard.press('Tab')
+    await expect(name).toHaveClass(/is-invalid/)
+    await expect(name.locator('.webx-field__error')).toContainText('Your name')
+    expect(await name.locator('input').getAttribute('aria-invalid')).toBe('true')
+
+    await name.locator('input').focus()
+    await page.keyboard.type('nn')
+    await expect(name, 'right again as it is typed').not.toHaveClass(/is-invalid/)
+
+    // The confirmation puts its password right too.
+    const password = page.locator(`${FORM} [data-webx-field="check.password"]`)
+    await password.locator('input').fill('secret12')
+    await password.locator('input').blur()
+    await expect(password).toHaveClass(/is-invalid/)
+    await page.locator(`${FORM} input[name="check[password_confirmation]"]`).fill('secret12')
+    await expect(password).not.toHaveClass(/is-invalid/)
+  })
+
+  test('what only the server knows comes from the server; all right, the thank-you', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+
+    await right(page, 'admin')
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} [data-webx-field="check.name"]`)).toHaveClass(/is-invalid/)
+    expect(seen).toEqual(['POST /webx/widgets/showcase/validation', 422])
+    expect(Object.keys(await errorsOf(page))).toEqual(['check.name'])
+
+    await page.locator(`${FORM} input[name="check[name]"]`).fill('Ann')
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-form__heading`)).toHaveText('Everything is right')
+  })
+
+  test('the phone is put in international form as it is typed, pasted and filled in', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const phone = page.locator(`${FORM} input[name="check[phone]"]`)
+
+    await phone.pressSequentially('48512345678')
+    await expect(phone).toHaveValue('+48 512 345 678')
+    expect(await phone.evaluate((input) => input.selectionStart), 'the caret at the end').toBe(15)
+
+    // Backspace right after a space takes the digit before it, not only the space.
+    await phone.press('ArrowLeft')
+    await phone.press('ArrowLeft')
+    await phone.press('ArrowLeft')
+    await phone.press('Backspace')
+    await expect(phone).toHaveValue('+48 512 346 78')
+
+    // A paste in any form, and what an autofill sets.
+    await phone.fill('')
+    await phone.focus()
+    await page.keyboard.insertText('+1 (212) 555-0123')
+    await expect(phone).toHaveValue('+1 212 555 0123')
+    await phone.evaluate((input) => {
+      input.value = '00380441234567'
+      input.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await expect(phone).toHaveValue('+380 441 234 567')
+  })
+
+  test('files are dropped, listed with their sizes, refused by type and size before sending, removed, and sent through XMLHttpRequest', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const field = page.locator(`${FORM} [data-webx-field="check.photos"]`)
+    const input = field.locator('input[type=file]')
+    const seen = watch(page)
+
+    await input.setInputFiles([
+      png('one.png'),
+      { name: 'cv.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n') },
+    ])
+    // A big one dropped on the field, as a person drags it from a folder.
+    await page.evaluate(async (scope) => {
+      const field = document.querySelector(`${scope} [data-webx-field="check.photos"]`)
+      const data = new DataTransfer()
+      data.items.add(new File([new Uint8Array(3 * 1024 * 1024)], 'huge.png', { type: 'image/png' }))
+      field.dispatchEvent(
+        new DragEvent('dragover', { dataTransfer: data, bubbles: true, cancelable: true }),
+      )
+      field.dispatchEvent(
+        new DragEvent('drop', { dataTransfer: data, bubbles: true, cancelable: true }),
+      )
+    }, FORM)
+
+    const rows = field.locator('.webx-field__files-item')
+    await expect(rows).toHaveCount(3)
+    expect(await rows.locator('.webx-field__files-name').allTextContents()).toEqual([
+      'one.png',
+      'cv.pdf',
+      'huge.png',
+    ])
+    expect(await rows.nth(2).locator('.webx-field__files-size').textContent()).toMatch(/3\s*MB/)
+    expect(
+      await rows.nth(0).locator('.webx-field__files-preview').count(),
+      'a picture shows itself',
+    ).toBe(1)
+    // Refused before anything is sent: the type of one, the size of the other, each by its row.
+    await expect(field).toHaveClass(/is-invalid/)
+    expect(
+      await rows.evaluateAll((all) => all.map((row) => row.classList.contains('is-invalid'))),
+    ).toEqual([false, true, true])
+    const said = await field.locator('.webx-field__error').textContent()
+    expect(said).toContain('Photos')
+    expect(said).toContain('2048')
+    expect(seen).toEqual([])
+
+    await rows.nth(2).locator('.webx-field__files-remove').click()
+    await rows.nth(1).locator('.webx-field__files-remove').click()
+    await expect(rows).toHaveCount(1)
+    await expect(field).not.toHaveClass(/is-invalid/)
+    expect(
+      await input.evaluate((el) => el.files.length),
+      'the input holds what the list shows',
+    ).toBe(1)
+
+    // Sent through XMLHttpRequest — the one that tells the upload's progress.
+    const kinds = []
+    page.on('request', (request) => {
+      if (request.url().includes('/showcase/validation')) kinds.push(request.resourceType())
+    })
+    await right(page)
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-form__heading`)).toHaveText('Everything is right')
+    expect(kinds).toEqual(['xhr'])
+  })
+
+  test('without JavaScript the browser checks by itself, and the server says the same words', async ({
+    browser,
+    page,
+  }) => {
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const without = await plain.newPage()
+    await without.goto(PATH)
+    expect(
+      await without.locator(FORM).getAttribute('novalidate'),
+      'the browser’s checks on',
+    ).toBeNull()
+    await without.locator(`${FORM} .b-showcase-validation__server`).click()
+    await without.waitForLoadState()
+    const back = await errorsOf(without)
+    await plain.close()
+
+    await page.goto(PATH)
+    await still(page)
+    expect(
+      await page.locator(FORM).evaluate((form) => form.noValidate),
+      'the script’s instead',
+    ).toBe(true)
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    await expect(page.locator(`${FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    expect(await errorsOf(page)).toEqual(back)
+  })
+
+  test('at 360 nothing scrolls sideways; the rows of files and their buttons are 44px', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+    await page
+      .locator(`${FORM} [data-webx-field="check.photos"] input[type=file]`)
+      .setInputFiles([png('a-very-long-name-of-a-photograph-taken-on-holiday-by-the-sea.png')])
+
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      const row = form.querySelector('.webx-field__files-item')
+      const outside = [...form.querySelectorAll('*')].filter((el) => {
+        const box = el.getBoundingClientRect()
+        return box.width > 0 && box.right > document.documentElement.clientWidth + 0.5
+      })
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        outside: outside.map((el) => el.className),
+        row: row.getBoundingClientRect().height,
+        remove: row.querySelector('.webx-field__files-remove').getBoundingClientRect().height,
+        buttons: [...form.querySelectorAll('.webx-form__submit')].map(
+          (b) => b.getBoundingClientRect().height,
+        ),
+      }
+    }, FORM)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    expect(m.outside).toEqual([])
+    expect(m.row).toBeGreaterThanOrEqual(44)
+    expect(m.remove).toBeGreaterThanOrEqual(44)
+    for (const height of m.buttons) expect(height).toBeGreaterThanOrEqual(44)
+  })
+
+  test('on the Polish page the names are Polish both ways, and so is the file list', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="pl"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+    const seen = watch(page)
+
+    await page.locator(`${FORM} .webx-form__submit`).first().click()
+    const name = page.locator(`${FORM} [data-webx-field="check.name"] .webx-field__error`)
+    await expect(name).toContainText('Twoje imię')
+    const browser = await errorsOf(page)
+    await page.locator(`${FORM} .b-showcase-validation__server`).click()
+    await expect.poll(() => seen.length).toBe(2)
+    expect(await errorsOf(page)).toEqual(browser)
+
+    await page
+      .locator(`${FORM} [data-webx-field="check.photos"] input[type=file]`)
+      .setInputFiles([png('a.png')])
+    await expect(page.locator(`${FORM} .webx-field__files-remove`)).toHaveText('Usuń')
+    await expect(page.locator(`${FORM} .webx-field__drop`)).toHaveText('lub upuść pliki tutaj')
+  })
+})
+
+test.describe('inbox on the form engine', () => {
+  // WIDGETS §17, W6.4: a form built in the panel's Inbox — Kitchen sink › Forms › Inbox — drawn by
+  // the same fields and shell as every form of the site, checked by the intake's own rules.
+  const PATH = '/kitchen-sink/forms/inbox'
+  const FORM = 'form.webx-inbox-form[data-webx-form="showcase"]'
+  // The showcase form asks a submission to wait three seconds after the page (antispam.min_seconds).
+  const WAIT = 3500
+
+  /** What the form shows wrong: each field's error by its validator name, and its alert. */
+  const errorsOf = (page) =>
+    page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        fields: Object.fromEntries(
+          [...form.querySelectorAll('[data-webx-field].is-invalid')].map((field) => [
+            field.dataset.webxField,
+            field.querySelector('.webx-field__error').textContent.trim(),
+          ]),
+        ),
+        alert: form.querySelector('.webx-form__error').textContent.trim(),
+      }
+    }, FORM)
+
+  /** Every request to the intake, and its answer, in order. */
+  function watch(page) {
+    const seen = []
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (url.pathname.startsWith('/webx/forms/')) seen.push(`${request.method()} ${url.pathname}`)
+    })
+    page.on('response', (response) => {
+      const url = new URL(response.url())
+      if (url.pathname.startsWith('/webx/forms/')) seen.push(response.status())
+    })
+    return seen
+  }
+
+  test('is the engine: fields, the shell without a token, the captcha place and no script of its own', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        send: form.hasAttribute('data-webx-send'),
+        token: !!form.querySelector('input[name="_token"]'),
+        csrf: form.hasAttribute('data-webx-csrf'),
+        id: form.querySelector('input[name="_webx_form"]')?.value,
+        fields: [...form.querySelectorAll('.webx-field[data-webx-field]')].map(
+          (field) => field.dataset.webxField,
+        ),
+        checks: form.querySelectorAll('[data-webx-rules]').length,
+        legacy: document.querySelectorAll('[class*="wx-form"]').length,
+        script: [...document.scripts].some((s) => /\/webx\/forms\/inbox/.test(s.src)),
+        novalidate: form.noValidate,
+      }
+    }, FORM)
+    expect(m.send).toBe(true)
+    expect(m.token, 'the intake guards itself').toBe(false)
+    expect(m.csrf).toBe(false)
+    expect(m.id).toMatch(/^webx-inbox-showcase/)
+    expect(m.fields).toEqual([
+      'fields.name',
+      'fields.email',
+      'fields.phone',
+      'fields.date',
+      'fields.topic',
+      'fields.reply',
+      'fields.interests',
+      'fields.attachment',
+      'fields.message',
+      'fields.consent',
+    ])
+    expect(m.checks, 'every field checks by the intake rules').toBe(10)
+    expect(m.legacy, 'no class of before W6.4').toBe(0)
+    expect(m.script, 'inbox.js comes only with a captcha').toBe(false)
+    expect(m.novalidate, 'the browser bubbles off').toBe(true)
+  })
+
+  test('an empty form gets the same errors from the browser and from the intake', async ({
+    browser,
+    page,
+  }) => {
+    // Without JavaScript and without the browser's own bubbles: the intake answers, the page
+    // comes back with its words under the fields.
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const without = await plain.newPage()
+    const seenWithout = watch(without)
+    await without.goto(PATH)
+    await without.waitForTimeout(WAIT)
+    await without.evaluate((scope) => (document.querySelector(scope).noValidate = true), FORM)
+    await without.locator(`${FORM} .webx-form__submit`).click()
+    await without.waitForLoadState()
+    expect(new URL(without.url()).pathname, 'back on the page it was sent from').toBe(PATH)
+    const server = await errorsOf(without)
+    const returned = await without.locator(FORM).getAttribute('data-webx-returned')
+    await plain.close()
+
+    // With JavaScript: the browser says it, and nothing is sent.
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    await page.locator(`${FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    const inBrowser = await errorsOf(page)
+
+    expect(seenWithout).toEqual(['POST /webx/forms/showcase', 302])
+    expect(returned).toBe('')
+    expect(Object.keys(server.fields).sort()).toEqual([
+      'fields.consent',
+      'fields.email',
+      'fields.message',
+      'fields.name',
+      'fields.topic',
+    ])
+    expect(server.fields['fields.name']).toBe('The Your name field is required.')
+    expect(inBrowser, 'the same words in the same places').toEqual(server)
+    expect(seen, 'nothing sent while one is wrong').toEqual([])
+    expect(
+      await page.evaluate(() => document.activeElement?.name),
+      'the focus on the first wrong field',
+    ).toBe('fields[name]')
+
+    // A wrong address said when the field is left, in the intake's words.
+    await page.locator(`${FORM} input[name="fields[email]"]`).fill('ann')
+    await page.locator(`${FORM} input[name="fields[name]"]`).focus()
+    await expect(
+      page.locator(`${FORM} [data-webx-field="fields.email"] .webx-field__error`),
+    ).toHaveText('The Email field must be a valid email address.')
+  })
+
+  test('filled in, it is sent in place and thanked under its fields', async ({ page }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    const form = page.locator(FORM)
+    await form.locator('input[name="fields[name]"]').fill('Ann')
+    await form.locator('input[name="fields[email]"]').fill('ann@example.com')
+    await form.locator('select[name="fields[topic]"]').selectOption('question')
+    await form.locator('textarea[name="fields[message]"]').fill('Only a showcase.')
+    await form.locator('input[name="fields[consent]"]').check()
+    await page.waitForTimeout(WAIT)
+    await page.evaluate((scope) => {
+      window.__sent = []
+      document
+        .querySelector(scope)
+        .addEventListener('webx:form:success', (event) => window.__sent.push(event.detail.response))
+    }, FORM)
+    await form.locator('.webx-form__submit').click()
+
+    await expect(form.locator('.webx-form__message .webx-form__heading')).toHaveText('Thank you')
+    await expect(form.locator('.webx-form__message .webx-form__text')).toContainText(
+      'This form only shows how fields look.',
+    )
+    expect(seen).toEqual(['POST /webx/forms/showcase', 200])
+    expect(new URL(page.url()).pathname).toBe(PATH)
+    expect(await page.evaluate(() => window.__sent)).toEqual([
+      {
+        ok: true,
+        heading: 'Thank you',
+        message: 'This form only shows how fields look. Nobody is told about it.',
+        redirect: null,
+        html: null,
+      },
+    ])
+    expect(await form.locator('input[name="fields[name]"]').inputValue(), 'emptied').toBe('')
+  })
+
+  test('at 360 nothing goes sideways, and every target is 44px tall', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 })
+    await page.goto(PATH)
+    await still(page)
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      const lowest = (selector) =>
+        Math.min(
+          ...[...form.querySelectorAll(selector)]
+            .filter((n) => n.getBoundingClientRect().height > 0)
+            .map((n) => n.getBoundingClientRect().height),
+        )
+      // The honeypot is clipped to a pixel on purpose: its input is wide and seen by no one.
+      const right = Math.max(
+        ...[...form.querySelectorAll('*')]
+          .filter((n) => !n.closest('.webx-inbox-form__honeypot'))
+          .map((n) => n.getBoundingClientRect().right),
+      )
+      return {
+        scroll: document.documentElement.scrollWidth,
+        client: document.documentElement.clientWidth,
+        right,
+        control: lowest('.webx-field__control:not([type="file"])'),
+        choice: lowest('.webx-field__choice'),
+        file: lowest('.webx-field__file'),
+        submit: form.querySelector('.webx-form__submit').getBoundingClientRect().height,
+        // Half-width fields one under another on a phone.
+        stacked:
+          form.querySelector('[data-webx-field="fields.email"]').getBoundingClientRect().top >=
+          form.querySelector('[data-webx-field="fields.name"]').getBoundingClientRect().bottom - 1,
+      }
+    }, FORM)
+    expect(m.scroll).toBeLessThanOrEqual(m.client)
+    expect(m.right, 'nothing of the form beyond the screen').toBeLessThanOrEqual(m.client + 0.5)
+    expect(m.control).toBeGreaterThanOrEqual(44)
+    expect(m.choice).toBeGreaterThanOrEqual(44)
+    expect(m.file).toBeGreaterThanOrEqual(44)
+    expect(m.submit).toBeGreaterThanOrEqual(44)
+    expect(m.stacked).toBe(true)
+  })
+
+  test('in its dialog the thank-you takes the place of the fields, with Close in the focus', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto('/kitchen-sink/dropdown-and-form')
+    await still(page)
+    await page.locator('a[href="#webx-form-contact"]').first().click()
+    const dialog = page.locator('#webx-form-contact')
+    await expect(dialog).toHaveJSProperty('open', true)
+    const form = dialog.locator('form.webx-inbox-form')
+    await form.locator('input[name="fields[name]"]').fill('Ann')
+    await form.locator('input[name="fields[email]"]').fill('ann@example.com')
+    await form.locator('textarea[name="fields[message]"]').fill('Only a showcase.')
+    await page.waitForTimeout(WAIT)
+    await form.locator('.webx-form__submit').click()
+
+    await expect(form.locator('.webx-form__heading')).toBeVisible()
+    await expect(form.locator('.webx-form__body')).toBeHidden()
+    const done = form.locator('.webx-form__done')
+    await expect(done).toBeVisible()
+    await expect(done).toBeFocused()
+    expect((await done.boundingBox()).height).toBeGreaterThanOrEqual(44)
+    // The dialog's own Close of before W6.4 is not there: the form brings its own.
+    expect(await dialog.locator('.webx-form-dialog__done').count()).toBe(0)
+
+    await done.click()
+    await expect(dialog).toHaveJSProperty('open', false)
+    await page.locator('a[href="#webx-form-contact"]').first().click()
+    await expect(form.locator('.webx-form__body')).toBeVisible()
+    await expect(form.locator('.webx-form__heading')).toHaveCount(0)
+  })
+
+  test('on the Russian page its errors are the intake’s Russian words', async ({ page }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="ru"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+    await page.locator(`${FORM} .webx-form__submit`).click()
+    await expect(
+      page.locator(`${FORM} [data-webx-field="fields.name"] .webx-field__error`),
+    ).toContainText('Ваше имя')
+    await expect(page.locator(`${FORM} .webx-form__submit`)).toHaveText('Отправить')
+  })
+})
+
+test.describe('suggestions', () => {
+  // WIDGETS §18, W6.5: Kitchen sink › Forms › Suggestions — a search box asking the showcase's
+  // door, which answers HTML from the block's goods; a city field inside a delivery form.
+  const PATH = '/kitchen-sink/forms/suggestions'
+  const SEARCH = '.b-showcase-suggest[data-mode="search"]'
+  const FIELD = '.b-showcase-suggest[data-mode="field"]'
+  const DOOR = '**/webx/widgets/showcase/suggest?**'
+
+  const aria = (page, scope) =>
+    page.evaluate((scope) => {
+      const input = document.querySelector(`${scope} .webx-suggest__input`)
+      const panel = document.getElementById(input.getAttribute('aria-controls'))
+      const active = document.getElementById(input.getAttribute('aria-activedescendant') || '')
+      const group = panel.querySelector('[role="group"]')
+      return {
+        role: input.getAttribute('role'),
+        expanded: input.getAttribute('aria-expanded'),
+        autocomplete: input.getAttribute('aria-autocomplete'),
+        listbox: panel.getAttribute('role'),
+        options: [...panel.querySelectorAll('[role="option"]')].map((o) => o.textContent.trim()),
+        selected: [...panel.querySelectorAll('[aria-selected="true"]')].map((o) => o.id),
+        active: active?.id ?? null,
+        activeText: active?.textContent.trim() ?? null,
+        group: group
+          ? document.getElementById(group.getAttribute('aria-labelledby'))?.textContent
+          : null,
+        status: document.querySelector(`${scope} .webx-suggest__status`).textContent,
+        focused: document.activeElement === input,
+      }
+    }, scope)
+
+  test('the keyboard alone: the combobox opens, walks, jumps, closes and takes an option', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    await input.focus()
+    await page.keyboard.type('oak')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+
+    let a = await aria(page, SEARCH)
+    expect(a.role).toBe('combobox')
+    expect(a.autocomplete).toBe('list')
+    expect(a.expanded).toBe('true')
+    expect(a.listbox).toBe('listbox')
+    expect(a.group).toBe('Products (8)')
+    // Five cards with their price, and «see all» — every one an option.
+    expect(a.options).toHaveLength(6)
+    expect(a.options[0]).toContain('€')
+    expect(a.options[5]).toBe('See all results: 8')
+    expect(a.status).toBe('Suggestions: 6')
+    expect(a.active).toBeNull()
+
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('ArrowDown')
+    a = await aria(page, SEARCH)
+    expect(a.selected).toEqual([a.active])
+    expect(a.activeText).toContain('Oak desk 160 cm')
+    expect(a.focused, 'the focus stays in the field').toBe(true)
+    await page.keyboard.press('End')
+    expect((await aria(page, SEARCH)).activeText).toBe('See all results: 8')
+    await page.keyboard.press('Home')
+    expect((await aria(page, SEARCH)).activeText).toContain('Oak desk 120 cm')
+
+    await page.keyboard.press('Escape')
+    a = await aria(page, SEARCH)
+    expect(a.expanded).toBe('false')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeHidden()
+    await expect(input).toHaveValue('oak')
+
+    await page.keyboard.press('ArrowDown')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+    await page.waitForURL(/\?q=Oak%20desk%20120%20cm/)
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__item`)).toHaveCount(1)
+  })
+
+  test('a stale question is cancelled and its late answer dropped', async ({ page }) => {
+    await page.goto(PATH)
+    await still(page)
+    const asked = []
+    const failed = []
+    page.on('requestfailed', (request) => failed.push(new URL(request.url()).searchParams.get('q')))
+    await page.route(DOOR, async (route) => {
+      const q = new URL(route.request().url()).searchParams.get('q')
+      asked.push(q)
+      // The first question answers slowly: the next one overtakes it.
+      if (q === 'oak') await new Promise((resolve) => setTimeout(resolve, 1500))
+      try {
+        await route.continue()
+      } catch {
+        // Cancelled by the page while it waited.
+      }
+    })
+
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    await input.focus()
+    await page.keyboard.type('oak')
+    await expect.poll(() => asked).toEqual(['oak'])
+    await input.fill('')
+    await page.keyboard.type('lamp')
+    await expect(page.locator(`${SEARCH} [data-webx-heading]`)).toHaveText('Products (4)')
+    await page.waitForTimeout(1800)
+
+    expect(asked).toEqual(['oak', 'lamp'])
+    expect(failed, 'the stale request aborted').toContain('oak')
+    await expect(page.locator(`${SEARCH} [data-webx-heading]`)).toHaveText('Products (4)')
+    expect(await page.locator(`${SEARCH} .webx-suggest__panel`).textContent()).not.toContain('Oak')
+  })
+
+  test('nothing found is said, and a screen reader hears it', async ({ page }) => {
+    await page.goto(PATH)
+    await still(page)
+    await page.locator(`${SEARCH} .webx-suggest__input`).focus()
+    await page.keyboard.type('zebra')
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__nothing`)).toHaveText(
+      'Nothing found for “zebra”.',
+    )
+    expect((await aria(page, SEARCH)).status).toBe('Nothing found')
+    expect((await aria(page, SEARCH)).options).toEqual([])
+  })
+
+  test('recent searches are kept in the browser, shown in an empty field and cleared', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    await input.focus()
+    await page.keyboard.type('lamp')
+    await page.keyboard.press('Enter')
+    await page.waitForURL(/\?q=lamp/)
+    await still(page)
+
+    await input.fill('')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+    const a = await aria(page, SEARCH)
+    expect(a.group).toBe('Recent searches')
+    expect(a.options).toEqual(['lamp', 'Clear recent searches'])
+
+    await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('Enter')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeHidden()
+    expect(
+      await page.evaluate(() =>
+        Object.keys(localStorage).filter((k) => k.startsWith('webx-suggest:')),
+      ),
+    ).toEqual([])
+  })
+
+  test('at 360 the panel stays inside the screen and every target is 44px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 })
+    await page.goto(PATH)
+    await still(page)
+    await page.locator(`${SEARCH} .webx-suggest__input`).focus()
+    await page.keyboard.type('o')
+    await page.keyboard.type('a')
+    await expect(page.locator(`${SEARCH} .webx-suggest__panel`)).toBeVisible()
+
+    const m = await page.evaluate((scope) => {
+      const root = document.querySelector(scope)
+      const panel = root.querySelector('.webx-suggest__panel').getBoundingClientRect()
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        width: document.documentElement.clientWidth,
+        height: window.visualViewport.height,
+        panel: { left: panel.left, right: panel.right, bottom: panel.bottom },
+        input: root.querySelector('.webx-suggest__input').getBoundingClientRect().height,
+        submit: root.querySelector('.webx-suggest__submit').getBoundingClientRect(),
+        options: [...root.querySelectorAll('[role="option"]')].map(
+          (o) => o.getBoundingClientRect().height,
+        ),
+      }
+    }, SEARCH)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    expect(m.panel.left).toBeGreaterThanOrEqual(0)
+    expect(m.panel.right).toBeLessThanOrEqual(m.width)
+    expect(m.panel.bottom, 'the panel ends above the bottom of the screen').toBeLessThanOrEqual(
+      m.height,
+    )
+    expect(m.input).toBeGreaterThanOrEqual(44)
+    expect(m.submit.height).toBeGreaterThanOrEqual(44)
+    expect(m.submit.width).toBeGreaterThanOrEqual(44)
+    expect(m.options.length).toBeGreaterThan(0)
+    for (const height of m.options) expect(height).toBeGreaterThanOrEqual(44)
+  })
+
+  test('without JavaScript it is a search: Enter opens the results page', async ({ browser }) => {
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const page = await plain.newPage()
+    await page.goto(PATH)
+    const input = page.locator(`${SEARCH} .webx-suggest__input`)
+    expect(await input.getAttribute('role'), 'no combobox without its script').toBeNull()
+    await input.fill('oak')
+    await input.press('Enter')
+    await page.waitForURL(/\?q=oak/)
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__results-heading`)).toHaveText(
+      'Found for “oak”: 8',
+    )
+    await expect(page.locator(`${SEARCH} .b-showcase-suggest__item`)).toHaveCount(8)
+    await plain.close()
+  })
+
+  test('inside another form a value fills the field and sends nothing; the form sends it', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const asked = []
+    page.on('request', (request) => {
+      if (request.url().includes('/webx/widgets/showcase/suggest')) asked.push(request.url())
+    })
+    const input = page.locator(`${FIELD} .webx-suggest__input`)
+    expect(await page.locator(`${FIELD} form`).count(), 'one form, the delivery’s').toBe(1)
+    await input.focus()
+    await page.keyboard.type('kra')
+    await expect(page.locator(`${FIELD} [role="option"]`)).toHaveText(['Kraków'])
+    expect(new URL(asked[0]).searchParams.get('as')).toBe('values')
+
+    const url = page.url()
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+    await expect(input).toHaveValue('Kraków')
+    await expect(page.locator(`${FIELD} .webx-suggest__panel`)).toBeHidden()
+    expect(page.url(), 'chosen, not sent').toBe(url)
+
+    await page.locator(`${FIELD} .webx-form__submit`).click()
+    await page.waitForURL(/city=Krak/)
+    await expect(page.locator(`${FIELD} .b-showcase-suggest__chosen`)).toHaveText(
+      'Delivery to Kraków.',
+    )
+  })
+
+  test('on the Polish page the panel speaks Polish', async ({ page }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="pl"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+    await page.locator(`${SEARCH} .webx-suggest__input`).focus()
+    await page.keyboard.type('lamp')
+    await expect(page.locator(`${SEARCH} [data-webx-heading]`)).toHaveText('Produkty (4)')
+    const a = await aria(page, SEARCH)
+    expect(a.status).toBe('Podpowiedzi: 5')
+    expect(a.options.at(-1)).toBe('Wszystkie wyniki: 4')
   })
 })
 

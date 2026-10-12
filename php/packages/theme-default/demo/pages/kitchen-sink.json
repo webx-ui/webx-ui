@@ -434,9 +434,9 @@
               "pl": "Poczta"
             },
             "body": {
-              "en": "A mail client is not a browser: it reads no CSS variable, often no stylesheet, and no file of the theme’s font. So a letter takes the values of the tokens on the server and writes them into the style of each element — the accent of the button, the colour of the text, the lines between the answers. A preset or a colour the owner picks in the panel repaints the letters along with the pages.\nThe frame is the theme’s: the name of the site above, the sheet with the letter, a line below saying who sent it. A local theme that overrides it re-dresses every letter of the site at once.",
-              "ru": "Почтовый клиент — не браузер: он не читает CSS-переменных, часто не читает стилей вовсе и не грузит файлы шрифта темы. Поэтому письмо берёт значения токенов на сервере и пишет их в стиль каждого элемента — акцент кнопки, цвет текста, линии между ответами. Пресет или цвет, который владелец выбрал в панели, перекрашивает письма вместе со страницами.\nРамка — темы: название сайта сверху, лист с письмом, строка внизу о том, кто его отправил. Локальная тема, которая её перекрывает, переодевает сразу все письма сайта.",
-              "pl": "Klient poczty to nie przeglądarka: nie czyta zmiennych CSS, często w ogóle nie czyta arkuszy stylów i nie pobiera plików fontu motywu. Dlatego wiadomość bierze wartości tokenów na serwerze i wpisuje je w styl każdego elementu — akcent przycisku, kolor tekstu, linie między odpowiedziami. Preset albo kolor wybrany przez właściciela w panelu zmienia kolory wiadomości razem ze stronami.\nRama należy do motywu: nazwa strony u góry, kartka z wiadomością, wiersz na dole o tym, kto ją wysłał. Lokalny motyw, który ją nadpisuje, zmienia od razu wszystkie wiadomości strony."
+              "en": "A mail client is not a browser: it reads no CSS variable, often no stylesheet, and no file of the theme’s font. So a letter takes the values of the tokens on the server and writes them into the style of each element — the accent of the button, the colour of the text, the lines between the answers. A preset or a colour changed in the theme’s tokens.json repaints the letters along with the pages.\nThe frame is the theme’s: the name of the site above, the sheet with the letter, a line below saying who sent it. A local theme that overrides it re-dresses every letter of the site at once.",
+              "ru": "Почтовый клиент — не браузер: он не читает CSS-переменных, часто не читает стилей вовсе и не грузит файлы шрифта темы. Поэтому письмо берёт значения токенов на сервере и пишет их в стиль каждого элемента — акцент кнопки, цвет текста, линии между ответами. Пресет или цвет, изменённый в tokens.json темы, перекрашивает письма вместе со страницами.\nРамка — темы: название сайта сверху, лист с письмом, строка внизу о том, кто его отправил. Локальная тема, которая её перекрывает, переодевает сразу все письма сайта.",
+              "pl": "Klient poczty to nie przeglądarka: nie czyta zmiennych CSS, często w ogóle nie czyta arkuszy stylów i nie pobiera plików fontu motywu. Dlatego wiadomość bierze wartości tokenów na serwerze i wpisuje je w styl każdego elementu — akcent przycisku, kolor tekstu, linie między odpowiedziami. Preset albo kolor zmieniony w tokens.json motywu zmienia kolory wiadomości razem ze stronami.\nRama należy do motywu: nazwa strony u góry, kartka z wiadomością, wiersz na dole o tym, kto ją wysłał. Lokalny motyw, który ją nadpisuje, zmienia od razu wszystkie wiadomości strony."
             }
           }
         },
@@ -520,9 +520,9 @@
               "pl": "Sześć bloków, z których składa się strona"
             },
             "body": {
-              "en": "<p>The default theme brings six blocks: a hero, text, a picture beside text, cards, a call to action and contacts. Their styles know only the tokens of the site, so a preset or the owner’s accent repaints every one of them.</p><p>Each page under this one shows a block in every variant and then once more in a narrow column: the layout of a block follows the width it is given, not the width of the window.</p>",
-              "ru": "<p>Тема по умолчанию приносит шесть блоков: первый экран, текст, картинку рядом с текстом, карточки, призыв и контакты. Их стили знают только токены сайта, поэтому пресет или акцент владельца перекрашивают каждый из них.</p><p>Каждая страница в этом разделе показывает блок во всех вариантах и ещё раз в узкой колонке: раскладка блока следует за шириной, которую ему дали, а не за шириной окна.</p>",
-              "pl": "<p>Domyślny motyw przynosi sześć bloków: baner, tekst, zdjęcie obok tekstu, karty, wezwanie do działania i kontakty. Ich style znają tylko tokeny strony, więc preset albo akcent właściciela przemalowuje każdy z nich.</p><p>Każda strona poniżej pokazuje blok we wszystkich wariantach, a potem jeszcze raz w wąskiej kolumnie: układ bloku idzie za szerokością, którą dostał, a nie za szerokością okna.</p>"
+              "en": "<p>The default theme brings six blocks: a hero, text, a picture beside text, cards, a call to action and contacts. Their styles know only the tokens of the site, so a preset or the theme’s accent repaints every one of them.</p><p>Each page under this one shows a block in every variant and then once more in a narrow column: the layout of a block follows the width it is given, not the width of the window.</p>",
+              "ru": "<p>Тема по умолчанию приносит шесть блоков: первый экран, текст, картинку рядом с текстом, карточки, призыв и контакты. Их стили знают только токены сайта, поэтому пресет или акцент темы перекрашивают каждый из них.</p><p>Каждая страница в этом разделе показывает блок во всех вариантах и ещё раз в узкой колонке: раскладка блока следует за шириной, которую ему дали, а не за шириной окна.</p>",
+              "pl": "<p>Domyślny motyw przynosi sześć bloków: baner, tekst, zdjęcie obok tekstu, karty, wezwanie do działania i kontakty. Ich style znają tylko tokeny strony, więc preset albo akcent motywu przemalowuje każdy z nich.</p><p>Każda strona poniżej pokazuje blok we wszystkich wariantach, a potem jeszcze raz w wąskiej kolumnie: układ bloku idzie za szerokością, którą dostał, a nie za szerokością okna.</p>"
             }
           }
         },
@@ -6606,6 +6606,244 @@
                   "en": "The form takes the rules the controller validates by: <x-webx-form :rules=\"FormRules::for($rules, $attributes)\">. Each <x-webx-field> inside takes its own part — the checks with the validator’s lines, required, the limits of a number or a date, the files a picker offers. unique, exists and closures stay the server’s. A phone field asks for the mask with mask; a file field lists, drops and removes by itself.",
                   "ru": "Форма берёт правила, по которым проверяет контроллер: <x-webx-form :rules=\"FormRules::for($rules, $attributes)\">. Каждое <x-webx-field> внутри берёт свою часть — проверки со строками валидатора, обязательность, пределы числа или даты, файлы, которые предложит выбор. unique, exists и замыкания остаются серверу. Поле телефона просит маску атрибутом mask; поле файла само показывает список, принимает перетаскивание и убирает лишнее.",
                   "pl": "Formularz bierze reguły, według których sprawdza kontroler: <x-webx-form :rules=\"FormRules::for($rules, $attributes)\">. Każde <x-webx-field> w środku bierze swoją część – sprawdzenia z wierszami walidatora, wymagalność, granice liczby lub daty, pliki proponowane przez wybór. unique, exists i domknięcia zostają serwerowi. Pole telefonu prosi o maskę atrybutem mask; pole pliku samo pokazuje listę, przyjmuje przeciąganie i usuwa zbędne."
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Inbox",
+            "ru": "Заявки",
+            "pl": "Zgłoszenia"
+          },
+          "slug": {
+            "en": "inbox",
+            "ru": "zayavki",
+            "pl": "zgloszenia"
+          },
+          "seo": {
+            "title": {
+              "en": "Inbox",
+              "ru": "Заявки",
+              "pl": "Zgłoszenia"
+            },
+            "description": {
+              "en": "A form built in the panel, drawn by the same fields and the same shell as every form of the site: checked in the browser by the intake’s own rules, answered in place.",
+              "ru": "Форма, собранная в панели, нарисована теми же полями и той же оболочкой, что любая форма сайта: проверка в браузере правилами самого приёма, ответ на месте.",
+              "pl": "Formularz zbudowany w panelu, narysowany tymi samymi polami i tą samą powłoką co każdy formularz strony: sprawdzany w przeglądarce regułami samego przyjęcia, z odpowiedzią na miejscu."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-inbox-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "A form of the panel",
+                  "ru": "Форма из панели",
+                  "pl": "Formularz z panelu"
+                },
+                "body": {
+                  "en": "An administrator builds this form in the Inbox from fields, and the site prints it with one tag. It is drawn the way every form of the site is: the same fields, the same messages, the same checks before anything is sent — made from the rules the intake will check by, in the words it would answer with. What stays the inbox’s is inside: the hidden field a robot fills in, the timestamp, the captcha when the form asks for one.",
+                  "ru": "Администратор собирает эту форму в разделе «Заявки» из полей, а сайт печатает её одним тегом. Нарисована она так же, как любая форма сайта: те же поля, те же сообщения, те же проверки до отправки — из правил, по которым проверит приём, и его же словами. Внутри остаётся то, что принадлежит заявкам: скрытое поле, которое заполняет робот, метка времени, капча, если форма её просит.",
+                  "pl": "Administrator buduje ten formularz w Zgłoszeniach z pól, a strona drukuje go jednym tagiem. Jest narysowany tak samo jak każdy formularz strony: te same pola, te same komunikaty, te same sprawdzenia przed wysłaniem – z reguł, według których sprawdzi przyjęcie, i jego słowami. W środku zostaje to, co należy do zgłoszeń: ukryte pole wypełniane przez robota, znacznik czasu, captcha, jeśli formularz o nią prosi."
+                }
+              }
+            },
+            {
+              "key": "showcase-inbox-form",
+              "type": "contact",
+              "values": {
+                "heading": {
+                  "en": "Every kind of field",
+                  "ru": "Все виды полей",
+                  "pl": "Każdy rodzaj pola"
+                },
+                "text": {
+                  "en": "Send it empty: the browser says what the intake would. Fill it in and send: the thank-you comes in place, and the submission is in the panel.",
+                  "ru": "Отправьте пустой: браузер скажет то же, что сказал бы приём. Заполните и отправьте: «спасибо» появится на месте, а заявка — в панели.",
+                  "pl": "Wyślij pusty: przeglądarka powie to samo, co powiedziałoby przyjęcie. Wypełnij i wyślij: podziękowanie pojawi się na miejscu, a zgłoszenie – w panelu."
+                },
+                "show_contacts": false,
+                "form": "showcase"
+              }
+            },
+            {
+              "key": "showcase-inbox-markup",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "For the site",
+                  "ru": "Для сайта",
+                  "pl": "Dla strony"
+                },
+                "body": {
+                  "en": "<code>&lt;x-webx-inbox::form slug=&quot;showcase&quot; /&gt;</code> prints an <code>&lt;x-webx-form :csrf=&quot;false&quot;&gt;</code> — the intake guards itself — with an <code>&lt;x-webx-field&gt;</code> per field of the panel. A theme restyles it by webx-field-* and webx-form-*, like any form; webx-inbox-form-* only lays the fields out two to a row and holds the captcha. The intake answers with FormResponse, so a script of the site listens to <code>webx:form:success</code> on <code>form[data-webx-form=\"showcase\"]</code>.",
+                  "ru": "<code>&lt;x-webx-inbox::form slug=&quot;showcase&quot; /&gt;</code> печатает <code>&lt;x-webx-form :csrf=&quot;false&quot;&gt;</code> — приём защищён сам — с <code>&lt;x-webx-field&gt;</code> на каждое поле из панели. Тема перекрашивает её классами webx-field-* и webx-form-*, как любую форму; webx-inbox-form-* только ставит поля по два в ряд и держит капчу. Приём отвечает FormResponse, поэтому скрипт сайта слушает <code>webx:form:success</code> на <code>form[data-webx-form=\"showcase\"]</code>.",
+                  "pl": "<code>&lt;x-webx-inbox::form slug=&quot;showcase&quot; /&gt;</code> drukuje <code>&lt;x-webx-form :csrf=&quot;false&quot;&gt;</code> – przyjęcie chroni się samo – z <code>&lt;x-webx-field&gt;</code> dla każdego pola z panelu. Motyw przemalowuje go klasami webx-field-* i webx-form-*, jak każdy formularz; webx-inbox-form-* tylko układa pola po dwa w rzędzie i trzyma captchę. Przyjęcie odpowiada FormResponse, więc skrypt strony słucha <code>webx:form:success</code> na <code>form[data-webx-form=\"showcase\"]</code>."
+                }
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Suggestions",
+            "ru": "Подсказки",
+            "pl": "Podpowiedzi"
+          },
+          "slug": {
+            "en": "suggestions",
+            "ru": "podskazki",
+            "pl": "podpowiedzi"
+          },
+          "seo": {
+            "title": {
+              "en": "Suggestions while typing",
+              "ru": "Подсказки при вводе",
+              "pl": "Podpowiedzi podczas pisania"
+            },
+            "description": {
+              "en": "A search box that suggests while typing — the site’s own HTML in the panel, keys and a screen reader, recent searches — and a field with suggestions inside another form.",
+              "ru": "Поиск, который подсказывает при вводе, — HTML самого сайта в панели, клавиши и экранный диктор, недавние запросы — и поле с подсказками внутри другой формы.",
+              "pl": "Wyszukiwarka, która podpowiada podczas pisania – własny HTML strony w panelu, klawisze i czytnik ekranu, ostatnie wyszukiwania – oraz pole z podpowiedziami w innym formularzu."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-suggest-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Suggestions while typing",
+                  "ru": "Подсказки при вводе",
+                  "pl": "Podpowiedzi podczas pisania"
+                },
+                "body": {
+                  "en": "Type two letters and the box asks the site what it has: the answer is the site’s own HTML — sections, counts, cards with a price, «see all» — put under the field as it is. The arrows walk it, Enter takes the choice, Escape closes it; a screen reader hears how many came. A request the next key made stale is cancelled.\nWithout JavaScript it is an ordinary search: Enter opens the results page.",
+                  "ru": "Наберите две буквы — и поле спросит сайт, что у него есть: ответ — HTML самого сайта (секции, счётчики, карточки с ценой, «смотреть все»), который встаёт под полем как есть. Стрелки ходят по нему, Enter берёт выбранное, Escape закрывает; экранный диктор слышит, сколько пришло. Запрос, который следующая клавиша сделала устаревшим, отменяется.\nБез JavaScript это обычный поиск: Enter открывает страницу результатов.",
+                  "pl": "Wpisz dwie litery, a pole zapyta stronę, co ma: odpowiedź to własny HTML strony – sekcje, liczniki, karty z ceną, «zobacz wszystko» – wstawiony pod polem bez zmian. Strzałki po nim chodzą, Enter bierze wybór, Escape zamyka; czytnik ekranu słyszy, ile przyszło. Zapytanie, które następny klawisz uczynił nieaktualnym, jest anulowane.\nBez JavaScriptu to zwykłe wyszukiwanie: Enter otwiera stronę wyników."
+                }
+              }
+            },
+            {
+              "key": "showcase-suggest-search",
+              "type": "showcase-suggest",
+              "values": {
+                "heading": {
+                  "en": "A search box",
+                  "ru": "Поиск",
+                  "pl": "Wyszukiwarka"
+                },
+                "note": {
+                  "en": "Try oak, lamp or chair. Leave the field empty and come back: your recent searches are kept in this browser only.",
+                  "ru": "Попробуйте «дуб», «лампа» или «кресло». Очистите поле и вернитесь в него: недавние запросы хранятся только в этом браузере.",
+                  "pl": "Spróbuj «dęb», «lamp» albo «krzesło». Wyczyść pole i wróć do niego: ostatnie wyszukiwania są tylko w tej przeglądarce."
+                },
+                "mode": "search",
+                "label": {
+                  "en": "Search the shop",
+                  "ru": "Поиск по магазину",
+                  "pl": "Szukaj w sklepie"
+                },
+                "placeholder": {
+                  "en": "Name of a product",
+                  "ru": "Название товара",
+                  "pl": "Nazwa produktu"
+                },
+                "button": {
+                  "en": "Search",
+                  "ru": "Найти",
+                  "pl": "Szukaj"
+                },
+                "goods": {
+                  "en": "Oak desk 120 cm | €349\nOak desk 160 cm | €429\nOak bookshelf | €289\nOak coffee table | €199\nOak dining chair | €119\nDesk lamp, brass | €79\nDesk lamp, black | €69\nDesk organiser | €24\nStanding desk frame | €399\nOffice chair, mesh | €259\nOffice chair, leather | €389\nLinen curtains | €59\nLinen bedding set | €129\nWool rug 160×230 | €239\nWool throw | €89\nCeramic vase | €35\nCeramic mug set | €29\nWall clock, oak | €49\nFloor lamp, linen shade | €149\nPendant lamp, glass | €119\nBathroom stool, teak | €69\nShoe rack, oak | €99\nCoat stand, oak | €129\nNotebook, A5 | €9",
+                  "ru": "Стол из дуба 120 см | 349 €\nСтол из дуба 160 см | 429 €\nКнижный стеллаж из дуба | 289 €\nЖурнальный столик из дуба | 199 €\nОбеденный стул из дуба | 119 €\nНастольная лампа, латунь | 79 €\nНастольная лампа, чёрная | 69 €\nОрганайзер для стола | 24 €\nКаркас стола для работы стоя | 399 €\nОфисное кресло, сетка | 259 €\nОфисное кресло, кожа | 389 €\nЛьняные шторы | 59 €\nЛьняной комплект белья | 129 €\nШерстяной ковёр 160×230 | 239 €\nШерстяной плед | 89 €\nКерамическая ваза | 35 €\nНабор керамических кружек | 29 €\nНастенные часы, дуб | 49 €\nТоршер, льняной абажур | 149 €\nПодвесная лампа, стекло | 119 €\nТабурет для ванной, тик | 69 €\nОбувница из дуба | 99 €\nВешалка напольная, дуб | 129 €\nБлокнот А5 | 9 €",
+                  "pl": "Biurko dębowe 120 cm | 349 €\nBiurko dębowe 160 cm | 429 €\nRegał dębowy | 289 €\nStolik kawowy dębowy | 199 €\nKrzesło dębowe | 119 €\nLampka na biurko, mosiądz | 79 €\nLampka na biurko, czarna | 69 €\nOrganizer na biurko | 24 €\nStelaż biurka do pracy na stojąco | 399 €\nKrzesło biurowe, siatka | 259 €\nKrzesło biurowe, skóra | 389 €\nZasłony lniane | 59 €\nPościel lniana | 129 €\nDywan wełniany 160×230 | 239 €\nPled wełniany | 89 €\nWazon ceramiczny | 35 €\nZestaw kubków ceramicznych | 29 €\nZegar ścienny, dąb | 49 €\nLampa podłogowa, lniany abażur | 149 €\nLampa wisząca, szkło | 119 €\nTaboret łazienkowy, tek | 69 €\nSzafka na buty, dąb | 99 €\nWieszak stojący, dąb | 129 €\nNotes A5 | 9 €"
+                },
+                "products_label": {
+                  "en": "Products (:count)",
+                  "ru": "Товары (:count)",
+                  "pl": "Produkty (:count)"
+                },
+                "all_label": {
+                  "en": "See all results: :count",
+                  "ru": "Все результаты: :count",
+                  "pl": "Wszystkie wyniki: :count"
+                },
+                "nothing_label": {
+                  "en": "Nothing found for “:q”.",
+                  "ru": "По запросу «:q» ничего не найдено.",
+                  "pl": "Nic nie znaleziono dla «:q»."
+                },
+                "results_label": {
+                  "en": "Found for “:q”: :count",
+                  "ru": "Найдено по запросу «:q»: :count",
+                  "pl": "Znaleziono dla «:q»: :count"
+                }
+              }
+            },
+            {
+              "key": "showcase-suggest-field",
+              "type": "showcase-suggest",
+              "values": {
+                "heading": {
+                  "en": "A field inside another form",
+                  "ru": "Поле внутри другой формы",
+                  "pl": "Pole w innym formularzu"
+                },
+                "note": {
+                  "en": "A delivery form with a city: the suggestion fills the field and sends nothing — the form around it is sent by its own button.",
+                  "ru": "Форма доставки с городом: подсказка заполняет поле и ничего не отправляет — форму вокруг отправляет её собственная кнопка.",
+                  "pl": "Formularz dostawy z miastem: podpowiedź wypełnia pole i niczego nie wysyła – formularz wokół wysyła jego własny przycisk."
+                },
+                "mode": "field",
+                "label": {
+                  "en": "City",
+                  "ru": "Город",
+                  "pl": "Miasto"
+                },
+                "placeholder": {
+                  "en": "Start typing a city",
+                  "ru": "Начните вводить город",
+                  "pl": "Zacznij wpisywać miasto"
+                },
+                "button": {
+                  "en": "Continue",
+                  "ru": "Продолжить",
+                  "pl": "Dalej"
+                },
+                "goods": {
+                  "en": "Amsterdam\nAthens\nBarcelona\nBerlin\nBratislava\nBrussels\nBucharest\nBudapest\nCopenhagen\nDublin\nGdańsk\nHelsinki\nKraków\nLisbon\nLjubljana\nLondon\nMadrid\nMilan\nMunich\nOslo\nParis\nPorto\nPrague\nRiga\nRome\nStockholm\nTallinn\nVienna\nVilnius\nWarsaw\nWrocław\nZagreb\nZurich",
+                  "ru": "Амстердам\nАфины\nБарселона\nБерлин\nБратислава\nБрюссель\nБухарест\nБудапешт\nКопенгаген\nДублин\nГданьск\nХельсинки\nКраков\nЛиссабон\nЛюбляна\nЛондон\nМадрид\nМилан\nМюнхен\nОсло\nПариж\nПорту\nПрага\nРига\nРим\nСтокгольм\nТаллин\nВена\nВильнюс\nВаршава\nВроцлав\nЗагреб\nЦюрих",
+                  "pl": "Amsterdam\nAteny\nBarcelona\nBerlin\nBratysława\nBruksela\nBukareszt\nBudapeszt\nKopenhaga\nDublin\nGdańsk\nHelsinki\nKraków\nLizbona\nLublana\nLondyn\nMadryt\nMediolan\nMonachium\nOslo\nParyż\nPorto\nPraga\nRyga\nRzym\nSztokholm\nTallinn\nWiedeń\nWilno\nWarszawa\nWrocław\nZagrzeb\nZurych"
+                },
+                "nothing_label": {
+                  "en": "No such city: “:q”.",
+                  "ru": "Нет такого города: «:q».",
+                  "pl": "Nie ma takiego miasta: «:q»."
+                },
+                "chosen_label": {
+                  "en": "Delivery to :value.",
+                  "ru": "Доставка в город :value.",
+                  "pl": "Dostawa do: :value."
+                }
+              }
+            },
+            {
+              "key": "showcase-suggest-markup",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "For the site",
+                  "ru": "Для сайта",
+                  "pl": "Dla strony"
+                },
+                "body": {
+                  "en": "<code>&lt;x-webx-suggest :action=&quot;…&quot; :source=&quot;…&quot; /&gt;</code> is a search box; without action it is a field to put inside any form. The address of the suggestions answers HTML of the site’s own view: the box needs only <code>data-webx-option</code> on what can be chosen and <code>data-webx-section</code> with <code>data-webx-heading</code> on a group. The catalogue’s search answers at <code>/catalog/suggest</code> from the view <code>webx-catalog::suggest</code>, which a theme overrides.",
+                  "ru": "<code>&lt;x-webx-suggest :action=&quot;…&quot; :source=&quot;…&quot; /&gt;</code> — это поиск; без action — поле, которое ставится в любую форму. Адрес подсказок отвечает HTML собственной вьюхи сайта: полю нужны только <code>data-webx-option</code> на том, что можно выбрать, и <code>data-webx-section</code> с <code>data-webx-heading</code> на группе. Поиск каталога отвечает по <code>/catalog/suggest</code> вьюхой <code>webx-catalog::suggest</code>, которую тема перекрывает.",
+                  "pl": "<code>&lt;x-webx-suggest :action=&quot;…&quot; :source=&quot;…&quot; /&gt;</code> to wyszukiwarka; bez action – pole do wstawienia w dowolny formularz. Adres podpowiedzi odpowiada HTML-em własnego widoku strony: polu wystarczy <code>data-webx-option</code> na tym, co można wybrać, i <code>data-webx-section</code> z <code>data-webx-heading</code> na grupie. Wyszukiwarka katalogu odpowiada pod <code>/catalog/suggest</code> widokiem <code>webx-catalog::suggest</code>, który motyw nadpisuje."
                 }
               }
             }

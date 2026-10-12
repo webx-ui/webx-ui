@@ -31,7 +31,7 @@ enum CssProblem: string
     public function why(): string
     {
         return match ($this) {
-            self::LiteralColor => 'no preset and no edit in the panel repaints it; use a colour role, var(--site-color-…)',
+            self::LiteralColor => 'no preset and no change in tokens.json repaints it; use a colour role, var(--site-color-…)',
             self::LiteralFont => 'the owner\'s font never reaches it; use var(--site-font-body) or var(--site-font-heading), or a generic family',
             self::UnknownToken => 'a variable nobody declares is an empty value: no colour, no border, no error',
             self::Fallback => 'the fallback is a literal value no preset repaints; every token of the vocabulary has a value',

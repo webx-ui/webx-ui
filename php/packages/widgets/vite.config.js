@@ -125,6 +125,8 @@ export default {
         files: join(root, 'resources/js/files.js'),
         // The phone mask, only where a field asks for it: +country code and groups of digits.
         mask: join(root, 'resources/js/mask.js'),
+        // Suggestions while typing: the combobox over a GET search; the panel's HTML is the site's.
+        suggest: join(root, 'resources/js/suggest.js'),
       },
       output: {
         entryFileNames: '[name].js',

@@ -28,10 +28,7 @@ export function format(value) {
   const trimmed = raw.trimStart()
   if (!trimmed.startsWith('+') && !trimmed.startsWith('00')) return raw
 
-  const digits = trimmed
-    .replace(/^00/, '')
-    .replace(/\D/g, '')
-    .slice(0, MOST)
+  const digits = trimmed.replace(/^00/, '').replace(/\D/g, '').slice(0, MOST)
   if (!digits) return '+'
 
   const code = '17'.includes(digits[0]) ? 1 : TWO.has(digits.slice(0, 2)) ? 2 : 3

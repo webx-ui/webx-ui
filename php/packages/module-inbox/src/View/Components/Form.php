@@ -14,30 +14,42 @@ use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\Component;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
+use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 // The component and the model are both called a form, and here the component wins the name:
 // `componentNamespace` looks up the class by what is written after `::`, so `<x-webx-inbox::form>`
 // can only be `View\Components\Form`.
 use WebxUi\Inbox\Models\Form as FormModel;
 use WebxUi\Inbox\Rendering\Assets;
+use WebxUi\Inbox\Rendering\LegacyAssets;
 use WebxUi\Inbox\Storage\FileStore;
+use WebxUi\Inbox\Submissions\Rules;
 use WebxUi\Inbox\Support\Forms;
 use WebxUi\Inbox\Support\Placement;
+use WebxUi\Widgets\Forms\FormResponse;
+use WebxUi\Widgets\Forms\FormRules;
 
 /**
  * `<x-webx-inbox::form slug="contact" />` — a form of the panel, printed on the site (§10).
  *
- * Everything visible is a view of the package, and every one of them is publishable: the markup
- * here is the minimum that works, not a design, and the first thing a real site does is publish
- * the lot and rewrite it. That is the arrangement the reference implementation arrived at too —
- * it kept the intake and replaced the controls.
+ * Drawn by the widgets' form engine (WIDGETS §17): `<x-webx-form :csrf="false">` around an
+ * `<x-webx-field>` per field, checked in the browser by the intake's own rules in the validator's
+ * words (`FormRules`), answered by `FormResponse`. What is the inbox's — the honeypot, the
+ * timestamp, the captcha, the hidden marks the intake reads — is printed inside it.
  *
- * The form works with JavaScript switched off. That is not a courtesy to anybody's principles:
- * the script is one file served from this package, and a form that only submits once that file
- * has arrived is a form that loses the enquiry somebody sent on a train.
+ * The form works with JavaScript switched off: a plain POST, and the page back with the errors
+ * under the fields or the thank-you under them.
+ *
+ * A view the site published before W6.4 (no `<x-webx-form>` in it) is still handed everything it
+ * was handed then, and its old script: an alias period, so a site that rewrote the form keeps a
+ * working one until it moves to the engine (spec WIDGETS §20, W6.4; the audit's
+ * `inbox.legacy_views` names it).
  */
 final class Form extends Component
 {
+    /** @var array<string, bool> which views were written before the engine, by path */
+    private static array $legacy = [];
+
     /** @var array<string, mixed>|null the old input of a submission that came back with errors */
     private ?array $old = null;
 
@@ -50,6 +62,7 @@ final class Form extends Component
         private readonly Captcha $captcha,
         private readonly Assets $assets,
         private readonly FileStore $files,
+        private readonly Rules $rules,
         private readonly ViewFactory $views,
         private readonly Request $request,
         private readonly ?string $slug = null,
@@ -73,34 +86,109 @@ final class Form extends Component
             return '';
         }
 
+        $view = $this->view ?? 'webx-inbox::form';
+        $legacy = $this->legacy($view);
         $fields = $form->liveFields;
+        $formId = $this->formId($form, $legacy ? 'wx-form-' : 'webx-inbox-');
+        $placement = $this->placement($form);
         $mine = $this->isMine($form);
 
-        return $this->views->make($this->view ?? 'webx-inbox::form', [
+        return $this->views->make($view, [
             'form' => $form,
-            'formId' => $this->formId($form),
+            'formId' => $formId,
             'fields' => $fields,
+            'controls' => $this->controls($fields, $formId),
+            'rules' => FormRules::for($this->rules->for($form), $this->rules->attributes($form)),
             'action' => $this->action($form),
-            'multipart' => $fields->contains(static fn (Field $field): bool => $field->type->value === 'file'),
             'page' => $this->request->fullUrl(),
             // What language this page came out in, for the intake to answer in the same one.
             'locale' => app()->getLocale(),
-            // Not `errors`: that name belongs to Laravel's own bag, and a published view has
-            // every right to expect it to be the usual thing.
-            'invalid' => $mine ? $this->errors() : [],
-            // What a file field may be handed, which is the module's list and not the field's
-            // alone — the view has no business assembling that.
-            'files' => $this->files,
-            'message' => $this->message($form),
             'honeypot' => $this->guard->honeypotField($form),
             'timestampField' => $this->guard->timestampField(),
             'timestamp' => $this->guard->timestamp(),
             'captcha' => $this->captcha->widget($form),
-            'assets' => $this->assets,
+            'captchaErrors' => $this->sent($formId) ? ($this->errors()['captcha'] ?? []) : [],
+            'assets' => $legacy ? new LegacyAssets($this->assets) : $this->assets,
             'submitText' => $this->submitText($form),
+            'placement' => $placement,
+            // What a view of before W6.4 reads (an alias period): the engine's view needs none of it.
+            'multipart' => $fields->contains(static fn (Field $field): bool => $field->type === FieldType::File),
+            // Not `errors`: that name belongs to Laravel's own bag.
+            'invalid' => $mine ? $this->errors() : [],
+            'files' => $this->files,
+            'message' => $this->message($form),
             'values' => $this->prefill($fields, $mine),
-            'placement' => $this->placement($form),
         ]);
+    }
+
+    /**
+     * Each field as `<x-webx-field>` takes it: the type of the panel is one of the widgets' (§4 —
+     * eleven, all among them), the name `fields.<key>` — `fields[<key>]` in the HTML, which is
+     * what the intake reads and what its errors are keyed by.
+     *
+     * The field finds its value itself — `old()` of this form, else the site's `:values` — and
+     * its checks among the form's rules. A select or a group of dots with nothing to choose from
+     * is a half-written field; it is left out with a line in the log rather than taking the page
+     * down.
+     *
+     * @param  Collection<int, Field>  $fields
+     * @return list<array<string, mixed>>
+     */
+    private function controls(Collection $fields, string $formId): array
+    {
+        $controls = [];
+
+        foreach ($fields as $field) {
+            $key = $field->key();
+            $choices = $field->choices();
+
+            if (in_array($field->type, [FieldType::Select, FieldType::Radio], true) && $choices === []) {
+                Log::warning('webx-inbox: a field with nothing to choose from is not printed.', ['form' => $field->form_id, 'field' => $key]);
+
+                continue;
+            }
+
+            $title = trim((string) $field->title);
+            $help = trim((string) $field->help);
+            $placeholder = trim((string) $field->placeholder);
+            $rows = $field->option('rows');
+
+            $controls[] = [
+                'type' => $field->type->value,
+                'name' => 'fields.'.$key,
+                'id' => $formId.'-'.$key,
+                'label' => $title !== '' ? $title : null,
+                'hint' => $help !== '' ? $help : null,
+                'placeholder' => $placeholder !== '' ? $placeholder : null,
+                'value' => $this->values[$key] ?? $this->values[(string) $field->name] ?? null,
+                'choices' => $choices,
+                'multiple' => $field->type === FieldType::File && $field->isMultiple(),
+                'rows' => $field->type === FieldType::Textarea ? (is_numeric($rows) && (int) $rows > 0 ? (int) $rows : 5) : null,
+                // The panel offers "full width" per field; on the site it is a class, and the base
+                // look puts two half ones to a row where the form has the room.
+                'half' => ! $field->is_fullsize,
+                // The consent's words are a sentence with a link in it, written in the panel:
+                // printed as they are, the same trust as the thank-you.
+                'consent' => $field->type === FieldType::Consent ? $field->optionText('text', $title) : null,
+            ];
+        }
+
+        return $controls;
+    }
+
+    /**
+     * Whether the view is one written before the engine — a site's own, published from this
+     * package before W6.4 — and is handed the old variables and the old script.
+     */
+    private function legacy(string $view): bool
+    {
+        try {
+            $path = $this->views->getFinder()->find($view);
+        } catch (\InvalidArgumentException) {
+            return false;
+        }
+
+        return self::$legacy[$path] ??= ! str_contains((string) @file_get_contents($path), '<x-webx-form');
     }
 
     /**
@@ -128,17 +216,16 @@ final class Form extends Component
     }
 
     /**
-     * What every `id` inside this form starts with, unique on the page.
+     * The form's `id`, unique on the page — and the same on every rendering of it, so the page
+     * that comes back after a POST knows which of its forms was sent (`_webx_form`).
      *
-     * The same form often stands on one page twice — a subscription in the footer and again
-     * in a popup — and two inputs with one `id` make every `<label for>` of the second copy
-     * point into the first. The first copy keeps the plain name, so a page with one form reads
-     * as it always did; each further copy gets a number. Counted on the request, which is
-     * exactly the life of one page.
+     * The same form often stands on one page twice — a subscription in the footer and again in a
+     * dialog. The first copy keeps the plain name; each further copy gets a number. Counted on the
+     * request, which is exactly the life of one page.
      */
-    private function formId(FormModel $form): string
+    private function formId(FormModel $form, string $prefix): string
     {
-        $base = 'wx-form-'.$form->slug;
+        $base = $prefix.$form->slug;
         $seen = $this->request->attributes->get('webx-inbox.form-ids', []);
         $seen = is_array($seen) ? $seen : [];
 
@@ -167,9 +254,15 @@ final class Form extends Component
         return url(trim((string) config('webx-inbox.path', 'webx/forms'), '/').'/'.$form->slug);
     }
 
+    /** The page came back from this very form — `_webx_form` names it. */
+    private function sent(string $formId): bool
+    {
+        return ($this->old()[FormResponse::FORM] ?? null) === $formId;
+    }
+
     /**
-     * What every control starts with: the old input of a refused submission, and otherwise
-     * whatever the site handed in.
+     * What every control of a view of before W6.4 starts with: the old input of a refused
+     * submission, and otherwise whatever the site handed in.
      *
      * @param  Collection<int, Field>  $fields
      * @return array<string, mixed>
@@ -202,6 +295,10 @@ final class Form extends Component
     {
         $shared = $this->views->shared('errors');
 
+        if (! $shared instanceof ViewErrorBag && $this->request->hasSession()) {
+            $shared = $this->request->session()->get('errors');
+        }
+
         $bag = match (true) {
             $shared instanceof ViewErrorBag => $shared->getBag('default'),
             $shared instanceof MessageBag => $shared,
@@ -226,11 +323,8 @@ final class Form extends Component
     }
 
     /**
-     * Whether what is in the session belongs to this form.
-     *
-     * A page may carry two forms, and without the marker both would light up red over one
-     * refusal. Every form prints `webx_form`, so what came back names the form it came from —
-     * in the old input for the errors, and in the flash for the thank-you.
+     * Whether what is in the session belongs to this form, for a view of before W6.4: every form
+     * prints `webx_form`, so what came back names the form it came from.
      */
     private function isMine(FormModel $form): bool
     {
@@ -256,8 +350,8 @@ final class Form extends Component
     }
 
     /**
-     * The thank-you of a submission that went through without JavaScript, put in the session
-     * by the intake and taken out here by the form it was sent from.
+     * The thank-you of a submission that went through without JavaScript from a view of before
+     * W6.4, put in the session by the intake and taken out here by the form it was sent from.
      *
      * @return array<string, mixed>|null
      */

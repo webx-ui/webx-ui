@@ -98,12 +98,13 @@ and fifty products, some unpublished and deleted, so that the filters have somet
 
 Both live at the root of the site, in the same flat space as the pages:
 
-| What     | Address                 | Notes                                                    |
-| -------- | ----------------------- | -------------------------------------------------------- |
-| category | `/laptops`              | flat at any depth; type `catalog.category`               |
-| product  | `/macbook-air-13-12345` | `{slug}-{id}`; type `catalog.product`                    |
-| root     | `/catalog`              | off by default: `WEBX_CATALOG_ROOT=true`                 |
-| search   | `/catalog/search?q=`    | always there, always `noindex`; the prefix is the root's |
+| What     | Address                 | Notes                                                                                |
+| -------- | ----------------------- | ------------------------------------------------------------------------------------ |
+| category | `/laptops`              | flat at any depth; type `catalog.category`                                           |
+| product  | `/macbook-air-13-12345` | `{slug}-{id}`; type `catalog.product`                                                |
+| root     | `/catalog`              | off by default: `WEBX_CATALOG_ROOT=true`                                             |
+| search   | `/catalog/search?q=`    | always there, always `noindex`; the prefix is the root's                             |
+| suggest  | `/catalog/suggest?q=`   | the HTML of the search box's suggestions ([Forms](./forms#suggestions-while-typing)) |
 
 **A category's address does not contain its parents.** `/gaming-laptops`, not
 `/laptops/gaming`: moving a category in the tree changes no address, and the breadcrumbs are built

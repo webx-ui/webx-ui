@@ -11,12 +11,14 @@ that a module draws its form from the same parts and a theme paints one set of c
 | **widgets** — the form         | CSRF, sending in place over a plain POST, errors by field, one answer for all forms |
 | **widgets** — checks           | the server's rules in the browser, with the server's words; masks; file uploads     |
 | **the owner of the form**      | where it goes, the rules on the server, what to do with the data                    |
-| **Inbox**                      | the form builder in the panel, intake, spam protection, letters                     |
+| **Inbox**                      | the form builder in the panel, intake, spam protection, captcha, letters            |
 | **sign-in, account, checkout** | their own forms in Blade from the same fields                                       |
 
-This page grows with the parts. Today: **the fields** and **the form** around them — sending in
-place over a plain POST, the errors by field, one answer for every form, and a sign-in written out
-in full. The checks in the browser follow.
+This page is the whole of it: **the fields**, **the form** around them — sending in place over a
+plain POST, the errors by field, one answer for every form — and **the checks in the browser** by
+the server's own rules and words, the phone mask and the files; **suggestions while typing** in a
+search box or a field; then three forms written out in
+full — a sign-in, a checkout step and a form of the Inbox, which is drawn by the same parts.
 
 The specification is §17 of
 [`docs/architecture/WEBX_UI_WIDGETS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md).
@@ -238,7 +240,7 @@ document.querySelector('#checkout').addEventListener('webx:form:success', (event
 
 ### In a dialog
 
-Any form in `<x-webx-dialog>` behaves as Inbox's does there: the thank-you takes the place of the
+Any form in `<x-webx-dialog>` — and the Inbox's forms a button opens (`data-webx-form="<slug>"`) — behaves the same: the thank-you takes the place of the
 fields with a «Close» button that gets the focus — the dialog never closes by itself, there has to
 be time to read — and closed, it is a fresh form again. Without JavaScript a page that comes back
 from a form in a dialog prints the dialog `open`, over the page; with it, the dialog opens again as
@@ -265,6 +267,234 @@ a modal.
 | `__progress`, `__done`                           | the upload, «Close» in a dialog      |
 
 Variables on `:root`: `--webx-form-gap`, `--webx-form-button-height`.
+
+## Checks in the browser
+
+The rules of a form are written once, on the server, where they are checked always. The browser
+checks the part it understands before anything is sent, and says what is wrong in the words the
+server would use — not a second dictionary, the validator's own lines:
+
+```blade
+<x-webx-form :action="route('checkout.contact')" :rules="FormRules::for($rules, $attributes, $messages)">
+    …fields…
+</x-webx-form>
+```
+
+`WebxUi\Widgets\Forms\FormRules::for()` takes the arrays the controller validates by — a
+`FormRequest`'s `rules()`, `attributes()` and `messages()`, or the array of `$request->validate()`.
+Every `<x-webx-field>` inside takes its own part by its name (`contact.email`, `lines.0.qty` is
+`lines.*.qty`). One field can be given its rules alone: `:rules="['required', 'email']"`.
+
+### What the browser checks
+
+| Rule                                                   | In the browser                                                    |
+| ------------------------------------------------------ | ----------------------------------------------------------------- |
+| `required`, `accepted`                                 | a value, a tick; also `required` on the control and the `*`       |
+| `email`, `url`                                         | the shape — looser than the server, never stricter                |
+| `numeric`, `integer`                                   | the number; a text field gets the numeric keyboard                |
+| `min`, `max`, `between`, `size`                        | a string's letters, a number, a file's kilobytes, a group's count |
+| `regex`, `not_regex`                                   | when the expression means the same in JavaScript                  |
+| `in`                                                   | one of the values                                                 |
+| `mimes`, `extensions`, `mimetypes`, `image`            | a file's type; also `accept` on the picker                        |
+| `confirmed`, `same`, `different`                       | against the other field of the form                               |
+| `date`                                                 | a day that cannot be (`2026-02-30`)                               |
+| `after`, `before`, `after_or_equal`, `before_or_equal` | with a literal `Y-m-d`; also `min`/`max` of a date picker         |
+| `bail`, `nullable`                                     | how the others run, as on the server                              |
+
+Everything else — `unique`, `exists`, `required_if`, a closure, a rule object, `after:tomorrow`
+(the server's clock), a PCRE with an atomic group or a possessive quantifier — is the server's
+alone. Silence, not an error: the browser lets it through and the server answers it.
+
+The order is the validator's: a field sent empty meets only `required` and `accepted`, unless it is
+not `nullable` — then the server holds every rule against it, and so does the browser (an optional
+field wants `nullable`). After a failed `required` nothing more is said; under `bail`, after the
+first failure. A field with several rules that fail says them all, as the server's 422 does.
+
+The words are asked of Laravel's validator at the page's render, in the page's language: the
+form's own `messages`, `validation.custom.*`, the names of `attributes` and
+`validation.attributes.*`. A site that wants the validator in Russian or Polish installs its lines
+(`lang/ru/validation.php`; Laravel ships English) — the browser follows by itself.
+
+### When
+
+- **A touched field when it is left.** Tabbing through an empty form says nothing.
+- **On submit**, every field; nothing is sent while one is wrong, and the focus goes to the first.
+- **As a wrong field is corrected**: checked on every keystroke, the error gone the moment it is
+  right. A confirmation puts its password right too.
+- An error the browser cannot check — the server's `unique` — goes at the first change, as before.
+
+The script sets `novalidate` on the form: the browser's bubbles are off, and the errors look one way
+in every language and browser. Without the script the browser's own checks stay — the only ones
+before the round trip. A submit button with `formnovalidate` sends without the browser's checks,
+straight to the server.
+
+### The phone mask
+
+```blade
+<x-webx-field type="tel" name="phone" :label="__('Phone')" mask />
+```
+
+International: `+`, the country code, the rest in groups — `+48 512 345 678`,
+`+1 212 555 0123`. No library and no list of countries: the length of a country code is told by its
+first digits. Nothing is refused on the way in, so a paste, an autofill and a phone's keyboard all
+work; the value is put in order after them. A digit typed into an empty field starts with `+`; a
+number pasted without `+` is someone's local number and is left alone. The server gets what the
+visitor sees (`+48 512 345 678`) — a rule like `regex:/^\+[1-9][0-9 ]{6,18}$/` takes it.
+`dist/mask.js` loads only where a field asks for it.
+
+### Files
+
+Every `type="file"` field, by itself (`dist/files.js`): files dropped on the field are taken as
+chosen; the chosen are listed under it — a picture's preview, the name, the size in the page's
+language — each with Remove; choosing again in a field of several adds rather than replaces. The
+form checks the type and the size the moment a file is chosen or dropped, and marks the refused
+rows. Sent with a file, the form goes by `XMLHttpRequest` with its progress bar.
+
+| Classes                                                             | What                       |
+| ------------------------------------------------------------------- | -------------------------- |
+| `webx-field__file.is-dragging`                                      | a file held over the field |
+| `__drop`                                                            | «or drop files here»       |
+| `__files` > `__files-item` (`is-invalid`)                           | the list, a row            |
+| `__files-preview`, `__files-name`, `__files-size`, `__files-remove` | its parts                  |
+
+Words: `widgets.field.remove`, `drop_file`, `drop_files` (props `remove-label`, `drop-label`);
+`--webx-files-preview` is the preview's size.
+
+## Suggestions while typing
+
+```blade
+<x-webx-suggest :action="route('webx.catalog.search')" :source="route('webx.catalog.suggest')" :recent="5" />
+```
+
+`<x-webx-suggest>` is a search box that asks the site as the visitor types (`dist/suggest.js`,
+claimed only by the component). The server prints an ordinary GET form to the results page — with
+JavaScript off, or before it runs, it is a search like any other: Enter opens the results. The
+script makes the field an ARIA combobox, waits for a pause (`delay`, 250 ms) after `min` characters
+(2), asks `source?q=…`, cancels a request the next key made stale and drops an answer that still
+comes late, and puts what came under the field.
+
+**The content of the panel is the site's.** `source` answers HTML from a view of the site — sections,
+headings, counts, cards with a price, «see all» — and the panel shows it as it is. The shell needs
+only two marks in it:
+
+| Mark                                                 | What the shell does with it                                                                                                                                          |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data-webx-option`                                   | an option: `role="option"`, an id, reached by the arrows; a link inside it (or the option itself as `<a>`) is followed; `data-webx-option="<value>"` is searched for |
+| `data-webx-section` with a `data-webx-heading` in it | a named group (`role="group"`, `aria-labelledby` the heading; an `<h2>`–`<h6>` will do)                                                                              |
+
+An answer that is empty, or a 204, says «nothing found» in the widget's words; an answer without
+an option shows the site's own words and the screen reader hears «nothing found». A failed answer
+says so and leaves the search to Enter. Everything else in the answer is the site's to style.
+
+**Keys** — the focus stays in the field: ↓/↑ walk the options (and open the panel), Home/End jump
+to the first or the last once an option is chosen (before that they move the caret), Enter takes
+the option chosen (without one it sends the form), Escape closes the panel (the second clears the
+field, as a search field does), Tab leaves. A screen reader hears `aria-expanded`, the option by
+`aria-activedescendant` and, in a status line, «Suggestions: 5». The panel is the width of the box
+and never taller than the room above a phone's keyboard.
+
+**Recent searches** — `:recent="5"` keeps the last five in the visitor's browser (`localStorage`,
+per results page) and shows them while the field is empty, with «Clear recent searches». Nothing
+is kept without it.
+
+**Inside another form** — leave out `action`: the component prints no form of its own (forms do
+not nest), only the field, named as any field (`name="delivery[city]"`, `old()` kept). An option
+with a value then fills the field and fires `change` on it — the form's checks hear it — and sends
+nothing; Enter without a choice is the form's. `param` names the query parameter `source` gets
+(`q` by default).
+
+```blade
+<x-webx-form :action="route('checkout.delivery')" :rules="$rules">
+    <x-webx-suggest :source="route('cities.suggest')" name="delivery[city]" param="city"
+                    :label="__('checkout.city')" :show-label="true" />
+    <x-webx-form.submit>{{ __('checkout.continue') }}</x-webx-form.submit>
+</x-webx-form>
+```
+
+The address answers values: `<li data-webx-option="Kraków">Kraków</li>`. The field has no
+`webx-field` frame: an error of the server about it comes into the form's alert.
+
+| Prop                                                                                                                  | What                                              |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `source`                                                                                                              | the address of suggestions, this site's           |
+| `action`                                                                                                              | the results page; without it — a field            |
+| `name`, `param`, `value`, `id`                                                                                        | the field; the query parameter; its value; its id |
+| `min`, `delay`, `recent`                                                                                              | 2 characters, 250 ms, 0 kept                      |
+| `show-label`                                                                                                          | the label shown, not only read                    |
+| `label`, `placeholder`, `submit-label`, `nothing-label`, `recent-label`, `clear-label`, `count-label`, `failed-label` | the words (`widgets.suggest.*`, ten languages)    |
+
+**Events** on the component's root: `webx:suggest:select` — cancelable, before an option is taken
+(`detail.option`, `value`, `href`, `query`: what was typed); `webx:suggest:results` — the panel
+filled (`detail.query`, `count`). A counter of the analytics listens there, with consent. The root carries
+`data-webx-suggest="<source>"` and the settings in `data-*`: an overridden view of the component keeps them.
+
+| Classes                                                                  | What                                      |
+| ------------------------------------------------------------------------ | ----------------------------------------- |
+| `webx-suggest` (`--field`), `is-open`, `is-loading`                      | the box, the panel open, a question asked |
+| `__label` (`--shown`), `__box`, `__input` (`--alone`), `__submit`        | its parts                                 |
+| `__panel`, `__status`                                                    | the panel, the line a screen reader hears |
+| `__section`, `__heading`, `__option` (`aria-selected="true"`), `__clear` | what the shell marks or builds in it      |
+| `__empty`                                                                | «nothing found» and «not available»       |
+
+Tokens `--webx-suggest-height`, `-radius`, `-border`, `-bg`, `-focus`, `-panel-bg`,
+`-panel-shadow`, `-active-bg`, `-max` (the panel's height), `-z`.
+
+### Example: the catalogue's search
+
+`module-catalog` is the first to use it. Its search page prints the box over its own address:
+
+```blade
+{{-- webx-catalog::search --}}
+<x-webx-suggest :action="$action" :source="$suggest" :value="$term"
+                :label="__('webx-catalog::storefront.search')"
+                :placeholder="__('webx-catalog::storefront.search-placeholder')"
+                :submit-label="__('webx-catalog::storefront.search-submit')" />
+```
+
+`$action` and `$suggest` are `/catalog/search` and `/catalog/suggest` in the page's language.
+`GET /catalog/suggest?q=` (`webx.catalog.suggest`) asks the same engine the search page asks — what
+is not on the site is not found, a correction is said — and answers the view
+`webx-catalog::suggest` (`noindex`, `no-store`; 204 for nothing asked):
+
+```php
+// WebxUi\Catalog\Storefront\Suggestions, in short
+$result = $this->catalog->engine()->search(new CatalogQuery(
+    locale: $locale, context: FilterContext::SEARCH, search: $term, perPage: $limit, filter: $context,
+));
+
+return response(view('webx-catalog::suggest', [
+    'term' => $term,
+    'products' => $this->listing->products($result->ids),
+    'total' => $result->total,
+    'corrected' => $result->corrected,
+    'all' => $searchPageFor($result->corrected ?? $term),
+    'priced' => config('webx-catalog.price.enabled'),
+])->render());
+```
+
+```blade
+{{-- webx-catalog::suggest — a theme overrides it --}}
+@if ($products->isEmpty())
+    <p class="webx-catalog-suggest__nothing">{{ __('webx-catalog::storefront.suggest-nothing', ['q' => $term]) }}</p>
+@else
+    <div class="webx-catalog-suggest" data-webx-section="products">
+        <p class="webx-catalog-suggest__heading" data-webx-heading>{{ __('webx-catalog::storefront.suggest-products', ['count' => $total]) }}</p>
+        @foreach ($products as $product)
+            <a class="webx-catalog-suggest__product" href="{{ $product->listedUrl() }}" data-webx-option>
+                <img class="webx-catalog-suggest__picture" src="…" alt="" width="48" height="48">
+                <span class="webx-catalog-suggest__name">{{ $product->displayName() }}</span>
+                <span class="webx-catalog-suggest__price"><strong>{{ $product->price }}</strong></span>
+            </a>
+        @endforeach
+    </div>
+    <a class="webx-catalog-suggest__all" href="{{ $all }}" data-webx-option>{{ __('webx-catalog::storefront.suggest-all', ['count' => $total]) }}</a>
+@endif
+```
+
+«Products (52)», five cards with a picture and a price, «See all results: 52» — every card and
+«see all» an option. `suggest.limit` (`WEBX_CATALOG_SUGGEST_LIMIT`, 6) is how many cards. A header
+of the site puts the same box anywhere: `<x-webx-suggest :action="route('webx.catalog.search')"
+:source="route('webx.catalog.suggest')" :recent="5" />`.
 
 ## Example: a sign-in
 
@@ -337,6 +567,191 @@ page left open overnight signs in anyway — the stale token is renewed and the 
 the seventh attempt in a minute is refused, and the form's alert says it could not be sent; and the same form posts and
 comes back with the same words where JavaScript is off.
 
+## Example: a checkout step
+
+The contact and delivery step of a checkout: the rules in a `FormRequest`, the same rules in the
+browser, the next step — payment — sent back in place of the fields. The basket, the totals and the
+payment belong to the checkout, not to the form.
+
+```php
+// routes/web.php
+use App\Http\Controllers\CheckoutController;
+
+Route::middleware('web')->group(function () {
+    Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout');
+    Route::post('/checkout/contact', [CheckoutController::class, 'contact'])->name('checkout.contact');
+    Route::post('/checkout/payment', [CheckoutController::class, 'payment'])->name('checkout.payment');
+});
+```
+
+```php
+// app/Http/Requests/CheckoutContactRequest.php
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+final class CheckoutContactRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'contact.name' => ['required', 'string', 'max:120'],
+            'contact.email' => ['required', 'email', 'max:190'],
+            'contact.phone' => ['required', 'regex:/^\+[1-9][0-9 ]{6,18}$/'],
+            'delivery' => ['required', Rule::in(['courier', 'pickup'])],
+            // The browser cannot know when it is wanted: the server says it.
+            'address' => ['required_if:delivery,courier', 'nullable', 'string', 'max:500'],
+            'invoice' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
+            'terms' => ['accepted'],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'contact.name' => __('checkout.name'),
+            'contact.email' => __('checkout.email'),
+            'contact.phone' => __('checkout.phone'),
+            'delivery' => __('checkout.delivery'),
+            'address' => __('checkout.address'),
+            'invoice' => __('checkout.invoice'),
+            'terms' => __('checkout.terms'),
+        ];
+    }
+}
+```
+
+```php
+// app/Http/Controllers/CheckoutController.php
+namespace App\Http\Controllers;
+
+use App\Http\Requests\CheckoutContactRequest;
+use App\Shop\Basket;
+use Illuminate\View\View;
+use WebxUi\Widgets\Forms\FormResponse;
+use WebxUi\Widgets\Forms\FormRules;
+
+final class CheckoutController
+{
+    public function show(Basket $basket): View
+    {
+        // A FormRequest made with `new` only says its rules; resolved from the container it would
+        // validate the request that shows the page.
+        $request = new CheckoutContactRequest;
+
+        return view('checkout.contact', [
+            'basket' => $basket,
+            'rules' => FormRules::for($request->rules(), $request->attributes(), $request->messages()),
+        ]);
+    }
+
+    public function contact(CheckoutContactRequest $request, Basket $basket): FormResponse
+    {
+        $order = $basket->order($request->validated(), $request->file('invoice'));
+
+        // The next step in place of the fields; without JavaScript the same page shows it.
+        return FormResponse::html(view('checkout.payment', ['order' => $order]));
+    }
+}
+```
+
+```blade
+{{-- resources/views/checkout/contact.blade.php --}}
+<x-layout>
+    <h1>{{ __('checkout.title') }}</h1>
+    <x-webx-form :action="route('checkout.contact')" id="checkout" class="checkout" :rules="$rules">
+        <x-webx-field name="contact.name" :label="__('checkout.name')" autocomplete="name" />
+        <x-webx-field name="contact.email" type="email" :label="__('checkout.email')" />
+        <x-webx-field name="contact.phone" type="tel" :label="__('checkout.phone')" mask />
+        <x-webx-field name="delivery" type="radio" :label="__('checkout.delivery')" value="courier"
+            :choices="['courier' => __('checkout.courier'), 'pickup' => __('checkout.pickup')]" inline />
+        <x-webx-field name="address" type="textarea" :label="__('checkout.address')" autocomplete="street-address" rows="3" />
+        <x-webx-field name="invoice" type="file" :label="__('checkout.invoice')" :hint="__('checkout.invoice_hint')" optional />
+        <x-webx-field name="terms" type="consent">
+            {!! __('checkout.terms_sentence', ['link' => route('terms')]) !!}
+        </x-webx-field>
+        <x-webx-form.submit>{{ __('checkout.to_payment') }}</x-webx-form.submit>
+    </x-webx-form>
+</x-layout>
+```
+
+```blade
+{{-- resources/views/checkout/payment.blade.php — the next step, sent in place --}}
+<p>{{ __('checkout.total', ['total' => $order->total()]) }}</p>
+<x-webx-form :action="route('checkout.payment')" id="checkout-payment">
+    <input type="hidden" name="order" value="{{ $order->id }}">
+    <x-webx-field name="method" type="radio" :label="__('checkout.method')" :choices="$order->paymentMethods()" required />
+    <x-webx-form.submit>{{ __('checkout.pay') }}</x-webx-form.submit>
+</x-webx-form>
+```
+
+What the visitor gets: an address without `@` or a phone without its country code is said under its
+field when the field is left, in the words the server would use; nothing is sent while one is wrong;
+the phone is written `+48 512 345 678` however it was typed or pasted; a scan of an invoice dropped
+on its field is listed with its size, and a JPEG or a 9 MB PDF is refused before a byte is sent; a
+courier without an address is refused by the server — the one rule the browser cannot know — in the
+same place and the same look. The payment step takes the fields' place, its own form already
+working (`webx.mount`). A module that recomputes the delivery cost listens to `change` on the
+radios and `webx:form:success` on the form, and writes no sending of its own.
+
+## Example: a form of the Inbox
+
+A request built in the panel's Inbox from fields, printed with one tag. Nothing of it is written by
+hand, and that is the point: it is the same engine as the two forms above.
+
+```blade
+<x-webx-inbox::form slug="contact" :values="['product' => $product->id]" placement="footer" />
+```
+
+What it prints, in short:
+
+```blade
+<x-webx-form :action="url('webx/forms/contact')" :csrf="false" id="webx-inbox-contact"
+    :rules="FormRules::for($intakeRules, $labels)" data-webx-form="contact"
+    class="webx-inbox-form webx-inbox-form--footer">
+    {{-- the inbox's own: which form, the page, its language, the honeypot, the timestamp --}}
+    <div class="webx-inbox-form__fields">
+        <x-webx-field type="text" name="fields.name" :label="…" class="webx-inbox-form__field webx-inbox-form__field--half" />
+        <x-webx-field type="email" name="fields.email" :label="…" class="webx-inbox-form__field webx-inbox-form__field--half" />
+        <x-webx-field type="consent" name="fields.terms" :label="…">{!! $consentWithALink !!}</x-webx-field>
+    </div>
+    {{-- the captcha, when the form asks for one: data-webx-field="captcha" --}}
+    <div class="webx-inbox-form__actions"><x-webx-form.submit>Send</x-webx-form.submit></div>
+</x-webx-form>
+```
+
+- **The fields** are `<x-webx-field>` named `fields.<machine name>` — the eleven types of the panel
+  are the widgets' own (`text`, `email`, `tel`, `textarea`, `select`, `radio`, `checkbox`,
+  `consent`, `date`, `file`, `hidden`); «half width» in the panel is
+  `webx-inbox-form__field--half`, two to a row from 32rem of the form.
+- **No token:** `:csrf="false"` — the intake guards itself (the origin, the honeypot, the
+  timestamp, the limit per address), so a page cached whole for a day still sends.
+- **The checks** are the intake's own rules — `required`, `email`, `max` of a line, `in` of the
+  choices, `accepted` of a consent, `mimes` and `max` of a file, the dates' bounds, a phone's
+  pattern — through `FormRules`, with each field's label: the browser says what a 422 would.
+- **The answer** is `FormResponse`: the form's thank-you (`::message()`), or its address
+  (`::redirect()`) when the form has one; an antispam refusal in the form's alert, a captcha's
+  under the captcha.
+- **The Inbox's own** stays the Inbox's: the builder, the intake, the honeypot, the timestamp and
+  the captcha — reCAPTCHA or Turnstile, run by `inbox.js` on `webx:form:submit` and reset after
+  `webx:form:success` or `webx:form:error`; the script comes only with a captcha.
+- **Analytics** of a request: `webx:form:success` on `form[data-webx-form="contact"]`, the way
+  `webx:form:*` is heard on any form.
+
+```js
+document.addEventListener('webx:form:success', (event) => {
+  const slug = event.target.dataset.webxForm
+  if (slug && window.webx.consent?.has('statistics'))
+    window.dataLayer?.push({ event: 'request', form: slug })
+})
+```
+
+**A site that painted the Inbox's form before W6.4** (`wx-form*`, a published `form.blade.php`):
+its view keeps working for an alias period — the module still hands it what it used to and its old
+script — and the audit's `inbox.legacy_views` names it until it is moved. The classes map one to
+one: [the table in the Inbox guide](./inbox#the-look-of-the-form).
+
 ## See it
 
 **Kitchen sink › Forms › Fields** of the default theme's showcase: every type empty, filled, with
@@ -347,3 +762,17 @@ meant for a row stand one under another.
 of the demo that answers by the convention above — the validator's errors on an empty form, then a
 thank-you, a redirect, the next step in place of the fields or nothing, as you pick. Send it with
 JavaScript off and on: the same words in the same places.
+
+**Kitchen sink › Forms › Validation**: one form with a rule of every kind, checked in the browser
+and, with «Ask the server», past it — the same words both ways, in English, Russian and Polish.
+The name `admin` passes the browser and not the server: that rule is the server's alone. The phone
+mask, and photos dropped, listed, refused by type and size and removed before sending.
+
+**Kitchen sink › Forms › Inbox**: a form built in the panel, with a field of every kind of the
+Inbox, on the same engine — send it empty with JavaScript on and off: the same words under the same
+fields, the browser's the intake's.
+
+**Kitchen sink › Forms › Suggestions**: a search box over goods of the demo — type «oak», walk the
+panel with the arrows, Enter; leave it empty for the recent searches; with JavaScript off, Enter
+opens the results — and a city field inside a delivery form, which a suggestion fills without
+sending it.

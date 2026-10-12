@@ -96,6 +96,11 @@ return [
 
     'per_page' => 24,
 
+    // The suggestions under the search box (`/catalog/suggest`): how many products, 1 to 20.
+    'suggest' => [
+        'limit' => (int) env('WEBX_CATALOG_SUGGEST_LIMIT', 6),
+    ],
+
     /*
     |---------------------------------------------------------------------------
     | Sorting

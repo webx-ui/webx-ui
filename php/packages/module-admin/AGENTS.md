@@ -68,7 +68,7 @@ archive with migrations this code lacks, refuses production without `--force`, a
 ### The site's root `AGENTS.md`
 
 `webx:panel` (and so `--sync`) writes a block between `<!-- webx:agents -->` and
-`<!-- /webx:agents -->`: what the site is, the first rule, where its look lives (a link to the
+`<!-- /webx:agents -->`: what the site is, the first rule (forms included), where its look lives (a link to the
 styles guide, `RootFile::STYLES_GUIDE`), a link to `vendor/webx-ui/<pkg>/AGENTS.md` for every
 installed `webx-ui/*` package that has one, what to run after updating. The block is
 replaced whole on each run; everything outside it — the `## This project` section — is never

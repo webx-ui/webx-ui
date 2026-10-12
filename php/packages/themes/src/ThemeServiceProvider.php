@@ -17,8 +17,8 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Themes\Console\CheckCommand;
 use WebxUi\Themes\Console\MakeCommand;
+use WebxUi\Themes\Console\ShowCommand;
 use WebxUi\Themes\Console\SyncCommand;
-use WebxUi\Themes\Contracts\Appearance;
 use WebxUi\Themes\Doctor\FontsCheck;
 use WebxUi\Themes\View\Components\Icon;
 
@@ -52,11 +52,7 @@ class ThemeServiceProvider extends ServiceProvider
             return $reference === null ? new ThemeChain : ThemeChain::resolve($reference, $app->make(ThemeLocator::class));
         });
 
-        // If: the panel's «Appearance» tab binds its own, and may register before or after this.
-        $this->app->singletonIf(Appearance::class, fn (Application $app) => new ConfigAppearance($app->make('config')));
-
-        // Scoped: the owner's choice may change between two requests of one long-lived worker.
-        $this->app->scoped(Tokens::class, fn (Application $app) => new Tokens($app->make(ThemeChain::class), $app->make(Appearance::class)));
+        $this->app->singleton(Tokens::class, fn (Application $app) => new Tokens($app->make(ThemeChain::class)));
 
         $this->app->singleton(BottomLayers::class);
 
@@ -84,7 +80,7 @@ class ThemeServiceProvider extends ServiceProvider
                 __DIR__.'/../config/webx-themes.php' => config_path('webx-themes.php'),
             ], 'webx-themes-config');
 
-            $this->commands([CheckCommand::class, MakeCommand::class, SyncCommand::class]);
+            $this->commands([CheckCommand::class, MakeCommand::class, ShowCommand::class, SyncCommand::class]);
         }
 
         // `var_export` rather than a literal class name: the compiled string has to carry the

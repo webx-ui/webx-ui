@@ -15,6 +15,7 @@ use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeIcons;
 use WebxUi\Themes\ThemeManifest;
+use WebxUi\Themes\Tokens;
 use WebxUi\Themes\Vocabulary;
 
 /**
@@ -96,6 +97,13 @@ final class ChainCheck
 
         foreach (array_reverse($this->chain->layers) as $layer) {
             $this->tokens($layer, $vocabulary);
+        }
+
+        // The preset a manifest names has to be one the chain declares — the page would throw.
+        try {
+            (new Tokens($this->chain))->preset();
+        } catch (ThemeException $failure) {
+            $this->findings[] = ['file' => '', 'line' => null, 'message' => $failure->getMessage()];
         }
 
         foreach ($this->stylesheets() as $file) {

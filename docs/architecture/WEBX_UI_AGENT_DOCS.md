@@ -71,7 +71,8 @@
 <!-- webx:agents -->
 <!-- Written by `php artisan webx:panel --sync`; … replaced on the next run. -->
 # This site                  ← что за сайт, где панель (config('webx-admin.path'))
-## The first rule            ← не форкать, не править vendor; порядок способов расширения
+## The first rule            ← не форкать, не править vendor; порядок способов расширения;
+                               любая форма — <x-webx-form> + <x-webx-field>, ответ FormResponse (W6.4)
 ## The site's look           ← три места вида и ссылка на гайд по стилям (AG4, §6)
 ## Installed packages        ← - [webx-ui/x](vendor/webx-ui/x/AGENTS.md) — description из composer
                                «Without a guide yet …» — установленные webx-ui/* без AGENTS.md
