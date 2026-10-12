@@ -290,6 +290,13 @@ vendor/composer/autoload_files.php`.
   своими `node_modules` звать его CLI —
   `node node_modules/@playwright/test/cli.js test -c tests/starter/playwright.config.mjs`; путь
   основного чекаута годится, только пока у worktree своих `node_modules` нет.
+- **`starter-site.sh` зелёный по шагам, а главная отвечает 404 («FAILED: GET … answered 404»).**
+  Выглядит как сломанный маршрут или тема, а это `webx:demo`, остановившийся на полпути: в логе
+  выше — `Data too long for column 'description'` при вставке демо-типа блока. `module-blocks`
+  держит `title` и `description` в 255 символах; страницы витрины после остановки не созданы.
+  Укоротить описание в `theme-default/demo/blocks/<тип>.json` (`ThemeDefaultTest` теперь меряет
+  каждое), затем на сайте `php artisan webx:demo --remove && php artisan webx:demo` — пересобирать
+  весь сайт не нужно.
 - **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` сервер надо
   перезапустить: свежий HTML тянет новые хеши, их нет в списке → 404, страница без стилей и без
   гидрации. Выглядит как «правка не помогла».

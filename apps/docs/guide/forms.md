@@ -14,9 +14,10 @@ that a module draws its form from the same parts and a theme paints one set of c
 | **Inbox**                      | the form builder in the panel, intake, spam protection, letters                     |
 | **sign-in, account, checkout** | their own forms in Blade from the same fields                                       |
 
-This page grows with the parts. Today: **the fields** and **the form** around them — sending in
-place over a plain POST, the errors by field, one answer for every form, and a sign-in written out
-in full. The checks in the browser follow.
+This page grows with the parts. Today: **the fields**, **the form** around them — sending in
+place over a plain POST, the errors by field, one answer for every form — and **the checks in the
+browser** by the server's own rules and words, the phone mask and the files; a sign-in and a
+checkout step written out in full.
 
 The specification is §17 of
 [`docs/architecture/WEBX_UI_WIDGETS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md).
@@ -266,6 +267,98 @@ a modal.
 
 Variables on `:root`: `--webx-form-gap`, `--webx-form-button-height`.
 
+## Checks in the browser
+
+The rules of a form are written once, on the server, where they are checked always. The browser
+checks the part it understands before anything is sent, and says what is wrong in the words the
+server would use — not a second dictionary, the validator's own lines:
+
+```blade
+<x-webx-form :action="route('checkout.contact')" :rules="FormRules::for($rules, $attributes, $messages)">
+    …fields…
+</x-webx-form>
+```
+
+`WebxUi\Widgets\Forms\FormRules::for()` takes the arrays the controller validates by — a
+`FormRequest`'s `rules()`, `attributes()` and `messages()`, or the array of `$request->validate()`.
+Every `<x-webx-field>` inside takes its own part by its name (`contact.email`, `lines.0.qty` is
+`lines.*.qty`). One field can be given its rules alone: `:rules="['required', 'email']"`.
+
+### What the browser checks
+
+| Rule                                                   | In the browser                                                    |
+| ------------------------------------------------------ | ----------------------------------------------------------------- |
+| `required`, `accepted`                                 | a value, a tick; also `required` on the control and the `*`       |
+| `email`, `url`                                         | the shape — looser than the server, never stricter                |
+| `numeric`, `integer`                                   | the number; a text field gets the numeric keyboard                |
+| `min`, `max`, `between`, `size`                        | a string's letters, a number, a file's kilobytes, a group's count |
+| `regex`, `not_regex`                                   | when the expression means the same in JavaScript                  |
+| `in`                                                   | one of the values                                                 |
+| `mimes`, `extensions`, `mimetypes`, `image`            | a file's type; also `accept` on the picker                        |
+| `confirmed`, `same`, `different`                       | against the other field of the form                               |
+| `date`                                                 | a day that cannot be (`2026-02-30`)                               |
+| `after`, `before`, `after_or_equal`, `before_or_equal` | with a literal `Y-m-d`; also `min`/`max` of a date picker         |
+| `bail`, `nullable`                                     | how the others run, as on the server                              |
+
+Everything else — `unique`, `exists`, `required_if`, a closure, a rule object, `after:tomorrow`
+(the server's clock), a PCRE with an atomic group or a possessive quantifier — is the server's
+alone. Silence, not an error: the browser lets it through and the server answers it.
+
+The order is the validator's: a field sent empty meets only `required` and `accepted`, unless it is
+not `nullable` — then the server holds every rule against it, and so does the browser (an optional
+field wants `nullable`). After a failed `required` nothing more is said; under `bail`, after the
+first failure. A field with several rules that fail says them all, as the server's 422 does.
+
+The words are asked of Laravel's validator at the page's render, in the page's language: the
+form's own `messages`, `validation.custom.*`, the names of `attributes` and
+`validation.attributes.*`. A site that wants the validator in Russian or Polish installs its lines
+(`lang/ru/validation.php`; Laravel ships English) — the browser follows by itself.
+
+### When
+
+- **A touched field when it is left.** Tabbing through an empty form says nothing.
+- **On submit**, every field; nothing is sent while one is wrong, and the focus goes to the first.
+- **As a wrong field is corrected**: checked on every keystroke, the error gone the moment it is
+  right. A confirmation puts its password right too.
+- An error the browser cannot check — the server's `unique` — goes at the first change, as before.
+
+The script sets `novalidate` on the form: the browser's bubbles are off, and the errors look one way
+in every language and browser. Without the script the browser's own checks stay — the only ones
+before the round trip. A submit button with `formnovalidate` sends without the browser's checks,
+straight to the server.
+
+### The phone mask
+
+```blade
+<x-webx-field type="tel" name="phone" :label="__('Phone')" mask />
+```
+
+International: `+`, the country code, the rest in groups — `+48 512 345 678`,
+`+1 212 555 0123`. No library and no list of countries: the length of a country code is told by its
+first digits. Nothing is refused on the way in, so a paste, an autofill and a phone's keyboard all
+work; the value is put in order after them. A digit typed into an empty field starts with `+`; a
+number pasted without `+` is someone's local number and is left alone. The server gets what the
+visitor sees (`+48 512 345 678`) — a rule like `regex:/^\+[1-9][0-9 ]{6,18}$/` takes it.
+`dist/mask.js` loads only where a field asks for it.
+
+### Files
+
+Every `type="file"` field, by itself (`dist/files.js`): files dropped on the field are taken as
+chosen; the chosen are listed under it — a picture's preview, the name, the size in the page's
+language — each with Remove; choosing again in a field of several adds rather than replaces. The
+form checks the type and the size the moment a file is chosen or dropped, and marks the refused
+rows. Sent with a file, the form goes by `XMLHttpRequest` with its progress bar.
+
+| Classes                                                             | What                       |
+| ------------------------------------------------------------------- | -------------------------- |
+| `webx-field__file.is-dragging`                                      | a file held over the field |
+| `__drop`                                                            | «or drop files here»       |
+| `__files` > `__files-item` (`is-invalid`)                           | the list, a row            |
+| `__files-preview`, `__files-name`, `__files-size`, `__files-remove` | its parts                  |
+
+Words: `widgets.field.remove`, `drop_file`, `drop_files` (props `remove-label`, `drop-label`);
+`--webx-files-preview` is the preview's size.
+
 ## Example: a sign-in
 
 The whole of it — the route, the controller, the view. The rate of attempts and the session belong
@@ -337,6 +430,134 @@ page left open overnight signs in anyway — the stale token is renewed and the 
 the seventh attempt in a minute is refused, and the form's alert says it could not be sent; and the same form posts and
 comes back with the same words where JavaScript is off.
 
+## Example: a checkout step
+
+The contact and delivery step of a checkout: the rules in a `FormRequest`, the same rules in the
+browser, the next step — payment — sent back in place of the fields. The basket, the totals and the
+payment belong to the checkout, not to the form.
+
+```php
+// routes/web.php
+use App\Http\Controllers\CheckoutController;
+
+Route::middleware('web')->group(function () {
+    Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout');
+    Route::post('/checkout/contact', [CheckoutController::class, 'contact'])->name('checkout.contact');
+    Route::post('/checkout/payment', [CheckoutController::class, 'payment'])->name('checkout.payment');
+});
+```
+
+```php
+// app/Http/Requests/CheckoutContactRequest.php
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+final class CheckoutContactRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'contact.name' => ['required', 'string', 'max:120'],
+            'contact.email' => ['required', 'email', 'max:190'],
+            'contact.phone' => ['required', 'regex:/^\+[1-9][0-9 ]{6,18}$/'],
+            'delivery' => ['required', Rule::in(['courier', 'pickup'])],
+            // The browser cannot know when it is wanted: the server says it.
+            'address' => ['required_if:delivery,courier', 'nullable', 'string', 'max:500'],
+            'invoice' => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
+            'terms' => ['accepted'],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'contact.name' => __('checkout.name'),
+            'contact.email' => __('checkout.email'),
+            'contact.phone' => __('checkout.phone'),
+            'delivery' => __('checkout.delivery'),
+            'address' => __('checkout.address'),
+            'invoice' => __('checkout.invoice'),
+            'terms' => __('checkout.terms'),
+        ];
+    }
+}
+```
+
+```php
+// app/Http/Controllers/CheckoutController.php
+namespace App\Http\Controllers;
+
+use App\Http\Requests\CheckoutContactRequest;
+use App\Shop\Basket;
+use Illuminate\View\View;
+use WebxUi\Widgets\Forms\FormResponse;
+use WebxUi\Widgets\Forms\FormRules;
+
+final class CheckoutController
+{
+    public function show(Basket $basket): View
+    {
+        // A FormRequest made with `new` only says its rules; resolved from the container it would
+        // validate the request that shows the page.
+        $request = new CheckoutContactRequest;
+
+        return view('checkout.contact', [
+            'basket' => $basket,
+            'rules' => FormRules::for($request->rules(), $request->attributes(), $request->messages()),
+        ]);
+    }
+
+    public function contact(CheckoutContactRequest $request, Basket $basket): FormResponse
+    {
+        $order = $basket->order($request->validated(), $request->file('invoice'));
+
+        // The next step in place of the fields; without JavaScript the same page shows it.
+        return FormResponse::html(view('checkout.payment', ['order' => $order]));
+    }
+}
+```
+
+```blade
+{{-- resources/views/checkout/contact.blade.php --}}
+<x-layout>
+    <h1>{{ __('checkout.title') }}</h1>
+    <x-webx-form :action="route('checkout.contact')" id="checkout" class="checkout" :rules="$rules">
+        <x-webx-field name="contact.name" :label="__('checkout.name')" autocomplete="name" />
+        <x-webx-field name="contact.email" type="email" :label="__('checkout.email')" />
+        <x-webx-field name="contact.phone" type="tel" :label="__('checkout.phone')" mask />
+        <x-webx-field name="delivery" type="radio" :label="__('checkout.delivery')" value="courier"
+            :choices="['courier' => __('checkout.courier'), 'pickup' => __('checkout.pickup')]" inline />
+        <x-webx-field name="address" type="textarea" :label="__('checkout.address')" autocomplete="street-address" rows="3" />
+        <x-webx-field name="invoice" type="file" :label="__('checkout.invoice')" :hint="__('checkout.invoice_hint')" optional />
+        <x-webx-field name="terms" type="consent">
+            {!! __('checkout.terms_sentence', ['link' => route('terms')]) !!}
+        </x-webx-field>
+        <x-webx-form.submit>{{ __('checkout.to_payment') }}</x-webx-form.submit>
+    </x-webx-form>
+</x-layout>
+```
+
+```blade
+{{-- resources/views/checkout/payment.blade.php — the next step, sent in place --}}
+<p>{{ __('checkout.total', ['total' => $order->total()]) }}</p>
+<x-webx-form :action="route('checkout.payment')" id="checkout-payment">
+    <input type="hidden" name="order" value="{{ $order->id }}">
+    <x-webx-field name="method" type="radio" :label="__('checkout.method')" :choices="$order->paymentMethods()" required />
+    <x-webx-form.submit>{{ __('checkout.pay') }}</x-webx-form.submit>
+</x-webx-form>
+```
+
+What the visitor gets: an address without `@` or a phone without its country code is said under its
+field when the field is left, in the words the server would use; nothing is sent while one is wrong;
+the phone is written `+48 512 345 678` however it was typed or pasted; a scan of an invoice dropped
+on its field is listed with its size, and a JPEG or a 9 MB PDF is refused before a byte is sent; a
+courier without an address is refused by the server — the one rule the browser cannot know — in the
+same place and the same look. The payment step takes the fields' place, its own form already
+working (`webx.mount`). A module that recomputes the delivery cost listens to `change` on the
+radios and `webx:form:success` on the form, and writes no sending of its own.
+
 ## See it
 
 **Kitchen sink › Forms › Fields** of the default theme's showcase: every type empty, filled, with
@@ -347,3 +568,8 @@ meant for a row stand one under another.
 of the demo that answers by the convention above — the validator's errors on an empty form, then a
 thank-you, a redirect, the next step in place of the fields or nothing, as you pick. Send it with
 JavaScript off and on: the same words in the same places.
+
+**Kitchen sink › Forms › Validation**: one form with a rule of every kind, checked in the browser
+and, with «Ask the server», past it — the same words both ways, in English, Russian and Polish.
+The name `admin` passes the browser and not the server: that rule is the server's alone. The phone
+mask, and photos dropped, listed, refused by type and size and removed before sending.
