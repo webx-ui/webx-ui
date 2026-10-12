@@ -5929,6 +5929,374 @@ test.describe('fields', () => {
   })
 })
 
+test.describe('sending', () => {
+  // WIDGETS §17.3, §17.4, W6.2: the shell of a form — Kitchen sink › Forms › Sending sends one
+  // form to the showcase's door, on the page and in a dialog.
+  const PATH = '/kitchen-sink/forms/sending'
+  const PAGE_FORM = '[data-mode="page"] form'
+  const DIALOG = '#showcase-sending-2'
+
+  /** What the form shows wrong: each field's error by its validator name, and its alert. */
+  const errorsOf = (page, scope) =>
+    page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        fields: Object.fromEntries(
+          [...form.querySelectorAll('[data-webx-field].is-invalid')].map((field) => [
+            field.dataset.webxField,
+            field.querySelector('.webx-field__error').textContent.trim(),
+          ]),
+        ),
+        alert: form.querySelector('.webx-form__error').textContent.trim(),
+      }
+    }, scope)
+
+  async function fill(page, scope, answer) {
+    const form = page.locator(scope)
+    await form.locator('input[name="showcase[name]"]').fill('Ann')
+    await form.locator('input[name="showcase[email]"]').fill('ann@example.com')
+    await form.locator(`input[name="showcase[answer]"][value="${answer}"]`).check()
+    await form.locator('input[name="showcase[agree]"]').check()
+  }
+
+  /** Every request the form makes to the showcase's door or the token route, in order. */
+  function watch(page) {
+    const seen = []
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (url.pathname.startsWith('/webx/widgets/'))
+        seen.push(`${request.method()} ${url.pathname}`)
+    })
+    page.on('response', (response) => {
+      const url = new URL(response.url())
+      if (url.pathname.startsWith('/webx/widgets/')) seen.push(response.status())
+    })
+    return seen
+  }
+
+  test('an empty form comes back with the same errors with JavaScript and without', async ({
+    browser,
+    page,
+  }) => {
+    const plain = await browser.newContext({ javaScriptEnabled: false })
+    const without = await plain.newPage()
+    await without.goto(PATH)
+    await without.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await without.waitForLoadState()
+    expect(new URL(without.url()).pathname, 'back on the page it was sent from').toBe(PATH)
+    const back = await errorsOf(without, PAGE_FORM)
+    const returned = await without.locator(PAGE_FORM).getAttribute('data-webx-returned')
+    await plain.close()
+
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    const inPlace = await errorsOf(page, PAGE_FORM)
+
+    expect(returned, 'the page knows which form was sent').toBe('')
+    expect(Object.keys(back.fields).sort()).toEqual([
+      'showcase.agree',
+      'showcase.email',
+      'showcase.name',
+    ])
+    expect(inPlace, 'the same words in the same places').toEqual(back)
+    expect(seen, 'sent in place, no page loaded').toEqual(['POST /webx/widgets/showcase', 422])
+    expect(new URL(page.url()).pathname).toBe(PATH)
+
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      const name = form.querySelector('input[name="showcase[name]"]')
+      return {
+        focus: document.activeElement === name,
+        invalid: name.getAttribute('aria-invalid'),
+        described: name.getAttribute('aria-describedby'),
+        errorId: form.querySelector('[data-webx-field="showcase.name"] .webx-field__error').id,
+      }
+    }, PAGE_FORM)
+    expect(m.focus, 'the focus on the first wrong field').toBe(true)
+    expect(m.invalid).toBe('true')
+    expect(m.described).toContain(m.errorId)
+
+    // Corrected, the field's error goes as it is typed.
+    await page.locator(`${PAGE_FORM} input[name="showcase[name]"]`).fill('Ann')
+    await expect(page.locator(`${PAGE_FORM} [data-webx-field="showcase.name"]`)).not.toHaveClass(
+      /is-invalid/,
+    )
+    await expect(page.locator(`${PAGE_FORM} [data-webx-field="showcase.email"]`)).toHaveClass(
+      /is-invalid/,
+    )
+  })
+
+  test('each answer: a thank-you in place, another page, the next step, or only the event', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+
+    await fill(page, PAGE_FORM, 'message')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    const answer = page.locator(`${PAGE_FORM} .webx-form__message .webx-form__answer`)
+    await expect(answer.locator('.webx-form__heading')).toHaveText('Thank you')
+    await expect(answer.locator('.webx-form__text')).toContainText('The form arrived, Ann.')
+    expect(
+      await page.locator(`${PAGE_FORM} input[name="showcase[name]"]`).inputValue(),
+      'emptied',
+    ).toBe('')
+
+    await page.goto(PATH)
+    await still(page)
+    await fill(page, PAGE_FORM, 'html')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-form__body .webx-showcase-step`)).toContainText(
+      'Step two, Ann',
+    )
+    expect(await page.locator(`${PAGE_FORM} .webx-form__body [data-webx-field]`).count()).toBe(0)
+
+    await page.goto(PATH)
+    await still(page)
+    await page.evaluate((scope) => {
+      window.__answers = []
+      document
+        .querySelector(scope)
+        .addEventListener('webx:form:success', (event) => window.__answers.push(event.detail))
+    }, PAGE_FORM)
+    await fill(page, PAGE_FORM, 'nothing')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect.poll(() => page.evaluate(() => window.__answers.length)).toBe(1)
+    const nothing = await page.evaluate(
+      (scope) => ({
+        answer: window.__answers[0],
+        region: document.querySelector(`${scope} .webx-form__message`).childElementCount,
+        busy: document.querySelector(scope).getAttribute('aria-busy'),
+      }),
+      PAGE_FORM,
+    )
+    expect(nothing.answer).toEqual({
+      status: 200,
+      response: { ok: true, heading: null, message: null, redirect: null, html: null },
+    })
+    expect(nothing.region, 'nothing to show').toBe(0)
+    expect(nothing.busy).toBeNull()
+
+    await fill(page, PAGE_FORM, 'redirect')
+    await Promise.all([
+      page.waitForURL('**/kitchen-sink/forms/fields'),
+      page.locator(`${PAGE_FORM} .webx-form__submit`).click(),
+    ])
+  })
+
+  test('a second press while the first is on its way sends nothing, and the form does not move', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    let posts = 0
+    await page.route('**/webx/widgets/showcase', async (route) => {
+      posts++
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      await route.continue()
+    })
+    const button = page.locator(`${PAGE_FORM} .webx-form__submit`)
+    // On the page, not in the window: pressing Enter in a field scrolls the field into view.
+    const place = (scope) => {
+      const r = document.querySelector(`${scope} .webx-form__submit`).getBoundingClientRect()
+      return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height }
+    }
+    const before = await page.evaluate(place, PAGE_FORM)
+
+    await button.click()
+    // Held back, the button is not enabled to Playwright either: pressed as a person would.
+    await button.click({ force: true })
+    await page.locator(`${PAGE_FORM} input[name="showcase[name]"]`).press('Enter')
+    const box = await page.evaluate(place, PAGE_FORM)
+    const during = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        sending: form.classList.contains('is-sending'),
+        busy: form.getAttribute('aria-busy'),
+        held: form.querySelector('.webx-form__submit').getAttribute('aria-disabled'),
+        focus: document.activeElement?.name ?? document.activeElement?.className,
+      }
+    }, PAGE_FORM)
+
+    expect(during.sending).toBe(true)
+    expect(during.busy).toBe('true')
+    expect(during.held).toBe('true')
+    expect(box, 'held back, the button keeps its place and size').toEqual(before)
+    await expect(page.locator(`${PAGE_FORM} .webx-field.is-invalid`).first()).toBeVisible()
+    expect(posts, 'three presses, one submission').toBe(1)
+    expect(await page.locator(PAGE_FORM).getAttribute('aria-busy')).toBeNull()
+  })
+
+  test('an expired token is renewed and the form sent once more — once', async ({
+    page,
+    context,
+  }) => {
+    await page.goto(PATH)
+    await still(page)
+    const seen = watch(page)
+    // What a page cached for hours carries: a token the session no longer knows — in place of
+    // Laravel's cookie, at its path, not beside it at the page's.
+    const expired = (page) => ({
+      name: 'XSRF-TOKEN',
+      value: 'expired',
+      domain: new URL(page.url()).hostname,
+      path: '/',
+    })
+    await context.addCookies([expired(page)])
+
+    await fill(page, PAGE_FORM, 'message')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-form__heading`)).toHaveText('Thank you')
+    expect(seen).toEqual([
+      'POST /webx/widgets/showcase',
+      419,
+      'GET /webx/widgets/csrf',
+      204,
+      'POST /webx/widgets/showcase',
+      200,
+    ])
+
+    // A token route that hands nothing new: the second 419 is said, not tried a third time.
+    await page.goto(PATH)
+    await still(page)
+    seen.length = 0
+    await context.addCookies([expired(page)])
+    await page.route('**/webx/widgets/csrf', (route) => route.fulfill({ status: 204 }))
+    await fill(page, PAGE_FORM, 'message')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-form__error`)).toContainText('open too long')
+    expect(seen.filter((s) => s === 'POST /webx/widgets/showcase')).toHaveLength(2)
+    expect(seen).not.toContain(200)
+  })
+
+  test('in a dialog the thank-you takes the place of the fields, and closed it is a fresh form', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+
+    await page.locator('[data-mode="dialog"] .b-showcase-sending__open').click()
+    const dialog = page.locator(DIALOG)
+    await expect(dialog).toBeVisible()
+    expect(await dialog.evaluate((d) => d.matches(':modal'))).toBe(true)
+
+    await dialog.locator('.webx-form__submit').click()
+    await expect(dialog.locator('.webx-field.is-invalid').first()).toBeVisible()
+    expect(
+      await page.evaluate(
+        (id) => document.querySelector(id).contains(document.activeElement),
+        DIALOG,
+      ),
+    ).toBe(true)
+
+    await fill(page, `${DIALOG} form`, 'message')
+    await dialog.locator('.webx-form__submit').click()
+    await expect(dialog.locator('.webx-form__heading')).toHaveText('Thank you')
+    const sent = await page.evaluate((id) => {
+      const d = document.querySelector(id)
+      const box = d.getBoundingClientRect()
+      return {
+        body: d.querySelector('.webx-form__body').hidden,
+        done: document.activeElement === d.querySelector('.webx-form__done'),
+        open: d.open,
+        inside: box.left >= 0 && box.right <= window.innerWidth,
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        doneHeight: d.querySelector('.webx-form__done').getBoundingClientRect().height,
+      }
+    }, DIALOG)
+    expect(sent).toEqual({
+      body: true,
+      done: true,
+      open: true,
+      inside: true,
+      scroll: expect.any(Number),
+      doneHeight: expect.any(Number),
+    })
+    expect(sent.scroll, 'nothing sideways').toBeLessThanOrEqual(0)
+    expect(sent.doneHeight).toBeGreaterThanOrEqual(44)
+
+    await dialog.locator('.webx-form__done').click()
+    await expect(dialog).toBeHidden()
+    await page.locator('[data-mode="dialog"] .b-showcase-sending__open').click()
+    await expect(dialog.locator('.webx-form__body')).toBeVisible()
+    expect(await dialog.locator('.webx-form__message').evaluate((r) => r.childElementCount)).toBe(0)
+    expect(await dialog.locator('input[name="showcase[name]"]').inputValue()).toBe('')
+  })
+
+  test('without JavaScript a form in a dialog comes back in its dialog, open over the page', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      viewport: { width: 375, height: 812 },
+    })
+    const page = await context.newPage()
+    await page.goto(`${PATH}${DIALOG}`)
+    await page.locator(`${DIALOG} .webx-form__submit`).click()
+    await page.waitForLoadState()
+
+    const m = await page.evaluate((id) => {
+      const d = document.querySelector(id)
+      return {
+        open: d.open,
+        position: getComputedStyle(d).position,
+        errors: d.querySelectorAll('.webx-field.is-invalid').length,
+        returned: d.querySelector('form').hasAttribute('data-webx-returned'),
+      }
+    }, DIALOG)
+    expect(m).toEqual({ open: true, position: 'fixed', errors: 3, returned: true })
+    await context.close()
+  })
+
+  test('at 360 nothing scrolls sideways, the button is 44px and the empty answer takes no room', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto(PATH)
+    await still(page)
+
+    const m = await page.evaluate((scope) => {
+      const form = document.querySelector(scope)
+      return {
+        scroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        button: form.querySelector('.webx-form__submit').getBoundingClientRect().height,
+        message: form.querySelector('.webx-form__message').getBoundingClientRect().height,
+        alert: form.querySelector('.webx-form__error').getBoundingClientRect().height,
+        live: form.querySelector('.webx-form__message').getAttribute('aria-live'),
+        role: form.querySelector('.webx-form__error').getAttribute('role'),
+      }
+    }, PAGE_FORM)
+    expect(m.scroll).toBeLessThanOrEqual(0)
+    expect(m.button).toBeGreaterThanOrEqual(44)
+    expect(m.message).toBe(0)
+    expect(m.alert).toBe(0)
+    expect(m.live).toBe('polite')
+    expect(m.role).toBe('alert')
+  })
+
+  test('on the Russian page the form, its errors and its thank-you are Russian', async ({
+    page,
+  }) => {
+    await page.goto(PATH)
+    const there = await page.locator('link[rel="alternate"][hreflang="ru"]').getAttribute('href')
+    await page.goto(there)
+    await still(page)
+
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(
+      page.locator(`${PAGE_FORM} [data-webx-field="showcase.name"] .webx-field__error`),
+    ).toContainText('Ваше имя')
+
+    await fill(page, PAGE_FORM, 'message')
+    await page.locator(`${PAGE_FORM} .webx-form__submit`).click()
+    await expect(page.locator(`${PAGE_FORM} .webx-form__heading`)).toHaveText('Спасибо')
+  })
+})
+
 test.describe('words of the layout', () => {
   // The words the shell can print: the theme's own (THEMES §15.2) and those of the widgets it is
   // built of. Read from the dictionaries themselves, so a word added later is checked too.
