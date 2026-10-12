@@ -11,18 +11,24 @@ and the site's `theme/`).
   the site with `theme.json`) or a package name. Empty means no theme.
 - **`ThemeManifest`** — a theme's description: `extra.webx.theme` of a `"type": "webx-theme"`
   package, or `theme` in a local `theme.json` (`title`, `uses`, `requires`, `locales`,
-  `editable`, `fonts`).
+  `fonts`, `preset`).
 - **`ThemeChain`** — the layers, top first (`app(ThemeChain::class)`).
 - **`ThemeLocator`** — reference to manifest; `register($name, $path)` for a theme Composer does
   not know.
-- **Config** `webx-themes.preset` (`WEBX_THEME_PRESET`): a preset from the chain's tokens.json;
-  an unknown name is ignored.
+- **The preset** — `"preset": "night"` in the manifest of a layer (the highest that names one
+  decides): a preset from the chain's tokens.json. A name the chain does not declare throws on the
+  page and is a finding of `webx:theme:check`. There is no setting for it: the look is in git, and
+  the panel does not edit it.
 - **`Vocabulary`** — the token names and their types (`Vocabulary::base()`); a theme adds its own
   under `vocabulary` in tokens.json. **`Tokens`** — the merged values (`app(Tokens::class)`):
-  layers bottom up → preset → the owner's edits of `editable` tokens (`Contracts\Appearance`).
+  layers bottom up → the preset; `sources()` says which layer or preset set each value.
 - **`@webxTheme`** — `<style>:root { --site-… }</style>`, the fonts' `@font-face`, the widgets, the modules' base look, then
   every layer's stylesheet bottom up; nothing without a theme. **`theme_token($name, $default)`** — a merged value, for mail;
   a value that refers to another token (`var(--site-font-body)`) comes with that token's value.
+- **`webx:theme:show [--json]`** — what the chain gives and where each piece comes from: the
+  layers, every token with its type, value and the layer or preset that set it, every view of the
+  layers with what serves it (the site, a layer, the module) and whom it hides, block types,
+  icons, fonts, module stylesheets (`ThemeReport`). Run it before you change the look.
 - **`webx:theme:check [path]`** — CSS knows only tokens (spec §8): the tokens.json of every
   layer, `src/css` of the layers, `resources/css` and `resources/theme` of the widgets and modules.
   A line per finding (file:line, what, why) and a non-zero exit; `Checks\CssCheck::check($css,
@@ -85,7 +91,7 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
 | Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json`                             |
 | Change a colour, a font, a radius                   | `theme/tokens.json` → `defaults`                                                  |
 | A token the vocabulary does not have                | `theme/tokens.json` → `vocabulary`, then `defaults`                               |
-| Another palette the site can switch to              | `theme/tokens.json` → `presets`; `WEBX_THEME_PRESET`                              |
+| Draw the site in another palette                    | `theme/tokens.json` → `presets`; `"preset": "<name>"` in `theme/theme.json`       |
 | Another look of a block the theme brings            | `theme/blocks/<same slug>.json` — add fields, never drop one                      |
 | Keep a block made in the panel in git               | `php artisan webx:blocks:export <slug> --path=theme/blocks`                       |
 | Add an icon, or redraw one of the theme's           | `theme/icons/<name>.svg`, then `php artisan webx:theme:sync`                      |
@@ -101,7 +107,7 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
   the rest never reach the site.
 - Do not make two themes `use` each other: the site refuses to boot with the loop in the message.
 - Do not write a colour or a font literally in CSS: use `var(--site-…)`, or the value stops
-  following presets and the panel. No fallback in `var(--site-x, …)` and no `@media` by width
+  following the presets and tokens.json. No fallback in `var(--site-x, …)` and no `@media` by width
   (`@container`) either; `tokens.json` is the one place a literal value goes.
 - Do not invent a prefix or mix the three: `--site-*` is a token of the vocabulary, `--webx-*` a
   package's own variable (`--webx-slider-gap`), `--wx-*` the panel — never on the public site.
@@ -118,9 +124,14 @@ $vocabulary)` is the same rule for one stylesheet, and the block editor warns wi
   does not repaint with the site — `style="color:{{ theme_token('color-text') }}"` (rule 25).
 - Do not call `View::prependNamespace()` for a theme yourself: it puts the theme above the site's
   `resources/views/vendor/<ns>`.
+- Do not build a way to change the look from the panel — a setting, a field, a stored preset: the
+  look is the theme's files in git, and a value in the database would silently beat what
+  `tokens.json` says.
 
 ## Check your work
 
+- `php artisan webx:theme:show` — before you start: what the chain already gives, and which
+  layer owns the value you are about to change.
 - `php artisan webx:theme:check` — no findings before you say the theme is done.
 - `php artisan tinker` → `app(\WebxUi\Themes\ThemeChain::class)->layers` — the chain as resolved.
 - Open a page: the layout and the module views come from the layer you expect.

@@ -187,12 +187,12 @@ gives values in its `tokens.json`:
 }
 ```
 
-Values merge bottom up: the lowest layer's defaults, each layer above, then the preset
-(`webx-themes.preset`, `WEBX_THEME_PRESET`), then the owner's edits of the tokens the theme lists
-as `editable`. `vocabulary` adds names of the theme's own (`color`, `length`, `font`, `shadow`,
+Values merge bottom up: the lowest layer's defaults, each layer above, then the preset the
+highest layer names in its manifest (`"preset": "night"`). The look is the theme's files, in git:
+nothing in the panel or the environment changes it. `vocabulary` adds names of the theme's own (`color`, `length`, `font`, `shadow`,
 `number`, `time`, `easing`); the engine's names cannot be redeclared. Every value is checked
 against its type — a name the vocabulary does not know or a value of the wrong shape in a
-tokens.json fails at boot, an owner's value that does not fit is dropped.
+tokens.json fails at boot, and so does a preset the chain does not declare.
 
 In the layout's `<head>`:
 
@@ -229,6 +229,16 @@ $chain->layers;      // list<ThemeManifest>, top first
 $chain->top();       // the theme the site configured, or null
 $chain->viewPaths(); // every layer's views/ directory
 $chain->requires();  // the modules the chain cannot render without
+```
+
+What the chain gives and from where — `php artisan webx:theme:show` prints it, `--json` for a
+script — is `ThemeReport`:
+
+```php
+$report = app(\WebxUi\Themes\ThemeReport::class)->toArray();
+$report['tokens']['color-accent']; // ['type' => 'color', 'value' => '#1f5fbf', 'resolved' => null, 'from' => 'webx-ui/theme-default']
+$report['views'];                  // [['view' => 'components/header.blade.php', 'from' => 'theme', 'hides' => ['webx-ui/theme-default']], …]
+$report['preset'];                 // the preset a manifest names, or null
 ```
 
 The token rule for one stylesheet — what `webx:theme:check` runs on every file of the chain:
