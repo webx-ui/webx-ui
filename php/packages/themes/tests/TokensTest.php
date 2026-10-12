@@ -82,6 +82,7 @@ class TokensTest extends TestCase
 
         $this->localOver('');
     }
+
     #[Test]
     public function the_css_is_one_root_rule_in_the_vocabulary_order(): void
     {

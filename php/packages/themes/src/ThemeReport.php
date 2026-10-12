@@ -86,7 +86,7 @@ final readonly class ThemeReport
             $resolved = $this->tokens->resolved($name);
 
             $rows[$name] = [
-                'type' => $this->tokens->vocabulary()->type($name)?->value ?? '',
+                'type' => $this->tokens->vocabulary()->type($name)->value ?? '',
                 'value' => $value,
                 // Only where it says more than the value: a reference to another token.
                 'resolved' => $resolved === $value ? null : $resolved,

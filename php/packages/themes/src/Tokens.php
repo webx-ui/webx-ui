@@ -179,7 +179,6 @@ class Tokens
         return $presets;
     }
 
-
     /**
      * `:root { --site-…: … }` for the inline `<style>` of `@webxTheme`. Every value is checked
      * against its type once more on the way out: the values are already checked on the way in,
