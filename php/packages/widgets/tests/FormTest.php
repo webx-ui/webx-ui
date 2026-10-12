@@ -356,4 +356,38 @@ final class FormTest extends TestCase
             'check' => ['name' => 'Ann', 'email' => 'ann@example.com', 'phone' => '+48 512 345 678', 'day' => '2026-05-01', 'password' => 'secret12', 'password_confirmation' => 'secret12', 'plan' => 'team', 'agree' => '1'],
         ])->assertJson(['ok' => true, 'heading' => 'All right', 'message' => '<p>Checked twice.</p>']);
     }
+
+    #[Test]
+    public function the_suggestions_showcase_door_answers_html_from_the_pages_goods_and_words(): void
+    {
+        $items = "Oak desk | €349\nOak <shelf> | €289\nDesk lamp | €79\n\nLinen curtains";
+        $words = ['products' => 'Products (:count)', 'all' => 'See all: :count', 'nothing' => 'Nothing for “:q”.'];
+
+        $this->get('/webx/widgets/showcase/suggest?q=oak')->assertNotFound();
+        file_put_contents($this->journal, '{"version":1,"entries":[]}');
+
+        $cards = $this->get('/webx/widgets/showcase/suggest?'.http_build_query(['q' => 'OAK', 'items' => $items, 'words' => $words, 'to' => '/kitchen-sink/forms/suggestions']))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/html; charset=UTF-8');
+        $html = (string) $cards->getContent();
+        $this->assertStringContainsString('no-store', (string) $cards->headers->get('Cache-Control'));
+        $this->assertStringContainsString('<div class="b-showcase-suggest__found" data-webx-section="products"><p class="b-showcase-suggest__found-heading" data-webx-heading>Products (2)</p>', $html);
+        $this->assertStringContainsString('<a class="b-showcase-suggest__card" href="/kitchen-sink/forms/suggestions?q=Oak%20desk" data-webx-option><span class="b-showcase-suggest__card-body"><span class="b-showcase-suggest__card-name"><mark class="b-showcase-suggest__mark">Oak</mark> desk</span><span class="b-showcase-suggest__card-price">€349</span></span></a>', $html);
+        // The page's goods are escaped, the typed words marked as they stand in the name.
+        $this->assertStringContainsString('<mark class="b-showcase-suggest__mark">Oak</mark> &lt;shelf&gt;</span>', $html);
+        $this->assertStringContainsString('<a class="b-showcase-suggest__all" href="/kitchen-sink/forms/suggestions?q=OAK" data-webx-option>See all: 2</a>', $html);
+
+        $values = (string) $this->get('/webx/widgets/showcase/suggest?'.http_build_query(['q' => 'lin', 'items' => $items, 'as' => 'values']))->assertOk()->getContent();
+        $this->assertSame('<ul class="b-showcase-suggest__values"><li class="b-showcase-suggest__value" data-webx-option="Linen curtains"><mark class="b-showcase-suggest__mark">Lin</mark>en curtains</li></ul>', $values);
+
+        $nothing = (string) $this->get('/webx/widgets/showcase/suggest?'.http_build_query(['q' => '<zebra>', 'items' => $items, 'words' => $words]))->assertOk()->getContent();
+        $this->assertSame('<p class="b-showcase-suggest__nothing">Nothing for “&lt;zebra&gt;”.</p>', $nothing);
+
+        // Another site's address is not a «see all»: the demo is not an open redirect.
+        $foreign = (string) $this->get('/webx/widgets/showcase/suggest?'.http_build_query(['q' => 'desk', 'items' => $items, 'to' => '//evil.example']))->getContent();
+        $this->assertStringContainsString('href="/?q=desk"', $foreign);
+
+        $this->get('/webx/widgets/showcase/suggest?q=+')->assertNoContent();
+        $this->assertSame([['name' => 'Oak desk', 'price' => '€349'], ['name' => 'Linen curtains', 'price' => '']], ShowcaseController::found(ShowcaseController::items("Oak desk | €349\r\nLinen curtains\n | 5"), 'e'));
+    }
 }

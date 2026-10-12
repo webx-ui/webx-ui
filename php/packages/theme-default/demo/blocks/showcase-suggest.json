@@ -1,0 +1,111 @@
+{
+  "slug": "showcase-suggest",
+  "title": "Showcase: suggestions while typing",
+  "description": "A search box that suggests while typing, or a field with suggestions inside another form, asking the showcase’s own door, which answers HTML from the goods and the words of the block — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 99,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "mode",
+      "type": "wx-select",
+      "label": "What it is",
+      "props": {
+        "options": [
+          {
+            "label": "A search box",
+            "value": "search"
+          },
+          {
+            "label": "A field inside another form",
+            "value": "field"
+          }
+        ]
+      }
+    },
+    {
+      "id": "label",
+      "type": "wx-input",
+      "label": "Label of the field",
+      "localized": true
+    },
+    {
+      "id": "placeholder",
+      "type": "wx-input",
+      "label": "Placeholder",
+      "localized": true
+    },
+    {
+      "id": "button",
+      "type": "wx-input",
+      "label": "Button",
+      "localized": true
+    },
+    {
+      "id": "goods",
+      "type": "wx-textarea",
+      "label": "Goods, a line each: name | price",
+      "localized": true,
+      "props": {
+        "rows": 8
+      }
+    },
+    {
+      "id": "products_label",
+      "type": "wx-input",
+      "label": "Heading of the goods found (:count)",
+      "localized": true
+    },
+    {
+      "id": "all_label",
+      "type": "wx-input",
+      "label": "See all (:count)",
+      "localized": true
+    },
+    {
+      "id": "nothing_label",
+      "type": "wx-input",
+      "label": "Nothing found (:q)",
+      "localized": true
+    },
+    {
+      "id": "results_label",
+      "type": "wx-input",
+      "label": "Heading of the results page (:q, :count)",
+      "localized": true
+    },
+    {
+      "id": "chosen_label",
+      "type": "wx-input",
+      "label": "What was sent (:value)",
+      "localized": true
+    }
+  ],
+  "template": "@php\n    // Suggestions while typing (W6.5) against the showcase's door (GET webx/widgets/showcase/suggest),\n    // which answers HTML the way a site's address of suggestions does. The goods and every word are\n    // this block's localized fields, carried to the door in the address of the suggestions.\n    // A search box: a GET search to this page, which lists what was found without JavaScript.\n    // A field: inside another form, a value chosen fills it; the form is sent as it would be.\n    $search = $mode !== 'field';\n    $param = $search ? 'q' : 'city';\n    $path = '/'.ltrim(request()->path(), '/');\n    $source = route('webx-widgets.showcase.suggest', array_filter([\n        'as' => $search ? null : 'values',\n        'items' => (string) $goods,\n        'to' => $path,\n        'words' => ['products' => (string) $products_label, 'all' => (string) $all_label, 'nothing' => (string) $nothing_label],\n    ]));\n    $asked = request()->query($param);\n    $asked = is_string($asked) ? trim($asked) : '';\n    $found = $search && $asked !== ''\n        ? \\WebxUi\\Widgets\\Forms\\ShowcaseController::found(\\WebxUi\\Widgets\\Forms\\ShowcaseController::items((string) $goods), $asked)\n        : [];\n@endphp\n<section class=\"b-showcase-suggest\" data-wx-block=\"showcase-suggest\" data-mode=\"{{ $search ? 'search' : 'field' }}\">\n    @if ($heading)\n        <h2 class=\"b-showcase-suggest__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-suggest__note\">{{ $note }}</p>\n    @endif\n    <div class=\"b-showcase-suggest__frame\">\n        @if ($search)\n            <x-webx-suggest :action=\"$path\" :source=\"$source\" :value=\"$asked\" :recent=\"5\" :label=\"(string) $label\"\n                            :placeholder=\"(string) $placeholder\" :submit-label=\"(string) $button\" />\n            @if ($asked !== '')\n                <div class=\"b-showcase-suggest__results\" role=\"status\">\n                    <p class=\"b-showcase-suggest__results-heading\">{{ str_replace([':q', ':count'], [$asked, (string) count($found)], (string) $results_label) }}</p>\n                    @if ($found === [])\n                        <p class=\"b-showcase-suggest__nothing\">{{ str_replace(':q', $asked, (string) $nothing_label) }}</p>\n                    @else\n                        <ul class=\"b-showcase-suggest__list\">\n                            @foreach ($found as $item)\n                                <li class=\"b-showcase-suggest__item\"><span class=\"b-showcase-suggest__card-name\">{{ $item['name'] }}</span> <span class=\"b-showcase-suggest__card-price\">{{ $item['price'] }}</span></li>\n                            @endforeach\n                        </ul>\n                    @endif\n                </div>\n            @endif\n        @else\n            <x-webx-form method=\"get\" :action=\"$path\" class=\"b-showcase-suggest__form\">\n                <x-webx-suggest :source=\"$source\" name=\"city\" :value=\"$asked\" :show-label=\"true\" :label=\"(string) $label\"\n                                :placeholder=\"(string) $placeholder\" />\n                <x-webx-form.submit>{{ $button }}</x-webx-form.submit>\n            </x-webx-form>\n            @if ($asked !== '')\n                <p class=\"b-showcase-suggest__chosen\" role=\"status\">{{ str_replace(':value', $asked, (string) $chosen_label) }}</p>\n            @endif\n        @endif\n    </div>\n</section>",
+  "styles": ".b-showcase-suggest {\n    container-type: inline-size;\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-suggest__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-suggest__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-suggest__frame {\n    max-width: 36rem;\n}\n\n.b-showcase-suggest__form {\n    display: flex;\n    flex-direction: column;\n    gap: var(--site-space-3);\n}\n\n.b-showcase-suggest__found-heading {\n    margin: 0;\n    padding: var(--site-space-1) var(--site-space-3);\n    color: var(--site-color-text-muted);\n    font-size: var(--site-font-size-6);\n    font-weight: 600;\n}\n\n.b-showcase-suggest__card-body {\n    display: flex;\n    flex-wrap: wrap;\n    justify-content: space-between;\n    gap: var(--site-space-1) var(--site-space-3);\n}\n\n.b-showcase-suggest__card-price {\n    font-weight: 600;\n    white-space: nowrap;\n}\n\n.b-showcase-suggest__mark {\n    background: transparent;\n    color: inherit;\n    font-weight: 700;\n    text-decoration: underline;\n}\n\n.b-showcase-suggest__all {\n    font-weight: 600;\n}\n\n.b-showcase-suggest__values {\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-showcase-suggest__nothing {\n    margin: 0;\n    padding: var(--site-space-2) var(--site-space-3);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-suggest__results {\n    margin-block-start: var(--site-space-5);\n}\n\n.b-showcase-suggest__results-heading {\n    margin: 0 0 var(--site-space-2);\n    font-weight: 600;\n}\n\n.b-showcase-suggest__list {\n    display: grid;\n    gap: var(--site-space-2);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-showcase-suggest__item {\n    display: flex;\n    flex-wrap: wrap;\n    justify-content: space-between;\n    gap: var(--site-space-3);\n    padding: var(--site-space-2) var(--site-space-3);\n    border: 1px solid var(--site-color-border);\n    border-radius: var(--site-radius-md);\n}\n\n.b-showcase-suggest__chosen {\n    margin: var(--site-space-4) 0 0;\n    font-weight: 600;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Suggestions",
+    "note": "",
+    "mode": "search"
+  }
+}

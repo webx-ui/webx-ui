@@ -572,7 +572,7 @@ class ThemeDefaultTest extends TestCase
             $templates['demo/blocks/'.basename($file)] = (string) (json_decode((string) file_get_contents($file), true)['template'] ?? '');
         }
 
-        $this->assertCount(32, $templates);
+        $this->assertCount(33, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);
