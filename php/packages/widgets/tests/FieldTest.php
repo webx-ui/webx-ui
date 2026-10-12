@@ -229,7 +229,7 @@ lines</textarea>', "Two\nlines"];
 
         $this->assertSame(1, substr_count($back, '" checked '));
         $this->assertStringContainsString('value="card" checked ', $back);
-        $this->assertMatchesRegularExpression('~<fieldset aria-describedby="field-order-extras-2-error" class="webx-field webx-field--checkbox is-invalid">~', $back);
+        $this->assertMatchesRegularExpression('~<fieldset aria-describedby="field-order-extras-2-error" class="webx-field webx-field--checkbox is-invalid" data-webx-field="order.extras">~', $back);
         $this->assertSame(3, substr_count($back, 'aria-invalid="true"'), 'each box says the group is wrong');
         $this->assertStringContainsString('The extra is not offered.', $back);
     }
@@ -258,7 +258,7 @@ lines</textarea>', "Two\nlines"];
 
         $html = Blade::render('<x-webx-field type="radio" name="plan" label="Plan" :choices="[[\'value\' => \'s\', \'label\' => \'Small\'], [\'value\' => \'l\', \'label\' => \'Large\', \'disabled\' => true]]" required inline />');
 
-        $this->assertStringContainsString('<fieldset aria-describedby="field-plan-error" class="webx-field webx-field--radio is-invalid is-required">', $html);
+        $this->assertStringContainsString('<fieldset aria-describedby="field-plan-error" class="webx-field webx-field--radio is-invalid is-required" data-webx-field="plan">', $html);
         $this->assertSame(2, substr_count($html, ' required '));
         $this->assertSame(2, substr_count($html, 'aria-invalid="true"'));
         $this->assertSame(1, substr_count($html, ' disabled '));
@@ -341,7 +341,7 @@ lines</textarea>', "Two\nlines"];
     {
         $html = Blade::render('<x-webx-field name="code" label="Code" required disabled readonly class="b-form__code" data-mask="code" />');
 
-        $this->assertStringContainsString('<div class="webx-field webx-field--text is-required is-disabled b-form__code">', $html);
+        $this->assertStringContainsString('<div class="webx-field webx-field--text is-required is-disabled b-form__code" data-webx-field="code">', $html);
         $this->assertStringContainsString('<label class="webx-field__label" for="field-code">Code<span class="webx-field__required" aria-hidden="true">*</span></label>', $html);
         $this->assertMatchesRegularExpression('~<input type="text" class="webx-field__control" id="field-code" name="code" value="" required="required" disabled="disabled" readonly="readonly"[^>]* data-mask="code">~', $html);
     }
@@ -406,8 +406,8 @@ lines</textarea>', "Two\nlines"];
         $this->assertMatchesRegularExpression('~id="field-fields-email-error" >[^<]*email[^<]*</p>~', $html);
         $this->assertStringContainsString('name="items[0][qty]" value="0"', $html);
         $this->assertMatchesRegularExpression('~id="field-items-0-qty-error" >[^<]*1[^<]*</p>~', $html);
-        $this->assertMatchesRegularExpression('~<fieldset aria-describedby="field-delivery-error" class="webx-field webx-field--radio is-invalid is-required">~', $html);
-        $this->assertMatchesRegularExpression('~<fieldset aria-describedby="field-extras-error" class="webx-field webx-field--checkbox is-invalid">~', $html);
+        $this->assertMatchesRegularExpression('~<fieldset aria-describedby="field-delivery-error" class="webx-field webx-field--radio is-invalid is-required" data-webx-field="delivery">~', $html);
+        $this->assertMatchesRegularExpression('~<fieldset aria-describedby="field-extras-error" class="webx-field webx-field--checkbox is-invalid" data-webx-field="extras">~', $html);
         $this->assertStringContainsString('value="wrap" checked ', $html);
         $this->assertMatchesRegularExpression('~id="field-terms-error" >[^<]+</p>~', $html);
         $this->assertStringNotContainsString('id="field-terms" name="terms" value="1" checked', $html);

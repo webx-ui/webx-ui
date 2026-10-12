@@ -119,6 +119,8 @@ export default {
         zoom: join(root, 'resources/js/zoom.js'),
         // The fields of a form: Show on a password, the line beside a file — the rest is HTML.
         field: join(root, 'resources/js/field.js'),
+        // The shell of a form: sending in place, the errors of a 422 by field, the answer.
+        form: join(root, 'resources/js/form.js'),
       },
       output: {
         entryFileNames: '[name].js',

@@ -32,11 +32,3 @@
 .webx-form-dialog__done[hidden] {
   display: none;
 }
-
-/* Printed open (the page came back from it) and no runtime: over the page, like :target. */
-html:not(.webx-js) .webx-form-dialog[open] {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  box-shadow: 0 0 0 100vmax var(--webx-dialog-backdrop);
-}

@@ -7,7 +7,8 @@
     __error, and the controls' (see each type); states is-invalid, is-required, is-disabled.
 
     The error is always there, empty and hidden until there is something to say, and the control
-    is described by it: the form's script (W6.2) writes into it rather than building it.
+    is described by it: the form's script writes into it rather than building it.
+    `data-webx-field` is the validator's name of the field — what the errors of a 422 are keyed by.
 --}}
 @if ($type === 'hidden')
     @include('webx-widgets::components.field.hidden')
@@ -19,11 +20,11 @@
             : ($optional ? '<span class="webx-field__optional">('.e($words['optional']).')</span>' : '');
     @endphp
     @if ($grouped())
-        <fieldset {{ $attributes->except('class')->merge(['aria-describedby' => $describedBy()]) }} {{ $attributes->only('class')->class($classes) }}>
+        <fieldset {{ $attributes->except('class')->merge(['aria-describedby' => $describedBy()]) }} {{ $attributes->only('class')->class($classes) }} data-webx-field="{{ $key }}">
             <legend class="webx-field__label webx-field__label--legend">{{ $label }}{!! $marker !!}</legend>
             @include('webx-widgets::components.field.'.$type)
     @else
-        <div {{ $attributes->only('class')->class($classes) }}>
+        <div {{ $attributes->only('class')->class($classes) }} data-webx-field="{{ $key }}">
             @if ($tick())
                 @include('webx-widgets::components.field.'.$type)
             @else

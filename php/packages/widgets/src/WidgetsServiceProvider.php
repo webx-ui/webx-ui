@@ -49,6 +49,8 @@ use WebxUi\Widgets\View\Components\Counter;
 use WebxUi\Widgets\View\Components\Dialog;
 use WebxUi\Widgets\View\Components\Dropdown;
 use WebxUi\Widgets\View\Components\Field;
+use WebxUi\Widgets\View\Components\Form;
+use WebxUi\Widgets\View\Components\FormSubmit;
 use WebxUi\Widgets\View\Components\Header;
 use WebxUi\Widgets\View\Components\HeaderNav;
 use WebxUi\Widgets\View\Components\Icon;
@@ -159,6 +161,11 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-notice-bar', NoticeBar::class);
         Blade::component('webx-zoom', Zoom::class);
         Blade::component('webx-field', Field::class);
+        Blade::component('webx-form', Form::class);
+        Blade::component('webx-form.submit', FormSubmit::class);
+
+        // The token a cached page's form asks for again (§17.3), and the door of the showcase.
+        $this->loadRoutesFrom(Widgets::path().'/routes/web.php');
 
         if ($this->app->runningInConsole()) {
             $this->publishes([Widgets::path().'/config/webx-widgets.php' => config_path('webx-widgets.php')], 'webx-widgets-config');

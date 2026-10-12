@@ -180,4 +180,8 @@ return [
         'no_file' => 'Dosya seçilmedi',
         'files' => 'Seçilen dosya: :count',
     ],
+    'form' => [
+        'failed' => 'Form gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.',
+        'expired' => 'Sayfa çok uzun süredir açık. Sayfayı yenileyip formu tekrar gönderin.',
+    ],
 ];

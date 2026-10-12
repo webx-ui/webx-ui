@@ -180,4 +180,8 @@ return [
         'no_file' => 'Nie wybrano pliku',
         'files' => 'Wybrane pliki: :count',
     ],
+    'form' => [
+        'failed' => 'Nie udało się wysłać formularza. Sprawdź połączenie i spróbuj ponownie.',
+        'expired' => 'Strona jest otwarta zbyt długo. Odśwież ją i wyślij formularz ponownie.',
+    ],
 ];

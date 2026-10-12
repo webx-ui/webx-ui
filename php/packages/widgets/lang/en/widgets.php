@@ -180,4 +180,8 @@ return [
         'no_file' => 'No file chosen',
         'files' => 'Files chosen: :count',
     ],
+    'form' => [
+        'failed' => 'The form could not be sent. Check the connection and try again.',
+        'expired' => 'The page has been open too long. Reload it and send the form again.',
+    ],
 ];
