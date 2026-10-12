@@ -92,7 +92,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'sources.json', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
@@ -125,6 +125,12 @@ final class DistTest extends PlainTestCase
         $size = self::gzipped('form.js') + self::gzipped('form.css');
 
         $this->assertLessThanOrEqual(self::FORM_BUDGET, $size, sprintf('The form is %.1f KB gzip.', $size / 1024));
+
+        // The mask and the files are pieces of their own, claimed by the fields that need them
+        // (§17.6): a form with neither never loads them.
+        $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, self::gzipped('mask.js'), 'The phone mask is over its budget.');
+        $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, self::gzipped('files.js') + self::gzipped('files.css'), 'The files of a field are over their budget.');
+        $this->assertStringNotContainsString('mask', (string) file_get_contents(Widgets::path().'/dist/form.js'));
     }
 
     #[Test]

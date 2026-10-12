@@ -11,6 +11,7 @@ use Illuminate\View\Component;
 use Illuminate\View\ComponentAttributeBag;
 use InvalidArgumentException;
 use WebxUi\Widgets\Facades\Widgets;
+use WebxUi\Widgets\Forms\FormRules;
 
 /**
  * `<x-webx-field>` — one field of a form on the site (spec §17.2): the label, the control, the
@@ -53,6 +54,12 @@ final class Field extends Component
     /** @var list<array{value: string, label: string, disabled: bool}> */
     public array $options = [];
 
+    /**
+     * The checks of FormRules as the browser runs them (`data-webx-rules` on the field), or null
+     * when the form gave no rules this field has.
+     */
+    public ?string $checks = null;
+
     /** @param  array<array-key, mixed>  $choices  `value => label`, or a list of `['value', 'label', 'disabled']` */
     public function __construct(
         public string $name,
@@ -90,6 +97,10 @@ final class Field extends Component
         public ?string $fileLabel = null,
         public ?string $noFileLabel = null,
         public ?string $filesLabel = null,
+        public ?string $removeLabel = null,
+        public ?string $dropLabel = null,
+        mixed $rules = null,
+        public bool $mask = false,
     ) {
         if (! in_array($type, self::TYPES, true)) {
             throw new InvalidArgumentException("<x-webx-field type=\"{$type}\">: one of ".implode(', ', self::TYPES).'.');
@@ -117,6 +128,65 @@ final class Field extends Component
         $base = $id ?? 'field-'.trim((string) preg_replace('/[^a-z0-9]+/i', '-', $this->key), '-');
         $this->fieldId = $id ?? (($n = Widgets::sequence('field:'.$base)) > 1 ? "{$base}-{$n}" : $base);
         $this->message = $type === 'hidden' ? null : ($error ?? $this->errorFromSession());
+        $this->applyRules($rules);
+    }
+
+    /**
+     * The rules the server checks this field by, as the browser can (spec §17.5): its own `:rules`
+     * — a list for this field, or a FormRules — else those of the `<x-webx-form :rules>` around it.
+     * What they say fills what the page did not: `required`, the limits of a number or a date, the
+     * files a picker offers, a number's keyboard.
+     */
+    private function applyRules(mixed $rules): void
+    {
+        if ($this->type === 'hidden') {
+            return;
+        }
+
+        if (is_string($rules) || (is_array($rules) && array_is_list($rules))) {
+            $rules = FormRules::for([$this->key => $rules]);
+        } elseif (is_array($rules)) {
+            $rules = FormRules::for($rules);
+        } elseif (! $rules instanceof FormRules) {
+            // The nearest form's — Blade keeps the data of every component the field stands in.
+            $rules = app('view')->getConsumableComponentData(Form::RULES);
+        }
+
+        if (! $rules instanceof FormRules) {
+            return;
+        }
+
+        $kind = match (true) {
+            $this->type === 'file' => $this->multiple ? 'files' : 'file',
+            $this->many() => 'many',
+            default => 'one',
+        };
+        $found = $rules->field($this->key, $kind);
+        $given = $found['attributes'];
+
+        $this->required = $this->required || $found['required'];
+
+        if ($this->type === 'number') {
+            $this->min ??= $given['min'] ?? null;
+            $this->max ??= $given['max'] ?? null;
+        }
+
+        if ($this->type === 'date') {
+            $this->min ??= $given['date-min'] ?? null;
+            $this->max ??= $given['date-max'] ?? null;
+        }
+
+        if ($this->type === 'file') {
+            $this->accept ??= $given['accept'] ?? null;
+        }
+
+        if ($this->type === 'text' && $this->inputmode === null && isset($given['inputmode'])) {
+            $this->inputmode = $given['inputmode'];
+        }
+
+        if ($found['checks'] !== []) {
+            $this->checks = json_encode($found['checks'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        }
     }
 
     /** `fields[email]` and `fields.email` are one field to the validator: `fields.email`. */
@@ -162,6 +232,15 @@ final class Field extends Component
     {
         Widgets::need('field');
 
+        if ($this->type === 'file') {
+            // Dropping, the list with sizes and pictures, removing one before sending.
+            Widgets::need('files');
+        }
+
+        if ($this->type === 'tel' && $this->mask) {
+            Widgets::need('mask');
+        }
+
         return view('webx-widgets::components.field', [
             'invalid' => $this->message !== null && $this->message !== '',
             'hintId' => $this->fieldId.'-hint',
@@ -177,6 +256,8 @@ final class Field extends Component
                 'file' => $this->fileLabel ?? __($this->multiple ? 'webx-widgets::widgets.field.choose_files' : 'webx-widgets::widgets.field.choose_file'),
                 'no_file' => $this->noFileLabel ?? __('webx-widgets::widgets.field.no_file'),
                 'files' => $this->filesLabel ?? __('webx-widgets::widgets.field.files'),
+                'remove' => $this->removeLabel ?? __('webx-widgets::widgets.field.remove'),
+                'drop' => $this->dropLabel ?? __($this->multiple ? 'webx-widgets::widgets.field.drop_files' : 'webx-widgets::widgets.field.drop_file'),
             ],
             'control' => fn (ComponentAttributeBag $attributes): ComponentAttributeBag => $this->control($attributes),
         ]);
@@ -212,6 +293,7 @@ final class Field extends Component
             'max' => $ranged ? $this->max : null,
             'step' => $ranged ? $this->step : null,
             'accept' => $this->type === 'file' ? $this->accept : null,
+            'data-webx-mask' => $this->type === 'tel' && $this->mask ? 'phone' : null,
             'aria-describedby' => $this->grouped() ? null : $this->describedBy(),
             'aria-invalid' => $invalid && ! $this->grouped() ? 'true' : null,
         ];

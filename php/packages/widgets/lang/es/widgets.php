@@ -179,6 +179,9 @@ return [
         'choose_files' => 'Elegir archivos',
         'no_file' => 'Ningún archivo elegido',
         'files' => 'Archivos elegidos: :count',
+        'remove' => 'Quitar',
+        'drop_file' => 'o suelta un archivo aquí',
+        'drop_files' => 'o suelta archivos aquí',
     ],
     'form' => [
         'failed' => 'No se pudo enviar el formulario. Comprueba la conexión e inténtalo de nuevo.',

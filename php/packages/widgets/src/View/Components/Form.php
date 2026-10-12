@@ -11,6 +11,7 @@ use Illuminate\View\Component;
 use InvalidArgumentException;
 use WebxUi\Widgets\Facades\Widgets;
 use WebxUi\Widgets\Forms\FormResponse;
+use WebxUi\Widgets\Forms\FormRules;
 
 /**
  * `<x-webx-form :action method>` — the shell of every form of the site (spec §17.3).
@@ -20,6 +21,9 @@ use WebxUi\Widgets\Forms\FormResponse;
  * {@see FormResponse} in place. With it (`dist/form.js`) the same form is sent in place: the token
  * from the cookie, one retry on a stale one, the errors of a 422 by field, no second submission
  * while the first is on its way, the answer in a live region.
+ *
+ * `:rules` — the server's rules, an array or {@see FormRules::for()}: every field inside checks
+ * itself by its own part of them in the browser, in the validator's words (spec §17.5).
  *
  * `:csrf="false"` — for a door that guards itself otherwise (inbox's intake: Origin, a honeypot, a
  * limit). `method="get"` — a search: a plain form, nothing to send in place.
@@ -35,6 +39,11 @@ final class Form extends Component
 
     public string $formId;
 
+    /** The name the fields inside find the rules by: Blade keeps a component's public data for its slot. */
+    public const string RULES = 'webxFormRules';
+
+    public ?FormRules $webxFormRules;
+
     public function __construct(
         public string $action,
         public string $method = 'post',
@@ -44,7 +53,14 @@ final class Form extends Component
         public ?string $failedLabel = null,
         public ?string $expiredLabel = null,
         public ?string $closeLabel = null,
+        mixed $rules = null,
     ) {
+        $this->webxFormRules = match (true) {
+            $rules instanceof FormRules => $rules,
+            is_array($rules) => FormRules::for($rules),
+            default => null,
+        };
+
         $method = strtolower(trim($method));
 
         if (! in_array($method, self::METHODS, true)) {

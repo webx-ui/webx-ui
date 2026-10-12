@@ -17,4 +17,5 @@ Route::middleware('web')
     ->group(static function (): void {
         Route::get('csrf', CsrfController::class)->name('csrf');
         Route::post('showcase', ShowcaseController::class)->name('showcase');
+        Route::post('showcase/validation', [ShowcaseController::class, 'validation'])->name('showcase.validation');
     });

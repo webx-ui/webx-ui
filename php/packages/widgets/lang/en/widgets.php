@@ -179,6 +179,9 @@ return [
         'choose_files' => 'Choose files',
         'no_file' => 'No file chosen',
         'files' => 'Files chosen: :count',
+        'remove' => 'Remove',
+        'drop_file' => 'or drop a file here',
+        'drop_files' => 'or drop files here',
     ],
     'form' => [
         'failed' => 'The form could not be sent. Check the connection and try again.',

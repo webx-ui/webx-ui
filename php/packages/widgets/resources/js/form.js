@@ -16,6 +16,9 @@
  *    the focus on the first field wrong; an error goes as soon as its field is changed;
  *  - the answer of FormResponse: off to `redirect`, `html` in place of the fields, `message`
  *    under them in a live region — in a dialog in place of them, with a button that closes it;
+ *  - the checks of FormRules (§17.5) before anything is sent: a touched field when it is left,
+ *    every field on submit, in the validator's own words; the browser's bubbles off
+ *    (`novalidate`); a button with `formnovalidate` goes straight to the server;
  *  - `webx:form:submit` (cancelable), `webx:form:success`, `webx:form:error` on the form.
  */
 
@@ -199,6 +202,201 @@ function request(action, body, progress) {
   })
 }
 
+/*
+ * The checks of FormRules (spec §17.5): the field carries its rules in `data-webx-rules`, each
+ * with the line the validator would write — so this says what the server would, and only what
+ * it surely would: anything it cannot know for certain it lets through to the server.
+ */
+
+const rulesOf = (field) => {
+  try {
+    return JSON.parse(field.getAttribute('data-webx-rules') || 'null')
+  } catch {
+    return null
+  }
+}
+
+/** `items.0.qty` as the browser sends it: `items[0][qty]`. */
+const nameOf = (key) => key.replace(/\.([^.]+)/g, '[$1]')
+
+/** What Laravel's TrimStrings and ConvertEmptyStringsToNull leave of what was sent. */
+function sent(data, name, password) {
+  return data
+    .getAll(name)
+    .filter((value) => typeof value === 'string' || value.name)
+    .map((value) => (typeof value === 'string' && !password ? value.trim() : value))
+    .filter((value) => value !== '')
+}
+
+const numeric = (value) => /^\s*[+-]?(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?\s*$/i.test(String(value))
+const iso = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+
+function measure(check, value) {
+  if (check.as === 'numeric' && numeric(value)) return Number(value)
+  if (Array.isArray(value)) return value.length
+  if (value instanceof File) return value.size / 1024
+  return [...String(value ?? '')].length
+}
+
+function extension(file) {
+  const name = file?.name ?? ''
+  return name.includes('.') ? name.slice(name.lastIndexOf('.') + 1).toLowerCase() : ''
+}
+
+function passes(check, value, other) {
+  const text = typeof value === 'string'
+  switch (check.rule) {
+    case 'required':
+      return value != null && !(Array.isArray(value) && value.length === 0)
+    case 'accepted':
+      return ['yes', 'on', '1', 'true'].includes(value)
+    case 'email':
+      return text && /^[^\s@]+@[^\s@]+$/.test(value)
+    case 'url':
+      return text && /^[a-z][a-z0-9+.-]*:\/\/[^\s/?#]+\S*$/i.test(value)
+    case 'numeric':
+      return text && numeric(value)
+    case 'integer':
+      return text && /^\s*[+-]?(0|[1-9]\d*)\s*$/.test(value)
+    case 'min':
+      return measure(check, value) >= check.value
+    case 'max':
+      return measure(check, value) <= check.value
+    case 'size':
+      return measure(check, value) === check.value
+    case 'between':
+      return measure(check, value) >= check.value[0] && measure(check, value) <= check.value[1]
+    case 'in':
+      return [].concat(value ?? '').every((one) => check.values.includes(String(one)))
+    case 'mimes':
+    case 'extensions': {
+      const list = check.values.some((one) => one === 'jpg' || one === 'jpeg')
+        ? [...check.values, 'jpg', 'jpeg']
+        : check.values
+      return value instanceof File && list.includes(extension(value))
+    }
+    case 'mimetypes':
+      return (
+        value instanceof File &&
+        check.values.some((type) =>
+          type.endsWith('/*') ? value.type.startsWith(type.slice(0, -1)) : value.type === type,
+        )
+      )
+    case 'regex':
+    case 'not_regex': {
+      if (!text) return false
+      let pattern
+      try {
+        pattern = new RegExp(check.source, check.flags)
+      } catch {
+        return true // Not JavaScript after all: the server's alone.
+      }
+      return pattern.test(value) === (check.rule === 'regex')
+    }
+    case 'confirmed':
+    case 'same':
+      return other === undefined || value === other
+    case 'different':
+      return other === undefined || value !== other
+    case 'date': {
+      // Only what is surely no date: 2026-02-30. PHP's strtotime reads far more than JavaScript.
+      if (!text) return false
+      if (!iso(value)) return true
+      const day = new Date(`${value}T00:00:00Z`)
+      return day.toISOString().slice(0, 10) === value
+    }
+    case 'after':
+    case 'before':
+    case 'after_or_equal':
+    case 'before_or_equal':
+      if (!text) return false
+      if (!iso(value)) return true
+      return {
+        after: value > check.value,
+        before: value < check.value,
+        after_or_equal: value >= check.value,
+        before_or_equal: value <= check.value,
+      }[check.rule]
+    default:
+      return true
+  }
+}
+
+/**
+ * The validator's order: a rule after a failed `required` or `accepted` is not run, nor any
+ * after the first failure under `bail`; an empty value meets only those two — unless it was sent
+ * empty and is not `nullable`, which the server holds against every rule as well.
+ */
+function run(checks, value, present, otherOf) {
+  const said = []
+  const bail = checks.some((check) => check.rule === 'bail')
+  const nullable = checks.some((check) => check.rule === 'nullable')
+  const empty = value == null || (Array.isArray(value) && value.length === 0)
+
+  for (const check of checks) {
+    if (!check.message) continue
+    const implicit = check.rule === 'required' || check.rule === 'accepted'
+    if (empty && !implicit && (!present || nullable)) continue
+    if (passes(check, value, otherOf(check))) continue
+    said.push(check.message)
+    if (bail || implicit) break
+  }
+  return said
+}
+
+/** What the server would say of this field, by the rules it carries; nothing — it has none. */
+export function check(form, field, data = new FormData(form)) {
+  const checks = rulesOf(field)
+  const control = controlsOf(field)[0]
+  if (!Array.isArray(checks) || !control?.name) return []
+
+  const values =
+    control.type === 'file'
+      ? Array.from(control.files ?? []).filter((file) => file.name)
+      : sent(data, control.name, control.type === 'password')
+  const many = control.name.endsWith('[]') || control.multiple
+  // A line, a list, a number are sent even empty; nothing goes for an unticked box, a radio no
+  // one chose, an empty file input.
+  const present =
+    !['radio', 'checkbox', 'file'].includes(control.type) && !(control.multiple && !values.length)
+  const otherOf = (rule) => {
+    if (!['confirmed', 'same', 'different'].includes(rule.rule)) return undefined
+    const name = nameOf(rule.other ?? `${field.dataset.webxField}_confirmation`)
+    if (!Array.from(form.elements).some((control) => control.name === name)) return undefined
+    return sent(data, name, true)[0] ?? null
+  }
+
+  const said = run(
+    checks.filter((rule) => !rule.each),
+    many ? values : (values[0] ?? null),
+    present,
+    otherOf,
+  )
+  const each = checks.filter((rule) => rule.each)
+  if (many && each.length) {
+    values.forEach((value, index) => {
+      const lines = run(each, value, true, otherOf)
+      const item = each[0].item
+      for (const line of lines) said.push(line.split(item).join(item.replace(/0$/, String(index))))
+      // The row of a refused file in the list files.js draws.
+      field
+        .querySelector(`[data-webx-file-index="${index}"]`)
+        ?.classList.toggle('is-invalid', lines.length > 0)
+    })
+  }
+  return said
+}
+
+/** The fields whose rules look at this one: a password's `confirmed`, `same`, `different`. */
+const watching = (form, key) =>
+  fieldsOf(form).filter((field) =>
+    (rulesOf(field) ?? []).some(
+      (rule) =>
+        ['confirmed', 'same', 'different'].includes(rule.rule) &&
+        (rule.other ?? `${field.dataset.webxField}_confirmation`) === key,
+    ),
+  )
+
 export function form(el) {
   if (!(el instanceof HTMLFormElement)) return undefined
   const on = listeners()
@@ -210,6 +408,8 @@ export function form(el) {
   // An `action` input would shadow the property: the attribute is the address.
   const action = el.getAttribute('action') || location.href
   let sending = false
+  // The fields the browser itself found wrong.
+  const refused = new WeakSet()
 
   const busy = (state) => {
     sending = state
@@ -319,6 +519,30 @@ export function form(el) {
     event.preventDefault()
     if (sending) return
 
+    // A button with formnovalidate sends without the browser's checks — straight to the server's.
+    if (!event.submitter?.formNoValidate) {
+      const all = new FormData(el)
+      let wrong = false
+      for (const field of fieldsOf(el)) {
+        const said = check(el, field, all)
+        if (said.length) {
+          invalid(field, said)
+          refused.add(field)
+          wrong = true
+        } else if (refused.has(field)) {
+          // Its error was the browser's, and it is right now; one of the server's stays.
+          valid(field)
+          refused.delete(field)
+        }
+      }
+      if (wrong) {
+        refuse(el, [])
+        say(el, null, null)
+        focusFirst()
+        return
+      }
+    }
+
     let data
     try {
       data = new FormData(el, event.submitter ?? undefined)
@@ -362,11 +586,47 @@ export function form(el) {
     }
   })
 
-  // A corrected field loses its error as it is corrected.
-  const changed = (event) =>
-    valid(event.target instanceof Element ? event.target.closest('[data-webx-field]') : null)
+  // A field is checked when it is left, if it was touched; a field already wrong is checked as it
+  // is corrected and loses its error the moment it is right. One the browser cannot check — an
+  // error of the server's — goes at the first change, as before.
+  const touched = new WeakSet()
+  const recheck = (field) => {
+    const said = check(el, field)
+    if (said.length) {
+      invalid(field, said)
+      refused.add(field)
+    } else {
+      valid(field)
+      refused.delete(field)
+    }
+  }
+  const changed = (event) => {
+    const field = event.target instanceof Element ? event.target.closest('[data-webx-field]') : null
+    if (!field || field.closest('form') !== el) return
+    touched.add(field)
+    // A file is checked as soon as it is chosen or dropped: before it is sent, not after.
+    if (field.classList.contains('is-invalid') || (event.target.type === 'file' && rulesOf(field)))
+      recheck(field)
+    for (const other of watching(el, field.dataset.webxField)) {
+      if (other.classList.contains('is-invalid')) recheck(other)
+    }
+  }
   on(el, 'input', changed)
   on(el, 'change', changed)
+  on(el, 'focusout', (event) => {
+    const field = event.target instanceof Element ? event.target.closest('[data-webx-field]') : null
+    // Moving between the radios of one group is not leaving it.
+    if (!field || field.contains(event.relatedTarget) || !touched.has(field)) return
+    if (rulesOf(field)) recheck(field)
+    for (const other of watching(el, field.dataset.webxField)) {
+      if (touched.has(other)) recheck(other)
+    }
+  })
+
+  // The browser's bubbles off: the same errors in every language and browser. Without this
+  // script the browser's own checks stay — the only ones before the round trip.
+  const validated = el.noValidate
+  el.noValidate = true
 
   let watch = null
   if (dialog) {
@@ -389,6 +649,7 @@ export function form(el) {
 
   return () => {
     on.off()
+    el.noValidate = validated
     watch?.disconnect()
     if (sending) busy(false)
   }

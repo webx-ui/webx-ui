@@ -139,7 +139,7 @@ final class FieldTest extends TestCase
             $this->assertMatchesRegularExpression('~<(input|select|textarea)[^>]* class="webx-field__control[^"]*" id="field-answer" name="answer"~', $html);
         }
 
-        $this->assertSame(['field'], Widgets::claimed());
+        $this->assertSame($type === 'file' ? ['field', 'files'] : ['field'], Widgets::claimed());
     }
 
     #[Test]

@@ -18,6 +18,7 @@ use Throwable;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Widgets\Facades\Widgets;
 use WebxUi\Widgets\Forms\FormResponse;
+use WebxUi\Widgets\Forms\FormRules;
 use WebxUi\Widgets\Forms\ShowcaseController;
 
 /**
@@ -295,5 +296,32 @@ final class FormTest extends TestCase
         // Removed with the demo: the journal is gone, the door with it.
         unlink($this->journal);
         $this->postJson('/webx/widgets/showcase', [])->assertNotFound();
+    }
+
+    #[Test]
+    public function the_validation_showcase_door_says_what_the_browser_said(): void
+    {
+        $this->postJson('/webx/widgets/showcase/validation', [])->assertNotFound();
+        file_put_contents($this->journal, '{"version":1,"entries":[]}');
+
+        $labels = ['name' => 'Your name', 'phone' => 'Phone', 'photos' => 'Photos'];
+        $browser = FormRules::for(ShowcaseController::CHECKS, ShowcaseController::attributes($labels));
+
+        $refused = $this->postJson('/webx/widgets/showcase/validation', ['labels' => $labels, 'check' => ['name' => 'admin', 'phone' => '512', 'password' => 'secret12', 'password_confirmation' => 'other']])->assertStatus(422);
+        $errors = (array) $refused->json('errors');
+
+        // What the browser checks, the server says in the same words.
+        $phone = array_column($browser->field('check.phone')['checks'], 'message', 'rule');
+        $this->assertSame([$phone['regex']], $errors['check.phone']);
+        $password = array_column($browser->field('check.password')['checks'], 'message', 'rule');
+        $this->assertSame([$password['confirmed']], $errors['check.password']);
+        // What only the server knows: the name passes the browser and not the server.
+        $this->assertNotContains('not_in', array_column($browser->field('check.name')['checks'], 'rule'));
+        $this->assertStringContainsString('Your name', (string) $errors['check.name'][0]);
+
+        $this->postJson('/webx/widgets/showcase/validation', [
+            'words' => ['heading' => 'All right', 'message' => 'Checked twice.'],
+            'check' => ['name' => 'Ann', 'email' => 'ann@example.com', 'phone' => '+48 512 345 678', 'day' => '2026-05-01', 'password' => 'secret12', 'password_confirmation' => 'secret12', 'plan' => 'team', 'agree' => '1'],
+        ])->assertJson(['ok' => true, 'heading' => 'All right', 'message' => '<p>Checked twice.</p>']);
     }
 }

@@ -179,6 +179,9 @@ return [
         'choose_files' => 'Dosyaları seçin',
         'no_file' => 'Dosya seçilmedi',
         'files' => 'Seçilen dosya: :count',
+        'remove' => 'Kaldır',
+        'drop_file' => 'ya da dosyayı buraya bırakın',
+        'drop_files' => 'ya da dosyaları buraya bırakın',
     ],
     'form' => [
         'failed' => 'Form gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.',
