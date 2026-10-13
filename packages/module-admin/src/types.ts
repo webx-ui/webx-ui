@@ -4,6 +4,7 @@ import type { TypeRegistry } from '@webx-ui/schema'
 import type { ThemePreference } from '@webx-ui/tokens'
 import type { AdminContext } from './admin'
 import type { LocaleDescriptor } from './i18n'
+import type { SiteBarTab } from './siteBar'
 
 /**
  * What `GET /api/cms/manifest` answers with — the panel's own description of itself, and the
@@ -187,6 +188,12 @@ export interface AdminModule {
    * cannot depend on the module that has the block library, so that module supplies this.
    */
   blockLabels?: (admin: AdminContext) => Promise<BlockLabels>
+  /**
+   * Tabs this module adds to the panel on the site (WEBX_UI_SITE_BAR.md). Each is drawn only
+   * where the server listed its name for the page — the server half of the module registers
+   * the same name with `SiteBar::section()`.
+   */
+  siteBarTabs?: SiteBarTab[]
 }
 
 /** Names of block types and of their fields, as the block library has them. */

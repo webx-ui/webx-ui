@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue'
+import { computed, onMounted, ref, type Component } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   useAdmin,
   useErrorText,
@@ -242,6 +243,25 @@ const actions = computed<ScreenAction[]>(() => [
     : []),
   ...faqActions.value,
 ])
+
+/*
+ * `?rule=12` opens that rule — the link the panel on the site gives next to a field the rule
+ * sets, so «overridden by rule /pricing» is one click from the rule rather than a search.
+ * Optional chaining because a test may mount the screen without a router.
+ */
+const route = useRoute()
+
+onMounted(async () => {
+  const id = Number(route?.query.rule)
+
+  if (!canManage || !Number.isInteger(id) || id <= 0) return
+
+  try {
+    await open(await api.url(id))
+  } catch (error) {
+    toast.danger(message(error))
+  }
+})
 
 function onFaqFilter(): void {
   void load({ ...last, page: 1 })

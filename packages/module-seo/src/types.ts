@@ -390,3 +390,41 @@ export interface SeoFaqImportResult {
   problems: SeoLinkProblem[]
   pages: { address: string; questions: number; action: 'create' | 'replace' | 'append' }[]
 }
+
+/** Where a field of a page got its value, as the SEO tab of the panel on the site says it. */
+export type SeoOrigin = 'rule' | 'entity' | 'fallback' | 'defaults' | 'other'
+
+/** The four fields the tab on the site edits. */
+export type SeoSiteBarField = 'title' | 'description' | 'h1' | 'robots'
+
+/**
+ * What `GET /api/cms/seo/site-bar` says about the page beside the panel on the site —
+ * mirrors `WebxUi\Seo\Panel\SiteBarSeo::report()`.
+ */
+export interface SeoSiteBarReport {
+  url: string
+  /** The page's language: what the inputs edit and what `value` is in. */
+  locale: string
+  /** Where an edit goes: the record's own card, or a rule for this exact address. */
+  target: 'entity' | 'rule'
+  /** The record whose card is edited — only when that is where an edit goes. */
+  entity: { type: string; id: number | string } | null
+  /** The rule that matches the address now, if any. Not `exact`: a mask, which a save replaces here. */
+  rule: { id: number; pattern: string; match_type: MatchType; exact: boolean } | null
+  fields: Record<
+    SeoSiteBarField,
+    {
+      /** What the page prints, after the title template and the limits. */
+      value: string | null
+      /** Which source won the field; null when none said anything. */
+      source: SeoOrigin | null
+      /** What the place an edit goes to says now, in this language. */
+      own: string | null
+      /** A source above that place that says something for this field: an edit will not show. */
+      overridden: SeoOrigin | null
+    }
+  >
+  /** The page's `<title>` now, when a rule or the record wrote it — for the browser's tab. */
+  title: string | null
+  can: { entity: boolean; rule: boolean }
+}

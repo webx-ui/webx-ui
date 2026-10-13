@@ -18,10 +18,12 @@ import type {
   SeoRedirectInput,
   SeoRedirectQuery,
   SeoSitemapStatus,
+  SeoSiteBarReport,
   SeoTestResult,
   SeoUrlInput,
   SeoUrlQuery,
   SeoUrlRule,
+  SeoValue,
 } from './types'
 
 export interface SeoApi {
@@ -62,6 +64,14 @@ export interface SeoApi {
   linksHeading(input: SeoLinkHeadingInput): Promise<SeoLinkHeadingResult>
   /** Addresses from the registry for an acceptor field to suggest. */
   linkAddresses(q: string, locale?: string | null): Promise<SeoLinkAddress[]>
+
+  /** What the page beside the panel on the site says, where from, and where an edit goes. */
+  siteBar(url: string, locale?: string | null): Promise<SeoSiteBarReport>
+  /**
+   * Named fields of one record's card, laid over what it has: a language map sets those
+   * languages, `null` empties. Behind the right of the record's section, not `seo.manage`.
+   */
+  saveEntitySeo(type: string, id: number | string, seo: SeoValue): Promise<SeoValue>
 
   /** Page FAQs from a file (§18.5); a preview unless `dryRun` is false. */
   importFaq(file: Blob, mode: SeoFaqImportMode, dryRun: boolean): Promise<SeoFaqImportResult>
@@ -189,6 +199,20 @@ export function createSeoApi(admin: AdminContext): SeoApi {
           query: { q: q || undefined, locale: locale ?? undefined },
         })
         .then(data),
+
+    siteBar: (url, locale = null) =>
+      admin.http
+        .get<{ data: SeoSiteBarReport }>(`${base}/site-bar`, {
+          query: { url, locale: locale ?? undefined },
+        })
+        .then(data),
+
+    saveEntitySeo: (type, id, seo) =>
+      admin.http
+        .put<{
+          data: { seo: SeoValue }
+        }>(`${base}/entity/${encodeURIComponent(type)}/${encodeURIComponent(String(id))}`, { seo })
+        .then((body) => body.data.seo),
 
     importFaq: (file, mode, dryRun) =>
       upload<SeoFaqImportResult>(`${base}/faq/import`, file, mode, dryRun, 'faq.csv'),

@@ -230,5 +230,7 @@ export {
   tellSitePage,
   type SiteBarContext,
   type SiteBarEntity,
+  type SiteBarMessage,
   type SiteBarStatus,
+  type SiteBarTab,
 } from './siteBar'

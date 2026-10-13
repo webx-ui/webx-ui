@@ -7,6 +7,7 @@ export { default as WxSeoUrlsPage } from './SeoUrlsPage.vue'
 export { default as WxSeoRedirectsPage } from './SeoRedirectsPage.vue'
 export { default as WxSeoAliasesPage } from './SeoAliasesPage.vue'
 export { default as WxSeoLinksPage } from './SeoLinksPage.vue'
+export { default as WxSeoSiteBarTab } from './SeoSiteBarTab.vue'
 export { faqEnabled, seoFeature } from './features'
 export type {
   MatchType,
@@ -36,8 +37,11 @@ export type {
   SeoRedirect,
   SeoRedirectInput,
   SeoRedirectQuery,
+  SeoOrigin,
   SeoResolved,
   SeoRoute,
+  SeoSiteBarField,
+  SeoSiteBarReport,
   SeoTestResult,
   SeoUrlInput,
   SeoUrlQuery,

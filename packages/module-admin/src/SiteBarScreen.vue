@@ -11,6 +11,7 @@ import {
   tellSitePage,
   type SiteBarContext,
   type SiteBarStatus,
+  type SiteBarTab,
 } from './siteBar'
 
 /**
@@ -20,7 +21,10 @@ import {
  * The same panel as everywhere else, in a shell without its navigation: the page it is about is
  * the one beside it, and the way into the rest of the panel is «Open in panel», which leaves the
  * site for the record's own screen. The page is named by `?url=`, which the script on the site
- * writes from its own address.
+ * writes from its own address, and its language by `?locale=`, from its `<html lang>`.
+ *
+ * «Page» is the frame's own tab; the others come from the modules (`siteBarTabs`), each drawn
+ * only where the server listed it for this page.
  */
 const admin = useAdmin()
 const route = useRoute()
@@ -32,6 +36,21 @@ const error = ref<string | null>(null)
 const tab = ref<string | number>('page')
 
 const url = computed(() => (typeof route.query.url === 'string' ? route.query.url : '/'))
+const locale = computed(() =>
+  typeof route.query.locale === 'string' && route.query.locale !== '' ? route.query.locale : null,
+)
+
+/* The modules' tabs the server offered here, in its order. One it offered that no module on this
+   side draws is left out rather than shown empty. */
+const moduleTabs = computed<SiteBarTab[]>(() => {
+  const known = (admin.modules ?? []).flatMap((module) => module.siteBarTabs ?? [])
+
+  return (context.value?.sections ?? []).flatMap((name) => {
+    const tab = name === 'page' ? undefined : known.find((one) => one.name === name)
+
+    return tab ? [tab] : []
+  })
+})
 const entity = computed(() => context.value?.entity ?? null)
 
 /*
@@ -54,10 +73,12 @@ async function load(): Promise<void> {
   error.value = null
 
   try {
-    const body = await fetchSiteBarContext(admin.http, admin.apiPath, url.value)
+    const body = await fetchSiteBarContext(admin.http, admin.apiPath, url.value, locale.value)
 
     context.value = body.data
-    tab.value = body.data.sections[0] ?? 'page'
+    tab.value = body.data.sections.includes('page')
+      ? 'page'
+      : (moduleTabs.value[0]?.name ?? body.data.sections[0] ?? 'page')
   } catch (caught) {
     context.value = null
     // A refusal is the server's to word — «nothing here you may edit»; anything else is ours.
@@ -161,6 +182,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           >
             {{ t('site-bar.open-in-panel') }}
           </wx-button>
+        </div>
+      </wx-tab>
+
+      <wx-tab v-for="one in moduleTabs" :key="one.name" :value="one.name" :label="one.label(admin)">
+        <div class="wx-site-bar__body">
+          <component :is="one.component" :context="context" />
         </div>
       </wx-tab>
     </wx-tabs>
