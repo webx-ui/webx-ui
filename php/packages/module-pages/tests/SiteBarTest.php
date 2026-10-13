@@ -194,7 +194,7 @@ final class SiteBarTest extends TestCase
             ->assertJsonPath('data.entity.edit', '/pages/'.$page->getKey())
             ->assertJsonPath('data.entity.draft.differs', false)
             ->assertJsonPath('data.entity.can.edit', true)
-            ->assertJsonPath('data.sections', ['page']);
+            ->assertJsonPath('data.sections', ['page', 'seo']);
     }
 
     #[Test]

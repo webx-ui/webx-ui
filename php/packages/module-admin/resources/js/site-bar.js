@@ -214,7 +214,10 @@ function start() {
     frame = document.createElement('iframe')
     frame.className = 'frame'
     frame.title = words.title ?? 'Site panel'
-    frame.src = `${src}?url=${encodeURIComponent(location.pathname)}`
+    // The page's language travels with its address: a page of the site's own code has no row
+    // in the registry to say it, and its SEO is per language.
+    const lang = document.documentElement.lang
+    frame.src = `${src}?url=${encodeURIComponent(location.pathname)}${lang ? `&locale=${encodeURIComponent(lang)}` : ''}`
     drawer.append(frame)
   }
 
@@ -312,6 +315,12 @@ function start() {
     if (message.type === 'close') {
       setOpen(false)
       tab.focus()
+    }
+
+    // The panel saved the page's title: shown in the browser's tab at once. Only the title —
+    // the rest of `<head>` is the site's markup, and it is right again on the next load.
+    if (message.type === 'title' && typeof message.title === 'string' && message.title !== '') {
+      document.title = message.title
     }
   })
 
