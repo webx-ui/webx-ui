@@ -79,7 +79,11 @@ const divided = computed(() => {
           :disabled="action.disabled"
           @click="action.run?.()"
         >
-          {{ action.label }}
+          <span v-if="action.hint" class="wx-row-menu__entry">
+            <span>{{ action.label }}</span>
+            <span class="wx-row-menu__hint">{{ action.hint }}</span>
+          </span>
+          <template v-else>{{ action.label }}</template>
         </wx-dropdown-item>
       </template>
     </template>
@@ -98,5 +102,23 @@ const divided = computed(() => {
  */
 .wx-row-menu {
   --wx-action-bg: transparent;
+}
+
+/*
+ * The reason a line is greyed, under its words and quieter than them. Under rather than beside: a
+ * reason is a sentence, and beside the words it took all of a narrow menu and left the words none.
+ * The item keeps its label on one line; the sentence under it wraps.
+ */
+.wx-row-menu__entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-2);
+  white-space: normal;
+}
+
+.wx-row-menu__hint {
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-xs);
+  font-weight: var(--wx-font-weight-regular);
 }
 </style>

@@ -17,4 +17,12 @@ return [
     'place-unknown' => 'Cet emplacement n’existe pas.',
     'ids' => 'L’ordre doit être une liste d’identifiants.',
     'ids-foreign' => 'Seules les bannières de cet emplacement peuvent être ordonnées ici.',
+    'layers-shape' => 'Les calques doivent être une liste.',
+    'layers-max' => 'Une bannière a au plus :max calques.',
+    'layer-type' => 'Un calque est l’un de : :types.',
+    'layer-tag' => 'Un calque de texte s’imprime avec l’une de ces balises : :tags.',
+    'layer-text-long' => 'Au plus :max caractères par langue.',
+    'layer-color' => 'Une couleur est #rrggbb ou une couleur du thème.',
+    'layer-range' => 'De :min à :max.',
+    'layer-buttons-once' => 'Les boutons de la bannière forment un seul calque, et il existe déjà.',
 ];

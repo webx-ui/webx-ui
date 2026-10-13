@@ -14,6 +14,7 @@ use Illuminate\View\ComponentAttributeBag;
 use Illuminate\View\Factory;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use WebxUi\Admin\SiteBar\Insertion;
 use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Content;
@@ -79,6 +80,12 @@ final class Renderer
 
     /** Whether a failure on the live site goes to the log — not while publishing checks a tree. */
     private bool $report = true;
+
+    /**
+     * Markers around the blocks without the rest of the preview: one block drawn for the panel on
+     * the site after an edit ({@see block()}), which replaces its range on the live page.
+     */
+    private bool $marking = false;
 
     public function __construct(
         private readonly BlockTypes $types,
@@ -341,6 +348,57 @@ final class Renderer
     }
 
     /**
+     * One block of an entity's content, drawn for the panel on the site (§9 of
+     * WEBX_UI_SITE_BAR.md): the page's third state — published types, a gap and a log line for a
+     * failure, and the marker pair around it and everything it nests, so that the page can put it
+     * in place of the range it had and still find it next time.
+     *
+     * A block of a region gets the region as `$region`, as it has in the layout: one template
+     * serves the header on the page and the header drawn after an edit.
+     *
+     * @param  array<string, mixed>  $node
+     */
+    public function block(array $node, ?object $entity, int $depth = 0, ?RegionContext $region = null): string
+    {
+        $was = [$this->marking, $this->preview, $this->region];
+        $this->marking = true;
+        $this->preview = false;
+        $this->region = $region;
+
+        try {
+            return Content::isNode($node) ? $this->one($node, $entity, $depth, 0) : '';
+        } finally {
+            [$this->marking, $this->preview, $this->region] = $was;
+        }
+    }
+
+    /**
+     * Whether blocks are printed with their markers: in the preview, and on a page that gets the
+     * panel on the site (§8 of WEBX_UI_SITE_BAR.md) — published values, no notices, only the
+     * markers. The second is the frame's decision, made once per request and before anything is
+     * printed; a visitor never gets it, so the live site prints what it always did.
+     */
+    public function isMarking(): bool
+    {
+        if ($this->preview || $this->marking) {
+            return true;
+        }
+
+        $container = Container::getInstance();
+
+        return $container->bound('request') && $container->make(Insertion::class)->marks($container->make('request'));
+    }
+
+    /**
+     * The panel on the site is marking this page: what the record's markers go by. The preview
+     * marks too, but it has its own frame around the record and needs nothing more.
+     */
+    public function isMarkingForSiteBar(): bool
+    {
+        return ! $this->preview && $this->isMarking();
+    }
+
+    /**
      * Preview mode: drafts instead of published versions, notices instead of log lines,
      * and a marker pair around every block.
      */
@@ -389,6 +447,7 @@ final class Renderer
         $this->region = null;
         $this->regionFailures = null;
         $this->report = true;
+        $this->marking = false;
     }
 
     /**
@@ -633,12 +692,12 @@ final class Renderer
     }
 
     /**
-     * The preview's markers. Nothing on the live site: the panel is the only reader, and a
-     * comment per block is a comment per block.
+     * The markers of the preview and of the panel on the site. Nothing for a visitor: the panel
+     * is the only reader, and a comment per block is a comment per block.
      */
     private function wrap(string $key, string $html): string
     {
-        if (! $this->preview) {
+        if (! $this->isMarking()) {
             return $html;
         }
 

@@ -4,6 +4,7 @@ import type { TypeRegistry } from '@webx-ui/schema'
 import type { ThemePreference } from '@webx-ui/tokens'
 import type { AdminContext } from './admin'
 import type { LocaleDescriptor } from './i18n'
+import type { SiteBarTab } from './siteBar'
 
 /**
  * What `GET /api/cms/manifest` answers with — the panel's own description of itself, and the
@@ -118,6 +119,11 @@ export interface AdminUser {
    * and then this browser's own choice stands.
    */
   theme?: ThemePreference | null
+  /**
+   * Whether the panel on the site is shown to them on the site's own pages. Absent from an older
+   * server, which has no such panel.
+   */
+  siteBar?: boolean
   /** The key their photograph is stored under — not an address; the panel resolves it. */
   avatar?: string | null
   [key: string]: unknown
@@ -182,6 +188,12 @@ export interface AdminModule {
    * cannot depend on the module that has the block library, so that module supplies this.
    */
   blockLabels?: (admin: AdminContext) => Promise<BlockLabels>
+  /**
+   * Tabs this module adds to the panel on the site (WEBX_UI_SITE_BAR.md). Each is drawn only
+   * where the server listed its name for the page — the server half of the module registers
+   * the same name with `SiteBar::section()`.
+   */
+  siteBarTabs?: SiteBarTab[]
 }
 
 /** Names of block types and of their fields, as the block library has them. */
@@ -256,6 +268,11 @@ export interface RowAction {
   danger?: boolean
   /** Offered but not possible right now — an address that does not exist yet. */
   disabled?: boolean
+  /**
+   * Why it is not possible right now, said on the line itself: «Already first», «No room». A
+   * greyed line with no reason reads as broken.
+   */
+  hint?: string
   /** Renders the line as a link. Opens in a new tab unless `target` says otherwise. */
   href?: string
   target?: string

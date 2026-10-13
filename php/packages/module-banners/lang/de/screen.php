@@ -26,4 +26,6 @@ return [
     'settings' => 'Einstellungen',
     'enabled' => 'Eingeschaltet',
     'enabled-help' => 'Nur ein eingeschaltetes Banner erscheint auf der Website. Ein neues beginnt ausgeschaltet.',
+    'layers' => 'Ebenen',
+    'layers-help' => 'Texte, Bilder und Schaltflächen auf dem Bild. Jede Größe ist ein Prozentsatz der Bildbreite, daher skaliert das Banner als Ganzes.',
 ];

@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Panel\Renamer;
 use WebxUi\Blocks\Rendering\Renderer;
+use WebxUi\Blocks\Rendering\SiteMarkers;
 
 /**
  * An entity whose content is a tree of blocks.
@@ -94,7 +95,15 @@ trait HasBlocks
 
     public function renderBlocks(): HtmlString
     {
-        return Container::getInstance()->make(Renderer::class)->render($this->blocksTree(), $this);
+        $renderer = Container::getInstance()->make(Renderer::class);
+        $html = $renderer->render($this->blocksTree(), $this);
+
+        // On a page that gets the panel on the site, the record's blocks are fenced as the
+        // record's (§8 of WEBX_UI_SITE_BAR.md): the page also holds the header and the footer,
+        // and the bar has to know whose block is under the pointer.
+        $type = $renderer->isMarkingForSiteBar() ? SiteMarkers::typeOf($this) : null;
+
+        return $type === null ? $html : new HtmlString(SiteMarkers::entity($type, $this->getKey(), $html->toHtml()));
     }
 
     /**

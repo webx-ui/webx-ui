@@ -38,7 +38,7 @@ final class BannerForm
      *
      * @var list<string>
      */
-    private const OWN = ['image', 'image_mobile', 'video', 'title', 'text', 'buttons', 'enabled'];
+    private const OWN = ['image', 'image_mobile', 'video', 'title', 'text', 'buttons', 'layers', 'enabled'];
 
     /** The most buttons a banner has. */
     public const MAX_BUTTONS = 3;
@@ -52,6 +52,7 @@ final class BannerForm
         private readonly MediaValues $media,
         private readonly FieldTypes $types,
         private readonly ValidationFactory $validator,
+        private readonly LayerRules $layers,
     ) {}
 
     /**
@@ -88,6 +89,7 @@ final class BannerForm
             'title' => $banner->getTranslations('title'),
             'text' => $banner->getTranslations('text'),
             'buttons' => $banner->buttonRows(),
+            'layers' => is_array($banner->layers) ? $banner->layerRows() : null,
             'enabled' => $banner->enabled,
         ];
     }
@@ -119,6 +121,18 @@ final class BannerForm
         if (array_key_exists('buttons', $input)) {
             [$input['buttons'], $kept, $buttonErrors] = $this->buttons($input['buttons'], $banner);
             $errors = [...$errors, ...$buttonErrors];
+        }
+
+        // Checked and tidied whole before the screen sees them: the screen knows a list, the
+        // layers spec knows what is in it (§3.4).
+        if (array_key_exists('layers', $input)) {
+            [$input['layers'], $layerErrors] = $this->layers->check(
+                $input['layers'],
+                $banner,
+                $place ?? $banner->place?->key,
+                fn (array $link): ?string => $this->linkProblem($link),
+            );
+            $errors = [...$errors, ...$layerErrors];
         }
 
         $errors = [...$errors, ...$this->pictureErrors($banner, $input, $place ?? $banner->place?->key)];
@@ -159,6 +173,10 @@ final class BannerForm
         switch ($field) {
             case 'enabled':
                 $banner->enabled = (bool) $value;
+                break;
+            case 'layers':
+                // [] is "every layer taken away", null is "never laid out" (decision 5).
+                $banner->setAttribute($field, is_array($value) ? array_values($value) : null);
                 break;
             case 'image':
             case 'image_mobile':

@@ -31,6 +31,7 @@ use WebxUi\Localization\HasTranslations;
  * @property array<string, string>|string|null $title
  * @property array<string, string>|string|null $text
  * @property list<array<string, mixed>>|null $buttons
+ * @property list<array<string, mixed>>|null $layers
  * @property bool $enabled
  * @property int $position
  * @property array<string, mixed>|null $extra
@@ -52,7 +53,7 @@ class Banner extends Model
     public const WORDS = ['title', 'text'];
 
     /** @var list<string> */
-    protected $fillable = ['place_id', 'image', 'image_mobile', 'video', 'title', 'text', 'buttons', 'enabled', 'position'];
+    protected $fillable = ['place_id', 'image', 'image_mobile', 'video', 'title', 'text', 'buttons', 'layers', 'enabled', 'position'];
 
     /** @var array<string, string> */
     protected $casts = [
@@ -63,6 +64,7 @@ class Banner extends Model
         'image_mobile' => 'array',
         'video' => 'array',
         'buttons' => 'array',
+        'layers' => 'array',
     ];
 
     /**
@@ -172,6 +174,24 @@ class Banner extends Model
         $rows = [];
 
         foreach (is_array($this->buttons) ? $this->buttons : [] as $row) {
+            if (is_array($row)) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The layers as they are stored, entries that are not a layer skipped (the layers spec, §3.2).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function layerRows(): array
+    {
+        $rows = [];
+
+        foreach (is_array($this->layers) ? $this->layers : [] as $row) {
             if (is_array($row)) {
                 $rows[] = $row;
             }

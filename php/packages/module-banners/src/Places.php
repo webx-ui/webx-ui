@@ -154,6 +154,53 @@ final class Places
     }
 
     /**
+     * Whether the banners of a place get the layer editor and print their layers (§4.4 of the
+     * layers spec). Only a declared place says so: its templates are the ones that know.
+     */
+    public function hasLayers(?string $key): bool
+    {
+        return $key !== null && ($this->declared()[$key]['layers'] ?? false) === true;
+    }
+
+    /** Whether a layer may step out of the frame of this place (decision 13 of the layers spec). */
+    public function overflows(?string $key): bool
+    {
+        return $key !== null && $this->hasLayers($key) && ($this->declared()[$key]['overflow'] ?? false) === true;
+    }
+
+    /**
+     * The tags a text layer of this place may be printed as: the site's list, widened by the
+     * place's own `tags` (a list of tags, or tag => name). Always at least a paragraph.
+     *
+     * @return array<string, string>
+     */
+    public function tags(?string $key): array
+    {
+        $tags = [];
+        $own = $key === null ? [] : ($this->declared()[$key]['tags'] ?? []);
+
+        foreach ([(array) $this->config->get('webx-banners.layers.tags', []), is_array($own) ? $own : []] as $list) {
+            foreach ($list as $tag => $label) {
+                [$tag, $label] = is_int($tag) ? [$label, $label] : [$tag, $label];
+
+                if (is_string($tag) && preg_match('/^(p|span|h[1-6])$/', $tag) === 1) {
+                    $tags[$tag] = is_string($label) && trim($label) !== '' ? trim($label) : $tag;
+                }
+            }
+        }
+
+        return $tags === [] ? ['p' => 'Paragraph'] : $tags;
+    }
+
+    /** The most layers one banner has. */
+    public function maxLayers(): int
+    {
+        $max = $this->config->get('webx-banners.layers.max', 20);
+
+        return is_int($max) && $max > 0 ? $max : 20;
+    }
+
+    /**
      * The layout of a place: its own when the configuration gives it a known one, else the
      * site's, else a slider.
      */

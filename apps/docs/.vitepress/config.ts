@@ -43,6 +43,7 @@ export default defineConfig({
             { text: 'Extending', link: '/guide/extending' },
             { text: 'Large uploads', link: '/guide/uploads' },
             { text: 'Editing together', link: '/guide/editing-together' },
+            { text: 'Building for the panel on the site', link: '/guide/site-bar-modules' },
           ],
         },
         {
@@ -70,6 +71,7 @@ export default defineConfig({
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },
             { text: 'Site audit', link: '/guide/audit' },
+            { text: 'The panel on the site', link: '/guide/site-bar' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Database backups', link: '/guide/backups' },
             { text: 'Moving content between stands', link: '/guide/snapshots' },

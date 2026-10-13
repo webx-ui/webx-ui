@@ -56,4 +56,16 @@ describe('WxRowMenu', () => {
 
     wrapper.unmount()
   })
+
+  it('greys a line that is not possible now and says why on it', async () => {
+    const wrapper = menu([{ key: 'up', label: 'Move up', disabled: true, hint: 'Already first' }])
+
+    await wrapper.get('.wx-actions__menu button').trigger('click')
+
+    const line = document.querySelector<HTMLButtonElement>('.wx-dropdown-item')!
+    expect(line.disabled).toBe(true)
+    expect(line.querySelector('.wx-row-menu__hint')?.textContent).toBe('Already first')
+
+    wrapper.unmount()
+  })
 })

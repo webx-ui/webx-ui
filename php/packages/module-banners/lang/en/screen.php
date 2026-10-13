@@ -26,4 +26,6 @@ return [
     'settings' => 'Settings',
     'enabled' => 'On',
     'enabled-help' => 'Only a banner that is on is shown on the site. A new one starts off.',
+    'layers' => 'Layers',
+    'layers-help' => 'Texts, pictures and buttons placed on the picture. Every size is a percent of the picture’s width, so the banner scales as a whole.',
 ];

@@ -25,8 +25,10 @@ import {
   type ScreenAction,
   useBodyKeys,
 } from '@webx-ui/module-admin'
-import type { ScreenModel } from '@webx-ui/schema'
+import type { Patch, ScreenModel } from '@webx-ui/schema'
 import { createBannersApi } from './api'
+import { provideBannerEditor } from './editor'
+import { defaultLayers } from './layers'
 import { useBannersMessages } from './i18n'
 import type { BannerDetail, BannerSummary, PlaceRow } from './types'
 
@@ -115,6 +117,26 @@ const section = computed(
     t('module.banners'),
 )
 
+/** The place the banner stands in now — the select's, not the server's — with its layers' frame. */
+const placeRow = computed(() => places.value.find((one) => one.key === place.value) ?? null)
+
+provideBannerEditor({ values, place: placeRow })
+
+/* The layers' card only where the place prints layers (§4.4 of the layers spec). */
+const screenPatch = computed<Patch>(() =>
+  placeRow.value?.layers ? [] : [{ op: 'remove', target: 'layers-card' }],
+)
+
+/**
+ * A banner of a place with layers that was never laid out starts with its title, its text and its
+ * buttons as three layers (decision 5). `[]` is somebody having taken them all away, and stays.
+ */
+function withDefaultLayers(model: ScreenModel): ScreenModel {
+  if (!placeRow.value?.layers || (model.layers !== null && model.layers !== undefined)) return model
+
+  return { ...model, layers: defaultLayers(locales.list.value[0]?.code ?? locales.active.value) }
+}
+
 const placeOptions = computed(() =>
   places.value.map((one) => ({ value: one.key, label: `${one.title} · ${one.key}` })),
 )
@@ -135,16 +157,21 @@ function blank(): ScreenModel {
     title: {},
     text: {},
     buttons: [],
+    layers: null,
     enabled: false,
   }
 }
 
 function take(detail: BannerDetail): void {
   banner.value = detail.banner
-  values.value = detail.values
-  snapshot.value = JSON.stringify(detail.values)
   place.value = detail.banner.place
   placeSaved.value = detail.banner.place
+
+  // The default layers are part of what the banner opens with, not a change somebody made.
+  const opened = withDefaultLayers(detail.values)
+
+  values.value = opened
+  snapshot.value = JSON.stringify(opened)
 }
 
 async function load(): Promise<void> {
@@ -163,13 +190,14 @@ async function load(): Promise<void> {
     } else {
       const asked = route.query.place
       const key = typeof asked === 'string' && list.some((one) => one.key === asked) ? asked : null
-      const fresh = blank()
-
       banner.value = null
-      values.value = fresh
-      snapshot.value = JSON.stringify(fresh)
       place.value = key ?? list[0]?.key ?? null
       placeSaved.value = place.value
+
+      const fresh = withDefaultLayers(blank())
+
+      values.value = fresh
+      snapshot.value = JSON.stringify(fresh)
     }
   } catch (error) {
     toast.danger(message(error))
@@ -263,6 +291,11 @@ useBodyKeys(onKeydown)
  * rather than mounting it again (CLAUDE.md §4) — so a change of banner is watched for. The first
  * save moving the address to the record it just made is not a change: that banner is on screen.
  */
+/* Moved to a place with layers, a banner never laid out gets the default three there too. */
+watch(place, () => {
+  if (!loading.value) values.value = withDefaultLayers(values.value)
+})
+
 watch(id, (next) => {
   if (next !== null && banner.value?.id === next) return
 
@@ -341,6 +374,7 @@ const actions = computed<ScreenAction[]>(() =>
       <wx-screen
         v-model="values"
         name="banners.form"
+        :patch="screenPatch"
         :errors="errors"
         :disabled="!canManage || saving"
       />

@@ -6,11 +6,14 @@ namespace WebxUi\CatalogLandings;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\EntityLink;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
 use WebxUi\Catalog\Events\ProductsIndexed;
@@ -60,6 +63,8 @@ class CatalogLandingsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerSiteBar();
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-landings');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-landings');
@@ -180,5 +185,21 @@ class CatalogLandingsServiceProvider extends ServiceProvider
             $schedule->command(CountCommand::class)->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
             $schedule->command(CountCommand::class, ['--all'])->dailyAt('03:45')->onOneServer();
         });
+    }
+
+    /**
+     * What the panel on the site says about this section's records, and where in the panel it
+     * opens them (WEBX_UI_SITE_BAR.md, §6) — one entry for every type this section gives an
+     * address, under the same type, because an address is what the bar starts from.
+     */
+    private function registerSiteBar(): void
+    {
+        $bar = $this->app->make(SiteBar::class);
+
+        $bar->entity(Landing::TYPE, new EntityLink(
+            edit: static fn (Model $record): string => '/catalog/landings/'.$record->getKey(),
+            permission: 'catalog.manage',
+            kind: 'webx-admin::site-bar.kind-landing',
+        ));
     }
 }

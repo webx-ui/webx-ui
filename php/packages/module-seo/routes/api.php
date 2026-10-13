@@ -9,6 +9,7 @@ use WebxUi\Seo\Http\Controllers\SeoFaqController;
 use WebxUi\Seo\Http\Controllers\SeoLinkController;
 use WebxUi\Seo\Http\Controllers\SeoRedirectController;
 use WebxUi\Seo\Http\Controllers\SeoUrlController;
+use WebxUi\Seo\Http\Controllers\SiteBarSeoController;
 use WebxUi\Seo\Http\Controllers\SitemapStatusController;
 use WebxUi\Seo\Http\Controllers\TestUrlController;
 
@@ -45,6 +46,14 @@ Route::prefix((string) config('webx-admin.api_path').'/seo')
 
             Route::post('sitemap', [SitemapStatusController::class, 'rebuild'])->name('sitemap.rebuild');
         });
+
+        // The SEO tab of the panel on the site (WEBX_UI_SITE_BAR.md, §7). No `cms.can` here: the
+        // right depends on the page — `seo.manage` for a rule, the record's own section for its
+        // card — and only the controller knows which page it is.
+        Route::get('site-bar', [SiteBarSeoController::class, 'show'])->name('site-bar');
+        Route::put('entity/{type}/{id}', [SiteBarSeoController::class, 'entity'])
+            ->where('type', '[a-z0-9_.-]+')
+            ->name('entity.update');
     });
 
 // Interlinking (§18.4) exists only where a developer turned it on: off, these addresses were

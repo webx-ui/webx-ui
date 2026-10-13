@@ -17,4 +17,12 @@ return [
     'place-unknown' => 'Böyle bir yer yok.',
     'ids' => 'Sıra bir id listesi olmalıdır.',
     'ids-foreign' => 'Burada yalnızca bu yerin bannerları sıralanabilir.',
+    'layers-shape' => 'Katmanlar bir liste olmalı.',
+    'layers-max' => 'Bir bannerda en fazla :max katman olur.',
+    'layer-type' => 'Katman şunlardan biridir: :types.',
+    'layer-tag' => 'Metin katmanı şu etiketlerden biriyle basılır: :tags.',
+    'layer-text-long' => 'Bir dilde en fazla :max karakter.',
+    'layer-color' => 'Renk #rrggbb ya da temanın bir rengidir.',
+    'layer-range' => ':min ile :max arası.',
+    'layer-buttons-once' => 'Bannerın düğmeleri tek bir katmandır ve zaten var.',
 ];

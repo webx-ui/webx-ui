@@ -17,4 +17,12 @@ return [
     'place-unknown' => 'Esa ubicación no existe.',
     'ids' => 'El orden debe ser una lista de id.',
     'ids-foreign' => 'Aquí solo se pueden ordenar los banners de esta ubicación.',
+    'layers-shape' => 'Las capas deben ser una lista.',
+    'layers-max' => 'Un banner tiene como máximo :max capas.',
+    'layer-type' => 'Una capa es una de: :types.',
+    'layer-tag' => 'Una capa de texto se imprime como una de estas etiquetas: :tags.',
+    'layer-text-long' => 'Como máximo :max caracteres por idioma.',
+    'layer-color' => 'Un color es #rrggbb o un color del tema.',
+    'layer-range' => 'De :min a :max.',
+    'layer-buttons-once' => 'Los botones del banner son una sola capa, y ya existe.',
 ];

@@ -18,12 +18,19 @@ return [
     | override the ones below for this place only. `'image' => false` lets a
     | banner of the place go without a picture — a place of words only.
     |
+    | `'layers' => true` gives the place's banners the layer editor: texts,
+    | pictures and buttons placed on the picture by hand, printed by
+    | <x-webx-banners>. `'overflow' => true` lets a layer step out of the
+    | frame — below the banner, over the block that follows. `'tags'` widens
+    | the tags a text layer may be printed as (an `h1` for the page's one hero).
+    |
     */
 
     'places' => [
         'hero' => [
             'title' => 'webx-banners::places.hero',
             'layout' => 'slider',
+            'layers' => true,
         ],
         'promo' => [
             'title' => 'webx-banners::places.promo',
@@ -97,6 +104,28 @@ return [
         'primary' => 'Primary',
         'secondary' => 'Secondary',
         'link' => 'Link',
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Layers
+    |---------------------------------------------------------------------------
+    |
+    | The tags a text layer may be printed as: tag => name for the panel. No
+    | h1 here on purpose — a slider has several slides; a place that is the
+    | page's only heading adds it under its own `tags`. `max` is the most
+    | layers one banner has.
+    |
+    */
+
+    'layers' => [
+        'tags' => [
+            'p' => 'Paragraph',
+            'h2' => 'Heading 2',
+            'h3' => 'Heading 3',
+            'span' => 'Inline',
+        ],
+        'max' => 20,
     ],
 
 ];

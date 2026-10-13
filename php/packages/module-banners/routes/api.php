@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Banners\Http\Controllers\BannerController;
 use WebxUi\Banners\Http\Controllers\PlaceController;
+use WebxUi\Banners\Http\Controllers\ThemeController;
 
 Route::prefix((string) config('webx-admin.api_path'))
     ->middleware('webx.panel')
@@ -15,6 +16,7 @@ Route::prefix((string) config('webx-admin.api_path'))
 
         Route::middleware('cms.can:banners.view,banners.manage')->group(function () use ($key): void {
             Route::get('banners/places', [PlaceController::class, 'index'])->name('places.index');
+            Route::get('banners/theme', ThemeController::class)->name('theme');
             Route::get('banners/places/{key}/banners', [PlaceController::class, 'banners'])->where(['key' => $key])->name('places.banners');
             Route::get('banners/{banner}', [BannerController::class, 'show'])->whereNumber('banner')->name('banners.show');
         });

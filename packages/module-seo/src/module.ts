@@ -4,6 +4,8 @@ import SeoAliasesPage from './SeoAliasesPage.vue'
 import SeoLinksPage from './SeoLinksPage.vue'
 import SeoCard from './SeoCard.vue'
 import SeoRedirectsPage from './SeoRedirectsPage.vue'
+import SeoSiteBarTab from './SeoSiteBarTab.vue'
+import { seedSeoMessages } from './i18n'
 import SeoUrlsPage from './SeoUrlsPage.vue'
 
 export interface SeoOptions {
@@ -78,5 +80,18 @@ export function seo(options: SeoOptions = {}): AdminModule {
         bind: () => ({ mediaField }),
       },
     },
+    // The SEO tab of the panel on the site. The server half registers `seo` with the bar and
+    // says on which pages it is there; this is what it looks like.
+    siteBarTabs: [
+      {
+        name: 'seo',
+        label: (admin) => {
+          seedSeoMessages(admin.i18n)
+
+          return admin.i18n.scope('webx-seo')('site-bar.tab')
+        },
+        component: markRaw(SeoSiteBarTab),
+      },
+    ],
   }
 }

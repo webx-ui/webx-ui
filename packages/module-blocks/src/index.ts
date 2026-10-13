@@ -1,5 +1,12 @@
 export { blocks, regions, type BlocksOptions, type RegionsOptions } from './module'
-export { createBlocksApi, createRegionsApi, type BlocksApi, type RegionsApi } from './api'
+export {
+  createBlocksApi,
+  createRegionsApi,
+  createSiteBarBlocksApi,
+  type BlocksApi,
+  type RegionsApi,
+  type SiteBarBlocksApi,
+} from './api'
 export { blocksMessages } from './messages'
 export {
   blocksPreviewKey,
@@ -30,6 +37,7 @@ export { lintBlock, undeclared } from './lint'
 export { findRange, highlightBlock, replaceBlock, stageDocument } from './frame'
 export { callTag, formSchema, kindOf } from './schema'
 export { default as WxBlocks } from './BlocksField.vue'
+export { default as WxBlocksSiteBarTab } from './BlocksSiteBarTab.vue'
 export { default as WxBlocksPage } from './BlocksPage.vue'
 export { default as WxBlockEditorPage } from './BlockEditorPage.vue'
 export { default as WxBlockPicker } from './BlockPicker.vue'

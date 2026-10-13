@@ -41,4 +41,6 @@ return [
     'reorder-failed' => 'Yeni sıra kaydedilmedi.',
     'save-failed' => 'Kaydedilmedi.',
     'cancel' => 'İptal',
+    'previous' => 'Önceki banner',
+    'next' => 'Sonraki banner',
 ];

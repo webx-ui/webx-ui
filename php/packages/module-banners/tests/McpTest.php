@@ -117,6 +117,33 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function an_agent_lays_out_layers_with_library_keys_and_plain_words(): void
+    {
+        $this->picture('media/ab/cd/wide.jpg');
+        $this->picture('media/ab/cd/badge.png', 'image/png');
+
+        $created = $this->content($this->agent('banners_create', [
+            'place' => 'hero',
+            'image' => 'media/ab/cd/wide.jpg',
+            'title' => 'Spring sale',
+            'layers' => [
+                ['type' => 'text', 'text' => '{title}', 'tag' => 'h2', 'frames' => ['desktop' => ['x' => 6, 'y' => 6]]],
+                ['type' => 'image', 'image' => 'media/ab/cd/badge.png', 'frames' => ['desktop' => ['x' => 70, 'w' => 20]]],
+            ],
+        ]));
+
+        $this->assertSame(['en' => '{title}'], $created['values']['layers'][0]['text'], 'a plain string is the default language');
+        $this->assertSame('media/ab/cd/badge.png', $created['values']['layers'][1]['image']['path']);
+        $this->assertSame(2, $created['banner']['layers']);
+
+        $this->agent('banners_update', ['banner' => $created['banner']['id'], 'values' => ['layers' => [['type' => 'text', 'text' => 'Hi', 'frames' => ['desktop' => ['x' => 999]]]]]])
+            ->assertSee('layers.0.frames.desktop.x');
+
+        $layers = ($this->resource('banners://layers')->handler)();
+        $this->assertSame(['p', 'h2', 'h3', 'span'], $layers['tags']);
+    }
+
+    #[Test]
     public function a_refused_create_leaves_nothing_behind(): void
     {
         $this->picture('media/ab/cd/wide.jpg');

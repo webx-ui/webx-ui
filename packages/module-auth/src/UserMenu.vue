@@ -112,6 +112,18 @@ const preference = computed<ThemePreference>({
   },
 })
 
+/*
+ * The panel on the site's own pages. Offered only by a server that has one — an older one sends
+ * nothing, and a switch that changes nothing is worse than none. Theirs alone, like the theme.
+ */
+const siteBar = computed(() =>
+  typeof user.value?.siteBar === 'boolean' ? user.value.siteBar : null,
+)
+
+function toggleSiteBar(): void {
+  if (siteBar.value !== null) void auth.setSiteBar(!siteBar.value)
+}
+
 async function choose(code: string): Promise<void> {
   if (code === i18n.state.locale) {
     return
@@ -184,6 +196,14 @@ async function choose(code: string): Promise<void> {
         :system-label="panel('theme.system')"
       />
     </div>
+
+    <template v-if="siteBar !== null">
+      <wx-divider spacing="sm" />
+
+      <wx-dropdown-item :icon="siteBar ? 'check' : undefined" @click="toggleSiteBar">
+        {{ t('menu.site-bar') }}
+      </wx-dropdown-item>
+    </template>
 
     <template v-if="languages.length > 0">
       <wx-divider spacing="sm" />

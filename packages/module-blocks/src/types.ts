@@ -353,3 +353,104 @@ export interface BlockImportRow {
   /** Why the type was refused, or — beside a status that is not `failed` — why it stayed a draft. */
   error: string | null
 }
+
+/** One line of a record's blocks as a map — `blocks_get_content(outline)`. */
+export interface BlockOutlineLine {
+  /** Absent for a block of old content that has no key yet: it is edited in the panel. */
+  key?: string
+  type: string
+  depth: number
+  parent?: string | null
+  /** A line to recognise the block by: its heading, its first words. */
+  label?: string
+  hidden?: boolean
+}
+
+/** What the «Blocks» tab of the panel on the site reads about a record or a region. */
+export interface SiteBarBlocks {
+  /** The revision to send with an edit: the record's editor's, or the region's. */
+  revision: string
+  /** Whether the tree is the draft or, with no draft yet, what the site shows. */
+  editing: 'draft' | 'live'
+  tree: BlockNode[]
+  outline: BlockOutlineLine[]
+  /** Only for a region: what the tab says over its map. */
+  region?: SiteBarRegion
+}
+
+/** A region of the layout as the tab of the panel on the site shows it. */
+export interface SiteBarRegion {
+  name: string
+  /** As the site declared it, in the panel's language: «Header». */
+  title: string
+  /** Whether visitors see its blocks, rather than the markup from code. */
+  published: boolean
+  /** The view the site prints while the region is not published, when the layout named one. */
+  fallback: string | null
+  draft: {
+    differs: boolean
+    by: string | null
+    at: string | null
+    /** How many blocks the draft changes, adds or takes away. */
+    changes: number
+    /** Whether the last hand on the draft was this administrator's. */
+    mine: boolean
+  }
+  /** A signed link to the draft drawn on a page — `&at=` names which — while there is a draft. */
+  preview?: string | null
+}
+
+/**
+ * One operation of the agent's dictionary (`blocks_edit_content`), which the bar sends too: the
+ * fields of one block, or where blocks stand. `parent`/`field` name a container's list; without
+ * them the top level. `after`/`before` name the neighbour.
+ */
+export type SiteBarBlockOp =
+  | { op: 'set'; key: string; values: Record<string, unknown>; locale?: string }
+  | {
+      op: 'add'
+      type: string
+      values?: Record<string, unknown>
+      parent?: string
+      field?: string
+      after?: string
+      before?: string
+    }
+  | { op: 'move'; key: string; parent?: string; field?: string; after?: string; before?: string }
+  | { op: 'duplicate' | 'hide' | 'show' | 'remove'; key: string }
+
+/** One edit from the tab, into the draft. */
+export interface SiteBarBlockEdit {
+  revision?: string
+  /** The page's language: a localized field sent one value takes it in this language. */
+  locale?: string | null
+  /** The page the bar is on: a region's block is drawn as it stands there. */
+  url?: string
+  /** The sets of block styles and scripts the page has, by hash: what is in them is not sent. */
+  bundles?: string[]
+  ops: SiteBarBlockOp[]
+}
+
+/** What the page does to show the draft, one block at a time (SB5). */
+export interface SiteBarStep {
+  do: 'place' | 'move' | 'remove' | 'reload'
+  key: string
+  /** The block drawn from the draft, markers and all — for `place` and `move`. */
+  html?: string
+  after?: string[]
+  before?: string[]
+  top?: boolean
+}
+
+/**
+ * The answer: the new revision, the block to open — the one a `set` named, the one an `add` or a
+ * `duplicate` made — and what the page has to do, with the styles and script it lacks.
+ */
+export interface SiteBarBlockEdited {
+  revision: string
+  key: string | null
+  /** The block `key` drawn, when a step drew it. */
+  html: string
+  steps?: SiteBarStep[]
+  assets?: { hash: string; css: string | null; js: string | null } | null
+}

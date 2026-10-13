@@ -95,6 +95,15 @@ final class BannerTools
                 ],
                 'description' => 'Up to '.BannerForm::MAX_BUTTONS.' buttons, in the order the site prints them. The whole list is replaced: send every button the banner keeps; an empty list takes them all away.',
             ],
+            'layers' => [
+                'type' => 'array',
+                'items' => ['type' => 'object'],
+                'description' => 'Only in a place with layers (banners://catalog says which): texts, pictures and buttons placed on the picture. '
+                    .'Read banners://layers first — every length is a percent of the picture\'s width, and the whole list is replaced. '
+                    .'A layer: { "type": "text|image|button|buttons", "text": { "en": "{title}" }, "tag": "h2", '
+                    .'"frames": { "desktop": { "x": 6, "y": 6, "w": 45, "size": 4 }, "mobile": null } }. '
+                    .'A picture layer takes "image": a library key. The composition is a person\'s to check on the canvas.',
+            ],
         ];
 
         return [
@@ -167,14 +176,14 @@ final class BannerTools
 
             Tool::mutating(
                 'update',
-                'Change a banner — any of image, image_mobile, video, title, text, buttons, enabled and the fields the '
+                'Change a banner — any of image, image_mobile, video, title, text, buttons, layers, enabled and the fields the '
                 .'project added — or move it to another place, where it stands last. A field left out keeps what it '
                 .'had, and so does a language left out of title or text: send "" for a language to take it away. It is '
                 .'on the site at once: banners have no draft.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'banner' => $banner,
-                    'values' => ['type' => 'object', 'description' => 'Field name → value, as banners_get returns them. Media take a library key; buttons a list of { label, link, variant }.'],
+                    'values' => ['type' => 'object', 'description' => 'Field name → value, as banners_get returns them. Media take a library key; buttons a list of { label, link, variant }; layers the whole list (banners://layers).'],
                     'place' => $place + ['description' => 'Move it to this place, at the end. Where it is when omitted.'],
                 ], 'required' => ['banner']],
                 permission: 'banners.manage',
@@ -342,7 +351,7 @@ final class BannerTools
         // takes, and an agent that sent both meant the one it could see.
         $values = [...$values, 'enabled' => ($arguments['enabled'] ?? false) === true];
 
-        foreach ([...self::MEDIA, ...self::WORDS, 'buttons'] as $field) {
+        foreach ([...self::MEDIA, ...self::WORDS, 'buttons', 'layers'] as $field) {
             if (array_key_exists($field, $arguments)) {
                 $values[$field] = $arguments[$field];
             }
@@ -497,6 +506,25 @@ final class BannerTools
             $values['buttons'] = $this->buttons($values['buttons'], $banner);
         }
 
+        // A picture layer named by its key, and words sent as one string — the default language.
+        if (is_array($values['layers'] ?? null)) {
+            foreach ($values['layers'] as $index => $layer) {
+                if (! is_array($layer)) {
+                    continue;
+                }
+
+                if (array_key_exists('image', $layer)) {
+                    $layer['image'] = $this->media($layer['image']);
+                }
+
+                if (is_string($layer['text'] ?? null)) {
+                    $layer['text'] = [$this->locales()->defaultCode() => $layer['text']];
+                }
+
+                $values['layers'][$index] = $layer;
+            }
+        }
+
         return $values;
     }
 
@@ -621,6 +649,7 @@ final class BannerTools
             'image' => $banner->mediaPath('image'),
             'has_video' => $banner->mediaPath('video') !== null,
             'buttons' => count($banner->buttonRows()),
+            'layers' => count($banner->layerRows()),
             'position' => (int) $banner->position,
             'updated_at' => $banner->updated_at?->toAtomString(),
         ];

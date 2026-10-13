@@ -26,4 +26,6 @@ return [
     'settings' => 'Impostazioni',
     'enabled' => 'Attivo',
     'enabled-help' => 'Solo un banner attivo appare sul sito. Uno nuovo parte disattivato.',
+    'layers' => 'Livelli',
+    'layers-help' => 'Testi, immagini e pulsanti sopra l’immagine. Ogni misura è una percentuale della larghezza dell’immagine, così il banner si ridimensiona tutto insieme.',
 ];

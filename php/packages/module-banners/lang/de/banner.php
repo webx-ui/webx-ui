@@ -41,4 +41,6 @@ return [
     'reorder-failed' => 'Die neue Reihenfolge wurde nicht gespeichert.',
     'save-failed' => 'Nicht gespeichert.',
     'cancel' => 'Abbrechen',
+    'previous' => 'Vorheriges Banner',
+    'next' => 'Nächstes Banner',
 ];

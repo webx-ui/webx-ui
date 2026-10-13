@@ -31,6 +31,7 @@ use WebxUi\Localization\Contracts\HasPanelLocale;
  * @property bool $is_active
  * @property string|null $locale
  * @property string|null $theme
+ * @property bool|null $site_bar
  * @property Carbon|null $last_login_at
  * @property Carbon|null $created_at
  */
@@ -56,6 +57,7 @@ class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale, 
         return [
             'is_super' => 'boolean',
             'is_active' => 'boolean',
+            'site_bar' => 'boolean',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watchEffect } from 'vue'
+import { useRoute } from 'vue-router'
 import { shellLayoutFor, useResponsiveShell, WxToaster } from '@webx-ui/core'
 import { useAdmin } from './admin'
 import { useTranslate } from './i18n'
@@ -33,6 +34,14 @@ const { width, layout, collapsed, showAside, drawerOpen, toggle, close } = useRe
 )
 
 const title = computed(() => admin.state.manifest?.title ?? '')
+
+/*
+ * A screen that is framed by something else — the panel on the site — and brings its own head:
+ * no menu, no account corner, nothing to navigate to from inside a drawer beside the site.
+ */
+const route = useRoute()
+// Optional: a test may mount the shell without a router.
+const bare = computed(() => route?.meta?.bare === true)
 
 /*
  * The client's logo, when the settings hold one. The name never leaves: it is the alt of the
@@ -84,6 +93,10 @@ onUnmounted(() => {
     <wx-result status="error" :title="t('shell.error-title')" :description="admin.state.error">
       <wx-button type="primary" @click="admin.reload()">{{ t('shell.retry') }}</wx-button>
     </wx-result>
+  </div>
+
+  <div v-else-if="bare" class="wx-root wx-admin-bare">
+    <router-view />
   </div>
 
   <div v-else ref="shellEl" class="wx-root wx-admin" :class="`wx-admin--${size}`">

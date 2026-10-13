@@ -572,6 +572,9 @@ importers:
       '@webx-ui/module-admin':
         specifier: workspace:^
         version: link:../module-admin
+      '@webx-ui/module-media':
+        specifier: workspace:^
+        version: link:../module-media
       '@webx-ui/schema':
         specifier: workspace:^
         version: link:../schema
