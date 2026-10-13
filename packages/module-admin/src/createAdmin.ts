@@ -11,6 +11,7 @@ import AdminLanding from './AdminLanding.vue'
 import AdminNav from './AdminNav.vue'
 import AdminNotFound from './AdminNotFound.vue'
 import AdminShell from './AdminShell.vue'
+import SiteBarScreen from './SiteBarScreen.vue'
 import { createAdminContext, provideAdmin, type AdminContext } from './admin'
 import { createHttp, type Http } from './http'
 import { createI18n, provideI18n, type Dictionary, type I18n, type LocaleDescriptor } from './i18n'
@@ -122,6 +123,19 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
       props: { landing: landing?.path ?? landing?.routes?.[0]?.path ?? null },
     })
   }
+
+  /*
+   * The panel on the site (WEBX_UI_SITE_BAR.md): the drawer a page of the site frames. A route
+   * of the same app rather than an app of its own, so it has the session, the words, the types
+   * of fields and every module's tabs without a second bundle — the shell only leaves out its
+   * navigation for it (`bare`).
+   */
+  routes.push({
+    path: '/_bar',
+    name: 'webx.site-bar',
+    component: SiteBarScreen,
+    meta: { bare: true },
+  })
 
   // An address nothing answers for says so, instead of leaving the content area empty — unless
   // the project brought its own catch-all. Matched last whatever the order: the router ranks a

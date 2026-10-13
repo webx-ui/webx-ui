@@ -118,6 +118,11 @@ export interface AdminUser {
    * and then this browser's own choice stands.
    */
   theme?: ThemePreference | null
+  /**
+   * Whether the panel on the site is shown to them on the site's own pages. Absent from an older
+   * server, which has no such panel.
+   */
+  siteBar?: boolean
   /** The key their photograph is stored under — not an address; the panel resolves it. */
   avatar?: string | null
   [key: string]: unknown

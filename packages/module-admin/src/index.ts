@@ -223,3 +223,12 @@ export {
   useRecordAddress,
   type RecordAddress,
 } from './address'
+// The panel on the site: its screen is a route of `createAdmin()`, the rest is for the tabs that
+// sections add to it.
+export {
+  fetchSiteBarContext,
+  tellSitePage,
+  type SiteBarContext,
+  type SiteBarEntity,
+  type SiteBarStatus,
+} from './siteBar'

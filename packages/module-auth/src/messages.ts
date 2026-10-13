@@ -179,5 +179,6 @@ export const authMessages: Record<string, Messages> = {
   menu: {
     'sign-out': 'Sign out',
     language: 'Interface language',
+    'site-bar': 'Panel on the site',
   },
 }
