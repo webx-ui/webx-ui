@@ -20,8 +20,9 @@ It is part of `webx-ui/module-admin` and comes with the panel; there is nothing 
 When the record has a draft and you may publish it, the head of the drawer counts the changes —
 «Unpublished changes: 2» — with **Publish** and **Discard**. Publish puts the draft on the site
 exactly as the record's own button in the panel does; Discard throws the draft away. The page
-reloads after either. If the last hand on the draft was somebody else's, the bar says so before
-your first edit goes into it: «J. Doe has a draft here; your edits go into it».
+reloads after either. If somebody else has written into the draft since the record was last
+published, the bar says so — before your first edit and after it, since **Publish** puts the
+whole draft on the site, their part with yours: «J. Doe has a draft here; your edits go into it».
 
 ## Blocks
 
@@ -53,12 +54,31 @@ A block of old content that was saved before blocks had keys says **Open in pane
 cannot be chosen: the first save in the constructor gives it a key. Adding, moving and removing
 blocks is the constructor's work too — the bar edits what a block says, not where it stands.
 
+### The header and the footer
+
+The regions of the layout — the header and the footer that `<x-webx-blocks::region>` prints (see
+[Layout regions](./layout-regions.md)) — are in the same tab, each under its own name and «On every page»,
+below the record's blocks. They are there for whoever edits the regions in the panel
+(`blocks.regions`), on every page of the site, a page without a record too.
+
+- **Picking** works for them as for the page: the frame says whose block it is — «Menu · Header».
+- **Save to draft** writes into the region's draft, not the page's, and the block comes back drawn
+  as it stands on this page: its active menu item, the record the page shows. The attributes the
+  layout's tag passes to the region are known only to the layout, so a block that reads
+  `$region->data()` looks right again on the next load.
+- **Publish** and **Discard** for a region are over its own map, not in the head of the drawer:
+  the head is about the record, and a region's draft goes on every page at once. A draft with a
+  block that fails is not published — the lines say which block and why, as in the region's
+  editor.
+- A region the site does not show yet — it prints the markup from code — has no map here, only
+  the way to its editor in the panel.
+
 ### How the page knows its blocks
 
 For an administrator who gets the bar, the page is printed with a pair of comments around every
 block — `<!--wx:{key}-->…<!--/wx:{key}-->` — and around the record's blocks
-`<!--wx-entity:page:12-->`: the header and the footer are on the page too, and the bar has to know
-whose block is under the pointer. The values are the site's, and a block that fails is a gap, as
+`<!--wx-entity:page:12-->`, around a region's `<!--wx-region:header-->`: the header and the footer
+are on the page too, and the bar has to know whose block is under the pointer. The values are the site's, and a block that fails is a gap, as
 for a visitor. A visitor's page has none of it.
 
 ## SEO
@@ -93,8 +113,8 @@ hold:
   `</body>`;
 - it is not the panel, its JSON or a block preview, and not inside a frame;
 - somebody is signed in to the panel (the `cms` guard) and their account is active;
-- they may edit the record behind the address — the permission of its section, `pages.manage`
-  for a page — or they have `seo.manage`, which works on any page;
+- they may edit the record behind the address — the permission of its section, `pages.manage` for
+  a page — or they have `seo.manage` or `blocks.regions`, which work on any page;
 - they have not turned the bar off for themselves: **Panel on the site** in the user menu;
 - the site has not turned it off for everybody:
 
@@ -103,8 +123,8 @@ WEBX_SITE_BAR=false
 ```
 
 On a phone the drawer takes the whole width. The tab can be dragged up and down the edge, and
-the browser remembers where (`localStorage`, key `wx-bar` — only an administrator's browser ever
-gets it). <kbd>Esc</kbd> closes the drawer.
+the browser remembers where, and which tab you chose: the next page opens on it (`localStorage`,
+key `wx-bar` — only an administrator's browser ever gets it). <kbd>Esc</kbd> closes the drawer.
 
 ## Caching
 
@@ -156,7 +176,9 @@ $this->app->make(SiteBar::class)->section(
 ```
 
 The panel module brings what it looks like; the component gets the page's `context` (address,
-language, record) as its one prop:
+language, record, the sections the server offered) as its one prop. A tab that stands for more
+than one section names the others in `sections` and is drawn once — «Blocks» is both `blocks` and
+`regions`:
 
 ```ts
 import { markRaw } from 'vue'
