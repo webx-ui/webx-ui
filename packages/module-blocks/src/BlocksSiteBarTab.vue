@@ -609,7 +609,13 @@ onBeforeUnmount(() => {
           <li v-for="(line, index) in refusals" :key="index">{{ line }}</li>
         </ul>
         <template v-if="panelHref(current)" #actions>
-          <wx-button size="sm" variant="outline" :href="panelHref(current)!" target="_top">
+          <wx-button
+            size="sm"
+            variant="outline"
+            :href="panelHref(current)!"
+            target="_blank"
+            rel="noopener"
+          >
             {{ t('site-bar.open-in-panel') }}
           </wx-button>
         </template>
@@ -701,7 +707,13 @@ onBeforeUnmount(() => {
         <template v-if="!onSite(source)">
           <wx-text size="sm" tone="muted">{{ t('site-bar.region-fallback') }}</wx-text>
           <div>
-            <wx-button size="sm" variant="outline" :href="panelHref(source)!" target="_top">
+            <wx-button
+              size="sm"
+              variant="outline"
+              :href="panelHref(source)!"
+              target="_blank"
+              rel="noopener"
+            >
               {{ t('site-bar.open-in-panel') }}
             </wx-button>
           </div>

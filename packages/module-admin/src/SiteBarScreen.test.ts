@@ -100,13 +100,13 @@ describe('the panel on the site', () => {
     expect(wrapper.text()).toContain('/pricing')
   })
 
-  it('opens the record in the whole window, not inside the frame', async () => {
+  it('opens the record in a tab of its own, not inside the frame or over the page', async () => {
     const { wrapper } = await open(() => Promise.resolve({ data: page }))
 
     const links = wrapper.findAll('a[href="/cms/pages/12"]')
 
     expect(links.length).toBeGreaterThan(0)
-    for (const link of links) expect(link.attributes('target')).toBe('_top')
+    for (const link of links) expect(link.attributes('target')).toBe('_blank')
   })
 
   it('says who left a draft before anybody edits on top of it', async () => {
@@ -127,7 +127,7 @@ describe('the panel on the site', () => {
 
     expect(wrapper.text()).toContain('This page')
     expect(wrapper.text()).toContain('Nothing in the panel stands behind this address')
-    expect(wrapper.find('a[target="_top"]').exists()).toBe(false)
+    expect(wrapper.find('a[target="_blank"]').exists()).toBe(false)
   })
 
   it('passes the refusal on in the words of the server', async () => {

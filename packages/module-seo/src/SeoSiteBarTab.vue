@@ -320,7 +320,7 @@ async function save(): Promise<void> {
             v-if="report.fields[field].overridden === 'rule' && report.rule && mayOpenRules"
             #actions
           >
-            <wx-link :href="ruleHref(report.rule.id)" target="_top" size="sm">
+            <wx-link :href="ruleHref(report.rule.id)" target="_blank" size="sm">
               {{ t('site-bar.open-rule') }}
             </wx-link>
           </template>
@@ -360,7 +360,7 @@ async function save(): Promise<void> {
         <wx-button type="primary" native-type="submit" :loading="saving">
           {{ t('site-bar.save') }}
         </wx-button>
-        <wx-link v-if="allFieldsHref" :href="allFieldsHref" target="_top" size="sm" external>
+        <wx-link v-if="allFieldsHref" :href="allFieldsHref" target="_blank" size="sm" external>
           {{ t('site-bar.all-fields') }}
         </wx-link>
       </div>

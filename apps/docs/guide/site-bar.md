@@ -15,7 +15,7 @@ It is part of `webx-ui/module-admin` and comes with the panel; there is nothing 
   edited.
 - **A draft somebody left** — «J. Doe has unpublished changes here», before you go and edit on
   top of it.
-- **Open in panel** — the record's own screen, in the whole window.
+- **Open in panel** — the record's own screen, in a new tab: the page stays where it was, to check the edit on.
 
 When the record has a draft and you may publish it, the head of the drawer counts the changes —
 «Unpublished changes: 2» — with **Publish** and **Discard**. Publish puts the draft on the site

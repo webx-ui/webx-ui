@@ -80,8 +80,9 @@ const remembered = computed(() =>
 const entity = computed(() => context.value?.entity ?? null)
 
 /*
- * Out of the frame to the panel's own address. The whole window rather than the frame: a
- * second panel inside the drawer is a panel nobody can work in.
+ * Out of the frame to the panel's own address, in a tab of its own: a second panel inside the
+ * drawer is a panel nobody can work in, and taking the whole window would close the page the
+ * editor came from — the one they are about to check the edit on.
  */
 const panelHref = computed(() =>
   entity.value?.edit ? `${admin.basePath.replace(/\/$/, '')}${entity.value.edit}` : null,
@@ -253,7 +254,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         icon="external-link"
         :title="t('site-bar.open-in-panel')"
         :href="panelHref"
-        target="_top"
+        target="_blank"
+        rel="noopener"
       />
       <wx-action icon="close" :title="t('site-bar.close')" @click="close" />
     </header>
@@ -315,7 +317,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             type="primary"
             block
             :href="panelHref"
-            target="_top"
+            target="_blank"
+            rel="noopener"
             class="wx-site-bar__open"
           >
             {{ t('site-bar.open-in-panel') }}
