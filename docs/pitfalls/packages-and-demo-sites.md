@@ -381,6 +381,16 @@ vendor/composer/autoload_files.php`.
     удалённого каталога). Смотреть `Get-NetTCPConnection -LocalPort 8123,8124` и гасить `php.exe`
     с `-S 127.0.0.1:812x`.
 
+- **`site exec <сайт> php artisan tinker файл.php` висит до таймаута.** Tinker с путём к файлу
+  всё равно открывает REPL и ждёт stdin, а `site exec` его не закрывает — команда уходит в фон
+  без единой строки вывода. Скрипт — через `tinker --execute="require 'storage/app/…/x.php';"`
+  и `</dev/null`, ещё лучше под `timeout 60`; русский текст держать в файле, не в аргументе.
+- **`require('playwright')` из скрипта в скретчпаде не находится, хотя `node_modules/.bin/playwright`
+  в монорепе есть.** pnpm кладёт в корень только прямые зависимости корня, а `playwright` там —
+  транзитивная (`@playwright/test`). Резолвить от самого пакета:
+  `createRequire('…/node_modules/.pnpm/playwright@<версия>/node_modules/playwright/package.json')`;
+  версию показывает `ls -d node_modules/.pnpm/playwright@*`.
+
 ## Docker и хомлаб
 
 - **Контейнер скелета не поднимается: «The database did not answer within 120s … Access denied»,
