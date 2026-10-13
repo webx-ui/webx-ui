@@ -181,6 +181,10 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
 
 ## Тесты в jsdom
 
+- **Обработчик `keydown` на `window` срабатывает столько раз, сколько тестов было до этого.**
+  `mount()` без `unmount()` оставляет компонент жить до конца файла, и `onBeforeUnmount` не
+  снимает слушатель: `Esc` в седьмом тесте зовёт шпиона семь раз. Складывать обёртки в список и
+  размонтировать в `afterEach`. У нас: `SiteBarScreen.test.ts`.
 - **Swiper в jsdom: `slideToLoop()` (и Home/End слайдера) «не сработал».** Он переходит на
   следующем кадре (`requestAnimationFrame`), а `slideTo()` — сразу; тест читает `realIndex`
   раньше. Ждать кадр: `await new Promise((r) => requestAnimationFrame(r))`. И Swiper без ширины

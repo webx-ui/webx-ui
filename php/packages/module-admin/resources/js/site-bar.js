@@ -245,6 +245,9 @@ function start() {
     if (event.button !== 0) return
 
     drag = { y: event.clientY, moved: false, id: event.pointerId }
+    // Held from the press on: the first step of a quick drag already leaves the 28px of the tab,
+    // and the moves after it would go to whatever is under the pointer instead.
+    tab.setPointerCapture?.(event.pointerId)
   })
 
   tab.addEventListener('pointermove', (event) => {
@@ -254,7 +257,6 @@ function start() {
 
     if (!drag.moved) {
       drag.moved = true
-      tab.setPointerCapture(event.pointerId)
       tab.classList.add('is-dragging')
     }
 

@@ -70,6 +70,7 @@ export default defineConfig({
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },
             { text: 'Site audit', link: '/guide/audit' },
+            { text: 'The panel on the site', link: '/guide/site-bar' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Database backups', link: '/guide/backups' },
             { text: 'Moving content between stands', link: '/guide/snapshots' },

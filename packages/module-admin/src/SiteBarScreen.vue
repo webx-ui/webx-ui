@@ -147,9 +147,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             <wx-descriptions-item :label="t('site-bar.status')">
               {{ t(`site-bar.status-${entity.status}`) }}
             </wx-descriptions-item>
-            <wx-descriptions-item v-if="entity.updatedAt" :label="t('site-bar.edited')">
-              <DateText :value="entity.updatedAt" />
-            </wx-descriptions-item>
           </wx-descriptions>
 
           <wx-text v-else size="sm" tone="muted">{{ t('site-bar.no-entity') }}</wx-text>
