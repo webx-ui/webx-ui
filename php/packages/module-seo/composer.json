@@ -31,19 +31,19 @@
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
         "openspout/openspout": "^4.32",
-        "webx-ui/localization": "^0.70.0",
-        "webx-ui/mcp": "^0.70.0",
-        "webx-ui/module-admin": "^0.70.0",
-        "webx-ui/module-auth": "^0.70.0",
-        "webx-ui/module-settings": "^0.70.0",
-        "webx-ui/routing": "^0.70.0"
+        "webx-ui/localization": "^0.71.0",
+        "webx-ui/mcp": "^0.71.0",
+        "webx-ui/module-admin": "^0.71.0",
+        "webx-ui/module-auth": "^0.71.0",
+        "webx-ui/module-settings": "^0.71.0",
+        "webx-ui/routing": "^0.71.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-audit": "^0.70.0",
-        "webx-ui/module-media": "^0.70.0",
-        "webx-ui/themes": "^0.70.0"
+        "webx-ui/module-audit": "^0.71.0",
+        "webx-ui/module-media": "^0.71.0",
+        "webx-ui/themes": "^0.71.0"
     },
     "suggest": {
         "webx-ui/module-media": "og:image gets its type and size from the library, a 1200×630 variant, and an SVG falls through to the next picture.",
@@ -69,7 +69,7 @@
         "webx": {
             "module": "seo",
             "npm": {
-                "@webx-ui/module-seo": "^0.8.2"
+                "@webx-ui/module-seo": "^0.9.0"
             },
             "panel": {
                 "import": "import { seo } from '@webx-ui/module-seo'",
