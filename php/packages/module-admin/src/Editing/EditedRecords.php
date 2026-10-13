@@ -87,11 +87,37 @@ final class EditedRecords
      */
     public function revisionOf(Model $model): ?string
     {
+        return $this->recordOf($model)['revision'] ?? null;
+    }
+
+    /**
+     * The name a record is registered under — what its editor's heartbeat calls it: `pages` for
+     * a page. The panel on the site knows a record by the type of its address (`page`) and needs
+     * this one to say «I have it open» in the same place the editor in the panel listens.
+     */
+    public function nameOf(Model $model): ?string
+    {
+        return $this->recordOf($model)['entity'] ?? null;
+    }
+
+    /**
+     * @return array{entity: string, revision: string}|null
+     */
+    private function recordOf(Model $model): ?array
+    {
         foreach (array_keys($this->records) as $entity) {
+            // Only a record whose model is this one's: a region is found by name, and asking it
+            // for «12» is a question about a different thing.
+            $class = $this->records[$entity]['model'];
+
+            if ($class !== null && ! $model instanceof $class) {
+                continue;
+            }
+
             $found = $this->find($entity, (string) $model->getKey());
 
             if ($found !== null && $model::class === $found['model']::class && $found['model']->getKey() === $model->getKey()) {
-                return $found['revision'];
+                return ['entity' => $entity, 'revision' => $found['revision']];
             }
         }
 

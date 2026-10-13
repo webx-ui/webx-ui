@@ -11,9 +11,13 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\EditedRecords;
+use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\SiteBar\Loader;
+use WebxUi\Admin\SiteBar\Publishing;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Resolver;
@@ -95,6 +99,93 @@ final class SiteBarController
                 : null,
             'sections' => $sections,
         ]);
+    }
+
+    /**
+     * `POST /api/cms/site-bar/publish` — «Publish» in the head of the bar (§9): the record's
+     * draft on the site, the way the section's own button puts it there ({@see Publishing}).
+     *
+     * The revision the bar held, when it sends one: an edit made since — a colleague's in the
+     * panel, an agent's — is not published under a click that never saw it. Answered 409 with
+     * who made it, as the editor in the panel is.
+     */
+    public function publish(Request $request): JsonResponse
+    {
+        [$entity, $publishing] = $this->publishable($request);
+
+        $sent = $request->input('revision');
+        $now = $this->container->make(EditedRecords::class)->revisionOf($entity);
+
+        if (is_string($sent) && $sent !== '' && $now !== null && $sent !== $now) {
+            $changed = LastChange::of($entity, $request->user());
+
+            return new JsonResponse([
+                'message' => (string) __('webx-admin::editing.stale-publish', [
+                    'name' => $changed['author'] ?? __('webx-admin::editing.somebody'),
+                ]),
+                'revision' => $now,
+                'changed' => $changed,
+            ], 409);
+        }
+
+        $publishing->publish($entity, $this->adminId($request));
+
+        return ApiResponse::data(['published' => true]);
+    }
+
+    /** `POST /api/cms/site-bar/discard` — «Discard»: the draft goes, the site's version stays. */
+    public function discard(Request $request): JsonResponse
+    {
+        [$entity, $publishing] = $this->publishable($request);
+
+        $publishing->discard($entity);
+
+        return ApiResponse::data(['discarded' => true]);
+    }
+
+    /**
+     * The record named in the request, and what publishes it — for an administrator who may.
+     * The same right the bar shows the buttons by (`can.publish`): the section's, on a record
+     * whose section said how it is published.
+     *
+     * @return array{0: Model, 1: Publishing}
+     */
+    private function publishable(Request $request): array
+    {
+        $request->validate([
+            'type' => ['required', 'string', 'max:64'],
+            'id' => ['required'],
+            'revision' => ['nullable', 'string', 'max:128'],
+        ]);
+
+        $id = $request->input('id');
+        $found = is_int($id) || is_string($id) ? $this->bar->record((string) $request->input('type'), $id) : null;
+
+        if ($found === null) {
+            throw new NotFoundHttpException;
+        }
+
+        [$entity, $link] = $found;
+        $user = $request->user();
+
+        if (! $user instanceof HasPermissions || ! $user->hasPermission($link->permission)) {
+            throw new AccessDeniedHttpException;
+        }
+
+        $publishing = $link->publish === null ? null : $this->container->make($link->publish);
+
+        if (! $publishing instanceof Publishing) {
+            throw new NotFoundHttpException;
+        }
+
+        return [$entity, $publishing];
+    }
+
+    private function adminId(Request $request): ?int
+    {
+        $id = $request->user()?->getAuthIdentifier();
+
+        return is_int($id) || (is_string($id) && ctype_digit($id)) ? (int) $id : null;
     }
 
     /** The path of an address of this site, without its query; anything else is refused. */

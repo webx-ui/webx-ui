@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'tab' => 'Bloques',
+    'pick' => 'Elegir un bloque en la página',
+    'pick-off' => 'Dejar de elegir',
+    'picking' => 'Haz clic en un bloque de la página. Esc para salir.',
+    'hint' => 'Elige un bloque en la página o en la lista para cambiar sus campos. Los cambios van al borrador.',
+    'empty' => 'Esta página no tiene bloques.',
+    'temporary' => 'Edítalo en el panel',
+    'hidden' => 'Oculto',
+    'all' => 'Todos los bloques',
+    'save' => 'Guardar en el borrador',
+    'saved' => 'Guardado en el borrador',
+    'unknown-type' => 'Este bloque no tiene formulario: su tipo no está publicado.',
+    'error' => 'No se pudieron leer los bloques de esta página.',
+    'retry' => 'Reintentar',
+    'conflict' => 'La página cambió después de que el formulario la leyera; ahora muestra lo que hay.',
+    'conflict-by' => ':name cambió la página después de que el formulario la leyera; ahora muestra lo que hay.',
+    'bad-op' => 'Este cambio no se puede hacer desde el sitio.',
+    'gone' => 'Este bloque ya no está en la página.',
+    'others' => 'También abierto en el panel: :names',
+];

@@ -17,6 +17,7 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\StringType;
+use WebxUi\Admin\SiteBar\DraftPublishing;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -376,6 +377,7 @@ class BlogServiceProvider extends ServiceProvider
             edit: static fn (Model $record): string => '/blog/articles/'.$record->getKey(),
             permission: 'blog.articles.manage',
             kind: 'webx-admin::site-bar.kind-article',
+            publish: DraftPublishing::class,
         ));
         $bar->entity('rubric', new EntityLink(
             edit: static fn (Model $record): string => '/blog/rubrics/'.$record->getKey(),

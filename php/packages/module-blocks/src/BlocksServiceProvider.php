@@ -20,6 +20,7 @@ use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Content\AuditContentSources;
@@ -43,6 +44,7 @@ use WebxUi\Blocks\Panel\BlocksModule;
 use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\RegionForm;
 use WebxUi\Blocks\Panel\RegionsModule;
+use WebxUi\Blocks\Panel\SiteBarBlocks;
 use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Preview\Preview;
 use WebxUi\Blocks\Preview\PreviewToken;
@@ -169,6 +171,10 @@ class BlocksServiceProvider extends ServiceProvider
 
         $this->registerGateOpenings();
         $this->registerAuditSource();
+
+        // The «Blocks» tab of the panel on the site, on a record that holds blocks for somebody
+        // who may edit it (§8 of WEBX_UI_SITE_BAR.md). The frame never learns what it is.
+        $this->app->make(SiteBar::class)->section('blocks', SiteBarBlocks::available(...));
 
         // What a response printed is what its bundle is glued from, and no more than that: in a
         // process that serves many requests the list would otherwise grow across them.

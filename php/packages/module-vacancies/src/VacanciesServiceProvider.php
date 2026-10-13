@@ -14,6 +14,7 @@ use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\DraftPublishing;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -258,6 +259,7 @@ class VacanciesServiceProvider extends ServiceProvider
             edit: static fn (Model $record): string => '/vacancies/'.$record->getKey(),
             permission: 'vacancies.manage',
             kind: 'webx-admin::site-bar.kind-vacancy',
+            publish: DraftPublishing::class,
         ));
     }
 }

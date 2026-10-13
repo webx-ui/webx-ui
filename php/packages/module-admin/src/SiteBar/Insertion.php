@@ -29,6 +29,12 @@ use WebxUi\Routing\Resolution;
  */
 final class Insertion
 {
+    /** Where the decision about markers is kept on the request: asked once per block, made once. */
+    public const MARKS = 'webx.site-bar.marks';
+
+    /** The markers the renderer prints for the bar (§8): blocks, the record, the regions. */
+    private const MARKERS = '/<!--\/?wx(?:-entity|-region)?:[^>]*?-->/';
+
     public function __construct(
         private readonly Config $config,
         private readonly AuthFactory $auth,
@@ -40,13 +46,9 @@ final class Insertion
 
     public function apply(Request $request, Response $response): void
     {
-        if (! $this->isPage($request, $response)) {
-            return;
-        }
+        if (! $this->isPage($request, $response) || ($user = $this->administrator()) === null || $this->sections($request, $user) === []) {
+            $this->unmark($request, $response);
 
-        $user = $this->administrator();
-
-        if ($user === null || $this->sections($request, $user) === []) {
             return;
         }
 
@@ -63,14 +65,54 @@ final class Insertion
         $response->headers->remove('Content-Length');
     }
 
+    /**
+     * Whether the blocks on this page are printed with their markers (§8) — the same decision as
+     * putting the bar on the page, taken before the page is rendered rather than after it, since
+     * the markers are needed while the renderer prints.
+     *
+     * Made the first time the renderer asks — by then the address is resolved and the record
+     * behind it known — and kept on the request, so a page of forty blocks asks once. A visitor
+     * costs the same as for the bar itself: a few checks of the request and no query. What the
+     * response turns out to be (not a 200, not HTML) is known only afterwards; {@see apply()}
+     * takes the markers back out of such a response.
+     */
+    public function marks(Request $request): bool
+    {
+        $known = $request->attributes->get(self::MARKS);
+
+        if (is_bool($known)) {
+            return $known;
+        }
+
+        $user = $this->wanted($request) ? $this->administrator() : null;
+        $marks = $user !== null && $this->sections($request, $user) !== [];
+
+        $request->attributes->set(self::MARKS, $marks);
+
+        return $marks;
+    }
+
+    /**
+     * Markers printed for a bar that is not put on the page after all: a response that is not a
+     * page, or one nobody may edit. They say only keys and slugs, but they say them to nobody.
+     */
+    private function unmark(Request $request, Response $response): void
+    {
+        if ($request->attributes->get(self::MARKS) !== true) {
+            return;
+        }
+
+        $content = $response->getContent();
+
+        if (is_string($content) && str_contains($content, '<!--')) {
+            $response->setContent((string) preg_replace(self::MARKERS, '', $content));
+        }
+    }
+
     /** The request and the response, before anybody is asked who is signed in. */
     private function isPage(Request $request, Response $response): bool
     {
-        if (! (bool) $this->config->get('webx-admin.site_bar.enabled', true)) {
-            return false;
-        }
-
-        if (! $request->isMethod('GET') || $response->getStatusCode() !== 200) {
+        if (! $this->wanted($request) || $response->getStatusCode() !== 200) {
             return false;
         }
 
@@ -84,7 +126,13 @@ final class Insertion
 
         $content = $response->getContent();
 
-        if (! is_string($content) || stripos($content, '</body>') === false) {
+        return is_string($content) && stripos($content, '</body>') !== false;
+    }
+
+    /** The half of the decision the request alone answers: known before anything is rendered. */
+    private function wanted(Request $request): bool
+    {
+        if (! (bool) $this->config->get('webx-admin.site_bar.enabled', true) || ! $request->isMethod('GET')) {
             return false;
         }
 
@@ -191,6 +239,8 @@ final class Insertion
                 'open' => $this->word('open', $locale),
                 'close' => $this->word('close', $locale),
                 'title' => $this->word('title', $locale),
+                'draft' => $this->word('draft', $locale),
+                'temporary' => $this->word('temporary', $locale),
             ],
         ];
 

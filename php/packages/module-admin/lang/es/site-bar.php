@@ -37,4 +37,13 @@ return [
     'kind-recipe' => 'Receta',
     'kind-event' => 'Evento',
     'kind-outlet' => 'Medio',
+    'changes' => 'Cambios sin publicar: :count',
+    'publish' => 'Publicar',
+    'discard' => 'Descartar',
+    'draft-other' => ':name tiene aquí un borrador; tus cambios irán a él',
+    'discard-title' => '¿Descartar los cambios sin publicar?',
+    'discard-text' => 'El registro vuelve a lo que muestra ahora el sitio. Se pierde todo el borrador, también los cambios de otras personas.',
+    'cancel' => 'Cancelar',
+    'loader-draft' => 'Borrador',
+    'loader-temporary' => 'Edítalo en el panel',
 ];

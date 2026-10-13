@@ -37,4 +37,13 @@ return [
     'kind-recipe' => 'Tarif',
     'kind-event' => 'Etkinlik',
     'kind-outlet' => 'Yayın organı',
+    'changes' => 'Yayımlanmamış değişiklik: :count',
+    'publish' => 'Yayımla',
+    'discard' => 'Vazgeç',
+    'draft-other' => ':name burada bir taslak tutuyor; değişiklikleriniz ona eklenir',
+    'discard-title' => 'Yayımlanmamış değişikliklerden vazgeçilsin mi?',
+    'discard-text' => 'Kayıt, sitenin şu an gösterdiğine döner. Başkalarının değişiklikleri dahil tüm taslak silinir.',
+    'cancel' => 'İptal',
+    'loader-draft' => 'Taslak',
+    'loader-temporary' => 'Panelde düzenleyin',
 ];

@@ -37,4 +37,13 @@ return [
     'kind-recipe' => 'Recette',
     'kind-event' => 'Événement',
     'kind-outlet' => 'Média',
+    'changes' => 'Modifications non publiées : :count',
+    'publish' => 'Publier',
+    'discard' => 'Abandonner',
+    'draft-other' => ':name a un brouillon ici ; vos modifications s’y ajoutent',
+    'discard-title' => 'Abandonner les modifications non publiées ?',
+    'discard-text' => 'L’enregistrement revient à ce que le site affiche maintenant. Tout le brouillon disparaît, y compris les modifications des autres.',
+    'cancel' => 'Annuler',
+    'loader-draft' => 'Brouillon',
+    'loader-temporary' => 'À modifier dans le panneau',
 ];

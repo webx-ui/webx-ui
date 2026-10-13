@@ -6,9 +6,13 @@ namespace WebxUi\Admin\SiteBar;
 
 use Carbon\CarbonInterface;
 use Closure;
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Editing\LastChange;
+use WebxUi\Routing\RouteTypes;
 
 /**
  * The register behind the panel on the site (WEBX_UI_SITE_BAR.md, §6).
@@ -41,6 +45,35 @@ final class SiteBar
     public function link(string $type): ?EntityLink
     {
         return $this->links[$type] ?? null;
+    }
+
+    /**
+     * A record the bar may name, by the type of its addresses and its key — what the bar's own
+     * writes (publishing, a block's fields) start from. Null for a type nobody registered here or
+     * in the address registry, and for a record that is not there.
+     *
+     * @return array{0: Model, 1: EntityLink}|null
+     */
+    public function record(string $type, string|int $id): ?array
+    {
+        $link = $this->link($type);
+
+        if ($link === null || ! class_exists(RouteTypes::class)) {
+            return null;
+        }
+
+        $container = Container::getInstance();
+        $routeType = $container->make(RouteTypes::class)->find($type);
+
+        if ($routeType === null) {
+            return null;
+        }
+
+        /** @var Model $model */
+        $model = $container->make($routeType->model);
+        $entity = $model->newQuery()->find($id);
+
+        return $entity instanceof Model ? [$entity, $link] : null;
     }
 
     /** @return array<string, EntityLink> */
@@ -101,6 +134,10 @@ final class SiteBar
             'draft' => self::draft($entity, $user),
             'updatedAt' => self::moment($entity->getAttribute('updated_at')),
             'edit' => ($link->edit)($entity),
+            // What the record's editor in the panel calls it and the revision it holds: the bar
+            // says «open» in the same place, and publishes only what it has seen.
+            'editing' => $this->records()?->nameOf($entity),
+            'revision' => $this->records()?->revisionOf($entity),
             'can' => [
                 'edit' => $user->hasPermission($link->permission),
                 'publish' => $link->publish !== null && $user->hasPermission($link->permission),
@@ -160,7 +197,10 @@ final class SiteBar
      * Asked of the record rather than of the bar, so a draft left in the panel by a colleague is
      * reported before the first edit on the site lands in it (§9).
      *
-     * @return array{differs: bool, by: string|null, at: string|null}|null
+     * `changes` counts the fields that differ; `mine` says whether the last hand on the draft was
+     * this administrator's — until it is, the bar warns that their edits go into somebody else's.
+     *
+     * @return array{differs: bool, by: string|null, at: string|null, changes: int, mine: bool}|null
      */
     private static function draft(Model $entity, HasPermissions $user): ?array
     {
@@ -168,13 +208,30 @@ final class SiteBar
             return null;
         }
 
-        if (! $entity->hasDraft() || $entity->changedFields() === []) {
-            return ['differs' => false, 'by' => null, 'at' => null];
+        $changed = $entity->hasDraft() ? $entity->changedFields() : [];
+
+        if ($changed === []) {
+            return ['differs' => false, 'by' => null, 'at' => null, 'changes' => 0, 'mine' => true];
         }
 
         $last = LastChange::of($entity, $user);
+        $me = $user instanceof Authenticatable ? $user->getAuthIdentifier() : null;
+        $author = $last['author_id'] ?? null;
 
-        return ['differs' => true, 'by' => $last['author'] ?? null, 'at' => $last['at'] ?? null];
+        return [
+            'differs' => true,
+            'by' => $last['author'] ?? null,
+            'at' => $last['at'] ?? null,
+            'changes' => count($changed),
+            'mine' => $author !== null && $me !== null && (string) $author === (string) $me,
+        ];
+    }
+
+    private function records(): ?EditedRecords
+    {
+        $container = Container::getInstance();
+
+        return $container->bound(EditedRecords::class) ? $container->make(EditedRecords::class) : null;
     }
 
     private static function moment(mixed $value): ?string

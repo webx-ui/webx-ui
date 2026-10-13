@@ -37,4 +37,13 @@ return [
     'kind-recipe' => 'Ricetta',
     'kind-event' => 'Evento',
     'kind-outlet' => 'Testata',
+    'changes' => 'Modifiche non pubblicate: :count',
+    'publish' => 'Pubblica',
+    'discard' => 'Scarta',
+    'draft-other' => ':name ha una bozza qui; le tue modifiche finiscono lì',
+    'discard-title' => 'Scartare le modifiche non pubblicate?',
+    'discard-text' => 'Il record torna a ciò che il sito mostra ora. Se ne va tutta la bozza, comprese le modifiche degli altri.',
+    'cancel' => 'Annulla',
+    'loader-draft' => 'Bozza',
+    'loader-temporary' => 'Da modificare nel pannello',
 ];

@@ -37,4 +37,13 @@ return [
     'kind-recipe' => 'Rezept',
     'kind-event' => 'Veranstaltung',
     'kind-outlet' => 'Medium',
+    'changes' => 'Unveröffentlichte Änderungen: :count',
+    'publish' => 'Veröffentlichen',
+    'discard' => 'Verwerfen',
+    'draft-other' => ':name hat hier einen Entwurf; Ihre Änderungen gehen in ihn ein',
+    'discard-title' => 'Unveröffentlichte Änderungen verwerfen?',
+    'discard-text' => 'Der Eintrag kehrt zu dem zurück, was die Website jetzt zeigt. Der ganze Entwurf geht verloren, auch die Änderungen anderer.',
+    'cancel' => 'Abbrechen',
+    'loader-draft' => 'Entwurf',
+    'loader-temporary' => 'Im Panel bearbeiten',
 ];

@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'tab' => 'Bloklar',
+    'pick' => 'Sayfada bir blok seçin',
+    'pick-off' => 'Seçmeyi bırak',
+    'picking' => 'Sayfada bir bloğa tıklayın. Esc ile çıkın.',
+    'hint' => 'Alanlarını değiştirmek için sayfada veya listede bir blok seçin. Değişiklikler taslağa gider.',
+    'empty' => 'Bu sayfada blok yok.',
+    'temporary' => 'Panelde düzenleyin',
+    'hidden' => 'Gizli',
+    'all' => 'Tüm bloklar',
+    'save' => 'Taslağa kaydet',
+    'saved' => 'Taslağa kaydedildi',
+    'unknown-type' => 'Bu bloğun formu yok: türü yayımlanmamış.',
+    'error' => 'Bu sayfanın blokları okunamadı.',
+    'retry' => 'Yeniden dene',
+    'conflict' => 'Form okuduktan sonra sayfa değişti; form artık güncel hâlini gösteriyor.',
+    'conflict-by' => ':name, form okuduktan sonra sayfayı değiştirdi; form artık güncel hâlini gösteriyor.',
+    'bad-op' => 'Bu değişiklik siteden yapılamaz.',
+    'gone' => 'Bu blok artık sayfada yok.',
+    'others' => 'Panelde de açık: :names',
+];

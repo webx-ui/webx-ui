@@ -37,4 +37,13 @@ return [
     'kind-recipe' => 'Receita',
     'kind-event' => 'Evento',
     'kind-outlet' => 'Veículo',
+    'changes' => 'Alterações não publicadas: :count',
+    'publish' => 'Publicar',
+    'discard' => 'Descartar',
+    'draft-other' => ':name tem um rascunho aqui; as suas alterações vão para ele',
+    'discard-title' => 'Descartar as alterações não publicadas?',
+    'discard-text' => 'O registo volta ao que o site mostra agora. Todo o rascunho desaparece, incluindo as alterações de outras pessoas.',
+    'cancel' => 'Cancelar',
+    'loader-draft' => 'Rascunho',
+    'loader-temporary' => 'Editar no painel',
 ];

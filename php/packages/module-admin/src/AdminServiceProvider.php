@@ -158,6 +158,8 @@ class AdminServiceProvider extends ServiceProvider
         // The panel on the site: which records it can name, filled from every section's
         // provider like the registers above, and its script, read and hashed once a process.
         $this->app->singleton(SiteBar::class);
+        // Asked by the renderer for every block it prints; the decision itself lives on the request.
+        $this->app->singleton(Insertion::class);
         $this->app->singleton(Loader::class);
 
         // The language prefix, when there is an address registry to ask. Behind `class_exists`

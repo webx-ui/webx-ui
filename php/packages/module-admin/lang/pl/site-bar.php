@@ -37,4 +37,13 @@ return [
     'kind-recipe' => 'Przepis',
     'kind-event' => 'Wydarzenie',
     'kind-outlet' => 'Medium',
+    'changes' => 'Nieopublikowane zmiany: :count',
+    'publish' => 'Opublikuj',
+    'discard' => 'Odrzuć',
+    'draft-other' => ':name ma tu wersję roboczą; Twoje zmiany do niej trafią',
+    'discard-title' => 'Odrzucić nieopublikowane zmiany?',
+    'discard-text' => 'Wpis wróci do tego, co strona pokazuje teraz. Zniknie cała wersja robocza, także zmiany innych osób.',
+    'cancel' => 'Anuluj',
+    'loader-draft' => 'Wersja robocza',
+    'loader-temporary' => 'Edytuj w panelu',
 ];

@@ -21,7 +21,7 @@ final readonly class EntityLink
      * @param  Closure(Model): ?string  $edit  Where the panel edits the record, relative to the panel: `/pages/12`.
      * @param  string  $permission  What the administrator needs for the bar to offer this record at all.
      * @param  string  $kind  A translation key for what the record is, in the singular: «Page», «Article».
-     * @param  class-string|null  $publish  What publishes the record from the bar (SB3); none, no «Publish» button.
+     * @param  class-string<Publishing>|null  $publish  What publishes and discards the record's draft from the bar; none, no «Publish» button.
      * @param  (Closure(Model, ?string): string)|null  $label  What the record is called; its title or name when not given.
      */
     public function __construct(

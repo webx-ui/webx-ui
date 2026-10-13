@@ -50,6 +50,9 @@ Route::prefix((string) config('webx-admin.api_path'))
         // record it names is checked against its own section's permission, not one shared
         // «may use the bar».
         Route::get('site-bar/context', [SiteBarController::class, 'context'])->name('site-bar.context');
+        // «Publish» and «Discard» in the bar's head (§9): behind the right of the record's section.
+        Route::post('site-bar/publish', [SiteBarController::class, 'publish'])->name('site-bar.publish');
+        Route::post('site-bar/discard', [SiteBarController::class, 'discard'])->name('site-bar.discard');
 
         Route::get('screens/{name}', ScreenController::class)
             ->where('name', '[a-z0-9-]+\.[a-z0-9-]+')

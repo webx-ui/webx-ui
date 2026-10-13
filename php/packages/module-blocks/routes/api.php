@@ -11,6 +11,7 @@ use WebxUi\Blocks\Http\Controllers\PublishController;
 use WebxUi\Blocks\Http\Controllers\RegionController;
 use WebxUi\Blocks\Http\Controllers\RenderController;
 use WebxUi\Blocks\Http\Controllers\ReorderController;
+use WebxUi\Blocks\Http\Controllers\SiteBarController;
 use WebxUi\Blocks\Http\Controllers\UsageController;
 
 Route::prefix((string) config('webx-admin.api_path').'/blocks')
@@ -29,6 +30,14 @@ Route::prefix((string) config('webx-admin.api_path').'/blocks')
             // when the request carries a template nobody has saved.
             Route::post('{block}/render', RenderController::class)->whereNumber('block')->name('render');
         });
+
+        // The «Blocks» tab of the panel on the site (§8–§9 of the bar's spec): a record's blocks
+        // and one block's fields into its draft. The right is the record's section's, which the
+        // controller asks of the record itself, plus reading blocks.
+        Route::get('content/{type}/{id}', [SiteBarController::class, 'show'])
+            ->where('type', '[a-z0-9_-]+')->where('id', '[A-Za-z0-9_-]+')->name('site-bar.show');
+        Route::post('content/{type}/{id}/edit', [SiteBarController::class, 'edit'])
+            ->where('type', '[a-z0-9_-]+')->where('id', '[A-Za-z0-9_-]+')->name('site-bar.edit');
 
         Route::middleware('cms.can:blocks.view,blocks.manage')->group(function (): void {
             Route::get('/', [BlockController::class, 'index'])->name('index');

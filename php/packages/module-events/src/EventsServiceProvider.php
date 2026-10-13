@@ -16,6 +16,7 @@ use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\DraftPublishing;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -302,6 +303,7 @@ class EventsServiceProvider extends ServiceProvider
             edit: static fn (Model $record): string => '/events/'.$record->getKey(),
             permission: 'events.manage',
             kind: 'webx-admin::site-bar.kind-event',
+            publish: DraftPublishing::class,
         ));
         $bar->entity(EventCategory::TYPE, new EntityLink(
             edit: static fn (Model $record): string => '/events/categories/'.$record->getKey(),

@@ -16,6 +16,7 @@ use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\DraftPublishing;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -324,6 +325,7 @@ class ServicesServiceProvider extends ServiceProvider
             edit: static fn (Model $record): string => '/services/'.$record->getKey(),
             permission: 'services.manage',
             kind: 'webx-admin::site-bar.kind-service',
+            publish: DraftPublishing::class,
         ));
         $bar->entity('service-category', new EntityLink(
             edit: static fn (Model $record): string => '/services/categories/'.$record->getKey(),
