@@ -354,13 +354,14 @@ final class Regions
     }
 
     /**
-     * The pair of comments the panel finds the region by, in its preview only. Blocks inside
-     * carry their own pair already; the region's is around all of them, fallback included, so
-     * that the panel knows where the first block of an empty region goes.
+     * The pair of comments the panel finds the region by, in its preview and on a page that gets
+     * the panel on the site. Blocks inside carry their own pair already; the region's is around
+     * all of them, fallback included, so that the panel knows where the first block of an empty
+     * region goes — and the bar, that a block under the pointer is the header's, not the page's.
      */
     private function mark(string $name, HtmlString $html, bool $preview): HtmlString
     {
-        if (! $preview) {
+        if (! $preview && ! $this->renderer->isMarkingForSiteBar()) {
             return $html;
         }
 

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace WebxUi\Press;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\EntityLink;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
@@ -49,6 +52,8 @@ class PressServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerSiteBar();
+
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-press');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-press');
@@ -157,5 +162,21 @@ class PressServiceProvider extends ServiceProvider
     private function config(): Config
     {
         return $this->app->make('config');
+    }
+
+    /**
+     * What the panel on the site says about this section's records, and where in the panel it
+     * opens them (WEBX_UI_SITE_BAR.md, §6) — one entry for every type this section gives an
+     * address, under the same type, because an address is what the bar starts from.
+     */
+    private function registerSiteBar(): void
+    {
+        $bar = $this->app->make(SiteBar::class);
+
+        $bar->entity(Outlet::TYPE, new EntityLink(
+            edit: static fn (Model $record): string => '/press?outlet='.$record->getKey(),
+            permission: 'press.manage',
+            kind: 'webx-admin::site-bar.kind-outlet',
+        ));
     }
 }

@@ -9,6 +9,7 @@ use WebxUi\Auth\Http\Controllers\CsrfCookieController;
 use WebxUi\Auth\Http\Controllers\McpCallController;
 use WebxUi\Auth\Http\Controllers\MeController;
 use WebxUi\Auth\Http\Controllers\PanelLocaleController;
+use WebxUi\Auth\Http\Controllers\PanelSiteBarController;
 use WebxUi\Auth\Http\Controllers\PanelThemeController;
 use WebxUi\Auth\Http\Controllers\ProfileController;
 use WebxUi\Auth\Http\Controllers\RoleController;
@@ -37,6 +38,7 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
             Route::put('me', ProfileController::class)->name('me.update');
             Route::put('locale', PanelLocaleController::class)->name('locale');
             Route::put('theme', PanelThemeController::class)->name('theme');
+            Route::put('site-bar', PanelSiteBarController::class)->name('site-bar');
 
             // The agents this person let in, like the profile above: your own connections are
             // yours to see and to end, and somebody else's needs `admins.manage` — which the

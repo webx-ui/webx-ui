@@ -6,12 +6,15 @@ namespace WebxUi\Admin;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +43,7 @@ use WebxUi\Admin\Console\SnapshotCommand;
 use WebxUi\Admin\Console\SnapshotRestoreCommand;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
+use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Doctor\DoctorChecks;
@@ -85,6 +89,10 @@ use WebxUi\Admin\Screens\Types\TagsType;
 use WebxUi\Admin\Screens\Types\TimeType;
 use WebxUi\Admin\Screens\Types\TreeSelectType;
 use WebxUi\Admin\Shortcodes\Shortcodes;
+use WebxUi\Admin\SiteBar\EntityLink;
+use WebxUi\Admin\SiteBar\Insertion;
+use WebxUi\Admin\SiteBar\Loader;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Support\Ownership;
 use WebxUi\Admin\Support\Parts;
@@ -146,6 +154,13 @@ class AdminServiceProvider extends ServiceProvider
         // settings section adds the ones the panel defines, and every module that prints text
         // reads the same registry.
         $this->app->singleton(Shortcodes::class);
+
+        // The panel on the site: which records it can name, filled from every section's
+        // provider like the registers above, and its script, read and hashed once a process.
+        $this->app->singleton(SiteBar::class);
+        // Asked by the renderer for every block it prints; the decision itself lives on the request.
+        $this->app->singleton(Insertion::class);
+        $this->app->singleton(Loader::class);
 
         // The language prefix, when there is an address registry to ask. Behind `class_exists`
         // because the frame does not require `webx-ui/routing` — a panel of settings and
@@ -296,6 +311,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerUploadsSchedule();
         $this->registerGate();
         $this->registerPurgedAnswer();
+        $this->registerSiteBar();
         SystemSections::register($this->app->make('config'));
 
         $router = $this->app->make('router');
@@ -377,6 +393,26 @@ class AdminServiceProvider extends ServiceProvider
 
                 return $purged === null ? null : Purged::answer($purged);
             });
+        });
+    }
+
+    /**
+     * The panel on the site (WEBX_UI_SITE_BAR.md): the «Page» tab, which the frame answers for
+     * itself, and the script put before `</body>` of an administrator's page.
+     *
+     * A listener of its own rather than a part of the theme's or the widgets' finishing: a site
+     * with neither gets the bar all the same. `RequestHandled` comes after every middleware, so
+     * nothing the site does to a page afterwards can see the script — and nothing before it can
+     * see the decision, which is why a visitor's response is never touched at all.
+     */
+    private function registerSiteBar(): void
+    {
+        $bar = $this->app->make(SiteBar::class);
+
+        $bar->section('page', static fn (HasPermissions $user, ?Model $entity, ?EntityLink $link): bool => $bar->mayOpen($user, $entity, $link));
+
+        $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (RequestHandled $event): void {
+            $this->app->make(Insertion::class)->apply($event->request, $event->response);
         });
     }
 

@@ -6,6 +6,7 @@ namespace WebxUi\Blocks;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
@@ -14,12 +15,14 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Content\AuditContentSources;
@@ -43,6 +46,7 @@ use WebxUi\Blocks\Panel\BlocksModule;
 use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\RegionForm;
 use WebxUi\Blocks\Panel\RegionsModule;
+use WebxUi\Blocks\Panel\SiteBarBlocks;
 use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Preview\Preview;
 use WebxUi\Blocks\Preview\PreviewToken;
@@ -169,6 +173,26 @@ class BlocksServiceProvider extends ServiceProvider
 
         $this->registerGateOpenings();
         $this->registerAuditSource();
+
+        // The «Blocks» tab of the panel on the site, on a record that holds blocks for somebody
+        // who may edit it (§8 of WEBX_UI_SITE_BAR.md). The frame never learns what it is.
+        $this->app->make(SiteBar::class)->section('blocks', SiteBarBlocks::available(...));
+
+        // The header and the footer, on every page, for whoever edits the regions — a section of
+        // its own so that the bar is there on a page without a record; the panel draws it inside
+        // the same tab, with one picker for the page (SB4 of the bar's spec).
+        $this->app->make(SiteBar::class)->section('regions', SiteBarBlocks::regionsAvailable(...));
+
+        // «Preview draft» in the bar's head: after a reload the page is the site again, and a block
+        // added from the bar is nowhere on it — the preview is where the whole draft is (SB5).
+        $this->app->make(SiteBar::class)->previews(function (Model $entity, ?int $adminId): ?string {
+            try {
+                return $this->app->make(Preview::class)->url($entity, $adminId);
+            } catch (Throwable) {
+                // A record outside the address registry has no preview.
+                return null;
+            }
+        });
 
         // What a response printed is what its bundle is glued from, and no more than that: in a
         // process that serves many requests the list would otherwise grow across them.

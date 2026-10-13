@@ -14,6 +14,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Fixes\AuditFixes;
@@ -39,6 +40,7 @@ use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\DefaultsSource;
 use WebxUi\Seo\Panel\SeoModule;
 use WebxUi\Seo\Panel\SeoRules;
+use WebxUi\Seo\Panel\SiteBarSeo;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
 use WebxUi\Seo\Rendering\Alternates;
@@ -117,6 +119,12 @@ class SeoServiceProvider extends ServiceProvider
         $this->registerFieldType();
         $this->registerSitemap();
         $this->registerAudit();
+
+        // The SEO tab of the panel on the site (WEBX_UI_SITE_BAR.md, §7). Registered by this
+        // package rather than by the frame, which never learns what its tabs are: on any address
+        // for somebody with `seo.manage` (a rule needs no record), and on a record's page for
+        // whoever may save its card.
+        $this->app->make(SiteBar::class)->section('seo', SiteBarSeo::available(...));
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(SeoModule::class));
 

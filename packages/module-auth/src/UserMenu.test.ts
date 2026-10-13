@@ -41,6 +41,7 @@ function panel(user: AdminUser): AdminContext {
 }
 
 const setTheme = vi.fn(() => Promise.resolve())
+const setSiteBar = vi.fn(() => Promise.resolve())
 
 const session: AuthSession = {
   me: () => Promise.resolve(null),
@@ -48,6 +49,7 @@ const session: AuthSession = {
   logout: () => Promise.resolve(),
   setLocale: () => Promise.resolve(),
   setTheme,
+  setSiteBar,
   updateProfile: () => Promise.reject(new Error('not stubbed')),
 }
 
@@ -119,6 +121,40 @@ describe('WxUserMenu', () => {
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
 
     document.documentElement.removeAttribute('data-theme')
+  })
+
+  /*
+   * The panel on the site's own pages, switched off for this person alone (no dictionary here,
+   * so the item is found by its key). The server decides
+   * on every page whether to put it there, so the call is the whole of it.
+   */
+  it('switches the panel on the site off for this administrator', async () => {
+    const wrapper = draw({ ...alexx, siteBar: true }, null)
+
+    await wrapper.get('.wx-user-menu__trigger').trigger('click')
+    await flushPromises()
+
+    const item = [...document.querySelectorAll('.wx-dropdown-item')].find((node) =>
+      node.textContent?.includes('menu.site-bar'),
+    )
+
+    item?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await flushPromises()
+
+    expect(setSiteBar).toHaveBeenCalledWith(false)
+
+    wrapper.unmount()
+  })
+
+  it('offers no switch where the server has no panel on the site', async () => {
+    const wrapper = draw(alexx, null)
+
+    await wrapper.get('.wx-user-menu__trigger').trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).not.toContain('menu.site-bar')
+
+    wrapper.unmount()
   })
 
   /* Initials tell two people apart; a name says who somebody is. The shell says which fits. */

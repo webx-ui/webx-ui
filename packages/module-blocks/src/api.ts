@@ -17,6 +17,9 @@ import type {
   RegionVersion,
   RenderInput,
   RenderResult,
+  SiteBarBlockEdit,
+  SiteBarBlockEdited,
+  SiteBarBlocks,
 } from './types'
 
 export interface BlocksApi {
@@ -125,6 +128,31 @@ export function createBlocksApi(admin: AdminContext): BlocksApi {
           publish: options.publish === true,
         })
         .then(data),
+  }
+}
+
+export interface SiteBarBlocksApi {
+  /** A record's blocks: the draft's, or the site's when there is no draft. */
+  read(type: string, id: number | string): Promise<SiteBarBlocks>
+  /**
+   * One block's fields into the record's draft. A revision that moved is answered 409 — the
+   * error's body names who moved it.
+   */
+  edit(type: string, id: number | string, input: SiteBarBlockEdit): Promise<SiteBarBlockEdited>
+}
+
+/** The two addresses of the «Blocks» tab of the panel on the site, by the record's address type. */
+export function createSiteBarBlocksApi(admin: AdminContext): SiteBarBlocksApi {
+  const at = (type: string, id: number | string) =>
+    `${admin.apiPath}/blocks/content/${encodeURIComponent(type)}/${encodeURIComponent(String(id))}`
+
+  return {
+    read: (type, id) =>
+      admin.http.get<{ data: SiteBarBlocks }>(at(type, id)).then((body) => body.data),
+    edit: (type, id, input) =>
+      admin.http
+        .post<{ data: SiteBarBlockEdited }>(`${at(type, id)}/edit`, input)
+        .then((body) => body.data),
   }
 }
 

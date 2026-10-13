@@ -6,6 +6,7 @@ namespace WebxUi\Blog;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\ConnectionResolverInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
@@ -16,6 +17,9 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\StringType;
+use WebxUi\Admin\SiteBar\DraftPublishing;
+use WebxUi\Admin\SiteBar\EntityLink;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Blog\Handlers\ArticleHandler;
 use WebxUi\Blog\Handlers\RubricHandler;
@@ -65,6 +69,8 @@ class BlogServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerSiteBar();
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-blog');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-blog');
@@ -356,5 +362,32 @@ class BlogServiceProvider extends ServiceProvider
     private function localeIsInThePath(): bool
     {
         return (string) $this->app->make('config')->get('webx-localization.strategy', 'prefix') === 'prefix';
+    }
+
+    /**
+     * What the panel on the site says about this section's records, and where in the panel it
+     * opens them (WEBX_UI_SITE_BAR.md, §6) — one entry for every type this section gives an
+     * address, under the same type, because an address is what the bar starts from.
+     */
+    private function registerSiteBar(): void
+    {
+        $bar = $this->app->make(SiteBar::class);
+
+        $bar->entity('article', new EntityLink(
+            edit: static fn (Model $record): string => '/blog/articles/'.$record->getKey(),
+            permission: 'blog.articles.manage',
+            kind: 'webx-admin::site-bar.kind-article',
+            publish: DraftPublishing::class,
+        ));
+        $bar->entity('rubric', new EntityLink(
+            edit: static fn (Model $record): string => '/blog/rubrics/'.$record->getKey(),
+            permission: 'blog.taxonomy.manage',
+            kind: 'webx-admin::site-bar.kind-rubric',
+        ));
+        $bar->entity('tag', new EntityLink(
+            edit: static fn (Model $record): string => '/blog/tags?q='.rawurlencode(SiteBar::label($record, null)),
+            permission: 'blog.taxonomy.manage',
+            kind: 'webx-admin::site-bar.kind-tag',
+        ));
     }
 }

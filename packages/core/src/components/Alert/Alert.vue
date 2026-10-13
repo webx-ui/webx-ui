@@ -156,8 +156,12 @@ function onClose(event: MouseEvent) {
   padding-top: 0.1em;
 }
 
+/*
+ * A zero basis rather than the text's own width: on a narrow screen the alert wraps, and a long
+ * title measured at its full width would wrap below the icon instead of beside it.
+ */
 .wx-alert__content {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
 }
 
@@ -185,8 +189,10 @@ function onClose(event: MouseEvent) {
   margin-top: var(--wx-space-8);
 }
 
+/* Wrapping: three buttons under a narrow alert go onto a second line rather than past its edge. */
 .wx-alert__actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-8);
   flex: 0 0 auto;
@@ -224,6 +230,7 @@ function onClose(event: MouseEvent) {
   }
 
   .wx-alert__actions {
+    box-sizing: border-box;
     width: 100%;
     padding-left: calc(1.15em + var(--wx-space-10));
   }

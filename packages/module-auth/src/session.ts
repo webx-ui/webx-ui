@@ -30,6 +30,11 @@ export interface AuthSession {
    */
   setTheme(preference: ThemePreference): Promise<void>
   /**
+   * Show or hide the panel on the site's own pages for this administrator. The server decides
+   * on every page whether to put it there, so this is all there is to it.
+   */
+  setSiteBar(enabled: boolean): Promise<void>
+  /**
    * Change what is yours to change about yourself: your name, your photograph, your password.
    *
    * Not the administrators endpoint. That one is behind `admins.manage`, which is a permission
@@ -116,6 +121,12 @@ export function createAuthSession(admin: AdminContext): AuthSession {
       const body = await admin.http.put<{ data: AdminUser }>(`${base}/theme`, {
         theme: preference === 'system' ? null : preference,
       })
+
+      admin.setUser(body.data)
+    },
+
+    async setSiteBar(enabled) {
+      const body = await admin.http.put<{ data: AdminUser }>(`${base}/site-bar`, { enabled })
 
       admin.setUser(body.data)
     },

@@ -15,6 +15,7 @@ use WebxUi\Admin\Http\Controllers\RelationController;
 use WebxUi\Admin\Http\Controllers\ScreenController;
 use WebxUi\Admin\Http\Controllers\ShellController;
 use WebxUi\Admin\Http\Controllers\ShortcodeController;
+use WebxUi\Admin\Http\Controllers\SiteBarController;
 use WebxUi\Admin\Http\Controllers\TranslationController;
 use WebxUi\Admin\Http\Controllers\UploadController;
 
@@ -44,6 +45,14 @@ Route::prefix((string) config('webx-admin.api_path'))
 
         // What `[` offers in a text field: the shortcodes and what each prints now.
         Route::get('shortcodes', ShortcodeController::class)->name('shortcodes');
+
+        // What the page in front of the panel on the site is (§6 of the site bar spec). Every
+        // record it names is checked against its own section's permission, not one shared
+        // «may use the bar».
+        Route::get('site-bar/context', [SiteBarController::class, 'context'])->name('site-bar.context');
+        // «Publish» and «Discard» in the bar's head (§9): behind the right of the record's section.
+        Route::post('site-bar/publish', [SiteBarController::class, 'publish'])->name('site-bar.publish');
+        Route::post('site-bar/discard', [SiteBarController::class, 'discard'])->name('site-bar.discard');
 
         Route::get('screens/{name}', ScreenController::class)
             ->where('name', '[a-z0-9-]+\.[a-z0-9-]+')
@@ -115,10 +124,23 @@ Route::prefix((string) config('webx-admin.path'))
             ->name('file');
     });
 
+// The script the panel on the site puts on a page, under its content hash. No middleware, like
+// the icons: it is the same file for everybody, and a visitor never gets a page that names it.
+Route::prefix((string) config('webx-admin.path'))
+    ->name('webx.site-bar.')
+    ->group(function (): void {
+        Route::get('_bar/loader.{hash}.js', [SiteBarController::class, 'loader'])
+            ->where('hash', '[a-f0-9]{1,64}')
+            ->name('loader');
+    });
+
 Route::prefix((string) config('webx-admin.path'))
     ->middleware((array) config('webx-admin.middleware'))
     ->name('webx.')
     ->group(function (): void {
+        // The panel on the site: the same shell, framed by the site's own pages and nobody else's.
+        Route::get('_bar', [SiteBarController::class, 'screen'])->name('site-bar');
+
         // The panel owns every address below its prefix; a deep link must not 404 before the
         // front end has had a chance to route it.
         Route::get('{path?}', ShellController::class)

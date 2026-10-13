@@ -33,6 +33,9 @@ final class CmsUserPayload
             // Null here is a choice as well: it says this person reads the panel in whatever
             // the machine in front of them is set to, on every machine.
             'theme' => $user->theme,
+            // The panel on the site's own pages; on until they turn it off, an account older
+            // than the column included.
+            'siteBar' => $user->site_bar ?? true,
             // The key the photograph is stored under, as the admin resource sends it: which
             // library turns it into an address is the panel's business, not this package's.
             'avatar' => $user->avatar,
