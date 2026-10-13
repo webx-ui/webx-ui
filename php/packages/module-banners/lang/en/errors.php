@@ -17,4 +17,12 @@ return [
     'place-unknown' => 'There is no such place.',
     'ids' => 'The order has to be a list of ids.',
     'ids-foreign' => 'Only the banners of this place can be ordered here.',
+    'layers-shape' => 'The layers must be a list.',
+    'layers-max' => 'A banner has no more than :max layers.',
+    'layer-type' => 'A layer is one of: :types.',
+    'layer-tag' => 'A text layer is printed as one of: :tags.',
+    'layer-text-long' => 'No more than :max characters in one language.',
+    'layer-color' => 'A colour is #rrggbb or a colour of the theme.',
+    'layer-range' => 'From :min to :max.',
+    'layer-buttons-once' => 'The banner’s buttons are one layer — there is one already.',
 ];

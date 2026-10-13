@@ -17,4 +17,12 @@ return [
     'place-unknown' => 'Questa posizione non esiste.',
     'ids' => 'L’ordine deve essere un elenco di id.',
     'ids-foreign' => 'Qui si possono ordinare solo i banner di questa posizione.',
+    'layers-shape' => 'I livelli devono essere un elenco.',
+    'layers-max' => 'Un banner ha al massimo :max livelli.',
+    'layer-type' => 'Un livello è uno tra: :types.',
+    'layer-tag' => 'Un livello di testo si stampa come uno di questi tag: :tags.',
+    'layer-text-long' => 'Al massimo :max caratteri per lingua.',
+    'layer-color' => 'Un colore è #rrggbb o un colore del tema.',
+    'layer-range' => 'Da :min a :max.',
+    'layer-buttons-once' => 'I pulsanti del banner sono un solo livello, e c’è già.',
 ];

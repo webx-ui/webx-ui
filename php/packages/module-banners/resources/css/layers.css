@@ -1,0 +1,386 @@
+/*
+ * A banner with layers (the layers spec, §4.2) — the one file both the site and the panel's
+ * canvas draw with, so what the editor shows is what the site prints.
+ *
+ * The frame has the place's proportions and crops the picture (`cover`). The stage has the
+ * picture's own proportions and covers the frame exactly as `cover` does, so a layer stays on the
+ * same pixel of the picture however the frame crops it. Every length of a layer is a percent of
+ * the picture's width: `1cqw` of the stage.
+ *
+ * The phone's layout is the block between the two markers below. The panel switches it with the
+ * class `is-mobile`; the site prints it again inside `@media (max-width: …)` at the place's
+ * breakpoint — the one `<picture>` switches its source at.
+ *
+ * Classes: webx-banners, webx-banners--<layout>, webx-banners--overflow, __strip, __item;
+ * webx-banner, __picture, __image, __video, __stage, __layer, __layer--<type>, __inner,
+ * __button, __button--<variant>, __buttons, __content, __title, __text; is-mobile, is-italic,
+ * is-uppercase, is-shadow, has-background, is-in-<entrance>, is-loop-<loop>.
+ */
+
+.webx-banners {
+  position: relative;
+  min-width: 0;
+}
+
+/* A layer that steps out of the frame lies over the block that follows, and widens nothing. */
+.webx-banners--overflow {
+  z-index: 1;
+  overflow-x: clip;
+}
+
+.webx-banners--overflow .webx-slider__viewport {
+  overflow: visible;
+}
+
+.webx-banners__strip {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+}
+
+.webx-banners__strip > .webx-banners__item {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+
+.webx-banners__strip.is-ready {
+  scrollbar-width: none;
+}
+
+.webx-banners__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.webx-banners__controls[hidden] {
+  display: none;
+}
+
+.webx-banners__arrow {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.webx-banners__dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.webx-banners__dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.3;
+  cursor: pointer;
+}
+
+.webx-banners__dot[aria-current='true'] {
+  opacity: 1;
+}
+
+.webx-banner {
+  position: relative;
+  aspect-ratio: var(--ratio, 16 / 6);
+  container-type: size;
+  overflow: hidden;
+}
+
+.webx-banners--overflow .webx-banner {
+  overflow: visible;
+}
+
+.webx-banner__picture {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.webx-banner__picture > picture {
+  display: contents;
+}
+
+.webx-banner__image,
+.webx-banner__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.webx-banner__video {
+  position: absolute;
+  inset: 0;
+}
+
+.webx-banner__stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100cqw, 100cqh * var(--img, 2.6667));
+  aspect-ratio: var(--img, 2.6667);
+  translate: -50% -50%;
+  container-type: inline-size;
+  pointer-events: none;
+}
+
+.webx-banner__layer {
+  position: absolute;
+  top: calc(var(--y) * 1cqw);
+  left: calc(var(--x) * 1cqw);
+  display: var(--display, block);
+  box-sizing: border-box;
+  width: calc(var(--w) * 1cqw);
+  margin: 0;
+  padding: calc(var(--pad) * 1cqw);
+  border-radius: calc(var(--radius) * 1cqw);
+  background: var(--background, transparent);
+  color: var(--color, inherit);
+  font-family: var(--font, inherit);
+  font-size: calc(var(--size) * 1cqw);
+  font-weight: var(--weight, 400);
+  line-height: var(--leading, 1.2);
+  letter-spacing: calc(var(--tracking) * 1em);
+  text-align: var(--align, start);
+  overflow-wrap: break-word;
+  opacity: var(--opacity, 1);
+  translate: var(--ox) var(--oy);
+  rotate: calc(var(--rotate) * 1deg);
+  pointer-events: auto;
+}
+
+.webx-banner__layer--image {
+  padding: 0;
+}
+
+/* A picture with no words of its own is a decoration: it never takes a click from a neighbour. */
+.webx-banner__layer--image:has(img[alt='']) {
+  pointer-events: none;
+}
+
+.webx-banner__layer--image .webx-banner__inner {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.webx-banner__layer.is-italic {
+  font-style: italic;
+}
+
+.webx-banner__layer.is-uppercase {
+  text-transform: uppercase;
+}
+
+.webx-banner__layer.is-shadow {
+  text-shadow: 0 0.05em 0.3em rgb(0 0 0 / 0.45);
+}
+
+.webx-banner__layer.has-background {
+  width: fit-content;
+  max-width: calc(var(--w) * 1cqw);
+}
+
+.webx-banner__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: var(--align, start);
+  gap: calc(var(--gap) * 1cqw);
+}
+
+.webx-banner__button {
+  display: inline-block;
+  padding: 0.6em 1.4em;
+  border-radius: var(--site-radius-control, 0.4em);
+  background: var(--site-color-accent, #111);
+  color: var(--site-color-accent-contrast, #fff);
+  font: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.webx-banner__button--secondary {
+  background: var(--site-color-surface, #fff);
+  color: var(--site-color-text, #111);
+}
+
+.webx-banner__button--link {
+  padding-inline: 0;
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+}
+
+/* A banner without layers: its words and buttons in a corner, as the guide's sample has them. */
+.webx-banner__content {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: 0.5em;
+  padding: clamp(1rem, 4cqw, 3rem);
+  color: #fff;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.5);
+}
+
+.webx-banner__title,
+.webx-banner__text {
+  margin: 0;
+}
+
+/* mobile:start */
+.webx-banner.is-mobile {
+  aspect-ratio: var(--ratio-mobile, 4 / 5);
+}
+
+.webx-banner.is-mobile .webx-banner__stage {
+  width: max(100cqw, 100cqh * var(--img-m, var(--img, 0.8)));
+  aspect-ratio: var(--img-m, var(--img, 0.8));
+}
+
+.webx-banner.is-mobile .webx-banner__layer {
+  top: calc(var(--m-y) * 1cqw);
+  left: calc(var(--m-x) * 1cqw);
+  display: var(--m-display, block);
+  width: calc(var(--m-w) * 1cqw);
+  padding: calc(var(--m-pad) * 1cqw);
+  border-radius: calc(var(--m-radius) * 1cqw);
+  font-size: calc(var(--m-size) * 1cqw);
+  letter-spacing: calc(var(--m-tracking) * 1em);
+  translate: var(--m-ox) var(--m-oy);
+  rotate: calc(var(--m-rotate) * 1deg);
+}
+
+.webx-banner.is-mobile .webx-banner__layer--image {
+  padding: 0;
+}
+
+.webx-banner.is-mobile .webx-banner__layer.has-background {
+  max-width: calc(var(--m-w) * 1cqw);
+}
+
+.webx-banner.is-mobile .webx-banner__buttons {
+  gap: calc(var(--m-gap) * 1cqw);
+}
+/* mobile:end */
+
+/*
+ * Motion (decision 12): an entrance plays when the banner is on screen — at once outside a
+ * slider, when its slide becomes the active one inside one; a loop runs on the inner content so
+ * the two never fight over `transform`. Nothing moves for a reader who asked for less motion.
+ */
+.webx-banner__layer[class*='is-in-'] {
+  animation-duration: var(--duration, 600ms);
+  animation-delay: var(--delay, 0ms);
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.webx-banner__layer.is-in-fade {
+  animation-name: webx-banner-fade;
+}
+
+.webx-banner__layer.is-in-rise {
+  animation-name: webx-banner-rise;
+}
+
+.webx-banner__layer.is-in-slide-start {
+  animation-name: webx-banner-slide-start;
+}
+
+.webx-banner__layer.is-in-slide-end {
+  animation-name: webx-banner-slide-end;
+}
+
+.webx-banner__layer.is-in-zoom {
+  animation-name: webx-banner-zoom;
+}
+
+/* A slide that is not the active one waits: its entrance starts over when it becomes it. */
+.webx-slider__track.is-ready
+  .webx-slider__slide:not(.is-active)
+  .webx-banner__layer[class*='is-in-'],
+.webx-banners__strip.is-ready
+  > .webx-banners__item:not(.is-active)
+  .webx-banner__layer[class*='is-in-'] {
+  animation-name: none;
+}
+
+.webx-banner__layer.is-loop-spin > .webx-banner__inner {
+  animation: webx-banner-spin 24s linear infinite;
+}
+
+.webx-banner__layer.is-loop-float > .webx-banner__inner {
+  animation: webx-banner-float 3.2s ease-in-out infinite alternate;
+}
+
+.webx-banner__layer > .webx-banner__inner {
+  display: block;
+}
+
+@keyframes webx-banner-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes webx-banner-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.8em);
+  }
+}
+
+@keyframes webx-banner-slide-start {
+  from {
+    opacity: 0;
+    transform: translateX(-1.5em);
+  }
+}
+
+@keyframes webx-banner-slide-end {
+  from {
+    opacity: 0;
+    transform: translateX(1.5em);
+  }
+}
+
+@keyframes webx-banner-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes webx-banner-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes webx-banner-float {
+  to {
+    transform: translateY(-6%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .webx-banner__layer,
+  .webx-banner__layer > .webx-banner__inner {
+    animation: none !important;
+  }
+}

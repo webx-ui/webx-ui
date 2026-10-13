@@ -17,4 +17,12 @@ return [
     'place-unknown' => 'Nie ma takiego miejsca.',
     'ids' => 'Kolejność musi być listą id.',
     'ids-foreign' => 'Tu można uporządkować tylko banery tego miejsca.',
+    'layers-shape' => 'Warstwy muszą być listą.',
+    'layers-max' => 'Baner ma najwyżej :max warstw.',
+    'layer-type' => 'Warstwa to jedno z: :types.',
+    'layer-tag' => 'Warstwa tekstu jest drukowana jako jeden z tagów: :tags.',
+    'layer-text-long' => 'Najwyżej :max znaków w jednym języku.',
+    'layer-color' => 'Kolor to #rrggbb albo kolor motywu.',
+    'layer-range' => 'Od :min do :max.',
+    'layer-buttons-once' => 'Przyciski banera to jedna warstwa i ona już jest.',
 ];

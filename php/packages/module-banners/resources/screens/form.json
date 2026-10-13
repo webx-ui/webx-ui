@@ -50,6 +50,19 @@
       ]
     },
     {
+      "id": "layers-card",
+      "type": "wx-card",
+      "label": "trans::webx-banners::screen.layers",
+      "children": [
+        {
+          "id": "layers",
+          "type": "wx-banner-layers",
+          "name": "layers",
+          "help": "trans::webx-banners::screen.layers-help"
+        }
+      ]
+    },
+    {
       "id": "words",
       "type": "wx-card",
       "label": "trans::webx-banners::screen.words",

@@ -455,6 +455,94 @@ What it stands on:
 - **The breakpoint** is in two places: the config, which the markup and the script read, and the
   `@media` of the CSS, which cannot read an attribute. Change both.
 
+## Layers
+
+A place declared with `'layers' => true` gives its banners the **layer editor**: texts, pictures
+and buttons placed on the picture by hand — a big title on the left, a figure with its caption on
+the right, a round picture with a ring of words. `hero` is declared so.
+
+```php
+'places' => [
+    'hero' => ['layout' => 'slider', 'layers' => true],
+    // A layer may step out of the frame — below the banner, over the next block.
+    'promo' => ['layout' => 'single', 'layers' => true, 'overflow' => true],
+],
+```
+
+**Every length is a percent of the picture's width** — the position, the width of a layer, its
+font size, its padding; `y` too, not of the height. A banner at 1920 and at 1024 pixels is one
+composition, scaled as a picture is, with no script. Letter spacing is in `em`, rotation in
+degrees.
+
+**The layers stand on the picture, not on the frame.** The frame of a place has its `ratio` and
+crops the picture (`cover`); the layers keep to the picture's own pixels whatever the crop. What
+the frame cuts away, the editor shades.
+
+**Two layouts.** The phone's picture (`image_mobile`) is usually another shape, and a size that
+reads on a computer is a speck on a phone — so the position and the sizes are kept apart for the
+computer and the phone; the look is shared. A layer without a phone layout uses the computer's.
+The site switches at the place's `breakpoint`, by the window — the width `<picture>` switches its
+source at.
+
+| Layer     | What it is                                                                      |
+| --------- | ------------------------------------------------------------------------------- |
+| `text`    | words in a tag (`p`, `h2`, `h3`, `span`; a place may add `h1` under its `tags`) |
+| `image`   | a picture from the library — a decoration with an empty `alt` takes no clicks   |
+| `button`  | a link with its label and look, as a button of the banner has                   |
+| `buttons` | the banner's own buttons, in a row — one such layer at most                     |
+
+**The banner's fields are put in.** `{title}` and `{text}` in a layer's words become the
+banner's title and text in the language of the page — so the words stay where they always were
+(the form, `banners_update`, who sees a banner in which language), and a layer only places them. A
+banner opened in a place with layers starts with three layers — `{title}`, `{text}` and the
+banner's buttons — in a column on the left; delete any of them as any layer. Taking every layer
+away is kept: the three are not laid back the next time.
+
+**A layer's own words fall back.** Empty in the language of the page, a layer shows the site's
+default language, else the first one written — a hole in a composition is worse than another
+language. Whether a banner is seen in a language is still decided by its title and text alone.
+
+**Motion.** An entrance (`fade`, `rise`, `slide-start`, `slide-end`, `zoom`) with a delay and a
+duration plays when the banner's slide becomes the active one; a loop (`spin`, `float`) runs on
+a decoration. Nothing moves for a reader who asked for less motion.
+
+### On the site: two components
+
+```blade
+{{-- the whole first screen --}}
+<x-webx-banners place="hero" />
+
+{{-- a part of it: the theme's hero prints its own words, the banners stand in a column --}}
+<section class="b-hero">
+  <div class="b-hero__text">…</div>
+  <x-webx-banners place="hero" class="b-hero__media" />
+</section>
+
+{{-- one banner the template chose itself --}}
+<x-webx-banner :banner="banners('promo')->first()" />
+```
+
+`<x-webx-banners>` prints a place whole, in its layout: a slider is `<x-webx-slider
+variant="hero">` of the widgets on a site with a theme, else a strip of its own that snaps, plays
+and has arrows and dots; `single` is the first banner, `random` opens one at random. Its width is
+its parent's and its height the place's `ratio`, so it is the whole first screen or one column of
+it alike. An empty place prints nothing, not even the wrapper. `<x-webx-banner>` prints one card:
+the frame, the picture, the video, the layers — and for a banner without layers its words and
+buttons in a corner, as the sample above has them.
+
+The CSS (`resources/css/layers.css`) comes with the first banner of the page, once; the panel's
+canvas draws with the same file, so what the editor shows is what the site prints. Both views are
+published under `webx-banners-views` for a theme to override.
+
+### In the panel
+
+The card «Layers» of a banner in such a place: the picture with the frame's crop shaded, the
+layers on it, their list (the top one is in front) and the fields of the one selected. Click to
+select, drag to move, the handles resize; arrows move by 0.05 and by 0.5 with Shift, Delete
+removes, Ctrl+D duplicates, Ctrl+Z and Ctrl+Shift+Z undo and redo; Alt while dragging stops the
+snapping to the edges and middles. The fonts and the palette are the theme's: a colour picked
+from the palette follows the theme when it changes.
+
 ## Button looks
 
 ```php
@@ -470,9 +558,9 @@ plain string or a translation key. A look taken out of the list does not lock a 
 the saved button keeps it and saves as it is, it only cannot be chosen for a new one — and the card
 gives it the first look of the list, because a button matters more than its look.
 
-## Why there is no block, no schedule and no component
+## Why there is no block and no schedule
 
-All three were weighed and left out on purpose; each can come later without breaking anything here.
+Both were weighed and left out on purpose; each can come later without breaking anything here.
 
 - **No block.** A place is part of the layout — the head of the home page, a strip above the
   footer — and a layout is written in the site's templates, not put on a page by an editor. A block
@@ -482,9 +570,9 @@ All three were weighed and left out on purpose; each can come later without brea
 - **No schedule.** A banner is on while it is on. A start and an end date sound simple and are not:
   a site that caches its pages would show a banner for hours after its end. They come together with
   an answer to the cache.
-- **No component.** The package ships no view and no Blade component: every site draws a hero its
-  own way, and a component general enough for all of them would be the template above with twenty
-  props. If sites turn out to copy it word for word, it becomes a component then.
+- **A component only for layers.** A banner without layers is still the site's own template —
+  every site draws a hero its own way. A banner with layers is `<x-webx-banners>`: the geometry of
+  the stage is one for every site, and the panel has to draw exactly what the site prints.
 
 ## Fields of the project
 

@@ -26,4 +26,6 @@ return [
     'settings' => 'Definições',
     'enabled' => 'Ativado',
     'enabled-help' => 'Só um banner ativado aparece no site. Um novo começa desativado.',
+    'layers' => 'Camadas',
+    'layers-help' => 'Textos, imagens e botões sobre a imagem. Cada tamanho é uma percentagem da largura da imagem, por isso o banner escala por inteiro.',
 ];

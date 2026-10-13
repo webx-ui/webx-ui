@@ -8,6 +8,7 @@ use Illuminate\Contracts\Container\Container;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Models\Place;
 use WebxUi\Banners\Panel\BannerNames;
+use WebxUi\Banners\Panel\LayerRules;
 use WebxUi\Banners\Panel\PlaceEditor;
 use WebxUi\Banners\Places;
 use WebxUi\Banners\Variants;
@@ -47,6 +48,46 @@ final class BannerResources
                 .'a banner, so that you reuse rather than duplicate.',
                 fn (): array => $this->catalog(),
             ),
+            new McpResource(
+                'banners://layers',
+                'Banner layers',
+                'How the layers of a banner work — texts, pictures and buttons placed on its picture in a place with '
+                .'layers: the unit every number is in, the two layouts, the anchor, the fields a text puts in, the '
+                .'limits. Read it before sending layers to banners_create or banners_update.',
+                fn (): array => $this->layers(),
+            ),
+        ];
+    }
+
+    /**
+     * The layers spec for an agent, short: what each number means and what is refused.
+     *
+     * @return array<string, mixed>
+     */
+    private function layers(): array
+    {
+        return [
+            'unit' => 'Every length — x, y, w, size, pad, radius, gap — is a percent of the picture\'s width; y too, '
+                .'not of its height. The banner scales as a picture does. tracking is in em, rotate in degrees.',
+            'stage' => 'The layers stand on the picture, which the frame of the place crops (object-fit: cover). A layer '
+                .'in the cropped part is not seen; the panel shades it.',
+            'layouts' => 'frames.desktop always; frames.mobile for the picture for phones, or null — then the phone uses desktop.',
+            'origin' => 'Which point of the layer stands at x, y: tl t tr l c r bl b br. A right-aligned number uses tr.',
+            'types' => [
+                'text' => '{ text: { "<lang>": "…" }, tag } — {title} and {text} put in the banner\'s fields. An empty '
+                    .'language shows the default one, else the first written.',
+                'image' => '{ image: "<library key>" }',
+                'button' => '{ text: { … }, link, variant }',
+                'buttons' => 'the banner\'s own buttons, in a row — one such layer at most',
+            ],
+            'ranges' => LayerRules::FRAME,
+            'tags' => array_keys($this->container->make(Places::class)->tags(null)),
+            'entrances' => LayerRules::ENTRANCES,
+            'loops' => LayerRules::LOOPS,
+            'fonts' => [...LayerRules::FONTS, null],
+            'colors' => '#rrggbb, or token:<name> of the theme\'s palette (--site-color-<name>).',
+            'max' => $this->container->make(Places::class)->maxLayers(),
+            'order' => 'The first layer of the list is in front.',
         ];
     }
 
@@ -76,6 +117,7 @@ final class BannerResources
                 'title' => $place['title'],
                 'declared' => $place['declared'],
                 'layout' => $place['layout'],
+                'layers' => isset($place['layers']),
                 'banners' => ($banners->get($rows->get($place['key'])) ?? collect())
                     ->map(static fn (Banner $banner): array => [
                         'id' => (int) $banner->getKey(),
@@ -83,6 +125,7 @@ final class BannerResources
                         'enabled' => $banner->enabled,
                         'written_in' => $banner->wordLanguages(),
                         'has_video' => $banner->mediaPath('video') !== null,
+                        'layers' => count($banner->layerRows()),
                     ])
                     ->values()
                     ->all(),

@@ -25,6 +25,9 @@ use WebxUi\Media\Screens\MediaValues;
  *     video                    url and mime, or null — the picture stays as the poster
  *     buttons                  label, url, new_tab, rel, variant — in the editor's order
  *     fields                   the project's own fields (a patch on `banners.form`), by name
+ *     layers                   in a place with layers, the layers ({@see Layers}); else []
+ *     ratio, ratio_mobile      width / height of image and of image_mobile (else image) — the
+ *                              stage the layers stand on; null when the library does not know
  *
  * A button without a label in the language, or with a link to something that is not on the site
  * now (a page in the bin or in a draft), drops out: a button to a 404 is worse than none. A banner
@@ -42,6 +45,7 @@ final class Cards
         private readonly LinkUrls $urls,
         private readonly Variants $variants,
         private readonly Places $places,
+        private readonly Layers $layers,
     ) {}
 
     /**
@@ -69,7 +73,9 @@ final class Cards
             }
         }
 
-        $this->files->load($paths);
+        [$layerPaths, $layerLinks] = Layers::wants($banners);
+        $this->files->load([...$paths, ...$layerPaths]);
+        $links = [...$links, ...$layerLinks];
         $candidates = $this->urls->candidates($links, $locale);
 
         $cards = [];
@@ -103,6 +109,12 @@ final class Cards
             $fields[(string) $name] = $banner->extra((string) $name, $locale);
         }
 
+        $mobile = $this->picture($banner->image_mobile, $locale);
+        $buttons = $this->buttons($banner, $locale, $candidates);
+        $layers = $this->places->hasLayers($banner->place?->key)
+            ? $this->layers->of($banner, $locale, $candidates, $buttons)
+            : [];
+
         return [
             'id' => (int) $banner->getKey(),
             'anchor' => 'banner-'.$banner->getKey(),
@@ -110,10 +122,13 @@ final class Cards
             'title' => $banner->wordsIn('title', $locale),
             'text' => $banner->wordsIn('text', $locale),
             'image' => $image,
-            'image_mobile' => $this->picture($banner->image_mobile, $locale),
+            'image_mobile' => $mobile,
             'video' => $this->video($banner->video),
-            'buttons' => $this->buttons($banner, $locale, $candidates),
+            'buttons' => $buttons,
             'fields' => $fields,
+            'layers' => $layers,
+            'ratio' => self::ratio($image),
+            'ratio_mobile' => self::ratio($mobile ?? $image),
         ];
     }
 
@@ -186,6 +201,22 @@ final class Cards
         }
 
         return $buttons;
+    }
+
+    /**
+     * Width over height of a picture, for the stage of its layers — null when the library has no
+     * size for it (an SVG, a file uploaded before sizes were read).
+     *
+     * @param  array<string, mixed>|null  $picture
+     */
+    private static function ratio(?array $picture): ?float
+    {
+        $width = $picture['width'] ?? null;
+        $height = $picture['height'] ?? null;
+
+        return is_numeric($width) && is_numeric($height) && (float) $height > 0
+            ? round((float) $width / (float) $height, 4)
+            : null;
     }
 
     /** A variant the site still has, else its first one (decision 11): a button outranks its look. */

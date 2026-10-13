@@ -1,6 +1,6 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
-import type { BannerDetail, BannerRow, PlaceInput, PlaceRow } from './types'
+import type { BannerDetail, BannerRow, BannersTheme, PlaceInput, PlaceRow } from './types'
 
 export interface BannersApi {
   /** Every place: the declared ones in the config's order, then the own ones by name. */
@@ -28,6 +28,8 @@ export interface BannersApi {
   restore(id: number): Promise<BannerRow>
   /** The order of one place, written whole. */
   reorder(place: string, ids: number[]): Promise<void>
+  /** The site's theme as the layer editor shows it; empty on a site without one. */
+  theme(): Promise<BannersTheme>
 }
 
 /** Everything under `/banners`, below the panel's API path (§5.6). */
@@ -62,5 +64,6 @@ export function createBannersApi(admin: AdminContext): BannersApi {
     restore: (id) => admin.http.post<{ data: BannerRow }>(`${base}/${id}/restore`, {}).then(data),
     reorder: (key, ids) =>
       admin.http.post<void>(`${place(key)}/reorder`, { ids }).then(() => undefined),
+    theme: () => admin.http.get<{ data: BannersTheme }>(`${base}/theme`).then(data),
   }
 }

@@ -1,6 +1,7 @@
 import type { AdminModule } from '@webx-ui/module-admin'
 import BannerEditorPage from './BannerEditorPage.vue'
 import BannersPage from './BannersPage.vue'
+import LayersField from './LayersField.vue'
 
 export interface BannersOptions {
   /** Where the banners live inside the panel. */
@@ -38,5 +39,12 @@ export function banners(options: BannersOptions = {}): AdminModule {
         props: { base: path },
       },
     ],
+    /*
+     * The one node of `banners.form` only this module can draw: the layers, on the banner's
+     * picture. A field like any other — its value is the list of layers.
+     */
+    types: {
+      'wx-banner-layers': { component: LayersField, kind: 'field', wide: true },
+    },
   }
 }

@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Models\Place;
 use WebxUi\Banners\Places;
+use WebxUi\Banners\Variants;
 use WebxUi\Localization\Locales;
 
 /**
@@ -27,12 +28,13 @@ final class PlaceEditor
     public function __construct(
         private readonly Places $places,
         private readonly Locales $locales,
+        private readonly Variants $variants,
     ) {}
 
     /**
      * Every place, in the order of {@see Places::keys()}.
      *
-     * @return list<array{id: int|null, key: string, title: string, declared: bool, layout: string, count: int, titles?: array<string, string>}>
+     * @return list<array<string, mixed>>
      */
     public function all(): array
     {
@@ -48,7 +50,7 @@ final class PlaceEditor
     }
 
     /**
-     * @return array{id: int|null, key: string, title: string, declared: bool, layout: string, count: int, titles?: array<string, string>}
+     * @return array<string, mixed>
      */
     public function one(string $key): array
     {
@@ -147,7 +149,7 @@ final class PlaceEditor
     }
 
     /**
-     * @return array{id: int|null, key: string, title: string, declared: bool, layout: string, count: int, titles?: array<string, string>}
+     * @return array<string, mixed>
      */
     private function describe(string $key, ?Place $row): array
     {
@@ -160,6 +162,29 @@ final class PlaceEditor
             'layout' => $this->places->layout($key),
             'count' => $row === null ? 0 : (int) ($row->getAttribute('banners_count') ?? 0),
         ];
+
+        // What the layer editor draws its canvas by: the frame the site prints, the tags a text
+        // layer may be, and whether a layer may step out of the frame (the layers spec, §4.4).
+        if ($this->places->hasLayers($key)) {
+            $options = $this->places->options($key);
+            $place['layers'] = [
+                'ratio' => (string) $options['ratio'],
+                'ratio_mobile' => (string) $options['ratio_mobile'],
+                'breakpoint' => (int) $options['breakpoint'],
+                'overflow' => $this->places->overflows($key),
+                'tags' => array_map(
+                    static fn (string $tag, string $label): array => ['value' => $tag, 'label' => (string) __($label)],
+                    array_keys($this->places->tags($key)),
+                    array_values($this->places->tags($key)),
+                ),
+                // A button layer picks its look from the same list as a button of the banner.
+                'variants' => array_map(
+                    static fn (string $value, string $label): array => ['value' => $value, 'label' => (string) __($label)],
+                    $this->variants->keys(),
+                    array_values($this->variants->all()),
+                ),
+            ];
+        }
 
         // Every language of a name somebody wrote, so that renaming it sends them all back rather
         // than the one the list shows. A declared place's name is the config's, never written.
