@@ -4,12 +4,15 @@ import {
   type AdminModule,
   type BlockLabels,
 } from '@webx-ui/module-admin'
+import { markRaw } from 'vue'
 import { createBlocksApi } from './api'
 import { WxTextarea } from '@webx-ui/core'
 import BlockDataField from './BlockDataField.vue'
 import BlockEditorPage from './BlockEditorPage.vue'
 import BlocksField from './BlocksField.vue'
 import BlocksPage from './BlocksPage.vue'
+import BlocksSiteBarTab from './BlocksSiteBarTab.vue'
+import { seedBlocksMessages } from './i18n'
 import RegionEditorPage from './RegionEditorPage.vue'
 import RegionHistory from './RegionHistory.vue'
 import RegionsPage from './RegionsPage.vue'
@@ -33,6 +36,19 @@ export function blocks(options: BlocksOptions = {}): AdminModule {
     id: 'blocks',
     path,
     blockLabels,
+    // «Blocks» in the panel on the site (§8 of WEBX_UI_SITE_BAR.md): where the server offers it
+    // — a record with blocks, for somebody who may edit it.
+    siteBarTabs: [
+      {
+        name: 'blocks',
+        label: (admin) => {
+          seedBlocksMessages(admin.i18n)
+
+          return admin.i18n.scope('webx-blocks')('site-bar.tab')
+        },
+        component: markRaw(BlocksSiteBarTab),
+      },
+    ],
     routes: [
       { path, name: 'webx.blocks', component: BlocksPage, props: { base: path } },
       {

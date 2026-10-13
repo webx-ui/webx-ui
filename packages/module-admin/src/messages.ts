@@ -68,6 +68,16 @@ export const adminMessages: Record<string, Messages> = {
     'kind-recipe': 'Recipe',
     'kind-event': 'Event',
     'kind-outlet': 'Press outlet',
+    changes: 'Unpublished changes: :count',
+    publish: 'Publish',
+    discard: 'Discard',
+    'draft-other': ':name has a draft here; your edits go into it',
+    'discard-title': 'Discard the unpublished changes?',
+    'discard-text':
+      'The record goes back to what the site shows now. Everything in the draft goes, other people’s changes included.',
+    cancel: 'Cancel',
+    'loader-draft': 'Draft',
+    'loader-temporary': 'Open in panel to edit',
   },
   // The three words on the theme switch. They belong to the panel rather than to whoever
   // places the switch: a core component ships English prop defaults and knows nothing about

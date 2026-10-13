@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import type { BadgeType } from '@webx-ui/core'
+import { confirm, toast, type BadgeType } from '@webx-ui/core'
 import { useAdmin } from './admin'
 import DateText from './DateText.vue'
+import { useErrorText } from './errors'
 import { HttpError } from './http'
 import { useTranslate } from './i18n'
 import {
+  discardSiteBarEntity,
   fetchSiteBarContext,
+  publishSiteBarEntity,
+  siteBarKey,
   tellSitePage,
   type SiteBarContext,
   type SiteBarStatus,
@@ -29,6 +33,7 @@ import {
 const admin = useAdmin()
 const route = useRoute()
 const t = useTranslate('webx-admin')
+const errorText = useErrorText()
 
 const context = ref<SiteBarContext | null>(null)
 const loading = ref(true)
@@ -68,18 +73,27 @@ const STATUS_TYPES: Record<SiteBarStatus, BadgeType> = {
   trashed: 'danger',
 }
 
-async function load(): Promise<void> {
-  loading.value = true
+/**
+ * @param quiet Read again behind what is on screen — after an edit in a tab — rather than from
+ *              scratch: the tabs stay, and the one that is open stays open.
+ */
+async function load(quiet = false): Promise<void> {
+  loading.value = !quiet
   error.value = null
 
   try {
     const body = await fetchSiteBarContext(admin.http, admin.apiPath, url.value, locale.value)
 
     context.value = body.data
-    tab.value = body.data.sections.includes('page')
-      ? 'page'
-      : (moduleTabs.value[0]?.name ?? body.data.sections[0] ?? 'page')
+
+    if (!quiet || !body.data.sections.includes(String(tab.value))) {
+      tab.value = body.data.sections.includes('page')
+        ? 'page'
+        : (moduleTabs.value[0]?.name ?? body.data.sections[0] ?? 'page')
+    }
   } catch (caught) {
+    if (quiet && context.value !== null) return
+
     context.value = null
     // A refusal is the server's to word — «nothing here you may edit»; anything else is ours.
     error.value =
@@ -92,6 +106,69 @@ async function load(): Promise<void> {
 }
 
 watch(url, () => void load())
+
+provide(siteBarKey, {
+  show: (name: string) => {
+    if (context.value?.sections.includes(name)) tab.value = name
+  },
+  refresh: () => load(true),
+})
+
+/*
+ * The draft's buttons are the record's (§9): there when its section said how it is published and
+ * the administrator may, whoever left the draft. Without them the bar says the draft is there and
+ * the way into the panel stays in the head.
+ */
+const draft = computed(() => (entity.value?.draft?.differs ? entity.value.draft : null))
+const mayPublish = computed(() => draft.value !== null && entity.value?.can.publish === true)
+const busy = ref(false)
+
+async function publish(): Promise<void> {
+  const found = entity.value
+
+  if (!found || busy.value) return
+
+  busy.value = true
+
+  try {
+    await publishSiteBarEntity(admin.http, admin.apiPath, found)
+    // The page beside the bar is the site again, and shows what was just published.
+    tellSitePage({ type: 'reload' })
+  } catch (caught) {
+    toast.danger(errorText(caught))
+    // A 409 is somebody's edit the bar had not seen: the head counts it now.
+    void load(true)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function discard(): Promise<void> {
+  const found = entity.value
+
+  if (!found || busy.value) return
+
+  const agreed = await confirm({
+    title: t('site-bar.discard-title'),
+    message: t('site-bar.discard-text'),
+    confirmText: t('site-bar.discard'),
+    cancelText: t('site-bar.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  busy.value = true
+
+  try {
+    await discardSiteBarEntity(admin.http, admin.apiPath, found)
+    tellSitePage({ type: 'reload' })
+  } catch (caught) {
+    toast.danger(errorText(caught))
+  } finally {
+    busy.value = false
+  }
+}
 
 function close(): void {
   tellSitePage('close')
@@ -140,12 +217,29 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     </header>
 
     <wx-alert
-      v-if="entity?.draft?.differs"
+      v-if="draft && mayPublish"
       type="warning"
       class="wx-site-bar__draft"
-      :title="
-        entity.draft.by ? t('site-bar.draft-by', { name: entity.draft.by }) : t('site-bar.draft')
+      :title="t('site-bar.changes', { count: draft.changes ?? 1 })"
+      :description="
+        draft.mine === false && draft.by ? t('site-bar.draft-other', { name: draft.by }) : undefined
       "
+    >
+      <template #actions>
+        <wx-button size="sm" type="primary" :loading="busy" @click="publish">
+          {{ t('site-bar.publish') }}
+        </wx-button>
+        <wx-button size="sm" variant="outline" :disabled="busy" @click="discard">
+          {{ t('site-bar.discard') }}
+        </wx-button>
+      </template>
+    </wx-alert>
+
+    <wx-alert
+      v-else-if="draft"
+      type="warning"
+      class="wx-site-bar__draft"
+      :title="draft.by ? t('site-bar.draft-by', { name: draft.by }) : t('site-bar.draft')"
     />
 
     <div v-if="loading" class="wx-site-bar__body">
@@ -158,7 +252,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       </wx-result>
     </div>
 
-    <wx-tabs v-else-if="context" v-model="tab" size="sm" class="wx-site-bar__tabs">
+    <!-- Kept alive: a half-typed form survives a look at another tab, and a block picked on the
+         page reaches «Blocks» even while «Page» is in front. -->
+    <wx-tabs v-else-if="context" v-model="tab" size="sm" keep-alive class="wx-site-bar__tabs">
       <wx-tab v-if="context.sections.includes('page')" value="page" :label="t('site-bar.tab-page')">
         <div class="wx-site-bar__body">
           <wx-descriptions v-if="entity" :columns="1" size="sm">

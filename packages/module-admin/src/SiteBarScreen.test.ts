@@ -36,6 +36,7 @@ async function open(
   url = '/pricing',
   modules: AdminModule[] = [],
   locale?: string,
+  post = vi.fn().mockResolvedValue({ data: {} }),
 ) {
   const get = vi.fn().mockImplementation(answer)
   const i18n = createI18n()
@@ -44,7 +45,7 @@ async function open(
   const admin = {
     apiPath: '/api/cms',
     basePath: '/cms',
-    http: { get },
+    http: { get, post },
     i18n,
     modules,
     state: { manifest: null, user: null, status: 'ready', error: null },
@@ -70,7 +71,7 @@ async function open(
   mounted.push(wrapper)
   await flushPromises()
 
-  return { wrapper, get }
+  return { wrapper, get, post }
 }
 
 /**
@@ -188,5 +189,58 @@ describe('the panel on the site', () => {
 
     expect(post).toHaveBeenCalledTimes(2)
     expect(post).toHaveBeenCalledWith({ wxBar: 1, type: 'close' }, window.location.origin)
+  })
+
+  it('offers to publish or discard a draft, counting what it changes', async () => {
+    const drafted = {
+      ...page,
+      entity: {
+        ...page.entity!,
+        revision: 'r7',
+        draft: { differs: true, by: 'J. Doe', at: null, changes: 3, mine: false },
+        can: { edit: true, publish: true },
+      },
+    }
+    const parent = { postMessage: vi.fn() } as unknown as Window
+    vi.spyOn(window, 'parent', 'get').mockReturnValue(parent)
+
+    const { wrapper, post } = await open(() => Promise.resolve({ data: drafted }))
+
+    expect(wrapper.text()).toContain('Unpublished changes: 3')
+    // Said before the first edit lands in somebody else's draft.
+    expect(wrapper.text()).toContain('J. Doe has a draft here; your edits go into it')
+    expect(wrapper.text()).toContain('Discard')
+
+    await wrapper
+      .findAll('button')
+      .find((one) => one.text() === 'Publish')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(post).toHaveBeenCalledWith('/api/cms/site-bar/publish', {
+      type: 'page',
+      id: 12,
+      revision: 'r7',
+    })
+    // The page is the site's again: it loads once more.
+    expect(parent.postMessage).toHaveBeenCalledWith(
+      { wxBar: 1, type: 'reload' },
+      window.location.origin,
+    )
+  })
+
+  it('keeps to the plain notice where the record may not be published from here', async () => {
+    const drafted = {
+      ...page,
+      entity: {
+        ...page.entity!,
+        draft: { differs: true, by: 'J. Doe', at: null, changes: 1, mine: false },
+      },
+    }
+
+    const { wrapper } = await open(() => Promise.resolve({ data: drafted }))
+
+    expect(wrapper.text()).toContain('J. Doe has unpublished changes here')
+    expect(wrapper.findAll('button').some((one) => one.text() === 'Publish')).toBe(false)
   })
 })

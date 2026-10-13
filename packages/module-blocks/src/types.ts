@@ -353,3 +353,40 @@ export interface BlockImportRow {
   /** Why the type was refused, or — beside a status that is not `failed` — why it stayed a draft. */
   error: string | null
 }
+
+/** One line of a record's blocks as a map — `blocks_get_content(outline)`. */
+export interface BlockOutlineLine {
+  /** Absent for a block of old content that has no key yet: it is edited in the panel. */
+  key?: string
+  type: string
+  depth: number
+  parent?: string | null
+  /** A line to recognise the block by: its heading, its first words. */
+  label?: string
+  hidden?: boolean
+}
+
+/** What the «Blocks» tab of the panel on the site reads about a record. */
+export interface SiteBarBlocks {
+  /** The revision to send with an edit: the record's editor's. */
+  revision: string
+  /** Whether the tree is the draft or, with no draft yet, what the site shows. */
+  editing: 'draft' | 'live'
+  tree: BlockNode[]
+  outline: BlockOutlineLine[]
+}
+
+/** One edit from the tab: the fields of one block, into the draft. */
+export interface SiteBarBlockEdit {
+  revision?: string
+  /** The page's language: a localized field sent one value takes it in this language. */
+  locale?: string | null
+  ops: { op: 'set'; key: string; values: Record<string, unknown> }[]
+}
+
+/** The answer: the new revision and the block drawn from the draft, markers and all. */
+export interface SiteBarBlockEdited {
+  revision: string
+  key: string | null
+  html: string
+}

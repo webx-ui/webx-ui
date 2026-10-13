@@ -12,6 +12,13 @@
  * its state (open or shut, where the tab was dragged) in `localStorage` under `wx-bar` — which
  * only an administrator's browser ever gets, because only their pages carry the script.
  *
+ * The blocks of the page (§8): the server prints them between markers for an administrator —
+ * `<!--wx:{key}-->…<!--/wx:{key}-->`, the record's `<!--wx-entity:{type}:{id}-->` around them —
+ * and this script frames them on a layer of its own over the page. Picking (the pencil in the
+ * panel) makes a click on a block choose it rather than follow it; without it the site behaves
+ * as the site. The only change it ever makes to the page's markup is a block's range, replaced
+ * with what the server drew from the draft.
+ *
  * No framework and no dependencies, like the blocks runtime: it runs on somebody else's page.
  */
 
@@ -25,6 +32,11 @@ const NARROW = 640
 // Where a dragged tab may stop: never so close to an edge of the window that it cannot be taken
 // hold of again.
 const MARGIN = 32
+// The keys the renderer makes up for blocks of old content that were saved without one: they
+// change with the order, so a block under one cannot be edited from here (§8).
+const TEMPORARY = /^\d+-\d+$/
+// Room kept between a block brought into view and the edge of the window.
+const GAP = 16
 
 const STYLE = `
 :host {
@@ -126,6 +138,65 @@ const STYLE = `
   }
 }
 
+/*
+ * The frames over the blocks. A layer of its own under the drawer, never in the way of a click:
+ * the page is what is clicked, and the layer only shows where.
+ */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--wx-z-index-overlay) - 1);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--wx-color-primary);
+  border-radius: var(--wx-radius-xs);
+}
+
+.box.is-highlight {
+  background: color-mix(in srgb, var(--wx-color-primary-soft) 45%, transparent);
+}
+
+.box.is-selected {
+  border-width: 2px;
+}
+
+/* The block on the page is the draft's now, not the site's: the page is a mix, and it shows. */
+.box.is-draft {
+  border: 2px dashed var(--wx-color-warning);
+}
+
+.tag {
+  position: absolute;
+  bottom: 100%;
+  left: -1px;
+  max-width: min(320px, 90vw);
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: var(--wx-radius-xs) var(--wx-radius-xs) 0 0;
+  background: var(--wx-color-primary);
+  color: var(--wx-color-primary-contrast);
+  font: var(--wx-font-weight-medium) var(--wx-font-size-xs) / 1.4 var(--wx-font-family-sans);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* A block at the very top of the window has no room above it: its name goes inside. */
+.box.is-top .tag {
+  top: 0;
+  bottom: auto;
+  border-radius: 0 0 var(--wx-radius-xs) 0;
+}
+
+.box.is-draft .tag {
+  background: var(--wx-color-warning);
+  color: var(--wx-color-warning-contrast);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tab,
   .drawer,
@@ -199,8 +270,11 @@ function start() {
   drawer.id = 'wx-bar-drawer'
   drawer.setAttribute('aria-label', words.title ?? 'Site panel')
 
+  const layer = document.createElement('div')
+  layer.className = 'layer'
+
   shell.append(tab, drawer)
-  root.append(style, shell)
+  root.append(style, layer, shell)
   document.body.append(host)
 
   let frame = null
@@ -290,9 +364,309 @@ function start() {
   tab.addEventListener('pointercancel', endDrag)
   tab.addEventListener('click', () => setOpen(!state.open))
 
-  // Esc on the page shuts the drawer; inside the frame the panel says so over the bridge.
+  /*
+   * The blocks of the page. What the panel said about them — whose they are, what each is called
+   * — and what is on screen: picking or not, the block chosen, the one under the pointer, the one
+   * under the pointer in the panel's list, the ones replaced from the draft.
+   */
+  const edit = {
+    picking: false,
+    entity: null,
+    labels: new Map(),
+    blocks: [],
+    selected: null,
+    hover: null,
+    highlight: null,
+    drafts: new Set(),
+  }
+
+  // Every pair of block markers in the document, in order, with what it is inside: the record's
+  // markers, and the block around it — a nested block is one level deeper than its container.
+  function scan() {
+    const found = []
+    const open = []
+    let entity = null
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_COMMENT)
+
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.data.trim()
+      const record = /^wx-entity:([^:]+):(.+)$/.exec(text)
+
+      if (record) {
+        entity = { type: record[1], id: record[2] }
+      } else if (text.startsWith('/wx-entity:')) {
+        entity = null
+      } else if (text.startsWith('wx:')) {
+        const block = { key: text.slice(3), start: node, end: null, depth: open.length, entity }
+        open.push(block)
+        found.push(block)
+      } else if (text.startsWith('/wx:')) {
+        const key = text.slice(4)
+        const at = open.findLastIndex((block) => block.key === key)
+
+        if (at !== -1) {
+          open[at].end = node
+          open.length = at
+        }
+      }
+    }
+
+    edit.blocks = found.filter((block) => block.end !== null)
+  }
+
+  // A block the panel may edit from here: the record's own — not the header's, not another
+  // record's printed beside it — and under a key it keeps.
+  function editable(block) {
+    return (
+      edit.entity !== null &&
+      block.entity !== null &&
+      block.entity.type === String(edit.entity.type) &&
+      block.entity.id === String(edit.entity.id)
+    )
+  }
+
+  function temporary(block) {
+    return TEMPORARY.test(block.key) || !edit.labels.has(block.key)
+  }
+
+  function find(key) {
+    return edit.blocks.find((block) => block.key === key && editable(block)) ?? null
+  }
+
+  function rangeOf(block) {
+    const range = document.createRange()
+    range.setStartAfter(block.start)
+    range.setEndBefore(block.end)
+
+    return range
+  }
+
+  // A block is whatever stands between its markers — several elements, text, nothing at all —
+  // so its frame is the rectangle around all of it.
+  function rectOf(block) {
+    const rect = rangeOf(block).getBoundingClientRect()
+
+    return rect.width === 0 && rect.height === 0 ? null : rect
+  }
+
+  // The innermost editable block holding the node: a nested block takes the pointer from its
+  // container.
+  function blockAt(node) {
+    let best = null
+
+    for (const block of edit.blocks) {
+      if (!editable(block) || node.contains(block.start)) continue
+      if (!rangeOf(block).intersectsNode(node)) continue
+      if (best === null || block.depth > best.depth) best = block
+    }
+
+    return best
+  }
+
+  function labelOf(block) {
+    const named = edit.labels.get(block.key)
+
+    if (named) return named
+
+    for (let node = block.start.nextSibling; node && node !== block.end; node = node.nextSibling) {
+      if (node.nodeType === 1 && node.getAttribute('data-wx-block')) {
+        return node.getAttribute('data-wx-block')
+      }
+    }
+
+    return block.key
+  }
+
+  let queued = 0
+
+  function draw() {
+    queued = 0
+
+    const wanted = new Map()
+    const mark = (key, name) => {
+      if (key === null) return
+      wanted.set(key, [...(wanted.get(key) ?? []), name])
+    }
+
+    for (const key of edit.drafts) mark(key, 'is-draft')
+    if (edit.picking) mark(edit.hover, 'is-hover')
+    mark(edit.highlight, 'is-highlight')
+    mark(edit.selected, 'is-selected')
+
+    const boxes = []
+
+    for (const [key, names] of wanted) {
+      const block = find(key)
+      const rect = block && rectOf(block)
+
+      if (!rect) continue
+
+      const box = document.createElement('div')
+      box.className = ['box', ...names, rect.top < 24 ? 'is-top' : ''].join(' ').trim()
+      box.style.cssText = `top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;height:${rect.height}px`
+
+      // Every frame says what it is around: the type, and why it is drawn when that is news — a
+      // draft, or a block that is edited in the panel only.
+      const tag = document.createElement('span')
+      const words = [labelOf(block)]
+
+      if (temporary(block)) words.push(config.words?.temporary ?? 'Open in panel to edit')
+      if (names.includes('is-draft')) words.push(config.words?.draft ?? 'Draft')
+
+      tag.className = 'tag'
+      tag.textContent = words.join(' · ')
+      box.append(tag)
+      boxes.push(box)
+    }
+
+    layer.replaceChildren(...boxes)
+  }
+
+  function redraw() {
+    if (queued === 0) queued = requestAnimationFrame(draw)
+  }
+
+  // Into the window with the smallest move, and only when it is not in it whole: a block on
+  // screen stays where the editor is looking.
+  function reveal(key) {
+    const block = find(key)
+    const rect = block && rectOf(block)
+
+    if (!rect) return
+
+    const room = window.innerHeight
+    let by = 0
+
+    if (rect.top < GAP || rect.height > room - GAP * 2) {
+      by = rect.top - GAP
+    } else if (rect.bottom > room - GAP) {
+      by = rect.bottom - room + GAP
+    }
+
+    if (by !== 0) window.scrollBy({ top: by, behavior: 'smooth' })
+  }
+
+  // The panel draws its frame on the page over this bridge too: `post` is the way back.
+  function post(message) {
+    frame?.contentWindow?.postMessage({ wxBar: 1, ...message }, location.origin)
+  }
+
+  function onPointerMove(event) {
+    const target = event.target
+    const block = target instanceof Node && target !== host ? blockAt(target) : null
+    const key = block?.key ?? null
+
+    if (key !== edit.hover) {
+      edit.hover = key
+      redraw()
+    }
+  }
+
+  // While picking, a click on a block chooses it — and does nothing else: a link in it does not
+  // lead away, a button in it does not press. A block of old content without keys says so and
+  // is not chosen.
+  function onClick(event) {
+    const target = event.target
+
+    if (!(target instanceof Node) || target === host) return
+
+    const block = blockAt(target)
+
+    if (block === null) return
+
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (temporary(block)) {
+      edit.hover = block.key
+      redraw()
+
+      return
+    }
+
+    edit.selected = block.key
+    setOpen(true)
+    post({ type: 'select', key: block.key })
+    redraw()
+  }
+
+  function setPicking(on, tell) {
+    if (edit.picking === on) return
+
+    edit.picking = on
+    edit.hover = null
+
+    const method = on ? 'addEventListener' : 'removeEventListener'
+    document[method]('pointermove', onPointerMove, true)
+    document[method]('click', onClick, true)
+
+    if (on) {
+      scan()
+      // A phone's drawer covers the page; the page is what is picked from.
+      if (window.innerWidth < NARROW) setOpen(false)
+    }
+
+    if (tell) post({ type: 'mode', on })
+
+    redraw()
+  }
+
+  // The block the server drew from the draft, in place of the range it had. Its own markers
+  // come with it, and its script starts again the way the preview starts it — `webx.mount` on
+  // what came in (§10 of the blocks spec). A range split across parents by the browser's parser
+  // cannot be replaced in place; the page is loaded again instead.
+  function replace(key, html) {
+    const block = find(key)
+
+    if (block === null || block.start.parentNode !== block.end.parentNode) {
+      location.reload()
+
+      return
+    }
+
+    const parent = block.start.parentNode
+    const anchor = block.end.nextSibling
+    const template = document.createElement('template')
+    template.innerHTML = html
+
+    for (let node = block.start; node;) {
+      const next = node.nextSibling
+      const last = node === block.end
+
+      node.remove()
+      if (last) break
+      node = next
+    }
+
+    const inserted = Array.from(template.content.childNodes)
+    parent.insertBefore(template.content, anchor)
+
+    for (const node of inserted) {
+      if (node.nodeType === 1) window.webx?.mount?.(node)
+    }
+
+    edit.drafts.add(key)
+    scan()
+    redraw()
+  }
+
+  // Frames follow their blocks: the page scrolls, the window changes, the page reflows when a
+  // picture loads or a block is replaced.
+  window.addEventListener('scroll', redraw, { capture: true, passive: true })
+  window.addEventListener('resize', redraw, { passive: true })
+
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(redraw).observe(document.body)
+  }
+
+  // Esc on the page ends picking first and shuts the drawer the second time; inside the frame
+  // the panel says the same over the bridge.
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && state.open && !event.defaultPrevented) {
+    if (event.key !== 'Escape' || event.defaultPrevented) return
+
+    if (edit.picking) {
+      setPicking(false, true)
+    } else if (state.open) {
       setOpen(false)
     }
   })
@@ -321,6 +695,47 @@ function start() {
     // the rest of `<head>` is the site's markup, and it is right again on the next load.
     if (message.type === 'title' && typeof message.title === 'string' && message.title !== '') {
       document.title = message.title
+    }
+
+    // Published or discarded: the page is the site's again, and shows it.
+    if (message.type === 'reload') {
+      location.reload()
+    }
+
+    // Whose blocks the panel edits here, and what each is called.
+    if (
+      message.type === 'blocks' &&
+      typeof message.entity === 'object' &&
+      message.entity !== null
+    ) {
+      edit.entity = message.entity
+      edit.labels = new Map(
+        (Array.isArray(message.items) ? message.items : [])
+          .filter((item) => typeof item?.key === 'string')
+          .map((item) => [item.key, String(item.label ?? item.key)]),
+      )
+      scan()
+      redraw()
+    }
+
+    if (message.type === 'mode') {
+      setPicking(message.on === true, false)
+    }
+
+    if (message.type === 'select' || message.type === 'highlight') {
+      const key = typeof message.key === 'string' ? message.key : null
+
+      edit[message.type === 'select' ? 'selected' : 'highlight'] = key
+      if (key !== null) reveal(key)
+      redraw()
+    }
+
+    if (
+      message.type === 'replace' &&
+      typeof message.key === 'string' &&
+      typeof message.html === 'string'
+    ) {
+      replace(message.key, message.html)
     }
   })
 

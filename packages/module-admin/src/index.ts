@@ -226,11 +226,19 @@ export {
 // The panel on the site: its screen is a route of `createAdmin()`, the rest is for the tabs that
 // sections add to it.
 export {
+  discardSiteBarEntity,
   fetchSiteBarContext,
+  onSitePage,
+  publishSiteBarEntity,
+  siteBarKey,
   tellSitePage,
+  useSiteBar,
   type SiteBarContext,
+  type SiteBarDraft,
   type SiteBarEntity,
+  type SiteBarHost,
   type SiteBarMessage,
+  type SitePageMessage,
   type SiteBarStatus,
   type SiteBarTab,
 } from './siteBar'

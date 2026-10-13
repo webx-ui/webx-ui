@@ -1,4 +1,4 @@
-import type { Component } from 'vue'
+import { inject, type Component, type InjectionKey } from 'vue'
 import type { AdminContext } from './admin'
 import type { Http } from './http'
 
@@ -27,11 +27,25 @@ export interface SiteBarEntity {
   label: string
   status: SiteBarStatus
   /** Absent for a record that keeps no draft. */
-  draft: { differs: boolean; by: string | null; at: string | null } | null
+  draft: SiteBarDraft | null
   updatedAt: string | null
   /** Where the panel edits it, relative to the panel. */
   edit: string | null
+  /** What the record's editor in the panel calls it — `editing/{editing}/{id}` is its heartbeat. */
+  editing?: string | null
+  /** The revision the record's editor holds; sent with «Publish» so an unseen edit is not published. */
+  revision?: string | null
   can: { edit: boolean; publish: boolean }
+}
+
+export interface SiteBarDraft {
+  differs: boolean
+  by: string | null
+  at: string | null
+  /** How many fields of the record the draft changes. */
+  changes?: number
+  /** Whether the last hand on the draft was this administrator's. */
+  mine?: boolean
 }
 
 /**
@@ -74,9 +88,97 @@ export function fetchSiteBarContext(
  *
  * - `close` — shut the drawer;
  * - `title` — put this in the browser's tab: the page's `<title>` after an edit, so the editor
- *   sees it changed without reloading (the rest of `<head>` waits for the next load).
+ *   sees it changed without reloading (the rest of `<head>` waits for the next load);
+ * - `reload` — load the page again: after «Publish» and «Discard» it is the site's again;
+ * - `blocks` — the record whose blocks may be picked on the page, and what each is called;
+ * - `mode` — picking blocks on the page on or off (§8);
+ * - `select` / `highlight` — frame a block on the page and bring it into view, or stop;
+ * - `replace` — put this markup in place of the block's range: the block drawn from the draft.
  */
-export type SiteBarMessage = { type: 'close' } | { type: 'title'; title: string }
+export type SiteBarMessage =
+  | { type: 'close' }
+  | { type: 'title'; title: string }
+  | { type: 'reload' }
+  | {
+      type: 'blocks'
+      entity: { type: string; id: number | string }
+      items: { key: string; label: string }[]
+    }
+  | { type: 'mode'; on: boolean }
+  | { type: 'select'; key: string | null }
+  | { type: 'highlight'; key: string | null }
+  | { type: 'replace'; key: string; html: string }
+
+/**
+ * What the page says to the panel: a block picked on it, and picking switched off there (Esc).
+ */
+export type SitePageMessage = { type: 'select'; key: string } | { type: 'mode'; on: boolean }
+
+/**
+ * Listen to the page the panel is framed in. Only that page — the parent window, from this
+ * origin — and only messages of the bar: anything else on the page can post messages too.
+ * Returns the way to stop listening.
+ */
+export function onSitePage(listener: (message: SitePageMessage) => void): () => void {
+  if (typeof window === 'undefined' || window.parent === window) return () => {}
+
+  const handler = (event: MessageEvent): void => {
+    if (event.origin !== window.location.origin || event.source !== window.parent) return
+
+    const data = event.data as { wxBar?: unknown; type?: unknown } | null
+
+    if (typeof data !== 'object' || data === null || data.wxBar !== 1) return
+    if (data.type !== 'select' && data.type !== 'mode') return
+
+    listener(data as SitePageMessage)
+  }
+
+  window.addEventListener('message', handler)
+
+  return () => window.removeEventListener('message', handler)
+}
+
+/**
+ * What the screen of the bar offers the tabs inside it: bring a tab forward (a block picked on
+ * the page opens «Blocks»), and read the page's context again (an edit changes the draft the
+ * head counts).
+ */
+export interface SiteBarHost {
+  show(name: string): void
+  refresh(): Promise<void>
+}
+
+export const siteBarKey: InjectionKey<SiteBarHost> = Symbol('wx-site-bar')
+
+/** The bar around a tab; null outside one — a tab drawn in a test or a demo. */
+export function useSiteBar(): SiteBarHost | null {
+  return inject(siteBarKey, null)
+}
+
+/**
+ * «Publish» in the head of the bar: the record's draft on the site. `revision` is the one the bar
+ * held; an edit made since is answered 409 with who made it, and nothing is published.
+ */
+export function publishSiteBarEntity(
+  http: Http,
+  apiPath: string,
+  entity: { type: string; id: number | string; revision?: string | null },
+): Promise<unknown> {
+  return http.post(`${apiPath}/site-bar/publish`, {
+    type: entity.type,
+    id: entity.id,
+    ...(entity.revision ? { revision: entity.revision } : {}),
+  })
+}
+
+/** «Discard»: the record's draft goes, and the record is what the site shows. */
+export function discardSiteBarEntity(
+  http: Http,
+  apiPath: string,
+  entity: { type: string; id: number | string },
+): Promise<unknown> {
+  return http.post(`${apiPath}/site-bar/discard`, { type: entity.type, id: entity.id })
+}
 
 /**
  * Say something to the page the panel is framed in. Only to that page's own origin: the screen
