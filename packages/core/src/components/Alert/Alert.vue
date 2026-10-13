@@ -189,8 +189,10 @@ function onClose(event: MouseEvent) {
   margin-top: var(--wx-space-8);
 }
 
+/* Wrapping: three buttons under a narrow alert go onto a second line rather than past its edge. */
 .wx-alert__actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-8);
   flex: 0 0 auto;
