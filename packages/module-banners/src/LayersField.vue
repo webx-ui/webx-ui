@@ -884,6 +884,8 @@ const viewModel = computed<string | number>({
 
 .wx-banner-layers__canvas {
   position: relative;
+  /* The layers, the shade and the guides stack inside the canvas, never over the sticky bar. */
+  isolation: isolate;
   overflow: hidden;
   border-radius: var(--wx-radius-sm);
   background: var(--wx-bg-muted, var(--wx-bg-surface));
