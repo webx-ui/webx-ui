@@ -63,11 +63,25 @@ const STYLE = `
   background: var(--wx-bg-surface);
   box-shadow: var(--wx-shadow-popover);
   color: var(--wx-text-default);
-  font: 600 18px/1 var(--wx-font-family-sans);
   cursor: pointer;
   touch-action: none;
   user-select: none;
   transition: right var(--wx-duration-normal) var(--wx-easing-standard);
+}
+
+/*
+ * A drawn chevron rather than a "‹": a glyph is centred by its line box, and its ink sits at the
+ * height of lowercase letters, a different height in every site's font — off centre in all of them.
+ */
+.tab svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  transition: transform var(--wx-duration-normal) var(--wx-easing-standard);
+}
+
+.is-open .tab svg {
+  transform: scaleX(-1);
 }
 
 .tab:hover {
@@ -264,6 +278,8 @@ function start() {
   tab.type = 'button'
   tab.className = 'tab'
   tab.setAttribute('aria-controls', 'wx-bar-drawer')
+  tab.innerHTML =
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.25 3.5 5.75 8l4.5 4.5"/></svg>'
 
   const drawer = document.createElement('aside')
   drawer.className = 'drawer'
@@ -302,7 +318,6 @@ function start() {
 
   function render() {
     shell.classList.toggle('is-open', state.open)
-    tab.textContent = state.open ? '›' : '‹'
     tab.setAttribute('aria-expanded', String(state.open))
     tab.setAttribute('aria-label', state.open ? (words.close ?? 'Close') : (words.open ?? 'Open'))
 
