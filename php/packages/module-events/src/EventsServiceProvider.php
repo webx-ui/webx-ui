@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Events;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
@@ -15,6 +16,8 @@ use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\EntityLink;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Events\Audit\EventContentSource;
@@ -65,6 +68,8 @@ class EventsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerSiteBar();
+
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-events');
 
         // Before anything is registered under it: a prefix nobody gave is a site whose events
@@ -282,5 +287,26 @@ class EventsServiceProvider extends ServiceProvider
     private function config(): Config
     {
         return $this->app->make('config');
+    }
+
+    /**
+     * What the panel on the site says about this section's records, and where in the panel it
+     * opens them (WEBX_UI_SITE_BAR.md, §6) — one entry for every type this section gives an
+     * address, under the same type, because an address is what the bar starts from.
+     */
+    private function registerSiteBar(): void
+    {
+        $bar = $this->app->make(SiteBar::class);
+
+        $bar->entity(Event::TYPE, new EntityLink(
+            edit: static fn (Model $record): string => '/events/'.$record->getKey(),
+            permission: 'events.manage',
+            kind: 'webx-admin::site-bar.kind-event',
+        ));
+        $bar->entity(EventCategory::TYPE, new EntityLink(
+            edit: static fn (Model $record): string => '/events/categories/'.$record->getKey(),
+            permission: 'events.categories.manage',
+            kind: 'webx-admin::site-bar.kind-category',
+        ));
     }
 }

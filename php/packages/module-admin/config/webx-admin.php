@@ -91,6 +91,27 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The panel on the site
+    |---------------------------------------------------------------------------
+    |
+    | A tab at the edge of the site's own pages for an administrator who is
+    | signed in to the panel: what this page is, and the way to it in the
+    | panel. A visitor gets nothing — no script, no header. Each administrator
+    | can switch it off for themselves in the user menu; this switches it off
+    | for everybody.
+    |
+    | A page with the bar is sent `Cache-Control: private, no-store` and
+    | `Vary: Cookie`. A CDN in front of the site should still pass requests
+    | that carry the session cookie straight through.
+    |
+    */
+
+    'site_bar' => [
+        'enabled' => env('WEBX_SITE_BAR', true),
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Links
     |---------------------------------------------------------------------------
     |

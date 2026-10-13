@@ -6,6 +6,7 @@ namespace WebxUi\CatalogBrands;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
@@ -14,6 +15,8 @@ use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\SiteBar\EntityLink;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
@@ -70,6 +73,8 @@ class BrandsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerSiteBar();
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-brands');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-brands');
@@ -271,5 +276,21 @@ class BrandsServiceProvider extends ServiceProvider
     private function config(): Config
     {
         return $this->app->make('config');
+    }
+
+    /**
+     * What the panel on the site says about this section's records, and where in the panel it
+     * opens them (WEBX_UI_SITE_BAR.md, §6) — one entry for every type this section gives an
+     * address, under the same type, because an address is what the bar starts from.
+     */
+    private function registerSiteBar(): void
+    {
+        $bar = $this->app->make(SiteBar::class);
+
+        $bar->entity(Brand::TYPE, new EntityLink(
+            edit: static fn (Model $record): string => '/catalog/brands/'.$record->getKey(),
+            permission: 'catalog.manage',
+            kind: 'webx-admin::site-bar.kind-brand',
+        ));
     }
 }
