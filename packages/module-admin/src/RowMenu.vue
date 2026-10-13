@@ -80,6 +80,9 @@ const divided = computed(() => {
           @click="action.run?.()"
         >
           {{ action.label }}
+          <template v-if="action.hint" #after>
+            <span class="wx-row-menu__hint">{{ action.hint }}</span>
+          </template>
         </wx-dropdown-item>
       </template>
     </template>
@@ -98,5 +101,12 @@ const divided = computed(() => {
  */
 .wx-row-menu {
   --wx-action-bg: transparent;
+}
+
+/* The reason a line is greyed, after its words and quieter than them. */
+.wx-row-menu__hint {
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-xs);
+  font-weight: var(--wx-font-weight-regular);
 }
 </style>

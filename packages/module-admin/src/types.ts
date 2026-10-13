@@ -268,6 +268,11 @@ export interface RowAction {
   danger?: boolean
   /** Offered but not possible right now — an address that does not exist yet. */
   disabled?: boolean
+  /**
+   * Why it is not possible right now, said on the line itself: «Already first», «No room». A
+   * greyed line with no reason reads as broken.
+   */
+  hint?: string
   /** Renders the line as a link. Opens in a new tab unless `target` says otherwise. */
   href?: string
   target?: string

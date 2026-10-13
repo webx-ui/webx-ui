@@ -37,6 +37,13 @@ const text = {
   id: 1,
   slug: 'text',
   title: 'Text',
+  group: 'content',
+  kind: 'block',
+  is_enabled: true,
+  published: { number: 1 },
+  allow: null,
+  allowed_in: null,
+  max_per_entity: null,
   content: { schema: [{ id: 'text', type: 'wx-input', label: 'Words' }], sample: {} },
 } as unknown as BlockType
 
@@ -98,6 +105,9 @@ function sent(parent: Window, type: string): unknown[] {
 interface Options {
   context?: SiteBarContext
   header?: () => SiteBarBlocks
+  rows?: RegionRow[]
+  /** What an edit answers, by what it sent. */
+  edited?: (body: { ops: { op: string }[] }) => unknown
 }
 
 async function open(read: () => SiteBarBlocks = () => content(), options: Options = {}) {
@@ -113,23 +123,27 @@ async function open(read: () => SiteBarBlocks = () => content(), options: Option
           url.endsWith('/catalog')
             ? { data: [text] }
             : url.endsWith('/api/cms/regions')
-              ? { data: [headerRow] }
+              ? { data: options.rows ?? [headerRow] }
               : url.endsWith('/content/region/header')
                 ? { data: (options.header ?? (() => region()))() }
                 : { data: read() },
         ),
       ),
-    post: vi
-      .fn()
-      .mockImplementation((url: string) =>
-        Promise.resolve(
-          url.endsWith('/edit')
-            ? { data: { revision: 'r2', key: 'k1', html: '<!--wx:k1--><p>New</p><!--/wx:k1-->' } }
-            : url.endsWith('/publish')
-              ? { data: {} }
-              : { data: { editors: [] } },
-        ),
+    post: vi.fn().mockImplementation((url: string, body: { ops: { op: string }[] }) =>
+      Promise.resolve(
+        url.endsWith('/edit')
+          ? {
+              data: options.edited?.(body) ?? {
+                revision: 'r2',
+                key: 'k1',
+                html: '<!--wx:k1--><p>New</p><!--/wx:k1-->',
+              },
+            }
+          : url.endsWith('/publish')
+            ? { data: {} }
+            : { data: { editors: [] } },
       ),
+    ),
     delete: vi.fn().mockResolvedValue(undefined),
   }
 
@@ -533,5 +547,252 @@ describe('the regions in the blocks tab', () => {
     expect(alert.text()).toContain('Not saved: what stands around this block')
     expect(alert.text()).toContain('«Text» cannot go inside «Columns»')
     expect(alert.find('a[href="/cms/pages/12"]').exists()).toBe(true)
+  })
+})
+
+/** Open a row's `···` and press the line that says `label`. */
+async function act(wrapper: VueWrapper, index: number, label: string): Promise<HTMLElement> {
+  await wrapper
+    .findAll('.wx-blocks-bar__item')
+    [index]!.get('.wx-actions__menu button')
+    .trigger('click')
+  await flushPromises()
+
+  const line = [...document.querySelectorAll<HTMLElement>('.wx-dropdown-item')].find((item) =>
+    item.textContent?.includes(label),
+  )!
+
+  return line
+}
+
+function fromPage(parent: Window, data: Record<string, unknown>): void {
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      data: { wxBar: 1, ...data },
+      origin: window.location.origin,
+      source: parent,
+    }),
+  )
+}
+
+/**
+ * The structure from the site (SB5): blocks added, duplicated, moved, hidden and deleted into the
+ * draft by the agent's operations, the page told what to do with the answer.
+ */
+describe('the structure of the blocks from the site', () => {
+  afterEach(async () => {
+    // The picker and the confirm take their hosts away on a timer: gone before the document is.
+    await vi.waitFor(() => expect(document.querySelector('.wx-modal-host')).toBeNull())
+    mounted.splice(0).forEach((wrapper) => wrapper.unmount())
+    document.body.innerHTML = ''
+    vi.restoreAllMocks()
+  })
+
+  const added = {
+    revision: 'r2',
+    key: 'n1',
+    html: '<!--wx:n1--><p></p><!--/wx:n1-->',
+    steps: [
+      {
+        do: 'place',
+        key: 'n1',
+        html: '<!--wx:n1--><p></p><!--/wx:n1-->',
+        after: ['k1'],
+        before: [],
+        top: true,
+      },
+    ],
+    assets: { hash: 'abcdef0123456789', css: '/blocks/abcdef0123456789.css', js: null },
+  }
+
+  function withNew(): SiteBarBlocks {
+    const read = content()
+
+    return {
+      ...read,
+      tree: [...read.tree, { key: 'n1', type: 'text', values: {} }],
+      outline: [...read.outline, { key: 'n1', type: 'text', depth: 0 }],
+    }
+  }
+
+  it('adds a block below another through the constructor’s picker and opens its form', async () => {
+    let reads = 0
+    const { wrapper, client, parent } = await open(() => (reads++ > 0 ? withNew() : content()), {
+      edited: () => added,
+    })
+
+    // The page says which sets of styles it has; the edit sends them on.
+    fromPage(parent, { type: 'bundles', hashes: ['1111222233334444'] })
+    ;(await act(wrapper, 0, 'Add below')).click()
+    await flushPromises()
+
+    document.querySelector<HTMLElement>('.wx-block-picker__card')!.click()
+    await flushPromises()
+
+    expect(client.post).toHaveBeenCalledWith('/api/cms/blocks/content/page/12/edit', {
+      revision: 'r1',
+      locale: 'en',
+      url: '/pricing',
+      bundles: ['1111222233334444'],
+      ops: [{ op: 'add', type: 'text', values: {}, after: 'k1' }],
+    })
+
+    // The styles first, then the block put in after its neighbour, then chosen.
+    const calls = vi
+      .mocked(parent.postMessage)
+      .mock.calls.map(([message]) => message as { type: string })
+    const types = calls.map((message) => message.type)
+    expect(types.indexOf('assets')).toBeLessThan(types.indexOf('insert'))
+    expect(sent(parent, 'insert')).toEqual([
+      {
+        wxBar: 1,
+        type: 'insert',
+        key: 'n1',
+        scope: 'page:12',
+        html: '<!--wx:n1--><p></p><!--/wx:n1-->',
+        after: ['k1'],
+        before: [],
+        top: true,
+      },
+    ])
+    expect(sent(parent, 'select')).toContainEqual({
+      wxBar: 1,
+      type: 'select',
+      key: 'n1',
+      scope: 'page:12',
+    })
+    expect(wrapper.find('.wx-blocks-bar__form input').exists()).toBe(true)
+  })
+
+  it('opens the picker from «Add below» on the page', async () => {
+    const { parent, bar } = await open()
+
+    fromPage(parent, { type: 'add', key: 'k1', scope: 'page:12' })
+    await flushPromises()
+
+    expect(bar.show).toHaveBeenCalledWith('blocks')
+    expect(document.querySelector('.wx-block-picker__card')).not.toBeNull()
+
+    // Shut again, so the dialog is gone before the document is.
+    const foot = [...document.querySelectorAll<HTMLButtonElement>('.wx-dialog__foot button')]
+    foot[foot.length - 1]!.click()
+    await flushPromises()
+  })
+
+  it('greys what cannot be done right now and says why', async () => {
+    const full = { ...headerRow, allow: null, max: 1 } as RegionRow
+    const { wrapper } = await open(undefined, {
+      context: { ...page, entity: null, sections: ['regions'] },
+      rows: [full],
+    })
+
+    // The only block of the header: first, last, and the header takes no more.
+    const up = await act(wrapper, 0, 'Move up')
+    expect(up.hasAttribute('disabled')).toBe(true)
+    expect(up.textContent).toContain('Already first')
+    const lines = [...document.querySelectorAll<HTMLElement>('.wx-dropdown-item')]
+    const duplicate = lines.find((line) => line.textContent?.includes('Duplicate'))!
+    expect(duplicate.hasAttribute('disabled')).toBe(true)
+    expect(duplicate.textContent).toContain('No room for more blocks here. Most it takes: 1')
+
+    const add = wrapper.findAll('.wx-blocks-bar__add button')[0]!
+    expect(add.attributes('disabled')).toBeDefined()
+    expect(wrapper.find('.wx-blocks-bar__add').text()).toContain('Most it takes: 1')
+  })
+
+  it('moves a block down past its neighbour, and hides it', async () => {
+    const two = (): SiteBarBlocks => ({
+      ...content(),
+      tree: [
+        { key: 'k1', type: 'text', values: { text: 'One' } },
+        { key: 'k2', type: 'text', values: { text: 'Two' } },
+      ],
+      outline: [
+        { key: 'k1', type: 'text', depth: 0, label: 'One' },
+        { key: 'k2', type: 'text', depth: 0, label: 'Two' },
+      ],
+    })
+    const { wrapper, client, parent } = await open(two, {
+      edited: (body) => ({
+        revision: 'r2',
+        key: 'k1',
+        html: '',
+        steps:
+          body.ops[0]!.op === 'move'
+            ? [
+                {
+                  do: 'move',
+                  key: 'k1',
+                  html: '<!--wx:k1--><!--/wx:k1-->',
+                  after: ['k2'],
+                  before: [],
+                  top: true,
+                },
+              ]
+            : [{ do: 'remove', key: 'k1' }],
+      }),
+    })
+
+    ;(await act(wrapper, 0, 'Move down')).click()
+    await flushPromises()
+
+    expect(client.post).toHaveBeenLastCalledWith(
+      '/api/cms/blocks/content/page/12/edit',
+      expect.objectContaining({ ops: [{ op: 'move', key: 'k1', after: 'k2' }] }),
+    )
+    expect(sent(parent, 'move')).toEqual([expect.objectContaining({ key: 'k1', after: ['k2'] })])
+
+    ;(await act(wrapper, 0, 'Hide')).click()
+    await flushPromises()
+
+    expect(client.post).toHaveBeenLastCalledWith(
+      '/api/cms/blocks/content/page/12/edit',
+      expect.objectContaining({ ops: [{ op: 'hide', key: 'k1' }] }),
+    )
+    expect(sent(parent, 'remove')).toEqual([
+      { wxBar: 1, type: 'remove', key: 'k1', scope: 'page:12' },
+    ])
+  })
+
+  it('deletes a block only once it is confirmed', async () => {
+    const { wrapper, client } = await open(undefined, {
+      edited: () => ({ revision: 'r2', key: 'k1', html: '', steps: [{ do: 'remove', key: 'k1' }] }),
+    })
+    const edits = () => client.post.mock.calls.filter(([url]) => String(url).endsWith('/edit'))
+
+    ;(await act(wrapper, 0, 'Delete')).click()
+    await flushPromises()
+
+    expect(document.querySelector('.wx-confirm__message')?.textContent).toContain(
+      'It goes from the draft',
+    )
+    const cancel = [...document.querySelectorAll<HTMLButtonElement>('.wx-dialog__foot button')][0]!
+    cancel.click()
+    await flushPromises()
+    expect(edits()).toHaveLength(0)
+
+    ;(await act(wrapper, 0, 'Delete')).click()
+    await flushPromises()
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>('.wx-dialog__foot button')]
+    buttons[buttons.length - 1]!.click()
+    await flushPromises()
+
+    expect(edits()).toHaveLength(1)
+    expect(edits()[0]![1]).toEqual(expect.objectContaining({ ops: [{ op: 'remove', key: 'k1' }] }))
+  })
+
+  it('offers the actions over the form of a block too', async () => {
+    const { wrapper } = await open()
+
+    await row(wrapper, 0).trigger('click')
+    await flushPromises()
+
+    await wrapper.get('.wx-blocks-bar__name .wx-actions__menu button').trigger('click')
+    await flushPromises()
+
+    const labels = [...document.querySelectorAll<HTMLElement>('.wx-dropdown-item')].map((item) =>
+      item.textContent?.trim(),
+    )
+    expect(labels).toEqual(expect.arrayContaining(['Add below', 'Duplicate', 'Hide', 'Delete']))
   })
 })

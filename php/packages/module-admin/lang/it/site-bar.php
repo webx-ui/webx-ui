@@ -46,4 +46,6 @@ return [
     'cancel' => 'Annulla',
     'loader-draft' => 'Bozza',
     'loader-temporary' => 'Da modificare nel pannello',
+    'loader-add' => 'Aggiungi sotto',
+    'preview' => 'Anteprima della bozza',
 ];

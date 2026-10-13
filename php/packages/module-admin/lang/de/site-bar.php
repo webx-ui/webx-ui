@@ -46,4 +46,6 @@ return [
     'cancel' => 'Abbrechen',
     'loader-draft' => 'Entwurf',
     'loader-temporary' => 'Im Panel bearbeiten',
+    'loader-add' => 'Darunter hinzufügen',
+    'preview' => 'Entwurfsvorschau',
 ];

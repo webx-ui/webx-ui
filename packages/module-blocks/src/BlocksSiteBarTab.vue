@@ -9,11 +9,13 @@ import {
   useErrorText,
   useSiteBar,
   useTranslate,
+  WxRowMenu,
   type EditingEditor,
+  type RowAction,
   type ShortcodeToken,
   type SiteBarContext,
 } from '@webx-ui/module-admin'
-import { confirm, toast } from '@webx-ui/core'
+import { confirm, createModal, toast } from '@webx-ui/core'
 import {
   coreTypes,
   WxScreenRenderer,
@@ -21,12 +23,21 @@ import {
   type ValidationErrors,
 } from '@webx-ui/schema'
 import { createBlocksApi, createRegionsApi, createSiteBarBlocksApi } from './api'
-import { clone, locate } from './content'
+import BlockPicker from './BlockPicker.vue'
+import { clone, countType, locate, nestedFields } from './content'
 import { useBlocksMessages } from './i18n'
 import { blocksRootKey } from './preview'
 import RegionDraftNotice from './RegionDraftNotice.vue'
-import { formSchema, markupFields, withPlaceholders, withShortcodes } from './schema'
-import type { BlockOutlineLine, BlockType, SiteBarBlocks, SiteBarRegion } from './types'
+import { formSchema, markupFields, startValues, withPlaceholders, withShortcodes } from './schema'
+import type {
+  BlockNode,
+  BlockOutlineLine,
+  BlockType,
+  SiteBarBlockEdited,
+  SiteBarBlockOp,
+  SiteBarBlocks,
+  SiteBarRegion,
+} from './types'
 
 /**
  * The «Blocks» tab of the panel on the site (WEBX_UI_SITE_BAR.md, §8–§9, SB4).
@@ -46,6 +57,11 @@ import type { BlockOutlineLine, BlockType, SiteBarBlocks, SiteBarRegion } from '
  * The record's draft is published from the head of the bar; a region's — with its own buttons
  * over its map and over the form of its block, since it is a draft of its own and goes on every
  * page at once.
+ *
+ * The structure too (SB5): a block added — below another, at the end of a tree, inside a
+ * container — duplicated, moved up or down, hidden, shown or deleted, each one an operation of the
+ * agent's dictionary into the same draft. The picker is the constructor's, held to the same rules
+ * of the place; what cannot be done right now is greyed with the reason rather than missing.
  */
 const props = defineProps<{ context: SiteBarContext }>()
 
@@ -71,6 +87,19 @@ interface Source {
   title: string
   content: SiteBarBlocks
   region: SiteBarRegion | null
+  /** What its top level takes: a region's declaration, or anything for a record. */
+  top: { allow: string[] | null; max: number | null; root: string }
+}
+
+/** One list of blocks: the top level of a tree, or a container's field. */
+interface Place {
+  parentKey: string | null
+  field: string | null
+  list: BlockNode[]
+  parent: BlockType | null
+  allow: string[] | null
+  max: number | null
+  root: string
 }
 
 const sources = ref<Source[]>([])
@@ -90,6 +119,29 @@ const others = ref<string[]>([])
 /* A region's publication refused — a block of its draft fails — said over that region's map. */
 const regionRefusals = ref<Record<string, string[]>>({})
 const busy = ref<string | null>(null)
+/* A change of structure under way: one at a time, since each answers with the page's steps. */
+const shaping = ref(false)
+/* The sets of block styles and scripts the page has, as the page reported them. */
+const pageBundles = ref<string[] | null>(null)
+
+const pick = createModal<
+  BlockType,
+  {
+    catalog: BlockType[]
+    parent: BlockType | null
+    allow: string[] | null
+    tree: BlockNode[]
+    groups: string[]
+    blocksPath: string | null
+    root: string
+  }
+>(BlockPicker)
+
+const groupsOrder = computed<string[]>(
+  () =>
+    (admin.state.manifest?.modules.find((m) => m.id === 'blocks')?.meta?.groups as
+      string[] | undefined) ?? [],
+)
 
 const entity = computed(() => props.context.entity)
 const offersRecord = computed(() => props.context.sections.includes('blocks') && !!entity.value)
@@ -240,6 +292,7 @@ async function readRecord(): Promise<Source[]> {
       title: record.kind,
       content: await api.read(record.type, record.id),
       region: null,
+      top: { allow: null, max: null, root: 'root' },
     },
   ]
 }
@@ -260,6 +313,7 @@ async function readRegions(): Promise<Source[]> {
         title: read.region?.title ?? row.title,
         content: read,
         region: read.region ?? null,
+        top: { allow: row.allow, max: row.max, root: `region:${row.name}` },
       }
     }),
   )
@@ -361,12 +415,12 @@ async function save(): Promise<void> {
       revision: source.content.revision,
       locale: props.context.locale,
       url: props.context.url,
+      bundles: pageBundles.value ?? undefined,
       ops: [{ op: 'set', key, values: changed.value }],
     })
 
     // The block from the draft in place of the old one, framed as a draft on the page.
-    if (done.html !== '')
-      tellSitePage({ type: 'replace', key, scope: source.scope, html: done.html })
+    showOnPage(source, done, key)
 
     held.value = JSON.stringify(values.value)
     toast.success(t('site-bar.saved'))
@@ -377,10 +431,7 @@ async function save(): Promise<void> {
   } catch (caught) {
     if (caught instanceof HttpError && caught.status === 409) {
       // Somebody wrote the tree since the form read it: read again and say who.
-      const body = caught.body as { changed?: { author?: string | null } | null } | null
-      const name = body?.changed?.author
-
-      toast.warning(name ? t('site-bar.conflict-by', { name }) : t('site-bar.conflict'))
+      conflicted(caught)
       await load()
       open(source.scope, key)
 
@@ -397,6 +448,312 @@ async function save(): Promise<void> {
   } finally {
     saving.value = false
   }
+}
+
+/*
+ * What the page does to show the draft: the steps the server worked out, after the styles and
+ * script of a type the page did not have — so that a new block arrives dressed.
+ */
+function showOnPage(source: Source, done: SiteBarBlockEdited, edited?: string): void {
+  const scope = source.scope
+
+  if (done.assets) tellSitePage({ type: 'assets', ...done.assets })
+
+  // An answer of the release before: the one block drawn.
+  if (!done.steps) {
+    const key = edited ?? done.key
+
+    if (key && done.html !== '') tellSitePage({ type: 'replace', key, scope, html: done.html })
+
+    return
+  }
+
+  for (const step of done.steps) {
+    if (step.do === 'reload') {
+      tellSitePage({ type: 'reload' })
+    } else if (step.do === 'remove') {
+      tellSitePage({ type: 'remove', key: step.key, scope })
+    } else {
+      tellSitePage({
+        type: step.do === 'move' ? 'move' : 'insert',
+        key: step.key,
+        scope,
+        html: step.html ?? '',
+        after: step.after ?? [],
+        before: step.before ?? [],
+        top: step.top === true,
+      })
+    }
+  }
+}
+
+/* Somebody wrote the tree since the tab read it: say who. */
+function conflicted(caught: HttpError): void {
+  const body = caught.body as { changed?: { author?: string | null } | null } | null
+  const name = body?.changed?.author
+
+  toast.warning(name ? t('site-bar.conflict-by', { name }) : t('site-bar.conflict'))
+}
+
+/** One list of blocks of a tree: the top level, or the field of a container. */
+function placeOf(source: Source, parentKey: string | null, field: string | null): Place {
+  if (parentKey === null) {
+    return {
+      parentKey: null,
+      field: null,
+      list: source.content.tree,
+      parent: null,
+      allow: source.top.allow,
+      max: source.top.max,
+      root: source.top.root,
+    }
+  }
+
+  const holder = locate(source.content.tree, parentKey)
+  const parent = holder ? typeOf(holder.node.type) : null
+  const slot = parent?.content
+    ? nestedFields(parent.content.schema).find((one) => one.id === field)
+    : undefined
+  const value = field !== null ? holder?.node.values[field] : undefined
+
+  return {
+    parentKey,
+    field,
+    list: Array.isArray(value) ? (value as BlockNode[]) : [],
+    parent,
+    allow: (slot?.props?.allow as string[] | undefined) ?? null,
+    max: (slot?.props?.max as number | undefined) ?? null,
+    // A container's field is named by its own type in `allowed_in`, not by the tree's root.
+    root: 'root',
+  }
+}
+
+/** The list a block is in. */
+function placeAround(source: Source, key: string): Place | null {
+  const hit = locate(source.content.tree, key)
+
+  return hit ? placeOf(source, hit.parent?.key ?? null, hit.field) : null
+}
+
+function isFull(place: Place): boolean {
+  return place.max !== null && place.list.length >= place.max
+}
+
+/** Why nothing more goes into a list, or null when something does. */
+function fullness(place: Place): string | null {
+  return isFull(place) ? t('site-bar.full', { count: place.max! }) : null
+}
+
+/**
+ * A change of structure into the draft, and the page brought in step. One at a time: each answer
+ * names what the page has to do, and two of them crossing would leave it guessing.
+ */
+async function shape(source: Source, ops: SiteBarBlockOp[]): Promise<SiteBarBlockEdited | null> {
+  if (shaping.value) return null
+
+  shaping.value = true
+
+  try {
+    const done = await api.edit(source.type, source.id, {
+      revision: source.content.revision,
+      locale: props.context.locale,
+      url: props.context.url,
+      bundles: pageBundles.value ?? undefined,
+      ops,
+    })
+
+    showOnPage(source, done)
+    toast.success(t('site-bar.saved'))
+
+    await load()
+    if (!source.region) void bar?.refresh()
+
+    return done
+  } catch (caught) {
+    if (caught instanceof HttpError && caught.status === 409) {
+      conflicted(caught)
+      await load()
+    } else if (caught instanceof HttpError && caught.isValidation) {
+      // Where a block may stand, how many a page takes — the server's words, as they are.
+      const lines = [...new Set(Object.values(caught.errors).flat())]
+
+      toast.danger(lines.length ? lines.join(' ') : errorText(caught))
+    } else {
+      toast.danger(errorText(caught))
+    }
+
+    return null
+  } finally {
+    shaping.value = false
+  }
+}
+
+/**
+ * A new block in a list — after `after`, or at its end — of a type chosen in the constructor's
+ * own picker, held to the same rules of the place. Its form opens at once.
+ */
+async function addTo(source: Source, place: Place, after: string | null): Promise<void> {
+  if (isFull(place) || shaping.value) return
+
+  const type = await pick({
+    catalog: catalog.value,
+    parent: place.parent,
+    allow: place.allow,
+    tree: source.content.tree,
+    groups: groupsOrder.value,
+    blocksPath: null,
+    root: place.root,
+  })
+
+  if (!type) return
+
+  const done = await shape(source, [
+    {
+      op: 'add',
+      type: type.slug,
+      values: startValues(type.content?.schema ?? [], type.content?.sample ?? {}),
+      ...(place.parentKey !== null ? { parent: place.parentKey, field: place.field ?? '' } : {}),
+      ...(after !== null ? { after } : {}),
+    },
+  ])
+
+  if (done?.key) open(source.scope, done.key)
+}
+
+async function duplicate(source: Source, key: string): Promise<void> {
+  const done = await shape(source, [{ op: 'duplicate', key }])
+
+  if (done?.key) open(source.scope, done.key)
+}
+
+/** One step up or down its own list, past the neighbour. */
+async function moveBy(source: Source, key: string, by: -1 | 1): Promise<void> {
+  const hit = locate(source.content.tree, key)
+  const next = hit?.list[hit.index + by]
+
+  if (!hit || !next?.key) return
+
+  await shape(source, [
+    {
+      op: 'move',
+      key,
+      ...(hit.parent ? { parent: hit.parent.key, field: hit.field ?? '' } : {}),
+      ...(by < 0 ? { before: next.key } : { after: next.key }),
+    },
+  ])
+}
+
+async function removeBlock(source: Source, key: string): Promise<void> {
+  const hit = locate(source.content.tree, key)
+
+  if (!hit) return
+
+  const agreed = await confirm({
+    title: t('site-bar.delete-title', { title: titleOf(hit.node.type) }),
+    message: t('site-bar.delete-text'),
+    confirmText: t('site-bar.delete'),
+    cancelText: t('site-bar.cancel'),
+    tone: 'danger',
+  })
+
+  if (agreed) await shape(source, [{ op: 'remove', key }])
+}
+
+/**
+ * What a block offers, on its row of the map and over its form: the panel's own `···`. What
+ * cannot be done right now — the first block up, a full list — is greyed with the reason.
+ */
+function actionsFor(source: Source, key: string): RowAction[] {
+  const hit = locate(source.content.tree, key)
+
+  if (!hit) return []
+
+  const place = placeOf(source, hit.parent?.key ?? null, hit.field)
+  const full = fullness(place)
+  const type = typeOf(hit.node.type)
+  const limit = type?.max_per_entity ?? null
+  const limited =
+    limit !== null && countType(source.content.tree, hit.node.type) >= limit
+      ? t('site-bar.limit', { count: limit })
+      : null
+  const slots = type?.content ? nestedFields(type.content.schema) : []
+  const hidden = hit.node.hidden === true
+  // A neighbour of old content without a key cannot be named: nothing moves past it from here.
+  const above = hit.list[hit.index - 1]
+  const below = hit.list[hit.index + 1]
+  const up = !above ? t('site-bar.at-top') : !above.key ? t('site-bar.temporary') : null
+  const down = !below ? t('site-bar.at-bottom') : !below.key ? t('site-bar.temporary') : null
+
+  return [
+    {
+      key: 'add-below',
+      icon: 'plus',
+      label: t('site-bar.add-below'),
+      disabled: full !== null,
+      hint: full ?? undefined,
+      run: () => void addTo(source, place, key),
+    },
+    ...slots.map((slot): RowAction => {
+      const inside = placeOf(source, key, slot.id)
+      const why = fullness(inside)
+
+      return {
+        key: `add-inside-${slot.id}`,
+        icon: 'plus',
+        label:
+          slots.length > 1
+            ? `${t('site-bar.add-inside')} · ${String(slot.label ?? slot.id)}`
+            : t('site-bar.add-inside'),
+        disabled: why !== null,
+        hint: why ?? undefined,
+        run: () => void addTo(source, inside, null),
+      }
+    }),
+    {
+      key: 'duplicate',
+      icon: 'copy',
+      label: t('site-bar.duplicate'),
+      disabled: full !== null || limited !== null,
+      hint: full ?? limited ?? undefined,
+      run: () => void duplicate(source, key),
+    },
+    {
+      key: 'move-up',
+      icon: 'arrow-up',
+      label: t('site-bar.move-up'),
+      disabled: up !== null,
+      hint: up ?? undefined,
+      run: () => void moveBy(source, key, -1),
+    },
+    {
+      key: 'move-down',
+      icon: 'arrow-down',
+      label: t('site-bar.move-down'),
+      disabled: down !== null,
+      hint: down ?? undefined,
+      run: () => void moveBy(source, key, 1),
+    },
+    {
+      key: 'visibility',
+      icon: hidden ? 'eye' : 'eye-off',
+      label: hidden ? t('site-bar.show') : t('site-bar.hide'),
+      run: () => void shape(source, [{ op: hidden ? 'show' : 'hide', key }]),
+    },
+    {
+      key: 'delete',
+      icon: 'trash',
+      label: t('site-bar.delete'),
+      danger: true,
+      run: () => void removeBlock(source, key),
+    },
+  ]
+}
+
+/* The whole draft on a page, for after a reload: the region's preview drawn on this page. */
+function regionPreview(source: Source): string | null {
+  const url = source.region?.preview
+
+  return url ? `${url}&at=${encodeURIComponent(props.context.url)}` : null
 }
 
 /*
@@ -505,8 +862,9 @@ function stopPresence(): void {
   knocking = null
 }
 
-/* The page's half: a block picked there, and picking switched off there with Esc. A pick without
-   a tree is from a page of the release before, where the record's was the only one. */
+/* The page's half: a block picked there, picking switched off there with Esc, «Add below» on the
+   picked block, and the sets of styles the page has. A message without a tree is from a page of
+   the release before, where the record's was the only one. */
 const stopListening = onSitePage((message) => {
   if (message.type === 'mode') {
     picking.value = message.on
@@ -518,6 +876,17 @@ const stopListening = onSitePage((message) => {
       bar?.show('blocks')
       open(source.scope, message.key)
     }
+  } else if (message.type === 'add') {
+    const scope = message.scope ?? sources.value[0]?.scope
+    const source = sources.value.find((one) => one.scope === scope)
+    const place = source ? placeAround(source, message.key) : null
+
+    if (source && place) {
+      bar?.show('blocks')
+      void addTo(source, place, message.key)
+    }
+  } else if (message.type === 'bundles') {
+    pageBundles.value = message.hashes
   }
 })
 
@@ -587,10 +956,19 @@ onBeforeUnmount(() => {
         </template>
       </nav>
 
-      <wx-text weight="semibold">
-        {{ selectedType?.title ?? found.node.type }}
-        <span v-if="current.region" class="wx-blocks-bar__where">· {{ current.title }}</span>
-      </wx-text>
+      <div class="wx-blocks-bar__name">
+        <wx-text weight="semibold">
+          {{ selectedType?.title ?? found.node.type }}
+          <span v-if="current.region" class="wx-blocks-bar__where">· {{ current.title }}</span>
+          <span v-if="found.node.hidden" class="wx-blocks-bar__where"
+            >· {{ t('site-bar.hidden') }}</span
+          >
+        </wx-text>
+        <wx-row-menu
+          :actions="actionsFor(current, found.node.key)"
+          :label="t('site-bar.actions')"
+        />
+      </div>
 
       <wx-text v-if="current.region" size="sm" tone="muted">
         {{ t('site-bar.region-everywhere') }}
@@ -603,6 +981,7 @@ onBeforeUnmount(() => {
         :busy="busy === current.scope"
         :blocked="busy !== null"
         :refusals="regionRefusals[current.scope]"
+        :preview="regionPreview(current)"
         @publish="publishRegion(current)"
         @discard="discardRegion(current)"
       />
@@ -678,6 +1057,7 @@ onBeforeUnmount(() => {
           :busy="busy === source.scope"
           :blocked="busy !== null"
           :refusals="regionRefusals[source.scope]"
+          :preview="regionPreview(source)"
           @publish="publishRegion(source)"
           @discard="discardRegion(source)"
         />
@@ -702,7 +1082,7 @@ onBeforeUnmount(() => {
         }}</wx-text>
 
         <ul v-else class="wx-blocks-bar__map">
-          <li v-for="row in rows" :key="row.id">
+          <li v-for="row in rows" :key="row.id" class="wx-blocks-bar__item">
             <button
               type="button"
               class="wx-blocks-bar__row"
@@ -725,8 +1105,26 @@ onBeforeUnmount(() => {
                 t('site-bar.temporary')
               }}</span>
             </button>
+            <wx-row-menu v-if="row.key" :actions="actionsFor(source, row.key)" :label="row.title" />
           </li>
         </ul>
+
+        <!-- At the end of the tree, whatever its blocks are: a page with none needs it most. -->
+        <div v-if="onSite(source)" class="wx-blocks-bar__add">
+          <wx-button
+            size="sm"
+            variant="outline"
+            icon="plus"
+            :disabled="fullness(placeOf(source, null, null)) !== null"
+            :loading="shaping"
+            @click="addTo(source, placeOf(source, null, null), null)"
+          >
+            {{ t('site-bar.add') }}
+          </wx-button>
+          <wx-text v-if="fullness(placeOf(source, null, null))" size="xs" tone="muted">
+            {{ fullness(placeOf(source, null, null)) }}
+          </wx-text>
+        </div>
       </section>
     </template>
   </div>
@@ -788,9 +1186,33 @@ onBeforeUnmount(() => {
   list-style: none;
 }
 
+/* A row and its `···`: the menu keeps its square at the end whatever the row says. */
+.wx-blocks-bar__item {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-4);
+  min-width: 0;
+}
+
+.wx-blocks-bar__name {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wx-space-8);
+  min-width: 0;
+}
+
+.wx-blocks-bar__add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-8);
+}
+
 /* One line a block, indented by how deep it is nested: the map is read by its shape. */
 .wx-blocks-bar__row {
   display: flex;
+  flex: 1 1 auto;
   align-items: baseline;
   gap: var(--wx-space-8);
   width: 100%;

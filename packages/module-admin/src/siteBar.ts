@@ -31,6 +31,8 @@ export interface SiteBarEntity {
   updatedAt: string | null
   /** Where the panel edits it, relative to the panel. */
   edit: string | null
+  /** A signed link to the draft shown as the page it will be; only while there is a draft. */
+  preview?: string | null
   /** What the record's editor in the panel calls it — `editing/{editing}/{id}` is its heartbeat. */
   editing?: string | null
   /** The revision the record's editor holds; sent with «Publish» so an unseen edit is not published. */
@@ -100,7 +102,12 @@ export function fetchSiteBarContext(
  *   is called;
  * - `mode` — picking blocks on the page on or off (§8);
  * - `select` / `highlight` — frame a block on the page and bring it into view, or stop;
- * - `replace` — put this markup in place of the block's range: the block drawn from the draft.
+ * - `replace` — put this markup in place of the block's range: the block drawn from the draft;
+ * - `insert` — the same when the page has the block, otherwise put it in after the first of
+ *   `after` the page has, before the first of `before`, or — `top` — at the end of its tree;
+ * - `move` — carry the block's range to where `after`/`before` say, `html` if the page lacks it;
+ * - `remove` — take the block's range out (removed, or hidden: the site does not draw it);
+ * - `assets` — add the styles and script of block types the page did not have.
  *
  * A block is named by its key and its `scope` — `{type}:{id}` of a record, `region:{name}` of a
  * region — since the header and the page are two trees that never promised each other unique keys.
@@ -115,6 +122,17 @@ export type SiteBarMessage =
   | { type: 'select'; key: string | null; scope?: string }
   | { type: 'highlight'; key: string | null; scope?: string }
   | { type: 'replace'; key: string; scope?: string; html: string }
+  | ({ type: 'insert' | 'move'; key: string; scope?: string; html: string } & SiteBarPlace)
+  | { type: 'remove'; key: string; scope?: string }
+  | { type: 'assets'; hash: string; css: string | null; js: string | null }
+
+/** Where a block that is not on the page goes: by its neighbours, nearest first. */
+export interface SiteBarPlace {
+  after?: string[]
+  before?: string[]
+  /** It stands at the top level of its tree: with no neighbour on the page, at the tree's end. */
+  top?: boolean
+}
 
 /** One tree of blocks the page may pick from. */
 export interface SiteBarBlockSource {
@@ -126,10 +144,15 @@ export interface SiteBarBlockSource {
 }
 
 /**
- * What the page says to the panel: a block picked on it, and picking switched off there (Esc).
+ * What the page says to the panel: a block picked on it, picking switched off there (Esc),
+ * «Add below» pressed on the picked block, and the sets of block styles and scripts the page has —
+ * sent with an edit, so that a type the page lacks brings its own and one it has brings nothing.
  */
 export type SitePageMessage =
-  { type: 'select'; key: string; scope?: string } | { type: 'mode'; on: boolean }
+  | { type: 'select'; key: string; scope?: string }
+  | { type: 'mode'; on: boolean }
+  | { type: 'add'; key: string; scope?: string }
+  | { type: 'bundles'; hashes: string[] }
 
 /**
  * Listen to the page the panel is framed in. Only that page — the parent window, from this
@@ -145,7 +168,13 @@ export function onSitePage(listener: (message: SitePageMessage) => void): () => 
     const data = event.data as { wxBar?: unknown; type?: unknown } | null
 
     if (typeof data !== 'object' || data === null || data.wxBar !== 1) return
-    if (data.type !== 'select' && data.type !== 'mode') return
+    if (
+      data.type !== 'select' &&
+      data.type !== 'mode' &&
+      data.type !== 'add' &&
+      data.type !== 'bundles'
+    )
+      return
 
     listener(data as SitePageMessage)
   }

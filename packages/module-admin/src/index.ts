@@ -239,6 +239,7 @@ export {
   type SiteBarEntity,
   type SiteBarHost,
   type SiteBarMessage,
+  type SiteBarPlace,
   type SitePageMessage,
   type SiteBarStatus,
   type SiteBarTab,

@@ -198,6 +198,52 @@ final class SiteBarRegionsTest extends RegionTestCase
     }
 
     #[Test]
+    public function the_structure_of_a_region_goes_into_its_draft_and_keeps_to_its_max(): void
+    {
+        $this->siteWithRegions();
+        $admin = $this->editor(self::REGIONS);
+
+        // Added below the footer's block: the region's draft, a key made on the server, the step
+        // that puts it after its neighbour, drawn as on the page.
+        $data = $this->actingAs($admin, 'cms')
+            ->postJson($this->content('footer').'/edit', ['url' => '/about', 'ops' => [['op' => 'add', 'type' => 'bar', 'after' => 'f1', 'values' => ['text' => 'Added']]]])
+            ->assertOk()
+            ->json('data');
+
+        $key = $data['key'];
+        $footer = Region::query()->where('name', 'footer')->firstOrFail();
+        $this->assertSame(['f1', $key], array_column($footer->draftValues()['blocks'], 'key'));
+        $this->assertSame(['f1'], array_column($footer->blocks, 'key'));
+        $this->assertSame([['do' => 'place', 'key' => $key, 'after' => ['f1'], 'before' => [], 'top' => true, 'html' => "<!--wx:{$key}--><div class=\"b-bar\">Added</div><!--/wx:{$key}-->"]], $data['steps']);
+
+        // The state says how many blocks changed and where the whole draft is shown.
+        $this->actingAs($admin, 'cms')
+            ->getJson($this->content('footer'))
+            ->assertJsonPath('data.region.draft.changes', 1)
+            ->assertJsonPath('data.region.preview', static fn (mixed $url): bool => is_string($url) && str_contains($url, '/_preview/region/footer'));
+
+        // The footer takes two blocks: a third is refused, and the draft keeps its two.
+        $this->actingAs($admin, 'cms')
+            ->postJson($this->content('footer').'/edit', ['ops' => [['op' => 'duplicate', 'key' => 'f1']]])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['blocks']);
+
+        // Moved up, then taken out again — the draft follows, the site does not.
+        $this->actingAs($admin, 'cms')
+            ->postJson($this->content('footer').'/edit', ['ops' => [['op' => 'move', 'key' => $key, 'before' => 'f1']]])
+            ->assertOk()
+            ->assertJsonPath('data.steps.0.do', 'move');
+        $this->assertSame([$key, 'f1'], array_column($footer->refresh()->draftValues()['blocks'], 'key'));
+
+        $this->actingAs($admin, 'cms')
+            ->postJson($this->content('footer').'/edit', ['ops' => [['op' => 'remove', 'key' => $key]]])
+            ->assertOk()
+            ->assertJsonPath('data.steps', [['do' => 'remove', 'key' => $key]]);
+
+        $this->assertStringNotContainsString('Added', (string) $this->get('/about')->getContent());
+    }
+
+    #[Test]
     public function the_regions_tab_is_behind_the_regions_right(): void
     {
         $this->siteWithRegions();

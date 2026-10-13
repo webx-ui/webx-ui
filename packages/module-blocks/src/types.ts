@@ -396,21 +396,61 @@ export interface SiteBarRegion {
     /** Whether the last hand on the draft was this administrator's. */
     mine: boolean
   }
+  /** A signed link to the draft drawn on a page — `&at=` names which — while there is a draft. */
+  preview?: string | null
 }
 
-/** One edit from the tab: the fields of one block, into the draft. */
+/**
+ * One operation of the agent's dictionary (`blocks_edit_content`), which the bar sends too: the
+ * fields of one block, or where blocks stand. `parent`/`field` name a container's list; without
+ * them the top level. `after`/`before` name the neighbour.
+ */
+export type SiteBarBlockOp =
+  | { op: 'set'; key: string; values: Record<string, unknown>; locale?: string }
+  | {
+      op: 'add'
+      type: string
+      values?: Record<string, unknown>
+      parent?: string
+      field?: string
+      after?: string
+      before?: string
+    }
+  | { op: 'move'; key: string; parent?: string; field?: string; after?: string; before?: string }
+  | { op: 'duplicate' | 'hide' | 'show' | 'remove'; key: string }
+
+/** One edit from the tab, into the draft. */
 export interface SiteBarBlockEdit {
   revision?: string
   /** The page's language: a localized field sent one value takes it in this language. */
   locale?: string | null
   /** The page the bar is on: a region's block is drawn as it stands there. */
   url?: string
-  ops: { op: 'set'; key: string; values: Record<string, unknown> }[]
+  /** The sets of block styles and scripts the page has, by hash: what is in them is not sent. */
+  bundles?: string[]
+  ops: SiteBarBlockOp[]
 }
 
-/** The answer: the new revision and the block drawn from the draft, markers and all. */
+/** What the page does to show the draft, one block at a time (SB5). */
+export interface SiteBarStep {
+  do: 'place' | 'move' | 'remove' | 'reload'
+  key: string
+  /** The block drawn from the draft, markers and all — for `place` and `move`. */
+  html?: string
+  after?: string[]
+  before?: string[]
+  top?: boolean
+}
+
+/**
+ * The answer: the new revision, the block to open — the one a `set` named, the one an `add` or a
+ * `duplicate` made — and what the page has to do, with the styles and script it lacks.
+ */
 export interface SiteBarBlockEdited {
   revision: string
   key: string | null
+  /** The block `key` drawn, when a step drew it. */
   html: string
+  steps?: SiteBarStep[]
+  assets?: { hash: string; css: string | null; js: string | null } | null
 }

@@ -46,4 +46,6 @@ return [
     'cancel' => 'Anuluj',
     'loader-draft' => 'Wersja robocza',
     'loader-temporary' => 'Edytuj w panelu',
+    'loader-add' => 'Dodaj poniżej',
+    'preview' => 'Podgląd wersji roboczej',
 ];

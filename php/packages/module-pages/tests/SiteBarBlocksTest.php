@@ -196,7 +196,7 @@ final class SiteBarBlocksTest extends TestCase
     }
 
     #[Test]
-    public function a_field_the_type_does_not_have_or_a_list_of_blocks_is_refused(): void
+    public function a_field_the_type_does_not_have_or_an_operation_nobody_knows_is_refused(): void
     {
         $page = $this->pageWithBlocks();
         $admin = $this->editor(self::EDITOR);
@@ -207,7 +207,7 @@ final class SiteBarBlocksTest extends TestCase
             ->assertJsonValidationErrors(['ops.0']);
 
         $this->actingAs($admin, 'cms')
-            ->postJson($this->content($page).'/edit', ['ops' => [['op' => 'remove', 'key' => 'k1']]])
+            ->postJson($this->content($page).'/edit', ['ops' => [['op' => 'rename', 'key' => 'k1']]])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['ops.0']);
 

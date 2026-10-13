@@ -11,6 +11,7 @@ use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Panel\SiteBarBlocks;
+use WebxUi\Blocks\Rendering\Renderer;
 
 /**
  * The two addresses of the «Blocks» tab of the panel on the site (§8–§9 of WEBX_UI_SITE_BAR.md),
@@ -21,7 +22,10 @@ use WebxUi\Blocks\Panel\SiteBarBlocks;
  */
 final class SiteBarController
 {
-    public function __construct(private readonly SiteBarBlocks $blocks) {}
+    public function __construct(
+        private readonly SiteBarBlocks $blocks,
+        private readonly Renderer $renderer,
+    ) {}
 
     /** `GET /api/cms/blocks/content/{type}/{id}` — the blocks as the tab reads them. */
     public function show(Request $request, string $type, string $id): JsonResponse
@@ -37,10 +41,14 @@ final class SiteBarController
     }
 
     /**
-     * `POST /api/cms/blocks/content/{type}/{id}/edit` — `{ revision, locale, url, ops }` into the
-     * draft; the answer is the new revision and the edited block drawn from the draft, for the
-     * page to put in place of the old one. `url` is the page the bar is on: a region's block is
-     * drawn as on that page.
+     * `POST /api/cms/blocks/content/{type}/{id}/edit` — `{ revision, locale, url, bundles, ops }`
+     * into the draft. `url` is the page the bar is on: a region's block is drawn as on that page.
+     * `bundles` are the hashes of the sets of styles and scripts that page has.
+     *
+     * The answer is the new revision, the block to open (`key` — the one a `set` named, the one an
+     * `add` or a `duplicate` made) and what the page does to show the draft (`steps`, each block
+     * it puts in drawn from the draft with its markers), plus the styles and the script of the
+     * types the page did not have (`assets`). `html` is the block `key` drawn, as before SB5.
      *
      * A revision that is not the record's any more is somebody else's edit since the form read
      * it: 409 with who made it, and the form reads the block again. No merge by field, unlike
@@ -53,13 +61,16 @@ final class SiteBarController
             'revision' => ['nullable', 'string', 'max:128'],
             'locale' => ['nullable', 'string', 'max:16'],
             'url' => ['nullable', 'string', 'max:2048'],
+            'bundles' => ['nullable', 'array', 'list', 'max:32'],
+            'bundles.*' => ['string', 'max:64'],
             'ops' => ['required', 'array', 'list', 'min:1', 'max:50'],
         ]);
 
         $url = $this->path($validated['url'] ?? null);
         $entity = $this->blocks->find($type, $id, $request->user());
+        $before = $this->blocks->editing($entity);
         $sent = $validated['revision'] ?? null;
-        $now = $this->blocks->revision($entity, $this->blocks->editing($entity));
+        $now = $this->blocks->revision($entity, $before);
 
         if (is_string($sent) && $sent !== '' && $sent !== $now) {
             return new JsonResponse([
@@ -73,18 +84,46 @@ final class SiteBarController
         /** @var list<mixed> $ops */
         $ops = $validated['ops'];
 
-        $this->blocks->edit($entity, $ops, $locale, $this->adminId($request));
+        $made = $this->blocks->edit($entity, $ops, $locale, $this->adminId($request));
 
         $entity->refresh();
-        $keys = array_values(array_unique(array_filter(array_map(
-            static fn (mixed $op): ?string => is_array($op) && is_string($op['key'] ?? null) ? $op['key'] : null,
+        $after = $this->blocks->editing($entity);
+        $first = is_array($ops[0] ?? null) && is_string($ops[0]['key'] ?? null) ? $ops[0]['key'] : null;
+        $key = $made ?? $first;
+
+        $moved = array_values(array_filter(array_map(
+            static fn (mixed $op): ?string => is_array($op) && ($op['op'] ?? null) === 'move' && is_string($op['key'] ?? null) ? $op['key'] : null,
             $ops,
-        ))));
+        )));
+
+        // Every block the page puts in is drawn from the draft; the types they use are what the
+        // page may lack the styles of.
+        $steps = [];
+
+        foreach (SiteBarBlocks::steps($before, $after, $moved) as $step) {
+            if ($step['do'] === 'place' || $step['do'] === 'move') {
+                $step['html'] = $this->blocks->html($entity, $step['key'], $locale, $url);
+            }
+
+            $steps[] = $step;
+        }
+
+        /** @var list<string>|null $have */
+        $have = $validated['bundles'] ?? null;
+        $html = '';
+
+        foreach ($steps as $step) {
+            if ($step['key'] === $key && isset($step['html'])) {
+                $html = $step['html'];
+            }
+        }
 
         return ApiResponse::data([
-            'revision' => $this->blocks->revision($entity, $this->blocks->editing($entity)),
-            'key' => $keys[0] ?? null,
-            'html' => isset($keys[0]) ? $this->blocks->html($entity, $keys[0], $locale, $url) : '',
+            'revision' => $this->blocks->revision($entity, $after),
+            'key' => $key,
+            'html' => $html,
+            'steps' => $steps,
+            'assets' => $this->blocks->assets($this->renderer->usedTypes(), $have),
         ]);
     }
 

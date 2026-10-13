@@ -22,9 +22,9 @@ use WebxUi\Blocks\BlockComponents;
 use WebxUi\Blocks\BlockLabel;
 use WebxUi\Blocks\BlockShapes;
 use WebxUi\Blocks\BlockType;
-use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Content;
 use WebxUi\Blocks\ContentEdit;
+use WebxUi\Blocks\ContentOps;
 use WebxUi\Blocks\ContentValues;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
@@ -51,8 +51,6 @@ use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\ViewCalls;
 use WebxUi\Blocks\Schema;
-use WebxUi\Blocks\StrayValues;
-use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 
@@ -1039,7 +1037,6 @@ final class BlockTools
         AgentRevision::check($arguments, $this->revision($entity, $tree), 'entity', 'blocks_get_content');
         $keysBefore = self::keys($tree);
 
-        $localized = $this->localized(...);
         $applied = [];
 
         foreach ($ops as $index => $op) {
@@ -1048,7 +1045,7 @@ final class BlockTools
             }
 
             try {
-                $tree = $this->applyOp($tree, $op, $localized);
+                $tree = $this->applyOp($tree, $op);
             } catch (BlocksException $failed) {
                 throw new ToolFailure('Operation '.($index + 1).' ('.(string) ($op['op'] ?? '?').'): '.$failed->getMessage());
             }
@@ -1083,171 +1080,15 @@ final class BlockTools
     }
 
     /**
+     * One operation, in the dictionary every door edits content with ({@see ContentOps}).
+     *
      * @param  list<array<string, mixed>>  $tree
      * @param  array<string, mixed>  $op
-     * @param  callable(string, string): ?bool  $localized
      * @return list<array<string, mixed>>
      */
-    private function applyOp(array $tree, array $op, callable $localized): array
+    private function applyOp(array $tree, array $op): array
     {
-        $name = $op['op'] ?? null;
-        $key = is_string($op['key'] ?? null) ? $op['key'] : '';
-        $parent = is_string($op['parent'] ?? null) && $op['parent'] !== '' ? $op['parent'] : null;
-        $field = is_string($op['field'] ?? null) && $op['field'] !== '' ? $op['field'] : null;
-        $before = is_string($op['before'] ?? null) && $op['before'] !== '' ? $op['before'] : null;
-        $after = is_string($op['after'] ?? null) && $op['after'] !== '' ? $op['after'] : null;
-
-        // A value for a field the type does not have is refused at the door: this is how stray
-        // values got into pages, and once in, nothing but a prune takes them out.
-        if ($name === 'set' && is_array($op['values'] ?? null) && ($node = ContentEdit::find($tree, $key)) !== null) {
-            $this->refuseStray((string) $node['type'], $op['values'], is_array($node['values'] ?? null) ? $node['values'] : [], self::held($tree));
-        }
-
-        if ($name === 'add' && is_string($op['type'] ?? null) && is_array($op['values'] ?? null)) {
-            $this->refuseStray($op['type'], $op['values'], [], self::held($tree));
-        }
-
-        $containers = $this->containers(...);
-
-        return match ($name) {
-            'set' => ContentEdit::set(
-                $tree,
-                $this->opKey($key),
-                is_array($op['values'] ?? null) ? $op['values'] : throw new ToolFailure('`values` is required by set.'),
-                is_string($op['locale'] ?? null) && $op['locale'] !== '' ? $op['locale'] : null,
-                $localized,
-                $this->container->make(Locales::class)->defaultCode(),
-            ),
-            'duplicate' => ContentEdit::duplicate($tree, $this->opKey($key), static fn (): string => substr(bin2hex(random_bytes(8)), 0, 12)),
-            'add' => ContentEdit::insert(
-                $tree,
-                [
-                    'type' => is_string($op['type'] ?? null) && $op['type'] !== ''
-                        ? $op['type']
-                        : throw new ToolFailure('`type` is required by add: the slug of a block type.'),
-                    'values' => is_array($op['values'] ?? null) ? $op['values'] : [],
-                ],
-                $parent,
-                $field,
-                $before,
-                $after,
-                $containers,
-            ),
-            'move' => ContentEdit::move($tree, $this->opKey($key), $parent, $field, $before, $after, $containers),
-            'remove' => ContentEdit::remove($tree, $this->opKey($key)),
-            'unset' => ContentEdit::unset(
-                $tree,
-                $this->opKey($key),
-                is_array($op['fields'] ?? null) && $op['fields'] !== [] && array_is_list($op['fields'])
-                    ? array_map(strval(...), $op['fields'])
-                    : throw new ToolFailure('`fields` is required by unset: the names of the values to take out.'),
-            ),
-            'hide' => ContentEdit::visibility($tree, $this->opKey($key), true),
-            'show' => ContentEdit::visibility($tree, $this->opKey($key), false),
-            default => throw new ToolFailure('Unknown operation ['.(is_string($name) ? $name : '?').']: set, unset, add, move, duplicate, remove, hide or show.'),
-        };
-    }
-
-    /**
-     * The `wx-blocks` fields of a block type, by id — empty for a type that holds no blocks, null
-     * for one nobody knows. What says whether "inside this block" is a place at all.
-     *
-     * @return list<string>|null
-     */
-    private function containers(string $type): ?array
-    {
-        $types = $this->container->make(BlockTypes::class);
-        $block = $types->find($type) ?? $types->draft($type);
-
-        return $block?->nestedFields();
-    }
-
-    /**
-     * Refuse values for fields a block type does not define — the block's own and those of every
-     * block nested in it. A field the block already holds may keep its value or be emptied; a
-     * value of a field the type no longer has goes with `unset`.
-     *
-     * @param  array<string, mixed>  $values
-     * @param  array<string, mixed>  $current
-     * @param  array<string, array<string, mixed>>  $held  Key → the values of every node the entity holds now.
-     *
-     * @throws BlocksException
-     */
-    private function refuseStray(string $type, array $values, array $current, array $held): void
-    {
-        $strays = $this->container->make(StrayValues::class);
-        $unknown = $strays->unknown($type, $values, $current);
-
-        if ($unknown !== []) {
-            throw new BlocksException(
-                "{$type} has no field [".implode('], [', $unknown).']. Its fields: '.implode(', ', $strays->fieldsOf($type)).'.'
-            );
-        }
-
-        foreach ($values as $value) {
-            if (! Content::isNodeList($value)) {
-                continue;
-            }
-
-            foreach ($value as $node) {
-                if (Content::isNode($node)) {
-                    $key = is_string($node['key'] ?? null) ? $node['key'] : null;
-                    $this->refuseStray((string) $node['type'], is_array($node['values'] ?? null) ? $node['values'] : [], $key === null ? [] : ($held[$key] ?? []), $held);
-                }
-            }
-        }
-    }
-
-    /**
-     * Every node of a tree by key, with its values: what a write may hand back as it was.
-     *
-     * @param  list<mixed>  $tree
-     * @return array<string, array<string, mixed>>
-     */
-    private static function held(array $tree): array
-    {
-        $held = [];
-
-        foreach ($tree as $node) {
-            if (! Content::isNode($node)) {
-                continue;
-            }
-
-            $values = is_array($node['values'] ?? null) ? $node['values'] : [];
-
-            if (is_string($node['key'] ?? null)) {
-                $held[$node['key']] = $values;
-            }
-
-            foreach ($values as $value) {
-                if (Content::isNodeList($value)) {
-                    $held += self::held(array_values($value));
-                }
-            }
-        }
-
-        return $held;
-    }
-
-    private function opKey(string $key): string
-    {
-        return $key !== '' ? $key : throw new ToolFailure('`key` is required: the key of the block to change.');
-    }
-
-    /**
-     * Whether a field of a block type holds a language map; null when nobody can say — the type
-     * was removed, or the field is not in its schema any more.
-     */
-    private function localized(string $type, string $field): ?bool
-    {
-        $types = $this->container->make(BlockTypes::class);
-        $block = $types->draft($type) ?? $types->find($type);
-
-        if ($block === null || ! in_array($field, $block->fields(), true)) {
-            return null;
-        }
-
-        return in_array($field, $block->localizedFields(), true);
+        return $this->container->make(ContentOps::class)->apply($tree, $op);
     }
 
     /**
@@ -1372,12 +1213,13 @@ final class BlockTools
         AgentRevision::check($arguments, $this->revision($entity, $editing), 'entity', 'blocks_get_content');
 
         try {
-            $held = self::held($editing);
+            $ops = $this->container->make(ContentOps::class);
+            $held = ContentOps::held($editing);
 
             foreach ($blocks as $node) {
                 if (Content::isNode($node)) {
                     $key = is_string($node['key'] ?? null) ? $node['key'] : null;
-                    $this->refuseStray((string) $node['type'], is_array($node['values'] ?? null) ? $node['values'] : [], $key === null ? [] : ($held[$key] ?? []), $held);
+                    $ops->refuseStray((string) $node['type'], is_array($node['values'] ?? null) ? $node['values'] : [], $key === null ? [] : ($held[$key] ?? []), $held);
                 }
             }
         } catch (BlocksException $refused) {

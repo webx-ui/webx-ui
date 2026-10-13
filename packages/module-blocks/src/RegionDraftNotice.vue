@@ -18,6 +18,8 @@ defineProps<{
   blocked?: boolean
   /** Why the publication was refused — the blocks of the draft that fail. */
   refusals?: string[]
+  /** The region's draft drawn on this page: after a reload the page shows the site again. */
+  preview?: string | null
 }>()
 
 const emit = defineEmits<{ publish: []; discard: [] }>()
@@ -47,6 +49,16 @@ const t = useTranslate('webx-blocks')
       </wx-button>
       <wx-button size="sm" variant="outline" :disabled="busy || blocked" @click="emit('discard')">
         {{ t('site-bar.discard') }}
+      </wx-button>
+      <wx-button
+        v-if="preview"
+        size="sm"
+        variant="text"
+        :href="preview"
+        target="_blank"
+        rel="noopener"
+      >
+        {{ t('site-bar.preview') }}
       </wx-button>
     </template>
   </wx-alert>

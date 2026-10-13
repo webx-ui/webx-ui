@@ -46,4 +46,6 @@ return [
     'cancel' => 'Annuler',
     'loader-draft' => 'Brouillon',
     'loader-temporary' => 'À modifier dans le panneau',
+    'loader-add' => 'Ajouter en dessous',
+    'preview' => 'Aperçu du brouillon',
 ];

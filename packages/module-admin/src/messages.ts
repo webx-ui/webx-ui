@@ -78,6 +78,8 @@ export const adminMessages: Record<string, Messages> = {
     cancel: 'Cancel',
     'loader-draft': 'Draft',
     'loader-temporary': 'Open in panel to edit',
+    'loader-add': 'Add below',
+    preview: 'Preview draft',
   },
   // The three words on the theme switch. They belong to the panel rather than to whoever
   // places the switch: a core component ships English prop defaults and knows nothing about

@@ -46,4 +46,6 @@ return [
     'cancel' => 'Cancelar',
     'loader-draft' => 'Rascunho',
     'loader-temporary' => 'Editar no painel',
+    'loader-add' => 'Adicionar abaixo',
+    'preview' => 'Pré-visualizar rascunho',
 ];

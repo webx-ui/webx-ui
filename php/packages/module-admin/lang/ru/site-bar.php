@@ -46,4 +46,6 @@ return [
     'cancel' => 'Не отменять',
     'loader-draft' => 'Черновик',
     'loader-temporary' => 'Правится в панели',
+    'loader-add' => 'Добавить ниже',
+    'preview' => 'Предпросмотр черновика',
 ];

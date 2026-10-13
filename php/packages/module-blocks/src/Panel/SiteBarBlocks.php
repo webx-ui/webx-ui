@@ -5,27 +5,36 @@ declare(strict_types=1);
 namespace WebxUi\Blocks\Panel;
 
 use Illuminate\Container\Container as Containers;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use UnexpectedValueException;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\BlockLabel;
+use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Content;
 use WebxUi\Blocks\ContentEdit;
+use WebxUi\Blocks\ContentOps;
 use WebxUi\Blocks\ContentValues;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Exceptions\RegionRefused;
+use WebxUi\Blocks\Models\BlockBundle;
 use WebxUi\Blocks\Models\Region;
+use WebxUi\Blocks\Preview\Preview;
 use WebxUi\Blocks\Regions;
+use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\RegionContext;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\StrayValues;
@@ -37,15 +46,15 @@ use WebxUi\Routing\RouteTypes;
 
 /**
  * The «Blocks» tab of the panel on the site (§8–§9 of WEBX_UI_SITE_BAR.md): the blocks of the
- * record behind the address and of the layout's regions as maps, one block's fields edited into
- * the draft of whatever holds it, and the block drawn again for the page to put in place of the
- * old one.
+ * record behind the address and of the layout's regions as maps, their fields and their
+ * structure edited into the draft of whatever holds them, and the blocks drawn again for the page
+ * to put in place of the old ranges.
  *
  * The same door the agent's `blocks_edit_content` goes through (§18.1 of the blocks spec): the
- * operations of {@see ContentEdit}, the revision the editor holds, the checks of
- * {@see ContentValues} — and for a region the gate of its declaration — then `saveDraft()`. Only
- * `set` here — adding, moving and removing blocks are the constructor's, in the panel (§1 of the
- * bar's spec).
+ * operations of {@see ContentOps}, the revision the editor holds, the checks of
+ * {@see ContentValues} — and for a region the gate of its declaration — then `saveDraft()`. Since
+ * SB5 that is the whole dictionary — add, duplicate, move, hide, show, remove as well as set — and
+ * the answer says what the page has to do to show the result ({@see self::steps()}).
  *
  * A region is addressed as the type `region` with its name for an id, the way the agent's tools
  * address it: it has no address of its own to be found by, it is on every page.
@@ -157,6 +166,8 @@ final class SiteBarBlocks
             'published' => $published,
             'fallback' => $this->regions->fallbackOf($name),
             'draft' => ['differs' => $changes > 0, 'changes' => $changes] + $hands,
+            // The whole draft on a page, for after a reload — the panel appends `&at=` with this page.
+            'preview' => $changes > 0 ? $this->container->make(Preview::class)->regionUrl($name, $this->idOf($user)) : null,
         ];
     }
 
@@ -200,20 +211,29 @@ final class SiteBarBlocks
     /**
      * Apply the operations and keep the result as the draft, from the panel.
      *
-     * @param  list<mixed>  $ops
+     * The operations are the agent's ({@see ContentOps}) — `set`, `add`, `duplicate`, `move`,
+     * `hide`, `show`, `remove` — so a structure the bar may build is one the agent may build, and
+     * the other way round. What a block may stand next to, inside or how many times is checked on
+     * the whole tree afterwards, by the same {@see ContentValues} every save goes through.
      *
-     * @throws ValidationException under `ops` for an operation that cannot be applied, under
-     *                             `blocks.<key>.<field>` for a value its field refuses, under
-     *                             `blocks` for a region its declaration would not take
+     * @param  list<mixed>  $ops
+     * @return string|null the key of the block the operations made — an added block, a copy — for the tab to open
+     *
+     * @throws ValidationException under `ops.N` for an operation that cannot be applied, under
+     *                             `blocks.<key>.<field>` for a value its field refuses or a block
+     *                             where it may not stand, under `blocks` for a region its
+     *                             declaration would not take
      */
-    public function edit(Model $entity, array $ops, ?string $locale, ?int $authorId): void
+    public function edit(Model $entity, array $ops, ?string $locale, ?int $authorId): ?string
     {
         $tree = $this->editing($entity);
-        $primary = $this->locales->defaultCode();
+        $made = null;
 
         foreach ($ops as $index => $op) {
-            $tree = $this->apply($tree, $op, $locale, $primary, $index);
+            $tree = $this->apply($tree, $op, $locale, $index, $made);
         }
+
+        $this->refuseDepth($tree);
 
         // The gate a region's own editor and the agent go through: what its declaration and the
         // types' `allowed_in` let stand at its top.
@@ -228,7 +248,8 @@ final class SiteBarBlocks
         $column = $this->column($entity);
 
         // Checked and cast by the field types, as every other save of content is — at the root
-        // the record names, which for a region is its own (`region:<name>`).
+        // the record names, which for a region is its own (`region:<name>`). A container's
+        // `allow` and `max` and a type's `max_per_entity` are checked here, on the whole tree.
         $stored = method_exists($entity, 'storeBlocks') ? $entity->storeBlocks($tree) : $tree;
         $draft = method_exists($entity, 'draftValues') ? $entity->draftValues() : [];
 
@@ -237,6 +258,286 @@ final class SiteBarBlocks
         }
 
         $entity->saveDraft(array_merge($draft, [$column => $stored]), $authorId, EntityVersion::SOURCE_PANEL);
+
+        return $made;
+    }
+
+    /**
+     * What the page has to do to show the tree as it is now, given what it was: the steps the
+     * loader takes over the ranges between the markers (§9 of the bar's spec, SB5).
+     *
+     * - `place` — the block drawn anew: in place of its range when the page has one, otherwise
+     *   after the first of `after` the page has, before the first of `before`, or — at the top
+     *   level (`top`) — at the end of the tree's markers;
+     * - `move` — the same block, unchanged, to the place `after`/`before` names;
+     * - `remove` — its range taken out: removed, or hidden, which the site does not draw.
+     *
+     * Inside a container a change of what it holds draws the container again rather than one
+     * block beside another: where a container prints its list is its template's business, and a
+     * container that held nothing has no neighbour to stand by. The keys are only ever the
+     * visible blocks' — a hidden one is not on the page.
+     *
+     * A list that holds a block without a key cannot be followed — its blocks go by their place in
+     * it — and the answer is then one step, `reload`.
+     *
+     * Which of two neighbours moved is not in the trees — swapping them is either one moving —
+     * so the keys an operation moved are named: those are the blocks that move on the page too.
+     *
+     * @param  list<array<string, mixed>>  $before
+     * @param  list<array<string, mixed>>  $after
+     * @param  list<string>  $moved  The keys `move` operations named.
+     * @return list<array{do: string, key: string, after?: list<string>, before?: list<string>, top?: bool}>
+     */
+    public static function steps(array $before, array $after, array $moved = []): array
+    {
+        try {
+            return self::diff($before, $after, $moved);
+        } catch (UnexpectedValueException) {
+            return [['do' => 'reload', 'key' => '']];
+        }
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $before
+     * @param  list<array<string, mixed>>  $after
+     * @param  list<string>  $moved
+     * @return list<array{do: string, key: string, after?: list<string>, before?: list<string>, top?: bool}>
+     */
+    private static function diff(array $before, array $after, array $moved): array
+    {
+        $old = self::visible($before);
+        $new = self::visible($after);
+        $oldKeys = array_keys($old);
+        $newKeys = array_keys($new);
+        $steps = [];
+
+        foreach (array_diff($oldKeys, $newKeys) as $key) {
+            $steps[] = ['do' => 'remove', 'key' => (string) $key];
+        }
+
+        $common = array_values(array_filter($newKeys, static fn (string|int $key): bool => isset($old[$key]) && ! in_array((string) $key, $moved, true)));
+        $stay = self::longestInOrder($common, array_flip($oldKeys));
+
+        foreach ($newKeys as $at => $key) {
+            $key = (string) $key;
+            $around = [
+                'after' => array_map('strval', array_reverse(array_slice($newKeys, 0, $at))),
+                'before' => array_map('strval', array_slice($newKeys, $at + 1)),
+                'top' => true,
+            ];
+
+            if (! isset($old[$key])) {
+                $steps[] = ['do' => 'place', 'key' => $key] + $around;
+
+                continue;
+            }
+
+            $same = $old[$key] === $new[$key];
+
+            if (! in_array($key, $stay, true)) {
+                // Moved: the range goes with it, unless what is in it changed too.
+                $steps[] = $same
+                    ? ['do' => 'move', 'key' => $key] + $around
+                    : ['do' => 'remove', 'key' => $key];
+
+                if (! $same) {
+                    $steps[] = ['do' => 'place', 'key' => $key] + $around;
+                }
+
+                continue;
+            }
+
+            if (! $same) {
+                $steps = [...$steps, ...self::nodeSteps($old[$key], $new[$key], $newKeys, $at, true)];
+            }
+        }
+
+        return $steps;
+    }
+
+    /**
+     * What the page needs of one block that stays where it was: nothing, the block drawn anew,
+     * or — when only blocks inside it changed and not which — those blocks, one by one.
+     *
+     * @param  array<string, mixed>  $old
+     * @param  array<string, mixed>  $new
+     * @param  list<string|int>  $siblings  The visible keys of the list it is in, in order.
+     * @param  bool  $top  Whether that list is the top level of the tree.
+     * @return list<array{do: string, key: string, after?: list<string>, before?: list<string>, top?: bool}>
+     */
+    private static function nodeSteps(array $old, array $new, array $siblings, int $at, bool $top): array
+    {
+        $key = (string) $new['key'];
+        $whole = [[
+            'do' => 'place',
+            'key' => $key,
+            'after' => array_map('strval', array_reverse(array_slice($siblings, 0, $at))),
+            'before' => array_map('strval', array_slice($siblings, $at + 1)),
+            'top' => $top,
+        ]];
+
+        if ($old['type'] !== $new['type'] || ($old['hidden'] ?? false) !== ($new['hidden'] ?? false)) {
+            return $whole;
+        }
+
+        $oldValues = is_array($old['values'] ?? null) ? $old['values'] : [];
+        $newValues = is_array($new['values'] ?? null) ? $new['values'] : [];
+        $steps = [];
+
+        foreach (array_unique([...array_keys($oldValues), ...array_keys($newValues)]) as $field) {
+            $was = $oldValues[$field] ?? null;
+            $is = $newValues[$field] ?? null;
+
+            if ($was === $is) {
+                continue;
+            }
+
+            if (! Content::isNodeList($was) && ! Content::isNodeList($is)) {
+                return $whole;
+            }
+
+            $inside = Content::isNodeList($was) ? array_values($was) : [];
+            $now = Content::isNodeList($is) ? array_values($is) : [];
+            $oldList = self::visible($inside);
+            $newList = self::visible($now);
+
+            // Which blocks the container shows, and in what order, changed: it is drawn again.
+            if (array_keys($oldList) !== array_keys($newList)) {
+                return $whole;
+            }
+
+            $keys = array_keys($newList);
+
+            foreach ($keys as $index => $child) {
+                if ($oldList[$child] !== $newList[$child]) {
+                    $steps = [...$steps, ...self::nodeSteps($oldList[$child], $newList[$child], $keys, $index, false)];
+                }
+            }
+        }
+
+        return $steps;
+    }
+
+    /**
+     * The blocks of one list a visitor's page draws, by key. A block without a key gets a
+     * temporary one from its place in the list, which moves with every block put before it — so
+     * a list holding one cannot be followed, and the page is drawn again whole.
+     *
+     * @param  list<mixed>  $list
+     * @return array<string, array<string, mixed>>
+     */
+    private static function visible(array $list): array
+    {
+        $visible = [];
+
+        foreach ($list as $node) {
+            if (! Content::isNode($node) || Content::isHidden($node)) {
+                continue;
+            }
+
+            if (! is_string($node['key'] ?? null) || $node['key'] === '') {
+                throw new UnexpectedValueException('A block without a key.');
+            }
+
+            $visible[$node['key']] = $node;
+        }
+
+        return $visible;
+    }
+
+    /**
+     * The longest run of keys that kept their order — the ones that stay put while the rest
+     * move around them. Quadratic, which on the length of one page's list is nothing.
+     *
+     * @param  list<string|int>  $keys  In the new order.
+     * @param  array<string|int, int>  $was  Key → its old position.
+     * @return list<string>
+     */
+    private static function longestInOrder(array $keys, array $was): array
+    {
+        $count = count($keys);
+        $length = array_fill(0, $count, 1);
+        $previous = array_fill(0, $count, -1);
+        $best = -1;
+
+        for ($i = 0; $i < $count; $i++) {
+            for ($j = 0; $j < $i; $j++) {
+                if ($was[$keys[$j]] < $was[$keys[$i]] && $length[$i] < $length[$j] + 1) {
+                    $length[$i] = $length[$j] + 1;
+                    $previous[$i] = $j;
+                }
+            }
+
+            if ($best === -1 || $length[$i] > $length[$best]) {
+                $best = $i;
+            }
+        }
+
+        $run = [];
+
+        for ($i = $best; $i !== -1; $i = $previous[$i]) {
+            $run[] = (string) $keys[$i];
+        }
+
+        return array_reverse($run);
+    }
+
+    /**
+     * The styles and the script of the types the blocks just drawn use and the page does not
+     * have yet: a type new to the page brings none of its own, since the page's set was glued
+     * when it was printed (§9 of the blocks spec). The page names the sets it has by their
+     * hashes; what they hold is read back from `block_bundles`, where every printed set is.
+     * Null when nothing is missing.
+     *
+     * @param  array<string, BlockType>  $used
+     * @param  list<string>|null  $have  The hashes of the sets the page has; null when it did not say, and then every type counts as missing.
+     * @return array{hash: string, css: string|null, js: string|null}|null
+     */
+    public function assets(array $used, ?array $have): ?array
+    {
+        $present = [];
+
+        foreach ($have ?? [] as $hash) {
+            $bundle = preg_match('/^[a-f0-9]{16}$/', $hash) === 1 ? BlockBundle::query()->find($hash) : null;
+
+            if ($bundle instanceof BlockBundle) {
+                $present += $bundle->versions();
+            }
+        }
+
+        $missing = array_filter($used, static fn (BlockType $type): bool => ! isset($present[$type->slug]));
+        $bundles = $this->container->make(Bundles::class);
+        $bundle = $missing === [] ? null : $bundles->build($missing);
+
+        if (! $bundle instanceof BlockBundle) {
+            return null;
+        }
+
+        $url = $this->container->make(UrlGenerator::class);
+
+        return [
+            'hash' => $bundle->hash,
+            'css' => $bundle->css !== '' ? $url->route('webx.blocks.css', ['hash' => $bundle->hash]) : null,
+            'js' => $bundle->js !== null ? $url->route('webx.blocks.js', ['hash' => $bundle->hash]) : null,
+        ];
+    }
+
+    /**
+     * Blocks nest as deep as the site lets them and no deeper — what the agent's write refuses
+     * too: the renderer leaves out whatever is below the limit, and an editor would see a block
+     * they just added vanish.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     */
+    private function refuseDepth(array $tree): void
+    {
+        $limit = (int) $this->container->make(Config::class)->get('webx-blocks.max_depth', 5);
+
+        foreach (ContentEdit::outline($tree) as $line) {
+            if ((int) $line['depth'] >= $limit) {
+                throw ValidationException::withMessages(['blocks' => (string) __('webx-blocks::site-bar.too-deep', ['max' => $limit])]);
+            }
+        }
     }
 
     /**
@@ -442,56 +743,116 @@ final class SiteBarBlocks
     }
 
     /**
+     * One operation of the agent's dictionary, with what the bar adds to it: the page's language
+     * for a `set`, and a new block only of a type the page can draw.
+     *
      * @param  list<array<string, mixed>>  $tree
      * @return list<array<string, mixed>>
      */
-    private function apply(array $tree, mixed $op, ?string $locale, string $primary, int $index): array
+    private function apply(array $tree, mixed $op, ?string $locale, int $index, ?string &$made): array
     {
         $field = 'ops.'.$index;
+        $name = is_array($op) ? ($op['op'] ?? null) : null;
 
-        if (! is_array($op) || ($op['op'] ?? null) !== 'set' || ! is_string($op['key'] ?? null) || ! is_array($op['values'] ?? null)) {
+        if (! is_array($op) || ! in_array($name, ContentOps::NAMES, true)) {
             throw ValidationException::withMessages([$field => (string) __('webx-blocks::site-bar.bad-op')]);
         }
 
-        $node = ContentEdit::find($tree, $op['key']);
+        $key = is_string($op['key'] ?? null) ? $op['key'] : null;
 
-        if ($node === null) {
+        // A block that is not in the tree any more — somebody took it out since the tab read it.
+        if ($name !== 'add' && ($key === null || ContentEdit::find($tree, $key) === null)) {
             throw ValidationException::withMessages([$field => (string) __('webx-blocks::site-bar.gone')]);
         }
 
-        $type = (string) $node['type'];
-
-        // A field the type does not have is refused at the door, as the agent's is.
-        // So is a list of blocks inside it: what stands in a container is the constructor's to
-        // change, and a whole list sent with a field would replace blocks the form never showed.
-        $nested = ($this->types->find($type) ?? $this->types->draft($type))?->nestedFields() ?? [];
-
-        if ($this->strays->unknown($type, $op['values'], is_array($node['values'] ?? null) ? $node['values'] : []) !== []
-            || array_intersect(array_map('strval', array_keys($op['values'])), $nested) !== []) {
-            throw ValidationException::withMessages([$field => (string) __('webx-blocks::site-bar.bad-op')]);
-        }
+        $ops = $this->container->make(ContentOps::class);
 
         try {
-            if (is_string($op['locale'] ?? null) && $op['locale'] !== '') {
-                return ContentEdit::set($tree, $op['key'], $op['values'], $op['locale'], $this->localized(...), $primary);
+            if ($name === 'set') {
+                return $this->set($tree, $op, $locale, $field, $ops);
             }
 
-            // The page's language goes to the fields that hold a language map and were sent one
-            // value: that value is the page's, and the other languages stay as they are. A map
-            // is written whole, as the constructor writes it; a plain field takes its value.
-            [$own, $whole] = [[], []];
-
-            foreach ($op['values'] as $name => $value) {
-                $one = $locale !== null && $this->localized($type, (string) $name) === true && ! $this->isMap($value);
-                $one ? $own[$name] = $value : $whole[$name] = $value;
+            if ($name === 'add') {
+                $this->refuseNew($op, $field);
             }
 
-            $tree = $whole === [] ? $tree : ContentEdit::set($tree, $op['key'], $whole, null, $this->localized(...), $primary);
+            $tree = $ops->apply($tree, $op, $one);
+            $made = $one ?? $made;
 
-            return $own === [] ? $tree : ContentEdit::set($tree, $op['key'], $own, $locale, $this->localized(...), $primary);
+            return $tree;
         } catch (BlocksException $failed) {
             throw ValidationException::withMessages([$field => $failed->getMessage()]);
         }
+    }
+
+    /**
+     * A new block only of a type the site draws — published, offered to editors, not a component
+     * that only templates call — and empty of blocks: what goes inside it is added after it.
+     *
+     * @param  array<string, mixed>  $op
+     */
+    private function refuseNew(array $op, string $field): void
+    {
+        $type = is_string($op['type'] ?? null) ? $this->types->find($op['type']) : null;
+
+        if ($type === null || ! $type->enabled || $type->isComponent()) {
+            throw ValidationException::withMessages([$field => (string) __('webx-blocks::site-bar.bad-type')]);
+        }
+
+        foreach (is_array($op['values'] ?? null) ? $op['values'] : [] as $value) {
+            if (Content::isNodeList($value)) {
+                throw ValidationException::withMessages([$field => (string) __('webx-blocks::site-bar.bad-op')]);
+            }
+        }
+    }
+
+    /**
+     * The fields of one block, the way the form sends them.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     * @param  array<string, mixed>  $op
+     * @return list<array<string, mixed>>
+     */
+    private function set(array $tree, array $op, ?string $locale, string $field, ContentOps $ops): array
+    {
+        $node = ContentEdit::find($tree, (string) $op['key']) ?? [];
+        $values = $op['values'] ?? null;
+
+        if (! is_array($values)) {
+            throw ValidationException::withMessages([$field => (string) __('webx-blocks::site-bar.bad-op')]);
+        }
+
+        $type = (string) ($node['type'] ?? '');
+
+        // A field the type does not have is refused at the door, as the agent's is.
+        // So is a list of blocks inside it: what stands in a container is changed by the
+        // operations that add, move and take out blocks, and a whole list sent with a field
+        // would replace blocks the form never showed.
+        $nested = ($this->types->find($type) ?? $this->types->draft($type))?->nestedFields() ?? [];
+
+        if ($this->strays->unknown($type, $values, is_array($node['values'] ?? null) ? $node['values'] : []) !== []
+            || array_intersect(array_map('strval', array_keys($values)), $nested) !== []) {
+            throw ValidationException::withMessages([$field => (string) __('webx-blocks::site-bar.bad-op')]);
+        }
+
+        if (is_string($op['locale'] ?? null) && $op['locale'] !== '') {
+            return $ops->apply($tree, $op);
+        }
+
+        // The page's language goes to the fields that hold a language map and were sent one
+        // value: that value is the page's, and the other languages stay as they are. A map
+        // is written whole, as the constructor writes it; a plain field takes its value.
+        [$own, $whole] = [[], []];
+
+        foreach ($values as $name => $value) {
+            $one = $locale !== null && $ops->localized($type, (string) $name) === true && ! $this->isMap($value);
+            $one ? $own[$name] = $value : $whole[$name] = $value;
+        }
+
+        $base = ['op' => 'set', 'key' => $op['key']];
+        $tree = $whole === [] ? $tree : $ops->apply($tree, $base + ['values' => $whole]);
+
+        return $own === [] ? $tree : $ops->apply($tree, $base + ['values' => $own, 'locale' => $locale]);
     }
 
     private function isMap(mixed $value): bool
@@ -499,20 +860,11 @@ final class SiteBarBlocks
         return is_array($value) && $value !== [] && ! array_is_list($value);
     }
 
-    /**
-     * Whether a field of a block type holds a language map; null when nobody can say. With it, a
-     * language is written into its map and the other languages stay; without it, a word in one
-     * language would take the place of all of them.
-     */
-    private function localized(string $type, string $field): ?bool
+    private function idOf(mixed $user): ?int
     {
-        $block = $this->types->draft($type) ?? $this->types->find($type);
+        $id = $user instanceof Authenticatable ? $user->getAuthIdentifier() : null;
 
-        if ($block === null || ! in_array($field, $block->fields(), true)) {
-            return null;
-        }
-
-        return in_array($field, $block->localizedFields(), true);
+        return is_int($id) || (is_string($id) && ctype_digit($id)) ? (int) $id : null;
     }
 
     private function hasDraftTree(Model $entity): bool

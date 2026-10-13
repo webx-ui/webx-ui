@@ -46,4 +46,6 @@ return [
     'cancel' => 'Cancelar',
     'loader-draft' => 'Borrador',
     'loader-temporary' => 'Edítalo en el panel',
+    'loader-add' => 'Añadir debajo',
+    'preview' => 'Vista previa del borrador',
 ];

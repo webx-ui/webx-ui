@@ -16,8 +16,9 @@
  * `<!--wx:{key}-->…<!--/wx:{key}-->`, the record's `<!--wx-entity:{type}:{id}-->` around them, a
  * region's `<!--wx-region:{name}-->` around the header's — and this script frames them on a layer
  * of its own over the page. Picking (the pencil in the panel) makes a click on a block choose it
- * rather than follow it; without it the site behaves as the site. The only change it ever makes
- * to the page's markup is a block's range, replaced with what the server drew from the draft.
+ * rather than follow it; without it the site behaves as the site. The only changes it ever makes
+ * to the page's markup are blocks' ranges — replaced, put in, taken out or moved by what the
+ * server drew from the draft — and the styles and script of a block type the page did not have.
  *
  * No framework and no dependencies, like the blocks runtime: it runs on somebody else's page.
  */
@@ -37,6 +38,8 @@ const MARGIN = 32
 const TEMPORARY = /^\d+-\d+$/
 // Room kept between a block brought into view and the edge of the window.
 const GAP = 16
+// A set of block styles and scripts, by the hash its address ends in (`/blocks/{hash}.css`).
+const BUNDLE = /\/([a-f0-9]{16})\.(?:css|js)(?:[?#]|$)/
 
 const STYLE = `
 :host {
@@ -209,6 +212,45 @@ const STYLE = `
 .box.is-draft .tag {
   background: var(--wx-color-warning);
   color: var(--wx-color-warning-contrast);
+}
+
+/*
+ * «Add below» on the lower edge of the block picked on the page. The one thing on the layer that
+ * takes the pointer: it is the bar's own control, drawn where the new block will go.
+ */
+.add {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--wx-bg-surface);
+  border-radius: var(--wx-radius-full);
+  background: var(--wx-color-primary);
+  box-shadow: var(--wx-shadow-popover);
+  color: var(--wx-color-primary-contrast);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.add:hover {
+  background: var(--wx-color-primary-hover);
+}
+
+.add:focus-visible {
+  outline: 2px solid var(--wx-border-focus);
+  outline-offset: 2px;
+}
+
+.add svg {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -400,6 +442,10 @@ function start() {
     hover: null,
     highlight: null,
     drafts: new Set(),
+    // The closing marker of each tree — where a block put at the end of it goes.
+    ends: new Map(),
+    // The sets of block styles and scripts the page has, by hash.
+    bundles: new Set(),
   }
 
   const idOf = (scope, key) => `${scope}|${key}`
@@ -410,6 +456,7 @@ function start() {
   function scan() {
     const found = []
     const open = []
+    const ends = new Map()
     let entity = null
     let region = null
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_COMMENT)
@@ -422,10 +469,12 @@ function start() {
       if (record) {
         entity = `${record[1]}:${record[2]}`
       } else if (text.startsWith('/wx-entity:')) {
+        ends.set(text.slice(11), node)
         entity = null
       } else if (place) {
         region = `region:${place[1]}`
       } else if (text.startsWith('/wx-region:')) {
+        ends.set(`region:${text.slice(11)}`, node)
         region = null
       } else if (text.startsWith('wx:')) {
         // A record's blocks printed inside a region are the region's to edit: the region is
@@ -454,6 +503,7 @@ function start() {
     }
 
     edit.blocks = found.filter((block) => block.end !== null)
+    edit.ends = ends
   }
 
   // A block the panel may edit from here: one of the trees it named — the record's own, a region
@@ -479,8 +529,38 @@ function start() {
   }
 
   // A block is whatever stands between its markers — several elements, text, nothing at all —
-  // so its frame is the rectangle around all of it.
+  // so its frame is the rectangle around all of it: the boxes of what stands there, not of
+  // everything inside. A range's own rectangle counts the descendants too, and the answer of a
+  // closed `<details>` keeps a box below its block — the frame of a list of questions went on
+  // over the block after it.
   function rectOf(block) {
+    let top = Infinity
+    let left = Infinity
+    let bottom = -Infinity
+    let right = -Infinity
+
+    for (let node = block.start.nextSibling; node && node !== block.end; node = node.nextSibling) {
+      let rect = null
+
+      if (node.nodeType === 1) {
+        rect = node.getBoundingClientRect()
+      } else if (node.nodeType === 3 && node.data.trim() !== '') {
+        const range = document.createRange()
+        range.selectNode(node)
+        rect = range.getBoundingClientRect()
+      }
+
+      if (rect === null || (rect.width === 0 && rect.height === 0)) continue
+
+      top = Math.min(top, rect.top)
+      left = Math.min(left, rect.left)
+      bottom = Math.max(bottom, rect.bottom)
+      right = Math.max(right, rect.right)
+    }
+
+    if (top !== Infinity) return new DOMRect(left, top, right - left, bottom - top)
+
+    // Nothing of its own has a box — a `display: contents` wrapper: the range, whatever is inside.
     const rect = rangeOf(block).getBoundingClientRect()
 
     return rect.width === 0 && rect.height === 0 ? null : rect
@@ -560,7 +640,37 @@ function start() {
       boxes.push(box)
     }
 
-    layer.replaceChildren(...boxes)
+    const add = addButton()
+
+    layer.replaceChildren(...boxes, ...(add ? [add] : []))
+  }
+
+  // «Add below» for the block picked on the page, on the middle of its lower edge — kept inside
+  // the window, so a block taller than the screen still has it in reach.
+  function addButton() {
+    const block = edit.picking && edit.selected !== null ? find(edit.selected) : null
+    const rect = block && !temporary(block) && rectOf(block)
+
+    if (!rect) return null
+
+    const button = document.createElement('button')
+    const label = config.words?.add ?? 'Add below'
+    button.type = 'button'
+    button.className = 'add'
+    button.title = label
+    button.setAttribute('aria-label', label)
+    button.innerHTML =
+      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>'
+    button.style.left = `${Math.min(Math.max(rect.left + rect.width / 2, GAP), window.innerWidth - GAP)}px`
+    button.style.top = `${Math.min(Math.max(rect.bottom, GAP), window.innerHeight - GAP)}px`
+    button.addEventListener('click', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      setOpen(true)
+      post({ type: 'add', key: block.key, scope: block.scope })
+    })
+
+    return button
   }
 
   function redraw() {
@@ -691,14 +801,179 @@ function start() {
     redraw()
   }
 
+  // The ranges of one block: its markers and everything between them, in order.
+  function nodesOf(block) {
+    const nodes = []
+
+    for (let node = block.start; node; node = node.nextSibling) {
+      nodes.push(node)
+      if (node === block.end) break
+    }
+
+    return nodes
+  }
+
+  // Where a block that is not on the page goes: after the first of the blocks before it the page
+  // has, before the first of the blocks after it, or — at the top level of its tree — at the end
+  // of the tree's markers. Null when none of them is here: the page does not show that list.
+  function anchorOf(scope, message) {
+    const keys = (list) =>
+      Array.isArray(list) ? list.filter((key) => typeof key === 'string') : []
+
+    for (const key of keys(message.after)) {
+      const block = find(idOf(scope, key))
+      if (block) return { parent: block.end.parentNode, before: block.end.nextSibling }
+    }
+
+    for (const key of keys(message.before)) {
+      const block = find(idOf(scope, key))
+      if (block) return { parent: block.start.parentNode, before: block.start }
+    }
+
+    const end = message.top === true ? edit.ends.get(scope) : null
+
+    return end ? { parent: end.parentNode, before: end } : null
+  }
+
+  function fragmentOf(html) {
+    const template = document.createElement('template')
+    template.innerHTML = html
+
+    return template.content
+  }
+
+  // Its script starts the way the preview starts it — `webx.mount` on what came in (§10 of the
+  // blocks spec); a script that arrives after it finds it on its own.
+  function mount(nodes) {
+    for (const node of nodes) {
+      if (node.nodeType === 1) window.webx?.mount?.(node)
+    }
+  }
+
+  // A block put on the page: in place of its range when the page has one, otherwise where its
+  // neighbours say. Nowhere to put it is a page that does not show that part of the tree — it is
+  // loaded again rather than left wrong.
+  function insert(scope, message) {
+    const id = idOf(scope, message.key)
+
+    if (find(id)) {
+      replace(id, message.html)
+
+      return
+    }
+
+    const anchor = anchorOf(scope, message)
+
+    if (anchor === null) {
+      location.reload()
+
+      return
+    }
+
+    const content = fragmentOf(message.html)
+    const inserted = Array.from(content.childNodes)
+    anchor.parent.insertBefore(content, anchor.before)
+    mount(inserted)
+    edit.drafts.add(id)
+    scan()
+    redraw()
+  }
+
+  // A block taken out of the page — removed, or hidden, which the site does not draw.
+  function remove(id) {
+    const block = find(id)
+
+    if (block !== null) {
+      for (const node of nodesOf(block)) node.remove()
+    }
+
+    edit.drafts.delete(id)
+    if (edit.selected === id) edit.selected = null
+    if (edit.highlight === id) edit.highlight = null
+    scan()
+    redraw()
+  }
+
+  // The same block somewhere else: its nodes carried over as they are, so whatever its script
+  // set up goes with it. A block the page does not have is put in from the HTML instead.
+  function move(scope, message) {
+    const id = idOf(scope, message.key)
+    const block = find(id)
+
+    if (block === null || block.start.parentNode !== block.end.parentNode) {
+      if (block !== null) remove(id)
+      insert(scope, message)
+
+      return
+    }
+
+    const nodes = nodesOf(block)
+    const fragment = document.createDocumentFragment()
+    fragment.append(...nodes)
+    // The block is out of the page while its neighbours are looked for.
+    scan()
+
+    const anchor = anchorOf(scope, message)
+
+    if (anchor === null) {
+      location.reload()
+
+      return
+    }
+
+    anchor.parent.insertBefore(fragment, anchor.before)
+    edit.drafts.add(id)
+    scan()
+    redraw()
+  }
+
+  // The styles and the script of a block type the page did not have, added once: the page's set
+  // was glued when it was printed (§9 of the blocks spec).
+  function addAssets(message) {
+    if (
+      typeof message.css === 'string' &&
+      !document.querySelector(`link[href="${CSS.escape(message.css)}"]`)
+    ) {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = message.css
+      document.head.append(link)
+    }
+
+    if (
+      typeof message.js === 'string' &&
+      !document.querySelector(`script[src="${CSS.escape(message.js)}"]`)
+    ) {
+      const script = document.createElement('script')
+      script.type = 'module'
+      script.src = message.js
+      document.body.append(script)
+    }
+
+    if (typeof message.hash === 'string') edit.bundles.add(message.hash)
+  }
+
+  // The sets the page has, for the panel to send with an edit: what is in them is not sent again.
+  function bundles() {
+    for (const element of document.querySelectorAll('link[href], script[src]')) {
+      const found = BUNDLE.exec(element.getAttribute('href') ?? element.getAttribute('src') ?? '')
+      if (found) edit.bundles.add(found[1])
+    }
+
+    return [...edit.bundles]
+  }
+
   // A message names a block by its key and its tree; one without a tree is the only tree there is.
+  function scopeFrom(message) {
+    return typeof message.scope === 'string'
+      ? message.scope
+      : (edit.sources.keys().next().value ?? null)
+  }
+
   function idFrom(message) {
-    if (typeof message.key !== 'string') return null
+    const scope = scopeFrom(message)
 
-    const scope =
-      typeof message.scope === 'string' ? message.scope : (edit.sources.keys().next().value ?? null)
-
-    return scope === null ? null : idOf(scope, message.key)
+    return typeof message.key !== 'string' || scope === null ? null : idOf(scope, message.key)
   }
 
   // Frames follow their blocks: the page scrolls, the window changes, the page reflows when a
@@ -708,6 +983,20 @@ function start() {
 
   if (typeof ResizeObserver === 'function') {
     new ResizeObserver(redraw).observe(document.body)
+  }
+
+  // A block that changes inside without the page changing size — a filter of questions, an open
+  // accordion, a block just put in shifting the ones below — moves the frames too. Only while
+  // there is a frame to move: the page of an editor reading their site costs nothing more.
+  if (typeof MutationObserver === 'function') {
+    new MutationObserver(() => {
+      if (layer.childElementCount > 0) redraw()
+    }).observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+    })
   }
 
   // Esc on the page ends picking first and shuts the drawer the second time; inside the frame
@@ -748,11 +1037,6 @@ function start() {
       document.title = message.title
     }
 
-    // Published or discarded: the page is the site's again, and shows it.
-    if (message.type === 'reload') {
-      location.reload()
-    }
-
     // The tab in front, for the frame of the next page to open on.
     if (message.type === 'tab' && typeof message.name === 'string') {
       state.tab = message.name
@@ -785,6 +1069,7 @@ function start() {
       )
       scan()
       redraw()
+      post({ type: 'bundles', hashes: bundles() })
     }
 
     if (message.type === 'mode') {
@@ -803,6 +1088,31 @@ function start() {
       const id = idFrom(message)
 
       if (id !== null) replace(id, message.html)
+    }
+
+    // The structure changed in the draft: a block put in, taken out or moved (SB5).
+    if (message.type === 'assets') {
+      addAssets(message)
+      post({ type: 'bundles', hashes: bundles() })
+    }
+
+    if (
+      (message.type === 'insert' || message.type === 'move') &&
+      typeof message.html === 'string' &&
+      idFrom(message) !== null
+    ) {
+      if (message.type === 'insert') insert(scopeFrom(message), message)
+      else move(scopeFrom(message), message)
+    }
+
+    if (message.type === 'remove') {
+      const id = idFrom(message)
+
+      if (id !== null) remove(id)
+    }
+
+    if (message.type === 'reload') {
+      location.reload()
     }
   })
 

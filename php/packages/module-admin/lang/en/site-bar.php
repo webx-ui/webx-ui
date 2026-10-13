@@ -46,4 +46,6 @@ return [
     'cancel' => 'Cancel',
     'loader-draft' => 'Draft',
     'loader-temporary' => 'Open in panel to edit',
+    'loader-add' => 'Add below',
+    'preview' => 'Preview draft',
 ];

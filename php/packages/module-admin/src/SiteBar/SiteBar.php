@@ -39,9 +39,24 @@ final class SiteBar
     /** @var array<string, Closure(HasPermissions, ?Model, ?EntityLink): bool> */
     private array $sections = [];
 
+    /** @var (Closure(Model, ?int): ?string)|null */
+    private ?Closure $preview = null;
+
     public function entity(string $type, EntityLink $link): void
     {
         $this->links[$type] = $link;
+    }
+
+    /**
+     * Where the draft of a record is shown as the page it will be — the blocks module's preview,
+     * since the frame has none of its own. The head of the bar links to it next to «Publish»: the
+     * page in front of the editor is the site, and after a reload a draft is nowhere on it.
+     *
+     * @param  Closure(Model, ?int): ?string  $url  The record and the administrator → a signed link, or null.
+     */
+    public function previews(Closure $url): void
+    {
+        $this->preview = $url;
     }
 
     public function link(string $type): ?EntityLink
@@ -136,6 +151,8 @@ final class SiteBar
             'draft' => self::draft($entity, $user),
             'updatedAt' => self::moment($entity->getAttribute('updated_at')),
             'edit' => ($link->edit)($entity),
+            // Only while there is a draft to look at: a signed link is made on every read.
+            'preview' => $this->previewOf($entity, $user),
             // What the record's editor in the panel calls it and the revision it holds: the bar
             // says «open» in the same place, and publishes only what it has seen.
             'editing' => $this->records()?->nameOf($entity),
@@ -145,6 +162,17 @@ final class SiteBar
                 'publish' => $link->publish !== null && $user->hasPermission($link->permission),
             ],
         ];
+    }
+
+    private function previewOf(Model $entity, HasPermissions $user): ?string
+    {
+        if ($this->preview === null || ! method_exists($entity, 'hasDraft') || ! $entity->hasDraft()) {
+            return null;
+        }
+
+        $id = $user instanceof Authenticatable ? $user->getAuthIdentifier() : null;
+
+        return ($this->preview)($entity, is_int($id) || (is_string($id) && ctype_digit($id)) ? (int) $id : null);
     }
 
     /** Its title or name in the language of the address, the way the audit names a record. */

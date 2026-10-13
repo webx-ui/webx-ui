@@ -276,6 +276,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         <wx-button size="sm" variant="outline" :disabled="busy" @click="discard">
           {{ t('site-bar.discard') }}
         </wx-button>
+        <!-- After a reload the page is the site again: the whole draft is in its preview. -->
+        <wx-button
+          v-if="entity?.preview"
+          size="sm"
+          variant="text"
+          :href="entity.preview"
+          target="_blank"
+          rel="noopener"
+        >
+          {{ t('site-bar.preview') }}
+        </wx-button>
       </template>
     </wx-alert>
 
@@ -284,7 +295,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       type="warning"
       class="wx-site-bar__draft"
       :title="draft.by ? t('site-bar.draft-by', { name: draft.by }) : t('site-bar.draft')"
-    />
+    >
+      <template v-if="entity?.preview" #actions>
+        <wx-button size="sm" variant="text" :href="entity.preview" target="_blank" rel="noopener">
+          {{ t('site-bar.preview') }}
+        </wx-button>
+      </template>
+    </wx-alert>
 
     <div v-if="loading" class="wx-site-bar__body">
       <wx-loading />

@@ -6,6 +6,7 @@ namespace WebxUi\Blocks;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\Openings;
@@ -180,6 +182,17 @@ class BlocksServiceProvider extends ServiceProvider
         // its own so that the bar is there on a page without a record; the panel draws it inside
         // the same tab, with one picker for the page (SB4 of the bar's spec).
         $this->app->make(SiteBar::class)->section('regions', SiteBarBlocks::regionsAvailable(...));
+
+        // «Preview draft» in the bar's head: after a reload the page is the site again, and a block
+        // added from the bar is nowhere on it — the preview is where the whole draft is (SB5).
+        $this->app->make(SiteBar::class)->previews(function (Model $entity, ?int $adminId): ?string {
+            try {
+                return $this->app->make(Preview::class)->url($entity, $adminId);
+            } catch (Throwable) {
+                // A record outside the address registry has no preview.
+                return null;
+            }
+        });
 
         // What a response printed is what its bundle is glued from, and no more than that: in a
         // process that serves many requests the list would otherwise grow across them.

@@ -46,4 +46,6 @@ return [
     'cancel' => 'İptal',
     'loader-draft' => 'Taslak',
     'loader-temporary' => 'Panelde düzenleyin',
+    'loader-add' => 'Altına ekle',
+    'preview' => 'Taslağı önizle',
 ];

@@ -241,6 +241,7 @@ final class Insertion
                 'title' => $this->word('title', $locale),
                 'draft' => $this->word('draft', $locale),
                 'temporary' => $this->word('temporary', $locale),
+                'add' => $this->word('add', $locale),
             ],
         ];
 
