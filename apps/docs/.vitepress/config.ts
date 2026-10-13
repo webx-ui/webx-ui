@@ -226,6 +226,14 @@ export default defineConfig({
     },
   },
   vite: {
+    // Vite 5 ignores __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS (newer Vite reads it itself), so a
+    // dev server behind a reverse proxy would answer "This host is not allowed" without this.
+    server: {
+      allowedHosts: (process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS ?? '')
+        .split(',')
+        .map((host) => host.trim())
+        .filter(Boolean),
+    },
     resolve: {
       alias: [
         {
