@@ -26,4 +26,6 @@ return [
     'settings' => 'Ayarlar',
     'enabled' => 'Açık',
     'enabled-help' => 'Sitede yalnızca açık banner görünür. Yenisi kapalı başlar.',
+    'layers' => 'Katmanlar',
+    'layers-help' => 'Resmin üzerine yerleştirilen metinler, resimler ve düğmeler. Her boyut resim genişliğinin yüzdesidir, bu yüzden banner bütün olarak ölçeklenir.',
 ];

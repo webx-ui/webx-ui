@@ -26,4 +26,6 @@ return [
     'settings' => 'Réglages',
     'enabled' => 'Activée',
     'enabled-help' => 'Seule une bannière activée apparaît sur le site. Une nouvelle commence désactivée.',
+    'layers' => 'Calques',
+    'layers-help' => 'Textes, images et boutons posés sur l’image. Chaque taille est un pourcentage de la largeur de l’image : la bannière s’adapte d’un bloc.',
 ];

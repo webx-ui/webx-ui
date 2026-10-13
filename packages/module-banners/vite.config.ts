@@ -32,6 +32,7 @@ export default defineConfig({
         '@webx-ui/core',
         '@webx-ui/tokens',
         '@webx-ui/module-admin',
+        '@webx-ui/module-media',
         '@webx-ui/schema',
       ],
     },

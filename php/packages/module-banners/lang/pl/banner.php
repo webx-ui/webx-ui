@@ -41,4 +41,6 @@ return [
     'reorder-failed' => 'Nowa kolejność nie została zapisana.',
     'save-failed' => 'Nie zapisano.',
     'cancel' => 'Anuluj',
+    'previous' => 'Poprzedni baner',
+    'next' => 'Następny baner',
 ];

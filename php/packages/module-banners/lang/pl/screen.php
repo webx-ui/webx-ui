@@ -26,4 +26,6 @@ return [
     'settings' => 'Ustawienia',
     'enabled' => 'Włączony',
     'enabled-help' => 'Na stronie widać tylko włączony baner. Nowy startuje wyłączony.',
+    'layers' => 'Warstwy',
+    'layers-help' => 'Teksty, obrazy i przyciski na obrazie. Każdy rozmiar to procent szerokości obrazu, więc baner skaluje się w całości.',
 ];

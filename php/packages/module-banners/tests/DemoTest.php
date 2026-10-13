@@ -51,6 +51,9 @@ final class DemoTest extends TestCase
 
         // "Read more" points at a demo page by entity, so its address comes from the registry.
         $spring = Banner::query()->where('place_id', $hero->id)->orderBy('position')->firstOrFail();
+
+        // hero has layers: the editor's three, so the slider shows a banner laid out (decision 5 of the layers spec).
+        $this->assertSame(['title', 'text', 'buttons'], array_column($spring->layerRows(), 'id'));
         $link = $spring->buttonRows()[0]['link'];
         $this->assertSame('entity', $link['target']);
         $this->assertTrue(Page::query()->whereKey($link['entity_id'])->whereNotNull('parent_id')->exists());

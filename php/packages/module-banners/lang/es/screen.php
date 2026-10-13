@@ -26,4 +26,6 @@ return [
     'settings' => 'Ajustes',
     'enabled' => 'Activado',
     'enabled-help' => 'Solo un banner activado aparece en el sitio. Uno nuevo empieza desactivado.',
+    'layers' => 'Capas',
+    'layers-help' => 'Textos, imágenes y botones sobre la imagen. Cada tamaño es un porcentaje del ancho de la imagen, así que el banner escala entero.',
 ];

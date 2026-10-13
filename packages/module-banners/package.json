@@ -51,6 +51,7 @@
   "dependencies": {
     "@webx-ui/core": "workspace:^",
     "@webx-ui/module-admin": "workspace:^",
+    "@webx-ui/module-media": "workspace:^",
     "@webx-ui/schema": "workspace:^"
   },
   "devDependencies": {

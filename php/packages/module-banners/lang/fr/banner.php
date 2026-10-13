@@ -41,4 +41,6 @@ return [
     'reorder-failed' => 'Le nouvel ordre n’a pas été enregistré.',
     'save-failed' => 'Non enregistré.',
     'cancel' => 'Annuler',
+    'previous' => 'Bannière précédente',
+    'next' => 'Bannière suivante',
 ];

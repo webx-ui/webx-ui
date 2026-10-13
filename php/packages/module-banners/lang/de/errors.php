@@ -17,4 +17,12 @@ return [
     'place-unknown' => 'Diesen Platz gibt es nicht.',
     'ids' => 'Die Reihenfolge muss eine Liste von IDs sein.',
     'ids-foreign' => 'Hier lassen sich nur die Banner dieses Platzes ordnen.',
+    'layers-shape' => 'Die Ebenen müssen eine Liste sein.',
+    'layers-max' => 'Ein Banner hat höchstens :max Ebenen.',
+    'layer-type' => 'Eine Ebene ist eine von: :types.',
+    'layer-tag' => 'Eine Textebene wird als eines dieser Tags ausgegeben: :tags.',
+    'layer-text-long' => 'Höchstens :max Zeichen pro Sprache.',
+    'layer-color' => 'Eine Farbe ist #rrggbb oder eine Farbe des Themes.',
+    'layer-range' => 'Von :min bis :max.',
+    'layer-buttons-once' => 'Die Schaltflächen des Banners sind eine Ebene – sie gibt es schon.',
 ];

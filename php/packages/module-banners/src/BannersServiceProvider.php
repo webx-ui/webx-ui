@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace WebxUi\Banners;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Panel\BannersModule;
+use WebxUi\Banners\Rendering\Stylesheet;
+use WebxUi\Banners\Screens\LayersType;
+use WebxUi\Banners\View\Components\Banner as BannerComponent;
+use WebxUi\Banners\View\Components\Banners as BannersComponent;
 
 /**
  * The banners, their places and the screen they are edited on — and not one public route, not a
- * block, not a view (decision 7). A banner reaches the site through `banners('hero')` in a
- * template of the site, which prints its own markup.
+ * block (decision 7). A banner reaches the site through `banners('hero')` in a template of the
+ * site, which prints its own markup — or through `<x-webx-banners>`, which prints the markup a
+ * banner with layers needs (decision 10 of the layers spec).
  */
 class BannersServiceProvider extends ServiceProvider
 {
@@ -25,6 +32,8 @@ class BannersServiceProvider extends ServiceProvider
             $tables->content('banners', 'banner_places');
         });
 
+        $this->app->scoped(Stylesheet::class);
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-banners.php', 'webx-banners');
     }
 
@@ -33,6 +42,10 @@ class BannersServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-banners');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-banners');
+
+        Blade::component('webx-banners', BannersComponent::class);
+        Blade::component('webx-banner', BannerComponent::class);
 
         $this->registerScreens();
 
@@ -49,6 +62,10 @@ class BannersServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-banners'),
         ], 'webx-banners-lang');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/webx-banners'),
+        ], 'webx-banners-views');
     }
 
     /**
@@ -62,6 +79,7 @@ class BannersServiceProvider extends ServiceProvider
         $screens = $this->app->make(ScreenRegistry::class);
 
         $screens->register(Banner::SCREEN, __DIR__.'/../resources/screens/form.json');
+        $this->app->make(FieldTypes::class)->register('wx-banner-layers', new LayersType);
         $screens->extend(Banner::SCREEN, [[
             'op' => 'set',
             'target' => 'button-variant',

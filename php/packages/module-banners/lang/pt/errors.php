@@ -17,4 +17,12 @@ return [
     'place-unknown' => 'Esse local não existe.',
     'ids' => 'A ordem tem de ser uma lista de ids.',
     'ids-foreign' => 'Aqui só se podem ordenar os banners deste local.',
+    'layers-shape' => 'As camadas devem ser uma lista.',
+    'layers-max' => 'Um banner tem no máximo :max camadas.',
+    'layer-type' => 'Uma camada é uma de: :types.',
+    'layer-tag' => 'Uma camada de texto é impressa como uma destas tags: :tags.',
+    'layer-text-long' => 'No máximo :max caracteres por idioma.',
+    'layer-color' => 'Uma cor é #rrggbb ou uma cor do tema.',
+    'layer-range' => 'De :min a :max.',
+    'layer-buttons-once' => 'Os botões do banner são uma só camada, e ela já existe.',
 ];

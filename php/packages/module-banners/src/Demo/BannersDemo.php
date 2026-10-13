@@ -10,6 +10,7 @@ use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Models\Place;
+use WebxUi\Banners\Panel\LayerRules;
 use WebxUi\Banners\Places;
 use WebxUi\Localization\Locales;
 use WebxUi\Media\Models\MediaFile;
@@ -131,6 +132,8 @@ final class BannersDemo
             'title' => $this->words($input['title'] ?? null),
             'text' => $this->words($input['text'] ?? null),
             'buttons' => $buttons === [] ? null : $buttons,
+            // A place with layers shows them laid out, as the editor would start them.
+            'layers' => $this->places->hasLayers($place->key) ? LayerRules::defaults($this->locales->defaultCode()) : null,
             'enabled' => ($input['enabled'] ?? false) === true,
         ]);
         $banner->moveToEndOf((int) $place->getKey());

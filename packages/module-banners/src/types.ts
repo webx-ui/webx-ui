@@ -25,6 +25,30 @@ export interface PlaceRow {
   layout: string
   /** Banners outside the bin. */
   count: number
+  /** Present when the place's banners have layers (§4.4 of the layers spec): the frame the site prints. */
+  layers?: PlaceLayers
+}
+
+/** What the layer editor draws its canvas by. */
+export interface PlaceLayers {
+  /** The frame on wide screens and below the breakpoint — `16/6`, `4/5`. */
+  ratio: string
+  ratio_mobile: string
+  /** px: below it the site switches to the phone's picture and layout. */
+  breakpoint: number
+  /** Whether a layer may step out of the frame (decision 13). */
+  overflow: boolean
+  /** The tags a text layer may be printed as. */
+  tags: { value: string; label: string }[]
+  /** The looks of a button. */
+  variants: { value: string; label: string }[]
+}
+
+/** What makes the canvas look like the site: the theme's tokens, its fonts, its palette. */
+export interface BannersTheme {
+  tokens_css: string
+  fonts_css: string
+  palette: { key: string; value: string }[]
 }
 
 /** What makes or renames a place of somebody's own. The title is required in the default language. */
