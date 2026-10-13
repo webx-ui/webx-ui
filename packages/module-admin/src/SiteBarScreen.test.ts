@@ -37,6 +37,7 @@ async function open(
   modules: AdminModule[] = [],
   locale?: string,
   post = vi.fn().mockResolvedValue({ data: {} }),
+  query = '',
 ) {
   const get = vi.fn().mockImplementation(answer)
   const i18n = createI18n()
@@ -58,7 +59,7 @@ async function open(
   })
 
   await router.push(
-    `/_bar?url=${encodeURIComponent(url)}${locale ? `&locale=${encodeURIComponent(locale)}` : ''}`,
+    `/_bar?url=${encodeURIComponent(url)}${locale ? `&locale=${encodeURIComponent(locale)}` : ''}${query}`,
   )
 
   const wrapper = mount(SiteBarScreen, {
@@ -242,5 +243,65 @@ describe('the panel on the site', () => {
 
     expect(wrapper.text()).toContain('J. Doe has unpublished changes here')
     expect(wrapper.findAll('button').some((one) => one.text() === 'Publish')).toBe(false)
+  })
+
+  it('draws a tab that stands for several sections once, and opens on the one the page kept', async () => {
+    const parent = { postMessage: vi.fn() } as unknown as Window
+    vi.spyOn(window, 'parent', 'get').mockReturnValue(parent)
+
+    const tab = (name: string, label: string, sections?: string[]) => ({
+      name,
+      label: () => label,
+      ...(sections ? { sections } : {}),
+      component: markRaw(defineComponent({ setup: () => () => h('p', { class: `tab-${name}` }) })),
+    })
+    const modules: AdminModule[] = [
+      { id: 'seo', siteBarTabs: [tab('seo', 'SEO')] },
+      { id: 'blocks', siteBarTabs: [tab('blocks', 'Blocks', ['regions'])] },
+    ]
+    const context = { ...page, sections: ['page', 'seo', 'blocks', 'regions'] }
+
+    const { wrapper } = await open(
+      () => Promise.resolve({ data: context }),
+      '/pricing',
+      modules,
+      undefined,
+      undefined,
+      '&tab=blocks',
+    )
+
+    expect(wrapper.findAll('[role="tab"]').map((one) => one.text())).toEqual([
+      'Page',
+      'SEO',
+      'Blocks',
+    ])
+    expect(wrapper.find('[role="tab"][aria-selected="true"]').text()).toBe('Blocks')
+    // Opening where the page said is not a choice to remember again.
+    expect(parent.postMessage).not.toHaveBeenCalled()
+
+    await wrapper.findAll('[role="tab"]')[1]!.trigger('mousedown')
+    await flushPromises()
+
+    expect(parent.postMessage).toHaveBeenCalledWith(
+      { wxBar: 1, type: 'tab', name: 'seo' },
+      window.location.origin,
+    )
+  })
+
+  it('opens on the first tab when the one the page kept is not here', async () => {
+    const parent = { postMessage: vi.fn() } as unknown as Window
+    vi.spyOn(window, 'parent', 'get').mockReturnValue(parent)
+
+    const { wrapper } = await open(
+      () => Promise.resolve({ data: page }),
+      '/pricing',
+      [],
+      undefined,
+      undefined,
+      '&tab=seo',
+    )
+
+    expect(wrapper.find('[role="tab"][aria-selected="true"]').text()).toBe('Page')
+    expect(parent.postMessage).not.toHaveBeenCalled()
   })
 })

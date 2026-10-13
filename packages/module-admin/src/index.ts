@@ -233,6 +233,7 @@ export {
   siteBarKey,
   tellSitePage,
   useSiteBar,
+  type SiteBarBlockSource,
   type SiteBarContext,
   type SiteBarDraft,
   type SiteBarEntity,

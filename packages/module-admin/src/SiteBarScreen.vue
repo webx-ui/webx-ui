@@ -39,6 +39,8 @@ const context = ref<SiteBarContext | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const tab = ref<string | number>('page')
+/* Set while the bar itself moves the tab — on reading the page — rather than the editor. */
+let settling = false
 
 const url = computed(() => (typeof route.query.url === 'string' ? route.query.url : '/'))
 const locale = computed(() =>
@@ -46,16 +48,35 @@ const locale = computed(() =>
 )
 
 /* The modules' tabs the server offered here, in its order. One it offered that no module on this
-   side draws is left out rather than shown empty. */
+   side draws is left out rather than shown empty; a tab that stands for several sections is
+   drawn once, where the first of them stands. */
 const moduleTabs = computed<SiteBarTab[]>(() => {
   const known = (admin.modules ?? []).flatMap((module) => module.siteBarTabs ?? [])
+  const drawn: SiteBarTab[] = []
 
-  return (context.value?.sections ?? []).flatMap((name) => {
-    const tab = name === 'page' ? undefined : known.find((one) => one.name === name)
+  for (const name of context.value?.sections ?? []) {
+    const tab = name === 'page' ? undefined : known.find((one) => namesOf(one).includes(name))
 
-    return tab ? [tab] : []
-  })
+    if (tab && !drawn.includes(tab)) drawn.push(tab)
+  }
+
+  return drawn
 })
+
+function namesOf(tab: SiteBarTab): string[] {
+  return [tab.name, ...(tab.sections ?? [])]
+}
+
+/* The tabs on screen by the names they answer to: «Page», then the modules'. */
+const tabNames = computed(() => [
+  ...(context.value?.sections.includes('page') ? ['page'] : []),
+  ...moduleTabs.value.map((one) => one.name),
+])
+
+/* The tab the page remembered from the last time — the frame is made again on every page. */
+const remembered = computed(() =>
+  typeof route.query.tab === 'string' && route.query.tab !== '' ? route.query.tab : null,
+)
 const entity = computed(() => context.value?.entity ?? null)
 
 /*
@@ -86,10 +107,15 @@ async function load(quiet = false): Promise<void> {
 
     context.value = body.data
 
-    if (!quiet || !body.data.sections.includes(String(tab.value))) {
-      tab.value = body.data.sections.includes('page')
-        ? 'page'
-        : (moduleTabs.value[0]?.name ?? body.data.sections[0] ?? 'page')
+    if (!quiet || !tabNames.value.includes(String(tab.value))) {
+      const chosen =
+        remembered.value !== null && tabNames.value.includes(remembered.value)
+          ? remembered.value
+          : (tabNames.value[0] ?? 'page')
+
+      // Not a choice of the editor's, so not one for the page to remember.
+      if (chosen !== tab.value) settling = true
+      tab.value = chosen
     }
   } catch (caught) {
     if (quiet && context.value !== null) return
@@ -107,9 +133,25 @@ async function load(quiet = false): Promise<void> {
 
 watch(url, () => void load())
 
+// The page keeps the tab the editor chose in its `wx-bar` state (§5): the next page's frame opens
+// on it. A tab the bar fell back on — the remembered one is not on this page — is not a choice,
+// and the page keeps the one it had.
+watch(tab, (name) => {
+  if (settling) {
+    settling = false
+
+    return
+  }
+
+  tellSitePage({ type: 'tab', name: String(name) })
+})
+
 provide(siteBarKey, {
   show: (name: string) => {
-    if (context.value?.sections.includes(name)) tab.value = name
+    const found =
+      name === 'page' ? 'page' : moduleTabs.value.find((one) => namesOf(one).includes(name))?.name
+
+    if (found && tabNames.value.includes(found)) tab.value = found
   },
   refresh: () => load(true),
 })

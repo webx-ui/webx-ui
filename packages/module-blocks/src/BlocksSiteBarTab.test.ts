@@ -12,7 +12,7 @@ import {
 } from '@webx-ui/module-admin'
 import BlocksSiteBarTab from './BlocksSiteBarTab.vue'
 import { blocksMessages } from './messages'
-import type { BlockType, SiteBarBlocks } from './types'
+import type { BlockType, RegionRow, SiteBarBlocks, SiteBarRegion } from './types'
 
 const page: SiteBarContext = {
   url: '/pricing',
@@ -55,6 +55,25 @@ function content(words = 'Draft words', revision = 'r1'): SiteBarBlocks {
   }
 }
 
+function region(state: Partial<SiteBarRegion> = {}, words = 'Menu words'): SiteBarBlocks {
+  return {
+    revision: 'h1',
+    editing: 'live',
+    tree: [{ key: 'm1', type: 'text', values: { text: words } }],
+    outline: [{ key: 'm1', type: 'text', depth: 0, label: words }],
+    region: {
+      name: 'header',
+      title: 'Header',
+      published: true,
+      fallback: 'components.header',
+      draft: { differs: false, by: null, at: null, changes: 0, mine: true },
+      ...state,
+    },
+  }
+}
+
+const headerRow = { name: 'header', title: 'Header' } as RegionRow
+
 const mounted: VueWrapper[] = []
 
 /** Stands in for the page that frames the panel: in jsdom a window is its own parent. */
@@ -76,7 +95,12 @@ function sent(parent: Window, type: string): unknown[] {
     .filter((message) => message.type === type)
 }
 
-async function open(read: () => SiteBarBlocks = () => content()) {
+interface Options {
+  context?: SiteBarContext
+  header?: () => SiteBarBlocks
+}
+
+async function open(read: () => SiteBarBlocks = () => content(), options: Options = {}) {
   const parent = framed()
   const i18n = createI18n()
   i18n.defaults('webx-blocks', blocksMessages)
@@ -85,7 +109,15 @@ async function open(read: () => SiteBarBlocks = () => content()) {
     get: vi
       .fn()
       .mockImplementation((url: string) =>
-        Promise.resolve(url.endsWith('/catalog') ? { data: [text] } : { data: read() }),
+        Promise.resolve(
+          url.endsWith('/catalog')
+            ? { data: [text] }
+            : url.endsWith('/api/cms/regions')
+              ? { data: [headerRow] }
+              : url.endsWith('/content/region/header')
+                ? { data: (options.header ?? (() => region()))() }
+                : { data: read() },
+        ),
       ),
     post: vi
       .fn()
@@ -93,7 +125,9 @@ async function open(read: () => SiteBarBlocks = () => content()) {
         Promise.resolve(
           url.endsWith('/edit')
             ? { data: { revision: 'r2', key: 'k1', html: '<!--wx:k1--><p>New</p><!--/wx:k1-->' } }
-            : { data: { editors: [] } },
+            : url.endsWith('/publish')
+              ? { data: {} }
+              : { data: { editors: [] } },
         ),
       ),
     delete: vi.fn().mockResolvedValue(undefined),
@@ -112,7 +146,7 @@ async function open(read: () => SiteBarBlocks = () => content()) {
   const bar = { show: vi.fn(), refresh: vi.fn().mockResolvedValue(undefined) }
 
   const wrapper = mount(BlocksSiteBarTab, {
-    props: { context: page },
+    props: { context: options.context ?? page },
     attachTo: document.body,
     global: {
       plugins: [WebxUI],
@@ -156,8 +190,7 @@ describe('the blocks tab of the panel on the site', () => {
       {
         wxBar: 1,
         type: 'blocks',
-        entity: { type: 'page', id: 12 },
-        items: [{ key: 'k1', label: 'Text' }],
+        sources: [{ scope: 'page:12', items: [{ key: 'k1', label: 'Text' }] }],
       },
     ])
   })
@@ -176,8 +209,8 @@ describe('the blocks tab of the panel on the site', () => {
     await row(wrapper, 0).trigger('mouseleave')
 
     expect(sent(parent, 'highlight')).toEqual([
-      { wxBar: 1, type: 'highlight', key: 'k1' },
-      { wxBar: 1, type: 'highlight', key: null },
+      { wxBar: 1, type: 'highlight', key: 'k1', scope: 'page:12' },
+      { wxBar: 1, type: 'highlight', key: null, scope: 'page:12' },
     ])
   })
 
@@ -189,7 +222,9 @@ describe('the blocks tab of the panel on the site', () => {
 
     const input = wrapper.find('input')
     expect((input.element as HTMLInputElement).value).toBe('Draft words')
-    expect(sent(parent, 'select')).toEqual([{ wxBar: 1, type: 'select', key: 'k1' }])
+    expect(sent(parent, 'select')).toEqual([
+      { wxBar: 1, type: 'select', key: 'k1', scope: 'page:12' },
+    ])
 
     await input.setValue('New')
     await wrapper
@@ -201,10 +236,17 @@ describe('the blocks tab of the panel on the site', () => {
     expect(client.post).toHaveBeenCalledWith('/api/cms/blocks/content/page/12/edit', {
       revision: 'r1',
       locale: 'en',
+      url: '/pricing',
       ops: [{ op: 'set', key: 'k1', values: { text: 'New' } }],
     })
     expect(sent(parent, 'replace')).toEqual([
-      { wxBar: 1, type: 'replace', key: 'k1', html: '<!--wx:k1--><p>New</p><!--/wx:k1-->' },
+      {
+        wxBar: 1,
+        type: 'replace',
+        key: 'k1',
+        scope: 'page:12',
+        html: '<!--wx:k1--><p>New</p><!--/wx:k1-->',
+      },
     ])
     expect(bar.refresh).toHaveBeenCalled()
   })
@@ -289,5 +331,180 @@ describe('the blocks tab of the panel on the site', () => {
       { wxBar: 1, type: 'mode', on: true },
       { wxBar: 1, type: 'mode', on: false },
     ])
+  })
+})
+
+/**
+ * The header and the footer in the same tab (SB4): a map under the region's name, its own draft
+ * with its own buttons, and edits into the region's draft drawn as on the page.
+ */
+describe('the regions in the blocks tab', () => {
+  const both: SiteBarContext = { ...page, sections: ['page', 'blocks', 'regions'] }
+  const regionsOnly: SiteBarContext = { ...page, entity: null, sections: ['regions'] }
+
+  afterEach(() => {
+    mounted.splice(0).forEach((wrapper) => wrapper.unmount())
+    document.body.innerHTML = ''
+    vi.restoreAllMocks()
+  })
+
+  it('maps the record and each region, and tells the page whose blocks are whose', async () => {
+    const { wrapper, client, parent } = await open(undefined, { context: both })
+
+    expect(client.get).toHaveBeenCalledWith('/api/cms/regions')
+    expect(client.get).toHaveBeenCalledWith('/api/cms/blocks/content/region/header')
+
+    const heads = wrapper.findAll('.wx-blocks-bar__head').map((head) => head.text())
+    expect(heads[0]).toContain('Page')
+    expect(heads[1]).toContain('Header')
+    expect(heads[1]).toContain('On every page')
+
+    expect(sent(parent, 'blocks')).toEqual([
+      {
+        wxBar: 1,
+        type: 'blocks',
+        sources: [
+          { scope: 'page:12', items: [{ key: 'k1', label: 'Text' }] },
+          { scope: 'region:header', title: 'Header', items: [{ key: 'm1', label: 'Text' }] },
+        ],
+      },
+    ])
+  })
+
+  it('works on a page without a record for whoever edits the regions', async () => {
+    const { wrapper, client } = await open(undefined, { context: regionsOnly })
+
+    expect(client.get).not.toHaveBeenCalledWith('/api/cms/blocks/content/page/12')
+    expect(wrapper.findAll('.wx-blocks-bar__group')).toHaveLength(1)
+    expect(row(wrapper, 0).attributes('data-scope')).toBe('region:header')
+  })
+
+  it('saves a region’s block into the region’s draft, drawn as on this page', async () => {
+    const { wrapper, client, parent, bar } = await open(undefined, { context: regionsOnly })
+
+    await row(wrapper, 0).trigger('click')
+    await flushPromises()
+
+    expect(client.post).toHaveBeenCalledWith('/api/cms/editing/regions/header')
+    expect(wrapper.text()).toContain('Header')
+
+    await wrapper.find('input').setValue('New menu')
+    await wrapper
+      .findAll('button')
+      .find((one) => one.text() === 'Save to draft')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(client.post).toHaveBeenCalledWith('/api/cms/blocks/content/region/header/edit', {
+      revision: 'h1',
+      locale: 'en',
+      url: '/pricing',
+      ops: [{ op: 'set', key: 'm1', values: { text: 'New menu' } }],
+    })
+    expect(sent(parent, 'replace')).toEqual([
+      expect.objectContaining({ key: 'm1', scope: 'region:header' }),
+    ])
+    // The head of the bar counts the record's draft, not the region's.
+    expect(bar.refresh).not.toHaveBeenCalled()
+  })
+
+  it('publishes the region’s draft with the revision it read, and the page reloads', async () => {
+    const draft = { differs: true, by: 'J. Doe', at: null, changes: 2, mine: false }
+    const { wrapper, client, parent } = await open(undefined, {
+      context: regionsOnly,
+      header: () => region({ draft }),
+    })
+
+    const alert = wrapper.find('.wx-alert')
+    expect(alert.text()).toContain('Unpublished changes: 2')
+    expect(alert.text()).toContain('J. Doe has a draft here; your edits go into it')
+
+    await alert
+      .findAll('button')
+      .find((one) => one.text() === 'Publish')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(client.post).toHaveBeenCalledWith('/api/cms/regions/header/publish', { revision: 'h1' })
+    expect(sent(parent, 'reload')).toHaveLength(1)
+  })
+
+  it('says why a region was not published', async () => {
+    const draft = { differs: true, by: null, at: null, changes: 1, mine: true }
+    const { wrapper, client, parent } = await open(undefined, {
+      context: regionsOnly,
+      header: () => region({ draft }),
+    })
+
+    client.post.mockImplementation((url: string) =>
+      url.endsWith('/publish')
+        ? Promise.reject(
+            new HttpError('Not published', 422, { blocks: ['Menu (m1): the menu is gone'] }),
+          )
+        : Promise.resolve({ data: { editors: [] } }),
+    )
+
+    await wrapper
+      .find('.wx-alert')
+      .findAll('button')
+      .find((one) => one.text() === 'Publish')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Menu (m1): the menu is gone')
+    expect(sent(parent, 'reload')).toHaveLength(0)
+  })
+
+  it('points a region the site does not show yet to the panel instead of a map', async () => {
+    const { wrapper } = await open(undefined, {
+      context: regionsOnly,
+      header: () => region({ published: false }),
+    })
+
+    expect(wrapper.findAll('.wx-blocks-bar__row')).toHaveLength(0)
+    expect(wrapper.text()).toContain('The site shows the markup from code here')
+    expect(wrapper.find('a[href="/cms/regions/header"]').exists()).toBe(true)
+  })
+
+  it('opens a region’s block picked on the page by its tree', async () => {
+    const { wrapper, parent } = await open(undefined, { context: both })
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { wxBar: 1, type: 'select', key: 'm1', scope: 'region:header' },
+        origin: window.location.origin,
+        source: parent,
+      }),
+    )
+    await flushPromises()
+
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('Menu words')
+  })
+
+  it('says a refusal about the content around the block is the panel’s to fix', async () => {
+    const { wrapper, client } = await open()
+
+    await row(wrapper, 0).trigger('click')
+    await flushPromises()
+    await wrapper.find('input').setValue('New')
+
+    client.post.mockImplementation((url: string) =>
+      url.endsWith('/edit')
+        ? Promise.reject(
+            new HttpError('Invalid', 422, { 'blocks.k9': ['«Text» cannot go inside «Columns»'] }),
+          )
+        : Promise.resolve({ data: { editors: [] } }),
+    )
+
+    await wrapper
+      .findAll('button')
+      .find((one) => one.text() === 'Save to draft')!
+      .trigger('click')
+    await flushPromises()
+
+    const alert = wrapper.find('.wx-blocks-bar__refused')
+    expect(alert.text()).toContain('Not saved: what stands around this block')
+    expect(alert.text()).toContain('«Text» cannot go inside «Columns»')
+    expect(alert.find('a[href="/cms/pages/12"]').exists()).toBe(true)
   })
 })

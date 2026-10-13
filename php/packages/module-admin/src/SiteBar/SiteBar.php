@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Editing\LastChange;
+use WebxUi\Admin\Support\Authors;
+use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Routing\RouteTypes;
 
 /**
@@ -197,8 +199,8 @@ final class SiteBar
      * Asked of the record rather than of the bar, so a draft left in the panel by a colleague is
      * reported before the first edit on the site lands in it (§9).
      *
-     * `changes` counts the fields that differ; `mine` says whether the last hand on the draft was
-     * this administrator's — until it is, the bar warns that their edits go into somebody else's.
+     * `changes` counts the fields that differ; `mine` says whether the draft is this administrator's
+     * alone — until it is, the bar warns that their edits go into somebody else's.
      *
      * @return array{differs: bool, by: string|null, at: string|null, changes: int, mine: bool}|null
      */
@@ -214,15 +216,53 @@ final class SiteBar
             return ['differs' => false, 'by' => null, 'at' => null, 'changes' => 0, 'mine' => true];
         }
 
+        return ['differs' => true, 'changes' => count($changed)] + self::hands($entity, $user);
+    }
+
+    /**
+     * Whose the draft is: somebody else's as long as anybody else wrote into it since the record
+     * was last published — not only when the last save was theirs. «Publish» puts the whole draft
+     * on the site, a colleague's half-made title with it, so the warning stays after this
+     * administrator's first edit on top. `by` names that somebody; when there is none, the last
+     * hand on it.
+     *
+     * Read off the versions: every save of a draft is an autosave, a draft written over is kept as
+     * `overwritten`, and a publication starts the count again.
+     *
+     * @return array{by: string|null, at: string|null, mine: bool}
+     */
+    public static function hands(Model $entity, mixed $user): array
+    {
         $last = LastChange::of($entity, $user);
         $me = $user instanceof Authenticatable ? $user->getAuthIdentifier() : null;
+        $other = null;
+
+        if (method_exists($entity, 'versions') && $me !== null) {
+            $since = $entity->versions()->reorder()->where('kind', EntityVersion::KIND_PUBLISHED)->max('id');
+
+            $other = $entity->versions()
+                ->whereIn('kind', [EntityVersion::KIND_AUTOSAVE, EntityVersion::KIND_OVERWRITTEN])
+                ->when($since !== null, static fn ($query) => $query->where('id', '>', $since))
+                ->whereNotNull('author_id')
+                ->where('author_id', '!=', $me)
+                ->first();
+        }
+
+        if ($other instanceof EntityVersion) {
+            $names = Authors::names($user, [$other->author_id]);
+
+            return [
+                'by' => $names[(int) $other->author_id] ?? null,
+                'at' => $other->created_at?->toAtomString(),
+                'mine' => false,
+            ];
+        }
+
         $author = $last['author_id'] ?? null;
 
         return [
-            'differs' => true,
             'by' => $last['author'] ?? null,
             'at' => $last['at'] ?? null,
-            'changes' => count($changed),
             'mine' => $author !== null && $me !== null && (string) $author === (string) $me,
         ];
     }

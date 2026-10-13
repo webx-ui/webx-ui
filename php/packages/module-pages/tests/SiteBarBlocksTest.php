@@ -249,6 +249,17 @@ final class SiteBarBlocksTest extends TestCase
 
         $this->actingAs($me, 'cms')->postJson($this->content($page).'/edit', ['ops' => [['op' => 'set', 'key' => 'k1', 'values' => ['text' => 'Mine']]]])->assertOk();
 
+        // Still theirs too after my edit on top: «Publish» would put their part on the site with
+        // mine, and the bar keeps saying whose it is.
+        $this->actingAs($me, 'cms')
+            ->getJson('/api/cms/site-bar/context?url=/pricing')
+            ->assertJsonPath('data.entity.draft.mine', false)
+            ->assertJsonPath('data.entity.draft.by', $colleague->name);
+
+        // A publication starts the count again: the next draft is mine alone.
+        $page->refresh()->publish($me->getKey());
+        $this->actingAs($me, 'cms')->postJson($this->content($page).'/edit', ['ops' => [['op' => 'set', 'key' => 'k1', 'values' => ['text' => 'Mine again']]]])->assertOk();
+
         $this->actingAs($me, 'cms')
             ->getJson('/api/cms/site-bar/context?url=/pricing')
             ->assertJsonPath('data.entity.draft.mine', true);

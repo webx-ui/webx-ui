@@ -37,10 +37,13 @@ export function blocks(options: BlocksOptions = {}): AdminModule {
     path,
     blockLabels,
     // «Blocks» in the panel on the site (§8 of WEBX_UI_SITE_BAR.md): where the server offers it
-    // — a record with blocks, for somebody who may edit it.
+    // — a record with blocks, for somebody who may edit it, and the layout's regions, for
+    // somebody who edits those. One tab for both: the page has one picker, and a click on the
+    // header should not have to know which tab it belongs to.
     siteBarTabs: [
       {
         name: 'blocks',
+        sections: ['regions'],
         label: (admin) => {
           seedBlocksMessages(admin.i18n)
 

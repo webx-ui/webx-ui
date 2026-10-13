@@ -58,8 +58,13 @@ export interface SiteBarDraft {
  * the server offers without a module on this side is simply not drawn.
  */
 export interface SiteBarTab {
-  /** The name the server registered the section under. */
+  /** The name the server registered the section under — and the tab's own, as `show()` names it. */
   name: string
+  /**
+   * More sections the same tab stands for: drawn once when the server offered any of them.
+   * «Blocks» is the record's blocks and the layout's regions — two rights, one picker on the page.
+   */
+  sections?: string[]
   /** What the tab is called, in the panel's language. */
   label: (admin: AdminContext) => string
   /** Drawn inside the tab, with the page's context as its `context` prop. */
@@ -90,29 +95,41 @@ export function fetchSiteBarContext(
  * - `title` — put this in the browser's tab: the page's `<title>` after an edit, so the editor
  *   sees it changed without reloading (the rest of `<head>` waits for the next load);
  * - `reload` — load the page again: after «Publish» and «Discard» it is the site's again;
- * - `blocks` — the record whose blocks may be picked on the page, and what each is called;
+ * - `tab` — the tab in front, for the page to remember and open the next frame on;
+ * - `blocks` — whose blocks may be picked on the page — the record's, a region's — and what each
+ *   is called;
  * - `mode` — picking blocks on the page on or off (§8);
  * - `select` / `highlight` — frame a block on the page and bring it into view, or stop;
  * - `replace` — put this markup in place of the block's range: the block drawn from the draft.
+ *
+ * A block is named by its key and its `scope` — `{type}:{id}` of a record, `region:{name}` of a
+ * region — since the header and the page are two trees that never promised each other unique keys.
  */
 export type SiteBarMessage =
   | { type: 'close' }
   | { type: 'title'; title: string }
   | { type: 'reload' }
-  | {
-      type: 'blocks'
-      entity: { type: string; id: number | string }
-      items: { key: string; label: string }[]
-    }
+  | { type: 'tab'; name: string }
+  | { type: 'blocks'; sources: SiteBarBlockSource[] }
   | { type: 'mode'; on: boolean }
-  | { type: 'select'; key: string | null }
-  | { type: 'highlight'; key: string | null }
-  | { type: 'replace'; key: string; html: string }
+  | { type: 'select'; key: string | null; scope?: string }
+  | { type: 'highlight'; key: string | null; scope?: string }
+  | { type: 'replace'; key: string; scope?: string; html: string }
+
+/** One tree of blocks the page may pick from. */
+export interface SiteBarBlockSource {
+  /** `{type}:{id}` of a record (`page:12`), `region:{name}` of a region of the layout. */
+  scope: string
+  /** Said on the frame beside the block's type — «Header» — when the block is not the page's own. */
+  title?: string
+  items: { key: string; label: string }[]
+}
 
 /**
  * What the page says to the panel: a block picked on it, and picking switched off there (Esc).
  */
-export type SitePageMessage = { type: 'select'; key: string } | { type: 'mode'; on: boolean }
+export type SitePageMessage =
+  { type: 'select'; key: string; scope?: string } | { type: 'mode'; on: boolean }
 
 /**
  * Listen to the page the panel is framed in. Only that page — the parent window, from this

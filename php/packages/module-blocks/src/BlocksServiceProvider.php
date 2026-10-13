@@ -176,6 +176,11 @@ class BlocksServiceProvider extends ServiceProvider
         // who may edit it (§8 of WEBX_UI_SITE_BAR.md). The frame never learns what it is.
         $this->app->make(SiteBar::class)->section('blocks', SiteBarBlocks::available(...));
 
+        // The header and the footer, on every page, for whoever edits the regions — a section of
+        // its own so that the bar is there on a page without a record; the panel draws it inside
+        // the same tab, with one picker for the page (SB4 of the bar's spec).
+        $this->app->make(SiteBar::class)->section('regions', SiteBarBlocks::regionsAvailable(...));
+
         // What a response printed is what its bundle is glued from, and no more than that: in a
         // process that serves many requests the list would otherwise grow across them.
         $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (): void {

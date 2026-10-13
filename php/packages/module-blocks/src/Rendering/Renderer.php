@@ -353,18 +353,22 @@ final class Renderer
      * failure, and the marker pair around it and everything it nests, so that the page can put it
      * in place of the range it had and still find it next time.
      *
+     * A block of a region gets the region as `$region`, as it has in the layout: one template
+     * serves the header on the page and the header drawn after an edit.
+     *
      * @param  array<string, mixed>  $node
      */
-    public function block(array $node, ?object $entity, int $depth = 0): string
+    public function block(array $node, ?object $entity, int $depth = 0, ?RegionContext $region = null): string
     {
-        $was = [$this->marking, $this->preview];
+        $was = [$this->marking, $this->preview, $this->region];
         $this->marking = true;
         $this->preview = false;
+        $this->region = $region;
 
         try {
             return Content::isNode($node) ? $this->one($node, $entity, $depth, 0) : '';
         } finally {
-            [$this->marking, $this->preview] = $was;
+            [$this->marking, $this->preview, $this->region] = $was;
         }
     }
 

@@ -366,14 +366,36 @@ export interface BlockOutlineLine {
   hidden?: boolean
 }
 
-/** What the «Blocks» tab of the panel on the site reads about a record. */
+/** What the «Blocks» tab of the panel on the site reads about a record or a region. */
 export interface SiteBarBlocks {
-  /** The revision to send with an edit: the record's editor's. */
+  /** The revision to send with an edit: the record's editor's, or the region's. */
   revision: string
   /** Whether the tree is the draft or, with no draft yet, what the site shows. */
   editing: 'draft' | 'live'
   tree: BlockNode[]
   outline: BlockOutlineLine[]
+  /** Only for a region: what the tab says over its map. */
+  region?: SiteBarRegion
+}
+
+/** A region of the layout as the tab of the panel on the site shows it. */
+export interface SiteBarRegion {
+  name: string
+  /** As the site declared it, in the panel's language: «Header». */
+  title: string
+  /** Whether visitors see its blocks, rather than the markup from code. */
+  published: boolean
+  /** The view the site prints while the region is not published, when the layout named one. */
+  fallback: string | null
+  draft: {
+    differs: boolean
+    by: string | null
+    at: string | null
+    /** How many blocks the draft changes, adds or takes away. */
+    changes: number
+    /** Whether the last hand on the draft was this administrator's. */
+    mine: boolean
+  }
 }
 
 /** One edit from the tab: the fields of one block, into the draft. */
@@ -381,6 +403,8 @@ export interface SiteBarBlockEdit {
   revision?: string
   /** The page's language: a localized field sent one value takes it in this language. */
   locale?: string | null
+  /** The page the bar is on: a region's block is drawn as it stands there. */
+  url?: string
   ops: { op: 'set'; key: string; values: Record<string, unknown> }[]
 }
 

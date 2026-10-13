@@ -13,11 +13,11 @@
  * only an administrator's browser ever gets, because only their pages carry the script.
  *
  * The blocks of the page (§8): the server prints them between markers for an administrator —
- * `<!--wx:{key}-->…<!--/wx:{key}-->`, the record's `<!--wx-entity:{type}:{id}-->` around them —
- * and this script frames them on a layer of its own over the page. Picking (the pencil in the
- * panel) makes a click on a block choose it rather than follow it; without it the site behaves
- * as the site. The only change it ever makes to the page's markup is a block's range, replaced
- * with what the server drew from the draft.
+ * `<!--wx:{key}-->…<!--/wx:{key}-->`, the record's `<!--wx-entity:{type}:{id}-->` around them, a
+ * region's `<!--wx-region:{name}-->` around the header's — and this script frames them on a layer
+ * of its own over the page. Picking (the pencil in the panel) makes a click on a block choose it
+ * rather than follow it; without it the site behaves as the site. The only change it ever makes
+ * to the page's markup is a block's range, replaced with what the server drew from the draft.
  *
  * No framework and no dependencies, like the blocks runtime: it runs on somebody else's page.
  */
@@ -244,7 +244,7 @@ function start() {
   const config = readConfig(script)
   const words = config.words ?? {}
   const src = typeof config.src === 'string' ? config.src : '/cms/_bar'
-  const state = { open: false, top: null, ...readState() }
+  const state = { open: false, top: null, tab: null, ...readState() }
 
   const host = document.createElement('div')
   host.setAttribute('data-wx-bar-root', '')
@@ -291,7 +291,12 @@ function start() {
     // The page's language travels with its address: a page of the site's own code has no row
     // in the registry to say it, and its SEO is per language.
     const lang = document.documentElement.lang
-    frame.src = `${src}?url=${encodeURIComponent(location.pathname)}${lang ? `&locale=${encodeURIComponent(lang)}` : ''}`
+    // The tab the editor had in front on the last page: the frame is made again on every page.
+    const tabName = typeof state.tab === 'string' && state.tab !== '' ? state.tab : null
+    frame.src =
+      `${src}?url=${encodeURIComponent(location.pathname)}` +
+      (lang ? `&locale=${encodeURIComponent(lang)}` : '') +
+      (tabName ? `&tab=${encodeURIComponent(tabName)}` : '')
     drawer.append(frame)
   }
 
@@ -365,14 +370,16 @@ function start() {
   tab.addEventListener('click', () => setOpen(!state.open))
 
   /*
-   * The blocks of the page. What the panel said about them — whose they are, what each is called
-   * — and what is on screen: picking or not, the block chosen, the one under the pointer, the one
-   * under the pointer in the panel's list, the ones replaced from the draft.
+   * The blocks of the page. What the panel said about them — whose trees may be picked from, what
+   * each block is called — and what is on screen: picking or not, the block chosen, the one under
+   * the pointer, the one under the pointer in the panel's list, the ones replaced from the draft.
+   *
+   * A block is known by its tree and its key together — `page:12|k1`, `region:header|k1` — since
+   * the header and the page are two trees, and nothing promised that their keys never meet.
    */
   const edit = {
     picking: false,
-    entity: null,
-    labels: new Map(),
+    sources: new Map(),
     blocks: [],
     selected: null,
     hover: null,
@@ -380,24 +387,44 @@ function start() {
     drafts: new Set(),
   }
 
-  // Every pair of block markers in the document, in order, with what it is inside: the record's
-  // markers, and the block around it — a nested block is one level deeper than its container.
+  const idOf = (scope, key) => `${scope}|${key}`
+
+  // Every pair of block markers in the document, in order, with what it is inside: the tree it
+  // belongs to — a region's, or the record's — and the block around it: a nested block is one
+  // level deeper than its container.
   function scan() {
     const found = []
     const open = []
     let entity = null
+    let region = null
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_COMMENT)
 
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const text = node.data.trim()
       const record = /^wx-entity:([^:]+):(.+)$/.exec(text)
+      const place = /^wx-region:(.+)$/.exec(text)
 
       if (record) {
-        entity = { type: record[1], id: record[2] }
+        entity = `${record[1]}:${record[2]}`
       } else if (text.startsWith('/wx-entity:')) {
         entity = null
+      } else if (place) {
+        region = `region:${place[1]}`
+      } else if (text.startsWith('/wx-region:')) {
+        region = null
       } else if (text.startsWith('wx:')) {
-        const block = { key: text.slice(3), start: node, end: null, depth: open.length, entity }
+        // A record's blocks printed inside a region are the region's to edit: the region is
+        // what put them there.
+        const scope = region ?? entity
+        const key = text.slice(3)
+        const block = {
+          key,
+          scope,
+          id: idOf(scope, key),
+          start: node,
+          end: null,
+          depth: open.length,
+        }
         open.push(block)
         found.push(block)
       } else if (text.startsWith('/wx:')) {
@@ -414,23 +441,18 @@ function start() {
     edit.blocks = found.filter((block) => block.end !== null)
   }
 
-  // A block the panel may edit from here: the record's own — not the header's, not another
-  // record's printed beside it — and under a key it keeps.
+  // A block the panel may edit from here: one of the trees it named — the record's own, a region
+  // it may edit — and not another record's printed beside them.
   function editable(block) {
-    return (
-      edit.entity !== null &&
-      block.entity !== null &&
-      block.entity.type === String(edit.entity.type) &&
-      block.entity.id === String(edit.entity.id)
-    )
+    return block.scope !== null && edit.sources.has(block.scope)
   }
 
   function temporary(block) {
-    return TEMPORARY.test(block.key) || !edit.labels.has(block.key)
+    return TEMPORARY.test(block.key) || !edit.sources.get(block.scope)?.labels.has(block.key)
   }
 
-  function find(key) {
-    return edit.blocks.find((block) => block.key === key && editable(block)) ?? null
+  function find(id) {
+    return edit.blocks.find((block) => block.id === id && editable(block)) ?? null
   }
 
   function rangeOf(block) {
@@ -463,18 +485,22 @@ function start() {
     return best
   }
 
+  // The block's type, and the region it is in when it is not the page's own: «Menu · Header».
   function labelOf(block) {
-    const named = edit.labels.get(block.key)
+    const source = edit.sources.get(block.scope)
+    let named = source?.labels.get(block.key) ?? null
 
-    if (named) return named
-
-    for (let node = block.start.nextSibling; node && node !== block.end; node = node.nextSibling) {
+    for (
+      let node = block.start.nextSibling;
+      !named && node && node !== block.end;
+      node = node.nextSibling
+    ) {
       if (node.nodeType === 1 && node.getAttribute('data-wx-block')) {
-        return node.getAttribute('data-wx-block')
+        named = node.getAttribute('data-wx-block')
       }
     }
 
-    return block.key
+    return [named ?? block.key, source?.title].filter(Boolean).join(' · ')
   }
 
   let queued = 0
@@ -483,20 +509,20 @@ function start() {
     queued = 0
 
     const wanted = new Map()
-    const mark = (key, name) => {
-      if (key === null) return
-      wanted.set(key, [...(wanted.get(key) ?? []), name])
+    const mark = (id, name) => {
+      if (id === null) return
+      wanted.set(id, [...(wanted.get(id) ?? []), name])
     }
 
-    for (const key of edit.drafts) mark(key, 'is-draft')
+    for (const id of edit.drafts) mark(id, 'is-draft')
     if (edit.picking) mark(edit.hover, 'is-hover')
     mark(edit.highlight, 'is-highlight')
     mark(edit.selected, 'is-selected')
 
     const boxes = []
 
-    for (const [key, names] of wanted) {
-      const block = find(key)
+    for (const [id, names] of wanted) {
+      const block = find(id)
       const rect = block && rectOf(block)
 
       if (!rect) continue
@@ -528,8 +554,8 @@ function start() {
 
   // Into the window with the smallest move, and only when it is not in it whole: a block on
   // screen stays where the editor is looking.
-  function reveal(key) {
-    const block = find(key)
+  function reveal(id) {
+    const block = find(id)
     const rect = block && rectOf(block)
 
     if (!rect) return
@@ -554,10 +580,10 @@ function start() {
   function onPointerMove(event) {
     const target = event.target
     const block = target instanceof Node && target !== host ? blockAt(target) : null
-    const key = block?.key ?? null
+    const id = block?.id ?? null
 
-    if (key !== edit.hover) {
-      edit.hover = key
+    if (id !== edit.hover) {
+      edit.hover = id
       redraw()
     }
   }
@@ -578,15 +604,15 @@ function start() {
     event.stopPropagation()
 
     if (temporary(block)) {
-      edit.hover = block.key
+      edit.hover = block.id
       redraw()
 
       return
     }
 
-    edit.selected = block.key
+    edit.selected = block.id
     setOpen(true)
-    post({ type: 'select', key: block.key })
+    post({ type: 'select', key: block.key, scope: block.scope })
     redraw()
   }
 
@@ -615,8 +641,8 @@ function start() {
   // come with it, and its script starts again the way the preview starts it — `webx.mount` on
   // what came in (§10 of the blocks spec). A range split across parents by the browser's parser
   // cannot be replaced in place; the page is loaded again instead.
-  function replace(key, html) {
-    const block = find(key)
+  function replace(id, html) {
+    const block = find(id)
 
     if (block === null || block.start.parentNode !== block.end.parentNode) {
       location.reload()
@@ -645,9 +671,19 @@ function start() {
       if (node.nodeType === 1) window.webx?.mount?.(node)
     }
 
-    edit.drafts.add(key)
+    edit.drafts.add(id)
     scan()
     redraw()
+  }
+
+  // A message names a block by its key and its tree; one without a tree is the only tree there is.
+  function idFrom(message) {
+    if (typeof message.key !== 'string') return null
+
+    const scope =
+      typeof message.scope === 'string' ? message.scope : (edit.sources.keys().next().value ?? null)
+
+    return scope === null ? null : idOf(scope, message.key)
   }
 
   // Frames follow their blocks: the page scrolls, the window changes, the page reflows when a
@@ -702,17 +738,35 @@ function start() {
       location.reload()
     }
 
-    // Whose blocks the panel edits here, and what each is called.
-    if (
-      message.type === 'blocks' &&
-      typeof message.entity === 'object' &&
-      message.entity !== null
-    ) {
-      edit.entity = message.entity
-      edit.labels = new Map(
-        (Array.isArray(message.items) ? message.items : [])
-          .filter((item) => typeof item?.key === 'string')
-          .map((item) => [item.key, String(item.label ?? item.key)]),
+    // The tab in front, for the frame of the next page to open on.
+    if (message.type === 'tab' && typeof message.name === 'string') {
+      state.tab = message.name
+      writeState(state)
+    }
+
+    // Whose blocks the panel edits here — the record's, the regions' — and what each is called.
+    // A panel of the release before named one record and no tree; it is read as that one tree.
+    if (message.type === 'blocks') {
+      const sources = Array.isArray(message.sources)
+        ? message.sources
+        : typeof message.entity === 'object' && message.entity !== null
+          ? [{ scope: `${message.entity.type}:${message.entity.id}`, items: message.items }]
+          : []
+
+      edit.sources = new Map(
+        sources
+          .filter((source) => typeof source?.scope === 'string')
+          .map((source) => [
+            source.scope,
+            {
+              title: typeof source.title === 'string' ? source.title : null,
+              labels: new Map(
+                (Array.isArray(source.items) ? source.items : [])
+                  .filter((item) => typeof item?.key === 'string')
+                  .map((item) => [item.key, String(item.label ?? item.key)]),
+              ),
+            },
+          ]),
       )
       scan()
       redraw()
@@ -723,19 +777,17 @@ function start() {
     }
 
     if (message.type === 'select' || message.type === 'highlight') {
-      const key = typeof message.key === 'string' ? message.key : null
+      const id = idFrom(message)
 
-      edit[message.type === 'select' ? 'selected' : 'highlight'] = key
-      if (key !== null) reveal(key)
+      edit[message.type === 'select' ? 'selected' : 'highlight'] = id
+      if (id !== null) reveal(id)
       redraw()
     }
 
-    if (
-      message.type === 'replace' &&
-      typeof message.key === 'string' &&
-      typeof message.html === 'string'
-    ) {
-      replace(message.key, message.html)
+    if (message.type === 'replace' && typeof message.html === 'string') {
+      const id = idFrom(message)
+
+      if (id !== null) replace(id, message.html)
     }
   })
 
