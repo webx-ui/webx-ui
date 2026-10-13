@@ -5,7 +5,9 @@ the right edge of the window. It opens a drawer with the panel in it: what recor
 whether it is published, whether somebody has left unpublished changes in it, and the way to
 open it in the panel. A visitor sees nothing — no script, no attribute, no header.
 
-It is part of `webx-ui/module-admin` and comes with the panel; there is nothing to install.
+It is part of `webx-ui/module-admin` and comes with the panel; there is nothing to install. A
+section that wants its records in it — or a tab of its own — follows
+[Building for the panel on the site](./site-bar-modules.md).
 
 ## What it shows
 
