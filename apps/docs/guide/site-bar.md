@@ -26,7 +26,8 @@ whole draft on the site, their part with yours: «J. Doe has a draft here; your 
 
 ## Blocks
 
-The **Blocks** tab edits the fields of a block of the page without leaving it. It is there on a
+The **Blocks** tab edits the blocks of the page without leaving it — their fields and where they
+stand. It is there on a
 record made of blocks — a page — for somebody who may edit the record (`pages.manage` for a
 page) and read blocks (`blocks.view`).
 
@@ -51,8 +52,32 @@ page) and read blocks (`blocks.view`).
   editor who opens the same page in the panel sees that it is being edited.
 
 A block of old content that was saved before blocks had keys says **Open in panel to edit** and
-cannot be chosen: the first save in the constructor gives it a key. Adding, moving and removing
-blocks is the constructor's work too — the bar edits what a block says, not where it stands.
+cannot be chosen: the first save in the constructor gives it a key.
+
+### Adding, moving and removing
+
+Every row of the map and the head of a block's form have a `···` menu:
+
+- **Add below** — a new block right after this one, in the same list; **Add inside** on a
+  container — at the end of what it holds. Under each map, **Add block** puts one at the end of the
+  page, the header or the footer. The type is chosen in the constructor's own picker, which offers
+  only what may stand there; the new block's form opens at once.
+- **Duplicate**, **Move up**, **Move down**, **Hide** / **Show**, and **Delete**, which asks first.
+
+What cannot be done right now stays in the menu, greyed, with the reason beside it — «Already
+first», «No room for more blocks here. Most it takes: 2», «A page takes no more blocks of this
+type» — rather than disappearing. While picking, the chosen block has a round **+** on its lower
+edge: the same **Add below**, where the new block will go. On a phone fold the drawer with its
+tab first — the drawer covers the page.
+
+All of it goes into the draft of the page or of the region, exactly as an agent's
+`blocks_edit_content` would, and the page follows at once: a new block appears drawn from the
+draft, with its dashed **Draft** frame — with its styles and script even when no block of that type
+was on the page before — a hidden or deleted one goes, a moved one moves. Moving a block into
+another container, into a region or onto another page is the constructor's work.
+
+After a reload the page is the site again and shows none of the draft. The draft's notice — in the
+head for the page, over its map for a region — has **Preview draft**: the whole draft, in a new tab.
 
 ### The header and the footer
 
@@ -62,7 +87,7 @@ below the record's blocks. They are there for whoever edits the regions in the p
 (`blocks.regions`), on every page of the site, a page without a record too.
 
 - **Picking** works for them as for the page: the frame says whose block it is — «Menu · Header».
-- **Save to draft** writes into the region's draft, not the page's, and the block comes back drawn
+- **Save to draft** and the structure write into the region's draft, not the page's, and the block comes back drawn
   as it stands on this page: its active menu item, the record the page shows. The attributes the
   layout's tag passes to the region are known only to the layout, so a block that reads
   `$region->data()` looks right again on the next load.

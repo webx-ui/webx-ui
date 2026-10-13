@@ -253,6 +253,13 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
   настоящий `WindowProxy`). Родителем делать `contentWindow` пустого `<iframe>`:
   `vi.spyOn(window, 'parent', 'get').mockReturnValue(frame.contentWindow)` и шпион на его
   `postMessage`. У нас: `BlocksSiteBarTab.test.ts`.
+- **Выбор блока (`createModal`) или `confirm` в тесте вкладки — «Cannot read properties of null
+  (reading 'nextSibling')» после зелёных тестов, хотя общий `afterEach` хостов ждёт.** Файл,
+  который сам чистит `document.body` в своём `afterEach`, делает это **раньше** общего: хуки
+  `afterEach` идут в обратном порядке, и `vitest.setup.ts` зарегистрирован первым. Хост диалога
+  уходит по таймеру уже в пустом документе. Такой файл ждёт `.wx-modal-host` сам перед чисткой
+  (`vi.waitFor`), а открытый и не отвеченный выбор закрывает в тесте. У нас:
+  `BlocksSiteBarTab.test.ts`, «the structure of the blocks from the site».
 
 ## Экраны панели
 

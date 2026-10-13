@@ -613,6 +613,14 @@ true` в `defineEnvironment()`. На настоящей СУБД всё это �
   базовым путём, — одним уровнем (`harbor-package`, а не `packages/…`): пустой родитель иначе
   остаётся. Проверка — `head -3 vendor/orchestra/testbench-core/laravel/composer.json` после
   прогона: `"name": "laravel/laravel"`.
+- **`draftValues()['blocks']` в тесте — «Undefined array key», хотя правка только что прошла.**
+  Черновик, который вернулся к опубликованному (добавили блок и удалили его), — не черновик:
+  `saveDraft()` его снимает, и `draftValues()` пуст. Дерево правки — черновик или, без него,
+  колонка: `draftValues()['blocks'] ?? $page->blocks`, как `SiteBarBlocks::editing()`.
+- **`Block::query()->where(...)->update([...])` в тесте не меняет того, что видит запись
+  содержимого.** Реестр типов (`BlockTypes`) кеширует строки и сбрасывается событиями модели, а
+  массовый `update()` событий не шлёт: тест «компонент нельзя добавить» проходил запрос как
+  обычный блок. Менять через модель — `->firstOrFail()->update([...])`.
 
 ## PHPStan
 
