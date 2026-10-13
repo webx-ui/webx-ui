@@ -315,7 +315,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
     <!-- Kept alive: a half-typed form survives a look at another tab, and a block picked on the
          page reaches «Blocks» even while «Page» is in front. -->
-    <wx-tabs v-else-if="context" v-model="tab" size="sm" keep-alive class="wx-site-bar__tabs">
+    <!-- Segmented and stretched: three or four short words share the drawer's width, and a strip of
+         underlined words read as a second heading under the record's. -->
+    <wx-tabs
+      v-else-if="context"
+      v-model="tab"
+      variant="pill"
+      size="md"
+      align="stretch"
+      keep-alive
+      class="wx-site-bar__tabs"
+    >
       <wx-tab v-if="context.sections.includes('page')" value="page" :label="t('site-bar.tab-page')">
         <div class="wx-site-bar__body">
           <wx-descriptions v-if="entity" :columns="1" size="sm">

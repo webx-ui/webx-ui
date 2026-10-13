@@ -922,7 +922,20 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="wx-blocks-bar">
+    <!-- One row: the way back to the list on the left, picking on the page on the right — two
+         rows of one button each took the height the form needs. -->
     <div class="wx-blocks-bar__tools">
+      <nav v-if="found && current" class="wx-blocks-bar__trail" :aria-label="t('site-bar.all')">
+        <wx-button size="sm" variant="text" icon="arrow-left" @click="back">
+          {{ t('site-bar.all') }}
+        </wx-button>
+        <template v-for="step in trail" :key="step.key">
+          <span class="wx-blocks-bar__slash" aria-hidden="true">/</span>
+          <wx-button size="sm" variant="text" @click="open(current.scope, step.key)">
+            {{ step.title }}
+          </wx-button>
+        </template>
+      </nav>
       <wx-button
         size="sm"
         icon="edit"
@@ -944,18 +957,6 @@ onBeforeUnmount(() => {
     </wx-result>
 
     <template v-else-if="found && current">
-      <nav class="wx-blocks-bar__trail" :aria-label="t('site-bar.all')">
-        <wx-button size="sm" variant="text" icon="arrow-left" @click="back">
-          {{ t('site-bar.all') }}
-        </wx-button>
-        <template v-for="step in trail" :key="step.key">
-          <span class="wx-blocks-bar__slash" aria-hidden="true">/</span>
-          <wx-button size="sm" variant="text" @click="open(current.scope, step.key)">
-            {{ step.title }}
-          </wx-button>
-        </template>
-      </nav>
-
       <div class="wx-blocks-bar__name">
         <wx-text weight="semibold">
           {{ selectedType?.title ?? found.node.type }}
@@ -1138,9 +1139,18 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
-.wx-blocks-bar__tools,
 .wx-blocks-bar__actions {
   display: flex;
+  gap: var(--wx-space-8);
+}
+
+/* The way back on the left, picking on the right; alone, picking stays where it always was. A
+   long trail to a nested block wraps, and picking goes under it rather than off the edge. */
+.wx-blocks-bar__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--wx-space-8);
 }
 

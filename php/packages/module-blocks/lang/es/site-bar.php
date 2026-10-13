@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'tab' => 'Bloques',
-    'pick' => 'Elegir un bloque en la página',
+    'pick' => 'Elegir un bloque',
     'pick-off' => 'Dejar de elegir',
     'picking' => 'Haz clic en un bloque de la página. Esc para salir.',
     'hint' => 'Elige un bloque en la página o en la lista para cambiar sus campos. Los cambios van al borrador.',

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'tab' => 'Blocs',
-    'pick' => 'Choisir un bloc sur la page',
+    'pick' => 'Choisir un bloc',
     'pick-off' => 'Arrêter de choisir',
     'picking' => 'Cliquez sur un bloc de la page. Échap pour arrêter.',
     'hint' => 'Choisissez un bloc sur la page ou dans la liste pour modifier ses champs. Les modifications vont dans le brouillon.',

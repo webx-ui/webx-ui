@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'tab' => 'Bloki',
-    'pick' => 'Wybierz blok na stronie',
+    'pick' => 'Wybierz blok',
     'pick-off' => 'Zakończ wybieranie',
     'picking' => 'Kliknij blok na stronie. Esc kończy.',
     'hint' => 'Wybierz blok na stronie lub na liście, aby zmienić jego pola. Zmiany trafiają do wersji roboczej.',

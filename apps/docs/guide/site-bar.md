@@ -35,7 +35,7 @@ page) and read blocks (`blocks.view`).
 
 - **The map.** Without a block chosen the tab lists the record's blocks, nested ones indented.
   A row under the pointer frames its block on the page and scrolls to it.
-- **Picking on the page.** The pencil (**Pick a block on the page**) turns picking on: a frame
+- **Picking on the page.** The pencil (**Pick a block**) turns picking on: a frame
   follows the pointer with the block's type, a nested block wins over the one around it, and a
   click chooses the block instead of following its link. <kbd>Esc</kbd> turns picking off; the
   next <kbd>Esc</kbd> closes the drawer. With picking off the site behaves as the site — links

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'tab' => 'Bloklar',
-    'pick' => 'Sayfada bir blok seçin',
+    'pick' => 'Blok seçin',
     'pick-off' => 'Seçmeyi bırak',
     'picking' => 'Sayfada bir bloğa tıklayın. Esc ile çıkın.',
     'hint' => 'Alanlarını değiştirmek için sayfada veya listede bir blok seçin. Değişiklikler taslağa gider.',

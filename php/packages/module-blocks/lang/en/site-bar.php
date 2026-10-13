@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'tab' => 'Blocks',
-    'pick' => 'Pick a block on the page',
+    'pick' => 'Pick a block',
     'pick-off' => 'Stop picking',
     'picking' => 'Click a block on the page. Esc stops.',
     'hint' => 'Pick a block on the page or in the list to change its fields. Changes go into the draft.',
