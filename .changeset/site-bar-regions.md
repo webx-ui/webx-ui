@@ -1,8 +1,0 @@
----
-'@webx-ui/php': minor
-'@webx-ui/module-admin': minor
-'@webx-ui/module-blocks': minor
-'@webx-ui/core': patch
----
-
-The panel on the site, fourth stage (SB4 of `WEBX_UI_SITE_BAR.md`): the header and the footer. The «Blocks» tab now maps the layout's regions under their names beside the record's blocks, for whoever holds `blocks.regions`, on every page of the site — a page without a record too. Picking on the page finds a region's blocks («Menu · Header»); «Save to draft» writes into the region's draft and puts the block back drawn as it stands on that page; a region's own «Publish» and «Discard» sit over its map, and a region the site does not show yet points to its editor in the panel. The drawer remembers the tab the editor chose and opens the next page on it. The bar keeps saying a draft is somebody else's as long as anybody else wrote into it since the last publication, not only until the first edit on top. A refused edit because of where a block stands now says it is the panel's to fix, with the way there. `webx-ui/module-blocks`: the `regions` section of the bar, `GET /api/cms/blocks/content/region/{name}` with the region's state, `POST …/edit` with `url` — the page the block is drawn on — and `Renderer::block()` taking a `RegionContext`. `webx-ui/module-admin`: `SiteBar::hands()`; the script on the page tells the trees of blocks apart (`<!--wx-region:{name}-->`), names a block by its tree and key, and keeps the tab in `wx-bar`. `@webx-ui/module-admin`: `SiteBarTab.sections`, the `tab` message and `scope` on block messages. `@webx-ui/module-blocks`: the regions in `WxBlocksSiteBarTab`. `@webx-ui/core`: `WxAlert` below 480px keeps its title beside the icon and its actions inside its box.
