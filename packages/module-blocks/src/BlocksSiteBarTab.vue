@@ -24,6 +24,7 @@ import { createBlocksApi, createRegionsApi, createSiteBarBlocksApi } from './api
 import { clone, locate } from './content'
 import { useBlocksMessages } from './i18n'
 import { blocksRootKey } from './preview'
+import RegionDraftNotice from './RegionDraftNotice.vue'
 import { formSchema, markupFields, withPlaceholders, withShortcodes } from './schema'
 import type { BlockOutlineLine, BlockType, SiteBarBlocks, SiteBarRegion } from './types'
 
@@ -43,7 +44,8 @@ import type { BlockOutlineLine, BlockType, SiteBarBlocks, SiteBarRegion } from '
  * changed and puts the block, drawn from the draft, in place of the old one on the page.
  *
  * The record's draft is published from the head of the bar; a region's — with its own buttons
- * over its map, since it is a draft of its own and goes on every page at once.
+ * over its map and over the form of its block, since it is a draft of its own and goes on every
+ * page at once.
  */
 const props = defineProps<{ context: SiteBarContext }>()
 
@@ -594,6 +596,17 @@ onBeforeUnmount(() => {
         {{ t('site-bar.region-everywhere') }}
       </wx-text>
 
+      <!-- Here too, not only over the map: the form is where the editor is after saving. -->
+      <region-draft-notice
+        v-if="current.region?.draft.differs"
+        :region="current.region"
+        :busy="busy === current.scope"
+        :blocked="busy !== null"
+        :refusals="regionRefusals[current.scope]"
+        @publish="publishRegion(current)"
+        @discard="discardRegion(current)"
+      />
+
       <wx-text v-if="others.length" size="sm" tone="muted">
         {{ t('site-bar.others', { names: others.join(', ') }) }}
       </wx-text>
@@ -659,50 +672,15 @@ onBeforeUnmount(() => {
         </header>
 
         <!-- A region's own draft: published from here, since the head of the bar is the record's. -->
-        <wx-alert
+        <region-draft-notice
           v-if="source.region?.draft.differs && onSite(source)"
-          type="warning"
-          :title="t('site-bar.changes', { count: source.region.draft.changes })"
-          :description="
-            !source.region.draft.mine && source.region.draft.by
-              ? t('site-bar.draft-other', { name: source.region.draft.by })
-              : undefined
-          "
-        >
-          <template #actions>
-            <wx-button
-              size="sm"
-              type="primary"
-              :loading="busy === source.scope"
-              :disabled="busy !== null && busy !== source.scope"
-              @click="publishRegion(source)"
-            >
-              {{ t('site-bar.publish') }}
-            </wx-button>
-            <wx-button
-              size="sm"
-              variant="outline"
-              :disabled="busy !== null"
-              @click="discardRegion(source)"
-            >
-              {{ t('site-bar.discard') }}
-            </wx-button>
-          </template>
-        </wx-alert>
-
-        <div
-          v-if="regionRefusals[source.scope]?.length"
-          class="wx-blocks-bar__refusals"
-          role="alert"
-        >
-          <wx-text
-            v-for="(line, index) in regionRefusals[source.scope]"
-            :key="index"
-            size="sm"
-            tone="danger"
-            >{{ line }}</wx-text
-          >
-        </div>
+          :region="source.region"
+          :busy="busy === source.scope"
+          :blocked="busy !== null"
+          :refusals="regionRefusals[source.scope]"
+          @publish="publishRegion(source)"
+          @discard="discardRegion(source)"
+        />
 
         <template v-if="!onSite(source)">
           <wx-text size="sm" tone="muted">{{ t('site-bar.region-fallback') }}</wx-text>
@@ -871,12 +849,6 @@ onBeforeUnmount(() => {
 
 .wx-blocks-bar__form {
   min-width: 0;
-}
-
-.wx-blocks-bar__refusals {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-4);
 }
 
 .wx-blocks-bar__lines {

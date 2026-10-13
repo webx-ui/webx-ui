@@ -66,7 +66,8 @@ below the record's blocks. They are there for whoever edits the regions in the p
   as it stands on this page: its active menu item, the record the page shows. The attributes the
   layout's tag passes to the region are known only to the layout, so a block that reads
   `$region->data()` looks right again on the next load.
-- **Publish** and **Discard** for a region are over its own map, not in the head of the drawer:
+- **Publish** and **Discard** for a region are over its own map and over the form of its block, not
+  in the head of the drawer:
   the head is about the record, and a region's draft goes on every page at once. A draft with a
   block that fails is not published — the lines say which block and why, as in the region's
   editor.

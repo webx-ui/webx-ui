@@ -408,6 +408,33 @@ describe('the regions in the blocks tab', () => {
     expect(bar.refresh).not.toHaveBeenCalled()
   })
 
+  it('shows the region’s draft over the form the block was saved from, not only over the map', async () => {
+    const draft = { differs: true, by: null, at: null, changes: 1, mine: true }
+    let saved = false
+    const { wrapper } = await open(undefined, {
+      context: regionsOnly,
+      header: () => (saved ? region({ draft }) : region()),
+    })
+
+    await row(wrapper, 0).trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.wx-alert').exists()).toBe(false)
+
+    saved = true
+    await wrapper.find('input').setValue('New menu')
+    await wrapper
+      .findAll('button')
+      .find((one) => one.text() === 'Save to draft')!
+      .trigger('click')
+    await flushPromises()
+
+    // Still in the form, and the region's notice with its buttons is right there.
+    expect(wrapper.find('input').exists()).toBe(true)
+    const alert = wrapper.find('.wx-alert')
+    expect(alert.text()).toContain('Unpublished changes: 1')
+    expect(alert.findAll('button').map((one) => one.text())).toEqual(['Publish', 'Discard'])
+  })
+
   it('publishes the region’s draft with the revision it read, and the page reloads', async () => {
     const draft = { differs: true, by: 'J. Doe', at: null, changes: 2, mine: false }
     const { wrapper, client, parent } = await open(undefined, {
