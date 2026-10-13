@@ -179,6 +179,13 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
   список перехватывает жест раньше внешнего, и дерево перетаскивается без своего кода. У нас:
   дерево пунктов `module-menu`.
 
+- **`watch` по геттеру, который собирает массив, срабатывает на каждый новый объект.**
+  `watch(() => [entity.value?.type, entity.value?.id], load)` сравнивает массивы по ссылке, а
+  геттер каждый раз строит новый — значит, любая замена `entity` тем же содержимым (контекст
+  перечитали после сохранения) снова зовёт `load`: два одинаковых запроса подряд, в сети видно,
+  в тесте нет. Следить за строкой (`${type}:${id}`) или передать массив источников
+  (`watch([a, b], …)`), где Vue сравнивает элементы. У нас: `BlocksSiteBarTab.vue`.
+
 ## Тесты в jsdom
 
 - **Обработчик `keydown` на `window` срабатывает столько раз, сколько тестов было до этого.**
@@ -239,6 +246,13 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
   `globalThis.location`. Код панели пишет `location.origin`/`location.assign()` без `window.`
   (как `BlocksPreview.vue`), и тогда подмена работает; иначе `assign` в тесте молча не
   вызывается, и выглядит это как «вотчер не сработал».
+
+- **`onSitePage` в тесте не слышит сообщение, хотя `origin` верный.** Мост панели на сайте
+  проверяет `event.source === window.parent`, а в jsdom окно — само себе родитель, и подмена
+  `window.parent` объектом `{ postMessage }` не годится в `source` у `MessageEvent` (там нужен
+  настоящий `WindowProxy`). Родителем делать `contentWindow` пустого `<iframe>`:
+  `vi.spyOn(window, 'parent', 'get').mockReturnValue(frame.contentWindow)` и шпион на его
+  `postMessage`. У нас: `BlocksSiteBarTab.test.ts`.
 
 ## Экраны панели
 

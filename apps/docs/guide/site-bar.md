@@ -17,7 +17,49 @@ It is part of `webx-ui/module-admin` and comes with the panel; there is nothing 
   top of it.
 - **Open in panel** — the record's own screen, in the whole window.
 
-Editing blocks in place comes in the next stages (`WEBX_UI_SITE_BAR.md`, §13).
+When the record has a draft and you may publish it, the head of the drawer counts the changes —
+«Unpublished changes: 2» — with **Publish** and **Discard**. Publish puts the draft on the site
+exactly as the record's own button in the panel does; Discard throws the draft away. The page
+reloads after either. If the last hand on the draft was somebody else's, the bar says so before
+your first edit goes into it: «J. Doe has a draft here; your edits go into it».
+
+## Blocks
+
+The **Blocks** tab edits the fields of a block of the page without leaving it. It is there on a
+record made of blocks — a page — for somebody who may edit the record (`pages.manage` for a
+page) and read blocks (`blocks.view`).
+
+- **The map.** Without a block chosen the tab lists the record's blocks, nested ones indented.
+  A row under the pointer frames its block on the page and scrolls to it.
+- **Picking on the page.** The pencil (**Pick a block on the page**) turns picking on: a frame
+  follows the pointer with the block's type, a nested block wins over the one around it, and a
+  click chooses the block instead of following its link. <kbd>Esc</kbd> turns picking off; the
+  next <kbd>Esc</kbd> closes the drawer. With picking off the site behaves as the site — links
+  lead, buttons press. On a phone, picking folds the drawer away so the page can be seen, and a
+  tap on a block opens it again on that block.
+- **The form** is the constructor's: the same fields, with the values of the **draft**, not of
+  the site — so an edit never writes over what somebody prepared in the panel. Above it, the way
+  back up to the blocks it is inside.
+- **Save to draft** writes the fields you changed into the record's draft and puts the block,
+  drawn from the draft, in place of the old one on the page, with a dashed **Draft** frame: the
+  page in front of you is now partly the site and partly the draft. Its script starts again the
+  way the preview starts it. Visitors see nothing until somebody presses **Publish**.
+- **Somebody else in the meantime.** If the record changed after the form read it — a colleague
+  saved it in the panel, an agent edited it — the save is refused, the form shows what is there
+  now and says who changed it. While a form is open the bar tells the panel it is there, so an
+  editor who opens the same page in the panel sees that it is being edited.
+
+A block of old content that was saved before blocks had keys says **Open in panel to edit** and
+cannot be chosen: the first save in the constructor gives it a key. Adding, moving and removing
+blocks is the constructor's work too — the bar edits what a block says, not where it stands.
+
+### How the page knows its blocks
+
+For an administrator who gets the bar, the page is printed with a pair of comments around every
+block — `<!--wx:{key}-->…<!--/wx:{key}-->` — and around the record's blocks
+`<!--wx-entity:page:12-->`: the header and the footer are on the page too, and the bar has to know
+whose block is under the pointer. The values are the site's, and a block that fails is a gap, as
+for a visitor. A visitor's page has none of it.
 
 ## SEO
 
@@ -89,7 +131,10 @@ $this->app->make(SiteBar::class)->entity('recipe', new EntityLink(
 ));
 ```
 
-`edit` is the panel's address of the record, relative to the panel. `kind` is a translation key
+`edit` is the panel's address of the record, relative to the panel. A record that keeps a draft
+(`HasDraft`) adds `publish: DraftPublishing::class` (`WebxUi\Admin\SiteBar\DraftPublishing`) for
+**Publish** and **Discard** in the bar's head; a section that does more on publishing names its
+own class implementing `WebxUi\Admin\SiteBar\Publishing`. `kind` is a translation key
 for what the record is, in the singular. The label is the record's `title` or `name` in the
 language of the address; a `label` closure says otherwise. A record that uses `HasSeo` gets the
 SEO tab with this registration and nothing more.
@@ -131,4 +176,6 @@ export const reviews = (): AdminModule => ({
 ```
 
 The bar is shown on a page when at least one tab says yes there. `tellSitePage({ type: 'title',
-title })` from a tab puts a new title into the browser's tab of the page.
+title })` from a tab puts a new title into the browser's tab of the page. `useSiteBar()` gives a
+tab `show(name)` — bring a tab forward — and `refresh()` — read the page's context again after a
+change, so the draft count in the head is right.
