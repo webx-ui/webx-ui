@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace WebxUi\Blog\Tests;
 
+use Illuminate\Testing\Fluent\AssertableJson;
+use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Author;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 
@@ -151,6 +156,53 @@ final class AuthorPanelTest extends TestCase
         $row = array_values(array_filter((array) $authors, static fn (mixed $one): bool => is_array($one) && $one['id'] === $author->user_id))[0] ?? null;
 
         $this->assertSame($author->getKey(), $row['profile'] ?? null);
+    }
+
+    #[Test]
+    public function an_agent_reads_the_profiles_and_changes_their_words_but_does_not_make_one(): void
+    {
+        $author = $this->profile();
+        $registry = $this->app->make(ToolRegistry::class);
+
+        $this->assertSame(
+            ['authors_list', 'authors_update'],
+            array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('authors')),
+        );
+
+        $list = $this->content($this->agent('authors_list'));
+        $this->assertSame('Anna Writer', $list['authors'][0]['name']);
+
+        // A dry run is the save, rolled back.
+        $dry = $this->content($this->agent('authors_update', ['author' => 'anna', 'role' => 'Editor', 'dry_run' => true]));
+        $this->assertTrue($dry['dry_run']);
+        $this->assertNull($author->refresh()->getTranslation('role', 'en', false));
+
+        $this->agent('authors_update', ['author' => $author->getKey(), 'role' => 'Editor'])->assertOk();
+        $this->assertSame('Editor', $author->refresh()->getTranslation('role', 'en'));
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function agent(string $tool, array $arguments = []): TestResponse
+    {
+        $bound = new RegistryTool($this->app->make(ToolRegistry::class)->tool($tool));
+
+        return WebxServer::actingAs($this->manager(), 'cms')->tool($bound, $arguments);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function content(TestResponse $response): array
+    {
+        $decoded = null;
+
+        $response->assertStructuredContent(static function (AssertableJson $json) use (&$decoded): void {
+            $decoded = $json->etc()->toArray();
+        });
+
+        return (array) $decoded;
     }
 
     private function manager(): CmsUser

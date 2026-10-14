@@ -264,6 +264,36 @@ one has nothing to subscribe to.
 common, then the main rubric, published only, never the article itself. How many is
 `webx-blog.related`; zero turns the automatic half off.
 
+## Author pages
+
+Off by default, the blog names the account that wrote an article — as it always has. A site that
+wants its authors to be people a reader can look up turns them on:
+
+```bash
+WEBX_BLOG_AUTHORS=true
+```
+
+The panel then has **Blog › Authors**, behind its own permission `blog.authors.manage`: a profile
+per administrator who writes — the name a reader sees, a role, a photo, a few lines about them and
+the last part of the address. Making one is choosing the account; the name starts as the account's
+and is the site's to change.
+
+A page is the author's own decision, **«Page on the site»** on the profile. With it, the author
+has a page at `blog/author/anna` with all of their articles, the byline under every article links
+there, and the article's `BlogPosting` names them as a `Person` with that address. Without it —
+or on a site with the switch off — the byline is text and the address answers 404. Both halves
+have to say yes: turning the feature on does not make everybody who writes a public figure.
+
+- **Without a profile** an account is named by its own name, as before.
+- **With nothing published yet** the page exists and stays out of the index (`noindex,follow`)
+  and out of the sitemap, until the first article goes out.
+- **The address** stays in the registry whatever the switches say, so opening a page later does
+  not move it. `ProfilePage` markup with the `Person` in it is printed on the page.
+- **The look** is `webx-blog::author` until the site writes `resources/views/blog/author.blade.php`
+  (or `WEBX_BLOG_VIEW_AUTHOR`); the cards in it are the same `blog.card` as everywhere.
+- **In the article editor**, under «Author», a link to the author's profile — or «Make a profile»
+  for an account without one.
+
 ## For an agent: MCP
 
 The three sections are also a set of tools. With `webx-ui/mcp` installed (it comes with this
@@ -293,6 +323,8 @@ way tinker is.
 | `rubrics_list`     | The sections of the blog, in menu order, with how many articles each holds |
 | `tags_list`        | The tags, most used first, with how each stands with the index             |
 | `tags_merge`       | Several tags into one — irreversible, optionally leaving redirects behind  |
+| `authors_list`     | The author profiles: account, articles, whether the page answers, where    |
+| `authors_update`   | The words of a profile and its «Page on the site» — not making one         |
 
 Every tool that changes something accepts `dry_run: true` and then reports what it would do
 without doing it. An article is named by its id or by its address — `"/blog/how-to-choose"` — and
@@ -332,6 +364,7 @@ named "publish" being called.
 | `per_page`     | `12`    | Articles on a listing page                            |
 | `related`      | `3`     | How many "read next" are worked out beyond the pinned |
 | `tags.noindex` | `true`  | What a new tag starts with                            |
+| `authors`      | `false` | Author profiles and pages (`WEBX_BLOG_AUTHORS`)       |
 | `views.*`      |         | The views each page is printed with                   |
 | `layout`       |         | The Blade component those views stand in              |
 | `middleware`   |         | What the feed and the RSS run through                 |
@@ -341,7 +374,8 @@ named "publish" being called.
 - **Comments** — a module the size of `module-inbox`: moderation, spam, notifications.
 - **Subscriptions and a newsletter** need a scheduler and outgoing mail that actually run.
 - **A view counter** is a write on every GET, and a conversation about caching.
-- **Series, co-authors, authors who are not administrators.**
+- **Series, co-authors, authors who are not administrators** — an author page is an
+  administrator's profile ([Author pages](#author-pages)).
 - **A tree of rubrics** — if it ever turns out to be wanted, `nested-set` and `TreePath` are there.
 - **Permissions** beyond the three above, like everywhere else, wait for the wider conversation
   about roles.

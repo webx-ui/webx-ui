@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Blog\Panel;
 
 use WebxUi\Blog\BlogServiceProvider;
+use WebxUi\Blog\Mcp\AuthorTools;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\ProvidesMcpDefaults;
+use WebxUi\Mcp\Tool;
 
 /**
  * «Authors» in the blog's group (§19.5): the profiles — the name a reader sees, a photo, a role,
@@ -16,9 +20,16 @@ use WebxUi\Blog\BlogServiceProvider;
  *
  * A permission of its own rather than the rubrics': whoever may rename a rubric may not by that
  * put a colleague's name and face on the site.
+ *
+ * To an agent, `authors_list` and `authors_update` (§19.7) — not making a profile, which is a
+ * person's decision.
  */
-final class AuthorsModule extends BlogModule
+final class AuthorsModule extends BlogModule implements ProvidesMcpTools
 {
+    use ProvidesMcpDefaults;
+
+    public function __construct(private readonly AuthorTools $tools) {}
+
     public function id(): string
     {
         return 'authors';
@@ -45,5 +56,13 @@ final class AuthorsModule extends BlogModule
     public function permissions(): array
     {
         return ['blog.authors.manage'];
+    }
+
+    /**
+     * @return list<Tool>
+     */
+    public function mcpTools(): array
+    {
+        return $this->tools->all();
     }
 }
