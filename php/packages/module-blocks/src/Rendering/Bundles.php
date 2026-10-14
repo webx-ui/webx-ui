@@ -198,13 +198,17 @@ final class Bundles
     }
 
     /**
-     * The hash of an ordered set: sixteen hex characters of the pairs of slug and version.
+     * The hash of an ordered set: sixteen hex characters of the pairs of slug and version row.
+     *
+     * The row, not the version number: a type deleted and created again under the same slug
+     * starts over at version 1, and a hash of the numbers would hand it the old type's bundle —
+     * the old styles, cached forever.
      *
      * @param  list<BlockType>  $ordered
      */
     public function hash(array $ordered): string
     {
-        $pairs = array_map(static fn (BlockType $type): array => [$type->slug, $type->version], $ordered);
+        $pairs = array_map(static fn (BlockType $type): array => [$type->slug, $type->versionId], $ordered);
 
         return substr(hash('sha256', json_encode($pairs, JSON_THROW_ON_ERROR)), 0, 16);
     }

@@ -6,6 +6,7 @@ namespace WebxUi\Blocks\Tests;
 
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Facades\Blocks;
 use WebxUi\Blocks\Models\BlockBundle;
 use WebxUi\Blocks\Rendering\Bundles;
@@ -70,6 +71,26 @@ final class BundlesTest extends TestCase
         $this->assertNotSame($heroBefore, $heroAfter->hash);
         $this->assertStringContainsString('color:blue', $heroAfter->css);
         $this->assertSame($textBefore, $textAfter?->hash);
+    }
+
+    #[Test]
+    public function a_type_deleted_and_created_again_under_its_slug_gets_a_bundle_of_its_own(): void
+    {
+        $page = [$this->node('services')];
+
+        $old = $this->publish('services', '<ul></ul>', [], ['styles' => '.services{display:grid}']);
+        $before = $this->bundleFor($page)?->hash;
+
+        // Both are version 1 of `services`: only the version row tells them apart.
+        $old->delete();
+        $this->app->make(BlockTypes::class)->forget();
+        $this->publish('services', '<ul></ul>', [], ['styles' => '.services{display:flex}']);
+
+        $after = $this->bundleFor($page);
+
+        $this->assertNotNull($after);
+        $this->assertNotSame($before, $after->hash);
+        $this->assertStringContainsString('display:flex', $after->css);
     }
 
     #[Test]
