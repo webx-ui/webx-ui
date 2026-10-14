@@ -83,8 +83,11 @@ export interface BlocksFragmentHost {
   selected: Readonly<Ref<string | null>>
   /** The shared block this constructor edits, when it edits one: never offered inside itself. */
   own: Readonly<Ref<string | null>>
-  /** Put these blocks where the block with this key stands, and open the first of them. */
-  detach(key: string, nodes: BlockNode[]): void
+  /**
+   * Put these blocks where the block with this key stands, and open the first of them. Whether it
+   * was done — the panel on the site writes it to the draft first, and the draft may refuse.
+   */
+  detach(key: string, nodes: BlockNode[]): boolean | Promise<boolean>
 }
 
 export const blocksFragmentKey: InjectionKey<BlocksFragmentHost> = Symbol('wx-blocks-fragment')

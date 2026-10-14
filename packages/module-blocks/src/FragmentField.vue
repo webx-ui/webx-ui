@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { adminKey, useErrorText, useTranslate, type AdminContext } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxSelect, WxSkeleton, WxText } from '@webx-ui/core'
 import { createBlocksApi, createRegionsApi } from './api'
@@ -38,7 +37,6 @@ const message = useErrorText()
 /* `inject` and not `useAdmin()`: a field must draw outside a panel too, in a demo or a test. */
 const admin: AdminContext | null = inject(adminKey, null)
 const host = inject(blocksFragmentKey, null)
-const router = useRouter()
 
 const loaded = ref<RegionRow[] | null>(null)
 const list = computed(() => props.fragments ?? loaded.value)
@@ -75,14 +73,17 @@ const badge = computed(() =>
 
 /**
  * Where the shared block is edited: its own editor, in a new tab — the page being edited here
- * keeps its draft and its place. Only for whoever may go there, and only where the panel has it.
+ * keeps its draft and its place. Only for whoever may go there, and only where the panel has the
+ * section. Built from the panel's address rather than asked of the router: the panel on the site
+ * draws this form in a frame that has none.
  */
 const editHref = computed<string | null>(() => {
   const name = chosen.value?.name
+  const path = admin?.modules?.find((module) => module.id === 'regions')?.path
 
-  if (!name || !admin?.can('blocks.regions') || !router?.hasRoute('webx.regions.edit')) return null
+  if (!name || !path || !admin?.can('blocks.regions')) return null
 
-  return router.resolve({ name: 'webx.regions.edit', params: { name } }).href
+  return `${admin.basePath.replace(/\/$/, '')}${path}/${encodeURIComponent(name)}`
 })
 
 /** Only inside a constructor, which is what can put the copies in its place. */
@@ -114,8 +115,10 @@ async function detach(): Promise<void> {
   copying.value = true
 
   try {
-    host.detach(key, await createRegionsApi(admin).copy(row.name))
-    toast.success(t('fragment.detached', { title: row.title }))
+    // The host says how it went when it has more to say than this: the panel on the site saves.
+    if (await host.detach(key, await createRegionsApi(admin).copy(row.name))) {
+      toast.success(t('fragment.detached', { title: row.title }))
+    }
   } catch (error) {
     toast.danger(message(error))
   } finally {

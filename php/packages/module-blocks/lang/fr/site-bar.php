@@ -23,6 +23,8 @@ return [
     'gone' => 'Ce bloc n’est plus sur la page.',
     'others' => 'Aussi ouvert dans le panneau : :names',
     'region-everywhere' => 'Sur toutes les pages',
+    'fragment-where' => 'Bloc partagé : sur chaque page où il figure',
+    'fragment-everywhere' => 'Un bloc partagé : le modifier ici le change sur toutes les pages où il figure.',
     'region-fallback' => 'Ici, le site affiche le balisage du code. Configurez la zone dans le panneau pour la modifier depuis le site.',
     'open-in-panel' => 'Ouvrir dans le panneau',
     'changes' => 'Modifications non publiées : :count',

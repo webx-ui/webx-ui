@@ -23,6 +23,8 @@ return [
     'gone' => 'This block is not on the page any more.',
     'others' => 'Also open in the panel: :names',
     'region-everywhere' => 'On every page',
+    'fragment-where' => 'Shared block: on every page where it stands',
+    'fragment-everywhere' => 'A shared block: an edit here changes it on every page where it stands.',
     'region-fallback' => 'The site shows the markup from code here. Set the region up in the panel to edit it from the site.',
     'open-in-panel' => 'Open in panel',
     'changes' => 'Unpublished changes: :count',

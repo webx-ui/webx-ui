@@ -23,6 +23,8 @@ return [
     'gone' => 'Dieser Block ist nicht mehr auf der Seite.',
     'others' => 'Auch im Panel geöffnet: :names',
     'region-everywhere' => 'Auf jeder Seite',
+    'fragment-where' => 'Gemeinsamer Block: auf jeder Seite, auf der er steht',
+    'fragment-everywhere' => 'Ein gemeinsamer Block: Eine Änderung hier wirkt auf jeder Seite, auf der er steht.',
     'region-fallback' => 'Hier zeigt die Website das Markup aus dem Code. Richte den Bereich im Panel ein, um ihn von der Website aus zu bearbeiten.',
     'open-in-panel' => 'Im Panel öffnen',
     'changes' => 'Unveröffentlichte Änderungen: :count',

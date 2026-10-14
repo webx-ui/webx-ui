@@ -23,6 +23,8 @@ return [
     'gone' => 'Tego bloku nie ma już na stronie.',
     'others' => 'Otwarte też w panelu: :names',
     'region-everywhere' => 'Na każdej stronie',
+    'fragment-where' => 'Wspólny blok: na każdej stronie, na której stoi',
+    'fragment-everywhere' => 'Wspólny blok: edycja tutaj zmieni go na każdej stronie, na której stoi.',
     'region-fallback' => 'Tutaj strona pokazuje znaczniki z kodu. Skonfiguruj strefę w panelu, aby edytować ją ze strony.',
     'open-in-panel' => 'Otwórz w panelu',
     'changes' => 'Nieopublikowane zmiany: :count',

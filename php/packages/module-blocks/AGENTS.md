@@ -63,6 +63,8 @@ their guides when the question is about one of those.
 | The types a module offers (FAQ accordion…)  | `php artisan webx:blocks:offered --install`; a slug the site has, or the theme carries, is not touched                   |
 | A region in the layout                      | declare it under `regions` in `config/webx-blocks.php` and print `<x-webx-blocks::region>` with a `fallback`             |
 | A type only for one region                  | `"region:header"` in the type's `allowed_in`; `allow` and `max` on the region limit what it takes                        |
+| One section on many pages (request form)    | a region with `'fragment' => true`; place the block «Shared block» (`wx-fragment`) or print the tag                      |
+| That section with its own text on one page  | «Make it this page's own» in the block's form; agent: `add` its live blocks after the node, `remove` it                  |
 | Another group in the picker                 | add it to `groups` in `config/webx-blocks.php` and translate it in the panel's dictionary                                |
 | Blocks drawn inside the site's layout       | `WEBX_BLOCKS_LAYOUT=layout` (`<x-layout>` with a `head` slot and the default one)                                        |
 | A library a block script can ask for        | `webx.provide('swiper', Swiper)` in the site's bundle, list it in `provides`; the block does `await webx.use('swiper')`  |

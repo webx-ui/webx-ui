@@ -446,6 +446,8 @@ function start() {
     ends: new Map(),
     // The sets of block styles and scripts the page has, by hash.
     bundles: new Set(),
+    // The regions printed on the page, as the panel was last told them.
+    regions: '',
   }
 
   const idOf = (scope, key) => `${scope}|${key}`
@@ -504,6 +506,23 @@ function start() {
 
     edit.blocks = found.filter((block) => block.end !== null)
     edit.ends = ends
+
+    // A shared block is on the pages that place it, not on all of them like the header: the panel
+    // lists the regions this page prints, and a block put in or taken out can change which.
+    if (regionsOnPage().join(',') !== edit.regions) tellRegions()
+  }
+
+  function regionsOnPage() {
+    return [...edit.ends.keys()]
+      .filter((scope) => scope.startsWith('region:'))
+      .map((scope) => scope.slice(7))
+  }
+
+  function tellRegions() {
+    const names = regionsOnPage()
+
+    edit.regions = names.join(',')
+    post({ type: 'regions', names })
   }
 
   // A block the panel may edit from here: one of the trees it named — the record's own, a region
@@ -1070,6 +1089,7 @@ function start() {
       scan()
       redraw()
       post({ type: 'bundles', hashes: bundles() })
+      tellRegions()
     }
 
     if (message.type === 'mode') {

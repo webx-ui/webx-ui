@@ -433,11 +433,13 @@ provide(blocksFragmentKey, {
   own: computed(() =>
     topRoot.value.startsWith('region:') ? topRoot.value.slice('region:'.length) : null,
   ),
-  detach(key: string, nodes: BlockNode[]): void {
-    if (!locate(tree.value, key)) return
+  detach(key: string, nodes: BlockNode[]): boolean {
+    if (!locate(tree.value, key)) return false
 
     set(swapNode(tree.value, key, nodes))
     selectedKey.value = nodes[0]?.key ?? null
+
+    return true
   },
 })
 

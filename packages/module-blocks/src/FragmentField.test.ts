@@ -57,6 +57,7 @@ async function field(
     state: { manifest: null, user: null, status: 'ready', error: null },
     can: () => options.can ?? true,
     types: {},
+    modules: [{ id: 'regions', path: '/regions' }],
   } as unknown as AdminContext
 
   const router = createRouter({
