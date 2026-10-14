@@ -300,6 +300,22 @@ have to say yes: turning the feature on does not make everybody who writes a pub
 - **In the article editor**, under «Author», a link to the author's profile — or «Make a profile»
   for an account without one.
 
+## Latest articles on any page
+
+The module offers a block type, **Latest articles** (`blog`): a heading, the articles and a link
+to the feed. Install it once with `php artisan webx:blocks:offered --install --module=blog` (a
+theme with a `blog` block of its own puts that one instead), then put it on the home page.
+
+- **Which articles** — the field «Articles» is a `wx-collection` of the source `blog`: all of
+  them or the rubrics you pick, and how many. The order is the feed's: pinned first, then the
+  newest; only what a reader of the feed would see.
+- **The cards** are the feed's own (`webx-blog::partials.cards`), so a theme's
+  `parts/blog/card.blade.php` draws them the same on the home page as in the blog.
+- **A block of your own** takes the same field and either prints the cards as data
+  (`$articles['items']`: `title`, `url`, `lead`, `cover`, `published_at`, `rubric`,
+  `tags`, `author`) or asks `WebxUi\Blog\Rendering\ArticleQuery::block($articles)` for the
+  models.
+
 ## For an agent: MCP
 
 The three sections are also a set of tools. With `webx-ui/mcp` installed (it comes with this

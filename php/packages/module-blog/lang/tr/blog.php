@@ -10,4 +10,5 @@ return [
     'related' => 'Sırada',
     'rss' => 'RSS',
     'rss-description' => 'En son yazılar.',
+    'all' => 'Tüm yazılar',
 ];

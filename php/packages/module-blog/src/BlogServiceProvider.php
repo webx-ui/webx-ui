@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
@@ -21,6 +22,8 @@ use WebxUi\Admin\SiteBar\DraftPublishing;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Blocks\BlockOffers;
+use WebxUi\Blog\Collections\ArticlesSource;
 use WebxUi\Blog\Handlers\ArticleHandler;
 use WebxUi\Blog\Handlers\AuthorHandler;
 use WebxUi\Blog\Handlers\RubricHandler;
@@ -84,6 +87,7 @@ class BlogServiceProvider extends ServiceProvider
         $this->registerRouteTypes();
         $this->registerFeedRoutes();
         $this->registerBlockEntity();
+        $this->registerCollection();
         $this->registerSeoSource();
         $this->registerLinkSources();
         $this->registerScreens();
@@ -226,6 +230,20 @@ class BlogServiceProvider extends ServiceProvider
 
         if (! in_array(Article::class, $entities, true)) {
             $config->set('webx-blocks.entities', [...$entities, Article::class]);
+        }
+    }
+
+    /**
+     * What a block may show, and — when `module-blocks` is here — the block that shows it (§20).
+     * The type is offered, not installed: `webx:blocks:offered --install` puts it on the site once,
+     * and a theme that carries a `blog` block of its own puts that one instead.
+     */
+    private function registerCollection(): void
+    {
+        $this->app->make(CollectionSources::class)->register($this->app->make(ArticlesSource::class));
+
+        if (class_exists(BlockOffers::class)) {
+            $this->app->make(BlockOffers::class)->offer(BlogModule::GROUP, __DIR__.'/../resources/blocks');
         }
     }
 

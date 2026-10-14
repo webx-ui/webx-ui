@@ -47,7 +47,7 @@ use WebxUi\Settings\Contacts\Channel;
  * @property array<string, string>|string|null $role
  * @property array<string, string>|string|null $bio
  * @property int|null $photo_id
- * @property array<mixed>|null $socials  what is stored; {@see self::socialLinks()} is what is printable
+ * @property array<mixed>|null $socials what is stored; {@see self::socialLinks()} is what is printable
  * @property bool $is_public
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

@@ -35,6 +35,9 @@ categories `webx-ui/module-admin`, the SEO card and redirects `webx-ui/module-se
   section «Authors» with screen `blog.author-form` and permission `blog.authors.manage`, tools
   `authors_list` and `authors_update`. The byline links only to an open page
   (`Article::authorUrl()`); without a profile it is the account's name.
+- **A block** — the collection source `blog` (`ArticlesSource` over `ArticleQuery`: the feed's
+  articles in the feed's order, rubrics as categories) and the offered block type `blog` «Latest
+  articles», which prints the feed's cards (`ArticleQuery::block($value)` gives the models).
 - Also registered: link sources for articles, rubrics and tags, an SEO source for tag pages
   (`noindex` by default), the feed in the sitemap, demo content (`resources/demo`).
 
@@ -51,6 +54,7 @@ categories `webx-ui/module-admin`, the SEO card and redirects `webx-ui/module-se
 | More or fewer articles per listing      | `per_page` in `config/webx-blog.php` (publish it: `--tag=webx-blog-config`)                                |
 | No automatic "read next"                | `'related' => 0` — the articles pinned by hand stay                                                        |
 | New tags open to the index              | `'tags' => ['noindex' => false]`; one tag: clear its flag or write a rule in `seo_urls`                    |
+| Latest articles on the home page        | `php artisan webx:blocks:offered --install --module=blog`, then the block «Latest articles» on the page    |
 | Pages for the authors                   | `WEBX_BLOG_AUTHORS=true`, then a profile per author in Blog › Authors with «Page on the site»              |
 | Different markup of the author page     | `resources/views/blog/author.blade.php`, or `WEBX_BLOG_VIEW_AUTHOR`; handed `$author` and `$articles`      |
 | No visible breadcrumbs                  | `WEBX_BLOG_BREADCRUMBS=false` (the BreadcrumbList in `<head>` is module-seo's and stays)                   |
