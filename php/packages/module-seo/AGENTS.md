@@ -73,6 +73,7 @@ their guides when the question is about one of those.
 | The head not to print a part the site writes      | `php artisan vendor:publish --tag=webx-seo-config`, set that key of `print` to `false`                                                                         |
 | A default title pattern                           | `title_template` in `config/webx-seo.php` (`{title}`, `{site}`); editors use the setting                                                                       |
 | Titles cut to the limits                          | `'trim' => true`; the limits are `limits.title`, `limits.description`, `limits.keywords`                                                                       |
+| Prev and next links on a page of a list           | `app(Seo::class)->paginate($paginator)` before the view; `print.pagination` turns the lines off                                                                |
 | Keep more of the query in the self-canonical      | `canonical.query` (default `['page']`); `canonical.self` off for no self-canonical                                                                             |
 | Turn interlinking or page FAQ on                  | `WEBX_SEO_LINKS=true`, `WEBX_SEO_FAQ=true` — a developer's decision, not an editor's                                                                           |
 | No redirects, no sitemap, own sitemap             | `WEBX_SEO_REDIRECTS=false`, `WEBX_SEO_SITEMAP=false`; `sitemap.per_file`, `WEBX_SEO_SITEMAP_TTL`                                                               |

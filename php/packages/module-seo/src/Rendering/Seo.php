@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Rendering;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use WebxUi\Admin\Shortcodes\Shortcodes;
@@ -34,6 +36,16 @@ final class Seo
 
     /** Where `put()` keeps its blocks on the request. */
     public const PUT = 'webx.seo.put';
+
+    /** Where `paginate()` keeps the neighbours of this page on the request. */
+    public const PAGES = 'webx.seo.pages';
+
+    /**
+     * The neighbours set outside a request.
+     *
+     * @var array{prev?: string, next?: string}
+     */
+    private array $pages = [];
 
     /**
      * Blocks pushed outside a request — a console command rendering a page.
@@ -215,6 +227,7 @@ final class Seo
             'alternates' => ($print['hreflang'] ?? true) ? $alternates : [],
             'social' => app(SocialTags::class)->for($data, $subject, $locale, $alternates),
             'blocks' => $this->blocks($data, $subject, $locale, $print),
+            'pages' => ($print['pagination'] ?? true) ? $this->pages() : [],
         ])->render());
     }
 
@@ -242,6 +255,59 @@ final class Seo
         }
 
         $request->attributes->set(self::PUSHED, [...$this->pushed(), $block]);
+    }
+
+    /**
+     * This response is one page of a list: `<link rel="prev">` and `<link rel="next">` in the head,
+     * to the pages either side. Called by whoever made the paginator, before the view prints the
+     * head — a handler, a controller, the module's listing.
+     *
+     * The first page is the list's own address, without `?page=1`, as the pagination widget links
+     * it and as the self canonical names it: one page, one address.
+     *
+     * @param  Paginator<array-key, mixed>  $paginator
+     */
+    public function paginate(Paginator $paginator): void
+    {
+        $page = $paginator->currentPage();
+        $pages = [];
+
+        if ($page > 1) {
+            $pages['prev'] = self::firstPageless($paginator, $page - 1);
+        }
+
+        if ($paginator->hasMorePages()) {
+            $pages['next'] = (string) $paginator->nextPageUrl();
+        }
+
+        $request = $this->request();
+
+        if ($request === null) {
+            $this->pages = $pages;
+
+            return;
+        }
+
+        $request->attributes->set(self::PAGES, $pages);
+    }
+
+    /**
+     * The neighbours `paginate()` set in this request.
+     *
+     * @return array{prev?: string, next?: string}
+     */
+    public function pages(): array
+    {
+        $request = $this->request();
+
+        if ($request === null) {
+            return $this->pages;
+        }
+
+        /** @var array{prev?: string, next?: string} $pages */
+        $pages = (array) $request->attributes->get(self::PAGES, []);
+
+        return $pages;
     }
 
     /**
@@ -430,6 +496,24 @@ final class Seo
         // folded together, a question repeated by its text kept once.
         // JSON-LD is text to whoever reads it: a shortcode in a lead is its plain rendering there.
         return self::plainDeep(PageFaq::fold(array_values(array_filter($blocks, static fn (array $block): bool => $block !== []))));
+    }
+
+    /**
+     * The address of a page of the paginator, page one without its parameter.
+     *
+     * @param  Paginator<array-key, mixed>  $paginator
+     */
+    private static function firstPageless(Paginator $paginator, int $number): string
+    {
+        $url = $paginator->url($number);
+
+        if ($number !== 1 || ! $paginator instanceof AbstractPaginator) {
+            return $url;
+        }
+
+        $name = preg_quote($paginator->getPageName(), '/');
+
+        return rtrim((string) preg_replace('/([?&])'.$name.'=1(?:&|$)/', '$1', $url), '?&');
     }
 
     private function pointsElsewhere(?string $canonical, string $path): bool

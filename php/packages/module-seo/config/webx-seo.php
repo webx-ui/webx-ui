@@ -41,6 +41,8 @@ return [
         'keywords' => true,
         'robots' => true,
         'canonical' => true,
+        // <link rel="prev"> and <link rel="next"> on a page of a list, from Seo::paginate().
+        'pagination' => true,
         'og' => true,
         'article' => true,
         'json_ld' => true,

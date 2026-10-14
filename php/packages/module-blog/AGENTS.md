@@ -81,7 +81,8 @@ theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a bre
 - Listings: `webx-blog-header`, `webx-blog-header__title`, `webx-blog-header__lead`,
   `webx-blog-empty`, `webx-blog-rubrics`, `webx-blog-rubrics__list`, `webx-blog-rubrics__item`,
   `webx-blog-rubrics__link`, `webx-blog-pager`, `webx-blog-pager__link`, `webx-blog-pager__link--prev`,
-  `webx-blog-pager__link--next`.
+  `webx-blog-pager__link--next` (previous and next without the widgets), `webx-blog-pages` (the
+  widgets' `<x-webx-pagination>`, when the site has them).
 - Cards: `webx-blog-cards`, `webx-blog-card`, `webx-blog-card__link`, `webx-blog-card__cover`,
   `webx-blog-card__title`, `webx-blog-card__date`, `webx-blog-card__lead`.
 - Article: `webx-blog-article`, `webx-blog-article__header`, `webx-blog-article__title`,

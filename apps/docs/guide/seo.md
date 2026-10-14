@@ -140,6 +140,21 @@ Everything goes through Blade's escaping, and JSON-LD through `json_encode` with
 a title with a quote in it cannot end an attribute, and a `</script>` inside a string cannot close
 the block.
 
+### A page of a list
+
+A listing that is one page of several names its neighbours in the head:
+
+```html
+<link rel="prev" href="https://example.com/blog" />
+<link rel="next" href="https://example.com/blog?page=3" />
+```
+
+Whoever makes the paginator tells the head before the view prints it —
+`app(\WebxUi\Seo\Rendering\Seo::class)->paginate($articles)` — and page one is named by the
+list's own address, without `?page=1`, as the self canonical and `<x-webx-pagination>` name it.
+The blog does it for the feed, a rubric, a tag and an author. `print.pagination` turns the lines
+off.
+
 ## Writing a rule
 
 A rule covers one address or a shape of them. What is compared is the path **with its query

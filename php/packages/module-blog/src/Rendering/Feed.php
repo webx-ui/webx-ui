@@ -12,6 +12,7 @@ use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Author;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
+use WebxUi\Seo\Rendering\Seo;
 
 /**
  * The three listings, which are one listing asked three questions (§5).
@@ -24,7 +25,10 @@ use WebxUi\Blog\Models\Tag;
  */
 final class Feed
 {
-    public function __construct(private readonly Config $config) {}
+    public function __construct(
+        private readonly Config $config,
+        private readonly Seo $seo,
+    ) {}
 
     /**
      * Everything on the site, newest first, pinned above it (§5).
@@ -106,6 +110,9 @@ final class Feed
             ->inFeedOrder()
             ->with($this->eagerLoad())
             ->paginate($this->perPage());
+
+        // A listing is a page of a list wherever it is printed: its neighbours go into the head.
+        $this->seo->paginate($page);
 
         return $page;
     }

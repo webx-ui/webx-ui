@@ -135,6 +135,41 @@ final class PublicTest extends TestCase
     }
 
     #[Test]
+    public function a_page_of_a_listing_names_its_neighbours_in_the_head(): void
+    {
+        config()->set('webx-blog.per_page', 1);
+        $repairs = $this->rubric('repairs');
+
+        foreach (['one', 'two', 'three'] as $slug) {
+            $this->article($slug)->rubrics()->attach($repairs);
+        }
+
+        $first = $this->get('/blog')->assertOk();
+        $first->assertSee('<link rel="next" href="'.url('/blog').'?page=2">', false);
+        $first->assertDontSee('<link rel="prev"', false);
+
+        // Page one is the list's own address, as the canonical and the pagination name it.
+        $this->get('/blog?page=2')
+            ->assertSee('<link rel="prev" href="'.url('/blog').'">', false)
+            ->assertSee('<link rel="next" href="'.url('/blog').'?page=3">', false);
+
+        $this->get('/blog/repairs?page=3')
+            ->assertSee('<link rel="prev" href="'.url('/blog/repairs').'?page=2">', false)
+            ->assertDontSee('<link rel="next"', false);
+
+        // Without the widgets the module's own previous and next.
+        $this->get('/blog?page=2')->assertSee('<nav class="webx-blog-pager">', false);
+    }
+
+    #[Test]
+    public function one_page_has_no_neighbours(): void
+    {
+        $this->article('one');
+
+        $this->get('/blog')->assertOk()->assertDontSee('<link rel="next"', false)->assertDontSee('<link rel="prev"', false);
+    }
+
+    #[Test]
     public function the_rss_carries_the_main_rubric_as_the_category(): void
     {
         $first = $this->rubric('repairs');

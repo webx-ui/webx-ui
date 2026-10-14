@@ -6,6 +6,7 @@ namespace WebxUi\Seo\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Application;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -159,6 +160,30 @@ final class EntityHeadTest extends TestCase
         $seo->put('faq', []);
 
         $this->assertSame([], $seo->putBlocks());
+    }
+
+    /*
+     * A page of a list names the pages either side, page one by the list's own address — and a
+     * site that does not want the lines turns them off like any other part of the head.
+     */
+    #[Test]
+    public function a_page_of_a_list_names_its_neighbours(): void
+    {
+        $seo = app(Seo::class);
+
+        $seo->paginate(new LengthAwarePaginator(range(1, 10), 50, 10, 2, ['path' => 'https://example.test/news']));
+        $head = (string) $seo->head(null, '/news', 'en');
+
+        $this->assertStringContainsString('<link rel="prev" href="https://example.test/news">', $head);
+        $this->assertStringContainsString('<link rel="next" href="https://example.test/news?page=3">', $head);
+
+        $seo->paginate(new LengthAwarePaginator(range(1, 10), 50, 10, 5, ['path' => 'https://example.test/news']));
+        $last = (string) $seo->head(null, '/news', 'en');
+        $this->assertStringContainsString('<link rel="prev" href="https://example.test/news?page=4">', $last);
+        $this->assertStringNotContainsString('rel="next"', $last);
+
+        config()->set('webx-seo.print.pagination', false);
+        $this->assertStringNotContainsString('rel="prev"', (string) $seo->head(null, '/news', 'en'));
     }
 
     #[Test]
