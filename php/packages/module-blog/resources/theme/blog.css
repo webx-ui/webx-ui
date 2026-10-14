@@ -203,6 +203,16 @@
   color: var(--site-color-text-muted);
 }
 
+/* The networks under the bio: the widgets' icons, or a row of plain links without them. */
+.webx-blog-author__socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2) var(--site-space-4);
+  margin: var(--site-space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
 .webx-blog-tags {
   display: flex;
   flex-wrap: wrap;

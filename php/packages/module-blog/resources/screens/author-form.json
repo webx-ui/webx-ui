@@ -65,6 +65,137 @@
                   }
                 },
                 {
+                  "id": "socials",
+                  "type": "wx-repeater",
+                  "name": "socials",
+                  "label": "trans::webx-blog::author.field-socials",
+                  "help": "trans::webx-blog::author.field-socials-help",
+                  "props": {
+                    "sortable": true,
+                    "itemLabel": "network",
+                    "addLabel": "trans::webx-blog::author.socials-add",
+                    "emptyText": "trans::webx-blog::author.socials-empty"
+                  },
+                  "children": [
+                    {
+                      "id": "social-network",
+                      "type": "wx-select",
+                      "name": "network",
+                      "label": "trans::webx-blog::author.social-network",
+                      "props": {
+                        "options": [
+                          {
+                            "value": "facebook",
+                            "label": "Facebook"
+                          },
+                          {
+                            "value": "instagram",
+                            "label": "Instagram"
+                          },
+                          {
+                            "value": "x",
+                            "label": "X"
+                          },
+                          {
+                            "value": "youtube",
+                            "label": "YouTube"
+                          },
+                          {
+                            "value": "tiktok",
+                            "label": "TikTok"
+                          },
+                          {
+                            "value": "linkedin",
+                            "label": "LinkedIn"
+                          },
+                          {
+                            "value": "threads",
+                            "label": "Threads"
+                          },
+                          {
+                            "value": "pinterest",
+                            "label": "Pinterest"
+                          },
+                          {
+                            "value": "telegram",
+                            "label": "Telegram"
+                          },
+                          {
+                            "value": "whatsapp",
+                            "label": "WhatsApp"
+                          },
+                          {
+                            "value": "viber",
+                            "label": "Viber"
+                          },
+                          {
+                            "value": "discord",
+                            "label": "Discord"
+                          },
+                          {
+                            "value": "reddit",
+                            "label": "Reddit"
+                          },
+                          {
+                            "value": "twitch",
+                            "label": "Twitch"
+                          },
+                          {
+                            "value": "vimeo",
+                            "label": "Vimeo"
+                          },
+                          {
+                            "value": "mastodon",
+                            "label": "Mastodon"
+                          },
+                          {
+                            "value": "bluesky",
+                            "label": "Bluesky"
+                          },
+                          {
+                            "value": "github",
+                            "label": "GitHub"
+                          },
+                          {
+                            "value": "behance",
+                            "label": "Behance"
+                          },
+                          {
+                            "value": "dribbble",
+                            "label": "Dribbble"
+                          },
+                          {
+                            "value": "medium",
+                            "label": "Medium"
+                          },
+                          {
+                            "value": "tripadvisor",
+                            "label": "Tripadvisor"
+                          },
+                          {
+                            "value": "vk",
+                            "label": "VK"
+                          },
+                          {
+                            "value": "other",
+                            "label": "trans::webx-settings::screen.social-other"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "social-url",
+                      "type": "wx-input",
+                      "name": "url",
+                      "label": "trans::webx-blog::author.social-url",
+                      "props": {
+                        "type": "url",
+                        "placeholder": "https://"
+                      }
+                    }
+                  ]
+                },
+                {
                   "id": "is-public",
                   "type": "wx-switch",
                   "name": "is_public",

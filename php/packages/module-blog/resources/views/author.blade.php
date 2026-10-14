@@ -23,6 +23,24 @@
         @if (($bio = $author->bioHtml()) !== '')
             <div class="webx-blog-header__lead">{!! $bio !!}</div>
         @endif
+        {{-- Their networks (§19.11): the widgets' icons where the site registered them, plain links where
+             not. The tag goes through Blade::render in the PHP block: a tag nobody registered would not
+             compile, and a template compiles whole. --}}
+        @php
+            $socials = $author->socialChannels();
+            $icons = $socials !== [] && array_key_exists('webx-socials', \Illuminate\Support\Facades\Blade::getClassComponentAliases())
+                ? \Illuminate\Support\Facades\Blade::render('<x-webx-socials class="webx-blog-author__socials" :socials="$socials" />', ['socials' => $socials])
+                : null;
+        @endphp
+        @if ($icons !== null)
+            {!! $icons !!}
+        @elseif ($socials !== [])
+            <ul class="webx-blog-author__socials">
+                @foreach ($socials as $social)
+                    <li><a href="{{ $social->url }}" rel="me noopener" target="_blank">{{ ucfirst($social->kind) }}</a></li>
+                @endforeach
+            </ul>
+        @endif
     </header>
 
     @if ($articles->isEmpty())

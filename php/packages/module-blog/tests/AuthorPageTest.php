@@ -130,6 +130,43 @@ final class AuthorPageTest extends TestCase
     }
 
     #[Test]
+    public function the_author_is_one_person_with_their_networks_and_the_posting_says_where_it_belongs(): void
+    {
+        $this->authorsOn();
+        $anna = $this->profile('anna', public: true);
+        $anna->socials = [['network' => 'linkedin', 'url' => 'https://www.linkedin.com/in/anna-writer'], ['network' => 'x', 'url' => 'javascript:alert(1)']];
+        $anna->save();
+
+        $rubric = $this->rubric('repairs');
+        $article = $this->articleBy($anna->user, 'changing-a-belt');
+        $article->rubrics()->attach($rubric);
+        $article->tags()->attach($this->tag('belts'));
+
+        $posting = $article->refresh()->structuredData('en')[0];
+
+        // One node for the author of every article and the subject of the page.
+        $this->assertSame(url('/blog/author/anna').'#person', $posting['author']['@id']);
+        // Only what a browser opens as a page: the script is not a network.
+        $this->assertSame(['https://www.linkedin.com/in/anna-writer'], $posting['author']['sameAs']);
+        $this->assertSame('Repairs', $posting['articleSection']);
+        $this->assertSame('Belts', $posting['keywords']);
+        $this->assertSame('en', $posting['inLanguage']);
+
+        $page = $anna->refresh()->structuredData('en')[0];
+        $this->assertSame($posting['author']['@id'], $page['mainEntity']['@id']);
+
+        $this->get('/blog/author/anna')->assertOk()->assertSee('https://www.linkedin.com/in/anna-writer', false)->assertDontSee('javascript:', false);
+    }
+
+    #[Test]
+    public function the_feed_is_a_blog_in_the_markup(): void
+    {
+        $this->article('changing-a-belt');
+
+        $this->get('/blog')->assertOk()->assertSee('"@type":"Blog"', false);
+    }
+
+    #[Test]
     public function a_closed_author_is_named_in_the_markup_without_an_address(): void
     {
         $this->authorsOn();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blog\Models;
 
 use Carbon\CarbonInterface;
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,7 @@ use WebxUi\Seo\Contracts\HasOpenGraph;
 use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Panel\DefaultsSource;
 use WebxUi\Seo\Rendering\SeoData;
 
 /**
@@ -263,6 +265,7 @@ class Article extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallb
             'headline' => (string) $this->getTranslation('title', $locale),
             'url' => $url,
             'mainEntityOfPage' => $url,
+            'inLanguage' => $locale,
         ];
 
         $lead = $this->getTranslation('lead', $locale);
@@ -296,6 +299,33 @@ class Article extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallb
             $posting['author'] = $profile->person($locale);
         } elseif ($this->author instanceof CmsUser) {
             $posting['author'] = ['@type' => 'Person', 'name' => $this->author->name];
+        }
+
+        // The section it is filed under and the words it carries — the main rubric (§2.6) and the tags.
+        $rubric = $this->mainRubric();
+        $section = $rubric?->getTranslation('title', $locale);
+
+        if (is_string($section) && trim($section) !== '') {
+            $posting['articleSection'] = trim($section);
+        }
+
+        $keywords = $this->tags
+            ->map(static fn (Tag $tag): string => trim((string) $tag->getTranslation('title', $locale)))
+            ->filter(static fn (string $word): bool => $word !== '')
+            ->values()
+            ->all();
+
+        if ($keywords !== []) {
+            $posting['keywords'] = implode(', ', $keywords);
+        }
+
+        // Who publishes it: the site's organisation, by reference to the block `module-seo` prints
+        // beside this one — and nothing where that block is not printed, since a reference to
+        // nothing is a warning in every validator.
+        $publisher = Container::getInstance()->make(DefaultsSource::class)->organizationId($locale);
+
+        if ($publisher !== null) {
+            $posting['publisher'] = ['@id' => $publisher];
         }
 
         return [$posting];

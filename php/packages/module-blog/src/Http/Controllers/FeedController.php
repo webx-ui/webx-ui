@@ -9,6 +9,8 @@ use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Rendering\Feed;
 use WebxUi\Blog\Rendering\Views;
+use WebxUi\Seo\Panel\DefaultsSource;
+use WebxUi\Seo\Rendering\Seo;
 
 /**
  * The front page of the blog: `{prefix}`, with `?page=2` under it (§2.11).
@@ -26,15 +28,46 @@ class FeedController
     public function __construct(
         private readonly Views $views,
         private readonly Feed $feed,
+        private readonly Seo $seo,
+        private readonly DefaultsSource $defaults,
     ) {}
 
     public function __invoke(Request $request): Response
     {
+        $this->seo->push($this->blog($request));
+
         return response($this->views->make('feed', [
             'articles' => $this->feed->all(),
             // The menu of the blog. Handed over rather than left to the view to query, so that
             // a site rewriting the view does not have to know how a hidden rubric is spelled.
             'rubrics' => Rubric::query()->visible()->inMenuOrder()->get(),
         ])->render());
+    }
+
+    /**
+     * The feed as a `Blog` (§19.11): a route rather than a record, so no model can describe it, and
+     * the block is pushed for the head the view prints. Published by the site's organisation where
+     * `module-seo` prints one.
+     *
+     * @return array<string, mixed>
+     */
+    private function blog(Request $request): array
+    {
+        $locale = app()->getLocale();
+        $blog = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Blog',
+            'name' => (string) trans('webx-blog::blog.title'),
+            'url' => $request->url(),
+            'inLanguage' => $locale,
+        ];
+
+        $publisher = $this->defaults->organizationId($locale);
+
+        if ($publisher !== null) {
+            $blog['publisher'] = ['@id' => $publisher];
+        }
+
+        return $blog;
     }
 }

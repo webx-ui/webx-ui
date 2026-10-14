@@ -47,4 +47,12 @@ return [
     'untitled' => 'Без імені',
     'profile' => 'Профіль автора',
     'make-profile' => 'Створити профіль',
+    'field-socials' => 'Соцмережі',
+    'field-socials-help' => 'Видно на сторінці автора, і вони кажуть пошуковикам, що це та сама людина.',
+    'socials-add' => 'Додати соцмережу',
+    'socials-empty' => 'Соцмереж поки немає.',
+    'social-network' => 'Мережа',
+    'social-url' => 'Адреса',
+    'social-network-missing' => 'Виберіть мережу.',
+    'social-url-invalid' => 'Адреса, що починається з https://.',
 ];

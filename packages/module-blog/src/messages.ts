@@ -229,6 +229,15 @@ export const blogMessages: Record<string, Messages> = {
     untitled: 'Without a name',
     profile: 'Author profile',
     'make-profile': 'Make a profile',
+    'field-socials': 'Networks',
+    'field-socials-help':
+      "Shown on the author's page, and named to search engines as the same person.",
+    'socials-add': 'Add a network',
+    'socials-empty': 'No networks yet.',
+    'social-network': 'Network',
+    'social-url': 'Address',
+    'social-network-missing': 'Choose the network.',
+    'social-url-invalid': 'An address that starts with https://.',
   },
   tag: {
     new: 'New tag',

@@ -26,6 +26,7 @@ use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
 use WebxUi\Seo\Rendering\SeoData;
+use WebxUi\Settings\Contacts\Channel;
 
 /**
  * What the site may say about an administrator who writes (§19): the name a reader sees, a
@@ -46,6 +47,7 @@ use WebxUi\Seo\Rendering\SeoData;
  * @property array<string, string>|string|null $role
  * @property array<string, string>|string|null $bio
  * @property int|null $photo_id
+ * @property array<mixed>|null $socials  what is stored; {@see self::socialLinks()} is what is printable
  * @property bool $is_public
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -67,7 +69,7 @@ class Author extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
     public const ROBOTS_EMPTY = 'noindex,follow';
 
     /** @var list<string> */
-    protected $fillable = ['user_id', 'title', 'slug', 'role', 'bio', 'photo_id', 'is_public'];
+    protected $fillable = ['user_id', 'title', 'slug', 'role', 'bio', 'photo_id', 'socials', 'is_public'];
 
     /**
      * @return list<string>
@@ -79,7 +81,7 @@ class Author extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
 
     protected function casts(): array
     {
-        return ['is_public' => 'boolean'];
+        return ['is_public' => 'boolean', 'socials' => 'array'];
     }
 
     /** The site allows author pages at all — without it there is no section, no page, no link. */
@@ -280,10 +282,59 @@ class Author extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
             $person['image'] = SeoData::fallback(null, null, $photo)->og['image'] ?? $photo;
         }
 
+        // The same person wherever they are named: the page's address with `#person`, so the
+        // author of every article and the subject of the page are one node to a reader of the graph.
         if ($this->isOpen() && $this->hasUrlIn($locale)) {
-            $person['url'] = $this->url($locale);
+            $url = $this->url($locale);
+            $person = ['@type' => 'Person', '@id' => $url.'#person', ...array_diff_key($person, ['@type' => true]), 'url' => $url];
+        }
+
+        // Their networks, which is how the page is tied to the same person elsewhere (§19.11).
+        $sameAs = array_values(array_map(static fn (array $link): string => $link['url'], $this->socialLinks()));
+
+        if ($sameAs !== []) {
+            $person['sameAs'] = $sameAs;
         }
 
         return $person;
+    }
+
+    /**
+     * The networks as stored — `{ network, url }` rows a browser opens as a page; anything else a
+     * hand or an import left in the column is not a link to print.
+     *
+     * @return list<array{network: string, url: string}>
+     */
+    public function socialLinks(): array
+    {
+        $links = [];
+
+        foreach (is_array($this->socials) ? $this->socials : [] as $row) {
+            $network = is_array($row) && is_string($row['network'] ?? null) ? trim($row['network']) : '';
+            $url = is_array($row) && is_string($row['url'] ?? null) ? trim($row['url']) : '';
+
+            if ($network !== '' && self::isWebAddress($url)) {
+                $links[] = ['network' => $network, 'url' => $url];
+            }
+        }
+
+        return $links;
+    }
+
+    /**
+     * The networks as the site's contacts hold theirs — what `<x-webx-socials>` of the widgets
+     * draws, an icon each.
+     *
+     * @return list<Channel>
+     */
+    public function socialChannels(): array
+    {
+        return array_map(static fn (array $link): Channel => new Channel($link['network'], $link['url']), $this->socialLinks());
+    }
+
+    /** `http://` or `https://` with a host — nothing a reader's browser would run instead. */
+    public static function isWebAddress(string $url): bool
+    {
+        return preg_match('~^https?://~i', $url) === 1 && filter_var($url, FILTER_VALIDATE_URL) !== false;
     }
 }

@@ -33,7 +33,7 @@ final class AuthorForm
      *
      * @var list<string>
      */
-    private const OWN = ['title', 'slug', 'role', 'bio', 'photo', 'is_public'];
+    private const OWN = ['title', 'slug', 'role', 'bio', 'photo', 'socials', 'is_public'];
 
     /** The fields that are a map of languages rather than a value. */
     private const TRANSLATED = ['title', 'slug', 'role', 'bio'];
@@ -74,6 +74,7 @@ final class AuthorForm
             'bio' => $author->getTranslations('bio'),
             // The key alone: the field asks the library where that key lives now.
             'photo' => $photo instanceof MediaFile ? ['path' => $photo->path] : null,
+            'socials' => $author->socialLinks(),
             'is_public' => $author->is_public,
             Fields::SCREEN => $author->seoValue(),
         ];
@@ -91,6 +92,10 @@ final class AuthorForm
     {
         if (! $author->exists) {
             $author->user_id = $this->account($userId);
+        }
+
+        if (array_key_exists('socials', $input)) {
+            $input['socials'] = $this->socials($input['socials']);
         }
 
         $split = $this->record->split(Author::SCREEN, $input, self::OWN, [Fields::SCREEN], $can);
@@ -122,6 +127,13 @@ final class AuthorForm
             case 'is_public':
                 $author->is_public = (bool) $value;
                 break;
+            case 'socials':
+                $rows = array_values(array_filter(is_array($value) ? $value : [], static fn (mixed $row): bool => is_array($row)));
+                $author->socials = $rows === [] ? null : array_map(
+                    static fn (array $row): array => ['network' => (string) ($row['network'] ?? ''), 'url' => (string) ($row['url'] ?? '')],
+                    $rows,
+                );
+                break;
             case 'photo':
                 $path = is_array($value) ? $value['path'] ?? null : null;
                 $file = is_string($path) && $path !== '' ? $this->files->find($path) : null;
@@ -130,6 +142,56 @@ final class AuthorForm
             default:
                 $this->translate($author, $field, $value);
         }
+    }
+
+    /**
+     * The networks as the repeater sent them, tidied before the screen checks them (§19.11): a row
+     * with neither a network nor an address is an empty row and dropped; one with an address a
+     * browser would not open as a page is a 422 under the field of that row, numbered as the editor
+     * sees the rows. Which networks there are is the screen's select — the same list the site's
+     * contacts offer.
+     *
+     * @throws ValidationException
+     */
+    private function socials(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        $rows = [];
+        $errors = [];
+
+        foreach (array_values($value) as $index => $row) {
+            if (! is_array($row)) {
+                $rows[] = $row;
+
+                continue;
+            }
+
+            $network = is_string($row['network'] ?? null) ? trim($row['network']) : '';
+            $url = is_string($row['url'] ?? null) ? trim($row['url']) : '';
+
+            if ($network === '' && $url === '') {
+                continue;
+            }
+
+            if ($network === '') {
+                $errors["socials.{$index}.network"] = [(string) __('webx-blog::author.social-network-missing')];
+            }
+
+            if (! Author::isWebAddress($url)) {
+                $errors["socials.{$index}.url"] = [(string) __('webx-blog::author.social-url-invalid')];
+            }
+
+            $rows[] = [...$row, 'network' => $network, 'url' => $url];
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        return $rows;
     }
 
     /**

@@ -117,6 +117,23 @@ final class AuthorPanelTest extends TestCase
     }
 
     #[Test]
+    public function the_networks_drop_empty_rows_and_refuse_an_address_that_is_not_a_page(): void
+    {
+        $author = $this->profile();
+
+        $this->actingAs($this->manager(), 'cms')->putJson('/api/cms/blog/authors/'.$author->getKey(), [
+            'values' => ['socials' => [['network' => 'linkedin', 'url' => 'linkedin.com/in/anna']]],
+        ])->assertStatus(422)->assertJsonValidationErrors(['socials.0.url']);
+
+        $response = $this->actingAs($this->manager(), 'cms')->putJson('/api/cms/blog/authors/'.$author->getKey(), [
+            'values' => ['socials' => [['network' => '', 'url' => ''], ['network' => 'linkedin', 'url' => 'https://www.linkedin.com/in/anna']]],
+        ]);
+
+        $response->assertOk();
+        $this->assertSame([['network' => 'linkedin', 'url' => 'https://www.linkedin.com/in/anna']], $response->json('data.values.socials'));
+    }
+
+    #[Test]
     public function deleting_a_profile_leaves_the_articles_with_the_account(): void
     {
         $author = $this->profile();

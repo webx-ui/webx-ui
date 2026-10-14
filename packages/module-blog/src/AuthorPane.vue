@@ -158,6 +158,7 @@ async function load(): Promise<void> {
         role: {},
         bio: {},
         photo: null,
+        socials: [],
         is_public: false,
       }
 

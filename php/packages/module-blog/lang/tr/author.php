@@ -47,4 +47,12 @@ return [
     'untitled' => 'Adsız',
     'profile' => 'Yazar profili',
     'make-profile' => 'Profil oluştur',
+    'field-socials' => 'Sosyal ağlar',
+    'field-socials-help' => 'Yazar sayfasında görünür ve arama motorlarına aynı kişi olduğunu söyler.',
+    'socials-add' => 'Ağ ekle',
+    'socials-empty' => 'Henüz ağ yok.',
+    'social-network' => 'Ağ',
+    'social-url' => 'Adres',
+    'social-network-missing' => 'Ağı seçin.',
+    'social-url-invalid' => 'https:// ile başlayan bir adres.',
 ];

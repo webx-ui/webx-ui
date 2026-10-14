@@ -47,4 +47,12 @@ return [
     'untitled' => 'Ohne Namen',
     'profile' => 'Autorenprofil',
     'make-profile' => 'Profil anlegen',
+    'field-socials' => 'Netzwerke',
+    'field-socials-help' => 'Auf der Autorenseite zu sehen und für Suchmaschinen ein Hinweis, dass es dieselbe Person ist.',
+    'socials-add' => 'Netzwerk hinzufügen',
+    'socials-empty' => 'Noch keine Netzwerke.',
+    'social-network' => 'Netzwerk',
+    'social-url' => 'Adresse',
+    'social-network-missing' => 'Wählen Sie das Netzwerk.',
+    'social-url-invalid' => 'Eine Adresse, die mit https:// beginnt.',
 ];

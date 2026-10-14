@@ -3910,7 +3910,16 @@ on('POST', '/blog/authors', ({ body, locale }) => {
   const profile = {
     id: Math.max(0, ...authorProfiles.map((one) => one.id)) + 1,
     user_id: userId as number,
-    values: { title: {}, slug: {}, role: {}, bio: {}, photo: null, is_public: false, ...values },
+    values: {
+      title: {},
+      slug: {},
+      role: {},
+      bio: {},
+      photo: null,
+      socials: [],
+      is_public: false,
+      ...values,
+    },
   }
 
   authorProfiles.push(profile)

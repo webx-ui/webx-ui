@@ -47,4 +47,12 @@ return [
     'untitled' => 'Sin nombre',
     'profile' => 'Perfil del autor',
     'make-profile' => 'Crear un perfil',
+    'field-socials' => 'Redes',
+    'field-socials-help' => 'Se ven en la página del autor y dicen a los buscadores que es la misma persona.',
+    'socials-add' => 'Añadir una red',
+    'socials-empty' => 'Todavía no hay redes.',
+    'social-network' => 'Red',
+    'social-url' => 'Dirección',
+    'social-network-missing' => 'Elija la red.',
+    'social-url-invalid' => 'Una dirección que empiece por https://.',
 ];

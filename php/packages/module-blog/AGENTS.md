@@ -85,7 +85,7 @@ theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a bre
   `webx-blog-article__cover`, `webx-blog-article__footer`, `webx-blog-tags`, `webx-blog-tags__item`,
   `webx-blog-tags__link`, `webx-blog-related`, `webx-blog-related__title`.
 - Author page (`webx-blog.authors`): `webx-blog-author`, `webx-blog-author__photo`,
-  `webx-blog-author__role`; the name, the bio and the cards are the listing's classes above.
+  `webx-blog-author__role`, `webx-blog-author__socials`; the name, the bio and the cards are the listing's classes above.
 
 ## Do not
 

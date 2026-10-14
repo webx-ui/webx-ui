@@ -291,6 +291,12 @@ have to say yes: turning the feature on does not make everybody who writes a pub
   not move it. `ProfilePage` markup with the `Person` in it is printed on the page.
 - **The look** is `webx-blog::author` until the site writes `resources/views/blog/author.blade.php`
   (or `WEBX_BLOG_VIEW_AUTHOR`); the cards in it are the same `blog.card` as everywhere.
+- **Networks** — the same «network + address» rows as the site's own in Settings › Contacts:
+  icons on the author's page, and the `sameAs` of their `Person`.
+- **The markup** ties it together: the author of every article and the subject of the page are one
+  `Person` (`@id` — the page's address with `#person`); a `BlogPosting` names its rubric
+  (`articleSection`), its tags (`keywords`), its language and the site's `Organization` as
+  `publisher`; the feed is a `Blog`.
 - **In the article editor**, under «Author», a link to the author's profile — or «Make a profile»
   for an account without one.
 
