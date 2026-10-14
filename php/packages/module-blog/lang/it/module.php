@@ -7,4 +7,6 @@ return [
     'articles' => 'Articoli',
     'rubrics' => 'Rubriche',
     'tags' => 'Tag',
+    'authors' => 'Autori',
+    'author' => 'Autore',
 ];

@@ -188,6 +188,21 @@
   border-block-start: 1px solid var(--site-color-border);
 }
 
+/* The author page (§19): the photo as a round mark over the name, the role under it. */
+.webx-blog-author__photo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin-block-end: var(--site-space-4);
+  border-radius: var(--site-radius-full);
+  object-fit: cover;
+}
+
+.webx-blog-author__role {
+  margin: 0 0 var(--site-space-3);
+  color: var(--site-color-text-muted);
+}
+
 .webx-blog-tags {
   display: flex;
   flex-wrap: wrap;

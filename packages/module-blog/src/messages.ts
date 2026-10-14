@@ -11,6 +11,8 @@ export const blogMessages: Record<string, Messages> = {
     articles: 'Articles',
     rubrics: 'Rubrics',
     tags: 'Tags',
+    authors: 'Authors',
+    author: 'Author',
   },
   panel: {
     new: 'New article',

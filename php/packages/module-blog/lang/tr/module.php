@@ -7,4 +7,6 @@ return [
     'articles' => 'Makaleler',
     'rubrics' => 'Bölümler',
     'tags' => 'Etiketler',
+    'authors' => 'Yazarlar',
+    'author' => 'Yazar',
 ];

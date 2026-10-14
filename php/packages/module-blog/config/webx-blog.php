@@ -75,6 +75,22 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Author pages
+    |---------------------------------------------------------------------------
+    |
+    | Off, the blog names the account that wrote an article, as it always has. On,
+    | the panel gets a section of author profiles — the name a reader sees, a
+    | photo, a role, a few lines — and an author who asks for it gets a page with
+    | all of their articles at `{prefix}/author/{slug}`, and the byline links
+    | there. Asking is per author and off by default: a site turning this on does
+    | not make everybody who writes a public figure.
+    |
+    */
+
+    'authors' => (bool) env('WEBX_BLOG_AUTHORS', false),
+
+    /*
+    |---------------------------------------------------------------------------
     | The views the public half is printed with
     |---------------------------------------------------------------------------
     |
@@ -82,8 +98,8 @@ return [
     | them, the package's own are used — bare documents that serve a blog rather
     | than an error on a fresh installation.
     |
-    | `$article`, or `$articles` (a paginator) with `$rubric` / `$tag` beside it,
-    | is what each one is handed.
+    | `$article`, or `$articles` (a paginator) with `$rubric`, `$tag` or `$author`
+    | beside it, is what each one is handed.
     |
     */
 
@@ -92,6 +108,7 @@ return [
         'feed' => env('WEBX_BLOG_VIEW_FEED', 'blog.feed'),
         'rubric' => env('WEBX_BLOG_VIEW_RUBRIC', 'blog.rubric'),
         'tag' => env('WEBX_BLOG_VIEW_TAG', 'blog.tag'),
+        'author' => env('WEBX_BLOG_VIEW_AUTHOR', 'blog.author'),
         'rss' => env('WEBX_BLOG_VIEW_RSS', 'blog.rss'),
     ],
 

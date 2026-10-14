@@ -22,13 +22,16 @@ use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Blog\Handlers\ArticleHandler;
+use WebxUi\Blog\Handlers\AuthorHandler;
 use WebxUi\Blog\Handlers\RubricHandler;
 use WebxUi\Blog\Handlers\TagHandler;
 use WebxUi\Blog\Http\Controllers\FeedController;
 use WebxUi\Blog\Http\Controllers\RssController;
 use WebxUi\Blog\Links\ArticleLinkSource;
+use WebxUi\Blog\Links\AuthorLinkSource;
 use WebxUi\Blog\Links\TagLinkSource;
 use WebxUi\Blog\Models\Article;
+use WebxUi\Blog\Models\Author;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
 use WebxUi\Blog\Panel\ArticleForm;
@@ -61,7 +64,7 @@ class BlogServiceProvider extends ServiceProvider
     {
         // What moves between stands with webx:snapshot, and what stays where it is.
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
-            $tables->content('blog_articles', 'blog_rubrics', 'blog_tags', 'blog_article_rubric', 'blog_article_tag', 'blog_article_related');
+            $tables->content('blog_articles', 'blog_rubrics', 'blog_tags', 'blog_authors', 'blog_article_rubric', 'blog_article_tag', 'blog_article_related');
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-blog.php', 'webx-blog');
@@ -106,7 +109,7 @@ class BlogServiceProvider extends ServiceProvider
     }
 
     /**
-     * The three types, all under one prefix and all in one flat namespace (§4).
+     * The four types, all under one prefix (§4, §19); the article and the rubric share one flat namespace.
      *
      * `Fail` on every one of them, and it is the same argument each time: an address is chosen
      * deliberately, and one that quietly became `remont-2` is a mistake somebody finds months
@@ -124,6 +127,7 @@ class BlogServiceProvider extends ServiceProvider
         // an article lives. Changing the prefix is that command, not a restart.
         $flat = $prefix === '' ? new Slug : new Prefixed($prefix, Slug::class);
         $tags = new Prefixed(UrlNormaliser::join($prefix, 'tag'), Slug::class);
+        $authors = new Prefixed(UrlNormaliser::join($prefix, 'author'), Slug::class);
 
         $types->register(new RouteType(
             type: 'article',
@@ -148,6 +152,18 @@ class BlogServiceProvider extends ServiceProvider
             model: Tag::class,
             formatter: $tags,
             handler: TagHandler::class,
+            acceptsTail: false,
+            onConflict: OnConflict::Fail,
+        ));
+
+        // Registered whether or not the site allows author pages: a profile keeps its address
+        // through the switch, and the handler is what closes it (§19.1, decision 5). A type that
+        // came and went with the flag would leave rows behind for a type nobody knows.
+        $types->register(new RouteType(
+            type: 'author',
+            model: Author::class,
+            formatter: $authors,
+            handler: AuthorHandler::class,
             acceptsTail: false,
             onConflict: OnConflict::Fail,
         ));
@@ -323,6 +339,12 @@ class BlogServiceProvider extends ServiceProvider
             210,
         ));
         $links->register($this->app->make(TagLinkSource::class));
+
+        // Only where the site allows author pages: a picker full of people with no page to go to
+        // would be a list of links to 404s.
+        if (Author::enabled()) {
+            $links->register($this->app->make(AuthorLinkSource::class));
+        }
     }
 
     /**
@@ -390,6 +412,11 @@ class BlogServiceProvider extends ServiceProvider
             edit: static fn (Model $record): string => '/blog/tags?q='.rawurlencode(SiteBar::label($record, null)),
             permission: 'blog.taxonomy.manage',
             kind: 'webx-admin::site-bar.kind-tag',
+        ));
+        $bar->entity('author', new EntityLink(
+            edit: static fn (Model $record): string => '/blog/authors?author='.$record->getKey(),
+            permission: 'blog.authors.manage',
+            kind: 'webx-blog::module.author',
         ));
     }
 }

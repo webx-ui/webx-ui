@@ -9,6 +9,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use WebxUi\Blog\Models\Article;
+use WebxUi\Blog\Models\Author;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
 
@@ -53,6 +54,17 @@ final class Feed
         return $this->paginate(
             Article::query()->whereHas('tags', static fn ($query) => $query->whereKey($tag->getKey())),
         );
+    }
+
+    /**
+     * What one account wrote, on the page of its author (§19.3) — by `author_id`, the same
+     * column the articles have always had.
+     *
+     * @return LengthAwarePaginator<int, Article>
+     */
+    public function byAuthor(Author $author): LengthAwarePaginator
+    {
+        return $this->paginate(Article::query()->where('author_id', $author->user_id));
     }
 
     /**
@@ -106,6 +118,6 @@ final class Feed
      */
     private function eagerLoad(): array
     {
-        return ['cover', 'rubrics', 'author'];
+        return ['cover', 'rubrics', 'author', 'authorProfile'];
     }
 }

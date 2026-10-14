@@ -20,13 +20,19 @@
                 <x-webx-seo::breadcrumbs :for="$article" />
             @endif
             <h1 class="webx-blog-article__title">{{ $article->title }}</h1>
-            @if ($article->published_at || $article->author)
+            @php($byline = $article->authorName())
+            @if ($article->published_at || $byline !== '')
                 <p class="webx-blog-article__meta">
                     @if ($article->published_at)
                         <time class="webx-blog-article__date" datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->locale(app()->getLocale())->isoFormat('LL') }}</time>
                     @endif
-                    @if ($article->author)
-                        <span class="webx-blog-article__author">{{ $article->author->name }}</span>
+                    {{-- A link only where the author has an open page (§19.1, decision 3). --}}
+                    @if ($byline !== '')
+                        @if ($authorUrl = $article->authorUrl())
+                            <a class="webx-blog-article__author" href="{{ $authorUrl }}" rel="author">{{ $byline }}</a>
+                        @else
+                            <span class="webx-blog-article__author">{{ $byline }}</span>
+                        @endif
                     @endif
                 </p>
             @endif

@@ -288,10 +288,14 @@ class Article extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallb
             $posting['image'] = $cover;
         }
 
-        $author = $this->author;
+        // The profile's Person where there is one — name, role, picture, and the address of the
+        // page where it is open — the account's name where there is not (§19.4).
+        $profile = Author::enabled() ? $this->authorProfile : null;
 
-        if ($author instanceof CmsUser) {
-            $posting['author'] = ['@type' => 'Person', 'name' => $author->name];
+        if ($profile instanceof Author && $profile->name($locale) !== '') {
+            $posting['author'] = $profile->person($locale);
+        } elseif ($this->author instanceof CmsUser) {
+            $posting['author'] = ['@type' => 'Person', 'name' => $this->author->name];
         }
 
         return [$posting];
@@ -363,6 +367,48 @@ class Article extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallb
     public function author(): BelongsTo
     {
         return $this->belongsTo(CmsUser::class, 'author_id');
+    }
+
+    /**
+     * What the site may say about the account that wrote it (§19) — found by the account, so the
+     * article itself keeps pointing at `cms_users` and knows nothing about profiles.
+     *
+     * @return BelongsTo<Author, $this>
+     */
+    public function authorProfile(): BelongsTo
+    {
+        return $this->belongsTo(Author::class, 'author_id', 'user_id');
+    }
+
+    /**
+     * The byline: the profile's name for the reader where there is a profile, the account's name
+     * where there is not — which is what a site without author profiles has always printed
+     * (§19.1, decision 4). Empty when nobody is named.
+     */
+    public function authorName(?string $locale = null): string
+    {
+        $profile = Author::enabled() ? $this->authorProfile : null;
+
+        if ($profile instanceof Author && $profile->name($locale) !== '') {
+            return $profile->name($locale);
+        }
+
+        return $this->author instanceof CmsUser ? (string) $this->author->name : '';
+    }
+
+    /**
+     * Where the byline links to: the author's page, when the site allows them and the author asked
+     * for one and it has an address in the language — null, and the name is text, otherwise
+     * (decision 3). The one place that decides it; the views and the markup ask here.
+     */
+    public function authorUrl(?string $locale = null): ?string
+    {
+        $locale ??= app()->getLocale();
+        $profile = Author::enabled() ? $this->authorProfile : null;
+
+        return $profile instanceof Author && $profile->isOpen() && $profile->hasUrlIn($locale)
+            ? $profile->url($locale)
+            : null;
     }
 
     /**
