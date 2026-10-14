@@ -22,4 +22,8 @@ return [
     'adopt-taken' => 'Esiste già un tipo di blocco «:slug».',
     'adopt-failed' => 'Il markup non è potuto diventare un tipo di blocco.',
     'adopt-forbidden' => 'Spostare il markup in un tipo di blocco richiede il permesso di modificare i tipi di blocco.',
+    'cycle' => 'Il blocco condiviso finirebbe dentro sé stesso: :path.',
+    'not-a-fragment' => '«:name» non è un blocco condiviso del sito.',
+    'copy-unpublished' => 'Il blocco condiviso non è ancora pubblicato: non c’è nulla da copiare.',
+    'not-on-page' => 'Questa pagina non contiene il blocco condiviso, quindi è mostrato su una pagina vuota del layout.',
 ];

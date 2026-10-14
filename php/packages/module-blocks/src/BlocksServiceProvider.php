@@ -16,6 +16,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\Openings;
@@ -39,7 +40,9 @@ use WebxUi\Blocks\Console\ImportCommand;
 use WebxUi\Blocks\Console\OfferedCommand;
 use WebxUi\Blocks\Console\PruneCommand;
 use WebxUi\Blocks\Console\RegionsCommand;
+use WebxUi\Blocks\Doctor\FragmentsCheck;
 use WebxUi\Blocks\Fields\DataType;
+use WebxUi\Blocks\Fields\FragmentType;
 use WebxUi\Blocks\Fields\SlotType;
 use WebxUi\Blocks\Http\Middleware\EnsureEditing;
 use WebxUi\Blocks\Panel\BlocksModule;
@@ -174,6 +177,15 @@ class BlocksServiceProvider extends ServiceProvider
         $this->registerGateOpenings();
         $this->registerAuditSource();
 
+        // «Shared block»: the one type this package offers itself, placing a region declared with
+        // `fragment` in a page's content (§3.2 of the shared blocks spec). Installed once, with
+        // `webx:blocks:offered --install --module=blocks`, and the site's from then on.
+        $this->app->make(BlockOffers::class)->offer('blocks', __DIR__.'/../resources/blocks');
+
+        // The layout's check leaves the shared blocks alone — the layout does not print them; this
+        // one says whether anything does.
+        $this->app->make(DoctorChecks::class)->register(FragmentsCheck::class);
+
         // The «Blocks» tab of the panel on the site, on a record that holds blocks for somebody
         // who may edit it (§8 of WEBX_UI_SITE_BAR.md). The frame never learns what it is.
         $this->app->make(SiteBar::class)->section('blocks', SiteBarBlocks::available(...));
@@ -291,7 +303,8 @@ class BlocksServiceProvider extends ServiceProvider
 
     /**
      * A component's two kinds of input the panel does not type in: data handed over by code, and
-     * a slot of markup. Both known to the server so that a walk over a schema stops at them.
+     * a slot of markup. Both known to the server so that a walk over a schema stops at them. And
+     * the name of a shared block, which only a declared one may be.
      */
     private function registerFieldTypes(): void
     {
@@ -299,6 +312,7 @@ class BlocksServiceProvider extends ServiceProvider
 
         $types->register('wx-data', new DataType);
         $types->register('wx-slot', new SlotType);
+        $types->register(Fragments::FIELD, new FragmentType);
     }
 
     /**

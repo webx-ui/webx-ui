@@ -85,3 +85,11 @@ Route::prefix((string) config('webx-admin.api_path').'/regions')
         // Writes a block type as well: the controller asks for `blocks.manage` and editing on top.
         Route::post('{name}/adopt', [RegionController::class, 'adopt'])->where('name', $name)->name('adopt');
     });
+
+// «Make it this page's own» (§3.5 of the shared blocks spec): a shared block's published tree, keyed
+// anew. Read by whoever edits a page that holds one, not only by the editor of the regions — it
+// writes nothing, and the page's own save is what asks whether they may change the page.
+Route::post((string) config('webx-admin.api_path').'/regions/{name}/copy', [RegionController::class, 'copy'])
+    ->where('name', '[a-z][a-z0-9-]*')
+    ->middleware(['webx.panel', 'cms.can:blocks.view,blocks.manage,blocks.regions'])
+    ->name('webx.blocks.regions.copy');

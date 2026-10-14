@@ -22,6 +22,9 @@ use WebxUi\Admin\Panel\PackageRegistry;
  * anywhere, because nothing is broken, only unconnected. Read as text from the layout's source,
  * like the `@stack('head')` of `Layouts`: the tag is a literal, and a layout that builds the name
  * at runtime is not something to guess about.
+ *
+ * A region declared with `fragment` is a shared block: the layout does not print it, the pages
+ * that place it do, so it is not looked for here — `module-blocks` checks it against the content.
  */
 final class Regions implements Check
 {
@@ -36,7 +39,13 @@ final class Regions implements Check
     public function run(): array
     {
         $declared = $this->config->get('webx-blocks.regions', []);
-        $names = array_values(array_filter(array_keys(is_array($declared) ? $declared : []), 'is_string'));
+        $names = [];
+
+        foreach (is_array($declared) ? $declared : [] as $name => $region) {
+            if (is_string($name) && ! (is_array($region) && ($region['fragment'] ?? false) === true)) {
+                $names[] = $name;
+            }
+        }
 
         if ($names === []) {
             return [];

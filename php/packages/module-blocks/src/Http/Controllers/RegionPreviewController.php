@@ -33,6 +33,10 @@ use WebxUi\Routing\RouteTypes;
  * An address the registry does not know — a route of the site with a controller of its own, a
  * typo — is not handed to that controller: under a preview token it might write, not only read.
  * The region is drawn on the stage instead, the layout with nothing in it, under a notice.
+ *
+ * A shared block is on the pages that place it and nowhere else (§3.6 of the shared blocks spec):
+ * a page that does not hold it would show the editor nothing of their draft. So does the stage,
+ * with a notice of its own, when the page came back without the region in it.
  */
 final class RegionPreviewController
 {
@@ -74,7 +78,13 @@ final class RegionPreviewController
         $this->container->instance('request', $page);
 
         try {
-            $response = $this->page($page, $path) ?? $this->stage($name, $path);
+            $response = $this->page($page, $path);
+
+            if ($response === null) {
+                $response = $this->stage($name, (string) __('webx-blocks::regions.not-in-registry', ['path' => $path]));
+            } elseif ($this->regions->isFragment($name) && $this->lacks($response, $name)) {
+                $response = $this->stage($name, (string) __('webx-blocks::regions.not-on-page'));
+            }
         } finally {
             $this->container->instance('request', $previous);
         }
@@ -135,19 +145,31 @@ final class RegionPreviewController
      * print this region at all gets it drawn in that place too, so the editor sees their draft
      * rather than an empty page.
      */
-    private function stage(string $name, string $path): Response
+    private function stage(string $name, string $notice): Response
     {
         $layout = $this->config->get('webx-blocks.layout');
 
         $html = $this->views->make('webx-blocks::region-stage', [
             'layout' => is_string($layout) && $layout !== '' ? $layout : 'webx-blocks::standalone',
-            'notice' => (string) __('webx-blocks::regions.not-in-registry', ['path' => $path]),
+            'notice' => $notice,
             'place' => self::PLACE,
         ])->render();
 
         $region = str_contains($html, "<!--wx-region:{$name}-->") ? '' : (string) $this->regions->render($name);
 
         return response(str_replace(self::PLACE, $region, $html));
+    }
+
+    /**
+     * A page that answered, and answered without the region: the region preview marks the
+     * region it draws whatever it holds, the fallback included, so no pair is no tag. A redirect
+     * or an error is the page's own answer and goes back as it is.
+     */
+    private function lacks(Response $response, string $name): bool
+    {
+        $html = $response->getContent();
+
+        return $response->isSuccessful() && is_string($html) && ! str_contains($html, "<!--wx-region:{$name}-->");
     }
 
     /**

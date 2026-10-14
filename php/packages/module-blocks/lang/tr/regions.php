@@ -22,4 +22,8 @@ return [
     'adopt-taken' => '“:slug” blok türü zaten var.',
     'adopt-failed' => 'İşaretleme bir blok türüne dönüştürülemedi.',
     'adopt-forbidden' => 'İşaretlemeyi bir blok türüne taşımak için blok türlerini düzenleme hakkı gerekir.',
+    'cycle' => 'Ortak blok kendi içinde yer alırdı: :path.',
+    'not-a-fragment' => '“:name” sitenin ortak bloklarından biri değil.',
+    'copy-unpublished' => 'Ortak blok henüz yayımlanmadı: kopyalanacak bir şey yok.',
+    'not-on-page' => 'Bu sayfada ortak blok yok; bu yüzden düzenin boş bir sayfasında gösteriliyor.',
 ];

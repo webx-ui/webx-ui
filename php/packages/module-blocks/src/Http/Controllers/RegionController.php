@@ -13,6 +13,9 @@ use WebxUi\Admin\Editing\HeldRevision;
 use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
+use WebxUi\Blocks\Content;
+use WebxUi\Blocks\ContentEdit;
+use WebxUi\Blocks\ContentOps;
 use WebxUi\Blocks\Exceptions\RegionRefused;
 use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Blocks\Panel\RegionForm;
@@ -37,10 +40,7 @@ final class RegionController
 
     public function index(): JsonResponse
     {
-        return ApiResponse::data(array_map(
-            fn (string $name): array => $this->form->row($name),
-            array_keys($this->regions->declared()),
-        ));
+        return ApiResponse::data($this->form->rows());
     }
 
     public function show(Request $request, string $name): JsonResponse
@@ -160,6 +160,35 @@ final class RegionController
             'data' => $this->form->describe($name, $request->user()),
             'block' => ['id' => $block->id, 'slug' => $block->slug],
         ], 201);
+    }
+
+    /**
+     * «Make it this page's own» (§3.5 of the shared blocks spec): the published tree of a shared
+     * block with a fresh key on every node, for the editor to put in place of the «Shared block»
+     * in a record's draft and save the ordinary way. Writes nothing — so it asks for no more than
+     * reading blocks; the record's own save asks for the right to change the record.
+     *
+     * Published and not the draft: the draft may be somebody's unfinished edit, and what the page
+     * takes over is what its visitors were seeing.
+     */
+    public function copy(string $name): JsonResponse
+    {
+        if (! $this->regions->isFragment($name)) {
+            throw new NotFoundHttpException;
+        }
+
+        $region = $this->regions->find($name);
+
+        if ($region === null || ! $region->isPublished()) {
+            return ApiResponse::message((string) __('webx-blocks::regions.copy-unpublished'), 409);
+        }
+
+        $blocks = array_map(
+            static fn (array $node): array => ContentEdit::rekey($node, ContentOps::newKey(...)),
+            array_values(array_filter($this->regions->published($name), Content::isNode(...))),
+        );
+
+        return ApiResponse::data(['blocks' => $blocks]);
     }
 
     /**

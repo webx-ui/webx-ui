@@ -233,6 +233,20 @@ final class DoctorTest extends TestCase
     }
 
     #[Test]
+    public function a_shared_block_is_not_looked_for_in_the_layout(): void
+    {
+        $this->layout("<html><head>@stack('head')</head><body>\n<x-webx-blocks::region name=\"header\" />\n{{ \$slot }}</body></html>\n");
+        $this->app['config']->set('webx-pages.layout', 'layout');
+        $this->app['config']->set('webx-blocks.regions', ['header' => ['title' => 'Header'], 'request' => ['title' => 'Request', 'fragment' => true]]);
+
+        $found = $this->regions();
+
+        $this->assertCount(1, $found, $this->details($found));
+        $this->assertSame(Diagnosis::OK, $found[0]->state);
+        $this->assertStringContainsString('[header]', $found[0]->detail);
+    }
+
+    #[Test]
     public function it_says_nothing_about_regions_when_none_are_declared(): void
     {
         $this->layout("<html><head>@stack('head')</head><body>{{ \$slot }}</body></html>\n");

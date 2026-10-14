@@ -162,6 +162,21 @@ unpublished (`fallback`).
 - On the site a region in which any block throws prints its fallback entirely. Render every type
   you put there with `blocks_render` first; `blocks_region_publish` refuses a draft that fails.
 
+### Shared blocks
+
+A region declared with `fragment: true` is a shared block — the request form above the footer, a
+promo strip — printed not by the layout but where it is placed. Its content is edited once, as
+any region's; `blocks_regions` says `fragment` and lists in `used_on` the records that place it.
+
+- On a page it is a node of the block «Shared block»:
+  `{ "type": "fragment", "values": { "fragment": "request" } }`. Only a shared block may be named
+  there, never the header or the footer.
+- To give one page its own text, read the region with `blocks_get_content` (`entity: "region"`)
+  and put its published blocks (`live`) into the page in place of that node, each with a new key.
+  From then on they are the page's and follow the shared block no more; there is no separate tool.
+- A shared block may not end up inside itself, directly or through another: publishing such a
+  draft is refused with the path.
+
 ## History, usage, renames
 
 - `blocks_versions` lists a type's versions (source, author, comment, which is the draft and which

@@ -22,4 +22,8 @@ return [
     'adopt-taken' => 'Typ bloku „:slug” już istnieje.',
     'adopt-failed' => 'Nie udało się przenieść znacznika do typu bloku.',
     'adopt-forbidden' => 'Przeniesienie znacznika do typu bloku wymaga prawa edycji typów bloków.',
+    'cycle' => 'Wspólny blok znalazłby się wewnątrz samego siebie: :path.',
+    'not-a-fragment' => '„:name” nie jest wspólnym blokiem witryny.',
+    'copy-unpublished' => 'Wspólny blok nie jest jeszcze opublikowany: nie ma czego kopiować.',
+    'not-on-page' => 'Ta strona nie zawiera wspólnego bloku, więc jest on pokazany na pustej stronie układu.',
 ];

@@ -231,11 +231,14 @@ final class ContentEdit
     }
 
     /**
+     * A node with a key of its own on it and on everything nested in it: a copy that goes into
+     * a record next to what it was copied from, or into another record altogether.
+     *
      * @param  array<string, mixed>  $node
      * @param  callable(): string  $newKey
      * @return array<string, mixed>
      */
-    private static function rekey(array $node, callable $newKey): array
+    public static function rekey(array $node, callable $newKey): array
     {
         $node['key'] = $newKey();
 

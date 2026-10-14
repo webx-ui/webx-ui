@@ -305,7 +305,9 @@ final class BlockTools
                 'The regions of the layout — the header, the footer — whose content is blocks: name, title, which '
                 .'types each takes, whether its blocks are on the site or the markup from code is (fallback, the view '
                 .'the layout prints while the region is empty or unpublished), how many blocks it holds and a preview '
-                .'link. Edit one with blocks_get_content / blocks_edit_content, entity "region", id its name.',
+                .'link. Edit one with blocks_get_content / blocks_edit_content, entity "region", id its name. '
+                .'A region with fragment: true is a shared block, which a page places as a block rather than the '
+                .'layout on every page; used_on lists the records whose content places it.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->regions($user),
                 permission: 'blocks.regions',
             ),
@@ -1554,12 +1556,12 @@ final class BlockTools
      */
     private function regions(?Authenticatable $user): array
     {
-        $form = $this->container->make(RegionForm::class);
         $preview = $this->container->make(Preview::class);
+        $entities = $this->entities();
         $regions = [];
 
-        foreach (array_keys($this->container->make(Regions::class)->declared()) as $name) {
-            $row = $form->row($name);
+        foreach ($this->container->make(RegionForm::class)->rows() as $row) {
+            $name = (string) $row['name'];
 
             $regions[] = [
                 'name' => $row['name'],
@@ -1567,6 +1569,17 @@ final class BlockTools
                 'description' => $row['description'],
                 'allow' => $row['allow'],
                 'max' => $row['max'],
+                'fragment' => $row['fragment'],
+                // Shared blocks only: the records that place one, as blocks_usage names them; a
+                // template that prints its tag is not content and is not among them.
+                'used_on' => $row['used_on'] === null ? null : array_map(static fn (array $entry): array => [
+                    'entity' => $entities->nameOfClass((string) $entry['model']),
+                    'id' => $entry['region'] ?? $entry['id'],
+                    'title' => $entry['title'],
+                    'live' => $entry['live'],
+                    'draft' => $entry['draft'],
+                    'url' => $entry['url'],
+                ], $row['used_on']),
                 // What the site prints there now, in one word: the blocks, or the markup from code.
                 'state' => $row['published'] ? ($row['has_draft'] ? 'published, with a draft' : 'published') : ($row['id'] === null ? 'never saved' : ($row['has_draft'] ? 'draft' : 'unpublished')),
                 'published' => $row['published'],

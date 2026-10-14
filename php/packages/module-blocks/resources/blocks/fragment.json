@@ -1,0 +1,25 @@
+{
+  "slug": "fragment",
+  "title": "Shared block",
+  "description": "A block whose content is edited once, in Site regions, and shows the same on every page it is placed on.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "fragment",
+      "type": "wx-fragment",
+      "label": "Shared block"
+    }
+  ],
+  "template": "@if ($fragment)<x-webx-blocks::region :name=\"$fragment\" />@endif\n",
+  "styles": "",
+  "script": null,
+  "sample": {
+    "fragment": null
+  }
+}

@@ -9,6 +9,7 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Throwable;
 use WebxUi\Blocks\Content;
+use WebxUi\Blocks\Fragments;
 use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Regions;
 
@@ -78,6 +79,41 @@ final class Usage
                 // A region is named, not numbered, wherever a tool takes one.
                 'region' => $entity instanceof Region ? $entity->name : null,
             ];
+        }
+
+        return $found;
+    }
+
+    /**
+     * Where each shared block stands (§3.7 of the shared blocks spec): the entities whose content
+     * places it, by the region's name — the same walk as {@see of()}, by the value of a
+     * `wx-fragment` field rather than by type. A template that prints the tag is not content and
+     * is not here.
+     *
+     * @return array<string, list<array{model: string, id: int|string, title: string|null, published: bool, live: bool, draft: bool, url: string|null, region: string|null}>>
+     */
+    public function fragments(): array
+    {
+        $fragments = $this->container->make(Fragments::class);
+        $found = [];
+
+        foreach ($this->entities() as $entity) {
+            [$live, $draft] = $this->trees($entity, separately: true);
+            $inLive = $fragments->placed($live);
+            $inDraft = $fragments->placed($draft);
+
+            foreach (array_unique([...$inLive, ...$inDraft]) as $name) {
+                $found[$name][] = [
+                    'model' => $entity::class,
+                    'id' => $entity->getKey(),
+                    'title' => $this->title($entity),
+                    'published' => method_exists($entity, 'isPublished') ? (bool) $entity->isPublished() : true,
+                    'live' => in_array($name, $inLive, true),
+                    'draft' => in_array($name, $inDraft, true),
+                    'url' => $this->url($entity),
+                    'region' => $entity instanceof Region ? $entity->name : null,
+                ];
+            }
         }
 
         return $found;
