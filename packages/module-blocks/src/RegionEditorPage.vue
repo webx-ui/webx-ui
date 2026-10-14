@@ -21,14 +21,15 @@ import {
   WxButton,
   WxCard,
   WxSkeleton,
+  WxText,
 } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
 import { createRegionsApi } from './api'
 import { useBlocksMessages } from './i18n'
 import { provideBlocksPreview, provideBlocksTop, type BlocksTop } from './preview'
-import { previewAt, provideRegionEditor } from './region'
+import { previewAt, provideRegionEditor, sitePath } from './region'
 import RegionPagePicker, { type RegionPlace } from './RegionPagePicker.vue'
-import type { BlockNode, RegionConflict, RegionDetail } from './types'
+import type { BlockNode, FragmentUse, RegionConflict, RegionDetail } from './types'
 
 /**
  * The editor of one layout region: the page editor without what a region does not have — no
@@ -122,9 +123,12 @@ const state = computed<'saving' | 'unsaved' | 'saved'>(() => {
 /* Which page of the site the region is looked at on, remembered per region in this browser. */
 const place = ref<RegionPlace>({ path: '/', link: null })
 
+/* Whether somebody chose the page here, or it is the one the editor started on. */
+const chosenPlace = ref(false)
+
 const storageKey = computed(() => `webx.regions.at.${name.value}`)
 
-function readPlace(): RegionPlace {
+function readPlace(): RegionPlace | null {
   try {
     const stored = JSON.parse(
       localStorage.getItem(storageKey.value) ?? 'null',
@@ -135,16 +139,46 @@ function readPlace(): RegionPlace {
     // Private windows and blocked storage throw on the accessor itself: the home page it is.
   }
 
-  return { path: '/', link: null }
+  return null
 }
 
-watch(place, (next) => {
+/**
+ * A page picked — in the picker, or from where the shared block stands — and remembered. Only a
+ * pick is: the page the editor starts on by itself is a guess, and a stored guess would outlive
+ * the page it guessed.
+ */
+function pickPlace(next: RegionPlace): void {
+  place.value = next
+  chosenPlace.value = true
+
   try {
     localStorage.setItem(storageKey.value, JSON.stringify(next))
   } catch {
     // Not remembered, which is all that is lost.
   }
-})
+}
+
+/**
+ * Where a shared block is looked at before anybody chose: the first page that places it, what the
+ * site shows before a draft — not the home page, which more often than not does not hold it, and
+ * then the preview is the stage with a notice instead of the block among its neighbours.
+ */
+function firstPlace(detail: RegionDetail): RegionPlace | null {
+  const uses = (detail.used_on ?? []).filter((use) => use.url)
+  const use = uses.find((one) => one.live !== false) ?? uses[0]
+  const path = sitePath(use?.url ?? null)
+
+  return path ? { path, link: null } : null
+}
+
+/** The records that place this shared block; nothing for a region of the layout. */
+const usedOn = computed<FragmentUse[]>(() => region.value?.used_on ?? [])
+
+function showOn(use: FragmentUse): void {
+  const path = sitePath(use.url ?? null)
+
+  if (path) pickPlace({ path, link: null })
+}
 
 const previewUrl = computed(() =>
   region.value ? previewAt(region.value.preview_url, place.value.path) : null,
@@ -160,6 +194,8 @@ provideBlocksTop(
           label: region.value.title,
           allow: region.value.allow,
           max: region.value.max,
+          // A shared block is wherever the page put it: the preview frames it and goes there.
+          frame: region.value.fragment ? region.value.name : null,
         }
       : null,
   ),
@@ -180,7 +216,12 @@ async function load(silent = false): Promise<void> {
   if (!silent) loading.value = true
 
   try {
-    take(await api.get(name.value))
+    const detail = await api.get(name.value)
+
+    take(detail)
+
+    if (!chosenPlace.value && detail.fragment) place.value = firstPlace(detail) ?? place.value
+
     reloadToken.value += 1
   } catch (error) {
     toast.danger(message(error))
@@ -381,7 +422,7 @@ function publish(): Promise<void> {
   return act(
     {
       title: t('region.publish-title', { title }),
-      text: t('region.publish-text'),
+      text: region.value?.fragment ? t('fragment.publish-text') : t('region.publish-text'),
       confirm: t('region.publish'),
       done: t('region.published'),
       publishing: true,
@@ -478,7 +519,10 @@ watch(current, schedule)
 watch(
   name,
   () => {
-    place.value = readPlace()
+    const stored = readPlace()
+
+    place.value = stored ?? { path: '/', link: null }
+    chosenPlace.value = stored !== null
     void load()
   },
   { immediate: true },
@@ -532,7 +576,7 @@ onBeforeRouteLeave(async () => {
         </template>
 
         <template #extra>
-          <region-page-picker v-model="place" />
+          <region-page-picker :model-value="place" @update:model-value="pickPlace" />
         </template>
       </wx-screen-head>
 
@@ -563,6 +607,49 @@ onBeforeRouteLeave(async () => {
           </wx-button>
         </template>
       </wx-alert>
+
+      <!--
+        Where a shared block stands — the records whose content places it. Each one is a page to
+        look at it on, which is what a list of places is for in front of a preview; a shared block
+        inside another one leads to that one's editor. Templates that print the tag are not
+        content, and the line under the list says they are not counted rather than leaving the
+        list to look complete.
+      -->
+      <div v-if="region.fragment" class="wx-region-editor__where">
+        <span class="wx-region-editor__where-label">{{ t('fragment.used-on') }}</span>
+        <template v-if="usedOn.length">
+          <template v-for="use in usedOn" :key="`${use.model}:${use.id}`">
+            <router-link
+              v-if="use.region"
+              :to="`${base}/${encodeURIComponent(use.region)}`"
+              class="wx-region-editor__use"
+            >
+              {{ use.title ?? use.region }}
+            </router-link>
+            <button
+              v-else-if="use.url"
+              type="button"
+              class="wx-region-editor__use"
+              :class="{ 'is-active': sitePath(use.url) === place.path }"
+              :aria-pressed="sitePath(use.url) === place.path"
+              :title="t('fragment.show-here')"
+              @click="showOn(use)"
+            >
+              {{ use.title ?? `#${use.id}` }}
+              <wx-badge v-if="use.live === false" type="warning" size="sm">{{
+                t('fragment.draft-only')
+              }}</wx-badge>
+            </button>
+            <span v-else class="wx-region-editor__use is-plain">{{
+              use.title ?? `#${use.id}`
+            }}</span>
+          </template>
+        </template>
+        <wx-text v-else size="sm" tone="muted">{{ t('fragment.used-nowhere') }}</wx-text>
+        <wx-text size="sm" tone="muted" class="wx-region-editor__where-note">{{
+          t('fragment.templates')
+        }}</wx-text>
+      </div>
 
       <div class="wx-region-editor__screen">
         <wx-screen
@@ -628,6 +715,62 @@ onBeforeRouteLeave(async () => {
 
 .wx-region-editor__ghost {
   max-width: 420px;
+}
+
+.wx-region-editor__where {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-6) var(--wx-space-8);
+  min-width: 0;
+}
+
+.wx-region-editor__where-label {
+  font-size: var(--wx-font-size-sm);
+  font-weight: var(--wx-font-weight-semibold);
+  color: var(--wx-text-strong);
+}
+
+/* A row of pages, each a press away from the preview: chips rather than links, since they stay. */
+.wx-region-editor__use {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wx-space-6);
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--wx-space-2) var(--wx-space-10);
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-full);
+  background: var(--wx-bg-surface);
+  color: var(--wx-text-default);
+  font: inherit;
+  font-size: var(--wx-font-size-sm);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.wx-region-editor__use:hover {
+  border-color: var(--wx-border-strong);
+}
+
+.wx-region-editor__use:focus-visible {
+  outline: none;
+  box-shadow: var(--wx-ring-focus);
+}
+
+.wx-region-editor__use.is-active {
+  border-color: var(--wx-color-primary);
+  color: var(--wx-text-link);
+}
+
+.wx-region-editor__use.is-plain {
+  cursor: default;
+}
+
+/* Its own line: a note about the list, not one more place in it. */
+.wx-region-editor__where-note {
+  flex-basis: 100%;
 }
 
 .wx-region-editor__screen {

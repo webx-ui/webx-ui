@@ -1,5 +1,5 @@
 import { inject, provide, type InjectionKey, type Ref } from 'vue'
-import type { BlockType } from './types'
+import type { BlockNode, BlockType } from './types'
 
 /**
  * What the page hosting a constructor knows and the constructor does not: where the preview
@@ -46,6 +46,11 @@ export interface BlocksTop {
   allow?: string[] | null
   /** How many blocks the top level may hold. */
   max?: number | null
+  /**
+   * The region the preview frames and scrolls to: a shared block, which stands wherever a page
+   * put it. A header needs neither — it is at the top of every page.
+   */
+  frame?: string | null
 }
 
 export const blocksTopKey: InjectionKey<Readonly<Ref<BlocksTop | null>>> = Symbol('wx-blocks-top')
@@ -68,3 +73,18 @@ export const blocksRootKey: InjectionKey<boolean> = Symbol('wx-blocks-root')
  * in this block. A ref, because the editor's settings are the draft, not the published type.
  */
 export const blocksOwnerKey: InjectionKey<Ref<BlockType | null>> = Symbol('wx-blocks-owner')
+
+/**
+ * What a «Shared block» form needs of the constructor it is open in, and a field drawn by the
+ * renderer cannot reach otherwise: which block it is, and the way to put others in its place.
+ */
+export interface BlocksFragmentHost {
+  /** The key of the block whose form is open — the one a field in that form belongs to. */
+  selected: Readonly<Ref<string | null>>
+  /** The shared block this constructor edits, when it edits one: never offered inside itself. */
+  own: Readonly<Ref<string | null>>
+  /** Put these blocks where the block with this key stands, and open the first of them. */
+  detach(key: string, nodes: BlockNode[]): void
+}
+
+export const blocksFragmentKey: InjectionKey<BlocksFragmentHost> = Symbol('wx-blocks-fragment')

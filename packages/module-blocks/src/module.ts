@@ -12,6 +12,7 @@ import BlockEditorPage from './BlockEditorPage.vue'
 import BlocksField from './BlocksField.vue'
 import BlocksPage from './BlocksPage.vue'
 import BlocksSiteBarTab from './BlocksSiteBarTab.vue'
+import FragmentField from './FragmentField.vue'
 import { seedBlocksMessages } from './i18n'
 import RegionEditorPage from './RegionEditorPage.vue'
 import RegionHistory from './RegionHistory.vue'
@@ -81,6 +82,9 @@ export function blocks(options: BlocksOptions = {}): AdminModule {
         kind: 'field',
         bind: () => ({ rows: 3, placeholder: '<p>…</p>' }),
       },
+      // «Shared block»: which shared block of the site this place on a page shows — a region
+      // declared with `fragment`, edited once in «Site regions» (§4.1 of the shared blocks spec).
+      'wx-fragment': { component: FragmentField, kind: 'field' },
     },
   }
 }

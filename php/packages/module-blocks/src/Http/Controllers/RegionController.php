@@ -163,6 +163,24 @@ final class RegionController
     }
 
     /**
+     * The shared blocks, for the field that places one on a page: each with its state, so the
+     * field says whether what it shows is on the site. Without `used_on` — that is a walk over the
+     * whole site's content, and the field has no use for it.
+     */
+    public function fragments(): JsonResponse
+    {
+        return ApiResponse::data(array_map(
+            function (string $name): array {
+                $row = $this->form->row($name, null, []);
+                unset($row['used_on']);
+
+                return $row;
+            },
+            $this->regions->fragments(),
+        ));
+    }
+
+    /**
      * «Make it this page's own» (§3.5 of the shared blocks spec): the published tree of a shared
      * block with a fresh key on every node, for the editor to put in place of the «Shared block»
      * in a record's draft and save the ordinary way. Writes nothing — so it asks for no more than

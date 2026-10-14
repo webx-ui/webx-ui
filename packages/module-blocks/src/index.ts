@@ -9,11 +9,13 @@ export {
 } from './api'
 export { blocksMessages } from './messages'
 export {
+  blocksFragmentKey,
   blocksPreviewKey,
   blocksTopKey,
   provideBlocksPreview,
   provideBlocksTop,
   useBlocksPreview,
+  type BlocksFragmentHost,
   type BlocksPreview,
   type BlocksTop,
 } from './preview'
@@ -28,13 +30,22 @@ export {
   newKey,
   removeNode,
   replaceList,
+  swapNode,
   typesIn,
   updateValues,
   walk,
   type Located,
 } from './content'
 export { lintBlock, undeclared } from './lint'
-export { findRange, highlightBlock, replaceBlock, stageDocument } from './frame'
+export {
+  findRange,
+  findRegion,
+  frameRegion,
+  highlightBlock,
+  regionRect,
+  replaceBlock,
+  stageDocument,
+} from './frame'
 export { callTag, formSchema, kindOf } from './schema'
 export { default as WxBlocks } from './BlocksField.vue'
 export { default as WxBlocksSiteBarTab } from './BlocksSiteBarTab.vue'
@@ -43,6 +54,7 @@ export { default as WxBlockEditorPage } from './BlockEditorPage.vue'
 export { default as WxBlockPicker } from './BlockPicker.vue'
 export { default as WxBlockThumb } from './BlockThumb.vue'
 export { default as WxBlockStage } from './BlockStage.vue'
+export { default as WxFragmentField } from './FragmentField.vue'
 export { default as WxRegionsPage } from './RegionsPage.vue'
 export { default as WxRegionEditorPage } from './RegionEditorPage.vue'
 export type {
@@ -60,6 +72,7 @@ export type {
   BlockVersion,
   BlockVersionMeta,
   DeclaredComponent,
+  FragmentUse,
   Lint,
   PublishRefusal,
   RegionAdopted,

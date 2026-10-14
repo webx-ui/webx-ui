@@ -268,6 +268,16 @@ export interface RegionRow {
   allow: string[] | null
   /** How many blocks the top level may hold; `null` — no limit. */
   max: number | null
+  /**
+   * A shared block: printed where it is placed — a «Shared block» on a page, a tag in a template —
+   * rather than by the layout. Absent from a server older than shared blocks.
+   */
+  fragment?: boolean
+  /**
+   * Where a shared block stands: the records whose content places it. `null` for a region of the
+   * layout, which is on every page; absent where it is not counted — the field's list.
+   */
+  used_on?: FragmentUse[] | null
   /** On the site: published, and visitors see the blocks rather than the code's view. */
   published: boolean
   published_at: string | null
@@ -278,6 +288,14 @@ export interface RegionRow {
   /** The view the site prints while the region is empty, or `null` when the tag names none. */
   fallback: string | null
   updated_at: string | null
+}
+
+/**
+ * A record that places a shared block, in what the site shows (`live`), in its draft, or both.
+ * A record of another shared block names that one in `region`.
+ */
+export interface FragmentUse extends BlockUsage {
+  region?: string | null
 }
 
 /** One region with what is being edited in it. */

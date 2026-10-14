@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAdmin, useErrorText, useTranslate, WxDate, WxScreenHead } from '@webx-ui/module-admin'
 import { toast, WxBadge, WxEmpty, WxIcon, WxSkeleton, WxText } from '@webx-ui/core'
 import { createRegionsApi } from './api'
@@ -26,6 +26,34 @@ const t = useTranslate('webx-blocks')
 const message = useErrorText()
 
 const regions = ref<RegionRow[] | null>(null)
+
+/**
+ * The regions of the layout, then the shared blocks (§4.3 of the shared blocks spec): the first are
+ * on every page, the second wherever somebody put them, and one list of both read as if the
+ * request form stood on every page like the header. A site without shared blocks gets the one
+ * list it always had, without a heading over it.
+ */
+const sections = computed(() => {
+  const rows = regions.value ?? []
+  const shared = rows.filter((row) => row.fragment === true)
+
+  if (shared.length === 0) return [{ key: 'all', title: null, help: null, rows }]
+
+  return [
+    {
+      key: 'layout',
+      title: t('fragment.group-layout'),
+      help: null,
+      rows: rows.filter((row) => row.fragment !== true),
+    },
+    {
+      key: 'shared',
+      title: t('fragment.group-shared'),
+      help: t('fragment.group-shared-help'),
+      rows: shared,
+    },
+  ].filter((section) => section.rows.length > 0)
+})
 
 /**
  * The state as one chip, and a second one only when it adds something: a region on the site with
@@ -73,43 +101,72 @@ onMounted(async () => {
       :description="t('region.empty-help')"
     />
 
-    <div v-else class="wx-regions__grid">
-      <router-link
-        v-for="region in regions"
-        :key="region.name"
-        :to="`${props.base}/${encodeURIComponent(region.name)}`"
-        class="wx-regions__card is-link"
+    <template v-else>
+      <section
+        v-for="section in sections"
+        :key="section.key"
+        class="wx-regions__section"
+        :aria-label="section.title ?? undefined"
       >
-        <div class="wx-regions__top">
-          <span class="wx-regions__title">{{ region.title }}</span>
-          <code class="wx-regions__name">{{ region.name }}</code>
+        <div v-if="section.title" class="wx-regions__head">
+          <h2 class="wx-regions__heading">{{ section.title }}</h2>
+          <wx-text v-if="section.help" size="sm" tone="muted">{{ section.help }}</wx-text>
         </div>
 
-        <wx-text v-if="region.description" size="sm" tone="muted" class="wx-regions__description">
-          {{ region.description }}
-        </wx-text>
+        <div class="wx-regions__grid">
+          <router-link
+            v-for="region in section.rows"
+            :key="region.name"
+            :to="`${props.base}/${encodeURIComponent(region.name)}`"
+            class="wx-regions__card is-link"
+          >
+            <div class="wx-regions__top">
+              <span class="wx-regions__title">{{ region.title }}</span>
+              <code class="wx-regions__name">{{ region.name }}</code>
+            </div>
 
-        <div class="wx-regions__chips">
-          <wx-badge v-for="chip in chips(region)" :key="chip.label" :type="chip.type" dot>
-            {{ chip.label }}
-          </wx-badge>
+            <wx-text
+              v-if="region.description"
+              size="sm"
+              tone="muted"
+              class="wx-regions__description"
+            >
+              {{ region.description }}
+            </wx-text>
+
+            <div class="wx-regions__chips">
+              <wx-badge v-for="chip in chips(region)" :key="chip.label" :type="chip.type" dot>
+                {{ chip.label }}
+              </wx-badge>
+            </div>
+
+            <div class="wx-regions__meta">
+              <wx-text size="sm" tone="muted">{{
+                t('region.count', { count: region.count })
+              }}</wx-text>
+              <!-- Where it stands, for a shared block: a header is on every page and says nothing. -->
+              <wx-text v-if="region.fragment && region.used_on" size="sm" tone="muted">
+                {{
+                  region.used_on.length
+                    ? t('fragment.count', { count: region.used_on.length })
+                    : t('fragment.used-nowhere')
+                }}
+              </wx-text>
+              <wx-text size="sm" tone="muted">
+                {{
+                  region.fallback
+                    ? t('region.fallback-view', { view: region.fallback })
+                    : t('region.fallback-none')
+                }}
+              </wx-text>
+              <wx-date v-if="region.updated_at" :value="region.updated_at" size="sm" tone="muted" />
+            </div>
+
+            <wx-icon name="chevron-right" class="wx-regions__go" aria-hidden="true" />
+          </router-link>
         </div>
-
-        <div class="wx-regions__meta">
-          <wx-text size="sm" tone="muted">{{ t('region.count', { count: region.count }) }}</wx-text>
-          <wx-text size="sm" tone="muted">
-            {{
-              region.fallback
-                ? t('region.fallback-view', { view: region.fallback })
-                : t('region.fallback-none')
-            }}
-          </wx-text>
-          <wx-date v-if="region.updated_at" :value="region.updated_at" size="sm" tone="muted" />
-        </div>
-
-        <wx-icon name="chevron-right" class="wx-regions__go" aria-hidden="true" />
-      </router-link>
-    </div>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -119,6 +176,25 @@ onMounted(async () => {
   flex-direction: column;
   gap: var(--wx-gap, var(--wx-space-16));
   container-type: inline-size;
+}
+
+.wx-regions__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-8);
+}
+
+.wx-regions__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-2);
+}
+
+.wx-regions__heading {
+  margin: 0;
+  font-size: var(--wx-font-size-md);
+  font-weight: var(--wx-font-weight-semibold);
+  color: var(--wx-text-strong);
 }
 
 /* Side by side while each card keeps room for its sentence; one above the other on a phone. */

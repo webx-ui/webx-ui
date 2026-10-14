@@ -213,6 +213,26 @@ final class FragmentsTest extends RegionTestCase
     }
 
     #[Test]
+    public function the_field_lists_the_shared_blocks_to_whoever_edits_a_page(): void
+    {
+        $this->region('request', [$this->node('bar', ['text' => 'Ask us'], 'r1')]);
+        $this->page('about', [$this->node('fragment', ['fragment' => 'request'], 'p1')]);
+
+        // Somebody who edits pages and not the regions: the field still has to name one.
+        $rows = $this->actingAs($this->editor(['blocks.view']), 'cms')->getJson('/api/cms/blocks/fragments')
+            ->assertOk()->json('data');
+        $byName = array_column($rows, null, 'name');
+
+        $this->assertSame(['request', 'promo'], array_column($rows, 'name'));
+        $this->assertTrue($byName['request']['published']);
+        $this->assertSame(1, $byName['request']['count']);
+        $this->assertFalse($byName['promo']['published']);
+        $this->assertArrayNotHasKey('used_on', $byName['request']);
+
+        $this->actingAs($this->editor(['webx.nothing']), 'cms')->getJson('/api/cms/blocks/fragments')->assertForbidden();
+    }
+
+    #[Test]
     public function the_preview_is_a_page_that_holds_it_or_the_stage_with_a_notice(): void
     {
         $this->app['config']->set('webx-blocks.layout', 'region-site::layout');

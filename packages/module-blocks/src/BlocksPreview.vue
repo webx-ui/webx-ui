@@ -5,8 +5,10 @@ import { useElementWidth, WxAction, WxSegmented, WxText } from '@webx-ui/core'
 import {
   bindFrame,
   blockElement,
+  frameRegion,
   highlightBlock,
   markHidden,
+  regionRect,
   replaceBlock,
   type FrameBinding,
 } from './frame'
@@ -33,8 +35,13 @@ const props = withDefaults(
     compact?: boolean
     /** Keys of the blocks switched off: marked in the page until it reloads without them. */
     hidden?: string[]
+    /**
+     * A region to frame and scroll to: a shared block, which is wherever the page placed it and
+     * not where a header always is — down the page under the content, more often than not.
+     */
+    region?: string | null
   }>(),
-  { selected: null, reload: 0, compact: false, hidden: () => [] },
+  { selected: null, reload: 0, compact: false, hidden: () => [], region: null },
 )
 
 const emit = defineEmits<{
@@ -200,6 +207,10 @@ function measure(): void {
   const margins = (parseFloat(style.marginTop) || 0) + (parseFloat(style.marginBottom) || 0)
   const height = Math.ceil(body.scrollHeight + margins)
 
+  /* The page moved under the frame drawn around the region — laid over it, not inside it — and
+     a width that changed moves it as surely as a height. */
+  if (props.region) frameRegion(page, props.region)
+
   if (height === contentHeight.value) return
 
   contentHeight.value = height
@@ -230,8 +241,6 @@ function onLoad(): void {
 
   if (!page) return
 
-  watch_(page)
-
   binding?.release()
   binding = bindFrame(page, {
     /* No guard against answering a click with a scroll: `bring` moves nothing that is already
@@ -242,7 +251,13 @@ function onLoad(): void {
 
   highlightBlock(page, props.selected ?? null)
   markHidden(page, props.hidden)
-  reveal(props.selected ?? null)
+  frameRegion(page, props.region)
+  reveal(props.selected ?? (props.region ? REGION : null))
+
+  /* Measured after the ask, not before: the frame grows to its page on the next tick, and only an
+     ask already pending is asked again then. Before, a block or a region further down than the
+     window-high frame reached scrolled only as far as that frame let it — and stayed there. */
+  watch_(page)
 }
 
 /*
@@ -255,6 +270,9 @@ function onLoad(): void {
  */
 let pending: string | null = null
 let forget: number | null = null
+
+/* What `pending` holds for the region rather than a block: no key of a block looks like it. */
+const REGION = '\u0000region'
 
 /**
  * Bring the selected block into view.
@@ -285,12 +303,10 @@ function reveal(key: string | null): void {
  * offset from the frame's own top, and the scale is a transform, so what the panel sees is
  * that offset times the scale.
  */
-function place(el: Element): { top: number; height: number } | null {
+function place(rect: { top: number; height: number }): { top: number; height: number } | null {
   const box = frame.value?.getBoundingClientRect()
 
   if (!box) return null
-
-  const rect = el.getBoundingClientRect()
 
   return { top: box.top + rect.top * scale.value, height: rect.height * scale.value }
 }
@@ -341,8 +357,13 @@ function bring(): void {
      stands where it was put. */
   pin(page)
 
-  const el = blockElement(page, pending)
-  const at = el ? place(el) : null
+  const target =
+    pending === REGION
+      ? props.region
+        ? regionRect(page, props.region)
+        : null
+      : (blockElement(page, pending)?.getBoundingClientRect() ?? null)
+  const at = target ? place(target) : null
 
   if (!at) return
 
@@ -373,6 +394,7 @@ function replace(key: string, html: string): boolean {
   if (done) {
     highlightBlock(page, props.selected ?? null)
     markHidden(page, props.hidden)
+    frameRegion(page, props.region)
   }
 
   return done

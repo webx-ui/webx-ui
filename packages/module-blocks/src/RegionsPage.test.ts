@@ -71,6 +71,47 @@ describe('WxRegionsPage', () => {
     expect(cards[0]!.text()).toContain('Blocks: 2')
   })
 
+  it('puts the shared blocks in a group of their own, with where each stands', async () => {
+    const use = {
+      model: 'Page',
+      id: 1,
+      title: 'About',
+      published: true,
+      live: true,
+      draft: false,
+      url: '/about',
+    }
+    const { wrapper } = await panel([
+      row('header', { used_on: null }),
+      row('request', { fragment: true, used_on: [use, { ...use, id: 2 }] }),
+      row('footer', { used_on: null }),
+      row('promo', { fragment: true, used_on: [] }),
+    ])
+
+    const sections = wrapper.findAll('.wx-regions__section')
+
+    expect(sections.map((one) => one.get('.wx-regions__heading').text())).toEqual([
+      'Header and footer',
+      'Shared blocks',
+    ])
+    expect(sections[0]!.findAll('.wx-regions__name').map((one) => one.text())).toEqual([
+      'header',
+      'footer',
+    ])
+
+    const [request, promo] = sections[1]!.findAll('.wx-regions__card')
+
+    expect(request!.text()).toContain('Pages: 2')
+    expect(promo!.text()).toContain('No page places it yet.')
+  })
+
+  it('keeps one list without a heading on a site with no shared blocks', async () => {
+    const { wrapper } = await panel([row('header'), row('footer')])
+
+    expect(wrapper.findAll('.wx-regions__section')).toHaveLength(1)
+    expect(wrapper.find('.wx-regions__heading').exists()).toBe(false)
+  })
+
   it('says whether the site shows the blocks or the code', async () => {
     const { wrapper } = await panel([
       row('header', { id: 1, published: true, has_draft: true }),

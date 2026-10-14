@@ -20,6 +20,18 @@ export interface MarkerRange {
 
 /** The pair of markers around a block, or null when the page does not hold it. */
 export function findRange(root: Node, key: string): MarkerRange | null {
+  return findPair(root, `wx:${key}`)
+}
+
+/**
+ * The pair around a region — `<!--wx-region:name-->` — which the region's own preview prints
+ * whatever the region holds, its fallback included.
+ */
+export function findRegion(root: Node, name: string): MarkerRange | null {
+  return findPair(root, `wx-region:${name}`)
+}
+
+function findPair(root: Node, opener: string): MarkerRange | null {
   const doc = root.ownerDocument ?? (root as Document)
   const walker = doc.createTreeWalker(root, 128 /* NodeFilter.SHOW_COMMENT */)
   let start: Comment | null = null
@@ -27,9 +39,9 @@ export function findRange(root: Node, key: string): MarkerRange | null {
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const text = (node as Comment).data.trim()
 
-    if (start === null && text === `wx:${key}`) {
+    if (start === null && text === opener) {
       start = node as Comment
-    } else if (start !== null && text === `/wx:${key}`) {
+    } else if (start !== null && text === `/${opener}`) {
       return { start, end: node as Comment }
     }
   }
@@ -82,17 +94,111 @@ export function replaceBlock(doc: Document, key: string, html: string): boolean 
   return true
 }
 
-/** The first element a block prints — where a highlight goes. */
+/**
+ * What a block prints that is never drawn. A block holding a shared block starts with the
+ * region's stylesheet, printed in place — and a `<link>` taken for the block was a box of nothing
+ * at the top of the page: the outline went nowhere and the preview never scrolled to it.
+ */
+const UNDRAWN = new Set(['link', 'style', 'script', 'template', 'meta', 'noscript'])
+
+/**
+ * The element a block is pointed at by — the outline, the scroll: the first one it prints that
+ * takes room on the page. One that draws nothing at all, or where the layout cannot be measured,
+ * gives the first it prints that could.
+ */
 export function blockElement(root: Node, key: string): Element | null {
   const range = findRange(root, key)
 
-  if (!range) return null
+  return range ? (drawnElements(range)[0] ?? null) : null
+}
+
+/** Elements between a pair of markers that could be drawn, the ones that are drawn first. */
+function drawnElements(range: MarkerRange): Element[] {
+  const drawn: Element[] = []
+  const empty: Element[] = []
 
   for (let node = range.start.nextSibling; node && node !== range.end; node = node.nextSibling) {
-    if (node.nodeType === 1) return node as Element
+    if (node.nodeType !== 1) continue
+
+    const element = node as Element
+
+    if (UNDRAWN.has(element.tagName.toLowerCase())) continue
+
+    const rect = element.getBoundingClientRect()
+
+    ;(rect.width > 0 || rect.height > 0 ? drawn : empty).push(element)
   }
 
-  return null
+  return [...drawn, ...empty]
+}
+
+/**
+ * Where a region stands on the page: one box around everything it printed, in the page's own
+ * coordinates. Null when the page does not print it, or it printed nothing that takes room.
+ */
+export function regionRect(
+  doc: Document,
+  name: string,
+): { top: number; left: number; width: number; height: number } | null {
+  const range = findRegion(doc, name)
+
+  if (!range) return null
+
+  let top = Infinity
+  let left = Infinity
+  let right = -Infinity
+  let bottom = -Infinity
+
+  for (const element of drawnElements(range)) {
+    const rect = element.getBoundingClientRect()
+
+    if (rect.width === 0 && rect.height === 0) continue
+
+    top = Math.min(top, rect.top)
+    left = Math.min(left, rect.left)
+    right = Math.max(right, rect.right)
+    bottom = Math.max(bottom, rect.bottom)
+  }
+
+  return top === Infinity ? null : { top, left, width: right - left, height: bottom - top }
+}
+
+export const REGION_FRAME_ID = 'wx-preview-region'
+
+/**
+ * Draw a frame around a region of the page, or take it away (null).
+ *
+ * A box laid over the page rather than a class on an element, as a block has: a region is any
+ * number of blocks side by side, and wrapping them in an element of ours would break the site's
+ * own rules — `.site-main > section` stops matching the moment there is a `div` in between.
+ * Hangs off the root element and not the body, which a site may have positioned: there its top
+ * is the page's top, whatever the body's margins.
+ */
+export function frameRegion(doc: Document, name: string | null): void {
+  const rect = name === null ? null : regionRect(doc, name)
+  let box = doc.getElementById(REGION_FRAME_ID)
+
+  if (rect === null) {
+    box?.remove()
+
+    return
+  }
+
+  if (box === null) {
+    box = doc.createElement('div')
+    box.id = REGION_FRAME_ID
+    box.setAttribute('aria-hidden', 'true')
+    doc.documentElement.appendChild(box)
+  }
+
+  const view = doc.defaultView
+  const top = rect.top + (view?.scrollY ?? 0)
+  const left = rect.left + (view?.scrollX ?? 0)
+
+  box.style.cssText =
+    `position:absolute;top:${top}px;left:${left}px;width:${rect.width}px;height:${rect.height}px;` +
+    // The selected block's outline, so the two read as one family: what is being edited.
+    'outline:2px solid #427edd;outline-offset:-2px;pointer-events:none;z-index:2147483646;margin:0;'
 }
 
 /** Mark one block as the selected one, and nothing else. Null clears the selection. */
