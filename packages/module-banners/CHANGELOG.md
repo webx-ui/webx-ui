@@ -1,5 +1,17 @@
 # @webx-ui/module-banners
 
+## 0.2.1
+
+### Patch Changes
+
+- e107a30: `WxSortableList`: проп `hoverable` — список сам подсвечивает строку под курсором и текущую (`.is-current` или `aria-current` внутри) и убирает разделители над ней и под ней. Рубрики и категории, места баннеров, вопросы FAQ и команда переведены на него.
+- Updated dependencies [e107a30]
+- Updated dependencies [e107a30]
+  - @webx-ui/module-admin@0.26.1
+  - @webx-ui/core@0.41.0
+  - @webx-ui/module-media@0.10.3
+  - @webx-ui/schema@0.9.1
+
 ## 0.2.0
 
 ### Minor Changes
