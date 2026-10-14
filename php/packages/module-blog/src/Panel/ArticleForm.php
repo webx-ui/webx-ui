@@ -10,6 +10,7 @@ use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Blog\Http\Resources\ArticleResource;
 use WebxUi\Blog\Models\Article;
+use WebxUi\Blog\Models\Author;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Localization\Locales;
 use WebxUi\Media\Models\MediaFile;
@@ -307,15 +308,23 @@ final class ArticleForm
      * Everybody who could be named as the author, not only those who already are: an article
      * written by one person and signed by another is an ordinary thing in a newsroom (§2.14).
      *
-     * @return list<array{id: int, title: string}>
+     * @return list<array{id: int, title: string, profile: int|null}>
      */
     private function authors(): array
     {
+        // With the profile of each, where the site has author pages (§19.5): the field links to it,
+        // or offers to make one.
+        $profiles = Author::enabled() ? Author::query()->pluck('id', 'user_id')->all() : [];
+
         return CmsUser::query()
             ->orderBy('name')
             ->limit(self::AUTHORS)
             ->get(['id', 'name'])
-            ->map(static fn (CmsUser $user): array => ['id' => (int) $user->getKey(), 'title' => (string) $user->name])
+            ->map(static fn (CmsUser $user): array => [
+                'id' => (int) $user->getKey(),
+                'title' => (string) $user->name,
+                'profile' => isset($profiles[$user->getKey()]) ? (int) $profiles[$user->getKey()] : null,
+            ])
             ->values()
             ->all();
     }

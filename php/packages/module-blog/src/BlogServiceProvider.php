@@ -36,6 +36,7 @@ use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
 use WebxUi\Blog\Panel\ArticleForm;
 use WebxUi\Blog\Panel\ArticlesModule;
+use WebxUi\Blog\Panel\AuthorsModule;
 use WebxUi\Blog\Panel\BlogModule;
 use WebxUi\Blog\Panel\Revision;
 use WebxUi\Blog\Panel\RubricsModule;
@@ -261,6 +262,12 @@ class BlogServiceProvider extends ServiceProvider
         foreach ([ArticlesModule::class, RubricsModule::class, TagsModule::class] as $module) {
             $modules->register($this->app->make($module));
         }
+
+        // Only where the site allows author pages (§19.1, decision 2): a profile nobody will see
+        // is a form that changes nothing.
+        if (Author::enabled()) {
+            $modules->register($this->app->make(AuthorsModule::class));
+        }
     }
 
     /**
@@ -287,6 +294,12 @@ class BlogServiceProvider extends ServiceProvider
         $this->app->make(ScreenRegistry::class)->register(
             Rubric::SCREEN,
             __DIR__.'/../resources/screens/category-form.json',
+        );
+
+        // A profile of an author (§19.5), described for the same two reasons.
+        $this->app->make(ScreenRegistry::class)->register(
+            Author::SCREEN,
+            __DIR__.'/../resources/screens/author-form.json',
         );
 
         $types = $this->app->make(FieldTypes::class);

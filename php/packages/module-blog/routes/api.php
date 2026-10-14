@@ -9,6 +9,7 @@ use WebxUi\Blog\Http\Controllers\ArticleDraftController;
 use WebxUi\Blog\Http\Controllers\ArticlePublicationController;
 use WebxUi\Blog\Http\Controllers\ArticleRestoreController;
 use WebxUi\Blog\Http\Controllers\ArticleVersionController;
+use WebxUi\Blog\Http\Controllers\AuthorController;
 use WebxUi\Blog\Http\Controllers\TagController;
 use WebxUi\Blog\Models\Rubric;
 
@@ -88,5 +89,16 @@ Route::prefix((string) config('webx-admin.api_path').'/blog')
             Route::post('tags/mass', [TagController::class, 'mass'])->name('tags.mass');
             Route::put('tags/{tag}', [TagController::class, 'update'])->whereNumber('tag')->name('tags.update');
             Route::delete('tags/{tag}', [TagController::class, 'destroy'])->whereNumber('tag')->name('tags.destroy');
+        });
+
+        // The profiles of the authors (§19.5). Always routed; a site without author pages answers
+        // 404 from the controller, as the routes are read before anybody could ask the flag.
+        Route::middleware('cms.can:blog.authors.manage')->group(function (): void {
+            Route::get('authors', [AuthorController::class, 'index'])->name('authors.index');
+            Route::get('authors/accounts', [AuthorController::class, 'accounts'])->name('authors.accounts');
+            Route::post('authors', [AuthorController::class, 'store'])->name('authors.store');
+            Route::get('authors/{author}', [AuthorController::class, 'show'])->whereNumber('author')->name('authors.show');
+            Route::put('authors/{author}', [AuthorController::class, 'update'])->whereNumber('author')->name('authors.update');
+            Route::delete('authors/{author}', [AuthorController::class, 'destroy'])->whereNumber('author')->name('authors.destroy');
         });
     });

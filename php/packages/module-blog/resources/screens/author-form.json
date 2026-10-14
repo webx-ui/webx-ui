@@ -1,0 +1,107 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "blog.author-form",
+  "model": "author",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "content",
+          "type": "wx-tab",
+          "label": "trans::webx-blog::author.tab-profile",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-blog::author.field-name",
+                  "help": "trans::webx-blog::author.field-name-help",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "role",
+                  "type": "wx-input",
+                  "name": "role",
+                  "label": "trans::webx-blog::author.field-role",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "bio",
+                  "type": "wx-rich-text",
+                  "name": "bio",
+                  "label": "trans::webx-blog::author.field-bio",
+                  "help": "trans::webx-blog::author.field-bio-help",
+                  "localized": true
+                }
+              ]
+            },
+            {
+              "id": "presentation",
+              "type": "wx-card",
+              "label": "trans::webx-blog::author.card-page",
+              "children": [
+                {
+                  "id": "photo",
+                  "type": "wx-media",
+                  "name": "photo",
+                  "label": "trans::webx-blog::author.field-photo",
+                  "props": {
+                    "accept": "image",
+                    "captions": false,
+                    "aspect": "1/1"
+                  }
+                },
+                {
+                  "id": "is-public",
+                  "type": "wx-switch",
+                  "name": "is_public",
+                  "label": "trans::webx-blog::author.field-public",
+                  "help": "trans::webx-blog::author.field-public-help"
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-input",
+                  "name": "slug",
+                  "label": "trans::webx-blog::author.field-slug",
+                  "help": "trans::webx-blog::author.field-slug-help",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 200
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-blog::rubric.tab-seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-blog::screen.seo-empty",
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
