@@ -111,13 +111,13 @@ final class Feed
     }
 
     /**
-     * What a card in a listing prints: a cover, the rubric it names and a byline. Loaded here
-     * rather than in the view, because a view that loads them loads them once per row.
+     * What a card in a listing prints: a cover, the rubric it names, its tags and a byline. Loaded
+     * here rather than in the view, because a view that loads them loads them once per row.
      *
      * @return list<string>
      */
     private function eagerLoad(): array
     {
-        return ['cover', 'rubrics', 'author', 'authorProfile'];
+        return ['cover', 'rubrics', 'tags', 'author', 'authorProfile'];
     }
 }
