@@ -34,6 +34,12 @@ export interface SortableListProps<T = unknown> {
   size?: SortableListSize
   /** Drops the frame, for a list that already sits in a card. */
   plain?: boolean
+  /**
+   * Tints the row under the pointer, and the row that holds the current item (`.is-current` or
+   * `aria-current` inside it), with the rules either side of a tinted row taken away — a tint
+   * cut by a line above and below reads as two rows.
+   */
+  hoverable?: boolean
   /** Shown when there is nothing in the list. */
   emptyText?: string
   /** What the grip is called, before the name of the row it holds. */

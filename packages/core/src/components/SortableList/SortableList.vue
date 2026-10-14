@@ -15,6 +15,7 @@ const props = withDefaults(defineProps<SortableListProps<T>>(), {
   disabled: false,
   size: 'md',
   plain: false,
+  hoverable: false,
   emptyText: 'Nothing here yet',
   dragLabel: 'Reorder',
   ariaLabel: undefined,
@@ -60,7 +61,12 @@ const handleSelector = computed(() => {
 const classes = computed(() => [
   'wx-sortable-list',
   `wx-sortable-list--${props.size}`,
-  { 'is-plain': props.plain, 'is-disabled': props.disabled, 'is-headed': hasHeader.value },
+  {
+    'is-plain': props.plain,
+    'is-hoverable': props.hoverable,
+    'is-disabled': props.disabled,
+    'is-headed': hasHeader.value,
+  },
 ])
 
 function keyOf(item: T, index: number) {
@@ -414,6 +420,29 @@ function onKeydown(event: KeyboardEvent, index: number) {
 
 .wx-sortable-list__row + .wx-sortable-list__row {
   border-top: 1px solid var(--wx-border-muted);
+}
+
+/*
+ * The tint of the row under the pointer and of the current one. The rules either side of it go:
+ * its own and the next row's — a tinted row with a line through its edges reads as a stain
+ * between two rows rather than a row. In a plain list the tint has corners of its own; in a frame
+ * the first and the last row take the frame's.
+ */
+.wx-sortable-list.is-hoverable
+  .wx-sortable-list__row:is(:hover, :has(.is-current, [aria-current])) {
+  background: var(--wx-bg-subtle);
+}
+
+.wx-sortable-list.is-hoverable.is-plain
+  .wx-sortable-list__row:is(:hover, :has(.is-current, [aria-current])) {
+  border-radius: var(--wx-radius-sm);
+}
+
+.wx-sortable-list.is-hoverable .wx-sortable-list__row:is(:hover, :has(.is-current, [aria-current])),
+.wx-sortable-list.is-hoverable
+  .wx-sortable-list__row:is(:hover, :has(.is-current, [aria-current]))
+  + .wx-sortable-list__row {
+  border-top-color: transparent;
 }
 
 /*
