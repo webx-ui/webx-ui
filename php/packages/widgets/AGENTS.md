@@ -34,19 +34,19 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 
 ## Change it without forking
 
-| You want                                 | Do this                                                                                                              |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Other colours, radius, spacing           | site tokens in `theme/tokens.json` — the widgets follow                                                              |
-| A widget's own measure (dialog width…)   | `--webx-<name>-*` on `:root` or on `.webx-<name>` in `theme/src/css`                                                 |
-| Another look of a widget                 | the same `.webx-<name>*` class in `theme/src/css` — it comes later in the cascade, no `!important`                   |
-| Logo in the middle, two rows in a header | `grid-template-areas` on `.webx-header__bar` in `theme/src/css`                                                      |
-| Other markup of a component              | `theme/views/vendor/webx-widgets/components/<name>.blade.php`                                                        |
-| Another control of one field type        | `theme/views/vendor/webx-widgets/components/field/<type>.blade.php` — print `{{ $control($attributes) }}` on it      |
-| A network's or a messenger's icon        | `theme/views/vendor/webx-widgets/icons/<name>.blade.php` — what goes inside a 24×24 `<svg>`                          |
-| A word                                   | the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`                                             |
-| A behaviour of the site's own            | `webx.widget('name', '[data-…]', (el) => cleanup)` in `theme/src/js/theme.js`                                        |
-| Start widgets in HTML added later        | `webx.mount(container)`; before removing it, `webx.unmount(container)`                                               |
-| Forms sending in place without a theme   | `@webxWidgets` before `</body>` in the site's layout, then `php artisan webx:theme:sync`; style the classes yourself |
+| You want                                 | Do this                                                                                                                                               |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Other colours, radius, spacing           | site tokens in `theme/tokens.json` — the widgets follow                                                                                               |
+| A widget's own measure (dialog width…)   | `--webx-<name>-*` on `:root` or on `.webx-<name>` in `theme/src/css`                                                                                  |
+| Another look of a widget                 | the same `.webx-<name>*` class in `theme/src/css` — it comes later in the cascade, no `!important`                                                    |
+| Logo in the middle, two rows in a header | `grid-template-areas` on `.webx-header__bar` in `theme/src/css`; the gap is each part's `margin-inline-start`, so zero it on a part that starts a row |
+| Other markup of a component              | `theme/views/vendor/webx-widgets/components/<name>.blade.php`                                                                                         |
+| Another control of one field type        | `theme/views/vendor/webx-widgets/components/field/<type>.blade.php` — print `{{ $control($attributes) }}` on it                                       |
+| A network's or a messenger's icon        | `theme/views/vendor/webx-widgets/icons/<name>.blade.php` — what goes inside a 24×24 `<svg>`                                                           |
+| A word                                   | the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`                                                                              |
+| A behaviour of the site's own            | `webx.widget('name', '[data-…]', (el) => cleanup)` in `theme/src/js/theme.js`                                                                         |
+| Start widgets in HTML added later        | `webx.mount(container)`; before removing it, `webx.unmount(container)`                                                                                |
+| Forms sending in place without a theme   | `@webxWidgets` before `</body>` in the site's layout, then `php artisan webx:theme:sync`; style the classes yourself                                  |
 
 ## Do not
 
