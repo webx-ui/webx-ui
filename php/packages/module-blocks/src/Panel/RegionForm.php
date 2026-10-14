@@ -28,17 +28,37 @@ final class RegionForm
         private readonly Regions $regions,
         private readonly Preview $preview,
         private readonly Config $config,
+        private readonly Usage $usage,
     ) {}
+
+    /**
+     * Every line of the list. Where the shared blocks stand is one walk over the site's content,
+     * so it is made once here rather than once per line.
+     *
+     * @return list<array{name: string, id: int|null, title: string, description: string|null, allow: list<string>|null, max: int|null, fragment: bool, used_on: list<array<string, mixed>>|null, published: bool, published_at: string|null, has_draft: bool, count: int, fallback: string|null, updated_at: string|null}>
+     */
+    public function rows(): array
+    {
+        $names = array_keys($this->regions->declared());
+        $placed = $this->regions->fragments() === [] ? [] : $this->usage->fragments();
+
+        return array_map(fn (string $name): array => $this->row($name, null, $placed), $names);
+    }
 
     /**
      * The line of the list.
      *
-     * @return array{name: string, id: int|null, title: string, description: string|null, allow: list<string>|null, max: int|null, published: bool, published_at: string|null, has_draft: bool, count: int, fallback: string|null, updated_at: string|null}
+     * `used_on` is for a shared block only — null for a region of the layout, which is on every
+     * page there is.
+     *
+     * @param  array<string, list<array<string, mixed>>>|null  $placed  Where the shared blocks stand, when the caller already knows.
+     * @return array{name: string, id: int|null, title: string, description: string|null, allow: list<string>|null, max: int|null, fragment: bool, used_on: list<array<string, mixed>>|null, published: bool, published_at: string|null, has_draft: bool, count: int, fallback: string|null, updated_at: string|null}
      */
-    public function row(string $name, ?Region $region = null): array
+    public function row(string $name, ?Region $region = null, ?array $placed = null): array
     {
         $region ??= $this->regions->find($name);
-        $declared = $this->regions->declared()[$name] ?? ['allow' => null, 'max' => null];
+        $declared = $this->regions->declared()[$name] ?? ['allow' => null, 'max' => null, 'fragment' => false];
+        $fragment = $declared['fragment'];
 
         return [
             'name' => $name,
@@ -47,6 +67,8 @@ final class RegionForm
             'description' => $this->regions->description($name),
             'allow' => $declared['allow'],
             'max' => $declared['max'],
+            'fragment' => $fragment,
+            'used_on' => $fragment ? array_values(($placed ?? $this->usage->fragments())[$name] ?? []) : null,
             'published' => $region instanceof Region && $region->exists && $region->isPublished(),
             'published_at' => $region?->published_at?->toAtomString(),
             'has_draft' => $region instanceof Region && $region->hasDraft(),

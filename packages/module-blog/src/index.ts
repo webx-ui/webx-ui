@@ -1,5 +1,12 @@
 export { blog, rubricsOptions, type BlogOptions } from './module'
 export { createBlogApi, type BlogApi } from './api'
+export {
+  createAuthorsApi,
+  type AuthorAccount,
+  type AuthorDetail,
+  type AuthorRow,
+  type AuthorsApi,
+} from './authors'
 export { blogMessages } from './messages'
 export {
   articleEditorKey,
@@ -9,6 +16,8 @@ export {
 } from './editor'
 export { default as WxArticlesPage } from './ArticlesPage.vue'
 export { default as WxTagsPage } from './TagsPage.vue'
+export { default as WxAuthorsPage } from './AuthorsPage.vue'
+export { default as WxAuthorPane } from './AuthorPane.vue'
 export { default as WxTagCreateDialog } from './TagCreateDialog.vue'
 export { default as WxTagMergeDialog } from './TagMergeDialog.vue'
 export { default as WxArticleCreateDialog } from './ArticleCreateDialog.vue'

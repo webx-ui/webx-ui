@@ -26,6 +26,11 @@ Route::prefix((string) config('webx-admin.api_path').'/blocks')
             // that a block already on a page still has a form.
             Route::get('catalog', [BlockController::class, 'catalog'])->name('catalog');
 
+            // The shared blocks a page may place, with their state — what the «Shared block»
+            // field chooses from (§4.1 of the shared blocks spec). Here and not under `/regions`:
+            // whoever edits a page may not edit the regions, and needs only to name one.
+            Route::get('fragments', [RegionController::class, 'fragments'])->name('fragments');
+
             // Reading, when it renders what is stored; the controller itself asks for more
             // when the request carries a template nobody has saved.
             Route::post('{block}/render', RenderController::class)->whereNumber('block')->name('render');
@@ -85,3 +90,11 @@ Route::prefix((string) config('webx-admin.api_path').'/regions')
         // Writes a block type as well: the controller asks for `blocks.manage` and editing on top.
         Route::post('{name}/adopt', [RegionController::class, 'adopt'])->where('name', $name)->name('adopt');
     });
+
+// «Make it this page's own» (§3.5 of the shared blocks spec): a shared block's published tree, keyed
+// anew. Read by whoever edits a page that holds one, not only by the editor of the regions — it
+// writes nothing, and the page's own save is what asks whether they may change the page.
+Route::post((string) config('webx-admin.api_path').'/regions/{name}/copy', [RegionController::class, 'copy'])
+    ->where('name', '[a-z][a-z0-9-]*')
+    ->middleware(['webx.panel', 'cms.can:blocks.view,blocks.manage,blocks.regions'])
+    ->name('webx.blocks.regions.copy');

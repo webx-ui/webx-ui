@@ -26,7 +26,7 @@ import { createBlocksApi, createRegionsApi, createSiteBarBlocksApi } from './api
 import BlockPicker from './BlockPicker.vue'
 import { clone, countType, locate, nestedFields } from './content'
 import { useBlocksMessages } from './i18n'
-import { blocksRootKey } from './preview'
+import { blocksFragmentKey, blocksRootKey } from './preview'
 import RegionDraftNotice from './RegionDraftNotice.vue'
 import { formSchema, markupFields, startValues, withPlaceholders, withShortcodes } from './schema'
 import type {
@@ -87,6 +87,8 @@ interface Source {
   title: string
   content: SiteBarBlocks
   region: SiteBarRegion | null
+  /** A shared block: on the pages that place it, not on every page like the header. */
+  fragment: boolean
   /** What its top level takes: a region's declaration, or anything for a record. */
   top: { allow: string[] | null; max: number | null; root: string }
 }
@@ -123,6 +125,8 @@ const busy = ref<string | null>(null)
 const shaping = ref(false)
 /* The sets of block styles and scripts the page has, as the page reported them. */
 const pageBundles = ref<string[] | null>(null)
+/* The regions the page prints, as it reported them; null from a page of the release before. */
+const pageRegions = ref<string[] | null>(null)
 
 const pick = createModal<
   BlockType,
@@ -172,8 +176,21 @@ function onSite(source: Source): boolean {
   return source.region === null || source.region.published
 }
 
+/*
+ * A shared block is listed on a page that holds it and on no other: on the rest its map is blocks
+ * nobody can point at here, and its draft notice an invitation to publish what this page does not
+ * show. Every one is listed by a page that cannot say what it holds.
+ */
+function onPage(source: Source): boolean {
+  return (
+    !source.fragment || pageRegions.value === null || pageRegions.value.includes(String(source.id))
+  )
+}
+
 const groups = computed(() =>
-  sources.value.map((source) => ({ source, rows: onSite(source) ? rowsOf(source) : [] })),
+  sources.value
+    .filter(onPage)
+    .map((source) => ({ source, rows: onSite(source) ? rowsOf(source) : [] })),
 )
 
 const current = computed(() =>
@@ -292,6 +309,7 @@ async function readRecord(): Promise<Source[]> {
       title: record.kind,
       content: await api.read(record.type, record.id),
       region: null,
+      fragment: false,
       top: { allow: null, max: null, root: 'root' },
     },
   ]
@@ -313,6 +331,7 @@ async function readRegions(): Promise<Source[]> {
         title: read.region?.title ?? row.title,
         content: read,
         region: read.region ?? null,
+        fragment: row.fragment === true,
         top: { allow: row.allow, max: row.max, root: `region:${row.name}` },
       }
     }),
@@ -548,7 +567,11 @@ function fullness(place: Place): string | null {
  * A change of structure into the draft, and the page brought in step. One at a time: each answer
  * names what the page has to do, and two of them crossing would leave it guessing.
  */
-async function shape(source: Source, ops: SiteBarBlockOp[]): Promise<SiteBarBlockEdited | null> {
+async function shape(
+  source: Source,
+  ops: SiteBarBlockOp[],
+  options: { forgetBundles?: boolean; quiet?: boolean } = {},
+): Promise<SiteBarBlockEdited | null> {
   if (shaping.value) return null
 
   shaping.value = true
@@ -558,12 +581,13 @@ async function shape(source: Source, ops: SiteBarBlockOp[]): Promise<SiteBarBloc
       revision: source.content.revision,
       locale: props.context.locale,
       url: props.context.url,
-      bundles: pageBundles.value ?? undefined,
+      bundles: options.forgetBundles ? undefined : (pageBundles.value ?? undefined),
       ops,
     })
 
     showOnPage(source, done)
-    toast.success(t('site-bar.saved'))
+    // Quiet where the caller says what was done in its own words.
+    if (!options.quiet) toast.success(t('site-bar.saved'))
 
     await load()
     if (!source.region) void bar?.refresh()
@@ -887,7 +911,49 @@ const stopListening = onSitePage((message) => {
     }
   } else if (message.type === 'bundles') {
     pageBundles.value = message.hashes
+  } else if (message.type === 'regions') {
+    pageRegions.value = message.names
   }
+})
+
+/*
+ * «Make it this page's own» of a «Shared block» open here (§5.2 of the shared blocks spec): the
+ * shared block's published blocks put after it, then it taken out — one edit of the draft of
+ * whatever holds it, so the page is brought in step by the answer, as after any other. Added in
+ * reverse, each right after the shared block: the server makes their keys, and the first of them
+ * — the last one made — is the one opened.
+ */
+provide(blocksFragmentKey, {
+  selected: computed(() => selected.value?.key ?? null),
+  own: computed(() => (current.value?.fragment ? String(current.value.id) : null)),
+  async detach(key: string, nodes: BlockNode[]): Promise<boolean> {
+    const source = current.value
+    const hit = source ? locate(source.content.tree, key) : null
+
+    if (!source || !hit) return false
+
+    const where = hit.parent ? { parent: hit.parent.key, field: hit.field ?? '' } : {}
+    const done = await shape(
+      source,
+      [
+        ...[...nodes].reverse().map((node): SiteBarBlockOp => ({
+          op: 'add',
+          type: node.type,
+          values: node.values,
+          after: key,
+          ...where,
+        })),
+        { op: 'remove', key },
+        // The page is not told which sets it has: the shared block printed its own in place, and
+        // that `<link>` goes with its range — the copies would come in without their styles.
+      ],
+      { forgetBundles: true, quiet: true },
+    )
+
+    if (done?.key) open(source.scope, done.key)
+
+    return done !== null
+  },
 })
 
 /* Esc in the frame ends picking first; the screen closes the drawer on the next one. */
@@ -972,7 +1038,7 @@ onBeforeUnmount(() => {
       </div>
 
       <wx-text v-if="current.region" size="sm" tone="muted">
-        {{ t('site-bar.region-everywhere') }}
+        {{ current.fragment ? t('site-bar.fragment-everywhere') : t('site-bar.region-everywhere') }}
       </wx-text>
 
       <!-- Here too, not only over the map: the form is where the editor is after saving. -->
@@ -1047,7 +1113,7 @@ onBeforeUnmount(() => {
         <header class="wx-blocks-bar__head">
           <wx-text weight="semibold">{{ source.title }}</wx-text>
           <wx-text v-if="source.region" size="xs" tone="muted">
-            {{ t('site-bar.region-everywhere') }}
+            {{ source.fragment ? t('site-bar.fragment-where') : t('site-bar.region-everywhere') }}
           </wx-text>
         </header>
 

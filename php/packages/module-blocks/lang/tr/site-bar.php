@@ -23,6 +23,8 @@ return [
     'gone' => 'Bu blok artık sayfada yok.',
     'others' => 'Panelde de açık: :names',
     'region-everywhere' => 'Her sayfada',
+    'fragment-where' => 'Ortak blok: bulunduğu her sayfada',
+    'fragment-everywhere' => 'Ortak bir blok: burada düzenlemek, bulunduğu her sayfada değiştirir.',
     'region-fallback' => 'Burada site koddaki işaretlemeyi gösteriyor. Siteden düzenlemek için bölgeyi panelde kurun.',
     'open-in-panel' => 'Panelde aç',
     'changes' => 'Yayımlanmamış değişiklikler: :count',

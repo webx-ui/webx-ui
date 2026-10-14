@@ -54,8 +54,8 @@ const props = withDefaults(
     structuredData?: boolean
     /**
      * The share tab — its own title, description and picture. Left out, the site decides
-     * (`webx-seo.og.panel_fields`, off by default): Open Graph is filled in from the page's
-     * title, description and picture, and fields nobody needs to fill in look forgotten.
+     * (`webx-seo.og.panel_fields`, on unless the site turned it off): Open Graph is filled in
+     * from the page's title, description and picture, and these override it by hand.
      */
     shareFields?: boolean
   }>(),

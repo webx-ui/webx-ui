@@ -17,7 +17,7 @@ export const linksEnabled = (context: AdminContext): boolean => seoFeature(conte
 export const faqEnabled = (context: AdminContext): boolean => seoFeature(context, 'faq')
 
 /**
- * The share title, description and picture in the SEO card (`webx-seo.og.panel_fields`). Off by
- * default: the site fills Open Graph in from the page itself.
+ * The share title, description and picture in the SEO card (`webx-seo.og.panel_fields`). The site
+ * decides — on unless it turned them off; without a manifest that says so, there are none.
  */
 export const ogFieldsEnabled = (context: AdminContext): boolean => seoFeature(context, 'og_fields')

@@ -9,8 +9,10 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use WebxUi\Blog\Models\Article;
+use WebxUi\Blog\Models\Author;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
+use WebxUi\Seo\Rendering\Seo;
 
 /**
  * The three listings, which are one listing asked three questions (§5).
@@ -23,7 +25,10 @@ use WebxUi\Blog\Models\Tag;
  */
 final class Feed
 {
-    public function __construct(private readonly Config $config) {}
+    public function __construct(
+        private readonly Config $config,
+        private readonly Seo $seo,
+    ) {}
 
     /**
      * Everything on the site, newest first, pinned above it (§5).
@@ -53,6 +58,17 @@ final class Feed
         return $this->paginate(
             Article::query()->whereHas('tags', static fn ($query) => $query->whereKey($tag->getKey())),
         );
+    }
+
+    /**
+     * What one account wrote, on the page of its author (§19.3) — by `author_id`, the same
+     * column the articles have always had.
+     *
+     * @return LengthAwarePaginator<int, Article>
+     */
+    public function byAuthor(Author $author): LengthAwarePaginator
+    {
+        return $this->paginate(Article::query()->where('author_id', $author->user_id));
     }
 
     /**
@@ -95,17 +111,20 @@ final class Feed
             ->with($this->eagerLoad())
             ->paginate($this->perPage());
 
+        // A listing is a page of a list wherever it is printed: its neighbours go into the head.
+        $this->seo->paginate($page);
+
         return $page;
     }
 
     /**
-     * What a card in a listing prints: a cover, the rubric it names and a byline. Loaded here
-     * rather than in the view, because a view that loads them loads them once per row.
+     * What a card in a listing prints: a cover, the rubric it names, its tags and a byline. Loaded
+     * here rather than in the view, because a view that loads them loads them once per row.
      *
      * @return list<string>
      */
     private function eagerLoad(): array
     {
-        return ['cover', 'rubrics', 'author'];
+        return ['cover', 'rubrics', 'tags', 'author', 'authorProfile'];
     }
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useTranslate } from '@webx-ui/module-admin'
+import { RouterLink } from 'vue-router'
+import { useAdmin, useTranslate } from '@webx-ui/module-admin'
 import { WxSelect, type SelectModelValue, type SelectOption } from '@webx-ui/core'
 import { useArticleEditor } from './editor'
 import { useBlogMessages } from './i18n'
@@ -26,6 +27,7 @@ const editor = useArticleEditor()
 useBlogMessages()
 
 const t = useTranslate('webx-blog')
+const context = useAdmin()
 const disabled = computed(() => props.disabled || editor?.disabled.value === true)
 
 const options = computed<SelectOption[]>(() =>
@@ -34,6 +36,30 @@ const options = computed<SelectOption[]>(() =>
     value: author.id,
   })),
 )
+
+/**
+ * The way to the author's profile under the field (§19.5 of the spec): to it where there is one, to
+ * a new one for this account where there is not — only on a site with author pages, which is a site
+ * whose manifest has the section, and only for somebody who may edit profiles.
+ */
+const profileLink = computed(() => {
+  const hasSection = context.state.manifest?.modules.some((module) => module.id === 'authors')
+
+  if (!hasSection || !context.can('blog.authors.manage') || value.value === null) return null
+
+  const base = editor?.base ?? '/blog'
+  const profile = editor?.options.value.authors.find((author) => author.id === value.value)?.profile
+
+  return profile
+    ? {
+        to: { path: `${base}/authors`, query: { author: String(profile) } },
+        label: t('author.profile'),
+      }
+    : {
+        to: { path: `${base}/authors`, query: { author: 'new', account: String(value.value) } },
+        label: t('author.make-profile'),
+      }
+})
 
 const chosen = computed<SelectModelValue>({
   get: () => value.value,
@@ -44,14 +70,39 @@ const chosen = computed<SelectModelValue>({
 </script>
 
 <template>
-  <wx-select
-    v-model="chosen"
-    :options="options"
-    :placeholder="t('article.no-author')"
-    :disabled="disabled"
-    clearable
-    filterable
-    teleport
-    :aria-label="t('article.author')"
-  />
+  <div class="wx-article-author">
+    <wx-select
+      v-model="chosen"
+      :options="options"
+      :placeholder="t('article.no-author')"
+      :disabled="disabled"
+      clearable
+      filterable
+      teleport
+      :aria-label="t('article.author')"
+    />
+
+    <router-link v-if="profileLink" class="wx-article-author__profile" :to="profileLink.to">
+      {{ profileLink.label }}
+    </router-link>
+  </div>
 </template>
+
+<style scoped>
+.wx-article-author {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wx-space-6);
+  min-width: 0;
+}
+
+.wx-article-author > :first-child {
+  align-self: stretch;
+}
+
+.wx-article-author__profile {
+  color: var(--wx-color-primary);
+  font-size: var(--wx-font-size-sm);
+}
+</style>

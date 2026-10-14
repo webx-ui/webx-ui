@@ -17,6 +17,9 @@
 @if (($print['canonical'] ?? true) && $seo->canonical !== null)
 <link rel="canonical" href="{{ $seo->canonical }}">
 @endif
+@foreach ($pages ?? [] as $rel => $href)
+<link rel="{{ $rel }}" href="{{ $href }}">
+@endforeach
 @foreach ($alternates ?? [] as $hreflang => $href)
 <link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $href }}">
 @endforeach

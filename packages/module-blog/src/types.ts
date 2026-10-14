@@ -148,6 +148,8 @@ export interface ArticleVersion {
 export interface ArticleOption {
   id: number
   title: string
+  /** An administrator's author profile, where the site has author pages (§19.5). */
+  profile?: number | null
 }
 
 /** A tag as the article form offers it, with the number of articles filed under it (§10). */

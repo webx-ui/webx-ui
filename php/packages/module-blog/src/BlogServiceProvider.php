@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
@@ -21,18 +22,24 @@ use WebxUi\Admin\SiteBar\DraftPublishing;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Blocks\BlockOffers;
+use WebxUi\Blog\Collections\ArticlesSource;
 use WebxUi\Blog\Handlers\ArticleHandler;
+use WebxUi\Blog\Handlers\AuthorHandler;
 use WebxUi\Blog\Handlers\RubricHandler;
 use WebxUi\Blog\Handlers\TagHandler;
 use WebxUi\Blog\Http\Controllers\FeedController;
 use WebxUi\Blog\Http\Controllers\RssController;
 use WebxUi\Blog\Links\ArticleLinkSource;
+use WebxUi\Blog\Links\AuthorLinkSource;
 use WebxUi\Blog\Links\TagLinkSource;
 use WebxUi\Blog\Models\Article;
+use WebxUi\Blog\Models\Author;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
 use WebxUi\Blog\Panel\ArticleForm;
 use WebxUi\Blog\Panel\ArticlesModule;
+use WebxUi\Blog\Panel\AuthorsModule;
 use WebxUi\Blog\Panel\BlogModule;
 use WebxUi\Blog\Panel\Revision;
 use WebxUi\Blog\Panel\RubricsModule;
@@ -61,7 +68,7 @@ class BlogServiceProvider extends ServiceProvider
     {
         // What moves between stands with webx:snapshot, and what stays where it is.
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
-            $tables->content('blog_articles', 'blog_rubrics', 'blog_tags', 'blog_article_rubric', 'blog_article_tag', 'blog_article_related');
+            $tables->content('blog_articles', 'blog_rubrics', 'blog_tags', 'blog_authors', 'blog_article_rubric', 'blog_article_tag', 'blog_article_related');
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-blog.php', 'webx-blog');
@@ -80,6 +87,7 @@ class BlogServiceProvider extends ServiceProvider
         $this->registerRouteTypes();
         $this->registerFeedRoutes();
         $this->registerBlockEntity();
+        $this->registerCollection();
         $this->registerSeoSource();
         $this->registerLinkSources();
         $this->registerScreens();
@@ -106,7 +114,7 @@ class BlogServiceProvider extends ServiceProvider
     }
 
     /**
-     * The three types, all under one prefix and all in one flat namespace (§4).
+     * The four types, all under one prefix (§4, §19); the article and the rubric share one flat namespace.
      *
      * `Fail` on every one of them, and it is the same argument each time: an address is chosen
      * deliberately, and one that quietly became `remont-2` is a mistake somebody finds months
@@ -124,6 +132,7 @@ class BlogServiceProvider extends ServiceProvider
         // an article lives. Changing the prefix is that command, not a restart.
         $flat = $prefix === '' ? new Slug : new Prefixed($prefix, Slug::class);
         $tags = new Prefixed(UrlNormaliser::join($prefix, 'tag'), Slug::class);
+        $authors = new Prefixed(UrlNormaliser::join($prefix, 'author'), Slug::class);
 
         $types->register(new RouteType(
             type: 'article',
@@ -148,6 +157,18 @@ class BlogServiceProvider extends ServiceProvider
             model: Tag::class,
             formatter: $tags,
             handler: TagHandler::class,
+            acceptsTail: false,
+            onConflict: OnConflict::Fail,
+        ));
+
+        // Registered whether or not the site allows author pages: a profile keeps its address
+        // through the switch, and the handler is what closes it (§19.1, decision 5). A type that
+        // came and went with the flag would leave rows behind for a type nobody knows.
+        $types->register(new RouteType(
+            type: 'author',
+            model: Author::class,
+            formatter: $authors,
+            handler: AuthorHandler::class,
             acceptsTail: false,
             onConflict: OnConflict::Fail,
         ));
@@ -213,6 +234,20 @@ class BlogServiceProvider extends ServiceProvider
     }
 
     /**
+     * What a block may show, and — when `module-blocks` is here — the block that shows it (§20).
+     * The type is offered, not installed: `webx:blocks:offered --install` puts it on the site once,
+     * and a theme that carries a `blog` block of its own puts that one instead.
+     */
+    private function registerCollection(): void
+    {
+        $this->app->make(CollectionSources::class)->register($this->app->make(ArticlesSource::class));
+
+        if (class_exists(BlockOffers::class)) {
+            $this->app->make(BlockOffers::class)->offer(BlogModule::GROUP, __DIR__.'/../resources/blocks');
+        }
+    }
+
+    /**
      * Three sections in one group of the navigation (§10).
      *
      * The group is written into `webx-admin.groups` here rather than shipped as a default of
@@ -245,6 +280,12 @@ class BlogServiceProvider extends ServiceProvider
         foreach ([ArticlesModule::class, RubricsModule::class, TagsModule::class] as $module) {
             $modules->register($this->app->make($module));
         }
+
+        // Only where the site allows author pages (§19.1, decision 2): a profile nobody will see
+        // is a form that changes nothing.
+        if (Author::enabled()) {
+            $modules->register($this->app->make(AuthorsModule::class));
+        }
     }
 
     /**
@@ -273,6 +314,12 @@ class BlogServiceProvider extends ServiceProvider
             __DIR__.'/../resources/screens/category-form.json',
         );
 
+        // A profile of an author (§19.5), described for the same two reasons.
+        $this->app->make(ScreenRegistry::class)->register(
+            Author::SCREEN,
+            __DIR__.'/../resources/screens/author-form.json',
+        );
+
         $types = $this->app->make(FieldTypes::class);
         $connection = $this->app->make(ConnectionResolverInterface::class);
 
@@ -286,8 +333,10 @@ class BlogServiceProvider extends ServiceProvider
         // `source` — the path the rubrics answer at — is told which table the ids live in.
         $this->app->make(CategorySources::class)->register('blog/rubrics', Rubric::class, 'webx-blog::errors.unknown-rubric');
 
-        $types->register('wx-article-tags', new IdsType($connection, 'tags', 'webx-blog::errors.unknown-tag'));
-        $types->register('wx-article-related', new IdsType($connection, 'articles', 'webx-blog::errors.unknown-article'));
+        // The tables from the models, not spelled here: a rename of the tables (blog_*) left two
+        // literals behind, and every save of an article with a tag failed on a missing table.
+        $types->register('wx-article-tags', new IdsType($connection, (new Tag)->getTable(), 'webx-blog::errors.unknown-tag'));
+        $types->register('wx-article-related', new IdsType($connection, (new Article)->getTable(), 'webx-blog::errors.unknown-article'));
         $types->register('wx-article-author', new AuthorType);
     }
 
@@ -321,6 +370,12 @@ class BlogServiceProvider extends ServiceProvider
             210,
         ));
         $links->register($this->app->make(TagLinkSource::class));
+
+        // Only where the site allows author pages: a picker full of people with no page to go to
+        // would be a list of links to 404s.
+        if (Author::enabled()) {
+            $links->register($this->app->make(AuthorLinkSource::class));
+        }
     }
 
     /**
@@ -388,6 +443,11 @@ class BlogServiceProvider extends ServiceProvider
             edit: static fn (Model $record): string => '/blog/tags?q='.rawurlencode(SiteBar::label($record, null)),
             permission: 'blog.taxonomy.manage',
             kind: 'webx-admin::site-bar.kind-tag',
+        ));
+        $bar->entity('author', new EntityLink(
+            edit: static fn (Model $record): string => '/blog/authors?author='.$record->getKey(),
+            permission: 'blog.authors.manage',
+            kind: 'webx-blog::module.author',
         ));
     }
 }

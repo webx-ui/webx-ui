@@ -112,7 +112,15 @@ import {
   unpublishRegion,
   type RegionRecord,
 } from './regions'
+import type { ScreenModel } from '../../../../packages/schema/src/types'
 import { defineFunction } from './blade'
+import {
+  authorRow,
+  freeAccounts,
+  profileOf,
+  profiles as authorProfiles,
+  refusal as authorRefusal,
+} from './blog-authors'
 import {
   PREFIX,
   articles,
@@ -532,6 +540,16 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 320,
         group: 'blog',
         permissions: ['blog.taxonomy.manage'],
+        meta: {},
+      },
+      // The site of this playground allows author pages (webx-blog.authors, §19 of the spec).
+      {
+        id: 'authors',
+        title: line(locale, 'webx-blog', 'module.authors'),
+        icon: 'user',
+        order: 330,
+        group: 'blog',
+        permissions: ['blog.authors.manage'],
         meta: {},
       },
       {
@@ -3855,6 +3873,84 @@ on('GET', '/blog/articles', ({ query, locale }) => {
   }
 })
 
+/* ----------------------------------------------------------------------- blog authors ----- */
+
+on('GET', '/blog/authors', ({ query, locale }) => {
+  const search = (query.get('q') ?? '').trim().toLowerCase()
+  const rows = authorProfiles.map((profile) => authorRow(profile, locale))
+
+  return {
+    data:
+      search === ''
+        ? rows
+        : rows.filter((row) =>
+            `${row.name} ${row.user?.name ?? ''}`.toLowerCase().includes(search),
+          ),
+  }
+})
+
+on('GET', '/blog/authors/accounts', () => ({ data: freeAccounts() }))
+
+on('GET', '/blog/authors/(\\d+)', ({ params, locale }) => {
+  const profile = authorProfiles.find((one) => one.id === Number(params[0]))
+
+  if (!profile) throw new HttpFailure(404, 'No such author.')
+
+  return { data: { author: authorRow(profile, locale), values: profile.values } }
+})
+
+on('POST', '/blog/authors', ({ body, locale }) => {
+  const values = (body.values ?? {}) as ScreenModel
+  const userId = typeof body.user_id === 'number' ? body.user_id : null
+  const errors = authorRefusal(values, userId)
+
+  if (Object.keys(errors).length > 0)
+    throw new HttpFailure(422, 'The given data was invalid.', undefined, errors)
+
+  const profile = {
+    id: Math.max(0, ...authorProfiles.map((one) => one.id)) + 1,
+    user_id: userId as number,
+    values: {
+      title: {},
+      slug: {},
+      role: {},
+      bio: {},
+      photo: null,
+      socials: [],
+      is_public: false,
+      ...values,
+    },
+  }
+
+  authorProfiles.push(profile)
+
+  return { data: { author: authorRow(profile, locale), values: profile.values } }
+})
+
+on('PUT', '/blog/authors/(\\d+)', ({ params, body, locale }) => {
+  const profile = authorProfiles.find((one) => one.id === Number(params[0]))
+
+  if (!profile) throw new HttpFailure(404, 'No such author.')
+
+  const values = { ...profile.values, ...((body.values ?? {}) as ScreenModel) }
+  const errors = authorRefusal(values)
+
+  if (Object.keys(errors).length > 0)
+    throw new HttpFailure(422, 'The given data was invalid.', undefined, errors)
+
+  profile.values = values
+
+  return { data: { author: authorRow(profile, locale), values: profile.values } }
+})
+
+on('DELETE', '/blog/authors/(\\d+)', ({ params }) => {
+  const at = authorProfiles.findIndex((one) => one.id === Number(params[0]))
+
+  if (at >= 0) authorProfiles.splice(at, 1)
+
+  return { data: null }
+})
+
 on('POST', '/blog/articles', ({ body, locale }) => {
   const title = String(body.title ?? 'Новая статья')
   const slug = typeof body.slug === 'string' && body.slug !== '' ? body.slug : slugify(title)
@@ -5803,7 +5899,11 @@ function articleDetail(record: ArticleRecord, locale: string): Record<string, un
       })),
       // Everybody who could be named as the author, not only those who already are: an article
       // written by one person and signed by another is an ordinary thing in a newsroom.
-      authors: blogAuthors.map((one) => ({ id: one.id, title: one.title })),
+      authors: blogAuthors.map((one) => ({
+        id: one.id,
+        title: one.title,
+        profile: profileOf(one.id),
+      })),
     },
     /* Titles for the ids in `values.related`; nothing else carries them. */
     related: blogIds(record, 'related').flatMap((id) => {

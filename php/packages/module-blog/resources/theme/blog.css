@@ -125,6 +125,11 @@
 }
 
 /* Previous and next: two buttons, "next" at the far end even when it is alone. */
+/* The widgets' pagination, where the site has them: the room the pager has. */
+.webx-blog-pages {
+  margin-block: var(--site-space-6);
+}
+
 .webx-blog-pager {
   display: flex;
   flex-wrap: wrap;
@@ -186,6 +191,31 @@
   margin-block-start: var(--site-space-6);
   padding-block-start: var(--site-space-5);
   border-block-start: 1px solid var(--site-color-border);
+}
+
+/* The author page (§19): the photo as a round mark over the name, the role under it. */
+.webx-blog-author__photo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin-block-end: var(--site-space-4);
+  border-radius: var(--site-radius-full);
+  object-fit: cover;
+}
+
+.webx-blog-author__role {
+  margin: 0 0 var(--site-space-3);
+  color: var(--site-color-text-muted);
+}
+
+/* The networks under the bio: the widgets' icons, or a row of plain links without them. */
+.webx-blog-author__socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2) var(--site-space-4);
+  margin: var(--site-space-4) 0 0;
+  padding: 0;
+  list-style: none;
 }
 
 .webx-blog-tags {

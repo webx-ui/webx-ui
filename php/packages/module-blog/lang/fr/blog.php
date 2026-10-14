@@ -10,4 +10,5 @@ return [
     'related' => 'À lire ensuite',
     'rss' => 'RSS',
     'rss-description' => 'Les derniers articles.',
+    'all' => 'Tous les articles',
 ];

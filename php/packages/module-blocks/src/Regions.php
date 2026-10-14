@@ -59,6 +59,15 @@ final class Regions
     /** @var array<string, string> what this process has already written to the hints */
     private array $remembered = [];
 
+    /**
+     * The regions being drawn right now, outermost first. A shared block may stand inside
+     * another, and one that ends up inside itself — published before publication checked for it —
+     * would draw until the stack overflowed.
+     *
+     * @var list<string>
+     */
+    private array $drawing = [];
+
     public function __construct(
         private readonly Config $config,
         private readonly Cache $cache,
@@ -72,7 +81,7 @@ final class Regions
      * The regions the site declared, in the order it declared them. A name that is not a name
      * is skipped rather than fatal: the tag will say so in the log.
      *
-     * @return array<string, array{title: string, description: string|null, allow: list<string>|null, max: int|null}>
+     * @return array<string, array{title: string, description: string|null, allow: list<string>|null, max: int|null, fragment: bool}>
      */
     public function declared(): array
     {
@@ -93,6 +102,8 @@ final class Regions
                 'description' => is_string($region['description'] ?? null) && $region['description'] !== '' ? $region['description'] : null,
                 'allow' => is_array($allow) ? array_values(array_map('strval', array_filter($allow, 'is_string'))) : null,
                 'max' => is_int($max) && $max > 0 ? $max : null,
+                // A shared block: printed by whoever places it, not by the layout (§2 of the shared blocks spec).
+                'fragment' => ($region['fragment'] ?? false) === true,
             ];
         }
 
@@ -102,6 +113,22 @@ final class Regions
     public function has(string $name): bool
     {
         return isset($this->declared()[$name]);
+    }
+
+    /**
+     * The shared blocks: the regions a page places as a block or a template prints with a tag,
+     * rather than the layout on every page.
+     *
+     * @return list<string>
+     */
+    public function fragments(): array
+    {
+        return array_keys(array_filter($this->declared(), static fn (array $region): bool => $region['fragment']));
+    }
+
+    public function isFragment(string $name): bool
+    {
+        return ($this->declared()[$name]['fragment'] ?? false) === true;
     }
 
     /** The region's name as a person reads it, in the language of the request. */
@@ -187,6 +214,12 @@ final class Regions
             return $this->fallback($fallback, $data);
         }
 
+        if (in_array($name, $this->drawing, true)) {
+            $this->log()->warning('The region ['.$name.'] stands inside itself ('.implode(' → ', [...$this->drawing, $name]).'); it is left empty there.', ['region' => $name]);
+
+            return new HtmlString('');
+        }
+
         $preview = $this->previewing($name);
 
         try {
@@ -235,7 +268,13 @@ final class Regions
      */
     public function draw(string $name, ?iterable $tree, array $data = [], bool $preview = false, bool $report = true): RegionRender
     {
-        return $this->renderer->region($tree, $this->entity(), new RegionContext($name, $data, $this->path()), $preview, $report);
+        $this->drawing[] = $name;
+
+        try {
+            return $this->renderer->region($tree, $this->entity(), new RegionContext($name, $data, $this->path()), $preview, $report);
+        } finally {
+            array_pop($this->drawing);
+        }
     }
 
     /**
@@ -252,8 +291,9 @@ final class Regions
 
     /**
      * Why a tree cannot stand in a region: types the region does not take, types that do not go
-     * there, more blocks than it holds. Only the top level — what is nested inside a block is
-     * that block's business, as on a page. Empty when it can.
+     * there, more blocks than it holds — only the top level, what is nested inside a block is
+     * that block's business, as on a page — and a shared block that would end up inside itself,
+     * at any depth. Empty when it can.
      *
      * @param  iterable<array-key, mixed>  $tree
      * @return list<string>
@@ -294,6 +334,12 @@ final class Regions
             }
         }
 
+        $cycle = $this->cycle($name, $tree);
+
+        if ($cycle !== null) {
+            $refusals[] = (string) __('webx-blocks::regions.cycle', ['path' => implode(' → ', $cycle)]);
+        }
+
         return $refusals;
     }
 
@@ -329,9 +375,46 @@ final class Regions
     }
 
     /**
+     * The way back to the region from its own tree, through the shared blocks it places and the
+     * ones those place in turn — `request → promo → request` — or null when there is none. The
+     * others are read as published: that is what the site would draw inside this one.
+     *
+     * @param  iterable<array-key, mixed>  $tree
+     * @param  list<string>  $path
+     * @return list<string>|null
+     */
+    private function cycle(string $name, iterable $tree, array $path = []): ?array
+    {
+        $path = $path === [] ? [$name] : $path;
+
+        foreach ($this->container->make(Fragments::class)->placed($tree) as $inner) {
+            if ($inner === $name) {
+                return [...$path, $inner];
+            }
+
+            // A loop that does not pass through this region is not this publication's doing; the
+            // site leaves it empty where it closes.
+            if (in_array($inner, $path, true)) {
+                continue;
+            }
+
+            $found = $this->cycle($name, $this->published($inner), [...$path, $inner]);
+
+            if ($found !== null) {
+                return $found;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The published tree as the row holds it, past the cache — what a copy is made of, and what
+     * a check reads right after another region was published.
+     *
      * @return list<array<string, mixed>>
      */
-    private function published(string $name): array
+    public function published(string $name): array
     {
         $region = $this->find($name);
 

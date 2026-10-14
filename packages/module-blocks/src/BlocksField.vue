@@ -55,11 +55,18 @@ import {
   removeNode,
   replaceList,
   setHidden,
+  swapNode,
   updateValues,
   walk,
 } from './content'
 import { useBlocksMessages } from './i18n'
-import { blocksOwnerKey, blocksPreviewKey, blocksRootKey, blocksTopKey } from './preview'
+import {
+  blocksFragmentKey,
+  blocksOwnerKey,
+  blocksPreviewKey,
+  blocksRootKey,
+  blocksTopKey,
+} from './preview'
 import { destinations, type Destination } from './move'
 import { formSchema, markupFields, startValues, withPlaceholders, withShortcodes } from './schema'
 import type { BlockNode, BlockType } from './types'
@@ -147,6 +154,8 @@ const catalog = computed(() => props.catalog ?? loaded.value)
 const topAllow = computed(() => props.allow ?? top?.value?.allow ?? null)
 const topMax = computed(() => props.max ?? top?.value?.max ?? null)
 const topRoot = computed(() => top?.value?.root ?? 'root')
+/* The region the preview frames, when the screen above says which. */
+const framed = computed(() => top?.value?.frame ?? null)
 
 const tree = computed<BlockNode[]>(() => (Array.isArray(model.value) ? model.value : []))
 
@@ -413,6 +422,26 @@ async function remove(key: string): Promise<void> {
   if (selectedKey.value === key) selectedKey.value = null
   set(removeNode(tree.value, key))
 }
+
+/*
+ * What a «Shared block» form asks of the constructor: the copies of the shared block put where it
+ * stood, the first of them opened — what was there a moment ago is still what is on screen. Nothing
+ * else changes: the page's draft takes them the ordinary way, autosave and history included.
+ */
+provide(blocksFragmentKey, {
+  selected: selectedKey,
+  own: computed(() =>
+    topRoot.value.startsWith('region:') ? topRoot.value.slice('region:'.length) : null,
+  ),
+  detach(key: string, nodes: BlockNode[]): boolean {
+    if (!locate(tree.value, key)) return false
+
+    set(swapNode(tree.value, key, nodes))
+    selectedKey.value = nodes[0]?.key ?? null
+
+    return true
+  },
+})
 
 function duplicate(key: string): void {
   const found = locate(tree.value, key)
@@ -939,6 +968,7 @@ const formRoot = computed(() =>
           :hidden="hiddenKeys"
           :reload="preview.reload?.value ?? 0"
           :compact="compact"
+          :region="framed"
           @select="selectFromPreview"
           @edit="sheet = true"
         />

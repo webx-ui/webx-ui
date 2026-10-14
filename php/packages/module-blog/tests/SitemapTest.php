@@ -7,6 +7,9 @@ namespace WebxUi\Blog\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Blog\Models\Article;
+use WebxUi\Blog\Models\Author;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\UrlMatcher;
 
@@ -87,6 +90,39 @@ final class SitemapTest extends TestCase
         $this->assertStringContainsString('/blog/tag/open<', $map);
     }
 
+    /**
+     * Open, and something of theirs out (§19.4): a closed profile is a 404, and an open one with
+     * nothing published is a page out of the index — neither belongs in the map.
+     */
+    #[Test]
+    public function an_author_is_in_the_map_when_the_page_is_open_and_has_articles(): void
+    {
+        config()->set('webx-blog.authors', true);
+
+        $writer = $this->author('writer', public: true);
+        $this->author('silent', public: true);
+        $private = $this->author('private', public: false);
+
+        foreach ([$writer, $private] as $author) {
+            $article = new Article(['title' => 'By '.$author->user_id, 'slug' => 'by-'.$author->user_id, 'author_id' => $author->user_id]);
+            $article->save();
+            $article->publish();
+        }
+
+        $map = $this->map('author');
+
+        $this->assertStringContainsString('/blog/author/writer<', $map);
+        $this->assertStringNotContainsString('silent', $map);
+        $this->assertStringNotContainsString('private', $map);
+
+        // Switched off, nobody is in it — once the map is built again: it is cached for a day and
+        // rebuilt when a record changes, and a setting changing is not a record changing.
+        config()->set('webx-blog.authors', false);
+        cache()->flush();
+
+        $this->assertStringNotContainsString('writer', $this->map('author'));
+    }
+
     #[Test]
     public function the_feed_is_in_the_map_though_the_registry_has_no_row_for_it(): void
     {
@@ -108,6 +144,19 @@ final class SitemapTest extends TestCase
         $article->publish(at: Carbon::parse('2026-01-10 10:00:00'));
 
         $this->assertStringContainsString('<lastmod>2026-09-20T12:00:00+00:00</lastmod>', $this->map('article'));
+    }
+
+    private function author(string $slug, bool $public): Author
+    {
+        $user = CmsUser::query()->create([
+            'name' => ucfirst($slug),
+            'email' => "{$slug}@example.test",
+            'password' => 'correct-horse-battery',
+            'is_super' => false,
+            'is_active' => true,
+        ]);
+
+        return Author::query()->create(['user_id' => $user->getKey(), 'title' => ucfirst($slug), 'slug' => $slug, 'is_public' => $public]);
     }
 
     private function map(string $file): string

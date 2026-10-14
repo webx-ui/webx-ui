@@ -8,6 +8,7 @@ import {
   nestedFields,
   removeNode,
   replaceList,
+  swapNode,
   typesIn,
   updateValues,
 } from './content'
@@ -63,6 +64,25 @@ describe('the tree of blocks', () => {
     const changed = updateValues(without, 'a', { title: 'Hello' })
     expect(changed[0]!.values.title).toBe('Hello')
     expect(before[0]!.values.title).toBe('Hi')
+  })
+
+  it('swaps one block for several where it stood, nested or not', () => {
+    const before = tree()
+    const copies: BlockNode[] = [
+      { key: 'x1', type: 'text', values: { body: 'Ask' } },
+      { key: 'x2', type: 'text', values: { body: 'us' } },
+    ]
+    const nested = swapNode(before, 'c', copies)
+
+    expect((nested[1]!.values.content as BlockNode[]).map((node) => node.key)).toEqual([
+      'x1',
+      'x2',
+      'd',
+    ])
+    expect((before[1]!.values.content as BlockNode[]).map((node) => node.key)).toEqual(['c', 'd'])
+
+    expect(swapNode(before, 'a', copies).map((node) => node.key)).toEqual(['x1', 'x2', 'b'])
+    expect(swapNode(before, 'nope', copies)).toBe(before)
   })
 
   it('creates the field when a container has nothing in it yet', () => {

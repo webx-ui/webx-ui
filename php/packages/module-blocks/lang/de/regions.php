@@ -22,4 +22,8 @@ return [
     'adopt-taken' => 'Ein Blocktyp „:slug“ existiert bereits.',
     'adopt-failed' => 'Das Markup konnte nicht zu einem Blocktyp werden.',
     'adopt-forbidden' => 'Um das Markup in einen Blocktyp zu verschieben, braucht es das Recht, Blocktypen zu bearbeiten.',
+    'cycle' => 'Der gemeinsame Block stünde in sich selbst: :path.',
+    'not-a-fragment' => '„:name“ ist kein gemeinsamer Block der Website.',
+    'copy-unpublished' => 'Der gemeinsame Block ist noch nicht veröffentlicht: Es gibt nichts zu kopieren.',
+    'not-on-page' => 'Diese Seite enthält den gemeinsamen Block nicht, daher wird er auf einer leeren Seite des Layouts gezeigt.',
 ];

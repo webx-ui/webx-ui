@@ -96,7 +96,7 @@ describe('WxSeo', () => {
    */
   /*
    * Open Graph is filled in from the page by the site, so the share fields are a site's choice
-   * (`webx-seo.og.panel_fields`) and not there by default.
+   * (`webx-seo.og.panel_fields`), told through the manifest: a card nobody told has none.
    */
   it('has no share fields unless the site asks for them', () => {
     const wrapper = card({ title: { en: 'Something' } })

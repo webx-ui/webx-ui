@@ -172,6 +172,21 @@ export function setHidden(tree: BlockNode[], key: string, hidden: boolean): Bloc
   return next
 }
 
+/**
+ * One block taken out and others put where it stood, in its list — what «Make it this page's own»
+ * does to a shared block. The tree as it was when the key is not in it.
+ */
+export function swapNode(tree: BlockNode[], key: string, nodes: BlockNode[]): BlockNode[] {
+  const next = clone(tree)
+  const found = locate(next, key)
+
+  if (!found) return tree
+
+  found.list.splice(found.index, 1, ...clone(nodes))
+
+  return next
+}
+
 /** The list a parent holds in a field, or the root when there is no parent. */
 function listAt(
   tree: BlockNode[],

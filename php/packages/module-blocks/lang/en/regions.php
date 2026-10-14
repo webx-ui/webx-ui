@@ -22,4 +22,8 @@ return [
     'adopt-taken' => 'A block type “:slug” already exists.',
     'adopt-failed' => 'The markup could not become a block type.',
     'adopt-forbidden' => 'Moving the markup into a block type needs the right to edit block types.',
+    'cycle' => 'The shared block would show itself inside itself: :path.',
+    'not-a-fragment' => '“:name” is not a shared block of the site.',
+    'copy-unpublished' => 'The shared block is not published yet: there is nothing to copy.',
+    'not-on-page' => 'This page does not hold the shared block, so it is shown on an empty page of the layout.',
 ];

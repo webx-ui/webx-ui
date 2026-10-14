@@ -153,6 +153,8 @@ export type SitePageMessage =
   | { type: 'mode'; on: boolean }
   | { type: 'add'; key: string; scope?: string }
   | { type: 'bundles'; hashes: string[] }
+  /** The regions the page prints — the layout's, and the shared blocks placed on this page. */
+  | { type: 'regions'; names: string[] }
 
 /**
  * Listen to the page the panel is framed in. Only that page — the parent window, from this
@@ -172,7 +174,8 @@ export function onSitePage(listener: (message: SitePageMessage) => void): () => 
       data.type !== 'select' &&
       data.type !== 'mode' &&
       data.type !== 'add' &&
-      data.type !== 'bundles'
+      data.type !== 'bundles' &&
+      data.type !== 'regions'
     )
       return
 

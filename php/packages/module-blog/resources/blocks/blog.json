@@ -1,0 +1,48 @@
+{
+  "slug": "blog",
+  "title": "Latest articles",
+  "description": "Cards of the blog's articles — the latest, or the latest of the rubrics you pick — with a link to the whole feed.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "articles",
+      "type": "wx-collection",
+      "label": "Articles",
+      "props": {
+        "source": "blog"
+      }
+    },
+    {
+      "id": "all_label",
+      "type": "wx-input",
+      "label": "Link to the feed",
+      "help": "Empty is “All articles” in the page's language.",
+      "localized": true
+    }
+  ],
+  "template": "@php\n    $cards = WebxUi\\Blog\\Rendering\\ArticleQuery::block($articles);\n    $feed = app(WebxUi\\Routing\\SiteUrl::class)->to('/'.config('webx-blog.prefix', 'blog'));\n@endphp\n<section class=\"b-blog\" data-wx-block=\"blog\">\n    <div class=\"b-blog__head\">\n        @if ($title)\n            <h2 class=\"b-blog__title\">{{ $title }}</h2>\n        @endif\n        <a class=\"b-blog__all\" href=\"{{ $feed }}\">{{ $all_label ?: trans('webx-blog::blog.all') }}</a>\n    </div>\n    {{-- The blog's own cards: a theme's card is drawn here as it is in the feed. --}}\n    @if ($cards->isNotEmpty())\n        @include('webx-blog::partials.cards', ['articles' => $cards])\n    @endif\n</section>\n",
+  "styles": ".b-blog__head {\n    display: flex;\n    flex-wrap: wrap;\n    align-items: baseline;\n    justify-content: space-between;\n    gap: 0.5em 1.5em;\n    margin: 0 0 1em;\n}\n\n.b-blog__title {\n    margin: 0;\n}\n",
+  "script": "",
+  "sample": {
+    "title": "From the blog",
+    "articles": {
+      "categories": [],
+      "limit": 3,
+      "filter": false,
+      "markup": null,
+      "related": null
+    }
+  }
+}

@@ -510,9 +510,16 @@ final class ArticleTools
             'published_at' => $article->published_at?->toAtomString(),
             'planned_at' => $article->published_at === null ? $this->planned($article)?->toAtomString() : null,
             'updated_at' => $article->updated_at?->toAtomString(),
+            // The account, and what the site calls it under the article: the profile's name and its
+            // page where there is one (§19.7), the account's name and no page otherwise.
             'author' => $article->author === null
                 ? null
-                : ['id' => (int) $article->author->getKey(), 'name' => (string) $article->author->name],
+                : [
+                    'id' => (int) $article->author->getKey(),
+                    'name' => (string) $article->author->name,
+                    'byline' => $article->authorName(),
+                    'url' => $article->authorUrl(),
+                ],
             // In the order that makes the first one the main one (§2.6): the breadcrumbs, "more
             // in this rubric" and `<category>` in the RSS all read it.
             'rubrics' => $article->rubrics

@@ -162,6 +162,30 @@ unpublished (`fallback`).
 - On the site a region in which any block throws prints its fallback entirely. Render every type
   you put there with `blocks_render` first; `blocks_region_publish` refuses a draft that fails.
 
+### Shared blocks
+
+A region declared with `fragment: true` is a shared block — the request form above the footer, a
+promo strip — printed not by the layout but where it is placed. Its content is edited once, as
+any region's; `blocks_regions` says `fragment` and lists in `used_on` the records that place it.
+
+- On a page it is a node of the block «Shared block»:
+  `{ "type": "fragment", "values": { "fragment": "request" } }`. Only a shared block may be named
+  there, never the header or the footer. A site may have renamed that type or made its own: the
+  block that places a shared block is the one whose field has the type `wx-fragment`. A catalog
+  without one means it was never installed — say so rather than inventing a type; it is installed
+  with `php artisan webx:blocks:offered --install --module=blocks`.
+- To give one page its own text, read the region with `blocks_get_content` (`entity: "region"`)
+  and replace that node by its published blocks (`live`, not a draft somebody has not finished):
+  in one `blocks_edit_content` call, an `add` of each block's `type` and `values` with
+  `after` the shared block's key — in reverse order, so they end up in the original one — then a
+  `remove` of the shared block. That is what the panel's «Make it this page's own» does. From
+  then on they are the page's and follow the shared block no more; there is no separate tool.
+  Tell the person first: edits to the shared block will not reach this page any more.
+- To take a shared block off one page, remove its node there. Where it is placed is decided by
+  each page, not by a switch on the shared block.
+- A shared block may not end up inside itself, directly or through another: publishing such a
+  draft is refused with the path.
+
 ## History, usage, renames
 
 - `blocks_versions` lists a type's versions (source, author, comment, which is the draft and which

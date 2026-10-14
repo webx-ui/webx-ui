@@ -30,7 +30,7 @@ final class Related
      */
     public function for(Article $article): Collection
     {
-        $pinned = $article->related()->published()->get();
+        $pinned = $article->related()->published()->with(['cover', 'rubrics', 'tags'])->get();
 
         $wanted = $this->limit() - $pinned->count();
 
@@ -92,7 +92,7 @@ final class Related
             )
             ->select('blog_articles.*')
             ->selectRaw($shared)
-            ->with(['cover', 'rubrics'])
+            ->with(['cover', 'rubrics', 'tags'])
             ->orderByDesc('shared_tags')
             ->orderByDesc('published_at')
             ->orderByDesc('id')

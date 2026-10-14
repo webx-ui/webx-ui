@@ -22,4 +22,8 @@ return [
     'adopt-taken' => 'Un type de bloc « :slug » existe déjà.',
     'adopt-failed' => 'Le balisage n’a pas pu devenir un type de bloc.',
     'adopt-forbidden' => 'Déplacer le balisage dans un type de bloc demande le droit de modifier les types de blocs.',
+    'cycle' => 'Le bloc partagé se retrouverait dans lui-même : :path.',
+    'not-a-fragment' => '« :name » n’est pas un bloc partagé du site.',
+    'copy-unpublished' => 'Le bloc partagé n’est pas encore publié : il n’y a rien à copier.',
+    'not-on-page' => 'Cette page ne contient pas le bloc partagé : il est affiché sur une page vide de la mise en page.',
 ];

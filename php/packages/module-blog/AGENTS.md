@@ -29,6 +29,15 @@ categories `webx-ui/module-admin`, the SEO card and redirects `webx-ui/module-se
   `rubrics_update`, `rubrics_delete`, `rubrics_reorder`; `tags_list`, `tags_merge`. Resource
   `blog://feed`, prompt `write_article`. Scopes `articles:read`, `articles:write`,
   `rubrics:read`, `rubrics:write`, `tags:read`, `tags:write`.
+- **Author pages** (`WEBX_BLOG_AUTHORS=true`, off by default): `blog_authors` (`Author`) — a
+  profile per administrator (name for readers, slug, role, photo, bio, `is_public`), address type
+  `author` (`blog/author/anna`, registered always; a closed page is a 404), view `author`,
+  section «Authors» with screen `blog.author-form` and permission `blog.authors.manage`, tools
+  `authors_list` and `authors_update`. The byline links only to an open page
+  (`Article::authorUrl()`); without a profile it is the account's name.
+- **A block** — the collection source `blog` (`ArticlesSource` over `ArticleQuery`: the feed's
+  articles in the feed's order, rubrics as categories) and the offered block type `blog` «Latest
+  articles», which prints the feed's cards (`ArticleQuery::block($value)` gives the models).
 - Also registered: link sources for articles, rubrics and tags, an SEO source for tag pages
   (`noindex` by default), the feed in the sitemap, demo content (`resources/demo`).
 
@@ -45,6 +54,9 @@ categories `webx-ui/module-admin`, the SEO card and redirects `webx-ui/module-se
 | More or fewer articles per listing      | `per_page` in `config/webx-blog.php` (publish it: `--tag=webx-blog-config`)                                |
 | No automatic "read next"                | `'related' => 0` — the articles pinned by hand stay                                                        |
 | New tags open to the index              | `'tags' => ['noindex' => false]`; one tag: clear its flag or write a rule in `seo_urls`                    |
+| Latest articles on the home page        | `php artisan webx:blocks:offered --install --module=blog`, then the block «Latest articles» on the page    |
+| Pages for the authors                   | `WEBX_BLOG_AUTHORS=true`, then a profile per author in Blog › Authors with «Page on the site»              |
+| Different markup of the author page     | `resources/views/blog/author.blade.php`, or `WEBX_BLOG_VIEW_AUTHOR`; handed `$author` and `$articles`      |
 | No visible breadcrumbs                  | `WEBX_BLOG_BREADCRUMBS=false` (the BreadcrumbList in `<head>` is module-seo's and stays)                   |
 | A field on the article or rubric editor | a patch: `Screens::extend('blog.article-form', [...])` in `AppServiceProvider::boot()`                     |
 | Other words in the panel                | `php artisan vendor:publish --tag=webx-blog-lang`                                                          |
@@ -69,13 +81,16 @@ theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a bre
 - Listings: `webx-blog-header`, `webx-blog-header__title`, `webx-blog-header__lead`,
   `webx-blog-empty`, `webx-blog-rubrics`, `webx-blog-rubrics__list`, `webx-blog-rubrics__item`,
   `webx-blog-rubrics__link`, `webx-blog-pager`, `webx-blog-pager__link`, `webx-blog-pager__link--prev`,
-  `webx-blog-pager__link--next`.
+  `webx-blog-pager__link--next` (previous and next without the widgets), `webx-blog-pages` (the
+  widgets' `<x-webx-pagination>`, when the site has them).
 - Cards: `webx-blog-cards`, `webx-blog-card`, `webx-blog-card__link`, `webx-blog-card__cover`,
   `webx-blog-card__title`, `webx-blog-card__date`, `webx-blog-card__lead`.
 - Article: `webx-blog-article`, `webx-blog-article__header`, `webx-blog-article__title`,
   `webx-blog-article__meta`, `webx-blog-article__date`, `webx-blog-article__author`,
   `webx-blog-article__cover`, `webx-blog-article__footer`, `webx-blog-tags`, `webx-blog-tags__item`,
   `webx-blog-tags__link`, `webx-blog-related`, `webx-blog-related__title`.
+- Author page (`webx-blog.authors`): `webx-blog-author`, `webx-blog-author__photo`,
+  `webx-blog-author__role`, `webx-blog-author__socials`; the name, the bio and the cards are the listing's classes above.
 
 ## Do not
 

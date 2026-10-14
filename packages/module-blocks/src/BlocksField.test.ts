@@ -1,7 +1,10 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { defineComponent, h, inject } from 'vue'
+import { coreTypes, type RenderContext } from '@webx-ui/schema'
 import BlocksField from './BlocksField.vue'
 import { useBlocksClipboard } from './clipboard'
+import { blocksFragmentKey } from './preview'
 import type { BlockNode, BlockType } from './types'
 import type { ScreenNode } from '@webx-ui/schema'
 
@@ -417,5 +420,61 @@ describe('WxBlocks shortcodes', () => {
     expect(root[0]!.props?.tokens).toEqual(shortcodes)
     expect(root[1]!.props?.tokens).toBeUndefined()
     expect(root[2]!.children![0]!.props?.tokens).toEqual(shortcodes)
+  })
+})
+
+describe('WxBlocks shared blocks', () => {
+  it('puts the copies of a shared block in its place and opens the first of them', async () => {
+    const fragment = type('fragment', {
+      content: {
+        schema: [{ id: 'fragment', type: 'wx-fragment', label: 'Shared block' }],
+        template: '',
+        styles: '',
+        script: null,
+        sample: {},
+      },
+    })
+    // Stands in for the field: what it is handed by the constructor, and the way out pressed.
+    const FakeFragment = defineComponent({
+      setup() {
+        const host = inject(blocksFragmentKey)!
+
+        return () =>
+          h('button', {
+            class: 'fake-detach',
+            onClick: () =>
+              host.detach(host.selected.value!, [
+                { key: 'n1', type: 'hero', values: { title: 'Ask us' } },
+                { key: 'n2', type: 'hero', values: { title: 'Today' } },
+              ]),
+          })
+      },
+    })
+    const wrapper = mount(BlocksField, {
+      props: {
+        modelValue: [
+          { key: 'a', type: 'hero', values: { title: 'One' } },
+          { key: 'f', type: 'fragment', values: { fragment: 'request' } },
+          { key: 'z', type: 'hero', values: { title: 'Last' } },
+        ],
+        catalog: [...catalog, fragment],
+        context: {
+          types: { ...coreTypes, 'wx-fragment': { component: FakeFragment, kind: 'field' } },
+        } as unknown as RenderContext,
+        'onUpdate:modelValue': (next: BlockNode[]) => wrapper.setProps({ modelValue: next }),
+      },
+      global: { stubs: { RouterLink: true } },
+    })
+
+    await wrapper.findAll('.wx-blocks-tree__row')[1]!.trigger('click')
+    await wrapper.get('.fake-detach').trigger('click')
+    await flushPromises()
+
+    expect(emitted(wrapper)!.map((node) => node.key)).toEqual(['a', 'n1', 'n2', 'z'])
+    // The first copy is open where the shared block was: its form, not the tree.
+    expect(wrapper.get('.wx-blocks__panel-name').text()).toBe('Hero')
+    expect((wrapper.get('.wx-blocks__fields input').element as HTMLInputElement).value).toBe(
+      'Ask us',
+    )
   })
 })

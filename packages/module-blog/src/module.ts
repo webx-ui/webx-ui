@@ -7,6 +7,7 @@ import ArticleSlug from './ArticleSlug.vue'
 import ArticleTags from './ArticleTags.vue'
 import ArticleUnpublish from './ArticleUnpublish.vue'
 import ArticlesPage from './ArticlesPage.vue'
+import AuthorsPage from './AuthorsPage.vue'
 import TagsPage from './TagsPage.vue'
 
 export interface BlogOptions {
@@ -15,15 +16,16 @@ export interface BlogOptions {
 }
 
 /**
- * The blog as sections of the panel: articles, rubrics and tags.
+ * The blog as sections of the panel: articles, rubrics, tags — and authors, where the site has
+ * author pages.
  *
- * Three modules rather than one, because the navigation is one entry per module and the blog
- * wants three of them; the server puts all three in the `blog` group, which is what draws them
- * under one heading. Each is returned separately so a panel can leave one out.
+ * Several modules rather than one, because the navigation is one entry per module and the blog
+ * wants several; the server puts them all in the `blog` group, which is what draws them under
+ * one heading. Each is returned separately so a panel can leave one out.
  *
  * A section whose server half is not installed never appears — the entry is built from the
  * manifest — and so does one whose front end is missing. That is what makes it safe to return
- * all three from one call: a panel that installed only part of the blog gets only that part.
+ * them all from one call: a panel that installed only part of the blog gets only that part.
  */
 /**
  * The rubrics as the panel's shared categories see them: where they answer, what they are edited
@@ -124,6 +126,20 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
           path: `${path}/tags`,
           name: 'webx.blog.tags',
           component: TagsPage,
+          props: { base: path },
+        },
+      ],
+    },
+    {
+      // Only on a site with author pages (§19): the server leaves the module out of the manifest
+      // otherwise, and a module the manifest does not name is never drawn.
+      id: 'authors',
+      path: `${path}/authors`,
+      routes: [
+        {
+          path: `${path}/authors`,
+          name: 'webx.blog.authors',
+          component: AuthorsPage,
           props: { base: path },
         },
       ],

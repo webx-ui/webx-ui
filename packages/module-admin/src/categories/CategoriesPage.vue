@@ -209,6 +209,7 @@ async function reorder(): Promise<void> {
       <wx-sortable-list
         v-model="rows"
         class="wx-categories__list"
+        hoverable
         plain
         item-key="id"
         :item-label="(item: CategoryRow) => item.name"
@@ -268,11 +269,6 @@ async function reorder(): Promise<void> {
 
 .wx-categories__note {
   margin-block-start: var(--wx-space-8);
-}
-
-.wx-categories__list .wx-sortable-list__row:hover {
-  background: var(--wx-bg-subtle);
-  border-radius: var(--wx-radius-sm);
 }
 
 .wx-category-row {

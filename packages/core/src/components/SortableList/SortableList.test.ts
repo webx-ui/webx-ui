@@ -174,4 +174,9 @@ describe('WxSortableList', () => {
 
     expect(grip(list(), 0)?.attributes('aria-label')).toBe('Reorder: Alternator Belt')
   })
+
+  it('marks a list that tints its rows, so the rules beside a tinted row can go', () => {
+    expect(list().classes()).not.toContain('is-hoverable')
+    expect(list({ hoverable: true }).classes()).toContain('is-hoverable')
+  })
 })

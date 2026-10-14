@@ -4,9 +4,12 @@ import {
   blockElement,
   fillStage,
   findRange,
+  frameRegion,
   freezeFrame,
   highlightBlock,
   keyAt,
+  REGION_FRAME_ID,
+  regionRect,
   replaceBlock,
   SELECTED_CLASS,
   siteShell,
@@ -83,6 +86,64 @@ describe('the markers in the preview', () => {
     expect(findRange(doc, 'a')?.end.data).toBe('/wx:a')
     expect(blockElement(doc, 'c')?.textContent).toBe('Nested')
     expect(findRange(doc, 'zzz')).toBeNull()
+  })
+
+  it('points at what a block draws, not at the stylesheet a shared block prints first', () => {
+    const doc = document.implementation.createHTMLDocument('site')
+    doc.body.innerHTML =
+      '<!--wx:f--><link rel="stylesheet" href="/blocks/a.css"><style>.x{}</style>' +
+      '<section class="b-request">Ask us</section><!--/wx:f-->'
+
+    expect(blockElement(doc, 'f')?.tagName).toBe('SECTION')
+
+    highlightBlock(doc, 'f')
+    expect(doc.querySelector('section')?.classList.contains(SELECTED_CLASS)).toBe(true)
+    expect(doc.querySelector('link')?.classList.contains(SELECTED_CLASS)).toBe(false)
+  })
+
+  it('prefers the first element that takes room over one that draws nothing', () => {
+    const doc = page()
+    doc.body.innerHTML = '<!--wx:f--><div id="empty"></div><section>Ask us</section><!--/wx:f-->'
+    const box = (height: number) => () =>
+      ({
+        top: 100,
+        left: 0,
+        right: 800,
+        bottom: 100 + height,
+        width: height ? 800 : 0,
+        height,
+      }) as DOMRect
+    doc.getElementById('empty')!.getBoundingClientRect = box(0)
+    doc.querySelector('section')!.getBoundingClientRect = box(240)
+
+    expect(blockElement(doc, 'f')?.tagName).toBe('SECTION')
+  })
+
+  it('frames a region around everything it printed, and takes the frame away', () => {
+    const doc = document.implementation.createHTMLDocument('site')
+    doc.body.innerHTML =
+      '<main>Page</main><!--wx-region:request--><link rel="stylesheet" href="/r.css">' +
+      '<!--wx:r1--><section id="one">One</section><!--/wx:r1-->' +
+      '<!--wx:r2--><section id="two">Two</section><!--/wx:r2--><!--/wx-region:request-->'
+    const at = (top: number, height: number) => () =>
+      ({ top, left: 0, right: 800, bottom: top + height, width: 800, height }) as DOMRect
+    doc.getElementById('one')!.getBoundingClientRect = at(500, 200)
+    doc.getElementById('two')!.getBoundingClientRect = at(700, 100)
+
+    expect(regionRect(doc, 'request')).toEqual({ top: 500, left: 0, width: 800, height: 300 })
+    expect(regionRect(doc, 'promo')).toBeNull()
+
+    frameRegion(doc, 'request')
+    const box = doc.getElementById(REGION_FRAME_ID)!
+
+    expect(box.style.top).toBe('500px')
+    expect(box.style.height).toBe('300px')
+    expect(box.style.pointerEvents).toBe('none')
+    // Laid over the page, not wrapped around the region: the site's selectors keep matching.
+    expect(doc.getElementById('one')!.parentElement).toBe(doc.body)
+
+    frameRegion(doc, null)
+    expect(doc.getElementById(REGION_FRAME_ID)).toBeNull()
   })
 
   it('swaps what sits between the markers and keeps the rest of the page', () => {

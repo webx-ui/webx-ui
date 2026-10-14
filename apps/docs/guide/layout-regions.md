@@ -214,6 +214,75 @@ too, and `?region=header` narrows it to what may stand at the top of that region
 «Where it is used» of a block type names the regions beside the pages, and the checks before a
 type is published see the values stored in regions.
 
+## Shared blocks
+
+A section that stands on many pages with the same content — the request form above the footer, a
+promo strip, «Trusted by» — is neither of the two things above. Put into the content of every
+page, its text is edited twenty times; made a region of the layout, it is on **every** page, and
+taking it off «Contacts» means a switch on every record that nobody goes looking for.
+
+A **shared block** is a region that the layout does not print: whoever places it does.
+
+```php
+// config/webx-blocks.php
+'regions' => [
+    'header' => ['title' => 'trans::webx-blocks::regions.header'],
+    'footer' => ['title' => 'trans::webx-blocks::regions.footer'],
+    'request' => [
+        'title' => 'Request',
+        'description' => 'The request form above the footer.',
+        'fragment' => true,
+    ],
+],
+```
+
+It is placed in two ways, and both are the same region with one content:
+
+- **On a page of blocks** — the block **«Shared block»**, which the editor adds, moves and removes
+  like any other. The package offers it; install it once with
+  `php artisan webx:blocks:offered --install --module=blocks`. Its one field (`wx-fragment`) takes
+  only a region declared with `fragment`: the header is the layout's, and in the middle of a page
+  it would be printed twice.
+- **In a template of a file** — the tag, as in the layout:
+  `<x-webx-blocks::region name="request" fallback="components.request" />` in the index of the
+  services, under an article.
+
+Everything a region has, a shared block has: a draft and its publication, the history and the
+restore, its own set of styles printed where it stands, the fallback while it is empty or
+unpublished, the preview, the panel on the site. Where it is shown is decided by the place, not
+by the shared block: to take it off a page, remove the block from that page.
+
+**One page with its own text.** «Make it this page's own» in the form of the block replaces it by
+a copy of the shared block's **published** blocks — what visitors were seeing, not a draft
+somebody has not finished — with new keys, into the page's draft. From then on they are the page's
+own blocks and follow the shared block no more; the panel says so before it is done. Until the
+shared block is published there is nothing to copy, and the button says so. Overriding single
+fields («shared, but the heading is mine») is not offered: one clear operation instead of rules
+about which field is whose.
+
+**Never inside itself.** A shared block that would end up inside itself — directly, or through
+another shared block — is refused at saving and at publishing, with the path
+(`request → promo → request`). On the site a loop published before the check is left empty where
+it closes, with a line in the log.
+
+**In the panel.**
+
+- «Site regions» lists the shared blocks as a group of their own, under the header and the footer,
+  with how many pages place each.
+- The editor of a shared block says **where it stands** — the records whose content places it,
+  live or in a draft; each one switches the preview to that page. Templates that print the tag
+  are not content and are not listed, and the editor says so. The preview starts on the first page
+  that places it rather than on the home page, scrolls to it and frames it. On a page that does
+  not hold it, the region is drawn on an empty page of the layout under a notice.
+- The form of «Shared block» on a page names the shared block, says whether it is on the site,
+  links to its editor in a new tab and offers «Make it this page's own».
+- In the panel on the site a shared block is listed on the pages that print it and on no other;
+  its blocks are edited as the region's, with a note that the edit reaches every page where it
+  stands.
+
+`php artisan webx:doctor` does not look for a shared block in the layout; it warns when no
+content places one (a template that prints the tag is not seen, and the warning says so).
+
 ## For an agent: MCP
 
 A region is an entity for the content tools, always — it does not have to be in

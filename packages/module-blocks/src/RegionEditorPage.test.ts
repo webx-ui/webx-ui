@@ -89,7 +89,7 @@ const FakeBlocks = defineComponent({
 
 const screen: ScreenNode[] = [{ id: 'blocks', type: 'wx-blocks', name: 'blocks' }]
 
-async function panel(first = detail()) {
+async function panel(first = detail(), name = 'header') {
   const get = vi.fn().mockResolvedValue({ data: first })
   const put = vi.fn().mockResolvedValue({ data: detail({ has_draft: true, revision: 'r2' }) })
   const post = vi.fn().mockResolvedValue({ data: detail() })
@@ -117,7 +117,7 @@ async function panel(first = detail()) {
     ],
   })
 
-  await router.push('/regions/header')
+  await router.push(`/regions/${name}`)
   await router.isReady()
 
   const wrapper = mount(
@@ -153,7 +153,73 @@ describe('WxRegionEditorPage', () => {
       label: 'Header',
       allow: ['text'],
       max: 3,
+      frame: null,
     })
+  })
+
+  it('looks at a shared block where it stands, frames it, and lists where that is', async () => {
+    const shared = detail({
+      name: 'request',
+      title: 'Request',
+      fragment: true,
+      preview_url: 'https://example.test/_preview/region/request?token=x',
+      used_on: [
+        {
+          model: 'Page',
+          id: 3,
+          title: 'Contacts',
+          published: true,
+          live: false,
+          draft: true,
+          url: 'https://example.test/contacts',
+          region: null,
+        },
+        {
+          model: 'Page',
+          id: 2,
+          title: 'About',
+          published: true,
+          live: true,
+          draft: false,
+          url: 'https://example.test/about',
+          region: null,
+        },
+        {
+          model: 'Region',
+          id: 9,
+          title: 'Region “Promo”',
+          published: true,
+          live: true,
+          draft: false,
+          url: null,
+          region: 'promo',
+        },
+      ],
+    })
+    const { wrapper } = await panel(shared, 'request')
+
+    // Not the home page, which may not hold it: the first page whose visitors see it.
+    expect(wrapper.get('.fake-url').text()).toContain('&at=%2Fabout')
+    expect(JSON.parse(wrapper.get('.fake-top').text()).frame).toBe('request')
+
+    const uses = wrapper.findAll('.wx-region-editor__use')
+
+    expect(uses.map((use) => use.text())).toEqual([
+      'Contacts In a draft',
+      'About',
+      'Region “Promo”',
+    ])
+    expect(uses[1]!.attributes('aria-pressed')).toBe('true')
+    expect(uses[2]!.attributes('href')).toBe('/regions/promo')
+    // The guess is not remembered; a page picked is.
+    expect(localStorage.getItem('webx.regions.at.request')).toBeNull()
+
+    await uses[0]!.trigger('click')
+
+    expect(wrapper.get('.fake-url').text()).toContain('&at=%2Fcontacts')
+    expect(JSON.parse(localStorage.getItem('webx.regions.at.request') ?? 'null')?.path).toBe(
+      '/contacts',
+    )
   })
 
   it('previews the home page until another page is chosen, and remembers the choice', async () => {

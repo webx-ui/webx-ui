@@ -11,6 +11,7 @@ import {
   type SiteBarContext,
 } from '@webx-ui/module-admin'
 import BlocksSiteBarTab from './BlocksSiteBarTab.vue'
+import FragmentField from './FragmentField.vue'
 import { blocksMessages } from './messages'
 import type { BlockType, RegionRow, SiteBarBlocks, SiteBarRegion } from './types'
 
@@ -81,6 +82,31 @@ function region(state: Partial<SiteBarRegion> = {}, words = 'Menu words'): SiteB
 
 const headerRow = { name: 'header', title: 'Header' } as RegionRow
 
+const requestRow = {
+  name: 'request',
+  title: 'Request',
+  fragment: true,
+  published: true,
+  has_draft: false,
+  count: 1,
+} as RegionRow
+
+const copies = [
+  { key: 'n1', type: 'text', values: { text: 'Ask us' } },
+  { key: 'n2', type: 'text', values: { text: 'Today' } },
+]
+
+/** The page tells the panel which regions it prints, after it read the markers. */
+function pagePrints(parent: Window, names: string[]): void {
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      data: { wxBar: 1, type: 'regions', names },
+      origin: window.location.origin,
+      source: parent,
+    }),
+  )
+}
+
 const mounted: VueWrapper[] = []
 
 /** Stands in for the page that frames the panel: in jsdom a window is its own parent. */
@@ -108,6 +134,10 @@ interface Options {
   rows?: RegionRow[]
   /** What an edit answers, by what it sent. */
   edited?: (body: { ops: { op: string }[] }) => unknown
+  catalog?: BlockType[]
+  /** The shared block `request`, read as a region. */
+  request?: () => SiteBarBlocks
+  types?: AdminContext['types']
 }
 
 async function open(read: () => SiteBarBlocks = () => content(), options: Options = {}) {
@@ -121,12 +151,16 @@ async function open(read: () => SiteBarBlocks = () => content(), options: Option
       .mockImplementation((url: string) =>
         Promise.resolve(
           url.endsWith('/catalog')
-            ? { data: [text] }
-            : url.endsWith('/api/cms/regions')
-              ? { data: options.rows ?? [headerRow] }
-              : url.endsWith('/content/region/header')
-                ? { data: (options.header ?? (() => region()))() }
-                : { data: read() },
+            ? { data: options.catalog ?? [text] }
+            : url.endsWith('/blocks/fragments')
+              ? { data: (options.rows ?? []).filter((one) => one.fragment) }
+              : url.endsWith('/content/region/request') && options.request
+                ? { data: options.request() }
+                : url.endsWith('/api/cms/regions')
+                  ? { data: options.rows ?? [headerRow] }
+                  : url.endsWith('/content/region/header')
+                    ? { data: (options.header ?? (() => region()))() }
+                    : { data: read() },
         ),
       ),
     post: vi.fn().mockImplementation((url: string, body: { ops: { op: string }[] }) =>
@@ -139,9 +173,11 @@ async function open(read: () => SiteBarBlocks = () => content(), options: Option
                 html: '<!--wx:k1--><p>New</p><!--/wx:k1-->',
               },
             }
-          : url.endsWith('/publish')
-            ? { data: {} }
-            : { data: { editors: [] } },
+          : url.endsWith('/copy')
+            ? { data: { blocks: copies } }
+            : url.endsWith('/publish')
+              ? { data: {} }
+              : { data: { editors: [] } },
       ),
     ),
     delete: vi.fn().mockResolvedValue(undefined),
@@ -153,6 +189,7 @@ async function open(read: () => SiteBarBlocks = () => content(), options: Option
     http: client,
     i18n,
     modules: [],
+    types: options.types ?? {},
     state: { manifest: null, user: null, status: 'ready', error: null },
     can: () => true,
   } as unknown as AdminContext
@@ -794,5 +831,102 @@ describe('the structure of the blocks from the site', () => {
       item.textContent?.trim(),
     )
     expect(labels).toEqual(expect.arrayContaining(['Add below', 'Duplicate', 'Hide', 'Delete']))
+  })
+})
+
+describe('shared blocks in the blocks tab', () => {
+  const both: SiteBarContext = { ...page, sections: ['page', 'blocks', 'regions'] }
+
+  afterEach(() => {
+    mounted.splice(0).forEach((wrapper) => wrapper.unmount())
+    document.body.innerHTML = ''
+    vi.restoreAllMocks()
+  })
+
+  const request = () => region({ name: 'request', title: 'Request' }, 'Ask us')
+
+  it('lists a shared block on a page that prints it, and on no other', async () => {
+    const { wrapper, parent } = await open(undefined, {
+      context: both,
+      rows: [headerRow, requestRow],
+      request,
+    })
+    const heads = () => wrapper.findAll('.wx-blocks-bar__head').map((head) => head.text())
+
+    // A page of the release before says nothing: everything is listed, as it was.
+    expect(heads()).toHaveLength(3)
+
+    pagePrints(parent, ['header'])
+    await flushPromises()
+    expect(heads()).toHaveLength(2)
+    expect(heads().join(' ')).not.toContain('Request')
+
+    pagePrints(parent, ['header', 'request'])
+    await flushPromises()
+    expect(heads()[2]).toContain('Request')
+    expect(heads()[2]).toContain('Shared block: on every page where it stands')
+    expect(heads()[1]).toContain('On every page')
+  })
+
+  it('makes a shared block of the page its own in one edit of the draft, and opens the first copy', async () => {
+    const fragment = {
+      ...text,
+      id: 2,
+      slug: 'fragment',
+      title: 'Shared block',
+      content: {
+        schema: [{ id: 'fragment', type: 'wx-fragment', label: 'Shared block' }],
+        sample: {},
+      },
+    } as unknown as BlockType
+    const placed = (): SiteBarBlocks => ({
+      revision: 'r1',
+      editing: 'live',
+      tree: [
+        { key: 'k1', type: 'text', values: { text: 'Before' } },
+        { key: 'f1', type: 'fragment', values: { fragment: 'request' } },
+      ],
+      outline: [
+        { key: 'k1', type: 'text', depth: 0, label: 'Before' },
+        { key: 'f1', type: 'fragment', depth: 0, label: 'Shared block' },
+      ],
+    })
+    const { wrapper, client } = await open(placed, {
+      context: both,
+      rows: [headerRow, requestRow],
+      request,
+      catalog: [text, fragment],
+      types: { 'wx-fragment': { component: FragmentField, kind: 'field' } },
+      edited: () => ({ revision: 'r2', key: 'x1', html: '' }),
+    })
+
+    await row(wrapper, 1).trigger('click')
+    await flushPromises()
+
+    const button = wrapper
+      .findAll('button')
+      .find((one) => one.text() === 'Make it this page’s own')!
+    await button.trigger('click')
+    await flushPromises()
+
+    const confirmations = [
+      ...document.querySelectorAll<HTMLButtonElement>('.wx-dialog__foot button'),
+    ]
+    confirmations[confirmations.length - 1]!.click()
+    await flushPromises()
+
+    expect(client.post).toHaveBeenCalledWith('/api/cms/regions/request/copy', {})
+
+    const edit = client.post.mock.calls.find(([url]) =>
+      String(url).endsWith('/content/page/12/edit'),
+    )
+
+    expect((edit?.[1] as { ops: unknown[] }).ops).toEqual([
+      { op: 'add', type: 'text', values: { text: 'Today' }, after: 'f1' },
+      { op: 'add', type: 'text', values: { text: 'Ask us' }, after: 'f1' },
+      { op: 'remove', key: 'f1' },
+    ])
+    // The shared block's own styles leave with it: the server is not told the page has them.
+    expect((edit?.[1] as { bundles?: unknown }).bundles).toBeUndefined()
   })
 })

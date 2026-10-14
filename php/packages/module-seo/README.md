@@ -62,7 +62,7 @@ language, `general.project-name` — and none is typed for the purpose. The deta
 - `twitter:*` mirrors Open Graph; `twitter:site` is the x.com profile in `seo.org-socials`.
 - Switches: `print.og`, `print.article`, `print.twitter`. Nothing empty is printed.
 
-The SEO card has no share fields unless `WEBX_SEO_OG_FIELDS=true` (`og.panel_fields`); stored
+The SEO card shows the share fields unless `WEBX_SEO_OG_FIELDS=false` (`og.panel_fields`); stored
 values still win either way.
 
 ## Where a value comes from

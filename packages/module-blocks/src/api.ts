@@ -39,6 +39,8 @@ export interface BlocksApi {
   publish(id: number, options?: { dropTranslations?: boolean }): Promise<BlockType>
   render(id: number, input?: RenderInput): Promise<RenderResult>
   usage(id: number): Promise<BlockUsage[]>
+  /** The shared blocks a page may place, with their state; open to whoever reads the catalog. */
+  fragments(): Promise<RegionRow[]>
   versions(id: number): Promise<BlockVersionMeta[]>
   version(id: number, number: number): Promise<BlockVersion>
   restore(id: number, number: number): Promise<BlockType>
@@ -90,6 +92,7 @@ export function createBlocksApi(admin: AdminContext): BlocksApi {
     render: (id, input = {}) =>
       admin.http.post<{ data: RenderResult }>(`${base}/${id}/render`, input).then(data),
     usage: (id) => admin.http.get<{ data: BlockUsage[] }>(`${base}/${id}/usage`).then(data),
+    fragments: () => admin.http.get<{ data: RegionRow[] }>(`${base}/fragments`).then(data),
     versions: (id) =>
       admin.http.get<{ data: BlockVersionMeta[] }>(`${base}/${id}/versions`).then(data),
     version: (id, number) =>
@@ -175,6 +178,11 @@ export interface RegionsApi {
   restoreVersion(name: string, number: number): Promise<RegionDetail>
   /** The fallback view made into a block type, and one of it put into the draft. */
   adopt(name: string): Promise<RegionAdopted>
+  /**
+   * A shared block's published tree with fresh keys, to put in a page in its place. Writes nothing;
+   * 409 while the shared block is not published.
+   */
+  copy(name: string): Promise<BlockNode[]>
 }
 
 /** Everything under `/regions`, below the panel's API path. */
@@ -205,5 +213,9 @@ export function createRegionsApi(admin: AdminContext): RegionsApi {
       admin.http
         .post<{ data: RegionDetail; block: { id: number; slug: string } }>(`${at(name)}/adopt`, {})
         .then((body) => ({ region: body.data, block: body.block })),
+    copy: (name) =>
+      admin.http
+        .post<{ data: { blocks: BlockNode[] } }>(`${at(name)}/copy`, {})
+        .then((body) => body.data.blocks),
   }
 }

@@ -7,4 +7,6 @@ return [
     'articles' => 'Статті',
     'rubrics' => 'Рубрики',
     'tags' => 'Теги',
+    'authors' => 'Автори',
+    'author' => 'Автор',
 ];

@@ -23,6 +23,8 @@ return [
     'gone' => 'Este bloco já não está na página.',
     'others' => 'Também aberto no painel: :names',
     'region-everywhere' => 'Em todas as páginas',
+    'fragment-where' => 'Bloco partilhado: em cada página onde está',
+    'fragment-everywhere' => 'Um bloco partilhado: editá-lo aqui muda-o em todas as páginas onde está.',
     'region-fallback' => 'Aqui o site mostra a marcação do código. Configure a zona no painel para editá-la a partir do site.',
     'open-in-panel' => 'Abrir no painel',
     'changes' => 'Alterações não publicadas: :count',

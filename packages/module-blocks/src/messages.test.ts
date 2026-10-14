@@ -37,6 +37,7 @@ describe('the English here matches the English the server ships', () => {
     'groups',
     'checks',
     'region',
+    'fragment',
     'exchange',
     'site-bar',
   ])('%s', (group) => {

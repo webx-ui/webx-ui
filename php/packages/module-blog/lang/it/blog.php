@@ -10,4 +10,5 @@ return [
     'related' => 'Continua a leggere',
     'rss' => 'RSS',
     'rss-description' => 'Gli ultimi articoli.',
+    'all' => 'Tutti gli articoli',
 ];

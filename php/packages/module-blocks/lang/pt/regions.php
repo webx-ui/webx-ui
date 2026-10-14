@@ -22,4 +22,8 @@ return [
     'adopt-taken' => 'Já existe um tipo de bloco «:slug».',
     'adopt-failed' => 'Não foi possível transformar a marcação num tipo de bloco.',
     'adopt-forbidden' => 'Mover a marcação para um tipo de bloco requer o direito de editar tipos de bloco.',
+    'cycle' => 'O bloco partilhado ficaria dentro de si mesmo: :path.',
+    'not-a-fragment' => '«:name» não é um bloco partilhado do site.',
+    'copy-unpublished' => 'O bloco partilhado ainda não está publicado: não há nada para copiar.',
+    'not-on-page' => 'Esta página não contém o bloco partilhado, por isso ele é mostrado numa página vazia do layout.',
 ];
