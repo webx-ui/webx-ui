@@ -23,11 +23,12 @@ final class Features
     }
 
     /**
-     * The share title, description and picture in the SEO card. Off by default: Open Graph is
-     * filled in from the page itself, and fields nobody fills in are fields that look forgotten.
+     * The share title, description and picture in the SEO card. On by default: Open Graph is
+     * filled in from the page itself, and the fields are there for the page whose picture for the
+     * networks is not its own — a site that wants them gone says so (`WEBX_SEO_OG_FIELDS=false`).
      */
     public static function ogFields(): bool
     {
-        return (bool) config('webx-seo.og.panel_fields', false);
+        return (bool) config('webx-seo.og.panel_fields', true);
     }
 }

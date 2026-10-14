@@ -28,8 +28,8 @@ their guides when the question is about one of those.
   articles and recipes are `article`, the rest `website`); `og:image` is the first source picture
   a network can show (an SVG falls through) and is described by `Contracts\SharesImages` — the
   library's record and a 1200×630 variant with `webx-ui/module-media`, the extension without it.
-  The card's share fields (`og_title`, `og_description`, `og_image`) are hidden unless
-  `WEBX_SEO_OG_FIELDS=true`; stored values are still honoured.
+  The card's share fields (`og_title`, `og_description`, `og_image`) are shown unless
+  `WEBX_SEO_OG_FIELDS=false`; stored values are honoured either way.
 - **Components** `<x-webx-seo::breadcrumbs />` (the same list as the `BreadcrumbList`),
   `<x-webx-seo::links />`, `<x-webx-seo::faq />`; views `webx-seo::head`, `breadcrumbs`, `links`,
   `faq`. The last two print nothing while their feature is off; `theme-default` prints both at
@@ -82,7 +82,7 @@ their guides when the question is about one of those.
 | Other words in the panel                          | `php artisan vendor:publish --tag=webx-seo-lang`                                                                                                               |
 | The SEO card on your own entity                   | `use HasSeo;` on the model, a patch putting a `wx-seo` node on its screen                                                                                      |
 | A page's kind for social networks (`article`)     | implement `HasOpenGraph` on the model: `openGraphType()`, `openGraphProperties($locale)` (`article:*` lines)                                                   |
-| Share fields back in the SEO card                 | `WEBX_SEO_OG_FIELDS=true` (`og.panel_fields`)                                                                                                                  |
+| Share fields out of the SEO card                  | `WEBX_SEO_OG_FIELDS=false` (`og.panel_fields`)                                                                                                                 |
 | `og:locale` other than the guess (`en` → `en_US`) | `og.locales` in the published config: `['en' => 'en_GB']`                                                                                                      |
 | A title, lead and picture without a card          | implement `HasSeoFallback` (`SeoData::fallback(...)`); a view with no entity: `@webxSeo(fallback: ['title' => ...])`                                           |
 | Breadcrumbs or JSON-LD from an entity             | implement `HasBreadcrumbs` (list of `Crumb`) or `HasStructuredData` on the model                                                                               |

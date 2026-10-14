@@ -308,11 +308,11 @@ about itself, as one object:
 
 The text fields are language maps and grow the same chip every localized field in the panel does.
 
-The share fields — `og_title`, `og_description`, `og_image` — are not in the card by default: the
-card is filled in from the page ([Social cards](#social-cards)), and fields nobody needs to fill in
-look forgotten. A site that wants to override them by hand turns them back on with
-`WEBX_SEO_OG_FIELDS=true` (`webx-seo.og.panel_fields`); the card's `share-fields` prop decides for
-one screen. Values already stored are honoured either way, above everything derived.
+The share fields — `og_title`, `og_description`, `og_image` — are in the card by default, empty:
+the card is filled in from the page ([Social cards](#social-cards)), and the fields are for the
+page whose picture or line for the networks is not its own. A site that wants none of that turns
+them off with `WEBX_SEO_OG_FIELDS=false` (`webx-seo.og.panel_fields`); the card's `share-fields`
+prop decides for one screen. Values already stored are honoured either way, above everything derived.
 
 `og_image` is not a language map: there are no per-language pictures anywhere in the panel yet, and a column
 that already holds an object would read `path` as a language code the day one was added.

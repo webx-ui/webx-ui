@@ -86,8 +86,9 @@ return [
     | `image` is the variant a landscape library picture at least that big is
     | cut to — the size networks recommend; null shares the picture as it is.
     |
-    | `panel_fields` brings back the share title, description and picture in
-    | the SEO card, for a site that wants to override them by hand. Off, values
+    | `panel_fields` shows the share title, description and picture in the SEO
+    | card, so an editor can override what is derived — another picture for
+    | the networks, a shorter line. On by default; off hides them, and values
     | already stored are still honoured.
     |
     */
@@ -96,7 +97,7 @@ return [
         'type' => 'website',
         'locales' => [],
         'image' => ['width' => 1200, 'height' => 630],
-        'panel_fields' => env('WEBX_SEO_OG_FIELDS', false),
+        'panel_fields' => env('WEBX_SEO_OG_FIELDS', true),
     ],
 
     /*
