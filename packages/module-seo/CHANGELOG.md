@@ -1,5 +1,16 @@
 # @webx-ui/module-seo
 
+## 0.9.1
+
+### Patch Changes
+
+- e107a30: `webx-ui/module-seo`: the SEO card shows the share title, description and picture again by default. Open Graph is still filled in from the page; the fields are there for the page whose picture or line for the networks is not its own. `WEBX_SEO_OG_FIELDS=false` hides them, and stored values are honoured either way.
+- Updated dependencies [e107a30]
+- Updated dependencies [e107a30]
+  - @webx-ui/module-admin@0.26.1
+  - @webx-ui/core@0.41.0
+  - @webx-ui/schema@0.9.1
+
 ## 0.9.0
 
 ### Minor Changes

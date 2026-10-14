@@ -1,5 +1,23 @@
 # @webx-ui/module-blog
 
+## 0.7.0
+
+### Minor Changes
+
+- e107a30: `webx-ui/module-blog` / `@webx-ui/module-blog`: author pages, AU2 — the panel (§19.5 of the blog spec). On a site with `WEBX_BLOG_AUTHORS=true`, the blog group gets «Authors» (permission `blog.authors.manage`): the profiles beside their form `blog.author-form` — the account chosen once, the name for readers, role, photo, bio, «Page on the site», the address and an SEO tab from `module-seo`. Under «Author» in the article editor, a link to the author's profile, or one to make it. API under `/api/cms/blog/authors`; the playground has two profiles.
+
+### Patch Changes
+
+- e107a30: `webx-ui/module-blog`: author pages, AU1 — the site half (§19 of the blog spec). With `WEBX_BLOG_AUTHORS=true`, an administrator who writes may have a profile (`blog_authors`: the name a reader sees, a slug, a role, a photo, a bio) and, when the profile asks for it, a page at `{prefix}/author/{slug}` with all of their articles; the byline links there and the article's `author` is that `Person` with its address. Off — the default — or with the profile closed, nothing changes: the account's name, no link, a 404 at the address. `ProfilePage` markup, the sitemap through the registry, the panel on the site, a link source for menus.
+- e107a30: `webx-ui/module-blog`: an author's networks — the «network + address» rows of the site's contacts, shown as icons on their page and named as the `sameAs` of their `Person`, which now has an `@id` shared by every article it wrote. A `BlogPosting` names its rubric, its tags, its language and the site's `Organization` as `publisher`; the feed is a `Blog`.
+- Updated dependencies [e107a30]
+- Updated dependencies [e107a30]
+- Updated dependencies [e107a30]
+  - @webx-ui/module-blocks@0.16.0
+  - @webx-ui/module-admin@0.26.1
+  - @webx-ui/core@0.41.0
+  - @webx-ui/schema@0.9.1
+
 ## 0.6.3
 
 ### Patch Changes

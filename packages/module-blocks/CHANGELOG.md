@@ -1,5 +1,20 @@
 # @webx-ui/module-blocks
 
+## 0.16.0
+
+### Minor Changes
+
+- e107a30: Shared blocks in the panel (F2 of `WEBX_UI_BLOCK_FRAGMENTS.md`). `wx-fragment` is a field now: the «Shared block» form chooses one of the site's shared blocks, says whether it is on the site, leads to its editor in a new tab and makes it the page's own — the published blocks copied in its place, the first opened. «Site regions» lists the shared blocks as a group of their own, with how many pages hold each; the editor of one says where it stands, starts its preview on the first page that holds it, and frames and scrolls to it there. Selecting a block whose first element is a stylesheet — a block holding a shared block — scrolls the page preview to what it draws rather than to the `<link>`, and a block or region further down than the first height of the frame is scrolled to after the frame grows. `webx-ui/module-blocks`: `GET /api/cms/blocks/fragments`, the shared blocks with their state, for whoever reads the block catalog.
+
+### Patch Changes
+
+- e107a30: Shared blocks in the panel on the site (F3 of `WEBX_UI_BLOCK_FRAGMENTS.md`). The page tells the panel which regions it prints, and the «Blocks» tab lists a shared block on the pages that print it and on no other, its blocks under a note that an edit reaches every page where it stands. «Make it this page's own» works from the tab too: one edit of the record's draft, the copies brought in with their styles, the first opened. The «Edit for all pages» link of the field no longer needs a router. The agent's guidelines spell out placing and detaching a shared block with `blocks_edit_content`; the guide to layout regions has a section «Shared blocks».
+- Updated dependencies [e107a30]
+- Updated dependencies [e107a30]
+  - @webx-ui/module-admin@0.26.1
+  - @webx-ui/core@0.41.0
+  - @webx-ui/schema@0.9.1
+
 ## 0.15.0
 
 ### Minor Changes

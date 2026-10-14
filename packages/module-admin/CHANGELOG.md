@@ -1,5 +1,15 @@
 # @webx-ui/admin
 
+## 0.26.1
+
+### Patch Changes
+
+- e107a30: Shared blocks in the panel on the site (F3 of `WEBX_UI_BLOCK_FRAGMENTS.md`). The page tells the panel which regions it prints, and the «Blocks» tab lists a shared block on the pages that print it and on no other, its blocks under a note that an edit reaches every page where it stands. «Make it this page's own» works from the tab too: one edit of the record's draft, the copies brought in with their styles, the first opened. The «Edit for all pages» link of the field no longer needs a router. The agent's guidelines spell out placing and detaching a shared block with `blocks_edit_content`; the guide to layout regions has a section «Shared blocks».
+- e107a30: `WxSortableList`: проп `hoverable` — список сам подсвечивает строку под курсором и текущую (`.is-current` или `aria-current` внутри) и убирает разделители над ней и под ней. Рубрики и категории, места баннеров, вопросы FAQ и команда переведены на него.
+- Updated dependencies [e107a30]
+  - @webx-ui/core@0.41.0
+  - @webx-ui/schema@0.9.1
+
 ## 0.26.0
 
 ### Minor Changes

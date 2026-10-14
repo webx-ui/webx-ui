@@ -1,5 +1,14 @@
 # @webx-ui/module-menu
 
+## 0.1.19
+
+### Patch Changes
+
+- Updated dependencies [e107a30]
+- Updated dependencies [e107a30]
+  - @webx-ui/module-admin@0.26.1
+  - @webx-ui/core@0.41.0
+
 ## 0.1.18
 
 ### Patch Changes
