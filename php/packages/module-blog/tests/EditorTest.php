@@ -138,6 +138,31 @@ final class EditorTest extends TestCase
     }
 
     /**
+     * The tags and the pinned related articles are checked against their tables — the tables of
+     * the models. Spelled by hand, they outlived the rename to blog_* and every save of an article
+     * with a tag was a 500 on a missing table.
+     */
+    #[Test]
+    public function tags_and_related_articles_are_checked_against_the_blog_tables(): void
+    {
+        $belts = $this->tag('belts');
+        $other = $this->article('replacing-a-belt');
+        $article = $this->article('signs-of-wear');
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($article->getKey()), ['values' => [
+                'tags' => [$belts->getKey()],
+                'related' => [$other->getKey()],
+            ]])
+            ->assertOk();
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($article->getKey()), ['values' => ['tags' => [9001], 'related' => [9002]]])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['tags', 'related']);
+    }
+
+    /**
      * A field a project patched onto the article's screen used to be drawn, filled in and
      * dropped. Now it lands in `extra` — through the draft, like the text around it, so it is on
      * the site when the article is published and not before (§3.4 of the services spec).

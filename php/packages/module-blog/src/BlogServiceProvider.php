@@ -286,8 +286,10 @@ class BlogServiceProvider extends ServiceProvider
         // `source` — the path the rubrics answer at — is told which table the ids live in.
         $this->app->make(CategorySources::class)->register('blog/rubrics', Rubric::class, 'webx-blog::errors.unknown-rubric');
 
-        $types->register('wx-article-tags', new IdsType($connection, 'tags', 'webx-blog::errors.unknown-tag'));
-        $types->register('wx-article-related', new IdsType($connection, 'articles', 'webx-blog::errors.unknown-article'));
+        // The tables from the models, not spelled here: a rename of the tables (blog_*) left two
+        // literals behind, and every save of an article with a tag failed on a missing table.
+        $types->register('wx-article-tags', new IdsType($connection, (new Tag)->getTable(), 'webx-blog::errors.unknown-tag'));
+        $types->register('wx-article-related', new IdsType($connection, (new Article)->getTable(), 'webx-blog::errors.unknown-article'));
         $types->register('wx-article-author', new AuthorType);
     }
 
