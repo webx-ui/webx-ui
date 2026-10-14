@@ -60,7 +60,8 @@
                   "props": {
                     "accept": "image",
                     "captions": false,
-                    "aspect": "1/1"
+                    "aspect": "1/1",
+                    "width": 160
                   }
                 },
                 {

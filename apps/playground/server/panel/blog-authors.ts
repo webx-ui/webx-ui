@@ -1,6 +1,7 @@
 import type { ScreenModel } from '../../../../packages/schema/src/types'
 import type { AuthorRow } from '../../../../packages/module-blog/src/authors'
 import { PREFIX, articles, authors as accounts } from './blog'
+import { fileByPath } from './media'
 
 /**
  * The profiles of the blog's authors (§19 of the blog spec), on a panel whose site allows author
@@ -51,6 +52,13 @@ function text(value: unknown, locale: string): string {
   return map[locale] || Object.values(map).find((line) => line) || ''
 }
 
+/** The picture of the photo field, as the list draws it — found in the library by its key. */
+function photoOf(value: unknown): string | null {
+  const path = (value as { path?: unknown } | null)?.path
+
+  return typeof path === 'string' ? (fileByPath(path)?.url ?? null) : null
+}
+
 function written(userId: number): number {
   return articles.filter((article) => !article.deleted_at && article.values.author_id === userId)
     .length
@@ -67,7 +75,7 @@ export function authorRow(profile: AuthorProfile, locale: string): AuthorRow {
     is_public: profile.values.is_public === true,
     open: profile.values.is_public === true,
     url: slug === '' ? null : `https://webx-demo.test/${PREFIX}/author/${slug}`,
-    photo: null,
+    photo: photoOf(profile.values.photo),
     articles_count: written(profile.user_id),
   }
 }
