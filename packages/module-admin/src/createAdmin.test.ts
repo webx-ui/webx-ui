@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { h, inject } from 'vue'
 import { dateTimezoneKey } from '@webx-ui/core'
@@ -496,5 +496,39 @@ describe('createAdmin', () => {
     await flushPromises()
 
     expect(unclaimed.router.currentRoute.value.path).toBe('/pages')
+  })
+
+  describe('methodOverride', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    async function deleteThrough(methodOverride?: boolean | 'header' | 'field') {
+      const fetch = vi
+        .fn()
+        .mockImplementation(() => Promise.resolve(new Response(null, { status: 204 })))
+      // The panel's own client picks up the global fetch when it is made.
+      vi.stubGlobal('fetch', fetch)
+
+      const admin = createAdmin({ el: mountPoint(), routes: [rootRoute], methodOverride })
+      await admin.context.http.delete('/api/cms/pages/1')
+
+      return fetch.mock.calls.at(-1)?.[1] as RequestInit & { headers: Record<string, string> }
+    }
+
+    it("hands the option to the panel's own client", async () => {
+      const sent = await deleteThrough('header')
+
+      expect(sent.method).toBe('POST')
+      expect(sent.headers['X-HTTP-Method-Override']).toBe('DELETE')
+      expect(sent.headers['X-Webx-Locale']).toBeDefined()
+    })
+
+    it('sends methods as they are without it', async () => {
+      const sent = await deleteThrough()
+
+      expect(sent.method).toBe('DELETE')
+      expect(sent.headers['X-HTTP-Method-Override']).toBeUndefined()
+    })
   })
 })

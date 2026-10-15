@@ -23,7 +23,17 @@ export interface HttpOptions {
   headers?: () => Record<string, string>
   /** Swappable for tests. */
   fetch?: typeof globalThis.fetch
+  /**
+   * For a host whose web server lets through nothing but GET and POST, as some shared hosting
+   * does before PHP is even reached: PUT, PATCH and DELETE go out as POST and say what they
+   * really are. `'header'` (or `true`) says it in `X-HTTP-Method-Override`; `'field'` in a
+   * `_method` field, for a firewall that strips the header too. Laravel understands both.
+   */
+  methodOverride?: MethodOverride
 }
+
+/** How a method a web server refuses travels inside a POST; `true` is `'header'`. */
+export type MethodOverride = boolean | 'header' | 'field'
 
 export interface RequestOptions {
   /** Query parameters; `undefined` and `null` are left out rather than sent empty. */
@@ -83,6 +93,7 @@ export interface Http {
 }
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+const OVERRIDABLE = new Set(['PUT', 'PATCH', 'DELETE'])
 
 export function createHttp(options: HttpOptions = {}): Http {
   const baseUrl = (options.baseUrl ?? '').replace(/\/$/, '')
@@ -92,6 +103,7 @@ export function createHttp(options: HttpOptions = {}): Http {
   const doFetch = options.fetch ?? globalThis.fetch.bind(globalThis)
   const onUnauthenticated = options.onUnauthenticated
   const standingHeaders = options.headers
+  const override = options.methodOverride === true ? 'header' : options.methodOverride || null
 
   let csrfFetched = false
 
@@ -136,12 +148,40 @@ export function createHttp(options: HttpOptions = {}): Http {
       headers['Content-Type'] = 'application/json'
     }
 
-    const response = await doFetch(url(baseUrl, path, options.query), {
-      method,
+    // Everything above — the CSRF token most of all — follows the method the caller meant;
+    // only what goes on the wire changes.
+    let sentMethod = method
+    let body = options.body ?? undefined
+    let query = options.query
+
+    if (override !== null && OVERRIDABLE.has(method)) {
+      sentMethod = 'POST'
+
+      if (override === 'header') {
+        headers['X-HTTP-Method-Override'] = method
+      } else {
+        const field = withMethodField(method, body, options.json === true)
+
+        if (field === null) {
+          // Bytes or a blob have nowhere to carry a field; Laravel reads `_method` from the
+          // query string as well.
+          query = { ...query, _method: method }
+        } else {
+          body = field.body
+
+          if (field.json) {
+            headers['Content-Type'] = 'application/json'
+          }
+        }
+      }
+    }
+
+    const response = await doFetch(url(baseUrl, path, query), {
+      method: sentMethod,
       credentials: 'same-origin',
       headers,
       signal: options.signal,
-      body: options.body ?? undefined,
+      body,
     })
 
     // 419 is Laravel for "your CSRF token has gone stale", which happens after a session is
@@ -191,6 +231,42 @@ export function createHttp(options: HttpOptions = {}): Http {
     delete: (path, options) => request('DELETE', path, undefined, options),
     send: (method, path, options) => send(method.toUpperCase(), path, options),
   }
+}
+
+/**
+ * The body with `_method` in it, or `null` when the body is not something a field fits in.
+ * No body at all becomes a JSON one, which Laravel reads the field out of.
+ */
+function withMethodField(
+  method: string,
+  body: BodyInit | undefined,
+  json: boolean,
+): { body: BodyInit; json: boolean } | null {
+  if (body === undefined) {
+    return { body: JSON.stringify({ _method: method }), json: true }
+  }
+
+  if (typeof FormData !== 'undefined' && body instanceof FormData) {
+    body.set('_method', method)
+
+    return { body, json: false }
+  }
+
+  if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) {
+    body.set('_method', method)
+
+    return { body, json: false }
+  }
+
+  if (json && typeof body === 'string') {
+    const parsed: unknown = JSON.parse(body)
+
+    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return { body: JSON.stringify({ ...parsed, _method: method }), json: true }
+    }
+  }
+
+  return null
 }
 
 export async function toError(response: Response): Promise<HttpError> {

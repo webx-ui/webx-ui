@@ -13,7 +13,7 @@ import AdminNotFound from './AdminNotFound.vue'
 import AdminShell from './AdminShell.vue'
 import SiteBarScreen from './SiteBarScreen.vue'
 import { createAdminContext, provideAdmin, type AdminContext } from './admin'
-import { createHttp, type Http } from './http'
+import { createHttp, type Http, type MethodOverride } from './http'
 import { createI18n, provideI18n, type Dictionary, type I18n, type LocaleDescriptor } from './i18n'
 import { createTheme, provideTheme, type ThemeController } from './theme'
 import { adminMessages } from './messages'
@@ -68,6 +68,12 @@ export interface CreateAdminOptions {
    * key for writing: the server decides what is saved.
    */
   screens?: Record<string, Patch>
+  /**
+   * Send PUT, PATCH and DELETE as POST, for a host whose web server refuses them before PHP is
+   * reached: `true` or `'header'` names the method in `X-HTTP-Method-Override`, `'field'` in
+   * a `_method` field of the body. Off by default; ignored when `http` is given.
+   */
+  methodOverride?: MethodOverride
   /** Swappable for tests. */
   http?: Http
 }
@@ -173,6 +179,7 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
       // not stored a preference yet, which is everybody until they choose one. Without it,
       // signing in on a Russian sign-in screen lands in an English panel.
       headers: () => ({ 'X-Webx-Locale': i18n.state.locale }),
+      methodOverride: options.methodOverride,
     })
 
   i18n.defaults('webx-admin', adminMessages)
