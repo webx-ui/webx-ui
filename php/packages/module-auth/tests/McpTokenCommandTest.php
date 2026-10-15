@@ -4,54 +4,16 @@ declare(strict_types=1);
 
 namespace WebxUi\Auth\Tests;
 
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Testing\TestResponse;
-use Laravel\Passport\Passport;
-use Laravel\Passport\PassportServiceProvider;
 use Laravel\Passport\Token;
-use phpseclib4\Crypt\RSA;
 use PHPUnit\Framework\Attributes\Test;
-use ReflectionClass;
-use Symfony\Component\HttpFoundation\Response;
+use WebxUi\Mcp\Keys\Key;
 
 /**
  * `webx:mcp:token`: a key for a program, and the server it opens.
- *
- * The tokens here are used, not only counted. A personal token that Passport issues happily and
- * the door then turns away — wrong provider, a scope nobody registered, a client of the wrong
- * kind — looks exactly like a working one until something calls with it.
  */
-final class McpTokenCommandTest extends TestCase
+final class McpTokenCommandTest extends PassportTestCase
 {
-    /**
-     * @param  Application  $app
-     * @return list<class-string>
-     */
-    protected function getPackageProviders($app): array
-    {
-        return [PassportServiceProvider::class, ...parent::getPackageProviders($app)];
-    }
-
-    /**
-     * @param  Application  $app
-     */
-    protected function defineEnvironment($app): void
-    {
-        parent::defineEnvironment($app);
-
-        [$private, $public] = self::keys();
-        $app['config']->set('passport.private_key', $private);
-        $app['config']->set('passport.public_key', $public);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->loadMigrationsFrom(dirname((string) (new ReflectionClass(Passport::class))->getFileName(), 2).'/database/migrations');
-
-        parent::defineDatabaseMigrations();
-    }
-
     #[Test]
     public function without_scopes_the_token_reaches_what_the_administrator_may(): void
     {
@@ -74,6 +36,28 @@ final class McpTokenCommandTest extends TestCase
     }
 
     #[Test]
+    public function the_lifetime_is_the_one_asked_for_and_the_key_is_listed(): void
+    {
+        $this->admin('owner@example.test', super: true);
+
+        $issued = $this->issue(['--name' => 'watcher', '--days' => 3650, '--json' => true]);
+
+        // Signed into the token, not only written beside it: ten years from now, give or take
+        // the second the command took.
+        $this->assertTrue(now()->addDays(3649)->lt($issued['expires_at']));
+        $this->assertTrue(now()->addDays(3651)->gt($issued['expires_at']));
+        $this->mcp('admins_list_admins', $issued['token'])->assertJsonPath('result.isError', false);
+
+        $key = Key::query()->sole();
+        $this->assertSame('watcher', $key->name);
+        $this->assertSame(['mcp:use'], $key->scopes);
+
+        $this->assertSame(1, Artisan::call('webx:mcp:token', ['--name' => 'watcher', '--days' => 3651]));
+        $this->assertSame(1, Artisan::call('webx:mcp:token', ['--name' => 'watcher', '--days' => 0]));
+        $this->assertSame(1, Key::query()->count());
+    }
+
+    #[Test]
     public function all_means_the_same_as_nothing(): void
     {
         $this->admin('owner@example.test', super: true);
@@ -92,9 +76,10 @@ final class McpTokenCommandTest extends TestCase
 
         $this->mcp('admins_list_admins', $issued['token'])->assertJsonPath('result.isError', false);
 
+        // Out of scope is out of the list, and a tool not in the list is not there to call.
         $this->mcp('admins_grant_role', $issued['token'], ['email' => 'owner@example.test', 'role' => 'editors'])
-            ->assertJsonPath('result.isError', true)
-            ->assertSee('admins:write');
+            ->assertBadRequest()
+            ->assertJsonPath('error.message', 'Tool [admins_grant_role] not found.');
     }
 
     #[Test]
@@ -193,38 +178,5 @@ final class McpTokenCommandTest extends TestCase
 
         /** @var array{token: string, type: string, scopes: list<string>, expires_at: ?string} */
         return (array) json_decode($output, true);
-    }
-
-    /**
-     * @param  array<string, mixed>  $arguments
-     * @return TestResponse<Response>
-     */
-    private function mcp(string $tool, string $token, array $arguments = []): TestResponse
-    {
-        // The guard remembers who it let in last; a real request starts with nobody.
-        $this->app['auth']->forgetGuards();
-
-        return $this->withToken($token)->postJson('/api/cms/mcp', [
-            'jsonrpc' => '2.0',
-            'id' => 1,
-            'method' => 'tools/call',
-            'params' => ['name' => $tool, 'arguments' => (object) $arguments],
-        ]);
-    }
-
-    /**
-     * @return array{string, string}
-     */
-    private static function keys(): array
-    {
-        static $keys = null;
-
-        if ($keys === null) {
-            $key = RSA::createKey(2048);
-
-            $keys = [(string) $key, (string) $key->getPublicKey()];
-        }
-
-        return $keys;
     }
 }

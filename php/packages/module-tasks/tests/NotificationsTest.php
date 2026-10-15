@@ -246,11 +246,44 @@ final class NotificationsTest extends TestCase
     }
 
     #[Test]
+    public function a_screen_read_after_the_token_was_set_saves_and_tests_without_a_conflict(): void
+    {
+        $planner = $this->member(['tasks.view', 'tasks.manage']);
+        Http::fake([self::API.'/*' => Http::sequence()
+            ->push(['ok' => true])
+            ->push(['ok' => false, 'description' => 'Unauthorized'], 401)]);
+
+        $this->actingAs($planner, 'cms')->putJson('/api/cms/tasks/settings', ['values' => [
+            'tasks.telegram.token' => 'secret-token',
+            'tasks.telegram.chats' => '111',
+        ]])->assertOk()->assertJsonPath('data.token_set', true);
+
+        // A reload: the screen starts from what the server answers, the token field empty.
+        $values = $this->actingAs($planner, 'cms')->getJson('/api/cms/tasks/settings')->assertOk()->json('data.values');
+        $values['tasks.notify.rework'] = true;
+
+        $this->actingAs($planner, 'cms')->putJson('/api/cms/tasks/settings', ['values' => $values])
+            ->assertOk()
+            ->assertJsonPath('data.token_set', true)
+            ->assertJsonPath('data.values', $values);
+        $this->assertSame('secret-token', $this->app->make(NotificationSettings::class)->token());
+
+        $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/settings/test')->assertOk();
+
+        // A token Telegram does not know is the bot's problem, not an edit somebody made meanwhile:
+        // never a 409, which the panel words as a conflict in place of Telegram's own words.
+        $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/settings/test')
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Telegram did not take the message — 111: Unauthorized');
+        $this->actingAs($planner, 'cms')->putJson('/api/cms/tasks/settings', ['values' => $values])->assertOk();
+    }
+
+    #[Test]
     public function the_test_button_sends_now_and_says_what_went_wrong(): void
     {
         $planner = $this->member(['tasks.view', 'tasks.manage']);
 
-        $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/settings/test')->assertStatus(409);
+        $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/settings/test')->assertStatus(422);
 
         $this->configure();
         Http::fake([self::API.'/*' => Http::sequence()
@@ -259,7 +292,7 @@ final class NotificationsTest extends TestCase
 
         $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/settings/test')->assertOk();
         $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/settings/test')
-            ->assertStatus(409)
+            ->assertStatus(422)
             ->assertJsonPath('message', 'Telegram did not take the message — 111: Bad Request: chat not found');
 
         $this->actingAs($this->member(['tasks.view']), 'cms')->postJson('/api/cms/tasks/settings/test')->assertForbidden();

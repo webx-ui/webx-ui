@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Tasks\Mcp;
 
 use Closure;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Keys\Keys;
 use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Scopes;
 use WebxUi\Mcp\Tool;
@@ -34,8 +36,8 @@ use WebxUi\Tasks\Workflow\TaskStatus;
  *
  * Who is acting is the `agent` argument when it is given — the name of the session, which the
  * journal and the stage keep. Without it the caller is the administrator behind the connection,
- * and only a person can be that: a key issued for a machine (one that names its scopes) must say
- * which agent it is, and is never taken for a person. That is what keeps a stage marked `human`
+ * and only a person can be that: a key issued for a program — whatever scopes it carries, all of
+ * them included — must say which agent it is, and is never taken for a person. That is what keeps a stage marked `human`
  * out of every agent's reach however its key was made.
  *
  * The four scopes of §5 are the four kinds of work: `tasks:read` looks, `tasks:write` plans,
@@ -514,9 +516,10 @@ final class TasksTools
 
     /**
      * The administrator behind the connection, when that is a person: signed in to the panel, or
-     * connected through the consent screen (a token carrying `mcp:use`). A key that names its
-     * scopes was made for a program, and the local stdio server has nobody behind it at all —
-     * neither speaks for a person.
+     * connected through the consent screen (a token carrying `mcp:use`). A key was made for a
+     * program — one issued without scopes carries `mcp:use` too, which is why it is asked about
+     * by what it is rather than by what it carries — and the local stdio server has nobody
+     * behind it at all; neither speaks for a person.
      */
     private function person(?Authenticatable $user): Actor
     {
@@ -524,7 +527,10 @@ final class TasksTools
             throw new ToolFailure('Nobody is signed in on this connection. An agent names itself with `agent`; a person\'s decision needs a person\'s connection.');
         }
 
-        if (Scopes::tokenOf($user) !== null && ! (method_exists($user, 'tokenCan') && $user->tokenCan(Scopes::OAUTH))) {
+        $token = Scopes::tokenOf($user);
+        $consented = method_exists($user, 'tokenCan') && $user->tokenCan(Scopes::OAUTH);
+
+        if ($token !== null && (! $consented || Container::getInstance()->make(Keys::class)->isKey($user))) {
             throw new ToolFailure('This key was issued for a program, not a person. Name the agent with `agent`; a person\'s decision needs a person\'s connection.');
         }
 

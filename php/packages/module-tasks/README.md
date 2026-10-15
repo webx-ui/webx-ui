@@ -72,7 +72,8 @@ php artisan webx:mcp:token --name=worker --scopes=tasks:read,tasks:work
 php artisan webx:mcp:token --name=dispatcher --scopes=tasks:read,tasks:work,tasks:review
 ```
 
-A stage marked `human` is accepted only over a person's connection, never with such a key.
+A stage marked `human` is accepted only over a person's connection, never with a key — whatever its
+scopes. A key is issued in the panel under _Administrators → Keys_ or by `webx:mcp:token`.
 
 ## Notifications
 

@@ -646,14 +646,15 @@ final class McpTest extends TestCase
             ->json('result.tools.*.name');
 
         $this->assertContains('blocks_list', $listed);
+        // Out of the token's scopes is out of the list, as a tool behind a permission is.
+        $this->assertNotContains('blocks_create', $listed);
 
         $create = $this->rpc('tools/call', ['name' => 'blocks_create', 'arguments' => ['slug' => 'hero', 'title' => 'Hero']]);
 
         $this->bearing($editor, ['blocks:read'])
             ->postJson('/api/cms/mcp', $create)
-            ->assertOk()
-            ->assertJsonPath('result.isError', true)
-            ->assertJsonPath('result.content.0.text', static fn (string $text): bool => str_contains($text, '[blocks:write]'));
+            ->assertBadRequest()
+            ->assertJsonPath('error.message', 'Tool [blocks_create] not found.');
 
         $this->assertSame(0, Block::query()->count());
 

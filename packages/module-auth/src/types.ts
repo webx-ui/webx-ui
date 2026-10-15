@@ -154,3 +154,48 @@ export interface Connections {
 }
 
 export type ConnectionScope = 'mine' | 'all'
+
+/**
+ * A key for a program, as `GET /api/cms/auth/keys` answers it.
+ *
+ * `user` is who the key acts as; `created_by` is who issued it, and is null for a key issued in
+ * a terminal. `everything` stands for `mcp:use` — whatever the administrator may do, modules
+ * installed later included. The secret is never here: it is shown once, when the key is issued.
+ */
+export interface McpKey {
+  id: number
+  name: string
+  user: { id: number; name: string | null }
+  created_by: { id: number; name: string | null } | null
+  scopes: string[]
+  everything: boolean
+  state: 'live' | 'expired' | 'revoked'
+  created_at: string | null
+  expires_at: string | null
+  last_used_at: string | null
+  revoked_at: string | null
+  [key: string]: unknown
+}
+
+/** The list, with what a key may be issued with. */
+export interface McpKeys {
+  data: McpKey[]
+  /** Every scope the server would accept, `mcp:use` — everything — among them. */
+  scopes: string[]
+  /** The longest a key may live, in days. */
+  maxDays: number
+}
+
+/** What issuing a key takes. No scopes means everything the administrator may do. */
+export interface McpKeyInput {
+  name: string
+  admin: number
+  scopes: string[]
+  days: number
+}
+
+/** A key just issued, and the one moment its secret exists outside the program. */
+export interface IssuedMcpKey {
+  key: McpKey
+  token: string
+}

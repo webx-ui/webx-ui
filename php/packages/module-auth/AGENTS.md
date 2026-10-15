@@ -26,25 +26,26 @@ registered in `webx-ui/module-admin` — read their guides for those.
   `admins:read`, `admins:write`, `admins:audit`. No tool sets a password, creates an account or
   issues a token.
 - **Commands** `webx:admin` (`--name`, `--email`, `--super`; password from `WEBX_ADMIN_PASSWORD`
-  when nobody is there to ask) and `webx:mcp:token` (`--name`, `--scopes`, `--admin`, `--json`,
-  `--revoke-existing`).
+  when nobody is there to ask) and `webx:mcp:token` (`--name`, `--scopes`, `--admin`, `--days`,
+  `--json`, `--revoke-existing`) — the same key the panel issues under Administrators → Keys
+  (`/api/cms/auth/keys`, behind `admins.manage`), listed and revoked there.
 - **Events** `AdminLoggedIn`, `AdminLoggedOut`, `AdminLoginFailed`.
 
 ## Change it without forking
 
-| You want                                   | Do this                                                                                |
-| ------------------------------------------ | -------------------------------------------------------------------------------------- |
-| The first administrator                    | `php artisan webx:admin` — the first account is always super                           |
-| A role                                     | a `Role` row in a seeder (`slug`, `name`, `permissions`); the panel only assigns roles |
-| An account an agent may connect as         | a role with just the permissions it needs, not `is_super`                              |
-| A key for a script or CI                   | `php artisan webx:mcp:token --name=ci --admin=... --scopes=pages:write`                |
-| Your own middleware stack on the panel API | `'protect_panel' => false` in `config/webx-auth.php`, add `cms.auth` to your stack     |
-| Another sign-in rate limit                 | `'throttle'` (`attempts,minutes`, default `6,1`)                                       |
-| The panel's sign-in screen at another path | `'login_path'`, matching the `path` option of the `auth()` plugin                      |
-| Another consent screen                     | `php artisan vendor:publish --tag=webx-auth-views`                                     |
-| Other words in the panel                   | `php artisan vendor:publish --tag=webx-auth-lang`                                      |
-| Publish the config                         | `php artisan vendor:publish --tag=webx-auth-config`                                    |
-| React to sign-ins                          | listen to `WebxUi\Auth\Events\AdminLoggedIn` / `AdminLoginFailed`                      |
+| You want                                   | Do this                                                                                 |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| The first administrator                    | `php artisan webx:admin` — the first account is always super                            |
+| A role                                     | a `Role` row in a seeder (`slug`, `name`, `permissions`); the panel only assigns roles  |
+| An account an agent may connect as         | a role with just the permissions it needs, not `is_super`                               |
+| A key for a script or CI                   | Administrators → Keys, or `php artisan webx:mcp:token --name=ci --admin=... --days=365` |
+| Your own middleware stack on the panel API | `'protect_panel' => false` in `config/webx-auth.php`, add `cms.auth` to your stack      |
+| Another sign-in rate limit                 | `'throttle'` (`attempts,minutes`, default `6,1`)                                        |
+| The panel's sign-in screen at another path | `'login_path'`, matching the `path` option of the `auth()` plugin                       |
+| Another consent screen                     | `php artisan vendor:publish --tag=webx-auth-views`                                      |
+| Other words in the panel                   | `php artisan vendor:publish --tag=webx-auth-lang`                                       |
+| Publish the config                         | `php artisan vendor:publish --tag=webx-auth-config`                                     |
+| React to sign-ins                          | listen to `WebxUi\Auth\Events\AdminLoggedIn` / `AdminLoginFailed`                       |
 
 ## Do not
 

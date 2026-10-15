@@ -27,8 +27,8 @@ final class ExchangeCheck implements Check
 
         foreach ($this->columns->renamed() as $code => $as) {
             $found[] = $as === null
-                ? Diagnosis::warn('Catalogue exchange', "the column [{$code}] of a property is taken, and so is [p_{$code}]: files cannot name this property until its code is changed.")
-                : Diagnosis::warn('Catalogue exchange', "[{$code}] is a column of the catalogue already, so the property of that code is [{$as}] in files — change the property's code if files should name it [{$code}].");
+                ? Diagnosis::content('Catalogue exchange', "the column [{$code}] of a property is taken, and so is [p_{$code}]: files cannot name this property until its code is changed.")
+                : Diagnosis::content('Catalogue exchange', "[{$code}] is a column of the catalogue already, so the property of that code is [{$as}] in files — change the property's code if files should name it [{$code}].");
         }
 
         return $found;

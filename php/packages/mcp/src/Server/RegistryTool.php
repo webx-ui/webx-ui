@@ -17,6 +17,7 @@ use WebxUi\Admin\History\HistoryContext;
 use WebxUi\Mcp\Calls\Recorder;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Grants\Grants;
+use WebxUi\Mcp\Keys\Keys;
 use WebxUi\Mcp\Permissions;
 use WebxUi\Mcp\Registry\BoundTool;
 use WebxUi\Mcp\Scopes;
@@ -39,8 +40,9 @@ final class RegistryTool extends McpTool
      *
      * An agent shown forty tools and refused on half of them spends its attempts and tells
      * the person it cannot do what it was never going to be allowed to. So a tool the caller
-     * may not use — one behind a permission they do not hold, or one that writes on a
-     * connection made read-only — is left out of the list rather than listed and refused.
+     * may not use — one behind a permission they do not hold, one that writes on a connection
+     * made read-only, or one outside the scopes a key was issued with — is left out of the list
+     * rather than listed and refused.
      * `laravel/mcp` asks this through the container, and on the local stdio server the
      * request it resolves is an empty one with no user, which is right: there is nobody
      * there to refuse, so everything is shown.
@@ -49,7 +51,10 @@ final class RegistryTool extends McpTool
     {
         $user = $request->user();
 
-        return Permissions::allows($user, $this->bound)
+        $scoped = array_filter($this->bound->scopes(), static fn (string $scope): bool => Scopes::allows($user, $scope));
+
+        return $scoped !== []
+            && Permissions::allows($user, $this->bound)
             && $grants->refusal($user, $this->bound->tool) === null;
     }
 
@@ -128,6 +133,9 @@ final class RegistryTool extends McpTool
      */
     private function attempt(?Authenticatable $user, array $arguments): Response|ResponseFactory
     {
+        // A key's "last used" moves with every call it makes, refused or not: an attempt is use.
+        Container::getInstance()->make(Keys::class)->forUser($user);
+
         $scopes = $this->bound->scopes();
 
         if (array_filter($scopes, static fn (string $scope): bool => Scopes::allows($user, $scope)) === []) {

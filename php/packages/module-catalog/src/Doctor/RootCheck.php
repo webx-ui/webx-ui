@@ -55,6 +55,6 @@ final class RootCheck implements Check
 
         $addresses = implode(', ', array_map(static fn (string $path): string => '/'.$path, $taken));
 
-        return [Diagnosis::warn('Catalogue root', "/{$prefix} is the catalogue, so these addresses never open: {$addresses} — give them another address, or move the root with WEBX_CATALOG_ROOT_PREFIX.")];
+        return [Diagnosis::content('Catalogue root', "/{$prefix} is the catalogue, so these addresses never open: {$addresses} — give them another address, or move the root with WEBX_CATALOG_ROOT_PREFIX.")];
     }
 }

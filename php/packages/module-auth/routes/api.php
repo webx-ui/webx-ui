@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Auth\Http\Controllers\AdminController;
 use WebxUi\Auth\Http\Controllers\ConnectionController;
 use WebxUi\Auth\Http\Controllers\CsrfCookieController;
+use WebxUi\Auth\Http\Controllers\KeyController;
 use WebxUi\Auth\Http\Controllers\McpCallController;
 use WebxUi\Auth\Http\Controllers\MeController;
 use WebxUi\Auth\Http\Controllers\PanelLocaleController;
@@ -60,6 +61,12 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
                 Route::post('admins', [AdminController::class, 'store'])->name('admins.store');
                 Route::patch('admins/{admin}', [AdminController::class, 'update'])->name('admins.update');
                 Route::delete('admins/{admin}', [AdminController::class, 'destroy'])->name('admins.destroy');
+
+                // Keys for programs, which act as the administrator they name: issuing one is
+                // speaking for somebody, the very thing this permission is about.
+                Route::get('keys', [KeyController::class, 'index'])->name('keys.index');
+                Route::post('keys', [KeyController::class, 'store'])->name('keys.store');
+                Route::delete('keys/{key}', [KeyController::class, 'destroy'])->name('keys.destroy');
             });
 
             // What agents did, behind the permission the sign-in trail is behind: the same

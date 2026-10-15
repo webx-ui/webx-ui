@@ -170,7 +170,16 @@ import {
   type ItemRecord,
   type MenuRecord,
 } from './menus'
-import { adminRows, endConnection, listCalls, listConnections, roles as adminRoles } from './agents'
+import {
+  adminRows,
+  endConnection,
+  issueKey,
+  listCalls,
+  listConnections,
+  listKeys,
+  revokeKey,
+  roles as adminRoles,
+} from './agents'
 import { dictionary, panelLocales } from './lang'
 import {
   createRecipe,
@@ -2132,6 +2141,12 @@ on('GET', '/auth/connections', ({ query }) => listConnections(query))
 on('DELETE', '/auth/connections/(\\d+)', ({ params }) => ({
   data: endConnection(Number(params[0])),
 }))
+
+on('GET', '/auth/keys', () => listKeys())
+
+on('POST', '/auth/keys', ({ body }) => issueKey(body))
+
+on('DELETE', '/auth/keys/(\\d+)', ({ params }) => ({ data: revokeKey(Number(params[0])) }))
 
 on('GET', '/inbox/forms/(\\d+)/submissions', ({ params, query }) => {
   const formId = Number(params[0])

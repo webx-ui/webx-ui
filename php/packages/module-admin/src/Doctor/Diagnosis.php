@@ -10,6 +10,10 @@ namespace WebxUi\Admin\Doctor;
  * A failure carries what to do about it in the same sentence, because the person reading this
  * is usually deploying and has never seen the code. "Storage: failed" sends them looking; "run
  * php artisan storage:link" does not.
+ *
+ * A warning is either about how the site is built or about what is in it. The second sort — a
+ * shared block nobody placed, a property code that clashes with a column — is mended in the panel
+ * by an editor, not by whoever deploys, so `--strict` lets it through and says it apart.
  */
 final readonly class Diagnosis
 {
@@ -23,6 +27,7 @@ final readonly class Diagnosis
         public string $state,
         public string $subject,
         public string $detail,
+        public bool $content = false,
     ) {}
 
     public static function ok(string $subject, string $detail): self
@@ -34,6 +39,15 @@ final readonly class Diagnosis
     public static function warn(string $subject, string $detail): self
     {
         return new self(self::WARN, $subject, $detail);
+    }
+
+    /**
+     * A warning about the content of the site rather than its setup: mended in the panel, so it
+     * never stops a deploy, not even a strict one.
+     */
+    public static function content(string $subject, string $detail): self
+    {
+        return new self(self::WARN, $subject, $detail, true);
     }
 
     /** Something broken, said together with the one command that mends it. */

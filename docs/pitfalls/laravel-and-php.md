@@ -777,6 +777,15 @@ Model` в файле без `use Illuminate\Database\Eloquent\Model` сравн�
   или гостю: экран согласия, редирект гостя на `/cms/login?next=…`. Возврат после входа
   доказывает тест плагина `auth()`, а не клик.
 
+- **Срок personal-токена не меняется правкой `expires_at` в базе.** Срок подписан в JWT (`exp`), гард
+  читает подпись, а не строку. Задаётся до выпуска: `Passport::personalAccessTokensExpireIn()` —
+  Passport читает его каждый раз, когда собирает сервер для `createToken()`, — и сразу
+  возвращается назад (`KeyIssuer`). Глобальный `tokensExpireIn` (час OAuth) на personal-токены не
+  действует. Проверка — вызов MCP выпущенным токеном и `expires_at` в ответе.
+- **В гарде Passport 13 токен — `AccessToken` из подписи, а не модель `Token`.** У него нет
+  `getKey()` и связи `client`: id — `oauth_access_token_id`, клиент — `oauth_client_id`. Код,
+  написанный под модель, молча находит «ничего» — так `last_used_at` ключа не двигался.
+
 ## Manticore
 
 - **Ответы `Http::pool` приходят в порядке готовности, а не в порядке запросов.** Ключи у них

@@ -60,7 +60,8 @@ add up to.
 ## Agents
 
 Agents work the queue over MCP. A person connects their assistant over OAuth and acts as
-themselves; a program gets a key with scopes and names its session with the `agent` argument:
+themselves; a program gets a [key](./agents.md#a-key-for-a-program) — in the panel under
+_Administrators → Keys_, or on the server — and names its session with the `agent` argument:
 
 ```bash
 php artisan webx:mcp:token --name=worker --scopes=tasks:read,tasks:work

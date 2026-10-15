@@ -17,8 +17,8 @@ export interface AdminsOptions {
   resolveAvatar?: (key: string) => Promise<string | null>
 }
 
-/** Which of the three views of the administrators section a route opens. */
-export type AdminsView = 'admins' | 'calls' | 'connections'
+/** Which of the four views of the administrators section a route opens. */
+export type AdminsView = 'admins' | 'calls' | 'connections' | 'keys'
 
 /**
  * The administrators, as a section of the panel.
@@ -44,7 +44,7 @@ export function admins(options: AdminsOptions = {}): AdminModule {
     path,
     routes: [
       { path, name: 'webx.admins', component: page('admins') },
-      // What their agents did, and which agents they let in: two more views of the same
+      // What their agents did, which agents they let in, and their keys: more views of the same
       // section, each with an address of its own so that its filters survive a trip to the
       // people and back.
       { path: `${path}/calls`, name: 'webx.admins.calls', component: page('calls') },
@@ -53,6 +53,9 @@ export function admins(options: AdminsOptions = {}): AdminModule {
         name: 'webx.admins.connections',
         component: page('connections'),
       },
+      // Keys for programs: a connection without a browser, issued by somebody who manages
+      // the people it acts as.
+      { path: `${path}/keys`, name: 'webx.admins.keys', component: page('keys') },
     ],
   }
 }

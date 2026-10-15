@@ -18,7 +18,7 @@ export interface TasksApi {
   task(id: number): Promise<TaskDetail>
   /** A draft with its stages. */
   create(input: TaskInput): Promise<TaskDetail>
-  /** Within the rules of §3: refused with 409 and the reason when the task has started. */
+  /** Within the rules of §3: refused with 422 and the reason when the task has started. */
   save(id: number, input: TaskInput): Promise<TaskDetail>
   ready(id: number): Promise<TaskDetail>
   cancel(id: number, reason?: string): Promise<TaskDetail>
@@ -34,7 +34,7 @@ export interface TasksApi {
     values: Record<string, unknown>,
     forgetToken?: boolean,
   ): Promise<NotificationSettings>
-  /** Sends one message now; refused with 409 and Telegram's own words when it does not get through. */
+  /** Sends one message now; refused with 422 and Telegram's own words when it does not get through. */
   testNotice(): Promise<string>
 }
 
