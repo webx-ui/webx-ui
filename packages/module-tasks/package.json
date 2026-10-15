@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-tasks",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A queue of work between people and AI agents for the WebX UI admin panel: tasks, ordered stages, reports, review and the journal.",
   "license": "MIT",
   "type": "module",

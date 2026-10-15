@@ -1,5 +1,12 @@
 # @webx-ui/module-catalog
 
+## 0.8.8
+
+### Patch Changes
+
+- Updated dependencies [be30498]
+  - @webx-ui/module-admin@0.27.0
+
 ## 0.8.7
 
 ### Patch Changes
