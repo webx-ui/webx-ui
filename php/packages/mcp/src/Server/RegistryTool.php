@@ -128,11 +128,13 @@ final class RegistryTool extends McpTool
      */
     private function attempt(?Authenticatable $user, array $arguments): Response|ResponseFactory
     {
-        $scope = $this->bound->scope();
+        $scopes = $this->bound->scopes();
 
-        if (! Scopes::allows($user, $scope)) {
+        if (array_filter($scopes, static fn (string $scope): bool => Scopes::allows($user, $scope)) === []) {
+            $needed = implode('] or [', $scopes);
+
             return Response::error(
-                "The token behind this call does not carry the [{$scope}] scope, which [{$this->name()}] needs."
+                "The token behind this call does not carry the [{$needed}] scope, which [{$this->name()}] needs."
             );
         }
 

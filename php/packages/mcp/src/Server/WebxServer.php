@@ -88,7 +88,7 @@ final class WebxServer extends Server
         ];
 
         $this->resources = array_map(
-            static fn (McpResource $resource): RegistryResource => new RegistryResource($resource),
+            static fn (McpResource $resource): RegistryResource => RegistryResource::for($resource),
             $registry->resources(),
         );
 

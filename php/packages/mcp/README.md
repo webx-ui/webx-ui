@@ -136,6 +136,17 @@ Tool::mutating('merge', '…', $handler, permission: 'blog.taxonomy.manage');
 Both are checked in the same place as the scope, before the handler; and `tools/list` leaves out
 what the caller may not use, so an agent is never shown a tool only to be refused it.
 
+A scope can be named the same way, and several mean "any of these" too — for a tool that two
+kinds of key may use, such as a comment both the agent that plans and the agent that works may
+leave:
+
+```php
+Tool::mutating('comment', '…', $handler, scope: ['tasks:write', 'tasks:work']);
+```
+
+A resource whose address has a `{variable}` in it — `tasks://projects/{slug}` — is served as a
+resource template, and its handler gets the variable among its arguments.
+
 A tool without a description is refused, and so is a name a model could not call — the name goes
 to the agent verbatim, so it must be lowercase letters, digits and underscores.
 
