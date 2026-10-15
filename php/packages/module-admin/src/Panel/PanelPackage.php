@@ -16,6 +16,8 @@ final readonly class PanelPackage
     /**
      * @param  array<string, string>  $npm  Package name to the range the site should ask for.
      * @param  list<string>  $register  The calls that go into `modules: []`.
+     * @param  array<string, true|list<string>>  $settings  The tabs of the site's settings the package prints
+     *                                                      (`extra.webx.settings`) — read by module-settings.
      */
     public function __construct(
         public string $name,
@@ -24,6 +26,7 @@ final readonly class PanelPackage
         public ?string $import = null,
         public ?string $style = null,
         public array $register = [],
+        public array $settings = [],
     ) {}
 
     /**
@@ -58,7 +61,36 @@ final readonly class PanelPackage
             import: is_string($panel['import'] ?? null) ? $panel['import'] : null,
             style: is_string($panel['style'] ?? null) ? $panel['style'] : null,
             register: array_values(array_filter($register, is_string(...))),
+            settings: self::settings($webx['settings'] ?? null),
         );
+    }
+
+    /**
+     * `extra.webx.settings`: each tab `true` or the list of its sections; anything else is dropped.
+     *
+     * @return array<string, true|list<string>>
+     */
+    private static function settings(mixed $settings): array
+    {
+        if (! is_array($settings)) {
+            return [];
+        }
+
+        $read = [];
+
+        foreach ($settings as $tab => $sections) {
+            if (! is_string($tab)) {
+                continue;
+            }
+
+            if ($sections === true) {
+                $read[$tab] = true;
+            } elseif (is_array($sections)) {
+                $read[$tab] = array_values(array_filter($sections, static fn (mixed $one): bool => is_string($one) && $one !== ''));
+            }
+        }
+
+        return $read;
     }
 
     /** Whether this package puts anything into the panel's entry file. */

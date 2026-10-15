@@ -14,11 +14,8 @@ that a module draws its form from the same parts and a theme paints one set of c
 | **Inbox**                      | the form builder in the panel, intake, spam protection, captcha, letters            |
 | **sign-in, account, checkout** | their own forms in Blade from the same fields                                       |
 
-This page is the whole of it: **the fields**, **the form** around them — sending in place over a
-plain POST, the errors by field, one answer for every form — and **the checks in the browser** by
-the server's own rules and words, the phone mask and the files; **suggestions while typing** in a
-search box or a field; then three forms written out in
-full — a sign-in, a checkout step and a form of the Inbox, which is drawn by the same parts.
+Below: the fields, the form, the checks in the browser, suggestions while typing, then three forms
+written out in full — a sign-in, a checkout step and a form of the Inbox.
 
 The specification is §17 of
 [`docs/architecture/WEBX_UI_WIDGETS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md).
@@ -462,23 +459,8 @@ Tokens `--webx-suggest-height`, `-radius`, `-border`, `-bg`, `-focus`, `-panel-b
 `$action` and `$suggest` are `/catalog/search` and `/catalog/suggest` in the page's language.
 `GET /catalog/suggest?q=` (`webx.catalog.suggest`) asks the same engine the search page asks — what
 is not on the site is not found, a correction is said — and answers the view
-`webx-catalog::suggest` (`noindex`, `no-store`; 204 for nothing asked):
-
-```php
-// WebxUi\Catalog\Storefront\Suggestions, in short
-$result = $this->catalog->engine()->search(new CatalogQuery(
-    locale: $locale, context: FilterContext::SEARCH, search: $term, perPage: $limit, filter: $context,
-));
-
-return response(view('webx-catalog::suggest', [
-    'term' => $term,
-    'products' => $this->listing->products($result->ids),
-    'total' => $result->total,
-    'corrected' => $result->corrected,
-    'all' => $searchPageFor($result->corrected ?? $term),
-    'priced' => config('webx-catalog.price.enabled'),
-])->render());
-```
+`webx-catalog::suggest` (`noindex`, `no-store`; 204 for nothing asked; the code is
+`WebxUi\Catalog\Storefront\Suggestions`):
 
 ```blade
 {{-- webx-catalog::suggest — a theme overrides it --}}
@@ -501,8 +483,7 @@ return response(view('webx-catalog::suggest', [
 
 «Products (52)», five cards with a picture and a price, «See all results: 52» — every card and
 «see all» an option. `suggest.limit` (`WEBX_CATALOG_SUGGEST_LIMIT`, 6) is how many cards. A header
-of the site puts the same box anywhere: `<x-webx-suggest :action="route('webx.catalog.search')"
-:source="route('webx.catalog.suggest')" :recent="5" />`.
+of the site puts the same box anywhere — the tag at the top of this section.
 
 ## Example: a sign-in
 

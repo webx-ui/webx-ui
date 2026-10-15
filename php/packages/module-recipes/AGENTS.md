@@ -86,9 +86,8 @@ Without a theme the catalogue prints a smaller look of its own inline (`partials
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-recipes`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-recipes` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not set the prefix empty: recipes at the root would fight the pages over every address, so
   the package refuses to boot. Change it with `webx:routes:rebuild`, which leaves redirects.
 - Do not add a route for the prefix or a recipe in `routes/web.php`: the registry owns them. To
@@ -97,16 +96,12 @@ Without a theme the catalogue prints a smaller look of its own inline (`partials
   Write its fields.
 - Do not type ingredients or steps as loose text: the `Recipe` markup reads one `<li>` per
   ingredient and per step. Use lists.
-- Do not write without the `revision` recipes_get gave you: `recipes_update` refuses a write
-  with none and refuses a stale one. Read again and redo the change; do not retry blindly.
-  `force: true` writes without one and is for a script that means to overwrite, not for an
-  agent working beside people. `recipes_get` names in `being_edited_by` who has the recipe open
-  in the panel right now — tell your user before writing under them. Their editor merges your
-  write with theirs field by field, and a draft written over by somebody else is kept: the
-  panel's History lists it under Drafts, and «Restore» puts it back.
-- `recipes_publish`, `recipes_unpublish`, `recipes_discard`, `recipes_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
-  one is refused, and while somebody has the recipe open in the panel (`being_edited_by`) one is
-  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
+- Do not write without the `revision` recipes_get gave you: `recipes_update` refuses a write with
+  none or a stale one — read again and redo the change, do not retry blindly. `force: true` is for
+  a script that means to overwrite, not for an agent working beside people. `being_edited_by` names
+  who has the recipe open in the panel — tell your user before writing under them; a draft written
+  over is kept in the panel's History › Drafts. `recipes_publish`, `recipes_unpublish`, `recipes_discard`, `recipes_delete` take the `revision` too: a
+  stale one is refused, and while somebody has the recipe open one is required.
 - Do not expect a saved change on the site: categories, nutrients, services and similar recipes
   wait in the draft with the text until `recipes_publish`.
 - Do not delete rows with SQL: deleting bins a recipe and releases its address; a raw delete
@@ -114,8 +109,8 @@ Without a theme the catalogue prints a smaller look of its own inline (`partials
 - Do not print `<title>` in a site's copy of a view: with an empty SEO card the recipe and the
   category name the page themselves (`seoFallback()` — the name through the title template, the
   lead, the first photo or the picture), and the index is called by the section.
-  A copy published before still has an `@if ($meta->title === null)` block and the `$seo` /
-  `$meta` lines for it: delete them, they never print any more.
+  An old copy's `@if ($meta->title === null)` block and its `$seo` / `$meta` lines are dead —
+  delete them.
 
 ## Check your work
 

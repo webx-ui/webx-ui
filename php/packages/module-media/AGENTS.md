@@ -34,7 +34,7 @@ guides when the question is about one of those. An entity's own attachments are 
   `media_optimize_images`, `media_delete_files`. Scopes `media:read`, `media:write`. A refusal is
   an MCP error, not an `ok: false` answer.
 - Also registered: the panel section `media` (group `system`), demo files (`resources/demo`), and
-  audit checks `media.missing_file` and `media.heavy` when `webx-ui/module-audit` is installed.
+  audit checks `media.missing_file`, `media.heavy`, `media.orphan_thumbs` when `webx-ui/module-audit` is installed.
 
 ## Change it without forking
 
@@ -60,9 +60,8 @@ a migration of your own, bytes and rows together.
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-media`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-media` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not store a file's URL in a field or a template: addresses depend on the disk, signed
   addresses expire, and a cache-busting version changes after an edit. Store the `path` the field
   gives you and let it resolve `url` and `thumb` on read.
@@ -70,14 +69,11 @@ a migration of your own, bytes and rows together.
   `hash`, `mime`, `size`, dimensions and `name_lower` that search and duplicates rely on. Upload
   through the panel, the API or `media_upload_from_url`.
 - Do not delete rows with SQL: `media_delete_files` (or the panel) removes the bytes, the
-  edited original and every preview (`media/thumbs/<key>`) with the row. It refuses a file the site still uses and says where (a foreign
-  key into `media_files`, or the file's key inside a text or JSON column); `force: true` deletes
-  anyway — replace the file in those places first. A module that keeps files where the schema
-  cannot show them tags a `WebxUi\Media\Usage\UsageSource` with `MediaUsage::TAG`. The panel's delete keeps the same rule: `DELETE files/{id}` and
-  `POST files/delete` answer `409 files_in_use` with where unless `force`, and `POST files/usage`
-  and `GET directories/{id}/contents` say it before anything is asked. A raw delete leaves
-  orphaned bytes and previews; a deleted file on the disk leaves a row the audit reports as
-  `media.missing_file`.
+  edited original and every preview with the row. It refuses a file the site still uses and says
+  where (a foreign key into `media_files`, or the key inside a text or JSON column) — the API
+  answers `409 files_in_use`; `force: true` deletes anyway, so replace the file there first. A
+  module that keeps files where the schema cannot show them tags a
+  `WebxUi\Media\Usage\UsageSource` with `MediaUsage::TAG`.
 - Do not try to move or delete the root folder — it is refused (`root_immutable`). Deleting a
   non-empty folder answers `409` with counts until `?force=1`; ask the person first, there is no
   bin. `media_delete_directory` deletes only an empty folder, on purpose.
@@ -95,8 +91,7 @@ a migration of your own, bytes and rows together.
   site needs the `storage` link for that address to answer.
 - With MCP: `media_list_directories`, then `media_list_files` or `media_get_file` for the `url`
   and `thumb`; every mutating tool takes `dry_run: true` first.
-- With `webx-ui/module-audit`: `media.missing_file` lists rows whose bytes are gone, `media.heavy`
-  the images too heavy for a page.
+- With `webx-ui/module-audit`: `media.missing_file`, `media.heavy`, `media.orphan_thumbs`.
 
 ## Read more
 

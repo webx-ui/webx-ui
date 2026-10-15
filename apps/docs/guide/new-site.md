@@ -26,8 +26,8 @@ minutes, most of it `npm install`.
 
 **Where the server is, is not among the questions on purpose.** What `.env` already says, or
 `127.0.0.1:3306` as `root`, is reached for before anything about the database is asked, and a
-machine that answers is never asked about it. A machine that does not — OSPanel gives each of
-its database modules a loopback address of its own — is told so and asked for the host, the
+machine that answers is never asked about it. A machine that does not — a local stack may give
+each database server a loopback address of its own — is told so and asked for the host, the
 port, the user and the password, with what was just tried as the defaults:
 
 ```
@@ -340,6 +340,9 @@ common is that none of them announce themselves:
   a panel with no front end. A `throttle:<name>` nobody declared is read by Laravel as a _number_
   of attempts — zero — so the address answers 429 to everyone, and only ever after
   `route:cache`.
+- **PUT and DELETE.** A web server that refuses every method but GET and POST leaves a panel
+  that reads and cannot save. A warning, with what to switch on — see
+  [a host that refuses PUT](#a-host-that-refuses-put).
 - **Agent access.** With `webx-ui/mcp` installed: Passport's keys and tables. Without the keys
   the guard cannot be built, so a call with no token answers 500 where it should answer 401.
 - **The site password.** [The gate](#a-password-over-the-site-while-it-is-tested) switched on
@@ -463,6 +466,52 @@ disconnects every agent that was connected, with nothing anywhere saying why.
 again. So the entrypoint creates the directories under `storage` on every boot: a release that
 starts writing somewhere new finds nothing there on a site that has been running since before
 it, and what fails is whatever first tried to write.
+
+## A host that refuses PUT
+
+Some shared hosts let only GET and POST through to PHP: mod_security rules on cPanel, a
+`<LimitExcept GET POST>` in the Apache config. The web server answers everything else itself,
+before Laravel sees the request.
+
+**The symptom** is a panel that opens, signs in and shows every list, and then cannot save or
+delete anything: each save answers 403 or 405, which looks like a missing permission. The
+browser's network tab shows the `PUT`, `PATCH` or `DELETE` request refused, often with the web
+server's own HTML page as the body rather than the panel's JSON.
+
+**The cure** is on the front end. `methodOverride` in `createAdmin()`, in the panel's entry file
+(`resources/js/admin.ts` in the skeleton), sends those requests as POST and names the real
+method alongside it:
+
+```ts
+createAdmin({
+  // …
+  methodOverride: true,
+})
+```
+
+| Value              | What is sent                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------- |
+| `false` (default)  | the method as it is                                                                   |
+| `true`, `'header'` | `POST` with the header `X-HTTP-Method-Override: PUT`                                  |
+| `'field'`          | `POST` with `_method: "PUT"` in the body — for a host whose WAF strips the header too |
+
+Laravel reads both on a POST and routes the request as if it had come with its real method; the
+CSRF check works as before, and the server side needs nothing. Rebuild the bundle after the
+change. Start with `true`; if saving still fails with the same refusal, use `'field'`.
+
+**To check**, run `php artisan webx:doctor` on the server. It sends a PUT and a DELETE to
+`/api/cms/method-probe` at `APP_URL`, an address that answers with a mark only Laravel puts on and
+changes nothing. A refusal without the mark came from the web server:
+
+```
+  ! PUT and DELETE: the web server refuses PUT 405, DELETE 405 before Laravel sees the request,
+    so the panel reads but cannot save or delete — pass `methodOverride: true` to createAdmin() …
+```
+
+It is a warning rather than a failure, because the site itself is fine. Once the entry file asks
+for the override, the same line turns into a tick. When the server cannot reach its own
+`APP_URL` — a container that does not know its public name, a certificate it does not trust —
+the check says it was not run, and stops nothing.
 
 ## A password over the site while it is tested
 

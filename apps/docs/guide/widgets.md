@@ -17,7 +17,7 @@ made by `webx:setup` with a theme has it already. Three rules hold for every wid
 - **It works without JavaScript.** A slider is a strip that scrolls, a lightbox a link to the
   picture, tabs are headings over their panels, a video a link to it, a map an address and a link.
 
-The specification, with every decision and how each piece went into code, is
+The specification is
 [`docs/architecture/WEBX_UI_WIDGETS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md).
 
 ## How a page gets the files
@@ -372,7 +372,7 @@ What a long page needs, each loading only where it stands:
 
 ## Forms
 
-The fields of every form of the site — `<x-webx-field>` of fifteen types, its value from `old()` and its error from `$errors` by a dotted name, the ARIA, the hints for an autofill — and the form around them, `<x-webx-form>`, sent in place over a plain POST with one answer for every form, `FormResponse`: [Forms](./forms).
+The fields of every form of the site — `<x-webx-field>` of fourteen types, its value from `old()` and its error from `$errors` by a dotted name, the ARIA, the hints for an autofill — and the form around them, `<x-webx-form>`, sent in place over a plain POST with one answer for every form, `FormResponse`: [Forms](./forms).
 
 ## Blocks
 
@@ -426,6 +426,7 @@ promise:
 | `widgets.toc_target`     | warning  | a link of a table of contents to an id the page does not have                                        | —                                                  |
 | `widgets.load_more_link` | warning  | "Show more" with a next page and no link to it — only a button, which no search engine presses       | —                                                  |
 | `widgets.zoom_link`      | warning  | a zoom that is no link and holds none — an override that lost it, or the attribute on a bare picture | —                                                  |
+| `widgets.form_script`    | warning  | a form of `<x-webx-form>` on a page that loads no `form.js` — no `@webxTheme` or `@webxWidgets`      | —                                                  |
 | `widgets.contact_both`   | notice   | the quick-contact button and the bottom bar on one page                                              | —                                                  |
 
 "Pasted into content" means a text block, a page's body or any field a module hands to the audit:

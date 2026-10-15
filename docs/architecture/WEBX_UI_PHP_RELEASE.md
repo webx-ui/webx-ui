@@ -1,169 +1,143 @@
-# WebX UI — как php-пакеты попадают на Packagist
+# WebX UI — как пакеты выпускаются: npm, Packagist и канал `next`
 
 Composer ставит пакет из его собственного репозитория: подпапку монорепо он видеть не умеет.
-Поэтому каждый пакет из `php/packages/` зеркалится в отдельный публичный репозиторий
-`github.com/webx-ui/<имя>`, и уже туда приезжает тег, который Packagist показывает как версию.
+Поэтому каждый пакет из `php/packages/` (и скелет `php/site`) зеркалится в отдельный публичный
+репозиторий `github.com/webx-ui/<имя>`, и уже туда приезжает тег, который Packagist показывает как
+версию.
 
 Публикации как таковой нет. **Версия существует ровно тогда, когда существует тег** в
 репозитории пакета. Секрет для публикации не нужен — нужно только право на запись в
-split-репозитории, и его даёт GitHub App организации.
+split-репозитории, и его даёт GitHub App организации. npm-пакеты публикуются из того же
+`release.yml` через Trusted Publishing (OIDC), тоже без токенов.
 
 ## Поток
 
 ```
-PR с changeset'ом на @webx-ui/php
-        │  merge
+PR с changeset'ом → очередь мержа → main
+        │
         ▼
-release.yml → changesets/action открывает «chore: version packages»
-        │  merge этого PR
+release.yml (push в main) → changesets/action открывает «chore: version packages»
+        │  мерж этого PR (тоже через очередь)
         ▼
 release.yml:
-   ├─ changeset version → php/package.json: 0.1.0
-   │                      scripts/sync-php-version.mjs правит внутренние констрейнты
-   ├─ changeset publish → npm-пакеты (php-пакет приватный, пропускается)
-   └─ тег php-v0.1.0 в монорепо
-        │  uses: ./.github/workflows/php-split.yml с tag: v0.1.0
+   ├─ тег php-v<версия> в монорепо (если версия в php/package.json новая)
+   └─ pnpm release = pnpm build && changeset publish → npm
+        │  uses: ./.github/workflows/php-split.yml с tag: v<версия>
         ▼
-php-split.yml → для каждого php/packages/<pkg>:
-        push содержимого в webx-ui/<pkg> + тег v0.1.0
+php-split.yml → для каждого php/packages/<pkg> и php/site:
+        push содержимого в webx-ui/<pkg> + тег v<версия> через API
         │  вебхук
         ▼
-Packagist: webx-ui/<pkg> 0.1.0
+Packagist: webx-ui/<pkg> <версия>
 ```
 
 Push в `main`, который трогает `php/**`, запускает `php-split.yml` без тега — зеркала держатся
 в актуальном состоянии между релизами.
 
+**Релизный PR открывает GitHub App**, а не `GITHUB_TOKEN`: ветка, запушенная `GITHUB_TOKEN`'ом,
+не запускает CI, и PR вставал в `action_required` до ручного approve. `release.yml` выпускает токен
+App (`actions/create-github-app-token`, та же App, что у сплита: `vars.PHP_SPLIT_APP_CLIENT_ID`,
+`secrets.PHP_SPLIT_APP_PRIVATE_KEY`) с `contents: write` и `pull-requests: write`; автор PR —
+`app/webx-ui-split`, его CI стартует сам. Auto-merge релизного PR сознательно не включён: это
+единственная кнопка «выпускаем», итерации идут через `next`.
+
 ## Версии
 
 Одна версия на все php-пакеты, как у `illuminate/*`. Её носит `php/package.json` — приватный
 npm-пакет `@webx-ui/php`, который существует только ради changesets: он не публикуется, но
-changesets его версионирует и пишет ему `CHANGELOG.md`.
+changesets его версионирует и пишет ему `CHANGELOG.md`. Правка в `php/packages/*` — changeset на
+`@webx-ui/php`.
 
-Зависимость между своими пакетами пишется как `^<версия>`;
-`scripts/sync-php-version.mjs` переписывает такие констрейнты в том же коммите, что и бамп, —
-разъехаться они не могут.
+Зависимость между своими пакетами пишется как `^<версия>`; `pnpm version-packages` после
+`changeset version` запускает `scripts/sync-php-version.mjs`, который переписывает такие
+констрейнты в том же коммите, что и бамп, — разъехаться они не могут.
 
-Пока `php/package.json` на `0.0.0`, шаг с тегом в `release.yml` ничего не делает: первый релиз
-надо выпустить осознанно, после того как репозитории созданы и пакеты отправлены на Packagist.
+## Канал `next` — показать ветку без релиза
 
-## Что сделать один раз на GitHub
+Цель — показать правку на хомлабе без version PR, гейта CI и тегов.
 
-1. **Создать пустые публичные репозитории** — по одному на пакет, имя ровно как во второй части
-   имени пакета:
+```bash
+gh workflow run release.yml --ref <ветка>            # опционально -f verify=true: typecheck + тесты
+```
 
-   ```bash
-   gh repo create webx-ui/nested-set --public \
-     --description "Read-only split of webx-ui/webx-ui — php/packages/nested-set"
-   ```
+Джоб `next` живёт в **том же `release.yml`** (`workflow_dispatch`): Trusted Publishing на npmjs.com
+привязан к имени файла воркфлоу, второй файл потребовал бы второго доверенного издателя на каждом
+пакете.
 
-   Без README и лицензии при создании: всё содержимое привезёт сплит. Пустой репозиторий
-   воркфлоу засеет первым коммитом сам — сам экшен сплита этого не умеет и молча пушит пустоту.
+- **npm** — `changeset version --snapshot next` (не коммитится) и `changeset publish --tag next
+--no-git-tag`. `latest` не трогается. `"snapshot": { "useCalculatedVersion": true }` в
+  `.changeset/config.json` даёт имя `0.33.3-next-<время>` — без него было бы `0.0.0-next-…`, и
+  `^0.33.0` у соседей его не принял бы. `workspace:^` pnpm подставляет при публикации, так что
+  снапшот согласован с тем, что уже в реестре.
+- **Двигаются только пакеты с changeset'ом на ветке и их зависимые.** Без changeset'а публиковать
+  нечего.
+- **Новый пакет через `next` не выйдет:** Trusted Publishing не создаёт имя, первая версия — руками
+  (`docs/pitfalls/release-and-ci.md`).
+- **Composer** — `php-split.yml` со входом `branch: next` пушит ветку `next` в каждое зеркало
+  (`dev-next` на Packagist, тем же вебхуком); тег на `next` не ставится никогда.
+  `sync-php-version.mjs` на снапшоте не запускается: `^0.37.1-next-…` Composer не разбирает.
+- **Гейта нет — сознательно.** Сборка обязана пройти; остальное — вход `verify`.
 
-2. **GitHub App на запись в зеркала.** Не личный токен: App не протухает, не привязан к одному
-   человеку, и новое зеркало не требует потом никаких действий.
+**Сторона сайта** — `node scripts/packages.mjs next` в репозитории демо-сайта:
 
-   https://github.com/organizations/webx-ui/settings/apps/new
-   - GitHub App name: `webx-ui-split` (имя глобально уникальное)
-   - Homepage URL: `https://github.com/webx-ui/webx-ui`
-   - Webhook → снять галку **Active**: события нам не нужны
-   - Permissions → Repository permissions → **Contents: Read and write**, больше ничего
-     (`Metadata: Read-only` добавится сам)
-   - Where can this GitHub App be installed → **Only on this account**
-   - Create GitHub App → запомнить **Client ID** (вида `Iv23li…`, он публичный) →
-     Generate a private key, скачается `.pem`
-   - Install App → организация `webx-ui` → **All repositories**
+- npm — для каждого пакета точная версия `next`, если она новее `latest`, иначе `latest`. Точная,
+  а не тег: хомлаб собирает то, что закоммичено. Сравнение нужно, потому что `next` релизом не
+  сбрасывается и через неделю указывает на старое.
+- composer — каждый `webx-ui/*`, включая транзитивные, просится инлайн-алиасом
+  `dev-next as <версия>.99`: алиас корня действует и на транзитивные требования.
+- `check` считает `next` допустимым для коммита, но пишет отдельно. После настоящего релиза —
+  `node scripts/packages.mjs registry`.
 
-   «All repositories» тут не расточительность: воркфлоу выпускает токен на каждый job отдельно
-   и сужает его до одного репозитория (`repositories:` + `permission-contents: write`), так что
-   у каждого прогона прав ровно на своё зеркало. Взамен новое зеркало подхватывается само.
+## CI
 
-3. **Положить Client ID и ключ в репозиторий:**
+`ci.yml` — параллельные джобы, каждый со своей установкой; сборку артефактом не передают.
 
-   ```bash
-   gh variable set PHP_SPLIT_APP_CLIENT_ID --repo webx-ui/webx-ui --body "<Client ID>"
-   gh secret set PHP_SPLIT_APP_PRIVATE_KEY --repo webx-ui/webx-ui < webx-ui-split.private-key.pem
-   ```
+- **`changes`** — `scripts/affected.mjs` по графу зависимостей решает, что гонять (`node`:
+  `none` / `some` / `all`, `docs`, `manticore`); `php-ci.yml` спрашивает его же внутри джоба.
+- **Lint and format** — ESLint и Prettier с кешем по содержимому, проверка сгенерированных токенов.
+- **Typecheck** — два шарда на полном прогоне, один на частичном; каждый собирает всё
+  (проверяемому нужны декларации зависимостей).
+- **Test** — три шарда на полном прогоне; **Build docs**. Оба собирают с `WEBX_SKIP_DTS=1` (без
+  `vite-plugin-dts`, это две трети сборки) — декларации читает только typecheck.
+- **PHP on Manticore**, **No client names** (дерево, заголовок и тело PR).
+- **Агрегатор `Lint, typecheck, test, build`** — единственный обязательный чек ruleset'а,
+  `needs` на все джобы и `if: always()`: без него упавший джоб сделал бы агрегатор `skipped`, а
+  пропущенный обязательный чек GitHub считает пройденным.
+- **Релизный PR** (`head_ref == 'changeset-release/main'`) — лёгкий путь: тяжёлые джобы
+  пропускаются, `release-pr` проверяет `pnpm install --frozen-lockfile` и `pnpm build`. Он меняет
+  только версии, `CHANGELOG.md` и констрейнты, а остальное — `main`, который уже прошёл CI.
+  Честно, пока `main` зелёный по построению — то есть пока стоит очередь мержа.
 
-   Client ID не секрет, поэтому он переменная. Из PowerShell редирект `<` не работает —
-   `cmd /c "gh secret set … < ключ.pem"`, так байты ключа доедут без перекодировки.
-   Скачанный `.pem` после этого удалить: ключ живёт только в секрете, а при утере на странице
-   App выпускается новый.
+`main` закрыт ruleset'ом с **очередью мержа** (squash, `ALLGREEN`); `ci.yml` слушает
+`merge_group`. Ставить в очередь — мутацией `enqueuePullRequest` (CLAUDE.md §5). PHP CI и smoke
+обязательными не являются.
 
-4. **Добавить чеки в ruleset** `main`. У матричного job'а имя чека своё на каждый вариант:
-   `PHP lint, analyse, test (8.3)` и `PHP lint, analyse, test (8.4)` — нужны оба.
+`php-ci.yml` — матрица PHP 8.4 и 8.5; validate, pint и phpstan — только на 8.4 (нижняя
+поддерживаемая версия) с кешами, 8.5 гоняет тесты. `php-smoke.yml` на PR — только при правке
+`php/**` или самого сценария, на push в `main` — всегда.
 
-## Что сделать один раз на packagist.org
+Не сделано: параллельный PHPUnit (paratest) — процессы делят один скелет Testbench, нужен
+`ParallelTesting::token()` в путях тестов; шарды PHPUnit — сначала поменять имена обязательных
+чеков в ruleset.
 
-1. **Войти через GitHub** (https://packagist.org/login/) тем аккаунтом, у которого есть доступ к
-   организации `webx-ui`. Именно вход через GitHub, а не логин с паролем: тогда Packagist сам
-   ставит вебхук при отправке пакета.
+## Однажды настроено
 
-2. **Дать доступ к организации.** На экране авторизации GitHub рядом с `webx-ui` есть кнопка
-   Grant. Если её пропустить — потом
-   https://github.com/settings/connections/applications/ → Packagist → Organization access →
-   Grant.
+GitHub: зеркала `webx-ui/<имя>` (имя = вторая часть имени пакета), App `webx-ui-split` с
+**Contents: Read and write** и **Pull requests: write**, установленная на все репозитории
+организации (токен на каждый job сужается до одного репозитория), Client ID — переменная, ключ —
+секрет. Packagist: вендор `webx-ui` закреплён, вход через GitHub, вебхук на организацию.
 
-3. **Отправить пакет:** https://packagist.org/packages/submit, вставить
-   `https://github.com/webx-ui/nested-set`, Check → Submit. Имя пакета Packagist возьмёт из
-   `composer.json`.
+Что остаётся руками на **каждый новый пакет**:
 
-   Первая же отправка **закрепляет вендора `webx-ui`** за аккаунтом — дальше никто чужой под ним
-   опубликоваться не сможет. Сейчас вендор свободен, занять его стоит раньше, чем позже.
+1. Создать пустое публичное зеркало: `gh repo create webx-ui/<имя> --public` без README и лицензии
+   — первый коммит положит воркфлоу.
+2. После мержа PR с пакетом (пуш в `main` уже залил в зеркало `composer.json`) и до мержа
+   релизного PR — отправить зеркало на https://packagist.org/packages/submit. Вебхук обновляет
+   только то, что на Packagist уже есть: неотправленный пакет отвечает 404 на
+   `repo.packagist.org/p2/webx-ui/<имя>.json`, хотя зеркало создано и отмечено тегом.
+3. Первую версию нового npm-пакета публикует человек — `docs/pitfalls/release-and-ci.md`.
 
-   **И так же — на каждое новое имя.** Вебхук обновляет только то, что на Packagist уже есть;
-   пакет, которого там нет, после релиза отвечает 404 на
-   `repo.packagist.org/p2/webx-ui/<имя>.json`, то есть `composer require` его не найдёт, хотя
-   зеркало создано, наполнено и отмечено тегом. Это ровно то, что произошло с
-   [`webx-ui/site`](https://github.com/webx-ui/site) 22.09.2026: репозиторий заведён, `php-split`
-   его зеркалит наравне с пакетами, а `composer create-project webx-ui/site` не работает, пока
-   его не отправили руками. Автоматики для первой отправки нет — у Packagist она за логином.
-
-4. **Проверить автообновление.** На странице пакета не должно быть плашки «This package is not
-   auto-updated». Если она есть — вебхук не встал, настроить руками, лучше сразу на уровне
-   организации (один хук на все split-репозитории):
-
-   GitHub → организация `webx-ui` → Settings → Webhooks → Add webhook
-   - Payload URL: `https://packagist.org/api/github?username=<логин на packagist>`
-   - Content type: `application/json`
-   - Secret: API-токен со страницы https://packagist.org/profile/ (кнопка «Show API Token»)
-   - Which events: Just the `push` event — теги приезжают тем же событием
-
-5. **Включить 2FA** в профиле Packagist. Красть там, кроме самого аккаунта, нечего — токенов
-   публикации не существует, — но вендор `webx-ui` стоит того.
-
-6. Повторять шаг 3 для каждого нового пакета. Шаги 1–2, 4–5 — один раз навсегда.
-
-   Окно для этого — между двумя мержами: пуш в `main` уже залил в зеркало `composer.json` (до
-   этого Packagist нечего проверять, у пустого репозитория Check не проходит), а релизный PR ещё
-   не смержен — значит вебхук встанет раньше, чем приедет тег, и версия появится сама.
-
-## Первый релиз, по порядку
-
-1. Смержить PR с инфраструктурой. Push в `main` запустит `php-split.yml` без тега и зальёт
-   содержимое в `webx-ui/nested-set`. **Репозиторий к этому моменту должен существовать**, иначе
-   job упадёт (создать и перезапустить).
-2. Отправить пакет на Packagist (выше).
-3. Выпустить версию:
-
-   ```bash
-   pnpm changeset      # выбрать @webx-ui/php, minor, описать одной строкой
-   ```
-
-   PR → merge → бот открывает «chore: version packages» → merge этого PR. Дальше всё само:
-   тег `php-v0.1.0` в монорепо, `v0.1.0` в `webx-ui/nested-set`, версия на Packagist.
-
-4. Проверить:
-
-   ```bash
-   composer show webx-ui/nested-set --all
-   ```
-
-   Смотреть надо именно так или на `https://repo.packagist.org/p2/webx-ui/<имя>.json` — это то,
-   что читает Composer, и там версия появляется сразу. А `packagist.org/packages/<имя>.json`
-   кешируется и отстаёт на десятки минут: выглядит как «релиз не доехал», хотя он уже доехал.
-
-## Чем это отличается от npm
+## Чем Packagist отличается от npm
 
 |                  | npm                      | Packagist                                   |
 | ---------------- | ------------------------ | ------------------------------------------- |
@@ -172,6 +146,10 @@ changesets его версионирует и пишет ему `CHANGELOG.md`.
 | версии           | своя у каждого пакета    | одна на все php-пакеты                      |
 | тег              | `@webx-ui/core@0.14.0`   | `php-v0.1.0` в монорепо, `v0.1.0` в зеркале |
 | задержка реестра | ~5 минут после воркфлоу  | секунды, по вебхуку                         |
+
+Проверять публикацию — `npm view`, `composer show webx-ui/<имя> --all` или
+`https://repo.packagist.org/p2/webx-ui/<имя>.json`. `packagist.org/packages/<имя>.json` кешируется и
+отстаёт на десятки минут: выглядит как «релиз не доехал», хотя он уже доехал.
 
 ## Проверка в настоящем приложении
 
@@ -193,9 +171,8 @@ changesets его версионирует и пишет ему `CHANGELOG.md`.
   вызывает сплит напрямую через `uses:`, а не надеется на триггер по тегу.
 - **Шаг тега стоит до `changesets/action`, и это не косметика.** Когда changesets есть что
   делать, он бампает версию и коммитит её: после него ни рабочее дерево, ни `HEAD` уже не то,
-  что лежит на `main`. Тег, поставленный после, помечает релиз, которого никто не мержил, — и
-  на коммите, который может вообще не доехать до `main` (так и вышло: ветку релиза бот
-  пересоздал, а тег остался на осиротевшем коммите). `git show HEAD:` от этого не спасает.
+  что лежит на `main`. Тег, поставленный после, помечает релиз, которого никто не мержил, — на
+  коммите, который может вообще не доехать до `main`. `git show HEAD:` от этого не спасает.
 - **Токен App отдаётся экшену как `x-access-token:<токен>`.** Экшен собирает
   `https://<токен>@github.com/...`, то есть кладёт токен в имя пользователя. Для PAT так можно,
   для installation-токена App — нет, он должен быть паролем; иначе git молча просит пароль и
@@ -204,15 +181,11 @@ changesets его версионирует и пишет ему `CHANGELOG.md`.
   изменений нет — а у релиза, который двигает только общую версию, их обычно и нет, — экшен
   уходит в ветку «No files to change» и пушит тег из каталога без учётных данных:
   `could not read Password`.
-- **Репозиторий-зеркало сплит не создаёт.** Нет репозитория — красный job. А вот пустой
-  репозиторий воркфлоу починит сам: шаг «Seed an empty mirror» кладёт первый коммит, потому
-  что `monorepo-split-github-action` в пустом клоне создаёт ветку локально и пушит ничего —
+- **Репозиторий-зеркало сплит не создаёт.** Нет репозитория — красный job. Пустой репозиторий
+  воркфлоу чинит сам: шаг «Seed an empty mirror» кладёт первый коммит, потому что
+  `monorepo-split-github-action` в пустом клоне создаёт ветку локально и пушит ничего —
   `src refspec main does not match any`.
 - **Имя репозитория = вторая часть имени пакета.** Матрица сплита собирается из листинга
-  `php/packages/*/composer.json`, имя берётся оттуда: `webx-ui/module-seo` → репозиторий
-  `module-seo`.
+  `php/packages/*/composer.json` и `php/site`: `webx-ui/module-seo` → репозиторий `module-seo`.
 - **`export-ignore` в `.gitattributes` пакета** убирает `tests/` из zip-архива, который Composer
   скачивает с GitHub. В самом зеркале тесты остаются — это нормально.
-- **Вендор на Packagist закрепляется за первым отправителем.**
-- **`packagist.org/packages/<имя>.json` отстаёт от реальности.** Проверять публикацию по
-  `repo.packagist.org/p2/<имя>.json` или `composer show`.

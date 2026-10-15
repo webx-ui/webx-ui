@@ -114,6 +114,7 @@ export {
   HttpError,
   type Http,
   type HttpOptions,
+  type MethodOverride,
   type RequestOptions,
   type SendOptions,
 } from './http'

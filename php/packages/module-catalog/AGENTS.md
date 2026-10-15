@@ -110,8 +110,8 @@ form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `barcod
 - Do not print `<title>` in a site's copy of a view: with an empty SEO card the product names its
   page itself (`seoFallback()` — the name through the title template, the summary, the main
   picture), and a list is called by its heading, with the category's description and cover on
-  the plain page. A copy published before still has an `@if ($meta->title === null)` block:
-  delete it, and keep `$meta` only where the `<h1>` reads `$meta->h1`.
+  the plain page. Delete an old copy's `@if ($meta->title === null)` block; keep `$meta` only
+  for `$meta->h1`.
 
 ## Check your work
 

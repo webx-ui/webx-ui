@@ -132,6 +132,34 @@ try {
 }
 ```
 
+### A host that refuses PUT
+
+Some shared hosting lets nothing but GET and POST past the web server: the panel opens and
+reads, and every save or delete gets a 403 or 405 before PHP is reached. `methodOverride` sends
+PUT, PATCH and DELETE as POST and says what they really are:
+
+```ts
+createAdmin({
+  modules: [pages],
+  plugins: [auth()],
+  methodOverride: true, // or 'header', or 'field'
+}).mount()
+```
+
+| Value                | On the wire                                                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `false` (default)    | Every method as it is                                                                                                               |
+| `true` or `'header'` | `POST` with `X-HTTP-Method-Override: PUT`                                                                                           |
+| `'field'`            | `POST` with `_method: "PUT"` in the JSON body, in a form, or in the query for raw bytes — for a firewall that strips the header too |
+
+GET and POST are never touched, and the CSRF token goes with every overridden request as it
+did before. Laravel reads both forms on its own; the server needs nothing. The option belongs
+to the panel's own client — a project that passes its own `http` passes `methodOverride` to
+`createHttp()` instead.
+
+`php artisan webx:doctor` says whether the site's host is one of them: it sends a PUT and a
+DELETE to its own `APP_URL` and warns when the web server, not Laravel, refuses them.
+
 `can('pages.manage')` answers from the signed-in session — a super administrator passes
 everything, the same rule the server applies.
 

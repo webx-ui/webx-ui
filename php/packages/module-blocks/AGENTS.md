@@ -142,5 +142,5 @@ whose type has no `wx-blocks` field is refused as "not a container".
 - Guide: https://webx-ui.github.io/webx-ui/guide/blocks
 - Regions guide: https://webx-ui.github.io/webx-ui/guide/layout-regions
 - Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_BLOCKS.md
-- Components and regions: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_BLOCK_COMPONENTS.md,
+- Components (§24) and regions: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_BLOCKS.md,
   https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_LAYOUT_REGIONS.md

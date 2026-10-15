@@ -188,18 +188,14 @@ mean in `services()` or `team()`.
 @endforeach
 ```
 
-| Step                  | What it does                                                          |
-| --------------------- | --------------------------------------------------------------------- |
-| `press()->outlets()`  | Outlets in their own order — the default                              |
-| `press()->articles()` | Articles of every outlet by date, the latest first, undated last      |
-| `featured()`          | Only the outlets marked for the strip; in a feed, only their articles |
-| `kind('authored')`    | Articles of this kind; outlets that ran one. A list, or `[]` for all  |
-| `only([3, 7])`        | Only these, in this order                                             |
-| `except($outlet)`     | All but these                                                         |
-| `take(6)`             | At most this many, counted after what is not seen; null or 0 — all    |
-| `locale('uk')`        | The language of the cards; by default the page's                      |
-| `get()`, `first()`    | The cards, or one; the query itself can be looped over and counted    |
-| `models()`            | The outlets or articles behind the cards, for code that needs a model |
+| Step                                                           | What it does                                                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `press()->outlets()`                                           | Outlets in their own order — the default                                                   |
+| `press()->articles()`                                          | Articles of every outlet by date, the latest first, undated last                           |
+| `featured()`                                                   | Only the outlets marked for the strip; in a feed, only their articles                      |
+| `kind('authored')`                                             | Articles of this kind; outlets that ran one. A list, or `[]` for all                       |
+| `only()`, `except()`, `take()`, `locale()`, `get()`, `first()` | The shared steps of [`RecordQuery`](/guide/collections#a-helper-for-templates-recordquery) |
+| `models()`                                                     | The outlets or articles behind the cards, for code that needs a model                      |
 
 An outlet's card:
 

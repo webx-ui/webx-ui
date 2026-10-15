@@ -8,6 +8,7 @@ use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use Throwable;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Demo\ThemeDemo;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\BlockOffers;
@@ -362,11 +363,19 @@ final class TeamDemo
     }
 
     /**
+     * The theme's `demo/team/team.json` when it has one — the people of the site the theme is
+     * made for — and the module's own otherwise.
+     *
      * @return array<string, mixed>
      */
     private function read(): array
     {
-        $document = json_decode((string) $this->files->get(__DIR__.'/../../resources/demo/team.json'), true);
+        $theme = ThemeDemo::directory('team');
+        $file = $theme !== null && $this->files->exists($theme.'/team.json')
+            ? $theme.'/team.json'
+            : __DIR__.'/../../resources/demo/team.json';
+
+        $document = json_decode((string) $this->files->get($file), true);
 
         if (! is_array($document)) {
             throw new RuntimeException('team.json is not a team.');

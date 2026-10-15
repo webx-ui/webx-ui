@@ -2,7 +2,7 @@
 
 The header and the footer of a site are Blade in its repository — `components/header.blade.php`,
 or written straight into the layout. The panel reaches only what they read: the items of
-`menu('header')`, the phone number from `settings()`. Moving the logo, putting a strip with an
+`menu('header')`, the phone number from `contacts()`. Moving the logo, putting a strip with an
 offer above the menu, building a footer of four columns is work for whoever edits the code and
 deploys the site. A site put together in the panel, or by an agent, has no such door.
 
@@ -121,7 +121,7 @@ inside an ordinary request:
 
 - the language — `app()->getLocale()`, and translated values of the blocks follow it;
 - `menu('header')` — the active item is worked out on every request;
-- `settings('contacts.phone')` — in the current language;
+- `contacts()` and `settings()` — in the current language;
 - `request()`, `auth()`, `@csrf`.
 
 `$entity` is worth using: a «Subscribe to this rubric» that names `$entity->rubric` in the footer of an article, a

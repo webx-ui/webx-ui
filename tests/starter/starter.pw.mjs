@@ -637,7 +637,7 @@ test.describe('form in a dialog', () => {
 test.describe('contacts', () => {
   const PATH = '/kitchen-sink/contacts'
 
-  // The demo's Contacts tab: three numbers, Mon–Fri 9–19 and Sat 10–16 in London.
+  // The demo's Contacts tab: three numbers, Mon–Fri 9–19 and Sat 10–16 in UTC.
   const inWindow = async (locator) => {
     const box = await locator.boundingBox()
     const width = await locator.page().evaluate(() => document.documentElement.clientWidth)
@@ -655,8 +655,8 @@ test.describe('contacts', () => {
     for (const href of links) expect(href).toMatch(/^tel:\+[1-9][\d-]{6,}(;ext=\d+)?$/)
     // Shown as typed, dialled without the spaces.
     const main = page.locator('.webx-header__actions .webx-phones__primary > .webx-phones__number')
-    await expect(main).toHaveText('+44 20 7946 0958')
-    await expect(main).toHaveAttribute('href', 'tel:+44-20-7946-0958')
+    await expect(main).toHaveText('+800 1234 5678')
+    await expect(main).toHaveAttribute('href', 'tel:+800-1234-5678')
   })
 
   test('the phone dropdown stays in the window at 1280, and in the menu at 360', async ({
@@ -669,7 +669,7 @@ test.describe('contacts', () => {
     const panel = page.locator('.webx-header__actions .webx-phones .webx-dropdown__panel')
     await expect(panel).toBeVisible()
     await inWindow(panel)
-    await expect(panel.locator('.webx-phones__label')).toHaveText(['Support', 'North America'])
+    await expect(panel.locator('.webx-phones__label')).toHaveText(['Support', 'Partners'])
 
     await page.setViewportSize({ width: 360, height: 740 })
     await page.goto(PATH)
@@ -683,22 +683,22 @@ test.describe('contacts', () => {
   })
 
   test('the hours are the office clock, whatever the visitor clock says', async ({ browser }) => {
-    // 14:30 in New York on a Monday is 19:30 in London: closed there, not open here.
+    // 15:30 in New York on a Monday is 19:30 in UTC: closed there, not open here.
     const context = await browser.newContext({ timezoneId: 'America/New_York' })
     const page = await context.newPage()
-    await page.clock.setFixedTime(new Date('2026-10-12T14:30:00-04:00'))
+    await page.clock.setFixedTime(new Date('2026-10-12T15:30:00-04:00'))
     await page.goto(PATH)
     const status = page.locator('.webx-header__topbar [data-webx-hours-status]')
     await expect(status).toHaveText('Closed, opens tomorrow at 9:00 AM')
     await expect(status).toHaveClass(/is-closed/)
 
-    await page.clock.setFixedTime(new Date('2026-10-12T10:00:00+01:00'))
+    await page.clock.setFixedTime(new Date('2026-10-12T10:00:00Z'))
     await page.reload()
     await expect(status).toHaveText('Open until 7:00 PM')
     await expect(status).toHaveClass(/is-open/)
 
     // Sunday: a day off, and Monday next.
-    await page.clock.setFixedTime(new Date('2026-10-18T12:00:00+01:00'))
+    await page.clock.setFixedTime(new Date('2026-10-18T12:00:00Z'))
     await page.reload()
     await expect(status).toHaveText('Closed today, opens tomorrow at 9:00 AM')
     await page.locator('.webx-header__topbar .webx-hours__toggle').click()
@@ -758,7 +758,7 @@ test.describe('contacts', () => {
             '<style>@container (min-width: 768px) { #probe-bar-spacer, #probe-bar-bar { display: none; } }</style>' +
             '<div class="webx-contact-bar__spacer" id="probe-bar-spacer"></div>' +
             '<nav class="webx-contact-bar__bar" id="probe-bar-bar">' +
-            '<a class="webx-contact-bar__item webx-contact-bar__item--call" href="tel:+442079460958"><span>Call</span></a>' +
+            '<a class="webx-contact-bar__item webx-contact-bar__item--call" href="tel:+80012345678"><span>Call</span></a>' +
             '<a class="webx-contact-bar__item webx-contact-bar__item--form" href="#webx-form-contact"><span>Request</span></a>' +
             '</nav></div>',
         )
@@ -2311,10 +2311,10 @@ test.describe('map', () => {
     )
     expect(places).toHaveLength(4)
     expect(places.map((place) => place.address)).toEqual([
-      '1 Example Street, London',
+      '1 Example Street, Sample City',
       'Pariser Platz, Berlin',
       'Paris',
-      '1 Example Street, London',
+      '1 Example Street, Sample City',
     ])
     for (const place of places) {
       expect(place.link).toMatch(/^https:\/\/www\.openstreetmap\.org\/\?mlat=/)

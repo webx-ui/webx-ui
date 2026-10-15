@@ -72,6 +72,43 @@ class ThemeChainTest extends TestCase
         ThemeChain::resolve('fixture/not-a-theme', app(ThemeLocator::class));
     }
 
+    #[Test]
+    public function the_settings_a_theme_prints_are_summed_down_the_chain(): void
+    {
+        $top = new ThemeManifest('top', '/top', true, settings: ['contacts' => ['phones', 'hours']]);
+        $silent = new ThemeManifest('silent', '/silent', false);
+        $base = new ThemeManifest('base', '/base', false, settings: ['contacts' => ['emails', 'phones']]);
+
+        $this->assertSame(['contacts' => ['phones', 'hours', 'emails']], (new ThemeChain([$top, $silent, $base]))->settings());
+        $this->assertSame(['contacts' => true], (new ThemeChain([$top, new ThemeManifest('whole', '/whole', false, settings: ['contacts' => true])]))->settings());
+        // Saying nothing is not saying "none": module-settings tells the two apart.
+        $this->assertNull((new ThemeChain([$silent]))->settings());
+        $this->assertSame([], (new ThemeChain([$silent, new ThemeManifest('none', '/none', false, settings: [])]))->settings());
+    }
+
+    #[Test]
+    public function a_manifest_reads_its_settings_and_refuses_a_bad_shape(): void
+    {
+        $dir = sys_get_temp_dir().'/webx-theme-settings-'.getmypid();
+        @mkdir($dir, 0777, true);
+
+        try {
+            file_put_contents($dir.'/theme.json', '{"theme": {"settings": {"contacts": ["phones", "emails"], "branding": true}}}');
+            $this->assertSame(['contacts' => ['phones', 'emails'], 'branding' => true], ThemeManifest::fromLocal($dir, 'theme')->settings);
+
+            file_put_contents($dir.'/theme.json', '{"theme": {}}');
+            $this->assertNull(ThemeManifest::fromLocal($dir, 'theme')->settings);
+
+            file_put_contents($dir.'/theme.json', '{"theme": {"settings": ["contacts"]}}');
+            $this->expectException(ThemeException::class);
+            $this->expectExceptionMessage('"settings" is an object of tabs');
+            ThemeManifest::fromLocal($dir, 'theme');
+        } finally {
+            @unlink($dir.'/theme.json');
+            @rmdir($dir);
+        }
+    }
+
     /**
      * @return list<string>
      */

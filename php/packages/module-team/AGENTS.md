@@ -24,7 +24,8 @@ questions about those.
 - **API** under `/api/cms/team`; permissions `team.view`, `team.manage`.
 - **MCP** tools `team_list`, `team_get`, `team_create`, `team_update`, `team_delete`,
   `team_reorder`; resource `team://catalog`. Scopes `team:read`, `team:write`.
-- Also registered: one top-level entry of the panel's menu, demo content (`resources/demo`).
+- Also registered: one top-level entry of the panel's menu, demo content (`resources/demo`);
+  a theme with `demo/team/team.json` seeds that file instead.
 
 ## Change it without forking
 
@@ -43,9 +44,8 @@ not from the screen JSON. A project field reaches the card under `fields`.
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-team`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-team` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not add options to the `social-network` select with a screen patch: the server checks a link
   against `webx-team.networks`, so the save is refused. Add the network to the config.
 - Do not add a migration for a project field: the patch and the `extra` column are the place; a

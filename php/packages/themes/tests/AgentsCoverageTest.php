@@ -17,7 +17,7 @@ use WebxUi\Themes\Vocabulary;
 final class AgentsCoverageTest extends TestCase
 {
     /** The keys of a theme's manifest, `extra.webx.theme` or `theme` in theme.json (§5). */
-    private const array MANIFEST_KEYS = ['title', 'uses', 'requires', 'locales', 'fonts', 'preset'];
+    private const array MANIFEST_KEYS = ['title', 'uses', 'requires', 'locales', 'fonts', 'preset', 'settings'];
 
     #[Test]
     public function the_engines_guide_names_every_command_and_every_key_of_the_manifest(): void

@@ -215,9 +215,8 @@ The router is asked first, so a project that adds a screen keeps the list true w
 anything; `webx-routing.reserved` covers what no route describes (`storage`, `build`, directories
 the web server serves off disk); the panel's own prefix is added at runtime from `module-admin`.
 
-One consequence, before it surprises somebody: a fresh Laravel skeleton answers `/` with its
-welcome route, so no page can take the site root until that route is gone. That is the rule
-working.
+One consequence: a fresh Laravel skeleton answers `/` with its welcome route, so no page can take
+the site root until that route is gone.
 
 ## An alias is not a redirect rule
 
@@ -244,8 +243,8 @@ php artisan webx:routes:check
 
 `check` reports what no database constraint can: rows whose entity is gone, entities with no
 address, aliases that lead nowhere, and addresses a project has since claimed with a route of its
-own. It exits 1 when it finds anything, so a deploy can run it and stop. From an agent, the same
-answers are `resolve_url`, `where_is` and `find_conflicts`.
+own. It exits 1 when it finds anything, so a deploy can run it and stop. An agent asks what one
+address answers with `seo_test_url` of `module-seo`.
 
 ## Importing a catalogue
 

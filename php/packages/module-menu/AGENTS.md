@@ -60,9 +60,8 @@ them under any theme. Nothing drops down: that is the widgets' header. Renaming 
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-menu`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-menu` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not rename or remove a declared menu's key while a template still calls `menu('<key>')`: an
   unknown key renders as an empty menu, silently. Add the new key, move the template, then drop
   the old one. Declared menus cannot be renamed or deleted in the panel for the same reason.

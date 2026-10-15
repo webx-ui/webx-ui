@@ -110,4 +110,33 @@ final readonly class ThemeChain
     {
         return array_values(array_unique(array_merge([], ...array_map(fn (ThemeManifest $layer) => $layer->requires, $this->layers))));
     }
+
+    /**
+     * The tabs of the site's settings the theme prints, summed down the chain like `requires`:
+     * a tab one layer prints whole stays whole, lists of sections are joined. Null when no layer
+     * says anything about it — module-settings then falls back to its transition rule.
+     *
+     * @return array<string, true|list<string>>|null
+     */
+    public function settings(): ?array
+    {
+        $declared = array_filter(array_map(fn (ThemeManifest $layer) => $layer->settings, $this->layers), is_array(...));
+
+        if ($declared === []) {
+            return null;
+        }
+
+        $settings = [];
+
+        foreach ($declared as $layer) {
+            foreach ($layer as $tab => $sections) {
+                $before = $settings[$tab] ?? [];
+                $settings[$tab] = $sections === true || $before === true
+                    ? true
+                    : array_values(array_unique([...$before, ...$sections]));
+            }
+        }
+
+        return $settings;
+    }
 }

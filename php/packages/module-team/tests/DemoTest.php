@@ -13,6 +13,8 @@ use WebxUi\Localization\Locales;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Services\Models\Service;
 use WebxUi\Team\Models\Member;
+use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\ThemeManifest;
 
 /**
  * The demo team (§5.9): the rules it is there to show, and the block where a site would put it —
@@ -46,8 +48,8 @@ final class DemoTest extends TestCase
         $this->assertTrue(Block::query()->where('slug', 'team')->exists());
 
         // The people are linked to the demo services, by the slugs the services demo gave them.
-        $anna = Member::query()->where('name->en', 'Anna Petrova')->firstOrFail();
-        $slugs = Service::query()->whereKey($anna->relatedIds(Member::SERVICES))->pluck('slug')
+        $alex = Member::query()->where('name->en', 'Alex M.')->firstOrFail();
+        $slugs = Service::query()->whereKey($alex->relatedIds(Member::SERVICES))->pluck('slug')
             ->map(static fn (mixed $slug): mixed => is_array($slug) ? $slug['en'] : $slug)->sort()->values()->all();
         $this->assertSame(['company-website', 'online-catalogue'], $slugs);
     }
@@ -59,13 +61,13 @@ final class DemoTest extends TestCase
 
         $page = $this->get('/team')->assertOk();
         $page->assertSee('data-team-layout="grid"', false);
-        $page->assertSee('Anna Petrova');
-        $page->assertSee('Maria Volkova');
-        $page->assertDontSee('Dmitry Sokolov');
+        $page->assertSee('Alex M.');
+        $page->assertSee('Jordan L.');
+        $page->assertDontSee('Max B.');
         // No photos in the demo: the initials stand in.
-        $page->assertSee('<span class="b-team__initials" aria-hidden="true">AP</span>', false);
-        // Igor's link to a network the config does not have is stored, and left off the card.
-        $page->assertSee('https://www.instagram.com/example_igor', false);
+        $page->assertSee('<span class="b-team__initials" aria-hidden="true">AM</span>', false);
+        // Sam's link to a network the config does not have is stored, and left off the card.
+        $page->assertSee('https://www.instagram.com/example_sam', false);
         $page->assertDontSee('myspace.com', false);
     }
 
@@ -77,10 +79,10 @@ final class DemoTest extends TestCase
         $this->nextRequest('ru');
 
         $this->get('/ru/team')->assertOk()
-            ->assertSee('Ольга Кузнецова')
-            ->assertSee('Анна Петрова')
+            ->assertSee('Робин К.')
+            ->assertSee('Алекс М.')
             ->assertSee('Собирает сайты')
-            // Decision 8: Olga is on the Russian page without her English text.
+            // Decision 8: Robin is on the Russian page without their English text.
             ->assertDontSee('Keeps every project on its calendar');
     }
 
@@ -92,9 +94,38 @@ final class DemoTest extends TestCase
         $service = $this->get('/services/company-website')->assertOk();
         $service->assertSee('Who does it');
         $service->assertSee('data-team-layout="list"', false);
-        $service->assertSee('Anna Petrova');
-        $service->assertSee('Igor Smirnov');
-        $service->assertDontSee('Pavel Orlov');
+        $service->assertSee('Alex M.');
+        $service->assertSee('Sam R.');
+        $service->assertDontSee('Kim T.');
+    }
+
+    /** A theme's `demo/team/team.json` speaks for the module: the people of the site it is made for. */
+    #[Test]
+    public function the_theme_brings_a_team_of_its_own(): void
+    {
+        $theme = sys_get_temp_dir().'/webx-team-demo-theme-'.getmypid();
+        @mkdir($theme.'/demo/team', 0777, true);
+        file_put_contents($theme.'/demo/team/team.json', (string) json_encode([
+            'members' => [['key' => 'lee', 'name' => ['en' => 'Lee N.'], 'job_title' => ['en' => 'Instructor']]],
+        ]));
+
+        try {
+            $this->app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('acme/theme', $theme, false)]));
+
+            $this->artisan('webx:demo')->assertSuccessful();
+
+            $this->assertSame(['Lee N.'], Member::query()->get()->map(static fn (Member $member): mixed => $member->getTranslation('name', 'en'))->all());
+            // The theme's file has no page: the module's own is not mixed in.
+            $this->assertFalse(Page::withTrashed()->where('slug->en', 'team')->exists());
+
+            $this->artisan('webx:demo', ['--remove' => true])->assertSuccessful();
+            $this->assertSame(0, Member::withTrashed()->count());
+        } finally {
+            @unlink($theme.'/demo/team/team.json');
+            @rmdir($theme.'/demo/team');
+            @rmdir($theme.'/demo');
+            @rmdir($theme);
+        }
     }
 
     #[Test]

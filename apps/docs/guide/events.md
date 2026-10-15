@@ -193,9 +193,8 @@ No number or no currency — no price in the markup. **Zero** is `isAccessibleFo
 Nobody types a `<title>` into a view. With an empty SEO card an event or a category names its page
 itself: the name through the site's title template, the lead as the description, the cover — a
 category's picture — as `og:image`, above the site's default social image. The index is called by
-the section's name the same way. A copy of a view published before this still has an
-`@if ($meta->title === null)` block and the `$seo` / `$meta` lines for it — delete them, they never
-print any more.
+the section's name the same way. An old published copy of a view with an
+`@if ($meta->title === null)` block — delete the block and its `$seo` / `$meta` lines.
 
 ## The Event markup, and how to check it
 
@@ -327,16 +326,8 @@ model has no column for is kept in `extra`.
 ]
 ```
 
-and in a service provider of the site:
-
-```php
-use WebxUi\Admin\Facades\Screens;
-
-public function boot(): void
-{
-    Screens::extend('events.form', resource_path('screens/events.form.json'));
-}
-```
+registered in the `boot()` of a service provider of the site with
+`Screens::extend('events.form', resource_path('screens/events.form.json'))`.
 
 The field appears on the **Settings** tab, is checked by its type on every save — the panel's and
 an agent's — waits in the draft with the rest, and is copied by **Duplicate**. Printing it is the one

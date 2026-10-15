@@ -324,16 +324,8 @@ The site lays a patch over the screen `tariffs.form`, whose empty card has the p
 ]
 ```
 
-and in a service provider of the site:
-
-```php
-use WebxUi\Admin\Facades\Screens;
-
-public function boot(): void
-{
-    Screens::extend('tariffs.form', resource_path('screens/tariffs.form.json'));
-}
-```
+registered in the `boot()` of a service provider of the site with
+`Screens::extend('tariffs.form', resource_path('screens/tariffs.form.json'))`.
 
 The field appears in the editor, is checked by its type on every save — the panel's and an
 agent's — and reaches the card as `$tariff['fields']['old_price']`. Printing it is a line in the

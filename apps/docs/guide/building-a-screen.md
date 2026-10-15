@@ -5,8 +5,7 @@ when there is something to save — a bar along the bottom. Written that way a n
 half an hour's work and reads like the ten screens beside it. Written freehand it is a day, and
 the panel gains one more answer to a question it had already answered.
 
-Start with the head. It is the part a reader learns once and then expects everywhere, and it is
-the part that used to be written eight different ways.
+Start with the head: the part a reader learns once and then expects everywhere.
 
 ## 1. The head
 
@@ -80,8 +79,7 @@ const actions = computed<ScreenAction[]>(() => [
 ```
 
 The same action has to be a button on a desktop and a line of a menu on a phone, and one vnode
-cannot be mounted in two places — written as markup it has to be written twice, which is what two
-editors here used to do. Written as data it is written once and the head decides:
+cannot be mounted in two places. Written as data it is written once and the head decides:
 
 - **`primary`** is the one thing the screen exists for: filled, blue, with the word on it. One per
   screen, and the one that keeps a button of its own when the head runs out of room.

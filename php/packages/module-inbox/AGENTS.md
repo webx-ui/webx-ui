@@ -114,15 +114,13 @@ for `repeated`. A full example — README, «After a submission is stored».
 - Do not add CSRF to the intake route: a page cached whole carries a stale token and every visitor
   gets a 419 later on. The origin check and the rate limit stand in for it.
 - Do not delete a form that has submissions — it is refused. Switch it off instead.
-- Do not delete submissions with SQL: rows and files on the disk go together only through
-  `webx:inbox:prune`. Run it with `--dry-run` first.
+- Do not delete submissions with SQL: rows and files go together only through `webx:inbox:prune`.
 - Do not create submissions through MCP or the database to "test" a form: there is no such tool
   on purpose. Send the form on the site, so the antispam and the letter are tested too.
 - Do not ask a form for a captcha the site has no keys for, or set a type other than the keys'
   kind ("Invalid key type"): either refuses every submission. The Antispam tab says which is set.
-- Do not hook a CRM into a fork of `SubmitController` or an Eloquent `created` listener: the
-  first is the vendor directory, and the second fires before any answer is written. Use the
-  handlers or the event.
+- Do not hook a CRM into a fork of `SubmitController` or an Eloquent `created` listener (it fires
+  before any answer is written). Use the handlers or the event.
 - Do not run handlers that call slow services on the `sync` queue: they run inside the visitor's
   request. Run a queue worker.
 - Do not read `notified_at` alone: read `notification.state`. Empty with `notifies: false` (or a
@@ -133,14 +131,13 @@ for `repeated`. A full example — README, «After a submission is stored».
 ## Check your work
 
 - Send the form on the site, with and without JavaScript: the same errors under the same fields
-  both ways, the thank-you, the submission in the panel, the letter (or `notify_error` says why). On a site with a queue the
-  submission says `queued`, then `delivered` once a worker has sent it.
+  both ways, the thank-you, the submission in the panel, the letter (or `notify_error` says why);
+  with a queue, `queued`, then `delivered` once a worker has sent it.
 - With handlers configured: the submission's log (panel card or `inbox_get`) has a `handled` line
   per handler, or `handler_error` with the reason.
 - `php artisan webx:inbox:prune --dry-run` — what the configured ages would remove.
-- With MCP: `inbox_forms_list` — every switched-on form should say `notifies: true` unless it is
-  meant to be read only in the panel —, then `inbox_form_get` for the fields; `inbox_form_save`,
-  `inbox_set_status` and `inbox_notify` take `dry_run: true`.
+- With MCP: `inbox_forms_list` — a switched-on form says `notifies: true` unless read only in the
+  panel; the writing tools take `dry_run: true`.
 
 ## Read more
 

@@ -21,6 +21,9 @@ final readonly class ThemeManifest
      * @param  list<string>  $locales
      * @param  list<array<string, mixed>>  $fonts
      * @param  string|null  $preset  The preset the site draws in; the highest layer that names one decides.
+     * @param  array<string, true|list<string>>|null  $settings  The tabs of the site's settings the theme prints —
+     *                                                           `contacts` whole (`true`) or by its sections;
+     *                                                           null when the manifest says nothing about them.
      */
     public function __construct(
         public string $name,
@@ -32,6 +35,7 @@ final readonly class ThemeManifest
         public array $locales = [],
         public array $fonts = [],
         public ?string $preset = null,
+        public ?array $settings = null,
     ) {}
 
     /** A packaged theme: a directory with a composer.json of `"type": "webx-theme"`. */
@@ -209,7 +213,50 @@ final readonly class ThemeManifest
             locales: self::strings($theme, 'locales', $file),
             fonts: $fonts,
             preset: $preset === null ? null : trim($preset),
+            settings: self::settings($theme, $file),
         );
+    }
+
+    /**
+     * `settings`: which tabs of the site's settings the theme prints, so the panel offers them
+     * (module-settings). A tab is `true` or the list of its sections the theme draws. Absent is
+     * not the same as `{}`: absent leaves the decision to the transition rule of module-settings,
+     * `{}` says the theme prints none of them.
+     *
+     * @param  array<mixed>  $theme
+     * @return array<string, true|list<string>>|null
+     */
+    private static function settings(array $theme, string $file): ?array
+    {
+        if (! array_key_exists('settings', $theme)) {
+            return null;
+        }
+
+        $value = $theme['settings'];
+        $shape = '"settings" is an object of tabs, each true or a list of its sections.';
+
+        if (! is_array($value) || ($value !== [] && array_is_list($value))) {
+            throw ThemeException::invalidManifest($file, $shape);
+        }
+
+        $settings = [];
+
+        foreach ($value as $tab => $sections) {
+            if ($sections === true) {
+                $settings[(string) $tab] = true;
+
+                continue;
+            }
+
+            if (! is_array($sections) || ! array_is_list($sections) || array_filter($sections, static fn (mixed $one): bool => ! is_string($one) || $one === '') !== []) {
+                throw ThemeException::invalidManifest($file, $shape);
+            }
+
+            /** @var list<string> $sections */
+            $settings[(string) $tab] = $sections;
+        }
+
+        return $settings;
     }
 
     /**

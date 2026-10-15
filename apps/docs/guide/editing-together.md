@@ -142,7 +142,8 @@ $this->app->make(EditedRecords::class)->register(
 );
 ```
 
-Find the record with `withTrashed()` when the model has a bin, so the editor hears that it went
+`Revision` is the module's own hash of what the editor reads — every content module keeps one
+(`WebxUi\Blog\Panel\Revision` is an example). Find the record with `withTrashed()` when the model has a bin, so the editor hears that it went
 there; a record that can move passes a fifth argument, `fn (Model $course): array` with where it
 sits. Without `model:` a purged record answers a plain `404` and the editor says nothing. Publishing, the bin and a version put back are noted by `HasDraft` and `HasVersions`
 themselves; a move by `nested-set`.

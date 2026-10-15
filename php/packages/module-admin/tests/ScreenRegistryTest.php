@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Tests;
 
+use Illuminate\Container\Container;
+use Illuminate\Foundation\Application;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+use stdClass;
 use WebxUi\Admin\Screens\ScreenException;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Tree;
@@ -119,6 +122,57 @@ final class ScreenRegistryTest extends PhpUnitTestCase
 
         $this->expectException(ScreenException::class);
         $this->expectExceptionMessage('target "renamed-since" not found');
+        $screens->tree('settings.index');
+    }
+
+    #[Test]
+    public function a_closure_patch_is_asked_when_the_tree_is_built_and_kept_only_once_booted(): void
+    {
+        $previous = Container::getInstance();
+        $app = new Application(sys_get_temp_dir());
+        Container::setInstance($app);
+
+        try {
+            // What a later provider registers, and how often the patch was asked.
+            $state = new stdClass;
+            $state->hidden = false;
+            $state->asked = 0;
+
+            $screens = new ScreenRegistry;
+            $screens->register('settings.index', self::FIXTURE);
+            $screens->extend('settings.index', static function () use ($state): array {
+                $state->asked++;
+
+                return $state->hidden ? [['op' => 'set', 'target' => 'secret', 'visible' => false]] : [];
+            });
+
+            // Before boot the answer may still change — a type registered by a later provider —
+            // so a tree built then is not kept.
+            $this->assertArrayNotHasKey('visible', Tree::find($screens->tree('settings.index'), 'secret') ?? []);
+            $state->hidden = true;
+            $this->assertFalse(Tree::find($screens->tree('settings.index'), 'secret')['visible'] ?? null);
+            $this->assertSame(2, $state->asked);
+
+            $app->boot();
+            $screens->tree('settings.index');
+            $screens->tree('settings.index');
+            $this->assertSame(3, $state->asked);
+            // Hidden, not cut out: the field is there for patches and for reading, not for editing.
+            $this->assertContains('general.secret', array_column($screens->fields('settings.index'), 'name'));
+            $this->assertNotContains('general.secret', array_column(Tree::editable($screens->tree('settings.index')), 'name'));
+        } finally {
+            Container::setInstance($previous);
+        }
+    }
+
+    #[Test]
+    public function a_closure_patch_is_checked_like_any_other(): void
+    {
+        $screens = new ScreenRegistry;
+        $screens->register('settings.index', self::FIXTURE);
+        $screens->extend('settings.index', static fn (): array => [['op' => 'explode']]);
+
+        $this->expectException(ScreenException::class);
         $screens->tree('settings.index');
     }
 

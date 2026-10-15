@@ -9,6 +9,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Admin\Screens\Tree;
 use WebxUi\Settings\Events\SettingsSaved;
 use WebxUi\Settings\Models\Setting;
 
@@ -78,7 +79,8 @@ final class Settings
     }
 
     /**
-     * The field nodes of every settings screen.
+     * The field nodes an editor can reach on every settings screen: a hidden tab — one nobody on
+     * the site uses — is not offered in the panel or over MCP ({@see Tree::editable()}).
      *
      * @return list<array<string, mixed>>
      */
@@ -88,18 +90,37 @@ final class Settings
 
         foreach (self::SCREENS as $screen) {
             if ($this->screens->has($screen)) {
-                array_push($fields, ...$this->screens->fields($screen));
+                array_push($fields, ...Tree::editable($this->screens->tree($screen)));
             }
         }
 
         return $fields;
     }
 
-    /** The screen that describes a key — what its value is validated against. */
+    /**
+     * Every field node, hidden ones too: what a stored value is read by. A hidden tab keeps its
+     * values, and `contacts()` or the panel's logo still read them the way their type says.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function nodes(): array
+    {
+        $nodes = [];
+
+        foreach (self::SCREENS as $screen) {
+            if ($this->screens->has($screen)) {
+                array_push($nodes, ...$this->screens->fields($screen));
+            }
+        }
+
+        return $nodes;
+    }
+
+    /** The screen that offers a key for editing — what its value is validated against. */
     public function screenOf(string $key): ?string
     {
         foreach (self::SCREENS as $screen) {
-            if ($this->screens->has($screen) && in_array($key, array_column($this->screens->fields($screen), 'name'), true)) {
+            if ($this->screens->has($screen) && in_array($key, array_column(Tree::editable($this->screens->tree($screen)), 'name'), true)) {
                 return $screen;
             }
         }
@@ -195,7 +216,7 @@ final class Settings
      */
     private function node(string $key): ?array
     {
-        foreach ($this->fields() as $node) {
+        foreach ($this->nodes() as $node) {
             if ($node['name'] === $key) {
                 return $node;
             }

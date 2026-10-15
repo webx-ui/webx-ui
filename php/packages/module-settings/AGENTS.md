@@ -40,26 +40,40 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   phone prints as a `tel:` link, an e-mail as `mailto:`. Listed in `settings://content-rules`
   under `shortcodes`.
 - **Contacts** — the tab `contacts` of `settings.index` (cards `contacts-phones-card`,
-  `contacts-addresses-card`, `contacts-hours-card`, `contacts-channels-card`): `contacts.phones`
-  (rows `number`, `label` per language, `messengers` — whatsapp, telegram, viber, signal —
-  `primary`), `contacts.emails` (`email`, `label`), `contacts.addresses` (`address` per language,
-  `latitude`, `longitude`, `map`, `primary`), `contacts.hours` (`days` mon…sun, `opens`, `closes`;
-  closing earlier than opening runs past midnight), `contacts.hours-exceptions` (`date`, `label`,
-  `closed`, `opens`, `closes`), `contacts.timezone` (Region/City; empty — `app.timezone`),
-  `contacts.messengers` (`channel`, `url`, `label`), `contacts.socials` (`network`, `url`,
-  `label` for `other`). Read through `contacts()` (`WebxUi\Settings\Contacts\Contacts`):
-  `phones()`, `primaryPhone()` (`number` as typed, `e164`, `href` — the `tel:` link), `emails()`,
-  `addresses()`, `primaryAddress()` (`mapUrl()`), `hours()` (`openNow()`, `status()`, `rows()`,
-  `upcoming()`), `messengers()`, `chats()`, `socials()`. A number without its country code, a
-  link that is not one, an unknown time zone are refused on save — panel and MCP alike.
+  `contacts-addresses-card`, `contacts-hours-card`, `contacts-channels-card`): keys `contacts.phones`,
+  `emails`, `addresses`, `hours` (closing earlier than opening runs past midnight),
+  `hours-exceptions`, `timezone` (empty — `app.timezone`), `messengers`, `socials`. Read through
+  `contacts()` (`WebxUi\Settings\Contacts\Contacts`): `phones()`, `primaryPhone()` (`number`,
+  `e164`, `href`), `emails()`, `addresses()`, `primaryAddress()`, `hours()` (`openNow()`,
+  `status()`, `rows()`, `upcoming()`), `messengers()`, `chats()`, `socials()`. A number without its country code, a link that is not one, an unknown time zone
+  are refused on save — panel and MCP alike.
   `php artisan webx:settings:contacts --from=<key> [--as=phones|emails|addresses] [--dry-run]`
   moves contacts kept under a key of the site's own; `webx-settings.contacts.legacy` names such
   keys so they are read until then.
   Which sections the tab draws is `webx-settings.contacts.sections` — `phones`, `emails`,
   `addresses` (the default), `hours` (with special dates and the time zone), `messengers`,
-  `socials`; one left out is hidden (`visible: false`), not cut out: its keys stay writable, `contacts()`
-  still reads them, a patch aimed at its card still applies. A misspelt section stops the boot.
-- Demo content (`resources/demo`), the content rules and the contacts included.
+  `socials` — joined with the sections the users declare (below); one left out is hidden
+  (`visible: false`), not cut out: `contacts()` still reads it and a patch aimed at its card still
+  applies, but neither the form nor `settings_*` offer its keys. A misspelt section stops the boot.
+- **Tabs only where they are used** (`WebxUi\Settings\Sections\SettingsSections`): `branding` and
+  `contacts` are offered only when something on the site uses them and their field types exist.
+  Contacts are declared by whoever prints them — a theme under `settings` of its manifest
+  (`"settings": {"contacts": ["phones", "hours"]}`, `true` for the whole tab, summed down the
+  chain; `theme-default` declares phones, emails, addresses, hours, socials), a package under
+  `extra.webx.settings` of its composer.json (same shape), the project in `webx-settings.uses`
+  (`['contacts']` or `['contacts' => ['phones', 'hours']]`). Branding is used by the panel itself
+  and needs `wx-media` — without `webx-ui/module-media` it is hidden. Widgets and SEO read
+  contacts when they are there and declare nothing. A tab not offered is hidden (`visible: false`)
+  by a closure patch laid before the project's: no tab in the panel, no keys in `settings_list`,
+  `settings_get`/`settings_set` answer «No setting is named…», no demo for it; stored values stay,
+  `contacts()` and the panel's logo still read them, and the tab comes back with them once a user
+  declares it. **Transition** (removed in the next minor): a site whose theme chain has no
+  `settings` key at all, or a site with no theme but contacts already stored, keeps Contacts.
+  `webx:doctor` — «Settings: branding / contacts» — says who uses each tab, warns when a declared
+  tab lacks its field type and when contacts are kept only because they are stored.
+- Demo content (`resources/demo`), the content rules and the contacts included. A theme with
+  `demo/settings/settings.json` seeds that file instead. Phones in demos and examples are
+  `+800 …` (`+800 1234 5678`): a number of no country that validates — `+00…` does not.
 
 ## Change it without forking
 
@@ -71,6 +85,8 @@ picture fields `webx-ui/module-media`, the languages of a localized value
 | A content rule of the site's own        | a patch on `settings.content` adding a field under `content-card` named `content.<name>`; it comes out in `more`                                |
 | A phone, an e-mail typed once           | «Settings» → «Contacts»; in a template `contacts()->primaryPhone()`, in content a shortcode row holding the value — `[phone]`                   |
 | Hours, messengers or socials on the tab | list them in `webx-settings.contacts.sections` (publish `webx-settings-config`), not a screen patch                                             |
+| The site's own views print contacts     | `'uses' => ['contacts']` in `config/webx-settings.php`; a theme declares `"settings": {"contacts": [...]}` in its manifest instead              |
+| A package that prints contacts          | `"extra": {"webx": {"settings": {"contacts": ["phones"]}}}` in its composer.json                                                                |
 | React when settings change              | listen to `WebxUi\Settings\Events\SettingsSaved`                                                                                                |
 | The panel's brand from somewhere else   | bind your own `WebxUi\Admin\Contracts\BrandingSource`                                                                                           |
 | No cache while debugging                | `WEBX_SETTINGS_CACHE=false`                                                                                                                     |
@@ -83,9 +99,8 @@ server-side patch both draws a field and opens its key for writing; a client-sid
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-settings`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-settings` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not insert rows into `cms_settings` for a key the screen does not describe: the panel and
   `settings_set` will neither show nor write it. Add the field with a screen patch first; the
   key exists from then on.
@@ -94,6 +109,8 @@ server-side patch both draws a field and opens its key for writing; a client-sid
 - Do not write the content rules into the root `AGENTS.md` or a project file: they are for the
   agent that writes content through MCP, and the editors keep them in the panel. Do not list
   the site's languages in them either — the resource takes them from `webx-ui/localization`.
+- Do not bring a hidden tab back with a screen patch (`set visible: true`): declare that the site
+  uses it — the patch would not survive the next theme or package that changes what is used.
 - Do not keep secrets (API keys, passwords) here: every value with `settings.view` is readable in
   the panel and through `settings_get`. Use `.env` and config.
 - Do not put the site's own settings in a config file the editors cannot reach when they should
@@ -105,7 +122,8 @@ server-side patch both draws a field and opens its key for writing; a client-sid
   `would_change` without writing; then `settings_get` gives both the stored and the resolved value.
 - Read the resource `settings://content-rules`: the languages and the rules as the agent sees them.
 - Open the section in the panel: the patched tab is there, a bad value is refused under its field.
-- `php artisan webx:doctor` — what is misconfigured on the site.
+- `php artisan webx:doctor` — what is misconfigured on the site; «Settings: contacts» and
+  «Settings: branding» say whether each tab is shown and who uses it.
 
 ## Read more
 

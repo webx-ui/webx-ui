@@ -86,6 +86,43 @@ final class Tree
     }
 
     /**
+     * The fields an editor can reach: {@see fields()} without those under a node hidden for
+     * good (`visible: false`). Such a node stays in the tree so a patch can still find it and a
+     * stored value can still be read by its type; it just is not offered for editing anywhere.
+     * A condition object is not "hidden for good" — the form decides it — so those count.
+     *
+     * @param  list<Node>  $nodes
+     * @return list<Node>
+     */
+    public static function editable(array $nodes): array
+    {
+        return self::fields(self::shown($nodes));
+    }
+
+    /**
+     * @param  list<Node>  $nodes
+     * @return list<Node>
+     */
+    private static function shown(array $nodes): array
+    {
+        $shown = [];
+
+        foreach ($nodes as $node) {
+            if (($node['visible'] ?? true) === false) {
+                continue;
+            }
+
+            if (isset($node['children']) && is_array($node['children'])) {
+                $node['children'] = self::shown(self::children($node));
+            }
+
+            $shown[] = $node;
+        }
+
+        return $shown;
+    }
+
+    /**
      * Drops every node whose `can` the check refuses, with everything under it.
      *
      * @param  list<Node>  $nodes

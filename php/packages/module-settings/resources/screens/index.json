@@ -89,7 +89,7 @@
                       "help": "trans::webx-settings::screen.phone-number-help",
                       "props": {
                         "maxlength": 40,
-                        "placeholder": "+1 202 555 0143",
+                        "placeholder": "+800 1234 5678",
                         "inputmode": "tel"
                       }
                     },

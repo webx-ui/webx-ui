@@ -207,4 +207,168 @@ describe('createHttp', () => {
 
     await expect(http.post('logout')).resolves.toBeUndefined()
   })
+
+  describe('methodOverride', () => {
+    /** Answers the CSRF cookie and records everything else. */
+    function recording() {
+      const fetch = vi.fn().mockImplementation((url: string) => {
+        if (url === '/api/cms/auth/csrf-cookie') {
+          document.cookie = 'XSRF-TOKEN=token; path=/'
+
+          return Promise.resolve(new Response(null, { status: 204 }))
+        }
+
+        return Promise.resolve(respond({ data: {} }))
+      })
+
+      const sent = () =>
+        fetch.mock.calls
+          .filter((call) => call[0] !== '/api/cms/auth/csrf-cookie')
+          .map((call) => {
+            const init = call[1] as RequestInit & { headers: Record<string, string> }
+
+            return { url: call[0] as string, ...init }
+          })
+
+      return { fetch, sent }
+    }
+
+    async function everyMethod(http: ReturnType<typeof createHttp>): Promise<void> {
+      await http.get('pages')
+      await http.post('pages', { title: 'A' })
+      await http.put('pages/1', { title: 'B' })
+      await http.patch('pages/1', { title: 'C' })
+      await http.delete('pages/1')
+    }
+
+    it('changes nothing when it is not asked for', async () => {
+      const { fetch, sent } = recording()
+      await everyMethod(createHttp({ baseUrl: '/api', fetch }))
+
+      expect(sent().map((request) => request.method)).toEqual([
+        'GET',
+        'POST',
+        'PUT',
+        'PATCH',
+        'DELETE',
+      ])
+      expect(sent().every((request) => !('X-HTTP-Method-Override' in request.headers))).toBe(true)
+      expect(sent()[2]?.body).toBe(JSON.stringify({ title: 'B' }))
+    })
+
+    it.each([true, 'header'] as const)(
+      'sends PUT, PATCH and DELETE as POST with the header (%s)',
+      async (methodOverride) => {
+        const { fetch, sent } = recording()
+        await everyMethod(createHttp({ baseUrl: '/api', fetch, methodOverride }))
+
+        const requests = sent()
+
+        expect(requests.map((request) => request.method)).toEqual([
+          'GET',
+          'POST',
+          'POST',
+          'POST',
+          'POST',
+        ])
+        expect(requests.map((request) => request.headers['X-HTTP-Method-Override'])).toEqual([
+          undefined,
+          undefined,
+          'PUT',
+          'PATCH',
+          'DELETE',
+        ])
+        // The body and the address are what they would have been.
+        expect(requests[2]?.body).toBe(JSON.stringify({ title: 'B' }))
+        expect(requests[4]?.body).toBeUndefined()
+        expect(requests[4]?.url).toBe('/api/pages/1')
+        // The CSRF token follows the method that was meant, and a read still carries none.
+        expect(requests.map((request) => request.headers['X-XSRF-TOKEN'])).toEqual([
+          undefined,
+          'token',
+          'token',
+          'token',
+          'token',
+        ])
+      },
+    )
+
+    it('puts _method in the body when asked for the field', async () => {
+      const { fetch, sent } = recording()
+      await everyMethod(createHttp({ baseUrl: '/api', fetch, methodOverride: 'field' }))
+
+      const requests = sent()
+
+      expect(requests.map((request) => request.method)).toEqual([
+        'GET',
+        'POST',
+        'POST',
+        'POST',
+        'POST',
+      ])
+      expect(requests.map((request) => request.body)).toEqual([
+        undefined,
+        JSON.stringify({ title: 'A' }),
+        JSON.stringify({ title: 'B', _method: 'PUT' }),
+        JSON.stringify({ title: 'C', _method: 'PATCH' }),
+        // DELETE has no body of its own, so it gets one to carry the field.
+        JSON.stringify({ _method: 'DELETE' }),
+      ])
+      expect(requests[4]?.headers['Content-Type']).toBe('application/json')
+      expect(requests.every((request) => !('X-HTTP-Method-Override' in request.headers))).toBe(true)
+      expect(
+        requests.slice(1).every((request) => request.headers['X-XSRF-TOKEN'] === 'token'),
+      ).toBe(true)
+    })
+
+    it('adds the field to a form, and to the query when the body is bytes', async () => {
+      const { fetch, sent } = recording()
+      const http = createHttp({ baseUrl: '/api', fetch, methodOverride: 'field' })
+
+      const form = new FormData()
+      form.append('file', 'x')
+      await http.send!('PUT', 'media', { body: form })
+      await http.send!('PATCH', 'uploads/1', { body: new Blob(['chunk']), query: { part: 2 } })
+
+      const [first, second] = sent()
+
+      expect(first?.method).toBe('POST')
+      expect((first?.body as FormData).get('_method')).toBe('PUT')
+      expect((first?.body as FormData).get('file')).toBe('x')
+      expect(first?.headers['Content-Type']).toBeUndefined()
+
+      expect(second?.method).toBe('POST')
+      expect(second?.url).toBe('/api/uploads/1?part=2&_method=PATCH')
+      expect(second?.body).toBeInstanceOf(Blob)
+    })
+
+    it('keeps the override when a stale token is refreshed and the request goes again', async () => {
+      let first = true
+      const fetch = vi.fn().mockImplementation((url: string) => {
+        if (url === '/api/cms/auth/csrf-cookie') {
+          document.cookie = 'XSRF-TOKEN=token; path=/'
+
+          return Promise.resolve(new Response(null, { status: 204 }))
+        }
+
+        if (first) {
+          first = false
+
+          return Promise.resolve(new Response(null, { status: 419 }))
+        }
+
+        return Promise.resolve(respond({ data: {} }))
+      })
+
+      const http = createHttp({ baseUrl: '/api', fetch, methodOverride: 'header' })
+      await http.delete('pages/1')
+
+      const retried = fetch.mock.calls.at(-1)?.[1] as RequestInit & {
+        headers: Record<string, string>
+      }
+
+      expect(retried.method).toBe('POST')
+      expect(retried.headers['X-HTTP-Method-Override']).toBe('DELETE')
+    })
+  })
 })

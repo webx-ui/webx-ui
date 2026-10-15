@@ -129,25 +129,11 @@ $tables->preserve('cms_settings', 'key', static fn (): array => ['shop.payment-m
    languages, block types; rebuilds the sitemap and, with Manticore, the search index.
 10. Run as root, hands every path it wrote back to the owner of `storage`.
 
-## Two ways a restore used to break a stand
-
-Both on a container stand, after a restore that said "Restored." and a `webx:doctor` that
-passed. Neither happens any more; the symptoms are here for a stand restored with an older
-version.
-
-- **Every page with a picture answers 500**, `League\Flysystem\UnableToCreateDirectory` for
-  `storage/app/public/media/thumbs/<key>`. The restore ran as root and unpacked the media as
-  `root:root`; the web server cannot cut a preview inside. Now the files are handed back to the
-  owner of `storage`. On an older stand: `chown -R www-data:www-data storage`.
-- **The whole site, panel included, is the proxy's "404 page not found".** The archive carried
-  `seo.normalise-https = true`; the container's health check asks `http://127.0.0.1/up`, got a
-  301 to an https nobody serves inside the container, and the proxy took the "unhealthy" container
-  out of routing. Now a restore keeps the target's `seo.normalise-*`, and neither the
-  normalisation nor the redirects table ever answers the health route (`health:` in `bootstrap/app.php`, plus
-  `webx-seo.probes`) or a request from 127.0.0.1 to `http://127.0.0.1` without `X-Forwarded-*`.
-  On an older stand: switch `seo.normalise-https` off there — the proxy already sends visitors
-  to https.
-
+A stand restored by an older version may show one of two symptoms the restore now prevents:
+every page with a picture answers 500 (`UnableToCreateDirectory` under `media/thumbs` — the
+files were unpacked as root; `chown -R www-data:www-data storage`), or the whole site is the
+proxy's 404 (the archive carried `seo.normalise-https = true` and the container's health check
+got a redirect; switch it off there — the proxy already sends visitors to https).
 Restoring into PostgreSQL is not supported yet; making a snapshot there is.
 
 ## The archive

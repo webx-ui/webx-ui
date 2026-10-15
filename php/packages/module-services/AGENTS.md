@@ -75,33 +75,28 @@ any theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-services`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-services` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not change `prefix` without `webx:routes:rebuild`: the stored addresses stay at the old
   prefix until rebuilt; the rebuild also leaves redirecting aliases on the old ones.
 - Do not add a route for the prefix or for a service in `routes/web.php`: the registry owns those
   addresses. To take over the index, switch `index` off and make a page there.
 - Do not write blocks through `services_update`: content goes through `blocks_edit_content`,
   which changes one node and leaves the rest alone. A `blocks` key there is refused.
-- Do not write without the `revision` services_get gave you: `services_update` refuses a write
-  with none and refuses a stale one. Read again and redo the change; do not retry blindly.
-  `force: true` writes without one and is for a script that means to overwrite, not for an
-  agent working beside people. `services_get` names in `being_edited_by` who has the service open
-  in the panel right now — tell your user before writing under them. Their editor merges your
-  write with theirs field by field, and a draft written over by somebody else is kept: the
-  panel's History lists it under Drafts, and «Restore» puts it back.
-- `services_publish`, `services_unpublish`, `services_discard`, `services_version_restore`, `services_delete` act on whatever the draft holds now, so they take the `revision` too: a stale
-  one is refused, and while somebody has the service open in the panel (`being_edited_by`) one is
-  required — the refusal names who. `force: true` goes ahead regardless; nobody there, no revision needed.
+- Do not write without the `revision` services_get gave you: `services_update` refuses a write with
+  none or a stale one — read again and redo the change, do not retry blindly. `force: true` is for
+  a script that means to overwrite, not for an agent working beside people. `being_edited_by` names
+  who has the service open in the panel — tell your user before writing under them; a draft written
+  over is kept in the panel's History › Drafts. `services_publish`, `services_unpublish`, `services_discard`, `services_version_restore`, `services_delete` take the `revision` too: a
+  stale one is refused, and while somebody has the service open one is required.
 - Do not add a migration for a project field: the patch and the `extra` column are the place.
 - Do not bin a category that still has services — it is refused with the count. Move the services
   out first. Do not delete rows with SQL: a raw delete leaves addresses in the routing registry.
 - Do not print `<title>` in a site's copy of a view: with an empty SEO card the service and the
   category name the page themselves (`seoFallback()` — the name through the title template, the
   lead, the cover), and the index is called by the section.
-  A copy published before still has an `@if ($meta->title === null)` block and the `$seo` /
-  `$meta` lines for it: delete them, they never print any more.
+  An old copy's `@if ($meta->title === null)` block and its `$seo` / `$meta` lines are dead —
+  delete them.
 
 ## Check your work
 

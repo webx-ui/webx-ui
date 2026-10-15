@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Settings\Models\Setting;
 use WebxUi\Settings\Settings;
@@ -24,7 +28,17 @@ final class McpToolsTest extends TestCase
         return ($this->app->make(ToolRegistry::class)->tool("settings_{$name}")->tool->handler)($arguments);
     }
 
+    /** Every tab in use and drawable: the file library installed, every part of the contacts printed. */
+    protected function everyTab(Application $app): void
+    {
+        $app['config']->set('webx-settings.uses', ['contacts' => ['phones', 'emails', 'addresses', 'hours', 'messengers', 'socials']]);
+        $app->afterResolving(FieldTypes::class, static function (FieldTypes $types): void {
+            $types->register('wx-media', new StringType);
+        });
+    }
+
     #[Test]
+    #[DefineEnvironment('everyTab')]
     public function list_describes_the_keys_the_screen_declares(): void
     {
         $this->assertSame([

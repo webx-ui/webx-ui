@@ -45,6 +45,15 @@
                     "module-blocks",
                     "module-seo"
                 ],
+                "settings": {
+                    "contacts": [
+                        "phones",
+                        "emails",
+                        "addresses",
+                        "hours",
+                        "socials"
+                    ]
+                },
                 "locales": [
                     "en",
                     "ru",

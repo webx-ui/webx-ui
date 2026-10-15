@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Screens;
 
+use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
@@ -23,7 +24,7 @@ final class ScreenRegistry
     /** @var array<string, list<Node>> */
     private array $trees = [];
 
-    /** @var array<string, list<list<array<string, mixed>>>> */
+    /** @var array<string, list<list<array<string, mixed>>|Closure(): list<array<string, mixed>>>> */
     private array $patches = [];
 
     /** @var array<string, list<Node>> */
@@ -65,10 +66,22 @@ final class ScreenRegistry
      * Lays a patch over a screen. The screen need not be registered yet — a project's provider
      * may boot before the module's — so the target is checked when the tree is first built.
      *
-     * @param  string|list<array<string, mixed>>  $patch  A path to a JSON file, or the operations.
+     * A closure is a patch that depends on what other providers register — a field type, a
+     * source — and so cannot be written down at boot. It keeps its place among the patches but
+     * is asked for its operations each time the tree is built, and a tree built before the
+     * application has booted is not kept: the answer may still change.
+     *
+     * @param  string|list<array<string, mixed>>|(Closure(): list<array<string, mixed>>)  $patch  A path to a JSON file, the operations, or a closure that returns them.
      */
-    public function extend(string $name, string|array $patch): void
+    public function extend(string $name, string|array|Closure $patch): void
     {
+        if ($patch instanceof Closure) {
+            $this->patches[$name][] = $patch;
+            unset($this->built[$name], $this->checked[$name]);
+
+            return;
+        }
+
         $ops = is_string($patch) ? $this->read($patch) : $patch;
         $problems = ScreenValidator::patch($ops);
 
@@ -113,8 +126,20 @@ final class ScreenRegistry
         if (! isset($this->built[$name])) {
             $root = $this->trees[$name];
 
+            $deferred = false;
+
             foreach ($this->patches[$name] ?? [] as $patch) {
+                if ($patch instanceof Closure) {
+                    $deferred = true;
+                    $patch = $this->deferred($name, $patch);
+                }
+
                 $root = Patcher::apply($name, $root, $patch);
+            }
+
+            // Defaults are not judged before boot either ({@see checkDefaults()}), so nothing is lost.
+            if ($deferred && ! $this->booted()) {
+                return $this->withdraw($root);
             }
 
             $this->built[$name] = $root;
@@ -212,7 +237,7 @@ final class ScreenRegistry
             return;
         }
 
-        if ($container instanceof Application && ! $container->isBooted()) {
+        if (! $this->booted()) {
             return;
         }
 
@@ -223,6 +248,32 @@ final class ScreenRegistry
         }
 
         $this->checked[$name] = true;
+    }
+
+    /**
+     * The operations of a closure patch, checked like any other patch.
+     *
+     * @param  Closure(): list<array<string, mixed>>  $patch
+     * @return list<array<string, mixed>>
+     */
+    private function deferred(string $name, Closure $patch): array
+    {
+        $ops = $patch();
+        $problems = ScreenValidator::patch($ops);
+
+        if ($problems !== []) {
+            throw ScreenException::invalid("The patch on [{$name}]", $problems);
+        }
+
+        return $ops;
+    }
+
+    /** Every provider has booted: what they register is in place, and an answer may be kept. */
+    private function booted(): bool
+    {
+        $container = Container::getInstance();
+
+        return ! $container instanceof Application || $container->isBooted();
     }
 
     /**

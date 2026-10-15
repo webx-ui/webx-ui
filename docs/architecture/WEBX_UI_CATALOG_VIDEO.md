@@ -3,8 +3,7 @@
 Дополнение к [`WEBX_UI_MODULE_CATALOG.md`](WEBX_UI_MODULE_CATALOG.md) §3 и §10.4: к картинке
 галереи можно прикрепить ролик — свой файл или ссылку на YouTube. Большие файлы идут частями
 через загрузку по кускам, которая живёт в `module-admin` и годится любому модулю. Пакеты:
-`webx-ui/module-catalog`, `webx-ui/module-admin` и их npm-половины. Выпущено в v0.52.0; спека —
-справочник того, что есть. Гайды для людей — `apps/docs/guide/uploads.md` и раздел «Video» в
+`webx-ui/module-catalog`, `webx-ui/module-admin` и их npm-половины. Статус: выпущено. Гайды для людей — `apps/docs/guide/uploads.md` и раздел «Video» в
 `apps/docs/guide/catalog.md`.
 
 ## 1. Решения (не переоткрывать)
@@ -31,8 +30,8 @@
    `i.ytimg.com/vi/{id}/maxresdefault.jpg` (при 404 — `hqdefault.jpg`) через `Gallery::fetch`;
    пустой `alt` заполняется названием ролика из oEmbed, если он ответил.
 8. **Плеер — только по клику.** До клика страница не тянет чужой JS и не ставит куки YouTube.
-   Без JS кнопка — ссылка на файл или на ролик. С W3.2 виджетов (09.10.2026) — ещё и только с
-   согласием посетителя на `media` (§6).
+   Без JS кнопка — ссылка на файл или на ролик. Ролик площадки — ещё и только с согласием
+   посетителя на `media` (§6).
 9. **Выключается флагом** `webx-catalog.fields.video` (по умолчанию включено), как `barcode`:
    ни кнопок в панели, ни плеера и разметки на витрине, API и инструменты прикрепления отвечают
    отказом. Уже прикреплённое хранится.
@@ -61,7 +60,7 @@
 ссылки принимаются без правки ядра. Ролик провайдера, которого больше никто не регистрирует,
 приходит в ресурсе как `video: null`.
 
-**Реестров два, и это нарочно** (решение W3.2, 09.10.2026). Этот отвечает на вопросы хранения:
+**Реестров два, и это нарочно.** Этот отвечает на вопросы хранения:
 что лежит в `video_provider` и `video`, из какой обложки сделать строку галереи, как назвать ролик
 по oEmbed. Реестр `webx-ui/widgets` (`WebxUi\Widgets\Video\VideoProviders`, спека виджетов §10) —
 на вопросы показа: чей адрес, плеер с автозапуском, страница ролика без JS, превью для постера.
@@ -84,10 +83,8 @@ PATCH  /api/cms/uploads/{id}  тело — байты, Upload-Offset: n → 204,
 DELETE /api/cms/uploads/{id}  → 204 (отмена, файл удаляется)
 ```
 
-- **Сессия** — строка `cms_uploads` (`id` uuid, `admin_id`, `purpose`, `name`, `size`, `type`,
-  `fingerprint` — sha1 строки клиента, `offset`, `expires_at`) и файл
-  `storage/app/uploads/{id}.part`. Куски всегда на локальном диске, независимо от диска
-  потребителя: в облачный дописывать нельзя.
+- **Сессия** — строка `cms_uploads` и файл `storage/app/uploads/{id}.part`. Куски всегда на
+  локальном диске, независимо от диска потребителя: в облачный дописывать нельзя.
 - **Назначение** — реестр `UploadPurposes`, как `HistoryTypes`; проверяет права, тип и размер на
   создании. Замыкания читаются при каждом запросе, так что лимиты меняются конфигом:
   `UploadPurposes::register('catalog.video', permission: 'catalog.manage', types: fn () => config('webx-catalog.videos.types'), maxBytes: fn () => config('webx-catalog.videos.max_size_mb') * 1048576)`.
@@ -112,16 +109,11 @@ DELETE /api/cms/uploads/{id}  → 204 (отмена, файл удаляется
   (`finfo` на `$claimed->path`) и хеш — до `$claimed->moveTo($disk, $path)` (потоком, `.part`
   удаляется) или `$claimed->discard()` при отказе.
 
-npm, `@webx-ui/module-admin`: `useChunkedUpload({ admin?, storage?, retries?, retryDelay? })` —
-`start(file, purpose)` резолвится id, когда файл целиком на сервере, `null` при отмене и
-реджектится при ошибке (пауза промис не трогает); `pause()`, `resume()`, `cancel()`; реактивные
-`progress`, `speed`, `remaining`, `state` (`idle | uploading | paused | offline | done | failed`).
-Сам уходит в `offline` по событию браузера и продолжает по `online`. Отпечатки незаконченных
-загрузок держит в `localStorage`; рядом `unfinishedUploads(purpose)`,
-`forgetUnfinishedUpload(fingerprint, purpose)`, `uploadFingerprint(file)`. Композабл ставит
-загрузку на паузу, когда умирает его scope, и не вешает `beforeunload` — это забота экрана. У
-`Http` есть необязательный `send()` — запрос с CSRF и заголовками панели, без JSON и без броска на
-не-2xx.
+npm, `@webx-ui/module-admin`: `useChunkedUpload()` — `start(file, purpose)` резолвится id, когда
+файл целиком на сервере, `null` при отмене (пауза промис не трогает); сам уходит в `offline` по
+событию браузера и продолжает по `online`; отпечатки незаконченных загрузок держит в
+`localStorage` (`unfinishedUploads(purpose)`). Композабл ставит загрузку на паузу, когда умирает
+его scope, и не вешает `beforeunload` — это забота экрана. Подробно — гайд `uploads.md`.
 
 ## 5. Сервер каталога
 
@@ -145,13 +137,11 @@ npm, `@webx-ui/module-admin`: `useChunkedUpload({ admin?, storage?, retries?, re
 
 Права — `catalog.manage`, как у остальной галереи. Картинка чужого товара — 404 везде.
 
-| Запрос                                              | Ответ                                                                                                                                                                                                                     |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST …/products/{id}/images` multipart             | картинка, как раньше                                                                                                                                                                                                      |
-| `POST …/products/{id}/images { url }`               | `201 { data: image }` для картинки и YouTube; `202 { data: { queued: true, product, url, image: null } }` для прямого файла. 422 `errors.url`: `video-off`, `video-no-poster`, `image-not-a-picture`, `image-unreachable` |
-| `POST …/images/{image}/video { upload, duration? }` | `200 { data: image }`; 422 `errors.upload`: `video-not-a-video`, `video-too-large`, `video-off`, плюс отказы `UploadRefused` (§4)                                                                                         |
-| `POST …/images/{image}/video { url }`               | `200` для YouTube, `202 { data: { queued: true, product, url, image } }` для прямого файла (ляжет на эту картинку); 422 `errors.url`: `video-not-a-video`, `video-off`                                                    |
-| `DELETE …/images/{image}/video`                     | `200 { data: image }` с `video: null`; на картинке без ролика — тот же ответ                                                                                                                                              |
+- `POST …/products/{id}/images { url }` — `201` для картинки и YouTube, `202 { queued: true }` для
+  прямого файла.
+- `POST …/images/{image}/video` с `{ upload, duration? }` или `{ url }` — `200`, прямой файл по
+  адресу — `202` (ляжет на эту картинку); отказы загрузки — те же `UploadRefused` (§4).
+- `DELETE …/images/{image}/video` — `200` с `video: null`, и на картинке без ролика тоже.
 
 Каждая картинка ресурса (`ProductForm::describe()` → `images`, ответы галереи) несёт
 `video: { provider, url, embed, duration } | null`: `url` — файл на диске галереи или страница
@@ -162,22 +152,20 @@ npm, `@webx-ui/module-admin`: `useChunkedUpload({ admin?, storage?, retries?, re
 
 ### Журнал
 
-Запись в поле `images`: `«{sha1}.jpg» ▶ YouTube` / `«{sha1}.jpg» ▶ clip.mp4`; прикрепление —
-`null → метка`, замена — `старая → новая`, снятие — `метка → null`. У файла при прикреплении —
-имя, с которым его загрузили, при снятии — хешевое имя на диске: исходное не хранится.
+Запись в поле `images` (`«{sha1}.jpg» ▶ clip.mp4`). У файла при прикреплении — имя, с которым его
+загрузили, при снятии — хешевое имя на диске: исходное не хранится.
 
 ## 6. Витрина
 
-- `product.blade.php` (с W3.2 виджетов, 09.10.2026): элемент с роликом —
+- `product.blade.php`: элемент с роликом —
   `<figure class="webx-catalog-product__video">` с `<x-webx-video>` пакета `webx-ui/widgets`
   (спека виджетов §10): постер — картинка галереи, пропорция — её `width/height`, имя — `title`
   картинки, иначе `alt`, иначе название товара. Ролик площадки — `src` = страница ролика
   (`videoData()['url']`): фасад, а **до согласия на `media` — заглушка** «Load» / «Always load
   videos» (§9.4 спеки виджетов), `iframe` `youtube-nocookie.com/embed/{id}?autoplay=1` по клику.
   Свой файл — `file`: `<video controls preload="none" playsinline poster>` без согласия. Без JS —
-  ссылка на ролик. Встроенный скрипт, `data-webx-embed` / `data-webx-video` и кнопка
-  `webx-catalog-product__play` ушли; слово `storefront.play-video` оставлено для сайтов, чья
-  перекрытая вьюха его зовёт. Каталог требует `webx-ui/widgets`: запасная старая разметка без
+  ссылка на ролик. Слово `storefront.play-video` оставлено для сайтов, чья перекрытая вьюха его
+  зовёт. Каталог требует `webx-ui/widgets`: запасная старая разметка без
   виджетов означала бы плеер YouTube без согласия, а согласие — обязанность сайта в ЕС (§2.4
   спеки виджетов). Открыто: вьюха каталога в раскладке без `@webxTheme` (сайт без темы) получает
   разметку компонента без его CSS и JS — ссылка на ролик работает, но заглушка до согласия видна
@@ -194,7 +182,7 @@ npm, `@webx-ui/module-admin`: `useChunkedUpload({ admin?, storage?, retries?, re
 
 - **▶ — в центре превью**, а не в углу рядом с «Главная»: на картинке в 72 пикселя «Главная»
   занимает почти всю ширину. Длительность, если известна, — в том же значке. Символ — `▶︎` с
-  селектором текстового вида: голый `▶` Windows рисует цветным эмодзи. Клик по превью открывает
+  селектором текстового вида: голый `▶` часть систем рисует цветным эмодзи. Клик по превью открывает
   ролик в новой вкладке.
 - Действия строки: «Прикрепить видео» → «Файл…» / «Ссылка на YouTube…»; у строки с роликом —
   «Убрать видео» с подтверждением (файл удаляется сразу).
@@ -216,9 +204,8 @@ npm, `@webx-ui/module-admin`: `useChunkedUpload({ admin?, storage?, retries?, re
   (`webx:catalog-video-targets`) товар и картинку. Предложение «Продолжить загрузку clip.mp4
   (1,2 из 3,4 ГБ)» — только на своём товаре; другой файл получает отказ словами, тот же —
   продолжает с места сервера и ложится на ту же картинку, если она ещё есть.
-- **Кадр** — `probeVideo()` в `video.ts`; `<video>`, `<canvas>` и object URL приходят параметром,
-  так тест проверяет кадр без DOM (в jsdom `<video>` не декодирует).
-- Слова — `panel.video-*` / `panel.gallery-*` на обеих половинах.
+- **Кадр** — `probeVideo()`; `<video>`, `<canvas>` и object URL приходят параметром, так тест
+  проверяет кадр без DOM (в jsdom `<video>` не декодирует).
 
 ## 8. MCP
 
@@ -258,10 +245,9 @@ npm, `@webx-ui/module-admin`: `useChunkedUpload({ admin?, storage?, retries?, re
 
 - `webx:demo` даёт одному товару ролик YouTube; своих файлов в демо нет — не тащить мегабайты в
   пакет.
-- Плейграунд: эндпоинты `/uploads` — `server/panel/uploads.ts`, в памяти, кусок 256 КБ и 400 мс
-  на кусок, чтобы паузу успевали нажать; статусы 200/202 роутер отдаёт через `Reply`
-  (`reply.ts`). У товара 1 — ролик YouTube и ролик-файл `apps/playground/public/demo-clip.webm`
-  (5 КБ, 3 с); прямая ссылка «скачивается» 4 секунды и даёт строку с заглушкой.
+- Плейграунд: `/uploads` в памяти (`server/panel/uploads.ts`), кусок 256 КБ и 400 мс на кусок,
+  чтобы паузу успевали нажать. У товара 1 — ролик YouTube и ролик-файл
+  `apps/playground/public/demo-clip.webm`; прямая ссылка «скачивается» 4 секунды.
 
 ## 11. Отложено и открыто
 

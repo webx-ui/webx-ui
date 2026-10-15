@@ -10,6 +10,7 @@ use WebxUi\Admin\Http\Controllers\IconController;
 use WebxUi\Admin\Http\Controllers\LinkController;
 use WebxUi\Admin\Http\Controllers\LocaleController;
 use WebxUi\Admin\Http\Controllers\ManifestController;
+use WebxUi\Admin\Http\Controllers\MethodProbeController;
 use WebxUi\Admin\Http\Controllers\NoteController;
 use WebxUi\Admin\Http\Controllers\RelationController;
 use WebxUi\Admin\Http\Controllers\ScreenController;
@@ -112,6 +113,12 @@ Route::prefix((string) config('webx-admin.api_path'))
             ->where('locale', '[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})?')
             ->name('translations');
     });
+
+// What `webx:doctor` asks to learn whether the web server lets PUT and DELETE through to PHP.
+// No middleware: the answer is the same for everybody, needs no session, and a CSRF check would
+// make Laravel's own refusal look like the web server's.
+Route::match(['PUT', 'DELETE'], (string) config('webx-admin.api_path').'/method-probe', MethodProbeController::class)
+    ->name('webx.api.method-probe');
 
 // The icons before the shell, whose pattern matches every address under the prefix. No
 // middleware: a file needs neither a session nor a language.

@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use JsonException;
 use RuntimeException;
+use stdClass;
 use Symfony\Component\Finder\SplFileInfo;
 use WebxUi\Themes\Exceptions\ThemeException;
 use WebxUi\Themes\ThemeChain;
@@ -251,6 +252,13 @@ class EjectCommand extends Command
             $merged['fonts'] = array_values($faces);
         }
 
+        // The settings tabs the package printed are still printed — by the views now copied here.
+        $settings = (new ThemeChain([$local, $package]))->settings();
+
+        if ($settings !== null) {
+            $merged['settings'] = $settings === [] ? new stdClass : $settings;
+        }
+
         $files->put($file, ThemePackage::json(['theme' => $merged]));
     }
 
@@ -471,7 +479,7 @@ class EjectCommand extends Command
     private static function tokensFile(array $tokens): string
     {
         // An empty object stays an object: "defaults": {} is what a fresh local theme has.
-        $tokens = array_map(static fn ($value) => $value === [] ? new \stdClass : $value, $tokens);
+        $tokens = array_map(static fn ($value) => $value === [] ? new stdClass : $value, $tokens);
 
         return ThemePackage::json($tokens);
     }

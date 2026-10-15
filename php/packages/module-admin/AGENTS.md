@@ -14,8 +14,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
   (default `api/cms`): `manifest`, `screens/{name}`, `links/*`, `collections`, `relations/{target}`,
   `entities/{type}/{id}/notes`, `history/{type}/{id}`, `history/runs/{id}`, `uploads`, `locales`,
   `translations/{locale}`. The panel's icons are served under its prefix too.
-- **Auth** — none of its own. `webx-admin.middleware` is `['web']`, so until `webx-ui/module-auth`
-  adds its middleware the panel is open. Modules put their API behind the middleware group
+- **Auth** — none of its own (see Do not). Modules put their API behind the middleware group
   `webx.panel` (`web`, `webx.panel-locale`, `cms.auth`, `webx.history`).
 - **Modules** — `ModuleRegistry`: a module (`AbstractModule`, `id()` required) is registered from a
   provider and lands in the manifest with its title, icon, order, group and permissions. Two
@@ -68,11 +67,10 @@ archive with migrations this code lacks, refuses production without `--force`, a
 ### The site's root `AGENTS.md`
 
 `webx:panel` (and so `--sync`) writes a block between `<!-- webx:agents -->` and
-`<!-- /webx:agents -->`: what the site is, the first rule (forms included), where its look lives (a link to the
-styles guide, `RootFile::STYLES_GUIDE`), a link to `vendor/webx-ui/<pkg>/AGENTS.md` for every
-installed `webx-ui/*` package that has one, what to run after updating. The block is
-replaced whole on each run; everything outside it — the `## This project` section — is never
-touched. A hand-written file without markers keeps every word, with the block put on top.
+`<!-- /webx:agents -->`: what the site is, the first rule (forms included), where its look lives
+(`RootFile::STYLES_GUIDE`), a link to `vendor/webx-ui/<pkg>/AGENTS.md` for every installed
+`webx-ui/*` package that has one, what to run after updating. The block is replaced whole on each
+run; everything outside it — the `## This project` section — is never touched. A hand-written file without markers keeps every word, with the block put on top.
 `CLAUDE.md` is written once as `@AGENTS.md`; an existing one without that line only gets a warning.
 Where `webx-ui/mcp` serves its HTTP endpoint (route `webx.mcp`), `.mcp.json` gets one server named
 after the site (`Site::name()`), at `app.url` + the route; other servers, and a key renamed over the
@@ -107,9 +105,8 @@ same address, are kept; a file that is not JSON is left alone with a warning (`A
 | A link source, note type, history type  | register into `LinkSources`, `NoteTypes`, `HistoryTypes` from a provider                                                                                                 |
 
 A patch addresses nodes by their `id`; every screen names its own (the module's guide lists them).
-Operations are `add`, `remove`, `replace`, `move`, `set`. A patch whose target is gone throws when
-the screen is first built — a patch here is a bug in whoever wrote it, not something to skip.
-Patches apply in the order they were registered.
+Operations are `add`, `remove`, `replace`, `move`, `set`, applied in the order registered. A patch
+whose target is gone throws when the screen is first built — a bug in whoever wrote it.
 
 ## Do not
 
@@ -125,8 +122,7 @@ Patches apply in the order they were registered.
   stores it in `extra`, and the next module release will not fight your migration.
 - Do not put a site live without `webx-ui/module-auth`: without it `webx-admin.middleware` is only
   `web` and the panel is open to anyone.
-- Do not restore a snapshot onto a stand whose content you have not copied first: a restore
-  replaces the content tables and mirrors the files. The rollback is the dump it names.
+- Do not restore a snapshot onto a stand whose content you have not copied first: it is replaced.
 - Do not print anything for the panel on the site in a view (`@auth`, `data-*`): visitors get it too.
 - Do not write `cms_versions` or `cms_history` with SQL: use `publish()`, `restoreVersion()`
   then `publish()`, and `History::record()` — a raw row has no number, no author, no source.

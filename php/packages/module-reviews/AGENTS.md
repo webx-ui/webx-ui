@@ -47,9 +47,8 @@ the card. A patch whose target node is gone throws when the screen is first buil
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-reviews`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-reviews` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not add a migration for a project field: the patch on the screen and the `extra` column are
   the place, and a column of your own is never read by the form, the card or MCP.
 - Do not add a route or a page for one review: a review has no address by design. Put a reviews

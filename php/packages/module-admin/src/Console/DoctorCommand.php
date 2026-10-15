@@ -12,6 +12,7 @@ use WebxUi\Admin\Doctor\Checks\Halves;
 use WebxUi\Admin\Doctor\Checks\Helpers;
 use WebxUi\Admin\Doctor\Checks\Languages;
 use WebxUi\Admin\Doctor\Checks\Layouts;
+use WebxUi\Admin\Doctor\Checks\Methods;
 use WebxUi\Admin\Doctor\Checks\Migrations;
 use WebxUi\Admin\Doctor\Checks\NpmRanges;
 use WebxUi\Admin\Doctor\Checks\PanelOpens;
@@ -69,6 +70,7 @@ final class DoctorCommand extends Command
         Relations::class,
         Languages::class,
         PanelOpens::class,
+        Methods::class,
         PassportKeys::class,
         SiteGate::class,
         Queue::class,
