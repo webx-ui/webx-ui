@@ -1,5 +1,16 @@
 # @webx-ui/php
 
+## 0.74.0
+
+### Minor Changes
+
+- 0268dac: `webx:doctor` tells notes on the content apart from warnings about the setup. `Diagnosis::content()` is a warning marked `(content)` — mended in the panel, so `--strict` no longer stops a deploy on it, and the closing line counts it apart. Moved to it: a shared block no page places (`module-blocks`), a property code that clashes with a column of the exchange and pages hidden under the catalogue's root (`module-catalog`). `--json` prints `{checks: [{state, subject, detail, content}], failed, warned, content}`, with `warned` counting only the warnings `--strict` stops on.
+- 0268dac: Keys for programs. `webx-ui/mcp` gets the `mcp_keys` table and `Keys` (which key a call came with, its last use, revoking it, and whether the caller is a program at all); a tool outside a key's scopes is now left out of `tools/list`. `webx-ui/module-auth` issues keys through one `KeyIssuer` for the panel (`/api/cms/auth/keys`, behind `admins.manage`) and for `webx:mcp:token`, which gains `--days` (1–3650, a year by default) and lists its keys in the panel. `webx-ui/module-tasks` no longer takes a key issued without scopes for a person: it carried `mcp:use` like an OAuth connection and could accept a stage marked `human` or answer an agent's question.
+
+### Patch Changes
+
+- 0268dac: `webx-ui/module-tasks`: the panel's refusals are 422 instead of 409 — a move the rules of §3 do not allow (with `message` and `reason`, as before) and «Send a test message» when nothing is set up or Telegram does not take the message. The panel reads every 409 as an edit somebody made meanwhile and shows «Somebody changed this while you were working on it» in place of the answer, so a wrong bot token looked like a conflict on the settings screen, and a refused move on a task never said why.
+
 ## 0.73.0
 
 ### Minor Changes
