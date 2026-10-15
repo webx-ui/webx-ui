@@ -44,6 +44,11 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     patches: ['php/packages/module-seo/resources/screens/blog.author-form.json'],
   },
   'faq.form': { base: 'php/packages/module-faq/resources/screens/form.json', patches: [] },
+  'tasks.form': { base: 'php/packages/module-tasks/resources/screens/form.json', patches: [] },
+  'tasks.settings': {
+    base: 'php/packages/module-tasks/resources/screens/settings.json',
+    patches: [],
+  },
   'audit.settings': {
     base: 'php/packages/module-audit/resources/screens/audit-settings.json',
     patches: [],

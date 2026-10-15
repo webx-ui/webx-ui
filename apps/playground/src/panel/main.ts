@@ -24,6 +24,7 @@ import { seo } from '@webx-ui/module-seo'
 import { services } from '@webx-ui/module-services'
 import { tariffs } from '@webx-ui/module-tariffs'
 import { team } from '@webx-ui/module-team'
+import { tasks } from '@webx-ui/module-tasks'
 import { vacancies } from '@webx-ui/module-vacancies'
 /* The opt-in typeface; the tokens themselves come in with the core stylesheet. */
 import '@webx-ui/tokens/fonts.css'
@@ -95,6 +96,7 @@ const admin = createAdmin({
     blocks(),
     seo(),
     audit(),
+    tasks(),
     ...catalogManticore(),
     admins(),
     connect(),

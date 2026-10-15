@@ -42,6 +42,7 @@ const NAMESPACES: Record<string, string> = {
   'module-services': 'webx-services',
   'module-settings': 'webx-settings',
   'module-tariffs': 'webx-tariffs',
+  'module-tasks': 'webx-tasks',
   'module-team': 'webx-team',
   'module-vacancies': 'webx-vacancies',
 }
