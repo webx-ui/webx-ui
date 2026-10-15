@@ -57,6 +57,7 @@
 | [WEBX_UI_MODULE_SEO.md](WEBX_UI_MODULE_SEO.md)                           | Правила по адресам, редиректы, `<head>`, sitemap; перелинковка и FAQ страниц (§18)             | выпущен 14.09.2026, v0.14.0   |
 | [WEBX_UI_MODULE_SERVICES.md](WEBX_UI_MODULE_SERVICES.md)                 | Услуги как страницы, общие категории, поля проекта                                             | выпущен 23.09.2026, v0.35.0   |
 | [WEBX_UI_MODULE_TARIFFS.md](WEBX_UI_MODULE_TARIFFS.md)                   | Карточки цен группами, предложенный блок                                                       | выпущен 28.09.2026, v0.48.0   |
+| [WEBX_UI_MODULE_TASKS.md](WEBX_UI_MODULE_TASKS.md)                       | Очередь работы людей и агентов: задачи, этапы по порядку, отчёты, проверка, журнал             | T1–T5 сделаны 15.10.2026      |
 | [WEBX_UI_MODULE_TEAM.md](WEBX_UI_MODULE_TEAM.md)                         | Люди организации, соцсети, `RecordQuery`                                                       | выпущен 27.09.2026, v0.45.0   |
 | [WEBX_UI_MODULE_VACANCIES.md](WEBX_UI_MODULE_VACANCIES.md)               | Вакансии под приставкой, `JobPosting`, отклик формой                                           | выпущен 28.09.2026, v0.48.0   |
 
