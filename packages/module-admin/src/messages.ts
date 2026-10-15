@@ -30,6 +30,8 @@ export const adminMessages: Record<string, Messages> = {
     'system-site': 'Site',
     'system-search': 'Search and checks',
     'system-access': 'Access',
+    // The count beside a menu entry, said to a screen reader: what waits there for this person.
+    badge: 'Waiting for you: :count',
   },
   // The panel on the site: the drawer beside a page of the site, and the tab that opens it.
   'site-bar': {

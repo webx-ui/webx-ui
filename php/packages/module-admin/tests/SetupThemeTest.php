@@ -31,6 +31,9 @@ final class SetupThemeTest extends TestCase
 
     private string $composer = '';
 
+    /** The skeleton's routes file as it was, or null when Testbench has none. */
+    private ?string $routes = null;
+
     /** @var list<string> */
     private array $ran = [];
 
@@ -64,6 +67,8 @@ final class SetupThemeTest extends TestCase
 
         // Testbench's own skeleton: setup adds a script to it, and it is put back as it was.
         $this->composer = (string) $this->files->get($this->app->basePath('composer.json'));
+        $routes = $this->app->basePath('routes/web.php');
+        $this->routes = $this->files->exists($routes) ? (string) $this->files->get($routes) : null;
     }
 
     protected function tearDown(): void
@@ -73,6 +78,11 @@ final class SetupThemeTest extends TestCase
         }
 
         $this->files->put($this->app->basePath('composer.json'), $this->composer);
+        if ($this->routes === null) {
+            $this->files->delete($this->app->basePath('routes/web.php'));
+        } else {
+            $this->files->put($this->app->basePath('routes/web.php'), $this->routes);
+        }
 
         parent::tearDown();
     }
@@ -281,6 +291,45 @@ final class SetupThemeTest extends TestCase
         $this->assertSame([], $catalogue->demoGaps(['en', 'pl'], ['blocks', 'seo', 'media'], ThemeChoice::DEFAULT));
         // A stranger's theme says nothing; its modules count with their own demo.
         $this->assertSame(['pl' => ['blocks']], $catalogue->demoGaps(['en', 'pl'], ['blocks'], 'acme/theme-harbour'));
+    }
+
+    // -- A site with no public part ----------------------------------------------------------
+
+    #[Test]
+    public function a_site_of_the_panel_alone_leads_home_to_the_panel_keeps_out_of_search_and_has_no_theme(): void
+    {
+        $this->files->ensureDirectoryExists($this->app->basePath('routes'));
+        $this->files->put($this->app->basePath('routes/web.php'), "<?php\n\n// Routes of the site.\n");
+        // Nothing public installed either: what is on disk counts as chosen.
+        $this->files->put($this->installed, (string) json_encode(['packages' => [
+            ['name' => 'webx-ui/module-admin', 'version' => '0.28.0'],
+            ['name' => 'webx-ui/module-auth', 'version' => '0.28.0'],
+        ]]));
+
+        $this->runSetup(['--modules' => 'admins,settings,tasks'])->assertSuccessful();
+
+        $this->assertStringContainsString("WEBX_PUBLIC=false\n", (string) $this->files->get($this->app->basePath('.env')));
+        $this->assertEmpty(array_filter($this->ran, fn (string $line): bool => str_contains($line, 'theme')));
+
+        $routes = (string) $this->files->get($this->app->basePath('routes/web.php'));
+        $this->assertStringContainsString("Route::redirect('/', '/'.trim((string) config('webx-admin.path', 'cms'), '/'));", $routes);
+        $this->assertStringNotContainsString("Route::view('/', 'demo')", $routes);
+
+        // Once is enough.
+        $this->runSetup(['--modules' => 'admins,settings,tasks'])->assertSuccessful();
+        $this->assertSame(1, substr_count((string) $this->files->get($this->app->basePath('routes/web.php')), 'webx:panel-home'));
+    }
+
+    #[Test]
+    public function a_site_with_anything_public_stays_public(): void
+    {
+        $this->files->ensureDirectoryExists($this->app->basePath('routes'));
+        $this->files->put($this->app->basePath('routes/web.php'), "<?php\n");
+
+        $this->runSetup(['--modules' => 'admins,settings,tasks,blog'])->assertSuccessful();
+
+        $this->assertStringNotContainsString('WEBX_PUBLIC', (string) $this->files->get($this->app->basePath('.env')));
+        $this->assertStringNotContainsString('webx:panel-home', (string) $this->files->get($this->app->basePath('routes/web.php')));
     }
 
     /** @param  array<string, mixed>  $options */

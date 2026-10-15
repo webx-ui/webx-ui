@@ -12,4 +12,5 @@ return [
     'system-site' => 'Sitio',
     'system-search' => 'Búsqueda y revisión',
     'system-access' => 'Acceso',
+    'badge' => 'Esperando por ti: :count',
 ];

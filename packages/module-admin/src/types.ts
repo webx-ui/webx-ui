@@ -228,6 +228,11 @@ export interface NavEntry {
   group: string | null
   /** Caption id inside the group, or null among its plain entries. */
   section: string | null
+  /**
+   * A count beside the entry — what waits for this person there. The module says it under
+   * `meta.badge` of its manifest; nothing, zero or anything but a number draws no badge.
+   */
+  badge?: number
 }
 
 /** A group with the entries that sit under it, in navigation order. */

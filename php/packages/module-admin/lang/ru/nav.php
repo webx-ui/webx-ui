@@ -12,4 +12,5 @@ return [
     'system-site' => 'Сайт',
     'system-search' => 'Поиск и проверка',
     'system-access' => 'Доступ',
+    'badge' => 'Ждёт вас: :count',
 ];

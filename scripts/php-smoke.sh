@@ -1088,10 +1088,12 @@ SITE_BASE="http://127.0.0.1:${SITE_PORT}"
 SITE_PID=""
 
 site_cleanup() {
-    if [ -n "$SITE_PID" ] && kill -0 "$SITE_PID" 2>/dev/null; then
-        kill "$SITE_PID" 2>/dev/null || true
-        wait "$SITE_PID" 2>/dev/null || true
-    fi
+    for pid in "$SITE_PID" "${PRIVATE_PID:-}"; do
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+            wait "$pid" 2>/dev/null || true
+        fi
+    done
     cleanup
 }
 trap site_cleanup EXIT
@@ -1305,6 +1307,94 @@ grep -qE 'class="([^"]* )?site-header[ "]' <<< "$REMOVED_HEADER" \
     || fail "without the demo the header is not the one from code: $REMOVED_HEADER"
 grep -q 'b-demo-header' <<< "$REMOVED_HEADER" && fail 'the demo header outlived the removal'
 note 'the removal gives the site back its header from code'
+
+# --------------------------------------------------------------------------------------------
+#
+# A site with no public part: the panel, its settings and the task queue, and nothing a visitor
+# sees (WEBX_UI_MODULE_TASKS.md §7). Setup has to notice that by itself — `/` leads to the panel
+# instead of a placeholder, there is no theme to dress nothing in, and the whole site keeps out
+# of search engines.
+
+PRIVATE="$WORKDIR/private"
+PRIVATE_PORT="$((PORT + 2))"
+PRIVATE_BASE="http://127.0.0.1:${PRIVATE_PORT}"
+PRIVATE_PID=""
+
+private_artisan() {
+    env -u DB_CONNECTION -u DB_HOST -u DB_PORT -u DB_DATABASE -u DB_USERNAME -u DB_PASSWORD \
+        "$PHP_BIN" "$PRIVATE/artisan" "$@"
+}
+
+step "Create a site with no public part"
+$COMPOSER_BIN create-project webx-ui/site "$PRIVATE" \
+    --repository="$SITE_REPOSITORY" \
+    --no-install --no-scripts --no-interaction --quiet
+(
+    cd "$PRIVATE"
+    $COMPOSER_BIN config repositories.webx "$REPOSITORY"
+    $COMPOSER_BIN config repositories.packagist.org \
+        '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
+    $COMPOSER_BIN install --no-interaction --no-progress --quiet
+)
+cp "$PRIVATE/.env.example" "$PRIVATE/.env"
+private_artisan key:generate --quiet
+
+if [ "$DB_CONNECTION" = "sqlite" ]; then
+    PRIVATE_DATABASE=(--db-connection=sqlite)
+else
+    PRIVATE_DATABASE=(
+        --db-connection="$DB_CONNECTION"
+        --db="${SETUP_DB}_private"
+        --db-host="${DB_HOST:-127.0.0.1}"
+        --db-port="${DB_PORT:-3306}"
+        --db-username="${DB_USERNAME:-root}"
+        --db-password="${DB_PASSWORD:-}"
+    )
+fi
+
+WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" private_artisan webx:setup \
+    --no-interaction \
+    --name='Tasks' \
+    --domain="127.0.0.1:${PRIVATE_PORT}" \
+    --modules=admins,settings,tasks \
+    --locales=en \
+    --admin="tasks@example.test" \
+    --no-demo \
+    --no-build \
+    "${PRIVATE_DATABASE[@]}" "${SETUP_COMPOSER[@]}" > "$WORKDIR/private-setup.log" 2>&1 \
+    || { cat "$WORKDIR/private-setup.log" >&2; fail 'webx:setup of a site with no public part did not succeed'; }
+
+grep -q '^WEBX_PUBLIC=false' "$PRIVATE/.env" || fail 'setup did not mark the site as having no public part'
+[ -d "$PRIVATE/theme" ] && fail 'a site with no public part was given a theme'
+grep -q 'webx:panel-home' "$PRIVATE/routes/web.php" || fail 'setup did not lead / to the panel'
+grep -q 'webx:demo-page' "$PRIVATE/routes/web.php" && fail 'a site with no public part got the placeholder page'
+for call in 'tasks()' 'admins()'; do
+    grep -qF "$call" "$PRIVATE/resources/js/admin.ts" || fail "resources/js/admin.ts does not register $call"
+done
+note 'marked private, no theme, / to the panel, the queue in the panel'
+
+step "Serve the site with no public part"
+private_artisan serve --host=127.0.0.1 --port="$PRIVATE_PORT" > "$WORKDIR/private-serve.log" 2>&1 &
+PRIVATE_PID=$!
+
+for _ in $(seq 1 40); do
+    curl -s -o /dev/null "$PRIVATE_BASE/robots.txt" && break
+    sleep 0.5
+done
+
+HOME_LOCATION="$(curl -s -o /dev/null -w '%{redirect_url}' "$PRIVATE_BASE/")"
+[ "$HOME_LOCATION" = "$PRIVATE_BASE/cms" ] || fail "/ leads to '$HOME_LOCATION', not to the panel"
+note "/ -> $HOME_LOCATION"
+
+ROBOTS="$(curl -s "$PRIVATE_BASE/robots.txt")"
+grep -q '^Disallow: /$' <<< "$ROBOTS" || fail "robots.txt does not keep crawlers out: $ROBOTS"
+curl -s -D - -o /dev/null "$PRIVATE_BASE/cms" | grep -qi '^X-Robots-Tag: noindex, nofollow' \
+    || fail 'the panel of a site with no public part does not say noindex'
+note 'robots.txt disallows everything, and every response says noindex'
+
+kill "$PRIVATE_PID" 2>/dev/null || true
+wait "$PRIVATE_PID" 2>/dev/null || true
+PRIVATE_PID=""
 
 printf '\n\033[32m== And one command turns an empty directory into a site with a panel on it.\033[0m\n'
 

@@ -12,4 +12,5 @@ return [
     'system-site' => 'Site',
     'system-search' => 'Arama ve denetim',
     'system-access' => 'Erişim',
+    'badge' => 'Sizi bekleyen: :count',
 ];

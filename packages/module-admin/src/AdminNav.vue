@@ -16,6 +16,10 @@ import { useTranslate } from './i18n'
  * every group had before groups could carry one. Inside a group, the entries under no caption
  * come first and each caption follows with its own — a caption adds no depth, and on the narrow
  * rail it is a rule.
+ *
+ * An entry may carry a count — what waits for this person in that section, as the module said
+ * under `meta.badge` of the manifest. On the collapsed rail the label is gone and so is the count
+ * beside it; the entry's title still says where it goes.
  */
 defineProps<{ collapsed?: boolean }>()
 
@@ -86,7 +90,18 @@ watch(current, reveal, { flush: 'post' })
       :value="entry.id"
       :icon="entry.icon ?? undefined"
       :label="entry.title"
-    />
+    >
+      <template v-if="entry.badge" #trailing>
+        <wx-badge
+          size="sm"
+          type="warning"
+          round
+          :aria-label="t('nav.badge', { count: entry.badge })"
+        >
+          {{ entry.badge }}
+        </wx-badge>
+      </template>
+    </wx-menu-item>
 
     <wx-submenu
       v-for="group in admin.groups.value.groups"
@@ -101,7 +116,18 @@ watch(current, reveal, { flush: 'post' })
         :value="entry.id"
         :icon="entry.icon ?? undefined"
         :label="entry.title"
-      />
+      >
+        <template v-if="entry.badge" #trailing>
+          <wx-badge
+            size="sm"
+            type="warning"
+            round
+            :aria-label="t('nav.badge', { count: entry.badge })"
+          >
+            {{ entry.badge }}
+          </wx-badge>
+        </template>
+      </wx-menu-item>
       <wx-menu-group v-for="section in group.sections" :key="section.id" :title="section.title">
         <wx-menu-item
           v-for="entry in section.entries"
@@ -109,7 +135,18 @@ watch(current, reveal, { flush: 'post' })
           :value="entry.id"
           :icon="entry.icon ?? undefined"
           :label="entry.title"
-        />
+        >
+          <template v-if="entry.badge" #trailing>
+            <wx-badge
+              size="sm"
+              type="warning"
+              round
+              :aria-label="t('nav.badge', { count: entry.badge })"
+            >
+              {{ entry.badge }}
+            </wx-badge>
+          </template>
+        </wx-menu-item>
       </wx-menu-group>
     </wx-submenu>
   </wx-menu>

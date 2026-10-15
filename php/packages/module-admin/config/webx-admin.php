@@ -63,6 +63,23 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | A site with no public part
+    |---------------------------------------------------------------------------
+    |
+    | A site that is only its panel — a task queue for people and agents, say
+    | — has nothing for a search engine. Off, every response says
+    | `X-Robots-Tag: noindex, nofollow` and `/robots.txt` disallows everything,
+    | whatever module would answer it otherwise. `webx:setup` writes it when
+    | none of the chosen modules shows a visitor anything.
+    |
+    |     WEBX_PUBLIC=false
+    |
+    */
+
+    'public' => (bool) env('WEBX_PUBLIC', true),
+
+    /*
+    |---------------------------------------------------------------------------
     | A password over the site while it is being tested
     |---------------------------------------------------------------------------
     |
