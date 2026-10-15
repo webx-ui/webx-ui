@@ -1,5 +1,12 @@
 # @webx-ui/module-settings
 
+## 0.4.4
+
+### Patch Changes
+
+- Updated dependencies [be30498]
+  - @webx-ui/module-admin@0.27.0
+
 ## 0.4.3
 
 ### Patch Changes

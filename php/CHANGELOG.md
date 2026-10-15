@@ -1,5 +1,15 @@
 # @webx-ui/php
 
+## 0.73.0
+
+### Minor Changes
+
+- be30498: New package `webx-ui/module-tasks`, T1 — the core of the queue of work between people and AI agents (§11 of its spec): projects, tasks with a specification and ordered stages, the stage state machine and the task status derived from the stages, an append-only journal, and the operations — create with stages, edit within the rules, ready, hand out the next stage atomically with everything a fresh session needs, report, accept, send back, release, ask and answer, comment, cancel. The section `tasks` with permissions `tasks.view`, `tasks.manage`, `tasks.work`, `tasks.review`. No MCP tools and no screens yet — those are T2 and T3.
+- be30498: `webx-ui/module-tasks`, T2 — the queue by MCP: eighteen `tasks_*` tools over the operations of T1, scopes `tasks:read`, `tasks:write`, `tasks:work`, `tasks:review`, and the resources `tasks://rules` and `tasks://projects/{slug}`. An agent names itself with `agent`; without it the caller must be a person on a person's connection, so a stage marked `human` and the answer to an agent's question never go to a key issued for a program. `webx-ui/mcp`: a tool's scope may be a list, any one of which lets a token in, and a resource whose address has a `{variable}` is served as a resource template.
+- be30498: `webx-ui/module-tasks`, T3 — the panel: the list of tasks with its views («Waiting for me», in work, drafts, closed), one task with its specification, stages, reports and journal and the buttons the rules allow (put to work, accept, send back, answer a question, release, cancel), the form as the described screen `tasks.form` with the rules of §3 laid over it, and the projects. `@webx-ui/module-tasks` is its npm half; the section is in the `webx:setup` catalogue, off by default. `@webx-ui/module-admin`: a module may put a count under `meta.badge` of its manifest, and the menu shows it beside the entry — tasks show what waits for a person.
+- be30498: `webx-ui/module-tasks`, T4 — notifications: a person hears from Telegram that a stage waits for their review, that an agent asked a question, that a task is done or a stage hung in progress (and, when switched on, that a stage was sent back or waits for an agent's review). Queued after the move commits, three attempts, the last failure written to the task's journal; the bot token is stored encrypted and never read back. «Tasks → Settings» has the token, the chats, the events and a test message; another channel is a binding of the `Notifier` contract.
+- be30498: A site with no public part. `webx:setup` sees when none of the chosen modules shows a visitor anything — `admins`, `settings` and `tasks` are such — and makes the site private: `/` leads to the panel instead of the placeholder page, no theme is installed, and `WEBX_PUBLIC=false` keeps the whole site out of search engines (`robots.txt` disallows everything and every response says `noindex`, a 404 included). `webx-ui/module-tasks` gets its guide.
+
 ## 0.72.0
 
 ### Minor Changes
