@@ -53,9 +53,8 @@ code, a lost look as the first one. A project field reaches the card under `fiel
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-tariffs`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-tariffs` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not add currencies or looks with a screen patch on the `currency` or `button-variant`
   select: the server checks against the config and refuses (422). Change the config.
 - Do not store «Free» as price `0`: zero is a price and prints as «$0». Leave the price empty and

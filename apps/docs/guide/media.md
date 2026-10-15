@@ -122,7 +122,7 @@ server half registers for storing the values — so a screen that writes `"type"
 this field and these rules without anyone wiring the two together.
 
 **Three names rather than `wx-media` with `multiple`.** The type is what an author picks from a
-list and what an agent reads in `blocks://nodes`. Nobody picks "media with `multiple: true` and
+list and what an agent reads in `blocks://fields`. Nobody picks "media with `multiple: true` and
 `accept: document`"; they pick "Files". Underneath there is one component and one set of rules —
 the names exist for the person, not for the code.
 
@@ -132,9 +132,8 @@ template printing an `<img>` at a document.
 
 Some things these deliberately do not do:
 
-- **The thumbnails come from `thumb`**, not from `url`. A gallery of forty photographs drawn from
-  the originals is forty originals over the wire; the manager's own grid has asked for previews
-  for the same reason since it was written.
+- **The thumbnails come from `thumb`**, not from `url`: a gallery of forty photographs drawn from
+  the originals is forty originals over the wire.
 - **Editing a picture is not offered here.** The file is shared, and cropping it from one page's
   form crops it everywhere it stands. The card offers "open in the library", where the
   consequences are visible.
@@ -168,7 +167,7 @@ A JPEG, PNG or still WebP is not stored as it arrived. It is turned the right wa
 its metadata, scaled down to no more than 2560px on its long side, and saved as a WebP at quality
 82 — unless that comes out no smaller, and then the original bytes are kept. A GIF, an animated
 WebP, an SVG and everything that is not a picture go in untouched. Every way into the library goes
-through it: the panel's upload, the agent's `upload_from_url`, the demo content.
+through it: the panel's upload, the agent's `media_upload_from_url`, the demo content.
 
 The steps live in `config/webx-media.php` under `optimize`, and a project adds its own by
 naming a class that implements `WebxUi\Media\Images\Optimizing\OptimizeStep`:
@@ -192,7 +191,7 @@ ends in its extension, and every page that shows it names that key — so a JPEG
 the pipeline stays a JPEG, only lighter. Each file remembers which settings it went through, so
 pressing it twice does nothing the second time, and changing a setting brings everything back
 into the list. The panel sends ten at a time and shows the count; there is no queue to keep
-running. Behind `media.manage`; for an agent, `optimize_images`.
+running. Behind `media.manage`; for an agent, `media_optimize_images`.
 
 ## What the addresses mean
 

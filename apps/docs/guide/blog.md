@@ -229,21 +229,19 @@ installation serves a blog rather than an error. Publish them and rewrite them:
 php artisan vendor:publish --tag=webx-blog-views
 ```
 
-Publishing is by file and not by directory: keep `article.blade.php`, delete the other four, and
-those go on coming from the package — fresh with every release — rather than being four files you
-now maintain for the sake of one.
+Keep only the file you change and delete the rest: those go on coming from the package, fresh with
+every release.
 
 Nobody types a `<title>` into a view. With an empty SEO card an article, a rubric or a tag names its
 page itself: the title through the site's title template, the lead as the description, the cover as
 `og:image`, above the site's default social image (a tag has only its word). The feed is called by
 the blog's name the same way — `@webxSeo(fallback: ['title' => trans('webx-blog::blog.title')])`. A
-copy of a view published before this still has an `@if ($meta->title === null)` block and the
-`$seo` / `$meta` lines for it — delete them, they never print any more.
+published copy of a view with an `@if ($meta->title === null)` block is older than this — delete
+that block and its `$seo` / `$meta` lines.
 
 ### The layout
 
-A blog with no header reads as a different site, and until now the only cure was publishing all
-five views. `webx-blog.layout` names a Blade component for the four pages to stand in; empty means
+`webx-blog.layout` names a Blade component for the four pages to stand in; empty means
 `webx-blog::standalone`, the bare document the module ships:
 
 ```php
@@ -318,21 +316,9 @@ theme with a `blog` block of its own puts that one instead), then put it on the 
 
 ## For an agent: MCP
 
-The three sections are also a set of tools. With `webx-ui/mcp` installed (it comes with this
-module), the panel serves one MCP server at `/api/cms/mcp`:
-
-Passport comes with the panel, and a site switches it on once:
-
-```bash
-php artisan vendor:publish --tag=passport-migrations && php artisan migrate
-php artisan passport:keys
-```
-
-Somebody then connects their own agent to it: they paste that address into Claude, ChatGPT or
-`claude mcp add --transport http webx <address>`, the client sends them to the panel to sign in
-and agree, and it leaves with a token of theirs. The agent acts as that administrator. On the
-machine the site runs on, `php artisan mcp:start webx` is the same server over stdio, trusted the
-way tinker is.
+The three sections are also a set of tools on the panel's one MCP server at `/api/cms/mcp`
+(`webx-ui/mcp` comes with this module); how an agent connects and acts as an administrator is
+[AI agents](/guide/agents).
 
 | Tool               | What it does                                                               |
 | ------------------ | -------------------------------------------------------------------------- |

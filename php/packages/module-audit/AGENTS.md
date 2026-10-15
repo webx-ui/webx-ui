@@ -31,11 +31,7 @@ bring. The panel shell, screens and permissions are `webx-ui/module-admin`, the 
 - **Registries** (singletons): `WebxUi\Audit\Checks\AuditChecks`,
   `WebxUi\Audit\Content\AuditContentSources`, `WebxUi\Audit\Fixes\AuditFixes`. Its own fix is
   `audit.replace-host` (a stand's host in the content replaced by the site's). Other modules
-  register theirs: `webx-ui/module-blocks` brings `blocks.stray_values` (block values for fields
-  the type does not define) with the fix `blocks.prune-stray`, and the shortcode checks
-  `blocks.unknown_shortcodes` and `blocks.hardcoded_values`; `webx-ui/widgets` brings
-  `widgets.before_consent` (fix `widgets.wait-for-consent`), `widgets.banner_off` (fix
-  `widgets.banner-on`), `widgets.lightbox_size`, `widgets.slider_pause`, `widgets.video_pause`, `widgets.counter_number`, `widgets.compare_range`, `widgets.toc_target`, `widgets.load_more_link`, `widgets.zoom_link`, `widgets.form_script`, `widgets.contact_both`.
+  register theirs (`blocks.*`, `widgets.*`, `inbox.*`, …) — `audit://checks` lists every one installed.
 - **Page readers**: `WebxUi\Audit\Crawl\PageReaders` — a module's `AuditPageReader` reads its own
   facts off each crawled page (the HTML is not kept); its checks find them in `$page->fact('<id>')`.
 

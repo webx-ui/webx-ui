@@ -123,14 +123,10 @@ never shows what a reader may not see: unpublished, or in the bin.
 @foreach (team()->relatedTo('service', $service)->take(3) as $member) … @endforeach
 ```
 
-| Step                  | What it does                                                             |
-| --------------------- | ------------------------------------------------------------------------ |
-| `relatedTo($t, $ids)` | Only the people related to these records: `'service'`, an id, a model    |
-| `only([12, 7])`       | These and no others, in this order                                       |
-| `except($member)`     | All but these                                                            |
-| `take(6)`             | At most six; null or zero — all                                          |
-| `locale('uk')`        | The language of the cards; by default the one being rendered             |
-| `get()`, `first()`    | A list of cards, or one; the query itself can be looped over and counted |
+| Step                                                           | What it does                                                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `relatedTo($t, $ids)`                                          | Only the people related to these records: `'service'`, an id, a model                      |
+| `only()`, `except()`, `take()`, `locale()`, `get()`, `first()` | The shared steps of [`RecordQuery`](/guide/collections#a-helper-for-templates-recordquery) |
 
 `relatedTo('service', [])` is nobody — «the people of no service» is not the whole team. The helper
 is a [`RecordQuery`](/guide/collections#a-helper-for-templates-recordquery), like `services()` and
@@ -191,12 +187,7 @@ its config:
 return [
     'networks' => [
         'facebook' => 'Facebook',
-        'instagram' => 'Instagram',
-        'linkedin' => 'LinkedIn',
-        'x' => 'X',
-        'telegram' => 'Telegram',
-        'youtube' => 'YouTube',
-        'tiktok' => 'TikTok',
+        // … the other six of the package — the whole list, see below
         'vk' => 'VK',
     ],
 ];
@@ -231,32 +222,16 @@ as it opened it — but a new link to that network is refused.
 Experience, education, certificates, the days a doctor sees patients — none is a column of the
 package. The site lays a patch over the screen `team.form`, whose empty card has the public id
 `project-fields`, and whatever the screen draws that the model has no column for is kept in
-`extra`. `resources/screens/team.form.json` in the site:
-
-```json
-[
-  {
-    "op": "add",
-    "target": "project-fields",
-    "node": {
-      "id": "experience",
-      "type": "wx-input-number",
-      "name": "experience",
-      "label": "Years of experience"
-    }
-  }
-]
-```
-
-and in a service provider of the site:
+`extra`. In a service provider of the site:
 
 ```php
 use WebxUi\Admin\Facades\Screens;
 
-public function boot(): void
-{
-    Screens::extend('team.form', resource_path('screens/team.form.json'));
-}
+Screens::extend('team.form', [[
+    'op' => 'add',
+    'target' => 'project-fields',
+    'node' => ['id' => 'experience', 'type' => 'wx-input-number', 'name' => 'experience', 'label' => 'Years of experience'],
+]]);
 ```
 
 The field appears in the editor, is checked by its type on every save — the panel's and an

@@ -190,9 +190,9 @@ vacancies with different codes.
 
 Nobody types a `<title>` into a view. With an empty SEO card a vacancy names its page itself: the
 name through the site's title template, the lead as the description, and, with no picture of its
-own, the site's default social image. The index is called by the section's name the same way. A copy
-of a view published before this still has an `@if ($meta->title === null)` block and the `$seo` /
-`$meta` lines for it — delete them, they never print any more.
+own, the site's default social image. The index is called by the section's name the same way. An
+old published copy of a view with an `@if ($meta->title === null)` block — delete the block and its
+`$seo` / `$meta` lines.
 
 ## The JobPosting markup, and how to check it
 
@@ -370,16 +370,8 @@ in `extra`.
 ]
 ```
 
-and in a service provider of the site:
-
-```php
-use WebxUi\Admin\Facades\Screens;
-
-public function boot(): void
-{
-    Screens::extend('vacancies.form', resource_path('screens/vacancies.form.json'));
-}
-```
+registered in the `boot()` of a service provider of the site with
+`Screens::extend('vacancies.form', resource_path('screens/vacancies.form.json'))`.
 
 The field appears on the **Settings** tab, is checked by its type on every save — the panel's and an
 agent's — waits in the draft with the rest, and is copied by **Duplicate**. Printing it is the one

@@ -1,9 +1,9 @@
 # webx-ui/module-banners
 
 Banners kept in **named places** the way menus are: a picture (and one for phones), a video, a
-title, a text and up to three buttons. A site template asks for a place — `banners('hero')` —
-and prints the cards in the site's own design. The module has **no public route, page, block or
-view**: what reaches the site is data. The section «Banners» of the panel and the MCP tools
+title, a text and up to three buttons. A site template prints a place with `<x-webx-banners
+place="hero" />`, or reads its cards — `banners('hero')` — and draws them itself. The module has
+**no public route, page or block**. The section «Banners» of the panel and the MCP tools
 `banners_*` edit it. Pictures and videos are `webx-ui/module-media`, button links the panel's
 link picker in `webx-ui/module-admin`, the languages `webx-ui/localization` — read their guides
 for those.
@@ -22,6 +22,9 @@ for those.
   (`single`, `random`, `slider`) merged with `webx-banners.options` and the place's `options`.
 - **Shown in a language** only when the banner's title or text is written in it (a banner with no
   words at all is shown everywhere); a button to a page that is not on the site is left out.
+- **Components** `<x-webx-banners place="…">` (a place in its layout) and `<x-webx-banner :banner>`
+  (one card); views under `webx-banners-views`. A place declared with `'layers' => true` gets the
+  layer editor, and its banners are printed only through these components.
 - **Button variants** `config('webx-banners.variants')` — `primary`, `secondary`, `link`.
 - **Panel screen** `banners.form`; API under `/api/cms/banners`; permissions `banners.view`,
   `banners.manage`.
@@ -34,7 +37,7 @@ for those.
 
 | You want                              | Do this                                                                                                 |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Banners somewhere on the site         | `banners('<place>')` and `banners_layout('<place>')` in that template; copy the template from the guide |
+| Banners somewhere on the site         | `<x-webx-banners place="<place>" />`, or `banners('<place>')` + `banners_layout('<place>')` of your own |
 | A place the templates rely on         | declare it in `places` in `config/webx-banners.php` (`--tag=webx-banners-config`)                       |
 | One place as a slider, another single | `'layout' => 'slider'` / `'single'` / `'random'` on the place; `default_layout` for the rest            |
 | Another layout in one template only   | `banners_layout('hero', 'random')`                                                                      |
@@ -52,8 +55,9 @@ A screen patch addresses nodes by `id`: `media`, `image`, `image-mobile`, `video
 
 - Do not edit anything in `vendor/webx-ui/module-banners` or copy it into the site. The rows
   above are the supported ways; if none fits, the package is missing a seam — say so.
-- Do not look for a banner block or a view to publish: there is none by design. The markup,
-  styles and slider script are the site's own, in the template that calls `banners()`.
+- Do not look for a banner block: there is none by design. A place is printed by a template.
+- Do not draw a place with layers from `banners()` by hand: the stage's geometry is the
+  component's, and the panel draws exactly what it prints.
 - Do not rename a declared place's key in the config while templates ask for it: the template
   then gets an empty list and the banners sit in a place nobody prints. Change the template too.
 - Do not take a variant out of `variants` expecting old buttons to change: they keep their key

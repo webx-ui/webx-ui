@@ -80,7 +80,7 @@ it: somebody who has never heard of MCP should not have to read this guide.
 
 ::: warning It has to be reachable from outside
 A connector at `claude.ai` or `chatgpt.com` opens the address from Anthropic's or OpenAI's
-servers, not from your machine. `https://webx-cms.local` cannot be connected that way, and
+servers, not from your machine. `https://example.local` cannot be connected that way, and
 neither can a site behind a VPN. Clients that run on your own computer — Claude Code, Codex,
 Cursor — reach a local address fine.
 
@@ -168,9 +168,7 @@ installed next month. An agent on such an account is not limited by anything exc
 that exist.
 
 Make an account with a **role** for this, even if it is your own account you are thinking of.
-A role is a list you can read; `is_super` is a list nobody can.
-
-This is the one piece of advice in this guide that is worth following before the first
+A role is a list you can read; `is_super` is a list nobody can. Do it before the first
 connection rather than after the first accident.
 
 ## Seeing what happened
@@ -197,9 +195,6 @@ saying the connection ended on the 21st is worth more than a gap where it was.
 
 ## Before you switch this on
 
-Two things, both from the security section of the specification, both cheap and both a
-nuisance to wish for later.
-
 **Nightly dumps of the database.** An agent with the right to write can empty a section faster
 than anybody notices, and the warning on the consent screen answers "who is responsible", not
 "how do we get it back". See [Database backups](./backups.md) — the first site that switches
@@ -219,10 +214,7 @@ ships a list, not a wildcard:
 'custom_schemes'   => ['claude', 'cursor', 'vscode'],
 ```
 
-Each vendor is there twice because each answers at two domains and only one of them is the one
-you meet: Claude connects from `claude.ai` today and Anthropic is moving to `claude.com`, and
-ChatGPT's own address is `chatgpt.com` while `chat.openai.com` is still the callback of
-anything set up before the rename.
+Each vendor is there twice because each answers at two domains.
 
 These are the **clients'** addresses, not yours; a list containing only your own domain lets
 nobody in at all. A client that is not on the list cannot connect until somebody adds it,
@@ -234,7 +226,8 @@ is the client's own choice.
 
 ## Installing
 
-`webx-ui/module-auth` brings Passport with it. Two deployment steps, neither optional:
+`webx-ui/module-auth` brings Passport with it. Two deployment steps, neither optional (`webx:setup`
+runs both):
 
 ```
 php artisan vendor:publish --tag=passport-migrations && php artisan migrate
@@ -256,9 +249,8 @@ createAdmin({
 })
 ```
 
-Leave that line out and the panel has no such entry, while the server goes on reporting the
-section — which looks exactly like the door being switched off, and sends you to the wrong
-half to find out why.
+Leave that line out and the panel has no such entry while the server still reports the section —
+which looks exactly like the door being switched off.
 
 ## What is deliberately not here
 

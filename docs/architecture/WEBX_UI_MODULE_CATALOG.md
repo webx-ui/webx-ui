@@ -1,6 +1,6 @@
 # `webx-ui/module-catalog` — спецификация ядра каталога
 
-Выпущено в v0.50.0 (npm `@webx-ui/module-catalog`), хвосты — до v0.57.0; спека — справочник того, что есть.
+Статус: выпущено (§19).
 Архитектура семейства, контракты и решения 1–26 — [`WEBX_UI_CATALOG.md`](WEBX_UI_CATALOG.md);
 здесь они не повторяются, только уточняются. Журнал изменений, на который ядро опирается, —
 [`WEBX_UI_HISTORY.md`](WEBX_UI_HISTORY.md).
@@ -98,9 +98,8 @@ SEO — `HasSeo` из `module-seo` (своя таблица), как у всех
 - `catalog_product_popularity` — `product_id` (первичный ключ), `views` (decimal, с затуханием),
   `score` (decimal, index), `computed_at`. Своя таблица, чтобы ночной пересчёт не переписывал
   `catalog_products` целиком (§9).
-- `catalog_bulk_runs` — `id`, `admin_id`, `admin_name`, `action`, `params` (json), `total`,
-  `done`, `failed`, `errors` (json, первые сто), `status`, timestamps; `catalog_bulk_run_items` —
-  id товаров прогона (§11.4).
+- `catalog_bulk_runs` и `catalog_bulk_run_items` — прогоны массовых действий и их id товаров
+  (§11.4).
 
 ## 4. Адреса
 
@@ -181,15 +180,12 @@ SEO — `HasSeo` из `module-seo` (своя таблица), как у всех
 
 ### 7.1. `Facets`
 
-Контракт `Facet`: `key()`; `code(string $locale)` — код в адресе на языке страницы,
-`[a-z0-9-]`, уникален среди фасетов этого языка (проверка при регистрации; `AbstractFacet` берёт
-его из `webx-catalog.facet_codes`, иначе `baseCode()` — §4.1 `WEBX_UI_CATALOG_PROPERTIES.md`);
-`kind()` — `Terms | Range | Toggle | Tree`; `label()`; `indexable()` — может ли первый уровень
-быть открыт; `field(): IndexField`; `labels($values, $locale)`, `slugs($values, $locale)`,
-`resolveSlugs($slugs, $locale)` — пачкой; `normalise(FacetValue)` — одно написание выбора (у
-дерева предок поглощает потомков); `applySql()`; `sqlValues(QueryBuilder $products)` — пары
-`(product_id, value)` для `SqlEngine`, дерево отдаёт значение со всеми предками. У `Tree` ещё
-`TreeFacet::parents($values)` — чтобы фильтр нарисовал дерево.
+Контракт `Facet` (смысл — §4.1 архитектуры): код в адресе — на языке страницы, `[a-z0-9-]`,
+уникален среди фасетов этого языка (проверка при регистрации; §4.1
+`WEBX_UI_CATALOG_PROPERTIES.md`); `indexable()` — может ли первый уровень быть открыт; подписи и
+слаги — пачкой; `normalise()` — одно написание выбора (у дерева предок поглощает потомков);
+`sqlValues()` — пары `(product_id, value)` для `SqlEngine`, дерево отдаёт значение со всеми
+предками.
 
 Необязательные: `ContextualIndexing::indexableIn(FilterContext)` — открыт ли первый уровень на
 этой странице (свойства — только в категории); `TitledFacet::filterTitle($where, $label,
@@ -226,12 +222,10 @@ $locale)` — свой заголовок первого уровня вмест
 
 ### 7.4. `ProductParts` и `ProductColumns`
 
-- `ProductParts` — реестр `ProductPart` (§11 архитектуры): `key()` (`[a-z0-9-]`, он же
-  приставка полей на экране), `describe(): PartSchema` (для MCP, §12.2: `PartField` — имя, тип,
-  подпись, правила, допустимые значения, `source` справочника или ссылка на инструмент),
-  `rules()` (ключи без приставки), `read(Eloquent\Collection $products): array<id, array<поле,
-значение>>`, `write(Product, array $input): list<{ field, from, to }>`. Изменения идут в журнал
-  одной записью с изменениями ядра; `rules()` всех частей проверяются до транзакции.
+- `ProductParts` — реестр `ProductPart` (§11 архитектуры): `key()` — он же приставка полей на
+  экране; `describe()` — схема для MCP (§12.2); `rules()` всех частей проверяются до транзакции;
+  `read()` пачкой; `write()` возвращает изменения, и они идут в журнал одной записью с изменениями
+  ядра.
 - `ProductColumns` — колонка списка панели: ключ, подпись, `values(Collection $products)`
   пачкой, сортируемая ли (тогда через `Sorts`). Колонки из базы (свойства) — источником
   `ColumnSource`, спрашивается на каждом чтении.
@@ -257,19 +251,8 @@ $locale)` — свой заголовок первого уровня вмест
 
 Сериализатор §8.1 архитектуры за интерфейсом: `parse(string $tail): FilterState` и
 `build(FilterContext, FilterState): string` — последний **пачкой** (`buildMany`), потому что
-фильтр рисует сотни ссылок. Реестр `FilterUrlRewriter`:
-
-```php
-interface FilterUrlRewriter
-{
-    /** Called once per page render with every link the filter is about to show. */
-    public function prepare(FilterContext $context, array $states): void;
-
-    public function rewrite(FilterContext $context, FilterState $state): ?RewrittenUrl;
-}
-```
-
-`RewrittenUrl` — базовый путь и остаток состояния, который дописывается сегментами (решение 26
+фильтр рисует сотни ссылок. Реестр `FilterUrlRewriter`: `prepare()` — один раз на рендер со всеми
+ссылками, которые фильтр покажет, `rewrite()` — на состояние. `RewrittenUrl` — базовый путь и остаток состояния, который дописывается сегментами (решение 26
 архитектуры); `$indexable` — переписчик открывает состояние, которое забирает целиком. У ядра
 переписчиков нет; первый — `module-catalog-landings`. `Storefront::listing()` принимает базовое
 состояние, к которому добавляет хвост: «ничего не выбрано» значит «ничего поверх него».
@@ -289,16 +272,11 @@ interface FilterUrlRewriter
 
 ### 8.1. Запрос и ответ
 
-`CatalogQuery`: контекст (`category`, `root`, `search`, `panel`, `brand` и прочие — строкой и id,
-ядро про бренды не знает); `scope` — где стоит страница (категория страницы, бренд страницы
-бренда), сужает и список, и все счётчики; `facets` — что выбрал читатель, свой фасет не сужает;
-`count` — какие фасеты считать; текст поиска, сортировка, страница, размер страницы, язык,
-`withUnpublished` (панель), `onlyTrashed` («Удалённые»), `state` — фильтры панели
-(`published|unpublished|no-category`).
-
-`CatalogResult`: `ids` страницы в порядке движка, `total`, `facets` — по видимым фасетам:
-значения со счётчиками (`Terms`), min/max (`Range`), число (`Toggle`), счётчики с потомками
-(`Tree`). Витрина поднимает товары одним `whereIn` и сохраняет порядок `ids`.
+`CatalogQuery`: контекст — строкой и id (ядро про бренды не знает); `scope` — где стоит страница
+(категория, бренд), сужает и список, и все счётчики; `facets` — что выбрал читатель, свой фасет не
+сужает; плюс поиск, сортировка, страница, язык и флаги панели. `CatalogResult`: `ids` страницы в
+порядке движка, `total`, `facets` по видимым фасетам. Витрина поднимает товары одним `whereIn` и
+сохраняет порядок `ids`.
 
 ### 8.2. `SqlEngine`
 
@@ -452,22 +430,14 @@ GET    /api/cms/catalog/bulk/{run}            прогресс
 Ролик картинки — `POST`/`DELETE …/images/{image}/video` (спека видео); обмен —
 `/api/cms/catalog/exchange/*` (спека обмена).
 
-Список — формат `->paginate()` как есть, ищет и считает движок, и рядом `counts: { no_category }`
-(решение 3), `facets` — по ключу фасета `{ key, kind, values: [{ value, label, count }] }` для
-`terms`/`tree`, `{ min, max }` для `range`, `{ count }` для `toggle`, — `columns: [{ key, label,
-sort }]` колонок спутников (у каждой строки их значения под `columns`) и `outgrown` (§8.2).
-Выбор фасетов — `facets[category][]=3&facets[price][min]=100`. Фильтр и сортировка — белый
-список, произвольные колонки отклоняются; `sort` — ключ реестра `Sorts`, неизвестный — 422.
-`GET /facets` отвечает `data: [{ key, code, kind, label, indexable }]` и `meta.sorts: [{ key,
-label }]`. `GET /categories/{id}` несёт ещё `facets_from: { id, name } | null` — откуда
-унаследованы фасеты, если своих нет (`null` и при своих, и при «все по умолчанию»). Занятый
-артикул — 422 с `errors.sku` и `meta.taken_by: { id, name, url, deleted }`, `url` — адрес товара
-в панели `/{webx-admin.path}/catalog/products/{id}`, форма показывает ссылку.
-
-Как это читает панель: `kind` — в любом регистре, панель приводит к нижнему; значения
-`terms`-фасета для выпадашки — из `facets` ответа списка (с числом товаров), у `range` — границы
-оттуда же подсказкой в полях; сортировки — только из `meta.sorts`, неизвестную панель не шлёт.
-`toggle` включается как `facets[<key>][]=1` — список, как у всех фасетов. `PUT /products/{id}` и
+Список — формат `->paginate()` как есть, ищет и считает движок; рядом `counts: { no_category }`
+(решение 3), `facets` (значения со счётчиками, из них панель берёт варианты фильтра и границы
+диапазонов), `columns` спутников и `outgrown` (§8.2). Выбор фасетов —
+`facets[category][]=3&facets[price][min]=100`, `toggle` — `facets[<key>][]=1`. Фильтр и
+сортировка — белый список, произвольные колонки отклоняются; `sort` — ключ реестра `Sorts`,
+неизвестный — 422, панель берёт сортировки только из `meta.sorts` ответа `GET /facets`.
+`facets_from` категории — откуда унаследованы фасеты, если своих нет. Занятый артикул — 422 с
+`meta.taken_by` (адрес товара в панели), форма показывает ссылку. `PUT /products/{id}` и
 `PUT /categories/{id}` принимают **часть** полей экрана: список и дерево публикуют и снимают одним
 `{ values: { is_published } }`.
 
@@ -479,33 +449,14 @@ services. Переводимые — картой языков, которая �
 разработчика, громко. Выключенные цена и штрихкод снимаются с экрана патчем в провайдере, поэтому
 их нет ни в форме, ни в записи, ни в ответе.
 
-- **`product`** (строка списка и шапка формы): `id, name` (на языке панели), `sku, barcode*,
-price*, old_price*` (числа), `unit, priority, is_published, state`
-  (`published|unpublished|deleted`), `visible` (§5), `category: { id, name, deleted } | null`,
-  `image: { id, url, thumb } | null`, `url` (адрес на сайте, у снятого тоже — урезанная
-  страница; у удалённого `null`), `created_at, updated_at, deleted_at`.
-- **`values` товара**: `name, slug, summary, description` — карты языков; `sku, barcode,
-category_id, categories` (дополнительные, без основной), `price, old_price, unit, priority,
-is_published`, `seo`; плюс `read()` каждой части под `<ключ>.<поле>`.
-- **`image`**: `id, path, url, thumb, alt, title` (карты языков), `width, height, size, position`.
-- **Узел дерева**: `id, parent_id, name, slug, depth, is_published, visible, products_count`
-  (живые, основная и дополнительные, с потомками, каждый товар один раз), `url, children`.
-- **`category`**: `id, parent_id, name, slug, depth, is_published, visible, products_count, url,
-created_at, updated_at, deleted_at`; **`values`**: `name, slug, description` (карты),
-  `cover: { path } | null`, `is_published`, `facets` (`null` — унаследовано, иначе `[{ key,
-visible }]` по порядку), `seo`.
-- **`deleted`**: `->paginate()`; строка товара `{ id, name, sku, category: { id, name, deleted }
-| null, deleted_at }`, категории `{ id, name, slug, parent: { id, name, deleted } | null,
-deleted_at }`.
-- **Действие** (`GET /bulk`): `{ key, label, permission, trashed, params: [PartField] }` —
-  `trashed` у восстановления (действует на «Удалённые»), `params` — что спросить до запуска
-  (`type: category` — дерево категорий; `source` — справочник). Список уже отфильтрован по правам
-  вызывающего.
-- **Прогон** (`POST /bulk`, `GET /bulk/{run}`): `{ id, action, label, status:
-queued|running|done|failed, total, done, failed, errors: [{ id, name, message }] (первые сто),
-history_id, created_at, finished_at }`. До `bulk.sync_limit` товаров — сделано в запросе, `200`
-  и `id: null`; больше — `202`, панель опрашивает. `selection.query` — `{ q, state, facets }` как
-  у списка; `selection.ids` — не больше 10 000.
+Формы ответов — ресурсы контроллеров; неочевидное в них: `url` товара есть и у снятого
+(урезанная страница), у удалённого — `null`; `values.categories` — дополнительные, без основной;
+`products_count` узла дерева — живые, основная и дополнительные, с потомками, каждый товар один
+раз; `facets` категории `null` — унаследовано. Список действий `GET /bulk` уже отфильтрован по
+правам вызывающего, `trashed` — действие на «Удалённые», `params` — что спросить до запуска. Прогон
+до `bulk.sync_limit` товаров сделан в запросе (`200`, `id: null`), больше — `202`, панель
+опрашивает; `selection.query` — `{ q, state, facets }` как у списка, `selection.ids` — не больше
+10 000, в `errors` — первые сто отказов.
 
 Узлы экранов: `wx-catalog-category` (одна категория, `props.multiple` — список),
 `wx-catalog-facets` (вкладка «Фильтры»), `wx-catalog-gallery` (галерея — отдельные запросы выше,
@@ -620,7 +571,7 @@ return [
 
 Как у каждого раздела (CLAUDE.md §4): `Setup\Catalogue`, `extra.webx.npm` и `extra.webx.panel`,
 плейграунд (`apps/playground/src/panel/main.ts` и фикстуры сервера), `scripts/packages.mjs` в
-`webx-cms.local`; composer-пакет — четыре раза в `php/`. Типы `routing`: `catalog.category`,
+демо-сайте панели; composer-пакет — четыре раза в `php/`. Типы `routing`: `catalog.category`,
 `catalog.product`.
 
 - `LinkSource` для меню — свои `CategoryLinkSource` и `ProductLinkSource` (не рамочный
@@ -641,41 +592,26 @@ return [
 
 ## 16. Что стерегут тесты
 
-Адреса (301 на канон, 301/410 удалённого, урезанная страница снятого, 422 занятого слага с
-держателем); видимость поддерева снятой категории; `taken_by` артикула; `SqlEngine` (поддерево,
-счётчик без собственного фильтра, порядок `ids`); наследование фасетов категории и скрытый новый
-фасет; `FilterUrls` (однозначный разбор, одно написание, `prepare` один раз на рендер); откат
-формы при упавшей части и одна запись журнала; очередь (ничего при `SqlEngine`, `touchQuery` —
-один запрос, повтор пачки безвреден); массовые действия по запросу; выключенные цена и штрихкод
-нигде не появляются; популярность (затухание, `touch` только сдвинувшихся); все фасеты в ответе
+Правила этой спеки, которые легко сломать молча: адреса и 301/410, видимость поддерева снятой
+категории, `SqlEngine` (поддерево, счётчик без собственного фильтра, порядок `ids`), скрытый новый
+фасет, `FilterUrls` (одно написание, `prepare` один раз на рендер), откат формы при упавшей части
+и одна запись журнала, безвредный повтор пачки, выключенные цена и штрихкод, все фасеты в ответе
 списка (`RegistriesTest`).
 
 ## 17. Слова
 
-Английские в коде и словаре по умолчанию, русские — в `lang/ru` модуля: «Каталог», «Товары»,
-«Категории», «Удалённые»; «Опубликован», «Снят», «Удалён»; «Категория не задана»; «Снят с
-продажи»; «Цена по запросу»; «Артикул занят товаром :name». Выбор строк в списках — пропсы
-`selectRowLabel` / `selectAllLabel` у `WxTable`, переводы — в `filters.*` `module-admin`; выбор
-категории в массовом действии говорит «Выберите категорию».
+Английские в коде и словаре по умолчанию, русские — в `lang/ru` модуля. Выбор строк в списках —
+пропсы `selectRowLabel` / `selectAllLabel` у `WxTable`, переводы — в `filters.*` `module-admin`.
 
 ## 18. Отложено
 
 Типы цен и валюты, вес и габариты (commerce), удаление навсегда, ручной порядок внутри категории,
 «покупали вместе», многосайтовость. Спутники и их состояние — §10 архитектуры.
 
-## 19. Как легло в код
+## 19. Выпуск
 
-Решения, которые не видны из разделов выше:
-
-- **Один раздел панели** (`catalog`): сервер регистрирует один модуль, навигация — запись на
-  модуль. «Категории» — кнопка в шапке списка, «Удалённые» и «Обмен» — в её `···`.
-- **Журнал формы — одна запись на сохранение** (§11.3), массовое действие — одна родительская
-  запись на прогон (§11.4).
-- **Корень каталога главнее страницы** (§4), порог `SqlEngine` — над списком товаров (§8.2).
-- **Очередь массовых действий нужна живая** (§11.4).
-
-Открытого по ядру нет. Гайд `apps/docs/guide/catalog.md` описывает ядро целиком — товары и
-категории, фасеты и адреса фильтра, витрину, галерею, обмен, движки поиска, спутники и как
-написать свой справочник. Хвосты волны A (`Catalog::outgrown()`, `RootCheck` в `webx:doctor`,
-демо спутников) выпущены в v0.57.0. Что не начато — волна B, таблица §10
-`WEBX_UI_CATALOG.md`.
+Ядро выпущено целиком, с видео в галерее и обменом; хвосты волны A (`Catalog::outgrown()`,
+`RootCheck` в `webx:doctor`, демо спутников) — тоже. Раздел панели один (`catalog`, §11.1).
+Открытого по ядру нет; что не начато — волна B, таблица §10 `WEBX_UI_CATALOG.md`. Гайд —
+`apps/docs/guide/catalog.md`: товары и категории, фасеты и адреса фильтра, витрина, галерея,
+обмен, движки, спутники и как написать свой справочник.

@@ -1,6 +1,6 @@
 # Журнал изменений — спецификация
 
-Статус: согласовано 29.09.2026, сделано в H1 (29.09.2026, итог — §9). Живёт в `webx-ui/module-admin` и
+Статус: выпущено (§9). Живёт в `webx-ui/module-admin` и
 `@webx-ui/module-admin`; первый потребитель — ядро каталога
 ([`WEBX_UI_MODULE_CATALOG.md`](WEBX_UI_MODULE_CATALOG.md)).
 
@@ -47,7 +47,7 @@
 
 Индексы: `(subject_type, subject_id, created_at)`, `created_at` (для чистки), `parent_id`. У
 прогона `subject_type` — тип, над которым он шёл (по нему проверяется право), `subject_id` —
-null. Внешнего ключа на администратора нет (было в первой редакции): пакет не знает, где живут
+null. Внешнего ключа на администратора нет: пакет не знает, где живут
 администраторы, а имя рядом — снимок.
 
 ## 4. Запись
@@ -132,20 +132,17 @@ id, summary } | null, created_at }`; подписи полей — из реес
 
 - `history_get` — `subject_type`, `subject_id`, необязательные `since`, `field`, `page` →
   записи, новые сверху, с подписями полей;
-- `history_runs` — прогоны (импорты, массовые действия) с фильтром по модулю, источнику и дате;
-  с `run_id` — сам прогон и его строки с поиском по сущности.
+- `history_runs` — прогоны (импорты, массовые действия) с фильтром `module`, `source`, `since`,
+  `until`; с `run_id` — сам прогон и его строки, `subject_id` — поиск.
 
 Право — право на просмотр сущности, которое регистрирует модуль вместе с типом (§5): агент
-редактора каталога видит историю товара, но не историю администраторов. Ресурс — список
-зарегистрированных типов сущностей с подписями полей, чтобы агент знал, что спрашивать.
+редактора каталога видит историю товара, но не историю администраторов. Ресурс
+`history://types` — зарегистрированные типы с подписями полей, чтобы агент знал, что спрашивать.
 
-Как сделано: инструменты несёт модуль `history` (`History\Mcp\HistoryModule`, скоуп
-`history:read`), который каркас регистрирует в момент первой регистрации типа и только если
-установлен `webx-ui/mcp`; страницы у него нет, и меню его не показывает. На двери инструмент
-стоит за любым правом какого-либо типа, а право конкретного типа проверяет обработчик (по
-правилу `webx-ui/mcp`: пользователь без `HasPermissions` — stdio — не спрашивается).
-`history_runs` фильтрует `module`, `source`, `since`, `until`; с `run_id` — прогон и строки,
-`subject_id` — поиск. Ресурс — `history://types`.
+Инструменты несёт модуль `history` (скоуп `history:read`): каркас регистрирует его при первой
+регистрации типа и только если установлен `webx-ui/mcp`; страницы и пункта меню у него нет. На
+двери инструмент стоит за любым правом какого-либо типа, право конкретного типа проверяет
+обработчик (пользователь без `HasPermissions` — stdio — не спрашивается).
 
 ## 7. Конфиг
 
@@ -164,69 +161,21 @@ id, summary } | null, created_at }`; подписи полей — из реес
 
 ## 9. Выпуск
 
-Одна сессия H1, один PR (php + npm + changeset), до ядра каталога. Подключение трейта в
-остальных модулях — по мере запросов, не в этой сессии. В конце сессия дописывает сюда «Итог H1».
+Выпущено одной сессией H1 (php + npm):
 
-### H1 — журнал в `module-admin`
+- **`module-admin`:** миграция `cms_history` (§3), трейт `RecordsHistory`, `History::record` /
+  `recordFor` / `run` (§4), `HistoryContext` и middleware `webx.history`, реестр `HistoryTypes`,
+  API (§5), модуль `history` с `history_get`, `history_runs` и `history://types` (§6),
+  `webx:history:prune` в расписании (§7); в npm — `WxHistory` и тип узла `wx-history`,
+  `createHistoryApi`, `provideHistorySubject` / `useHistorySubject`.
+- **`mcp`:** `RegistryTool` ставит источник `mcp`, администратора и грант на время обработчика.
+- **Плейграунд:** раздел «Журнал (демо)» на фейковой сущности `demo.product`.
 
-```
-Сессия H1 из §9 docs/architecture/WEBX_UI_HISTORY.md: журнал изменений в webx-ui/module-admin
-и @webx-ui/module-admin. Первый потребитель — ядро каталога (WEBX_UI_MODULE_CATALOG.md, сессия
-K1), его кода ещё нет.
-
-Начало: git fetch claude; git worktree add ../webx-ui-history -b feat/admin-history claude/main.
-Из worktree pnpm не запускать и preview_start по имени не звать (CLAUDE.md §4). PR открыть в
-конце, в очередь не ставить.
-
-Прочитать: эту спеку целиком; WEBX_UI_MCP_ACCESS.md §6 (право инструмента) и как пишется
-mcp_calls — оттуда брать автора-агента и id гранта; WEBX_UI_SCREENS.md — новый тип узла;
-docs/pitfalls/laravel-and-php.md и vue-and-tests.md. Образцы в module-admin:
-Console/PruneVersionsCommand (чистка пачками по расписанию), Versions (запись в транзакции
-сохранения), Notes (лента под сущностью), Doctor.
-
-Сделать: миграция cms_history §3; RecordsHistory, History::record и History::run §4;
-HistoryContext и его установка в middleware панели, в MCP и в консоли; реестр типов сущностей с
-подписями полей и правом на просмотр §5; API §5; MCP-инструменты history_get и history_runs и
-ресурс типов §6; конфиг и webx:history:prune §7; узел экрана history в npm (лента, «было →
-стало», WxDate, ссылка на прогон) с тестами и демо на плейграунде — на фейковой сущности.
-Тесты §8. Changeset на @webx-ui/php и @webx-ui/module-admin. Полный гейт CLAUDE.md §5 и
-php-гейт.
-
-Если сигнатуры разошлись со спекой — поправить спеку тем же коммитом: K1 пишет по ней. В
-конце — «Итог H1» в §9, коммит по именам файлов, пуш в claude, PR.
-```
-
-### Итог H1
-
-Сделано 29.09.2026 одним PR (php + npm + changeset на `@webx-ui/php` и `@webx-ui/module-admin`).
-
-- **php, `module-admin`:** миграция `cms_history` (§3, с `grant_id` и без внешнего ключа на
-  администратора); `History\HistoryEntry`, `HistoryContext`, `HistoryTypes`/`HistoryType`,
-  `Journal` за фасадом `Facades\History`, трейт `RecordsHistory`, `Changes`, `HistoryReader`,
-  `HistoryPresenter`, `HistoryPruner`; middleware `webx.history`; `HistoryController` на двух
-  адресах §5; модуль `history` с `history_get`, `history_runs` и `history://types` (§6); конфиг и
-  `webx:history:prune` в расписании (§7); словарь `history.php` на десяти языках.
-- **php, `mcp`:** `RegistryTool` ставит `mcp`, администратора и грант на время обработчика.
-- **npm, `@webx-ui/module-admin`:** `WxHistory` и тип узла `wx-history`, `createHistoryApi`,
-  `provideHistorySubject`/`useHistorySubject`, `historyValue`, слова `history.*`.
-- **Плейграунд:** раздел «Журнал (демо)» — фейковая запись `demo.product` с вкладкой «История»
-  (`server/panel/history.ts`, `project/demo.product.json`): сохранения в панели, агента,
-  импорт и массовое действие, длинный текст, переводимое название, удалённый автор.
-- **Тесты:** `module-admin/tests/HistoryTest.php` (всё из §8 плюс API, длинные значения, прогон с
-  ошибкой), `mcp/tests/HistoryTest.php` (сохранение из инструмента — `mcp` с грантом),
-  `HistoryFeed.test.ts`.
-
-Разошлось со спекой и поправлено выше: узел называется `wx-history`, а не `history`; у `run`
-первый аргумент — тип (по нему право и фильтр модуля), источник — четвёртым; есть `recordFor`
-для типа без модели; `admin_id` без внешнего ключа, добавлен `grant_id`.
-
-Для K1: зарегистрировать `catalog.product` и `catalog.category` в провайдере
-(`HistoryTypes::register`, подписи — ключи `webx-catalog::…`, право — `catalog.view` и
-`catalog.manage`); форма товара пишет одну запись через `History::record($product, 'updated',
-$changes)` из общей транзакции, а не трейтом на каждой модели частей; импорт и массовые действия
-— внутри `History::run('catalog.product', [...], fn, 'import'|'bulk')`; редактор зовёт
-`provideHistorySubject({ id })`. Ключи `summary` прогона показываются как есть — называть их
-словами, которые не стыдно показать (`what`, `profile`), или положить подписи в значения.
+Как подключать в модуле (образец — каталог): типы — в провайдере; форма из нескольких частей
+пишет одну запись `History::record($model, 'updated', $changes)` из общей транзакции, а не
+трейтом на каждой модели частей; импорт и массовые действия — внутри
+`History::run(type, [...], fn, 'import'|'bulk')`; редактор зовёт `provideHistorySubject({ id })`.
+Ключи `summary` прогона показываются как есть — называть их словами, которые не стыдно показать.
 
 Открыто: общий раздел «Журнал» (схема позволяет, §2 п. 5); трейт в остальных модулях — по мере
 запросов.

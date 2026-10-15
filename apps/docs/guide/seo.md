@@ -14,6 +14,7 @@ those is a source, asked in order and merged field by field.
 import { createAdmin } from '@webx-ui/module-admin'
 import { media } from '@webx-ui/module-media'
 import { seo } from '@webx-ui/module-seo'
+import { settings } from '@webx-ui/module-settings'
 import '@webx-ui/module-seo/style.css'
 
 createAdmin({
@@ -99,8 +100,8 @@ entity to ask. The view names it:
 @webxSeo(fallback: ['title' => trans('webx-recipes::site.title')])
 ```
 
-The modules' views used to print `<title>` by hand when `$meta->title === null`. That missed the
-template, `og:title` and every picture; a site's copy of a module view can drop the block.
+A site's published copy of a module view with an `@if ($meta->title === null)` block is older than
+this — drop the block: it missed the template, `og:title` and every picture.
 
 ## Printing the head
 

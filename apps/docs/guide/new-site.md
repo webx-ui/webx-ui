@@ -26,8 +26,8 @@ minutes, most of it `npm install`.
 
 **Where the server is, is not among the questions on purpose.** What `.env` already says, or
 `127.0.0.1:3306` as `root`, is reached for before anything about the database is asked, and a
-machine that answers is never asked about it. A machine that does not — OSPanel gives each of
-its database modules a loopback address of its own — is told so and asked for the host, the
+machine that answers is never asked about it. A machine that does not — a local stack may give
+each database server a loopback address of its own — is told so and asked for the host, the
 port, the user and the password, with what was just tried as the defaults:
 
 ```

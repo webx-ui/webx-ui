@@ -270,8 +270,7 @@ the page.
 are container queries, because the block does not know whether it is the page or a third of it.
 Saving reports what leaks — a selector outside the prefix, a bare element selector, `@media`, a
 missing `data-wx-block`, a text field changed by a string function without `wx_text()` — as
-warnings under the editor, never as a refusal. (A marker that names
-another slug is the one exception: it is refused on publishing.)
+warnings under the editor; only a marker naming another slug is refused, on publishing.
 
 **The script is a body**, not a program:
 
@@ -528,10 +527,9 @@ entirely, one release later, and it reads like a broken package rather than a st
 
 ## For an agent: MCP
 
-The section is also a set of tools. With `webx-ui/mcp` installed (it comes with the blocks
-module), the panel serves one MCP server at `/api/cms/mcp`:
-
-Passport comes with the panel, and a site switches it on once:
+The section is also a set of tools. `webx-ui/mcp` comes with the blocks module, and the panel
+serves one MCP server at `/api/cms/mcp`. Passport comes with the panel; a site switches it on once
+(`webx:setup` already does):
 
 ```bash
 php artisan vendor:publish --tag=passport-migrations && php artisan migrate
@@ -602,10 +600,8 @@ names the node instead, and everything else stays the object it already was:
   language of a localized field rather than replacing the map with a string.
 - `parent` omitted means the top level; `field` names the `wx-blocks` field when the parent block
   has more than one. `before` and `after` place the node among its siblings.
-- `hide` and `show` switch one block off and back on. A hidden block stays in the content and
-  keeps everything in it; the site simply does not draw it, nor anything nested inside it.
-  `outline` reports `hidden: true` for those, which is the only way to tell from the content
-  that a block is not on the page.
+- `hide` and `show` are the eye of the tree (above); `outline` reports `hidden: true` for a
+  hidden block — the only way to tell from the content that it is not on the page.
 - `revision` is the one `blocks_get_content` returned. Send it and the edit is refused when the
   entity changed in between, instead of overwriting whoever changed it. `blocks_set_content` takes
   it too.

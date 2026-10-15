@@ -1,489 +1,313 @@
-# Пакеты, демо-сайты и локальное окружение
+# Пакеты, демо-сайты и окружение
 
-Читать, когда правка пакета не доезжает до `webx-cms.local`, когда работаешь из worktree, когда
-команда в Git Bash или OSPanel ведёт себя странно, перед локальным гейтом и smoke, при деплое на
-хомлаб и когда смотришь экран панели в плейграунде. Почти всё здесь выглядит как «ничего не
-изменилось» или «сломалась ветка», хотя сломано окружение.
+Читать, когда правка пакета не доезжает до сайта, когда работаешь из worktree, перед локальным
+гейтом и smoke, при работе с Docker и когда смотришь экран панели в плейграунде. Почти всё здесь
+выглядит как «ничего не изменилось» или «сломалась ветка», хотя сломано окружение.
+
+## Где смотреть правку
+
+- **Live-сайты платформы** (`webx status` показывает, какие в live): пакеты `webx-ui/*` в них —
+  ссылки на эту монорепу, правка PHP/Blade/lang видна сразу. После правки `composer.json` пакета,
+  новых миграций или ассетов при выключенном watch — `webx sync <сайт>`; что пошло не так —
+  `webx logs <сайт> [-f]` (app, очередь, сборка ассетов). Строка «lock ≠ релиз» в `webx status` —
+  подсказка, что lock сайта отстал от версии монорепы. Включать и выключать live — только человек.
+- **Dev-копии** — `site up <имя>`: рабочая копия `~/work/<имя>`, адрес `https://<имя>.$DEV_DOMAIN`,
+  artisan и composer — через `site exec <имя> …`.
+- **Сайт панели** переключается между монорепой и реестром `scripts/link-panel.sh` (обратно —
+  `--registry`), путь к сайту — `APP_PATH` (здесь — `APP_PATH=~/work/webx-cms`, рабочая копия
+  сайта хомлаба; у неё свой `scripts/packages.mjs`, которому скрипт и передаёт ход). **Стартовый сайт** пересобирается с нуля `scripts/starter-site.sh` (см. ниже).
+- **Хомлаб** — https://webx-cms.alexx.group на опубликованных пакетах, деплой при каждом пуше и
+  ночью. Ветку без релиза туда везёт канал `next` (`docs/architecture/WEBX_UI_PHP_RELEASE.md`).
 
 ## Линковка сайта с монорепой
 
 - **`vite build` сайта падает «Rolldown failed to resolve import "@webx-ui/<x>" from
   …/packages/<y>/dist/index.js», а `<y>` никто не трогал.** `dist` — не в git и остаётся от той
-  ветки, на которой его собирали последним: собранный на ветке, где `<y>` зависит от `<x>`, он
-  импортирует пакет, которого в `package.json` текущей ветки нет, и в `node_modules` пакета его
-  тоже нет. Лечится `pnpm --filter @webx-ui/<y> build` на текущей ветке. Проверка — `grep
-"@webx-ui/" packages/<y>/dist/index.js` против `dependencies` его `package.json`.
-- **Правка PHP на слинкованном сайте видна на страницах, но не в том, что идёт через очередь.**
-  Прогон аудита (и любая задача) снова находит то, что исправлено, хотя тот же код, вызванный
-  из `tinker`, отвечает уже по-новому. `queue:work` загрузил классы при старте и держит их, пока
-  жив, а симлинк меняет только файлы. После правки PHP — `php artisan queue:restart` в сайте;
-  проверка — у процесса `php artisan queue:work` время старта позже правки.
-- Было: новая строка в `lang/*` пакета сутки приезжала в панель английским дефолтом — словарь
-  панели жил в кэше без привязки к файлам. Починено: в ключе кэша — число lang-файлов и время
-  самого свежего (`DictionaryBuilder::fingerprint()`), новые слова видны со следующей загрузки
-  панели. `webx:locales:clear` остаётся для кэша списка языков.
-- **Правка пакета доезжает до `webx-cms.local` только сборкой, и с двух сторон по-разному.** Сайт
-  грузит `dist` («The packages ship compiled»), значит нужен `pnpm --filter <пакет> build` в
-  монорепе, иначе смотришь вчерашний бандл. И **каждая половина бывает копией, а не симлинком**,
-  причём в разные дни по-разному: `vendor/webx-ui/*` может оказаться симлинками, а
-  `node_modules/@webx-ui/*` — копиями двухдневной давности (npm с `file:` на Windows копирует).
-  Копия живёт своей жизнью: правка `resources/screens/*.json` или свежий `dist` до сайта не
-  доходят вовсе. Проверять `ls -la` в обоих каталогах. Копию npm-половины освежает
-  `npm install "@webx-ui/<пакет>@file:../webx-ui.local/packages/<пакет>"` в самом сайте,
-  composer-половину — `composer update "webx-ui/*"`. Доехала ли php-часть, показывает ответ
-  `/api/cms/screens/<экран>`. Собирать `npx vite build` в самом сайте: dev-сервер сайта панели
-  браузера не годится — его `http://127.0.0.1:<порт>` рядом с `https://webx-cms.local` отлетает как
-  `ERR_BLOCKED_BY_CLIENT`, и страница молча остаётся на старом бандле.
-- **Правка базового CSS модуля (`resources/theme/*.css`) не видна на слинкованном сайте, хотя
-  `vendor/webx-ui/<модуль>` — junction на чекаут.** Страница грузит не файл модуля, а копию:
-  `webx:theme:sync` склеивает стили всех модулей в `public/themes/modules/<хеш>/modules.css`, и
-  ссылка ведёт туда. Перезагрузка страницы показывает вчерашний вид — похоже на кеш браузера или
-  на то, что правило перебивает тема. Лечится `php artisan webx:theme:sync` в сайте после каждой
-  правки (строка «modules — their base look … published <новый хеш>»); проверка — новый хеш в
-  `<link>` страницы. То же у `dist/` тем и виджетов, но их и так пересобирают.
+  ветки, на которой его собирали последним: собранный там, где `<y>` зависит от `<x>`, он
+  импортирует пакет, которого в `package.json` текущей ветки нет. Лечится
+  `pnpm --filter @webx-ui/<y> build` на текущей ветке. Проверка — `grep "@webx-ui/"
+packages/<y>/dist/index.js` против `dependencies` его `package.json`.
+- **Правка PHP видна на страницах, но не в том, что идёт через очередь.** Прогон аудита (и любая
+  задача) снова находит исправленное, хотя тот же код из `tinker` отвечает уже по-новому.
+  `queue:work` загрузил классы при старте и держит их, пока жив, а симлинк меняет только файлы.
+  После правки PHP — `php artisan queue:restart` в сайте (dev-копия — через `site exec`);
+  проверка — время старта процесса `queue:work` позже правки, на live-сайте — `webx logs`.
+- Было: новая строка в `lang/*` пакета сутки приезжала в панель английским дефолтом. Починено
+  ключом кэша по lang-файлам (`DictionaryBuilder::fingerprint()`).
+- **Правка npm-половины доезжает до сайта только сборкой.** Сайт грузит `dist` пакетов, значит
+  нужен `pnpm --filter <пакет> build` в монорепе, иначе смотришь вчерашний бандл. И **каждая
+  половина бывает копией, а не симлинком**: копия живёт своей жизнью, правка
+  `resources/screens/*.json` или свежий `dist` до сайта не доходят вовсе. Проверять `ls -la` в
+  `vendor/webx-ui` и `node_modules/@webx-ui`. Копию npm-половины освежает `npm install
+"@webx-ui/<пакет>@file:<монорепа>/packages/<пакет>"` в сайте, composer-половину —
+  `composer update "webx-ui/*"`. Доехала ли php-часть, показывает ответ `/api/cms/screens/<экран>`.
+- **Правка базового CSS модуля (`resources/theme/*.css`) не видна, хотя `vendor/webx-ui/<модуль>`
+  — симлинк на чекаут.** Страница грузит копию: `webx:theme:sync` склеивает стили всех модулей в
+  `public/themes/modules/<хеш>/modules.css`. Похоже на кеш браузера или на то, что правило
+  перебивает тема. Лечится `php artisan webx:theme:sync` после каждой правки; проверка — новый
+  хеш в `<link>` страницы. То же у `dist/` тем и виджетов.
 - **`rm -rf` внутри `vendor/webx-ui/*` сносит исходники монорепы.** `path`-репозиторий без
   `"symlink": false` кладёт в `vendor` симлинк на чекаут, и каталог внутри него — тот же самый
   каталог. Команда выглядит как «обновить копию в тестовом сайте», а удаляет оригинал; `cp` следом
-  честно говорит «are the same file», но уже после `rm`. Перед любой правкой или удалением внутри
-  `vendor/webx-ui/*` смотреть `ls -la vendor/webx-ui`: если это симлинки, править нечего — сайт и
-  так видит чекаут. Сносить такой сайт целиком тоже нельзя, пока не сняты симлинки: сначала
-  `find <сайт> -type l -delete` (там ещё `public/storage`), потом `rm -rf`.
+  говорит «are the same file», но уже после `rm`. Перед любой правкой или удалением там —
+  `ls -la vendor/webx-ui`: если это симлинки, править нечего. Сносить такой сайт целиком — только
+  после `find <сайт> -type l -delete` (там ещё `public/storage`).
 - **Сайт, слинкованный с монорепой, получает вторую копию Vue — и реактивность рвётся по шву.**
-  В local-режиме `vue` изнутри пакета резолвится в `packages/core/node_modules/vue` чекаута:
-  `createApp` приходит из Vue пакета, а `ref()` в коде сайта — из своего. Ничего не падает, в
-  консоли пусто — `ref` меняется, а перерисовки нет. Диагноз: выставить ref в `window` и убедиться,
-  что присвоение не меняет DOM. Лечится `resolve: { dedupe: ['vue'] }` в `vite.config.js` сайта;
-  скелет (`php/site/vite.config.js`) это уже делает, сайт, собранный не на нём, — проверить. В
-  registry-режиме не воспроизводится, то есть ломается ровно там, где ведётся разработка.
-- **Composer не «пропускает» `path`-репозиторий, каталога которого нет, — он падает.** «The url
-  supplied for the path repository does not exist» — ошибка, а не предупреждение; у npm то же с
-  `file:`. Поэтому сайт переключается между монорепой и реестром скриптом (`scripts/packages.mjs`
-  у него, `scripts/link-panel.sh` здесь), а не живёт в одном состоянии. **Вернуть сайт после
-  local-режима из git нельзя:** `composer.lock` там не отслеживается, а
-  `packages.mjs local --no-install` всё равно переписывает `package.json` — `git checkout` отвечает
-  «pathspec did not match». Перед переключением копировать в скретчпад `composer.json`,
-  `composer.lock`, `package.json`, `package-lock.json` и `database/database.sqlite`, потом положить
-  назад и `composer install`. Если на сайте был `webx:demo` — туда же
-  `storage/app/webx-demo.json`: журнал демо не в git и не в базе, и вернувшаяся база иначе
-  остаётся рядом с журналом строк, которых в ней уже нет. **Новый пакет в local-режиме одним
-  `composer require` не ставится:** он тянет свежие диапазоны соседей, а частичное обновление
-  держит их на версиях из lock'а («fixed to … by a partial update»). Два шага:
+  `vue` изнутри пакета резолвится в `packages/core/node_modules/vue` чекаута: `createApp` — из Vue
+  пакета, `ref()` в коде сайта — из своего. Ничего не падает, `ref` меняется, перерисовки нет.
+  Диагноз: выставить ref в `window` и убедиться, что присвоение не меняет DOM. Лечится
+  `resolve: { dedupe: ['vue'] }` в `vite.config.js` сайта; скелет (`php/site/vite.config.js`) это
+  уже делает, сайт не на нём — проверить. В registry-режиме не воспроизводится.
+- **Composer не «пропускает» `path`-репозиторий, каталога которого нет, — он падает** («The url
+  supplied for the path repository does not exist»); у npm то же с `file:`. Поэтому сайт
+  переключается скриптом (`scripts/packages.mjs` у него, `scripts/link-panel.sh` здесь), а не живёт
+  в одном состоянии. **Вернуть сайт после local-режима из git нельзя:** `composer.lock` там не
+  отслеживается, а `packages.mjs local --no-install` всё равно переписывает `package.json`. Перед
+  переключением копировать в скретчпад `composer.json`, `composer.lock`, `package.json`,
+  `package-lock.json`, `database/database.sqlite` и, если был `webx:demo`,
+  `storage/app/webx-demo.json` (журнал демо не в git и не в базе); потом положить назад и
+  `composer install`. **Новый пакет в local-режиме одним `composer require` не ставится:** частичное
+  обновление держит соседей на версиях из lock'а («fixed to … by a partial update»). Два шага:
   `require "webx-ui/<пакет>:*" --no-update`, потом `update "webx-ui/*"`.
 - **Перевести слинкованный сайт на другой чекаут (worktree) — это не `composer update`.**
-  `MONOREPO=<worktree> node scripts/packages.mjs local` переписывает манифесты, `composer update
-"webx-ui/*"` пишет новый путь в `composer.lock` — а симлинки в `vendor/webx-ui` остаются на
-  прежний чекаут: версия та же, и composer считает пакет установленным. Выглядит как «правка не
-  доехала». Снять сами ссылки (`find vendor/webx-ui -maxdepth 1 -type l -delete` — только ссылки,
-  не `rm -rf`) и `composer install`; с `node_modules/@webx-ui` так же и `npm install`. **Обратно —
-  подождать минуту:** PHP OSPanel держит realpath-кеш, и после возврата на основной чекаут сайт ещё
-  около минуты отвечает 500 «Class … not found» с путём `webx-ui-<ветка>/…` в логе. Не чинить, а
-  подождать и проверить по содержимому страницы, а не по коду ответа.
+  `MONOREPO=<worktree> node scripts/packages.mjs local` переписывает манифесты, `composer update`
+  пишет новый путь в lock — а симлинки в `vendor/webx-ui` остаются на прежний чекаут: версия та же,
+  и composer считает пакет установленным. Снять сами ссылки (`find vendor/webx-ui -maxdepth 1 -type
+l -delete` — не `rm -rf`) и `composer install`; с `node_modules/@webx-ui` так же и `npm install`.
 - **На сайте, где панель уже есть, `webx:panel --sync` новый модуль в неё не впишет.** Команда
-  нарочно не трогает существующий `resources/js/admin.ts`: пишет конфиги, говорит
-  «npm run build» — маршруты сервера на месте, пункт в манифесте есть, а раздела в панели нет.
-  Импорт, стиль и `...services()` в `modules` на таком сайте дописываются руками.
-- **Компонент, поставленный в лэйаут `webx-cms.local`, не печатается на страницах конструктора.**
-  Статьи, услуги и каталог стоят в `components/layout.blade.php`, а страница `module-pages` — в
+  нарочно не трогает существующий `resources/js/admin.ts`: маршруты сервера на месте, пункт в
+  манифесте есть, а раздела в панели нет. Импорт, стиль и `...services()` дописываются руками.
+- **Компонент, поставленный в лэйаут сайта, не печатается на страницах конструктора.** Статьи,
+  услуги и каталог стоят в `components/layout.blade.php`, а страница `module-pages` — в
   `resources/views/pages/show.blade.php`, отдельном документе со своими `<head>` и регионами, без
-  `<main>` и без `{{ $slot }}`. Выглядит как «компонент на этой странице ничего не нашёл», хотя
-  данные на месте. Всё, что сайт печатает на каждой странице, ставить в оба файла; проверка —
-  `curl` статьи и `/about`.
+  `<main>` и `{{ $slot }}`. Всё, что сайт печатает на каждой странице, ставить в оба файла;
+  проверка — `curl` статьи и `/about`.
 - **Статический `public/robots.txt` отдаётся раньше Laravel, и маршрут `module-seo` не отвечает
-  никогда.** Веб-сервер (и `artisan serve`) отдаёт файл сам, так что `seo.robots-txt` и строка
-  `Sitemap:` до посетителя не доходят, а проверка «`/robots.txt` отвечает 200» проходит на этом же
-  файле. Скелет `webx-ui/site` файла уже не несёт; сайт, собранный из обычного скелета Laravel, —
-  удалить его. Проверять содержимое ответа, а не код.
+  никогда** — а проверка «`/robots.txt` отвечает 200» проходит на этом же файле. Скелет
+  `webx-ui/site` файла не несёт; сайт из обычного скелета Laravel — удалить его. Проверять
+  содержимое ответа, а не код.
 - **После проверки «Publish» на демо запись возвращена из снимка строки, а версий на одну меньше.**
-  `publish()` удаляет автосейвы записи, и если в ней был чужой черновик, его автосейв ушёл вместе с
-  публикацией — снимок самой строки (`draft`, колонки) его не вернёт. И публикуется черновик
-  целиком: чужой заголовок, адрес, обложка — вместе с одной своей правкой блока. Для живой проверки
-  Publish брать запись без черновика (`draft` пуст) или снимать заодно её строки `cms_versions`;
-  содержимое пропавшего автосейва лежит в версии `overwritten`, которую оставила первая правка
-  поверх чужого черновика. Проверка — число строк `cms_versions` до и после.
+  `publish()` удаляет автосейвы записи, и чужой черновик уходит вместе с публикацией — снимок самой
+  строки его не вернёт; публикуется и черновик целиком, с чужими правками. Для живой проверки брать
+  запись без черновика (`draft` пуст) или снимать заодно её строки `cms_versions`; содержимое
+  пропавшего автосейва — в версии `overwritten`. Проверка — число строк `cms_versions` до и после.
 
 ## Worktree и pnpm
 
-- **Файл, скопированный «в стартовый сайт», оказывается в основном чекауте.** `vendor/webx-ui/*`
-  сайта, слинкованного с монорепой, — симлинки на `php/packages` **основного** чекаута, не
-  worktree: `cp dist/contacts.css <сайт>/vendor/webx-ui/widgets/dist/` из worktree тихо правит
-  чужой рабочий каталог, и `git status` основного чекаута показывает изменённый `dist/`. Свежая
-  сборка попадает на сайт только через коммит → ff в основной чекаут → `php artisan
-webx:theme:sync`. Случайную запись снимать `git -C <основной> checkout -- <файл>`.
 - **В worktree `node_modules` — симлинк на основной чекаут, и `pnpm` это не переживает.** Любой
   `pnpm <скрипт>` оттуда либо отказывается («Refusing to use task run state directory … because it
-  is a symbolic link»), либо, решив, что сменился пакетный менеджер, идёт по симлинку и **сносит
-  содержимое `node_modules` основного чекаута**: пропадают `.pnpm` и `.bin`, ломается всё сразу,
-  включая соседнюю сессию. Дело в симлинке, а не в worktree: `git worktree add` в обычный каталог
-  приезжает без `node_modules`, и `pnpm install` там делает свой, основной чекаут цел. Так же ведёт
-  себя `preview_start` по имени из `.claude/launch.json` — он запускает pnpm. Из worktree запускать
-  бинарники напрямую (`npx vite build`, `npx vue-tsc -p tsconfig.json --noEmit` в каждом пакете
-  вместо рекурсивного `pnpm typecheck`,
-  `node <основной чекаут>/apps/docs/node_modules/vitepress/bin/vitepress.js dev --port 5177`), а
-  dev-сервер поднимать фоновой командой и открывать `preview_start` с `url`. Снос лечится одним
-  `pnpm install --frozen-lockfile` в основном чекауте — проверить, что `node_modules/.pnpm` на
-  месте.
-- **Worktree бывает и вовсе без `node_modules` — и `npx` это прячет.** Свежий worktree приезжает
-  без единого `node_modules`, ни в корне, ни в пакетах: `npx prettier` молча скачивает себе
-  какой-то Prettier и форматирует им, а `npx vue-tsc` в пакете падает «Cannot find type definition
-  file for 'node'» — похоже на сломанный `tsconfig`. Лечится junction'ами на основной чекаут, корень
-  и каждый пакет: `cmd //c mklink //J node_modules <основной>\node_modules`, то же для
-  `packages/*/node_modules` и `apps/*/node_modules` (они в `.gitignore`). Пакетные junction'ы
-  циклом — из PowerShell (`New-Item -ItemType Junction`), не из Bash: собранный в Bash путь теряет
-  обратные слэши, `mklink` молча делает ссылку в никуда, и vitest падает «Failed to resolve import
-  "vue-router"» на каждом файле пакета. Битая ссылка видна по пустому `Target` у `Get-Item`;
-  снимать её `cmd /c rmdir`, а не `Remove-Item -Recurse`, который уходит за ссылку. pnpm после этого из
+  is a symbolic link»), либо идёт по симлинку и **сносит содержимое `node_modules` основного
+  чекаута**: пропадают `.pnpm` и `.bin`, ломается всё, включая соседнюю сессию. Дело в симлинке:
+  `git worktree add` в обычный каталог приезжает без `node_modules`, и `pnpm install` там делает
+  свой. Из worktree запускать бинарники напрямую (`npx vite build`, `npx vue-tsc -p tsconfig.json
+--noEmit` в каждом пакете вместо рекурсивного `pnpm typecheck`,
+  `node <основной>/apps/docs/node_modules/vitepress/bin/vitepress.js dev --host --port 5177`).
+  Снос лечится `pnpm install --frozen-lockfile` в основном чекауте — проверить, что
+  `node_modules/.pnpm` на месте.
+- **Worktree бывает и вовсе без `node_modules` — и `npx` это прячет.** `npx prettier` молча
+  скачивает себе какой-то Prettier, а `npx vue-tsc` в пакете падает «Cannot find type definition
+  file for 'node'» — похоже на сломанный `tsconfig`. Лечится симлинками на основной чекаут: корень,
+  `packages/*/node_modules` и `apps/*/node_modules` (они в `.gitignore`); pnpm после этого из
   worktree по-прежнему не звать. Проверка — `ls node_modules/.bin/prettier` перед первым
   форматированием; отформатированное до неё — прогнать ещё раз.
-- **Сайт, слинкованный с worktree, собирается из двух чекаутов сразу.** Junction
+- **Файл, скопированный «в сайт», оказывается в основном чекауте.** `vendor/webx-ui/*` сайта,
+  слинкованного с монорепой, — симлинки на `php/packages` **основного** чекаута: `cp` из worktree
+  в `<сайт>/vendor/webx-ui/…` тихо правит чужой рабочий каталог. Свежая сборка попадает на сайт
+  только через коммит → ff в основной чекаут → `webx:theme:sync`. Случайную запись снимать
+  `git -C <основной> checkout -- <файл>`.
+- **Сайт, слинкованный с worktree, собирается из двух чекаутов сразу.** Симлинк
   `packages/<пакет>/node_modules` целиком смотрит в основной чекаут, а там `@webx-ui/<сосед>` —
-  ссылка на **его** `packages/<сосед>`. Пакет из worktree импортирует соседа из чужого `dist`, и
-  сборка сайта падает `[MISSING_EXPORT]` с путём `../webx-ui.local/packages/<сосед>/dist` —
-  похоже на забытый экспорт в ветке. Хуже, когда экспорт есть: тогда сайт молча
-  собирается с прошлой версией соседа. Для линковки сайта `node_modules` пакета в worktree делать
-  настоящим каталогом: каждая запись — junction на основной чекаут, а `@webx-ui/*` — junction'ы на
-  пакеты самого worktree. Проверка — `ls -la packages/<пакет>/node_modules/@webx-ui` показывает
-  путь worktree. Сборку пакета из worktree `npx vite build` делает в его каталоге; без junction'а
-  на `node_modules` пакета она падает «Cannot find package 'vite-plugin-dts'».
-- **`starter-site.sh` снёс клон сайта вместе с `.git`.** Скрипт по определению одноразовый: удаляет
-  каталог целиком, кроме `.osp/`. Раньше его каталогом по умолчанию был `webx-starter.local`, а под
-  этим именем теперь живёт клон `sites/starter` с хостинга, где правится `theme/` под дизайн. Каталог
-  по умолчанию — `webx-starter-test.local` (база `webx_starter_test`), и скрипт падает «is a git
-  checkout», если в `STARTER_PATH` есть `.git`. Хост `webx-starter-test.local` в OSPanel заводится
-  один раз (`.osp/project.ini` в каталоге сайта, его пересборка сохраняет). Проверка —
-  `STARTER_PATH=<клон> scripts/starter-site.sh --down` отказывает, не тронув ни файла.
-- **Стартовый сайт показывает не твою ветку, хотя пересобран только что.** `starter-site.sh`
-  линкует тот чекаут, из которого запущен (`MONOREPO` — родитель скрипта), а в основном чекауте
-  может стоять ветка другой сессии. PHP из worktree проверяется запуском скрипта из worktree с
-  `STARTER_PATH=/c/Work/OSPanel/home/webx-starter-test.local`, `STARTER_URL=http://webx-starter-test.local`
-  и `STARTER_ENV=<основной чекаут>/.env.starter` — без них сайт соберётся рядом с worktree и без
-  `.env.starter`; шаг npm требует `packages/core/dist`, его и
-  остальные `packages/*/dist` взять junction'ами из основного чекаута, если npm-пакеты не
-  менялись. Проверка — `ls -la vendor/webx-ui` на сайте показывает путь worktree. Сайт остаётся
-  слинкован с worktree: перед удалением worktree пересобрать сайт из основного. (Шаг «Check»
-  падал «Test directory tests/Feature not found» в любом свежем чекауте — пустой каталог скелета
-  не попадал в git; починено `.gitkeep` в W6.4.)
-- **Удалять отработавший worktree — сначала ссылки, потом каталог.** В нём junction'ы
-  `node_modules` на основной чекаут, симлинки `php/vendor/webx-ui/*` и тысячи ссылок pnpm, и
-  удаление, которое пойдёт за ссылку, снесёт чужое. Порядок: обойти дерево, не заходя в точки
-  повторной обработки (`FileAttributes.ReparsePoint`), и снять каждую ссылку
-  (`[IO.Directory]::Delete(path, $false)` для каталога), потом `git worktree remove --force` и
-  `git branch -D`. Проверка — `node_modules/vue` и `php/packages/*/src` основного чекаута на месте.
-  Пустая папка, которая не удаляется «Device or resource busy», — чей-то процесс держит её текущим
-  каталогом; оставить до освобождения. Для `vitepress build` из worktree нужны ещё junction'ы
-  `packages/*/dist`: доки резолвят `@webx-ui/*` из `dist`.
-- **Рукописная правка `pnpm-lock.yaml` из worktree проверяется в отдельном worktree без
-  `node_modules`.** Зависимость, вписанная не в тот `importers`, роняет каждую джобу CI на
-  `ERR_PNPM_OUTDATED_LOCKFILE` («1 dependency was removed»), а локально этого не видно — pnpm из
-  worktree звать нельзя. Проверка без риска: закоммитить, `git worktree add --detach <скретчпад>
-HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` (симлинков нет,
-  `node_modules` не создаётся, секунды), потом `git worktree remove --force`.
-- **На пустом `php/vendor` первый `analyse` — гонка за манифест Testbench.** В worktree своего
-  `php/vendor` нет, `composer install` манифест не пишет (он пишется при первой загрузке
-  приложения), и первым приложение поднимает phpstan — сразу в несколько процессов. Дальше либо
+  ссылка на **его** `packages/<сосед>`. Сборка сайта падает `[MISSING_EXPORT]` с путём в чужой
+  `dist` — похоже на забытый экспорт; хуже, когда экспорт есть: сайт молча собирается с прошлой
+  версией соседа. Для линковки `node_modules` пакета в worktree делать настоящим каталогом: каждая
+  запись — ссылка на основной чекаут, а `@webx-ui/*` — на пакеты самого worktree. Проверка —
+  `ls -la packages/<пакет>/node_modules/@webx-ui` показывает путь worktree.
+- **Удалять отработавший worktree — сначала ссылки, потом каталог:** `find <worktree> -type l
+-delete`, потом `git worktree remove --force` и `git branch -D`. Проверка — `node_modules/vue` и
+  `php/packages/*/src` основного чекаута на месте. Для `vitepress build` из worktree нужны ещё
+  ссылки на `packages/*/dist`: доки резолвят `@webx-ui/*` из `dist`.
+- **Рукописная правка `pnpm-lock.yaml` проверяется в отдельном worktree без `node_modules`.**
+  Зависимость, вписанная не в тот `importers`, роняет каждую джобу CI на
+  `ERR_PNPM_OUTDATED_LOCKFILE`, а локально этого не видно. Закоммитить, `git worktree add --detach
+<скретчпад> HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts`
+  (`node_modules` не создаётся, секунды), потом `git worktree remove --force`.
+- **На пустом `php/vendor` первый `analyse` — гонка за манифест Testbench.** `composer install`
+  манифест не пишет, и первым приложение поднимает phpstan — сразу в несколько процессов. Итог —
   «undefined method» на **всех** Blueprint-макросах (`draft()`, `blocks()`, `nestedSet()`) плюс
-  претензии к типам в чужих пакетах — похоже на сломанную ветку, — либо
-  `Laravel framework bootstrap failed` с `rename(…serXXXX.tmp, …services.php): Access is denied`,
-  что читается как права на каталог. После `composer install` в свежем `php/` прогреть манифест
-  **один раз и последовательно**:
-  `TESTBENCH_WORKING_PATH="$(cygpath -m $PWD)" php vendor/bin/testbench package:discover` из
-  `php/`, убрать `bootstrap/cache/*.tmp`, потом `analyse`. Если `analyse` уже успел упасть,
-  прогрева мало: те же ошибки приезжают из `php/.phpstan.cache` — сначала
-  `php vendor/bin/phpstan clear-result-cache -c phpstan.neon.dist`. Голый
-  `php vendor/orchestra/testbench-core/laravel/artisan` не годится: без рабочего пути он ищет
-  `vendor/autoload.php` внутри testbench и падает на `require`. **Новый пакет в `php/` — это
-  `composer update webx-ui/<пакет>`**, после которого манифест прогревается заново (снести
-  `packages.php` и `services.php`), иначе тест отвечает «Class …ServiceProvider not found».
-  В свежем worktree `php/composer.lock` нет (он не отслеживается), и `update <пакет>` отказывается
-  «Cannot update only a partial set of packages without a lock file» — скопировать lock основного
-  чекаута, тогда ставится всё остальное ровно его версиями и новый пакет сверху.
-  Если и после прогрева `analyse` падает на том же `rename(…services.php)`, — так было после
-  `composer update` с новым пакетом, — один последовательный прогон греет манифест в том виде, в
-  каком его строит Larastan: `php vendor/bin/phpstan analyse --debug <любой путь пакета>`, убрать
-  `*.tmp`, потом полный `analyse`.
-- **«Call to undefined function wx_text()» после rebase — функция в ветке есть, `vendor` о ней
-  не знает.** Пакет завёл `autoload.files` (`src/helpers.php`), а `composer dump-autoload` строит
-  карту из `vendor/composer/installed.json`, где записан старый `composer.json` пакета, — и
-  helpers.php в неё не попадает. Похоже на сломанную чужую ветку. Лечится `composer update
-webx-ui/<пакет>` из `php/`: path-репозиторий перечитывается. Проверка — `grep helpers.php
-vendor/composer/autoload_files.php`.
-- **Скрипт пакетной темы собирается в `dist/theme2.js`, а `@webxTheme` его не ставит.** У Vite
-  со входом-стилем (`src/css/theme.css`) и входом-скриптом рядом стилевой вход оставляет пустой
-  JS-чанк, и тот занимает имя `theme.js` первым — скрипт получает `theme2.js`, а движок ищет
-  `dist/theme.js`. Похоже на сломанный `assetFileNames`. В заготовке `webx:theme:make` входы
-  названы `theme` и `script`, а `entryFileNames` — функцией: `script` → `theme.js`, остальное —
-  `[name]-entry.js` (пустой чанк выбрасывается). Правя `vite.config.js` темы, это не трогать.
+  претензии к типам в чужих пакетах, похоже на сломанную ветку. После `composer install` прогреть
+  манифест **один раз и последовательно**: `TESTBENCH_WORKING_PATH="$PWD" php
+vendor/bin/testbench package:discover` из `php/`, убрать `bootstrap/cache/*.tmp`, потом
+  `analyse`. Если `analyse` уже упал — сначала `php vendor/bin/phpstan clear-result-cache -c
+phpstan.neon.dist`: ошибки приезжают из `php/.phpstan.cache`. **Новый пакет в `php/` — это
+  `composer update webx-ui/<пакет>`** и прогрев заново (снести `packages.php` и `services.php`),
+  иначе «Class …ServiceProvider not found». В свежем worktree `php/composer.lock` нет, и
+  `update <пакет>` отказывается «Cannot update only a partial set of packages without a lock file»
+  — скопировать lock основного чекаута.
+- **«Call to undefined function wx_text()» после rebase — функция в ветке есть, `vendor` о ней не
+  знает.** Пакет завёл `autoload.files`, а `composer dump-autoload` строит карту из
+  `vendor/composer/installed.json` со старым `composer.json` пакета. Лечится `composer update
+webx-ui/<пакет>` из `php/`. Проверка — `grep helpers.php vendor/composer/autoload_files.php`.
+- **Скрипт пакетной темы собирается в `dist/theme2.js`, а `@webxTheme` его не ставит.** Стилевой
+  вход Vite оставляет пустой JS-чанк, и тот занимает имя `theme.js` первым. В заготовке
+  `webx:theme:make` входы названы `theme` и `script`, а `entryFileNames` — функцией (`script` →
+  `theme.js`, остальное — `[name]-entry.js`). Правя `vite.config.js` темы, это не трогать.
   Проверка — `ls dist` после `npm run build`: `sources.json`, `theme.css`, `theme.js`.
 
-## Windows, Git Bash, OSPanel
+## Стартовый сайт
 
-- **Команда, которой не было, запустилась сама — `pnpm install` прямо в worktree.** Текст с
-  обратными кавычками (markdown: `` `pnpm test:starter` ``) внутри `node -e "…"` в двойных
-  кавычках Bash выполняет как подстановку команды — до node. Так правка спеки поставила зависимости
-  в worktree и запустила Playwright; рядом «header: command not found» от соседних кавычек. Текст с
-  обратными кавычками — только скриптом из файла (Write), никогда в аргументе Bash. Проверка —
-  `git status` и `ls -ld node_modules` в обоих чекаутах.
-
-- **Правка скриптом на node задвоила половину файла.** `String.prototype.replace` со строкой
-  замены понимает `$'`, `$&` и `$$` (и обратную кавычку после доллара) как шаблоны: PHP с
-  `'$'.$name` в замене вставил «остаток файла» посреди класса. Заменять функцией —
-  `s.replace(a, () => b)`. И `sed` из Bash с обратной кавычкой после слэша: слэш съеден, а эта
-  пара в GNU sed значит «начало строки» — кавычка встаёт в начало каждой строки диапазона.
-  Проверка — `php -l` на каждом тронутом файле.
-
-- **Bash-инструмент съедает обратные слэши, даже в закавыченном heredoc'е.** Двойной слэш
-  приезжает одинарным, `\N` — просто буквой; так ломаются psr-4 в `composer.json` (composer
-  отвечает «unescaped backslash») и любые perl/sed-выражения с экранированием. Файлы со слэшами
-  писать инструментом Write, точечные правки — скриптом на php/node, который держит шаблон в
-  файле, а не в командной строке. Большие `.vue` — тоже Write: heredoc ломается на обратных
-  кавычках и `$`. **Скрипт-правка, сам записанный heredoc'ом, теряет те же слэши**: `.cjs` с
-  `s.replace("use WebxUi\\Themes\\…")` после heredoc'а ищет `WebxUiThemes…`, не находит и молча
-  оставляет файл как был — `git diff --stat` показывает меньше строк, чем ждали. Такой скрипт —
-  тоже Write, а правку со слэшами проще сделать Edit.
-- **`cat > файл` без heredoc'а ждёт stdin до таймаута.** Команда висит две минуты и уходит в фон,
-  ничего не написав; всё после неё в той же строке не выполняется. Писать файл — Write или
-  `cat > файл <<'X' … X`; node-скрипты запускать с `</dev/null`.
-- **Юникод-экранирование в тексте вызова инструмента приезжает раскрытым.** Обратный слэш, `u` и
-  четыре шестнадцатеричные цифры в содержимом Write, Edit или heredoc'а становятся самим символом
-  ещё до записи: экранированный `<b>` в проверке теста становится сырым `<b>` (и проверка «в
-  JSON-LD нет сырого `<`» ищет ровно то, чего быть не должно), BOM в шаблонной строке мока —
-  невидимым символом в исходнике. Ничего не падает, тест просто проверяет другое. Такую строку
-  собирать из кусков — в PHP слэш отдельной строкой, склеенной с `u003C`; в `.ts` — скриптом
-  через `String.fromCharCode(92)`. Проверка — `grep -n u003C` (или `uFEFF`) по файлу после записи.
-- **Не-ASCII в аргументе команды приезжает вопросительными знаками.** `curl -d '{"title":"Панель"}'`
-  кладёт в фикстуру `??????`, и выглядит это не как кодировка, а как сломанный экран. Тело запроса
-  и любой русский текст писать в файл (Write) и передавать `--data-binary @файл`.
-- **`/tmp` у bash и у php — разные каталоги.** Bash подставляет реальный путь только в аргументах
-  запуска, а строка `/tmp/x.php` внутри php-кода на Windows никуда не ведёт. Временное — в
-  скретчпад сессии по абсолютному пути.
-- **Скрипт `.js` во временном каталоге — ES-модуль.** `node /tmp/fix.js` падает «require is not
-  defined in ES module scope»: в `%TEMP%` лежит чужой `package.json` с `"type": "module"`, и node
-  читает по нему всё под ним. Похоже на опечатку в скрипте. Одноразовую правку писать `.cjs` (или
-  через `import`).
-- **Git Bash переписывает всё, похожее на абсолютный posix-путь, по дороге в дочерний процесс.**
-  `WEBX_BASE=/webx/` приезжает как `C:/Program Files/Git/webx/`: сборка проходит, потом 404 на
-  каждом шрифте. Передавать имя, а путь собирать на той стороне; `MSYS_NO_PATHCONV=1` не лечит — он
-  ломает сам pnpm. Так же гибнет `//` в jq: `.conclusion // "-"` отвечает «cannot add: string and
-  array» — писать `if .conclusion == null then …` или держать фильтр в файле. **Обратная сторона:**
-  путь внутри JSON-строки не переписывается, поэтому `--repository='{"url":"/c/Work/…"}'` доезжает
-  до composer как есть, а такого каталога на Windows нет — собирать такой JSON на стороне php,
-  передав путь отдельным аргументом. **И путь после префикса в аргументе:**
-  `curl -F "fields[attachment]=@/c/Users/…"` — `curl.exe` получает `/c/…` как есть и выходит с
-  кодом 26 без единой строки. Путь для Windows-программ — в виде `C:/…` (`cygpath -m`).
-- **Файл из `/themes/` на сайте OSPanel приходит без вечного кеша, хотя в скелете он есть.**
-  OSPanel не читает ни `docker/nginx.conf`, ни `public/.htaccess` скелета: блок `server` — хоста,
-  в `.osp/nginx/<хост>.conf`, и там только `location /` и PHP. Стартовому сайту `/build/` и
-  `/themes/` дописывает `scripts/starter-site.sh` (и перезапускает nginx: `osp restart nginx`);
-  другому сайту OSPanel — руками туда же. И не `expires 1y` вместе с `add_header Cache-Control`:
-  nginx отдаёт тогда два заголовка `Cache-Control` — один `max-age`, второй `public, immutable`.
-  Один `add_header Cache-Control "public, max-age=31536000, immutable"`. Проверка —
-  `curl -sI <адрес из /themes/> | grep -i cache-control`: ровно одна строка.
-- **PHP-часть проверяется настоящим PHP.** Локально есть модули OSPanel
-  (`C:\Work\OSPanel\modules\PHP-8.3\php.exe` и `PHP-8.4`); composer в PATH нет, phar кладётся в
-  скретчпад. Гейт php-половины — `composer lint && composer analyse && composer test` из `php/`.
-  Скрипты composer зовут `php` по имени, и без него в PATH все три падают с «'php' is not
-  recognized» и вопросом про `allow-plugins` — похоже на сломанный `composer.json`. В фоне и с
-  выводом в `| tail` ошибки не видно вовсе: composer молча ждёт ответа на этот вопрос, и гейт
-  «висит» без дочернего процесса. Либо каталог
-  `php.exe` в PATH, либо сами бинарники: `php.exe vendor/bin/pint --test`, `… phpstan analyse`,
-  `… phpunit`.
-- **`composer test` обрывается на середине с «The process "phpunit" exceeded the timeout of 300
-  seconds».** Похоже на зависший тест, а это таймаут скриптов composer: полный PHPUnit локально идёт
-  около девяти минут. `COMPOSER_PROCESS_TIMEOUT=0` перед `composer test` или сам `vendor/bin/phpunit`.
-- Было: dev-корень `php/` не запускался на 8.3 при пакетах на `^8.3` (PHPUnit 13 требует 8.4.1).
-  Нижняя версия пакетов поднята до `^8.4`, матрица CI — 8.4 и 8.5.
+- **`scripts/starter-site.sh` одноразовый: удаляет каталог сайта целиком.** Поэтому каталог по
+  умолчанию — `webx-starter-test.local` (база `webx_starter_test`), и скрипт падает «is a git
+  checkout», если в `STARTER_PATH` есть `.git`: клон `~/work/webx-starter` под ним не живёт. Все
+  умолчания переопределяются окружением (`STARTER_PATH`, `STARTER_URL`, `PHP_BIN`, `DB_*` — шапка
+  скрипта). Проверка — `STARTER_PATH=<клон> scripts/starter-site.sh --down` отказывает, не тронув ни
+  файла.
+- **Стартовый сайт показывает не твою ветку, хотя пересобран только что.** Скрипт линкует тот
+  чекаут, из которого запущен (`MONOREPO` — родитель скрипта), а в основном может стоять ветка
+  другой сессии. PHP из worktree проверяется запуском скрипта из worktree с явными
+  `STARTER_PATH`, `STARTER_URL` и `STARTER_ENV=<основной>/.env.starter`; шаг npm требует
+  `packages/*/dist` — взять ссылками из основного, если npm-пакеты не менялись. Проверка —
+  `ls -la vendor/webx-ui` на сайте показывает путь worktree. Перед удалением worktree пересобрать
+  сайт из основного.
+- **`starter-site.sh` зелёный по шагам, а главная отвечает 404.** Это `webx:demo`, остановившийся
+  на полпути: в логе выше — `Data too long for column 'description'` при вставке демо-типа блока
+  (`title` и `description` — 255 символов). Укоротить описание в
+  `theme-default/demo/blocks/<тип>.json` (`ThemeDefaultTest` меряет каждое), затем на сайте
+  `php artisan webx:demo --remove && php artisan webx:demo`.
+- **`ThemeDefaultTest` падает «array_push() does not accept unknown named parameters».** Ключ
+  `items` в `values` демо-блока — это вложенные блоки, строка или карта языков там — не список.
+  Поле демо-типа называть иначе (`goods`, `rows`).
+- **Тег в тексте витрины пропал на странице.** Тело блока `text` печатается как HTML, и браузер
+  съедает `<x-…>` как неизвестный элемент. Код в демо-тексте — `<code>&lt;x-webx-…&gt;</code>`.
+- **После пересборки браузер показывает старый вид блока, хотя `webx:theme:sync` сказал
+  «updated».** Стили блоков отдаются одним `/blocks/<хеш>.css` с `immutable` на год, а хеш назван
+  по версиям блоков — в свежей базе номера начинаются заново, адрес совпадает с прошлой сборкой.
+  `curl` отдаёт новое. В браузере — `fetch(href, { cache: 'reload' })` для каждого
+  `link[rel=stylesheet]`, потом `location.reload()`; Playwright не задет.
 
 ## Гейт и проверки локально
 
-- **После пересборки стартового сайта панель браузера показывает старый вид блока, хотя
-  `webx:theme:sync` сказал «updated», а разметка уже новая.** Стили блоков отдаются одним файлом
-  `/blocks/<хеш>.css` с `immutable` на год, а хеш назван по версиям блоков, — в свежей базе номера
-  версий начинаются заново, адрес совпадает с прошлой сборкой, и браузер берёт файл из кеша.
-  `curl` того же адреса отдаёт новое. В панели браузера — перезапросить стили мимо кеша
-  (`fetch(href, { cache: 'reload' })` для каждого `link[rel=stylesheet]`, потом `location.reload()`);
-  Playwright не задет — у каждого прогона свой пустой кеш.
-
-- **Гейт локально упирается в память, а не в ошибки.** `pnpm build` и `pnpm test` идут
-  параллельно по числу ядер, dts-шаг `@webx-ui/core` и тесты с `WxCodeEditor` (CodeMirror)
-  тяжёлые — и прогон срывается в `Fatal process out of memory: Zone` каждый раз в разном месте, а
-  со второго раза проходит. Перед гейтом гасить dev-серверы. Отдельный тест —
-  `npx vitest run <файл> --pool=forks --poolOptions.forks.singleFork` **из корня репозитория**:
-  `vitest.config.ts` один, в корне; из каталога пакета jsdom не поднимается, и падает всё подряд с
-  «document is not defined», что читается как сломанная ветка.
-- **`composer test` локально обрывается на 93% с «The process "phpunit" exceeded the timeout of
-  300 seconds».** Похоже на зависший тест, а это таймаут процесса у самого composer: весь набор
-  на Windows идёт дольше пяти минут. `composer analyse` из той же сессии падает «Result is
-  incomplete because of severe errors» — ему не хватило памяти. Запускать напрямую:
-  `php -d memory_limit=-1 vendor/bin/phpunit --colors=never` и
-  `php -d memory_limit=-1 vendor/bin/phpstan analyse --no-progress --error-format=raw`
-  (`--colors=never`, иначе `grep` по итогу не находит ничего — строки обёрнуты в коды цвета).
+- **Гейт упирается в память, а не в ошибки.** `pnpm build` и `pnpm test` идут параллельно,
+  dts-шаг `@webx-ui/core` и тесты с `WxCodeEditor` тяжёлые — прогон срывается в `Fatal process out
+of memory: Zone` каждый раз в разном месте. Перед гейтом гасить dev-серверы. Отдельный тест —
+  `npx vitest run <файл> --pool=forks --poolOptions.forks.singleFork` **из корня репозитория**: из
+  каталога пакета jsdom не поднимается, и всё падает «document is not defined».
+- **`composer test` обрывается с «The process "phpunit" exceeded the timeout of 300 seconds».**
+  Похоже на зависший тест, а это таймаут скриптов composer: полный PHPUnit идёт дольше. Звать
+  напрямую: `php -d memory_limit=-1 vendor/bin/phpunit --colors=never` и `php -d memory_limit=-1
+vendor/bin/phpstan analyse --no-progress --error-format=raw` (или `COMPOSER_PROCESS_TIMEOUT=0`).
+  `--colors=never` — иначе `grep` по итогу ничего не находит.
 - **Страница, переписанная в Playwright через `page.route()` + `route.fulfill()`, остаётся без
-  стилей и скриптов** — баннер не появляется, клик ждёт минуту и падает по таймауту, а в консоли
-  «blocked by CORS policy: … the resource is in more-private address space `loopback`». Документ,
-  отданный `fulfill`, для браузера уже не с loopback-адреса сайта, и Private Network Access режет
-  каждый его запрос к `*.local`. Убрать `Content-Length` и `Content-Encoding` (их тоже приходится
-  убирать: тело из `route.fetch()` уже разжато) не помогает. Добавлять разметку не в ответ, а при
-  разборе страницы: `page.addInitScript()` с `MutationObserver`, который вставляет её в `<main>`,
-  как только тот появится, — до модульных скриптов (`tests/starter/starter.pw.mjs`, согласие).
-- **Полный прогон стартового сайта идёт 40 минут вместо десяти, и не видно, где.** Изредка
-  воркер виснет на тесте так, что таймаут теста (60 с) не срабатывает, а `… | tail -40` ничего не
-  печатает до конца. Прогон — `--reporter=line` в файл (не в `tail`) под `timeout 1500`; повис —
-  убить дерево процесса, тест отдельно (`-g "<describe>"`), остальное догнать одним `-g` по
-  оставшимся describe (`--list` сначала — Playwright склеивает заголовки пробелами, `›` в
-  фильтре не находит ничего).
-- **`pnpm test:starter` из worktree падает до первого теста: «Playwright Test did not expect
-  test.describe() to be called here … No tests found».** Похоже на сломанный файл тестов, а это
-  две копии `@playwright/test`: CLI запущен из `node_modules` основного чекаута, а
-  `tests/starter/starter.pw.mjs` импортирует пакет из `node_modules` worktree. В worktree со
-  своими `node_modules` звать его CLI —
-  `node node_modules/@playwright/test/cli.js test -c tests/starter/playwright.config.mjs`; путь
-  основного чекаута годится, только пока у worktree своих `node_modules` нет.
-- **`starter-site.sh` зелёный по шагам, а главная отвечает 404 («FAILED: GET … answered 404»).**
-  Выглядит как сломанный маршрут или тема, а это `webx:demo`, остановившийся на полпути: в логе
-  выше — `Data too long for column 'description'` при вставке демо-типа блока. `module-blocks`
-  держит `title` и `description` в 255 символах; страницы витрины после остановки не созданы.
-  Укоротить описание в `theme-default/demo/blocks/<тип>.json` (`ThemeDefaultTest` теперь меряет
-  каждое), затем на сайте `php artisan webx:demo --remove && php artisan webx:demo` — пересобирать
-  весь сайт не нужно.
-- **`ThemeDefaultTest` падает «array_push() does not accept unknown named parameters» на новой
-  странице витрины.** Ключ `items` в `values` демо-блока — это вложенные блоки: тест (и сид)
-  разворачивает его как список блоков, а строка или карта языков там — не список. Поле демо-типа
-  называть иначе (`goods`, `rows`).
-- **Тег в тексте витрины пропал на странице** («`<x-webx-inbox::form …>` prints…» читается как
-  «prints…»). Тело блока `text` печатается как HTML, и браузер съедает `<x-…>` как неизвестный
-  элемент. Код в демо-тексте — `<code>&lt;x-webx-…&gt;</code>`.
-- **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` сервер надо
-  перезапустить: свежий HTML тянет новые хеши, их нет в списке → 404, страница без стилей и без
-  гидрации. Выглядит как «правка не помогла».
-- **`webx:doctor --strict` в контейнере: «storage owner: storage/app/public/media is not
-  www-data's», хотя entrypoint только что сделал `chown`.** Доктор, запущенный от root
-  (`docker compose exec app php artisan …`), сам создаёт этот каталог своей проверкой «Media
-  disk» — следующей проверке он уже чужой. Artisan в контейнере — всегда `exec -u www-data`.
-- **Проверка smoke падает на тексте, в котором искомое есть** («the consent page did not draw»,
-  а в выводе ровно эта страница), рядом `printf: write error: Broken pipe`. `… | grep -q` под
-  `pipefail`: `grep -q` уходит на первом совпадении, писатель упирается в закрытую трубу, как
-  только текст больше её буфера, и конвейер — провал. Растёт страница — проверка начинает
-  падать сама. В smoke — `… | has <шаблон>` (дочитывает вход до конца) или
-  `grep -q … <<< "$текст"`, никогда `| grep -q`.
-- **Редирект `module-seo` в smoke отвечает 404 вместо 301, а на сайте работает.** Запрос с этой
-  же машины на хост `127.0.0.1` без `X-Forwarded-*` — для `Probes` проба здоровья контейнера, и
-  ни редирект, ни нормализация адреса ей не отвечают. Smoke ходит в `artisan serve` по
-  `http://127.0.0.1:<порт>` — поэтому всё, что ждёт 3xx, спрашивает по имени: `visit
-"$VISITOR/…"` (`http://localhost:<порт>`), **без общего cookie-jar**: вторая сессия под
-  `localhost` в нём отдаёт `xsrf_token()` чужой токен, и согласие OAuth дальше не возвращает
-  `code`. Проверка руками: `artisan serve --host=127.0.0.1` и `curl` одного
-  адреса через `127.0.0.1` и через `localhost`.
-- **Локальный smoke против MariaDB запускается так, и никак иначе.** MariaDB OSPanel слушает
-  `127.0.1.14:3306` под `root` без пароля (`DB_HOST=127.0.1.14`). Перед прогоном:
-  - `DROP DATABASE` обеих баз (`webx_smoke`, `webx_smoke_site`) и `CREATE DATABASE webx_smoke`:
-    скрипт создаёт базу, только если её нет, и не чистит её — и прошлый прогон роняет свежую
-    миграцию Passport «table oauth_auth_codes already exists».
-  - `SMOKE_DIR` виндовым путём (`C:/…`): `curl -F …=@/c/…` из Git Bash файл не читает и выходит с
-    кодом 26 на вложении формы.
-  - `COMPOSER_BIN` строкой `"<php.exe> <путь>/composer.phar"`: скрипт вытаскивает из неё phar и
-    передаёт `webx:setup --composer`; обёртка-скрипт вместо этого даёт «Could not open input
-    file: \composer.phar» на второй половине. Плюс `composer` в PATH (`composer.bat` рядом с
-    phar): `webx:setup` зовёт его по имени, иначе «'composer' is not recognized».
-  - Порты 8123/8124 свободны: `artisan serve` упавшего прогона другой сессии остаётся жить, и
-    сайт второй половины отвечает из _его_ скретчпада (`require(…/helpers.php)` чужого,
-    удалённого каталога). Смотреть `Get-NetTCPConnection -LocalPort 8123,8124` и гасить `php.exe`
-    с `-S 127.0.0.1:812x`.
-
-- **`site exec <сайт> php artisan tinker файл.php` висит до таймаута.** Tinker с путём к файлу
-  всё равно открывает REPL и ждёт stdin, а `site exec` его не закрывает — команда уходит в фон
-  без единой строки вывода. Скрипт — через `tinker --execute="require 'storage/app/…/x.php';"`
-  и `</dev/null`, ещё лучше под `timeout 60`; русский текст держать в файле, не в аргументе.
-- **`require('playwright')` из скрипта в скретчпаде не находится, хотя `node_modules/.bin/playwright`
-  в монорепе есть.** pnpm кладёт в корень только прямые зависимости корня, а `playwright` там —
-  транзитивная (`@playwright/test`). Резолвить от самого пакета:
-  `createRequire('…/node_modules/.pnpm/playwright@<версия>/node_modules/playwright/package.json')`;
+  стилей и скриптов**, а в консоли «blocked by CORS policy: … more-private address space».
+  Документ, отданный `fulfill`, для браузера уже не с адреса сайта, и Private Network Access режет
+  каждый его запрос. Добавлять разметку не в ответ, а при разборе: `page.addInitScript()` с
+  `MutationObserver`, который вставляет её в `<main>` до модульных скриптов
+  (`tests/starter/starter.pw.mjs`, согласие).
+- **Полный прогон стартового сайта идёт 40 минут вместо десяти.** Изредка воркер виснет так, что
+  таймаут теста не срабатывает, а `| tail` ничего не печатает до конца. Прогон — `--reporter=line`
+  в файл под `timeout 1500`; повис — убить дерево процесса, тест отдельно (`-g "<describe>"`),
+  остальное догнать `-g` по оставшимся describe (`--list` сначала: `›` в фильтре не находит ничего).
+- **`pnpm test:starter` из worktree: «Playwright Test did not expect test.describe() to be called
+  here».** Две копии `@playwright/test`: CLI — из `node_modules` основного чекаута, тест
+  импортирует пакет из worktree. Звать CLI worktree:
+  `node node_modules/@playwright/test/cli.js test -c tests/starter/playwright.config.mjs`.
+- **`require('playwright')` из скрипта в скретчпаде не находится.** pnpm кладёт в корень только
+  прямые зависимости, а `playwright` — транзитивная. `createRequire('…/node_modules/.pnpm/playwright@<версия>/node_modules/playwright/package.json')`;
   версию показывает `ls -d node_modules/.pnpm/playwright@*`.
+- **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` перезапустить:
+  новые хеши → 404, страница без стилей и гидрации.
+- **Проверка smoke падает на тексте, в котором искомое есть**, рядом `printf: write error: Broken
+pipe`. `… | grep -q` под `pipefail`: grep уходит на первом совпадении, писатель упирается в
+  закрытую трубу, конвейер — провал; растёт страница — проверка начинает падать сама. В smoke —
+  `… | has <шаблон>` или `grep -q … <<< "$текст"`, никогда `| grep -q`.
+- **Редирект `module-seo` в smoke отвечает 404 вместо 301, а на сайте работает.** Запрос на
+  `127.0.0.1` без `X-Forwarded-*` — для `Probes` проба здоровья, редиректы ей не отвечают. Всё, что
+  ждёт 3xx, smoke спрашивает по имени (`visit "$VISITOR/…"`, `http://localhost:<порт>`) **без общего
+  cookie-jar**: вторая сессия в нём отдаёт чужой `xsrf_token()`, и согласие OAuth не возвращает
+  `code`.
+- **Локальный smoke против MariaDB.** Перед прогоном `DROP DATABASE` обеих баз (`webx_smoke`,
+  `webx_smoke_site`) и `CREATE DATABASE webx_smoke`: скрипт базу не чистит, и прошлый прогон роняет
+  миграцию Passport «table oauth_auth_codes already exists». Порты 8123/8124 должны быть свободны
+  (`ss -ltnp`): `artisan serve` упавшего прогона другой сессии остаётся жить и отвечает из своего,
+  уже удалённого скретчпада.
+- **`site exec <сайт> php artisan tinker файл.php` висит до таймаута.** Tinker с файлом всё равно
+  ждёт stdin. Скрипт — `tinker --execute="require 'storage/app/…/x.php';"` с `</dev/null` под
+  `timeout 60`; русский текст — в файле, не в аргументе.
+
+## Shell и инструменты агента
+
+- **Bash-инструмент съедает обратные слэши, даже в закавыченном heredoc'е.** Так ломаются psr-4 в
+  `composer.json` («unescaped backslash») и perl/sed-выражения. Файлы со слэшами и большие `.vue`
+  писать Write, точечные правки — Edit или скриптом, который сам записан Write: скрипт из heredoc'а
+  теряет те же слэши и молча не находит, что заменять (`git diff --stat` меньше ожидаемого).
+- **Текст с обратными кавычками внутри `node -e "…"` Bash выполняет как подстановку команды** — так
+  правка спеки однажды запустила `pnpm install` в worktree. Такой текст — только скриптом из файла.
+  Проверка — `git status` и `ls -ld node_modules` в обоих чекаутах.
+- **Правка скриптом на node задвоила половину файла.** `replace` со строкой замены понимает `$'`,
+  `$&`, `$$` как шаблоны. Заменять функцией — `s.replace(a, () => b)`. Проверка — `php -l` на
+  каждом тронутом файле.
+- **`cat > файл` без heredoc'а ждёт stdin до таймаута** — и всё после него не выполняется. node-
+  скрипты запускать с `</dev/null`.
+- **Юникод-экранирование (`<`) в тексте Write, Edit или heredoc'а приезжает раскрытым** —
+  проверка теста начинает проверять другое. Собирать из кусков (в PHP — слэш отдельной строкой, в
+  `.ts` — `String.fromCharCode(92)`). Проверка — `grep -n u003C` по файлу после записи.
+- **Не-ASCII в аргументе команды приезжает вопросительными знаками** — похоже на сломанный экран,
+  а не на кодировку. Русский текст — в файл (Write) и `--data-binary @файл`.
 
 ## Docker и хомлаб
 
-- **Контейнер скелета не поднимается: «The database did not answer within 120s … Access denied»,
-  хотя в `.env` пользователь и пароль верные.** Compose подставляет `${DB_USERNAME}` и остальное в
-  `docker-compose.yml` сначала из окружения shell, а `.env` — только для того, чего там нет. В CI
-  и в смоуке окружение несёт `DB_USERNAME=root` для хоста, и MariaDB в контейнере заводится не под
-  тем пользователем, которым приложение потом входит по `.env`. Звать `docker compose` с
-  `env -u DB_USERNAME -u DB_PASSWORD …` (так делает `platform_compose` в `scripts/php-smoke.sh`);
-  проверка — `docker compose config` показывает `MARIADB_USER` из `.env`.
-- **`mysql-client` в Alpine — это клиент MariaDB, и против MySQL 8 он падает дважды.** Сначала на
-  TLS: клиент сам предлагает шифрование и отказывается от самоподписанного сертификата
-  («self-signed certificate in certificate chain») — лечится `--ssl-verify-server-cert=0`, не
-  `--skip-ssl`. Потом на аутентификации: плагина `caching_sha2_password` в `mariadb-client` нет
-  («could not be loaded»), его приносит `mariadb-connector-c`. Ни Testbench, ни smoke против
-  MariaDB этого не видят — только дамп на настоящем сайте. Поэтому флаги передаются через
-  `WEBX_BACKUP_OPTIONS`: их знает машина, а не пакет. `php/site/Dockerfile` ставит
-  `mariadb-connector-c` сам; сайт со своим образом — сверить.
-- **Крон в отдельном контейнере пишет дамп от root, и панель его не видит.** Каталог под снимки
-  создаёт тот, кто дампит, и Laravel создаёт его `0700` — `drwx------ root`, куда php-fpm под
-  `www-data` не заглянет. Файл лежит, строка «последний снимок» пуста, ошибок нигде. Планировщик
-  должен ходить тем же пользователем, что и приложение (`user: www-data` у сервиса).
-- **Том берёт содержимое из образа один раз, а ключи Passport лежат в `storage/`, не в
-  `storage/app/`.** Скелет это учитывает: `php/site/docker/entrypoint.sh` создаёт дерево `storage`
-  на каждой загрузке, том — на весь `storage`; сайт со своим Dockerfile — сверить с ним.
-- **Порт Vite в контейнере публикуется одинаковым с обеих сторон.** Адрес в `public/hot` пишет сам
-  dev-сервер, и пишет тот порт, который слушает; вывод наружу на другой номер (`5199:5173`) даёт
-  страницу, все ассеты которой смотрят туда, где ничего нет, — при том что в логе сервера всё
-  правильно.
-- **`webx:doctor` говорит «has changed since the bundle was built» на только что собранном
-  образе.** Стадию сборки фронта Docker взял из кеша слоёв — бандл от старой сборки, а исходники
-  скопированы заново, и mtime у них новее. Скелет это лечит плагином `sources()` в
-  `vite.config.js`: он пишет `webx-sources.json` с sha256 каждого файла сайта из графа сборки, и
-  doctor сравнивает содержимое. Сайт со своим `vite.config.js` без плагина по-прежнему
-  сравнивается по времени — скопировать `sources()` из `php/site/vite.config.js`. Проверка —
-  `public/build/webx-sources.json` после `npm run build`.
-- **`COPY . .` везёт в образ то, что хост сгенерировал для себя.** После локального
-  `composer install` в `bootstrap/cache/packages.php` записаны провайдеры dev-пакетов (Pail), в
-  образе их нет — entrypoint падает на `package:discover` с «Class … not found», хотя сборка
-  прошла. `.dockerignore` сверять с `.gitignore`: всё, что git не видит, кроме исходников, —
-  кандидат и туда (кеши `bootstrap/cache/*.php`, `auth.json`, ключи `storage/*.key`).
-- **После `docker exec … php artisan …` каждая страница с картинкой отвечает 500
-  (`UnableToCreateDirectory` для `storage/app/public/media/thumbs/<key>`), а команда сказала
-  «Restored.».** `docker exec` — это root: всё, что команда создала в `storage`, — `root:root`, и
-  php-fpm под `www-data` не режет превью в таких папках. `webx:snapshot` и
-  `webx:snapshot:restore` теперь отдают написанное владельцу `storage` сами (`Support\Ownership`),
-  но любая другая artisan-команда под root оставит тот же след — логи, кеш. Звать
-  `docker exec -u www-data …`; проверка — `webx:doctor` под root перечисляет пути в `storage`
-  чужого владельца, лечится `chown -R www-data:www-data storage`.
-- **Весь сайт вместе с панелью — «404 page not found» от Traefik, а в контейнере всё живое.**
-  Traefik выводит из маршрутизации контейнер с упавшим healthcheck, а тот спрашивает
-  `http://127.0.0.1/up` изнутри: любой редирект на https (нормализация `module-seo`, правило
-  редиректа) — провал проверки. Нормализация и таблица редиректов теперь не трогают health-маршрут
-  и запрос с 127.0.0.1 на `http://127.0.0.1` без `X-Forwarded-*`, а `seo.normalise-*` при restore
-  остаются стендовыми. Проверка — `docker inspect --format '{{.State.Health.Status}}' <контейнер>`
-  и `curl -si http://127.0.0.1/up` внутри.
+- **Контейнер скелета: «The database did not answer within 120s … Access denied», хотя `.env`
+  верный.** Compose подставляет `${DB_USERNAME}` сначала из окружения shell, а в CI и smoke там
+  `DB_USERNAME=root`. Звать `docker compose` с `env -u DB_USERNAME -u DB_PASSWORD …` (так делает
+  `platform_compose` в `scripts/php-smoke.sh`); проверка — `docker compose config`.
+- **`mysql-client` в Alpine против MySQL 8 падает дважды:** на TLS («self-signed certificate») —
+  `--ssl-verify-server-cert=0`, не `--skip-ssl`; на `caching_sha2_password` — его приносит
+  `mariadb-connector-c`. Флаги — через `WEBX_BACKUP_OPTIONS`: их знает машина, а не пакет.
+  `php/site/Dockerfile` коннектор ставит; сайт со своим образом — сверить.
+- **Крон в отдельном контейнере пишет дамп от root, и панель его не видит** (каталог `0700 root`).
+  Планировщик ходит тем же пользователем, что и приложение (`user: www-data`).
+- **Artisan в контейнере — всегда `exec -u www-data`.** `docker exec` — root, и всё созданное в
+  `storage` становится `root:root`: страницы с картинкой отвечают 500 (`UnableToCreateDirectory`),
+  `webx:doctor --strict` жалуется «storage owner … is not www-data's» на каталог, созданный его же
+  проверкой. Лечится `chown -R www-data:www-data storage`.
+- **Том берёт содержимое из образа один раз, а ключи Passport лежат в `storage/`.** Скелетный
+  `docker/entrypoint.sh` создаёт дерево `storage` на каждой загрузке, том — на весь `storage`;
+  сайт со своим Dockerfile — сверить.
+- **Порт Vite в контейнере публикуется одинаковым с обеих сторон:** `public/hot` пишет тот порт,
+  который слушает сервер, и `5199:5173` даёт страницу с ассетами в никуда.
+- **`webx:doctor`: «has changed since the bundle was built» на свежем образе.** Слой сборки фронта
+  взят из кеша, а mtime исходников новее. Скелет пишет плагином `sources()` в `vite.config.js`
+  sha256 каждого файла (`public/build/webx-sources.json`); сайт без плагина — скопировать его из
+  `php/site/vite.config.js`.
+- **`COPY . .` везёт в образ то, что хост сгенерировал для себя** — `bootstrap/cache/packages.php`
+  с dev-провайдерами, и entrypoint падает на `package:discover`. `.dockerignore` сверять с
+  `.gitignore` (кеши `bootstrap/cache/*.php`, `auth.json`, `storage/*.key`).
+- **nginx: не `expires 1y` вместе с `add_header Cache-Control`** — уйдут два заголовка. Один
+  `add_header Cache-Control "public, max-age=31536000, immutable"`; проверка — `curl -sI … | grep
+-i cache-control` даёт ровно одну строку.
+- Было: Traefik выводил сайт из маршрутизации, потому что healthcheck `http://127.0.0.1/up` получал
+  редирект на https. Починено: нормализация и редиректы `module-seo` не трогают health-маршрут и
+  запрос на `127.0.0.1` без `X-Forwarded-*`.
 
 ## Плейграунд
 
-- **Экран панели смотреть на `http://localhost:5174/panel/`, а не на сайте.** Плейграунд второй
-  страницей поднимает настоящую панель (`createAdmin` с модулями из
-  `apps/playground/src/panel/main.ts`), а `apps/playground/server/panel/` отвечает ей за
-  `/api/cms/*` фикстурами в памяти. Экраны настоящие, поэтому правка едет в релиз; Laravel, база и
-  сборка сайта не нужны. Описанные экраны мок собирает из `php/packages/*/resources/screens/*.json`
-  вместе с патчами `module-seo`, словарь читает из `php/packages/*/lang/` — язык переключается
-  по-настоящему. Меню там и объявленные конфигом, и заведённые руками, включая объявленное и ни
-  разу не сохранённое (`id: null`). Чего нет: входа и редактора изображений — файлы библиотеки
-  `editable: false`, а картинки — SVG, собранные из имени файла (загруженное в сессии отдаётся
-  своими байтами). **Vite следит только за тем, что импортирует, а `.php` и `.json` он не
-  импортирует**, поэтому фикстура читает их с диска на каждый запрос; кеш в памяти отдавал бы
-  словарь, снятый при старте сервера, и новая строка молча приезжала бы английским дефолтом.
-- **Blade плейграунда — подмножество, и `@php` в него не входит.** Шаблон предложенного блока
-  читают двое: настоящий Blade на сайте и `apps/playground/server/panel/blade.ts` в превью. Второй
-  знает `@if`/`@foreach`, выражения и короткий список функций; `@php(…)`, `$list[] = …` и вызов с
-  ведущим `\` он печатает как текст — сырой шаблон в превью при зелёных серверных тестах. Писать
-  так, чтобы выражение стояло в `@foreach (…)` и `{{ }}` прямо (`press()->kind($kind)->get()`),
-  статику пакета заменять тем, что есть у обоих (`config()`, `__()`); функцию модуля фикстура
-  объявляет `defineFunction`.
+- **Экран панели смотреть на плейграунде (`/panel/`, порт 5174), а не на сайте.** Плейграунд
+  второй страницей поднимает настоящую панель (`createAdmin` с модулями из
+  `apps/playground/src/panel/main.ts`), а `apps/playground/server/panel/` отвечает за `/api/cms/*`
+  фикстурами в памяти: экраны — из `php/packages/*/resources/screens/*.json` с патчами
+  `module-seo`, словарь — из `php/packages/*/lang/`. В devbox — `--host`, адрес
+  `https://ws-5174.$DEV_DOMAIN/panel/`. Нет входа и редактора изображений. **Vite следит только за
+  импортами, а `.php` и `.json` он не импортирует** — фикстура читает их с диска на каждый запрос;
+  кеш в памяти отдавал бы словарь со старта сервера.
+- **Blade плейграунда — подмножество, и `@php` в него не входит.** Шаблон блока читают настоящий
+  Blade и `apps/playground/server/panel/blade.ts`; второй знает `@if`/`@foreach`, выражения и
+  короткий список функций, а `@php(…)`, `$list[] = …` и вызов с ведущим `\` печатает как текст.
+  Выражение ставить прямо в `@foreach (…)` и `{{ }}`, статику пакета заменять тем, что есть у обоих
+  (`config()`, `__()`); функцию модуля фикстура объявляет `defineFunction`.
 - **Обработку значений блока класть в `renderTemplate()`**, через который идут и конструктор, и
   предпросмотр страницы, — не в `draw()` из `blocks.ts`.
-- **«Новый» артикул в фикстуре плейграунда уже занят.** Товары каталога генерируются с
-  артикулами `WX-${1000 + id * 7}` и `WX-${2000 + index}`, то есть заняты почти все от `WX-1007` до
-  `WX-2050`: файл импорта с «новыми» `WX-2001…` обновил чужие товары — «создано: 0, обновлено: 16»
-  и смартфон с ценой чехла. Выглядит как ключ, который ищет не то. Новое в фикстурах — `WX-9xxx`.
-- **Проверка в плейграунде показывает то, что посчитал мок, а не сервер.** Фикстура пишется по
-  спеке, сервер — по коду, и где они разошлись, плейграунд честно показывает правильное: у
-  статуса наличия по умолчанию мок считал и товары без строки, а сервер — только строки, и на
-  настоящем сайте «В наличии: 37» стояло при ~115 товарах в нём. Так же журнал: мок пишет поле
-  `extra` строкой на ключ, сервер — одной строкой с объектом. Число, счётчик и запись журнала
-  после плейграунда сверять на `webx-cms.local` или тестом php-половины.
+- **«Новый» артикул в фикстуре уже занят.** Товары генерируются с артикулами
+  `WX-${1000 + id * 7}` и `WX-${2000 + index}` — заняты почти все от `WX-1007` до `WX-2050`, и
+  импорт «новых» обновит чужие товары. Новое в фикстурах — `WX-9xxx`.
+- **Плейграунд показывает то, что посчитал мок, а не сервер.** Фикстура пишется по спеке, сервер —
+  по коду, и где они разошлись, плейграунд честно показывает правильное (счётчик наличия, формат
+  `extra` в журнале). Число, счётчик и запись журнала сверять на сайте или тестом php-половины.

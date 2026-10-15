@@ -338,9 +338,8 @@ name through the site's title template, the summary (or the description, cut sho
 description, the main picture as `og:image`, above the site's default social image. A page of a list
 is called by its heading — the category's name, a brand's, «Catalogue» on the root — and on the
 plain page the owner's description and cover (a brand's logo) come with it; once a filter is chosen
-they are not that page's, the same as the card. A copy of a view published before this still has an
-`@if ($meta->title === null)` block — delete it; keep `$meta` only where the `<h1>` reads
-`$meta->h1`.
+they are not that page's, the same as the card. A published copy of a view with an
+`@if ($meta->title === null)` block is older than this — delete the block; keep `$meta` only where the `<h1>` reads `$meta->h1`.
 
 ## The gallery
 
@@ -406,9 +405,8 @@ hands it to the widgets' registry.
 `WEBX_CATALOG_VIDEO=false` takes the player and the markup off the storefront and the video menu
 off the panel, and the API and the agent refuse to attach one; videos already attached are kept.
 
-YouTube is the one provider in the core. Another is a class implementing `VideoProvider` — its
-`key()`, `label()`, `idFrom($url)` (`null` when the link is not one of its videos), `embedUrl()`,
-`watchUrl()`, `posterUrls()` (best first) and `title()` — registered from a provider:
+YouTube is the one provider in the core. Another is a class implementing `VideoProvider`
+(`idFrom($url)` is `null` when the link is not one of its videos), registered from a provider:
 
 ```php
 use WebxUi\Catalog\Gallery\Video\VideoProviders;
@@ -548,11 +546,9 @@ the spot.
 ### The queue's `retry_after`
 
 A large import is a chain of jobs: each does chunks for `exchange.job_seconds` (60) and hands the
-rest to the next. The site's queue connection has a `retry_after` of its own (`config/queue.php`) —
-how long a worker may hold a job before the queue decides it was lost and gives it to another
-worker. Shorter than a job runs, it makes a second worker start the same job while the first is
-still inside a chunk. Nothing is written wrong — a chunk is one transaction, and a row written again
-writes itself — but the work is done twice and the run takes longer.
+rest to the next. A queue connection's `retry_after` (`config/queue.php`) shorter than a job runs
+makes a second worker start the same job while the first is still inside a chunk. Nothing is
+written wrong — a chunk is one transaction — but the work is done twice.
 
 Keep `retry_after` above `job_seconds` with room for the last chunk: the default 90 of the
 `database` and `redis` connections covers the default 60. Raise them together — `job_seconds` 300

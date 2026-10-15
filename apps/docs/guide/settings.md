@@ -100,9 +100,9 @@ country, and valid; `+00 000 000-00-00` is refused like any number without a cou
 
 ## The screen, and what to patch
 
-Out of the box the screen is three tabs — what the panel is called, what it wears, and the house
-rules for whoever writes the content. That is deliberately little: the rest of a site's settings are the site's own, and a module cannot
-guess them.
+Out of the box the screen is four tabs — what the panel is called, what it wears, the contacts
+(above) and the shortcodes. That is deliberately little: the rest of a site's settings are the
+site's own, and a module cannot guess them.
 
 | id              | type       | name                   | what it is                       |
 | --------------- | ---------- | ---------------------- | -------------------------------- |
@@ -114,6 +114,8 @@ guess them.
 | `branding-card` | `wx-card`  |                        | The card inside it               |
 | `logo`          | `wx-media` | `branding.logo`        | The logo for the open sidebar    |
 | `mark`          | `wx-media` | `branding.mark`        | The square mark for the rail     |
+| `contacts`      | `wx-tab`   |                        | "Contacts" — its cards above     |
+| `shortcodes`    | `wx-tab`   |                        | "Shortcodes"                     |
 
 The content rules are a screen of their own, `settings.content`, shown on the page where agents
 are connected (`module-auth`'s «Connect an agent») rather than among the settings — agents are
@@ -168,26 +170,26 @@ public function boot(): void
     "op": "add",
     "target": "tabs",
     "node": {
-      "id": "contacts",
+      "id": "office",
       "type": "wx-tab",
-      "label": "Contacts",
+      "label": "Office",
       "children": [
         {
-          "id": "contacts-card",
+          "id": "office-card",
           "type": "wx-card",
           "children": [
             {
               "id": "office-photo",
               "type": "wx-media",
-              "name": "contacts.photo",
+              "name": "office.photo",
               "label": "Photograph of the office",
               "slot": "sidebar",
               "props": { "aspect": "16/9", "accept": "image" }
             },
             {
-              "id": "address",
+              "id": "office-address",
               "type": "wx-textarea",
-              "name": "contacts.address",
+              "name": "office.address",
               "label": "Postal address",
               "localized": true,
               "props": { "rows": 4 }
@@ -221,8 +223,8 @@ is. It cannot open a key for writing. What is saved is the server's decision.
 
 ```php
 settings('general.project-name');            // the current language, with the site's fallbacks
-settings('contacts.address', 'Nowhere');
-settings('contacts.photo')['url'] ?? null;   // a media field resolves to its address
+settings('office.address', 'Nowhere');
+settings('office.photo')['url'] ?? null;     // a media field resolves to its address
 settings()->all();
 ```
 

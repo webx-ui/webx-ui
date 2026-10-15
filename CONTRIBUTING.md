@@ -15,16 +15,16 @@ pnpm install
 pnpm build
 ```
 
-| Command           | What it does                                            |
-| ----------------- | ------------------------------------------------------- |
-| `pnpm dev`        | Vite playground on http://localhost:5174                |
-| `pnpm docs:dev`   | VitePress docs, live-linked to the package sources      |
-| `pnpm test`       | Vitest (jsdom + Vue Test Utils)                         |
-| `pnpm test:watch` | Vitest in watch mode                                    |
-| `pnpm lint`       | ESLint over the whole workspace                         |
-| `pnpm format`     | Prettier write                                          |
-| `pnpm typecheck`  | `vue-tsc` / `tsc` in every package                      |
-| `pnpm build`      | Builds `tokens`, `core` and `schema` into their `dist/` |
+| Command           | What it does                                          |
+| ----------------- | ----------------------------------------------------- |
+| `pnpm dev`        | Vite playground on http://localhost:5174              |
+| `pnpm docs:dev`   | VitePress docs, live-linked to the package sources    |
+| `pnpm test`       | Vitest (jsdom + Vue Test Utils)                       |
+| `pnpm test:watch` | Vitest in watch mode                                  |
+| `pnpm lint`       | ESLint over the whole workspace                       |
+| `pnpm format`     | Prettier write                                        |
+| `pnpm typecheck`  | `vue-tsc` / `tsc` in every package                    |
+| `pnpm build`      | Builds every package in `packages/*` into its `dist/` |
 
 The docs and playground alias `@webx-ui/*` to the package **sources**, so changes to a component
 show up immediately without rebuilding.
@@ -135,7 +135,7 @@ on npmjs.com against this repo's `release.yml`.
 
 A branch can be shown on a live site without a release: `gh workflow run release.yml --ref <branch>`
 publishes a snapshot under the `next` dist-tag. See
-[`docs/architecture/WEBX_UI_RELEASE_SPEED.md`](docs/architecture/WEBX_UI_RELEASE_SPEED.md).
+[`docs/architecture/WEBX_UI_PHP_RELEASE.md`](docs/architecture/WEBX_UI_PHP_RELEASE.md).
 
 ## Documentation
 

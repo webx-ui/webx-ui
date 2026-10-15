@@ -27,9 +27,8 @@ createAdmin({
 })
 ```
 
-The section appears at the top level, first in the menu, and the panel opens on it: a panel with
-an inbox is one somebody opens in the morning to see what came in overnight, and the pages, the
-blocks and the settings are what they do afterwards. A panel whose front page is something else
+The section appears at the top level, first in the menu, and the panel opens on it — what came in
+overnight is what a panel with an inbox is opened for. A panel whose front page is something else
 says `inbox({ landing: false })`.
 
 The migration creates the `inbox_*` tables and seeds five statuses — New · In progress · Done ·
@@ -97,9 +96,8 @@ panel like this.
   a **Forms** button that stands in the head of the section beside **New submission**; the reader
   opens the section and sees what has come in, which is what they came for. One form is always
   open, the first unless the address names another.
-- **The action the section exists for is a submission**, so that is the button in its head. A new
-  form is the `+` over the list of forms — beside the things it makes one more of — because a
-  panel opens this section to read what came in dozens of times for every once it adds a form.
+- **The button in the head is New submission**; a new form is the `+` over the list of forms,
+  because the section is opened to read what came in far more often than to add a form.
 
 Statuses are their own screen under `inbox.manage`: the label, the colour, and three flags —
 which one a submission arrives in, which one means spam, which ones mean closed. Rows rather than
@@ -447,21 +445,8 @@ the same log line — and differs only in its `source`, which is what tells the 
 
 ## For an agent: MCP
 
-The section is also a set of tools. With `webx-ui/mcp` installed (it comes with this module), the
-panel serves one MCP server at `/api/cms/mcp`:
-
-Passport comes with the panel, and a site switches it on once:
-
-```bash
-php artisan vendor:publish --tag=passport-migrations && php artisan migrate
-php artisan passport:keys
-```
-
-Somebody then connects their own agent to it: they paste that address into Claude, ChatGPT or
-`claude mcp add --transport http webx <address>`, the client sends them to the panel to sign in
-and agree, and it leaves with a token of theirs. The agent acts as that administrator. On the
-machine the site runs on, `php artisan mcp:start webx` is the same server over stdio, trusted the
-way tinker is.
+The section is also a set of tools. `webx-ui/mcp` comes with this module; connecting an agent is in
+[AI agents](/guide/agents).
 
 | Tool               | What it does                                                                    |
 | ------------------ | ------------------------------------------------------------------------------- |

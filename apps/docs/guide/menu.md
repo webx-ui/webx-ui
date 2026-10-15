@@ -192,10 +192,8 @@ app(\WebxUi\Menu\MenuCache::class)->flush();          // every menu
 app(\WebxUi\Menu\MenuCache::class)->forget('header'); // one, in every language
 ```
 
-Note that `mergeConfigFrom` merges one level deep, so a published `config/webx-menu.php` naming
-one key inside `cache` **replaces the section whole**. Both values are read with a default of
-their own for that reason, but a site that published the file before `ttl` existed will not have
-it.
+A published `config/webx-menu.php` naming one key inside `cache` replaces the section whole
+(`mergeConfigFrom` merges one level deep); both values are read with a default of their own.
 
 ## The section
 

@@ -50,23 +50,20 @@ boot instead of failing quietly. Values the screen does not name are dropped on 
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-pages`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-pages` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not add a route for `/` in `routes/web.php`: the home page is the root of the tree and owns
   `/`. A route there takes the address from it for good.
 - Do not create a second root or move, delete or give an address to the home page — all three are
   refused. `$page->capabilities()` says what a node allows.
 - Do not write blocks through `pages_update`: content goes through `blocks_edit_content`, which
   changes one node and leaves the rest of the page alone. A `blocks` key there is refused.
-- Do not write without the `revision` pages_get gave you: `pages_update` refuses a write
-  with none and refuses a stale one. Read again and redo the change; do not retry blindly.
-  `force: true` writes without one and is for a script that means to overwrite, not for an
-  agent working beside people. `pages_get` names in `being_edited_by` who has the page open
-  in the panel right now — tell your user before writing under them. Their editor merges your
-  write with theirs field by field, and a draft written over by somebody else is kept: the
-  panel's History lists it under Drafts, `pages_versions` under `drafts` (kind `overwritten`),
-  and `pages_version_restore` with `draft` puts it back into the draft.
+- Do not write without the `revision` pages_get gave you: `pages_update` refuses a write with
+  none or a stale one — read again and redo the change, do not retry blindly. `force: true` is for
+  a script that means to overwrite, not for an agent working beside people. `being_edited_by` names
+  who has the page open in the panel — tell your user before writing under them. A draft written
+  over is kept: `pages_versions` lists it under `drafts` (kind `overwritten`), and
+  `pages_version_restore` with `draft` puts it back.
 - Do not publish, unpublish, discard, restore a version, move or delete a page somebody has
   open without the `revision`: those tools act on whatever the draft holds now, which may be an
   edit you never read. While `being_edited_by` is not empty they refuse a call without one and

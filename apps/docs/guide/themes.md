@@ -163,21 +163,14 @@ php artisan webx:theme:extract acme/theme-clinic
 - The site stands on the package: a path repository and `"acme/theme-clinic": "@dev"` in its
   composer.json, `WEBX_THEME=acme/theme-clinic` in `.env`, the theme's suite gone from
   `phpunit.xml`; the entries of `theme/` in `vite.config.js` are named for you to remove.
-- The look of the chain is compared before and after — tokens and the preset, the winning file of
-  every view, picture and icon, every block type, every font face, every word. «The same look»
-  means the site draws the same pages; anything else is listed.
+- The look of the chain is compared before and after — tokens, the winning file of every view,
+  picture and icon, block types, font faces, words; any difference is listed.
 
 Composer and npm are not run — the command ends with the steps:
 
 ```bash
 composer update acme/theme-clinic
-```
-
-```bash
-cd packages/theme-clinic && npm install && npm run build
-```
-
-```bash
+(cd packages/theme-clinic && npm install && npm run build)
 php artisan webx:theme:sync
 ```
 

@@ -112,38 +112,20 @@ column for is kept in `extra`.
 
 Both screens — `services.form` for a service, `services.category-form` for a category — keep an
 empty card with the public id `project-fields` for this. The renderer does not draw the card until a
-patch puts something in it.
-
-`resources/screens/services.form.json` in the site:
-
-```json
-[
-  {
-    "op": "add",
-    "target": "project-fields",
-    "node": {
-      "id": "price-from",
-      "type": "wx-input-number",
-      "name": "price-from",
-      "label": "Price from"
-    }
-  }
-]
-```
-
-and in a service provider of the site:
+patch puts something in it. In a service provider of the site:
 
 ```php
 use WebxUi\Admin\Facades\Screens;
 
-public function boot(): void
-{
-    Screens::extend('services.form', resource_path('screens/services.form.json'));
-}
+Screens::extend('services.form', [[
+    'op' => 'add',
+    'target' => 'project-fields',
+    'node' => ['id' => 'price-from', 'type' => 'wx-input-number', 'name' => 'price-from', 'label' => 'Price from'],
+]]);
 ```
 
-That is the whole of it. The field appears on the **Settings** tab, is checked by its type on
-every save, and is kept in `services.extra`:
+The field appears on the **Settings** tab, is checked by its type on every save, and is kept in
+`services.extra`:
 
 - **through the draft** for a service — a price is published with the service, not before it;
   a save of another tab does not empty it;
@@ -226,8 +208,8 @@ category page push an `ItemList`.
 Nobody types a `<title>` into a view. With an empty SEO card a service or a category names its page
 itself: the name through the site's title template, the lead as the description, the cover as
 `og:image`, above the site's default social image. The index is called by the section's name the
-same way. A copy of a view published before this still has an `@if ($meta->title === null)` block
-and the `$seo` / `$meta` lines for it — delete them, they never print any more.
+same way. A published copy of a view with an `@if ($meta->title === null)` block is older than
+this — delete that block and its `$seo` / `$meta` lines.
 
 ## Services in a block
 
@@ -251,16 +233,12 @@ of the page.
 @endforeach
 ```
 
-| Step                 | What it does                                                                 |
-| -------------------- | ---------------------------------------------------------------------------- |
-| `in($categories)`    | An id, a slug, a category or a list; one category lists in its own order     |
-| `in(null)`, `in([])` | No filter — what an editor's untouched field sends means "every service"     |
-| `only([12, 7])`      | These and no others, in this order                                           |
-| `except($service)`   | "Other services" on a service page                                           |
-| `take(6)`            | At most six; null or zero — all                                              |
-| `locale('uk')`       | The language of the cards; by default the one being rendered                 |
-| `categories()`       | The catalogue: visible categories, each with its `services`; empty ones drop |
-| `get()`, `first()`   | A list of cards, or one; the query itself can be looped over and counted     |
+| Step                                                           | What it does                                                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `in($categories)`                                              | An id, a slug, a category or a list; one category lists in its own order                   |
+| `in(null)`, `in([])`                                           | No filter — what an editor's untouched field sends means "every service"                   |
+| `only()`, `except()`, `take()`, `locale()`, `get()`, `first()` | The shared steps of [`RecordQuery`](/guide/collections#a-helper-for-templates-recordquery) |
+| `categories()`                                                 | The catalogue: visible categories, each with its `services`; empty ones drop               |
 
 A card is `id`, `anchor` (the slug), `categories` (ids), `title`, `url`, `lead` (plain text),
 `cover` (what a `wx-media` field hands over: `url`, `thumb`, `width`, `height`, …, or null) and

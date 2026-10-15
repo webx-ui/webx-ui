@@ -4,7 +4,7 @@
 [`WEBX_UI_CATALOG.md`](WEBX_UI_CATALOG.md) (§8.1, решения 17–19 и 26), ядро и его реестры —
 [`WEBX_UI_MODULE_CATALOG.md`](WEBX_UI_MODULE_CATALOG.md) (§7.7 `FilterUrls`, §10.3 SEO), свойства —
 [`WEBX_UI_CATALOG_PROPERTIES.md`](WEBX_UI_CATALOG_PROPERTIES.md); здесь они не повторяются.
-Выпущено в v0.56.0; спека — справочник того, что есть.
+Статус: выпущено.
 
 Ручная перелинковка между любыми адресами и FAQ на странице — не здесь, а в `module-seo`
 ([`WEBX_UI_MODULE_SEO.md`](WEBX_UI_MODULE_SEO.md) §18): посадочная там просто один из адресов.
@@ -70,26 +70,11 @@
 
 ## 4. Схема
 
-### `catalog_landings`
-
-| Колонка                    | Тип                       | Примечание                                                     |
-| -------------------------- | ------------------------- | -------------------------------------------------------------- |
-| `id`                       | `bigIncrements`           |                                                                |
-| `category_id`              | `foreignId` null          | основа; null — весь каталог                                    |
-| `filters`                  | `json`                    | нормализованный набор: `{ key: { values: [...], min, max } }`  |
-| `filters_hash`             | `string(64)` null         | sha256 от основы и набора; уникальный; null — у сломанной (§9) |
-| `name`                     | `json`                    | переводимое; подпись в панели и в ссылках подборок             |
-| `slug`                     | `json`                    | переводимое; пишется в реестр `routing`                        |
-| `h1`                       | `json` null               | переводимое; пусто — `name`                                    |
-| `text_above`, `text_below` | `json` null               | переводимые, rich-text                                         |
-| `sort`                     | `string(32)` null         | ключ из `webx-catalog.sorts`                                   |
-| `on_category`              | `boolean` default `false` | показывать в «Подборках» категории                             |
-| `position`                 | `integer` default `0`     | порядок в подборках и среди соседей                            |
-| `is_published`             | `boolean` default `false` |                                                                |
-| `attention`                | `string(32)` null         | `value_removed` \| `duplicate` \| `empty_set`                  |
-| `products_count`           | `integer` null            | сколько видно на витрине; null — ещё не посчитано              |
-| `counted_at`               | `timestamp` null          |                                                                |
-| `deleted_at`, timestamps   |                           | soft delete, как у категорий                                   |
+`catalog_landings` (схема — миграция пакета). Неочевидное: `category_id` null — весь каталог;
+`filters_hash` — sha256 от основы и набора, уникальный, null у сломанной (§9); `name` — подпись в
+панели и в ссылках подборок, пустой `h1` — `name`; `sort` — ключ из `webx-catalog.sorts`;
+`on_category` — показывать в «Подборках» категории; `attention` — `value_removed` | `duplicate` |
+`empty_set`; `products_count` null — ещё не посчитано; soft delete, как у категорий.
 
 `catalog_landing_products` — `landing_id`, `product_id`, `position`: рекомендуемые. Невидимый на
 витрине товар полоса пропускает, а не удаляет: вернули — снова в полосе.
@@ -231,8 +216,8 @@ npm-пакет `@webx-ui/module-catalog-landings` (`catalogLandings()`); на ph
   («Как у категории»), потому что пустую строку селект ядра показывает плейсхолдером; в данные
   пишется `null`. Плюс «показывать в подборках категории» и порядок.
 - **Рекомендуемые** — `wx-catalog-landing-products`: комбобокс с поиском, порядок
-  перетаскиванием; ресурс отдаёт `recommended_items` (id, название, артикул, в корзине ли) рядом
-  с `recommended`, чтобы не спрашивать товары второй раз.
+  перетаскиванием; ресурс отдаёт `recommended_items` рядом с `recommended`, чтобы не спрашивать
+  товары второй раз.
 - **SEO** — карточка `wx-seo`; ссылка «открыть на сайте».
 
 ### 8.3. Создать пачкой
@@ -316,12 +301,9 @@ npm-пакет `@webx-ui/module-catalog-landings` (`catalogLandings()`); на ph
 
 `LandingTools` и ресурс `LandingsResource` (`catalog://landings` — правила дома: когда делать
 посадочную, шаблоны, «не плодить пустые») в `WebxUi\CatalogLandings\Mcp`, отданы каталогу через
-`SatelliteTools`. Инструменты `catalog_landings_*`: `list` (фильтры как в панели, включая
-`attention`), `get`, `create`, `update`, `delete`, `restore`, `publish`, `unpublish`, `count`
-(набор → число товаров без сохранения), `facets` (то же, что `GET facets?category=`, но со слагами
-значений — иначе агенту неоткуда взять слова набора), `generate` (§8.3, `dry_run` — предпросмотр;
-фасет кодом, значения слагами, строки несут ещё `value_slug`), `generation` (прогресс генерации,
-ушедшей в очередь).
+`SatelliteTools`. Инструменты `catalog_landings_*` повторяют API панели; `facets` в отличие от
+него отдаёт слаги значений — иначе агенту неоткуда взять слова набора; `generate` (§8.3) берёт
+фасет кодом и значения слагами, `generation` — прогресс ушедшей в очередь.
 
 - Набор — кодами фасетов и слагами значений на языке `locale` (по умолчанию — язык сайта по
   умолчанию); ищутся сначала на нём, потом на остальных, код — ещё и как ключ реестра (`price`).
@@ -337,11 +319,7 @@ npm-пакет `@webx-ui/module-catalog-landings` (`catalogLandings()`); на ph
 
 ## 13. Пакет, демо, регистрации
 
-- **php** — `php/packages/module-catalog-landings`, namespace `WebxUi\CatalogLandings`: модели
-  `Landing`, `LandingRun`; `Catalog\` — `LandingSet`, `LandingCounter`, `LandingRepairs`,
-  `LandingGenerator`, `LandingWords`, `BaseFacets`; `Storefront\` — `LandingHandler`,
-  `LandingRewriter`, `LandingLinks`, `LandingViews`; задачи `CountLandings`, `GenerateLandings`;
-  `Mcp\`; `Panel\LandingsModule`.
+- **php** — `php/packages/module-catalog-landings`, namespace `WebxUi\CatalogLandings`.
 - **Демо** — `webx:demo` пакета (`LandingsDemo`) на демо-товарах ядра: подборки на двух
   категориях, посадочная без основы, пустая, с текстом и рекомендуемыми. `requires()` — `catalog`
   плюс установленные из `catalog-brands`, `catalog-labels`, `catalog-properties`: требование,
@@ -349,11 +327,3 @@ npm-пакет `@webx-ui/module-catalog-landings` (`catalogLandings()`); на ph
   без своего фасета пропускается с заметкой.
 - **Регистрации** — `catalog-landings` в `Setup\Catalogue` (нужны `catalog` и `seo`),
   `extra.webx.npm` и `extra.webx.panel`, список модулей плейграунда, четыре места в `php/`.
-- **Тесты** держат: 301 со старого адреса и наибольшую покрывающую (Apple+Dell не переписывается
-  посадочной Apple), 422 на занятый набор и фасет категории, `noindex` и карту для пустой, тексты
-  и сортировку, четыре выборки ссылок без запроса на товар, исчезающие значения, генерацию без
-  записи при `dry_run`.
-
-**Открыто:** файлы карты сайта с точкой в типе (`sitemap-catalog.landing.xml` и все `catalog.*`)
-отвечают 404 — маршрут `module-seo` пускает в имя файла только `[a-z0-9_-]`; это задача
-`module-seo`, не посадочных.

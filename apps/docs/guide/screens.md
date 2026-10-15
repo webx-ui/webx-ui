@@ -369,7 +369,7 @@ assetUrls: async (paths, admin) => {
 ```
 
 The seam is a contract in `module-admin` that `module-media` binds
-(`WebxUiAdminContractsAssetUrls`), for the same reason as `pickImage`: the panel cannot
+(`WebxUi\Admin\Contracts\AssetUrls`), for the same reason as `pickImage`: the panel cannot
 depend on the module that has the files. A site with no file manager has nothing to ask, and the
 document is read exactly as it was written.
 
@@ -390,16 +390,13 @@ for it. The address is worked out on read rather than stored, and the same holds
 entity's screen it is the tab that builds the content out of blocks, and inside a block's own
 schema it makes the type a container — see [Blocks](/guide/blocks).
 
-Which half of a value is stored and which is worked out is the type's to decide, and it decides
-both directions: on the server the type says what a read hands over and what a save keeps. A save
-puts every value through the type its node names — a colour lowercased, a number that stops being
-the string a form sent, pasted markup through an allowlist — and takes the answer whole, `null`
-included. A block's fields are these same nodes, so the same holds inside the constructor: the
-tree arrives as one value, `module-blocks` walks it and every field of every block goes through
-the step its own schema names, whether the save came from the editor or from an agent's tool. Two
-things are kept exactly as they came, in both directions: a value whose key the schema does not
-name — a field dropped after the page was written — and a value of a type nobody registered, the
-nested tree of blocks above all, which is the renderer's to print rather than any field's to keep.
+Which half of a value is stored and which is worked out is the type's to decide, in both
+directions: on the server the type says what a read hands over and what a save keeps — a colour
+lowercased, a number that stops being the string a form sent, pasted markup through an allowlist —
+and the answer is taken whole, `null` included. The fields of a block go through the same step
+([Blocks](/guide/blocks)). Two things are kept exactly as they came: a value whose key the schema
+does not name — a field dropped after the page was written — and a value of a type nobody
+registered, the nested tree of blocks above all.
 
 `wx-repeater` is the one type with a nested model: its value is a list of records, and its
 children are the fields of one of them, so a `name` inside it is a key of the item rather than a
@@ -518,6 +515,6 @@ rules for writing it and the permissions — the server needs it no less than th
 The front end fetches a screen with `GET /api/cms/screens/<name>` when its page opens: the tree,
 server patches applied in order (other packages first, the project last), nodes without
 permission already cut out, `trans::` strings already translated. Client patches from `admin.ts`
-go on top. That endpoint is `GET /api/cms/screens/<name>` in `module-admin`, with
-`Screens::register` and `Screens::extend` behind it; the design in full is
+go on top. On the server it is `Screens::register` and `Screens::extend` in `module-admin`; the
+design in full is
 [`docs/architecture/WEBX_UI_SCREENS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_SCREENS.md).

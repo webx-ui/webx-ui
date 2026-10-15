@@ -163,69 +163,11 @@ CDN that caches HTML, let requests that carry the session cookie pass straight t
 
 ## For a section of your own
 
-A module whose records have addresses registers each type it gives one, under the same type the
-address registry knows it by:
-
-```php
-use Illuminate\Database\Eloquent\Model;
-use WebxUi\Admin\SiteBar\EntityLink;
-use WebxUi\Admin\SiteBar\SiteBar;
-
-// In the provider's boot():
-$this->app->make(SiteBar::class)->entity('recipe', new EntityLink(
-    edit: static fn (Model $recipe): string => '/recipes/'.$recipe->getKey(),
-    permission: 'recipes.manage',
-    kind: 'webx-admin::site-bar.kind-recipe',
-));
-```
-
-`edit` is the panel's address of the record, relative to the panel. A record that keeps a draft
-(`HasDraft`) adds `publish: DraftPublishing::class` (`WebxUi\Admin\SiteBar\DraftPublishing`) for
-**Publish** and **Discard** in the bar's head; a section that does more on publishing names its
-own class implementing `WebxUi\Admin\SiteBar\Publishing`. `kind` is a translation key
-for what the record is, in the singular. The label is the record's `title` or `name` in the
-language of the address; a `label` closure says otherwise. A record that uses `HasSeo` gets the
-SEO tab with this registration and nothing more.
-
-### A tab of your own
-
-A tab has two halves with one name. The server says on which pages it is there:
-
-```php
-use Illuminate\Database\Eloquent\Model;
-use WebxUi\Admin\Contracts\HasPermissions;
-use WebxUi\Admin\SiteBar\EntityLink;
-use WebxUi\Admin\SiteBar\SiteBar;
-
-$this->app->make(SiteBar::class)->section(
-    'reviews',
-    static fn (HasPermissions $user, ?Model $entity, ?EntityLink $link): bool => $user->hasPermission('reviews.manage'),
-);
-```
-
-The panel module brings what it looks like; the component gets the page's `context` (address,
-language, record, the sections the server offered) as its one prop. A tab that stands for more
-than one section names the others in `sections` and is drawn once — «Blocks» is both `blocks` and
-`regions`:
-
-```ts
-import { markRaw } from 'vue'
-import type { AdminModule } from '@webx-ui/module-admin'
-import ReviewsBarTab from './ReviewsBarTab.vue'
-
-export const reviews = (): AdminModule => ({
-  id: 'reviews',
-  siteBarTabs: [
-    {
-      name: 'reviews',
-      label: (admin) => admin.i18n.scope('reviews')('site-bar.tab'),
-      component: markRaw(ReviewsBarTab),
-    },
-  ],
-})
-```
-
-The bar is shown on a page when at least one tab says yes there. `tellSitePage({ type: 'title',
-title })` from a tab puts a new title into the browser's tab of the page. `useSiteBar()` gives a
-tab `show(name)` — bring a tab forward — and `refresh()` — read the page's context again after a
-change, so the draft count in the head is right.
+A module whose records have addresses registers each type it gives one with
+`SiteBar::entity(<type>, new EntityLink(edit: …, permission: …, kind: …))` — `publish:
+DraftPublishing::class` for a record with drafts, and a record with `HasSeo` gets the SEO tab with
+nothing more. A tab of its own is `SiteBar::section()` on the server and a `siteBarTabs` entry of
+the panel module; a tab that stands for more than one section names the others in `sections` and
+is drawn once — «Blocks» is both `blocks` and `regions`. From a tab, `tellSitePage({ type: 'title',
+title })` retitles the page's browser tab, and `useSiteBar()` gives `show(name)` and `refresh()`.
+The whole of it, with examples: [Building for the panel on the site](./site-bar-modules.md).

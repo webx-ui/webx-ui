@@ -40,18 +40,13 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   phone prints as a `tel:` link, an e-mail as `mailto:`. Listed in `settings://content-rules`
   under `shortcodes`.
 - **Contacts** — the tab `contacts` of `settings.index` (cards `contacts-phones-card`,
-  `contacts-addresses-card`, `contacts-hours-card`, `contacts-channels-card`): `contacts.phones`
-  (rows `number`, `label` per language, `messengers` — whatsapp, telegram, viber, signal —
-  `primary`), `contacts.emails` (`email`, `label`), `contacts.addresses` (`address` per language,
-  `latitude`, `longitude`, `map`, `primary`), `contacts.hours` (`days` mon…sun, `opens`, `closes`;
-  closing earlier than opening runs past midnight), `contacts.hours-exceptions` (`date`, `label`,
-  `closed`, `opens`, `closes`), `contacts.timezone` (Region/City; empty — `app.timezone`),
-  `contacts.messengers` (`channel`, `url`, `label`), `contacts.socials` (`network`, `url`,
-  `label` for `other`). Read through `contacts()` (`WebxUi\Settings\Contacts\Contacts`):
-  `phones()`, `primaryPhone()` (`number` as typed, `e164`, `href` — the `tel:` link), `emails()`,
-  `addresses()`, `primaryAddress()` (`mapUrl()`), `hours()` (`openNow()`, `status()`, `rows()`,
-  `upcoming()`), `messengers()`, `chats()`, `socials()`. A number without its country code, a
-  link that is not one, an unknown time zone are refused on save — panel and MCP alike.
+  `contacts-addresses-card`, `contacts-hours-card`, `contacts-channels-card`): keys `contacts.phones`,
+  `emails`, `addresses`, `hours` (closing earlier than opening runs past midnight),
+  `hours-exceptions`, `timezone` (empty — `app.timezone`), `messengers`, `socials`. Read through
+  `contacts()` (`WebxUi\Settings\Contacts\Contacts`): `phones()`, `primaryPhone()` (`number`,
+  `e164`, `href`), `emails()`, `addresses()`, `primaryAddress()`, `hours()` (`openNow()`,
+  `status()`, `rows()`, `upcoming()`), `messengers()`, `chats()`, `socials()`. A number without its country code, a link that is not one, an unknown time zone
+  are refused on save — panel and MCP alike.
   `php artisan webx:settings:contacts --from=<key> [--as=phones|emails|addresses] [--dry-run]`
   moves contacts kept under a key of the site's own; `webx-settings.contacts.legacy` names such
   keys so they are read until then.
@@ -104,9 +99,8 @@ server-side patch both draws a field and opens its key for writing; a client-sid
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-settings`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-settings` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not insert rows into `cms_settings` for a key the screen does not describe: the panel and
   `settings_set` will neither show nor write it. Add the field with a screen patch first; the
   key exists from then on.

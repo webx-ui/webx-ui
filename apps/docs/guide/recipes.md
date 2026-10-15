@@ -190,9 +190,8 @@ A part is markup over plain data — no part asks the database for itself. What 
 Nobody types a `<title>` into a view. With an empty SEO card a recipe or a category names its page
 itself: the name through the site's title template, the lead as the description, the first photo — a
 category's picture — as `og:image`, above the site's default social image. The index is called by
-the section's name the same way. A copy of a view published before this still has an
-`@if ($meta->title === null)` block and the `$seo` / `$meta` lines for it — delete them, they never
-print any more.
+the section's name the same way. An old published copy of a view with an
+`@if ($meta->title === null)` block — delete the block and its `$seo` / `$meta` lines.
 
 The views stand in the site's layout the way every module's do: `webx-recipes.layout` names the
 component, the same seam as the [blog's](/guide/blog#the-layout).
@@ -316,16 +315,8 @@ whatever the screen draws that the model has no column for is kept in `extra`.
 ]
 ```
 
-and in a service provider of the site:
-
-```php
-use WebxUi\Admin\Facades\Screens;
-
-public function boot(): void
-{
-    Screens::extend('recipes.form', resource_path('screens/recipes.form.json'));
-}
-```
+registered in the `boot()` of a service provider of the site with
+`Screens::extend('recipes.form', resource_path('screens/recipes.form.json'))`.
 
 The field appears on the **Settings** tab, is checked by its type on every save — the panel's and
 an agent's — and waits in the draft with the rest. Printing it is the one part you publish:

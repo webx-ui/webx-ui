@@ -56,12 +56,10 @@ their guides when the question is about one of those.
   field `seo-fields` (type `wx-seo`) in place of a `seo-placeholder` node on `pages.form`,
   `blog.article-form`, `services.form`, `recipes.form`, `events.form`, `vacancies.form` and the
   category forms. A screen that is not registered is simply not patched.
-- **MCP** tools `seo_urls_list`, `seo_urls_get`, `seo_urls_set`, `seo_urls_delete`,
-  `seo_test_url`, `seo_sitemap_status`, `seo_redirects_list`, `seo_redirects_set`,
-  `seo_redirects_delete`, `seo_import_redirects`; with
-  interlinking `seo_links_list`, `seo_links_get`, `seo_links_set`, `seo_links_delete`,
-  `seo_links_import`, `seo_links_heading`; with page FAQ `seo_faq_get`, `seo_faq_set`,
-  `seo_faq_import`. Scopes `seo:read`, `seo:write`.
+- **MCP** tools `seo_urls_*` (`list`, `get`, `set`, `delete`), `seo_redirects_*` (`list`, `set`,
+  `delete`), `seo_import_redirects`, `seo_test_url`, `seo_sitemap_status`; with interlinking
+  `seo_links_*` (`list`, `get`, `set`, `delete`, `import`, `heading`); with page FAQ `seo_faq_get`,
+  `seo_faq_set`, `seo_faq_import`. Scopes `seo:read`, `seo:write`.
 - **Command** `php artisan webx:seo:sitemap`. Also registered: the field type `wx-seo`, audit
   checks and fixes when `webx-ui/module-audit` is installed, demo content (`resources/demo`; a theme's
   `demo/seo/pages.json` gives its own demo pages a FAQ and links in every language).
@@ -120,8 +118,7 @@ theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a bre
   setting.
 - Do not write `seo_urls` or `seo_redirects` with SQL: the compiled rules in the cache are
   thrown away by the models' save and delete, and a raw write leaves the site matching the old
-  list. Go through the panel, the API or `seo_urls_set` / `seo_redirects_set` and
-  `seo_urls_delete` / `seo_redirects_delete`.
+  list. Go through the panel, the API or the MCP tools.
 - Do not mark every address of a redirecting type `noindex` to get it out of the sitemap: the
   handler that redirects implements `NotAPage`, and the whole type goes. A list of types in config
   is not offered on purpose — it would drift from the binding.

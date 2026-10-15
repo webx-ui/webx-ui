@@ -7,8 +7,8 @@ A banner is a picture (and, if the editor wants, a narrower one for phones), a v
 title, a line or two of text and up to three buttons. Banners stand in **named places**, the way
 menu items stand in named menus: a template of the site asks for `banners('hero')`, the editor puts
 banners into `hero` and drags them into order. A banner has no page, the module has no public
-route, and there is no block for banners: **the site's template draws them**, and the package hands
-it data.
+route, and there is no block for banners: **the site's template prints a place** — with
+`<x-webx-banners>`, or with markup of its own from the data the package hands it.
 
 ## Install
 
@@ -89,7 +89,7 @@ Media are not translated; the `alt` and `title` of each picture are, as everywhe
 
 ## Two helpers
 
-Everything a site gets from the module is two calls:
+The data of a place is two calls — what the components print, and what a template of its own reads:
 
 ```php
 banners('hero')->get();                // the cards of a place, in its order
@@ -148,300 +148,32 @@ site can add its own.
 
 ## A template
 
-The package draws nothing. This is the whole of a working place — markup, styles and a script —
-for a site to copy and change; it was checked against the demo banners on a real site, wide and at
-375 px, in two languages. The three layouts share one piece of markup, and the script decides what
-each one does.
-
-::: code-group
-
-```blade [partials/banners.blade.php]
-@php($banners = banners($place)->get())
-@php($layout = banners_layout($place))
-@php($shown = $layout['layout'] === 'single' ? array_slice($banners, 0, 1) : $banners)
-
-@if ($shown !== [])
-  <section class="banners banners--{{ $layout['layout'] }}"
-           style="--ratio: {{ $layout['ratio'] }}; --ratio-mobile: {{ $layout['ratio_mobile'] }}"
-           data-banners='@json($layout)'>
-    <div class="banners__track">
-      @foreach ($shown as $banner)
-        <article class="banners__slide" id="{{ $banner['anchor'] }}"
-                 @if ($layout['layout'] === 'random' && ! $loop->first) hidden @endif>
-          <picture>
-            @if ($banner['image_mobile'])
-              <source media="(max-width: {{ $layout['breakpoint'] - 1 }}px)"
-                      srcset="{{ $banner['image_mobile']['url'] }}">
-            @endif
-            <img src="{{ $banner['image']['url'] }}" alt="{{ $banner['image']['alt'] ?? '' }}"
-                 width="{{ $banner['image']['width'] }}" height="{{ $banner['image']['height'] }}"
-                 loading="{{ $loop->first ? 'eager' : 'lazy' }}">
-          </picture>
-
-          @if ($banner['video'])
-            <video muted playsinline loop preload="none" aria-hidden="true"
-                   poster="{{ $banner['image']['url'] }}" data-src="{{ $banner['video']['url'] }}"></video>
-          @endif
-
-          @if ($banner['title'] !== '' || $banner['text'] !== '' || $banner['buttons'] !== [])
-            <div class="banners__body">
-              @if ($banner['title'] !== '')
-                <h2 class="banners__title">{{ $banner['title'] }}</h2>
-              @endif
-              @if ($banner['text'] !== '')
-                <p class="banners__text">{!! nl2br(e($banner['text'])) !!}</p>
-              @endif
-              @if ($banner['buttons'] !== [])
-                <p class="banners__buttons">
-                  @foreach ($banner['buttons'] as $button)
-                    <a class="button button--{{ $button['variant'] }}" href="{{ $button['url'] }}"
-                       @if ($button['new_tab']) target="_blank" @endif
-                       @if ($button['rel']) rel="{{ $button['rel'] }}" @endif>{{ $button['label'] }}</a>
-                  @endforeach
-                </p>
-              @endif
-            </div>
-          @endif
-        </article>
-      @endforeach
-    </div>
-  </section>
-@endif
-```
-
-```css [banners.css]
-.banners {
-  position: relative;
-}
-
-.banners__track {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-}
-
-.banners__track::-webkit-scrollbar {
-  display: none;
-}
-
-.banners__slide {
-  position: relative;
-  display: flex;
-  flex: 0 0 100%;
-  align-items: flex-end;
-  aspect-ratio: var(--ratio);
-  overflow: hidden;
-  scroll-snap-align: start;
-}
-
-.banners__slide[hidden] {
-  display: none;
-}
-
-.banners__slide img,
-.banners__slide video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.banners__body {
-  position: relative;
-  width: 100%;
-  padding: 2rem 4rem 3rem;
-  color: #fff;
-  background: linear-gradient(transparent, rgb(0 0 0 / 0.6));
-}
-
-.banners__title {
-  margin: 0 0 0.5rem;
-}
-
-.banners__text {
-  margin: 0 0 1rem;
-}
-
-.banners__buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0;
-}
-
-.banners__arrow {
-  position: absolute;
-  top: 50%;
-  translate: 0 -50%;
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 0;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.85);
-  cursor: pointer;
-}
-
-.banners__arrow--prev {
-  left: 0.75rem;
-}
-
-.banners__arrow--next {
-  right: 0.75rem;
-}
-
-.banners__dots {
-  position: absolute;
-  bottom: 0.75rem;
-  left: 50%;
-  display: flex;
-  gap: 0.5rem;
-  translate: -50% 0;
-}
-
-.banners__dot {
-  width: 0.625rem;
-  height: 0.625rem;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.5);
-  cursor: pointer;
-}
-
-.banners__dot[aria-current='true'] {
-  background: #fff;
-}
-
-/* The same number as `breakpoint` in the config: CSS cannot read it from the attribute. */
-@media (max-width: 767px) {
-  .banners__slide {
-    aspect-ratio: var(--ratio-mobile);
-  }
-
-  .banners__body {
-    padding: 1.5rem 1rem 2.5rem;
-  }
-
-  .banners__arrow {
-    display: none;
-  }
-}
-```
-
-```js [banners.js]
-// resources/js/banners.js — every place on the page, whatever its layout.
-for (const root of document.querySelectorAll('[data-banners]')) {
-  const options = JSON.parse(root.dataset.banners)
-  const track = root.querySelector('.banners__track')
-  const slides = [...root.querySelectorAll('.banners__slide')]
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches
-  const wide = matchMedia(`(min-width: ${options.breakpoint}px)`).matches
-
-  // The video only where it is wanted; everywhere else the picture under it is the poster.
-  if (!still && (wide || options.video_on_mobile)) {
-    for (const video of root.querySelectorAll('video[data-src]')) {
-      video.src = video.dataset.src
-      video.play().catch(() => {})
-    }
-  }
-
-  // Random: every banner is printed, the first one shown; a script picks on every view.
-  if (options.layout === 'random') {
-    const pick = slides[Math.floor(Math.random() * slides.length)]
-    for (const slide of slides) slide.hidden = slide !== pick
-    continue
-  }
-
-  if (options.layout !== 'slider' || slides.length < 2) continue
-
-  let current = 0
-  let paused = false
-  const dots = []
-
-  const mark = () => {
-    dots.forEach((dot, index) => dot.setAttribute('aria-current', String(index === current)))
-  }
-
-  const go = (index) => {
-    const last = slides.length - 1
-    current = options.loop
-      ? (index + slides.length) % slides.length
-      : Math.max(0, Math.min(index, last))
-    track.scrollTo({ left: current * track.clientWidth, behavior: still ? 'auto' : 'smooth' })
-    mark()
-  }
-
-  const button = (className, label, onClick) => {
-    const element = document.createElement('button')
-    element.type = 'button'
-    element.className = className
-    element.setAttribute('aria-label', label)
-    element.addEventListener('click', onClick)
-    return element
-  }
-
-  if (options.arrows) {
-    root.append(
-      button('banners__arrow banners__arrow--prev', 'Previous', () => go(current - 1)),
-      button('banners__arrow banners__arrow--next', 'Next', () => go(current + 1)),
-    )
-  }
-
-  if (options.dots) {
-    const nav = document.createElement('div')
-    nav.className = 'banners__dots'
-    slides.forEach((slide, index) => {
-      dots.push(nav.appendChild(button('banners__dot', `Slide ${index + 1}`, () => go(index))))
-    })
-    root.append(nav)
-  }
-
-  // A swipe moves the track by itself: the dots follow wherever it stopped. A track not laid
-  // out yet is 0 wide, and 0 / 0 would leave no dot current at all.
-  track.addEventListener(
-    'scroll',
-    () => {
-      if (track.clientWidth === 0) return
-      current = Math.round(track.scrollLeft / track.clientWidth)
-      mark()
-    },
-    { passive: true },
-  )
-  mark()
-
-  if (options.pause_on_hover) {
-    root.addEventListener('mouseenter', () => (paused = true))
-    root.addEventListener('mouseleave', () => (paused = false))
-    root.addEventListener('focusin', () => (paused = true))
-    root.addEventListener('focusout', () => (paused = false))
-  }
-
-  if (options.autoplay && !still) {
-    const timer = setInterval(() => {
-      if (paused) return
-      if (!options.loop && current === slides.length - 1) return clearInterval(timer)
-      go(current + 1)
-    }, options.interval)
-  }
-}
-```
-
-:::
+`<x-webx-banners place="hero" />` prints a place whole, in its layout — see
+[On the site: two components](#on-the-site-two-components). What it does is what a template of
+the site's own should do too, if it draws a place itself from `banners()` and `banners_layout()`:
 
 ```blade
-{{-- the home page --}}
-@include('partials.banners', ['place' => 'hero'])
+@php($layout = banners_layout($place))
+@foreach (banners($place)->get() as $banner)
+  <article id="{{ $banner['anchor'] }}" @if ($layout['layout'] !== 'slider' && ! $loop->first) hidden @endif>
+    <picture>
+      @if ($banner['image_mobile'])
+        <source media="(max-width: {{ $layout['breakpoint'] - 1 }}px)" srcset="{{ $banner['image_mobile']['url'] }}">
+      @endif
+      <img src="{{ $banner['image']['url'] }}" alt="{{ $banner['image']['alt'] ?? '' }}"
+           width="{{ $banner['image']['width'] }}" height="{{ $banner['image']['height'] }}"
+           loading="{{ $loop->first ? 'eager' : 'lazy' }}">
+    </picture>
+    {{-- the video, the title, nl2br(e($banner['text'])), the buttons with their `rel` as it is --}}
+  </article>
+@endforeach
 ```
-
-What it stands on:
 
 - **The picture** is a `<picture>`: `image_mobile` under the breakpoint, `image` otherwise, with its
   `width` and `height` so the page does not jump. The first banner loads at once, the others
   `lazy`. The frame is `aspect-ratio` from `ratio` and `ratio_mobile`.
 - **single** prints the first banner only.
-- **random** prints them all, every one but the first `hidden`, and the script opens a random one.
+- **random** prints them all, every one but the first `hidden`, and a script opens a random one.
   The choice is the browser's, not the server's: it is made on every view, even when the site
   caches the page's HTML, and the hidden pictures are `lazy`, so they are not loaded. Without
   JavaScript the first one is seen.
@@ -449,11 +181,9 @@ What it stands on:
   script adds the arrows and the dots (none for a single banner — a slider of one is a picture),
   autoplay with the interval, pause on hover and on focus, and the loop. No autoplay under
   `prefers-reduced-motion`.
-- **The video** has no `src` in the markup: the script gives it one on a wide screen (or when
-  `video_on_mobile`) and not under `prefers-reduced-motion`. Everywhere else, and without
+- **The video** has no `src` in the markup (`data-src`): the script gives it one on a wide screen
+  (or when `video_on_mobile`) and not under `prefers-reduced-motion`. Everywhere else, and without
   JavaScript, the picture is what is seen, and the video's bytes are never fetched.
-- **The breakpoint** is in two places: the config, which the markup and the script read, and the
-  `@media` of the CSS, which cannot read an attribute. Change both.
 
 ## Layers
 
@@ -528,7 +258,7 @@ and has arrows and dots; `single` is the first banner, `random` opens one at ran
 its parent's and its height the place's `ratio`, so it is the whole first screen or one column of
 it alike. An empty place prints nothing, not even the wrapper. `<x-webx-banner>` prints one card:
 the frame, the picture, the video, the layers — and for a banner without layers its words and
-buttons in a corner, as the sample above has them.
+buttons in a corner.
 
 The CSS (`resources/css/layers.css`) comes with the first banner of the page, once; the panel's
 canvas draws with the same file, so what the editor shows is what the site prints. Both views are
@@ -570,9 +300,9 @@ Both were weighed and left out on purpose; each can come later without breaking 
 - **No schedule.** A banner is on while it is on. A start and an end date sound simple and are not:
   a site that caches its pages would show a banner for hours after its end. They come together with
   an answer to the cache.
-- **A component only for layers.** A banner without layers is still the site's own template —
-  every site draws a hero its own way. A banner with layers is `<x-webx-banners>`: the geometry of
-  the stage is one for every site, and the panel has to draw exactly what the site prints.
+- **Layers only through the component.** A place without layers may be drawn by the site's own
+  template — every site draws a hero its own way. A banner with layers is `<x-webx-banners>`: the
+  geometry of the stage is one for every site, and the panel has to draw exactly what the site prints.
 
 ## Fields of the project
 

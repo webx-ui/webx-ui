@@ -49,9 +49,8 @@ registered in `webx-ui/module-admin` — read their guides for those.
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-auth`, and do not copy the package into the
-  site. Every row above is the supported way; if none fits, the package is missing a seam — say
-  so instead of working around it.
+- Do not edit anything in `vendor/webx-ui/module-auth` or copy it into the site. Every row
+  above is the supported way; if none fits, the package is missing a seam — say so.
 - Do not use the site's `users` table or `web` guard for administrators: the panel reads
   `cms_users` behind `cms`, so a leak on the public site never reaches the panel.
 - Do not connect an agent as a super administrator: `is_super` passes every permission,

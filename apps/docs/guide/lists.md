@@ -99,10 +99,6 @@ A leading minus is how the whole panel says "the other way round", and the serve
 way everywhere. Leave the default out of the query string: a link that repeats the default outlives
 a change of mind about it.
 
-What this replaces is a pair of buttons over the list saying "by name" and "by count". They are the
-same thing said in a second place, they cost a line of chrome, and they cannot say which way round
-the order is.
-
 ## Filters behind a funnel
 
 Three dropdowns standing open above the rows are three controls to read before any data, and on a

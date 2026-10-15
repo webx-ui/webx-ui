@@ -237,26 +237,11 @@ Both places for the head, and that costs nothing: a slot is one place, filled by
 and a stack is as many as needed — what a block type or a partial pushes cannot reach a slot. A
 layout with no `@stack('head')` looks whole and quietly drops what was pushed into it.
 
-Publishing the views stays what it is for — "I want different markup for an article" — rather than
-the only way to get a header.
-
 ## For an agent: MCP
 
-The section is also a set of tools. With `webx-ui/mcp` installed (it comes with this module), the
-panel serves one MCP server at `/api/cms/mcp`:
-
-Passport comes with the panel, and a site switches it on once:
-
-```bash
-php artisan vendor:publish --tag=passport-migrations && php artisan migrate
-php artisan passport:keys
-```
-
-Somebody then connects their own agent to it: they paste that address into Claude, ChatGPT or
-`claude mcp add --transport http webx <address>`, the client sends them to the panel to sign in
-and agree, and it leaves with a token of theirs. The agent acts as that administrator. On the
-machine the site runs on, `php artisan mcp:start webx` is the same server over stdio, trusted the
-way tinker is.
+The section is also a set of tools on the panel's one MCP server at `/api/cms/mcp` (`webx-ui/mcp`
+comes with this module); how an agent connects and acts as an administrator is
+[AI agents](/guide/agents).
 
 | Tool            | What it does                                                                            |
 | --------------- | --------------------------------------------------------------------------------------- |

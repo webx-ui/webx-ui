@@ -97,12 +97,8 @@ component — both run on `useTreeNodes`, so a drop means the same thing in each
 pages or categories module wants: the tree and the data in one pane, instead of a sidebar tree
 beside a list of the same records.
 
-It is lazy by design — `data` is the roots, `load(row)` is one level — and it gives up the two
-things a table does to a flat list, because both destroy a structure: sorting and pagination.
-Holding a dragged row over a closed branch opens it, fetching it if need be, so a move across the
-tree is one drag. What it does not have is a keyboard equivalent for the drag, the way
-[Tree](/components/tree) does; for that, and for a move across a long distance, a row wants a
-**Move** action and a picker.
+It gives up sorting and pagination, because both destroy a structure, and has no keyboard
+equivalent for the drag — a row wants a **Move** action and a picker for that.
 
 [TreeSelect](/components/tree-select) ✅ — the same tree as a form field, single or with
 checkboxes. It is the "parent category" field, so it reads a key and reports a key: `parent_id` is

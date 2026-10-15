@@ -106,16 +106,12 @@ text in the language of the page.
 @foreach (reviews()->in($categories)->take($limit ?: 6) as $review) … @endforeach
 ```
 
-| Step                 | What it does                                                             |
-| -------------------- | ------------------------------------------------------------------------ |
-| `in($categories)`    | An id, a category or a list of them; one category lists in its own order |
-| `in(null)`, `in([])` | No filter — what an editor's untouched field sends means «every review»  |
-| `only([12, 7])`      | These and no others, in this order                                       |
-| `except($review)`    | All but these                                                            |
-| `take(6)`            | At most six; null or zero — all                                          |
-| `locale('uk')`       | The language of the cards; by default the one being rendered             |
-| `categories()`       | The catalogue: visible categories, each with its `reviews`; empty drop   |
-| `get()`, `first()`   | A list of cards, or one; the query itself can be looped over and counted |
+| Step                                                           | What it does                                                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `in($categories)`                                              | An id, a category or a list of them; one category lists in its own order                   |
+| `in(null)`, `in([])`                                           | No filter — what an editor's untouched field sends means «every review»                    |
+| `only()`, `except()`, `take()`, `locale()`, `get()`, `first()` | The shared steps of [`RecordQuery`](/guide/collections#a-helper-for-templates-recordquery) |
+| `categories()`                                                 | The catalogue: visible categories, each with its `reviews`; empty drop                     |
 
 Review categories have no slugs, so a string is read only when it is an id; any other string is a
 filter nothing passes — a typo must not turn «reviews about implants» into every review. The limit
@@ -212,14 +208,7 @@ attribute `data-reviews-layout` on the block's root, and the styles hang off it.
      grid-template-columns: 3.5em 1fr;
      column-gap: 1em;
    }
-   .b-reviews[data-reviews-layout='list']
-     .b-reviews__card
-     > :not(.b-reviews__photo, .b-reviews__initials) {
-     grid-column: 2;
-   }
-   .b-reviews[data-reviews-layout='list'] :is(.b-reviews__photo, .b-reviews__initials) {
-     grid-row: span 3;
-   }
+   /* … the photo in the first column, everything else in the second */
    ```
 
 3. **Template**, only if the markup itself differs: `@if ($layout === 'list') … @endif` around what
@@ -244,33 +233,16 @@ the site lays a patch over the screen, and whatever the screen draws that the mo
 for is kept in `extra`.
 
 Both screens — `reviews.form` for a review, `reviews.category-form` for a category — keep an empty
-card with the public id `project-fields`. `resources/screens/reviews.form.json` in the site:
-
-```json
-[
-  {
-    "op": "add",
-    "target": "project-fields",
-    "node": {
-      "id": "city",
-      "type": "wx-input",
-      "name": "city",
-      "label": "City",
-      "localized": true
-    }
-  }
-]
-```
-
-and in a service provider of the site:
+card with the public id `project-fields`. In a service provider of the site:
 
 ```php
 use WebxUi\Admin\Facades\Screens;
 
-public function boot(): void
-{
-    Screens::extend('reviews.form', resource_path('screens/reviews.form.json'));
-}
+Screens::extend('reviews.form', [[
+    'op' => 'add',
+    'target' => 'project-fields',
+    'node' => ['id' => 'city', 'type' => 'wx-input', 'name' => 'city', 'label' => 'City', 'localized' => true],
+]]);
 ```
 
 The field appears in the editor, is checked by its type on every save — the panel's and an

@@ -1,69 +1,64 @@
 # Архитектура: спеки и справочники
 
-Здесь лежат спецификации модулей и справочники по тому, как устроена система целиком: реестр
-пакетов, выпуск, экраны, адреса, развёртывание. Спека выпущенного модуля — это описание того, что
-он есть, а не план: пошаговые планы сессий сжаты в разделы «Выпуск», а сами промпты остались в
-истории git. Ловушки, которые стоили времени, живут отдельно — в [`../pitfalls/`](../pitfalls/):
-`layout-and-browser.md`, `vue-and-tests.md`, `laravel-and-php.md`,
-`packages-and-demo-sites.md`, `release-and-ci.md`.
+Спека описывает то, что есть сейчас, а не план: пошаговые планы и журналы сессий сжаты в разделы
+«Выпуск», история осталась в git. Статус — без версий и дат: что в каком релизе, скажут
+`CHANGELOG.md` пакетов и `npm view` / `composer show`. Ловушки, которые стоили времени, живут
+отдельно — в [`../pitfalls/`](../pitfalls/).
+
+Номера разделов (§N) у спек не меняются: на них ссылаются код и другие документы.
 
 ## Справочники
 
-| Файл                                                         | О чём                                                                                                                   | Статус                                        |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| [WEBX_UI_COMPOSER_PACKAGES.md](WEBX_UI_COMPOSER_PACKAGES.md) | Реестр composer-пакетов: назначение, состав, npm-пара                                                                   | на 28.09.2026, v0.49.1                        |
-| [WEBX_UI_PHP_RELEASE.md](WEBX_UI_PHP_RELEASE.md)             | Как php-пакеты попадают на Packagist через зеркала                                                                      | действует                                     |
-| [WEBX_UI_RELEASE_SPEED.md](WEBX_UI_RELEASE_SPEED.md)         | Параллельный CI, релизный PR от App, канал `next`                                                                       | сделано 24.09.2026                            |
-| [WEBX_UI_SCREENS.md](WEBX_UI_SCREENS.md)                     | Экраны панели как JSON-дерево, патчи, реестр типов                                                                      | третья редакция, в работе                     |
-| [WEBX_UI_ROUTING.md](WEBX_UI_ROUTING.md)                     | Плоский реестр адресов сайта и резолвер                                                                                 | выпущен 15.09.2026, v0.15.0                   |
-| [WEBX_UI_VISUAL.md](WEBX_UI_VISUAL.md)                       | Визуальная переделка панели: 21 пункт с решениями                                                                       | этапы сделаны 17.09.2026                      |
-| [WEBX_UI_NEW_SITE.md](WEBX_UI_NEW_SITE.md)                   | Новый сайт одной командой: скелет, `webx:setup`                                                                         | сделано 22.09.2026                            |
-| [WEBX_UI_MCP_ACCESS.md](WEBX_UI_MCP_ACCESS.md)               | Подключение AI-агентов: OAuth, согласие, журнал                                                                         | выпущен 21.09.2026, v0.27.0                   |
-| [WEBX_UI_BACKUPS.md](WEBX_UI_BACKUPS.md)                     | Ночные дампы базы и строка о них в панели                                                                               | выпущен 21.09.2026, v0.27.0                   |
-| [WEBX_UI_BLOCK_COMPONENTS.md](WEBX_UI_BLOCK_COMPONENTS.md)   | Тип блока как компонент `<x-webx-block>` в шаблонах                                                                     | выпущен 25.09.2026, v0.42.0                   |
-| [WEBX_UI_BLOCK_FRAGMENTS.md](WEBX_UI_BLOCK_FRAGMENTS.md)     | Общий блок: зона, которую ставят блоком на страницу или тегом в шаблон, отвязка на месте                                | спроектирована 14.10.2026, не начиналась      |
-| [WEBX_UI_LAYOUT_REGIONS.md](WEBX_UI_LAYOUT_REGIONS.md)       | Шапка и подвал сайта деревьями блоков                                                                                   | выпущен 28.09.2026, v0.49.0                   |
-| [WEBX_UI_CATALOG.md](WEBX_UI_CATALOG.md)                     | Каталог товаров: ядро и спутники, контракты                                                                             | волна A выпущена в v0.56.0                    |
-| [WEBX_UI_HISTORY.md](WEBX_UI_HISTORY.md)                     | Журнал изменений в module-admin, узел `wx-history`                                                                      | сделано 29.09.2026 (H1), ждёт релиза          |
-| [WEBX_UI_AGENT_DOCS.md](WEBX_UI_AGENT_DOCS.md)               | `AGENTS.md` в пакетах и корневой файл сайта                                                                             | AG1–AG4 04.10.2026, AG5 впереди               |
-| [WEBX_UI_THEMES.md](WEBX_UI_THEMES.md)                       | Тема по умолчанию и локальная тема сайта: цепочка слоёв, токены, блоки, модули, правила для агентов                     | спроектировано 07.10.2026, редакция 3 (08.10) |
-| [WEBX_UI_WIDGETS.md](WEBX_UI_WIDGETS.md)                     | Виджеты сайта: шапка, меню, контакты, язык, слайдер, лайтбокс, видео, карта, согласие на cookie                         | спроектировано 08.10.2026                     |
-| [WEBX_UI_SITE_BAR.md](WEBX_UI_SITE_BAR.md)                   | Панель на сайте для вошедшего администратора: ссылка в панель, SEO, правка и структура блоков страницы, шапки и подвала | SB1–SB5 сделаны 13.10.2026, ждёт релиза       |
+| Файл                                                         | О чём                                                                                  | Статус                                 |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | -------------------------------------- |
+| [WEBX_UI_COMPOSER_PACKAGES.md](WEBX_UI_COMPOSER_PACKAGES.md) | Реестр composer-пакетов: назначение, состав, npm-пара                                  | действует                              |
+| [WEBX_UI_PHP_RELEASE.md](WEBX_UI_PHP_RELEASE.md)             | Релиз: npm, зеркала php-пакетов для Packagist, канал `next`                            | действует                              |
+| [WEBX_UI_SCREENS.md](WEBX_UI_SCREENS.md)                     | Экраны панели как JSON-дерево, патчи, реестр типов                                     | действует; не все экраны переведены    |
+| [WEBX_UI_ROUTING.md](WEBX_UI_ROUTING.md)                     | Плоский реестр адресов сайта и резолвер                                                | выпущено                               |
+| [WEBX_UI_NEW_SITE.md](WEBX_UI_NEW_SITE.md)                   | Новый сайт одной командой: скелет, `webx:setup`                                        | выпущено                               |
+| [WEBX_UI_MCP_ACCESS.md](WEBX_UI_MCP_ACCESS.md)               | Подключение AI-агентов: OAuth, согласие, журнал                                        | выпущено                               |
+| [WEBX_UI_BLOCK_FRAGMENTS.md](WEBX_UI_BLOCK_FRAGMENTS.md)     | Общий блок: зона, которую ставят блоком на страницу или тегом в шаблон                 | выпущено                               |
+| [WEBX_UI_LAYOUT_REGIONS.md](WEBX_UI_LAYOUT_REGIONS.md)       | Шапка и подвал сайта деревьями блоков                                                  | выпущено                               |
+| [WEBX_UI_CATALOG.md](WEBX_UI_CATALOG.md)                     | Каталог товаров: ядро и спутники, контракты, таблица статусов (§10)                    | волна A выпущена, волна B не начата    |
+| [WEBX_UI_HISTORY.md](WEBX_UI_HISTORY.md)                     | Журнал изменений в module-admin, узел `wx-history`                                     | выпущено                               |
+| [WEBX_UI_AGENT_DOCS.md](WEBX_UI_AGENT_DOCS.md)               | `AGENTS.md` в пакетах и корневой файл сайта                                            | AG1–AG4 выпущены, AG5 впереди          |
+| [WEBX_UI_THEMES.md](WEBX_UI_THEMES.md)                       | Тема по умолчанию и локальная тема сайта: слои, токены, блоки, модули, правила агентов | TH1–TH5 выпущены; §21 не начат         |
+| [WEBX_UI_WIDGETS.md](WEBX_UI_WIDGETS.md)                     | Виджеты сайта и формы сайта (§17–§18)                                                  | W1–W6 выпущены                         |
+| [WEBX_UI_SITE_BAR.md](WEBX_UI_SITE_BAR.md)                   | Панель на сайте для вошедшего администратора: ссылка в панель, SEO, правка блоков      | выпущено; проверка на телефоне открыта |
 
 ## Модули
 
-| Файл                                                                     | О чём                                                                                          | Статус                        |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------- |
-| [WEBX_UI_MODULE_BANNERS.md](WEBX_UI_MODULE_BANNERS.md)                   | Баннеры в именованных местах, только хелпер                                                    | выпущен 28.09.2026, v0.47.0   |
-| [WEBX_UI_BANNER_LAYERS.md](WEBX_UI_BANNER_LAYERS.md)                     | Слои баннера: текст, картинка, кнопка в % ширины картинки                                      | черновик 13.10.2026           |
-| [WEBX_UI_MODULE_BLOCKS.md](WEBX_UI_MODULE_BLOCKS.md)                     | Конструктор блоков: схема, Blade, CSS, скрипт                                                  | выпущен 16.09.2026, v0.16.0   |
-| [WEBX_UI_MODULE_BLOG.md](WEBX_UI_MODULE_BLOG.md)                         | Статьи из блоков, рубрики, теги, дата публикации                                               | выпущен 19.09.2026, v0.23.0   |
-| [WEBX_UI_MODULE_CATALOG.md](WEBX_UI_MODULE_CATALOG.md)                   | Ядро каталога: товары, категории, движок, витрина, массовые действия                           | выпущен 29.09.2026 в v0.50.0  |
-| [WEBX_UI_CATALOG_VIDEO.md](WEBX_UI_CATALOG_VIDEO.md)                     | Видео в галерее товара: свой файл или YouTube, постер — картинка                               | выпущено в v0.52.0            |
-| [WEBX_UI_CATALOG_DICTIONARIES.md](WEBX_UI_CATALOG_DICTIONARIES.md)       | Справочники каталога: метки, наличие, бренды; подпись «Справочники» в меню                     | выпущены 30.09.2026 в v0.53.0 |
-| [WEBX_UI_CATALOG_PROPERTIES.md](WEBX_UI_CATALOG_PROPERTIES.md)           | Свойства каталога: типы, значения, наборы по категориям, фасеты, характеристики                | выпущены 30.09.2026 в v0.54.0 |
-| [WEBX_UI_CATALOG_MANTICORE.md](WEBX_UI_CATALOG_MANTICORE.md)             | Движок Manticore: таблицы на язык, поиск с опечатками и по кодам, подмена при перестройке      | выпущен в v0.56.0             |
-| [WEBX_UI_CATALOG_LANDINGS.md](WEBX_UI_CATALOG_LANDINGS.md)               | Посадочные фильтров: листинг с зашитым набором, свой адрес, SEO, тексты, перелинковка каталога | выпущены в v0.56.0            |
-| [WEBX_UI_MODULE_CATALOG_EXCHANGE.md](WEBX_UI_MODULE_CATALOG_EXCHANGE.md) | Обмен каталога: импорт и экспорт CSV и XLSX, профили, журнал ошибок                            | выпущен в v0.55.0             |
-| [WEBX_UI_MODULE_EVENTS.md](WEBX_UI_MODULE_EVENTS.md)                     | События: дата, место, цена, `.ics`, разметка `Event`                                           | выпущен 25.09.2026, v0.43.0   |
-| [WEBX_UI_MODULE_FAQ.md](WEBX_UI_MODULE_FAQ.md)                           | Вопросы и ответы, вставка блоком, `FAQPage`                                                    | выпущен 24.09.2026, v0.37.0   |
-| [WEBX_UI_MODULE_INBOX.md](WEBX_UI_MODULE_INBOX.md)                       | Формы сайта и заявки с них, мини-CRM                                                           | выпущен, v0.22.0              |
-| [WEBX_UI_MODULE_MEDIA.md](WEBX_UI_MODULE_MEDIA.md)                       | Файловый менеджер: папки, загрузка, редактор картинок                                          | выпущен 13.09.2026, v0.7.0    |
-| [WEBX_UI_MODULE_MENU.md](WEBX_UI_MODULE_MENU.md)                         | Именованные меню, дерево пунктов, контракт ссылок                                              | выпущен 22.09.2026, v0.30.0   |
-| [WEBX_UI_MODULE_PAGES.md](WEBX_UI_MODULE_PAGES.md)                       | Дерево страниц, главная — корень, содержимое блоками                                           | выпущен 16.09.2026, v0.18.0   |
-| [WEBX_UI_MODULE_PRESS.md](WEBX_UI_MODULE_PRESS.md)                       | Пресса о нас: издания и материалы, три блока                                                   | выпущен 27.09.2026, v0.44.0   |
-| [WEBX_UI_MODULE_RECIPES.md](WEBX_UI_MODULE_RECIPES.md)                   | Рецепты, каталог блоком, связи между записями                                                  | выпущен 24.09.2026, v0.41.0   |
-| [WEBX_UI_MODULE_REVIEWS.md](WEBX_UI_MODULE_REVIEWS.md)                   | Отзывы с оценкой, на сайт предложенным блоком                                                  | выпущен 24.09.2026, v0.40.0   |
-| [WEBX_UI_MODULE_SEO.md](WEBX_UI_MODULE_SEO.md)                           | Правила по адресам, редиректы, `<head>`, sitemap; перелинковка и FAQ страниц (§18)             | выпущен 14.09.2026, v0.14.0   |
-| [WEBX_UI_MODULE_SERVICES.md](WEBX_UI_MODULE_SERVICES.md)                 | Услуги как страницы, общие категории, поля проекта                                             | выпущен 23.09.2026, v0.35.0   |
-| [WEBX_UI_MODULE_TARIFFS.md](WEBX_UI_MODULE_TARIFFS.md)                   | Карточки цен группами, предложенный блок                                                       | выпущен 28.09.2026, v0.48.0   |
-| [WEBX_UI_MODULE_TASKS.md](WEBX_UI_MODULE_TASKS.md)                       | Очередь работы людей и агентов: задачи, этапы по порядку, отчёты, проверка, журнал             | T1–T5 сделаны 15.10.2026      |
-| [WEBX_UI_MODULE_TEAM.md](WEBX_UI_MODULE_TEAM.md)                         | Люди организации, соцсети, `RecordQuery`                                                       | выпущен 27.09.2026, v0.45.0   |
-| [WEBX_UI_MODULE_VACANCIES.md](WEBX_UI_MODULE_VACANCIES.md)               | Вакансии под приставкой, `JobPosting`, отклик формой                                           | выпущен 28.09.2026, v0.48.0   |
+| Файл                                                                     | О чём                                                                                          | Статус                   |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------ |
+| [WEBX_UI_MODULE_AUDIT.md](WEBX_UI_MODULE_AUDIT.md)                       | Аудит сайта: обход, снимок страниц, проверки, исправления модулей                              | выпущено; открытое — §12 |
+| [WEBX_UI_MODULE_BANNERS.md](WEBX_UI_MODULE_BANNERS.md)                   | Баннеры в именованных местах и их слои                                                         | выпущено                 |
+| [WEBX_UI_MODULE_BLOCKS.md](WEBX_UI_MODULE_BLOCKS.md)                     | Конструктор блоков: схема, Blade, CSS, скрипт; блок как компонент (§24)                        | выпущено                 |
+| [WEBX_UI_MODULE_BLOG.md](WEBX_UI_MODULE_BLOG.md)                         | Статьи из блоков, рубрики, теги, дата публикации                                               | выпущено                 |
+| [WEBX_UI_MODULE_CATALOG.md](WEBX_UI_MODULE_CATALOG.md)                   | Ядро каталога: товары, категории, движок, витрина, массовые действия                           | выпущено                 |
+| [WEBX_UI_CATALOG_VIDEO.md](WEBX_UI_CATALOG_VIDEO.md)                     | Видео в галерее товара: свой файл или YouTube, постер — картинка                               | выпущено                 |
+| [WEBX_UI_CATALOG_DICTIONARIES.md](WEBX_UI_CATALOG_DICTIONARIES.md)       | Справочники каталога: метки, наличие, бренды                                                   | выпущено                 |
+| [WEBX_UI_CATALOG_PROPERTIES.md](WEBX_UI_CATALOG_PROPERTIES.md)           | Свойства каталога: типы, значения, наборы по категориям, фасеты, характеристики                | выпущено                 |
+| [WEBX_UI_CATALOG_MANTICORE.md](WEBX_UI_CATALOG_MANTICORE.md)             | Движок Manticore: таблицы на язык, поиск с опечатками и по кодам, подмена при перестройке      | выпущено                 |
+| [WEBX_UI_CATALOG_LANDINGS.md](WEBX_UI_CATALOG_LANDINGS.md)               | Посадочные фильтров: листинг с зашитым набором, свой адрес, SEO, тексты, перелинковка каталога | выпущено                 |
+| [WEBX_UI_MODULE_CATALOG_EXCHANGE.md](WEBX_UI_MODULE_CATALOG_EXCHANGE.md) | Обмен каталога: импорт и экспорт CSV и XLSX, профили, журнал ошибок                            | выпущено                 |
+| [WEBX_UI_MODULE_EVENTS.md](WEBX_UI_MODULE_EVENTS.md)                     | События: дата, место, цена, `.ics`, разметка `Event`                                           | выпущено                 |
+| [WEBX_UI_MODULE_FAQ.md](WEBX_UI_MODULE_FAQ.md)                           | Вопросы и ответы, вставка блоком, `FAQPage`                                                    | выпущено                 |
+| [WEBX_UI_MODULE_INBOX.md](WEBX_UI_MODULE_INBOX.md)                       | Заявки с форм сайта, мини-CRM                                                                  | выпущено                 |
+| [WEBX_UI_MODULE_MEDIA.md](WEBX_UI_MODULE_MEDIA.md)                       | Файловый менеджер: папки, загрузка, редактор картинок                                          | выпущено                 |
+| [WEBX_UI_MODULE_MENU.md](WEBX_UI_MODULE_MENU.md)                         | Именованные меню, дерево пунктов, контракт ссылок                                              | выпущено                 |
+| [WEBX_UI_MODULE_PAGES.md](WEBX_UI_MODULE_PAGES.md)                       | Дерево страниц, главная — корень, содержимое блоками                                           | выпущено                 |
+| [WEBX_UI_MODULE_PRESS.md](WEBX_UI_MODULE_PRESS.md)                       | Пресса о нас: издания и материалы, три блока                                                   | выпущено                 |
+| [WEBX_UI_MODULE_RECIPES.md](WEBX_UI_MODULE_RECIPES.md)                   | Рецепты, каталог блоком, связи между записями                                                  | выпущено                 |
+| [WEBX_UI_MODULE_REVIEWS.md](WEBX_UI_MODULE_REVIEWS.md)                   | Отзывы с оценкой, на сайт предложенным блоком                                                  | выпущено                 |
+| [WEBX_UI_MODULE_SEO.md](WEBX_UI_MODULE_SEO.md)                           | Правила по адресам, редиректы, `<head>`, sitemap; перелинковка и FAQ страниц (§18)             | выпущено                 |
+| [WEBX_UI_MODULE_SERVICES.md](WEBX_UI_MODULE_SERVICES.md)                 | Услуги как страницы, общие категории, поля проекта                                             | выпущено                 |
+| [WEBX_UI_MODULE_TARIFFS.md](WEBX_UI_MODULE_TARIFFS.md)                   | Карточки цен группами, предложенный блок                                                       | выпущено                 |
+| [WEBX_UI_MODULE_TASKS.md](WEBX_UI_MODULE_TASKS.md)                       | Очередь работы людей и агентов: задачи, этапы по порядку, отчёты, проверка, журнал             | выпущено                 |
+| [WEBX_UI_MODULE_TEAM.md](WEBX_UI_MODULE_TEAM.md)                         | Люди организации, соцсети, `RecordQuery`                                                       | выпущено                 |
+| [WEBX_UI_MODULE_VACANCIES.md](WEBX_UI_MODULE_VACANCIES.md)               | Вакансии под приставкой, `JobPosting`, отклик формой                                           | выпущено                 |
 
 ## Не начато
 
-| Файл                                               | О чём                                                             | Статус                                          |
-| -------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------- |
-| [WEBX_UI_MODULE_AUDIT.md](WEBX_UI_MODULE_AUDIT.md) | Аудит сайта: обход, снимок страниц, проверки, исправления модулей | спека написана 01.10.2026, код не начат (A1–A5) |
-| [WEBX_UI_MULTISITE.md](WEBX_UI_MULTISITE.md)       | Одна установка, много доменов, одна панель                        | спроектирована 24.09.2026, не начата            |
+| Файл                                         | О чём                                      | Статус                    |
+| -------------------------------------------- | ------------------------------------------ | ------------------------- |
+| [WEBX_UI_MULTISITE.md](WEBX_UI_MULTISITE.md) | Одна установка, много доменов, одна панель | спроектировано, не начато |

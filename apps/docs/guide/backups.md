@@ -42,6 +42,22 @@ file. Structure is kept for every table; rows are skipped for the ones the appli
 by itself — `cache`, `sessions`, `jobs` and the rest of `skip_data`, which on most sites are
 most of the file.
 
+The flags `mysqldump` gets are not decoration, and a dump tool configured by hand needs the same:
+
+- `--single-transaction --quick` — without them the nightly dump locks the tables and takes the
+  site down while it runs.
+- `--no-tablespaces` — without it MySQL 8 and MariaDB ask for the `PROCESS` privilege, which the
+  site's database user on a shared host usually lacks, and the dump fails on the first table.
+- `--default-character-set=utf8mb4` — otherwise the translated JSON columns come out mangled.
+- **The password never goes on the command line**, where `ps` shows it to anyone on the machine.
+  It is written to a temporary defaults file, mode 0600, passed as `--defaults-extra-file` and
+  removed when the dump ends, whatever the outcome.
+
+The command is the package's own rather than `spatie/laravel-backup`: the job is "just a dump",
+and spatie would have become a dependency of every site with a panel. A site that wants more —
+other storage, uploaded files, notifications — installs it alongside; the two do not get in each
+other's way.
+
 ## The schedule
 
 The package puts the command on the scheduler itself:
@@ -100,6 +116,9 @@ If the newest file is more than two days old, or there is none, the same line is
 instead. A backup whose breakage is discovered on the day it was needed is not a backup, and
 this sentence is the whole of the guard against that. Nothing is recorded in the database: the
 line is the newest file in the directory, and a task that failed is the file that is not there.
+
+Deliberately not there: a list of snapshots, a download button, a restore. A restore is done by
+hand on the server (below), and a directory listing is not worth a screen.
 
 ## Security
 

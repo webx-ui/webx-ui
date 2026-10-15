@@ -16,7 +16,7 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   `register($name, $path)` for a theme Composer does not know.
 - **The preset** — `"preset": "night"` in the manifest of a layer (the highest that names one
   decides), a preset of the chain's tokens.json; an unknown name throws on the page and is a
-  finding of the check. There is no setting for it: the look is in git, the panel does not edit it.
+  finding of the check. No panel setting for it (see Do not).
 - **`settings`** — the tabs of the site's settings the theme prints, so the panel offers them:
   `"settings": {"contacts": ["phones", "emails", "hours"]}` (a tab is `true` or the list of its
   sections), summed down the chain by `ThemeChain::settings()`. `{}` says the theme prints none;
@@ -44,9 +44,8 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
 - **`webx:theme:make <name> --local [--uses=…]`** — the local theme `webx:setup` gives every site:
   `theme.json`, empty `tokens.json`, `src/css/theme.css`, `src/js/theme.js`, a test.
   **`webx:theme:make <vendor/name> [--uses=…] [--path=…]`** — a packaged theme (over
-  `webx-ui/theme-default` unless told otherwise, in `packages/<name>`): the manifest in
-  composer.json, empty tokens.json and `src/css`, an already built empty `dist/`, the build
-  (`npm run build`), a Testbench test, a CI. Both tests are green from the first run.
+  `webx-ui/theme-default` unless told otherwise, in `packages/<name>`) with a built empty `dist/`,
+  a Testbench test and a CI. Both tests are green from the first run.
 - **`webx:theme:extract <vendor/name> [--path=…]`** — the local theme becomes a package: `theme/`
   moves into it, the site requires it (path repository) and `WEBX_THEME` names it.
   **`webx:theme:eject [<vendor/name>] [--path=theme]`** — the packaged theme under the local one
@@ -116,8 +115,7 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   `{{ __('theme::theme.<key>') }}`, or it stays English in every other language.
 - Do not load a font from a CDN nor preload one: files in `assets/fonts/` (a CDN hands every
   visitor's address to a third party; a preload downloads a script whatever the language).
-- Do not write `var(` or a literal colour into a letter: mail reads no CSS variable —
-  `style="color:{{ theme_token('color-text') }}"`.
+- Do not write `var(` or a literal colour into a letter: `theme_token()` (mail reads no CSS variable).
 - Do not make two themes `use` each other (the site refuses to boot), and do not call
   `View::prependNamespace()` for a theme yourself: it puts the theme above the site's overrides.
 - Do not build a way to change the look from the panel — a setting, a field, a stored preset: the
