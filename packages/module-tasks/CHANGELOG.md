@@ -1,5 +1,12 @@
 # @webx-ui/module-tasks
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [152a118]
+  - @webx-ui/module-admin@0.28.0
+
 ## 0.1.0
 
 ### Minor Changes

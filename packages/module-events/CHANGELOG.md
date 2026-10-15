@@ -1,5 +1,12 @@
 # @webx-ui/module-events
 
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [152a118]
+  - @webx-ui/module-admin@0.28.0
+
 ## 0.2.4
 
 ### Patch Changes

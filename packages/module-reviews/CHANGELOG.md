@@ -1,5 +1,12 @@
 # @webx-ui/module-reviews
 
+## 0.1.17
+
+### Patch Changes
+
+- Updated dependencies [152a118]
+  - @webx-ui/module-admin@0.28.0
+
 ## 0.1.16
 
 ### Patch Changes
