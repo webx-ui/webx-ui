@@ -1,0 +1,98 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "tasks.settings",
+  "root": [
+    {
+      "id": "telegram",
+      "type": "wx-card",
+      "label": "trans::webx-tasks::screen.telegram",
+      "children": [
+        {
+          "id": "token",
+          "type": "wx-input",
+          "name": "tasks.telegram.token",
+          "label": "trans::webx-tasks::screen.token",
+          "help": "trans::webx-tasks::screen.token-help",
+          "props": {
+            "type": "password",
+            "autocomplete": "off"
+          }
+        },
+        {
+          "id": "chats",
+          "type": "wx-textarea",
+          "name": "tasks.telegram.chats",
+          "label": "trans::webx-tasks::screen.chats",
+          "help": "trans::webx-tasks::screen.chats-help",
+          "props": {
+            "rows": 3,
+            "placeholder": "123456789"
+          }
+        }
+      ]
+    },
+    {
+      "id": "events",
+      "type": "wx-card",
+      "label": "trans::webx-tasks::screen.events",
+      "children": [
+        {
+          "id": "review-human",
+          "type": "wx-switch",
+          "name": "tasks.notify.review_human",
+          "label": "trans::webx-tasks::screen.notify-review-human",
+          "help": "trans::webx-tasks::screen.notify-review-human-help"
+        },
+        {
+          "id": "task-done",
+          "type": "wx-switch",
+          "name": "tasks.notify.task_done",
+          "label": "trans::webx-tasks::screen.notify-task-done",
+          "help": "trans::webx-tasks::screen.notify-task-done-help"
+        },
+        {
+          "id": "blocked",
+          "type": "wx-switch",
+          "name": "tasks.notify.blocked",
+          "label": "trans::webx-tasks::screen.notify-blocked",
+          "help": "trans::webx-tasks::screen.notify-blocked-help"
+        },
+        {
+          "id": "rework",
+          "type": "wx-switch",
+          "name": "tasks.notify.rework",
+          "label": "trans::webx-tasks::screen.notify-rework",
+          "help": "trans::webx-tasks::screen.notify-rework-help"
+        },
+        {
+          "id": "review-auto",
+          "type": "wx-switch",
+          "name": "tasks.notify.review_auto",
+          "label": "trans::webx-tasks::screen.notify-review-auto",
+          "help": "trans::webx-tasks::screen.notify-review-auto-help"
+        },
+        {
+          "id": "stale",
+          "type": "wx-switch",
+          "name": "tasks.notify.stale",
+          "label": "trans::webx-tasks::screen.notify-stale",
+          "help": "trans::webx-tasks::screen.notify-stale-help"
+        },
+        {
+          "id": "stale-hours",
+          "type": "wx-input-number",
+          "name": "tasks.notify.stale_hours",
+          "label": "trans::webx-tasks::screen.stale-hours",
+          "visible": {
+            "when": "tasks.notify.stale",
+            "is": true
+          },
+          "props": {
+            "min": 1,
+            "max": 168
+          }
+        }
+      ]
+    }
+  ]
+}

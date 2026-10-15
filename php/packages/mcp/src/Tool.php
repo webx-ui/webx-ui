@@ -26,6 +26,7 @@ final class Tool
 
     /**
      * @param  array<string, mixed>  $inputSchema  JSON Schema for the arguments
+     * @param  string|list<string>|null  $scope  the token scope, or several any one of which will do; null for the module's default
      * @param  list<string>|null  $permissions  panel permissions, any of which lets the caller use the tool; null for the module's default
      */
     private function __construct(
@@ -33,7 +34,7 @@ final class Tool
         public readonly string $description,
         public readonly array $inputSchema,
         public readonly bool $mutating,
-        public readonly ?string $scope,
+        public readonly string|array|null $scope,
         public readonly ?array $permissions,
         public readonly Closure $handler,
     ) {
@@ -50,6 +51,7 @@ final class Tool
      * A tool that only looks.
      *
      * @param  array<string, mixed>  $inputSchema
+     * @param  string|list<string>|null  $scope  the token scope, when it is not the module's `<id>:read`; several mean any of them
      * @param  string|list<string>|null  $permission  the panel permission this tool is behind, when it is not the module's `<id>.view`; several mean any of them, the way a route's `cms.can` does
      */
     public static function read(
@@ -57,7 +59,7 @@ final class Tool
         string $description,
         Closure $handler,
         array $inputSchema = [],
-        ?string $scope = null,
+        string|array|null $scope = null,
         string|array|null $permission = null,
     ): self {
         return new self(
@@ -76,6 +78,7 @@ final class Tool
      * such tool can be asked what it would do, without each author having to remember.
      *
      * @param  array<string, mixed>  $inputSchema
+     * @param  string|list<string>|null  $scope  the token scope, when it is not the module's `<id>:write`; several mean any of them — a comment that both the planner and the worker may leave
      * @param  string|list<string>|null  $permission  the panel permission this tool is behind, when it is not the module's `<id>.manage`; several mean any of them
      */
     public static function mutating(
@@ -83,7 +86,7 @@ final class Tool
         string $description,
         Closure $handler,
         array $inputSchema = [],
-        ?string $scope = null,
+        string|array|null $scope = null,
         string|array|null $permission = null,
     ): self {
         $schema = self::normaliseSchema($inputSchema);

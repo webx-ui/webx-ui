@@ -97,7 +97,7 @@ final class ToolRegistry
      */
     public function scopes(): array
     {
-        $scopes = array_map(static fn (BoundTool $tool): string => $tool->scope(), $this->tools());
+        $scopes = array_merge([], ...array_map(static fn (BoundTool $tool): array => $tool->scopes(), $this->tools()));
 
         $scopes = array_values(array_unique($scopes));
         sort($scopes);

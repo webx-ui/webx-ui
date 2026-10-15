@@ -30,7 +30,7 @@ final readonly class ThemeChoice
         public string $why,
     ) {}
 
-    public static function decide(?string $option, bool $none, ?string $configured, bool $ownLayout): self
+    public static function decide(?string $option, bool $none, ?string $configured, bool $ownLayout, bool $public = true): self
     {
         $option = $option === null || trim($option) === '' ? null : trim($option);
         $configured = $configured === null || trim($configured) === '' ? null : trim($configured);
@@ -41,6 +41,11 @@ final readonly class ThemeChoice
 
         if ($configured !== null) {
             return new self(null, true, "WEBX_THEME={$configured} — kept as it is");
+        }
+
+        // A site nobody visits but its people — the panel and nothing else — has nothing to dress.
+        if ($option === null && ! $public) {
+            return new self(null, false, 'none — the site has no public part; --theme=… gives it one');
         }
 
         if ($option === null && $ownLayout) {

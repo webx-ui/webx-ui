@@ -101,6 +101,13 @@ export function useAdmin(): AdminContext {
   return admin
 }
 
+/** A positive whole number under `meta.badge`, or nothing. */
+function badgeOf(meta: Record<string, unknown> | undefined): number | undefined {
+  const badge = meta?.badge
+
+  return typeof badge === 'number' && Number.isInteger(badge) && badge > 0 ? badge : undefined
+}
+
 /**
  * Permissions are flattened by the server, so a check is a lookup. A super administrator
  * carries no permissions and passes everything — the same rule as on the server, in the one
@@ -158,6 +165,7 @@ export function createAdminContext(options: {
         path,
         group: module.group ?? null,
         section: module.section ?? null,
+        badge: badgeOf(module.meta),
       })
     }
 

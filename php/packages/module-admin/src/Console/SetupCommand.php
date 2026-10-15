@@ -83,6 +83,9 @@ final class SetupCommand extends Command
 
     private ThemeChoice $theme;
 
+    /** Whether anything of the chosen modules is seen by a visitor of the site ({@see Catalogue::hasPublicPart()}). */
+    private bool $public = true;
+
     /**
      * What every child process is told, over the top of what it inherits.
      *
@@ -168,6 +171,7 @@ final class SetupCommand extends Command
         );
 
         $this->modules = $this->chooseModules();
+        $this->public = $this->catalogue->hasPublicPart($this->modules);
 
         $given = $this->option('db-connection');
 
@@ -196,6 +200,7 @@ final class SetupCommand extends Command
             (bool) $this->option('no-theme'),
             $this->env->get('WEBX_THEME'),
             file_exists($this->laravel->resourcePath('views/components/layout.blade.php')),
+            $this->public,
         );
 
         $this->answers['demo'] = $this->wantsDemo() ? 'yes' : 'no';
@@ -384,6 +389,11 @@ final class SetupCommand extends Command
             'WEBX_ADMIN_TITLE' => $this->answers['name'],
             'DB_CONNECTION' => $this->server->connection,
         ];
+
+        // Only ever written as false: a public site is the default, and its `.env` stays as it was.
+        if (! $this->public) {
+            $values['WEBX_PUBLIC'] = 'false';
+        }
 
         if (! $this->server->isSqlite()) {
             $values += $this->server->env($this->answers['db']);
@@ -694,6 +704,13 @@ final class SetupCommand extends Command
     private function routeTheDemoPage(Filesystem $files): void
     {
         $path = $this->laravel->basePath('routes/web.php');
+
+        if (! $this->public) {
+            $this->routeHomeToThePanel($files, $path);
+
+            return;
+        }
+
         $marker = '// webx:demo-page';
         $route = $marker."\n\\Illuminate\\Support\\Facades\\Route::view('/', 'demo');\n";
 
@@ -721,6 +738,31 @@ final class SetupCommand extends Command
 
         $files->put($path, rtrim($contents)."\n\n".$route);
         $this->components->twoColumnDetail('routes/web.php', 'the placeholder page answers / until the site has one');
+    }
+
+    /**
+     * A site with no public part (§7 of WEBX_UI_MODULE_TASKS.md) has no home page to show and no
+     * placeholder worth showing: its address leads to the panel. A redirect, not a closure, so
+     * `route:cache` takes it; the path is read when the routes are, so a changed WEBX_ADMIN_PATH
+     * follows. Any route the site wrote itself is its own answer, as for the placeholder.
+     */
+    private function routeHomeToThePanel(Filesystem $files, string $path): void
+    {
+        $marker = '// webx:panel-home';
+        $route = $marker."\n\\Illuminate\\Support\\Facades\\Route::redirect('/', '/'.trim((string) config('webx-admin.path', 'cms'), '/'));\n";
+
+        if (! $files->exists($path)) {
+            return;
+        }
+
+        $contents = (string) $files->get($path);
+
+        if (str_contains($contents, $marker) || preg_match('/^[^\S\n]*\\\\?(?:Illuminate\\\\Support\\\\Facades\\\\)?Route::/m', $contents) === 1) {
+            return;
+        }
+
+        $files->put($path, rtrim($contents)."\n\n".$route);
+        $this->components->twoColumnDetail('routes/web.php', '/ leads to the panel — the site has no public part');
     }
 
     private function migrate(): void

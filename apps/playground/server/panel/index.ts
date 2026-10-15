@@ -261,6 +261,7 @@ import {
   registerCatalog,
 } from './catalog'
 import { registerAudit } from './audit'
+import { registerTasks, tasksBadge } from './tasks'
 import { handleSeoFaqFiles, registerSeoFaq } from './seo-faq'
 import { handleSeoLinkFiles, registerSeoLinks } from './seo-links'
 import { registerManticore } from './catalog-manticore'
@@ -839,6 +840,16 @@ on('GET', '/manifest', ({ locale }) => ({
         permissions: ['seo.view', 'seo.manage'],
         /* Both optional tools on (§18.3), so their views are here to be looked at. */
         meta: { links: true, faq: true },
+      },
+      {
+        id: 'tasks',
+        title: line(locale, 'webx-tasks', 'module.title'),
+        icon: 'clipboard',
+        order: 50,
+        group: null,
+        permissions: ['tasks.view', 'tasks.manage', 'tasks.work', 'tasks.review'],
+        /* What waits for a person, beside the entry in the menu. */
+        meta: { badge: tasksBadge() },
       },
       {
         id: 'audit',
@@ -2323,6 +2334,8 @@ registerCatalog(
 /* Its search index on Manticore (WEBX_UI_CATALOG_MANTICORE.md): «System → Search index». */
 registerManticore(on, (status, message) => new HttpFailure(status, message), productCount)
 registerAudit(on, (status, message) => new HttpFailure(status, message), line)
+/* The queue of work between people and agents (WEBX_UI_MODULE_TASKS.md): «Tasks». */
+registerTasks(on, (status, message) => new HttpFailure(status, message), line)
 registerSeoLinks(
   on,
   (status, message, errors) => new HttpFailure(status, message, undefined, errors),

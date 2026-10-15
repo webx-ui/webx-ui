@@ -306,6 +306,35 @@ describe('createAdmin', () => {
 
     expect(admin.context.nav.value.map((entry) => entry.id)).toEqual(['pages'])
   })
+
+  it('carries the count a module puts under meta.badge, and nothing that is not one', async () => {
+    const counted = (badge: unknown) => ({
+      ...manifest,
+      modules: [{ ...manifest.modules[0]!, meta: { badge } }],
+    })
+    const page = { render: () => h('div') }
+    const badges: (number | undefined)[] = []
+
+    for (const badge of [3, 0, '3', 1.5]) {
+      const admin = createAdmin({
+        el: mountPoint(),
+        basePath: '/cms',
+        routes: [rootRoute],
+        http: stubHttp({
+          get: ((url: string) =>
+            Promise.resolve(
+              url.endsWith('/manifest') ? { data: counted(badge) } : answer(url),
+            )) as never,
+        }),
+        modules: [{ id: 'pages', routes: [{ path: '/pages', component: page }] }],
+      })
+
+      await admin.mount()
+      badges.push(admin.context.nav.value[0]?.badge)
+    }
+
+    expect(badges).toEqual([3, undefined, undefined, undefined])
+  })
   it('renames the sections when the language changes, without a reload', async () => {
     // The dictionary is not the whole interface: section titles are translated on the server
     // and arrive inside the manifest. Without refetching it the panel switched everything

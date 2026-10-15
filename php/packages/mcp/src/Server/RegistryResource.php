@@ -13,11 +13,18 @@ use WebxUi\Mcp\McpResource;
 
 /**
  * A module's resource as `laravel/mcp` serves it: the address and the MIME type the module
- * gave, the handler's result as text.
+ * gave, the handler's result as text. An address with a `{variable}` in it is served by
+ * {@see RegistryResourceTemplate}.
  */
-final class RegistryResource extends McpResourceBase
+class RegistryResource extends McpResourceBase
 {
-    public function __construct(private readonly McpResource $resource) {}
+    final public function __construct(protected readonly McpResource $resource) {}
+
+    /** The class that serves this resource: a template when its address has a variable in it. */
+    public static function for(McpResource $resource): self
+    {
+        return str_contains($resource->uri, '{') ? new RegistryResourceTemplate($resource) : new self($resource);
+    }
 
     public function name(): string
     {

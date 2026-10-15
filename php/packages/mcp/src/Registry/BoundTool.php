@@ -24,10 +24,22 @@ final class BoundTool
         return str_replace('-', '_', $this->moduleId).'_'.$this->tool->name;
     }
 
-    /** `pages:write` for a mutating tool, `pages:read` otherwise, unless the tool says so itself. */
+    /** `pages:write` for a mutating tool, `pages:read` otherwise, unless the tool says so itself; several read as "any of". */
     public function scope(): string
     {
-        return $this->tool->scope ?? $this->moduleId.':'.($this->tool->mutating ? 'write' : 'read');
+        return implode(' | ', $this->scopes());
+    }
+
+    /**
+     * The scopes any one of which lets a token use this tool.
+     *
+     * @return list<string>
+     */
+    public function scopes(): array
+    {
+        $scope = $this->tool->scope ?? $this->moduleId.':'.($this->tool->mutating ? 'write' : 'read');
+
+        return is_string($scope) ? [$scope] : array_values($scope);
     }
 
     /**

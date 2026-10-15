@@ -36,9 +36,11 @@ final class Catalogue
      * do. `demo` is the languages the module's demo content is written in — for the same reason:
      * `webx:setup` warns about a language it lacks before the package is there to be read (spec
      * WEBX_UI_THEMES.md §15.2); a demo of plain strings is `en`, a module that seeds no words has
-     * none. `ModulesCommandTest` holds all three to the packages of the monorepo.
+     * none. `ModulesCommandTest` holds all three to the packages of the monorepo. `public` is false for
+     * a module with nothing a visitor of the site sees — the panel, its settings, the task queue: a site
+     * built of those alone has no public part ({@see self::hasPublicPart()}).
      *
-     * @var array<string, array{package: string, npm: string, label: string, default: bool, requires: list<string>, demo: list<string>}>
+     * @var array<string, array{package: string, npm: string, label: string, default: bool, requires: list<string>, demo: list<string>, public?: bool}>
      */
     private const MODULES = [
         'pages' => [
@@ -80,6 +82,7 @@ final class Catalogue
             'default' => true,
             'requires' => ['admins'],
             'demo' => ['en', 'pl', 'ru'],
+            'public' => false,
         ],
         'audit' => [
             'package' => 'webx-ui/module-audit',
@@ -185,6 +188,15 @@ final class Catalogue
             'requires' => ['seo'],
             'demo' => ['en', 'pl', 'ru'],
         ],
+        'tasks' => [
+            'package' => 'webx-ui/module-tasks',
+            'npm' => '@webx-ui/module-tasks',
+            'label' => 'Tasks — a queue of work between people and AI agents: stages handed out one at a time, reported and reviewed',
+            'default' => false,
+            'requires' => ['admins', 'settings'],
+            'demo' => [],
+            'public' => false,
+        ],
         'catalog' => [
             'package' => 'webx-ui/module-catalog',
             'npm' => '@webx-ui/module-catalog',
@@ -256,6 +268,7 @@ final class Catalogue
             'default' => true,
             'requires' => [],
             'demo' => [],
+            'public' => false,
         ],
     ];
 
@@ -332,6 +345,25 @@ final class Catalogue
         }
 
         return $described;
+    }
+
+    /**
+     * Whether a site of these modules has anything a visitor sees. Not when every one of them is
+     * only the panel's — then `/` leads to the panel and the site keeps out of search engines
+     * (`webx-admin.public`). A module the catalogue does not know is somebody else's, and assumed to
+     * show something.
+     *
+     * @param  list<string>  $ids
+     */
+    public function hasPublicPart(array $ids): bool
+    {
+        foreach ($ids as $id) {
+            if ((self::MODULES[$id]['public'] ?? true) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

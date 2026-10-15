@@ -1,0 +1,153 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "tasks.form",
+  "model": "tasks-task",
+  "root": [
+    {
+      "id": "task",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "project",
+          "type": "wx-select",
+          "name": "project_id",
+          "label": "trans::webx-tasks::screen.project",
+          "props": {
+            "options": []
+          }
+        },
+        {
+          "id": "title",
+          "type": "wx-input",
+          "name": "title",
+          "label": "trans::webx-tasks::screen.title",
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "priority",
+          "type": "wx-segmented",
+          "name": "priority",
+          "label": "trans::webx-tasks::screen.priority",
+          "props": {
+            "options": [
+              {
+                "value": "low",
+                "label": "trans::webx-tasks::screen.priority-low"
+              },
+              {
+                "value": "normal",
+                "label": "trans::webx-tasks::screen.priority-normal"
+              },
+              {
+                "value": "high",
+                "label": "trans::webx-tasks::screen.priority-high"
+              }
+            ]
+          }
+        },
+        {
+          "id": "branch",
+          "type": "wx-input",
+          "name": "branch",
+          "label": "trans::webx-tasks::screen.branch",
+          "help": "trans::webx-tasks::screen.branch-help",
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "spec",
+          "type": "wx-textarea",
+          "name": "spec",
+          "label": "trans::webx-tasks::screen.spec",
+          "help": "trans::webx-tasks::screen.markdown-help",
+          "props": {
+            "rows": 10
+          }
+        },
+        {
+          "id": "acceptance",
+          "type": "wx-textarea",
+          "name": "acceptance",
+          "label": "trans::webx-tasks::screen.acceptance",
+          "help": "trans::webx-tasks::screen.markdown-help",
+          "props": {
+            "rows": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "stages-card",
+      "type": "wx-card",
+      "label": "trans::webx-tasks::screen.stages",
+      "children": [
+        {
+          "id": "stages",
+          "type": "wx-repeater",
+          "name": "stages",
+          "help": "trans::webx-tasks::screen.stages-help",
+          "props": {
+            "sortable": true,
+            "collapsible": true,
+            "plain": true,
+            "itemLabel": "title",
+            "addLabel": "trans::webx-tasks::screen.stage-add",
+            "emptyText": "trans::webx-tasks::screen.stages-empty"
+          },
+          "children": [
+            {
+              "id": "stage-title",
+              "type": "wx-input",
+              "name": "title",
+              "label": "trans::webx-tasks::screen.stage-title",
+              "props": {
+                "maxlength": 255
+              }
+            },
+            {
+              "id": "stage-brief",
+              "type": "wx-textarea",
+              "name": "brief",
+              "label": "trans::webx-tasks::screen.stage-brief",
+              "help": "trans::webx-tasks::screen.stage-brief-help",
+              "props": {
+                "rows": 6
+              }
+            },
+            {
+              "id": "stage-acceptance",
+              "type": "wx-textarea",
+              "name": "acceptance",
+              "label": "trans::webx-tasks::screen.stage-acceptance",
+              "props": {
+                "rows": 3
+              }
+            },
+            {
+              "id": "stage-review",
+              "type": "wx-segmented",
+              "name": "review_mode",
+              "label": "trans::webx-tasks::screen.review-mode",
+              "help": "trans::webx-tasks::screen.review-mode-help",
+              "props": {
+                "options": [
+                  {
+                    "value": "auto",
+                    "label": "trans::webx-tasks::screen.review-auto"
+                  },
+                  {
+                    "value": "human",
+                    "label": "trans::webx-tasks::screen.review-human"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

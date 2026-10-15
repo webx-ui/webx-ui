@@ -52,6 +52,7 @@ use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Editing\Purged;
 use WebxUi\Admin\Editing\RecordEvents;
 use WebxUi\Admin\Gate\CloseSite;
+use WebxUi\Admin\Gate\KeepOutOfSearch;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\History\HistoryContext;
 use WebxUi\Admin\History\HistoryTypes;
@@ -535,6 +536,8 @@ class AdminServiceProvider extends ServiceProvider
 
             if ($kernel instanceof Kernel) {
                 $kernel->pushMiddleware(CloseSite::class);
+                // Read per request too: a site that goes public is an `.env` line, not a deploy.
+                $kernel->pushMiddleware(KeepOutOfSearch::class);
             }
         });
     }
