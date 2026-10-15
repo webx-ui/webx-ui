@@ -157,6 +157,9 @@ did before. Laravel reads both forms on its own; the server needs nothing. The o
 to the panel's own client — a project that passes its own `http` passes `methodOverride` to
 `createHttp()` instead.
 
+`php artisan webx:doctor` says whether the site's host is one of them: it sends a PUT and a
+DELETE to its own `APP_URL` and warns when the web server, not Laravel, refuses them.
+
 `can('pages.manage')` answers from the signed-in session — a super administrator passes
 everything, the same rule the server applies.
 

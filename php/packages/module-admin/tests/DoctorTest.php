@@ -6,8 +6,10 @@ namespace WebxUi\Admin\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClassConstant;
@@ -16,6 +18,7 @@ use WebxUi\Admin\Doctor\Checks\Halves;
 use WebxUi\Admin\Doctor\Checks\Helpers;
 use WebxUi\Admin\Doctor\Checks\Languages;
 use WebxUi\Admin\Doctor\Checks\Layouts;
+use WebxUi\Admin\Doctor\Checks\Methods;
 use WebxUi\Admin\Doctor\Checks\NpmRanges;
 use WebxUi\Admin\Doctor\Checks\PanelOpens;
 use WebxUi\Admin\Doctor\Checks\Queue;
@@ -23,6 +26,7 @@ use WebxUi\Admin\Doctor\Checks\Regions;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Doctor\VersionRange;
+use WebxUi\Admin\Http\Controllers\MethodProbeController;
 use WebxUi\Admin\Panel\PackageRegistry;
 use WebxUi\Admin\Tests\Fixtures\FixedCheck;
 
@@ -370,6 +374,95 @@ final class DoctorTest extends TestCase
 
         $this->assertStringContainsString('webx-nobody-declared-this', $details);
         $this->assertStringContainsString('429', $details);
+    }
+
+    // -- PUT and DELETE ----------------------------------------------------------------------
+
+    #[Test]
+    public function the_probe_answers_put_and_delete_with_its_mark(): void
+    {
+        $this->put('/api/cms/method-probe')->assertOk()->assertHeader(MethodProbeController::HEADER, 'PUT');
+        $this->delete('/api/cms/method-probe')->assertOk()->assertHeader(MethodProbeController::HEADER, 'DELETE');
+        $this->get('/api/cms/method-probe')->assertStatus(405);
+    }
+
+    #[Test]
+    public function it_is_quiet_when_laravel_answers_put_and_delete(): void
+    {
+        config(['app.url' => 'https://site.test']);
+        Http::fake(static fn (Request $request) => Http::response(
+            ['method' => $request->method()],
+            200,
+            [MethodProbeController::HEADER => $request->method()],
+        ));
+
+        $found = $this->app->make(Methods::class)->run();
+
+        $this->assertSame([Diagnosis::OK], array_map(static fn (Diagnosis $d): string => $d->state, $found));
+        $this->assertStringContainsString('passes them on', $this->details($found));
+        Http::assertSent(static fn (Request $request): bool => $request->method() === 'PUT'
+            && $request->url() === 'https://site.test/api/cms/method-probe');
+        Http::assertSent(static fn (Request $request): bool => $request->method() === 'DELETE');
+    }
+
+    #[Test]
+    public function it_warns_when_the_web_server_refuses_put_before_laravel(): void
+    {
+        config(['app.url' => 'https://site.test']);
+        Http::fake(['*' => Http::response('<html>405 Not Allowed</html>', 405)]);
+
+        $found = $this->app->make(Methods::class)->run();
+
+        $this->assertSame([Diagnosis::WARN], array_map(static fn (Diagnosis $d): string => $d->state, $found));
+        $this->assertStringContainsString('PUT 405', $this->details($found));
+        $this->assertStringContainsString('methodOverride: true', $this->details($found));
+    }
+
+    #[Test]
+    public function a_refusal_laravel_marked_is_not_the_web_servers(): void
+    {
+        config(['app.url' => 'https://site.test']);
+        // A 405 that carries the mark came from Laravel, which did see the method.
+        Http::fake(static fn (Request $request) => Http::response('', 405, [MethodProbeController::HEADER => $request->method()]));
+
+        $this->assertSame(Diagnosis::OK, $this->app->make(Methods::class)->run()[0]->state);
+    }
+
+    #[Test]
+    public function it_says_the_override_is_already_on_when_the_entry_asks_for_it(): void
+    {
+        config(['app.url' => 'https://site.test', 'webx-admin.vite' => ['resources/js/doctor-methods.js']]);
+        $this->write($this->app->basePath('resources/js/doctor-methods.js'), "createAdmin({ modules, methodOverride: true })\n");
+        Http::fake(['*' => Http::response('', 403)]);
+
+        $found = $this->app->make(Methods::class)->run();
+
+        $this->assertSame(Diagnosis::OK, $found[0]->state);
+        $this->assertStringContainsString('resources/js/doctor-methods.js', $this->details($found));
+    }
+
+    #[Test]
+    public function it_skips_the_check_when_the_site_cannot_be_reached(): void
+    {
+        config(['app.url' => 'https://site.test']);
+        Http::fake(['*' => Http::failedConnection()]);
+
+        $found = $this->app->make(Methods::class)->run();
+
+        $this->assertSame(Diagnosis::OK, $found[0]->state);
+        $this->assertStringContainsString('not checked', $this->details($found));
+    }
+
+    #[Test]
+    public function it_does_not_guess_from_an_answer_that_is_not_a_refusal(): void
+    {
+        config(['app.url' => 'http://site.test']);
+        Http::fake(['*' => Http::response('', 301, ['Location' => 'https://site.test/api/cms/method-probe'])]);
+
+        $found = $this->app->make(Methods::class)->run();
+
+        $this->assertSame(Diagnosis::OK, $found[0]->state);
+        $this->assertStringContainsString('answered 301', $this->details($found));
     }
 
     // -- the command itself ------------------------------------------------------------------
