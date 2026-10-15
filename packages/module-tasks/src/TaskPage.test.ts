@@ -7,6 +7,7 @@ import {
   adminMessages,
   adminTypes,
   createI18n,
+  HttpError,
   i18nKey,
   type AdminContext,
 } from '@webx-ui/module-admin'
@@ -17,13 +18,18 @@ import TaskFormPage from './TaskFormPage.vue'
 import TaskPage from './TaskPage.vue'
 import type { Stage, TaskDetail } from './types'
 
-const { confirm, ask } = vi.hoisted(() => ({ confirm: vi.fn(), ask: vi.fn() }))
+const { confirm, ask, toast } = vi.hoisted(() => ({
+  confirm: vi.fn(),
+  ask: vi.fn(),
+  toast: { success: vi.fn(), danger: vi.fn() },
+}))
 
 /* The dialogs are the core's; what is checked here is which move asks and what it sends. */
 vi.mock('@webx-ui/core', async (original) => ({
   ...(await original<typeof Core>()),
   confirm,
   createModal: () => ask,
+  toast,
 }))
 
 function stage(
@@ -177,6 +183,8 @@ const buttons = (wrapper: Awaited<ReturnType<typeof panel>>['wrapper']) =>
 beforeEach(() => {
   confirm.mockReset()
   ask.mockReset()
+  toast.success.mockReset()
+  toast.danger.mockReset()
 })
 
 afterEach(() => {
@@ -212,6 +220,24 @@ describe('WxTaskPage', () => {
     expect(post).toHaveBeenCalledWith('/api/cms/tasks/stages/12/rework', {
       remarks: 'The empty cart crashes.',
     })
+  })
+
+  it('says the reason a move was refused, not that somebody changed it, and reads the task again', async () => {
+    const { wrapper, get, post } = await panel('/tasks/7', task([stage(12, 1, 'review')]), [
+      'tasks.review',
+    ])
+    const reason = 'The stage is not waiting for a review any more.'
+    post.mockRejectedValueOnce(
+      new HttpError(reason, 422, {}, null, { message: reason, reason: 'stage-not-in-review' }),
+    )
+    get.mockClear()
+
+    confirm.mockResolvedValueOnce(true)
+    await wrapper.findAll('.wx-task__moves button')[0]!.trigger('click')
+    await flushPromises()
+
+    expect(toast.danger).toHaveBeenCalledWith(reason)
+    expect(get).toHaveBeenCalledWith('/api/cms/tasks/tasks/7')
   })
 
   it('shows the question of a blocked stage and lets whoever plans answer it', async () => {

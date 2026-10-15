@@ -12,8 +12,11 @@ use WebxUi\Tasks\Models\Task;
 use WebxUi\Tasks\Workflow\Present;
 
 /**
- * A move the rules of §3 do not allow is a 409 with the reason in words — and the key, so the
+ * A move the rules of §3 do not allow is a 422 with the reason in words — and the key, so the
  * panel can tell refusals apart without reading the text.
+ *
+ * Not a 409, though "somebody got there first" is often why: the panel reads every 409 as an edit
+ * made meanwhile and says so in its own words, and the reason written here never reached anyone.
  */
 trait Refusals
 {
@@ -25,7 +28,7 @@ trait Refusals
         try {
             return $work();
         } catch (TaskRefused $refusal) {
-            return new JsonResponse(['message' => $refusal->getMessage(), 'reason' => $refusal->reason], 409);
+            return new JsonResponse(['message' => $refusal->getMessage(), 'reason' => $refusal->reason], 422);
         }
     }
 

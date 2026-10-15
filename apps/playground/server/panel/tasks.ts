@@ -415,14 +415,14 @@ export function registerTasks(on: On, fail: Fail, line: Line): void {
   /* No Telegram here: the button answers as the real one does when nothing is set up. */
   on('POST', '/tasks/settings/test', ({ locale }) => {
     if (!tokenSet || String(notify['tasks.telegram.chats']).trim() === '') {
-      throw fail(409, line(locale, 'webx-tasks', 'errors.notify-not-configured'))
+      throw fail(422, line(locale, 'webx-tasks', 'errors.notify-not-configured'))
     }
 
     return { message: line(locale, 'webx-tasks', 'panel.test-sent') }
   })
 
   const refuse = (locale: string, key: string) =>
-    fail(409, line(locale, 'webx-tasks', `errors.${key}`))
+    fail(422, line(locale, 'webx-tasks', `errors.${key}`))
 
   const findTask = (value: string) => {
     const task = tasks.find((one) => one.id === Number(value))

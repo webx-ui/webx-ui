@@ -82,7 +82,7 @@ final class PanelTest extends TestCase
             ->assertJsonPath('data.status', 'ready');
 
         $this->actingAs($planner, 'cms')->putJson("/api/cms/tasks/tasks/{$id}", ['spec' => 'Changed.'])
-            ->assertStatus(409)
+            ->assertStatus(422)
             ->assertJsonPath('reason', 'task-started');
 
         $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/tasks', ['project_id' => $project->id, 'stages' => []])
@@ -102,7 +102,7 @@ final class PanelTest extends TestCase
 
         $this->actingAs($planner, 'cms')->postJson("/api/cms/tasks/stages/{$stage?->id}/accept")->assertForbidden();
         $this->actingAs($reviewer, 'cms')->postJson("/api/cms/tasks/stages/{$stage?->id}/rework", ['remarks' => ''])
-            ->assertStatus(409)
+            ->assertStatus(422)
             ->assertJsonPath('reason', 'text-required');
 
         $after = $this->actingAs($reviewer, 'cms')->postJson("/api/cms/tasks/stages/{$stage?->id}/accept")->assertOk();

@@ -63,17 +63,22 @@ final class SettingsController
         return ApiResponse::data($this->state());
     }
 
-    /** One message through the channel, now, to see that the token and the chats are right. */
+    /**
+     * One message through the channel, now, to see that the token and the chats are right.
+     *
+     * A refusal is a 422, not a 409: the panel reads a 409 as "somebody changed this meanwhile"
+     * and puts its own words in place of these, and the point of the button is Telegram's words.
+     */
     public function test(Notifier $notifier, Notices $notices): JsonResponse
     {
         if (! $notifier->configured()) {
-            return ApiResponse::message((string) __('webx-tasks::errors.notify-not-configured'), 409);
+            return ApiResponse::message((string) __('webx-tasks::errors.notify-not-configured'), 422);
         }
 
         try {
             $notifier->send($notices->test((string) config('app.name')));
         } catch (NoticeFailed $failure) {
-            return ApiResponse::message($failure->getMessage(), 409);
+            return ApiResponse::message($failure->getMessage(), 422);
         }
 
         return ApiResponse::message((string) __('webx-tasks::panel.test-sent'));

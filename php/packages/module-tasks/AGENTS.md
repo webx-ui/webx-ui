@@ -34,7 +34,7 @@ an append-only journal. The panel shell, permissions and the module registry are
   OAuth token) — a key with named scopes never is.
 - **Panel** — API under `<api_path>/tasks` (`projects`, `tasks` with `view=all|waiting|active|draft|closed`,
   `tasks/{id}/ready|cancel|comments`, `stages/{id}/accept|rework|unblock|release|cancel`); a refusal
-  of the rules is 409 with `message` and `reason`. The form is the described screen `tasks.form`
+  of the rules is 422 with `message` and `reason`. The form is the described screen `tasks.form`
   (`resources/screens/form.json`). The manifest carries `meta.badge` — tasks waiting for a person.
   The screens are `@webx-ui/module-tasks`.
 - **Notifications** (`WebxUi\Tasks\Notifications`) — contract `Notifier`, `TelegramNotifier` bound by
