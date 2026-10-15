@@ -69,13 +69,15 @@ describe('WxAdminsPage', () => {
       'Agent calls',
     ])
 
-    // Everybody's connections are the same question as everybody's accounts.
+    // Everybody's connections are the same question as everybody's accounts, and a key speaks
+    // for somebody's account.
     const { wrapper: manager } = panel(['admins.manage'])
     await flushPromises()
 
     expect(manager.findAll('.wx-tabs__tab').map((tab) => tab.text())).toEqual([
       'Administrators',
       'Connections',
+      'Keys',
     ])
   })
 

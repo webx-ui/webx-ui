@@ -25,6 +25,7 @@ use WebxUi\Mcp\Console\ListToolsCommand;
 use WebxUi\Mcp\Console\PruneCallsCommand;
 use WebxUi\Mcp\Grants\Grants;
 use WebxUi\Mcp\Http\Middleware\AuthenticateAgent;
+use WebxUi\Mcp\Keys\Keys;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\EmptyMaps;
 use WebxUi\Mcp\Server\WebxServer;
@@ -57,6 +58,7 @@ class McpServiceProvider extends ServiceProvider
         // Scoped, not a singleton: it remembers what it looked up, and a memory that outlived
         // the request would keep a connection alive after the person switched it off.
         $this->app->scoped(Grants::class);
+        $this->app->scoped(Keys::class);
 
         $this->configurePassport();
     }

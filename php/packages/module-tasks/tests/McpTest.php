@@ -8,6 +8,7 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Mcp\Keys\Key;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Scopes;
 use WebxUi\Mcp\Server\RegistryResource;
@@ -16,6 +17,7 @@ use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Tasks\Models\JournalEntry;
 use WebxUi\Tasks\Models\Stage;
 use WebxUi\Tasks\Models\Task;
+use WebxUi\Tasks\Tests\Fixtures\Keyed;
 use WebxUi\Tasks\Tests\Fixtures\Scoped;
 use WebxUi\Tasks\Workflow\StageStatus;
 use WebxUi\Tasks\Workflow\TaskStatus;
@@ -113,6 +115,32 @@ final class McpTest extends TestCase
             $person->name,
             JournalEntry::query()->where('stage_id', $stage)->where('meta->to', 'done')->sole()->actor_name,
         );
+    }
+
+    #[Test]
+    public function a_key_issued_without_scopes_is_still_a_program(): void
+    {
+        $this->task(stages: ['Design'], human: ['Design']);
+        $worker = $this->holder(['tasks.view', 'tasks.work'], ['tasks:read', 'tasks:work']);
+
+        $stage = $this->content($this->tool('tasks_claim_next', ['agent' => 'worker-1'], $worker))['claimed']['stage']['id'];
+        $this->tool('tasks_stage_report', ['stage' => $stage, 'report' => 'Screens are in.', 'agent' => 'worker-1'], $worker)->assertOk();
+
+        // `mcp:use`, the scope an OAuth connection carries — and a key issued for everything the
+        // administrator may do. What tells the two apart is the key's row, not the scope.
+        $watcher = $this->member(['tasks.view', 'tasks.manage', 'tasks.review']);
+        Key::query()->create([
+            'cms_user_id' => $watcher->getKey(),
+            'token_id' => 'watcher-key',
+            'name' => 'queue watcher',
+            'scopes' => [Scopes::OAUTH],
+            'created_at' => now(),
+        ]);
+        $watcher->withAccessToken(new Keyed('watcher-key', [Scopes::OAUTH]));
+
+        $this->tool('tasks_stage_accept', ['stage' => $stage], $watcher)->assertHasErrors(['issued for a program']);
+        $this->tool('tasks_stage_accept', ['stage' => $stage, 'agent' => 'watcher'], $watcher)->assertHasErrors(['checked by a person']);
+        $this->assertSame(StageStatus::Review, Stage::query()->findOrFail($stage)->status);
     }
 
     #[Test]

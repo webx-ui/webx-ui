@@ -12,6 +12,7 @@ import {
   WxTabs,
   WxText,
 } from '@webx-ui/core'
+import { copyText } from './clipboard'
 import ConnectionList from './ConnectionList.vue'
 import ContentRulesCard from './ContentRulesCard.vue'
 import { useAuthMessages } from './i18n'
@@ -95,49 +96,17 @@ function encode(value: string): string {
   return encodeURIComponent(btoa(binary))
 }
 
-/**
- * Copying, with the old way behind it.
- *
- * The clipboard API is missing outside a secure context and refused inside some frames, and
- * this page is exactly the page where "it did not work and said nothing" is worst: the
- * address is the one thing the person came here for.
- */
+/** Copying the address — the one thing the person came here for — and saying so either way. */
 async function copy(value: string): Promise<void> {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value)
-    } else if (!byHand(value)) {
-      throw new Error('no clipboard')
-    }
-
-    copied.value = true
-    clearTimeout(copiedTimer)
-    copiedTimer = setTimeout(() => (copied.value = false), 2000)
-  } catch {
-    if (byHand(value)) return
-
+  if (!(await copyText(value))) {
     toast.danger(t('connect.copy-failed'))
+
+    return
   }
-}
 
-function byHand(value: string): boolean {
-  const field = document.createElement('textarea')
-
-  field.value = value
-  field.setAttribute('readonly', '')
-  field.style.position = 'fixed'
-  field.style.opacity = '0'
-
-  document.body.append(field)
-  field.select()
-
-  try {
-    return document.execCommand('copy')
-  } catch {
-    return false
-  } finally {
-    field.remove()
-  }
+  copied.value = true
+  clearTimeout(copiedTimer)
+  copiedTimer = setTimeout(() => (copied.value = false), 2000)
 }
 </script>
 

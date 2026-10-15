@@ -1,4 +1,10 @@
-import type { Admin, AgentCall, Connection, Role } from '../../../../packages/module-auth/src/types'
+import type {
+  Admin,
+  AgentCall,
+  Connection,
+  McpKey,
+  Role,
+} from '../../../../packages/module-auth/src/types'
 import { admins } from './inbox'
 
 /**
@@ -476,6 +482,112 @@ export function endConnection(id: number): Connection {
 
   if (found === undefined) return connections[0]
 
+  found.revoked_at = new Date().toISOString()
+
+  return found
+}
+
+/**
+ * Keys for programs: a queue watcher kept to the tasks, a deploy script with everything Anna
+ * may do and no end in sight, and an import that was revoked — the three things the list is
+ * read for.
+ */
+export const keys: McpKey[] = [
+  {
+    id: 1,
+    name: 'queue watcher',
+    user: { id: dmytro, name: admins.find((one) => one.id === dmytro)?.name ?? null },
+    created_by: { id: anna, name: admins.find((one) => one.id === anna)?.name ?? null },
+    scopes: ['tasks:read', 'tasks:review'],
+    everything: false,
+    state: 'live',
+    created_at: at(3, 10, 0),
+    expires_at: at(-3650, 10, 0),
+    last_used_at: at(0, 9, 40),
+    revoked_at: null,
+  },
+  {
+    id: 2,
+    name: 'deploy',
+    user: { id: anna, name: admins.find((one) => one.id === anna)?.name ?? null },
+    created_by: null,
+    scopes: ['mcp:use'],
+    everything: true,
+    state: 'live',
+    created_at: at(40, 18, 0),
+    expires_at: at(-325, 18, 0),
+    last_used_at: null,
+    revoked_at: null,
+  },
+  {
+    id: 3,
+    name: 'nightly import',
+    user: { id: olha, name: admins.find((one) => one.id === olha)?.name ?? null },
+    created_by: { id: anna, name: admins.find((one) => one.id === anna)?.name ?? null },
+    scopes: ['pages:read', 'pages:write'],
+    everything: false,
+    state: 'revoked',
+    created_at: at(60, 9, 0),
+    expires_at: at(-30, 9, 0),
+    last_used_at: at(12, 3, 0),
+    revoked_at: at(10, 12, 0),
+  },
+]
+
+/** `GET /auth/keys`: every key, with the scopes the form offers. */
+export function listKeys(): { data: McpKey[]; meta: { scopes: string[]; max_days: number } } {
+  return {
+    data: keys,
+    meta: {
+      scopes: [
+        'mcp:use',
+        'admins:read',
+        'admins:write',
+        'pages:read',
+        'pages:write',
+        'tasks:read',
+        'tasks:review',
+        'tasks:work',
+        'tasks:write',
+      ],
+      max_days: 3650,
+    },
+  }
+}
+
+/** `POST /auth/keys`: a new row, and a secret that is shown once and never kept. */
+export function issueKey(body: Record<string, unknown>): { data: McpKey; token: string } {
+  const user = admins.find((one) => one.id === Number(body.admin))
+  const scopes =
+    Array.isArray(body.scopes) && body.scopes.length > 0 ? body.scopes.map(String) : ['mcp:use']
+  const days = Number(body.days) || 365
+  const expires = new Date()
+  expires.setDate(expires.getDate() + days)
+
+  const key: McpKey = {
+    id: Math.max(0, ...keys.map((one) => one.id)) + 1,
+    name: String(body.name ?? ''),
+    user: { id: Number(body.admin), name: user?.name ?? null },
+    created_by: { id: anna, name: admins.find((one) => one.id === anna)?.name ?? null },
+    scopes,
+    everything: scopes.includes('mcp:use'),
+    state: 'live',
+    created_at: new Date().toISOString(),
+    expires_at: expires.toISOString(),
+    last_used_at: null,
+    revoked_at: null,
+  }
+
+  keys.unshift(key)
+
+  return { data: key, token: `eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.playground.${key.id}` }
+}
+
+/** `DELETE /auth/keys/{id}`: the row stays, the key stops. */
+export function revokeKey(id: number): McpKey {
+  const found = keys.find((one) => one.id === id) ?? keys[0]
+
+  found.state = 'revoked'
   found.revoked_at = new Date().toISOString()
 
   return found

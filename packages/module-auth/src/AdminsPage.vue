@@ -13,11 +13,13 @@ import AdminDialog from './AdminDialog.vue'
 import AdminList from './AdminList.vue'
 import CallList from './CallList.vue'
 import ConnectionList from './ConnectionList.vue'
+import KeyDialog from './KeyDialog.vue'
+import KeyList from './KeyList.vue'
 import { createAdminsApi } from './admins'
 import { libraryAvatarField, libraryAvatarResolver } from './avatars'
 import type { AdminsView } from './module'
 import { useAuthMessages } from './i18n'
-import type { Admin } from './types'
+import type { Admin, McpKey } from './types'
 
 /**
  * The administrators section: the list, the form over it, the trail of what their agents did,
@@ -27,13 +29,13 @@ import type { Admin } from './types'
  * and a screen that takes over the page for that loses the list you were reading — which is
  * where you decide who to open next.
  *
- * The calls and the connections are further views of the same section rather than sections of
+ * The calls, the connections and the keys are further views of the same section rather than sections of
  * their own: "who did what" is a question about these people, whether a hand or a program was
  * at the other end. A route each rather than panels of one, because each has its own paging
  * and filters, and a view that quietly resets both when you come back to it is worse than a
  * second address. The calls are behind `admins.audit`, the permission the sign-in trail is
  * behind; everybody's connections are behind `admins.manage`, the one that is about other
- * people's accounts.
+ * people's accounts. Keys are behind it too: a key speaks for the administrator it names.
  *
  * The heading and `Add` used to live inside the card, which made this the one section of the
  * panel with no line of its own at the top. They stand outside it now, where every other list
@@ -65,9 +67,11 @@ const t = useTranslate('webx-auth')
 const message = useErrorText()
 
 const list = useTemplateRef<{ reload: () => void }>('list')
+const keysView = useTemplateRef<{ reload: () => void }>('keys')
 const editing = ref<Admin | null>(null)
 
 const edit = createModal<Admin, { admin: Admin | null; avatarField?: Component }>(AdminDialog)
+const issueKey = createModal<McpKey>(KeyDialog)
 
 const canManage = context.can('admins.manage')
 const canAudit = context.can('admins.audit')
@@ -91,6 +95,7 @@ const views = computed<TabItem[] | undefined>(() => {
 
   if (canAudit) items.push({ value: 'calls', label: t('calls.title') })
   if (canManage) items.push({ value: 'connections', label: t('connections.title') })
+  if (canManage) items.push({ value: 'keys', label: t('keys.title') })
 
   return items.length > 1 ? items : undefined
 })
@@ -106,19 +111,39 @@ const where = computed<TabValue>({
 
 /* Short enough for a phone, where the name and the button share one line. `Add` belongs to
    the people, not to the log. */
-const actions = computed<ScreenAction[]>(() =>
-  canManage && props.current === 'admins'
-    ? [
-        {
-          key: 'new',
-          label: t('admins.new-short'),
-          icon: 'plus',
-          primary: true,
-          run: () => void open(null),
-        },
-      ]
-    : [],
-)
+const actions = computed<ScreenAction[]>(() => {
+  if (!canManage) return []
+
+  if (props.current === 'admins') {
+    return [
+      {
+        key: 'new',
+        label: t('admins.new-short'),
+        icon: 'plus',
+        primary: true,
+        run: () => void open(null),
+      },
+    ]
+  }
+
+  if (props.current === 'keys') {
+    return [
+      {
+        key: 'issue',
+        label: t('keys.issue-short'),
+        icon: 'plus',
+        primary: true,
+        run: () => void issue(),
+      },
+    ]
+  }
+
+  return []
+})
+
+async function issue(): Promise<void> {
+  if (await issueKey()) keysView.value?.reload()
+}
 
 async function open(admin: Admin | null): Promise<void> {
   editing.value = admin
@@ -155,6 +180,7 @@ async function remove(admin: Admin): Promise<void> {
   <wx-list-screen v-model:view="where" :title="title" :views="views" :actions="actions">
     <call-list v-if="current === 'calls'" />
     <connection-list v-else-if="current === 'connections'" scope="all" />
+    <key-list v-else-if="current === 'keys'" ref="keys" />
     <admin-list
       v-else
       ref="list"
