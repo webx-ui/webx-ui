@@ -8,6 +8,7 @@ use Illuminate\Filesystem\Filesystem;
 use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Demo\DemoWords;
+use WebxUi\Admin\Demo\ThemeDemo;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Localization\Locales;
@@ -110,11 +111,19 @@ final class SettingsDemo
     }
 
     /**
+     * The theme's `demo/settings/settings.json` when it has one — the contacts of the site the
+     * theme is made for — and the module's own otherwise.
+     *
      * @return array<string, mixed>
      */
     private function read(): array
     {
-        $document = json_decode((string) $this->files->get(__DIR__.'/../../resources/demo/settings.json'), true);
+        $theme = ThemeDemo::directory('settings');
+        $file = $theme !== null && $this->files->exists($theme.'/settings.json')
+            ? $theme.'/settings.json'
+            : __DIR__.'/../../resources/demo/settings.json';
+
+        $document = json_decode((string) $this->files->get($file), true);
 
         if (! is_array($document)) {
             throw new RuntimeException('settings.json is not a settings document.');

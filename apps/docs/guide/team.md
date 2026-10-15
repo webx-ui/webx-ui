@@ -144,7 +144,7 @@ The card:
     'id' => 12,
     'anchor' => 'member-12',          // for a link to #member-12
     'categories' => [],               // the collection contract asks for the key; there are none
-    'name' => 'Anna Petrova',         // in the language of the page, else the default one
+    'name' => 'Alex M.',         // in the language of the page, else the default one
     'initials' => 'AP',               // what stands in for a missing photo
     'job_title' => 'Orthodontist',    // the same; '' when there is none
     'text' => "…\n…",                 // in the language of the page only, else ''

@@ -59,7 +59,9 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   `addresses` (the default), `hours` (with special dates and the time zone), `messengers`,
   `socials`; one left out is hidden (`visible: false`), not cut out: its keys stay writable, `contacts()`
   still reads them, a patch aimed at its card still applies. A misspelt section stops the boot.
-- Demo content (`resources/demo`), the content rules and the contacts included.
+- Demo content (`resources/demo`), the content rules and the contacts included. A theme with
+  `demo/settings/settings.json` seeds that file instead. Phones in demos and examples are
+  `+800 …` (`+800 1234 5678`): a number of no country that validates — `+00…` does not.
 
 ## Change it without forking
 

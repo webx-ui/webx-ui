@@ -21,10 +21,10 @@ final class DataShortcodesTest extends TestCase
         app(Settings::class)->save([
             'general.project-name' => ['ru' => 'Глобекс'],
             DataShortcodes::KEY => [
-                ['name' => 'phone', 'key' => '', 'value' => ['ru' => '+44 20 7946 0958']],
+                ['name' => 'phone', 'key' => '', 'value' => ['ru' => '+800 1234 5678']],
                 ['name' => 'email', 'key' => '', 'value' => ['ru' => 'hello@example.com']],
                 ['name' => 'brand', 'key' => 'general.project-name', 'value' => null],
-                ['name' => 'address', 'key' => '', 'value' => ['ru' => "1 High St\nLondon"]],
+                ['name' => 'address', 'key' => '', 'value' => ['ru' => "1 High St\nSample City"]],
                 ['name' => 'Not A Name', 'key' => '', 'value' => ['ru' => 'x']],
             ],
         ]);
@@ -35,18 +35,18 @@ final class DataShortcodesTest extends TestCase
         $this->assertSame('settings', $shortcodes->get('phone')?->origin);
         $this->assertSame('general.project-name', $shortcodes->get('brand')?->description);
 
-        $this->assertSame('Call <a href="tel:+442079460958">+44 20 7946 0958</a>', $shortcodes->html('Call [phone]'));
+        $this->assertSame('Call <a href="tel:+80012345678">+800 1234 5678</a>', $shortcodes->html('Call [phone]'));
         $this->assertSame('<a href="mailto:hello@example.com">hello@example.com</a>', $shortcodes->html('[email]'));
-        $this->assertSame('1 High St<br>'."\n".'London', $shortcodes->html('[address]'));
+        $this->assertSame('1 High St<br>'."\n".'Sample City', $shortcodes->html('[address]'));
         $this->assertSame('Глобекс', $shortcodes->html('[brand]'));
 
         // Plain text is the value, never the link.
-        $this->assertSame('Call +44 20 7946 0958 or hello@example.com', $shortcodes->plain('Call [phone] or [email]'));
+        $this->assertSame('Call +800 1234 5678 or hello@example.com', $shortcodes->plain('Call [phone] or [email]'));
 
         // Arguments: a phone in another format, a value without its link.
-        $this->assertSame('+442079460958', $shortcodes->plain('[phone format=intl]'));
-        $this->assertSame('442079460958', $shortcodes->plain('[phone format=digits]'));
-        $this->assertSame('+44 20 7946 0958', $shortcodes->html('[phone link=no]'));
+        $this->assertSame('+80012345678', $shortcodes->plain('[phone format=intl]'));
+        $this->assertSame('80012345678', $shortcodes->plain('[phone format=digits]'));
+        $this->assertSame('+800 1234 5678', $shortcodes->html('[phone link=no]'));
 
         // A changed setting changes every text that says the shortcode.
         app(Settings::class)->save(['general.project-name' => ['ru' => 'Инитех']]);
@@ -83,7 +83,7 @@ final class DataShortcodesTest extends TestCase
     {
         app(Settings::class)->save([DataShortcodes::KEY => [
             ['name' => 'brand', 'key' => 'general.project-name', 'value' => null],
-            ['name' => 'phone', 'key' => '', 'value' => ['ru' => '+44 20 7946 0958']],
+            ['name' => 'phone', 'key' => '', 'value' => ['ru' => '+800 1234 5678']],
         ]]);
 
         $rows = $this->actingAs($this->editor(), 'cms')
@@ -120,11 +120,11 @@ final class DataShortcodesTest extends TestCase
     #[Test]
     public function the_content_rules_name_the_shortcodes_for_agents(): void
     {
-        app(Settings::class)->save([DataShortcodes::KEY => [['name' => 'phone', 'key' => '', 'value' => ['ru' => '+44 20 7946 0958']]]]);
+        app(Settings::class)->save([DataShortcodes::KEY => [['name' => 'phone', 'key' => '', 'value' => ['ru' => '+800 1234 5678']]]]);
 
         $rules = app(ContentRules::class)->toArray();
 
         $this->assertStringContainsString('[phone]', $rules['shortcodes']['rule']);
-        $this->assertSame([['name' => 'phone', 'plain' => '+44 20 7946 0958', 'description' => null]], $rules['shortcodes']['list']);
+        $this->assertSame([['name' => 'phone', 'plain' => '+800 1234 5678', 'description' => null]], $rules['shortcodes']['list']);
     }
 }

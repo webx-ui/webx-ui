@@ -28,14 +28,14 @@ A setting that does not exist is refused on save, under the row — a typo used 
 
 What a value looks like decides how it is printed:
 
-| Value looks like | HTML                                               | Plain text         |
-| ---------------- | -------------------------------------------------- | ------------------ |
-| a phone number   | `<a href="tel:+442079460958">+44 20 7946 0958</a>` | `+44 20 7946 0958` |
-| an e-mail        | `<a href="mailto:…">…</a>`                         | the address        |
-| anything else    | the text, escaped, line breaks as `<br>`           | the text           |
+| Value looks like | HTML                                            | Plain text       |
+| ---------------- | ----------------------------------------------- | ---------------- |
+| a phone number   | `<a href="tel:+80012345678">+800 1234 5678</a>` | `+800 1234 5678` |
+| an e-mail        | `<a href="mailto:…">…</a>`                      | the address      |
+| anything else    | the text, escaped, line breaks as `<br>`        | the text         |
 
 Arguments: `[phone link=no]` prints the number without the link, `[phone format=intl]` prints
-`+442079460958`, `[phone format=digits]` the digits alone.
+`+80012345678`, `[phone format=digits]` the digits alone.
 
 ## A shortcode of the site's own
 

@@ -21,8 +21,8 @@ final class ContactsMarkupTest extends TestCase
             'seo.org-name' => ['ru' => 'Acme'],
             'seo.org-socials' => [['url' => 'https://www.facebook.com/acme']],
             'contacts.phones' => [
-                ['number' => '+1 202 555 0143', 'primary' => false],
-                ['number' => '+44 20 7946 0958', 'primary' => true],
+                ['number' => '+800 8765 4321', 'primary' => false],
+                ['number' => '+800 1234 5678', 'primary' => true],
             ],
             'contacts.emails' => [['email' => 'hello@example.com']],
             'contacts.socials' => [
@@ -34,7 +34,7 @@ final class ContactsMarkupTest extends TestCase
         $organisation = $this->organisation();
 
         $this->assertSame('Organization', $organisation['@type']);
-        $this->assertSame('+442079460958', $organisation['telephone']);
+        $this->assertSame('+80012345678', $organisation['telephone']);
         $this->assertSame('hello@example.com', $organisation['email']);
         // The network typed into SEO before the tab existed and the tab's, each once.
         $this->assertSame(['https://www.facebook.com/acme', 'https://www.instagram.com/acme'], $organisation['sameAs']);
@@ -46,7 +46,7 @@ final class ContactsMarkupTest extends TestCase
     {
         app(Settings::class)->save([
             'seo.org-name' => ['ru' => 'Acme'],
-            'contacts.addresses' => [['address' => ['ru' => '1 Example Street, London'], 'latitude' => 51.5074, 'longitude' => -0.1278, 'primary' => true]],
+            'contacts.addresses' => [['address' => ['ru' => '1 Example Street, Sample City'], 'latitude' => 12.34, 'longitude' => -34.56, 'primary' => true]],
             'contacts.hours' => [
                 ['days' => ['mon', 'tue', 'wed', 'thu', 'fri'], 'opens' => '09:00', 'closes' => '19:00'],
                 ['days' => ['sat'], 'opens' => '22:00', 'closes' => '02:00'],
@@ -57,8 +57,8 @@ final class ContactsMarkupTest extends TestCase
         $organisation = $this->organisation();
 
         $this->assertSame('LocalBusiness', $organisation['@type']);
-        $this->assertSame('1 Example Street, London', $organisation['address']);
-        $this->assertSame(['@type' => 'GeoCoordinates', 'latitude' => 51.5074, 'longitude' => -0.1278], $organisation['geo']);
+        $this->assertSame('1 Example Street, Sample City', $organisation['address']);
+        $this->assertSame(['@type' => 'GeoCoordinates', 'latitude' => 12.34, 'longitude' => -34.56], $organisation['geo']);
         $this->assertSame([
             [
                 '@type' => 'OpeningHoursSpecification',

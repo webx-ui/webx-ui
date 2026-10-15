@@ -49,7 +49,7 @@ final class InputFormatTest extends TestCase
         yield 'an email' => ['contacts.email', 'team@example.com'];
         yield 'an https address' => ['contacts.site', 'https://example.com/about'];
         yield 'an http address' => ['contacts.site', 'http://example.com'];
-        yield 'an international number' => ['contacts.phone', '+44 (0)20 7946-0958'];
+        yield 'an international number' => ['contacts.phone', '+800 (1234) 5678'];
         yield 'a number with dots' => ['contacts.phone', '030.123.456'];
         yield 'an empty email' => ['contacts.email', ''];
         yield 'a null address' => ['contacts.site', null];

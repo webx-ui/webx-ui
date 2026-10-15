@@ -36,16 +36,16 @@ final class ContactsTest extends TestCase
     #[Test]
     public function a_number_is_shown_as_typed_and_dialled_in_e164(): void
     {
-        $number = PhoneNumber::parse('+44 (20) 7946-0958');
+        $number = PhoneNumber::parse('+800 (1234) 5678');
         $this->assertNotNull($number);
-        $this->assertSame('+44 (20) 7946-0958', $number->number);
-        $this->assertSame('+442079460958', $number->e164);
-        $this->assertSame('tel:+44-20-7946-0958', $number->href);
+        $this->assertSame('+800 (1234) 5678', $number->number);
+        $this->assertSame('+80012345678', $number->e164);
+        $this->assertSame('tel:+800-1234-5678', $number->href);
 
         // 00 dials out in most of the world, and is the same number.
-        $this->assertSame('+442079460958', PhoneNumber::parse('0044 20 7946 0958')?->e164);
+        $this->assertSame('+80012345678', PhoneNumber::parse('00800 1234 5678')?->e164);
         // An extension goes into the link, which E.164 has no room for.
-        $this->assertSame('tel:+1-202-555-0143;ext=12', PhoneNumber::parse('+1 202 555 0143 ext. 12')?->href);
+        $this->assertSame('tel:+800-8765-4321;ext=12', PhoneNumber::parse('+800 8765 4321 ext. 12')?->href);
 
         // Without the country code there is no number: the site's language does not say which country.
         $this->assertNull(PhoneNumber::parse('020 7946 0958'));
@@ -60,14 +60,14 @@ final class ContactsTest extends TestCase
     {
         $response = $this->actingAs($this->editor(), 'cms')
             ->putJson('/api/cms/settings', ['values' => [
-                'contacts.phones' => [['number' => '+44 20 7946 0958'], ['number' => '020 7946 0321']],
+                'contacts.phones' => [['number' => '+800 1234 5678'], ['number' => '020 7946 0321']],
             ]])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['contacts.phones.1.number']);
 
         // Under the row and the field, where the panel shows it.
         $this->assertSame(
-            '020 7946 0321 has no country code. Start it with + and the code: +44 20 7946 0958.',
+            '020 7946 0321 has no country code. Start it with + and the code: +800 1234 5678.',
             $response->json('errors')['contacts.phones.1.number'][0],
         );
 
@@ -88,26 +88,26 @@ final class ContactsTest extends TestCase
     {
         app(Settings::class)->save([
             'contacts.phones' => [
-                ['number' => '+1 202 555 0143', 'label' => ['ru' => 'Поддержка', 'uk' => 'Підтримка'], 'primary' => false, 'messengers' => []],
-                ['number' => '+44 20 7946 0958', 'label' => ['ru' => 'Продажи'], 'primary' => true, 'messengers' => ['whatsapp', 'telegram', 'viber', 'signal']],
+                ['number' => '+800 8765 4321', 'label' => ['ru' => 'Поддержка', 'uk' => 'Підтримка'], 'primary' => false, 'messengers' => []],
+                ['number' => '+800 1234 5678', 'label' => ['ru' => 'Продажи'], 'primary' => true, 'messengers' => ['whatsapp', 'telegram', 'viber', 'signal']],
             ],
             'contacts.emails' => [['email' => 'hello@example.com', 'label' => null], ['email' => 'not an address', 'label' => null]],
-            'contacts.addresses' => [['address' => ['ru' => 'Пример-стрит, 1'], 'latitude' => 51.5074, 'longitude' => -0.1278, 'map' => null, 'primary' => true]],
+            'contacts.addresses' => [['address' => ['ru' => 'Пример-стрит, 1'], 'latitude' => 12.34, 'longitude' => -34.56, 'map' => null, 'primary' => true]],
             'contacts.messengers' => [['channel' => 'telegram', 'url' => 'https://t.me/example_bot', 'label' => null]],
             'contacts.socials' => [['network' => 'instagram', 'url' => 'https://www.instagram.com/example', 'label' => null]],
         ]);
 
         $contacts = contacts();
         $this->assertCount(2, $contacts->phones());
-        $this->assertSame('+442079460958', $contacts->primaryPhone()?->e164);
+        $this->assertSame('+80012345678', $contacts->primaryPhone()?->e164);
         $this->assertSame('Продажи', $contacts->primaryPhone()->label);
         $this->assertSame('Підтримка', $contacts->phones('uk')[0]->label);
 
         $this->assertSame([
-            'https://wa.me/442079460958',
-            'https://t.me/+442079460958',
-            'viber://chat?number=%2B442079460958',
-            'https://signal.me/#p/+442079460958',
+            'https://wa.me/80012345678',
+            'https://t.me/+80012345678',
+            'viber://chat?number=%2B80012345678',
+            'https://signal.me/#p/+80012345678',
         ], array_map(static fn ($channel): string => $channel->url, $contacts->primaryPhone()->messengers));
 
         // The number's chats first, then the channels of their own — the quick-contact list.
@@ -115,7 +115,7 @@ final class ContactsTest extends TestCase
 
         $this->assertSame(['hello@example.com'], array_map(static fn ($email): string => $email->address, $contacts->emails()));
         $this->assertSame('Пример-стрит, 1', $contacts->primaryAddress()?->text);
-        $this->assertSame('https://www.openstreetmap.org/?mlat=51.5074&mlon=-0.1278#map=17/51.5074/-0.1278', $contacts->primaryAddress()->mapUrl());
+        $this->assertSame('https://www.openstreetmap.org/?mlat=12.34&mlon=-34.56#map=17/12.34/-34.56', $contacts->primaryAddress()->mapUrl());
         $this->assertSame('instagram', $contacts->socials()[0]->kind);
         $this->assertFalse($contacts->isEmpty());
     }
@@ -218,14 +218,14 @@ final class ContactsTest extends TestCase
     {
         $this->app['config']->set('webx-settings.contacts.legacy.phones', 'contacts.phone');
         // A key of a project's patch: stored, read back as stored.
-        app(Settings::class)->save(['contacts.phone' => '+44 20 7946 0958', 'contacts.email' => 'hello@example.com']);
+        app(Settings::class)->save(['contacts.phone' => '+800 1234 5678', 'contacts.email' => 'hello@example.com']);
 
-        $this->assertSame('+442079460958', contacts()->primaryPhone()?->e164);
+        $this->assertSame('+80012345678', contacts()->primaryPhone()?->e164);
 
         $this->artisan('webx:settings:contacts', ['--from' => ['contacts.phone', 'contacts.email']])->assertSuccessful();
 
         $raw = app(Settings::class)->raw();
-        $this->assertSame('+44 20 7946 0958', $raw['contacts.phones'][0]['number']);
+        $this->assertSame('+800 1234 5678', $raw['contacts.phones'][0]['number']);
         $this->assertSame('hello@example.com', $raw['contacts.emails'][0]['email']);
 
         // Again: nothing to move twice.

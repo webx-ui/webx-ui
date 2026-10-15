@@ -24,7 +24,8 @@ questions about those.
 - **API** under `/api/cms/team`; permissions `team.view`, `team.manage`.
 - **MCP** tools `team_list`, `team_get`, `team_create`, `team_update`, `team_delete`,
   `team_reorder`; resource `team://catalog`. Scopes `team:read`, `team:write`.
-- Also registered: one top-level entry of the panel's menu, demo content (`resources/demo`).
+- Also registered: one top-level entry of the panel's menu, demo content (`resources/demo`);
+  a theme with `demo/team/team.json` seeds that file instead.
 
 ## Change it without forking
 

@@ -134,9 +134,9 @@ final class ThemeDefaultBlocksTest extends TestCase
     {
         $this->sync();
         $this->app->make(Settings::class)->save([
-            'contacts.phones' => [['number' => '+44 20 7946 0958', 'label' => null, 'primary' => true, 'messengers' => []]],
+            'contacts.phones' => [['number' => '+800 1234 5678', 'label' => null, 'primary' => true, 'messengers' => []]],
             'contacts.emails' => [['email' => 'hello@example.com', 'label' => null]],
-            'contacts.addresses' => [['address' => ['en' => '1 Example Street, London'], 'latitude' => null, 'longitude' => null, 'map' => null, 'primary' => true]],
+            'contacts.addresses' => [['address' => ['en' => '1 Example Street, Sample City'], 'latitude' => null, 'longitude' => null, 'map' => null, 'primary' => true]],
         ]);
         $form = Form::query()->create(['slug' => 'contact', 'title' => ['en' => 'Contact'], 'is_enabled' => true, 'options' => []]);
         $form->fields()->create(['name' => 'email', 'type' => FieldType::Email, 'title' => ['en' => 'E-mail'], 'is_enabled' => true, 'is_required' => true, 'position' => 0]);
@@ -146,9 +146,9 @@ final class ThemeDefaultBlocksTest extends TestCase
         $this->assertStringContainsString('class="b-contact b-contact--both"', $html);
         // The label after its icon of the theme's sprite (THEMES §13.1).
         $this->assertMatchesRegularExpression('#<h3 class="b-contact__label"><svg class="theme-icon b-contact__icon"[^>]*>.*?</svg>Phone</h3>#s', $html);
-        $this->assertStringContainsString('href="tel:+44-20-7946-0958"', $html);
+        $this->assertStringContainsString('href="tel:+800-1234-5678"', $html);
         $this->assertStringContainsString('href="mailto:hello@example.com"', $html);
-        $this->assertStringContainsString('1 Example Street, London', $html);
+        $this->assertStringContainsString('1 Example Street, Sample City', $html);
         $this->assertStringContainsString('<h3 class="b-contact__form-heading">Or here</h3>', $html);
         $this->assertMatchesRegularExpression('#<form[^>]+/webx/forms/contact#', $html);
 

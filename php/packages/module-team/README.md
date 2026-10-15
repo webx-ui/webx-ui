@@ -125,7 +125,7 @@ Both roads hand over the same card:
     'id' => 12,
     'anchor' => 'member-12',
     'categories' => [],            // the contract of a collection asks for the key
-    'name' => 'Anna Petrova',
+    'name' => 'Alex M.',
     'initials' => 'AP',            // what stands in for a missing photo
     'job_title' => 'Orthodontist', // '' when there is none
     'text' => "…\n…",              // '' when it is not written in the language

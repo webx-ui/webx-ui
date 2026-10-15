@@ -45,10 +45,10 @@ describe('settingOptions', () => {
     const options = settingOptions(
       root,
       {
-        'contacts.phone': '+44 20 7946 0958',
+        'contacts.phone': '+800 1234 5678',
         'contacts.address': {
           ru: '',
-          en: '1 High Street,\n   Westminster, London SW1A 1AA, United Kingdom',
+          en: '1 High Street,\n   Old Town, Sample City 12345, Sample Country',
         },
       },
       'ru',
@@ -58,12 +58,12 @@ describe('settingOptions', () => {
       {
         value: 'contacts.phone',
         label: 'Contacts → Phone',
-        description: 'contacts.phone · +44 20 7946 0958',
+        description: 'contacts.phone · +800 1234 5678',
       },
       {
         value: 'contacts.address',
         label: 'Contacts → Address',
-        description: 'contacts.address · 1 High Street, Westminster, London SW1A…',
+        description: 'contacts.address · 1 High Street, Old Town, Sample City 12…',
       },
     ])
   })

@@ -213,7 +213,7 @@ abstract class RecordQuery implements Countable, IteratorAggregate
     'id' => 12,
     'anchor' => 'member-12',        // стабильный якорь
     'categories' => [],             // контракт CollectionSource требует ключ; категорий нет
-    'name' => 'Anna Petrova',       // на языке страницы, иначе на языке по умолчанию
+    'name' => 'Alex M.',       // на языке страницы, иначе на языке по умолчанию
     'initials' => 'AP',             // как у отзыва — вместо фото
     'job_title' => 'Orthodontist',  // то же; '' если нет
     'text' => "…\n…",               // на языке страницы, иначе '' (решение 8)

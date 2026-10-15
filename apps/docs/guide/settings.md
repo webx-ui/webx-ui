@@ -60,6 +60,9 @@ the header's socials) lists `hours` or `socials` here. Because the nodes stay, a
 this setting that removed `contacts-hours-card` or `contacts-channels-card` still applies; it is
 just no longer needed. A misspelt section stops the boot with the known names.
 
+In demos and examples a phone is an `+800 …` number (`+800 1234 5678`) — international, of no
+country, and valid; `+00 000 000-00-00` is refused like any number without a country code.
+
 ## The screen, and what to patch
 
 Out of the box the screen is three tabs — what the panel is called, what it wears, and the house
