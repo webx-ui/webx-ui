@@ -350,8 +350,33 @@ common is that none of them announce themselves:
 A failure exits non-zero, which is what puts it in a deploy:
 
 ```bash
-php artisan webx:doctor --strict   # anything worth mentioning stops the deploy too
+php artisan webx:doctor --strict   # a warning about the setup stops the deploy too
 ```
+
+Some warnings are about what is _in_ the site rather than how it is built — a shared block no
+page places, a catalogue property whose code clashes with a column of the exchange, pages that
+the catalogue's root hides. They are marked `(content)`, counted apart in the closing line, and
+never stop a deploy, not even a strict one: an editor mends them in the panel, and holding the
+release back would not.
+
+A platform that decides by the report rather than reads it asks for JSON — the exit code is the
+same:
+
+```bash
+php artisan webx:doctor --strict --json
+```
+
+```json
+{
+  "checks": [{ "state": "warn", "subject": "Regions", "detail": "…", "content": true }],
+  "failed": 0,
+  "warned": 0,
+  "content": 1
+}
+```
+
+`warned` counts the warnings about the setup and `content` the rest, never one line twice, so
+`failed + warned > 0` is exactly what `--strict` stops on.
 
 ## What the skeleton gives you, and what to delete
 

@@ -45,7 +45,8 @@ use WebxUi\Admin\Doctor\DoctorChecks;
 final class DoctorCommand extends Command
 {
     protected $signature = 'webx:doctor
-                            {--strict : Treat anything worth mentioning as a failure — for a deploy that should stop}';
+                            {--strict : Treat anything worth mentioning about the setup as a failure — for a deploy that should stop; notes on the content never stop it}
+                            {--json : Print the findings as JSON, for a platform that decides by them}';
 
     protected $description = 'Check that this site is set up the way it has to be: both halves, storage, layout, migrations, caches';
 
@@ -75,37 +76,72 @@ final class DoctorCommand extends Command
 
     public function handle(Container $container): int
     {
-        $this->newLine();
+        $json = (bool) $this->option('json');
 
+        if (! $json) {
+            $this->newLine();
+        }
+
+        $checks = [];
         $failed = 0;
         $warned = 0;
+        $content = 0;
 
         foreach ([...self::CHECKS, ...$container->make(DoctorChecks::class)->all()] as $class) {
             foreach ($this->diagnose($container, $class) as $diagnosis) {
-                $this->say($diagnosis);
+                if ($json) {
+                    $checks[] = $diagnosis;
+                } else {
+                    $this->say($diagnosis);
+                }
 
                 $failed += $diagnosis->failed() ? 1 : 0;
-                $warned += $diagnosis->warned() ? 1 : 0;
+                $warned += $diagnosis->warned() && ! $diagnosis->content ? 1 : 0;
+                $content += $diagnosis->warned() && $diagnosis->content ? 1 : 0;
             }
+        }
+
+        $stops = $failed > 0 || ($warned > 0 && $this->option('strict'));
+
+        if ($json) {
+            // For a platform that decides by it: `warned` and `content` never count the same
+            // line twice, so `failed + warned > 0` is exactly what --strict stops on.
+            $this->line((string) json_encode([
+                'checks' => array_map(static fn (Diagnosis $diagnosis): array => [
+                    'state' => $diagnosis->state,
+                    'subject' => $diagnosis->subject,
+                    'detail' => $diagnosis->detail,
+                    'content' => $diagnosis->content,
+                ], $checks),
+                'failed' => $failed,
+                'warned' => $warned,
+                'content' => $content,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+            return $stops ? self::FAILURE : self::SUCCESS;
         }
 
         $this->newLine();
 
+        $notes = $content > 0 ? " {$content} ".($content === 1 ? 'note' : 'notes').' on the content — mended in the panel.' : '';
+
         if ($failed > 0) {
-            $this->components->error($failed.' of the things this site needs '.($failed === 1 ? 'is' : 'are').' not in place.');
+            $this->components->error($failed.' of the things this site needs '.($failed === 1 ? 'is' : 'are').' not in place.'.$notes);
 
             return self::FAILURE;
         }
 
-        if ($warned > 0 && $this->option('strict')) {
-            $this->components->error($warned.' worth mentioning, and --strict says that is enough to stop.');
+        if ($stops) {
+            $this->components->error($warned.' worth mentioning, and --strict says that is enough to stop.'.$notes);
 
             return self::FAILURE;
         }
 
-        $this->components->info(
-            $warned > 0 ? "Nothing is broken; {$warned} worth knowing about." : 'Everything this site needs is in place.',
-        );
+        $this->components->info(match (true) {
+            $warned > 0 => "Nothing is broken; {$warned} worth knowing about.".$notes,
+            $content > 0 => 'Everything this site needs is in place.'.$notes,
+            default => 'Everything this site needs is in place.',
+        });
 
         return self::SUCCESS;
     }
@@ -141,6 +177,8 @@ final class DoctorCommand extends Command
 
         // One line each, written out rather than laid out in two columns: what a check has to
         // say is a sentence with a command in it, and a column would either wrap it or cut it.
-        $this->line("  {$mark} <options=bold>{$diagnosis->subject}</>: {$diagnosis->detail}");
+        $kind = $diagnosis->content ? ' <fg=gray>(content)</>' : '';
+
+        $this->line("  {$mark}{$kind} <options=bold>{$diagnosis->subject}</>: {$diagnosis->detail}");
     }
 }

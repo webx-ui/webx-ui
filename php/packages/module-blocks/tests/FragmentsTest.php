@@ -289,12 +289,15 @@ final class FragmentsTest extends RegionTestCase
     {
         $this->page('about', [$this->node('fragment', ['fragment' => 'request'], 'p1')]);
 
-        $found = array_map(static fn (Diagnosis $diagnosis): string => $diagnosis->state.' '.$diagnosis->detail, $this->app->make(FragmentsCheck::class)->run());
+        $diagnoses = $this->app->make(FragmentsCheck::class)->run();
+        $found = array_map(static fn (Diagnosis $diagnosis): string => $diagnosis->state.' '.$diagnosis->detail, $diagnoses);
 
         $this->assertCount(2, $found);
         $this->assertStringStartsWith(Diagnosis::OK.' The shared block [request] stands in the content of 1 record(s)', $found[0]);
         $this->assertStringContainsString('[promo] is placed on no page', $found[1]);
         $this->assertStringNotContainsString(Diagnosis::OK, $found[1]);
+        // A block nobody placed is the editor's to place, so a strict deploy does not stop on it.
+        $this->assertTrue($diagnoses[1]->content);
     }
 
     /**

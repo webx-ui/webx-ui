@@ -48,7 +48,7 @@ final class FragmentsCheck implements Check
 
             $found[] = $count > 0
                 ? Diagnosis::ok('Regions', "The shared block [{$name}] stands in the content of {$count} record(s).")
-                : Diagnosis::warn('Regions', "The shared block [{$name}] is placed on no page — unless a template of the site prints it with <x-webx-blocks::region name=\"{$name}\" />, which is not checked. Add the block «Shared block» to a page, or the tag to a template.");
+                : Diagnosis::content('Regions', "The shared block [{$name}] is placed on no page — unless a template of the site prints it with <x-webx-blocks::region name=\"{$name}\" />, which is not checked. Add the block «Shared block» to a page, or the tag to a template.");
         }
 
         return $found;

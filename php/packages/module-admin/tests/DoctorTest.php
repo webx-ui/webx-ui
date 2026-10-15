@@ -6,9 +6,12 @@ namespace WebxUi\Admin\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionClassConstant;
+use WebxUi\Admin\Console\DoctorCommand;
 use WebxUi\Admin\Doctor\Checks\Halves;
 use WebxUi\Admin\Doctor\Checks\Helpers;
 use WebxUi\Admin\Doctor\Checks\Languages;
@@ -18,8 +21,10 @@ use WebxUi\Admin\Doctor\Checks\PanelOpens;
 use WebxUi\Admin\Doctor\Checks\Queue;
 use WebxUi\Admin\Doctor\Checks\Regions;
 use WebxUi\Admin\Doctor\Diagnosis;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Doctor\VersionRange;
 use WebxUi\Admin\Panel\PackageRegistry;
+use WebxUi\Admin\Tests\Fixtures\FixedCheck;
 
 /**
  * What `webx:doctor` says, for the three sorts of breakage that cost the most to find by hand.
@@ -379,6 +384,66 @@ final class DoctorTest extends TestCase
             ->expectsOutputToContain('webx:panel --sync');
     }
 
+    #[Test]
+    public function a_strict_deploy_does_not_stop_on_a_note_about_the_content(): void
+    {
+        $this->findings(Diagnosis::content('Regions', 'The shared block [request] is placed on no page.'));
+
+        $this->artisan('webx:doctor', ['--strict' => true])
+            ->expectsOutputToContain('(content)')
+            ->expectsOutputToContain('1 note on the content — mended in the panel.')
+            ->assertExitCode(0);
+    }
+
+    #[Test]
+    public function a_strict_deploy_stops_on_a_warning_about_the_setup(): void
+    {
+        $this->findings(
+            Diagnosis::content('Regions', 'The shared block [request] is placed on no page.'),
+            Diagnosis::warn('Regions', 'The region [footer] is declared, but the layout does not print it.'),
+        );
+
+        $this->artisan('webx:doctor', ['--strict' => true])
+            ->expectsOutputToContain('1 worth mentioning, and --strict says that is enough to stop. 1 note on the content')
+            ->assertExitCode(1);
+
+        $this->artisan('webx:doctor')->assertExitCode(0);
+    }
+
+    #[Test]
+    public function a_strict_deploy_stops_on_a_failure(): void
+    {
+        $this->findings(Diagnosis::fail('Storage', 'run php artisan storage:link'));
+
+        $this->artisan('webx:doctor', ['--strict' => true])->assertExitCode(1);
+        $this->artisan('webx:doctor')->assertExitCode(1);
+    }
+
+    #[Test]
+    public function it_prints_the_findings_as_json(): void
+    {
+        $this->findings(
+            Diagnosis::ok('Storage', 'public/storage points at the library.'),
+            Diagnosis::warn('Queue', 'jobs wait and nobody takes them.'),
+            Diagnosis::content('Regions', 'The shared block [request] is placed on no page.'),
+        );
+
+        $code = Artisan::call('webx:doctor', ['--json' => true, '--strict' => true]);
+        $report = json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR);
+
+        $this->assertSame(1, $code);
+        $this->assertSame([
+            'checks' => [
+                ['state' => 'ok', 'subject' => 'Storage', 'detail' => 'public/storage points at the library.', 'content' => false],
+                ['state' => 'warn', 'subject' => 'Queue', 'detail' => 'jobs wait and nobody takes them.', 'content' => false],
+                ['state' => 'warn', 'subject' => 'Regions', 'detail' => 'The shared block [request] is placed on no page.', 'content' => true],
+            ],
+            'failed' => 0,
+            'warned' => 1,
+            'content' => 1,
+        ], $report);
+    }
+
     // -- bundle ------------------------------------------------------------------------------
 
     #[Test]
@@ -519,6 +584,22 @@ final class DoctorTest extends TestCase
     {
         $this->files->put($path, $contents);
         $this->written[] = $path;
+    }
+
+    /**
+     * The command with every check of its own and of the modules quiet, and one that finds these.
+     */
+    private function findings(Diagnosis ...$found): void
+    {
+        /** @var list<class-string> $checks */
+        $checks = (new ReflectionClassConstant(DoctorCommand::class, 'CHECKS'))->getValue();
+
+        foreach ([...$checks, ...$this->app->make(DoctorChecks::class)->all()] as $check) {
+            $this->app->instance($check, new FixedCheck);
+        }
+
+        $this->app->make(DoctorChecks::class)->register(FixedCheck::class);
+        $this->app->instance(FixedCheck::class, new FixedCheck(array_values($found)));
     }
 
     /** @param list<Diagnosis> $found */
