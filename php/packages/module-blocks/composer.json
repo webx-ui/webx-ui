@@ -33,17 +33,17 @@
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
         "php": "^8.4",
-        "webx-ui/localization": "^0.74.0",
-        "webx-ui/mcp": "^0.74.0",
-        "webx-ui/module-admin": "^0.74.0",
-        "webx-ui/module-auth": "^0.74.0",
-        "webx-ui/routing": "^0.74.0"
+        "webx-ui/localization": "^0.75.0",
+        "webx-ui/mcp": "^0.75.0",
+        "webx-ui/module-admin": "^0.75.0",
+        "webx-ui/module-auth": "^0.75.0",
+        "webx-ui/routing": "^0.75.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-audit": "^0.74.0",
-        "webx-ui/themes": "^0.74.0"
+        "webx-ui/module-audit": "^0.75.0",
+        "webx-ui/themes": "^0.75.0"
     },
     "suggest": {
         "webx-ui/module-audit": "The site audit searches its content, drafts included, for addresses of a development stand.",
@@ -68,7 +68,7 @@
         "webx": {
             "module": "blocks",
             "npm": {
-                "@webx-ui/module-blocks": "^0.16.1"
+                "@webx-ui/module-blocks": "^0.16.2"
             },
             "panel": {
                 "import": "import { blocks, regions } from '@webx-ui/module-blocks'",

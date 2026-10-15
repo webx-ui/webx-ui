@@ -1,5 +1,14 @@
 # @webx-ui/module-catalog-properties
 
+## 0.1.13
+
+### Patch Changes
+
+- Updated dependencies [152a118]
+  - @webx-ui/module-admin@0.28.0
+  - @webx-ui/module-catalog@0.8.9
+  - @webx-ui/module-media@0.10.5
+
 ## 0.1.12
 
 ### Patch Changes
