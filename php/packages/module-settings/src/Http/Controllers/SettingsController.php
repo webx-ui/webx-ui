@@ -10,6 +10,7 @@ use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Admin\Screens\Tree;
 use WebxUi\Settings\Contacts\ContactsCheck;
 use WebxUi\Settings\DataShortcodes;
 use WebxUi\Settings\Settings;
@@ -61,14 +62,14 @@ final class SettingsController
     }
 
     /**
-     * Only the keys the screen has: a row left behind by a field that was removed is not
-     * something the form should carry around.
+     * Only the keys the screen offers: a row left behind by a field that was removed, or kept
+     * by a hidden tab, is not something the form should carry around.
      *
      * @return array<string, mixed>
      */
     private function described(Settings $settings, string $screen): array
     {
-        $keys = array_column(app(ScreenRegistry::class)->fields($screen), 'name');
+        $keys = array_column(Tree::editable(app(ScreenRegistry::class)->tree($screen)), 'name');
         $values = array_intersect_key($settings->raw(), array_flip($keys));
 
         if (array_key_exists(DataShortcodes::KEY, $values)) {

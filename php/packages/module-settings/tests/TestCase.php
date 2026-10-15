@@ -16,6 +16,9 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    /** A site that prints its contacts: most tests are about the tab, not about whether it is offered. */
+    protected bool $printsContacts = true;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -41,6 +44,9 @@ abstract class TestCase extends Orchestra
             ['code' => 'ru', 'default' => true],
             ['code' => 'uk'],
         ]);
+        if ($this->printsContacts && in_array($app['config']->get('webx-settings.uses'), [null, []], true)) {
+            $app['config']->set('webx-settings.uses', ['contacts']);
+        }
     }
 
     protected function defineDatabaseMigrations(): void

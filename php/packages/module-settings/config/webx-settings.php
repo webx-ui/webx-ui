@@ -36,6 +36,23 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Tabs the site uses
+    |---------------------------------------------------------------------------
+    |
+    | Contacts are offered in the panel only when something on the site prints
+    | them. A theme says so under `settings` of its manifest, a package under
+    | `extra.webx.settings`; a project that prints them from its own views says
+    | so here — 'uses' => ['contacts'], or with the sections it prints:
+    | 'uses' => ['contacts' => ['phones', 'hours']]. Branding is used by the
+    | panel itself and needs no word here. A tab nobody uses is hidden, its
+    | stored values kept: `php artisan webx:doctor` says who uses what.
+    |
+    */
+
+    'uses' => [],
+
+    /*
+    |---------------------------------------------------------------------------
     | Contacts kept under keys of the site's own
     |---------------------------------------------------------------------------
     |

@@ -54,11 +54,46 @@ question an editor asks every time. So the server draws only the sections named 
 | `socials`    | `contacts.socials`                                | `contacts-channels-card`  |
 
 A section left out is hidden (`visible: false`), not cut out of the screen: a card with none of
-its sections drawn is hidden whole, an empty list hides the tab. The keys stay writable — from MCP
-too — and `contacts()` returns whatever is stored, so a site that prints the hours (`<x-webx-hours>`,
-the header's socials) lists `hours` or `socials` here. Because the nodes stay, a patch from before
-this setting that removed `contacts-hours-card` or `contacts-channels-card` still applies; it is
-just no longer needed. A misspelt section stops the boot with the known names.
+its sections drawn is hidden whole, an empty list hides the tab. `contacts()` returns whatever is
+stored, but the form and the MCP tools no longer offer a hidden key. A site that prints the hours
+(`<x-webx-hours>`, the header's socials) lists `hours` or `socials` here — or the theme that prints
+them declares them (below). Because the nodes stay, a patch from before this setting that removed
+`contacts-hours-card` or `contacts-channels-card` still applies; it is just no longer needed. A
+misspelt section stops the boot with the known names.
+
+### Tabs only where something uses them
+
+Branding and Contacts are offered only on a site that uses them. A task tracker with no public
+theme prints no contacts, and without the file library the logo fields cannot even be drawn —
+so it gets neither tab. Whoever prints contacts says so, in the place it already describes
+itself:
+
+| Who         | Where                                                         | Example                                         |
+| ----------- | ------------------------------------------------------------- | ----------------------------------------------- |
+| a theme     | `settings` of its manifest (`extra.webx.theme`, `theme.json`) | `"settings": {"contacts": ["phones", "hours"]}` |
+| a package   | `extra.webx.settings` of its composer.json                    | `"settings": {"contacts": true}`                |
+| the project | `uses` in `config/webx-settings.php`                          | `'uses' => ['contacts']`                        |
+
+A tab is `true` — the whole tab, sections as configured — or the list of its sections the user
+prints; the lists join `contacts.sections`, and a theme's are summed down its chain.
+`theme-default` declares phones, emails, addresses, hours and socials, so a site on it keeps the
+tab as it was. Widgets and SEO markup print contacts only when there are some and declare
+nothing — otherwise they would bring the tab to every site.
+
+Branding is used by the panel itself — its corner and the consent screen — so nobody declares
+it; it is hidden only when `wx-media` is not registered (no `webx-ui/module-media`). Declaring it
+still makes sense: then `webx:doctor` warns that the type is missing instead of staying quiet.
+
+A tab nobody uses is hidden the same way as a section: the panel has no such tab, `settings_list`
+has no such keys, `settings_get` / `settings_set` answer «No setting is named…», and the demo
+leaves it empty. What was stored stays — `contacts()` and the panel's logo read it, saving the
+form does not touch it — and the tab comes back with its values when a user declares it.
+
+**Transition, until the next minor.** A site whose theme chain says nothing about `settings` —
+no key at all, as every theme written before this — keeps Contacts; `{}` says the theme prints
+none. A site with no theme but with contacts already stored keeps them too, and `webx:doctor`
+asks it to add `'uses' => ['contacts']`. `php artisan webx:doctor` lists «Settings: branding» and
+«Settings: contacts» with who uses each.
 
 In demos and examples a phone is an `+800 …` number (`+800 1234 5678`) — international, of no
 country, and valid; `+00 000 000-00-00` is refused like any number without a country code.

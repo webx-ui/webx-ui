@@ -7,6 +7,7 @@ namespace WebxUi\Settings;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\BrandingSource;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -14,8 +15,9 @@ use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Settings\Console\MoveContactsCommand;
 use WebxUi\Settings\Contacts\Contacts;
-use WebxUi\Settings\Contacts\ContactSections;
 use WebxUi\Settings\Events\SettingsSaved;
+use WebxUi\Settings\Sections\SettingsSections;
+use WebxUi\Settings\Sections\SettingsSectionsCheck;
 
 class SettingsServiceProvider extends ServiceProvider
 {
@@ -47,6 +49,7 @@ class SettingsServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(SettingsModule::class));
+        $this->app->make(DoctorChecks::class)->register(SettingsSectionsCheck::class);
 
         // Values rewritten around the model (the library moving a logo to a new key): the cached
         // settings still hold the old one.
@@ -63,12 +66,11 @@ class SettingsServiceProvider extends ServiceProvider
         // The reference screen. A project lays its own tabs over it from its provider, which
         // boots after this one — `Screens::extend('settings.index', ...)`.
         $this->app->make(ScreenRegistry::class)->register(Settings::SCREEN, __DIR__.'/../resources/screens/index.json');
-        // The Contacts sections this site does not use are hidden by a patch of the section's own,
-        // laid before the project's: the cards stay in the tree, so a project patch that targets one
-        // still applies.
-        $this->app->make(ScreenRegistry::class)->extend(Settings::SCREEN, ContactSections::patch(
-            ContactSections::configured(config('webx-settings.contacts.sections')),
-        ));
+        // The tabs nobody on this site uses, or that cannot be drawn here, and the Contacts sections
+        // nobody prints are hidden by a patch of the section's own, laid before the project's: the
+        // nodes stay in the tree, so a project patch that targets one still applies. Worked out when
+        // the tree is built — a field type is registered by a provider that may boot after this one.
+        $this->app->make(ScreenRegistry::class)->extend(Settings::SCREEN, fn (): array => $this->app->make(SettingsSections::class)->patch());
         $this->app->make(ScreenRegistry::class)->register(Settings::CONTENT_SCREEN, __DIR__.'/../resources/screens/content.json');
 
         // The shortcodes defined in the panel, read when a page asks rather than at boot: they

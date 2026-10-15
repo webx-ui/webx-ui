@@ -36,7 +36,8 @@ final class SettingsDemo
         $nodes = [];
 
         foreach (Settings::SCREENS as $screen) {
-            foreach (Tree::fields($this->screens->tree($screen)) as $node) {
+            // A hidden tab gets no demo: nobody on the site prints it, and nobody could edit it.
+            foreach (Tree::editable($this->screens->tree($screen)) as $node) {
                 $nodes[(string) $node['name']] = $node;
             }
         }

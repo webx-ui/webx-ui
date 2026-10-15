@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings\Tests;
 
+use Illuminate\Foundation\Application;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Settings\Contacts\PhoneNumber;
@@ -28,7 +30,14 @@ final class DemoTest extends TestCase
         parent::tearDown();
     }
 
+    /** A site that prints every part of its contacts, as the default theme does. */
+    protected function printsAllContacts(Application $app): void
+    {
+        $app['config']->set('webx-settings.uses', ['contacts' => ['phones', 'emails', 'addresses', 'hours', 'messengers', 'socials']]);
+    }
+
     #[Test]
+    #[DefineEnvironment('printsAllContacts')]
     public function it_gives_the_panel_a_name_and_takes_it_back(): void
     {
         $settings = $this->app->make(Settings::class);

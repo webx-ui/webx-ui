@@ -21,15 +21,15 @@ the modules                each module's own views and base look
 A layer is a directory with the same parts, each optional — a part that is missing is inherited
 from below:
 
-| Part                         | What it is                                                              |
-| ---------------------------- | ----------------------------------------------------------------------- |
-| `theme.json` / composer.json | the manifest: `title`, `uses`, `requires`, `locales`, `fonts`, `preset` |
-| `tokens.json`                | `defaults`, `presets` and the layer's own `vocabulary`                  |
-| `src/css`, `src/js`          | the stylesheet (and, rarely, a script) on `var(--site-…)` only          |
-| `views/`                     | Blade views: the layout, the header, an override of a module's view     |
-| `blocks/`                    | block types by slug, in the format `webx:blocks:export` writes          |
-| `icons/`, `assets/`          | the sprite's icons, pictures and fonts for `theme_asset()`              |
-| `lang/<locale>/theme.php`    | the words of the layout                                                 |
+| Part                         | What it is                                                                          |
+| ---------------------------- | ----------------------------------------------------------------------------------- |
+| `theme.json` / composer.json | the manifest: `title`, `uses`, `requires`, `locales`, `fonts`, `preset`, `settings` |
+| `tokens.json`                | `defaults`, `presets` and the layer's own `vocabulary`                              |
+| `src/css`, `src/js`          | the stylesheet (and, rarely, a script) on `var(--site-…)` only                      |
+| `views/`                     | Blade views: the layout, the header, an override of a module's view                 |
+| `blocks/`                    | block types by slug, in the format `webx:blocks:export` writes                      |
+| `icons/`, `assets/`          | the sprite's icons, pictures and fonts for `theme_asset()`                          |
+| `lang/<locale>/theme.php`    | the words of the layout                                                             |
 
 A **local** theme is `theme/` inside the site; its manifest is `theme/theme.json`, and the site's
 Vite builds its `src/`. A **packaged** theme is a Composer package of `"type": "webx-theme"`; its
@@ -38,6 +38,22 @@ site installs it without Node.
 
 `WEBX_THEME` in `.env` names the top of the chain — `theme` for a local theme, a Composer name for
 a packaged one; every layer below comes from the `uses` of the one above it.
+
+### What the theme prints from the settings
+
+A theme that prints the site's contacts says so under `settings` of its manifest, and the panel
+offers the «Contacts» tab only then — with the sections the theme prints:
+
+```json
+"settings": { "contacts": ["phones", "emails", "addresses", "hours", "socials"] }
+```
+
+A tab is `true` (the whole tab) or the list of its sections — `phones`, `emails`, `addresses`,
+`hours`, `messengers`, `socials`; the layers are summed down the chain, so a local theme over
+`theme-default` adds to what the default prints. `"settings": {}` says the theme prints none of
+them. A manifest with no `settings` key at all keeps the tab while the transition of
+module-settings lasts (until the next minor) — declare it. `webx:theme:eject` carries the
+package's declaration into `theme/theme.json`. More in [Settings](/guide/settings#tabs-only-where-something-uses-them).
 
 ## Four doors, cheapest first
 

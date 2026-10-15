@@ -12,11 +12,16 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   the site with `theme.json`) or a package name. Empty means no theme.
 - **`ThemeManifest`** — a theme's description: `extra.webx.theme` of a `"type": "webx-theme"`
   package, or `theme` in a local `theme.json`: `title`, `uses`, `requires`, `locales`, `fonts`,
-  `preset`. **`ThemeChain`** — the layers, top first; **`ThemeLocator`** — reference to manifest,
+  `preset`, `settings`. **`ThemeChain`** — the layers, top first; **`ThemeLocator`** — reference to manifest,
   `register($name, $path)` for a theme Composer does not know.
 - **The preset** — `"preset": "night"` in the manifest of a layer (the highest that names one
   decides), a preset of the chain's tokens.json; an unknown name throws on the page and is a
   finding of the check. There is no setting for it: the look is in git, the panel does not edit it.
+- **`settings`** — the tabs of the site's settings the theme prints, so the panel offers them:
+  `"settings": {"contacts": ["phones", "emails", "hours"]}` (a tab is `true` or the list of its
+  sections), summed down the chain by `ThemeChain::settings()`. `{}` says the theme prints none;
+  no key at all keeps Contacts while module-settings' transition lasts. A theme that prints
+  `contacts()` declares it — otherwise the tab is hidden and nobody can fill in what it prints.
 - **`Vocabulary`** — the token names and their types; a theme adds its own under `vocabulary` in
   tokens.json. **`Tokens`** — the merged values: layers bottom up → the preset; `sources()` says
   which layer or preset set each.
@@ -88,6 +93,7 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
 | Keep a block made in the panel in git               | `php artisan webx:blocks:export <slug> --path=theme/blocks`                    |
 | An icon, a picture, a font of the site's own        | `theme/icons/`, `theme/assets/`, `theme/assets/fonts/` + `fonts`; then sync    |
 | Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json`                          |
+| Print the site's contacts from the theme            | `"settings": {"contacts": [<sections printed>]}` in `theme/theme.json`         |
 | A look several sites share                          | `php artisan webx:theme:make vendor/name`, or `webx:theme:extract vendor/name` |
 | Stop following a packaged theme's updates           | `php artisan webx:theme:eject vendor/name`                                     |
 | Publish the config                                  | `php artisan vendor:publish --tag=webx-themes-config`                          |
