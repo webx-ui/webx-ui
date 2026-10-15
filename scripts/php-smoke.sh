@@ -1316,7 +1316,8 @@ note 'the removal gives the site back its header from code'
 # of search engines.
 
 PRIVATE="$WORKDIR/private"
-PRIVATE_PORT="$((PORT + 2))"
+# Not +2: that one is the platform's below, and a port still held here stops its container.
+PRIVATE_PORT="$((PORT + 3))"
 PRIVATE_BASE="http://127.0.0.1:${PRIVATE_PORT}"
 PRIVATE_PID=""
 
@@ -1392,6 +1393,9 @@ curl -s -D - -o /dev/null "$PRIVATE_BASE/cms" | grep -qi '^X-Robots-Tag: noindex
     || fail 'the panel of a site with no public part does not say noindex'
 note 'robots.txt disallows everything, and every response says noindex'
 
+# `artisan serve` runs the server as a child of its own; stopping only the parent leaves the
+# port held.
+pkill -P "$PRIVATE_PID" 2>/dev/null || true
 kill "$PRIVATE_PID" 2>/dev/null || true
 wait "$PRIVATE_PID" 2>/dev/null || true
 PRIVATE_PID=""
