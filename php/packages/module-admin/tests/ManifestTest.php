@@ -129,6 +129,26 @@ final class ManifestTest extends TestCase
     }
 
     #[Test]
+    public function the_way_to_the_site_is_its_home_page(): void
+    {
+        $this->getJson('/api/cms/manifest')
+            ->assertOk()
+            ->assertJsonPath('data.siteUrl', 'http://localhost');
+    }
+
+    #[Test]
+    public function the_home_page_is_in_the_sites_main_language_not_the_panels(): void
+    {
+        config()->set('webx-localization.strategy', 'prefix');
+        config()->set('webx-localization.prefix_default', true);
+
+        $this->withHeader('X-Webx-Locale', 'de')
+            ->getJson('/api/cms/manifest')
+            ->assertOk()
+            ->assertJsonPath('data.siteUrl', 'http://localhost/en');
+    }
+
+    #[Test]
     public function a_panel_nobody_has_branded_wears_its_configured_title(): void
     {
         $this->getJson('/api/cms/manifest')

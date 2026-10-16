@@ -48,6 +48,13 @@ export interface AdminContext {
    * fetched once for the session. Optional on the context so a hand-made one in a test needs none.
    */
   readonly blockLabels?: () => Promise<BlockLabels | null>
+  /**
+   * The site this panel runs, as the way out of the panel: its home page in the site's main
+   * language. `null` when the project hid the link with `createAdmin({ siteLink: false })`, or
+   * when the server is too old to say. The header, the rail and the account menu all read it
+   * here, so an address given once moves all three.
+   */
+  readonly siteUrl: ComputedRef<string | null>
   /** Ask the server what the panel is and who is signed in again. */
   reload(): Promise<void>
   /**
@@ -123,6 +130,8 @@ export function createAdminContext(options: {
   loadDictionary?: (locale: string) => Promise<void>
   types?: TypeRegistry
   screens?: Record<string, Patch>
+  /** The project's say over the way to the site: an address of its own, or `false` for none. */
+  siteLink?: string | false
   /** Told who is signed in, so the theme they chose follows them to this machine. */
   theme?: ThemeController
 }): AdminContext {
@@ -396,6 +405,13 @@ export function createAdminContext(options: {
     return Object.fromEntries(paths.map((path, index) => [path, urls[index] ?? null]))
   }
 
+  // An empty address is no address: a link to nowhere would reload the panel in a new tab.
+  const siteUrl = computed(() => {
+    const given = options.siteLink === undefined ? state.manifest?.siteUrl : options.siteLink
+
+    return typeof given === 'string' && given !== '' ? given : null
+  })
+
   const context: AdminContext = {
     http: options.http,
     basePath: options.basePath,
@@ -405,6 +421,7 @@ export function createAdminContext(options: {
     modules: options.modules,
     nav,
     groups,
+    siteUrl,
     types,
     pickImage: pickImage ?? null,
     assetUrls: assetUrls ? cachedAssetUrls : null,

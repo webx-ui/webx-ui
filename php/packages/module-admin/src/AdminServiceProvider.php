@@ -292,6 +292,8 @@ class AdminServiceProvider extends ServiceProvider
                 // Optional on purpose: a site without `module-settings` has nowhere to put a
                 // logo, and the frame must not require the section that holds one.
                 $app->bound(BrandingSource::class) ? $app->make(BrandingSource::class) : null,
+                // The language prefix of the site's home, when there is a registry to ask.
+                $app->bound(SiteUrls::class) ? $app->make(SiteUrls::class) : null,
             ),
         );
     }

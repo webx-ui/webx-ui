@@ -176,6 +176,61 @@ describe('createAdmin', () => {
     expect(admin.context.state.manifest?.title).toBe('WebX UI')
   })
 
+  describe('siteLink', () => {
+    function withSite(): Http {
+      return stubHttp({
+        get: ((url: string) => {
+          const body = answer(url) as { data: unknown }
+
+          return Promise.resolve(
+            body.data === manifest
+              ? { data: { ...manifest, siteUrl: 'https://shop.example.test/' } }
+              : body,
+          )
+        }) as never,
+      })
+    }
+
+    async function siteUrlOf(siteLink?: string | false, http: Http = withSite()) {
+      const admin = createAdmin({ el: mountPoint(), http, routes: [rootRoute], siteLink })
+
+      await admin.mount()
+
+      return admin.context.siteUrl.value
+    }
+
+    it('leads to the home page the server names', async () => {
+      expect(await siteUrlOf()).toBe('https://shop.example.test/')
+    })
+
+    it('goes where the project says instead', async () => {
+      expect(await siteUrlOf('https://www.example.test/en/')).toBe('https://www.example.test/en/')
+    })
+
+    it('is left out everywhere when the project says false', async () => {
+      expect(await siteUrlOf(false)).toBeNull()
+    })
+
+    it('offers nothing when an older server does not say where the site is', async () => {
+      expect(await siteUrlOf(undefined, stubHttp())).toBeNull()
+    })
+
+    it('makes the name in the head a link to the site, in a new tab', async () => {
+      const admin = createAdmin({ el: mountPoint(), http: withSite(), routes: [rootRoute] })
+
+      await admin.mount()
+      await flushPromises()
+
+      const links = [...document.querySelectorAll<HTMLAnchorElement>('a[target="_blank"]')]
+
+      expect(links.length).toBeGreaterThan(0)
+      for (const link of links) {
+        expect(link.getAttribute('href')).toBe('https://shop.example.test/')
+        expect(link.getAttribute('rel')).toBe('noopener')
+      }
+    })
+  })
+
   it("hands every date picker the site's clock from the manifest", async () => {
     let zone: unknown = 'not read'
     const reader = {

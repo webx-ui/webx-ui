@@ -24,6 +24,7 @@ export const adminMessages: Record<string, Messages> = {
     menu: 'Menu',
     collapse: 'Collapse the menu',
     expand: 'Expand the menu',
+    'open-site': 'Open the site',
     language: 'Language',
     // The one menu group the panel names itself; a module's own group is named by the module.
     system: 'System',

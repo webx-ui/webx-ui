@@ -434,6 +434,8 @@ function on(method: string, pattern: string, handler: Handler): void {
 on('GET', '/manifest', ({ locale }) => ({
   data: {
     title: 'WebX Demo',
+    // The site the panel runs — a made-up one: the playground has no site of its own.
+    siteUrl: 'https://example.test/',
     path: '/panel',
     apiPath: '/api/cms',
     locale,

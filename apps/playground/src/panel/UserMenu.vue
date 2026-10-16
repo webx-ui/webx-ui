@@ -79,6 +79,18 @@ const preference = computed({
       {{ item.nativeName }}
     </wx-dropdown-item>
 
+    <wx-divider spacing="sm" />
+
+    <wx-dropdown-item
+      v-if="admin.siteUrl.value"
+      icon="external-link"
+      :href="admin.siteUrl.value"
+      target="_blank"
+      rel="noopener"
+    >
+      {{ panel('nav.open-site') }}
+    </wx-dropdown-item>
+
     <wx-dropdown-item icon="arrow-left" href="/">Back to the playground</wx-dropdown-item>
   </wx-dropdown>
 </template>

@@ -10,6 +10,7 @@ use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Contracts\Module;
+use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Localization\Locales;
@@ -27,12 +28,14 @@ final class ManifestBuilder
         private readonly ScreenRegistry $screens,
         private readonly Backups $backups,
         private readonly ?BrandingSource $brand = null,
+        private readonly ?SiteUrls $site = null,
     ) {}
 
     /**
      * @return array{
      *     title: string,
      *     branding: array{logo: array{url: string, width: int|null, height: int|null}|null, mark: array{url: string, width: int|null, height: int|null}|null},
+     *     siteUrl: string,
      *     path: string,
      *     apiPath: string,
      *     locale: string,
@@ -55,6 +58,10 @@ final class ManifestBuilder
             // until the picture loads, what it shows if the picture is gone, and its alt.
             'title' => $this->title($brand),
             'branding' => $brand->toArray(),
+            // The way from the panel to the site it runs: the home page in the site's main
+            // language rather than the one this administrator reads the panel in — the panel is
+            // theirs, the site is its visitors'.
+            'siteUrl' => $this->siteUrl(),
             'path' => '/'.ltrim((string) $this->config->get('webx-admin.path'), '/'),
             'apiPath' => '/'.ltrim((string) $this->config->get('webx-admin.api_path'), '/'),
             // The language this administrator reads the panel in — their own choice, not the
@@ -74,6 +81,16 @@ final class ManifestBuilder
             'screens' => $this->screens->names(),
             'backup' => $this->backup(),
         ];
+    }
+
+    /**
+     * The home page, prefixed the way the site prefixes its main language when the address
+     * registry is there to say how; the application's root when it is not, which is the home
+     * all the same.
+     */
+    private function siteUrl(): string
+    {
+        return $this->site?->to('/', $this->locales->defaultCode()) ?? url('/');
     }
 
     /** The application's zone, the one every moment is stored and printed in. */
