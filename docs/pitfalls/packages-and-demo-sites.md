@@ -196,6 +196,12 @@ of memory: Zone` каждый раз в разном месте. Перед ге
   напрямую: `php -d memory_limit=-1 vendor/bin/phpunit --colors=never` и `php -d memory_limit=-1
 vendor/bin/phpstan analyse --no-progress --error-format=raw` (или `COMPOSER_PROCESS_TIMEOUT=0`).
   `--colors=never` — иначе `grep` по итогу ничего не находит.
+- **Полный PHPUnit вдруг даёт тысячу ошибок «no such table: cache», а тот же тест отдельно
+  зелёный.** Во время прогона из `php/` запускали `vendor/bin/testbench …` (например, `testbench
+list`): он переписывает общий `vendor/orchestra/testbench-core/laravel/bootstrap/cache/services.php`,
+  и тесты, поднимающие приложение в этот момент, получают чужой набор провайдеров. Пока идёт
+  прогон, `testbench` не звать; после — удалить `services.php` (он сгенерируется заново) и
+  повторить. Список MCP-инструментов модуля проверяет его тест на `webx:mcp-tools`.
 - **Страница, переписанная в Playwright через `page.route()` + `route.fulfill()`, остаётся без
   стилей и скриптов**, а в консоли «blocked by CORS policy: … more-private address space».
   Документ, отданный `fulfill`, для браузера уже не с адреса сайта, и Private Network Access режет

@@ -21,7 +21,7 @@ final class AgentDocsCoverageTest extends PlainTestCase
      * every package, and every new one, is required — but for a package being built in steps, whose
      * guide is written with its MCP tools: take it off the list in the same commit.
      */
-    private const array PENDING = ['module-notifications'];
+    private const array PENDING = [];
 
     /** The sections every guide has, in this order. */
     public const array SECTIONS = [

@@ -714,6 +714,7 @@ GET    meta                          notifications.view    провайдеры 
 | `notifications_channel_update` | `channel`, любые поля create кроме `provider`; `forget?: string[]`                                                                                    | канал + `warnings`                                                        |
 | `notifications_channel_delete` | `channel`                                                                                                                                             | в корзину                                                                 |
 | `notifications_channel_copy`   | `channel`, `name?`                                                                                                                                    | новый канал (выключен, креденшелы перенесены — §3.4)                      |
+| `notifications_preview`        | `channel?` и/или `provider`, `event?`, `subject?`, `template?`; `locale?`                                                                             | сообщение на примерах события, без отправки; отказ шаблона — словами      |
 | `notifications_test`           | `channel`, `recipient?`                                                                                                                               | по получателям: `sent` / ошибка                                           |
 | `notifications_find_chats`     | `channel` или `token`                                                                                                                                 | чаты: id, type, title, username                                           |
 | `notifications_deliveries`     | `channel?`, `event?`, `status?`, `subject_type?`+`subject_id?`, `since?`, `tests?`, `limit?`                                                          | строки журнала (`variables` — да: право `view` это даёт)                  |
@@ -750,8 +751,10 @@ GET    meta                          notifications.view    провайдеры 
   правила), форма получателей, тема есть/нет, возможности (`find_recipients`), допустимая
   разметка шаблона;
 - `notifications://events` — события: ключ, подпись, модуль, переменные с описанием и примером,
-  `sample`, и сколько каналов на событие (`channels`, `enabled`) — чтобы агент не завёл второй
-  канал того же назначения.
+  `sample`, списки и их поля, адресаты, синтаксис шаблона, и сколько каналов на событие
+  (`channels`, `enabled`) — чтобы агент не завёл второй канал того же назначения;
+- `notifications://channels` — каналы кратко (строка списка панели) и режим отправки (`queue` /
+  `after_response`).
 
 ## 13. Диагностика — `webx:doctor`
 
@@ -902,9 +905,12 @@ subject: $submission)`. Это расходится со старым письм
 ### 16.2 Демо
 
 `Demo\NotificationsDemo` (`ProvidesDemo`, как `module-faq/src/Demo/FaqDemo.php`): один
-**выключенный** Telegram-канал «New submissions (demo)», событие `inbox.submission`, если Inbox
-стоит (иначе универсальный), шаблон — `sample`, **без токена и без получателей**. Сайт, где уже
-есть канал (и в корзине), демо не получает; `webx:demo --remove` удаляет по журналу демо.
+**выключенный** e-mail-канал «Example letter (demo)» для любого события, через почту сайта, на
+выдуманный `manager@example.com`, **без секретов**. Шаблон (`resources/demo/notifications.json`,
+en и ru — те языки, что есть у сайта) показывает синтаксис: комментарий, `{{#title}}`/`{{^title}}` и
+список `{{#items}}…{{/items}}` с `{{^items}}`. Канал сохраняется через `ChannelForm` — шаблон демо
+проходит те же правила. Сайт, где уже есть канал (и в корзине), демо не получает;
+`webx:demo --remove` удаляет по журналу демо.
 
 ### 16.3 Как потом перевести `module-tasks`
 
@@ -1014,5 +1020,21 @@ subject: $submission)`. Это расходится со старым письм
 формы — `Provider::screen()`, плоские, добавляются в карточку `connection`; форма шлёт настройки
 плоско по имени (`token`, `host`), агент — и объектами `credentials`/`options`; `sample` события —
 по ключу провайдера (`*` — любой). Строка `Catalogue`, `extra.webx.npm`/`panel`, `RelationTarget`
-каналов, MCP, демо и `AGENTS.md` — следующими этапами (пакет пока в `PENDING`
-`AgentDocsCoverageTest`).
+каналов — следующими этапами.
+
+**MCP, демо, `AGENTS.md` (этап 3) — сделано.** `Mcp\NotificationsTools` (11 инструментов §12.1) и
+`Mcp\NotificationsResources` (три ресурса §12.3), `Demo\NotificationsDemo` (§16.2), `AGENTS.md`
+пакета; `module-notifications` снят с `PENDING` в `AgentDocsCoverageTest`. Уточнения против текста
+выше:
+
+- добавлен `notifications_preview` (чтение, право `view` или `manage`): шаблон проверяется так же,
+  как при сохранении (`ChannelForm::unsaved`), и рисуется на примерах события; читающие
+  инструменты — под `view` или `manage`, как маршруты панели;
+- в ответах MCP секретные поля убраны из `values` совсем, остаётся `credentials_set`;
+- `dry_run` сохранений (`create`, `update`, `copy`) — сама запись с откатом; `dry_run` того, что
+  выходит наружу (`test`, `find_chats`, `retry`), наружу не ходит и задание не ставит, а говорит,
+  кому ушло бы (`would_send_to`) или что повторилось бы (`would_retry`);
+- `notifications_test` — тот же лимит 10 в минуту на администратора, что у кнопки;
+- тексты ошибок §12.2 — по смыслу: отказы правил значений идут словами `lang/errors.php`
+  (`Not accepted — template: The section {{#items}} is not closed: end it with {{/items}}.`),
+  ошибки Telegram — словами провайдера, токен в них замаскирован.

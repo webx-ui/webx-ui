@@ -1,0 +1,19 @@
+{
+  "channels": [
+    {
+      "key": "example-email",
+      "name": { "en": "Example letter (demo)", "ru": "Пример письма (демо)" },
+      "provider": "email",
+      "options": { "mode": "site" },
+      "recipients": [{ "email": "manager@example.com" }],
+      "subject": {
+        "en": "{{#title}}{{title}}{{/title}}{{^title}}A notification{{/title}} — demo",
+        "ru": "{{#title}}{{title}}{{/title}}{{^title}}Уведомление{{/title}} — демо"
+      },
+      "template": {
+        "en": "{{! A demo channel: switched off, its address is made up. Put your own address in before you switch it on. }}\n{{#title}}{{title}}{{/title}}\n\n{{#items}}\n- {{name}}: {{value}}\n{{/items}}\n{{^items}}\nNothing listed.\n{{/items}}\n\n{{#url}}Open: {{url}}{{/url}}",
+        "ru": "{{! Демо-канал: выключен, адрес выдуманный. Укажите свой адрес, прежде чем включать. }}\n{{#title}}{{title}}{{/title}}\n\n{{#items}}\n- {{name}}: {{value}}\n{{/items}}\n{{^items}}\nСписок пуст.\n{{/items}}\n\n{{#url}}Открыть: {{url}}{{/url}}"
+      }
+    }
+  ]
+}

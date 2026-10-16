@@ -11,7 +11,7 @@ use Mustache\Loader\ArrayLoader;
 use Mustache\Tokenizer;
 
 /**
- * A channel's template is Mustache (§7, decision 15), rendered by `mustache/mustache`: `{{name}}`,
+ * A channel's template is Mustache (§7, decision 16), rendered by `mustache/mustache`: `{{name}}`,
  * a list `{{#items}}…{{/items}}` over the fields of each element, `{{#name}}…{{/name}}` when a
  * value is there and `{{^name}}…{{/name}}` when it is not. A template is stored in the database,
  * so it is never Blade and never PHP: Mustache has no way to call code, and lambdas are off.

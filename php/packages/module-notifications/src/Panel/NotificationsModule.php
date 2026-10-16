@@ -5,6 +5,15 @@ declare(strict_types=1);
 namespace WebxUi\Notifications\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\McpResource;
+use WebxUi\Mcp\ProvidesMcpDefaults;
+use WebxUi\Mcp\Tool;
+use WebxUi\Notifications\Demo\NotificationsDemo;
+use WebxUi\Notifications\Mcp\NotificationsResources;
+use WebxUi\Notifications\Mcp\NotificationsTools;
 
 /**
  * The section "Notifications" (§10): channels, and the log of what they sent.
@@ -15,15 +24,28 @@ use WebxUi\Admin\AbstractModule;
  * super administrator sees the section until somebody grants them on purpose.
  *
  * In the group `system`, beside the settings and the codes: set up once, rarely visited.
+ *
+ * To an agent it is the same section by other doors (§12): eleven tools `notifications_*` behind
+ * `notifications:read` and `notifications:write` and the same two permissions, and
+ * `notifications://providers`, `notifications://events`, `notifications://channels` to read first.
+ * The demo is one e-mail channel, switched off.
  */
-final class NotificationsModule extends AbstractModule
+final class NotificationsModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
 {
+    use ProvidesMcpDefaults;
+
     /** The id in the panel. */
     public const ID = 'notifications';
 
     public const VIEW = 'notifications.view';
 
     public const MANAGE = 'notifications.manage';
+
+    public function __construct(
+        private readonly NotificationsTools $tools,
+        private readonly NotificationsResources $resources,
+        private readonly NotificationsDemo $demo,
+    ) {}
 
     public function id(): string
     {
@@ -64,5 +86,26 @@ final class NotificationsModule extends AbstractModule
     public function requires(): array
     {
         return [];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
+    }
+
+    /**
+     * @return list<Tool>
+     */
+    public function mcpTools(): array
+    {
+        return $this->tools->all();
+    }
+
+    /**
+     * @return list<McpResource>
+     */
+    public function mcpResources(): array
+    {
+        return $this->resources->all();
     }
 }
