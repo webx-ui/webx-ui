@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Admin\Cache;
+namespace WebxUi\Cache;
 
 use Closure;
 

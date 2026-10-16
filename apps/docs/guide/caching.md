@@ -4,7 +4,8 @@ A WebX site caches on versioned keys. Every group of data — the menu, the sett
 — has a version, a counter in the cache; an entry built from a group carries that version in its
 key, so moving the version is forgetting every entry built on the old one at once. It works on
 every store, `file` and `database` included, where Laravel's tags do not. The design and its
-reasons are in `docs/architecture/WEBX_UI_CACHE.md`.
+reasons are in `docs/architecture/WEBX_UI_CACHE.md`. The registry is the library `webx-ui/cache`;
+the screen, the command and the agent's tool that reset through it are `webx-ui/module-admin`'s.
 
 **The rule:** a save in the panel resets its own group, and nobody ever needs the button. If
 somebody had to press «Reset the site cache», a write went past the groups — a mass `update()`, a
@@ -13,7 +14,7 @@ raw query, an import — and that is a bug: find the path and give it a `bump()`
 ## Reading through a group
 
 ```php
-use WebxUi\Admin\Cache\CacheGroups;
+use WebxUi\Cache\CacheGroups;
 
 $html = app(CacheGroups::class)->remember(
     'theme.header',                       // the entry's name
@@ -25,7 +26,7 @@ $html = app(CacheGroups::class)->remember(
 The key is `webx:theme.header:<locale>:menu.<v>.settings.<v>.theme.<v>`: the language of the
 request is part of it, so every language has an entry of its own. Pass `localized: false` for data
 that is the same in every language, and `ttl:` for a life other than the default day
-(`webx-admin.cache.ttl`).
+(`webx-cache.ttl`).
 
 Nothing is stored while a database transaction is open: the rows read inside it may still roll
 back, and an agent's `dry_run` is exactly such a transaction. The value is computed and returned,
@@ -33,10 +34,18 @@ not kept.
 
 ## Declaring a group
 
-A module declares the group its data lives in, from its service provider's `boot()`, and names
-the models whose every save moves it:
+A module requires `webx-ui/cache`, registers its provider from its own `register()` — so the
+registry is one singleton before any `boot()` declares into it, whether the site found the package
+by discovery or a test listed the providers by hand — and declares the group its data lives in
+from `boot()`, with the models whose every save moves it:
 
 ```php
+public function register(): void
+{
+    $this->app->register(CacheServiceProvider::class);
+}
+
+// in boot():
 $groups = $this->app->make(CacheGroups::class);
 
 $groups->declare('menu', 'webx-menu::module.title');
@@ -54,8 +63,10 @@ Product::query()->where('brand_id', $old)->update(['brand_id' => $new]);
 $groups->bump('catalog');
 ```
 
-The frame declares `locales`, `routes`, `screens` and `theme`; the modules declare `settings`,
-`menu`, `blocks`, `regions`, `seo`, `sitemap`, `snippets`, `banners` and `catalog`. A group may be
+The groups every site has are declared by their owners: `locales` by `webx-ui/localization`,
+`routes` by `webx-ui/routing`, `theme` by `webx-ui/themes`, `screens` by the frame, which also
+gives the four their words on the screen; the modules declare `settings`, `menu`, `blocks`,
+`regions`, `seo`, `sitemap`, `snippets`, `banners` and `catalog`. A group may be
 read by anybody — a theme's header depends on `menu` — but is named and given its models by its
 owner only. A group with an expensive build, the sitemap, is a group of its own, so that it moves
 less often.

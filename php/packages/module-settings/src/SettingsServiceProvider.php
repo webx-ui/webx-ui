@@ -6,7 +6,6 @@ namespace WebxUi\Settings;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
-use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Events\StoredContentRewritten;
@@ -14,6 +13,7 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Settings\Console\MoveContactsCommand;
 use WebxUi\Settings\Contacts\Contacts;
 use WebxUi\Settings\Events\SettingsSaved;

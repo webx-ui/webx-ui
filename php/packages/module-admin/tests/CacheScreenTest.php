@@ -9,7 +9,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
-use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Cache\CacheModule;
 use WebxUi\Admin\Cache\CacheReset;
 use WebxUi\Admin\Cache\McpCacheModule;
@@ -20,6 +19,7 @@ use WebxUi\Admin\History\HistoryContext;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Tests\Fixtures\Editor;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 
@@ -207,10 +207,10 @@ final class CacheScreenTest extends TestCase
         $this->assertStringContainsString('5 cache groups', $found[0]->detail);
         $this->assertStringContainsString('webx:cache:prune', $found[0]->detail);
 
-        config(['webx-admin.cache.enabled' => false]);
+        config(['webx-cache.enabled' => false]);
         $found = $check->run();
         $this->assertSame(Diagnosis::WARN, $found[0]->state);
-        $this->assertStringContainsString('webx-admin.cache.enabled', $found[0]->detail);
+        $this->assertStringContainsString('webx-cache.enabled', $found[0]->detail);
 
         $this->assertContains(CacheStore::class, (new \ReflectionClassConstant(DoctorCommand::class, 'CHECKS'))->getValue());
     }

@@ -26,9 +26,9 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 - **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in
   `HistoryTypes`. With `webx-ui/mcp`: MCP tools `history_get`, `history_runs`, resource
   `history://types`, scope `history:read` (the frame registers a type of its own, so they are always there).
-- **Cache** — `Cache\CacheGroups`: versioned keys per group (`declare`, `bumpOn`, `bump`, `onReset`,
-  `remember`), on any store; «System → Cache» (`cache.view`, `cache.reset`), `webx:cache:reset`,
-  MCP `cache_reset` (`dry_run`), every reset journalled. Guide: https://webx-ui.github.io/webx-ui/guide/caching
+- **Cache** — «System → Cache» (`cache.view`, `cache.reset`), `webx:cache:reset`, MCP `cache_reset`
+  (`dry_run`), every reset journalled; the group `screens` and the words of `locales`, `routes`, `theme`.
+  The registry itself (`WebxUi\Cache\CacheGroups`) is `webx-ui/cache`'s — read its AGENTS.md to cache or reset.
 - **Also** — tables `cms_notes` (`HasNotes`), `cms_relations` (`HasRelations`), `cms_uploads` (chunked uploads,
   `UploadPurposes`); macros `category()`, `categoryLinks()`; `@webxPart` / `@webxPartAssets`; the site password (`CloseSite`, `Openings`).
 - **Shortcodes** — the registry `WebxUi\Admin\Shortcodes\Shortcodes` (facade `Shortcodes`): `register()`, `source()`,
@@ -103,7 +103,7 @@ same address, are kept; a file that is not JSON is left alone with a warning (`A
 | A table of the site's own in snapshots  | `webx-admin.snapshot.tables` (`content`, `stand`, … ; `shop_*` is a prefix), or `SnapshotTables` from a provider                                                         |
 | A setting that stays on its stand       | its key in `webx-settings.stand_own`; a restore keeps this stand's value                                                                                                 |
 | A check of your own in `webx:doctor`    | `$this->app->make(DoctorChecks::class)->register(YourCheck::class)` in a provider                                                                                        |
-| Cache something the site reads a lot    | `CacheGroups::remember('name', ['menu', 'settings'], fn () => …)`; a mass write without a model → `bump('menu')`                                                         |
+| Cache something the site reads a lot    | `WebxUi\Cache\CacheGroups::remember('name', ['menu', 'settings'], fn () => …)`; a mass write without a model → `bump('menu')`                                            |
 | A record of yours on the site's panel   | `SiteBar::entity(<RouteType type>, new EntityLink(...))` per address type: https://webx-ui.github.io/webx-ui/guide/site-bar-modules                                      |
 | A link source, note type, history type  | register into `LinkSources`, `NoteTypes`, `HistoryTypes` from a provider                                                                                                 |
 

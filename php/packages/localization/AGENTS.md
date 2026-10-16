@@ -50,7 +50,8 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 - Do not delete a language to hide it: content written in it stays in every JSON map. Set
   `is_active` to false instead; the text comes back when it is switched on.
 - Do not set `is_default` with a raw SQL update: the model is what keeps exactly one default and
-  normalises the code. Save through `Locale`, then `webx:locales:clear` — the list is cached.
+  normalises the code. Save through `Locale` — the cached list and the `locales` cache group
+  (`webx-ui/cache`, `CacheGroups::LOCALES`) follow the model; after SQL, `webx:locales:clear`.
 - Do not write `$model->title = [...]` to set several languages: a plain assignment writes the
   current language only. Use `setTranslations('title', [...])`.
 - Do not make a translated slug unique with a database index: a JSON column cannot do it per

@@ -16,7 +16,6 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
-use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Events\StoredContentRewritten;
@@ -63,6 +62,7 @@ use WebxUi\Blocks\Rendering\TemplateCompiler;
 use WebxUi\Blocks\Rendering\Thumbnails;
 use WebxUi\Blocks\Tags\BlockTag;
 use WebxUi\Blocks\Themes\LayerSync;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Themes\Contracts\SyncStep;
 
 /**

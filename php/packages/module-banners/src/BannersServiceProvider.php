@@ -6,7 +6,6 @@ namespace WebxUi\Banners;
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
-use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -18,6 +17,7 @@ use WebxUi\Banners\Rendering\Stylesheet;
 use WebxUi\Banners\Screens\LayersType;
 use WebxUi\Banners\View\Components\Banner as BannerComponent;
 use WebxUi\Banners\View\Components\Banners as BannersComponent;
+use WebxUi\Cache\CacheGroups;
 
 /**
  * The banners, their places and the screen they are edited on — and not one public route, not a

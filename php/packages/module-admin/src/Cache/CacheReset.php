@@ -8,6 +8,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use InvalidArgumentException;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\Journal;
+use WebxUi\Cache\CacheGroups;
 
 /**
  * «Reset the site cache» — the button, the command and the agent's tool behind one door.

@@ -8,10 +8,13 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Translation\FileLoader;
+use WebxUi\Cache\CacheGroups;
+use WebxUi\Cache\CacheServiceProvider;
 use WebxUi\Localization\Console\ClearLocalesCommand;
 use WebxUi\Localization\Console\SeedLocalesCommand;
 use WebxUi\Localization\Http\Middleware\SetLocale;
 use WebxUi\Localization\Http\Middleware\SetPanelLocale;
+use WebxUi\Localization\Models\Locale;
 use WebxUi\Localization\Translations\DictionaryBuilder;
 
 class LocalizationServiceProvider extends ServiceProvider
@@ -19,6 +22,10 @@ class LocalizationServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/webx-localization.php', 'webx-localization');
+
+        // The registry of cache groups has to be one singleton before `boot()` declares into it,
+        // whether the site found `webx-ui/cache` by discovery or a test listed the providers.
+        $this->app->register(CacheServiceProvider::class);
 
         // One list per request: it is read by routing, by models, by the manifest, and asking
         // the database each time would be a query on every translated attribute.
@@ -44,6 +51,7 @@ class LocalizationServiceProvider extends ServiceProvider
 
         $this->addValidationLines();
         $this->registerBlueprintMacro();
+        $this->registerCacheGroup();
 
         /** @var Router $router */
         $router = $this->app->make('router');
@@ -62,6 +70,21 @@ class LocalizationServiceProvider extends ServiceProvider
             ClearLocalesCommand::class,
             SeedLocalesCommand::class,
         ]);
+    }
+
+    /**
+     * The `locales` cache group (WEBX_UI_CACHE.md §2.1): a language saved through its model moves
+     * it, and a reset by code — the panel's button, the command, the agent's tool — also forgets
+     * the list this package keeps on a key of its own, which the model's events forget already.
+     * The words the panel shows for the group are the frame's, where there is one.
+     */
+    private function registerCacheGroup(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare(CacheGroups::LOCALES);
+        $groups->bumpOn(CacheGroups::LOCALES, Locale::class);
+        $groups->onReset(CacheGroups::LOCALES, fn () => $this->app->make(Locales::class)->forget());
     }
 
     /**

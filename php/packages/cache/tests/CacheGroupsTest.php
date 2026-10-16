@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Admin\Tests;
+namespace WebxUi\Cache\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use WebxUi\Admin\Cache\CacheGroups;
-use WebxUi\Admin\Tests\Fixtures\Widget;
+use WebxUi\Cache\CacheGroups;
+use WebxUi\Cache\Tests\Fixtures\Widget;
 
 /**
  * Cache on versioned keys (WEBX_UI_CACHE.md §2–§3): a group moves when its model is saved or
@@ -27,8 +27,6 @@ final class CacheGroupsTest extends TestCase
 
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate')->run();
-
         Schema::create('widgets', static function (Blueprint $table): void {
             $table->id();
             $table->string('name');
@@ -88,7 +86,7 @@ final class CacheGroupsTest extends TestCase
         $groups = $this->app->make(CacheGroups::class);
         $groups->declare('menu');
 
-        $this->assertSame(['locales', 'routes', 'screens', 'theme', 'menu'], $groups->ids(), 'the frame declares its own four first');
+        $this->assertSame(['menu'], $groups->ids(), 'the library declares nothing of its own: every group has an owner');
 
         try {
             $groups->bump('menus');
@@ -324,7 +322,7 @@ final class CacheGroupsTest extends TestCase
     #[Test]
     public function switched_off_it_computes_every_time(): void
     {
-        config(['webx-admin.cache.enabled' => false]);
+        config(['webx-cache.enabled' => false]);
         $groups = $this->fresh();
         $groups->declare('menu');
 

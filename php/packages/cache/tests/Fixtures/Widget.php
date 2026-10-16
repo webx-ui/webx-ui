@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Admin\Tests\Fixtures;
+namespace WebxUi\Cache\Tests\Fixtures;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;

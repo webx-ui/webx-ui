@@ -15,7 +15,7 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
   `alias`), `target_id` (an alias points at the canonical row, so renames never chain),
   `entity_type`, `entity_id`; unique on `locale` + `path`.
 - **Trait** `HasUrl` — `routePath()`, `routeCanonical()`, `url()`, `routes()`, `hasUrlIn()`.
-- **Cache group** `routes` (the frame's, WEBX_UI_CACHE.md): every `Route` save moves it; `RouteSync` says so after its bulk writes where `module-admin` is installed.
+- **Cache group** `routes` (`webx-ui/cache`, `CacheGroups::ROUTES`): every `Route` save moves it; `RouteSync` says so after its bulk writes. The panel names it; this package owns it.
   Saving, moving, deleting and restoring the model keep the registry in step.
 - **Address types** registered with `app(RouteTypes::class)->register(new RouteType(...))`:
   `type` (the morph alias), `model`, `formatter`, `handler` (a `RouteHandler`), `acceptsTail`,

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Admin\Cache;
+namespace WebxUi\Cache;
 
 use Closure;
 use Illuminate\Contracts\Cache\Repository as Cache;
@@ -38,7 +38,11 @@ final class CacheGroups
 {
     public const PREFIX = 'webx:ver:';
 
-    /** The frame's own groups: every site has them, whichever modules it installs. */
+    /**
+     * The groups every WebX site has, whichever modules it installs — declared by their owners
+     * (`localization`, `routing`, `themes`, the frame) and named here so that a reader does not
+     * spell them.
+     */
     public const LOCALES = 'locales';
 
     public const ROUTES = 'routes';
@@ -262,13 +266,13 @@ final class CacheGroups
 
     public function enabled(): bool
     {
-        return (bool) $this->config->get('webx-admin.cache.enabled', true);
+        return (bool) $this->config->get('webx-cache.enabled', true);
     }
 
     /** How long an entry lives unless told otherwise: a day, so that nothing missed stays forever. */
     public function ttl(): int
     {
-        return max(1, (int) $this->config->get('webx-admin.cache.ttl', self::DEFAULT_TTL));
+        return max(1, (int) $this->config->get('webx-cache.ttl', self::DEFAULT_TTL));
     }
 
     private function bumpFor(ConnectionInterface $connection, string $group, bool $hooks = true): void

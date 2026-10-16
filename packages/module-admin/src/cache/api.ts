@@ -16,7 +16,7 @@ export interface CacheReport {
   driver: string
   /** The store's name in the configuration. */
   store: string
-  /** `webx-admin.cache.enabled` — off, the site computes everything on every request. */
+  /** `webx-cache.enabled` — off, the site computes everything on every request. */
   enabled: boolean
   /** How long an entry lives, in seconds, unless its code says otherwise. */
   ttl: number

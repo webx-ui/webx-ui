@@ -2,8 +2,9 @@
 
 Статус: механизм и экран «Кеш» реализованы (§9); перевод существующих кешей на версионные ключи и
 кеширование общих данных страницы — следующие этапы задачи о производительности
-([`WEBX_UI_PERFORMANCE_AUDIT.md`](WEBX_UI_PERFORMANCE_AUDIT.md), §5). Живёт в `webx-ui/module-admin`
-(`WebxUi\Admin\Cache\`) и `@webx-ui/module-admin` (`cache()`, `WxCachePage`).
+([`WEBX_UI_PERFORMANCE_AUDIT.md`](WEBX_UI_PERFORMANCE_AUDIT.md), §5). Реестр групп и `remember` —
+библиотека `webx-ui/cache` (`WebxUi\Cache\`); экран, команда, MCP-инструмент и право — в
+`webx-ui/module-admin` (`WebxUi\Admin\Cache\`) и `@webx-ui/module-admin` (`cache()`, `WxCachePage`).
 
 ## 1. Зачем и где
 
@@ -13,11 +14,20 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
 свой: `forget` по ключу, «поколение», отпечаток в ключе (карта — аудит §3). Общего способа сказать
 «меню изменилось, забудьте всё, что из него собрано» нет, и кнопки «сбросить кеш сайта» тоже нет.
 
-Механизм — в `module-admin`, а не отдельной библиотекой (аудит §8, п. 1): все модули его требуют,
-новый composer-пакет — новое зеркало для Packagist и первая версия руками. Библиотекам `routing` и
-`localization`, которые от `module-admin` не зависят, группы объявляет сам каркас (§2.1), а
-`RouteSync` говорит о массовых записях через `Container::bound(CacheGroups::class)` — там, где
-каркас установлен.
+Реестр групп — отдельная библиотека `webx-ui/cache` (только PHP, без npm-пары), а не часть
+`module-admin` (решение человека): группы `routes`, `locales` и `theme` нужны `routing`,
+`localization` и `themes`, которые от каркаса не зависят, и ссылка на класс каркаса из них была бы
+ссылкой на чужой пакет. Базового пакета, от которого зависят все потребители, нет (`themes` не
+требует ни одного `webx-ui/*`), поэтому — новая библиотека: её `require` каждый, кто объявляет или
+двигает группу (`localization`, `routing`, `themes`, `module-admin`, `module-settings`, `module-menu`,
+`module-blocks`, `module-seo`, `module-snippets`, `module-banners`, `module-catalog`,
+`module-catalog-properties`). Экран «Кеш», команда, MCP-инструмент, право и история остаются в
+`module-admin` и пользуются библиотекой.
+
+Провайдер библиотеки (`CacheServiceProvider`: синглтон `CacheGroups`, конфиг `webx-cache`, сброс
+мемо на `RequestReceived` Octane) находится discovery; вдобавок каждый пакет, который объявляет
+группу, регистрирует его сам в `register()` — чтобы реестр был одним синглтоном до любого `boot()`
+и в тестах, где провайдеры перечислены руками.
 
 ## 2. Решения
 
@@ -31,9 +41,12 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
   `[10⁹, 9·10⁹)`: запись версии, вытесненная из кеша и заведённая заново с 1, встретила бы записи
   старой «единицы». Версия живёт 30 дней без касания; истёкшая заводится заново (промах, не старые
   данные).
-- **Каркас объявляет** `locales` (модель `Locale`, плюс `Locales::forget()` при явном сбросе),
-  `routes` (модель `Route`; массовые записи `RouteSync` — `bump` сами), `screens` и `theme` (без
-  моделей: деплой, `webx:theme:sync`, кнопка).
+- **Группы, которые есть на каждом сайте, объявляют их владельцы:** `localization` — `locales`
+  (модель `Locale`, плюс `Locales::forget()` при явном сбросе), `routing` — `routes` (модель
+  `Route`; массовые записи `RouteSync` — `bump` сами), `themes` — `theme` (без моделей:
+  `webx:theme:sync`, кнопка), каркас — `screens` (деплой, кнопка). Имена — константы
+  `CacheGroups::LOCALES` и т. д. Слова для экрана (ключи `webx-admin::cache.group-*`) даёт каркас:
+  `declare(group, title)` поверх уже объявленной группы только даёт заголовок, если его ещё нет.
 - **Пакеты объявляют своё** из провайдера: `settings` (`Setting`), `menu` (`Menu`, `MenuItem`),
   `blocks` (`Block`, `BlockVersion`), `regions` (`Region`), `seo` (`SeoUrl`, `SeoRedirect`,
   `SeoLinkBlock`, `SeoLinkItem`), `sitemap` (без моделей — сам слушает всё видимое), `snippets`
@@ -68,10 +81,10 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
 ### 2.4. `remember` и TTL
 
 `CacheGroups::remember('header', ['menu', 'settings'], fn () => …, ttl: null, localized: true)` —
-`Cache::remember` на версионном ключе. TTL по умолчанию — `webx-admin.cache.ttl` (сутки): запись,
+`Cache::remember` на версионном ключе. TTL по умолчанию — `webx-cache.ttl` (сутки): запись,
 чей сброс кто-то пропустил, не живёт вечно. При `transactionLevel() > 0` ничего не пишется, значение
 считается и отдаётся — так репетиция MCP (`dry_run`: запись и откат) не оставляет в кеше того, чего
-не было. `webx-admin.cache.enabled=false` — всё считается на каждый запрос (для теста, не для сайта).
+не было. `webx-cache.enabled=false` — всё считается на каждый запрос (для теста, не для сайта).
 
 ### 2.5. Чтение версий один раз за запрос
 
@@ -80,7 +93,7 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
 Под Octane мемо сбрасывает `RequestReceived`; в тестах и воркерах — `forgetMemo()`. Группа,
 объявленная после первого чтения, дочитывается отдельно.
 
-## 3. API (`WebxUi\Admin\Cache\CacheGroups`)
+## 3. API (`WebxUi\Cache\CacheGroups`, пакет `webx-ui/cache`)
 
 | Метод                                                | Что делает                                                                                |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------- |
@@ -93,7 +106,7 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
 | `remember(name, depends, fn, ttl = null, localized)` | `Cache::remember` на этом ключе; в транзакции — без записи                                |
 | `all()` / `ids()` / `has(group)`                     | реестр для экрана, команды и инструмента                                                  |
 | `forgetMemo(group?)`                                 | забыть прочитанные версии (воркер, тест)                                                  |
-| `enabled()` / `ttl()`                                | конфиг `webx-admin.cache`                                                                 |
+| `enabled()` / `ttl()`                                | конфиг `webx-cache` (`WEBX_CACHE_ENABLED`, `WEBX_CACHE_TTL`)                              |
 
 Пример — шапка темы, зависящая от меню, настроек и темы, на языке запроса:
 
@@ -107,7 +120,7 @@ $html = $groups->remember('theme.header', ['menu', 'settings', 'theme'], fn () =
   механизма гоняются на трёх первых (`CacheGroupsTest`).
 - `webx:doctor`, проверка `Cache`: `array`/`null` в production — предупреждение («между запросами
   ничего не сохраняется»), в остальных окружениях — ok с оговоркой; `database` — ok и напоминание
-  про планировщик; выключенный `webx-admin.cache.enabled` — предупреждение.
+  про планировщик; выключенный `webx-cache.enabled` — предупреждение.
 - `webx:cache:prune` — раз в час по расписанию каркаса: `DELETE … WHERE expiration <= now` из таблиц
   `cache` и `cache_locks` хранилища `database`. Laravel удаляет просроченную запись только когда её
   читают, а записи под старыми версиями больше никто не читает. На других драйверах — no-op.
@@ -165,7 +178,7 @@ $html = $groups->remember('theme.header', ['menu', 'settings', 'theme'], fn () =
 
 ## 7. Тесты
 
-- `module-admin/tests/CacheGroupsTest.php` — версия, объявление, составные зависимости на
+- `cache/tests/CacheGroupsTest.php` — версия, объявление, составные зависимости на
   `array`/`file`/`database`, события моделей, массовый `update` без события, коллизия после потери
   версии, языки, транзакция (отложенный сброс, откат, без записи), хуки, одно чтение версий,
   выключенный кеш, длинный ключ.
@@ -194,5 +207,8 @@ $html = $groups->remember('theme.header', ['menu', 'settings', 'theme'], fn () =
 
 ## 9. Выпуск
 
-Этап 2 задачи webx-ui#16: `@webx-ui/php` minor (механизм, экран, команда, MCP, doctor, группы в
-пакетах), `@webx-ui/module-admin` minor (`cache()`, `WxCachePage`, `createCacheApi`, слова `cache`).
+Этап 2 задачи webx-ui#16: `@webx-ui/php` minor (библиотека `webx-ui/cache`, экран, команда, MCP,
+doctor, группы в пакетах), `@webx-ui/module-admin` minor (`cache()`, `WxCachePage`, `createCacheApi`,
+слова `cache`). `webx-ui/cache` — новый composer-пакет: при релизе человек создаёт зеркало
+`webx-ui/cache` и отправляет его на Packagist до мержа релизного PR
+([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md), «Однажды настроено»).

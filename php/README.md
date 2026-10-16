@@ -86,6 +86,7 @@ not that the logic is right.
 | `webx-ui/mcp`          | What a module offers an AI agent, and the registry for it  |
 | `webx-ui/module-auth`  | Administrators, roles, sign-in — and what closes the panel |
 | `webx-ui/nested-set`   | Nested set trees for Eloquent (`HasNestedSet`)             |
+| `webx-ui/cache`        | Cache on versioned keys (`CacheGroups`), on any store      |
 
 The roadmap for the rest lives in
 [`docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`](../docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md).

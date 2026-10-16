@@ -6,6 +6,7 @@
     "require": {
         "php": "^8.4",
         "mustache/mustache": "^3.2",
+        "webx-ui/cache": "*",
         "webx-ui/localization": "*",
         "webx-ui/mcp": "*",
         "webx-ui/module-admin": "*",
@@ -59,6 +60,7 @@
             "options": {
                 "//": "Without this the packages take the version of the git branch, and a constraint between two of them cannot be satisfied locally. scripts/sync-php-version.mjs keeps the map in step with php/package.json.",
                 "versions": {
+                    "webx-ui/cache": "0.76.0",
                     "webx-ui/localization": "0.76.0",
                     "webx-ui/mcp": "0.76.0",
                     "webx-ui/module-admin": "0.76.0",
@@ -109,6 +111,7 @@
             "WebxUi\\Banners\\Tests\\": "packages/module-banners/tests/",
             "WebxUi\\Blocks\\Tests\\": "packages/module-blocks/tests/",
             "WebxUi\\Blog\\Tests\\": "packages/module-blog/tests/",
+            "WebxUi\\Cache\\Tests\\": "packages/cache/tests/",
             "WebxUi\\Catalog\\Manticore\\Tests\\": "packages/module-catalog-manticore/tests/",
             "WebxUi\\Catalog\\Tests\\": "packages/module-catalog/tests/",
             "WebxUi\\CatalogBrands\\Tests\\": "packages/module-catalog-brands/tests/",

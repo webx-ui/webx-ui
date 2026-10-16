@@ -205,7 +205,7 @@ onMounted(() => void load())
 
         <!-- Every reset, signed: the journal is what says a `bump` is missing somewhere. -->
         <wx-card bordered :title="t('cache.history')">
-          <history-feed ref="history" type="cache" :id="0" title="" />
+          <history-feed :id="0" ref="history" type="cache" title="" />
         </wx-card>
       </template>
     </div>

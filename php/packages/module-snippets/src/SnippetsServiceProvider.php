@@ -6,12 +6,12 @@ namespace WebxUi\Snippets;
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
-use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Snippets\Checks\PlacesCheck;
 use WebxUi\Snippets\Doctor\SnippetPlaces;

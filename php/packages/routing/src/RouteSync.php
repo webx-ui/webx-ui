@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace WebxUi\Routing;
 
-use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use WebxUi\Admin\Cache\CacheGroups;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Exceptions\PathRejected;
 use WebxUi\Routing\Models\Route;
@@ -40,6 +39,7 @@ class RouteSync
         private readonly RouteTypes $types,
         private readonly UniquePath $unique,
         private readonly Locales $locales,
+        private readonly CacheGroups $cache,
     ) {}
 
     /**
@@ -524,15 +524,10 @@ class RouteSync
 
     /**
      * Addresses written without an Eloquent event — a mass delete, an update, an upsert — tell
-     * the `routes` cache group themselves (WEBX_UI_CACHE.md §2). Only where the frame is
-     * installed: this library does not require it, and a site without a panel caches nothing.
+     * the `routes` cache group themselves (WEBX_UI_CACHE.md §2).
      */
     private function invalidate(): void
     {
-        $app = Container::getInstance();
-
-        if ($app->bound(CacheGroups::class)) {
-            $app->make(CacheGroups::class)->bump(CacheGroups::ROUTES);
-        }
+        $this->cache->bump(CacheGroups::ROUTES);
     }
 }

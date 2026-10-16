@@ -62,7 +62,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 
 Всё, из чего состоит панель, — пакет с префиксом `module-`: каркас `webx-ui/module-admin` и
 разделы; npm-пара называется так же (`@webx-ui/module-admin`). Библиотека, которая живёт и без
-панели, — без префикса: `nested-set`, `localization`, `mcp`, `routing`, `themes`, `widgets`,
+панели, — без префикса: `nested-set`, `cache`, `localization`, `mcp`, `routing`, `themes`, `widgets`,
 `theme-default`. По имени видно, панель это или библиотека.
 
 Идентификатор модуля (`Module::id()`, он же префикс прав `<id>.<action>`, областей MCP
@@ -78,6 +78,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | --------------------------- | --------------------------------------------------------------------- | ------------------------------------ |
 | **Библиотеки**              |                                                                       |                                      |
 | `nested-set`                | деревья Eloquent (nested set)                                         | —                                    |
+| `cache`                     | кеш на версионных ключах: группы, версии, `remember` с зависимостями  | — (экран «Кеш» в `module-admin`)     |
 | `localization`              | языки сайта, переводимые атрибуты, словарь панели                     | — (i18n в `module-admin`)            |
 | `mcp`                       | контракт инструментов модуля, MCP-сервер, OAuth и ключи агентов       | экраны в `module-auth`               |
 | `routing`                   | плоский реестр публичных адресов и резолвер                           | —                                    |

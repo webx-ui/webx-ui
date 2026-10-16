@@ -6,9 +6,9 @@ namespace WebxUi\Admin\Doctor\Checks;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Foundation\Application;
-use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Doctor\Check;
 use WebxUi\Admin\Doctor\Diagnosis;
+use WebxUi\Cache\CacheGroups;
 
 /**
  * Whether what the site caches outlives the request (WEBX_UI_CACHE.md §4).
@@ -37,7 +37,7 @@ final class CacheStore implements Check
         $declared = $groups === 0 ? 'no cache group declared' : "{$groups} cache group".($groups === 1 ? '' : 's');
 
         if (! $this->groups->enabled()) {
-            return [Diagnosis::warn('Cache', "{$store} ({$driver}) — the versioned cache is off (`webx-admin.cache.enabled`): every page builds everything again. On for a site anybody visits.")];
+            return [Diagnosis::warn('Cache', "{$store} ({$driver}) — the versioned cache is off (`webx-cache.enabled`): every page builds everything again. On for a site anybody visits.")];
         }
 
         if ($driver === 'array' || $driver === 'null') {
