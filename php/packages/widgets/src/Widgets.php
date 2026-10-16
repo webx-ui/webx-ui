@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Themes\ThemeAssets;
+use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Widgets\Prose\Contents;
 use WebxUi\Widgets\Prose\Tables;
@@ -69,6 +70,7 @@ final class Widgets implements HeadPart
         private readonly Config $config,
         private readonly Consent $consent,
         private readonly FormDialogs $dialogs,
+        private readonly ThemeChain $chain,
     ) {}
 
     /** The package's own directory: `dist/`, `resources/`, `lang/` are under it. */
@@ -155,20 +157,7 @@ final class Widgets implements HeadPart
 
         // A response that never went through the router has not had its dialogs yet.
         $html = $this->withDialogs($html);
-
-        // Every table of prose in a scroller of its own (§14), whichever module printed the
-        // prose: the shadows at its edges are a file of their own, claimed when there is one.
-        [$html, $tables] = Tables::wrap($html, (string) __('webx-widgets::widgets.table.label'));
-
-        if ($tables > 0) {
-            $this->need('table');
-        }
-
-        // The lists of `<x-webx-toc>`, made of headings that may be printed after them, by any
-        // module: the headings get their ids here, so the links work without JavaScript (§14).
-        if (str_contains($html, '<!--webx-toc:')) {
-            [$html] = Contents::fill($html, static fn (array $list): string => view('webx-widgets::toc', $list)->render(), app()->getLocale());
-        }
+        $html = $this->prepare($html);
 
         $styles = [];
         $scripts = [];
@@ -182,11 +171,7 @@ final class Widgets implements HeadPart
             }
         }
 
-        // An announcement bar the visitor closed is hidden before the body is painted (§14): its
-        // script comes at the end of the page, too late not to flash it.
-        if (isset($this->claimed['notice-bar']) && preg_match_all('/data-webx-notice-bar="([A-Za-z0-9-]+)"/', $html, $bars) > 0) {
-            $styles[] = NoticeBar::head(array_values(array_unique($bars[1])));
-        }
+        $styles[] = $this->noticeHead($html);
 
         // The consent banner is on every page (§9): it asks until answered, and its script is
         // what switches on whatever third-party code waits for an answer — with the banner off too.
@@ -203,30 +188,15 @@ final class Widgets implements HeadPart
             }
         }
 
-        // A link to a picture with `data-webx-lightbox` claims the lightbox wherever it was written —
-        // a block, a module's view, a theme's partial — as a form's opener claims its dialog (§8).
-        if (Lightbox::wanted($html) && $this->built('lightbox', 'js')) {
-            $this->need('lightbox');
+        $this->claimAttributes($html);
+
+        if (($lightbox = $this->lightbox()) !== '') {
+            $bottom .= $lightbox."\n";
         }
 
-        // A picture with `data-webx-zoom` claims the zoom the same way: a gallery's link, a slide (§14).
-        if (Zoom::wanted($html) && $this->built('zoom', 'js')) {
-            $this->need('zoom');
-        }
-
-        if (isset($this->claimed['lightbox']) && $this->url('lightbox', 'js') !== null) {
-            $bottom .= view('webx-widgets::lightbox')->render()."\n";
-        }
-
-        foreach (['runtime', ...array_diff($this->claimed(), self::RUNTIME)] as $widget) {
-            if (($url = $this->url($widget, 'css')) !== null) {
-                $styles[] = '<link rel="stylesheet" href="'.e($url).'">';
-            }
-
-            if (($url = $this->url($widget, 'js')) !== null) {
-                $scripts[] = '<script type="module" src="'.e($url).'"></script>';
-            }
-        }
+        [$links, $sources] = $this->tags();
+        $styles = [...$styles, ...$links];
+        $scripts = [...$scripts, ...$sources];
 
         // The first marker takes the stylesheets; a second `@webxTheme` on the page prints nothing twice.
         if ($styled) {
@@ -242,6 +212,46 @@ final class Widgets implements HeadPart
         $scripts = $bottom.implode("\n", $scripts)."\n";
 
         return $body === false ? $html.$scripts : substr($html, 0, $body).$scripts.substr($html, $body);
+    }
+
+    /**
+     * A piece of a page drawn on its own — a block the panel swaps into a page that is already
+     * there — finished as `finish()` finishes a page, but handed back in parts: the panel puts
+     * them into a document whose head and body were printed long before this piece existed
+     * (WEBX_UI_WIDGETS.md §4). `head` are the stylesheets the claims of the piece load, `body`
+     * what goes before `</body>`: the scripts, the lightbox's settings, the dialogs of the forms
+     * it opens. The runtime is listed too; the page that has it already keeps one.
+     *
+     * No consent banner: the page the piece goes into printed it, or has no theme to show it
+     * with. No stylesheet on a site without a theme, as `@webxWidgets` has none either.
+     *
+     * @return array{html: string, head: list<string>, body: list<string>}
+     */
+    public function piece(string $html): array
+    {
+        $html = $this->prepare($html);
+        $this->claimAttributes($html);
+        $body = [];
+
+        $dialogs = $this->dialogs->render([...$this->forms(), ...FormDialogs::openers($html)]);
+
+        if ($dialogs !== '') {
+            $this->need('form-dialog');
+            $body[] = $dialogs;
+        }
+
+        if (($lightbox = $this->lightbox()) !== '') {
+            $body[] = $lightbox;
+        }
+
+        [$links, $scripts] = $this->tags();
+        $styled = ! $this->chain->isEmpty();
+
+        return [
+            'html' => $html,
+            'head' => $styled ? array_values(array_filter([$this->noticeHead($html), ...$links])) : [],
+            'body' => [...$body, ...$scripts],
+        ];
     }
 
     /**
@@ -278,6 +288,86 @@ final class Widgets implements HeadPart
         $this->forms = [];
         $this->dialogsDone = false;
         $this->sequences = [];
+    }
+
+    /**
+     * What a page or a piece of one is changed into before its claims are counted: the tables of
+     * prose in their scrollers, the lists of the contents filled.
+     */
+    private function prepare(string $html): string
+    {
+        // Every table of prose in a scroller of its own (§14), whichever module printed the
+        // prose: the shadows at its edges are a file of their own, claimed when there is one.
+        [$html, $tables] = Tables::wrap($html, (string) __('webx-widgets::widgets.table.label'));
+
+        if ($tables > 0) {
+            $this->need('table');
+        }
+
+        // The lists of `<x-webx-toc>`, made of headings that may be printed after them, by any
+        // module: the headings get their ids here, so the links work without JavaScript (§14).
+        if (str_contains($html, '<!--webx-toc:')) {
+            [$html] = Contents::fill($html, static fn (array $list): string => view('webx-widgets::toc', $list)->render(), app()->getLocale());
+        }
+
+        return $html;
+    }
+
+    /** The widgets an attribute asks for, with no component there to claim them. */
+    private function claimAttributes(string $html): void
+    {
+        // A link to a picture with `data-webx-lightbox` claims the lightbox wherever it was written —
+        // a block, a module's view, a theme's partial — as a form's opener claims its dialog (§8).
+        if (Lightbox::wanted($html) && $this->built('lightbox', 'js')) {
+            $this->need('lightbox');
+        }
+
+        // A picture with `data-webx-zoom` claims the zoom the same way: a gallery's link, a slide (§14).
+        if (Zoom::wanted($html) && $this->built('zoom', 'js')) {
+            $this->need('zoom');
+        }
+    }
+
+    /**
+     * An announcement bar the visitor closed is hidden before the body is painted (§14): its
+     * script comes at the end of the page, too late not to flash it.
+     */
+    private function noticeHead(string $html): string
+    {
+        if (isset($this->claimed['notice-bar']) && preg_match_all('/data-webx-notice-bar="([A-Za-z0-9-]+)"/', $html, $bars) > 0) {
+            return NoticeBar::head(array_values(array_unique($bars[1])));
+        }
+
+        return '';
+    }
+
+    /** The lightbox's settings, once the lightbox is claimed and its script is there to read them. */
+    private function lightbox(): string
+    {
+        return isset($this->claimed['lightbox']) && $this->url('lightbox', 'js') !== null ? view('webx-widgets::lightbox')->render() : '';
+    }
+
+    /**
+     * The tags of the runtime and of every widget claimed so far: the stylesheets and the scripts.
+     *
+     * @return array{list<string>, list<string>}
+     */
+    private function tags(): array
+    {
+        $styles = [];
+        $scripts = [];
+
+        foreach (['runtime', ...array_diff($this->claimed(), self::RUNTIME)] as $widget) {
+            if (($url = $this->url($widget, 'css')) !== null) {
+                $styles[] = '<link rel="stylesheet" href="'.e($url).'">';
+            }
+
+            if (($url = $this->url($widget, 'js')) !== null) {
+                $scripts[] = '<script type="module" src="'.e($url).'"></script>';
+            }
+        }
+
+        return [$styles, $scripts];
     }
 
     private function built(string $widget, string $extension): bool

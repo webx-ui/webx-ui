@@ -2,7 +2,15 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useElementWidth, WxSegmented, WxSkeleton } from '@webx-ui/core'
-import { fillStage, freezeFrame, mountScript, stageDocument, type FrameBinding } from './frame'
+import {
+  addAssets,
+  fillStage,
+  freezeFrame,
+  mountScript,
+  stageDocument,
+  type BlockAssets,
+  type FrameBinding,
+} from './frame'
 
 /**
  * The block as it will stand on the site, at a chosen width: a desktop scaled down to fit the
@@ -19,11 +27,13 @@ const props = withDefaults(
     styles: string
     script?: string | null
     runtime?: string | null
+    /** What the widgets in the block load: a map's stylesheet and script. */
+    assets?: BlockAssets | null
     /** The address of the stage page; null draws the block on a bare document. */
     stage?: string | null
     loading?: boolean
   }>(),
-  { script: null, runtime: null, stage: null, loading: false },
+  { script: null, runtime: null, assets: null, stage: null, loading: false },
 )
 
 const t = useTranslate('webx-blocks')
@@ -81,6 +91,7 @@ const srcdoc = computed(() =>
         styles: props.styles,
         script: props.script,
         runtime: props.runtime,
+        assets: props.assets,
         base: typeof location === 'undefined' ? null : location.origin + '/',
       }),
 )
@@ -142,6 +153,7 @@ function fill(doc: Document): void {
   }
 
   fillStage(doc, { html: props.html, styles: props.styles })
+  addAssets(doc, props.assets)
 }
 
 function onLoad(): void {
@@ -170,7 +182,7 @@ function onLoad(): void {
 }
 
 watch(
-  () => [props.html, props.styles] as const,
+  () => [props.html, props.styles, props.assets] as const,
   () => {
     const doc = frame.value?.contentDocument
 

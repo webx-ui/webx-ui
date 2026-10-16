@@ -448,6 +448,117 @@ export function mountScript(doc: Document, script: string): void {
   doc.body.appendChild(element)
 }
 
+/** What the widgets of a drawn block load: tags for `<head>` and for the end of `<body>`. */
+export interface BlockAssets {
+  head: string[]
+  body: string[]
+}
+
+/**
+ * Put what a block's widgets load into a page printed before the block was there — the
+ * stylesheet and the script of a map, the dialog of a form it opens. The server gathers them
+ * as it does for a whole page; a page gets each of them once, so what the page already has
+ * (the same address, the same id, the same inline style) is skipped.
+ *
+ * A stylesheet goes beside the widgets' stylesheets the page has, where the server puts them:
+ * under every theme layer, which restyles a widget by coming later. A script is made anew,
+ * since one parsed from markup never runs.
+ */
+export function addAssets(doc: Document, assets: BlockAssets | null | undefined): void {
+  if (!assets) return
+
+  for (const element of assets.head.flatMap((tag) => parseTags(doc, tag))) {
+    if (!present(doc, element)) addToHead(doc, element)
+  }
+
+  for (const element of assets.body.flatMap((tag) => parseTags(doc, tag))) {
+    if (!present(doc, element)) doc.body.appendChild(live(doc, element))
+  }
+}
+
+function parseTags(doc: Document, tag: string): Element[] {
+  const template = doc.createElement('template')
+  template.innerHTML = tag
+
+  return Array.from(template.content.children)
+}
+
+function absolute(doc: Document, value: string): string {
+  try {
+    return new URL(value, doc.baseURI).href
+  } catch {
+    return value
+  }
+}
+
+function present(doc: Document, element: Element): boolean {
+  if (element.id && doc.getElementById(element.id)) return true
+
+  const tag = element.tagName.toLowerCase()
+  const address = element.getAttribute(tag === 'link' ? 'href' : 'src')
+
+  if ((tag === 'link' || tag === 'script') && address) {
+    const href = absolute(doc, address)
+    const attribute = tag === 'link' ? 'href' : 'src'
+
+    return Array.from(doc.querySelectorAll(`${tag}[${attribute}]`)).some(
+      (other) => absolute(doc, other.getAttribute(attribute) ?? '') === href,
+    )
+  }
+
+  if (tag === 'style') {
+    return Array.from(doc.querySelectorAll('style')).some(
+      (other) => other.textContent === element.textContent,
+    )
+  }
+
+  return false
+}
+
+function addToHead(doc: Document, element: Element): void {
+  const head = doc.head ?? doc.documentElement
+  const href = element.getAttribute('href')
+
+  if (element.tagName.toLowerCase() === 'link' && href) {
+    const folder = absolute(doc, href).replace(/[^/]*$/, '')
+    const siblings = Array.from(head.querySelectorAll('link[rel="stylesheet"][href]')).filter(
+      (other) => absolute(doc, other.getAttribute('href') ?? '').startsWith(folder),
+    )
+    const last = siblings[siblings.length - 1]
+
+    if (last) {
+      last.after(live(doc, element))
+
+      return
+    }
+
+    // No widget's stylesheet on the page: the first in the cascade, as the server would put it.
+    const first = head.querySelector('link[rel="stylesheet"], style')
+
+    if (first) {
+      head.insertBefore(live(doc, element), first)
+
+      return
+    }
+  }
+
+  head.appendChild(live(doc, element))
+}
+
+function live(doc: Document, element: Element): Element {
+  if (element.tagName.toLowerCase() !== 'script') return doc.importNode(element, true)
+
+  const script = doc.createElement('script')
+
+  for (const attribute of Array.from(element.attributes)) {
+    script.setAttribute(attribute.name, attribute.value)
+  }
+
+  script.textContent = element.textContent
+
+  return script
+}
+
 /** The one thing the panel adds to the site's markup: how a block looks under the editor. */
 function ensureStyle(doc: Document): void {
   if (doc.getElementById(STYLE_ID)) return
@@ -476,6 +587,8 @@ export interface StageInput {
   base?: string | null
   /** Styles the site's layout would give the page: fonts, the ground colour. */
   frame?: string | null
+  /** What the block's widgets load. */
+  assets?: BlockAssets | null
 }
 
 /**
@@ -489,11 +602,13 @@ export function stageDocument(input: StageInput): string {
     input.script && input.runtime
       ? `<script src="${escapeAttribute(input.runtime)}"></script><script>${input.script}</script>`
       : ''
+  const head = input.assets?.head.join('') ?? ''
+  const tail = input.assets?.body.join('') ?? ''
 
   return (
     `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${base}` +
-    `<style>html,body{margin:0}body{container-type:inline-size}</style>${frame}<style>${input.styles}</style></head>` +
-    `<body>${input.html}${runtime}</body></html>`
+    `<style>html,body{margin:0}body{container-type:inline-size}</style>${head}${frame}<style>${input.styles}</style></head>` +
+    `<body>${input.html}${runtime}${tail}</body></html>`
   )
 }
 

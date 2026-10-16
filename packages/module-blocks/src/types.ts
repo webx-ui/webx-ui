@@ -198,6 +198,11 @@ export interface RenderResult {
   script: string | null
   /** Where the runtime is served. */
   runtime: string
+  /**
+   * What the widgets in the block load — tags for `<head>` and for the end of `<body>` — or
+   * nothing from a server that does not gather them.
+   */
+  assets?: { head: string[]; body: string[] } | null
   version: number
   /**
    * The page of the site the block is drawn on — its layout with an empty place in it — or
