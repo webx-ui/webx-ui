@@ -35,6 +35,9 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
   `@shortcodesIn`, `@shortcodesPlain`; `GET /api/cms/shortcodes` for the panel's text fields.
   `wx_text($value)` makes a plain string or a `ShortcodeText` a `ShortcodeText`, whose `trim*`,
   `strip*` and `map()` change the typed text and stay HTML.
+- **Testing** — `Testing\CountsQueries` in a Testbench case: `assertQueriesWithin(N, fn () => $this->get(…))`
+  fails over the budget with every statement listed and the repeated ones (an N+1) called out;
+  `assertNoRepeatedQueries()`, `recordQueries()` → `QueryTally`.
 - **Front end entry** — `resources/js/admin.ts` in the site, written from `stubs/panel.stub` (or
   `panel-auth.stub` when module-auth is installed). Three regions are the installer's:
   `// webx:imports`, `// webx:styles`, `// webx:modules`; everything outside them is the site's.
