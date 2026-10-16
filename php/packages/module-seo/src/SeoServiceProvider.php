@@ -229,15 +229,11 @@ class SeoServiceProvider extends ServiceProvider
                     $this->app->make(Sitemap::class)->refresh();
                 }
 
-                // A rule bound to an entity is compiled with the entity's current address (§18.2),
-                // so a new slug in the registry is a new compiled list.
-                if ($model instanceof RouteRow) {
-                    $this->app->make(SeoRules::class)->forget();
-                }
-
-                // Whether a link is broken depends on the registry and on visibility, and what it
-                // prints on its own rows and on redirects that replace addresses.
-                if ($model instanceof RouteRow || $model instanceof Visible || $model instanceof SeoLinkBlock || $model instanceof SeoLinkItem || $model instanceof SeoRedirect) {
+                // Whether a link is broken depends on visibility: an entity taken off the site
+                // moves the `seo` group. The registry is a group of its own that the compiled
+                // rules and the link blocks depend on, and this module's own rows move the
+                // group from the provider (`bumpOn`).
+                if ($model instanceof Visible) {
                     $this->app->make(LinkBlocks::class)->refresh();
                 }
             },
@@ -340,24 +336,19 @@ class SeoServiceProvider extends ServiceProvider
     }
 
     /**
-     * The `seo` and `sitemap` cache groups (WEBX_UI_CACHE.md §2). The rules and the redirects, the
-     * link blocks: saved through their models, the group moves, and a move refreshes what each
-     * keeps on a key or a generation of its own — so that «reset the site cache» reaches them
-     * until they live on versioned keys. The sitemap is a group apart: its build is the expensive
-     * one, and it listens to every visible record itself; a move only starts it afresh.
+     * The `seo` and `sitemap` cache groups (WEBX_UI_CACHE.md §2). The compiled rules and the
+     * link blocks live on the `seo` group's key, with the address registry's beside it; the
+     * rules, the redirects and the link blocks move the group when saved. The sitemap is a group
+     * apart: its build is the expensive one, and `registerSitemap()` moves it from every visible
+     * record itself.
      */
     private function registerCacheGroups(): void
     {
         $groups = $this->app->make(CacheGroups::class);
 
-        $groups->declare('seo', 'webx-seo::module.title');
-        $groups->bumpOn('seo', SeoUrl::class, SeoRedirect::class, SeoLinkBlock::class, SeoLinkItem::class);
-        $groups->onReset('seo', function (): void {
-            $this->app->make(SeoRules::class)->forget();
-            $this->app->make(LinkBlocks::class)->refresh();
-        });
+        $groups->declare(SeoRules::GROUP, 'webx-seo::module.title');
+        $groups->bumpOn(SeoRules::GROUP, SeoUrl::class, SeoRedirect::class, SeoLinkBlock::class, SeoLinkItem::class);
 
-        $groups->declare('sitemap', 'Sitemap');
-        $groups->onReset('sitemap', fn () => $this->app->make(Sitemap::class)->refresh());
+        $groups->declare(Sitemap::GROUP, 'Sitemap');
     }
 }

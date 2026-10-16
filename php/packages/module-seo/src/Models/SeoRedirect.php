@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use WebxUi\Routing\UrlNormaliser;
-use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
 
 /**
@@ -46,16 +45,6 @@ class SeoRedirect extends Model
             'hits' => 'integer',
             'last_hit_at' => 'datetime',
         ];
-    }
-
-    protected static function booted(): void
-    {
-        $forget = static function (): void {
-            app(SeoRules::class)->forget();
-        };
-
-        static::saved($forget);
-        static::deleted($forget);
     }
 
     /**

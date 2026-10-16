@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Snippets\Output;
 
-use Illuminate\Contracts\Cache\Repository as Cache;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Snippets\Models\Snippet;
 
 /**
@@ -18,9 +18,9 @@ use WebxUi\Snippets\Models\Snippet;
  */
 final class Codes
 {
-    public const KEY = 'webx-snippets.codes';
+    public const GROUP = 'snippets';
 
-    public function __construct(private readonly Cache $cache) {}
+    public function __construct(private readonly CacheGroups $groups) {}
 
     /**
      * @return list<array{id: int, code: string, consent: string, only_paths: list<string>, except_paths: list<string>, locales: list<string>, on_stage: bool}>
@@ -36,7 +36,7 @@ final class Codes
     public function all(): array
     {
         /** @var array<string, list<array{id: int, code: string, consent: string, only_paths: list<string>, except_paths: list<string>, locales: list<string>, on_stage: bool}>> $all */
-        $all = $this->cache->rememberForever(self::KEY, static function (): array {
+        $all = $this->groups->remember('snippets.codes', [self::GROUP], static function (): array {
             $places = [];
 
             $snippets = Snippet::query()
@@ -58,13 +58,18 @@ final class Codes
             }
 
             return $places;
-        });
+        }, localized: false);
 
         return $all;
     }
 
+    /**
+     * Throw the list away: the `snippets` group moves (WEBX_UI_CACHE.md). A snippet saved
+     * through its model moves the group on its own; this is for a write that went round it — a
+     * reorder, a rehearsal rolled back.
+     */
     public function forget(): void
     {
-        $this->cache->forget(self::KEY);
+        $this->groups->bump(self::GROUP);
     }
 }

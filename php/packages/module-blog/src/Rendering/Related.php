@@ -23,6 +23,9 @@ use WebxUi\Blog\Models\Article;
  */
 final class Related
 {
+    /** What a card of a related article prints, its address included. */
+    private const WITH = ['cover', 'rubrics', 'tags', 'routes'];
+
     public function __construct(private readonly Config $config) {}
 
     /**
@@ -30,7 +33,7 @@ final class Related
      */
     public function for(Article $article): Collection
     {
-        $pinned = $article->related()->published()->with(['cover', 'rubrics', 'tags'])->get();
+        $pinned = $article->related()->published()->with(self::WITH)->get();
 
         $wanted = $this->limit() - $pinned->count();
 
@@ -92,7 +95,7 @@ final class Related
             )
             ->select('blog_articles.*')
             ->selectRaw($shared)
-            ->with(['cover', 'rubrics', 'tags'])
+            ->with(self::WITH)
             ->orderByDesc('shared_tags')
             ->orderByDesc('published_at')
             ->orderByDesc('id')

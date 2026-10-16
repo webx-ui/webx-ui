@@ -32,7 +32,6 @@ class LocalizationServiceProvider extends ServiceProvider
         $this->app->singleton(Locales::class, static fn ($app): Locales => new Locales(
             $app,
             $app->make('config'),
-            $app->make('cache')->store(),
         ));
 
         $this->app->singleton(DictionaryBuilder::class, static fn ($app): DictionaryBuilder => new DictionaryBuilder(
@@ -74,9 +73,8 @@ class LocalizationServiceProvider extends ServiceProvider
 
     /**
      * The `locales` cache group (WEBX_UI_CACHE.md §2.1): a language saved through its model moves
-     * it, and a reset by code — the panel's button, the command, the agent's tool — also forgets
-     * the list this package keeps on a key of its own, which the model's events forget already.
-     * The words the panel shows for the group are the frame's, where there is one.
+     * it, and the list itself lives on the group's versioned key ({@see Locales::rows()}). The
+     * words the panel shows for the group are the frame's, where there is one.
      */
     private function registerCacheGroup(): void
     {
@@ -84,7 +82,6 @@ class LocalizationServiceProvider extends ServiceProvider
 
         $groups->declare(CacheGroups::LOCALES);
         $groups->bumpOn(CacheGroups::LOCALES, Locale::class);
-        $groups->onReset(CacheGroups::LOCALES, fn () => $this->app->make(Locales::class)->forget());
     }
 
     /**

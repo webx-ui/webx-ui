@@ -163,16 +163,15 @@ class MenuServiceProvider extends ServiceProvider
 
     /**
      * The `menu` cache group (WEBX_UI_CACHE.md §2): a menu or an item saved, deleted or moved
-     * moves it. The link sources and the addresses are the subscriber's business for now
-     * ({@see CacheSubscriber}); a move of the group flushes the trees it keeps, so that «reset
-     * the site cache» reaches them until they live on versioned keys.
+     * moves it, and the built trees live on its versioned key together with the address
+     * registry's ({@see MenuCache}). The link sources are the subscriber's business
+     * ({@see CacheSubscriber}).
      */
     private function registerCacheGroups(): void
     {
         $groups = $this->app->make(CacheGroups::class);
 
-        $groups->declare('menu', 'webx-menu::module.title');
-        $groups->bumpOn('menu', Menu::class, MenuItem::class);
-        $groups->onReset('menu', fn () => $this->app->make(MenuCache::class)->flush());
+        $groups->declare(MenuCache::GROUP, 'webx-menu::module.title');
+        $groups->bumpOn(MenuCache::GROUP, Menu::class, MenuItem::class);
     }
 }

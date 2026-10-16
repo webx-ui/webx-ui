@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Localization;
 
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 use Throwable;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Models\Locale;
 
 /**
@@ -25,20 +24,32 @@ class Locales
     /** @var Collection<int, Locale>|null */
     private ?Collection $loaded = null;
 
+    /** The version of the `locales` group the list in memory was hydrated under. */
+    private ?int $loadedAt = null;
+
     public function __construct(
         private readonly Application $app,
         private readonly Config $config,
-        private readonly Cache $cache,
     ) {}
 
     /**
      * Every active language, in the order a site chose to show them.
      *
+     * Hydrated once and kept while the `locales` cache group stands still: a language saved
+     * through its model moves the group, and the next call reads the table again.
+     *
      * @return Collection<int, Locale>
      */
     public function all(): Collection
     {
-        return $this->loaded ??= Locale::hydrate($this->rows());
+        $version = $this->caching() ? $this->groups()->version(CacheGroups::LOCALES) : null;
+
+        if ($this->loaded === null || $this->loadedAt !== $version) {
+            $this->loaded = Locale::hydrate($this->rows());
+            $this->loadedAt = $version;
+        }
+
+        return $this->loaded;
     }
 
     /**
@@ -248,10 +259,15 @@ class Locales
         return $this->all()->map(fn (Locale $locale): array => $locale->toPayload())->values()->all();
     }
 
+    /**
+     * Throw the kept list away: the `locales` group moves (WEBX_UI_CACHE.md), here and in every
+     * entry of any module built on it. A language saved through its model moves the group on
+     * its own; this is for a write that went round it.
+     */
     public function forget(): void
     {
         $this->loaded = null;
-        $this->cache->forget($this->cacheKey());
+        $this->groups()->bump(CacheGroups::LOCALES);
     }
 
     /**
@@ -264,10 +280,12 @@ class Locales
         }
 
         /** @var list<array<string, mixed>> $rows */
-        $rows = $this->cache->remember(
-            $this->cacheKey(),
-            (int) $this->config->get('webx-localization.cache.ttl', 86400),
+        $rows = $this->groups()->remember(
+            'locales',
+            [CacheGroups::LOCALES],
             fn (): array => $this->read(),
+            (int) $this->config->get('webx-localization.cache.ttl', 86400),
+            localized: false,
         );
 
         return $rows;
@@ -363,13 +381,15 @@ class Locales
     private function caching(): bool
     {
         return (bool) $this->config->get('webx-localization.cache.enabled', true)
-            // Caching a list read inside a transaction that may still roll back is how a test
-            // suite starts answering with rows that no longer exist.
-            && DB::transactionLevel() === 0;
+            // Before the provider booted — a `migrate` on an empty database asks for a
+            // language from inside the frame's own providers — the group is not declared yet.
+            && $this->app->bound(CacheGroups::class)
+            && $this->groups()->has(CacheGroups::LOCALES);
     }
 
-    private function cacheKey(): string
+    /** Resolved late: the registry is a singleton of the application this list was made for. */
+    private function groups(): CacheGroups
     {
-        return (string) $this->config->get('webx-localization.cache.prefix', 'webx.localization').'.locales';
+        return $this->app->make(CacheGroups::class);
     }
 }

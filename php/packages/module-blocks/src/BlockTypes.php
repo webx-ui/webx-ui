@@ -4,27 +4,33 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks;
 
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Throwable;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
+use WebxUi\Cache\CacheGroups;
 
 /**
  * The block types the site prints, read once and kept.
  *
  * Every page render asks for its types by slug, so what is cached is the published version of
- * every type, template included — a few kilobytes each — and the list is thrown away when a
- * version is saved, published or deleted. Types come from the tables only: a block written by
- * hand in a site's repository is a legitimate case, but not one v0.1 answers.
+ * every type, template included — a few kilobytes each — in the `blocks` cache group
+ * (WEBX_UI_CACHE.md): a version saved, published or deleted moves the group, and the list is
+ * read again. Types come from the tables only: a block written by hand in a site's repository is
+ * a legitimate case, but not one v0.1 answers.
  */
 final class BlockTypes
 {
+    public const GROUP = 'blocks';
+
     /** @var array<string, BlockType>|null slug → the published type, disabled ones included */
     private ?array $loaded = null;
 
+    /** The version of the group the types in memory were built under. */
+    private ?int $loadedAt = null;
+
     public function __construct(
-        private readonly Cache $cache,
+        private readonly CacheGroups $groups,
         private readonly Config $config,
     ) {}
 
@@ -67,13 +73,15 @@ final class BlockTypes
             : null;
     }
 
+    /**
+     * Throw the kept list away: the `blocks` group moves, here and in everything built on it.
+     * A block or a version saved through its model moves the group on its own; this is for a
+     * write that went round it — an import, a reorder, a command.
+     */
     public function forget(): void
     {
         $this->loaded = null;
-
-        if ($this->enabled()) {
-            $this->cache->forget($this->key());
-        }
+        $this->groups->bump(self::GROUP);
     }
 
     /**
@@ -81,7 +89,9 @@ final class BlockTypes
      */
     private function load(): array
     {
-        if ($this->loaded !== null) {
+        $version = $this->enabled() ? $this->groups->version(self::GROUP) : null;
+
+        if ($this->loaded !== null && $this->loadedAt === $version) {
             return $this->loaded;
         }
 
@@ -102,7 +112,7 @@ final class BlockTypes
 
         try {
             $rows = $this->enabled()
-                ? $this->cache->remember($this->key(), $this->ttl(), $read)
+                ? $this->groups->remember('blocks.types', [self::GROUP], $read, $this->ttl(), localized: false)
                 : $read();
         } catch (Throwable) {
             // The tables are not there yet — the package is installed and `migrate` has not
@@ -119,6 +129,8 @@ final class BlockTypes
             }
         }
 
+        $this->loadedAt = $version;
+
         return $this->loaded = $types;
     }
 
@@ -130,10 +142,5 @@ final class BlockTypes
     private function ttl(): int
     {
         return (int) $this->config->get('webx-blocks.cache.ttl', 86400);
-    }
-
-    private function key(): string
-    {
-        return (string) $this->config->get('webx-blocks.cache.key', 'webx.blocks.types');
     }
 }

@@ -22,6 +22,7 @@ use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\RegionContext;
 use WebxUi\Blocks\Rendering\RegionRender;
 use WebxUi\Blocks\Rendering\Renderer;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Routing\Resolution;
 
 /**
@@ -51,7 +52,8 @@ final class Regions
     /** The prefix of a region in a block type's `allowed_in`. */
     public const ALLOWED_IN = 'region:';
 
-    private const KEY = 'webx.blocks.regions.';
+    /** The cache group the published trees live in (WEBX_UI_CACHE.md). */
+    public const GROUP = 'regions';
 
     /** A colon cannot be part of a name, so no region can collide with the hints. */
     private const FALLBACKS = 'webx.blocks.regions:fallbacks';
@@ -71,6 +73,7 @@ final class Regions
     public function __construct(
         private readonly Config $config,
         private readonly Cache $cache,
+        private readonly CacheGroups $groups,
         private readonly Renderer $renderer,
         private readonly Bundles $bundles,
         private readonly Views $views,
@@ -170,18 +173,25 @@ final class Regions
         }
 
         /** @var list<array<string, mixed>> $tree */
-        $tree = $this->cache->remember(
-            self::KEY.$name,
-            max(1, (int) $this->config->get('webx-blocks.cache.ttl', 86400)),
+        $tree = $this->groups->remember(
+            'blocks.region.'.$name,
+            [self::GROUP],
             fn (): array => $this->published($name),
+            max(1, (int) $this->config->get('webx-blocks.cache.ttl', 86400)),
+            localized: false,
         );
 
         return $tree;
     }
 
+    /**
+     * Throw the published trees away: the `regions` group moves, every region's with it — a
+     * version is one number, and the regions are few. A region saved through its model moves
+     * the group on its own; this is for a write that went round it.
+     */
     public function forget(string $name): void
     {
-        $this->cache->forget(self::KEY.$name);
+        $this->groups->bump(self::GROUP);
     }
 
     /**

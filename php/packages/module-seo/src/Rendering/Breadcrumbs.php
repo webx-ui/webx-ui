@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Rendering;
 
 use Illuminate\Contracts\Translation\Translator;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use WebxUi\Routing\Contracts\NotAPage;
 use WebxUi\Routing\Models\Route;
@@ -27,6 +29,9 @@ use WebxUi\Settings\Settings;
  */
 final class Breadcrumbs
 {
+    /** The request attribute the trail of a subject is kept under, once it was built. */
+    private const MEMO = 'webx.seo.trail.';
+
     public function __construct(
         private readonly SiteUrl $site,
         private readonly Translator $translator,
@@ -45,6 +50,31 @@ final class Breadcrumbs
             return [];
         }
 
+        // Built once a request: the visible crumbs and the `BreadcrumbList` print the same
+        // trail of the same page, and every step of it is a query or two. Kept on the request
+        // rather than here, because this is a singleton and the next request is another page.
+        $request = app()->bound('request') ? app('request') : null;
+        $memo = $request instanceof Request && $subject instanceof Model && $subject->exists
+            ? self::MEMO.$subject::class.':'.$subject->getKey().':'.$locale
+            : null;
+
+        if ($memo !== null && is_array($known = $request->attributes->get($memo))) {
+            /** @var list<Crumb> $known */
+            return $known;
+        }
+
+        $trail = $this->build($subject, $locale);
+
+        if ($memo !== null) {
+            $request->attributes->set($memo, $trail);
+        }
+
+        return $trail;
+    }
+
+    /** @return list<Crumb> */
+    private function build(HasBreadcrumbs $subject, string $locale): array
+    {
         $own = $subject->breadcrumbs($locale);
 
         if ($own === []) {

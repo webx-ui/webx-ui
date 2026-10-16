@@ -43,7 +43,9 @@ class ArticleHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        $entity->loadMissing(['cover', 'author', 'rubrics', 'tags']);
+        // With the registry rows of everything the page links to: each `url()` would otherwise
+        // be a query — the rubric in the trail, every tag, the author's page.
+        $entity->loadMissing(['cover', 'author', 'routes', 'rubrics.routes', 'tags.routes', 'authorProfile.routes']);
 
         return response($this->views->make('article', [
             'article' => $entity,

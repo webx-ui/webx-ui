@@ -371,29 +371,20 @@ class BlocksServiceProvider extends ServiceProvider
 
     /**
      * The `blocks` and `regions` cache groups (WEBX_UI_CACHE.md §2): a block, a version or a
-     * region saved moves its group, and a move forgets what the registry, the thumbnails and the
-     * regions keep on keys of their own — so that «reset the site cache» reaches them until they
-     * live on versioned keys. `webx:blocks:clear` stays for the compiled templates.
+     * region saved moves its group, and the registry of types, the bundles and the published
+     * trees of the regions live on the groups' versioned keys. The thumbnails keep a generation
+     * of their own, so a reset by code starts them afresh too; `webx:blocks:clear` stays for the
+     * compiled templates.
      */
     private function registerCacheGroups(): void
     {
         $groups = $this->app->make(CacheGroups::class);
 
-        $groups->declare('blocks', 'webx-blocks::module.title');
-        $groups->bumpOn('blocks', Block::class, BlockVersion::class);
-        $groups->onReset('blocks', function (): void {
-            $this->app->make(BlockTypes::class)->forget();
-            $this->app->make(Thumbnails::class)->forget();
-        });
+        $groups->declare(BlockTypes::GROUP, 'webx-blocks::module.title');
+        $groups->bumpOn(BlockTypes::GROUP, Block::class, BlockVersion::class);
+        $groups->onReset(BlockTypes::GROUP, fn () => $this->app->make(Thumbnails::class)->forget());
 
-        $groups->declare('regions', 'webx-blocks::module.regions');
-        $groups->bumpOn('regions', Region::class);
-        $groups->onReset('regions', function (): void {
-            $regions = $this->app->make(Regions::class);
-
-            foreach (array_keys($regions->declared()) as $name) {
-                $regions->forget($name);
-            }
-        });
+        $groups->declare(Regions::GROUP, 'webx-blocks::module.regions');
+        $groups->bumpOn(Regions::GROUP, Region::class);
     }
 }

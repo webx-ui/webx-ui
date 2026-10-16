@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Blocks\Preview\PreviewGrant;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Settings\Settings;
 use WebxUi\Snippets\Models\Snippet;
 use WebxUi\Snippets\Output\Codes;
@@ -241,7 +242,7 @@ final class OutputTest extends TestCase
         $render = static fn (): string => Blade::render('<x-webx-snippets place="body_end" />');
 
         $this->assertSame("<i>one</i>\n<i>two</i>", $render());
-        $this->assertTrue(cache()->has(Codes::KEY));
+        $this->assertTrue(cache()->has($this->app->make(CacheGroups::class)->key('snippets.codes', [Codes::GROUP], false)), 'the list is kept on the versioned key of its group');
 
         $one->update(['code' => '<i>one, edited</i>']);
         $this->assertSame("<i>one, edited</i>\n<i>two</i>", $render());

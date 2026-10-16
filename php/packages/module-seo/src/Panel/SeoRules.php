@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Panel;
 
 use Closure;
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Throwable;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
 
@@ -21,11 +21,10 @@ use WebxUi\Seo\Models\SeoUrl;
  */
 final class SeoRules
 {
-    /** @var array<string, list<array<string, mixed>>> */
-    private array $loaded = [];
+    public const GROUP = 'seo';
 
     public function __construct(
-        private readonly Cache $cache,
+        private readonly CacheGroups $groups,
         private readonly Config $config,
     ) {}
 
@@ -74,30 +73,29 @@ final class SeoRules
         ));
     }
 
+    /**
+     * Throw the compiled lists away: the `seo` group moves (WEBX_UI_CACHE.md). A rule or a
+     * redirect saved through its model moves the group on its own; this is for a write that
+     * went round it.
+     */
     public function forget(): void
     {
-        $this->loaded = [];
-
-        if ($this->enabled()) {
-            foreach (['urls', 'redirects'] as $what) {
-                $this->cache->forget($this->key($what));
-            }
-        }
+        $this->groups->bump(self::GROUP);
     }
 
     /**
+     * The compiled list, in the `seo` cache group — and in `routes` too: a rule bound to an
+     * entity is compiled with the entity's current address (§18.2), so a new slug in the
+     * registry is a new compiled list. Read once a request, by the registry's own memo.
+     *
      * @param  Closure(): list<array<string, mixed>>  $load
      * @return list<array<string, mixed>>
      */
     private function remember(string $what, Closure $load): array
     {
-        if (isset($this->loaded[$what])) {
-            return $this->loaded[$what];
-        }
-
         try {
             $rows = $this->enabled()
-                ? $this->cache->remember($this->key($what), $this->ttl(), $load)
+                ? $this->groups->remember('seo.rules.'.$what, [self::GROUP, CacheGroups::ROUTES], $load, $this->ttl(), localized: false)
                 : $load();
         } catch (Throwable) {
             // The tables are not there yet: the package is installed and `migrate` has not
@@ -106,7 +104,7 @@ final class SeoRules
             $rows = [];
         }
 
-        return $this->loaded[$what] = is_array($rows) ? array_values($rows) : [];
+        return is_array($rows) ? array_values($rows) : [];
     }
 
     private function enabled(): bool
@@ -117,10 +115,5 @@ final class SeoRules
     private function ttl(): int
     {
         return (int) $this->config->get('webx-seo.cache.ttl', 86400);
-    }
-
-    private function key(string $what): string
-    {
-        return (string) $this->config->get('webx-seo.cache.key', 'webx.seo.rules').'.'.$what;
     }
 }

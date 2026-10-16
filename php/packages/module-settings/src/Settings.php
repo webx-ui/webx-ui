@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings;
 
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Screens\Tree;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Settings\Events\SettingsSaved;
 use WebxUi\Settings\Models\Setting;
 
@@ -20,6 +20,9 @@ use WebxUi\Settings\Models\Setting;
  * language of a localized value, a media key turned into an address — decided by the field's
  * type in the screen. A key the screen does not describe is still read back as stored: a
  * project patch that added a field the server has no type for gets its value, unchanged.
+ *
+ * The table is kept in the `settings` cache group (WEBX_UI_CACHE.md): every setting saved
+ * moves the group, and the registry hands the same array back for the rest of the request.
  */
 final class Settings
 {
@@ -34,13 +37,12 @@ final class Settings
     /** Every screen whose fields are settings. */
     public const SCREENS = [self::SCREEN, self::CONTENT_SCREEN];
 
-    /** @var array<string, mixed>|null */
-    private ?array $loaded = null;
+    public const GROUP = 'settings';
 
     public function __construct(
         private readonly ScreenRegistry $screens,
         private readonly ScreenValues $values,
-        private readonly Cache $cache,
+        private readonly CacheGroups $groups,
         private readonly Config $config,
         private readonly Dispatcher $events,
     ) {}
@@ -52,17 +54,22 @@ final class Settings
      */
     public function raw(): array
     {
-        if ($this->loaded !== null) {
-            return $this->loaded;
-        }
-
         $load = static fn (): array => Setting::query()->pluck('value', 'key')->all();
 
-        $this->loaded = $this->cacheEnabled()
-            ? $this->cache->remember($this->cacheKey(), (int) $this->config->get('webx-settings.cache.ttl', 86400), $load)
-            : $load();
+        if (! $this->cacheEnabled()) {
+            return $load();
+        }
 
-        return $this->loaded;
+        /** @var array<string, mixed> $raw */
+        $raw = $this->groups->remember(
+            'settings',
+            [self::GROUP],
+            $load,
+            (int) $this->config->get('webx-settings.cache.ttl', 86400),
+            localized: false,
+        );
+
+        return $raw;
     }
 
     /**
@@ -202,13 +209,14 @@ final class Settings
         $this->events->dispatch(new SettingsSaved($keys));
     }
 
+    /**
+     * Throw the kept table away: the `settings` group moves, and whatever was built from it —
+     * here and in any module that depends on the group — is read afresh. For a write that went
+     * round the model; a setting saved through it moves the group on its own.
+     */
     public function forget(): void
     {
-        $this->loaded = null;
-
-        if ($this->cacheEnabled()) {
-            $this->cache->forget($this->cacheKey());
-        }
+        $this->groups->bump(self::GROUP);
     }
 
     /**
@@ -228,10 +236,5 @@ final class Settings
     private function cacheEnabled(): bool
     {
         return (bool) $this->config->get('webx-settings.cache.enabled', true);
-    }
-
-    private function cacheKey(): string
-    {
-        return (string) $this->config->get('webx-settings.cache.key', 'webx.settings');
     }
 }

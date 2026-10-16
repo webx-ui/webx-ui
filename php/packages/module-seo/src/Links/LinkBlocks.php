@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Links;
 
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Throwable;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Routing\Resolution;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Models\SeoLinkBlock;
 use WebxUi\Seo\Models\SeoLinkItem;
+use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Targets\UrlTarget;
 use WebxUi\Seo\Targets\UrlTargets;
 use WebxUi\Settings\Settings;
@@ -20,10 +21,10 @@ use WebxUi\Settings\Settings;
 /**
  * Interlinking as the site prints it and the panel lists it (§18.4).
  *
- * What a page prints is kept under a generation, like the sitemap: whether a link is broken
- * depends on rows of other modules — an entity unpublished, a category renamed — so nothing here
- * could name the keys to forget. The generation moves on every save that could matter, and the
- * old entries run out on their own.
+ * What a page prints is kept in the `seo` and `routes` cache groups (WEBX_UI_CACHE.md):
+ * whether a link is broken depends on rows of other modules — an entity unpublished, a category
+ * renamed — so nothing here could name the keys to forget. The provider moves `seo` on every
+ * save that could matter, and the old entries run out on their own.
  */
 final class LinkBlocks
 {
@@ -32,7 +33,7 @@ final class LinkBlocks
 
     public function __construct(
         private readonly UrlTargets $targets,
-        private readonly Cache $cache,
+        private readonly CacheGroups $groups,
         private readonly Config $config,
         private readonly Settings $settings,
     ) {}
@@ -96,7 +97,7 @@ final class LinkBlocks
 
         try {
             $found = $this->caching()
-                ? $this->cache->remember($this->key($donor), $this->ttl(), $load)
+                ? $this->groups->remember($this->name($donor), [SeoRules::GROUP, CacheGroups::ROUTES], $load, $this->ttl(), localized: false)
                 : $load();
         } catch (Throwable) {
             // Not migrated yet, or a store that is down: a page without its links, not a 500.
@@ -246,12 +247,8 @@ final class LinkBlocks
     {
         $this->broken = [];
 
-        if (! $this->caching()) {
-            return;
-        }
-
         try {
-            $this->cache->forever($this->generationKey(), bin2hex(random_bytes(6)));
+            $this->groups->bump(SeoRules::GROUP);
         } catch (Throwable) {
             // A store that is down has nothing stale in it either.
         }
@@ -296,25 +293,8 @@ final class LinkBlocks
         return (int) $this->config->get('webx-seo.cache.ttl', 86400);
     }
 
-    private function key(UrlTarget $donor): string
+    private function name(UrlTarget $donor): string
     {
-        return $this->base().'.'.$this->generation().'.'.md5(implode('|', $donor->toRow()));
-    }
-
-    private function generation(): string
-    {
-        $generation = $this->cache->get($this->generationKey());
-
-        return is_string($generation) ? $generation : '0';
-    }
-
-    private function generationKey(): string
-    {
-        return $this->base().'.generation';
-    }
-
-    private function base(): string
-    {
-        return (string) $this->config->get('webx-seo.cache.key', 'webx.seo.rules').'.links';
+        return 'seo.links.'.md5(implode('|', $donor->toRow()));
     }
 }

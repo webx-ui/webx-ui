@@ -76,6 +76,16 @@ final class CacheGroups
      */
     private array $pending = [];
 
+    /**
+     * What `remember()` read or computed this request, by its versioned key: the settings, the
+     * menu and the block types are asked for many times while one page renders, and the store
+     * is asked once. Dropped with the versions (`forgetMemo()`), so a move in this process is
+     * seen by this process.
+     *
+     * @var array<string, mixed>
+     */
+    private array $values = [];
+
     public function __construct(
         private readonly Cache $cache,
         private readonly Dispatcher $events,
@@ -246,7 +256,46 @@ final class CacheGroups
             return $compute();
         }
 
-        return $this->cache->remember($this->key($name, $depends, $localized), $ttl ?? $this->ttl(), $compute);
+        $key = $this->key($name, $depends, $localized);
+
+        // A null is never kept: the store does not keep one either (`remember` computes it
+        // again), and a `get()` that found nothing must not stand in for the value.
+        return $this->values[$key] ??= $this->cache->remember($key, $ttl ?? $this->ttl(), $compute);
+    }
+
+    /**
+     * What is stored under a versioned key, or null — for a reader that decides itself whether
+     * a value is worth keeping (a resolver that caches the addresses it found and not the ones
+     * it did not). Nothing is read inside a transaction, where nothing was written either.
+     *
+     * @param  list<string>  $depends
+     */
+    public function get(string $name, array $depends, bool $localized = true): mixed
+    {
+        if (! $this->enabled() || $this->db->connection()->transactionLevel() > 0) {
+            return null;
+        }
+
+        $key = $this->key($name, $depends, $localized);
+
+        return $this->values[$key] ??= $this->cache->get($key);
+    }
+
+    /**
+     * Store a value under a versioned key — the other half of `get()`. Not inside a transaction,
+     * for the reason `remember()` gives.
+     *
+     * @param  list<string>  $depends
+     */
+    public function put(string $name, array $depends, mixed $value, ?int $ttl = null, bool $localized = true): void
+    {
+        if (! $this->enabled() || $this->db->connection()->transactionLevel() > 0) {
+            return;
+        }
+
+        $key = $this->key($name, $depends, $localized);
+        $this->cache->put($key, $value, $ttl ?? $this->ttl());
+        $this->values[$key] = $value;
     }
 
     /**
@@ -255,6 +304,11 @@ final class CacheGroups
      */
     public function forgetMemo(?string $group = null): void
     {
+        // The values go with the versions, whichever group moved: an entry built from two groups
+        // is as stale as the one that moved, and sorting them by group costs more than reading
+        // the few of them again.
+        $this->values = [];
+
         if ($group === null || $this->memo === null) {
             $this->memo = null;
 

@@ -118,9 +118,18 @@ trait HasSeo
         }
     }
 
+    /**
+     * The card, through the relation so that it is read once: the `<head>`, the `hreflang`
+     * lines and the social tags each ask the entity, and a page asked three times a request was
+     * three queries. `saveSeo()` drops what was loaded.
+     */
     private function seoMeta(): ?SeoMeta
     {
-        $meta = $this->relationLoaded('seo') ? $this->getRelation('seo') : $this->seo()->first();
+        if (! $this->exists) {
+            return null;
+        }
+
+        $meta = $this->getRelationValue('seo');
 
         return $meta instanceof SeoMeta ? $meta : null;
     }

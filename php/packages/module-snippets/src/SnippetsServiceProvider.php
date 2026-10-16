@@ -61,8 +61,6 @@ class SnippetsServiceProvider extends ServiceProvider
         $this->registerCacheGroups();
 
         Blade::component('webx-snippets', Place::class);
-
-        $this->forgetOnChange();
         $this->registerScreens();
         $this->registerHistory();
 
@@ -79,19 +77,6 @@ class SnippetsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-snippets'),
         ], 'webx-snippets-lang');
-    }
-
-    /** Every write the site would print differently after: the cached list goes (§5.7). */
-    private function forgetOnChange(): void
-    {
-        $forget = function (): void {
-            $this->app->make(Codes::class)->forget();
-        };
-
-        Snippet::saved($forget);
-        Snippet::deleted($forget);
-        Snippet::restored($forget);
-        Snippet::forceDeleted($forget);
     }
 
     /**
@@ -140,8 +125,7 @@ class SnippetsServiceProvider extends ServiceProvider
     {
         $groups = $this->app->make(CacheGroups::class);
 
-        $groups->declare('snippets', 'webx-snippets::module.title');
-        $groups->bumpOn('snippets', Snippet::class);
-        $groups->onReset('snippets', fn () => $this->app->make(Codes::class)->forget());
+        $groups->declare(Codes::GROUP, 'webx-snippets::module.title');
+        $groups->bumpOn(Codes::GROUP, Snippet::class);
     }
 }

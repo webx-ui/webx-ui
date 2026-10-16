@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Sitemap;
 
 use Carbon\CarbonInterface;
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Contracts\NotAPage;
 use WebxUi\Routing\Contracts\Visible;
@@ -51,6 +51,9 @@ use WebxUi\Seo\Rendering\Seo;
  */
 final class Sitemap
 {
+    /** The cache group the built map lives in (WEBX_UI_CACHE.md): a group apart, because the build is the expensive one. */
+    public const GROUP = 'sitemap';
+
     /** The file of named routes that have no entity; a type of that name would share it. */
     public const ROUTES = 'routes';
 
@@ -81,7 +84,7 @@ final class Sitemap
         private readonly Router $router,
         private readonly Resolver $resolver,
         private readonly Alternates $alternates,
-        private readonly Cache $cache,
+        private readonly CacheGroups $cache,
         private readonly Config $config,
         private readonly SitemapSources $sources,
     ) {}
@@ -206,18 +209,17 @@ final class Sitemap
         $stats = ['built_at' => Carbon::now()->toAtomString(), 'files' => $counts, 'excluded' => $this->excluded];
 
         if ($this->caching()) {
-            $generation = $this->generation();
             $ttl = $this->ttl();
 
             foreach ($files as $name => $xml) {
-                $this->cache->put($this->key($generation, 'file.'.$name), $xml, $ttl);
+                $this->cache->put($this->key('file.'.$name), [self::GROUP], $xml, $ttl, localized: false);
             }
 
-            $this->cache->put($this->key($generation, 'stats'), (string) json_encode($stats), $ttl);
+            $this->cache->put($this->key('stats'), [self::GROUP], (string) json_encode($stats), $ttl, localized: false);
 
             // The index last: it is what says a build is in the cache, so a request that sees
             // it can trust that every file it names is there too.
-            $this->cache->put($this->key($generation, 'index'), $index, $ttl);
+            $this->cache->put($this->key('index'), [self::GROUP], $index, $ttl, localized: false);
         }
 
         return ['index' => $index, 'files' => $files, 'counts' => $counts, 'stats' => $stats];
@@ -225,13 +227,12 @@ final class Sitemap
 
     /**
      * Throw the built map away. Not by deleting — the files are many and their names are not
-     * known in advance — but by moving on to a new generation; the old one runs out on its own.
+     * known in advance — but by moving the `sitemap` group on; the old entries run out on their
+     * own.
      */
     public function refresh(): void
     {
-        if ($this->caching()) {
-            $this->cache->forever($this->generationKey(), bin2hex(random_bytes(6)));
-        }
+        $this->cache->bump(self::GROUP);
     }
 
     /**
@@ -333,6 +334,13 @@ final class Sitemap
 
                     if ($withSeo) {
                         $query->with('seo');
+                    }
+
+                    // What a line of the map asks the entity — its cover for `og:image`, its
+                    // history for `lastmod` — loaded for the chunk at once where the model
+                    // says how (`scopeForSitemap`), rather than once per entity.
+                    if (method_exists($prototype, 'scopeForSitemap')) {
+                        $query->forSitemap();
                     }
 
                     /** @var Collection<int, Model&Visible> $found */
@@ -684,31 +692,18 @@ final class Sitemap
             return null;
         }
 
-        $value = $this->cache->get($this->key($this->generation(), $what));
+        $value = $this->cache->get($this->key($what), [self::GROUP], localized: false);
 
         return is_string($value) ? $value : null;
     }
 
-    private function generation(): string
-    {
-        $generation = $this->cache->get($this->generationKey());
-
-        if (is_string($generation) && $generation !== '') {
-            return $generation;
-        }
-
-        $this->refresh();
-
-        return (string) $this->cache->get($this->generationKey(), '0');
-    }
-
     /**
-     * The generation, and which types are not pages. Those change with a deploy rather than a
-     * save, so no event moves the generation for them; naming them in the key instead means a
+     * The name of an entry, and which types are not pages. Those change with a deploy rather
+     * than a save, so no event moves the group for them; naming them in the key instead means a
      * map built before a site bound its redirecting handler is simply never read again. Empty for
      * a site where every type is a page, so its keys are what they always were.
      */
-    private function key(string $generation, string $what): string
+    private function key(string $what): string
     {
         $skipped = [];
 
@@ -723,17 +718,7 @@ final class Sitemap
         // The stylesheet is in every file's prologue and is switched by config, which no save announces.
         $format = self::FORMAT.($this->stylesheet() === null ? '' : 'x');
 
-        return $this->prefix().'.'.$format.'.'.$generation.$skipped.'.'.$what;
-    }
-
-    private function generationKey(): string
-    {
-        return $this->prefix().'.generation';
-    }
-
-    private function prefix(): string
-    {
-        return (string) $this->config->get('webx-seo.sitemap.cache.key', 'webx.seo.sitemap');
+        return 'seo.sitemap.'.$format.$skipped.'.'.$what;
     }
 
     private function caching(): bool

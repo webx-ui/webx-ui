@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Cache;
 
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Octane\Events\RequestReceived;
 
@@ -28,9 +29,15 @@ class CacheServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // A worker that serves many requests in one process must not keep the first one's versions.
+        // A worker that serves many requests — or many jobs — in one process must not keep the
+        // first one's versions: the panel moved them from another process in between.
+        $events = $this->app->make(Dispatcher::class);
+        $events->listen(JobProcessing::class, function (): void {
+            $this->app->make(CacheGroups::class)->forgetMemo();
+        });
+
         if (class_exists(RequestReceived::class)) {
-            $this->app->make(Dispatcher::class)->listen(RequestReceived::class, function (): void {
+            $events->listen(RequestReceived::class, function (): void {
                 $this->app->make(CacheGroups::class)->forgetMemo();
             });
         }

@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Seo\Fields;
-use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Targets\ForeignHost;
 use WebxUi\Seo\Targets\UrlTargets;
@@ -95,20 +94,12 @@ class SeoUrl extends Model
 
     protected static function booted(): void
     {
-        // The public side reads the compiled list, not the table. A rule that has just been
-        // switched off has to stop working on the next request, not in a day.
-        $forget = static function (): void {
-            app(SeoRules::class)->forget();
-        };
-
         static::saving(static function (SeoUrl $rule): void {
             if ($rule->isDirty(['match_type', 'pattern']) || ! $rule->exists) {
                 $rule->bind();
             }
         });
 
-        static::saved($forget);
-        static::deleted($forget);
     }
 
     /**

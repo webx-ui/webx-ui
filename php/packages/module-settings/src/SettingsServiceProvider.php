@@ -97,15 +97,15 @@ class SettingsServiceProvider extends ServiceProvider
 
     /**
      * The `settings` cache group (WEBX_UI_CACHE.md §2): every save of a setting moves it, and
-     * until the settings themselves live on a versioned key, a move forgets the key they live on
-     * now — so that «reset the site cache» reaches them.
+     * the table itself lives on its versioned key ({@see Settings::raw()}) — a seeder, a
+     * removal, a console one-liner all go through the model, and a row written round it says
+     * `Settings::forget()`.
      */
     private function registerCacheGroups(): void
     {
         $groups = $this->app->make(CacheGroups::class);
 
-        $groups->declare('settings', 'webx-settings::module.title');
-        $groups->bumpOn('settings', Setting::class);
-        $groups->onReset('settings', fn () => $this->app->make(Settings::class)->forget());
+        $groups->declare(Settings::GROUP, 'webx-settings::module.title');
+        $groups->bumpOn(Settings::GROUP, Setting::class);
     }
 }

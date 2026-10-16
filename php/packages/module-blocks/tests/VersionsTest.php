@@ -13,6 +13,7 @@ use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
+use WebxUi\Cache\CacheGroups;
 
 final class VersionsTest extends TestCase
 {
@@ -145,17 +146,18 @@ final class VersionsTest extends TestCase
     public function content_rewritten_around_the_models_empties_the_caches(): void
     {
         $types = $this->app->make(BlockTypes::class);
-        $key = (string) $this->app['config']->get('webx-blocks.cache.key');
+        $groups = $this->app->make(CacheGroups::class);
         $this->publish('hero', '<img src="/storage/media/aa/bb/one.jpg">');
 
         $types->all();
-        $this->assertTrue(Cache::has($key));
+        $this->assertTrue(Cache::has($groups->key('blocks.types', [BlockTypes::GROUP], false)), 'the registry is kept on the versioned key of its group');
+        $version = $groups->version(BlockTypes::GROUP);
         $generation = Cache::get('webx.blocks.thumbnails.generation');
 
         // What the library dispatches once it has moved a picture to a new key in every table.
         event(new StoredContentRewritten(['one.jpg' => 'one.webp']));
 
-        $this->assertFalse(Cache::has($key), 'the cached registry still holds the old key');
+        $this->assertNotSame($version, $groups->version(BlockTypes::GROUP), 'the cached registry still holds the old key');
         $this->assertNotSame($generation, Cache::get('webx.blocks.thumbnails.generation'), 'the thumbnails were not started afresh');
     }
 
@@ -163,10 +165,9 @@ final class VersionsTest extends TestCase
     public function the_registry_forgets_what_it_cached_when_a_type_changes(): void
     {
         $types = $this->app->make(BlockTypes::class);
-        $key = (string) $this->app['config']->get('webx-blocks.cache.key');
 
         $this->assertSame([], $types->all());
-        $this->assertTrue(Cache::has($key));
+        $this->assertTrue(Cache::has($this->app->make(CacheGroups::class)->key('blocks.types', [BlockTypes::GROUP], false)));
 
         // Through a closure each time: the assertion would otherwise remember the expression's type.
         $template = static fn (): ?string => $types->find('hero')?->template;
