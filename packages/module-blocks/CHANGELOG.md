@@ -1,5 +1,17 @@
 # @webx-ui/module-blocks
 
+## 0.16.3
+
+### Patch Changes
+
+- c700893: A widget inside a block looks in the panel as it does on the page: the block type editor's stage, a block redrawn into the page preview after a field changed, and `blocks_render` now bring the stylesheets and scripts its widgets claim (a map, opening hours). `module-blocks` dispatches `Events\BlockDrawn` for a block drawn on its own, `webx-ui/widgets` answers with `Widgets::piece()` — the gathering `Widgets::finish()` does for a page — and the render answers with `assets` (`head`, `body`), which the panel adds to the frame once each (`addAssets()`). Pages and the page and region previews are unchanged.
+- c700893: A form of the Inbox is chosen, not typed: the field type `wx-inbox-form` (registered by `module-inbox`, drawn by `WxInboxFormField` of `@webx-ui/module-inbox`) searches the forms by name and slug, shows both, and is cleared by its remove button. It keeps the slug, as the text field did, so blocks written before open with their form chosen and nothing is migrated. A slug no form has is refused when it is written — by the panel's save, `blocks_set_content` and `blocks_edit_content` (with the slugs there are), and a settings screen — and kept when the record already held it, drawn as "No such form". The `contact` block of `theme-default` uses it. The relation target `inbox-form` answers with `slug` and searches by it, the exact one first. `ScreenValues::validate()` and `ScreenRecord::split()` take `held:` — what the record keeps — and run the checks only a new value has to pass (`ChecksNewValues`) on what differs from it; the settings pass it. A block added from the picker no longer copies the sample's form.
+- Updated dependencies [c700893]
+- Updated dependencies [c700893]
+  - @webx-ui/core@0.42.0
+  - @webx-ui/module-admin@0.29.0
+  - @webx-ui/schema@0.9.2
+
 ## 0.16.2
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @webx-ui/module-catalog
 
+## 0.8.10
+
+### Patch Changes
+
+- Updated dependencies [c700893]
+- Updated dependencies [c700893]
+  - @webx-ui/core@0.42.0
+  - @webx-ui/module-admin@0.29.0
+  - @webx-ui/schema@0.9.2
+
 ## 0.8.9
 
 ### Patch Changes
