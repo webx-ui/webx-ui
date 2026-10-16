@@ -86,6 +86,21 @@ The list of enabled snippets is cached forever and forgotten on every save, dele
 Every change is in the panel's journal — who, when, what — with the **whole code before and after**,
 so an old code can be pasted back by hand. There are no versions and no rollback button.
 
+## MCP
+
+Six tools behind the scopes `snippets:read` and `snippets:write` — and, like the panel, behind
+`snippets.manage`: `snippets_list`, `snippets_get`, `snippets_create`, `snippets_update`,
+`snippets_delete`, `snippets_reorder`. Every write takes `dry_run: true`; a place the config does
+not declare is refused with the list of the ones it does. The resources `snippets://catalog` (the
+rules and every snippet in short) and `snippets://places` (each place, whether a view prints it,
+how many snippets it holds) are what an agent reads first.
+
+## Demo
+
+`php artisan webx:demo --module=snippets` adds one snippet to `body_end` — a comment and a
+`console.log`, waiting for the analytics category, **switched off**. A site that already has a
+snippet gets none; `webx:demo --remove` takes it out.
+
 ## License
 
 MIT

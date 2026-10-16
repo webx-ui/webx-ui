@@ -9,6 +9,7 @@ use Illuminate\Contracts\Foundation\Application;
 use WebxUi\Admin\Doctor\Check;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Snippets\Checks\PlaceFinder;
+use WebxUi\Snippets\Checks\SiteViews;
 use WebxUi\Snippets\Models\Snippet;
 use WebxUi\Snippets\Places;
 use WebxUi\Themes\ThemeChain;
@@ -30,6 +31,7 @@ final class SnippetPlaces implements Check
         private readonly Config $config,
         private readonly Places $places,
         private readonly PlaceFinder $finder,
+        private readonly SiteViews $views,
         private readonly ThemeChain $chain,
         private readonly Widgets $widgets,
     ) {}
@@ -37,7 +39,7 @@ final class SnippetPlaces implements Check
     public function run(): array
     {
         $found = [];
-        $printed = $this->finder->find($this->viewPaths())['places'];
+        $printed = $this->finder->find($this->views->paths())['places'];
 
         foreach ($this->places->keys() as $place) {
             if (! isset($printed[$place])) {
@@ -93,17 +95,5 @@ final class SnippetPlaces implements Check
         }
 
         return $found;
-    }
-
-    /**
-     * The site's views (`view.paths`), then the theme's layers: the order Blade reads them in.
-     *
-     * @return list<string>
-     */
-    private function viewPaths(): array
-    {
-        $site = array_filter((array) $this->config->get('view.paths', []), static fn (mixed $path): bool => is_string($path) && is_dir($path));
-
-        return [...array_values(array_map(static fn (string $path): string => str_replace('\\', '/', $path), $site)), ...$this->chain->viewPaths()];
     }
 }

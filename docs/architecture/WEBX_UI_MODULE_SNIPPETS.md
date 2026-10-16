@@ -403,21 +403,24 @@ return [
 
 ### 9.1 Инструменты
 
-`WebxUi\Snippets\Mcp\SnippetTools`, `Arguments::strictAll([...])`, мутирующие — `Tool::mutating`
+`WebxUi\Snippets\Mcp\SnippetsTools`, `Arguments::strictAll([...])`, мутирующие — `Tool::mutating`
 (`dry_run` даёт сам `Tool`: проверить и сказать, что было бы, ничего не записав).
 
-| Имя                | Аргументы                                                                                                         | Ответ                                                                                         |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `snippets_list`    | `place?`, `search?` (в названии и коде), `trashed?`                                                               | по местам: id, name, place, place_declared, consent, охват, locales, on_stage, enabled, bytes |
-| `snippets_get`     | `snippet` (id)                                                                                                    | запись целиком, `code`                                                                        |
-| `snippets_create`  | `name`, `place`, `code`, `consent?`, `only?`, `except?`, `locales?`, `on_stage?`, `enabled?` (по умолчанию false) | запись + `warnings`                                                                           |
-| `snippets_update`  | `snippet`, любые поля create; не переданное — без изменений                                                       | запись + `warnings`                                                                           |
-| `snippets_delete`  | `snippet`                                                                                                         | в корзину; удаление насовсем — в панели                                                       |
-| `snippets_reorder` | `place`, `snippets` — все id места в новом порядке                                                                | порядок места                                                                                 |
+| Имя                | Аргументы                                                                                                                     | Ответ                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `snippets_list`    | `place?`, `search?` (в названии и коде), `trashed?`                                                                           | по местам: id, name, place, place_declared, consent, охват, locales, on_stage, enabled, bytes |
+| `snippets_get`     | `snippet` (id)                                                                                                                | запись целиком, `code`                                                                        |
+| `snippets_create`  | `name`, `place`, `code`, `consent?`, `only_paths?`, `except_paths?`, `locales?`, `on_stage?`, `enabled?` (по умолчанию false) | запись + `warnings`                                                                           |
+| `snippets_update`  | `snippet`, любые поля create; не переданное — без изменений                                                                   | запись + `warnings`                                                                           |
+| `snippets_delete`  | `snippet`                                                                                                                     | в корзину; удаление насовсем — в панели                                                       |
+| `snippets_reorder` | `place`, `snippets` — все id места в новом порядке                                                                            | порядок места                                                                                 |
 
 - **Шесть инструментов.** `update` пишет колонки сразу, включая `enabled` — включение и
   выключение тоже через него; журнал пишется с агентом (источник `mcp`, `HistoryContext`).
   `publish`/`discard` нет — черновиков нет (§15, решение 2).
+- Все шесть — за правом `snippets.manage` (как API раздела); scopes по умолчанию — `snippets:read`
+  (`list`, `get`) и `snippets:write` (остальные). Поля у `create`/`update` — плоскими аргументами,
+  под теми же именами, что в форме (`SnippetValues::FIELDS`).
 - `enabled: true` у `create` — только когда человек об этом попросил (формулировка FAQ:
   «pass published: true only when a person asked for that»).
 - **Описание каждого инструмента записи начинается словами:** «Writing a snippet runs its
@@ -428,7 +431,10 @@ return [
 
 `WebxUi\Mcp\Exceptions\ToolFailure` с подсказкой, куда смотреть, как у FAQ:
 
-- `Place [x] is not declared. snippets://places lists the places this site has.`
+- `Place [x] is not declared. The places this site has: head, body_start, body_end, … — snippets://places describes them.`
+  Место проверяет сам инструмент до формы — чтобы назвать допустимые; у `create`, `reorder` и `update` с новым `place`.
+- Отказы правил значений (`SnippetValues`) приходят как `Not accepted — <поле>: <слова из lang/errors.php>` —
+  те же слова, что под полем в панели; список ниже — о чём они.
 - `` `code` cannot be empty. `` / `` `code` is N bytes; the limit is 65536. ``
 - `` `consent` is one of: necessary, statistics, marketing, media. ``
 - `A mask is a path from the root, like "/blog/*": [x] is not.`
@@ -436,20 +442,24 @@ return [
 - `No snippet has the id [N]. snippets_list has them all.`
 - `Snippet N is in the bin. Bring it back in the panel before editing it.`
 - `` `snippets` must list every snippet of place [x], each once: missing N, M. ``
-- `Snippet N is in place [y], not [x].` (reorder через границу мест — только `update` с `place`)
-- Включение в осиротевшем месте: `Snippet N is in place [x], which is no longer declared; move it with update {place} before enabling it.`
+- `Snippet N is in place [y], not [x]. Move it with snippets_update {place} first.` (через границу мест — только `update` с `place`)
+- Включение в осиротевшем месте: `Snippet N is in place [x], which is no longer declared; move it with snippets_update {place} before enabling it.`
 
 Предупреждения (§7.4) — не отказ, а `warnings: ["The code has <head>: …"]`.
 
 ### 9.3 Ресурсы
 
-`WebxUi\Snippets\Mcp\SnippetResources`:
+`WebxUi\Snippets\Mcp\SnippetsResources`:
 
 - `snippets://catalog` — справочник: что такое код, правила (лимит, маски, категории, «и на dev»,
   где не выводится), и список существующих кодов кратко (id, name, place, enabled) — чтобы агент
   не завёл второй счётчик того же сервиса;
-- `snippets://places` — места: ключ, подпись, встроенное ли, встречалось ли на страницах (§10.3),
-  число кодов; осиротевшие — отдельным списком.
+- `snippets://places` — места: `key`, `label`, `built_in`, `in_views` (статический поиск §10.1 по
+  видам сайта и слоям темы; `null`, если искать не вышло), `last_seen_on_a_page` (§10.3),
+  `snippets` и `enabled` — число кодов; осиротевшие — списком `undeclared`; `own_place` — как сайту
+  добавить своё место.
+
+Директории видов для доктора и ресурса — один класс `Checks\SiteViews`.
 
 `webx:mcp-tools` показывает инструменты без своего кода — реестр MCP.
 
@@ -586,8 +596,6 @@ Changeset — `@webx-ui/php` (общий для composer-пакетов) и, е�
   `ModulesCommandTest` требует, чтобы npm-половина строки каталога стояла в `extra.webx.npm`, а
   `scripts/sync-npm-pairs.mjs` (часть `pnpm version-packages`) роняет релиз на имени
   `@webx-ui/*`, которого в `packages/` нет. До тех пор `webx:module:add snippets` модуля не знает.
-- Пока пакет собирается по этапам, он в `PENDING` у `AgentDocsCoverageTest`; убрать оттуда тем же
-  коммитом, что `AGENTS.md`.
 - Плейграунд — `apps/playground/src/panel/main.ts` + фикстура в `apps/playground/server/panel/`.
 - `scripts/packages.mjs` репозитория демо-сайта.
 - `RouteType` нет — `SiteBar::entity()` не нужен (`SiteBarCoverageTest` не задет).
@@ -596,14 +604,18 @@ Changeset — `@webx-ui/php` (общий для composer-пакетов) и, е�
 ## 13. Демо
 
 `WebxUi\Snippets\Demo\SnippetsDemo` (`ProvidesDemo`, как `module-faq/src/Demo/FaqDemo.php`):
-один выключенный код в `body_end`, `consent: statistics`, без реальных идентификаторов сервисов:
+один выключенный код в `body_end`, `consent: statistics`, `on_stage: false`, без реальных
+идентификаторов сервисов (`resources/demo/snippets.json`, название — на языке сайта по умолчанию):
 
 ```html
-<!-- Example: an analytics tag. Replace with the code your service gives you. -->
+<!-- Demo snippet: paste the code your service gives you here. It is switched off. -->
 <script>
-  console.info('webx snippets: example code, not connected to any service')
+  console.log('webx snippets: the demo snippet ran')
 </script>
 ```
+
+Сайт, где уже есть хоть один код (и в корзине), демо не получает. `webx:demo --remove` удаляет
+его по журналу демо.
 
 ## 14. Тесты
 
@@ -657,5 +669,11 @@ Changeset — `@webx-ui/php` (общий для composer-пакетов) и, е�
 согласием и исключениями, раздел панели (`SnippetsModule`, API §7.5, экран `snippets.form`),
 `PlacesCheck` в `webx:theme:check`, `SnippetPlaces` в `webx:doctor`; в `theme-default` — три
 места; в `themes` — `ThemeCheckPart`; в `widgets` — `Widgets::EARLY`, `consentReady()`, тип и
-порядок скриптов шаблона в `consent.js`; в `module-admin` — `historyKeepsFull()`. Первую версию `@webx-ui/module-snippets` в npm
+порядок скриптов шаблона в `consent.js`; в `module-admin` — `historyKeepsFull()`.
+
+**MCP, демо, `AGENTS.md` (этап 3) сделано:** `Mcp\SnippetsTools` (шесть инструментов §9.1, отказы
+§9.2, `warnings`), `Mcp\SnippetsResources` (`snippets://catalog`, `snippets://places`),
+`Demo\SnippetsDemo` (§13), `AGENTS.md` пакета; пакет снят с `PENDING` у `AgentDocsCoverageTest`.
+
+Первую версию `@webx-ui/module-snippets` в npm
 публикует человек (`docs/pitfalls/release-and-ci.md`).
