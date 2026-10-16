@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Cache',
+    'lead' => 'What the site remembers between requests — the menu, the settings, the addresses — by group. A save in the panel resets its own group; the button is for when the site still shows what the panel no longer says.',
+    'store' => 'Store',
+    'store-array' => 'Nothing survives the request: every page builds everything again. Set a store in CACHE_STORE.',
+    'disabled' => 'The versioned cache is switched off in the configuration.',
+    'ttl' => 'Entries live',
+    'ttl-value' => ':hours h',
+    'groups' => 'Groups',
+    'group' => 'Group',
+    'version' => 'Version',
+    'models' => 'Reset by',
+    'models-none' => 'Only by hand',
+    'no-groups' => 'No module has declared a cache group yet.',
+    'reset-all' => 'Reset the site cache',
+    'reset-all-title' => 'Reset the whole site cache?',
+    'reset-all-text' => 'Every group is reset; the site rebuilds what it cached on the next visits. Sessions and sign-ins are not touched. If you had to press this, something did not reset itself — tell whoever maintains the site which page was stale.',
+    'reset-group' => 'Reset',
+    'reset-group-title' => 'Reset the «:group» cache?',
+    'reset-group-text' => 'What the site cached from this group is rebuilt on the next visits. Sessions and sign-ins are not touched.',
+    'reset' => 'Reset',
+    'cancel' => 'Cancel',
+    'reset-done' => 'The cache is reset.',
+    'reset-group-done' => 'The «:group» cache is reset.',
+    'load-failed' => 'Could not load the state of the cache.',
+    'refresh' => 'Refresh',
+    'history' => 'Resets',
+    'history-groups' => 'Groups',
+    'forbidden' => 'You may not reset the cache.',
+    'group-locales' => 'Languages',
+    'group-routes' => 'Addresses',
+    'group-screens' => 'Panel screens',
+    'group-theme' => 'Theme',
+];

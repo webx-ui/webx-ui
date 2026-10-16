@@ -35,10 +35,11 @@ final class ListToolsCommandTest extends TestCase
     }
 
     #[Test]
-    public function it_says_so_when_there_is_nothing(): void
+    public function the_frame_alone_offers_the_journal_and_the_cache(): void
     {
         $this->artisan('webx:mcp-tools')
-            ->expectsOutputToContain('No installed module offers MCP tools yet.')
+            ->expectsOutputToContain('history_get')
+            ->expectsOutputToContain('cache_reset')
             ->assertSuccessful();
     }
 

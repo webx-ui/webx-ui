@@ -41,6 +41,8 @@ question is about one of them.
   `seo-tab`, `history-tab`). Also the exchange forms `catalog.exchange-import` and
   `catalog.exchange-profile`. The API is under `/api/cms/catalog`. Permissions are
   `catalog.view`, `catalog.manage` and `catalog.delete`; satellites have none of their own.
+- **Cache group** `catalog` (WEBX_UI_CACHE.md): no model moves it yet — a product is saved by the thousand in an
+  import; a reset («System → Cache», `bump('catalog')`) drops the facets' settings and what the satellites keep.
 - **Registries** (singletons a satellite fills from its provider): `ProductParts`, `Facets`,
   `Sorts`, `Documents`, `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`,
   `StorefrontParts`, `Purchasability`, `PopularitySignals`, `CatalogEngines`, `FilterUrls`,

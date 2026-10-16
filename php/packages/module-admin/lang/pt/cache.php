@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Cache',
+    'lead' => 'O que o site lembra entre pedidos — o menu, as definições, os endereços — por grupos. Guardar no painel repõe o seu próprio grupo; o botão é para quando o site ainda mostra o que o painel já não diz.',
+    'store' => 'Armazenamento',
+    'store-array' => 'Nada sobrevive ao pedido: cada página reconstrói tudo. Defina um armazenamento em CACHE_STORE.',
+    'disabled' => 'A cache com versões está desligada na configuração.',
+    'ttl' => 'As entradas vivem',
+    'ttl-value' => ':hours h',
+    'groups' => 'Grupos',
+    'group' => 'Grupo',
+    'version' => 'Versão',
+    'models' => 'Reposto por',
+    'models-none' => 'Só à mão',
+    'no-groups' => 'Nenhum módulo declarou ainda um grupo de cache.',
+    'reset-all' => 'Repor a cache do site',
+    'reset-all-title' => 'Repor toda a cache do site?',
+    'reset-all-text' => 'Todos os grupos são repostos; o site reconstrói o que tinha em cache nas próximas visitas. Sessões e inícios de sessão não são tocados. Se teve de carregar aqui, algo não se repôs sozinho: diga a quem mantém o site qual página estava desatualizada.',
+    'reset-group' => 'Repor',
+    'reset-group-title' => 'Repor a cache «:group»?',
+    'reset-group-text' => 'O que o site guardou em cache deste grupo é reconstruído nas próximas visitas. Sessões e inícios de sessão não são tocados.',
+    'reset' => 'Repor',
+    'cancel' => 'Cancelar',
+    'reset-done' => 'A cache foi reposta.',
+    'reset-group-done' => 'A cache «:group» foi reposta.',
+    'load-failed' => 'Não foi possível carregar o estado da cache.',
+    'refresh' => 'Atualizar',
+    'history' => 'Reposições',
+    'history-groups' => 'Grupos',
+    'forbidden' => 'Não pode repor a cache.',
+    'group-locales' => 'Idiomas',
+    'group-routes' => 'Endereços',
+    'group-screens' => 'Ecrãs do painel',
+    'group-theme' => 'Tema',
+];

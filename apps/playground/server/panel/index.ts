@@ -270,6 +270,7 @@ import {
   registerCatalog,
 } from './catalog'
 import { registerAudit } from './audit'
+import { registerCache } from './cache'
 import { registerTasks, tasksBadge } from './tasks'
 import {
   channelsOfForm,
@@ -856,6 +857,16 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 500,
         group: 'system',
         permissions: ['media.view', 'media.upload', 'media.manage'],
+        meta: {},
+      },
+      /* «System → Cache», the frame's own section: a super administrator's until a role gets a permission. */
+      {
+        id: 'cache',
+        title: line(locale, 'webx-admin', 'cache.title'),
+        icon: 'refresh',
+        order: 730,
+        group: 'system',
+        permissions: ['cache.view', 'cache.reset'],
         meta: {},
       },
       /* Only a super administrator has it until a role is given one of the two (§11). */
@@ -2357,6 +2368,16 @@ const notes = new Map<
   string,
   { id: number; body: string; author: unknown; created_at: string; updated_at: string | null }[]
 >()
+
+/*
+ * The frame's own «System → Cache» (WEBX_UI_CACHE.md): groups, versions, the reset and its journal.
+ * Before the journal's routes below: its `history/cache/0` would otherwise be read as a record's.
+ */
+registerCache(
+  on,
+  (status, message, errors) => new HttpFailure(status, message, undefined, errors),
+  line,
+)
 
 /*
  * The journal (WEBX_UI_HISTORY.md §5), of the one fake record that has one. The run first, as

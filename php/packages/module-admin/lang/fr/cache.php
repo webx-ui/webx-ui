@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Cache',
+    'lead' => 'Ce que le site retient entre les requêtes — le menu, les réglages, les adresses — par groupe. Un enregistrement dans le panneau réinitialise son groupe lui-même ; le bouton sert quand le site montre encore ce que le panneau ne dit plus.',
+    'store' => 'Stockage',
+    'store-array' => 'Rien ne survit à la requête : chaque page reconstruit tout. Définissez un stockage dans CACHE_STORE.',
+    'disabled' => 'Le cache versionné est désactivé dans la configuration.',
+    'ttl' => 'Les entrées vivent',
+    'ttl-value' => ':hours h',
+    'groups' => 'Groupes',
+    'group' => 'Groupe',
+    'version' => 'Version',
+    'models' => 'Réinitialisé par',
+    'models-none' => 'À la main seulement',
+    'no-groups' => 'Aucun module n’a encore déclaré de groupe de cache.',
+    'reset-all' => 'Réinitialiser le cache du site',
+    'reset-all-title' => 'Réinitialiser tout le cache du site ?',
+    'reset-all-text' => 'Tous les groupes sont réinitialisés ; le site reconstruit ce qu’il avait mis en cache lors des prochaines visites. Les sessions et les connexions ne sont pas touchées. Si vous avez dû appuyer ici, quelque chose ne s’est pas réinitialisé tout seul : dites à qui maintient le site quelle page était périmée.',
+    'reset-group' => 'Réinitialiser',
+    'reset-group-title' => 'Réinitialiser le cache « :group » ?',
+    'reset-group-text' => 'Ce que le site a mis en cache depuis ce groupe est reconstruit lors des prochaines visites. Les sessions et les connexions ne sont pas touchées.',
+    'reset' => 'Réinitialiser',
+    'cancel' => 'Annuler',
+    'reset-done' => 'Le cache est réinitialisé.',
+    'reset-group-done' => 'Le cache « :group » est réinitialisé.',
+    'load-failed' => 'Impossible de charger l’état du cache.',
+    'refresh' => 'Actualiser',
+    'history' => 'Réinitialisations',
+    'history-groups' => 'Groupes',
+    'forbidden' => 'Vous ne pouvez pas réinitialiser le cache.',
+    'group-locales' => 'Langues',
+    'group-routes' => 'Adresses',
+    'group-screens' => 'Écrans du panneau',
+    'group-theme' => 'Thème',
+];

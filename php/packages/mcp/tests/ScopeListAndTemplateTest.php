@@ -68,14 +68,15 @@ final class ScopeListAndTemplateTest extends TestCase
         WebxServer::actingAs(new TokenUser(['queue:read']))->tool($tool)
             ->assertHasErrors(['[queue:write] or [queue:work]']);
 
-        $this->assertSame(['queue:work', 'queue:write'], $this->tools()->scopes());
+        $this->assertSame(['cache:write', 'history:read', 'queue:work', 'queue:write'], $this->tools()->scopes());
         $this->assertSame('queue:write | queue:work', $this->tools()->tool('queue_note')->scope());
     }
 
     #[Test]
     public function an_address_with_a_variable_is_served_as_a_template(): void
     {
-        [$all, $project] = array_map(RegistryResource::for(...), $this->tools()->resources());
+        // After the frame's own `history://types`.
+        [$all, $project] = array_map(RegistryResource::for(...), array_slice($this->tools()->resources(), 1));
 
         $this->assertNotInstanceOf(RegistryResourceTemplate::class, $all);
         $this->assertInstanceOf(RegistryResourceTemplate::class, $project);
@@ -84,7 +85,7 @@ final class ScopeListAndTemplateTest extends TestCase
         $server->start();
         $context = $server->createContext();
 
-        $this->assertSame(['queue://all'], $context->resources()->map(static fn ($resource): string => $resource->uri())->values()->all());
+        $this->assertSame(['history://types', 'queue://all'], $context->resources()->map(static fn ($resource): string => $resource->uri())->values()->all());
         $this->assertSame(['queue://projects/{slug}'], $context->resourceTemplates()->map(static fn ($resource): string => $resource->uri())->values()->all());
 
         WebxServer::resource($project, ['slug' => 'shop'])->assertOk()->assertSee('"slug": "shop"');

@@ -110,7 +110,7 @@ whose type has no `wx-blocks` field is refused as "not a container".
 - Do not give `blocks.manage` to content editors: a template is Blade, Blade is PHP, saving one is
   running code. Regions need only `blocks.regions`.
 - Do not write rows of `blocks` or `block_versions` with SQL: a version is checked and compiled on
-  save, publishing renders it first, and the cache is forgotten only through the model. Use
+  save, publishing renders it first, and the cache is forgotten only through the model (or by a reset of the `blocks` / `regions` cache groups, «System → Cache»). Use
   `webx:blocks:import` or the tools.
 - Do not publish a template that declares no `data-wx-block="{slug}"` on its root, marks it with
   anything but the exact slug, or uses variables the schema lacks: the script never runs, the

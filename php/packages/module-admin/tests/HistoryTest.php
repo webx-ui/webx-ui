@@ -451,10 +451,12 @@ final class HistoryTest extends TestCase
 
         $this->assertInstanceOf(HistoryModule::class, $module);
         $this->assertSame(['get', 'runs'], array_map(static fn (Tool $tool): string => $tool->name, $module->mcpTools()));
-        $this->assertSame(['catalog.view', 'catalog.manage', 'admins.view'], $module->mcpTools()[0]->permissions);
+        // The frame's own type — the cache's resets — comes first: it is registered at boot.
+        $this->assertSame(['cache.view', 'cache.reset', 'catalog.view', 'catalog.manage', 'admins.view'], $module->mcpTools()[0]->permissions);
 
         $types = ($module->mcpResources()[0]->handler)();
-        $this->assertSame('Price', $types['types'][0]['fields']['price']);
+        // The frame's own `cache` type comes first; the product's is the second.
+        $this->assertSame('Price', $types['types'][1]['fields']['price']);
     }
 
     private function types(): HistoryTypes

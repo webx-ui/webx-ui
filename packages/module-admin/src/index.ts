@@ -130,6 +130,16 @@ export {
   type UnfinishedUpload,
 } from './uploads'
 export { adminTypes } from './screenTypes'
+// «System → Cache»: the one section the frame itself brings (WEBX_UI_CACHE.md §5).
+export { cache, type CacheOptions } from './cache/module'
+export {
+  createCacheApi,
+  type CacheApi,
+  type CacheGroupRow,
+  type CacheReport,
+  type CacheResetResult,
+} from './cache/api'
+export { default as WxCachePage } from './cache/CachePage.vue'
 export {
   categoryRoutes,
   categoryEditorKey,

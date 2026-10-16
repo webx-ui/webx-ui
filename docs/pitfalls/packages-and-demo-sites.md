@@ -241,6 +241,12 @@ pipe`. `… | grep -q` под `pipefail`: grep уходит на первом с
 - **`site exec <сайт> php artisan tinker файл.php` висит до таймаута.** Tinker с файлом всё равно
   ждёт stdin. Скрипт — `tinker --execute="require 'storage/app/…/x.php';"` с `</dev/null` под
   `timeout 60`; русский текст — в файле, не в аргументе.
+- **`scripts/php-smoke.sh` локально (sqlite) падает на втором `webx:setup`: «The email has already been
+  taken», «webx:admin exited with 1».** В CI (MySQL) тот же скрипт зелёный. На sqlite сайт `create-project`
+  живёт в файле `site/laravel` (`DB_DATABASE=laravel`), а `SetupCommand::administrators()` считает
+  администраторов в `database/database.sqlite` — пустом файле скелета — и, не найдя ни одного, снова зовёт
+  `webx:admin`. К правкам не относится: проверять smoke против MySQL (`DB_CONNECTION=mysql …`, как в CI)
+  или чинить `administrators()` на путь из конфига.
 
 ## Shell и инструменты агента
 

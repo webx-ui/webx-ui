@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Themes\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Container\Container;
+use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\SyncStep;
 use WebxUi\Themes\ModuleStyles;
@@ -97,6 +99,14 @@ class SyncCommand extends Command
                     $this->components->twoColumnDetail($line->subject, $line->detail);
                 }
             }
+        }
+
+        // The pointers moved: whatever a site cached from the theme is built on the old ones
+        // (WEBX_UI_CACHE.md §2). Only where the frame is installed; the engine does not require it.
+        $app = Container::getInstance();
+
+        if (! (bool) $this->option('dry-run') && $app->bound(CacheGroups::class)) {
+            $app->make(CacheGroups::class)->bump(CacheGroups::THEME);
         }
 
         if ($refused > 0) {

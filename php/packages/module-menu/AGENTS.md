@@ -34,16 +34,16 @@ when the question is about one of those.
 
 ## Change it without forking
 
-| You want                               | Do this                                                                                              |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| A menu a template asks for             | add it under `menus` in `config/webx-menu.php` (`php artisan vendor:publish --tag=webx-menu-config`) |
-| Item looks (a button, an outline link) | `'variants' => ['link', 'button']` on that menu; your markup divides by `$item->variant`             |
-| Your own markup for a menu             | `@foreach (menu('header') as $item)` in the layout, using `attrs()` and `isActive()`                 |
-| Change the component's markup          | `php artisan vendor:publish --tag=webx-menu-views`, keep only the files you change                   |
-| A menu inside a site built from blocks | `php artisan webx:blocks:offered --install --module=menu`, then edit the type in the panel           |
-| Other words in the panel               | `php artisan vendor:publish --tag=webx-menu-lang`                                                    |
-| A cache that lives shorter, or none    | `'cache' => ['enabled' => ..., 'ttl' => ...]` in the published config                                |
-| Forget menus after a bulk write        | `app(WebxUi\Menu\MenuCache::class)->flush()`, or `forget('header')` for one menu                     |
+| You want                               | Do this                                                                                                                                                                 |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A menu a template asks for             | add it under `menus` in `config/webx-menu.php` (`php artisan vendor:publish --tag=webx-menu-config`)                                                                    |
+| Item looks (a button, an outline link) | `'variants' => ['link', 'button']` on that menu; your markup divides by `$item->variant`                                                                                |
+| Your own markup for a menu             | `@foreach (menu('header') as $item)` in the layout, using `attrs()` and `isActive()`                                                                                    |
+| Change the component's markup          | `php artisan vendor:publish --tag=webx-menu-views`, keep only the files you change                                                                                      |
+| A menu inside a site built from blocks | `php artisan webx:blocks:offered --install --module=menu`, then edit the type in the panel                                                                              |
+| Other words in the panel               | `php artisan vendor:publish --tag=webx-menu-lang`                                                                                                                       |
+| A cache that lives shorter, or none    | `'cache' => ['enabled' => ..., 'ttl' => ...]` in the published config                                                                                                   |
+| Forget menus after a bulk write        | `app(WebxUi\Menu\MenuCache::class)->flush()`, or `forget('header')` for one menu; the `menu` cache group (`CacheGroups::bump('menu')`, «System → Cache») reaches it too |
 
 A published config replaces the whole `cache` section if it names one key inside it
 (`mergeConfigFrom` merges one level deep); both values have a default of their own when read.

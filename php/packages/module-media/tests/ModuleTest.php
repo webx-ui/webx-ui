@@ -18,10 +18,11 @@ final class ModuleTest extends TestCase
 
         $this->getJson('/api/cms/manifest')
             ->assertOk()
-            ->assertJsonPath('data.modules.0.id', 'media')
-            ->assertJsonPath('data.modules.0.icon', 'folder')
-            ->assertJsonPath('data.modules.0.group', 'system')
-            ->assertJsonPath('data.modules.0.permissions', [
+            // After the frame's own journal module (order 0).
+            ->assertJsonPath('data.modules.1.id', 'media')
+            ->assertJsonPath('data.modules.1.icon', 'folder')
+            ->assertJsonPath('data.modules.1.group', 'system')
+            ->assertJsonPath('data.modules.1.permissions', [
                 'media.view',
                 'media.upload',
                 'media.manage',
@@ -38,7 +39,7 @@ final class ModuleTest extends TestCase
         $this->withHeader('X-Webx-Locale', 'ru')
             ->getJson('/api/cms/manifest')
             ->assertOk()
-            ->assertJsonPath('data.modules.0.title', 'Файлы');
+            ->assertJsonPath('data.modules.1.title', 'Файлы');
     }
 
     #[Test]

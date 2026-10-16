@@ -21,13 +21,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Laravel\Octane\Events\RequestReceived;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Backups\Backups;
+use WebxUi\Admin\Cache\CacheGroups;
+use WebxUi\Admin\Cache\CacheModule;
+use WebxUi\Admin\Cache\CacheReset;
+use WebxUi\Admin\Cache\McpCacheModule;
 use WebxUi\Admin\Categories\CategoriesType;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Console\BackupCommand;
 use WebxUi\Admin\Console\BootCommand;
+use WebxUi\Admin\Console\CachePruneCommand;
+use WebxUi\Admin\Console\CacheResetCommand;
 use WebxUi\Admin\Console\DemoCommand;
 use WebxUi\Admin\Console\DoctorCommand;
 use WebxUi\Admin\Console\InstallCommand;
@@ -51,6 +58,7 @@ use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Editing\Purged;
 use WebxUi\Admin\Editing\RecordEvents;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\KeepOutOfSearch;
 use WebxUi\Admin\Gate\Openings;
@@ -101,7 +109,9 @@ use WebxUi\Admin\Uploads\FreeSpace;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Admin\Uploads\Uploads;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Models\Locale;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Routing\Models\Route as RouteModel;
 use WebxUi\Routing\SiteUrl;
 
 class AdminServiceProvider extends ServiceProvider
@@ -147,6 +157,10 @@ class AdminServiceProvider extends ServiceProvider
 
         // What modules add to `webx:doctor` after the frame's own checks.
         $this->app->singleton(DoctorChecks::class);
+
+        // The cache groups and their versions (WEBX_UI_CACHE.md): declared from providers like the
+        // registers above, read once a request.
+        $this->app->singleton(CacheGroups::class);
 
         // Whose `storage` it is: what a command run as root hands its files back to.
         $this->app->bind(Ownership::class, static fn (): Ownership => new Ownership(storage_path()));
@@ -312,6 +326,8 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerBackupSchedule();
         $this->registerHistorySchedule();
         $this->registerUploadsSchedule();
+        $this->registerCache();
+        $this->registerCacheSchedule();
         $this->registerGate();
         $this->registerPurgedAnswer();
         $this->registerSiteBar();
@@ -347,6 +363,8 @@ class AdminServiceProvider extends ServiceProvider
         $this->commands([
             BackupCommand::class,
             BootCommand::class,
+            CachePruneCommand::class,
+            CacheResetCommand::class,
             DemoCommand::class,
             DoctorCommand::class,
             InstallCommand::class,
@@ -504,6 +522,76 @@ class AdminServiceProvider extends ServiceProvider
 
             $schedule->command(PruneHistoryCommand::class)
                 ->dailyAt((string) $config->get('webx-admin.history.prune_at', '03:40'))
+                ->onOneServer()
+                ->withoutOverlapping();
+        });
+    }
+
+    /**
+     * The frame's own cache groups (WEBX_UI_CACHE.md §2.1): what every site has whichever modules
+     * it installs — the languages, the addresses, the screens, the theme — and the section
+     * «System → Cache» with its reset. The module is the one with the agent's tool where
+     * `webx-ui/mcp` is installed; the frame does not require it.
+     *
+     * A language saved through its model moves `locales` and forgets the list the localization
+     * package keeps on a key of its own — that package does not know the frame, so the frame
+     * joins the two. The addresses are the same: `routes` moves on every `Route` written through
+     * Eloquent, and `RouteSync` says so itself where it writes in bulk.
+     */
+    private function registerCache(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare(CacheGroups::LOCALES, 'webx-admin::cache.group-locales');
+        $groups->declare(CacheGroups::ROUTES, 'webx-admin::cache.group-routes');
+        $groups->declare(CacheGroups::SCREENS, 'webx-admin::cache.group-screens');
+        $groups->declare(CacheGroups::THEME, 'webx-admin::cache.group-theme');
+
+        $groups->bumpOn(CacheGroups::LOCALES, Locale::class);
+        $groups->onReset(CacheGroups::LOCALES, fn () => $this->app->make(Locales::class)->forget());
+
+        if (class_exists(RouteModel::class)) {
+            $groups->bumpOn(CacheGroups::ROUTES, RouteModel::class);
+        }
+
+        // A rewrite of stored content — paths of optimised images — touches rows of every module
+        // without a single model event: everything built from them is stale at once.
+        $this->app->make(Dispatcher::class)->listen(StoredContentRewritten::class, static function () use ($groups): void {
+            $groups->bumpAll();
+        });
+
+        // A worker that serves many requests in one process must not keep the first one's versions.
+        if (class_exists(RequestReceived::class)) {
+            $this->app->make(Dispatcher::class)->listen(RequestReceived::class, static function () use ($groups): void {
+                $groups->forgetMemo();
+            });
+        }
+
+        $this->app->make(HistoryTypes::class)->register(
+            CacheReset::TYPE,
+            fields: ['groups' => 'webx-admin::cache.history-groups'],
+            permission: [CacheModule::VIEW, CacheModule::RESET],
+            module: CacheModule::ID,
+            label: 'webx-admin::cache.title',
+        );
+
+        $this->app->make(ModuleRegistry::class)->register(
+            interface_exists(ProvidesMcpTools::class)
+                ? $this->app->make(McpCacheModule::class)
+                : $this->app->make(CacheModule::class),
+        );
+    }
+
+    /**
+     * The hourly sweep of the `database` cache store: Laravel deletes an expired row only when
+     * it is asked for, and an entry under a version nobody reads any more is never asked for.
+     * On any other store the command is a no-op and says so.
+     */
+    private function registerCacheSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command(CachePruneCommand::class)
+                ->hourly()
                 ->onOneServer()
                 ->withoutOverlapping();
         });

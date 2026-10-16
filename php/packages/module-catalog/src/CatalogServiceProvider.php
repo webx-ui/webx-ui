@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
@@ -159,6 +160,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         // The catalogue's own checks of the site audit, when the audit is installed (§7 of its
         // spec): what a shop forgets to fill in.
@@ -615,5 +617,19 @@ class CatalogServiceProvider extends ServiceProvider
             permission: 'catalog.manage',
             kind: 'webx-admin::site-bar.kind-product',
         ));
+    }
+
+    /**
+     * The `catalog` cache group (WEBX_UI_CACHE.md §2). No model moves it yet: a product is saved
+     * by the thousand in an import, and the group waits for the readers that will measure what a
+     * move costs. A move forgets the facets' settings, kept on a generation of their own — so
+     * that «reset the site cache» reaches them; the satellites add what they keep.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare('catalog', 'webx-catalog::module.title');
+        $groups->onReset('catalog', fn () => $this->app->make(CategoryFacets::class)->forget());
     }
 }

@@ -6,11 +6,13 @@ namespace WebxUi\Banners;
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Banners\Models\Banner;
+use WebxUi\Banners\Models\Place;
 use WebxUi\Banners\Panel\BannersModule;
 use WebxUi\Banners\Rendering\Stylesheet;
 use WebxUi\Banners\Screens\LayersType;
@@ -43,6 +45,7 @@ class BannersServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-banners');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-banners');
+        $this->registerCacheGroups();
 
         Blade::component('webx-banners', BannersComponent::class);
         Blade::component('webx-banner', BannerComponent::class);
@@ -85,5 +88,17 @@ class BannersServiceProvider extends ServiceProvider
             'target' => 'button-variant',
             'props' => ['options' => $this->app->make(Variants::class)->options()],
         ]]);
+    }
+
+    /**
+     * The `banners` cache group (WEBX_UI_CACHE.md §2): a banner or a place saved moves it. Nothing
+     * of the banners is cached yet; the group is where the places' queries go when they are.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare('banners', 'webx-banners::module.banners');
+        $groups->bumpOn('banners', Banner::class, Place::class);
     }
 }

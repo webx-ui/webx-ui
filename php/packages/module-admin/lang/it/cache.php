@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Cache',
+    'lead' => 'Ciò che il sito ricorda tra una richiesta e l’altra — il menu, le impostazioni, gli indirizzi — per gruppi. Un salvataggio nel pannello azzera da sé il proprio gruppo; il pulsante serve quando il sito mostra ancora ciò che il pannello non dice più.',
+    'store' => 'Archivio',
+    'store-array' => 'Nulla sopravvive alla richiesta: ogni pagina ricostruisce tutto. Imposta un archivio in CACHE_STORE.',
+    'disabled' => 'La cache versionata è disattivata nella configurazione.',
+    'ttl' => 'Le voci vivono',
+    'ttl-value' => ':hours h',
+    'groups' => 'Gruppi',
+    'group' => 'Gruppo',
+    'version' => 'Versione',
+    'models' => 'Azzerato da',
+    'models-none' => 'Solo a mano',
+    'no-groups' => 'Nessun modulo ha ancora dichiarato un gruppo di cache.',
+    'reset-all' => 'Azzera la cache del sito',
+    'reset-all-title' => 'Azzerare tutta la cache del sito?',
+    'reset-all-text' => 'Tutti i gruppi vengono azzerati; il sito ricostruisce ciò che aveva in cache alle prossime visite. Sessioni e accessi non vengono toccati. Se hai dovuto premere qui, qualcosa non si è azzerato da sé: di’ a chi cura il sito quale pagina era vecchia.',
+    'reset-group' => 'Azzera',
+    'reset-group-title' => 'Azzerare la cache «:group»?',
+    'reset-group-text' => 'Ciò che il sito ha messo in cache da questo gruppo viene ricostruito alle prossime visite. Sessioni e accessi non vengono toccati.',
+    'reset' => 'Azzera',
+    'cancel' => 'Annulla',
+    'reset-done' => 'La cache è stata azzerata.',
+    'reset-group-done' => 'La cache «:group» è stata azzerata.',
+    'load-failed' => 'Impossibile caricare lo stato della cache.',
+    'refresh' => 'Aggiorna',
+    'history' => 'Azzeramenti',
+    'history-groups' => 'Gruppi',
+    'forbidden' => 'Non puoi azzerare la cache.',
+    'group-locales' => 'Lingue',
+    'group-routes' => 'Indirizzi',
+    'group-screens' => 'Schermate del pannello',
+    'group-theme' => 'Tema',
+];

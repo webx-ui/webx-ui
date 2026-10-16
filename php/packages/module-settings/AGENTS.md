@@ -10,7 +10,7 @@ picture fields `webx-ui/module-media`, the languages of a localized value
 ## What it owns
 
 - **Table** `cms_settings` (`WebxUi\Settings\Models\Setting`): `key` (unique), `value` (JSON).
-  Read whole and cached under `webx-settings.cache.key`; dropped on every save.
+  Read whole and cached under `webx-settings.cache.key`; dropped on every save, and by a reset of the `settings` cache group («System → Cache», `webx:cache:reset --group=settings`).
 - **Service** `WebxUi\Settings\Settings` — `get()`, `all()`, `raw()`, `keys()`, `save()`,
   `forget()`; helper `settings('key', $default)`, `settings()` for the service. Event
   `SettingsSaved` carries the keys that changed.

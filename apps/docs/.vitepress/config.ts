@@ -44,6 +44,7 @@ export default defineConfig({
             { text: 'Large uploads', link: '/guide/uploads' },
             { text: 'Editing together', link: '/guide/editing-together' },
             { text: 'Building for the panel on the site', link: '/guide/site-bar-modules' },
+            { text: 'Caching', link: '/guide/caching' },
           ],
         },
         {

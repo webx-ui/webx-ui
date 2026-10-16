@@ -23,6 +23,10 @@ final class AuthMcpToolsTest extends TestCase
 
         $this->assertSame(
             [
+                // The frame's own first: the journal's two and the cache's reset.
+                'history_get',
+                'history_runs',
+                'cache_reset',
                 'admins_list_admins',
                 'admins_list_roles',
                 'admins_grant_role',
@@ -33,7 +37,7 @@ final class AuthMcpToolsTest extends TestCase
             array_map(fn ($tool) => $tool->fullName(), $registry->tools()),
         );
 
-        $this->assertSame(['admins:audit', 'admins:read', 'admins:write'], $registry->scopes());
+        $this->assertSame(['admins:audit', 'admins:read', 'admins:write', 'cache:write', 'history:read'], $registry->scopes());
     }
 
     #[Test]

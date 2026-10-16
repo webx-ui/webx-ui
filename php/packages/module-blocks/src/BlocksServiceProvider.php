@@ -16,6 +16,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
+use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Events\StoredContentRewritten;
@@ -45,6 +46,9 @@ use WebxUi\Blocks\Fields\DataType;
 use WebxUi\Blocks\Fields\FragmentType;
 use WebxUi\Blocks\Fields\SlotType;
 use WebxUi\Blocks\Http\Middleware\EnsureEditing;
+use WebxUi\Blocks\Models\Block;
+use WebxUi\Blocks\Models\BlockVersion;
+use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Panel\BlocksModule;
 use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\RegionForm;
@@ -135,6 +139,7 @@ class BlocksServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-blocks');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         $this->registerMacro();
         $this->registerDirectives();
@@ -361,6 +366,34 @@ class BlocksServiceProvider extends ServiceProvider
             $what = trim($expression) === '' ? "'all'" : $expression;
 
             return sprintf('<?php echo app(%s)->tags(%s); ?>', var_export(Bundles::class, true), $what);
+        });
+    }
+
+    /**
+     * The `blocks` and `regions` cache groups (WEBX_UI_CACHE.md §2): a block, a version or a
+     * region saved moves its group, and a move forgets what the registry, the thumbnails and the
+     * regions keep on keys of their own — so that «reset the site cache» reaches them until they
+     * live on versioned keys. `webx:blocks:clear` stays for the compiled templates.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare('blocks', 'webx-blocks::module.title');
+        $groups->bumpOn('blocks', Block::class, BlockVersion::class);
+        $groups->onReset('blocks', function (): void {
+            $this->app->make(BlockTypes::class)->forget();
+            $this->app->make(Thumbnails::class)->forget();
+        });
+
+        $groups->declare('regions', 'webx-blocks::module.regions');
+        $groups->bumpOn('regions', Region::class);
+        $groups->onReset('regions', function (): void {
+            $regions = $this->app->make(Regions::class);
+
+            foreach (array_keys($regions->declared()) as $name) {
+                $regions->forget($name);
+            }
         });
     }
 }

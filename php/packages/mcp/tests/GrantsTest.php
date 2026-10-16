@@ -48,12 +48,12 @@ final class GrantsTest extends TestCase
         $this->register(new SeoModule);
         $this->grant(['read_only' => true]);
 
-        $this->assertSame(['site_info', 'seo_get_seo'], $this->listedTo(PassportUser::bearing(['mcp:use'], self::CLIENT)));
+        $this->assertSame(['site_info', 'history_get', 'history_runs', 'seo_get_seo'], $this->listedTo(PassportUser::bearing(['mcp:use'], self::CLIENT)));
 
         // And a connection that may write sees everything, so the list is the grant's doing.
         $this->grant(['read_only' => false]);
 
-        $this->assertSame(['site_info', 'seo_get_seo', 'seo_bulk_update_seo'], $this->listedTo(PassportUser::bearing(['mcp:use'], self::CLIENT)));
+        $this->assertSame(['site_info', 'history_get', 'history_runs', 'seo_get_seo', 'seo_bulk_update_seo', 'cache_reset'], $this->listedTo(PassportUser::bearing(['mcp:use'], self::CLIENT)));
     }
 
     #[Test]

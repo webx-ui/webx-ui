@@ -26,6 +26,7 @@ for those.
   (one card); views under `webx-banners-views`. A place declared with `'layers' => true` gets the
   layer editor, and its banners are printed only through these components.
 - **Button variants** `config('webx-banners.variants')` — `primary`, `secondary`, `link`.
+- **Cache group** `banners` (WEBX_UI_CACHE.md): moved by every `Banner` and `Place` save; a mass write says `CacheGroups::bump('banners')` itself.
 - **Panel screen** `banners.form`; API under `/api/cms/banners`; permissions `banners.view`,
   `banners.manage`.
 - **MCP** tools `banners_places`, `banners_place_create`, `banners_place_delete`, `banners_list`,

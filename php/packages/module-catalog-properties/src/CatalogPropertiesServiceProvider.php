@@ -8,6 +8,7 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
@@ -85,6 +86,7 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-properties');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-properties');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         $this->registerScreens();
         $this->registerHistory();
@@ -217,6 +219,19 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $events->listen(JobProcessing::class, function (): void {
             $this->app->make(Properties::class)->reset();
             $this->app->make(PropertySets::class)->reset();
+        });
+    }
+
+    /**
+     * What this satellite keeps on generations of its own — the properties, the sets by category
+     * — goes when the catalogue's cache group moves (WEBX_UI_CACHE.md §2), so that «reset the
+     * site cache» reaches it until it lives on versioned keys.
+     */
+    private function registerCacheGroups(): void
+    {
+        $this->app->make(CacheGroups::class)->onReset('catalog', function (): void {
+            $this->app->make(Properties::class)->flush();
+            $this->app->make(PropertySets::class)->forget();
         });
     }
 }

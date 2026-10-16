@@ -11,6 +11,7 @@ use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -112,6 +113,7 @@ class SeoServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-seo');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         $this->registerSources();
         $this->registerRendering();
@@ -335,5 +337,27 @@ class SeoServiceProvider extends ServiceProvider
                 $kernel->pushMiddleware(RedirectRequests::class);
             }
         });
+    }
+
+    /**
+     * The `seo` and `sitemap` cache groups (WEBX_UI_CACHE.md §2). The rules and the redirects, the
+     * link blocks: saved through their models, the group moves, and a move refreshes what each
+     * keeps on a key or a generation of its own — so that «reset the site cache» reaches them
+     * until they live on versioned keys. The sitemap is a group apart: its build is the expensive
+     * one, and it listens to every visible record itself; a move only starts it afresh.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare('seo', 'webx-seo::module.title');
+        $groups->bumpOn('seo', SeoUrl::class, SeoRedirect::class, SeoLinkBlock::class, SeoLinkItem::class);
+        $groups->onReset('seo', function (): void {
+            $this->app->make(SeoRules::class)->forget();
+            $this->app->make(LinkBlocks::class)->refresh();
+        });
+
+        $groups->declare('sitemap', 'Sitemap');
+        $groups->onReset('sitemap', fn () => $this->app->make(Sitemap::class)->refresh());
     }
 }

@@ -6,6 +6,7 @@ namespace WebxUi\Snippets;
 
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
@@ -57,6 +58,7 @@ class SnippetsServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-snippets');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-snippets');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         Blade::component('webx-snippets', Place::class);
 
@@ -127,5 +129,19 @@ class SnippetsServiceProvider extends ServiceProvider
             module: SnippetsModule::ID,
             label: 'webx-snippets::module.snippet',
         );
+    }
+
+    /**
+     * The `snippets` cache group (WEBX_UI_CACHE.md §2): a snippet saved moves it, and a move
+     * forgets the codes kept on a key of their own — so that «reset the site cache» reaches them
+     * until they live on a versioned key.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare('snippets', 'webx-snippets::module.title');
+        $groups->bumpOn('snippets', Snippet::class);
+        $groups->onReset('snippets', fn () => $this->app->make(Codes::class)->forget());
     }
 }

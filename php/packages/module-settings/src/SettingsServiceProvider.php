@@ -6,6 +6,7 @@ namespace WebxUi\Settings;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Cache\CacheGroups;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Events\StoredContentRewritten;
@@ -16,6 +17,7 @@ use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Settings\Console\MoveContactsCommand;
 use WebxUi\Settings\Contacts\Contacts;
 use WebxUi\Settings\Events\SettingsSaved;
+use WebxUi\Settings\Models\Setting;
 use WebxUi\Settings\Sections\SettingsSections;
 use WebxUi\Settings\Sections\SettingsSectionsCheck;
 
@@ -49,6 +51,7 @@ class SettingsServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(SettingsModule::class));
+        $this->registerCacheGroups();
         $this->app->make(DoctorChecks::class)->register(SettingsSectionsCheck::class);
 
         // Values rewritten around the model (the library moving a logo to a new key): the cached
@@ -90,5 +93,19 @@ class SettingsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-settings'),
         ], 'webx-settings-lang');
+    }
+
+    /**
+     * The `settings` cache group (WEBX_UI_CACHE.md §2): every save of a setting moves it, and
+     * until the settings themselves live on a versioned key, a move forgets the key they live on
+     * now — so that «reset the site cache» reaches them.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare('settings', 'webx-settings::module.title');
+        $groups->bumpOn('settings', Setting::class);
+        $groups->onReset('settings', fn () => $this->app->make(Settings::class)->forget());
     }
 }
