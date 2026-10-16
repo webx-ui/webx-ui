@@ -19,11 +19,15 @@ use UnitEnum;
  *
  * A long value (a page of rich text, a repeater) is not copied into the journal twice a save:
  * the row says that it changed and how long it was before and after (§4). Whoever needs the text
- * itself has the versions.
+ * itself has the versions. A model with no versions to turn to names the fields it needs whole
+ * (`RecordsHistory::historyKeepsFull()`): those are written as they are, however long.
  */
 final readonly class Changes
 {
-    public function __construct(private int $long = 500) {}
+    /**
+     * @param  list<string>  $full  fields never cut short — a translated one with all its languages
+     */
+    public function __construct(private int $long = 500, private array $full = []) {}
 
     /**
      * Both shapes a caller may write: the list the table holds, or `field => [from, to]`.
@@ -81,7 +85,7 @@ final readonly class Changes
         $fromLength = $this->length($from);
         $toLength = $this->length($to);
 
-        if ($fromLength > $this->long || $toLength > $this->long) {
+        if (($fromLength > $this->long || $toLength > $this->long) && ! $this->keptFull($field)) {
             return $row + ['from' => null, 'to' => null, 'long' => true, 'from_length' => $fromLength, 'to_length' => $toLength];
         }
 
@@ -106,6 +110,18 @@ final readonly class Changes
             $value instanceof Stringable => (string) $value,
             default => json_decode((string) json_encode($value), true),
         };
+    }
+
+    /** `code` itself, or `code.ru` of a translated one. */
+    private function keptFull(string $field): bool
+    {
+        foreach ($this->full as $name) {
+            if ($field === $name || str_starts_with($field, $name.'.')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function length(mixed $value): int

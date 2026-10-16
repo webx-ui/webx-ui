@@ -46,9 +46,12 @@ final class Journal
      * `changes` is `[{ field, label?, from, to }]` or `field => [from, to]`; an `updated` with
      * nothing in it is not written at all — a save that changed nothing is not an event.
      *
+     * `$full` names the fields written whole however long they are (`historyKeepsFull()`).
+     *
      * @param  array<array-key, mixed>  $changes
+     * @param  list<string>  $full
      */
-    public function record(Model $subject, string $event, array $changes = []): ?HistoryEntry
+    public function record(Model $subject, string $event, array $changes = [], array $full = []): ?HistoryEntry
     {
         if (! $this->enabled()) {
             return null;
@@ -61,6 +64,7 @@ final class Journal
             is_numeric($key) ? (int) $key : null,
             $event,
             $changes,
+            $full,
         );
     }
 
@@ -131,14 +135,15 @@ final class Journal
 
     /**
      * @param  array<array-key, mixed>  $changes
+     * @param  list<string>  $full
      */
-    private function write(string $type, ?int $id, string $event, array $changes): ?HistoryEntry
+    private function write(string $type, ?int $id, string $event, array $changes, array $full = []): ?HistoryEntry
     {
         if (! in_array($event, HistoryEntry::EVENTS, true) || $event === HistoryEntry::RUN) {
             throw new InvalidArgumentException("[{$event}] is not an event a record can have.");
         }
 
-        $rows = $this->changes()->normalise($changes);
+        $rows = $this->changes($full)->normalise($changes);
 
         if ($event === HistoryEntry::UPDATED && $rows === []) {
             return null;
@@ -180,9 +185,12 @@ final class Journal
         ])->save();
     }
 
-    private function changes(): Changes
+    /**
+     * @param  list<string>  $full
+     */
+    private function changes(array $full = []): Changes
     {
-        return new Changes(max(1, (int) $this->config->get('webx-admin.history.long_value', 500)));
+        return new Changes(max(1, (int) $this->config->get('webx-admin.history.long_value', 500)), $full);
     }
 
     /**

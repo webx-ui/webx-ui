@@ -23,7 +23,8 @@ use Illuminate\Database\Eloquent\Model;
  * Which fields: `historyFields()` names them outright; otherwise every attribute but the ones
  * `historySkipped()` names and the global `webx-admin.history.skip_fields` (timestamps, the
  * tree's bounds). `historyValue()` is where a model turns an id into words — a picture's name
- * rather than its key.
+ * rather than its key. `historyKeepsFull()` names the fields written whole however long they
+ * are: a model without versions has nothing else to bring an old value back from.
  *
  * Registered with `static::created()` and the rest rather than an observer: `observe()` inside a
  * trait's boot builds the model while it is booting (docs/pitfalls/laravel-and-php.md).
@@ -72,6 +73,17 @@ trait RecordsHistory
      * @return list<string>
      */
     public function historySkipped(): array
+    {
+        return [];
+    }
+
+    /**
+     * Fields the journal never cuts short to "changed, N → M characters" — the code of a snippet,
+     * which somebody may have to paste back by hand.
+     *
+     * @return list<string>
+     */
+    public function historyKeepsFull(): array
     {
         return [];
     }
@@ -130,7 +142,7 @@ trait RecordsHistory
      */
     protected function writeHistory(string $event, array $changes = []): void
     {
-        Container::getInstance()->make(Journal::class)->record($this, $event, $changes);
+        Container::getInstance()->make(Journal::class)->record($this, $event, $changes, $this->historyKeepsFull());
     }
 
     private function followsInHistory(string $field): bool

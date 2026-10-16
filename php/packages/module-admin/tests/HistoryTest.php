@@ -19,6 +19,7 @@ use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\History\Mcp\HistoryModule;
 use WebxUi\Admin\Tests\Fixtures\Editor;
 use WebxUi\Admin\Tests\Fixtures\Product;
+use WebxUi\Admin\Tests\Fixtures\Script;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 
@@ -101,6 +102,23 @@ final class HistoryTest extends TestCase
         $change = HistoryEntry::query()->where('event', 'updated')->sole()->changes[0] ?? [];
 
         $this->assertSame(['field' => 'body', 'from' => null, 'to' => null, 'long' => true, 'from_length' => 5, 'to_length' => 900], $change);
+    }
+
+    #[Test]
+    public function a_field_the_model_keeps_full_is_written_whole_and_the_rest_as_before(): void
+    {
+        $this->types()->register('catalog.script', Script::class, permission: 'catalog.view');
+
+        $before = str_repeat('a', 900);
+        $after = str_repeat('b', 1200);
+        $script = Script::query()->create(['name' => ['en' => 'Short'], 'body' => $before]);
+
+        $script->update(['body' => $after, 'name' => ['en' => str_repeat('n', 600)]]);
+
+        $changes = $this->sorted(HistoryEntry::query()->where('event', 'updated')->sole()->changes ?? []);
+
+        $this->assertSame(['field' => 'body', 'from' => $before, 'to' => $after], $changes[0]);
+        $this->assertSame(['field' => 'name.en', 'from' => null, 'to' => null, 'long' => true, 'from_length' => 5, 'to_length' => 600], $changes[1]);
     }
 
     #[Test]
