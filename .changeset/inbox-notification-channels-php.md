@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-module-inbox notifies through the channels of module-notifications, when it is installed — a `suggest`, never a `require`. The inbox declares the event `inbox.submission` (the form, the submission's address in the panel, every answer as text and as the list `answers`, `field.<name>`, files, page, language, UTM, and the addressee `reply_to` from the form's e-mail field); a form keeps the channels it chose in `options.notify_channels`, and a submission from the site's form goes to each of them by its template — not a repeat inside the duplicate window, not one typed in by hand. The form's own letter goes beside them as before. The API and MCP carry `notifications` and `channels` on a form and `channels` (the log rows) on a submission; resending a notification, in the panel or with `inbox_notify` (new argument `channels`), sends the channels' failed rows again too; a form with only a channel counts as notifying for the audit. `SubmissionStored` is fired with the module and without it, and the guide shows how a site listens to it.
