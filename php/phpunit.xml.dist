@@ -34,6 +34,7 @@
             <directory>packages/module-seo/tests</directory>
             <directory>packages/module-services/tests</directory>
             <directory>packages/module-settings/tests</directory>
+            <directory>packages/module-snippets/tests</directory>
             <directory>packages/module-team/tests</directory>
             <directory>packages/module-vacancies/tests</directory>
             <directory>packages/module-banners/tests</directory>
@@ -74,6 +75,7 @@
             <directory>packages/module-seo/src</directory>
             <directory>packages/module-services/src</directory>
             <directory>packages/module-settings/src</directory>
+            <directory>packages/module-snippets/src</directory>
             <directory>packages/module-team/src</directory>
             <directory>packages/module-vacancies/src</directory>
             <directory>packages/module-banners/src</directory>

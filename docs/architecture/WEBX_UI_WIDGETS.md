@@ -618,10 +618,15 @@ Cookie `webx_consent` (первая сторона, `Path=/`, `SameSite=Lax`, `S
 - Отказ после согласия — перезагрузка страницы: выполненный скрипт не выгрузить.
 - Компонент `<x-webx-consent category="statistics">…</x-webx-consent>` оборачивает любой
   произвольный код (вставку из настроек сайта): без согласия печатает его в `<template
-data-webx-consent>`, который скрипт распакует, с согласием — как есть.
+data-webx-consent>`, который скрипт распакует, с согласием — как есть. Скрипты распакованного
+  шаблона пересоздаются **со своим `type`** (JSON-LD остаётся данными, модуль — модулем) и **по
+  очереди**: следующий вставляется после `load`/`error` предыдущего внешнего, так что встроенный
+  `Widget.init()` после `<script src>` библиотеки ждёт её. Так же печатает коды `module-snippets`.
 - **Google Consent Mode v2**: при включённом баннере `consent default` печатается в `<head>` до
   слоёв всегда, а не «если есть `gtag`» — default должен стоять раньше тега Google, а узнать о нём
-  заранее нельзя. Сервер знает ответ из cookie: разрешённое — `granted`, остальное — `denied`.
+  заранее нельзя. Если на странице есть маркер `Widgets::EARLY` (`<!--webx-widgets:early-->`, его
+  печатает место `head` модуля `module-snippets` выше `@webxTheme`), default встаёт на него, а не к
+  стилям. Сервер знает ответ из cookie: разрешённое — `granted`, остальное — `denied`.
   `consent update` после ответа — через `gtag` или в тот же `dataLayer`. Соответствие:
   `statistics` → `analytics_storage`; `marketing` → `ad_storage`, `ad_user_data`,
   `ad_personalization`; `preferences` → `functionality_storage`, `personalization_storage`.

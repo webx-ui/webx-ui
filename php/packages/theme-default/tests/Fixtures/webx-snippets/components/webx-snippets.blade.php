@@ -1,0 +1,2 @@
+@props(['place'])
+<!-- place:{{ $place }} -->

@@ -183,6 +183,11 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
 
 ## Тесты в jsdom
 
+- **Тест скрипта согласия (`consent.js`) ждёт `window.ran`, а он `undefined`, хотя скрипт
+  «распакован».** jsdom в vitest вставленные скрипты не исполняет, а внешние не грузит: ни кода,
+  ни `load`. Смотреть, какой элемент в странице: `revive()` заменяет скрипт новым, инертная копия
+  из `<template>` — старый объект; `load`/`error` у внешнего — `dispatchEvent(new Event('load'))`.
+  У нас: `php/packages/widgets/resources/js/consent.test.js`, «what waits for consent».
 - **Обработчик `keydown` на `window` срабатывает столько раз, сколько тестов было до этого.**
   `mount()` без `unmount()` оставляет компонент жить до конца файла, и `onBeforeUnmount` не
   снимает слушатель: `Esc` в седьмом тесте зовёт шпиона семь раз. Складывать обёртки в список и

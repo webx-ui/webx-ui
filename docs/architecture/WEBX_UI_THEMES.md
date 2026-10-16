@@ -927,8 +927,10 @@ en/ru/pl; FAQ, отзывы, команда, тарифы и баннеры — 
 
 **Вьюхи**
 
-21. `components/layout` держит `@webxTheme`, `@webxSeo`, `@webxBlocks` и зоны `header`/`footer`.
-    (check: обязательные директивы)
+21. `components/layout` держит `@webxTheme`, `@webxSeo`, `@webxBlocks` и зоны `header`/`footer`;
+    на сайте с `module-snippets` — и три места кодов `head`, `body_start`, `body_end`
+    (`<x-webx-snippets place="…" />`, SNIPPETS §4.1). (check: обязательные директивы; места кодов
+    проверяет часть `ThemeCheckPart` модуля)
 22. Перекрывая вьюху модуля, копировать **текущую** версию из `vendor/` и менять минимум; классы и
     `@webxPart` оставлять на месте — на них стоят спутники модуля. (check: свежесть перекрытия)
 23. Ссылки — через `route()`/адреса сущностей, никаких зашитых путей; меню — `menu('…')`, контакты

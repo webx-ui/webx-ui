@@ -56,6 +56,8 @@ parameters:
         - packages/module-services/tests
         - packages/module-settings/src
         - packages/module-settings/tests
+        - packages/module-snippets/src
+        - packages/module-snippets/tests
         - packages/module-team/src
         - packages/module-team/tests
         - packages/module-vacancies/src

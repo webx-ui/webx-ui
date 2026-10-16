@@ -46,6 +46,13 @@ final class Widgets implements HeadPart
     /** What `@webxWidgets` prints: the scripts only, for a site without a theme. */
     public const string SCRIPTS = '<!--webx-widgets:scripts-->';
 
+    /**
+     * Where Consent Mode's default goes when something above `@webxTheme` may start a Google tag:
+     * the head place of `webx-ui/module-snippets` prints it before its codes (spec §9.3). Without
+     * it the default stays where it always was, with the stylesheets.
+     */
+    public const string EARLY = '<!--webx-widgets:early-->';
+
     /** The behaviours inside the runtime: claiming one is allowed and loads nothing more. */
     public const array RUNTIME = ['disclosure', 'dialog', 'tabs', 'accordion', 'mobile-menu', 'header', 'dropdown', 'form-dialog', 'reveal'];
 
@@ -122,6 +129,15 @@ final class Widgets implements HeadPart
         return $this->sequences[$name] = ($this->sequences[$name] ?? 0) + 1;
     }
 
+    /**
+     * Whether a page with a theme gets the consent script — built and published — which is what
+     * releases any code waiting for an answer. `webx:doctor` of a module with such code asks it.
+     */
+    public function consentReady(): bool
+    {
+        return $this->url('consent', 'js') !== null;
+    }
+
     /** @return list<string> What this page claimed, in the order it did. */
     public function claimed(): array
     {
@@ -148,7 +164,7 @@ final class Widgets implements HeadPart
     public function finish(string $html): string
     {
         if (! self::marked($html)) {
-            return $html;
+            return str_replace(self::EARLY, '', $html);
         }
 
         // A layout with both gets the theme's head; `@webxWidgets` then adds nothing.
@@ -172,6 +188,7 @@ final class Widgets implements HeadPart
         }
 
         $styles[] = $this->noticeHead($html);
+        $early = '';
 
         // The consent banner is on every page (§9): it asks until answered, and its script is
         // what switches on whatever third-party code waits for an answer — with the banner off too.
@@ -184,7 +201,12 @@ final class Widgets implements HeadPart
             $bottom = $this->consent->render($html)."\n";
 
             if ($this->consent->enabled()) {
-                $styles[] = $this->consent->googleDefault();
+                // Before every tag the page may start: on the early marker when the page has one.
+                if (str_contains($html, self::EARLY)) {
+                    $early = $this->consent->googleDefault();
+                } else {
+                    $styles[] = $this->consent->googleDefault();
+                }
             }
         }
 
@@ -192,6 +214,12 @@ final class Widgets implements HeadPart
 
         if (($lightbox = $this->lightbox()) !== '') {
             $bottom .= $lightbox."\n";
+        }
+
+        // The first early marker takes the default; any other is only a comment to drop.
+        if (str_contains($html, self::EARLY)) {
+            $at = (int) strpos($html, self::EARLY);
+            $html = substr($html, 0, $at).$early.str_replace(self::EARLY, '', substr($html, $at + strlen(self::EARLY)));
         }
 
         [$links, $sources] = $this->tags();

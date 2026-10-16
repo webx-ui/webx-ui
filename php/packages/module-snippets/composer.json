@@ -1,0 +1,73 @@
+{
+    "name": "webx-ui/module-snippets",
+    "description": "Codes of outside services for the WebX UI admin panel: a tag manager, a counter, a chat pasted into the head or the body of every page, with its coverage, languages, environment and cookie consent.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "snippets"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-snippets"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/localization": "^0.75.0",
+        "webx-ui/module-admin": "^0.75.0",
+        "webx-ui/routing": "^0.75.0",
+        "webx-ui/widgets": "^0.75.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-auth": "^0.75.0",
+        "webx-ui/module-blocks": "^0.75.0",
+        "webx-ui/theme-default": "^0.75.0"
+    },
+    "suggest": {
+        "webx-ui/theme-default": "Its layout prints the three built-in places; a site with a layout of its own adds three lines.",
+        "webx-ui/module-blocks": "The block preview and the block stage are never given the codes."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Snippets\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Snippets\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Snippets\\SnippetsServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "snippets"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
