@@ -31,7 +31,7 @@ final readonly class EventDefinition
     /**
      * @param  list<Variable>  $variables
      * @param  array<string, array{subject?: string, template: string}>  $sample
-     * @param  (Closure(array<string, string>): ?string)|null  $url
+     * @param  (Closure(array<string, string|list<array<string, string>>>): ?string)|null  $url
      */
     public function __construct(
         public string $key,
@@ -59,6 +59,25 @@ final readonly class EventDefinition
     }
 
     /**
+     * Whether a name a template uses, inside these sections (innermost last), is the event's:
+     * a field of an enclosing list first, then a variable of the event — how Mustache looks it up.
+     *
+     * @param  list<string>  $sections
+     */
+    public function knows(string $name, array $sections = []): bool
+    {
+        foreach (array_reverse($sections) as $section) {
+            $list = $this->variable($section);
+
+            if ($list !== null && $list->isList() && array_key_exists($name, $list->fields)) {
+                return true;
+            }
+        }
+
+        return $this->variable($name) !== null;
+    }
+
+    /**
      * The variables that are addressees of this kind of address.
      *
      * @return list<Variable>
@@ -74,7 +93,7 @@ final readonly class EventDefinition
     /**
      * The example values, for a test message and the editor's preview.
      *
-     * @return array<string, string>
+     * @return array<string, string|list<array<string, string>>>
      */
     public function examples(): array
     {
@@ -106,7 +125,7 @@ final readonly class EventDefinition
     }
 
     /**
-     * @param  array<string, string>  $variables
+     * @param  array<string, string|list<array<string, string>>>  $variables
      */
     public function urlFor(array $variables): ?string
     {

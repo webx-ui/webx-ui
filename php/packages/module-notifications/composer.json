@@ -34,6 +34,7 @@
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
         "illuminate/view": "^13.0",
+        "mustache/mustache": "^3.2",
         "webx-ui/localization": "^0.75.0",
         "webx-ui/mcp": "^0.75.0",
         "webx-ui/module-admin": "^0.75.0",

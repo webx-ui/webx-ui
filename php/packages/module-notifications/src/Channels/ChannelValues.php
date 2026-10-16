@@ -14,6 +14,7 @@ use WebxUi\Notifications\Providers;
 use WebxUi\Notifications\Refusal;
 use WebxUi\Notifications\Sending\Field;
 use WebxUi\Notifications\Templates\Template;
+use WebxUi\Notifications\Templates\TemplateError;
 
 /**
  * What a channel may hold (§3.3), checked the same way for every door that writes one — the
@@ -25,8 +26,9 @@ use WebxUi\Notifications\Templates\Template;
  * A field that did not come is left as it is. A secret that came empty is kept: the form never
  * has it to send back (decision 3).
  *
- * A refusal is a `ValidationException` under the field's name; a template that names a variable
- * no event has is a warning on a channel for any event, a refusal on a channel for one.
+ * A refusal is a `ValidationException` under the field's name. A template Mustache cannot read, or
+ * one with a partial or a change of delimiters, is refused (§7); a name no event has is a warning on
+ * a channel for any event, a refusal on a channel for one.
  */
 final class ChannelValues
 {
@@ -309,18 +311,14 @@ final class ChannelValues
                 throw new Refusal($this->say('template-long', ['max' => self::TEMPLATE_LENGTH]));
             }
 
-            foreach (Template::names($text) as $name) {
-                if ($event !== null && $event->variable($name) === null) {
-                    throw new Refusal($this->say('variable', [
-                        'variable' => $name,
-                        'event' => $event->key,
-                        'variables' => implode(', ', array_map(static fn ($variable): string => $variable->name, $event->variables)),
-                    ]));
-                }
+            try {
+                $usages = Template::usages($text);
+            } catch (TemplateError $error) {
+                throw new Refusal($error->words());
+            }
 
-                if ($event === null && ! $this->declaredAnywhere($name)) {
-                    $warnings[] = $this->say('variable-unknown', ['variable' => $name]);
-                }
+            foreach ($usages as $usage) {
+                $this->checkUsage($usage, $event, $warnings);
             }
 
             if ($field === 'template') {
@@ -414,10 +412,67 @@ final class ChannelValues
         return $value;
     }
 
-    private function declaredAnywhere(string $name): bool
+    /**
+     * A name is the event's where it is used — a field inside its list, a variable outside — and
+     * a list is gone over, not printed. A channel for any event only gets a warning.
+     *
+     * @param  array{name: string, sections: list<string>, kind: string}  $usage
+     * @param  list<string>  $warnings
+     *
+     * @throws Refusal
+     */
+    private function checkUsage(array $usage, ?EventDefinition $event, array &$warnings): void
+    {
+        ['name' => $name, 'sections' => $sections, 'kind' => $kind] = $usage;
+
+        if ($event === null) {
+            if (! $this->declaredAnywhere($name, $sections)) {
+                $warnings[] = $this->say('variable-unknown', ['variable' => $name]);
+            }
+
+            return;
+        }
+
+        if (! $event->knows($name, $sections)) {
+            $names = [];
+
+            foreach ($event->variables as $variable) {
+                $names[] = $variable->isList() ? $variable->name.' ('.implode(', ', array_keys($variable->fields)).')' : $variable->name;
+            }
+
+            throw new Refusal($this->say('variable', [
+                'variable' => $name,
+                'event' => $event->key,
+                'variables' => implode(', ', $names),
+            ]));
+        }
+
+        if ($kind === Template::VALUE && $event->variable($name)?->isList() === true && ! $this->isField($event, $name, $sections)) {
+            throw new Refusal($this->say('variable-list', ['variable' => $name]));
+        }
+    }
+
+    /**
+     * @param  list<string>  $sections
+     */
+    private function isField(EventDefinition $event, string $name, array $sections): bool
+    {
+        foreach ($sections as $section) {
+            if (array_key_exists($name, $event->variable($section)->fields ?? [])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  list<string>  $sections
+     */
+    private function declaredAnywhere(string $name, array $sections): bool
     {
         foreach ($this->events->all() as $event) {
-            if ($event->variable($name) !== null) {
+            if ($event->knows($name, $sections)) {
                 return true;
             }
         }

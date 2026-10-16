@@ -120,7 +120,8 @@ final class TelegramProvider implements FindsRecipients, Provider
         foreach ($recipients as $recipient) {
             if (isset($recipient['variable'])) {
                 $name = (string) $recipient['variable'];
-                $value = trim($variables[$name] ?? '');
+                $value = $variables[$name] ?? '';
+                $value = is_string($value) ? trim($value) : '';
 
                 $resolved[] = preg_match(self::CHAT, $value) === 1
                     ? new Recipient($value, '{{'.$name.'}}')

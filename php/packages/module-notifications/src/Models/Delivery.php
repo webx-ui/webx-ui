@@ -7,6 +7,7 @@ namespace WebxUi\Notifications\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use WebxUi\Notifications\Notifications;
 
 /**
  * One recipient of one channel for one event (§9 of the notifications spec): what was sent,
@@ -32,7 +33,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_test
  * @property bool $truncated
  * @property list<string>|null $unknown_variables
- * @property array<string, string>|null $variables
+ * @property array<string, string|list<array<string, string>>>|null $variables
  * @property Carbon|null $created_at
  * @property Carbon|null $sent_at
  */
@@ -93,10 +94,10 @@ class Delivery extends Model
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, string|list<array<string, string>>>
      */
     public function values(): array
     {
-        return array_map(static fn (mixed $value): string => is_scalar($value) ? (string) $value : '', $this->variables ?? []);
+        return Notifications::values($this->variables ?? []);
     }
 }

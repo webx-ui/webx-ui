@@ -229,7 +229,9 @@ pipe`. `… | grep -q` под `pipefail`: grep уходит на первом с
   `CREATE DATABASE webx_smoke`: скрипт базу не чистит, и прошлый прогон роняет
   миграцию Passport «table oauth_auth_codes already exists». Порты 8123/8124 должны быть свободны
   (`ss -ltnp`): `artisan serve` упавшего прогона другой сессии остаётся жить и отвечает из своего,
-  уже удалённого скретчпада.
+  уже удалённого скретчпада. Симптом — «FAILED: GET / — expected 200, got 404» у сайта из
+  скелета, а в `site-serve.log` — «Address already in use». Чужой процесс не трогать, прогнать на
+  других портах: `SMOKE_PORT=8150 scripts/php-smoke.sh` (скрипт берёт порты от него до +3).
 - **`site exec <сайт> php artisan tinker файл.php` висит до таймаута.** Tinker с файлом всё равно
   ждёт stdin. Скрипт — `tinker --execute="require 'storage/app/…/x.php';"` с `</dev/null` под
   `timeout 60`; русский текст — в файле, не в аргументе.

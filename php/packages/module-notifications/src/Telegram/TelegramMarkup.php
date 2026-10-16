@@ -8,8 +8,8 @@ namespace WebxUi\Notifications\Telegram;
  * Telegram's HTML, checked when a template is saved rather than refused by Telegram when a
  * submission arrives (§6.1): only its tags, each closed, and no bare `<`.
  *
- * Variables are not markup — their values are escaped when they go in — so `{{…}}` is left out
- * of the check.
+ * Variables are not markup — their values are escaped when they go in — so `{{name}}` is left out
+ * of the check; sections are not, see `problems()`.
  */
 final class TelegramMarkup
 {
@@ -36,24 +36,41 @@ final class TelegramMarkup
      * What is wrong, as `[problem, tag]` pairs: `tag` — not Telegram's; `unclosed` — opened and
      * never closed, or closed out of order; `lt` — a `<` that is not a tag (write `&lt;`).
      *
+     * A section of the template is a boundary (§7): a tag opened inside `{{#items}}…{{/items}}`
+     * closes inside it, or the message breaks whenever the list is empty or has two rows.
+     *
      * @return list<array{0: string, 1: string}>
      */
     public static function problems(string $template): array
     {
-        $text = (string) preg_replace('/\{\{.*?\}\}/s', '', $template);
         $problems = [];
         $open = [];
 
-        preg_match_all('/<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[^<>]*)?)\s*(\/?)>|</', $text, $found, PREG_SET_ORDER);
+        preg_match_all('/\{\{\{?\s*([#^\/]?)\s*([^}]*?)\s*\}?\}\}|<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[^<>]*)?)\s*(\/?)>|</', $template, $found, PREG_SET_ORDER);
 
         foreach ($found as $match) {
-            if (! isset($match[2]) || $match[2] === '') {
+            if (str_starts_with($match[0], '{{')) {
+                if ($match[1] === '#' || $match[1] === '^') {
+                    $open[] = '{{'.$match[2];
+                } elseif ($match[1] === '/') {
+                    // Whatever is still open inside the section did not close in it.
+                    while ($open !== [] && ! str_starts_with((string) end($open), '{{')) {
+                        $problems[] = ['unclosed', (string) array_pop($open)];
+                    }
+
+                    array_pop($open);
+                }
+
+                continue;
+            }
+
+            if (! isset($match[4]) || $match[4] === '') {
                 $problems[] = ['lt', '<'];
 
                 continue;
             }
 
-            $tag = strtolower($match[2]);
+            $tag = strtolower($match[4]);
 
             if (! array_key_exists($tag, self::TAGS)) {
                 $problems[] = ['tag', $tag];
@@ -61,7 +78,7 @@ final class TelegramMarkup
                 continue;
             }
 
-            if ($match[1] === '/') {
+            if ($match[3] === '/') {
                 if (end($open) === $tag) {
                     array_pop($open);
                 } else {
@@ -71,7 +88,7 @@ final class TelegramMarkup
                 continue;
             }
 
-            if ($tag === 'span' && preg_match('/class\s*=\s*"tg-spoiler"/', $match[3]) !== 1) {
+            if ($tag === 'span' && preg_match('/class\s*=\s*"tg-spoiler"/', $match[5]) !== 1) {
                 // Refused, but still opened: its closing tag is not a second problem.
                 $problems[] = ['tag', 'span'];
                 $open[] = $tag;
@@ -83,7 +100,9 @@ final class TelegramMarkup
         }
 
         foreach (array_reverse($open) as $tag) {
-            $problems[] = ['unclosed', $tag];
+            if (! str_starts_with($tag, '{{')) {
+                $problems[] = ['unclosed', $tag];
+            }
         }
 
         // Each problem once: ten <div> are one thing to fix.

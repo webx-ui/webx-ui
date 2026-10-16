@@ -68,7 +68,7 @@ interface Provider
      * A recipient that cannot be written to is returned with the reason, to be logged as skipped.
      *
      * @param  list<array<string, mixed>>  $recipients
-     * @param  array<string, string>  $variables
+     * @param  array<string, string|list<array<string, string>>>  $variables
      * @return list<Recipient>
      */
     public function resolve(array $recipients, array $variables): array;

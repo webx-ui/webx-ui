@@ -23,13 +23,13 @@ final class Renderer
     public function __construct(private readonly Locales $locales) {}
 
     /**
-     * @param  array<string, string>  $variables
+     * @param  array<string, string|list<array<string, string>>>  $variables
      * @return array{message: Message, unknown: list<string>}
      */
     public function render(Channel $channel, Provider $provider, array $variables, ?string $locale, ?EventDefinition $event): array
     {
         $locale = $locale !== null && $locale !== '' ? $locale : $this->locales->defaultCode();
-        $known = $event === null ? null : static fn (string $name): bool => $event->variable($name) !== null;
+        $known = $event === null ? null : static fn (string $name, array $sections): bool => $event->knows($name, $sections);
 
         $body = Template::render($channel->templateIn($locale), $variables, $provider->escape(...), $known);
         $subject = null;

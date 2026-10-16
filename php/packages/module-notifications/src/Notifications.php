@@ -224,7 +224,7 @@ final class Notifications
      * The rows of one channel for one event: a queued one per recipient it can reach, a skipped
      * one per recipient it cannot, or one skipped row when the channel itself does not send.
      *
-     * @param  array<string, string>  $values
+     * @param  array<string, string|list<array<string, string>>>  $values
      * @return list<Delivery>
      */
     private function rowsFor(int $id, string $event, array $values, ?Model $subject, ?string $locale): array
@@ -258,7 +258,7 @@ final class Notifications
     }
 
     /**
-     * @param  array<string, string>  $values
+     * @param  array<string, string|list<array<string, string>>>  $values
      */
     private function row(Channel $channel, string $event, array $values, ?Model $subject, ?string $locale, Recipient $recipient): Delivery
     {
@@ -284,7 +284,7 @@ final class Notifications
     }
 
     /**
-     * @param  array<string, string>  $values
+     * @param  array<string, string|list<array<string, string>>>  $values
      */
     private function skipped(?Channel $channel, string $name, string $provider, string $event, array $values, ?Model $subject, ?string $locale, string $reason): Delivery
     {
@@ -309,10 +309,11 @@ final class Notifications
     }
 
     /**
-     * The values as strings: what a template can print.
+     * The values as strings — what a template can print — and lists as rows of strings, for
+     * `{{#items}}…{{/items}}`. A list is a list of rows; a row that is not one is dropped.
      *
      * @param  array<string, mixed>  $variables
-     * @return array<string, string>
+     * @return array<string, string|list<array<string, string>>>
      */
     public static function values(array $variables): array
     {
@@ -323,11 +324,30 @@ final class Notifications
                 $value === null => '',
                 is_bool($value) => $value ? '1' : '0',
                 is_scalar($value), $value instanceof Stringable => (string) $value,
+                is_array($value) && array_is_list($value) => self::rows($value),
                 default => '',
             };
         }
 
         return $values;
+    }
+
+    /**
+     * @param  list<mixed>  $rows
+     * @return list<array<string, string>>
+     */
+    private static function rows(array $rows): array
+    {
+        $list = [];
+
+        foreach ($rows as $row) {
+            if (is_array($row) && ! array_is_list($row)) {
+                $values = self::values($row);
+                $list[] = array_map(static fn (string|array $value): string => is_string($value) ? $value : '', $values);
+            }
+        }
+
+        return $list;
     }
 
     /** The event a channel is for, if it is declared. */

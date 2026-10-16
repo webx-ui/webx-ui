@@ -115,6 +115,28 @@ final class SendingTest extends TestCase
     }
 
     #[Test]
+    public function a_list_of_the_event_is_kept_in_the_log_and_goes_over_its_rows_in_the_message(): void
+    {
+        $channel = $this->telegram(['template' => ['en' => "<b>Order {{number}}</b>\n{{#items}}\n{{name}} × {{qty}}\n{{/items}}"]]);
+        Bus::fake();
+        $this->notifications()->send('shop.order', [$channel->id], ['number' => 5, 'items' => [
+            ['name' => 'Tea <green>', 'qty' => 2],
+            ['name' => 'Cup', 'qty' => 1, 'extra' => ['nested' => 'dropped']],
+            'not a row',
+        ]]);
+        $row = Delivery::query()->sole();
+
+        $this->assertSame(['number' => '5', 'items' => [['name' => 'Tea <green>', 'qty' => '2'], ['name' => 'Cup', 'qty' => '1', 'extra' => '']]], $row->variables);
+
+        Http::fake(['telegram.test/*' => Http::response(['ok' => true])]);
+        $job = (new Deliver($channel->id, [$row->id]))->withFakeQueueInteractions();
+        $job->handle($this->app->make(Deliverer::class));
+
+        $this->assertSame(Delivery::SENT, $row->fresh()?->status);
+        Http::assertSent(static fn ($request): bool => $request['text'] === "<b>Order 5</b>\nTea &lt;green&gt; × 2\nCup × 1\n");
+    }
+
+    #[Test]
     public function after_the_last_attempt_the_row_fails_with_the_words_of_the_last_try_and_nothing_is_thrown(): void
     {
         $channel = $this->telegram();

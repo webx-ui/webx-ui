@@ -5,6 +5,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "mustache/mustache": "^3.2",
         "webx-ui/localization": "*",
         "webx-ui/mcp": "*",
         "webx-ui/module-admin": "*",
@@ -16,8 +17,8 @@
         "webx-ui/module-catalog": "*",
         "webx-ui/module-catalog-brands": "*",
         "webx-ui/module-catalog-labels": "*",
-        "webx-ui/module-catalog-manticore": "*",
         "webx-ui/module-catalog-landings": "*",
+        "webx-ui/module-catalog-manticore": "*",
         "webx-ui/module-catalog-properties": "*",
         "webx-ui/module-catalog-stock": "*",
         "webx-ui/module-events": "*",

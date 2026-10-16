@@ -147,6 +147,33 @@ final class PanelTest extends TestCase
     }
 
     #[Test]
+    public function a_template_mustache_cannot_read_or_one_with_a_partial_is_refused_with_words_to_fix_it(): void
+    {
+        $channel = $this->telegram();
+        $admin = $this->admin();
+        $put = fn (string $template) => $this->actingAs($admin, 'cms')->putJson(self::API.'/channels/'.$channel->id, ['values' => ['template' => ['en' => $template]]]);
+
+        $put('{{#items}}{{name}}')->assertUnprocessable()
+            ->assertJsonPath('errors.template.0', 'The section {{#items}} is not closed: end it with {{/items}}.');
+        $put('{{>footer}}')->assertUnprocessable()
+            ->assertJsonPath('errors.template.0', 'Partials ({{>name}}) are not available in a message template.');
+        $put('{{=<% %>=}}<% number %>')->assertUnprocessable()
+            ->assertJsonPath('errors.template.0', 'Changing the delimiters ({{=<% %>=}}) is not available in a message template.');
+        $put('{{/items}}')->assertUnprocessable()->assertJsonValidationErrors('template');
+        $put('{{number')->assertUnprocessable()->assertJsonValidationErrors('template');
+        $put('{{#items}}{{colour}}{{/items}}')->assertUnprocessable()->assertJsonValidationErrors('template');
+        $put('{{#parcels}}{{name}}{{/parcels}}')->assertUnprocessable()->assertJsonValidationErrors('template');
+        $put('{{items}}')->assertUnprocessable()
+            ->assertJsonPath('errors.template.0', '{{items}} is a list: go over it with {{#items}}…{{/items}} and print the fields of each row.');
+        $put('{{name}}')->assertUnprocessable()->assertJsonValidationErrors('template');
+        // Telegram's markup is checked with the sections: a tag opened in a row closes in it.
+        $put('{{#items}}<b>{{name}}{{/items}}</b>')->assertUnprocessable()->assertJsonValidationErrors('template');
+
+        $put("<b>{{number}}</b>\n{{#items}}\n<i>{{name}}</i> × {{qty}} — {{price}}\n{{/items}}\n{{^items}}No items{{/items}}{{#note}}{{note}}{{/note}} {{{note}}} {{field.city}}")
+            ->assertOk();
+    }
+
+    #[Test]
     public function an_addressee_of_the_event_is_a_recipient_of_a_channel_for_that_event(): void
     {
         $this->actingAs($this->admin(), 'cms')->postJson(self::API.'/channels', ['values' => [

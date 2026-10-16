@@ -79,6 +79,7 @@ abstract class TestCase extends Orchestra
                 new Variable('total', 'Total', example: '10.00'),
                 new Variable('note', 'Note', example: 'Leave at the door'),
                 new Variable('field.*', 'A field by its name'),
+                new Variable('items', 'Items', example: [['name' => 'Tea', 'qty' => '2', 'price' => '3.00']], fields: ['name' => 'Name', 'qty' => 'Quantity', 'price' => 'Price']),
                 new Variable('customer_email', 'Customer e-mail', example: 'customer@example.com', address: 'email'),
                 new Variable('reply_to', 'Reply to', example: 'customer@example.com', address: 'email'),
             ],
