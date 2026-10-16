@@ -1,0 +1,7 @@
+export { snippets, type SnippetsOptions } from './module'
+export { createSnippetsApi, SNIPPETS_API, type SnippetsApi } from './api'
+export { snippetsMessages } from './messages'
+export { coverageOf, localesOf } from './summary'
+export { default as WxSnippetsPage } from './SnippetsPage.vue'
+export { default as WxSnippetPane } from './SnippetPane.vue'
+export type { SnippetConsent, SnippetDetail, SnippetPlace, SnippetRow, SnippetsList } from './types'

@@ -109,7 +109,8 @@
           "id": "journal",
           "type": "wx-history",
           "props": {
-            "type": "snippets"
+            "type": "snippets",
+            "title": ""
           }
         }
       ]

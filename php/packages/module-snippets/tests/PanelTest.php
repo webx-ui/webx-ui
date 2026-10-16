@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Snippets\Models\Snippet;
+use WebxUi\Snippets\Output\Seen;
 
 /**
  * The panel's half (§7–§8): one dangerous permission, a save that is on the site at once, the
@@ -52,6 +53,7 @@ final class PanelTest extends TestCase
         config()->set('webx-snippets.places', ['before-footer' => 'Before the footer']);
         $this->snippet('body_end', '<i>b</i>', ['position' => 2]);
         $this->snippet('body_end', '<i>a</i>', ['position' => 1]);
+        $this->app->make(Seen::class)->mark('body_end');
         DB::table('snippets_codes')->insert(['name' => 'Old', 'place' => 'promo', 'code' => '<i>old</i>', 'consent' => 'necessary', 'enabled' => false, 'on_stage' => false, 'position' => 1]);
 
         $places = $this->actingAs($this->admin(), 'cms')->getJson(self::API)->assertOk()->json('data');
@@ -62,6 +64,9 @@ final class PanelTest extends TestCase
         $this->assertFalse($places[4]['snippets'][0]['place_declared']);
         $this->assertSame([1, 2], array_column($places[2]['snippets'], 'position'));
         $this->assertSame('Head, as high as possible', $places[0]['label']);
+        // A place printed by a page carries the day; one never printed, or not declared, does not.
+        $this->assertSame(now()->toDateString(), $places[2]['last_seen']);
+        $this->assertSame([null, null, null], [$places[0]['last_seen'], $places[3]['last_seen'], $places[4]['last_seen']]);
     }
 
     #[Test]

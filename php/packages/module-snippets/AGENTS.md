@@ -95,6 +95,7 @@ prints it.
 ## Read more
 
 - [README.md](README.md) in this directory — places, what decides printing, history.
+- Guide: https://webx-ui.github.io/webx-ui/guide/snippets
 - Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_SNIPPETS.md
 - Cookie consent: https://webx-ui.github.io/webx-ui/guide/widgets
 - Extending views and services: https://webx-ui.github.io/webx-ui/guide/extending

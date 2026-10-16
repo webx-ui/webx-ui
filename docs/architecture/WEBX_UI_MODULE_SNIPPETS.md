@@ -379,7 +379,7 @@ return [
 ### 7.5 API панели
 
 Под `config('webx-admin.api_path')/snippets`, все — `cms.can:snippets.manage`:
-`GET /` (список по местам + `places` + `environment`), `GET {id}`, `POST /`, `PUT {id}` (сразу на
+`GET /` (список по местам — у места `last_seen`, §10.3 — + `environment`, `everything_printed`), `GET {id}`, `POST /`, `PUT {id}` (сразу на
 сайте; ответ несёт `warnings`, §7.4), `DELETE {id}` (корзина), `POST {id}/restore`,
 `DELETE {id}/purge`, `POST reorder` (`{ place, ids }`). Отказы валидации — 422 под полем,
 неизвестное место — под `place`.
@@ -592,10 +592,12 @@ Changeset — `@webx-ui/php` (общий для composer-пакетов) и, е�
 - `module-admin/src/Setup/Catalogue.php` — `'snippets' => ['package' => 'webx-ui/module-snippets',
 'npm' => '@webx-ui/module-snippets', …]`, не по умолчанию для нового сайта.
 - `composer.json` пакета — `extra.webx.npm`, `extra.webx.panel`.
-- Строка `Catalogue` и `extra.webx.npm`/`panel` ставятся **вместе с npm-пакетом**, а не раньше:
-  `ModulesCommandTest` требует, чтобы npm-половина строки каталога стояла в `extra.webx.npm`, а
-  `scripts/sync-npm-pairs.mjs` (часть `pnpm version-packages`) роняет релиз на имени
-  `@webx-ui/*`, которого в `packages/` нет. До тех пор `webx:module:add snippets` модуля не знает.
+- Строка `Catalogue` и `extra.webx.npm`/`panel` поставлены **вместе с npm-пакетом** (этап 4), не
+  раньше: `ModulesCommandTest` требует, чтобы npm-половина строки каталога стояла в
+  `extra.webx.npm`, а `scripts/sync-npm-pairs.mjs` (часть `pnpm version-packages`) роняет релиз на
+  имени `@webx-ui/*`, которого в `packages/` нет. Строка каталога: не по умолчанию, `requires` пуст
+  (из панельных модулей пакет требует только каркас), `demo` — `en`, `ru`, `public: false` (своих
+  страниц нет).
 - Плейграунд — `apps/playground/src/panel/main.ts` + фикстура в `apps/playground/server/panel/`.
 - `scripts/packages.mjs` репозитория демо-сайта.
 - `RouteType` нет — `SiteBar::entity()` не нужен (`SiteBarCoverageTest` не задет).
@@ -674,6 +676,16 @@ Changeset — `@webx-ui/php` (общий для composer-пакетов) и, е�
 **MCP, демо, `AGENTS.md` (этап 3) сделано:** `Mcp\SnippetsTools` (шесть инструментов §9.1, отказы
 §9.2, `warnings`), `Mcp\SnippetsResources` (`snippets://catalog`, `snippets://places`),
 `Demo\SnippetsDemo` (§13), `AGENTS.md` пакета; пакет снят с `PENDING` у `AgentDocsCoverageTest`.
+
+**Панель, плейграунд, гайд (этап 4) сделано:** npm-пакет `@webx-ui/module-snippets` —
+`snippets()`, `SnippetsPage` (список по местам: бейджи согласия, охвата, языков, «и на dev»,
+переключатель `enabled`, перетаскивание внутри места и между объявленными местами — `reorder`
+места, куда бросили; «окружение не прод» вверху; «не встречалось на страницах» у места по
+`last_seen`; осиротевшее место — в конце, с предупреждением и без перетаскивания), `SnippetPane`
+(экран `snippets.form`, предупреждения `warnings` и «место не объявлено» над формой, журнал через
+`provideHistorySubject`), корзина с восстановлением и удалением насовсем. API списка отдаёт у места
+`last_seen` (`Output\Seen`). Регистрации §12 — `Catalogue`, `extra.webx`, плейграунд (`main.ts`,
+фикстура `apps/playground/server/panel/snippets.ts`); гайд `apps/docs/guide/snippets.md`.
 
 Первую версию `@webx-ui/module-snippets` в npm
 публикует человек (`docs/pitfalls/release-and-ci.md`).

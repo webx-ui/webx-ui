@@ -35,6 +35,7 @@
     "@webx-ui/module-reviews": "workspace:*",
     "@webx-ui/module-seo": "workspace:*",
     "@webx-ui/module-services": "workspace:*",
+    "@webx-ui/module-snippets": "workspace:*",
     "@webx-ui/module-tariffs": "workspace:*",
     "@webx-ui/module-tasks": "workspace:*",
     "@webx-ui/module-team": "workspace:*",

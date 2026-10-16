@@ -96,7 +96,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `module-seo`                | правила адресов, редиректы, дефолты и `<head>`                        | `@webx-ui/module-seo`                |
 | `module-inbox`              | формы сайта и заявки                                                  | `@webx-ui/module-inbox`              |
 | `module-audit`              | аудит сайта без внешних сервисов                                      | `@webx-ui/module-audit`              |
-| `module-snippets`           | коды внешних сервисов в `<head>`/`<body>`                             | `@webx-ui/module-snippets` (ещё нет) |
+| `module-snippets`           | коды внешних сервисов в `<head>`/`<body>`                             | `@webx-ui/module-snippets`           |
 | **Разделы: контент**        |                                                                       |                                      |
 | `module-blog`               | статьи, рубрики, теги, лента                                          | `@webx-ui/module-blog`               |
 | `module-services`           | каталог услуг                                                         | `@webx-ui/module-services`           |
@@ -367,13 +367,13 @@ catch-all SPA, `ApiResponse` (пагинация Laravel как есть, 422). 
 
 ### `webx-ui/module-snippets` — коды внешних сервисов
 
-Спека — [`WEBX_UI_MODULE_SNIPPETS.md`](WEBX_UI_MODULE_SNIPPETS.md). Менеджер тегов, счётчик, чат —
+Спека — [`WEBX_UI_MODULE_SNIPPETS.md`](WEBX_UI_MODULE_SNIPPETS.md), гайд — `apps/docs/guide/snippets.md`. Менеджер тегов, счётчик, чат —
 код в базе, выводится компонентом `<x-webx-snippets place="…" />` в трёх встроенных местах
 лэйаута `theme-default` и в своих местах из `config/webx-snippets.php`, с охватом по путям, языками,
 окружением и согласием на cookie (механизм `widgets`). Черновиков нет: «Сохранить» — сразу на
 сайте, журнал хранит код целиком. Право `snippets.manage` никому не выдаётся при установке.
-Потерянные места ловят `webx:theme:check` и `webx:doctor`. В работе: npm-половины, строки
-`Setup\Catalogue` и MCP пока нет.
+Потерянные места ловят `webx:theme:check` и `webx:doctor`. Раздел «Коды» в группе «Система» —
+список по местам с перетаскиванием между ними; MCP — шесть инструментов `snippets_*`.
 
 ### `webx-ui/module-faq` — вопросы и ответы
 

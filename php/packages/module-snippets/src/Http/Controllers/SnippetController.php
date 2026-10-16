@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Snippets\Models\Snippet;
+use WebxUi\Snippets\Output\Seen;
 use WebxUi\Snippets\Panel\SnippetForm;
 use WebxUi\Snippets\Panel\SnippetOrder;
 use WebxUi\Snippets\Places;
@@ -22,6 +23,7 @@ final class SnippetController
     public function __construct(
         private readonly SnippetForm $form,
         private readonly Places $places,
+        private readonly Seen $seen,
     ) {}
 
     /**
@@ -40,16 +42,17 @@ final class SnippetController
             ]);
         }
 
+        $seen = $this->seen->all();
         $byPlace = Snippet::query()->orderBy('position')->orderBy('id')->get()->groupBy('place');
         $places = [];
 
         foreach ($this->places->keys() as $key) {
-            $places[] = $this->group($key, true, $byPlace->get($key)?->all() ?? []);
+            $places[] = $this->group($key, true, $byPlace->get($key)?->all() ?? [], $seen[$key] ?? null);
         }
 
         foreach ($byPlace as $key => $snippets) {
             if (! $this->places->has((string) $key)) {
-                $places[] = $this->group((string) $key, false, $snippets->all());
+                $places[] = $this->group((string) $key, false, $snippets->all(), null);
             }
         }
 
@@ -121,16 +124,20 @@ final class SnippetController
     }
 
     /**
+     * `last_seen` is the day a page of the site last printed the place (§10.3): a declared place
+     * never seen is one the theme may have lost — or one nobody has opened a page with since.
+     *
      * @param  list<Snippet>  $snippets
      * @return array<string, mixed>
      */
-    private function group(string $key, bool $declared, array $snippets): array
+    private function group(string $key, bool $declared, array $snippets, ?string $lastSeen): array
     {
         return [
             'key' => $key,
             'label' => $this->places->label($key),
             'built_in' => $this->places->builtIn($key),
             'declared' => $declared,
+            'last_seen' => $lastSeen,
             'snippets' => array_map(fn (Snippet $snippet): array => $this->form->row($snippet), $snippets),
         ];
     }

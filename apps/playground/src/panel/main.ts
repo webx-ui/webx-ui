@@ -22,6 +22,7 @@ import { recipes } from '@webx-ui/module-recipes'
 import { reviews } from '@webx-ui/module-reviews'
 import { seo } from '@webx-ui/module-seo'
 import { services } from '@webx-ui/module-services'
+import { snippets } from '@webx-ui/module-snippets'
 import { tariffs } from '@webx-ui/module-tariffs'
 import { team } from '@webx-ui/module-team'
 import { tasks } from '@webx-ui/module-tasks'
@@ -95,6 +96,7 @@ const admin = createAdmin({
     media(),
     blocks(),
     seo(),
+    snippets(),
     audit(),
     tasks(),
     ...catalogManticore(),

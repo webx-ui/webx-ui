@@ -272,6 +272,15 @@ import {
 import { registerAudit } from './audit'
 import { registerTasks, tasksBadge } from './tasks'
 import { handleSeoFaqFiles, registerSeoFaq } from './seo-faq'
+import {
+  findSnippet,
+  listSnippets,
+  reorderSnippets,
+  purgeSnippet,
+  snippetDetail,
+  snippetHistory,
+  writeSnippet,
+} from './snippets'
 import { handleSeoLinkFiles, registerSeoLinks } from './seo-links'
 import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
@@ -838,6 +847,16 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 500,
         group: 'system',
         permissions: ['media.view', 'media.upload', 'media.manage'],
+        meta: {},
+      },
+      /* Only a super administrator has it until a role is given the one permission (§8). */
+      {
+        id: 'snippets',
+        title: line(locale, 'webx-snippets', 'module.title'),
+        icon: 'file-html',
+        order: 850,
+        group: 'system',
+        permissions: ['snippets.manage'],
         meta: {},
       },
       {
@@ -2332,7 +2351,8 @@ on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
     catalogHistory(params[0]!, Number(params[1]), page) ??
     brandHistory(params[0]!, Number(params[1]), page) ??
     propertyHistory(params[0]!) ??
-    landingHistory(params[0]!)
+    landingHistory(params[0]!) ??
+    snippetHistory(params[0]!, Number(params[1]))
 
   if (found === null) throw new HttpFailure(404, 'That kind of record keeps no history.')
 
@@ -2672,6 +2692,82 @@ on('GET', '/relations/([\\w-]+)', ({ params, query, locale }) => {
   if (found === null) throw new HttpFailure(404, `Nothing can be related to "${params[0]}".`)
 
   return { data: found }
+})
+
+/* --------------------------------------------------------------------------- snippets ----- */
+
+/*
+ * The codes (§7.5 of the snippets spec): every place with its codes, the bin, a save that is on
+ * the site at once, the order of a place. `PUT` writes only the fields it is given — the switch
+ * in the list sends `enabled` alone.
+ */
+function liveSnippet(id: string) {
+  const record = findSnippet(Number(id))
+
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'Not found.')
+
+  return record
+}
+
+function refusal(errors: Record<string, string[]>): HttpFailure {
+  return new HttpFailure(422, Object.values(errors)[0]?.[0] ?? 'Invalid', undefined, errors)
+}
+
+on('GET', '/snippets', ({ query }) => listSnippets(query.get('trashed') === '1'))
+
+on('POST', '/snippets', ({ body }) => {
+  const written = writeSnippet(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw refusal(written.errors)
+
+  return { data: snippetDetail(written.record) }
+})
+
+on('POST', '/snippets/reorder', ({ body }) => {
+  const errors = reorderSnippets(body.place, body.ids)
+
+  if (errors !== null) throw refusal(errors)
+
+  return { data: null }
+})
+
+on('GET', '/snippets/(\\d+)', ({ params }) => ({ data: snippetDetail(liveSnippet(params[0]!)) }))
+
+on('PUT', '/snippets/(\\d+)', ({ params, body }) => {
+  const written = writeSnippet(
+    liveSnippet(params[0]!),
+    (body.values ?? {}) as Record<string, unknown>,
+  )
+
+  if ('errors' in written) throw refusal(written.errors)
+
+  return { data: snippetDetail(written.record) }
+})
+
+on('DELETE', '/snippets/(\\d+)', ({ params }) => {
+  liveSnippet(params[0]!).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/snippets/(\\d+)/restore', ({ params }) => {
+  const record = findSnippet(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  record.deleted_at = null
+
+  return { data: snippetDetail(record) }
+})
+
+on('DELETE', '/snippets/(\\d+)/purge', ({ params }) => {
+  const record = findSnippet(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  purgeSnippet(record)
+
+  return { data: null }
 })
 
 /* -------------------------------------------------------------------------------- faq ----- */

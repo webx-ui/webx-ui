@@ -261,6 +261,15 @@ final class Catalogue
             'requires' => [],
             'demo' => ['en', 'pl', 'ru'],
         ],
+        'snippets' => [
+            'package' => 'webx-ui/module-snippets',
+            'npm' => '@webx-ui/module-snippets',
+            'label' => 'Codes — a tag manager, a counter or a chat pasted into the head or the body of every page',
+            'default' => false,
+            'requires' => [],
+            'demo' => ['en', 'ru'],
+            'public' => false,
+        ],
         'admins' => [
             'package' => 'webx-ui/module-auth',
             'npm' => '@webx-ui/module-auth',

@@ -63,7 +63,15 @@
             ]
         },
         "webx": {
-            "module": "snippets"
+            "module": "snippets",
+            "npm": {
+                "@webx-ui/module-snippets": "^0.0.0"
+            },
+            "panel": {
+                "import": "import { snippets } from '@webx-ui/module-snippets'",
+                "style": "@webx-ui/module-snippets/style.css",
+                "register": "snippets()"
+            }
         }
     },
     "config": {
