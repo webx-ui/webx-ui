@@ -8,12 +8,14 @@ export { default as WxInboxStatusesPage } from './StatusesPage.vue'
 export { default as WxInboxSubmissionList } from './SubmissionList.vue'
 export { default as WxInboxSubmissionPage } from './SubmissionPage.vue'
 export { default as WxInboxFieldList } from './FieldList.vue'
+export { default as WxInboxFormField } from './FormField.vue'
 export { FIELD_TYPES, STATUS_COLORS } from './types'
 export type {
   FieldChoice,
   FieldInput,
   FieldOptions,
   FieldType,
+  FormCandidate,
   FormInput,
   FormOptions,
   InboxField,

@@ -52,13 +52,15 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
   `inbox_queued_minutes`), `inbox.captcha_keys` (error), `inbox.captcha_unused` (notice),
   `inbox.spam_without_captcha` (warning; `inbox_spam_min` 3 spam + refusals in `inbox_spam_days` 30),
   `inbox.legacy_views` (warning: the site's `form.blade.php` from before the form engine).
-- Also registered: a relation target for forms, notes on submissions, demo content (`resources/demo`).
+- **Field type** `wx-inbox-form` (`Screens\FormFieldType`; component in `@webx-ui/module-inbox`): a form
+  chosen by name, kept by **slug**; a slug no form has is refused when new, kept when already held.
+- Also registered: a relation target for forms (`inbox-form`, rows with `slug`), notes on submissions, demo content.
 
 ## Change it without forking
 
 | You want                                  | Do this                                                                                  |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------- |
-| A form on a page                          | `<x-webx-inbox::form slug="..." />` in the view, or a block type that prints that tag    |
+| A form on a page                          | `<x-webx-inbox::form slug="..." />` in the view, or a block with a `wx-inbox-form` field |
 | Sent in place on a site without a theme   | `@webxWidgets` before `</body>` in the site's layout, then `php artisan webx:theme:sync` |
 | Which page or product it came from        | a hidden field on the form, filled with `:values="['product' => ...]"`                   |
 | A form restyled                           | classes `webx-field-*`, `webx-form-*` in the theme's CSS — like every form of the site   |

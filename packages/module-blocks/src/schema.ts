@@ -75,7 +75,8 @@ const LAYOUT = new Set(['wx-card', 'wx-tabs', 'wx-tab', 'wx-row', 'wx-col', 'wx-
  * a page starts without them: the sample is the author's example, and copied in as the block's own
  * content it went onto the site under the next autosave ("Quote text sample", "John Doe"). What
  * the other fields hold — a number, a switch, a choice from a list — is a setting, and the sample's
- * setting is as good a start as any.
+ * setting is as good a start as any. A chosen record is the author's too: the form of the Inbox a
+ * sample names is one on the author's site, and on another one the save would refuse it.
  */
 const WORDS = new Set([
   'wx-input',
@@ -91,6 +92,7 @@ const WORDS = new Set([
   'wx-link',
   'wx-repeater',
   'wx-relations',
+  'wx-inbox-form',
   'wx-blocks',
 ])
 

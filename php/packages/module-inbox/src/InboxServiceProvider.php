@@ -13,6 +13,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Inbox\Antispam\Throttle;
@@ -28,6 +29,7 @@ use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Panel\InboxModule;
 use WebxUi\Inbox\Relations\FormTarget;
 use WebxUi\Inbox\Rendering\Assets;
+use WebxUi\Inbox\Screens\FormFieldType;
 use WebxUi\Inbox\Submissions\Handlers;
 use WebxUi\Inbox\Support\Forms;
 
@@ -78,6 +80,10 @@ class InboxServiceProvider extends ServiceProvider
         // A form is something another record can choose — a vacancy its application form. A
         // form deleted takes the rows pointing at it along; one with submissions is not deleted.
         $this->app->make(RelationTargets::class)->register(new FormTarget);
+
+        // And a form is what a block prints: `wx-inbox-form` keeps its slug, the one the Blade tag
+        // takes, and refuses a slug no form has — the form that otherwise never appears.
+        $this->app->make(FieldTypes::class)->register('wx-inbox-form', new FormFieldType);
 
         // The site audit's check of the forms, when the audit is installed: a switched-on form
         // that would write to nobody saves every enquiry and tells nobody about any of them.

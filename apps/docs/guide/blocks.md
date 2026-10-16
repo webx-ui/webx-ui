@@ -211,6 +211,32 @@ a library that moves to another disk rewrites no page. A value whose type nobody
 server — `wx-blocks`, a field of the project's own — arrives as it is stored. `$block->values`
 holds the same map, which is what a template hands its script in `data-wx-values`.
 
+**A form of the Inbox is a `wx-inbox-form` field**, not a text field with a slug typed in: the
+editor picks the form by name, the value is its slug, and a slug no form has is refused when it is
+written — by the panel and by `blocks_set_content` / `blocks_edit_content` alike, the latter with
+the slugs there are. The template prints it with the Inbox's own tag, which prints nothing for an
+empty value, a form switched off, or one deleted since the page was saved:
+
+::: v-pre
+
+```json
+{ "id": "form", "type": "wx-inbox-form", "label": "Form", "help": "Empty: no form." }
+```
+
+```blade
+@if ($form)
+    <x-webx-inbox::form :slug="$form" />
+@endif
+```
+
+:::
+
+A type that used to keep the slug in a `wx-input` changes the field's `type` and nothing else:
+the stored slugs are what the new field keeps, and the pages open with their forms chosen. The
+sample's form is not copied into a block added from the picker — it is a form of the author's site.
+A type compiled on a site without `module-inbox` cannot use the tag; the `contact` block of the
+default theme checks `class_exists(\WebxUi\Inbox\View\Components\Form::class)` first.
+
 ::: v-pre
 
 **A text field the template changes goes through `wx_text()`.** A text or textarea field arrives
@@ -613,12 +639,13 @@ screen runs — on every door: `blocks_set_content`, `blocks_edit_content`, the 
 autosave, a region's save, and a publication (for a draft written before the checks). A number past
 its `min`/`max`, an option the select does not offer, a rating, a checkbox group or a repeater past
 its `max`, something that is not a date or a colour, a link that is not `http(s)`, `mailto`, `tel`,
-a relative path or an `#anchor`, a library key nobody has — each is refused, naming the block's key
+a relative path or an `#anchor`, a library key nobody has, a form of the Inbox nobody made — each is refused, naming the block's key
 and the field (`hero [k1], field [title]: …`); the panel opens that block and shows the message
 under the field. Where a block stands is checked too: a container field's `props.allow` and
 `props.max` (or the type's `allow` when the field names none), a type's `allowed_in` and
 `max_per_entity`. A picture deleted from the library after a page was written does not stop the
-page from being saved; a key typed now that the library never had does.
+page from being saved; a key typed now that the library never had does. The same holds for the
+slug of a deleted form in a `wx-inbox-form` field.
 
 A field switched to `localized` (or back) on a type pages already use: `blocks_update` and the
 editor say how many pages hold values of it, and publishing the type converts them — a plain value

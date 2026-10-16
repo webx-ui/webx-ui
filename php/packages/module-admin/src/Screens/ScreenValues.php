@@ -32,13 +32,20 @@ final class ScreenValues
      * path — so each value is validated on its own rather than through one nested rule set.
      * Only keys that were sent are touched: a hidden field that did not travel is left alone.
      *
+     * `$held` is what the record keeps now, by field name: a value sent back as it was is not new,
+     * and is spared the checks only a new value has to pass ({@see ChecksNewValues}) — a form a
+     * block once named and somebody deleted since must not stop the settings from being saved.
+     * Without it nothing is held to those checks: a caller that cannot say what the record keeps
+     * would otherwise refuse a picture that was deleted from the library after it was chosen.
+     *
      * @param  array<string, mixed>  $input
      * @param  (callable(string): bool)|null  $can
+     * @param  array<string, mixed>|null  $held
      * @return array<string, mixed> What to store, keyed by field name.
      *
      * @throws ValidationException
      */
-    public function validate(string $screen, array $input, ?callable $can = null): array
+    public function validate(string $screen, array $input, ?callable $can = null, ?array $held = null): array
     {
         $root = $this->screens->tree($screen);
 
@@ -101,6 +108,14 @@ final class ScreenValues
                 continue;
             }
 
+            $fresh = $type instanceof ChecksNewValues && $held !== null ? $this->newValueProblems($type, $node, $value, $held) : [];
+
+            if ($fresh !== []) {
+                $errors[$name] = $fresh;
+
+                continue;
+            }
+
             // `$type === null` rather than `?? $value`: a type is entitled to store null — an
             // emptied editor keeps nothing — and coalescing would hand the raw value back as
             // though no type had been registered at all.
@@ -114,6 +129,39 @@ final class ScreenValues
         }
 
         return $stored;
+    }
+
+    /**
+     * What a type has against the parts of a value that the record did not hold — a language at a
+     * time when the field is translated, so that one new language is checked and the rest are not.
+     *
+     * @param  Node  $node
+     * @param  array<string, mixed>  $held
+     * @return list<string>
+     */
+    private function newValueProblems(ChecksNewValues $type, array $node, mixed $value, array $held): array
+    {
+        if ($value === null) {
+            return [];
+        }
+
+        /** @var string $name */
+        $name = $node['name'];
+        $before = $held[$name] ?? null;
+        $localized = ($node['localized'] ?? false) === true && is_array($value);
+        $problems = [];
+
+        foreach ($localized ? $value : [$value] as $locale => $one) {
+            $was = $localized ? (is_array($before) ? ($before[$locale] ?? null) : null) : $before;
+
+            if ($one === null || $one === $was) {
+                continue;
+            }
+
+            $problems = [...$problems, ...$type->newValueProblems($one, $node)];
+        }
+
+        return array_values(array_unique($problems));
     }
 
     /**

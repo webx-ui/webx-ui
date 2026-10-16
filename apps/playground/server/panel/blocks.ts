@@ -1547,14 +1547,9 @@ export const blockTypes: BlockType[] = [
         { id: 'text', type: 'wx-input', label: 'Подпись', localized: true },
         {
           id: 'form',
-          type: 'wx-select',
+          type: 'wx-inbox-form',
           label: 'Форма',
-          props: {
-            options: [
-              { value: 'feedback', label: 'Обратная связь' },
-              { value: 'callback', label: 'Заказ звонка' },
-            ],
-          },
+          help: 'Форма из раздела «Заявки». Пусто — без формы.',
         },
       ],
       template: FORM_TEMPLATE,

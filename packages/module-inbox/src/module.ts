@@ -1,5 +1,6 @@
 import type { AdminModule } from '@webx-ui/module-admin'
 import FormEditorPage from './FormEditorPage.vue'
+import FormField from './FormField.vue'
 import InboxPage from './InboxPage.vue'
 import StatusesPage from './StatusesPage.vue'
 import SubmissionPage from './SubmissionPage.vue'
@@ -57,5 +58,10 @@ export function inbox(options: InboxOptions = {}): AdminModule {
         props: { base: path },
       },
     ],
+    // A form of the Inbox as a field of any screen or block — the contact block's form — chosen
+    // by name and kept by slug. Here and not in the panel: what it lists is this section's.
+    types: {
+      'wx-inbox-form': { component: FormField, kind: 'field' },
+    },
   }
 }

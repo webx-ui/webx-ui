@@ -52,6 +52,7 @@ final class SettingsController
             $screen,
             is_array($input) ? $input : [],
             static fn (string $permission): bool => $user instanceof HasPermissions && $user->hasPermission($permission),
+            $settings->raw(),
         );
 
         app(DataShortcodes::class)->check($stored);

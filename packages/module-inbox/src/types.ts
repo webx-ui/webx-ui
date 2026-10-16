@@ -1,4 +1,5 @@
 import type { LocalizedValue } from '@webx-ui/core'
+import type { RelationCandidate } from '@webx-ui/module-admin'
 
 /** The kinds of question a form can ask (§4). Mirrors `WebxUi\Inbox\Fields\FieldType`. */
 export const FIELD_TYPES = [
@@ -377,4 +378,12 @@ export interface SubmissionMassInput {
   ids: number[]
   action: 'status' | 'read' | 'unread' | 'delete'
   status_id?: number
+}
+
+/**
+ * A form as the panel's relation target `inbox-form` describes it, with the slug under its own
+ * name — what `wx-inbox-form` keeps (`FormTarget::row()` on the server).
+ */
+export interface FormCandidate extends RelationCandidate {
+  slug?: string
 }

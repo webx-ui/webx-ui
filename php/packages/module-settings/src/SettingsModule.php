@@ -205,7 +205,7 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
                 $screen = $settings->screenOf($key) ?? Settings::SCREEN;
                 // A translated setting changes in the languages named and refuses one the site lacks.
                 $input = app(ScreenValues::class)->patch($screen, [$key => $settings->raw()[$key] ?? null], [$key => $value]);
-                $stored = app(ScreenValues::class)->validate($screen, $input);
+                $stored = app(ScreenValues::class)->validate($screen, $input, held: $settings->raw());
                 app(DataShortcodes::class)->check($stored);
                 ContactsCheck::check($stored);
             } catch (ValidationException $exception) {

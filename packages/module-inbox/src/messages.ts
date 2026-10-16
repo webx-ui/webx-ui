@@ -258,4 +258,17 @@ export const inboxMessages: Record<string, Messages> = {
     'type-file': 'File',
     'type-hidden': 'Hidden',
   },
+
+  relations: {
+    form: 'Form',
+    'field-search': 'Find a form by its name or address',
+    'field-empty': 'No form',
+    'field-remove': 'Remove the form',
+    'field-missing': 'No such form',
+    'field-off': 'Switched off',
+    'field-nothing': 'No form matches',
+    'field-searching': 'Searching…',
+    unknown: 'The Inbox has no form “:slug”. It has: :forms.',
+    'unknown-none': 'The Inbox has no form “:slug” — it has no forms yet.',
+  },
 }
