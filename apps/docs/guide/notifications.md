@@ -249,6 +249,38 @@ or, in a described screen, the node `{ "type": "wx-notifications-channels", "pro
 its recipients or its secrets. Behind it is the relation target `notify-shop-order` that every event
 brings — `GET /api/cms/relations/notify-shop-order`.
 
+### The Inbox, a consumer as it is
+
+`webx-ui/module-inbox` is the first consumer, and the whole of it is three small classes — a pattern
+to copy (`php/packages/module-inbox/src/Notifications`):
+
+- **`SubmissionEvent`** — the definition of `inbox.submission` (the variables, the list `answers`,
+  the addressee `reply_to`, the samples) and `values(Submission)`, the snapshot of one submission.
+  The provider registers it under `class_exists(NotificationEvents::class)`.
+- **`SendToChannels`** — a listener of the inbox's own Laravel event `SubmissionStored`: it skips
+  a repeat and a submission typed in by hand, and calls `send()` with the ids the form keeps.
+- **`Channels`** — everything else the inbox asks: whether the module is there at all
+  (`available()`: the class exists, its provider ran, the event is declared), the ids a form may
+  keep, the chosen channels named for the editor, the log of one submission
+  (`deliveriesFor($submission)`) for its card, and `retry()` of its failed rows.
+
+```php
+// The listener: the consumer's own event in, send() out.
+public function handle(SubmissionStored $event): void
+{
+    if ($event->repeated || $event->submission->source !== Submission::SOURCE_WEB) {
+        return;
+    }
+
+    $this->channels->send($event->submission);
+}
+```
+
+Its form keeps the ids in `options.notify_channels`; the editor, being a Vue screen rather than a
+described one, draws `WxRelationsField` of `@webx-ui/module-admin` with the target
+`notify-inbox-submission` — so the inbox's npm package needs nothing of this one either. The
+section's guide, [Inbox](./inbox#channels-telegram-and-more), has what an administrator sees.
+
 A provider of its own — Slack, SMS, a webhook — is a class implementing
 `WebxUi\Notifications\Contracts\Provider` registered in `Providers`; its settings are described as
 nodes of the form, so it appears in the panel without a line of Vue. The package's

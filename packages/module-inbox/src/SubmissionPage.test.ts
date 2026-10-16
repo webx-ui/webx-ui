@@ -331,4 +331,57 @@ describe('WxInboxSubmissionPage', () => {
     expect(wrapper.text()).toContain('The notification is waiting in the queue')
     expect(wrapper.text()).not.toContain('The notification went out')
   })
+
+  it('has no channels tab on a site without the notifications module', async () => {
+    const { wrapper } = await open(submission({ channels: null }))
+
+    expect(wrapper.findAll('.wx-tabs__tab').map((tab) => tab.text())).not.toContain('Channels')
+    expect(wrapper.text()).not.toContain('A channel did not deliver the notification')
+  })
+
+  it('marks a channel that did not deliver, says why, and sends it again', async () => {
+    const row = {
+      id: 9,
+      channel_id: 3,
+      channel: 'Managers in Telegram',
+      provider: 'telegram',
+      recipient: '100200300',
+      recipient_label: 'Managers',
+      status: 'failed' as const,
+      status_label: 'Failed',
+      reason: null,
+      reason_label: null,
+      error: 'Bad Request: chat not found',
+      attempts: 3,
+      retryable: true,
+      created_at: '2026-09-18T08:10:00Z',
+      sent_at: null,
+    }
+    const { wrapper, post } = await open(submission({ channels: [row] }))
+
+    expect(wrapper.text()).toContain('A channel did not deliver the notification')
+
+    const tab = wrapper.findAll('.wx-tabs__tab').find((one) => one.text() === 'Channels')
+    await tab!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Managers in Telegram')
+    expect(wrapper.text()).toContain('Bad Request: chat not found')
+
+    post.mockResolvedValueOnce({
+      data: submission({
+        channels: [{ ...row, status: 'sent', status_label: 'Sent', error: null, retryable: false }],
+      }),
+    })
+
+    const again = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Send the notification again')
+
+    await again!.trigger('click')
+    await flushPromises()
+
+    expect(post).toHaveBeenCalledWith('/api/cms/inbox/submissions/5/notify')
+    expect(wrapper.text()).not.toContain('A channel did not deliver the notification')
+  })
 })

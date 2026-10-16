@@ -46,6 +46,7 @@
     },
     "suggest": {
         "webx-ui/module-audit": "The site audit reports switched-on forms that would notify nobody, and notifications that failed or have waited in the queue for long.",
+        "webx-ui/module-notifications": "Notify through channels too: Telegram, e-mail by a template of its own, any provider a package adds — chosen per form beside the letter.",
         "webx-ui/themes": "With a theme, the form gets its base look on site tokens (resources/theme/inbox.css)."
     },
     "autoload": {

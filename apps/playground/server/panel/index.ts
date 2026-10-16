@@ -271,7 +271,13 @@ import {
 } from './catalog'
 import { registerAudit } from './audit'
 import { registerTasks, tasksBadge } from './tasks'
-import { notificationsHistory, registerNotifications } from './notifications'
+import {
+  channelsOfForm,
+  deliveriesOfSubmission,
+  notificationsHistory,
+  registerNotifications,
+  retrySubmission,
+} from './notifications'
 import { handleSeoFaqFiles, registerSeoFaq } from './seo-faq'
 import {
   findSnippet,
@@ -1901,7 +1907,16 @@ function withRecipients(item: InboxForm): InboxForm {
     }
   })
 
-  return { ...item, recipients, notifies: recipients.some((one) => one.receives) }
+  // The notifications module is installed here: "Notify through" shows, with the chosen channels.
+  const chosen = channelsOfForm(item.options.notify_channels)
+
+  return {
+    ...item,
+    recipients,
+    notifies: recipients.some((one) => one.receives) || chosen.some((one) => one.sends),
+    notifications: true,
+    channels: chosen,
+  }
 }
 
 on('GET', '/inbox/forms', () => {
@@ -1946,7 +1961,7 @@ on('GET', '/inbox/forms/(\\d+)', ({ params }) => {
 on('PUT', '/inbox/forms/(\\d+)', ({ params, body }) => {
   const item = form(params[0])
 
-  Object.assign(item, omit(body, ['recipients', 'notifies']))
+  Object.assign(item, omit(body, ['recipients', 'notifies', 'notifications', 'channels']))
   item.updated_at = new Date().toISOString()
 
   return {
@@ -2315,9 +2330,11 @@ on('PUT', '/inbox/submissions/(\\d+)', ({ params, body }) => {
   return { data: detail(record) }
 })
 
-/* Sent again: the playground has no mail, so it simply went. */
+/* Sent again: the playground has no mail and no bot, so the letter and the channels simply went. */
 on('POST', '/inbox/submissions/(\\d+)/notify', ({ params }) => {
   const record = submission(params[0])
+
+  retrySubmission(record.id)
 
   record.notified_at = new Date().toISOString()
   record.notify_error = null
@@ -5931,6 +5948,7 @@ function detail(record: SubmissionRecord, query?: URLSearchParams) {
     placement: record.placement ?? null,
     notified_at: record.notified_at,
     notify_error: record.notify_error,
+    channels: deliveriesOfSubmission(record.id),
     /* Read off the two columns, as the server reads a submission from before the queue was
        watched: an error is failed, a time without one is delivered. */
     notification: {

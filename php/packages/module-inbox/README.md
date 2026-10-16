@@ -326,6 +326,18 @@ form, with answers nobody sent and nothing saved — what the kitchen sink of th
 SubmissionReceived::sample($form, ['name' => 'Ada', 'message' => 'Hello'])->render();
 ```
 
+### Channels
+
+With [`webx-ui/module-notifications`](../module-notifications) installed — a suggestion, not a
+requirement — a form also notifies through the channels chosen under «Notify through»
+(`options.notify_channels`): Telegram, another letter with its own template, any provider a
+package adds. The letter above goes as before, beside them. The inbox declares the event
+`inbox.submission` (`{{form}}`, `{{fields}}`, `{{field.<name>}}`, the list `{{#answers}}`,
+`{{submission_url}}`, the addressee `{{reply_to}}` and more), sends a submission from the site's
+form to each chosen channel (not one sent again inside the duplicate window, not one typed in by
+hand), and shows what came of it on the submission's card and in `inbox_get` (`channels`). The
+guide «Inbox» has the whole list.
+
 ## After a submission is stored
 
 Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor

@@ -336,6 +336,38 @@ repaints the letter with the site. Without a theme it has a frame of its own in 
 theme's colours. A theme rewrites the letter in `views/vendor/webx-inbox/mail/submission.blade.php`
 (the styles guide, «Letters»); the starter site's «Kitchen sink › Mail» shows it.
 
+### Channels: Telegram and more
+
+::: v-pre
+The letter is the inbox's own and needs nothing else. With
+[`webx-ui/module-notifications`](./notifications) installed, a form can also notify through its
+**channels** — a Telegram chat, another letter with a template of its own, a provider a package
+adds — and the two work side by side: the letter goes to the recipients above, and each chosen
+channel gets the submission by its own template. The inbox does not require that package; without
+it nothing about channels shows.
+
+- **The event `inbox.submission`.** The inbox declares it for the channels. A template gets
+  `{{form}}`, `{{form_slug}}`, `{{submission_id}}`, `{{submission_url}}` (built from `app.url`),
+  `{{created_at}}`, `{{fields}}` (every answer, a line each: «Label: value»), `{{field.<name>}}`
+  (one answer by its field's machine name), the list `{{#answers}}{{label}}: {{value}}{{/answers}}`,
+  `{{files}}`, `{{page}}`, `{{locale}}`, `{{utm}}` and `{{reply_to}}` — the answer of the form's
+  e-mail field. `reply_to` is also an **addressee**: an e-mail channel of this event can write to
+  the visitor, and its letters answer to them. The IP and the browser are not variables.
+- **«Notify through».** The Notifications tab of the form's editor gets a second card: the channels
+  of this event and the ones for any event, chosen with search. The ids are kept in
+  `options.notify_channels`; a channel deleted for good drops out on save, one in the bin stays and
+  is logged as skipped. «Set up channels» leads to the section, for whoever may manage it.
+- **When it is sent.** Once the submission is stored, from the site's form only — not for the same
+  answers again inside the duplicate window, not for one typed in by hand. Each channel renders its
+  template in the language the submission came in.
+- **What came of it.** The submission's card has a «Channels» tab — a row per recipient: sent,
+  queued, failed with the error, or skipped with the reason — and a warning above it when a channel
+  did not deliver. «Send the notification again» sends the letter and the channels' failed rows. The
+  same is `channels` in `inbox_get`; `inbox_notify` takes `channels: false` to leave them alone.
+- A form **notifies** — for the editor's warning and the audit's `inbox.no_recipients` — when a
+  letter reaches somebody or a chosen channel is switched on.
+  :::
+
 ## After a submission is stored
 
 Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor
@@ -348,7 +380,8 @@ written and never announced. The submission comes with `form`, `values` and `fil
 `$event->repeated` is the same answers again inside the duplicate window — a double click.
 
 It is not an Eloquent `created`: the row is written before its answers, so a listener of
-`created` would find none of them.
+`created` would find none of them. It is fired with the notifications module and without it — the
+channels are just one more listener.
 
 A listener is an ordinary Laravel listener; one that talks to the network is `ShouldQueue`:
 
@@ -370,6 +403,19 @@ final class TellTheSalesChannel implements ShouldQueue
     }
 }
 ```
+
+Laravel finds a listener in `app/Listeners` by the type `handle()` takes; one kept anywhere else is
+registered in the `boot()` of a service provider of the site:
+
+```php
+use Illuminate\Support\Facades\Event;
+use WebxUi\Inbox\Events\SubmissionStored;
+
+Event::listen(SubmissionStored::class, \App\Listeners\TellTheSalesChannel::class);
+```
+
+A listener that throws inside the request is logged, and the visitor never hears of it: the
+submission is written either way.
 
 **The handlers.** For the common case — "this form goes to that service" — name classes in
 `config/webx-inbox.php`, by the form's slug or by `*` for every form:

@@ -11,11 +11,13 @@ export { default as WxInboxFieldList } from './FieldList.vue'
 export { default as WxInboxFormField } from './FormField.vue'
 export { FIELD_TYPES, STATUS_COLORS } from './types'
 export type {
+  ChannelDelivery,
   FieldChoice,
   FieldInput,
   FieldOptions,
   FieldType,
   FormCandidate,
+  FormChannel,
   FormInput,
   FormOptions,
   InboxField,

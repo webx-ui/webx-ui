@@ -144,8 +144,9 @@ const PROVIDERS = [
 const EVENTS = [
   {
     key: 'inbox.submission',
-    label: 'A new submission of a form',
+    label: 'A submission of a form',
     module: 'inbox',
+    /* As `WebxUi\Inbox\Notifications\SubmissionEvent` declares it (§15.1). */
     variables: [
       {
         name: 'form',
@@ -154,58 +155,101 @@ const EVENTS = [
         address: null,
         fields: [],
       },
-      { name: 'name', label: 'Who wrote', example: 'Alex Doe', address: null, fields: [] },
       {
-        name: 'reply_to',
-        label: "The visitor's e-mail",
-        example: 'visitor@site.test',
-        address: 'email',
+        name: 'form_slug',
+        label: 'The slug of the form',
+        example: 'contact',
+        address: null,
         fields: [],
       },
       {
-        name: 'fields',
-        label: 'The fields of the submission',
-        example: [
-          { label: 'Phone', value: '+0 000 000 00 00' },
-          { label: 'Message', value: 'Call me after six, please.' },
-        ],
-        address: null,
-        fields: [
-          { name: 'label', label: 'The label of the field' },
-          { name: 'value', label: 'What was typed into it' },
-        ],
-      },
-      {
-        name: 'field.*',
-        label: 'A field by its machine name',
-        example: '',
+        name: 'submission_id',
+        label: 'The number of the submission',
+        example: '128',
         address: null,
         fields: [],
       },
       {
         name: 'submission_url',
         label: 'The submission in the panel',
-        example: 'https://site.test/cms/inbox/submissions/42',
+        example: 'https://site.test/cms/inbox/submissions/128',
         address: null,
         fields: [],
       },
       {
-        name: 'date',
-        label: 'When it came',
-        example: '16.10.2026 14:05',
+        name: 'created_at',
+        label: 'When it arrived',
+        example: '10/16/2026 2:05 PM',
         address: null,
+        fields: [],
+      },
+      {
+        name: 'fields',
+        label: 'Every answer, a line each: “Label: value”',
+        example: 'Name: Alex Doe\nPhone: +0 000 000-00-00\nMessage: Call me after six, please.',
+        address: null,
+        fields: [],
+      },
+      {
+        name: 'answers',
+        label: 'The answers, as a list',
+        example: [
+          { name: 'name', label: 'Name', value: 'Alex Doe' },
+          { name: 'phone', label: 'Phone', value: '+0 000 000-00-00' },
+          { name: 'message', label: 'Message', value: 'Call me after six, please.' },
+        ],
+        address: null,
+        fields: [
+          { name: 'name', label: 'The machine name of the field' },
+          { name: 'label', label: 'The label of the field' },
+          { name: 'value', label: 'The answer' },
+        ],
+      },
+      {
+        name: 'field.*',
+        label: 'One answer, by the machine name of its field',
+        example: '',
+        address: null,
+        fields: [],
+      },
+      {
+        name: 'files',
+        label: 'The names of the attached files',
+        example: 'brief.pdf',
+        address: null,
+        fields: [],
+      },
+      {
+        name: 'page',
+        label: 'The page the form was sent from',
+        example: 'https://site.test/contacts',
+        address: null,
+        fields: [],
+      },
+      {
+        name: 'locale',
+        label: 'The language of the submission',
+        example: 'en',
+        address: null,
+        fields: [],
+      },
+      { name: 'utm', label: 'UTM tags', example: 'source=newsletter', address: null, fields: [] },
+      {
+        name: 'reply_to',
+        label: "The visitor's e-mail, from the form's e-mail field",
+        example: 'visitor@site.test',
+        address: 'email',
         fields: [],
       },
     ],
     sample: {
       telegram: {
         template:
-          '<b>{{form}}</b> — {{name}}\n{{#fields}}\n{{label}}: {{value}}\n{{/fields}}\n<a href="{{submission_url}}">Open the submission</a>',
+          '<b>{{form}}</b>\n{{fields}}\n\n<a href="{{submission_url}}">Open in the panel</a>',
       },
-      email: {
+      '*': {
         subject: 'New submission: {{form}}',
-        template:
-          '{{name}} wrote through «{{form}}» on {{date}}.\n\n{{#fields}}\n{{label}}: {{value}}\n{{/fields}}\n\n{{submission_url}}',
+        template: '{{form}}\n\n{{fields}}\n\nOpen in the panel: {{submission_url}}',
       },
     },
   },
@@ -283,8 +327,8 @@ const channels: Channel[] = [
     secrets: ['token'],
     subject: {},
     template: {
-      ru: '<b>{{form}}</b> — {{name}}\n{{#fields}}\n{{label}}: {{value}}\n{{/fields}}\n<a href="{{submission_url}}">Открыть заявку</a>',
-      en: '<b>{{form}}</b> — {{name}}\n{{#fields}}\n{{label}}: {{value}}\n{{/fields}}\n<a href="{{submission_url}}">Open the submission</a>',
+      ru: '<b>{{form}}</b> — {{field.name}}\n{{#answers}}\n{{label}}: {{value}}\n{{/answers}}\n<a href="{{submission_url}}">Открыть заявку</a>',
+      en: '<b>{{form}}</b> — {{field.name}}\n{{#answers}}\n{{label}}: {{value}}\n{{/answers}}\n<a href="{{submission_url}}">Open the submission</a>',
     },
     copied_from: null,
     updated_at: ago(60 * 26),
@@ -750,6 +794,80 @@ export function notifyCandidates(target: string) {
       },
       deleted: one.deleted_at !== null,
     }))
+}
+
+const STATUS_LABELS: Record<Delivery['status'], string> = {
+  queued: 'Queued',
+  sent: 'Sent',
+  failed: 'Failed',
+  skipped: 'Skipped',
+}
+
+const REASON_LABELS: Record<string, string> = {
+  channel_deleted: 'The channel is deleted',
+  channel_disabled: 'The channel is switched off',
+  wrong_event: 'The channel is for another event',
+  no_recipients: 'The channel has no recipients',
+}
+
+/** What the Inbox names on a form: the chosen channels, each with whether it sends (§15.2). */
+export function channelsOfForm(ids: number[] | undefined) {
+  return (ids ?? []).map((id) => {
+    const channel = channels.find((one) => one.id === id)
+    const deleted = channel === undefined || channel.deleted_at !== null
+    const wrong =
+      channel !== undefined && channel.event !== null && channel.event !== 'inbox.submission'
+
+    return {
+      id,
+      name: channel?.name ?? null,
+      provider: channel?.provider ?? null,
+      enabled: channel?.enabled ?? false,
+      deleted,
+      sends: !deleted && !wrong && (channel?.enabled ?? false),
+    }
+  })
+}
+
+/** The card's "Channels": the log about one submission, newest first (§15.3). */
+export function deliveriesOfSubmission(id: number) {
+  return deliveries
+    .filter((one) => one.subject_id === id && one.event === 'inbox.submission' && !one.is_test)
+    .map((one) => ({
+      id: one.id,
+      channel_id: one.channel_id,
+      channel: one.channel_name,
+      provider: one.provider,
+      recipient: one.recipient,
+      recipient_label: one.recipient_label,
+      status: one.status,
+      status_label: STATUS_LABELS[one.status],
+      reason: one.reason,
+      reason_label: one.reason === null ? null : (REASON_LABELS[one.reason] ?? one.reason),
+      error: one.error,
+      attempts: one.attempts,
+      retryable: (one.status === 'failed' || one.status === 'queued') && one.channel_id !== null,
+      created_at: one.created_at,
+      sent_at: one.sent_at,
+    }))
+}
+
+/** "Send the notification again" of a submission: the playground has no bot, so it went. */
+export function retrySubmission(id: number): number {
+  let count = 0
+
+  for (const one of deliveries) {
+    if (one.subject_id !== id || one.is_test || one.channel_id === null) continue
+    if (one.status !== 'failed' && one.status !== 'queued') continue
+
+    one.status = 'sent'
+    one.error = null
+    one.attempts += 1
+    one.sent_at = new Date().toISOString()
+    count += 1
+  }
+
+  return count
 }
 
 export function registerNotifications(on: On, fail: Fail, line: Line): void {

@@ -73,8 +73,23 @@ const tab = ref(TABS.includes(String(route.query.tab)) ? String(route.query.tab)
 const silent = computed(
   () =>
     settings.is_enabled &&
-    !reachesAnybody(options.value.recipients as Recipient[] | undefined, form.value?.recipients),
+    !reachesAnybody(options.value.recipients as Recipient[] | undefined, form.value?.recipients) &&
+    !channelsSend.value,
 )
+
+/*
+ * A channel chosen and switched on tells somebody too. One chosen since the form was loaded is
+ * taken at its word until the save says otherwise: the server names only what was saved.
+ */
+const channelsSend = computed(() => {
+  if (form.value?.notifications !== true) return false
+
+  const reported = form.value.channels ?? []
+
+  return (options.value.notify_channels ?? []).some(
+    (id) => reported.find((channel) => channel.id === id)?.sends ?? true,
+  )
+})
 
 const canManage = computed(() => context.can('inbox.manage'))
 
@@ -197,6 +212,7 @@ async function save(): Promise<void> {
             :fields="fields"
             :errors="errors"
             :reported="form.recipients"
+            :notifications="form.notifications"
           />
         </wx-tab>
 

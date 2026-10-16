@@ -10,6 +10,7 @@ use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionEvent;
 use WebxUi\Inbox\Models\SubmissionFile;
 use WebxUi\Inbox\Models\SubmissionValue;
+use WebxUi\Inbox\Notifications\Channels;
 
 /**
  * One submission, open.
@@ -42,6 +43,7 @@ final class SubmissionResource extends JsonResource
     {
         /** @var Submission $submission */
         $submission = $this->resource;
+        $channels = app(Channels::class);
 
         return [
             'id' => (int) $submission->getKey(),
@@ -65,6 +67,9 @@ final class SubmissionResource extends JsonResource
             // The same two read as a state — none, queued, delivered, failed — with who was
             // written to and how each letter went. A queued letter has not left yet (§9).
             'notification' => $submission->notification(),
+            // What the channels of the notifications module made of it, one row per recipient
+            // (NOTIFICATIONS §15.3); null on a site without the module, so the card has no block.
+            'channels' => $channels->available() ? $channels->deliveries($submission) : null,
             // Which submission is before and after this one *in the list it was opened from*,
             // so the arrows in its head walk the same filter the reader was looking at.
             'previous_id' => $this->around['previous'] ?? null,

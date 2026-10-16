@@ -70,6 +70,10 @@ app(Notifications::class)->send('shop.order', $order->notify_channels, [
 ], subject: $order, locale: $order->locale);
 ```
 
+A consumer as it is: `webx-ui/module-inbox`, `src/Notifications` — the event (`SubmissionEvent`), a
+listener of its own Laravel event calling `send()` (`SendToChannels`), and `Channels`: whether this
+module is there (`bound(NotificationEvents::class)`), the ids a form keeps, `deliveriesFor()`, `retry()`.
+
 A channel writes to an addressee with the recipient `{"variable": "customer_email"}` — only on a
 channel of that event, only an addressee of the provider's kind (`email`, `telegram`).
 

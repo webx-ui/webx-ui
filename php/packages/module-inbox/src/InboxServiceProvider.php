@@ -26,12 +26,15 @@ use WebxUi\Inbox\Audit\SpamWithoutCaptcha;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Models\Submission;
+use WebxUi\Inbox\Notifications\SendToChannels;
+use WebxUi\Inbox\Notifications\SubmissionEvent;
 use WebxUi\Inbox\Panel\InboxModule;
 use WebxUi\Inbox\Relations\FormTarget;
 use WebxUi\Inbox\Rendering\Assets;
 use WebxUi\Inbox\Screens\FormFieldType;
 use WebxUi\Inbox\Submissions\Handlers;
 use WebxUi\Inbox\Support\Forms;
+use WebxUi\Notifications\NotificationEvents;
 
 class InboxServiceProvider extends ServiceProvider
 {
@@ -47,6 +50,14 @@ class InboxServiceProvider extends ServiceProvider
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-inbox.php', 'webx-inbox');
+
+        // `inbox.submission` for the channels of `webx-ui/module-notifications`, when it is there
+        // (NOTIFICATIONS §15): a suggestion, not a requirement, so the class may not exist at all.
+        if (class_exists(NotificationEvents::class)) {
+            $this->callAfterResolving(NotificationEvents::class, static function (NotificationEvents $events): void {
+                $events->register(SubmissionEvent::definition());
+            });
+        }
 
         // Looked up by the rate limiter and then by the controller, within one request.
         $this->app->scoped(Forms::class);
@@ -113,6 +124,10 @@ class InboxServiceProvider extends ServiceProvider
         // The handlers of `webx-inbox.handlers` (§2.19). A site that wants something else listens
         // to the same event itself; this one only reads the config.
         $this->app->make(Dispatcher::class)->listen(SubmissionStored::class, Handlers::class);
+
+        // And the channels the form chose, when the notifications module is installed; without it
+        // the listener has nothing to send to and returns.
+        $this->app->make(Dispatcher::class)->listen(SubmissionStored::class, SendToChannels::class);
 
         // Letters that failed or wait for a worker nobody runs — only when
         // `webx-ui/module-audit` is installed.

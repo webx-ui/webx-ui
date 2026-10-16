@@ -28,6 +28,7 @@ use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionEvent;
+use WebxUi\Inbox\Notifications\Channels;
 use WebxUi\Inbox\Panel\FieldInput;
 use WebxUi\Inbox\Panel\FormInput;
 use WebxUi\Inbox\Submissions\ListQuery;
@@ -93,7 +94,8 @@ final class InboxTools
                 .'allows, and the name it travels under. This is the shape of the data the public intake expects '
                 .'— the answer says where that door is and what a submission has to carry. `form.recipients` '
                 .'and `form.notifies` say who a submission would be written to; an empty list and '
-                .'`notifies: false` mean nobody is.',
+                .'`notifies: false` mean nobody is. With the notifications module installed (`form.notifications: true`), '
+                .'`form.channels` names the channels in `options.notify_channels`, each with whether it `sends`.',
                 fn (array $arguments): array => $this->formGet($arguments),
                 ['properties' => ['form' => $form], 'required' => ['form']],
                 permission: 'inbox.manage',
@@ -115,7 +117,9 @@ final class InboxTools
                     'slug' => ['type' => 'string', 'description' => 'Where it answers: lower case, words joined by hyphens.'],
                     'title' => ['type' => ['string', 'object'], 'description' => 'One language as a string, or every language as { "en": "…" }.'],
                     'is_enabled' => ['type' => 'boolean', 'description' => 'A form that is off is a 404 to the site and keeps everything it has received.'],
-                    'options' => ['type' => 'object', 'description' => 'The settings, as inbox_form_get returns them: recipients, the thank-you, the antispam. Unknown keys are dropped.'],
+                    'options' => ['type' => 'object', 'description' => 'The settings, as inbox_form_get returns them: recipients, the thank-you, the antispam. Unknown keys are dropped. '
+                        .'`notify_channels` — ids of channels of the notifications module (notifications_channels_list with event inbox.submission) '
+                        .'that a submission from the site is also sent to; ids no channel has are dropped. Only with that module installed.'],
                     'fields' => [
                         'type' => 'array',
                         'description' => 'The questions to add or change.',
@@ -167,7 +171,9 @@ final class InboxTools
                 .'administrators have left on it, and the log of everything that has happened to it. '
                 .'`notification` says whether the letter about it left: none, queued (handed to the queue and '
                 .'not yet sent — long in this state means no queue worker runs), delivered, or failed with the '
-                .'reason, and how it went for each recipient. Reading it does not mark it read: that is a '
+                .'reason, and how it went for each recipient. `channels` (null without the notifications module) '
+                .'is what the form\'s channels made of it: a row per recipient — sent, queued, failed with the error, '
+                .'or skipped with the reason. Reading it does not mark it read: that is a '
                 .'person having looked. Files are named with their size and type; `files[].url` is the panel\'s '
                 .'address and opens only in a signed-in panel — the bytes cannot be read through this tool.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->get($arguments, $user),
@@ -199,10 +205,12 @@ final class InboxTools
                 .'that failed or has been queued for long. Fix what made it fail first (the mail settings, a '
                 .'queue worker that holds old settings and needs a restart): otherwise it fails the same way. '
                 .'On a site with a queue the answer is "queued"; inbox_get a little later says whether it left. '
-                .'A form that names nobody is refused.',
+                .'The rows of the form\'s channels that failed or are stuck go again too, unless channels: false. '
+                .'A form that names nobody and has no channel row to send again is refused.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->notify($arguments, $user)),
                 ['properties' => [
                     'submission' => ['type' => 'integer'],
+                    'channels' => ['type' => 'boolean', 'description' => 'Also send again the channel rows that failed or are stuck; true when omitted.'],
                 ], 'required' => ['submission']],
                 permission: 'inbox.update',
             ),
@@ -218,8 +226,10 @@ final class InboxTools
         $submission = $this->submission($arguments['submission'] ?? null);
         $notifier = $this->container->make(Notifier::class);
         $recipients = $notifier->recipients($submission);
+        $channels = ($arguments['channels'] ?? true) !== false;
+        $retry = $channels ? $this->container->make(Channels::class)->retry($submission, dryRun: true) : [];
 
-        if ($recipients === []) {
+        if ($recipients === [] && $retry === []) {
             throw new NobodyToNotify((string) $submission->form->slug);
         }
 
@@ -227,13 +237,20 @@ final class InboxTools
             return [
                 'dry_run' => true,
                 'submission' => (int) $submission->getKey(),
-                'would' => $notifier->queued(new SubmissionReceived($submission)) ? 'queue' : 'send',
+                'would' => $recipients === [] ? 'retry_channels' : ($notifier->queued(new SubmissionReceived($submission)) ? 'queue' : 'send'),
                 'recipients' => array_map(static fn (array $one): string => $one[0], $recipients),
+                'would_retry' => $retry,
                 'notification' => $submission->notification(),
             ];
         }
 
-        $notifier->send($submission, $this->adminId($user));
+        if ($channels) {
+            $this->container->make(Channels::class)->retry($submission);
+        }
+
+        if ($recipients !== []) {
+            $notifier->send($submission, $this->adminId($user));
+        }
 
         return $this->get(['submission' => (int) $submission->getKey()], $user);
     }
