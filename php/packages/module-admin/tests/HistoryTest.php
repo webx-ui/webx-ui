@@ -19,6 +19,8 @@ use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\History\Mcp\HistoryModule;
 use WebxUi\Admin\Tests\Fixtures\Editor;
 use WebxUi\Admin\Tests\Fixtures\Product;
+use WebxUi\Admin\Tests\Fixtures\Script;
+use WebxUi\Admin\Tests\Fixtures\Vault;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 
@@ -101,6 +103,47 @@ final class HistoryTest extends TestCase
         $change = HistoryEntry::query()->where('event', 'updated')->sole()->changes[0] ?? [];
 
         $this->assertSame(['field' => 'body', 'from' => null, 'to' => null, 'long' => true, 'from_length' => 5, 'to_length' => 900], $change);
+    }
+
+    #[Test]
+    public function a_field_the_model_keeps_full_is_written_whole_and_the_rest_as_before(): void
+    {
+        $this->types()->register('catalog.script', Script::class, permission: 'catalog.view');
+
+        $before = str_repeat('a', 900);
+        $after = str_repeat('b', 1200);
+        $script = Script::query()->create(['name' => ['en' => 'Short'], 'body' => $before]);
+
+        $script->update(['body' => $after, 'name' => ['en' => str_repeat('n', 600)]]);
+
+        $changes = $this->sorted(HistoryEntry::query()->where('event', 'updated')->sole()->changes ?? []);
+
+        $this->assertSame(['field' => 'body', 'from' => $before, 'to' => $after], $changes[0]);
+        $this->assertSame(['field' => 'name.en', 'from' => null, 'to' => null, 'long' => true, 'from_length' => 5, 'to_length' => 600], $changes[1]);
+    }
+
+    #[Test]
+    public function a_masked_secret_is_written_as_set_replaced_or_forgotten_never_as_itself(): void
+    {
+        $this->types()->register('catalog.vault', Vault::class, permission: 'catalog.view');
+
+        $vault = Vault::query()->create(['token' => ['key' => 'first-secret']]);
+        $vault->update(['token' => ['key' => 'second-secret', 'user' => 'robot']]);
+        $vault->update(['token' => ['key' => 'second-secret', 'user' => 'robot']]);
+        $vault->update(['token' => ['user' => 'robot']]);
+
+        $rows = HistoryEntry::query()->where('event', 'updated')->orderBy('id')->get();
+
+        $this->assertCount(2, $rows, 'A save of the same secrets is no change.');
+        $this->assertSame([
+            ['field' => 'token.key', 'from' => '••••', 'to' => '••••', 'masked' => true],
+            ['field' => 'token.user', 'from' => null, 'to' => '••••', 'masked' => true],
+        ], $this->sorted($rows[0]->changes ?? []));
+        $this->assertSame([['field' => 'token.key', 'from' => '••••', 'to' => null, 'masked' => true]], $rows[1]->changes);
+
+        $written = (string) json_encode(HistoryEntry::query()->pluck('changes')->all());
+        $this->assertStringNotContainsString('secret', $written);
+        $this->assertStringNotContainsString('robot', $written);
     }
 
     #[Test]

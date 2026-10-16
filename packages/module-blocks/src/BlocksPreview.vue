@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useElementWidth, WxAction, WxSegmented, WxText } from '@webx-ui/core'
 import {
+  addAssets,
   bindFrame,
   blockElement,
   frameRegion,
@@ -10,6 +11,7 @@ import {
   markHidden,
   regionRect,
   replaceBlock,
+  type BlockAssets,
   type FrameBinding,
 } from './frame'
 
@@ -384,14 +386,18 @@ function bring(): void {
   ;(box ?? window).scrollBy({ top: delta, behavior: 'smooth' })
 }
 
-/** Swap one block's markup in place; false when the page has to be reloaded instead. */
-function replace(key: string, html: string): boolean {
+/**
+ * Swap one block's markup in place, with what its widgets load; false when the page has to be
+ * reloaded instead.
+ */
+function replace(key: string, html: string, assets?: BlockAssets | null): boolean {
   const page = doc()
 
   if (!page || !ready.value) return false
 
   const done = replaceBlock(page, key, html)
   if (done) {
+    addAssets(page, assets)
     highlightBlock(page, props.selected ?? null)
     markHidden(page, props.hidden)
     frameRegion(page, props.region)

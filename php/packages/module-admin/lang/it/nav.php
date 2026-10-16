@@ -7,6 +7,7 @@ return [
     'menu' => 'Menu',
     'collapse' => 'Comprimi il menu',
     'expand' => 'Espandi il menu',
+    'open-site' => 'Apri il sito',
     'language' => 'Lingua',
     'system' => 'Sistema',
     'system-site' => 'Sito',

@@ -7,6 +7,7 @@ namespace WebxUi\Themes\Console;
 use Illuminate\Console\Command;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Checks\ChainCheck;
+use WebxUi\Themes\Contracts\ThemeCheckPart;
 use WebxUi\Themes\Exceptions\ThemeException;
 use WebxUi\Themes\ModuleStyles;
 use WebxUi\Themes\ThemeChain;
@@ -23,7 +24,8 @@ use WebxUi\Themes\ThemeManifest;
  * have every key of `en` in each language a layer declares (§15.2, rule 26); and the fonts of the
  * layers are their own files with a file for every script the site's languages need (§15.3, rule
  * 27); and the letters take their colours from theme_token(), never var() or a literal (§7.5, rule
- * 25). The rest of §17's list joins with the stages that build what it checks.
+ * 25). The rest of §17's list joins with the stages that build what it checks. A package adds a
+ * check of its own as a `ThemeCheckPart` — the places of the snippets module, say.
  *
  * A refusal, not advice: a finding is a line naming the file, the line, what and why, and the
  * exit code is non-zero, so a build or a script can stop on it.
@@ -55,10 +57,26 @@ class CheckCommand extends Command
         $locales = $this->locales();
         $check = new ChainCheck($chain, $bottom->all(), $modules->modules(), $locales);
         $findings = $check->run();
+        $notes = [];
+
+        foreach ($this->parts($chain) as $line) {
+            $entry = ['file' => $line['file'], 'line' => $line['line'], 'message' => $line['message']];
+
+            if ($line['note'] ?? false) {
+                $notes[] = $entry;
+            } else {
+                $findings[] = $entry;
+            }
+        }
 
         foreach ($findings as $finding) {
             $where = $this->relative($finding['file']).($finding['line'] === null ? '' : ':'.$finding['line']);
             $this->line(trim("  {$where}  {$finding['message']}"));
+        }
+
+        foreach ($notes as $note) {
+            $where = $this->relative($note['file']).($note['line'] === null ? '' : ':'.$note['line']);
+            $this->line(trim("  {$where}  note: {$note['message']}"));
         }
 
         $layers = implode(', ', array_map(static fn (ThemeManifest $layer): string => $layer->name, $chain->layers));
@@ -95,6 +113,42 @@ class CheckCommand extends Command
         ));
 
         return self::SUCCESS;
+    }
+
+    /**
+     * What the packages that know the engine check on top of it, in the views Blade would read:
+     * the site's own first, unless a theme is checked by its path — then only the chain's.
+     *
+     * @return list<array{file: string, line: int|null, message: string, note?: bool}>
+     */
+    private function parts(ThemeChain $chain): array
+    {
+        $path = $this->argument('path');
+        $site = (! is_string($path) || trim($path) === '') ? self::siteViews($this->laravel['config']->get('view.paths', [])) : [];
+        $viewPaths = [...$site, ...$chain->viewPaths()];
+
+        $lines = [];
+
+        foreach ($this->laravel->tagged(ThemeCheckPart::TAG) as $part) {
+            if ($part instanceof ThemeCheckPart) {
+                array_push($lines, ...$part->check($chain, $viewPaths));
+            }
+        }
+
+        return $lines;
+    }
+
+    /**
+     * The site's own view directories (`view.paths`), the ones Blade reads before any layer.
+     *
+     * @return list<string>
+     */
+    private static function siteViews(mixed $paths): array
+    {
+        return array_values(array_map(
+            static fn (string $path): string => str_replace('\\', '/', $path),
+            array_filter((array) $paths, static fn (mixed $path): bool => is_string($path) && is_dir($path)),
+        ));
     }
 
     /**

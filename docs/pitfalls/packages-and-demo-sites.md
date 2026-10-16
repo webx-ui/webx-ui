@@ -196,6 +196,12 @@ of memory: Zone` каждый раз в разном месте. Перед ге
   напрямую: `php -d memory_limit=-1 vendor/bin/phpunit --colors=never` и `php -d memory_limit=-1
 vendor/bin/phpstan analyse --no-progress --error-format=raw` (или `COMPOSER_PROCESS_TIMEOUT=0`).
   `--colors=never` — иначе `grep` по итогу ничего не находит.
+- **Полный PHPUnit вдруг даёт тысячу ошибок «no such table: cache», а тот же тест отдельно
+  зелёный.** Во время прогона из `php/` запускали `vendor/bin/testbench …` (например, `testbench
+list`): он переписывает общий `vendor/orchestra/testbench-core/laravel/bootstrap/cache/services.php`,
+  и тесты, поднимающие приложение в этот момент, получают чужой набор провайдеров. Пока идёт
+  прогон, `testbench` не звать; после — удалить `services.php` (он сгенерируется заново) и
+  повторить. Список MCP-инструментов модуля проверяет его тест на `webx:mcp-tools`.
 - **Страница, переписанная в Playwright через `page.route()` + `route.fulfill()`, остаётся без
   стилей и скриптов**, а в консоли «blocked by CORS policy: … more-private address space».
   Документ, отданный `fulfill`, для браузера уже не с адреса сайта, и Private Network Access режет
@@ -224,11 +230,14 @@ pipe`. `… | grep -q` под `pipefail`: grep уходит на первом с
   ждёт 3xx, smoke спрашивает по имени (`visit "$VISITOR/…"`, `http://localhost:<порт>`) **без общего
   cookie-jar**: вторая сессия в нём отдаёт чужой `xsrf_token()`, и согласие OAuth не возвращает
   `code`.
-- **Локальный smoke против MariaDB.** Перед прогоном `DROP DATABASE` обеих баз (`webx_smoke`,
-  `webx_smoke_site`) и `CREATE DATABASE webx_smoke`: скрипт базу не чистит, и прошлый прогон роняет
+- **Локальный smoke против MariaDB.** Перед прогоном `DROP DATABASE` всех баз `webx_smoke%`
+  (`webx_smoke`, `webx_smoke_site`, `webx_smoke_site_private` — сайт без публичной части) и
+  `CREATE DATABASE webx_smoke`: скрипт базу не чистит, и прошлый прогон роняет
   миграцию Passport «table oauth_auth_codes already exists». Порты 8123/8124 должны быть свободны
   (`ss -ltnp`): `artisan serve` упавшего прогона другой сессии остаётся жить и отвечает из своего,
-  уже удалённого скретчпада.
+  уже удалённого скретчпада. Симптом — «FAILED: GET / — expected 200, got 404» у сайта из
+  скелета, а в `site-serve.log` — «Address already in use». Чужой процесс не трогать, прогнать на
+  других портах: `SMOKE_PORT=8150 scripts/php-smoke.sh` (скрипт берёт порты от него до +3).
 - **`site exec <сайт> php artisan tinker файл.php` висит до таймаута.** Tinker с файлом всё равно
   ждёт stdin. Скрипт — `tinker --execute="require 'storage/app/…/x.php';"` с `</dev/null` под
   `timeout 60`; русский текст — в файле, не в аргументе.

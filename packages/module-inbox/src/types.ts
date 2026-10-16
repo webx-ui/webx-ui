@@ -1,4 +1,5 @@
 import type { LocalizedValue } from '@webx-ui/core'
+import type { RelationCandidate } from '@webx-ui/module-admin'
 
 /** The kinds of question a form can ask (§4). Mirrors `WebxUi\Inbox\Fields\FieldType`. */
 export const FIELD_TYPES = [
@@ -105,6 +106,8 @@ export interface FormOptions {
   redirect?: string
   recipients?: Recipient[]
   email_field?: string
+  /** Channels of the notifications module a submission from the site also goes to (NOTIFICATIONS §15.2). */
+  notify_channels?: number[]
   'antispam.honeypot'?: boolean
   'antispam.min_seconds'?: number
   'antispam.throttle'?: number
@@ -123,8 +126,12 @@ export interface InboxForm {
    * only because a server older than this field does not send it.
    */
   recipients?: RecipientState[]
-  /** False when a submission would be written to nobody at all. */
+  /** False when a submission would be written to nobody at all — no letter and no channel. */
   notifies?: boolean
+  /** Whether `webx-ui/module-notifications` is installed: "Notify through" shows only then. */
+  notifications?: boolean
+  /** The channels `options.notify_channels` holds, as saved, each with whether it sends. */
+  channels?: FormChannel[]
   position: number
   /** Only where the query counted them — null on a form loaded on its own. */
   submissions_count: number | null
@@ -140,6 +147,18 @@ export interface InboxForm {
   captcha?: Record<CaptchaProvider, CaptchaSite>
   created_at: string | null
   updated_at: string | null
+}
+
+/** A channel a form notifies through, as the server read it. */
+export interface FormChannel {
+  id: number
+  /** Null for a channel deleted for good. */
+  name: string | null
+  provider: string | null
+  enabled: boolean
+  deleted: boolean
+  /** Switched on, not in the bin, and for this event or any. */
+  sends: boolean
 }
 
 export type CaptchaProvider = 'recaptcha' | 'turnstile'
@@ -316,6 +335,26 @@ export interface SubmissionNotification {
   }[]
 }
 
+/** One row of the notifications module's log about a submission (NOTIFICATIONS §15.3). */
+export interface ChannelDelivery {
+  id: number
+  channel_id: number | null
+  channel: string
+  provider: string
+  recipient: string
+  recipient_label: string | null
+  status: 'queued' | 'sent' | 'failed' | 'skipped'
+  /** The status and the reason in the notifications module's own words. */
+  status_label: string
+  reason: string | null
+  reason_label: string | null
+  error: string | null
+  attempts: number
+  retryable: boolean
+  created_at: string | null
+  sent_at: string | null
+}
+
 /** What the intake saw around the submission: the page, the language, the campaign. */
 export interface SubmissionMeta {
   ip?: string
@@ -344,6 +383,11 @@ export interface InboxSubmission {
   notify_error: string | null
   /** The same two read as a state, with how each letter went. */
   notification: SubmissionNotification
+  /**
+   * What the form's channels made of it, a row per recipient, newest first; null on a site
+   * without the notifications module, absent from a server older than it.
+   */
+  channels?: ChannelDelivery[] | null
   /** The neighbours in the list this was opened from, so the arrows walk the same pile. */
   previous_id: number | null
   next_id: number | null
@@ -377,4 +421,12 @@ export interface SubmissionMassInput {
   ids: number[]
   action: 'status' | 'read' | 'unread' | 'delete'
   status_id?: number
+}
+
+/**
+ * A form as the panel's relation target `inbox-form` describes it, with the slug under its own
+ * name — what `wx-inbox-form` keeps (`FormTarget::row()` on the server).
+ */
+export interface FormCandidate extends RelationCandidate {
+  slug?: string
 }

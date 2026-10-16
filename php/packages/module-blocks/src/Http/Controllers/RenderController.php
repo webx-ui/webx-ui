@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Blocks\Http\Controllers;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Blocks\BlockType;
+use WebxUi\Blocks\Events\BlockDrawn;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Rendering\Bundles;
@@ -27,7 +29,7 @@ use WebxUi\Blocks\Rendering\Renderer;
  */
 final class RenderController
 {
-    public function __invoke(Request $request, Block $block, Renderer $renderer, Bundles $bundles, Config $config): JsonResponse
+    public function __invoke(Request $request, Block $block, Renderer $renderer, Bundles $bundles, Config $config, Dispatcher $events): JsonResponse
     {
         $request->validate([
             'values' => ['nullable', 'array'],
@@ -73,11 +75,17 @@ final class RenderController
             $unsaved,
         );
 
+        // The stage was printed before this block existed: what the block's widgets load comes
+        // with it, for the panel to put into the page (`BlockDrawn`).
+        $drawn = new BlockDrawn($html);
+        $events->dispatch($drawn);
+
         return ApiResponse::data([
-            'html' => $html,
+            'html' => $drawn->html,
             'styles' => $type->styles,
             'script' => Bundles::wrapScript($type),
             'runtime' => $bundles->runtimeUrl(),
+            'assets' => $drawn->assets(),
             'version' => $type->version,
             // The page to draw it on: the site's layout, loaded once by the editor's stage.
             'stage' => route('webx.blocks.stage', absolute: false),

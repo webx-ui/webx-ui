@@ -271,7 +271,23 @@ import {
 } from './catalog'
 import { registerAudit } from './audit'
 import { registerTasks, tasksBadge } from './tasks'
+import {
+  channelsOfForm,
+  deliveriesOfSubmission,
+  notificationsHistory,
+  registerNotifications,
+  retrySubmission,
+} from './notifications'
 import { handleSeoFaqFiles, registerSeoFaq } from './seo-faq'
+import {
+  findSnippet,
+  listSnippets,
+  reorderSnippets,
+  purgeSnippet,
+  snippetDetail,
+  snippetHistory,
+  writeSnippet,
+} from './snippets'
 import { handleSeoLinkFiles, registerSeoLinks } from './seo-links'
 import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
@@ -424,6 +440,8 @@ function on(method: string, pattern: string, handler: Handler): void {
 on('GET', '/manifest', ({ locale }) => ({
   data: {
     title: 'WebX Demo',
+    // The site the panel runs — a made-up one: the playground has no site of its own.
+    siteUrl: 'https://example.test/',
     path: '/panel',
     apiPath: '/api/cms',
     locale,
@@ -838,6 +856,26 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 500,
         group: 'system',
         permissions: ['media.view', 'media.upload', 'media.manage'],
+        meta: {},
+      },
+      /* Only a super administrator has it until a role is given one of the two (§11). */
+      {
+        id: 'notifications',
+        title: line(locale, 'webx-notifications', 'module.title'),
+        icon: 'bell',
+        order: 860,
+        group: 'system',
+        permissions: ['notifications.view', 'notifications.manage'],
+        meta: {},
+      },
+      /* Only a super administrator has it until a role is given the one permission (§8). */
+      {
+        id: 'snippets',
+        title: line(locale, 'webx-snippets', 'module.title'),
+        icon: 'file-html',
+        order: 850,
+        group: 'system',
+        permissions: ['snippets.manage'],
         meta: {},
       },
       {
@@ -1869,7 +1907,16 @@ function withRecipients(item: InboxForm): InboxForm {
     }
   })
 
-  return { ...item, recipients, notifies: recipients.some((one) => one.receives) }
+  // The notifications module is installed here: "Notify through" shows, with the chosen channels.
+  const chosen = channelsOfForm(item.options.notify_channels)
+
+  return {
+    ...item,
+    recipients,
+    notifies: recipients.some((one) => one.receives) || chosen.some((one) => one.sends),
+    notifications: true,
+    channels: chosen,
+  }
 }
 
 on('GET', '/inbox/forms', () => {
@@ -1914,7 +1961,7 @@ on('GET', '/inbox/forms/(\\d+)', ({ params }) => {
 on('PUT', '/inbox/forms/(\\d+)', ({ params, body }) => {
   const item = form(params[0])
 
-  Object.assign(item, omit(body, ['recipients', 'notifies']))
+  Object.assign(item, omit(body, ['recipients', 'notifies', 'notifications', 'channels']))
   item.updated_at = new Date().toISOString()
 
   return {
@@ -2283,9 +2330,11 @@ on('PUT', '/inbox/submissions/(\\d+)', ({ params, body }) => {
   return { data: detail(record) }
 })
 
-/* Sent again: the playground has no mail, so it simply went. */
+/* Sent again: the playground has no mail and no bot, so the letter and the channels simply went. */
 on('POST', '/inbox/submissions/(\\d+)/notify', ({ params }) => {
   const record = submission(params[0])
+
+  retrySubmission(record.id)
 
   record.notified_at = new Date().toISOString()
   record.notify_error = null
@@ -2332,7 +2381,9 @@ on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
     catalogHistory(params[0]!, Number(params[1]), page) ??
     brandHistory(params[0]!, Number(params[1]), page) ??
     propertyHistory(params[0]!) ??
-    landingHistory(params[0]!)
+    landingHistory(params[0]!) ??
+    snippetHistory(params[0]!, Number(params[1])) ??
+    notificationsHistory(params[0]!, Number(params[1]))
 
   if (found === null) throw new HttpFailure(404, 'That kind of record keeps no history.')
 
@@ -2351,6 +2402,12 @@ registerManticore(on, (status, message) => new HttpFailure(status, message), pro
 registerAudit(on, (status, message) => new HttpFailure(status, message), line)
 /* The queue of work between people and agents (WEBX_UI_MODULE_TASKS.md): «Tasks». */
 registerTasks(on, (status, message) => new HttpFailure(status, message), line)
+/* Channels of notifications (WEBX_UI_MODULE_NOTIFICATIONS.md): «System → Notifications». */
+registerNotifications(
+  on,
+  (status, message, errors) => new HttpFailure(status, message, undefined, errors),
+  line,
+)
 registerSeoLinks(
   on,
   (status, message, errors) => new HttpFailure(status, message, undefined, errors),
@@ -2672,6 +2729,82 @@ on('GET', '/relations/([\\w-]+)', ({ params, query, locale }) => {
   if (found === null) throw new HttpFailure(404, `Nothing can be related to "${params[0]}".`)
 
   return { data: found }
+})
+
+/* --------------------------------------------------------------------------- snippets ----- */
+
+/*
+ * The codes (§7.5 of the snippets spec): every place with its codes, the bin, a save that is on
+ * the site at once, the order of a place. `PUT` writes only the fields it is given — the switch
+ * in the list sends `enabled` alone.
+ */
+function liveSnippet(id: string) {
+  const record = findSnippet(Number(id))
+
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'Not found.')
+
+  return record
+}
+
+function refusal(errors: Record<string, string[]>): HttpFailure {
+  return new HttpFailure(422, Object.values(errors)[0]?.[0] ?? 'Invalid', undefined, errors)
+}
+
+on('GET', '/snippets', ({ query }) => listSnippets(query.get('trashed') === '1'))
+
+on('POST', '/snippets', ({ body }) => {
+  const written = writeSnippet(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw refusal(written.errors)
+
+  return { data: snippetDetail(written.record) }
+})
+
+on('POST', '/snippets/reorder', ({ body }) => {
+  const errors = reorderSnippets(body.place, body.ids)
+
+  if (errors !== null) throw refusal(errors)
+
+  return { data: null }
+})
+
+on('GET', '/snippets/(\\d+)', ({ params }) => ({ data: snippetDetail(liveSnippet(params[0]!)) }))
+
+on('PUT', '/snippets/(\\d+)', ({ params, body }) => {
+  const written = writeSnippet(
+    liveSnippet(params[0]!),
+    (body.values ?? {}) as Record<string, unknown>,
+  )
+
+  if ('errors' in written) throw refusal(written.errors)
+
+  return { data: snippetDetail(written.record) }
+})
+
+on('DELETE', '/snippets/(\\d+)', ({ params }) => {
+  liveSnippet(params[0]!).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/snippets/(\\d+)/restore', ({ params }) => {
+  const record = findSnippet(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  record.deleted_at = null
+
+  return { data: snippetDetail(record) }
+})
+
+on('DELETE', '/snippets/(\\d+)/purge', ({ params }) => {
+  const record = findSnippet(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  purgeSnippet(record)
+
+  return { data: null }
 })
 
 /* -------------------------------------------------------------------------------- faq ----- */
@@ -5815,6 +5948,7 @@ function detail(record: SubmissionRecord, query?: URLSearchParams) {
     placement: record.placement ?? null,
     notified_at: record.notified_at,
     notify_error: record.notify_error,
+    channels: deliveriesOfSubmission(record.id),
     /* Read off the two columns, as the server reads a submission from before the queue was
        watched: an error is failed, a time without one is delivered. */
     notification: {

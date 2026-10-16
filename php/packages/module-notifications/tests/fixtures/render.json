@@ -1,0 +1,131 @@
+{
+  "about": "The same messages rendered by the server (PreviewParityTest) and by the panel's live preview (packages/module-notifications/src/render.test.ts). A case is a template, values and what comes out; `repeat` fills a value with a string that long; `error` is the key of errors.* a refused template gives.",
+  "cases": [
+    {
+      "name": "telegram escapes the values and keeps its own markup",
+      "provider": "telegram",
+      "template": "<b>{{form}}</b>\n{{ name }}{{! never printed }}",
+      "values": { "form": "Contact <us>", "name": "O'Brien & \"Co\"" },
+      "body": "<b>Contact &lt;us&gt;</b>\nO&#039;Brien &amp; &quot;Co&quot;",
+      "plain": "Contact <us>\nO'Brien & \"Co\""
+    },
+    {
+      "name": "a list goes over its rows, standalone tags leave no empty lines",
+      "provider": "telegram",
+      "template": "Order {{number}}\n{{#items}}\n- {{name}} × {{qty}}\n{{/items}}\n{{^items}}\nNo items\n{{/items}}\nTotal {{total}}",
+      "values": {
+        "number": "42",
+        "total": "8.00",
+        "items": [
+          { "name": "Tea <green>", "qty": "2" },
+          { "name": "Cup", "qty": "1" }
+        ]
+      },
+      "body": "Order 42\n- Tea &lt;green&gt; × 2\n- Cup × 1\nTotal 8.00"
+    },
+    {
+      "name": "an empty list shows the inverted section",
+      "provider": "telegram",
+      "template": "Order {{number}}\n{{#items}}\n- {{name}}\n{{/items}}\n{{^items}}\nNo items\n{{/items}}",
+      "values": { "number": "42", "items": [] },
+      "body": "Order 42\nNo items\n",
+      "unknown": ["name"]
+    },
+    {
+      "name": "inside a list a name is the row's field, then the event's",
+      "provider": "email",
+      "template": "{{#items}}{{number}}-{{name}};{{/items}}",
+      "values": { "number": "7", "name": "outer", "items": [{ "name": "a" }, { "qty": "1" }] },
+      "body": "7-a;7-outer;"
+    },
+    {
+      "name": "'0' and '' are empty to a section, and '0' is still printed",
+      "provider": "email",
+      "template": "[{{note}}] {{#note}}yes{{/note}}{{^note}}no{{/note}} {{#blank}}yes{{/blank}}{{^blank}}none{{/blank}} {{#word}}{{word}}!{{/word}}",
+      "values": { "note": "0", "blank": "", "word": "hi" },
+      "body": "[0] no none hi!"
+    },
+    {
+      "name": "triple braces and & are escaped like any value",
+      "provider": "telegram",
+      "template": "{{{form}}} {{&form}} {{form}}",
+      "values": { "form": "<i>x</i>" },
+      "body": "&lt;i&gt;x&lt;/i&gt; &lt;i&gt;x&lt;/i&gt; &lt;i&gt;x&lt;/i&gt;"
+    },
+    {
+      "name": "a dot is a field by its name, and a section of one field",
+      "provider": "email",
+      "template": "{{field.phone}} / {{#field.phone}}has a phone{{/field.phone}}{{^field.email}}, no e-mail{{/field.email}}",
+      "values": { "field.phone": "+0 000 000", "field.email": "" },
+      "body": "+0 000 000 / has a phone, no e-mail"
+    },
+    {
+      "name": "a value is never expanded a second time",
+      "provider": "email",
+      "template": "{{name}}",
+      "values": { "name": "{{secret}} {{#x}}y{{/x}}" },
+      "body": "{{secret}} {{#x}}y{{/x}}"
+    },
+    {
+      "name": "the subject of a letter is one line, the body is text as it is",
+      "provider": "email",
+      "subject": "New: {{form}} <{{name}}>",
+      "template": "{{form}}\n& {{name}}",
+      "values": { "form": "Line one\nline two", "name": "A & B" },
+      "subject_out": "New: Line one line two <A & B>",
+      "body": "Line one\nline two\n& A & B"
+    },
+    {
+      "name": "a name with no value is empty and reported",
+      "provider": "email",
+      "template": "Hi {{who}}, {{form}}",
+      "values": { "form": "Contact" },
+      "body": "Hi , Contact",
+      "unknown": ["who"]
+    },
+    {
+      "name": "a message longer than Telegram takes goes as plain text, cut",
+      "provider": "telegram",
+      "template": "<b>{{long}}</b>",
+      "values": {},
+      "repeat": { "name": "long", "text": "a<", "times": 2100 },
+      "truncated": true,
+      "length": 4096
+    },
+    {
+      "name": "a partial is refused",
+      "provider": "email",
+      "template": "Hi {{>footer}}",
+      "values": {},
+      "error": "template-partial"
+    },
+    {
+      "name": "a change of delimiters is refused",
+      "provider": "email",
+      "template": "{{=<% %>=}} <% name %>",
+      "values": {},
+      "error": "template-delimiters"
+    },
+    {
+      "name": "a section left open is refused",
+      "provider": "email",
+      "template": "{{#items}}{{name}}",
+      "values": {},
+      "error": "template-unclosed"
+    },
+    {
+      "name": "a close of nothing is refused",
+      "provider": "email",
+      "template": "{{name}}{{/items}}",
+      "values": {},
+      "error": "template-unexpected"
+    },
+    {
+      "name": "a name that is not one is refused",
+      "provider": "email",
+      "template": "{{ Name }}",
+      "values": {},
+      "error": "template-name"
+    }
+  ]
+}

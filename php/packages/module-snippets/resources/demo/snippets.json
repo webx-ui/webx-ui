@@ -1,0 +1,11 @@
+{
+  "snippets": [
+    {
+      "key": "example-counter",
+      "name": { "en": "Example counter (demo)", "ru": "Пример счётчика (демо)" },
+      "place": "body_end",
+      "consent": "statistics",
+      "code": "<!-- Demo snippet: paste the code your service gives you here. It is switched off. -->\n<script>\n  console.log('webx snippets: the demo snippet ran');\n</script>"
+    }
+  ]
+}

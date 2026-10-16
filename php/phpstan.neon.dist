@@ -42,6 +42,8 @@ parameters:
         - packages/module-media/tests
         - packages/module-menu/src
         - packages/module-menu/tests
+        - packages/module-notifications/src
+        - packages/module-notifications/tests
         - packages/module-pages/src
         - packages/module-pages/tests
         - packages/module-press/src
@@ -56,6 +58,8 @@ parameters:
         - packages/module-services/tests
         - packages/module-settings/src
         - packages/module-settings/tests
+        - packages/module-snippets/src
+        - packages/module-snippets/tests
         - packages/module-team/src
         - packages/module-team/tests
         - packages/module-vacancies/src

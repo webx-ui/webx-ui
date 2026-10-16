@@ -661,7 +661,7 @@ watch(
       void api
         .render(typeId, { values, key })
         .then((drawn) => {
-          if (!previewEl.value?.replace(key, drawn.html)) previewEl.value?.refresh()
+          if (!previewEl.value?.replace(key, drawn.html, drawn.assets)) previewEl.value?.refresh()
         })
         .catch(() => {})
     }, 300)

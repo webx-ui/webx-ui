@@ -7,6 +7,7 @@ namespace WebxUi\Themes\Tests;
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Themes\BottomLayers;
+use WebxUi\Themes\Contracts\ThemeCheckPart;
 use WebxUi\Themes\ThemeChain;
 
 /**
@@ -37,6 +38,39 @@ final class CheckCommandTest extends TestCase
             ->expectsOutputToContain('src/css/theme.css:8  @media by width')
             ->expectsOutputToContain('8 findings')
             ->assertFailed();
+    }
+
+    #[Test]
+    public function a_part_a_package_tags_joins_the_check_its_findings_fail_and_its_notes_do_not(): void
+    {
+        $part = new class implements ThemeCheckPart
+        {
+            /** @var list<string> */
+            public array $viewPaths = [];
+
+            public function check(ThemeChain $chain, array $viewPaths): array
+            {
+                $this->viewPaths = $viewPaths;
+
+                return [
+                    ['file' => '/site/config/places.php', 'line' => null, 'message' => 'a place nobody prints'],
+                    ['file' => '/site/views/page.blade.php', 'line' => 3, 'message' => 'not checked', 'note' => true],
+                ];
+            }
+        };
+
+        $this->app->instance('fixture.part', $part);
+        $this->app->tag(['fixture.part'], ThemeCheckPart::TAG);
+
+        $this->artisan('webx:theme:check')
+            ->expectsOutputToContain('/site/config/places.php  a place nobody prints')
+            ->expectsOutputToContain('/site/views/page.blade.php:3  note: not checked')
+            ->expectsOutputToContain('1 finding')
+            ->assertFailed();
+
+        // The views the site reads first, then the chain's.
+        $chain = $this->app->make(ThemeChain::class)->viewPaths();
+        $this->assertSame([...array_values(array_filter((array) config('view.paths'), is_dir(...))), ...$chain], $part->viewPaths);
     }
 
     #[Test]

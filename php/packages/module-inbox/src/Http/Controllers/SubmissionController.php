@@ -22,6 +22,7 @@ use WebxUi\Inbox\Models\Status;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionEvent;
 use WebxUi\Inbox\Models\SubmissionValue;
+use WebxUi\Inbox\Notifications\Channels;
 use WebxUi\Inbox\Submissions\Intake;
 use WebxUi\Inbox\Submissions\ListQuery;
 use WebxUi\Inbox\Submissions\Rules;
@@ -115,16 +116,26 @@ final class SubmissionController
     }
 
     /**
-     * The notification once more, to whoever the form names now (§9).
+     * The notification once more, to whoever the form names now (§9), and the channels' rows
+     * that failed or are stuck (NOTIFICATIONS §15.3).
      *
      * For a letter that failed, one stuck in a queue nobody works, or one that went to a spam
-     * folder. A form that names nobody is refused out loud rather than answered "done".
+     * folder. A form that names nobody and has nothing to send again is refused out loud rather
+     * than answered "done".
      */
-    public function notify(Request $request, Submission $submission, Notifier $notifier): JsonResponse
+    public function notify(Request $request, Submission $submission, Notifier $notifier, Channels $channels): JsonResponse
     {
         $submission->loadMissing('form');
 
-        if ($notifier->send($submission, $this->adminId($request)) === 0) {
+        $retried = $channels->retry($submission);
+
+        // A form that only notifies through channels has no letter to send again, and saying in
+        // its log that it names nobody would be wrong.
+        $letters = $retried !== [] && $notifier->recipients($submission) === []
+            ? 0
+            : $notifier->send($submission, $this->adminId($request));
+
+        if ($letters === 0 && $retried === []) {
             throw new NobodyToNotify((string) $submission->form->slug);
         }
 

@@ -45,6 +45,12 @@ export interface CreateAdminOptions {
    * arrives; given here for the first paint, before it has.
    */
   basePath?: string
+  /**
+   * The way from the panel to the site: the name in the sidebar's head, the arrow beside it and
+   * an entry of the account menu. By default the home page the server names, in the site's main
+   * language; an address here goes there instead, and `false` leaves the link out everywhere.
+   */
+  siteLink?: string | false
   /** Replaces the panel's name in the header — a logo, usually. */
   brand?: Component
   /** The corner of the header: who is signed in, and the way out. */
@@ -222,6 +228,7 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
     loadDictionary,
     types: options.types,
     screens: options.screens,
+    siteLink: options.siteLink,
     loadManifest: async () => {
       const body = await http.get<{ data: Manifest }>(manifestUrl)
 

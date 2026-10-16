@@ -38,6 +38,7 @@ export {
 } from './content'
 export { lintBlock, undeclared } from './lint'
 export {
+  addAssets,
   findRange,
   findRegion,
   frameRegion,
@@ -46,6 +47,7 @@ export {
   replaceBlock,
   stageDocument,
 } from './frame'
+export type { BlockAssets } from './frame'
 export { callTag, formSchema, kindOf } from './schema'
 export { default as WxBlocks } from './BlocksField.vue'
 export { default as WxBlocksSiteBarTab } from './BlocksSiteBarTab.vue'

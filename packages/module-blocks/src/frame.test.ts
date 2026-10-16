@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  addAssets,
   bindFrame,
   blockElement,
   fillStage,
@@ -221,6 +222,70 @@ describe('the stage a block type is drawn on', () => {
     ).toBe(true)
     expect(doc.querySelector('main')?.innerHTML).toBe('<!--wx:sample--><p>Two</p><!--/wx:sample-->')
     expect(doc.querySelector('header')?.textContent).toBe('Site')
+  })
+
+  it("brings the files of the block's widgets beside the page's own, once each", () => {
+    const doc = stage()
+    const widgets = 'https://site.test/themes/webx-ui/widgets/abc'
+    doc.head.innerHTML =
+      '<style data-webx-theme>:root{}</style>' +
+      `<link rel="stylesheet" href="${widgets}/runtime.css">` +
+      '<link rel="stylesheet" href="https://site.test/themes/theme.css">' +
+      '<style id="wx-stage-styles"></style>'
+    doc.body.innerHTML += `<script type="module" src="${widgets}/runtime.js"></script>`
+
+    const assets = {
+      head: [
+        `<link rel="stylesheet" href="${widgets}/runtime.css">`,
+        `<link rel="stylesheet" href="${widgets}/map.css">`,
+      ],
+      body: [
+        '<script type="application/json" id="webx-lightbox">{}</script>',
+        `<script type="module" src="${widgets}/runtime.js"></script>`,
+        `<script type="module" src="${widgets}/map.js"></script>`,
+      ],
+    }
+
+    addAssets(doc, assets)
+    addAssets(doc, assets)
+
+    const sheets = Array.from(doc.head.querySelectorAll('link')).map((link) =>
+      link.getAttribute('href'),
+    )
+    // Under the theme's stylesheet, which restyles a widget by coming after it.
+    expect(sheets).toEqual([
+      `${widgets}/runtime.css`,
+      `${widgets}/map.css`,
+      'https://site.test/themes/theme.css',
+    ])
+
+    const scripts = Array.from(doc.body.querySelectorAll('script'))
+    expect(scripts.map((script) => script.getAttribute('src') ?? script.id)).toEqual([
+      `${widgets}/runtime.js`,
+      'webx-lightbox',
+      `${widgets}/map.js`,
+    ])
+    // Made by the page rather than parsed from markup, which a browser would never run.
+    expect(scripts[2].getAttribute('type')).toBe('module')
+
+    addAssets(doc, null)
+    expect(doc.head.querySelectorAll('link')).toHaveLength(3)
+  })
+
+  it('writes them into the document of a stage without a site', () => {
+    const html = stageDocument({
+      html: '<div data-webx-map></div>',
+      styles: '',
+      assets: {
+        head: ['<link rel="stylesheet" href="/map.css">'],
+        body: ['<script type="module" src="/map.js"></script>'],
+      },
+    })
+
+    expect(html).toMatch(/<link rel="stylesheet" href="\/map\.css">.*<\/head>/)
+    expect(html).toMatch(
+      /<div data-webx-map><\/div><script type="module" src="\/map\.js"><\/script><\/body>/,
+    )
   })
 
   it('keeps a place for the next change when the markup came without its markers', () => {

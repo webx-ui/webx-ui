@@ -17,8 +17,9 @@ use PHPUnit\Framework\TestCase as PlainTestCase;
 final class AgentDocsCoverageTest extends PlainTestCase
 {
     /**
-     * The packages still allowed to go without a guide; every other one must carry it. Empty since
-     * AG2: every package, and every new one, is required.
+     * The packages still allowed to go without a guide; every other one must carry it. Since AG2
+     * every package, and every new one, is required — but for a package being built in steps, whose
+     * guide is written with its MCP tools: take it off the list in the same commit.
      */
     private const array PENDING = [];
 

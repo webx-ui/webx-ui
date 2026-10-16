@@ -6,6 +6,7 @@ namespace WebxUi\Admin\History;
 
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
+use Throwable;
 
 /**
  * A model whose saves are written into the journal (§4).
@@ -23,7 +24,10 @@ use Illuminate\Database\Eloquent\Model;
  * Which fields: `historyFields()` names them outright; otherwise every attribute but the ones
  * `historySkipped()` names and the global `webx-admin.history.skip_fields` (timestamps, the
  * tree's bounds). `historyValue()` is where a model turns an id into words — a picture's name
- * rather than its key.
+ * rather than its key. `historyKeepsFull()` names the fields written whole however long they
+ * are: a model without versions has nothing else to bring an old value back from.
+ * `historyMasked()` names secrets the journal reports as replaced without saying them — an
+ * encrypted token would otherwise go unrecorded altogether.
  *
  * Registered with `static::created()` and the rest rather than an observer: `observe()` inside a
  * trait's boot builds the model while it is booting (docs/pitfalls/laravel-and-php.md).
@@ -76,6 +80,29 @@ trait RecordsHistory
         return [];
     }
 
+    /**
+     * Fields the journal never cuts short to "changed, N → M characters" — the code of a snippet,
+     * which somebody may have to paste back by hand.
+     *
+     * @return list<string>
+     */
+    public function historyKeepsFull(): array
+    {
+        return [];
+    }
+
+    /**
+     * Secret fields — encrypted or hidden — whose change is written as a mask: that a token was
+     * set, replaced or forgotten, never the token. An array is compared key by key, so the row
+     * says which secret changed (`credentials.token`). Without this they are not written at all.
+     *
+     * @return list<string>
+     */
+    public function historyMasked(): array
+    {
+        return [];
+    }
+
     /** How a value is shown in the journal: an id made into a name, say. */
     public function historyValue(string $field, mixed $value): mixed
     {
@@ -93,6 +120,12 @@ trait RecordsHistory
         $changes = [];
 
         foreach (array_keys($this->getChanges()) as $field) {
+            if (in_array($field, $this->historyMasked(), true)) {
+                $changes = [...$changes, ...$this->historyMaskedChanges($field)];
+
+                continue;
+            }
+
             if (! $this->followsInHistory($field)) {
                 continue;
             }
@@ -130,7 +163,48 @@ trait RecordsHistory
      */
     protected function writeHistory(string $event, array $changes = []): void
     {
-        Container::getInstance()->make(Journal::class)->record($this, $event, $changes);
+        Container::getInstance()->make(Journal::class)->record($this, $event, $changes, $this->historyKeepsFull());
+    }
+
+    /**
+     * A secret's change as a mask on both sides: `••••` where a value is set, null where none.
+     * A value that no longer decrypts counts as set.
+     *
+     * @return list<array{field: string, from: string|null, to: string|null, masked: true}>
+     */
+    private function historyMaskedChanges(string $field): array
+    {
+        $from = $this->historySecret($field, $this->getRawOriginal($field));
+        $to = $this->historySecret($field, $this->getAttributes()[$field] ?? null);
+        $mask = static fn (mixed $value): ?string => $value === null || $value === '' || $value === [] ? null : '••••';
+
+        if (! is_array($from) && ! is_array($to)) {
+            return [['field' => $field, 'from' => $mask($from), 'to' => $mask($to), 'masked' => true]];
+        }
+
+        $from = is_array($from) ? $from : [];
+        $to = is_array($to) ? $to : [];
+        $rows = [];
+
+        foreach (array_unique([...array_keys($from), ...array_keys($to)]) as $key) {
+            if (($from[$key] ?? null) === ($to[$key] ?? null) || $mask($from[$key] ?? null) === null && $mask($to[$key] ?? null) === null) {
+                continue;
+            }
+
+            $rows[] = ['field' => $field.'.'.$key, 'from' => $mask($from[$key] ?? null), 'to' => $mask($to[$key] ?? null), 'masked' => true];
+        }
+
+        return $rows;
+    }
+
+    /** A secret's raw value through its cast; one that no longer decrypts is "something". */
+    private function historySecret(string $field, mixed $raw): mixed
+    {
+        try {
+            return $this->historyCast($field, $raw);
+        } catch (Throwable) {
+            return $raw;
+        }
     }
 
     private function followsInHistory(string $field): bool

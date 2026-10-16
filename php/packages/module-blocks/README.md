@@ -228,6 +228,12 @@ empty pair of markers where the content goes. The panel loads it once and swaps 
 styles in on every change. Empty prints `webx-blocks::standalone`, a bare document; it needs an
 editor's session with `blocks.view`.
 
+A block drawn on its own like this — the stage, a block swapped into a page's preview, the tool
+`blocks_render` — dispatches `WebxUi\Blocks\Events\BlockDrawn`. Whatever gathers the files a page
+loads for its content gathers them for the block too (`webx-ui/widgets`: the stylesheet and the
+script of a map), and the answer carries them as `assets` (`head`, `body`), which the panel adds to
+the page once each.
+
 ## The panel
 
 The section lives in `@webx-ui/module-blocks` on the front end; this package answers it under

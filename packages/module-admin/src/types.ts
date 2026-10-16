@@ -15,6 +15,11 @@ export interface Manifest {
   title: string
   /** The client's own logo, when they have put one in the settings. */
   branding?: ManifestBranding
+  /**
+   * The site's home page in its main language — the way from the panel to the site. Absent
+   * from an older server, and the panel then offers no link.
+   */
+  siteUrl?: string
   /** Where the panel is served, e.g. `/cms`. Becomes the router's base. */
   path: string
   /** Where its JSON lives, e.g. `/api/cms`. */

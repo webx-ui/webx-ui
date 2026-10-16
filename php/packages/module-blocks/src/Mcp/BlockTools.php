@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Mcp;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Validation\Factory as ValidatorFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
@@ -26,6 +27,7 @@ use WebxUi\Blocks\Content;
 use WebxUi\Blocks\ContentEdit;
 use WebxUi\Blocks\ContentOps;
 use WebxUi\Blocks\ContentValues;
+use WebxUi\Blocks\Events\BlockDrawn;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Exceptions\RegionRefused;
@@ -200,7 +202,8 @@ final class BlockTools
             Tool::read(
                 'render',
                 'Draw a block type on values — its sample when none are sent — and return the HTML with the styles '
-                .'and the wrapped script, or the line the template failed on. For a component the values are its '
+                .'and the wrapped script, the files of the widgets it holds (assets: tags for <head> and for the end '
+                .'of <body>, what a page with it loads), or the line the template failed on. For a component the values are its '
                 .'input: what the tag passes. The way to see what you wrote.',
                 fn (array $arguments): array => $this->render($arguments),
                 ['properties' => [
@@ -881,13 +884,19 @@ final class BlockTools
         // only said `sample` around values the agent had just sent.
         $html = (string) preg_replace('/^<!--wx:[A-Za-z0-9_.:-]*-->(.*)<!--\/wx:[A-Za-z0-9_.:-]*-->$/s', '$1', $renderer->draw($type, $values));
 
+        // A map in the block is a map only with its stylesheet and its script: what a page holding
+        // it would load, gathered the way the page gathers it (`BlockDrawn`).
+        $drawn = new BlockDrawn($html);
+        $this->container->make(Dispatcher::class)->dispatch($drawn);
+
         return [
             'slug' => $block->slug,
             'version' => $type->version,
             'values_from' => $sent ? 'values' : 'sample',
-            'html' => $html,
+            'html' => $drawn->html,
             'styles' => $type->styles,
             'script' => Bundles::wrapScript($type),
+            'assets' => $drawn->assets(),
             'warnings' => [
                 ...Lints::check($block->slug, $type->template, $type->styles),
                 ...$this->valueWarnings($type, $values),

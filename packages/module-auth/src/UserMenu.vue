@@ -48,6 +48,12 @@ const panel = i18n.scope('webx-admin')
 
 const user = computed(() => admin.state.user)
 
+/*
+ * The way to the site, once more: the head of the sidebar has it too, but the head is a logo on
+ * some panels and a rail on others, and this menu is where people look for a way out.
+ */
+const siteUrl = admin.siteUrl
+
 // One language is not a choice, and a menu that offers it is noise.
 const languages = computed(() =>
   i18n.state.panelLocales.length > 1 ? i18n.state.panelLocales : [],
@@ -173,6 +179,16 @@ async function choose(code: string): Promise<void> {
 
     <wx-dropdown-item icon="user" @click="openProfile">
       {{ t('profile.menu') }}
+    </wx-dropdown-item>
+
+    <wx-dropdown-item
+      v-if="siteUrl"
+      icon="external-link"
+      :href="siteUrl"
+      target="_blank"
+      rel="noopener"
+    >
+      {{ panel('nav.open-site') }}
     </wx-dropdown-item>
 
     <wx-divider spacing="sm" />

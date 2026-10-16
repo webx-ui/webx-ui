@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import type { EditorView } from '@codemirror/view'
+import { currentCompletions, startCompletion } from '@codemirror/autocomplete'
+import { provideLocales } from '../../composables/useLocalized'
 import WxCodeEditor from './CodeEditor.vue'
 import type { CodeEditorDiagnostic } from './types'
 
@@ -157,5 +159,104 @@ describe('WxCodeEditor', () => {
     wrapper.unmount()
 
     expect(destroy).toHaveBeenCalled()
+  })
+
+  it('paints the tags of a Mustache template', async () => {
+    const wrapper = await mountEditor({
+      language: 'mustache-html',
+      modelValue: '<b>{{form}}</b> {{#items}}x{{/items}} {{! note }} {{>footer}}',
+    })
+
+    expect(wrapper.findAll('.wx-cm-mustache').map((mark) => mark.text())).toEqual([
+      '{{form}}',
+      '{{#items}}',
+      '{{/items}}',
+      '{{! note }}',
+      '{{>footer}}',
+    ])
+    expect(wrapper.find('.wx-cm-mustache--section').text()).toBe('{{#items}}')
+    expect(wrapper.find('.wx-cm-mustache--invalid').text()).toBe('{{>footer}}')
+  })
+
+  it('suggests from the completions it is given', async () => {
+    const wrapper = await mountEditor({
+      modelValue: 'fo',
+      completions: [{ label: 'form', detail: 'variable' }, { label: 'note' }],
+    })
+    const view = viewOf(wrapper)
+    view.dispatch({ selection: { anchor: 2 } })
+
+    startCompletion(view)
+    await vi.waitFor(() => expect(currentCompletions(view.state).length).toBeGreaterThan(0))
+
+    expect(currentCompletions(view.state).map((one) => one.label)).toEqual(['form'])
+  })
+
+  it('asks a completer about the place and writes a snippet over the tail it names', async () => {
+    // The `}}` after the caret is what closing brackets typed: the suggestion takes it over, and
+    // the list is still matched against what was typed, not against that tail.
+    const wrapper = await mountEditor({
+      modelValue: '{{}}',
+      completions: ({ text, pos }: { text: string; pos: number }) =>
+        text.slice(0, pos).endsWith('{{')
+          ? {
+              from: pos,
+              to: pos + 2,
+              options: [{ label: 'items', apply: '#items}}${}{{/items}}' }],
+            }
+          : null,
+    })
+    const view = viewOf(wrapper)
+    view.dispatch({ selection: { anchor: 2 } })
+
+    startCompletion(view)
+    await vi.waitFor(() => expect(currentCompletions(view.state)).toHaveLength(1))
+
+    const chosen = currentCompletions(view.state)[0]!
+    const apply = chosen.apply as (
+      view: EditorView,
+      completion: unknown,
+      from: number,
+      to: number,
+    ) => void
+    apply(view, chosen, 2, 2)
+
+    expect(docOf(wrapper)).toBe('{{#items}}{{/items}}')
+    expect(view.state.selection.main.head).toBe(10)
+  })
+
+  it('edits one language at a time when localized', async () => {
+    const model = ref<Record<string, string>>({ en: 'Hello', uk: 'Привіт' })
+    const Host = defineComponent({
+      setup() {
+        provideLocales(ref([{ code: 'en' }, { code: 'uk' }]))
+
+        return () =>
+          h(WxCodeEditor, {
+            localized: true,
+            modelValue: model.value,
+            'onUpdate:modelValue': (value: unknown) =>
+              (model.value = value as Record<string, string>),
+          })
+      },
+    })
+    const host = mount(Host, { attachTo: document.body })
+    await nextTick()
+    const editor = host.findComponent(WxCodeEditor)
+
+    expect(docOf(editor as unknown as Wrapper)).toBe('Hello')
+    expect(editor.classes()).toContain('is-localized')
+
+    await host.findAll('.wx-locale-picker__code')[1]!.trigger('click')
+    await nextTick()
+
+    expect(docOf(editor as unknown as Wrapper)).toBe('Привіт')
+    // Swapping the language is not an edit of it.
+    expect(model.value).toEqual({ en: 'Hello', uk: 'Привіт' })
+
+    typeInto(editor as unknown as Wrapper, '!')
+    await nextTick()
+
+    expect(model.value).toEqual({ en: 'Hello', uk: 'Привіт!' })
   })
 })

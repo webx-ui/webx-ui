@@ -376,19 +376,39 @@ document is read exactly as it was written.
 A module registers its own the same way — its `types` are merged into every panel screen, as are
 `createAdmin({ types })` — so these are here whenever the module is installed on both halves:
 
-| Type         | From            | Value                | The field                         |
-| ------------ | --------------- | -------------------- | --------------------------------- |
-| `wx-media`   | `module-media`  | `MediaValue \| null` | one picture in a frame            |
-| `wx-gallery` | `module-media`  | `MediaValue[]`       | a grid of thumbnails, in order    |
-| `wx-file`    | `module-media`  | `MediaValue \| null` | one file card: glyph, name, size  |
-| `wx-files`   | `module-media`  | `MediaValue[]`       | those cards a line each, in order |
-| `wx-blocks`  | `module-blocks` | a list of blocks     | the constructor                   |
+| Type            | From            | Value                | The field                         |
+| --------------- | --------------- | -------------------- | --------------------------------- |
+| `wx-media`      | `module-media`  | `MediaValue \| null` | one picture in a frame            |
+| `wx-gallery`    | `module-media`  | `MediaValue[]`       | a grid of thumbnails, in order    |
+| `wx-file`       | `module-media`  | `MediaValue \| null` | one file card: glyph, name, size  |
+| `wx-files`      | `module-media`  | `MediaValue[]`       | those cards a line each, in order |
+| `wx-blocks`     | `module-blocks` | a list of blocks     | the constructor                   |
+| `wx-inbox-form` | `module-inbox`  | `string \| null`     | one form of the Inbox, by slug    |
 
 `MediaValue` is `{ path, alt?, title? }` — the key on the media disk and this entity's own words
 for it. The address is worked out on read rather than stored, and the same holds for a list; see
 [the file manager](/guide/media). `wx-blocks` is the constructor from `module-blocks`: on an
 entity's screen it is the tab that builds the content out of blocks, and inside a block's own
 schema it makes the type a container — see [Blocks](/guide/blocks).
+
+`wx-inbox-form` is a form of the [Inbox](/guide/inbox), searched by its name or its slug, shown
+with both, and cleared by its remove button. It keeps the **slug** — what
+`<x-webx-inbox::form slug="…" />` takes — so a field that used to be a plain `wx-input` with a slug
+typed in opens with the form already chosen, and nothing has to be migrated. Empty is `null`, no
+form. A slug no form has is refused when it is new, with the slugs there are in the message; one
+the record already held — a form deleted since — is kept and drawn as "No such form", so the
+record can still be saved. A form that is switched off can be chosen and is marked: the site
+prints nothing for it.
+
+```json
+{ "id": "form", "type": "wx-inbox-form", "name": "form", "label": "Form" }
+```
+
+"New" is the caller's to say: `ScreenValues::validate($screen, $input, $can, held: $stored)` checks
+only what differs from `$stored`, and without `held` the checks a type keeps for new values
+(`ChecksNewValues` — this one, a library key in `wx-media`) are not run at all. The settings pass
+what they hold; a record's form passes `held:` to `ScreenRecord::split()` when its screen has such
+a field.
 
 Which half of a value is stored and which is worked out is the type's to decide, in both
 directions: on the server the type says what a read hands over and what a save keeps — a colour

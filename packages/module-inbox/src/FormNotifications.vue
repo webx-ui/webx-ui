@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useRouter } from 'vue-router'
+import { useAdmin, useTranslate, WxRelationsField } from '@webx-ui/module-admin'
 import {
   confirm,
   WxAction,
@@ -10,6 +11,7 @@ import {
   WxCard,
   WxFormItem,
   WxInput,
+  WxLink,
   WxSelect,
   WxSpace,
   WxText,
@@ -28,12 +30,19 @@ import type { FormOptions, InboxField, InboxRecipient, Recipient, RecipientState
  * The list offered is not every administrator but the ones who may open a submission — a
  * notification is a link, and sending one to somebody who gets a 403 looks like the panel is
  * broken rather than like the form is.
+ *
+ * Beside the letter, and never instead of it: the channels of the notifications module, when it
+ * is installed (NOTIFICATIONS §15.2) — a Telegram chat, another letter with its own template.
+ * The picker asks the event's target on the server for names, so this package needs nothing of
+ * that module's code; a site without it never sees the card.
  */
 const props = defineProps<{
   fields: InboxField[]
   errors: Record<string, string[]>
   /** What the server said about the saved list: who is deleted or switched off. */
   reported?: RecipientState[]
+  /** Whether the notifications module is installed — the server says so on the form. */
+  notifications?: boolean
 }>()
 
 const options = defineModel<FormOptions>({ required: true })
@@ -46,6 +55,21 @@ const admins = ref<InboxRecipient[]>([])
 
 const recipients = option<Recipient[]>(options, 'recipients', [])
 const emailField = option<string>(options, 'email_field', '')
+const channels = option<number[]>(options, 'notify_channels', [])
+
+const router = useRouter()
+
+/* The channels are set up in their own section; only somebody who may do it gets the way there. */
+const canSetUp = computed(() => context.can('notifications.manage'))
+const channelsLink = computed(() => `${context.basePath}/notifications`.replace(/\/{2,}/g, '/'))
+
+/* Inside the panel, without loading it again: the address is for a middle click. */
+function setUpChannels(event: MouseEvent): void {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
+
+  event.preventDefault()
+  void router.push('/notifications')
+}
 
 onMounted(async () => {
   try {
@@ -121,73 +145,108 @@ function setEmail(index: number, email: string): void {
 </script>
 
 <template>
-  <wx-card :title="t('panel.recipients')">
-    <wx-text size="sm" tone="muted">{{ t('panel.recipients-help') }}</wx-text>
+  <div class="wx-inbox-notifications">
+    <wx-card :title="t('panel.recipients')">
+      <wx-text size="sm" tone="muted">{{ t('panel.recipients-help') }}</wx-text>
 
-    <wx-alert
-      v-if="errors['options.recipients']"
-      type="danger"
-      variant="soft"
-      :description="errors['options.recipients']?.[0]"
-    />
+      <wx-alert
+        v-if="errors['options.recipients']"
+        type="danger"
+        variant="soft"
+        :description="errors['options.recipients']?.[0]"
+      />
 
-    <div class="wx-inbox-recipients">
-      <wx-text v-if="recipients.length === 0" size="sm" tone="placeholder">
-        {{ t('panel.no-recipients') }}
-      </wx-text>
-
-      <div v-for="(recipient, index) in recipients" :key="index" class="wx-inbox-recipients__item">
-        <div class="wx-inbox-recipients__row">
-          <wx-select
-            v-if="isAdmin(recipient)"
-            :model-value="recipient.admin_id"
-            :options="adminOptions"
-            @update:model-value="(id) => setAdmin(index, Number(id))"
-          />
-          <wx-input
-            v-else
-            :model-value="recipient.email"
-            type="email"
-            placeholder="sales@example.com"
-            @update:model-value="(email) => setEmail(index, String(email))"
-          />
-
-          <!-- Red, like every other way of taking something away in the panel: the colour is
-             what tells the two buttons of a row apart before either is read. -->
-          <wx-action icon="trash" tone="danger" :title="t('panel.remove')" @click="remove(index)" />
-        </div>
-        <wx-text v-if="adminProblem(recipient)" size="sm" tone="danger">
-          {{ adminProblem(recipient) }}
+      <div class="wx-inbox-recipients">
+        <wx-text v-if="recipients.length === 0" size="sm" tone="placeholder">
+          {{ t('panel.no-recipients') }}
         </wx-text>
+
+        <div
+          v-for="(recipient, index) in recipients"
+          :key="index"
+          class="wx-inbox-recipients__item"
+        >
+          <div class="wx-inbox-recipients__row">
+            <wx-select
+              v-if="isAdmin(recipient)"
+              :model-value="recipient.admin_id"
+              :options="adminOptions"
+              @update:model-value="(id) => setAdmin(index, Number(id))"
+            />
+            <wx-input
+              v-else
+              :model-value="recipient.email"
+              type="email"
+              placeholder="sales@example.com"
+              @update:model-value="(email) => setEmail(index, String(email))"
+            />
+
+            <!-- Red, like every other way of taking something away in the panel: the colour is
+             what tells the two buttons of a row apart before either is read. -->
+            <wx-action
+              icon="trash"
+              tone="danger"
+              :title="t('panel.remove')"
+              @click="remove(index)"
+            />
+          </div>
+          <wx-text v-if="adminProblem(recipient)" size="sm" tone="danger">
+            {{ adminProblem(recipient) }}
+          </wx-text>
+        </div>
       </div>
-    </div>
 
-    <wx-space size="sm">
-      <wx-button
-        variant="outline"
-        icon="user"
-        :disabled="adminOptions.length === 0"
-        @click="add({ admin_id: Number(adminOptions[0]?.value) })"
+      <wx-space size="sm">
+        <wx-button
+          variant="outline"
+          icon="user"
+          :disabled="adminOptions.length === 0"
+          @click="add({ admin_id: Number(adminOptions[0]?.value) })"
+        >
+          {{ t('panel.add-admin') }}
+        </wx-button>
+        <wx-button variant="outline" @click="add({ email: '' })">
+          <template #icon><wx-icon name="mail" /></template>
+          {{ t('panel.add-email') }}
+        </wx-button>
+      </wx-space>
+
+      <wx-form-item
+        :label="t('panel.email-field')"
+        :help="t('panel.email-field-help')"
+        :error="errors['options.email_field']?.[0]"
       >
-        {{ t('panel.add-admin') }}
-      </wx-button>
-      <wx-button variant="outline" @click="add({ email: '' })">
-        <template #icon><wx-icon name="mail" /></template>
-        {{ t('panel.add-email') }}
-      </wx-button>
-    </wx-space>
+        <wx-select v-model="emailField" :options="emailOptions" />
+      </wx-form-item>
+    </wx-card>
 
-    <wx-form-item
-      :label="t('panel.email-field')"
-      :help="t('panel.email-field-help')"
-      :error="errors['options.email_field']?.[0]"
-    >
-      <wx-select v-model="emailField" :options="emailOptions" />
-    </wx-form-item>
-  </wx-card>
+    <wx-card v-if="props.notifications" :title="t('panel.notify-through')">
+      <wx-text size="sm" tone="muted">{{ t('panel.notify-through-help') }}</wx-text>
+
+      <div class="wx-inbox-channels">
+        <wx-relations-field
+          v-model="channels"
+          target="notify-inbox-submission"
+          :sortable="false"
+          :add-text="t('panel.pick-channels')"
+          :empty-text="t('panel.no-channels')"
+        />
+        <wx-link v-if="canSetUp" :href="channelsLink" size="sm" @click="setUpChannels">{{
+          t('panel.set-up-channels')
+        }}</wx-link>
+      </div>
+    </wx-card>
+  </div>
 </template>
 
 <style scoped>
+/* The letter and the channels: two cards, the panel's step between them. */
+.wx-inbox-notifications {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-gap, var(--wx-space-16));
+}
+
 /*
  * As wide as a field, because that is what each row is: an address is typed into it and read
  * back off it. The rows are not form items — one of them is a select, the next an input, and
@@ -199,6 +258,19 @@ function setEmail(index: number, email: string): void {
   gap: var(--wx-space-8);
   margin-block: var(--wx-space-12);
   max-width: var(--wx-field-max-width, 640px);
+}
+
+.wx-inbox-channels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wx-space-8);
+  margin-block-start: var(--wx-space-12);
+  max-width: var(--wx-field-max-width, 640px);
+}
+
+.wx-inbox-channels > :first-child {
+  align-self: stretch;
 }
 
 .wx-inbox-recipients__item {

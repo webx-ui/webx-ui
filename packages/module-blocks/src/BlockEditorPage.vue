@@ -67,6 +67,7 @@ import type {
   BlockType,
   BlockUsage,
   PublishRefusal,
+  RenderResult,
 } from './types'
 
 /**
@@ -167,6 +168,7 @@ const stage = reactive({
   styles: '',
   script: null as string | null,
   runtime: null as string | null,
+  assets: null as RenderResult['assets'],
   stage: null as string | null,
   loading: false,
 })
@@ -459,6 +461,7 @@ async function render(): Promise<void> {
     stage.styles = drawn.styles
     stage.script = drawn.script
     stage.runtime = drawn.runtime
+    stage.assets = drawn.assets ?? null
     stage.stage = drawn.stage ?? null
   } catch (error) {
     if (ticket === pending) {
@@ -1277,6 +1280,7 @@ const actions = computed<ScreenAction[]>(() => [
           :styles="stage.styles"
           :script="stage.script"
           :runtime="stage.runtime"
+          :assets="stage.assets"
           :stage="stage.stage"
           :loading="stage.loading"
         />

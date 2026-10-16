@@ -95,7 +95,8 @@ the `revision` `blocks_get_content` gave for the region: a stale one is refused,
 region open in the panel (`being_edited_by`) one is required — `force: true` goes ahead regardless.
 
 Every value is checked by its field type's rules — bounds, options, dates, colours, links
-(`http(s)`, `mailto`, `tel`, relative paths and `#anchors` only), library files — and every
+(`http(s)`, `mailto`, `tel`, relative paths and `#anchors` only), library files, Inbox forms
+(`wx-inbox-form`: a slug no form has is refused with the slugs there are) — and every
 block against where it stands: a container field's `props.allow` and `props.max` (or the type's
 `allow`), a type's `allowed_in` and `max_per_entity`. A refusal names the block's key and the
 field (`hero [k1], field [title]: …`); the panel shows it under the field. `add` into a block

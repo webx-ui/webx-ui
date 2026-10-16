@@ -48,12 +48,17 @@ const form: InboxForm = {
   updated_at: null,
 }
 
+/* What the picker of channels is told by the target of `inbox.submission`. */
+const CHANNELS = [
+  { id: 3, title: 'Managers in Telegram', subtitle: 'Telegram', thumb: null, visible: true },
+]
+
 async function panel(loaded: InboxForm = form, at = '/inbox/forms/1') {
-  const get = vi
-    .fn()
-    .mockImplementation((url: string) =>
-      Promise.resolve({ data: url.endsWith('/recipients') ? [] : loaded }),
-    )
+  const get = vi.fn().mockImplementation((url: string) =>
+    Promise.resolve({
+      data: url.includes('/relations/') ? CHANNELS : url.endsWith('/recipients') ? [] : loaded,
+    }),
+  )
   const put = vi.fn().mockResolvedValue({ data: form })
   const post = vi.fn().mockResolvedValue({ data: field({ id: 12, key: 'budget' }) })
 
@@ -213,5 +218,50 @@ describe('WxInboxFormEditor', () => {
 
     expect(wrapper.text()).toContain('its keys must be v2 Checkbox keys')
     expect(wrapper.text()).not.toContain('The site has no keys for this captcha yet')
+  })
+
+  it('offers “Notify through” only when the notifications module is installed', async () => {
+    const without = await panel()
+    expect(without.wrapper.text()).not.toContain('Notify through')
+
+    const withModule = await panel({
+      ...form,
+      notifications: true,
+      options: { ...form.options, notify_channels: [3] },
+      channels: [
+        {
+          id: 3,
+          name: 'Managers in Telegram',
+          provider: 'telegram',
+          enabled: true,
+          deleted: false,
+          sends: true,
+        },
+      ],
+    })
+
+    expect(withModule.wrapper.text()).toContain('Notify through')
+    expect(withModule.wrapper.text()).toContain('Managers in Telegram')
+    expect(withModule.get).toHaveBeenCalledWith(
+      '/api/cms/relations/notify-inbox-submission?ids[]=3',
+    )
+    // A channel that sends tells somebody: no warning, though the form names no recipient.
+    expect(withModule.wrapper.find('.wx-inbox-editor__silent').exists()).toBe(false)
+  })
+
+  it('sends the chosen channels back with the settings', async () => {
+    const { wrapper, put } = await panel({
+      ...form,
+      notifications: true,
+      options: { ...form.options, notify_channels: [3] },
+    })
+
+    await wrapper.get('.wx-action-bar button').trigger('click')
+    await flushPromises()
+
+    expect(put).toHaveBeenCalledWith(
+      '/api/cms/inbox/forms/1',
+      expect.objectContaining({ options: expect.objectContaining({ notify_channels: [3] }) }),
+    )
   })
 })

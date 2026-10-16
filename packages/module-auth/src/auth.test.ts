@@ -21,6 +21,7 @@ function panel(status: 'unauthenticated' | 'ready' = 'unauthenticated'): Admin {
     modules: [],
     nav: computed(() => []),
     groups: computed(() => ({ top: [], groups: [] })),
+    siteUrl: computed(() => null),
     types: {},
     pickImage: null,
     assetUrls: null,

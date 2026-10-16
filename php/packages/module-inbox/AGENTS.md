@@ -1,11 +1,10 @@
 # webx-ui/module-inbox
 
-Forms and submissions: an administrator builds a form in the panel from fields, the site prints
-it with one Blade tag, a visitor sends it, the people named on the form get a letter, and the
-panel keeps each submission with a status, an assignee and a log. Not a CRM — no deals, no
-pipeline. The section «Inbox» of the panel and the MCP tools `inbox_*` edit it. Accounts and
-permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, the languages
-`webx-ui/localization` — read their guides for those.
+Forms and submissions: an administrator builds a form in the panel, the site prints it with one
+Blade tag, a visitor sends it, the people named on the form get a letter (and the form's channels a
+message, with `webx-ui/module-notifications`), the panel keeps each submission with a status, an
+assignee and a log. Not a CRM. The section «Inbox» and the MCP tools `inbox_*` edit it; accounts
+are `webx-ui/module-auth`, the frame `webx-ui/module-admin`, languages `webx-ui/localization`.
 
 ## What it owns
 
@@ -43,8 +42,11 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 - **Who a form writes to** — `WebxUi\Inbox\Mail\Recipients` from `options.recipients` (`{ admin_id }`
   / `{ email }`); the API and MCP return `recipients` (each with `receives` and a `problem`:
   `admin_deleted`, `admin_inactive`, `invalid_email`) and `notifies` — `false`: nobody is told.
-- **Event** `SubmissionStored`, contract `SubmissionHandler` (config `handlers`). **Panel**: one
-  section, API `/api/cms/inbox`, permissions `inbox.view`, `inbox.update`, `inbox.manage`.
+- **Event** `SubmissionStored` — always fired, with channels or without; contract `SubmissionHandler`
+  (config `handlers`). **Panel**: one section, API `/api/cms/inbox`, `inbox.view|update|manage`.
+- **Channels** — only with `webx-ui/module-notifications` (a `suggest`): event `inbox.submission`
+  (`Notifications\SubmissionEvent`), ids in `options.notify_channels`, sent by `SendToChannels` for
+  the site's form, not a repeat; `channels` on a form and a submission (null without the module).
 - **MCP** tools `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`,
   `inbox_get`, `inbox_set_status`, `inbox_notify`; scopes `inbox:read`, `inbox:write`.
 - **Command** `webx:inbox:prune` (`--days`, `--spam-days`, `--dry-run`) — not scheduled by default.
@@ -52,13 +54,15 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
   `inbox_queued_minutes`), `inbox.captcha_keys` (error), `inbox.captcha_unused` (notice),
   `inbox.spam_without_captcha` (warning; `inbox_spam_min` 3 spam + refusals in `inbox_spam_days` 30),
   `inbox.legacy_views` (warning: the site's `form.blade.php` from before the form engine).
-- Also registered: a relation target for forms, notes on submissions, demo content (`resources/demo`).
+- **Field type** `wx-inbox-form` (`Screens\FormFieldType`; component in `@webx-ui/module-inbox`): a form
+  chosen by name, kept by **slug**; a slug no form has is refused when new, kept when already held.
+- Also registered: a relation target for forms (`inbox-form`, rows with `slug`), notes on submissions, demo content.
 
 ## Change it without forking
 
 | You want                                  | Do this                                                                                  |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------- |
-| A form on a page                          | `<x-webx-inbox::form slug="..." />` in the view, or a block type that prints that tag    |
+| A form on a page                          | `<x-webx-inbox::form slug="..." />` in the view, or a block with a `wx-inbox-form` field |
 | Sent in place on a site without a theme   | `@webxWidgets` before `</body>` in the site's layout, then `php artisan webx:theme:sync` |
 | Which page or product it came from        | a hidden field on the form, filled with `:values="['product' => ...]"`                   |
 | A form restyled                           | classes `webx-field-*`, `webx-form-*` in the theme's CSS — like every form of the site   |
@@ -80,7 +84,8 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 | Other words                               | `php artisan vendor:publish --tag=webx-inbox-lang`                                       |
 | Send submissions to a CRM or mailing list | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below                |
 | Write back to the visitor (a gift, a PDF) | the same: a handler on that form's slug that sends a mailable to its e-mail field        |
-| Anything else once a submission is stored | a listener of `WebxUi\Inbox\Events\SubmissionStored`, `ShouldQueue` if it calls out      |
+| Anything else once a submission is stored | a listener of `WebxUi\Inbox\Events\SubmissionStored` (`Event::listen`), `ShouldQueue`    |
+| A submission also in Telegram             | a channel of `inbox.submission`, then `inbox_form_save` `options.notify_channels`        |
 | A letter sent again                       | the submission's menu in the panel; MCP `inbox_notify` (`dry_run` first)                 |
 
 ### Classes
@@ -95,12 +100,10 @@ inbox adds its layout, in `resources/theme/inbox.css`; restyle in the theme's `s
 ### Send submissions to a CRM
 
 `SubmissionStored` comes once the submission, its answers and files are written (after commit);
-never for what the antispam stopped, `repeated` for a double click. Name handlers per slug —
-`'handlers' => ['*' => [App\Inbox\SyncToCrm::class], 'gift' => [...]]` — each a
-`SubmissionHandler` (`handle(Submission $submission)`, `$submission->value('email')?->value`),
-a queued job of its own, tried once: throwing becomes a `handler_error` line in the submission's
-log (`handled` on success), and the visitor and the other handlers never notice. Not run again
-for `repeated`. A full example — README, «After a submission is stored».
+never for what the antispam stopped, `repeated` for a double click. Handlers per slug —
+`'handlers' => ['*' => [App\Inbox\SyncToCrm::class], 'gift' => [...]]`, each a `SubmissionHandler`
+(`handle(Submission $submission)`), a queued job tried once: throwing is a `handler_error` line in
+the log (`handled` on success); the visitor never notices. Example — guide, «After a submission…».
 
 ## Do not
 
@@ -133,8 +136,8 @@ for `repeated`. A full example — README, «After a submission is stored».
 - Send the form on the site, with and without JavaScript: the same errors under the same fields
   both ways, the thank-you, the submission in the panel, the letter (or `notify_error` says why);
   with a queue, `queued`, then `delivered` once a worker has sent it.
-- With handlers configured: the submission's log (panel card or `inbox_get`) has a `handled` line
-  per handler, or `handler_error` with the reason.
+- Handlers: a `handled` or `handler_error` line per handler in the log (card or `inbox_get`).
+- Channels: `inbox_get` → `channels`, a row per recipient; `failed` carries the error.
 - `php artisan webx:inbox:prune --dry-run` — what the configured ages would remove.
 - With MCP: `inbox_forms_list` — a switched-on form says `notifies: true` unless read only in the
   panel; the writing tools take `dry_run: true`.

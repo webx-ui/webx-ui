@@ -1,0 +1,119 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "snippets.form",
+  "model": "snippet",
+  "root": [
+    {
+      "id": "content",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "name",
+          "type": "wx-input",
+          "name": "name",
+          "label": "trans::webx-snippets::screen.name",
+          "help": "trans::webx-snippets::screen.name-help",
+          "props": {
+            "maxlength": 160
+          }
+        },
+        {
+          "id": "place",
+          "type": "wx-select",
+          "name": "place",
+          "label": "trans::webx-snippets::screen.place",
+          "help": "trans::webx-snippets::screen.place-help"
+        },
+        {
+          "id": "code",
+          "type": "wx-code-editor",
+          "name": "code",
+          "label": "trans::webx-snippets::screen.code",
+          "help": "trans::webx-snippets::screen.code-help",
+          "props": {
+            "language": "html"
+          }
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "wx-card",
+      "label": "trans::webx-snippets::screen.settings",
+      "children": [
+        {
+          "id": "enabled",
+          "type": "wx-switch",
+          "name": "enabled",
+          "label": "trans::webx-snippets::screen.enabled",
+          "help": "trans::webx-snippets::screen.enabled-help"
+        },
+        {
+          "id": "consent",
+          "type": "wx-segmented",
+          "name": "consent",
+          "label": "trans::webx-snippets::screen.consent",
+          "help": "trans::webx-snippets::screen.consent-help",
+          "props": {
+            "options": [
+              { "value": "necessary", "label": "trans::webx-snippets::module.consent.necessary" },
+              { "value": "statistics", "label": "trans::webx-snippets::module.consent.statistics" },
+              { "value": "marketing", "label": "trans::webx-snippets::module.consent.marketing" },
+              { "value": "media", "label": "trans::webx-snippets::module.consent.media" }
+            ]
+          }
+        },
+        {
+          "id": "on_stage",
+          "type": "wx-switch",
+          "name": "on_stage",
+          "label": "trans::webx-snippets::screen.on-stage",
+          "help": "trans::webx-snippets::screen.on-stage-help"
+        }
+      ]
+    },
+    {
+      "id": "coverage",
+      "type": "wx-card",
+      "label": "trans::webx-snippets::screen.coverage",
+      "children": [
+        {
+          "id": "only_paths",
+          "type": "wx-tags-input",
+          "name": "only_paths",
+          "label": "trans::webx-snippets::screen.only-paths",
+          "help": "trans::webx-snippets::screen.only-paths-help"
+        },
+        {
+          "id": "except_paths",
+          "type": "wx-tags-input",
+          "name": "except_paths",
+          "label": "trans::webx-snippets::screen.except-paths",
+          "help": "trans::webx-snippets::screen.except-paths-help"
+        },
+        {
+          "id": "locales",
+          "type": "wx-checkbox-group",
+          "name": "locales",
+          "label": "trans::webx-snippets::screen.locales",
+          "help": "trans::webx-snippets::screen.locales-help"
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "type": "wx-card",
+      "label": "trans::webx-snippets::screen.history",
+      "children": [
+        {
+          "id": "journal",
+          "type": "wx-history",
+          "props": {
+            "type": "snippets",
+            "title": ""
+          }
+        }
+      ]
+    }
+  ]
+}

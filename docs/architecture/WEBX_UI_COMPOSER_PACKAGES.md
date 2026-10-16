@@ -96,6 +96,8 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `module-seo`                | правила адресов, редиректы, дефолты и `<head>`                        | `@webx-ui/module-seo`                |
 | `module-inbox`              | формы сайта и заявки                                                  | `@webx-ui/module-inbox`              |
 | `module-audit`              | аудит сайта без внешних сервисов                                      | `@webx-ui/module-audit`              |
+| `module-snippets`           | коды внешних сервисов в `<head>`/`<body>`                             | `@webx-ui/module-snippets`           |
+| `module-notifications`      | каналы уведомлений: Telegram, e-mail, шаблоны, журнал отправок        | `@webx-ui/module-notifications`      |
 | **Разделы: контент**        |                                                                       |                                      |
 | `module-blog`               | статьи, рубрики, теги, лента                                          | `@webx-ui/module-blog`               |
 | `module-services`           | каталог услуг                                                         | `@webx-ui/module-services`           |
@@ -363,6 +365,27 @@ catch-all SPA, `ApiResponse` (пагинация Laravel как есть, 422). 
 Услуга устроена как страница (блоки, адрес, полное SEO), категория — тоже страница. Адреса плоские
 под одной приставкой, политика `Fail`. На нём вынесены общие кирпичи: категории и поля проекта.
 Услуга — цель связей `service` для рецептов, событий, команды и тарифов.
+
+### `webx-ui/module-snippets` — коды внешних сервисов
+
+Спека — [`WEBX_UI_MODULE_SNIPPETS.md`](WEBX_UI_MODULE_SNIPPETS.md), гайд — `apps/docs/guide/snippets.md`. Менеджер тегов, счётчик, чат —
+код в базе, выводится компонентом `<x-webx-snippets place="…" />` в трёх встроенных местах
+лэйаута `theme-default` и в своих местах из `config/webx-snippets.php`, с охватом по путям, языками,
+окружением и согласием на cookie (механизм `widgets`). Черновиков нет: «Сохранить» — сразу на
+сайте, журнал хранит код целиком. Право `snippets.manage` никому не выдаётся при установке.
+Потерянные места ловят `webx:theme:check` и `webx:doctor`. Раздел «Коды» в группе «Система» —
+список по местам с перетаскиванием между ними; MCP — шесть инструментов `snippets_*`.
+
+### `webx-ui/module-notifications` — каналы уведомлений
+
+Спека — [`WEBX_UI_MODULE_NOTIFICATIONS.md`](WEBX_UI_MODULE_NOTIFICATIONS.md). Канал — провайдер
+(`telegram`, `email`, свой — через `Providers::register()`), зашифрованные креденшелы, получатели
+(фиксированные и адресаты события), переводимый шаблон `{{var}}` без исполнения кода. Потребитель
+объявляет событие (`NotificationEvents`) без жёсткой зависимости и зовёт
+`Notifications::send()`: строка журнала на получателя, задание на канал, три попытки; без воркера —
+после ответа. Журнал `notifications_deliveries` чистит `webx:notifications:prune`, проблемы
+называет `webx:doctor`. Права `notifications.view` / `notifications.manage`, раздел «Уведомления»
+в группе «Система».
 
 ### `webx-ui/module-faq` — вопросы и ответы
 

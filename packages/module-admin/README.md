@@ -35,6 +35,10 @@ createAdmin({
 reads the manifest address out of the `webx-manifest` meta tag beside it. Both are overridable
 for a panel served some other way.
 
+The name in the head of the sidebar, an arrow on the rail and an entry of the account menu lead
+to the site, in a new tab: to the home page in its main language the server names, to the
+address in `siteLink` when the project gives one, and nowhere at all with `siteLink: false`.
+
 Mounting does not wait for the server. The manifest needs a signed-in session, so a visit that
 starts at the sign-in screen would otherwise stare at a blank page waiting for a request it is
 bound to lose.

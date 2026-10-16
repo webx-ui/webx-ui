@@ -1,0 +1,96 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "notifications.channel",
+  "model": "channel",
+  "root": [
+    {
+      "id": "settings",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "name",
+          "type": "wx-input",
+          "name": "name",
+          "label": "trans::webx-notifications::screen.name",
+          "help": "trans::webx-notifications::screen.name-help",
+          "props": {
+            "maxlength": 160
+          }
+        },
+        {
+          "id": "provider",
+          "type": "wx-select",
+          "name": "provider",
+          "label": "trans::webx-notifications::screen.provider",
+          "help": "trans::webx-notifications::screen.provider-help"
+        },
+        {
+          "id": "event",
+          "type": "wx-select",
+          "name": "event",
+          "label": "trans::webx-notifications::screen.event",
+          "help": "trans::webx-notifications::screen.event-help",
+          "props": {
+            "clearable": true,
+            "placeholder": "trans::webx-notifications::screen.any-event"
+          }
+        },
+        {
+          "id": "enabled",
+          "type": "wx-switch",
+          "name": "enabled",
+          "label": "trans::webx-notifications::screen.enabled",
+          "help": "trans::webx-notifications::screen.enabled-help"
+        }
+      ]
+    },
+    {
+      "id": "connection",
+      "type": "wx-card",
+      "label": "trans::webx-notifications::screen.connection",
+      "children": []
+    },
+    {
+      "id": "message",
+      "type": "wx-card",
+      "label": "trans::webx-notifications::screen.message",
+      "children": [
+        {
+          "id": "subject",
+          "type": "wx-input",
+          "name": "subject",
+          "label": "trans::webx-notifications::screen.subject",
+          "help": "trans::webx-notifications::screen.subject-help",
+          "localized": true,
+          "visible": { "when": "provider", "is": "email" },
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "template",
+          "type": "wx-notifications-template",
+          "name": "template",
+          "label": "trans::webx-notifications::screen.template",
+          "help": "trans::webx-notifications::screen.template-help",
+          "localized": true
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "type": "wx-card",
+      "label": "trans::webx-notifications::screen.history",
+      "children": [
+        {
+          "id": "journal",
+          "type": "wx-history",
+          "props": {
+            "type": "notifications",
+            "title": ""
+          }
+        }
+      ]
+    }
+  ]
+}

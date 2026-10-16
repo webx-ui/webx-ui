@@ -151,6 +151,27 @@ The two picture fields are `wx-media`, which means `webx-ui/module-media` resolv
 addresses. Without that package installed the values stay library paths the panel cannot read,
 and the corner keeps its name — the same tolerance `module-seo` has for its `og:image`.
 
+### The way to the site
+
+The name in the head of the sidebar is a link to the site, with a small ↗ after it; on the rail
+the ↗ stands alone under the button that opens the sidebar, with "Open the site" as its tooltip,
+and the account menu has an "Open the site" entry as well. All three open a new tab, and all
+three go to `manifest.siteUrl`: the home page in the site's **main** language, whatever language
+the administrator reads the panel in — with `webx-ui/routing` installed it carries the same
+language prefix every other link on the site does, without it it is the application's root.
+
+A project that wants it elsewhere, or not at all, says so in `createAdmin()`:
+
+```ts
+createAdmin({
+  siteLink: 'https://www.example.test/', // instead of the home page the server names
+  // siteLink: false,                    // no link in the head, on the rail or in the menu
+})
+```
+
+A brand component of the project's own (`createAdmin({ brand })`) is not made into a link — it
+may hold links of its own — and the rail and the account menu still lead to the site.
+
 Those ids are the public contract. A project addresses them from a patch — registered on the
 server, in a provider that boots after the module's, which the application's own does:
 

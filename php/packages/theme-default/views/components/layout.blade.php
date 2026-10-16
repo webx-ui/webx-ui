@@ -10,12 +10,22 @@
 
     `@stack('head')` stays beside the slot: what a block type or a partial pushes cannot
     reach a slot, and a layout without the stack loses metatags without looking broken.
+
+    The three places of module-snippets — `head`, `body_start`, `body_end` — are the codes of
+    outside services an editor pastes in the panel. By name and behind `view()->exists()`, as
+    the SEO components below: without the module there is no component to compile against, and
+    the page is what it always was. A layer that overrides this file keeps the three lines, or
+    `webx:theme:check` says which place it lost.
 --}}
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{-- Above the stylesheets: a tag manager does not wait for CSS. --}}
+    @if (view()->exists('webx-snippets::place'))
+        <x-dynamic-component component="webx-snippets" place="head" />
+    @endif
 
     {{-- The site tokens as one inline :root, then the stylesheet of every layer, bottom first. --}}
     @webxTheme
@@ -30,6 +40,9 @@
     @stack('head')
 </head>
 <body class="site">
+    @if (view()->exists('webx-snippets::place'))
+        <x-dynamic-component component="webx-snippets" place="body_start" />
+    @endif
     <a class="site-skip" href="#content">{{ __('theme::theme.shell.skip') }}</a>
 
     {{--
@@ -68,5 +81,8 @@
     <x-webx-contact-button />
 
     @stack('scripts')
+    @if (view()->exists('webx-snippets::place'))
+        <x-dynamic-component component="webx-snippets" place="body_end" />
+    @endif
 </body>
 </html>

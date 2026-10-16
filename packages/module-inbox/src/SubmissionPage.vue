@@ -34,7 +34,13 @@ import {
 } from '@webx-ui/core'
 import { createInboxApi } from './api'
 import { useInboxMessages, useStatusName } from './i18n'
-import type { InboxRecipient, InboxStatus, InboxSubmission, SubmissionEvent } from './types'
+import type {
+  ChannelDelivery,
+  InboxRecipient,
+  InboxStatus,
+  InboxSubmission,
+  SubmissionEvent,
+} from './types'
 
 /**
  * One submission, on a screen of its own (§11).
@@ -242,6 +248,25 @@ const notification = computed(() => submission.value?.notification ?? null)
 
 function recipientState(state: string): string {
   return t(`panel.notify-recipient-${state}`)
+}
+
+/*
+ * What the channels of the notifications module made of it (NOTIFICATIONS §15.3) — null on a
+ * site without that module, and then there is no tab for it at all.
+ */
+const channels = computed(() => submission.value?.channels ?? null)
+
+/* A channel that did not deliver is said above the strip: nobody opens a tab to look for it. */
+const channelsFailed = computed(() => (channels.value ?? []).some((row) => row.status === 'failed'))
+
+const channelsRetryable = computed(() => (channels.value ?? []).some((row) => row.retryable))
+
+function channelTone(row: ChannelDelivery): 'danger' | 'success' | 'warning' | 'default' {
+  if (row.status === 'failed') return 'danger'
+  if (row.status === 'sent') return 'success'
+  if (row.status === 'skipped') return 'warning'
+
+  return 'default'
 }
 
 async function unread(): Promise<void> {
@@ -473,6 +498,13 @@ const details = computed(() => {
           changing its contents, not a place in the panel that can be navigated to. The strip is
           the card's heading — which is why there is no other one.
         -->
+        <wx-alert
+          v-if="channelsFailed"
+          type="warning"
+          :closable="false"
+          :title="t('panel.channels-failed')"
+        />
+
         <wx-card class="wx-submission__more">
           <wx-tabs variant="pill" :aria-label="heading">
             <wx-tab value="notes" :label="panel('notes.title')">
@@ -575,6 +607,38 @@ const details = computed(() => {
                     (notification?.state === 'failed' || notification?.state === 'queued')
                   "
                 >
+                  <wx-button size="sm" @click="notifyAgain">{{
+                    t('panel.notify-again')
+                  }}</wx-button>
+                </div>
+              </div>
+            </wx-tab>
+            <wx-tab v-if="channels" value="channels" :label="t('panel.channels')">
+              <div class="wx-submission__fields">
+                <wx-text v-if="channels.length === 0" size="sm" tone="muted">
+                  {{ t('panel.channels-none') }}
+                </wx-text>
+                <ul v-else class="wx-submission__recipients">
+                  <li v-for="row in channels" :key="row.id" class="wx-submission__channel">
+                    <div class="wx-submission__channel-text">
+                      <wx-text size="sm">{{ row.channel }}</wx-text>
+                      <wx-text v-if="row.recipient !== ''" size="sm" tone="muted">
+                        {{ row.recipient_label ?? row.recipient }}
+                      </wx-text>
+                      <wx-text
+                        v-if="row.error ?? row.reason_label"
+                        size="sm"
+                        tone="muted"
+                        class="wx-submission__detail"
+                      >
+                        {{ row.error ?? row.reason_label }}
+                      </wx-text>
+                    </div>
+                    <wx-badge :type="channelTone(row)">{{ row.status_label }}</wx-badge>
+                  </li>
+                </ul>
+
+                <div v-if="canUpdate && channelsRetryable">
                   <wx-button size="sm" @click="notifyAgain">{{
                     t('panel.notify-again')
                   }}</wx-button>
@@ -688,6 +752,19 @@ const details = computed(() => {
   align-items: center;
   gap: var(--wx-space-8);
   overflow-wrap: anywhere;
+}
+
+/* The channel, who it went to and why not on the left; the badge stays on the right. */
+.wx-submission__recipients li.wx-submission__channel {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.wx-submission__channel-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .wx-submission__event {

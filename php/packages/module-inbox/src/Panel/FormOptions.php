@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\Panel;
 
+use WebxUi\Inbox\Notifications\Channels;
+
 /**
  * The settings of a form (§5), and what is allowed to be in them.
  *
@@ -61,6 +63,14 @@ final class FormOptions
 
         if ($recipients !== []) {
             $options['recipients'] = $recipients;
+        }
+
+        // The channels of the notifications module (NOTIFICATIONS §15.2): ids, each once, and only
+        // ones that exist — a channel deleted for good drops out, one in the bin stays.
+        $channels = app(Channels::class)->existing(Channels::ids($input[Channels::OPTION] ?? null));
+
+        if ($channels !== []) {
+            $options[Channels::OPTION] = $channels;
         }
 
         // The antispam settings are written even when they match the site's defaults: each one

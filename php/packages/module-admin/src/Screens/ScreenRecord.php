@@ -41,12 +41,13 @@ final class ScreenRecord
      * @param  list<string>  $own  The record's own fields.
      * @param  list<string>  $taken  Fields the form stores somewhere else: relations, other modules' cards.
      * @param  (callable(string): bool)|null  $can
+     * @param  array<string, mixed>|null  $held  What the record keeps now, by field name: a value sent back unchanged is spared the checks only a new one has to pass ({@see ScreenValues::validate()}).
      *
      * @throws ValidationException
      */
-    public function split(string $screen, array $input, array $own, array $taken = [], ?callable $can = null): ScreenSplit
+    public function split(string $screen, array $input, array $own, array $taken = [], ?callable $can = null, ?array $held = null): ScreenSplit
     {
-        $stored = $this->values->validate($screen, $input, $can);
+        $stored = $this->values->validate($screen, $input, $can, $held);
 
         // A relation field is sorted by its type, not by the lists: a form that does not know it
         // (a project's patch, a module that came later) must not see it land in `extra`.

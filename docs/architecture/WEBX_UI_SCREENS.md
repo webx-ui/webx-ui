@@ -335,7 +335,14 @@ interface TypeEntry {
 `range`), `wx-rate`, `wx-time-picker` (`HH:mm`), `wx-date-time-picker` (ISO 8601 со смещением, в
 поясе приложения), `wx-date-range-picker` (`[start, end]`), `wx-tags-input` (список строк),
 `wx-autocomplete`/`wx-icon-picker`/`wx-code-editor` (string); `wx-heading` — display, значения
-нет. Полная таблица — в `apps/docs/guide/screens.md`. `localized` — не тип, а модификатор: правила
+нет. Модули добавляют свои: `wx-media` и соседи (`module-media`), `wx-inbox-form` (`module-inbox`,
+slug формы «Заявок»; §10.1 `WEBX_UI_MODULE_INBOX.md`). Полная таблица — в `apps/docs/guide/screens.md`.
+
+Тип с проверкой, которую проходит только новое значение (`ChecksNewValues`: ключ, которого нет в
+медиатеке; slug несуществующей формы), спрашивается об этом, только когда вызывающий назвал
+хранимое: `ScreenValues::validate(..., held: $stored)` (настройки) или
+`ScreenRecord::split(..., held:)`. Значение, равное хранимому, не новое; без `held` эти проверки не
+идут — иначе удалённая из медиатеки картинка остановила бы сохранение записи. `localized` — не тип, а модификатор: правила
 применяются к каждому языку, `resolve` отдаёт текущий язык с фолбэком на язык по умолчанию.
 
 `wx-input` держит формат по `props.type`: `email` — правило `email`, `url` — `url:http,https`,

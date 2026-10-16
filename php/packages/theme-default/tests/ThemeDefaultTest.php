@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\HtmlString;
+use Illuminate\View\DynamicComponent;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionProperty;
 use SplFileInfo;
 use WebxUi\Themes\Checks\CssCheck;
 use WebxUi\Themes\Checks\CssFinding;
@@ -442,6 +444,41 @@ class ThemeDefaultTest extends TestCase
 
             $this->assertNotEmpty(token_get_all($compiled, TOKEN_PARSE), "{$view} does not compile.");
         }
+    }
+
+    /**
+     * The three places of module-snippets (SNIPPETS §11.1): without the module the page is what it
+     * always was — viewport, then the theme; with it, a place above the theme, one right after
+     * <body> and one closing it.
+     */
+    #[Test]
+    public function the_places_of_the_snippets_are_there_only_with_the_module(): void
+    {
+        $this->stubModules();
+        $forget = static function (): void {
+            (new ReflectionProperty(DynamicComponent::class, 'compiler'))->setValue(null, null);
+            (new ReflectionProperty(DynamicComponent::class, 'componentClasses'))->setValue(null, []);
+        };
+        $forget();
+
+        $html = Blade::render('<x-layout><p>Body</p></x-layout>');
+
+        $this->assertStringNotContainsString('place:', $html);
+        $this->assertMatchesRegularExpression('~<meta name="viewport" content="width=device-width, initial-scale=1">\s*<style data-webx-theme>~', $html);
+        $this->assertMatchesRegularExpression('~<body class="site">\s*<a class="site-skip"~', $html);
+
+        // A stand-in for the module: its view, and a component by its name.
+        $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures/webx-snippets';
+        View::addNamespace('webx-snippets', $fixtures);
+        Blade::anonymousComponentPath($fixtures.'/components');
+
+        // The layout asks view()->exists() as it renders: the same compiled file prints the places now.
+        $html = Blade::render('<x-layout><p>Body</p></x-layout>');
+        $forget();
+
+        $this->assertMatchesRegularExpression('~<meta name="viewport" content="width=device-width, initial-scale=1">\s*<!-- place:head -->\s*<style data-webx-theme>~', $html);
+        $this->assertMatchesRegularExpression('~<body class="site">\s*<!-- place:body_start -->\s*<a class="site-skip"~', $html);
+        $this->assertMatchesRegularExpression('~<!-- place:body_end -->\s*</body>~', $html);
     }
 
     /** A module's view hands its own @webxSeo and @webxBlocks in the head slot; neither prints twice. */

@@ -200,8 +200,17 @@ corner (WCAG 2.2.2); a pause is remembered for the next page. The video is decor
 readers: what it says, the page's markup over it says.
 
 The map is Leaflet over OpenStreetMap tiles, with no key. Before consent it is the address, "Open
-in maps" and the same two buttons; the wheel scrolls the page until the map is clicked. Another
-provider of tiles is a config entry:
+in maps" and the same two buttons; the wheel scrolls the page until the map is clicked.
+
+An owner who decided the site needs no consent for the map's tiles lifts the wait for maps alone:
+the switch "Maps without asking" of the Cookie tab, or `'map' => ['consent' => false]` in the
+config — either one is enough. The map then loads at once for every visitor, with no notice and no
+buttons, and the banner no longer offers "media" for it; the banner itself and the other categories
+stay as they were, and the site audit lists the pages with such maps as a notice, so the decision
+stays visible. `<x-webx-map :consent="false">` (or `true`) decides for one map, whatever the site
+says.
+
+Another provider of tiles is a config entry:
 
 ```php
 // config/webx-widgets.php (php artisan vendor:publish --tag=webx-widgets-config)
@@ -417,6 +426,7 @@ promise:
 | Check                    | Severity | Finds                                                                                                | Fix by a button                                    |
 | ------------------------ | -------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
 | `widgets.before_consent` | error    | a YouTube, Vimeo, Google Maps or OpenStreetMap iframe, a known counter or pixel asked at once        | pasted into content: rewritten to wait for consent |
+|                          | notice   | maps the owner lets load without consent ("Maps without asking") — one notice with their pages       | —                                                  |
 | `widgets.banner_off`     | warning  | the banner off while something third-party is on the site                                            | turns the banner on                                |
 | `widgets.lightbox_size`  | warning  | a lightbox link without `data-width` / `data-height`                                                 | —                                                  |
 | `widgets.slider_pause`   | warning  | a slider that moves with no pause button — a theme's override that lost it                           | —                                                  |

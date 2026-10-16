@@ -7,6 +7,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { yaml } from '@codemirror/lang-yaml'
 import { php } from '@codemirror/lang-php'
 import type { LintSource } from '@codemirror/lint'
+import { mustacheHighlighting } from './mustache'
 import type { CodeEditorLanguage } from './types'
 
 interface LanguageSupport {
@@ -28,5 +29,7 @@ export const LANGUAGES: Record<CodeEditorLanguage, LanguageSupport> = {
   markdown: { extension: () => markdown() },
   yaml: { extension: () => yaml() },
   php: { extension: () => php() },
+  mustache: { extension: () => mustacheHighlighting() },
+  'mustache-html': { extension: () => [html(), mustacheHighlighting()] },
   plain: { extension: () => [] },
 }

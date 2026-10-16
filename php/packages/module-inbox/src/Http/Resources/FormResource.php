@@ -9,6 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Mail\Recipients;
 use WebxUi\Inbox\Models\Form;
+use WebxUi\Inbox\Notifications\Channels;
 
 /**
  * One form: a row of the left column, and the record its editor saves.
@@ -24,6 +25,11 @@ use WebxUi\Inbox\Models\Form;
  * stays in `options.recipients` as it was; these two are what a form with nobody to write to
  * shows instead of looking like a queue that has not run. A list of forms looks the people up
  * once ({@see Recipients::load()}).
+ *
+ * `notifications` says whether `webx-ui/module-notifications` is installed — the editor shows
+ * "Notify through" only then — and `channels` names what `options.notify_channels` holds, each
+ * with whether it `sends` (NOTIFICATIONS §15.2). A form notifies when a letter reaches somebody
+ * or a channel sends.
  *
  * `captcha` is the site's and not the form's: for each provider, how it runs (`checkbox`,
  * `invisible`, `v3`) and whether both halves of its keys are in the `.env`. A reCAPTCHA key of
@@ -45,6 +51,8 @@ final class FormResource extends JsonResource
         /** @var Form $form */
         $form = $this->resource;
         $recipients = Recipients::describe($form);
+        $notifications = app(Channels::class);
+        $channels = $notifications->describe($form);
 
         return [
             'id' => (int) $form->getKey(),
@@ -53,7 +61,10 @@ final class FormResource extends JsonResource
             'is_enabled' => $form->is_enabled,
             'options' => $form->options ?? [],
             'recipients' => $recipients,
-            'notifies' => in_array(true, array_column($recipients, 'receives'), true),
+            'notifies' => in_array(true, array_column($recipients, 'receives'), true)
+                || in_array(true, array_column($channels, 'sends'), true),
+            'notifications' => $notifications->available(),
+            'channels' => $channels,
             'position' => $form->position,
             'submissions_count' => $this->count($form, 'submissions_count'),
             'unread_count' => $this->count($form, 'unread_count'),

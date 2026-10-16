@@ -112,6 +112,8 @@ export const forms: InboxForm[] = [
       'design.submit-text': { ru: 'Отправить', en: 'Send' },
       recipients: [{ admin_id: 1 }, { email: 'sales@webx-demo.test' }],
       email_field: 'email',
+      // The sales chat of the notifications module and a deleted bot — the card shows what each did.
+      notify_channels: [1, 3],
       'antispam.honeypot': true,
       'antispam.min_seconds': 3,
       'antispam.throttle': 5,

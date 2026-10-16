@@ -44,12 +44,9 @@
     },
     {
       "id": "form",
-      "type": "wx-input",
+      "type": "wx-inbox-form",
       "label": "Form",
-      "help": "The machine name of a form of the Inbox — contact, say. Empty: no form.",
-      "props": {
-        "placeholder": "contact"
-      }
+      "help": "A form of the Inbox, printed beside the contacts. Empty: no form."
     },
     {
       "id": "form_heading",

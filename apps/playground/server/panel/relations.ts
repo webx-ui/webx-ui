@@ -2,6 +2,7 @@ import type { RelationCandidate } from '../../../../packages/module-admin/src/re
 import { recipes, row as recipeRow, visible as recipeVisible, type RecipeRecord } from './recipes'
 import { row as serviceRow, services, type ServiceRecord } from './services'
 import { forms } from './inbox'
+import { notifyCandidates } from './notifications'
 
 /**
  * The targets of relations the playground has (§3.3 of the recipes spec): the services and the
@@ -39,8 +40,11 @@ function serviceCandidate(record: ServiceRecord, locale: string): RelationCandid
   }
 }
 
+/** `slug` is the forms' own, as `FormTarget::row()` adds it. */
+type Candidate = RelationCandidate & { slug?: string }
+
 interface Target {
-  all: (locale: string) => { candidate: RelationCandidate; deleted: boolean }[]
+  all: (locale: string) => { candidate: Candidate; deleted: boolean }[]
 }
 
 const TARGETS: Record<string, Target> = {
@@ -54,8 +58,9 @@ const TARGETS: Record<string, Target> = {
         })),
   },
   /*
-   * `FormTarget` of `module-inbox`: the title, the slug under it, ordered by `position`. A form
-   * that is switched off stays choosable-as-chosen and is marked, as a service in the bin is.
+   * `FormTarget` of `module-inbox`: the title, the slug under it and as `slug` — what
+   * `wx-inbox-form` keeps — ordered by `position`. A form that is switched off stays
+   * choosable-as-chosen and is marked, as a service in the bin is. Searched by the slug too.
    */
   'inbox-form': {
     all: (locale) =>
@@ -66,6 +71,7 @@ const TARGETS: Record<string, Target> = {
             id: form.id,
             title: form.title[locale] || form.title.ru || form.slug,
             subtitle: form.slug,
+            slug: form.slug,
             thumb: null,
             visible: form.is_enabled,
           },
@@ -88,8 +94,11 @@ export function relationCandidates(
   target: string,
   query: URLSearchParams,
   locale: string,
-): RelationCandidate[] | null {
-  const found = TARGETS[target]
+): Candidate[] | null {
+  const found: Target | undefined =
+    TARGETS[target] ??
+    // One target per event of the notifications (`ChannelTarget`): `notify-inbox-submission`.
+    (notifyCandidates(target) === null ? undefined : { all: () => notifyCandidates(target) ?? [] })
 
   if (found === undefined) return null
 
@@ -105,9 +114,18 @@ export function relationCandidates(
 
   const term = (query.get('q') ?? '').trim().toLowerCase()
 
-  return all
-    .filter((one) => !one.deleted)
-    .map((one) => one.candidate)
-    .filter((one) => term === '' || one.title.toLowerCase().includes(term))
-    .slice(0, 20)
+  return (
+    all
+      .filter((one) => !one.deleted)
+      .map((one) => one.candidate)
+      .filter(
+        (one) =>
+          term === '' ||
+          one.title.toLowerCase().includes(term) ||
+          (one.slug?.includes(term) ?? false),
+      )
+      // The exact slug first, as `FormTarget` orders it: that is how a stored slug is named.
+      .sort((one, two) => Number(two.slug === term) - Number(one.slug === term))
+      .slice(0, 20)
+  )
 }

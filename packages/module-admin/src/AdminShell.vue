@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { shellLayoutFor, useResponsiveShell, WxToaster } from '@webx-ui/core'
 import { useAdmin } from './admin'
 import { useTranslate } from './i18n'
+import SiteLink from './SiteLink.vue'
 
 /**
  * The panel around the screen: navigation built from the manifest and the hole the router
@@ -34,6 +35,17 @@ const { width, layout, collapsed, showAside, drawerOpen, toggle, close } = useRe
 )
 
 const title = computed(() => admin.state.manifest?.title ?? '')
+
+/*
+ * The way to the site, from the one place every corner of the panel reads it — the manifest, or
+ * what the project said instead. A name that leads somewhere says where aloud: "Acme — Open
+ * the site" rather than just "Acme".
+ */
+const siteUrl = admin.siteUrl
+const openSite = computed(() => t('nav.open-site'))
+const siteLabel = computed(() =>
+  title.value === '' ? openSite.value : `${title.value} — ${openSite.value}`,
+)
 
 /*
  * A screen that is framed by something else — the panel on the site — and brings its own head:
@@ -150,7 +162,10 @@ onUnmounted(() => {
         :collapsed-width="56"
       >
         <template #top>
-          <div class="wx-admin__brand" :class="{ 'wx-admin__brand--stacked': collapsed && mark }">
+          <div
+            class="wx-admin__brand"
+            :class="{ 'wx-admin__brand--stacked': collapsed && (mark || siteUrl) }"
+          >
             <!--
               The rail has no room for a name, and the button is the one thing on it that
               has to stay: without it there is no way back to the full sidebar. A mark fits
@@ -158,17 +173,43 @@ onUnmounted(() => {
               stand one above the other.
             -->
             <slot v-if="!collapsed" name="brand">
-              <img
-                v-if="logo"
-                class="wx-admin__logo"
-                :src="logo.url"
-                :alt="title"
-                :width="logo.width ?? undefined"
-                :height="logo.height ?? undefined"
-              />
-              <wx-text v-else weight="semibold" truncate class="wx-admin__title">
-                {{ title }}
-              </wx-text>
+              <!--
+                The name is the way to the site. Not the project's own brand: that may hold
+                links of its own, and a link inside a link is no link at all.
+              -->
+              <site-link
+                v-if="siteUrl"
+                class="wx-admin__site"
+                :href="siteUrl"
+                :label="siteLabel"
+                :hint="openSite"
+              >
+                <img
+                  v-if="logo"
+                  class="wx-admin__logo"
+                  :src="logo.url"
+                  :alt="title"
+                  :width="logo.width ?? undefined"
+                  :height="logo.height ?? undefined"
+                />
+                <wx-text v-else weight="semibold" truncate class="wx-admin__name">
+                  {{ title }}
+                </wx-text>
+              </site-link>
+
+              <template v-else>
+                <img
+                  v-if="logo"
+                  class="wx-admin__logo"
+                  :src="logo.url"
+                  :alt="title"
+                  :width="logo.width ?? undefined"
+                  :height="logo.height ?? undefined"
+                />
+                <wx-text v-else weight="semibold" truncate class="wx-admin__title">
+                  {{ title }}
+                </wx-text>
+              </template>
             </slot>
 
             <img v-else-if="mark" class="wx-admin__mark" :src="mark.url" :alt="title" />
@@ -177,6 +218,20 @@ onUnmounted(() => {
               icon="sidebar"
               :title="collapsed ? t('nav.expand') : t('nav.collapse')"
               @click="toggle"
+            />
+
+            <!--
+              The rail has no room for the name, so the arrow stands for it, under the button
+              that brings the name back.
+            -->
+            <wx-action
+              v-if="collapsed && siteUrl"
+              icon="external-link"
+              :href="siteUrl"
+              target="_blank"
+              rel="noopener"
+              :title="openSite"
+              tooltip-side="right"
             />
           </div>
         </template>
@@ -216,6 +271,13 @@ onUnmounted(() => {
       :full-screen="false"
       closable
     >
+      <!-- The drawer is the phone's sidebar, and its head leads to the site the same way. -->
+      <template v-if="siteUrl && title !== ''" #title>
+        <site-link :href="siteUrl" :label="siteLabel" :hint="openSite" class="wx-admin__site">
+          <span class="wx-admin__name">{{ title }}</span>
+        </site-link>
+      </template>
+
       <slot name="nav" :collapsed="false" :select="close" />
 
       <template #footer>
@@ -306,6 +368,31 @@ onUnmounted(() => {
 .wx-admin__title {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/*
+ * The link takes the room the title took, so the button still ends up at the far end; inside
+ * it the name gives way before the arrow does.
+ */
+.wx-admin__brand > .wx-admin__site {
+  flex: 1 1 auto;
+}
+
+.wx-admin__site {
+  justify-content: flex-start;
+}
+
+.wx-admin__name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inside the link the logo is held by the link, which already gave the button its place. */
+.wx-admin__site > .wx-admin__logo {
+  margin-inline-end: 0;
 }
 
 /*

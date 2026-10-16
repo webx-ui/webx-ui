@@ -10,10 +10,12 @@ use WebxUi\Audit\Checks\ModuleCheck;
 use WebxUi\Audit\Checks\Severity;
 use WebxUi\Inbox\Mail\Recipients;
 use WebxUi\Inbox\Models\Form;
+use WebxUi\Inbox\Notifications\Channels;
 
 /**
  * A switched-on form that would write to nobody: no recipients at all, or only administrators
- * deleted or switched off since, or addresses that are not addresses.
+ * deleted or switched off since, or addresses that are not addresses — and no channel of the
+ * notifications module that sends either (NOTIFICATIONS §15.3).
  *
  * Every submission is still saved, so nothing breaks where anybody looks — the site thanks the
  * visitor, the panel keeps the enquiry — and nobody hears of it until somebody opens the
@@ -38,7 +40,7 @@ final class NoRecipients extends ModuleCheck
         Recipients::load($forms);
 
         foreach ($forms as $form) {
-            if (Recipients::notifies($form)) {
+            if (Recipients::notifies($form) || app(Channels::class)->notifies($form)) {
                 continue;
             }
 

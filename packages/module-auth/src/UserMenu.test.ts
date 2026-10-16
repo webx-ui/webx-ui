@@ -14,7 +14,7 @@ import {
 import UserMenu from './UserMenu.vue'
 import { authKey, avatarResolverKey, type AuthSession, type AvatarResolver } from './session'
 
-function panel(user: AdminUser): AdminContext {
+function panel(user: AdminUser, siteUrl: string | null = null): AdminContext {
   const i18n = createI18n({ locale: 'en' })
 
   return {
@@ -26,6 +26,7 @@ function panel(user: AdminUser): AdminContext {
     modules: [],
     nav: computed(() => []),
     groups: computed(() => ({ top: [], groups: [] })),
+    siteUrl: computed(() => siteUrl),
     types: {},
     pickImage: null,
     assetUrls: null,
@@ -53,8 +54,13 @@ const session: AuthSession = {
   updateProfile: () => Promise.reject(new Error('not stubbed')),
 }
 
-function draw(user: AdminUser, resolve: AvatarResolver | null, expanded = false) {
-  const admin = panel(user)
+function draw(
+  user: AdminUser,
+  resolve: AvatarResolver | null,
+  expanded = false,
+  siteUrl: string | null = null,
+) {
+  const admin = panel(user, siteUrl)
 
   return mount(UserMenu, {
     props: { expanded },
@@ -153,6 +159,34 @@ describe('WxUserMenu', () => {
     await flushPromises()
 
     expect(document.body.textContent).not.toContain('menu.site-bar')
+
+    wrapper.unmount()
+  })
+
+  it('offers the way to the site, in a new tab, where the panel knows one', async () => {
+    const wrapper = draw(alexx, null, false, 'https://shop.example.test/')
+
+    await wrapper.get('.wx-user-menu__trigger').trigger('click')
+    await flushPromises()
+
+    const link = [...document.querySelectorAll<HTMLAnchorElement>('a.wx-dropdown-item')].find(
+      (node) => node.textContent?.includes('nav.open-site'),
+    )
+
+    expect(link?.getAttribute('href')).toBe('https://shop.example.test/')
+    expect(link?.getAttribute('target')).toBe('_blank')
+    expect(link?.getAttribute('rel')).toBe('noopener')
+
+    wrapper.unmount()
+  })
+
+  it('offers no way to the site where the project hid it', async () => {
+    const wrapper = draw(alexx, null)
+
+    await wrapper.get('.wx-user-menu__trigger').trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).not.toContain('nav.open-site')
 
     wrapper.unmount()
   })
