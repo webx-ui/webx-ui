@@ -97,7 +97,9 @@ RouteLocationRaw | boolean` компилировался в `{ type: Boolean }`:
   markdown как шаблон Vue, и `{{ … }}` исполняется даже внутри инлайн-кода: Blade-пример
   `` `{{ rtrim($x) }}` `` даёт `TypeError: _ctx.rtrim is not a function` в логе сборки, а `{{ }}`
   молча печатает пустоту. Сборка при этом выходит с нулём. Абзац с усами — в `::: v-pre … :::`
-  (в блоке кода ` ``` ` они безопасны). Проверка: `pnpm docs:build 2>&1 | grep -E "TypeError|ReferenceError"`.
+  (в блоке кода ` ``` ` они безопасны). Усы, которые не выражение JS — Mustache `` `{{#items}}` ``,
+  `` `{{/…}}` `` — роняют сборку: «Error parsing JavaScript expression» с номером строки `.md`. Проверка:
+  `pnpm docs:build 2>&1 | grep -E "TypeError|ReferenceError"`.
 
 ## Reka и слои
 
@@ -133,6 +135,16 @@ RouteLocationRaw | boolean` компилировался в `{ type: Boolean }`:
 
 ## Редакторы: Tiptap, CodeMirror, датапикер, canvas
 
+- **Автодополнение `WxCodeEditor` молчит в браузере, хотя источник отдаёт варианты.** CodeMirror
+  сравнивает набранное с текстом `from…to` результата: `to` за кареткой (захватить `}}`, которые
+  дописали `closeBrackets`) — и сравнивается хвост `}}`, под него не подходит ни одна подпись.
+  Проп `completions` поэтому отдаёт CodeMirror только `from`, а хвост до `to` заменяет при
+  применении. Тест через `startCompletion` + `currentCompletions` ловит это, только если в
+  документе после каретки что-то есть (`'{{}}'`, а не `'{{'`).
+- **`InstanceType<typeof WxCodeEditor>` — ошибка «does not satisfy the constraint».** Компонент
+  generic по модели (строка или карта языков), а `InstanceType` generic-компонент не берёт. Ref
+  типизировать `ref<CodeEditorExposed | null>(null)`; `wrapper.findComponent(WxCodeEditor)` в
+  тестах — `findComponent({ name: 'WxCodeEditor' })`.
 - **`setEditable()` у Tiptap — это событие `update`, а не только переключатель.** Форма, которая
   на время публикации запирается и потом отпирается, заставляет каждый `WxRichText` «меняться»:
   пустое переводимое поле сервер отдаёт `[]` (пустой PHP-массив), редактор пишет в ответ

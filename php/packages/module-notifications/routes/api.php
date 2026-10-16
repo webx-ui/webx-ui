@@ -37,6 +37,7 @@ Route::prefix((string) config('webx-admin.api_path').'/notifications')
             Route::post('preview', [ToolController::class, 'preview'])->name('preview');
             Route::post('check', [ToolController::class, 'check'])->name('check');
             Route::post('find-recipients', [ToolController::class, 'findRecipients'])->name('find-recipients');
+            Route::get('administrators', [ToolController::class, 'administrators'])->name('administrators');
             Route::post('deliveries/{delivery}/retry', [DeliveryController::class, 'retry'])->whereNumber('delivery')->name('deliveries.retry');
         });
     });

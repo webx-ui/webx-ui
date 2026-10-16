@@ -55,7 +55,7 @@ final class EmailProvider implements Provider
 
     public function icon(): string
     {
-        return 'envelope-simple';
+        return 'mail';
     }
 
     public function fields(): array

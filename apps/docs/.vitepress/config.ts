@@ -68,6 +68,7 @@ export default defineConfig({
             { text: 'Site widgets', link: '/guide/widgets' },
             { text: 'Codes of outside services', link: '/guide/snippets' },
             { text: 'Forms', link: '/guide/forms' },
+            { text: 'Notifications', link: '/guide/notifications' },
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },

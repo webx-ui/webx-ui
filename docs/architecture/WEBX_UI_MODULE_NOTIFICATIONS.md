@@ -454,11 +454,23 @@ Telegram не подтверждает обновления, и они оста�
 
 ### 7.5 Редактор
 
-`wx-textarea` (моноширинным) с панелью переменных события под ним: кнопка-чип на переменную
-вставляет `{{name}}` в курсор, подсказка — описание и пример. Без события — переменные всех
-событий, сгруппированно. Предпросмотр — отрисованное сообщение на примерах (`POST preview`,
-§10.5) в рамке «как в Telegram» / «как письмо». `wx-code-editor` не нужен: подсветки HTML для
-шаблона из десятка строк мало, чипы важнее.
+Узел `wx-notifications-template` npm-пакета — `wx-code-editor` с подсветкой Mustache
+(`language: mustache-html` для Telegram, `mustache` для письма) и `localized`. Готовой подсветки
+Mustache для CodeMirror 6 нет (в `@codemirror/legacy-modes` — Jinja и Velocity, сторонний
+`codemirror-lang-handlebars` не поддерживается с 2024), поэтому в `core` — свой язык: теги
+находит один проход по документу и красит метками поверх HTML или текста. Автокомплит — общий
+проп `completions` редактора (список слов или функция места), для Mustache —
+`mustacheCompletions(variables)`: после `{{` переменные события с примером и описанием, список —
+целой секцией с курсором внутри, `{{#…}}`/`{{^…}}`; внутри `{{#items}}` первыми поля строки;
+после `{{/` — ближайшая открытая секция. Без события — только синтаксис. Под редактором —
+кнопки переменных (вставка в курсор) и предупреждения `mustacheProblems()`: незакрытая секция,
+лишнее закрытие, неизвестное имя, запрещённый тег.
+
+Предпросмотр рисуется в браузере, пока шаблон набирается: `mustache.js` разбирает шаблон, обход
+дерева — по правилам `Templates\Template` (`'0'` — пусто, как в PHP), экранирование — как у
+провайдера. Расхождение с сервером закрывает `PreviewParityTest` и `render.test.ts` на общих
+примерах `tests/fixtures/render.json`. `POST preview` остаётся для агента
+(`notifications_preview`).
 
 ## 8. Отправка
 
@@ -1021,6 +1033,14 @@ en и ru — те языки, что есть у сайта) показывае�
 плоско по имени (`token`, `host`), агент — и объектами `credentials`/`options`; `sample` события —
 по ключу провайдера (`*` — любой). Строка `Catalogue`, `extra.webx.npm`/`panel`, `RelationTarget`
 каналов — следующими этапами.
+
+**Панель, npm-пакет, плейграунд, гайд (этап 4) — сделано.** `packages/module-notifications`:
+раздел (каналы, журнал, корзина), страница канала, узлы `wx-notifications-template`,
+`-chats`, `-emails`, `-channels`; в `core` — язык Mustache и проп `completions` у
+`wx-code-editor` (§7.5). На сервере — `Relations\ChannelTarget` (цель `notify-<событие>`
+регистрирует `NotificationEvents::register()`), `GET administrators` для получателей письма,
+иконки провайдеров `send`/`mail`, `lang/*/panel.php`, строка `Catalogue` и
+`extra.webx.npm`/`panel`. Гайд — `apps/docs/guide/notifications.md`.
 
 **MCP, демо, `AGENTS.md` (этап 3) — сделано.** `Mcp\NotificationsTools` (11 инструментов §12.1) и
 `Mcp\NotificationsResources` (три ресурса §12.3), `Demo\NotificationsDemo` (§16.2), `AGENTS.md`

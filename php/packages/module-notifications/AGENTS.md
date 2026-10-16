@@ -116,6 +116,7 @@ A provider: `key()`, `fields()` (`Sending\Field`, `secret: true` goes to `creden
 ## Read more
 
 - [README.md](README.md) in this directory — installing, channels, sending from a module, commands.
+- Guide: https://webx-ui.github.io/webx-ui/guide/notifications — channels, templates, the editor.
 - Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_NOTIFICATIONS.md
 - MCP access and scopes: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MCP_ACCESS.md
 - Extending views and services: https://webx-ui.github.io/webx-ui/guide/extending

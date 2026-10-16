@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends CodeEditorModelValue = string">
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import {
@@ -19,13 +19,30 @@ import {
   syntaxHighlighting,
 } from '@codemirror/language'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
+import {
+  autocompletion,
+  closeBrackets,
+  closeBracketsKeymap,
+  snippet,
+  type Completion,
+  type CompletionContext,
+  type CompletionResult,
+} from '@codemirror/autocomplete'
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search'
 import { linter, type Diagnostic } from '@codemirror/lint'
 import { useFormField } from '../../composables/useFormField'
+import { useLocalized } from '../../composables/useLocalized'
+import LocalePicker from '../Locales/LocalePicker.vue'
 import { LANGUAGES } from './languages'
 import { highlightStyle } from './highlight'
-import type { CodeEditorDiagnostic, CodeEditorEmits, CodeEditorProps } from './types'
+import type {
+  CodeEditorCompletion,
+  CodeEditorCompletionResult,
+  CodeEditorDiagnostic,
+  CodeEditorEmits,
+  CodeEditorModelValue,
+  CodeEditorProps,
+} from './types'
 
 defineOptions({ name: 'WxCodeEditor', inheritAttrs: false })
 
@@ -44,14 +61,27 @@ const props = withDefaults(defineProps<CodeEditorProps>(), {
   lineWrapping: false,
   tabSize: 2,
   lint: true,
+  completions: undefined,
+  localized: false,
   extensions: () => [],
 })
 
 const emit = defineEmits<CodeEditorEmits>()
 
-const model = defineModel<string>({ default: '' })
+/*
+ * Generic so that a plain editor stays a `string` to whoever binds it, and a localized one is the
+ * map of languages it edits.
+ */
+const model = defineModel<T>({ default: '' as never })
 
 const field = useFormField(props)
+const locales = useLocalized(props, model)
+
+/** The language on screen, or nothing at all when the field is plain. */
+const editing = computed(() => (locales.on.value ? locales.active.value : undefined))
+
+/** The text of the language on screen: what the editor holds. */
+const current = computed(() => locales.read(editing.value))
 const host = ref<HTMLElement | null>(null)
 const view = shallowRef<EditorView | null>(null)
 const focused = ref(false)
@@ -71,6 +101,7 @@ const compartments = {
   indent: new Compartment(),
   placeholder: new Compartment(),
   attributes: new Compartment(),
+  completion: new Compartment(),
   extra: new Compartment(),
 }
 
@@ -113,6 +144,82 @@ function toDiagnostic(diagnostic: Diagnostic): CodeEditorDiagnostic {
     severity: diagnostic.severity,
     message: diagnostic.message,
   }
+}
+
+/**
+ * A suggestion as CodeMirror takes it: an `apply` with `${}` in it is a snippet. `extra` is how
+ * much past the caret it replaces — the `}}` closing brackets typed after it.
+ */
+function toCompletion(option: CodeEditorCompletion, extra: number): Completion {
+  const given = option.apply ?? option.label
+  const write = given.includes('${') ? snippet(given) : null
+
+  return {
+    label: option.label,
+    detail: option.detail,
+    info: option.info,
+    type: option.type,
+    boost: option.boost,
+    apply:
+      extra === 0 && write === null
+        ? option.apply
+        : (view, completion, from, to) => {
+            const end = Math.min(view.state.doc.length, to + extra)
+
+            if (write !== null) {
+              write(view, completion, from, end)
+
+              return
+            }
+
+            view.dispatch({
+              changes: { from, to: end, insert: given },
+              selection: { anchor: from + given.length },
+              userEvent: 'input.complete',
+            })
+          },
+  }
+}
+
+/*
+ * CodeMirror matches what was typed against the text from `from` to `to`, so a result that
+ * reaches past the caret would be matched against that tail and offer nothing. It is told only
+ * where the word starts; the tail is replaced when a suggestion is taken.
+ */
+function toResult(result: CodeEditorCompletionResult, pos: number): CompletionResult {
+  const extra = Math.max(0, (result.to ?? pos) - pos)
+
+  return { from: result.from, options: result.options.map((option) => toCompletion(option, extra)) }
+}
+
+/**
+ * The completions prop on CodeMirror's own completion: a list completes the word before the
+ * caret, a function is asked about every place and says where its suggestions belong.
+ */
+function completionExtension(): Extension {
+  const given = props.completions
+
+  if (given === undefined) return []
+
+  const source = (context: CompletionContext): CompletionResult | null => {
+    if (typeof given === 'function') {
+      const result = given({
+        text: context.state.doc.toString(),
+        pos: context.pos,
+        explicit: context.explicit,
+      })
+
+      return result === null ? null : toResult(result, context.pos)
+    }
+
+    const word = context.matchBefore(/[\w.]*/)
+
+    if (word === null || (word.from === word.to && !context.explicit)) return null
+
+    return toResult({ from: word.from, options: given }, context.pos)
+  }
+
+  return autocompletion({ override: [source], icons: false })
 }
 
 function editableExtension(): Extension {
@@ -178,11 +285,12 @@ function buildState(doc: string): EditorState {
       compartments.indent.of(indentExtension()),
       compartments.placeholder.of(placeholderExtensionFor()),
       compartments.attributes.of(attributesExtension()),
+      compartments.completion.of(completionExtension()),
       compartments.extra.of(props.extensions),
       EditorView.updateListener.of((update) => {
-        if (!update.docChanged) return
+        if (!update.docChanged || replacing) return
         const value = update.state.doc.toString()
-        model.value = value
+        locales.write(editing.value, value)
         emit('change', value)
       }),
       EditorView.domEventHandlers({
@@ -201,7 +309,7 @@ function buildState(doc: string): EditorState {
 
 onMounted(() => {
   if (!host.value) return
-  view.value = new EditorView({ state: buildState(model.value ?? ''), parent: host.value })
+  view.value = new EditorView({ state: buildState(current.value), parent: host.value })
 })
 
 onBeforeUnmount(() => {
@@ -209,15 +317,25 @@ onBeforeUnmount(() => {
   view.value = null
 })
 
+/*
+ * Set while the document is swapped for another language's: that is not an edit of this one, and
+ * written back it would copy one language's text into the other.
+ */
+let replacing = false
+
 /** Replaces the document only when the value really differs, or the caret jumps. */
-watch(model, (value) => {
+function follow(next: string, language: boolean): void {
   const instance = view.value
   if (!instance) return
-  const next = value ?? ''
-  const current = instance.state.doc.toString()
-  if (next === current) return
-  instance.dispatch({ changes: { from: 0, to: current.length, insert: next } })
-})
+  const shown = instance.state.doc.toString()
+  if (next === shown) return
+  replacing = language
+  instance.dispatch({ changes: { from: 0, to: shown.length, insert: next } })
+  replacing = false
+}
+
+watch(current, (next) => follow(next, false))
+watch(editing, () => follow(current.value, true))
 
 function reconfigure(compartment: Compartment, extension: Extension) {
   view.value?.dispatch({ effects: compartment.reconfigure(extension) })
@@ -255,6 +373,10 @@ watch([() => props.ariaLabel, field.id, field.describedBy, field.status, field.d
   reconfigure(compartments.attributes, attributesExtension()),
 )
 watch(
+  () => props.completions,
+  () => reconfigure(compartments.completion, completionExtension()),
+)
+watch(
   () => props.extensions,
   (extensions) => reconfigure(compartments.extra, extensions),
 )
@@ -284,6 +406,7 @@ const classes = computed(() => [
     'is-focused': focused.value,
     'is-disabled': field.disabled.value,
     'is-readonly': props.readonly,
+    'is-localized': locales.on.value,
   },
 ])
 
@@ -291,6 +414,12 @@ const style = computed(() => ({
   '--wx-code-editor-min-height': props.minHeight,
   '--wx-code-editor-max-height': props.maxHeight ?? 'none',
 }))
+
+/** Same as the other text fields: the caret follows the language into this one. */
+function choose(code: string): void {
+  locales.active.value = code
+  view.value?.focus()
+}
 
 defineExpose({
   view,
@@ -302,11 +431,24 @@ defineExpose({
 <template>
   <div :class="classes" :style="style">
     <div ref="host" class="wx-code-editor__host" />
+
+    <locale-picker
+      v-if="locales.on.value"
+      :locales="locales.list.value"
+      :active="locales.active.value"
+      @choose="choose"
+    />
   </div>
 </template>
 
 <style scoped>
 .wx-code-editor {
+  /* Tall like a textarea: the chip is pinned near the top, a size smaller. */
+  --wx-locale-picker-height: 20px;
+  --wx-locale-picker-top: var(--wx-space-6);
+  --wx-locale-picker-shift: 0;
+
+  position: relative;
   display: block;
   box-sizing: border-box;
   width: 100%;
@@ -389,6 +531,40 @@ defineExpose({
 
 .wx-code-editor :deep(.cm-line) {
   padding: 0 var(--wx-space-12);
+}
+
+/* Room for the language chip, so the end of a long line is never under it. */
+.wx-code-editor.is-localized :deep(.cm-content) {
+  padding-right: var(--wx-space-48);
+}
+
+/*
+ * Mustache tags (`language="mustache"`): marks over the language underneath, in the palette of
+ * the rest of the code — a value in the primary colour, a section bold, a comment muted.
+ */
+.wx-code-editor :deep(.wx-cm-mustache) {
+  color: var(--wx-color-primary-active);
+}
+
+.wx-code-editor :deep(.wx-cm-mustache--section) {
+  color: var(--wx-color-warning-active);
+  font-weight: 600;
+}
+
+.wx-code-editor :deep(.wx-cm-mustache--comment) {
+  color: var(--wx-text-muted);
+  font-style: italic;
+}
+
+.wx-code-editor :deep(.wx-cm-mustache--invalid) {
+  color: var(--wx-color-danger);
+  text-decoration: underline wavy var(--wx-color-danger);
+  text-underline-offset: 3px;
+}
+
+/* A mark inside a mark keeps the tag's colour over the HTML highlighter's. */
+.wx-code-editor :deep(.wx-cm-mustache span) {
+  color: inherit;
 }
 
 .wx-code-editor :deep(.cm-cursor) {

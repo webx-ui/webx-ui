@@ -271,6 +271,7 @@ import {
 } from './catalog'
 import { registerAudit } from './audit'
 import { registerTasks, tasksBadge } from './tasks'
+import { notificationsHistory, registerNotifications } from './notifications'
 import { handleSeoFaqFiles, registerSeoFaq } from './seo-faq'
 import {
   findSnippet,
@@ -847,6 +848,16 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 500,
         group: 'system',
         permissions: ['media.view', 'media.upload', 'media.manage'],
+        meta: {},
+      },
+      /* Only a super administrator has it until a role is given one of the two (§11). */
+      {
+        id: 'notifications',
+        title: line(locale, 'webx-notifications', 'module.title'),
+        icon: 'bell',
+        order: 860,
+        group: 'system',
+        permissions: ['notifications.view', 'notifications.manage'],
         meta: {},
       },
       /* Only a super administrator has it until a role is given the one permission (§8). */
@@ -2352,7 +2363,8 @@ on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
     brandHistory(params[0]!, Number(params[1]), page) ??
     propertyHistory(params[0]!) ??
     landingHistory(params[0]!) ??
-    snippetHistory(params[0]!, Number(params[1]))
+    snippetHistory(params[0]!, Number(params[1])) ??
+    notificationsHistory(params[0]!, Number(params[1]))
 
   if (found === null) throw new HttpFailure(404, 'That kind of record keeps no history.')
 
@@ -2371,6 +2383,12 @@ registerManticore(on, (status, message) => new HttpFailure(status, message), pro
 registerAudit(on, (status, message) => new HttpFailure(status, message), line)
 /* The queue of work between people and agents (WEBX_UI_MODULE_TASKS.md): «Tasks». */
 registerTasks(on, (status, message) => new HttpFailure(status, message), line)
+/* Channels of notifications (WEBX_UI_MODULE_NOTIFICATIONS.md): «System → Notifications». */
+registerNotifications(
+  on,
+  (status, message, errors) => new HttpFailure(status, message, undefined, errors),
+  line,
+)
 registerSeoLinks(
   on,
   (status, message, errors) => new HttpFailure(status, message, undefined, errors),

@@ -3,7 +3,6 @@ import { mount } from '@vue/test-utils'
 import { computed, nextTick, ref } from 'vue'
 import { localesKey } from '../../composables/useLocalized'
 import WxRichText from './RichText.vue'
-import WxCodeEditor from '../CodeEditor/CodeEditor.vue'
 
 type Wrapper = ReturnType<typeof mount>
 
@@ -471,12 +470,12 @@ describe('WxRichText', () => {
     }
 
     function typeSource(wrapper: Wrapper, html: string) {
-      wrapper.findComponent(WxCodeEditor).vm.$emit('update:modelValue', html)
+      wrapper.findComponent({ name: 'WxCodeEditor' }).vm.$emit('update:modelValue', html)
     }
 
     it('shows the document as indented HTML and hides the editor', async () => {
       const wrapper = await openSource({ modelValue: '<ul><li><p>One</p></li></ul>' })
-      const code = wrapper.findComponent(WxCodeEditor)
+      const code = wrapper.findComponent({ name: 'WxCodeEditor' })
 
       expect(code.props('modelValue')).toBe('<ul>\n  <li>\n    <p>One</p>\n  </li>\n</ul>')
       expect(code.props('language')).toBe('html')
@@ -491,7 +490,7 @@ describe('WxRichText', () => {
       await toolByLabel(wrapper, 'HTML source').trigger('click')
       await flush()
 
-      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(false)
+      expect(wrapper.findComponent({ name: 'WxCodeEditor' }).exists()).toBe(false)
       expect(wrapper.emitted('update:modelValue')).toBeUndefined()
       expect(wrapper.emitted('change')).toBeUndefined()
     })
@@ -523,25 +522,25 @@ describe('WxRichText', () => {
       const warning = wrapper.get('.wx-rich-text__loss')
       expect(warning.text()).toContain('<div>')
       expect(warning.text()).toContain('style on <p>')
-      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(true)
+      expect(wrapper.findComponent({ name: 'WxCodeEditor' }).exists()).toBe(true)
 
       await warning.findAll('button').at(1)!.trigger('click')
       await flush()
       expect(wrapper.find('.wx-rich-text__loss').exists()).toBe(false)
-      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(true)
+      expect(wrapper.findComponent({ name: 'WxCodeEditor' }).exists()).toBe(true)
 
       await toolByLabel(wrapper, 'HTML source').trigger('click')
       await flush()
       await wrapper.get('.wx-rich-text__loss').findAll('button').at(0)!.trigger('click')
       await flush()
 
-      expect(wrapper.findComponent(WxCodeEditor).exists()).toBe(false)
+      expect(wrapper.findComponent({ name: 'WxCodeEditor' }).exists()).toBe(false)
       expect(editorOf(wrapper).getHTML()).toBe('<p>Kept</p>')
     })
 
     it('lets a read-only field show its source', async () => {
       const wrapper = await openSource({ modelValue: '<p>Read me</p>', readonly: true })
-      const code = wrapper.findComponent(WxCodeEditor)
+      const code = wrapper.findComponent({ name: 'WxCodeEditor' })
 
       expect(code.exists()).toBe(true)
       expect(code.props('readonly')).toBe(true)

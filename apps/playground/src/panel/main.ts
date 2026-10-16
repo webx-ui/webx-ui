@@ -16,6 +16,7 @@ import { faq } from '@webx-ui/module-faq'
 import { inbox } from '@webx-ui/module-inbox'
 import { media } from '@webx-ui/module-media'
 import { menu } from '@webx-ui/module-menu'
+import { notifications } from '@webx-ui/module-notifications'
 import { pages } from '@webx-ui/module-pages'
 import { press } from '@webx-ui/module-press'
 import { recipes } from '@webx-ui/module-recipes'
@@ -97,6 +98,7 @@ const admin = createAdmin({
     blocks(),
     seo(),
     snippets(),
+    notifications(),
     audit(),
     tasks(),
     ...catalogManticore(),

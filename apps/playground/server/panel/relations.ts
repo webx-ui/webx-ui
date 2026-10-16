@@ -2,6 +2,7 @@ import type { RelationCandidate } from '../../../../packages/module-admin/src/re
 import { recipes, row as recipeRow, visible as recipeVisible, type RecipeRecord } from './recipes'
 import { row as serviceRow, services, type ServiceRecord } from './services'
 import { forms } from './inbox'
+import { notifyCandidates } from './notifications'
 
 /**
  * The targets of relations the playground has (§3.3 of the recipes spec): the services and the
@@ -94,7 +95,10 @@ export function relationCandidates(
   query: URLSearchParams,
   locale: string,
 ): Candidate[] | null {
-  const found = TARGETS[target]
+  const found: Target | undefined =
+    TARGETS[target] ??
+    // One target per event of the notifications (`ChannelTarget`): `notify-inbox-submission`.
+    (notifyCandidates(target) === null ? undefined : { all: () => notifyCandidates(target) ?? [] })
 
   if (found === undefined) return null
 

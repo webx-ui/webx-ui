@@ -61,7 +61,15 @@
             ]
         },
         "webx": {
-            "module": "notifications"
+            "module": "notifications",
+            "npm": {
+                "@webx-ui/module-notifications": "^0.0.0"
+            },
+            "panel": {
+                "import": "import { notifications } from '@webx-ui/module-notifications'",
+                "style": "@webx-ui/module-notifications/style.css",
+                "register": "notifications()"
+            }
         }
     },
     "config": {

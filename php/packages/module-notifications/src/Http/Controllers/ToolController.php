@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Notifications\Channels\ChannelForm;
 use WebxUi\Notifications\Contracts\FindsRecipients;
 use WebxUi\Notifications\Contracts\Provider;
@@ -160,6 +161,26 @@ final class ToolController
             'recipients' => array_map(static fn (FoundRecipient $one): array => $one->toArray(), $found),
             'hint' => $found === [] ? (string) __('webx-notifications::errors.telegram.nothing-found') : null,
         ]);
+    }
+
+    /**
+     * The administrators an e-mail channel can write to (§6.2), switched on, by name — what the
+     * form's «Add an administrator» offers. Not filtered by a permission: a notification is a
+     * letter, not a link into the panel somebody would need a right to open.
+     */
+    public function administrators(): JsonResponse
+    {
+        return ApiResponse::data(CmsUser::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email'])
+            ->map(static fn (CmsUser $admin): array => [
+                'id' => (int) $admin->getKey(),
+                'name' => (string) $admin->name,
+                'email' => (string) $admin->email,
+            ])
+            ->values()
+            ->all());
     }
 
     /** The channel the request is about, as the form has it now: saved values under typed ones. */

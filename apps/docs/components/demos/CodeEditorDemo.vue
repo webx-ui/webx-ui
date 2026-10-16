@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { WxCodeEditor, type CodeEditorDiagnostic, type CodeEditorLanguage } from '@webx-ui/core'
+import {
+  WxCodeEditor,
+  type CodeEditorDiagnostic,
+  type CodeEditorExposed,
+  type CodeEditorLanguage,
+} from '@webx-ui/core'
 
 const samples: Record<CodeEditorLanguage, string> = {
   json: `{
@@ -77,6 +82,14 @@ final class Screen
         return $this->tree['id'] ?? 'settings';
     }
 }`,
+  mustache: `New request from {{form}}
+{{#items}}
+- {{name}}: {{value}}
+{{/items}}
+{{^items}}Nothing was filled in.{{/items}}`,
+  'mustache-html': `<b>{{form}}</b>
+{{#note}}<i>{{note}}</i>{{/note}}
+{{! never printed }}`,
   plain: 'Anything goes here: no highlighting, no linting, just a monospace surface.',
 }
 
@@ -89,7 +102,7 @@ const language = ref<CodeEditorLanguage>('json')
 const code = ref(samples.json)
 const wrap = ref(false)
 const diagnostics = ref<CodeEditorDiagnostic[]>([])
-const editor = ref<InstanceType<typeof WxCodeEditor> | null>(null)
+const editor = ref<CodeEditorExposed | null>(null)
 
 watch(language, (next) => {
   code.value = samples[next]

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { applyPatch } from '../../../../packages/schema/src/patch'
 import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
 import { productFormPatches } from './catalog-dictionaries'
+import { notificationsChannelPatches } from './notifications'
 import { snippetsFormPatches } from './snippets'
 
 /**
@@ -48,6 +49,11 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   'snippets.form': {
     base: 'php/packages/module-snippets/resources/screens/form.json',
     patches: [...snippetsFormPatches],
+  },
+  // The providers' settings are laid over the common part by the server (`Provider::screen()`).
+  'notifications.channel': {
+    base: 'php/packages/module-notifications/resources/screens/channel.json',
+    patches: [...notificationsChannelPatches],
   },
   'faq.form': { base: 'php/packages/module-faq/resources/screens/form.json', patches: [] },
   'tasks.form': { base: 'php/packages/module-tasks/resources/screens/form.json', patches: [] },

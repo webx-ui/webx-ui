@@ -169,6 +169,8 @@ export const builtinIcons = {
     '<rect x="3.5" y="5.5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3.5V7M16 3.5V7"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7.5 6.9 5a2 2 0 0 0 2.2 0l6.9-5"/>',
+  /* A paper plane: a message sent — a test, a chat bot. */
+  send: '<path d="M20.5 3.5 3.8 10.4a.6.6 0 0 0 0 1.1l6.3 2.4 2.4 6.3a.6.6 0 0 0 1.1 0Z"/><path d="m10.1 13.9 4.6-4.6"/>',
   phone:
     '<path d="M7 3.5 9.5 4l1.2 3.4-1.9 1.6a11 11 0 0 0 5.2 5.2l1.6-1.9 3.4 1.2.5 2.5a2 2 0 0 1-2 2.3A15.5 15.5 0 0 1 4.7 5.5a2 2 0 0 1 2.3-2Z"/>',
   bell: '<path d="M7 10a5 5 0 0 1 10 0c0 4 1.5 5.5 1.5 5.5h-13S7 14 7 10Z"/><path d="M10.2 18.5a2 2 0 0 0 3.6 0"/>',

@@ -270,6 +270,15 @@ final class Catalogue
             'demo' => ['en', 'ru'],
             'public' => false,
         ],
+        'notifications' => [
+            'package' => 'webx-ui/module-notifications',
+            'npm' => '@webx-ui/module-notifications',
+            'label' => 'Notifications — channels to Telegram and e-mail, with templates and a log of what was sent',
+            'default' => false,
+            'requires' => ['admins'],
+            'demo' => ['en', 'ru'],
+            'public' => false,
+        ],
         'admins' => [
             'package' => 'webx-ui/module-auth',
             'npm' => '@webx-ui/module-auth',

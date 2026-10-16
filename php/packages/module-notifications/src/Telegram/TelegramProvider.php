@@ -52,7 +52,7 @@ final class TelegramProvider implements FindsRecipients, Provider
 
     public function icon(): string
     {
-        return 'paper-plane-tilt';
+        return 'send';
     }
 
     public function fields(): array

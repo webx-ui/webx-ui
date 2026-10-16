@@ -69,15 +69,11 @@
         },
         {
           "id": "template",
-          "type": "wx-textarea",
+          "type": "wx-notifications-template",
           "name": "template",
           "label": "trans::webx-notifications::screen.template",
           "help": "trans::webx-notifications::screen.template-help",
-          "localized": true,
-          "props": {
-            "rows": 10,
-            "monospace": true
-          }
+          "localized": true
         }
       ]
     },
