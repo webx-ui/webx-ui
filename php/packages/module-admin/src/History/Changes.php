@@ -42,6 +42,9 @@ final readonly class Changes
         foreach ($changes as $key => $change) {
             if (is_string($key) && is_array($change) && array_is_list($change) && count($change) === 2) {
                 $row = $this->entry($key, $change[0], $change[1]);
+            } elseif (is_array($change) && is_string($change['field'] ?? null) && ($change['masked'] ?? false) === true) {
+                // A secret: both sides are a mask, so "the same" is not a reason to drop it.
+                $row = ['field' => $change['field'], 'from' => self::plain($change['from'] ?? null), 'to' => self::plain($change['to'] ?? null), 'masked' => true];
             } elseif (is_array($change) && is_string($change['field'] ?? null)) {
                 $label = $change['label'] ?? null;
                 $row = $this->entry(

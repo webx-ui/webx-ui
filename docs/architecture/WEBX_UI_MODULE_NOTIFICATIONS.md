@@ -478,6 +478,7 @@ notifications_deliveries
   event             string(64) index
   subject_type      string(64) null         -- morph (§8.1)
   subject_id        bigint null
+  locale            string(12) null         -- язык шаблона (решение 13); null — основной язык сайта
   recipient         string(255)             -- chat_id / адрес; у admin_id — адрес на момент отправки
   recipient_label   string(255) null        -- подпись чата / имя администратора
   status            string(16) index        -- queued | sent | failed | skipped
@@ -923,3 +924,17 @@ subject: $submission)`. Это расходится со старым письм
 Этапы задачи: спека → PHP-ядро (модель, провайдеры, шаблоны, отправка, журнал, доктор, правка
 `module-admin`) → MCP, демо, `AGENTS.md` → панель, npm-пакет, плейграунд, гайд → Inbox (событие,
 поле, переход).
+
+**PHP-ядро (этап 2) — сделано.** Пакет `php/packages/module-notifications`: модели и миграции
+(§3.1, §9), реестры `Providers` и `NotificationEvents` (`EventDefinition`, `Variable` с
+`address` — адресат события), провайдеры Telegram (с `FindsRecipients`) и e-mail,
+`Templates\Template`, `Sending\Renderer` и `Deliverer`, `Jobs\Deliver`, `Notifications`
+(`send`, `test`, `retry`, `deliveriesFor`), API панели §10.5, экран `notifications.channel`,
+`webx:notifications:prune`, `Doctor\NotificationsCheck`, словари на 10 языков; в `module-admin` —
+`historyMasked()`. Уточнения против текста выше: настройки провайдера описывает
+`Provider::fields()` (`Sending\Field`: `secret` — в `credentials`, иначе — в `options`), а узлы
+формы — `Provider::screen()`, плоские, добавляются в карточку `connection`; форма шлёт настройки
+плоско по имени (`token`, `host`), агент — и объектами `credentials`/`options`; `sample` события —
+по ключу провайдера (`*` — любой). Строка `Catalogue`, `extra.webx.npm`/`panel`, `RelationTarget`
+каналов, MCP, демо и `AGENTS.md` — следующими этапами (пакет пока в `PENDING`
+`AgentDocsCoverageTest`).

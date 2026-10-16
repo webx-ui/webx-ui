@@ -224,8 +224,9 @@ pipe`. `… | grep -q` под `pipefail`: grep уходит на первом с
   ждёт 3xx, smoke спрашивает по имени (`visit "$VISITOR/…"`, `http://localhost:<порт>`) **без общего
   cookie-jar**: вторая сессия в нём отдаёт чужой `xsrf_token()`, и согласие OAuth не возвращает
   `code`.
-- **Локальный smoke против MariaDB.** Перед прогоном `DROP DATABASE` обеих баз (`webx_smoke`,
-  `webx_smoke_site`) и `CREATE DATABASE webx_smoke`: скрипт базу не чистит, и прошлый прогон роняет
+- **Локальный smoke против MariaDB.** Перед прогоном `DROP DATABASE` всех баз `webx_smoke%`
+  (`webx_smoke`, `webx_smoke_site`, `webx_smoke_site_private` — сайт без публичной части) и
+  `CREATE DATABASE webx_smoke`: скрипт базу не чистит, и прошлый прогон роняет
   миграцию Passport «table oauth_auth_codes already exists». Порты 8123/8124 должны быть свободны
   (`ss -ltnp`): `artisan serve` упавшего прогона другой сессии остаётся жить и отвечает из своего,
   уже удалённого скретчпада.
