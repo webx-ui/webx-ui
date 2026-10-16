@@ -96,6 +96,8 @@ class WidgetsServiceProvider extends ServiceProvider
 
     private const string ASK_AGAIN = 'consent.ask-again';
 
+    private const string MAPS_AT_ONCE = 'consent.maps-at-once';
+
     /** What `webx:blocks:offered --module=` calls the blocks this package offers. */
     public const string OFFERS = 'widgets';
 
@@ -240,6 +242,11 @@ class WidgetsServiceProvider extends ServiceProvider
                     'consent.version' => (int) $this->app->make(Consent::class)->version() + 1,
                     self::ASK_AGAIN => false,
                 ]);
+            }
+
+            // "Maps without asking" changes what asks for `media`: the banner's list starts over.
+            if (in_array(self::MAPS_AT_ONCE, (array) ($event->keys ?? []), true)) {
+                $this->app->make(Consent::class)->forgetSeen();
             }
         });
     }
