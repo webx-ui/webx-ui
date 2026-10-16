@@ -45,6 +45,7 @@
 | [WEBX_UI_MODULE_FAQ.md](WEBX_UI_MODULE_FAQ.md)                           | Вопросы и ответы, вставка блоком, `FAQPage`                                                    | выпущено                                    |
 | [WEBX_UI_MODULE_INBOX.md](WEBX_UI_MODULE_INBOX.md)                       | Заявки с форм сайта, мини-CRM                                                                  | выпущено                                    |
 | [WEBX_UI_MODULE_MEDIA.md](WEBX_UI_MODULE_MEDIA.md)                       | Файловый менеджер: папки, загрузка, редактор картинок                                          | выпущено                                    |
+| [WEBX_UI_MODULE_NOTIFICATIONS.md](WEBX_UI_MODULE_NOTIFICATIONS.md)       | Каналы уведомлений: Telegram и e-mail, шаблоны, события модулей, очередь, журнал, MCP          | спроектировано; открытые вопросы — §17      |
 | [WEBX_UI_MODULE_MENU.md](WEBX_UI_MODULE_MENU.md)                         | Именованные меню, дерево пунктов, контракт ссылок                                              | выпущено                                    |
 | [WEBX_UI_MODULE_PAGES.md](WEBX_UI_MODULE_PAGES.md)                       | Дерево страниц, главная — корень, содержимое блоками                                           | выпущено                                    |
 | [WEBX_UI_MODULE_PRESS.md](WEBX_UI_MODULE_PRESS.md)                       | Пресса о нас: издания и материалы, три блока                                                   | выпущено                                    |
