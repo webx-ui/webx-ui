@@ -116,7 +116,7 @@ final readonly class Values
      * What a list of blocks holds in fields whose type loads ahead ({@see PreloadsValues}),
      * handed over by type once, before a block of the list is rendered: a page of seven picture
      * blocks asked the library seven times, once per block, and asks it once. The nested lists
-     * are walked too; a repeater's items are not — its fields resolve one item at a time.
+     * and the items of a repeater are walked too.
      *
      * @param  iterable<array-key, mixed>  $blocks
      * @param  Closure(string): ?BlockType  $typeOf
@@ -159,33 +159,60 @@ final readonly class Values
                 continue;
             }
 
-            foreach (Schema::fields($type->schema, $this->types) as $name => $field) {
-                if (! array_key_exists($name, $values)) {
-                    continue;
-                }
+            $this->collectFields(Schema::fields($type->schema, $this->types), $values, $typeOf, $stored, $depth);
+        }
+    }
 
-                $value = $values[$name];
-                $id = (string) ($field['type'] ?? '');
-
-                if ($id === 'wx-blocks') {
-                    if (is_iterable($value)) {
-                        $this->collect($value, $typeOf, $stored, $depth + 1);
-                    }
-
-                    continue;
-                }
-
-                if (! $this->types->get($id) instanceof PreloadsValues) {
-                    continue;
-                }
-
-                // The language being read, the way `resolve()` picks it.
-                if ($this->locales->isMap($value, ($field['localized'] ?? false) === true)) {
-                    $value = $this->pick($value);
-                }
-
-                $stored[$id][] = $value;
+    /**
+     * The values of these fields — a block's, or one repeater item's, whose fields are named
+     * by `name` where a block's are named by `id` (the same bridge {@see Schema::fields()} makes).
+     *
+     * @param  array<string, array<string, mixed>>  $fields
+     * @param  array<array-key, mixed>  $values
+     * @param  Closure(string): ?BlockType  $typeOf
+     * @param  array<string, list<mixed>>  $stored
+     */
+    private function collectFields(array $fields, array $values, Closure $typeOf, array &$stored, int $depth): void
+    {
+        foreach ($fields as $name => $field) {
+            if (! array_key_exists($name, $values)) {
+                continue;
             }
+
+            $value = $values[$name];
+            $id = (string) ($field['type'] ?? '');
+
+            if ($id === 'wx-blocks') {
+                if (is_iterable($value)) {
+                    $this->collect($value, $typeOf, $stored, $depth + 1);
+                }
+
+                continue;
+            }
+
+            if ($id === 'wx-repeater') {
+                $children = is_array($field['children'] ?? null) ? $field['children'] : [];
+                $itemFields = Schema::fields($children, $this->types);
+
+                foreach (is_array($value) ? $value : [] as $item) {
+                    if (is_array($item) && $depth < 16) {
+                        $this->collectFields($itemFields, $item, $typeOf, $stored, $depth + 1);
+                    }
+                }
+
+                continue;
+            }
+
+            if (! $this->types->get($id) instanceof PreloadsValues) {
+                continue;
+            }
+
+            // The language being read, the way `resolve()` picks it.
+            if ($this->locales->isMap($value, ($field['localized'] ?? false) === true)) {
+                $value = $this->pick($value);
+            }
+
+            $stored[$id][] = $value;
         }
     }
 

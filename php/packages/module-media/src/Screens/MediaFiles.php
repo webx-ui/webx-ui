@@ -25,19 +25,44 @@ final class MediaFiles
     private array $found = [];
 
     /**
-     * Makes sure every one of these keys is known, in one query.
+     * Keys asked for and not looked up yet: `load()` only notes them, and the first `find()`
+     * looks all of them up at once — so two callers loading ahead of the same render (the
+     * pictures of a page and its galleries) are one query, not one each.
+     *
+     * @var array<string, string>
+     */
+    private array $wanted = [];
+
+    /**
+     * Makes sure every one of these keys will be known, in one query with everything else
+     * loaded ahead of the next `find()`.
      *
      * @param  list<string>  $paths
      */
     public function load(array $paths): void
     {
-        $missing = [];
-
         foreach ($paths as $path) {
             if ($path !== '' && ! array_key_exists($path, $this->found)) {
-                $missing[$path] = $path;
+                $this->wanted[$path] = $path;
             }
         }
+    }
+
+    public function find(string $path): ?MediaFile
+    {
+        if (! array_key_exists($path, $this->found)) {
+            $this->load([$path]);
+            $this->lookUp();
+        }
+
+        return $this->found[$path] ?? null;
+    }
+
+    /** Everything noted since the last look-up, in one query (and one more for the aliases). */
+    private function lookUp(): void
+    {
+        $missing = $this->wanted;
+        $this->wanted = [];
 
         if ($missing === []) {
             return;
@@ -63,16 +88,10 @@ final class MediaFiles
         }
     }
 
-    public function find(string $path): ?MediaFile
-    {
-        $this->load([$path]);
-
-        return $this->found[$path] ?? null;
-    }
-
     /** Between two responses of one process the library may well have changed. */
     public function flush(): void
     {
         $this->found = [];
+        $this->wanted = [];
     }
 }
