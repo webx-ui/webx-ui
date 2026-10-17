@@ -52,7 +52,9 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
   `blocks` (`Block`, `BlockVersion`), `regions` (`Region`), `seo` (`SeoUrl`, `SeoRedirect`,
   `SeoLinkBlock`, `SeoLinkItem`), `sitemap` (без моделей — сам слушает всё видимое), `snippets`
   (`Snippet`), `banners` (`Banner`, `Place`), `press` (`Outlet`, `Article`; издания страницы — один
-  загрузчик на запрос под версиями `press` + `routes`), `catalog` (без моделей, см. §8).
+  загрузчик на запрос под версиями `press` + `routes`), `catalog` (`Category`, `Product`, `Brand`, `Label`, `StockStatus`, `Landing`, `Property`,
+  `PropertyValue`, `PropertyGroup`, `PropertyInterval`; наборы свойств, список свойств и настройки
+  фасетов — по одной записи `remember`).
 
 ### 2.2. Что двигает версию
 
@@ -208,8 +210,11 @@ $html = $groups->remember('theme.header', ['menu', 'settings', 'theme'], fn () =
    импортам — транзакция (сброс один, после коммита) или массовая запись + явный `bump`.
    Альтернатива: дебаунс с досбросом в конце запроса/задачи — риск застрять с устаревшим при
    убитом процессе.
-2. **`catalog` без моделей.** Товар сохраняется тысячами в импорте; группа ждёт читателей
-   (этап 3), которые измерят цену сброса на товар. Пока — хуки на фасеты/свойства при явном сбросе.
+2. **`Product` в `bumpOn('catalog')`** — по замеру: импорт пишет чанками в транзакции, сброс — один
+   `increment` на зафиксированный чанк (140 строк: 277 мс против 264 без). Сегодня от товаров не
+   зависит ни одна запись группы; это задел под счётчики фасетов и дерево панели. Альтернатива —
+   убрать `Product` из `bumpOn` (одна строка в `CatalogServiceProvider`), если цена на большом
+   импорте окажется заметной.
 3. **Переезд существующих кешей сделан** (Settings, Locales, MenuCache, BlockTypes, Regions, Bundles,
    SeoRules, UrlRuleSource, LinkBlocks, Sitemap, Codes — на `remember`/`get`/`put`; резолвер
    адресов хранит попадания в `routes`); мосты `onReset` остались у миниатюр блоков и у кешей
