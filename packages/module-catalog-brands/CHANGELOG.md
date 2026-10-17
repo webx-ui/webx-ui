@@ -1,5 +1,16 @@
 # @webx-ui/module-catalog-brands
 
+## 0.1.15
+
+### Patch Changes
+
+- Updated dependencies [08eabf2]
+- Updated dependencies [08eabf2]
+  - @webx-ui/module-admin@0.30.0
+  - @webx-ui/core@0.43.0
+  - @webx-ui/module-catalog@0.9.0
+  - @webx-ui/schema@0.9.3
+
 ## 0.1.14
 
 ### Patch Changes

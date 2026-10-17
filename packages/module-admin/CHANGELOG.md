@@ -1,5 +1,17 @@
 # @webx-ui/admin
 
+## 0.30.0
+
+### Minor Changes
+
+- 08eabf2: «System → Cache»: `cache()` module, `WxCachePage`, `createCacheApi()` and the `cache` messages — the store, every cache group with its version and what resets it, «Reset the site cache» and a reset per group, the journal of resets below.
+
+### Patch Changes
+
+- Updated dependencies [08eabf2]
+  - @webx-ui/core@0.43.0
+  - @webx-ui/schema@0.9.3
+
 ## 0.29.0
 
 ### Minor Changes
