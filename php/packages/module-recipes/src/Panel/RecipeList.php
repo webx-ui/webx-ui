@@ -26,7 +26,7 @@ final class RecipeList
      */
     public function build(Request $request): Builder
     {
-        $query = Recipe::query()->with(['routes', 'categories']);
+        $query = Recipe::query()->with(['routes', 'categories'])->withCovers();
 
         if ($request->boolean('trashed')) {
             // The bin is a list of things to bring back, and the last thing thrown away is the

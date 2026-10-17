@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection as BaseCollection;
 use WebxUi\Admin\Categories\HasCategories;
 use WebxUi\Admin\Relations\HasRelations;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -22,6 +23,7 @@ use WebxUi\Events\Seo\EventMarkup;
 use WebxUi\Events\Seo\Trail;
 use WebxUi\Events\Support\Moment;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Screens\MediaValues;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
@@ -314,6 +316,47 @@ class Event extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructur
             ->orderByRaw("case when {$starts} is null then 0 else 1 end")
             ->orderByDesc($starts)
             ->orderByDesc($this->qualifyColumn($this->getKeyName()));
+    }
+
+    /**
+     * The covers of every event found read from the library at once: the cover is the first
+     * picture of the gallery, a key into the library, and `cover()` on each row of a list would
+     * otherwise look it up one at a time. For the panel's list, the picker and the sitemap.
+     *
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeWithCovers(Builder $query): Builder
+    {
+        // The hook also runs on what `pluck()` returns, which is no collection of models: hence
+        // the base collection, and the check of each item.
+        return $query->afterQuery(static function (BaseCollection $events): void {
+            $paths = [];
+
+            foreach ($events as $event) {
+                $first = $event instanceof Event && is_array($event->gallery) ? $event->gallery[0] ?? null : null;
+
+                if (is_array($first) && is_string($first['path'] ?? null)) {
+                    $paths[] = $first['path'];
+                }
+            }
+
+            if ($paths !== []) {
+                Container::getInstance()->make(MediaFiles::class)->load($paths);
+            }
+        });
+    }
+
+    /**
+     * What a line of the sitemap asks of an event, for a chunk at once: the cover behind
+     * `og:image`. The date is a column, and the address comes with the row of the registry.
+     *
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeForSitemap(Builder $query): Builder
+    {
+        return $this->scopeWithCovers($query);
     }
 
     /** Whether it is over — the same expression as {@see scopePast()}, asked of one event. */

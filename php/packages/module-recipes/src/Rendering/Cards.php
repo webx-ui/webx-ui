@@ -36,8 +36,12 @@ use WebxUi\Routing\Models\Route;
  */
 final class Cards
 {
-    /** What a list of recipes is loaded with, so that no card goes back to the database. */
-    public const RELATIONS = ['routes', 'categories.routes', 'nutrients'];
+    /**
+     * What a list of recipes is loaded with, so that no card goes back to the database. The
+     * addresses of the categories are not here: {@see recipes()} reads them for the whole list at
+     * once, and skips the ones the page around the list loaded already ({@see CatalogPage}).
+     */
+    public const RELATIONS = ['routes', 'categories', 'nutrients'];
 
     /** The role the recipe form keeps its services under (`wx-relations` named `services`). */
     private const SERVICES = 'services';
@@ -54,6 +58,7 @@ final class Cards
     public function recipes(array $recipes, string $locale): array
     {
         $paths = [];
+        $categories = [];
 
         foreach ($recipes as $recipe) {
             foreach (is_array($recipe->gallery) ? $recipe->gallery : [] as $picture) {
@@ -61,10 +66,24 @@ final class Cards
                     $paths[] = $picture['path'];
                 }
             }
+
+            if ($recipe->relationLoaded('categories')) {
+                foreach ($recipe->getRelation('categories') as $category) {
+                    $categories[] = $category;
+                }
+            }
         }
 
         // Every picture of the list in one query of the library rather than one per card.
         $this->files->load($paths);
+
+        // And the addresses of every category of the list in one query of the registry — the
+        // same category under two recipes is two instances, and the registry is asked once for
+        // the id. None at all when the page loaded them already.
+        if ($categories !== []) {
+            (new Collection($categories))->loadMissing('routes');
+        }
+
         $this->loadServices($recipes);
 
         return array_map(fn (Recipe $recipe): array => $this->recipe($recipe, $locale), $recipes);

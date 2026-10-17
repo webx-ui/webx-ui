@@ -40,7 +40,9 @@ class VacancyHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        $entity->loadMissing(['categories']);
+        // With the registry rows of the vacancy: the trail, the markup and the `<head>` all print
+        // its address, and read the same rows rather than one reading each.
+        $entity->loadMissing(['categories', 'routes']);
 
         return response($this->views->make('vacancy', $this->page->data($entity))->render());
     }

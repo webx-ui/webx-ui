@@ -42,7 +42,9 @@ class EventHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        $entity->loadMissing(['categories']);
+        // With the registry rows of what the page links to — the event itself in the trail, the
+        // markup and the `<head>`, its categories in the facts — rather than one reading per link.
+        $entity->loadMissing(['routes', 'categories.routes']);
 
         return response($this->views->make('event', $this->page->data($entity))->render());
     }

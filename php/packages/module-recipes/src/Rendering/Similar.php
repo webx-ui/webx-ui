@@ -53,6 +53,10 @@ final class Similar
                 ->take($limit)
                 ->values();
 
+            // The relations came through the picker's query, which loads what the picker shows;
+            // the cards need their addresses and nutrients too — for the few shown, at once.
+            $shown->loadMissing(Cards::RELATIONS);
+
             return $shown;
         }
 
@@ -79,7 +83,9 @@ final class Similar
                 ->whereIn($links->getQualifiedRelatedPivotKeyName(), $ids)];
         }
 
-        $services = $recipe->related('services')->modelKeys();
+        // The ids are the points' only input: no need to load the services to count by them.
+        // None without the module: its rows wait for it, and count for nothing meanwhile.
+        $services = Relations::targets()->has('service') ? $recipe->shownRelatedIds('services') : [];
 
         if ($services !== []) {
             $table = Relations::TABLE;
@@ -107,16 +113,22 @@ final class Similar
             ->whereRaw("({$score}) > 0", $bindings)
             ->orderByDesc('similarity')
             ->orderBy($recipe->qualifyColumn('position'))
-            ->orderBy($recipe->getQualifiedKeyName())
-            ->with(Cards::RELATIONS);
+            ->orderBy($recipe->getQualifiedKeyName());
 
         /** @var Collection<int, Recipe> $found */
         $found = $query->get();
 
-        return $found
+        // Whether a candidate is written in the language is a question of its words, so the
+        // limit is taken here — and what the cards need is loaded for the few shown, not for
+        // every candidate the score admitted.
+        $shown = $found
             ->filter(static fn (Recipe $other): bool => $other->hasUrlIn($locale))
             ->take($limit)
             ->values();
+
+        $shown->loadMissing(Cards::RELATIONS);
+
+        return $shown;
     }
 
     /**

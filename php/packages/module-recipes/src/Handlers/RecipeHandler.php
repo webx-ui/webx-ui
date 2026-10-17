@@ -40,7 +40,9 @@ class RecipeHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        $entity->loadMissing(['categories', 'nutrients']);
+        // With the registry rows of what the page links to — the recipe itself in the trail, the
+        // markup and the `<head>`, its categories in the facts — rather than one reading per link.
+        $entity->loadMissing(['routes', 'categories.routes', 'nutrients']);
 
         return response($this->views->make('recipe', $this->page->data($entity))->render());
     }

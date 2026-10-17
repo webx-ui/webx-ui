@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Events\Rendering;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Events\Models\Event;
@@ -23,9 +24,14 @@ final class ListPage
     ) {}
 
     /**
+     * @param  iterable<Model>  $categories  The categories the page around the list has loaded
+     *                                       with their addresses — the navigation of the index,
+     *                                       the category of its own page — so that a card under
+     *                                       one of them does not ask the registry for it again.
+     *
      * @throws NotFoundHttpException A page past the last one.
      */
-    public function build(Request $request, EventQuery $query): Listing
+    public function build(Request $request, EventQuery $query, iterable $categories = []): Listing
     {
         $locale = $query->resolvedLocale();
 
@@ -39,11 +45,46 @@ final class ListPage
         }
 
         /** @var list<Event> $shown */
+        $this->shareRoutes($shown, $categories);
         $cards = $this->cards->events($shown, $locale);
 
         $this->pushItemList($cards);
 
         return $listing->withItems($cards);
+    }
+
+    /**
+     * The registry rows the page already holds for a category, handed to the same category under
+     * the events shown — another instance of the same row, which would otherwise be read again.
+     *
+     * @param  list<Event>  $events
+     * @param  iterable<Model>  $categories
+     */
+    private function shareRoutes(array $events, iterable $categories): void
+    {
+        $known = [];
+
+        foreach ($categories as $category) {
+            if ($category->relationLoaded('routes')) {
+                $known[(int) $category->getKey()] = $category->getRelation('routes');
+            }
+        }
+
+        if ($known === []) {
+            return;
+        }
+
+        foreach ($events as $event) {
+            if (! $event->relationLoaded('categories')) {
+                continue;
+            }
+
+            foreach ($event->getRelation('categories') as $category) {
+                if (! $category->relationLoaded('routes') && isset($known[(int) $category->getKey()])) {
+                    $category->setRelation('routes', $known[(int) $category->getKey()]);
+                }
+            }
+        }
     }
 
     /**

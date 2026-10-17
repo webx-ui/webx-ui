@@ -105,6 +105,24 @@ trait HasRelations
     }
 
     /**
+     * The ids of one role as the page shows them: what publishing is about to write when there is
+     * something pending (a preview is a copy laid over with the draft and never saved), the rows
+     * otherwise — the same choice {@see related()} makes, without loading the targets. For a
+     * page that hands the ids to the targets' own query (`services()->only($ids)`), which loads
+     * the records once, with what its cards need.
+     *
+     * @return list<int>
+     */
+    public function shownRelatedIds(string $role): array
+    {
+        if (array_key_exists($role, $this->pendingRelations)) {
+            return $this->pendingRelations[$role]['ids'];
+        }
+
+        return $this->relatedIds($role);
+    }
+
+    /**
      * The ids of one role as the site has them, rows of removed modules included — the value is
      * the editor's, and a module coming back finds it whole.
      *

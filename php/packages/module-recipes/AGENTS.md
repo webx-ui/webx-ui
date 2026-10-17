@@ -119,6 +119,8 @@ Without a theme the catalogue prints a smaller look of its own inline (`partials
   and in Google's Rich Results Test.
 - With MCP: read `recipes://catalog` first, then `recipes_get` (it gives a preview link of the
   draft); every tool that changes something takes `dry_run: true` first.
+- Touched a list, a card or a page part: `tests/PerformanceTest.php` holds the query budget of
+  every public page — a query per card fails it before anybody sees the site slow.
 
 ## Read more
 

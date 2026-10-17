@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Recipes\Rendering;
 
 use Illuminate\Container\Container;
-use Illuminate\Database\Eloquent\Model;
+use WebxUi\Admin\Relations\Relations;
 use WebxUi\Localization\Locales;
 use WebxUi\Recipes\Models\Recipe;
 use WebxUi\Recipes\Models\RecipeNutrient;
@@ -73,11 +73,15 @@ final class RecipePage
      */
     private function services(Recipe $recipe, string $locale): array
     {
-        if (! class_exists(ServiceQuery::class)) {
+        // The module has to be on the site, not only on the disk: the rows point at a table its
+        // provider makes, and wait for it otherwise.
+        if (! class_exists(ServiceQuery::class) || ! Relations::targets()->has('service')) {
             return [];
         }
 
-        $ids = $recipe->related('services')->map(static fn (Model $service): int => (int) $service->getKey())->all();
+        // The ids only: `services()` loads the records once, with what its cards need, and asks
+        // whether each may be shown — `related()` would have loaded them first, to be dropped.
+        $ids = $recipe->shownRelatedIds('services');
 
         if ($ids === []) {
             return [];

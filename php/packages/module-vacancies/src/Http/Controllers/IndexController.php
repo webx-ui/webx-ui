@@ -46,8 +46,10 @@ class IndexController
             $category = VacancyCategory::findBySlug($asked, $locale);
 
             // A hidden category is no filter a reader could have been shown: nothing matches.
+            // A visible one is its group of the whole index — the same vacancies in the same
+            // order, already built for the filter's links — rather than the list read again.
             $groups = $category !== null && $category->is_visible
-                ? (new VacancyQuery)->locale($locale)->in((int) $category->getKey())->groups()
+                ? array_values(array_filter($everything, static fn (array $group): bool => $group['id'] === (int) $category->getKey()))
                 : [];
         }
 

@@ -32,7 +32,7 @@ final class EventTarget extends RelationTarget
     public function query(): Builder
     {
         /** @var Builder<Model> $query */
-        $query = Event::query();
+        $query = Event::query()->withCovers();
 
         return $query;
     }

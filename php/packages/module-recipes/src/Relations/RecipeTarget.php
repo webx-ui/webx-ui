@@ -32,7 +32,7 @@ final class RecipeTarget extends RelationTarget
     public function query(): Builder
     {
         /** @var Builder<Model> $query */
-        $query = Recipe::query()->with('categories');
+        $query = Recipe::query()->with('categories')->withCovers();
 
         return $query;
     }

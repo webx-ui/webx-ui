@@ -121,6 +121,8 @@ Without a theme the list prints a smaller look of its own inline.
   with a date on https://validator.schema.org. A draft is seen through the editor's preview link.
 - With MCP: read `events://catalog` first, then `events_get` by address; every mutating tool
   takes `dry_run: true`.
+- Touched a list, a card or a page part: `tests/PerformanceTest.php` holds the query budget of
+  every public page — a query per card fails it before anybody sees the site slow.
 
 ## Read more
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Recipes\Rendering;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Recipes\Models\Recipe;
@@ -27,9 +28,15 @@ final class CatalogPage
     ) {}
 
     /**
+     * @param  iterable<Model>  $categories  The categories the page around the catalogue has
+     *                                       loaded with their addresses — the navigation of the
+     *                                       index, the category of its own page — so that a card
+     *                                       under one of them does not ask the registry for it
+     *                                       again.
+     *
      * @throws NotFoundHttpException A page past the last one.
      */
-    public function build(Request $request, RecipeQuery $query): Catalog
+    public function build(Request $request, RecipeQuery $query, iterable $categories = []): Catalog
     {
         $locale = $query->resolvedLocale();
         $recipes = $query->models()->keyBy(static fn (Recipe $recipe): int => (int) $recipe->getKey());
@@ -62,11 +69,46 @@ final class CatalogPage
             }
         }
 
+        $this->shareRoutes($shown, $categories);
         $cards = $this->cards->recipes($shown, $locale);
 
         $this->pushItemList($cards);
 
         return $catalog->withItems($cards);
+    }
+
+    /**
+     * The registry rows the page already holds for a category, handed to the same category under
+     * the recipes shown — another instance of the same row, which would otherwise be read again.
+     *
+     * @param  list<Recipe>  $recipes
+     * @param  iterable<Model>  $categories
+     */
+    private function shareRoutes(array $recipes, iterable $categories): void
+    {
+        $known = [];
+
+        foreach ($categories as $category) {
+            if ($category->relationLoaded('routes')) {
+                $known[(int) $category->getKey()] = $category->getRelation('routes');
+            }
+        }
+
+        if ($known === []) {
+            return;
+        }
+
+        foreach ($recipes as $recipe) {
+            if (! $recipe->relationLoaded('categories')) {
+                continue;
+            }
+
+            foreach ($recipe->getRelation('categories') as $category) {
+                if (! $category->relationLoaded('routes') && isset($known[(int) $category->getKey()])) {
+                    $category->setRelation('routes', $known[(int) $category->getKey()]);
+                }
+            }
+        }
     }
 
     /**
