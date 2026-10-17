@@ -39,7 +39,9 @@ final class ServiceController
         $locale = $locales->content();
 
         return new JsonResponse([
+            // The SEO card is for the revision every row carries, which the agent's list does not.
             'data' => $this->list->build($request)
+                ->with('seo')
                 ->get()
                 ->map(static fn (Service $service): array => (new ServiceResource($service))->resolve($request))
                 ->values()

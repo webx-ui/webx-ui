@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Submissions;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -47,6 +48,15 @@ final class ListQuery
         FieldType::Radio,
         FieldType::Date,
     ];
+
+    /**
+     * The statuses, in their order, read once for the list: the tabs, the counts and the filters
+     * each asked the table again — three or four queries for five rows that do not change while a
+     * request is served.
+     *
+     * @var Collection<int, Status>|null
+     */
+    private ?Collection $statuses = null;
 
     /**
      * @param  list<Field>  $columns  the `in_table` fields, in the order of the form
@@ -104,7 +114,7 @@ final class ListQuery
     public function views(): array
     {
         /** @var list<string> $keys */
-        $keys = Status::query()->orderBy('position')->pluck('key')->all();
+        $keys = $this->statuses()->pluck('key')->values()->all();
 
         return [self::VIEW_ALL, self::VIEW_UNREAD, ...$keys];
     }
@@ -181,7 +191,7 @@ final class ListQuery
         $statuses = [];
         $all = 0;
 
-        foreach (Status::query()->orderBy('position')->get() as $status) {
+        foreach ($this->statuses() as $status) {
             $count = (int) ($byStatus[$status->getKey()] ?? 0);
             $statuses[$status->key] = $count;
 
@@ -430,7 +440,7 @@ final class ListQuery
     private function spamIds(): array
     {
         /** @var list<int> $ids */
-        $ids = Status::query()->where('is_spam', true)->pluck('id')->all();
+        $ids = $this->statuses()->where('is_spam', true)->map(static fn (Status $status): int => (int) $status->getKey())->values()->all();
 
         return $ids;
     }
@@ -441,8 +451,16 @@ final class ListQuery
     private function statusIds(string $key): array
     {
         /** @var list<int> $ids */
-        $ids = Status::query()->where('key', $key)->pluck('id')->all();
+        $ids = $this->statuses()->where('key', $key)->map(static fn (Status $status): int => (int) $status->getKey())->values()->all();
 
         return $ids;
+    }
+
+    /**
+     * @return Collection<int, Status>
+     */
+    private function statuses(): Collection
+    {
+        return $this->statuses ??= Status::query()->orderBy('position')->get();
     }
 }

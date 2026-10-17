@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Admin\Relations\Relations;
 use WebxUi\Localization\Locales;
 use WebxUi\Vacancies\Http\Requests\VacancyRequest;
 use WebxUi\Vacancies\Http\Resources\VacancyResource;
@@ -43,7 +44,11 @@ final class VacancyController
     {
         $locale = $locales->current();
 
-        $rows = $this->list->build($request)->get()
+        // The SEO card and the form each row hashes into its revision, for the whole list at once.
+        $vacancies = $this->list->build($request)->with('seo')->get();
+        Relations::loadIds($vacancies, Vacancy::FORM);
+
+        $rows = $vacancies
             ->map(static fn (Vacancy $vacancy): array => (new VacancyResource($vacancy))->resolve($request))
             ->values()
             ->all();
@@ -137,7 +142,10 @@ final class VacancyController
 
     private function loaded(Vacancy $vacancy): Vacancy
     {
-        return $vacancy->loadMissing(['routes', 'categories']);
+        // The form, its revision and its relation field each read the form: once for all.
+        Relations::loadIds([$vacancy], Vacancy::FORM);
+
+        return $vacancy->loadMissing(['routes', 'categories', 'seo']);
     }
 
     private function author(Request $request): ?int

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,6 +12,8 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Blocks\Models\Region;
+use WebxUi\Blocks\Panel\Usage;
+use WebxUi\Cache\CacheGroups;
 
 /**
  * Values for fields a block type does not define: finding them and taking them out.
@@ -208,6 +211,8 @@ final class StrayValues
 
         if ($write && $writes !== []) {
             $entity->newQueryWithoutScopes()->whereKey($entity->getKey())->update($writes);
+            // Past the model's events: where each type stands may have changed with the content.
+            Container::getInstance()->make(CacheGroups::class)->bump(Usage::GROUP);
         }
 
         return new StrayReport($site, $drafted, $draftDropped);

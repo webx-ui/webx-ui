@@ -20,6 +20,7 @@ use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Blog\Exceptions\BlogException;
 use WebxUi\Blog\Models\Article;
+use WebxUi\Blog\Models\Author;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
 use WebxUi\Blog\Panel\ArticleForm;
@@ -208,6 +209,11 @@ final class ArticleTools
         $page = $this->container->make(ArticleList::class)
             ->build($this->request($arguments))
             ->paginate($perPage, ['*'], 'page', max(1, (int) ($arguments['page'] ?? 1)));
+
+        // The byline of every row asks for the profile and its address: once for the page.
+        if (Author::enabled()) {
+            $page->getCollection()->load('authorProfile.routes');
+        }
 
         return [
             'locales' => $this->locales()->codes(),

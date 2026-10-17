@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Blog\Panel;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use WebxUi\Blog\Models\Article;
 
 /**
@@ -53,8 +55,23 @@ final class Revision
      */
     private static function keys(Article $article, string $relation): array
     {
-        /** @var list<int> $ids */
-        $ids = $article->{$relation}()->pluck('id')->map(static fn (mixed $id): int => (int) $id)->sort()->values()->all();
+        // A row of the list arrives with its relations loaded, and twenty rows asking again were
+        // sixty queries; the same rows either way, so the same hash.
+        $loaded = $article->relationLoaded($relation) ? $article->getRelation($relation) : null;
+        $ids = [];
+
+        if ($loaded instanceof Collection) {
+            foreach ($loaded as $row) {
+                if ($row instanceof Model) {
+                    $ids[] = (int) $row->getKey();
+                }
+            }
+        } else {
+            /** @var list<int> $ids */
+            $ids = $article->{$relation}()->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
+        }
+
+        sort($ids);
 
         return $ids;
     }

@@ -49,6 +49,14 @@ trait HasRelations
     /** @var array<string, Collection<int, Model>> */
     protected array $loadedRelated = [];
 
+    /**
+     * The ids of a role read for a whole list at once ({@see Relations::loadIds()}): a row of
+     * the panel hashes them into its revision, and twenty rows were twenty queries per role.
+     *
+     * @var array<string, list<int>>
+     */
+    protected array $loadedRelatedIds = [];
+
     /** The owner's key in the rows: `recipe`. The same name the address registry knows it by. */
     abstract public function relationKey(): string;
 
@@ -130,6 +138,10 @@ trait HasRelations
      */
     public function relatedIds(string $role): array
     {
+        if (array_key_exists($role, $this->loadedRelatedIds)) {
+            return $this->loadedRelatedIds[$role];
+        }
+
         /** @var list<int> $ids */
         $ids = Relations::rows($this)
             ->where('owner_type', $this->relationKey())
@@ -192,7 +204,7 @@ trait HasRelations
             }
         });
 
-        unset($this->loadedRelated[$role]);
+        unset($this->loadedRelated[$role], $this->loadedRelatedIds[$role]);
     }
 
     /**
@@ -285,6 +297,16 @@ trait HasRelations
     public function setLoadedRelated(string $role, Collection $related): void
     {
         $this->loadedRelated[$role] = $related;
+    }
+
+    /**
+     * @internal Filled by {@see Relations::loadIds()}.
+     *
+     * @param  list<int>  $ids
+     */
+    public function setLoadedRelatedIds(string $role, array $ids): void
+    {
+        $this->loadedRelatedIds[$role] = $ids;
     }
 
     /**

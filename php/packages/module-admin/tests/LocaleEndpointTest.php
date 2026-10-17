@@ -48,6 +48,29 @@ final class LocaleEndpointTest extends TestCase
             ->assertJsonPath('data.namespaces.webx-admin.nav.sections', 'Разделы');
     }
 
+    /**
+     * Two hundred kilobytes on every opening of the panel: the browser keeps them and asks
+     * whether they are still the ones, and an unchanged dictionary is a 304 without a body.
+     */
+    #[Test]
+    public function the_dictionary_is_revalidated_rather_than_sent_again(): void
+    {
+        $first = $this->getJson('api/cms/translations/ru')->assertOk();
+        $tag = (string) $first->headers->get('ETag');
+
+        $this->assertNotSame('', $tag);
+        $this->assertStringContainsString('no-cache', (string) $first->headers->get('Cache-Control'));
+        $this->assertStringContainsString('private', (string) $first->headers->get('Cache-Control'));
+
+        $again = $this->getJson('api/cms/translations/ru', ['If-None-Match' => $tag]);
+        $again->assertStatus(304);
+        $this->assertSame('', (string) $again->getContent());
+
+        // Another language is another dictionary, and another tag.
+        $this->assertNotSame($tag, (string) $this->getJson('api/cms/translations/uk')->headers->get('ETag'));
+        $this->getJson('api/cms/translations/uk', ['If-None-Match' => $tag])->assertOk()->assertJsonPath('data.locale', 'uk');
+    }
+
     #[Test]
     public function a_language_the_panel_does_not_speak_is_answered_in_one_it_does(): void
     {

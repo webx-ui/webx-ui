@@ -109,6 +109,7 @@ use WebxUi\Admin\Uploads\Uploads;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cache\CacheServiceProvider;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Translations\DictionaryBuilder;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Routing\SiteUrl;
 
@@ -307,6 +308,8 @@ class AdminServiceProvider extends ServiceProvider
                 $app->bound(BrandingSource::class) ? $app->make(BrandingSource::class) : null,
                 // The language prefix of the site's home, when there is a registry to ask.
                 $app->bound(SiteUrls::class) ? $app->make(SiteUrls::class) : null,
+                $app->make(CacheGroups::class),
+                $app->make(DictionaryBuilder::class),
             ),
         );
     }

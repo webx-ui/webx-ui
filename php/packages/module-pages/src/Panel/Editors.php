@@ -38,20 +38,25 @@ final class Editors
             return [];
         }
 
-        // Newest first, and the first one seen per page wins: `id` orders the same way
-        // `created_at` does and does not tie inside a second, which two saves in one request
-        // can easily do.
-        $rows = EntityVersion::query()
+        // The newest version with an author, per page: `id` orders the same way `created_at`
+        // does and does not tie inside a second, which two saves in one request can easily do.
+        // Its number first, then the one row it is — a page edited a hundred times is a hundred
+        // rows of history, and the column wants one name.
+        $newest = EntityVersion::query()
             ->where('versionable_type', (new Page)->getMorphClass())
             ->whereIn('versionable_id', $ids)
             ->whereNotNull('author_id')
-            ->orderByDesc('id')
-            ->get(['versionable_id', 'author_id']);
+            ->groupBy('versionable_id')
+            ->selectRaw('max(id) as id')
+            ->pluck('id')
+            ->all();
 
         $latest = [];
 
-        foreach ($rows as $row) {
-            $latest[$row->versionable_id] ??= (int) $row->author_id;
+        if ($newest !== []) {
+            foreach (EntityVersion::query()->whereKey($newest)->get(['versionable_id', 'author_id']) as $row) {
+                $latest[(int) $row->versionable_id] = (int) $row->author_id;
+            }
         }
 
         $names = Authors::names($latest);

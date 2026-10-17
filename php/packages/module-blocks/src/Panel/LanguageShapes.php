@@ -12,6 +12,7 @@ use WebxUi\Blocks\Content;
 use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Regions;
 use WebxUi\Blocks\Schema;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 
 /**
@@ -176,6 +177,7 @@ final class LanguageShapes
 
             if ($dirty) {
                 $entity->saveQuietly();
+                $this->container->make(CacheGroups::class)->bump(Usage::GROUP);
                 $changed++;
 
                 // A region's published tree is cached by name, and a quiet save does not say so.

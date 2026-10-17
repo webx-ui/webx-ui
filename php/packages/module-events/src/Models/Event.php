@@ -466,14 +466,7 @@ class Event extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructur
      */
     public function categoryIds(): array
     {
-        $relation = $this->categories();
-
-        /** @var list<int> $ids */
-        $ids = $relation->pluck($relation->getRelated()->getQualifiedKeyName())
-            ->map(static fn (mixed $id): int => (int) $id)
-            ->all();
-
-        return $ids;
+        return $this->categoryKeys('categories');
     }
 
     /** Where a published draft hands back its categories: written by the save that follows. */

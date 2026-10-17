@@ -6,6 +6,8 @@ namespace WebxUi\Vacancies\Mcp;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -14,6 +16,7 @@ use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Editing\AgentRevision;
 use WebxUi\Admin\Editing\Presence;
+use WebxUi\Admin\Relations\Relations;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenValues;
@@ -277,14 +280,20 @@ final class VacancyTools
         }
 
         $vacancies = $this->container->make(VacancyList::class)->build(Request::create('/', 'GET', $query))->get();
+        $this->preload($vacancies);
 
-        return [
-            'locales' => $this->locales()->codes(),
-            'default_locale' => $this->locales()->defaultCode(),
-            'state' => $query['trashed'] === '1' ? 'bin' : $state,
-            'count' => $vacancies->count(),
-            'vacancies' => $vacancies->map(fn (Vacancy $vacancy): array => $this->summary($vacancy))->values()->all(),
-        ];
+        try {
+            return [
+                'locales' => $this->locales()->codes(),
+                'default_locale' => $this->locales()->defaultCode(),
+                'state' => $query['trashed'] === '1' ? 'bin' : $state,
+                'count' => $vacancies->count(),
+                'vacancies' => $vacancies->map(fn (Vacancy $vacancy): array => $this->summary($vacancy))->values()->all(),
+            ];
+        } finally {
+            // The tools outlive a call; the next one reads the rows as they are then.
+            $this->categories = $this->forms = null;
+        }
     }
 
     /**
@@ -768,6 +777,44 @@ final class VacancyTools
     }
 
     /**
+     * The categories and the forms a list names, by id, read once for the list: every row asked for
+     * its own, which was two queries a vacancy. Null outside a list, where the row asks itself.
+     *
+     * @var array<int, VacancyCategory>|null
+     */
+    private ?array $categories = null;
+
+    /** @var array<int, Model>|null */
+    private ?array $forms = null;
+
+    /**
+     * @param  Collection<int, Vacancy>  $vacancies
+     */
+    private function preload(Collection $vacancies): void
+    {
+        Relations::loadIds($vacancies, Vacancy::FORM);
+
+        $categoryIds = [];
+        $formIds = [];
+
+        foreach ($vacancies as $vacancy) {
+            $categoryIds = [...$categoryIds, ...$vacancy->draftedCategoryIds()];
+            $form = $vacancy->draftedRelatedIds(Vacancy::FORM)[0] ?? null;
+
+            if ($form !== null) {
+                $formIds[] = $form;
+            }
+        }
+
+        $this->categories = VacancyCategory::query()->whereKey(array_values(array_unique($categoryIds)))->get()->keyBy(static fn (VacancyCategory $category): int => (int) $category->getKey())->all();
+
+        $target = $this->formTarget();
+        $this->forms = $target === null || $formIds === []
+            ? []
+            : $target->query()->whereKey(array_values(array_unique($formIds)))->get()->keyBy(static fn (Model $form): int => (int) $form->getKey())->all();
+    }
+
+    /**
      * One vacancy as an agent needs it — every language at once, the draft's words and categories
      * where there is a draft, and from the site whether it is closed, since that is what the tabs
      * of the list go by (§4.11).
@@ -780,7 +827,11 @@ final class VacancyTools
         $shown = $vacancy->hasDraft() ? $vacancy->withDraft() : $vacancy;
         $ids = $vacancy->draftedCategoryIds();
 
-        $categories = VacancyCategory::query()->whereKey($ids)->get()
+        $categories = $this->categories === null
+            ? VacancyCategory::query()->whereKey($ids)->get()
+            : new Collection(array_values(array_intersect_key($this->categories, array_flip($ids))));
+
+        $categories = $categories
             ->sortBy(static fn (VacancyCategory $category): int => (int) array_search((int) $category->getKey(), $ids, true))
             ->map(static fn (VacancyCategory $category): array => [
                 'id' => (int) $category->getKey(),
@@ -835,7 +886,7 @@ final class VacancyTools
             return null;
         }
 
-        $form = $target->query()->whereKey($ids[0])->first();
+        $form = $this->forms === null ? $target->query()->whereKey($ids[0])->first() : ($this->forms[$ids[0]] ?? null);
 
         return $form === null ? null : [
             'id' => (int) $form->getKey(),

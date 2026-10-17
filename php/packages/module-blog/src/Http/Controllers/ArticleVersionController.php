@@ -29,7 +29,7 @@ final class ArticleVersionController
 {
     public function index(Article $article): JsonResponse
     {
-        $versions = $article->publishedVersions()->get();
+        $versions = $article->publishedVersions()->withoutPayload()->get();
         $authors = Authors::names($versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
 
         return ApiResponse::data(

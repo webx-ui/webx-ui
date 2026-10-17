@@ -9,8 +9,12 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Testing\CountsQueries;
+use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Events\Models\Event;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Media\Models\MediaFile;
 
 /**
@@ -25,6 +29,40 @@ use WebxUi\Media\Models\MediaFile;
 final class PerformanceTest extends TestCase
 {
     use CountsQueries;
+
+    /**
+     * The panel's list, its form and the agent's list (WEBX_UI_PERFORMANCE_AUDIT.md §9.5): each
+     * row hashes its revision out of what the page loaded at once, so a list costs the same for
+     * five rows and for fifty. Warm — the request before it filled the caches every panel request
+     * reads — because what is measured is the endpoint, not the first visitor after a deploy.
+     */
+    #[Test]
+    public function the_panel_fits_its_budgets_and_does_not_grow_with_the_rows(): void
+    {
+        $this->seedEvents();
+        $admin = CmsUser::query()->create(['name' => 'Admin', 'email' => 'budget@example.test', 'password' => 'correct-horse-battery', 'is_super' => true, 'is_active' => true]);
+        $id = (string) Event::query()->orderBy('id')->value('id');
+
+        // [address, budget]; nothing may repeat on any of them
+        foreach ([
+            ['/api/cms/events', 12],
+            ['/api/cms/events/{id}', 8],
+        ] as [$url, $budget]) {
+            $url = str_replace('{id}', $id, $url);
+            $this->actingAs($admin, 'cms')->getJson($url)->assertOk();
+
+            $this->assertQueriesWithin($budget, fn () => $this->actingAs($admin, 'cms')->getJson($url)->assertOk(), $url);
+            $this->assertNoRepeatedQueries(fn () => $this->actingAs($admin, 'cms')->getJson($url)->assertOk(), $url);
+        }
+
+        foreach ([
+            ['events_list', 7],
+        ] as [$tool, $budget]) {
+            $bound = new RegistryTool($this->app->make(ToolRegistry::class)->tool($tool));
+            $this->assertQueriesWithin($budget, fn () => WebxServer::actingAs($admin, 'cms')->tool($bound, [])->assertOk(), $tool);
+            $this->assertNoRepeatedQueries(fn () => WebxServer::actingAs($admin, 'cms')->tool($bound, [])->assertOk(), $tool);
+        }
+    }
 
     private const EVENTS = 30;
 

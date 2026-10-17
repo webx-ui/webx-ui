@@ -9,8 +9,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Testing\CountsQueries;
+use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Cache\CacheGroups;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
@@ -29,6 +33,46 @@ use WebxUi\Pages\Models\Page;
 final class PerformanceTest extends TestCase
 {
     use CountsQueries;
+
+    /**
+     * The panel's list, its form and the agent's list (WEBX_UI_PERFORMANCE_AUDIT.md §9.5): each
+     * row hashes its revision out of what the page loaded at once, so a list costs the same for
+     * five rows and for fifty. Warm — the request before it filled the caches every panel request
+     * reads — because what is measured is the endpoint, not the first visitor after a deploy.
+     */
+    #[Test]
+    public function the_panel_fits_its_budgets_and_does_not_grow_with_the_rows(): void
+    {
+        $this->seedTree();
+        $admin = CmsUser::query()->create(['name' => 'Admin', 'email' => 'budget@example.test', 'password' => 'correct-horse-battery', 'is_super' => true, 'is_active' => true]);
+        $id = (string) Page::query()->orderBy('id')->value('id');
+
+        // [address, budget, whether nothing may repeat]
+        foreach ([
+            ['/api/cms/pages', 8, true],
+            ['/api/cms/pages?flat=1', 5, true],
+            ['/api/cms/pages/{id}', 9, true],
+            ['/api/cms/blocks', 6, false], // the draft and the published version: two loads of one table, a fixed price
+            ['/api/cms/blocks/catalog', 6, false],
+        ] as [$url, $budget, $flat]) {
+            $url = str_replace('{id}', $id, $url);
+            $this->actingAs($admin, 'cms')->getJson($url)->assertOk();
+
+            $this->assertQueriesWithin($budget, fn () => $this->actingAs($admin, 'cms')->getJson($url)->assertOk(), $url);
+
+            if ($flat) {
+                $this->assertNoRepeatedQueries(fn () => $this->actingAs($admin, 'cms')->getJson($url)->assertOk(), $url);
+            }
+        }
+
+        foreach ([
+            ['pages_tree', 8],
+        ] as [$tool, $budget]) {
+            $bound = new RegistryTool($this->app->make(ToolRegistry::class)->tool($tool));
+            $this->assertQueriesWithin($budget, fn () => WebxServer::actingAs($admin, 'cms')->tool($bound, [])->assertOk(), $tool);
+            $this->assertNoRepeatedQueries(fn () => WebxServer::actingAs($admin, 'cms')->tool($bound, [])->assertOk(), $tool);
+        }
+    }
 
     /** Six sections of four pages each under the home, plus the chain down to the fifth level. */
     private const SECTIONS = 6;

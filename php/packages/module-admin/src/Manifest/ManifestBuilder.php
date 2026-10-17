@@ -13,11 +13,20 @@ use WebxUi\Admin\Contracts\Module;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Translations\DictionaryBuilder;
 
 /**
  * The one request the admin front end makes before it can draw anything: what this panel is
  * called, where its API lives, which languages it works in, and which modules it has.
+ *
+ * Half of it is words and the site — the titles of the modules and of the groups in the
+ * administrator's language, the branding from the settings, the address of the home, the list of
+ * languages — and that half is the expensive one: under FPM every request loads the lang files of
+ * every module to say them. It lives on a versioned key ({@see words()}). Nothing in it depends on
+ * who asks, beyond the language: what does (a module's `meta`, the badge of the tasks, the date of
+ * the last dump) is worked out on every request, so one administrator never reads another's.
  */
 final class ManifestBuilder
 {
@@ -29,6 +38,8 @@ final class ManifestBuilder
         private readonly Backups $backups,
         private readonly ?BrandingSource $brand = null,
         private readonly ?SiteUrls $site = null,
+        private readonly ?CacheGroups $cache = null,
+        private readonly ?DictionaryBuilder $dictionary = null,
     ) {}
 
     /**
@@ -50,37 +61,96 @@ final class ManifestBuilder
      */
     public function build(): array
     {
-        $brand = $this->brand?->branding() ?? new Branding;
+        $locale = $this->locales->resolvePanel($this->locales->current());
+        $modules = $this->registry->all();
+        $words = $this->words($locale, $modules);
 
         return [
             // The name the client gave the panel, falling back to the one it was deployed with.
             // It stays in the payload even when there is a logo: it is what the corner shows
             // until the picture loads, what it shows if the picture is gone, and its alt.
-            'title' => $this->title($brand),
-            'branding' => $brand->toArray(),
+            'title' => $words['title'],
+            'branding' => $words['branding'],
             // The way from the panel to the site it runs: the home page in the site's main
             // language rather than the one this administrator reads the panel in — the panel is
             // theirs, the site is its visitors'.
-            'siteUrl' => $this->siteUrl(),
+            'siteUrl' => $words['siteUrl'],
             'path' => '/'.ltrim((string) $this->config->get('webx-admin.path'), '/'),
             'apiPath' => '/'.ltrim((string) $this->config->get('webx-admin.api_path'), '/'),
             // The language this administrator reads the panel in — their own choice, not the
             // site's, so two people can work on one site in two languages.
-            'locale' => $this->locales->resolvePanel($this->locales->current()),
+            'locale' => $locale,
             // The languages content is written in. Every editing screen is built around this
             // list: one tab, one column or one card per entry.
-            'locales' => $this->locales->toPayload(),
+            'locales' => $words['locales'],
             // What the interface itself can be switched to.
-            'panelLocales' => $this->locales->panel(),
+            'panelLocales' => $words['panelLocales'],
             // The site's clock: a date picker shows and takes a moment in it, so an editor abroad
             // reads an event at the hour the site prints rather than at their own.
             'timezone' => $this->timezone(),
-            'groups' => $this->groups(),
-            'modules' => array_map($this->describe(...), $this->registry->all()),
+            'groups' => $words['groups'],
+            'modules' => array_map(fn (Module $module): array => $this->describe($module, $words['modules'][$module->id()] ?? $module->title()), $modules),
             // Only the names: a screen travels on its own, when the page that needs it opens.
             'screens' => $this->screens->names(),
             'backup' => $this->backup(),
         ];
+    }
+
+    /**
+     * The half of the manifest that is words and the site, on a versioned key: it moves with the
+     * settings (the branding), the languages and the addresses (the home), with the screens'
+     * group (reset by hand), and — through the name — with the lang files, the panel's config and
+     * the modules installed. In the administrator's language, and with nothing else of theirs.
+     *
+     * @param  list<Module>  $modules
+     * @return array{title: string, branding: array<string, mixed>, siteUrl: string, locales: list<array<string, mixed>>, panelLocales: list<array<string, mixed>>, groups: list<array<string, mixed>>, modules: array<string, string>}
+     */
+    private function words(string $locale, array $modules): array
+    {
+        $compute = function () use ($modules): array {
+            $brand = $this->brand?->branding() ?? new Branding;
+            $titles = [];
+
+            foreach ($modules as $module) {
+                $titles[$module->id()] = $module->title();
+            }
+
+            return [
+                'title' => $this->title($brand),
+                'branding' => $brand->toArray(),
+                'siteUrl' => $this->siteUrl(),
+                'locales' => $this->locales->toPayload(),
+                'panelLocales' => $this->locales->panel(),
+                'groups' => $this->groups(),
+                'modules' => $titles,
+            ];
+        };
+
+        if ($this->cache === null) {
+            return $compute();
+        }
+
+        $depends = array_values(array_filter(
+            [CacheGroups::LOCALES, CacheGroups::ROUTES, CacheGroups::SCREENS, 'settings'],
+            fn (string $group): bool => $this->cache->has($group),
+        ));
+
+        $name = 'admin.manifest.'.$locale.'.'.md5((string) json_encode([
+            $this->dictionary?->version($locale),
+            array_map(static fn (Module $module): string => $module::class.'#'.$module->id(), $modules),
+            $this->config->get('webx-admin.title'),
+            $this->config->get('webx-admin.groups'),
+            $this->config->get('webx-localization'),
+            $this->config->get('app.url'),
+            // The home is an address of the host this request came to: a site answering on two
+            // names must not hand one the other's.
+            url('/'),
+        ]));
+
+        /** @var array{title: string, branding: array<string, mixed>, siteUrl: string, locales: list<array<string, mixed>>, panelLocales: list<array<string, mixed>>, groups: list<array<string, mixed>>, modules: array<string, string>} $words */
+        $words = $this->cache->remember($name, $depends, $compute);
+
+        return $words;
     }
 
     /**
@@ -151,11 +221,11 @@ final class ManifestBuilder
     /**
      * @return array<string, mixed>
      */
-    private function describe(Module $module): array
+    private function describe(Module $module, string $title): array
     {
         return [
             'id' => $module->id(),
-            'title' => $module->title(),
+            'title' => $title,
             'icon' => $module->icon(),
             'order' => $module->order(),
             'group' => $module->group(),

@@ -84,6 +84,53 @@ final class Relations
     }
 
     /**
+     * The ids of these roles for many owners in one query, without loading the targets — what
+     * {@see HasRelations::relatedIds()} answers row by row otherwise. For a list of the panel,
+     * whose rows hash the ids into their revision: the same rows, rows of removed modules
+     * included, in the same order.
+     *
+     * @param  iterable<Model>  $records  Owners of one class, using {@see HasRelations}.
+     */
+    public static function loadIds(iterable $records, string ...$roles): void
+    {
+        $byId = [];
+
+        foreach ($records as $record) {
+            $byId[(int) $record->getKey()] = $record;
+        }
+
+        if ($byId === [] || $roles === []) {
+            return;
+        }
+
+        $first = reset($byId);
+
+        $rows = self::rows($first)
+            ->where('owner_type', self::ownerKey($first))
+            ->whereIn('owner_id', array_keys($byId))
+            ->whereIn('role', $roles)
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get(['owner_id', 'role', 'target_id']);
+
+        $ids = [];
+
+        foreach ($rows as $row) {
+            $ids[(int) $row->owner_id][(string) $row->role][] = (int) $row->target_id;
+        }
+
+        foreach ($byId as $id => $record) {
+            if (! method_exists($record, 'setLoadedRelatedIds')) {
+                continue;
+            }
+
+            foreach ($roles as $role) {
+                $record->setLoadedRelatedIds($role, $ids[$id][$role] ?? []);
+            }
+        }
+    }
+
+    /**
      * The owners related through a role to this record — the recipes of a service. A query, so
      * the caller adds what is theirs: visibility, order, a limit.
      *

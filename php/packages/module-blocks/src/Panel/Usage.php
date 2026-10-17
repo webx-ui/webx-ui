@@ -12,6 +12,7 @@ use WebxUi\Blocks\Content;
 use WebxUi\Blocks\Fragments;
 use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Regions;
+use WebxUi\Cache\CacheGroups;
 
 /**
  * Where a block type stands.
@@ -25,6 +26,9 @@ use WebxUi\Blocks\Regions;
  */
 final class Usage
 {
+    /** The cache group of the counts: any entity with content saved moves it. */
+    public const GROUP = 'block-usage';
+
     public function __construct(
         private readonly Config $config,
         private readonly Container $container,
@@ -33,9 +37,46 @@ final class Usage
     /**
      * How many entities hold each type, by slug. A type absent from the map is on none.
      *
+     * On the group's versioned key: the walk reads every row of every entity with content, and
+     * the list of blocks, the picker of every editor and each save of a block asked for it.
+     *
      * @return array<string, int>
      */
     public function counts(): array
+    {
+        $groups = $this->container->make(CacheGroups::class);
+        $models = $this->models();
+
+        // Bound again here, idempotently, and the list in the key: a site — or a test — that names
+        // its entities after boot still has their saves move the counts.
+        $groups->bumpOn(self::GROUP, Region::class, ...$models);
+
+        return $groups->remember('blocks.usage.'.md5(implode(',', $models)), [self::GROUP], $this->count(...), localized: false);
+    }
+
+    /**
+     * The models whose saves move the counts: the ones the site named that are models.
+     *
+     * @return list<class-string<Model>>
+     */
+    public function models(): array
+    {
+        $classes = $this->config->get('webx-blocks.entities', []);
+        $models = [];
+
+        foreach (is_array($classes) ? $classes : [] as $class) {
+            if (is_string($class) && class_exists($class) && is_subclass_of($class, Model::class)) {
+                $models[] = $class;
+            }
+        }
+
+        return $models;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function count(): array
     {
         $counts = [];
 

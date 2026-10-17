@@ -24,7 +24,7 @@ final class EventVersionController
 {
     public function index(Request $request, Event $event): JsonResponse
     {
-        $versions = $event->publishedVersions()->get();
+        $versions = $event->publishedVersions()->withoutPayload()->get();
         $authors = Authors::names($request->user(), $versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
 
         return ApiResponse::data(

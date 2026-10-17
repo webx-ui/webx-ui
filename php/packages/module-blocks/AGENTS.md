@@ -112,6 +112,8 @@ whose type has no `wx-blocks` field is refused as "not a container".
 - Do not write rows of `blocks` or `block_versions` with SQL: a version is checked and compiled on
   save, publishing renders it first, and the cache is forgotten only through the model (or by a reset of the `blocks` / `regions` cache groups, «System → Cache»). Use
   `webx:blocks:import` or the tools.
+- Do not rewrite the content of an entity with `saveQuietly()` or a query without `bump('block-usage')`:
+  where each type stands is cached on that group and moves only with the models' events.
 - Do not publish a template that declares no `data-wx-block="{slug}"` on its root, marks it with
   anything but the exact slug, or uses variables the schema lacks: the script never runs, the
   publish check refuses the last two. `blocks_render`

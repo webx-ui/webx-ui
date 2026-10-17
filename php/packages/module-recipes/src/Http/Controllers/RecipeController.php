@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Recipes\Http\Controllers;
 
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Admin\Relations\Relations;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Localization\Locales;
 use WebxUi\Recipes\Http\Requests\RecipeRequest;
@@ -51,18 +53,14 @@ final class RecipeController
         ];
 
         return new JsonResponse([
-            'data' => $this->list->build($request)
-                ->get()
+            'data' => self::withRelationIds($this->list->build($request)->with(['nutrients', 'seo'])->get())
                 ->map(static fn (Recipe $recipe): array => (new RecipeResource($recipe))->resolve($request))
                 ->values()
                 ->all(),
             'filters' => [
                 'categories' => RecipeCategory::query()->ordered()->get()->map($named)->values()->all(),
                 'nutrients' => RecipeNutrient::query()->ordered()->get()->map($named)->values()->all(),
-                'services' => $service === null ? null : array_map(
-                    static fn (array $row): array => ['id' => $row['id'], 'title' => $row['title']],
-                    $service->candidates('', $locale, 1000),
-                ),
+                'services' => $service?->names($locale),
             ],
         ]);
     }
@@ -132,9 +130,26 @@ final class RecipeController
         return ApiResponse::noContent();
     }
 
+    /**
+     * The services and the similar recipes each row hashes into its revision, for the whole list
+     * at once — with the nutrients and the SEO card loaded beside the rows for the same reason.
+     *
+     * @param  Collection<int, Recipe>  $recipes
+     * @return Collection<int, Recipe>
+     */
+    private static function withRelationIds(Collection $recipes): Collection
+    {
+        Relations::loadIds($recipes, 'services', 'related');
+
+        return $recipes;
+    }
+
     private function loaded(Recipe $recipe): Recipe
     {
-        return $recipe->loadMissing(['routes', 'categories', 'nutrients']);
+        // The form, its revision and its relation fields each read the relations: once for all.
+        Relations::loadIds([$recipe], 'services', 'related');
+
+        return $recipe->loadMissing(['routes', 'categories', 'nutrients', 'seo']);
     }
 
     private function author(Request $request): ?int

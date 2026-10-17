@@ -387,6 +387,12 @@ class BlocksServiceProvider extends ServiceProvider
         $groups->declare(Regions::GROUP, 'webx-blocks::module.regions');
         $groups->bumpOn(Regions::GROUP, Region::class);
 
+        // Where each type stands is a walk over every entity with content; it moves with any of
+        // them saved, and the quiet writers of this package (`Renamer`, `LanguageShapes`,
+        // `StrayValues`) say so themselves.
+        $groups->declare(Usage::GROUP, 'webx-blocks::module.usage');
+        $groups->bumpOn(Usage::GROUP, Region::class, ...$this->app->make(Usage::class)->models());
+
         // Every page reads the types and the regions the layout prints: with the versions, in
         // the same call, rather than one query each on the `database` store.
         $groups->prefetch('blocks.types', [BlockTypes::GROUP], localized: false);

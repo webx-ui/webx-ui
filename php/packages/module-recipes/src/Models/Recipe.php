@@ -315,12 +315,7 @@ class Recipe extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallba
      */
     public function categoryIds(string $relation = 'categories'): array
     {
-        /** @var list<int> $ids */
-        $ids = $this->categoryLinks($relation)->pluck($this->categoryLinks($relation)->getRelated()->getQualifiedKeyName())
-            ->map(static fn (mixed $id): int => (int) $id)
-            ->all();
-
-        return $ids;
+        return $this->categoryKeys($relation);
     }
 
     /** Where a published draft hands back its categories: written by the save that follows. */

@@ -55,6 +55,23 @@ final class BrandingTest extends TestCase
             ->assertJsonPath('data.title', 'Акме Україна');
     }
 
+    /**
+     * The manifest keeps its words on a versioned key; a name saved moves the settings and the
+     * next manifest says it — in the same process, the way a worker serves the next request.
+     */
+    #[Test]
+    public function a_new_name_reaches_the_cached_manifest_at_once(): void
+    {
+        config()->set('cache.default', 'array');
+        $this->actingAs($this->editor(), 'cms');
+
+        $this->getJson('/api/cms/manifest')->assertOk()->assertJsonPath('data.title', 'WebX UI');
+
+        Setting::query()->create(['key' => 'general.project-name', 'value' => ['ru' => 'Новое имя', 'en' => 'New name']]);
+
+        $this->getJson('/api/cms/manifest')->assertOk()->assertJsonPath('data.title', 'New name');
+    }
+
     #[Test]
     public function an_unnamed_project_leaves_the_deployed_title_alone(): void
     {

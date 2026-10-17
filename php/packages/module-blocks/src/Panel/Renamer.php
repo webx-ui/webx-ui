@@ -14,6 +14,7 @@ use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Regions;
+use WebxUi\Cache\CacheGroups;
 
 /**
  * A block type under a new slug, and everything that names it brought along.
@@ -136,6 +137,8 @@ final class Renamer
     private function save(Model $entity): void
     {
         $entity->saveQuietly();
+        // Quiet: the counts of where each type stands are keyed on the old slug.
+        $this->container->make(CacheGroups::class)->bump(Usage::GROUP);
 
         if ($entity instanceof Region) {
             $this->container->make(Regions::class)->forget($entity->name);
