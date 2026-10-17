@@ -1,0 +1,74 @@
+{
+    "name": "webx-ui/module-debug",
+    "description": "A debug bar at the bottom of a WebX UI site's pages, for an administrator and never in production: the SQL a page ran with its repeats, a timeline, regions and blocks, the versioned cache, what the resolver found — and the same report to an agent over MCP.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "debug"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-debug"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/cache": "^0.77.0",
+        "webx-ui/localization": "^0.77.0",
+        "webx-ui/mcp": "^0.77.0",
+        "webx-ui/module-admin": "^0.77.0",
+        "webx-ui/module-auth": "^0.77.0",
+        "webx-ui/routing": "^0.77.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-blocks": "^0.77.0",
+        "webx-ui/themes": "^0.77.0"
+    },
+    "suggest": {
+        "webx-ui/module-blocks": "Without it there are no regions and blocks in the report.",
+        "webx-ui/themes": "Without it the report names no theme chain."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Debug\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Debug\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Debug\\DebugServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "debug"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

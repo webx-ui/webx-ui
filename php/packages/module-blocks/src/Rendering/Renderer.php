@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Rendering;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\HtmlString;
@@ -18,6 +19,8 @@ use WebxUi\Admin\SiteBar\Insertion;
 use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Content;
+use WebxUi\Blocks\Events\BlockRendered;
+use WebxUi\Blocks\Events\BlockRendering;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Localization\Locales;
@@ -93,6 +96,7 @@ final class Renderer
         private readonly ViewFactory $views,
         private readonly Config $config,
         private readonly Values $values,
+        private readonly ?Dispatcher $events = null,
     ) {}
 
     /**
@@ -609,9 +613,26 @@ final class Renderer
             $this->views->incrementRender();
         }
 
+        // Told only to a listener — the debug bar — and otherwise one check of an array.
+        $told = $this->events?->hasListeners(BlockRendering::class) === true;
+
+        if ($told) {
+            $this->events?->dispatch(new BlockRendering($context));
+        }
+
+        $failure = null;
+
         try {
             return $this->views->getEngineResolver()->resolve('php')->get($path, $data);
+        } catch (Throwable $thrown) {
+            $failure = $thrown;
+
+            throw $thrown;
         } finally {
+            if ($told) {
+                $this->events?->dispatch(new BlockRendered($context, $failure));
+            }
+
             if ($counted) {
                 $this->views->decrementRender();
             }

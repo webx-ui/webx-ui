@@ -6,6 +6,7 @@ namespace WebxUi\Routing;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Contracts\Spelling;
+use WebxUi\Routing\Events\Resolved;
+use WebxUi\Routing\Events\Resolving;
 use WebxUi\Routing\Models\Route;
 
 /**
@@ -52,6 +55,7 @@ class Resolver
         private readonly Misses $misses,
         private readonly Spelling $spelling,
         private readonly CacheGroups $cache,
+        private readonly ?Dispatcher $events = null,
     ) {}
 
     public function resolve(Request $request): Response
@@ -59,6 +63,10 @@ class Resolver
         // Decoded, because the registry stores what an editor typed: a Cyrillic slug is
         // `ремень` in the `path` column and `%D1%80%D0%B5...` on the wire.
         $incoming = rawurldecode($request->getPathInfo());
+
+        if ($this->events?->hasListeners(Resolving::class) === true) {
+            $this->events->dispatch(new Resolving($incoming));
+        }
 
         [$locale, $prefix, $path] = $this->split(UrlNormaliser::key($incoming));
 
@@ -264,6 +272,10 @@ class Resolver
 
         /** @var RouteHandler $handler */
         $handler = $this->container->make($type->handler);
+
+        if ($this->events?->hasListeners(Resolved::class) === true) {
+            $this->events->dispatch(new Resolved($resolution));
+        }
 
         // Publication is the handler's business, not the registry's (§8.6): the entity carries
         // that state already, and a draft answers 404 to everybody but a preview.
