@@ -46,6 +46,7 @@ export default defineConfig({
             { text: 'Building for the panel on the site', link: '/guide/site-bar-modules' },
             { text: 'Caching', link: '/guide/caching' },
             { text: 'Performance', link: '/guide/performance' },
+            { text: 'The debug bar', link: '/guide/debugbar' },
           ],
         },
         {

@@ -76,6 +76,7 @@ RegionRendered,BlockRendering,BlockRendered}`, `WebxUi\Cache\Events\GroupRead`.
 ## Read more
 
 - [README.md](README.md) in this directory — how a request is collected and decided.
+- Guide — reading repeats and slow statements, `debug_page`, a module of your own: https://webx-ui.github.io/webx-ui/guide/debugbar
 - Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_DEBUGBAR.md
 - Performance rules the numbers are for: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_PERFORMANCE.md
 - The versioned cache: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_CACHE.md

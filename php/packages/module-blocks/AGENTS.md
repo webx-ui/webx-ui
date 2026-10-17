@@ -135,6 +135,7 @@ whose type has no `wx-blocks` field is refused as "not a container".
 - `blocks_render` on the sample values, then `blocks_preview_url` for the page as it will be; every
   tool that changes something takes `dry_run: true` first.
 - `php artisan webx:blocks:import --dry-run` says what an import would change.
+- A page slow or heavy on queries: `debug_page` (`webx-ui/module-debug`) times every region and block, with its statements.
 - `php artisan webx:blocks:regions` lists the declared regions and whether they are published.
 - A page shows a block but no styles: the layout lacks `@webxBlocks` in its head. Stale output
   after a deploy: `php artisan webx:blocks:clear`.

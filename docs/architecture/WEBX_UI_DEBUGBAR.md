@@ -5,7 +5,7 @@
 нарисованы и из какой темы, что прочитано из кеша, что нашёл резолвер — и откуда в коде всё это
 пришло. Тот же отчёт агенту — инструментом MCP `debug_page`.
 
-Статус: серверная половина в `php/packages/module-debug` (задача webx-ui#19, этап 2): сборщики, отчёт, доступ, API, MCP `debug_page`; полоса на странице (этап 3): сводка, вкладки, высота, соседство с панелью сайта. Развилки — §16.
+Статус: серверная половина в `php/packages/module-debug` (задача webx-ui#19, этап 2): сборщики, отчёт, доступ, API, MCP `debug_page`; полоса на странице (этап 3): сводка, вкладки, высота, соседство с панелью сайта; гайд `apps/docs/guide/debugbar.md` (этап 4). Развилки — §16.
 
 Соседние спеки: панель на сайте (показ, загрузчик, Shadow DOM, `no-store`) —
 [`WEBX_UI_SITE_BAR.md`](WEBX_UI_SITE_BAR.md); сборщик запросов и бюджеты —
@@ -398,7 +398,7 @@ PHP (Testbench), в `module-debug/tests`:
 Конфиг `webx-debug.php`: `enabled`, `store`, `ttl`, `keep`, `slow_ms`, `repeat`, `limits`,
 `mask.{columns,tables,headers}`, `events`.
 
-Гайд — `apps/docs/guide/debug-bar.md`; `AGENTS.md` пакета по `WEBX_UI_AGENT_DOCS.md`.
+Гайд — `apps/docs/guide/debugbar.md`; `AGENTS.md` пакета по `WEBX_UI_AGENT_DOCS.md`.
 
 Этапы:
 

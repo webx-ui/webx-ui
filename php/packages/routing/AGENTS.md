@@ -34,6 +34,8 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
   (`original()`); `module-seo` and the language switcher ask it.
 - **Contracts** `Visible` (shown on the site or not — the handler and the sitemap ask it),
   `RouteAliases` (the read side the SEO screen shows).
+- **Events** `Events\Resolving` (path) and `Events\Resolved` (`Resolution`, before the handler) —
+  made only while somebody listens (the debug bar, `webx-ui/module-debug`); not for site logic.
 - **Commands** `webx:routes:rebuild` (`--type=`, `--dry-run`), `webx:routes:check`.
 - Audit checks when `webx-ui/module-audit` is installed: `routing.orphan`,
   `routing.alias_broken`, `routing.shadowed`, `routing.no_address`, `routing.unknown_type`.
