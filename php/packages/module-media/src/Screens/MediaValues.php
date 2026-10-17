@@ -210,6 +210,32 @@ final class MediaValues
     }
 
     /**
+     * The rows behind these stored values — single pictures or lists of them — in one query of
+     * the library, ahead of resolving any of them: a page of picture blocks asked once per block.
+     *
+     * @param  list<mixed>  $stored
+     */
+    public function preload(array $stored): void
+    {
+        $items = [];
+
+        foreach ($stored as $value) {
+            if (! is_array($value)) {
+                continue;
+            }
+
+            // A picture is a map with a path; a gallery is a list of such maps.
+            if (is_string($value['path'] ?? null)) {
+                $items[] = $value;
+            } else {
+                $items = [...$items, ...array_values($value)];
+            }
+        }
+
+        $this->files->load($this->paths($items));
+    }
+
+    /**
      * The same for a list, in one query rather than one per picture.
      *
      * @return list<array<string, mixed>>

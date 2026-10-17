@@ -6,6 +6,7 @@ namespace WebxUi\Media\Screens;
 
 use WebxUi\Admin\Screens\ChecksNewValues;
 use WebxUi\Admin\Screens\FieldType;
+use WebxUi\Admin\Screens\PreloadsValues;
 use WebxUi\Media\Support\MediaType;
 
 /**
@@ -15,7 +16,7 @@ use WebxUi\Media\Support\MediaType;
  * template printing an `<img>` at a document. A list of files that takes anything is `wx-files`,
  * and it is a separate type because that is a different thing to choose from a menu.
  */
-final class GalleryFieldType implements ChecksNewValues, FieldType
+final class GalleryFieldType implements ChecksNewValues, FieldType, PreloadsValues
 {
     public function __construct(private readonly MediaValues $values) {}
 
@@ -42,6 +43,16 @@ final class GalleryFieldType implements ChecksNewValues, FieldType
     public function resolve(mixed $stored, array $node, ?string $locale = null): mixed
     {
         return $this->values->resolveList($stored, $locale);
+    }
+
+    /**
+     * Every gallery of the page in one query of the library, before any is resolved.
+     *
+     * @param  list<mixed>  $stored
+     */
+    public function preload(array $stored): void
+    {
+        $this->values->preload($stored);
     }
 
     /**

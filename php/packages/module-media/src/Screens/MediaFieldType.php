@@ -6,6 +6,7 @@ namespace WebxUi\Media\Screens;
 
 use WebxUi\Admin\Screens\ChecksNewValues;
 use WebxUi\Admin\Screens\FieldType;
+use WebxUi\Admin\Screens\PreloadsValues;
 
 /**
  * `wx-media` on the server: one picture, in a frame.
@@ -14,7 +15,7 @@ use WebxUi\Admin\Screens\FieldType;
  * reads it back with everything known about the file filled in. The address is never stored: a
  * library that moves from a public directory to S3 does not have to rewrite a single article.
  */
-final class MediaFieldType implements ChecksNewValues, FieldType
+final class MediaFieldType implements ChecksNewValues, FieldType, PreloadsValues
 {
     public function __construct(private readonly MediaValues $values) {}
 
@@ -41,6 +42,16 @@ final class MediaFieldType implements ChecksNewValues, FieldType
     public function resolve(mixed $stored, array $node, ?string $locale = null): mixed
     {
         return $this->values->resolve($stored, $locale);
+    }
+
+    /**
+     * Every picture of the page in one query of the library, before any is resolved.
+     *
+     * @param  list<mixed>  $stored
+     */
+    public function preload(array $stored): void
+    {
+        $this->values->preload($stored);
     }
 
     /**
