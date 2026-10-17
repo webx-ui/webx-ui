@@ -72,6 +72,25 @@ MCP-сервер, движок Manticore. Всё ниже однажды сто�
   `valueFormat: "yyyy-MM-dd'T'HH:mm:ssXXX"`. **В тестах не видно:** и Testbench, и CI живут в
   UTC, где смещение нулевое. У нас: `Panel\Instant` в `module-blog`.
 
+- **`Builder::afterQuery()` срабатывает и на `pluck()`** — в замыкание приходит
+  `Support\Collection`, не Eloquent. Симптом: публичные страницы и sitemap проходят, а сохранение в
+  панели падает 500 «TypeError … must be of type Eloquent\Collection, Support\Collection given»
+  (`RelationsType::store()` → `pluck('id')`). Скоуп вроде `withCovers()` типизирует замыкание
+  базовой коллекцией и проверяет `instanceof` на каждом элементе.
+- **Два пути к одним адресам — `routes` 2×.** `with('routes')` у навигации и `categories.routes`
+  у карточек грузят одни id в разные экземпляры: Eloquent не делит загруженные связи между
+  экземплярами. Страница передаёт загруженные категории в построитель списка, тот
+  `setRelation('routes', …)` на экземпляры у карточек, остаток — одним `loadMissing('routes')` на
+  коллекцию (`module-events/src/Rendering/ListPage.php`). Тот же знак у `Relations::load()` на
+  подсписок (группы вакансий): грузить и строить карточки один раз на весь список, потом раздавать.
+- **Сид с одной обложкой прячет N+1 по обложкам:** `MediaFiles` мемоизирует по пути, и `cover()`
+  на каждую запись sitemap даёт один запрос, а не N. В тесте бюджета крутить 3–4 разные картинки по
+  записям — тогда `describe()` показывает `media_files` по одной.
+- **`class_exists(ServiceQuery::class)` в монорепе истинно всегда**, даже когда провайдер
+  `module-services` не зарегистрирован (как в `WithoutServicesTest`): ids связи есть,
+  `services()->only($ids)` → «no such table: services». Рядом с `class_exists` спрашивать
+  `Relations::targets()->has('service')`.
+
 ## nested-set и адреса
 
 - **`(rgt - lft - 1) / 2` считает и то, что в корзине.** Удалённый узел границы сохраняет
@@ -353,6 +372,17 @@ $value` не отличает «типа нет» от «тип сказал н�
 
 ## Тесты: Testbench и PHPUnit
 
+- **`assertNoRepeatedQueries` считает повтором две загрузки с одинаковыми id и не считает — с
+  разными.** `QueryTally::shape()` схлопывает только `in (?, ?)`, а eager load целых ключей
+  Eloquent делает `whereIntegerInRaw` — числа в SQL литералом. Сид с одной обложкой на всех даёт
+  «повтор» `media_files where id in (1)` у двух списков страницы; два списка `routes` с разными id
+  повтором не считаются. В сиде бюджета — разные картинки у записей (как в демо) и читать
+  `describe()` с этой поправкой.
+- **Мемо на запрос переживает `$this->get()` в одном тесте** — и у `CacheGroups`, и у своего
+  загрузчика (`OutletLoader` прессы): «тёплый» бюджет врёт в меньшую сторону, 0 вместо 3. Класс,
+  который мемоизирует, привязывать к идентичности `Request` или брать свежий экземпляр
+  (`forgetInstance()`) перед замером; и не резолвить такой класс через `make()` без `singleton()`
+  — иначе он, наоборот, не мемоизирует вовсе.
 - **Вдруг падают тесты в пакетах, которых никто не трогал: адреса `http://localhost:8000/…`
   вместо `http://localhost/…` или «file is not a database» на `Cache::remember`.** Кто-то
   запустил команду через `vendor/bin/testbench <команда>` (не `package:discover`) — Testbench
@@ -524,6 +554,12 @@ Model` в файле без `use Illuminate\Database\Eloquent\Model` сравн�
   отличает каталог `config/` пакета, — и каждый `env()` в `config/*.php` становится ошибкой
   `larastan.noEnvCallsOutsideOfConfig`, полтора десятка на чистой ветке. Похоже на чужую поломку
   в `main`. Гнать как гейт — без пути, целиком; это и быстрее, чем разбираться.
+
+- **`Model&HasUrl` в PHPDoc — `parameter.unresolvableType`.** Трейт в пересечении типов PHPStan
+  не резолвит, и `@param Model&HasUrl $entity` роняет анализ. Связь из трейта читать через
+  `$entity->getRelationValue('routes')` с `@var iterable<Route>`, как `HasSeo::seoMeta()` и
+  `Untranslated::canonicalRows()`; проверка принадлежности — `in_array(HasUrl::class,
+class_uses_recursive($entity), true)`.
 
 ## Установщик (webx:setup)
 

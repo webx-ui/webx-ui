@@ -21,8 +21,8 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
 ссылкой на чужой пакет. Базового пакета, от которого зависят все потребители, нет (`themes` не
 требует ни одного `webx-ui/*`), поэтому — новая библиотека: её `require` каждый, кто объявляет или
 двигает группу (`localization`, `routing`, `themes`, `module-admin`, `module-settings`, `module-menu`,
-`module-blocks`, `module-seo`, `module-snippets`, `module-banners`, `module-catalog`,
-`module-catalog-properties`). Экран «Кеш», команда, MCP-инструмент, право и история остаются в
+`module-blocks`, `module-seo`, `module-snippets`, `module-banners`, `module-press`,
+`module-catalog`, `module-catalog-properties`). Экран «Кеш», команда, MCP-инструмент, право и история остаются в
 `module-admin` и пользуются библиотекой.
 
 Провайдер библиотеки (`CacheServiceProvider`: синглтон `CacheGroups`, конфиг `webx-cache`, сброс
@@ -51,7 +51,8 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
 - **Пакеты объявляют своё** из провайдера: `settings` (`Setting`), `menu` (`Menu`, `MenuItem`),
   `blocks` (`Block`, `BlockVersion`), `regions` (`Region`), `seo` (`SeoUrl`, `SeoRedirect`,
   `SeoLinkBlock`, `SeoLinkItem`), `sitemap` (без моделей — сам слушает всё видимое), `snippets`
-  (`Snippet`), `banners` (`Banner`, `Place`), `catalog` (без моделей, см. §8).
+  (`Snippet`), `banners` (`Banner`, `Place`), `press` (`Outlet`, `Article`; издания страницы — один
+  загрузчик на запрос под версиями `press` + `routes`), `catalog` (без моделей, см. §8).
 
 ### 2.2. Что двигает версию
 
