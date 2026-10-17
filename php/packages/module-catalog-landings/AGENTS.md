@@ -25,7 +25,8 @@ catalogue's name and scopes. For the filter, its facets and the storefront views
   (tabs `main`, `texts-tab`, `recommended-tab`, `seo-tab`, `history-tab`). The API is under
   `/api/cms/catalog/landings` (with `count`, `facets`, `generate`, `publish`, `unpublish`,
   `restore`). It has no permissions of its own: `catalog.view` reads and `catalog.manage`
-  writes.
+  writes. A landing saved moves the `catalog` cache group. Query budgets of its pages:
+  `tests/PerformanceTest.php`.
 - **Command** `webx:catalog-landings:count` (`--all`), which runs on the package's own schedule:
   every fifteen minutes, and with `--all` nightly.
 - **MCP** tools `catalog_landings_list`, `_get`, `_facets`, `_count`, `_create`, `_update`,

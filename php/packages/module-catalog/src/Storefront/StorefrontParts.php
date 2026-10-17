@@ -37,6 +37,9 @@ final class StorefrontParts
     /** @var array<string, array<string, mixed>> part class → what it prepared */
     private array $prepared = [];
 
+    /** @var array<int, true> the products of this page the parts were told about */
+    private array $preparedIds = [];
+
     public function __construct(private readonly ViewFactory $views) {}
 
     public function register(StorefrontPart $part): void
@@ -58,11 +61,48 @@ final class StorefrontParts
     public function prepare(Collection $products): void
     {
         $this->prepared = [];
+        $this->preparedIds = [];
 
         foreach ($this->parts as $parts) {
             foreach ($parts as $part) {
                 $this->prepared[spl_object_hash($part)] = $part->prepare($products);
             }
+        }
+
+        $this->remember($products);
+    }
+
+    /**
+     * More products for the same page — a strip of recommended ones over the list — told to every
+     * part once: what they prepared for the page's own products stays, and what they prepare for
+     * these is put beside it. A product already prepared is not asked about again.
+     *
+     * @param  Collection<int, Product>  $products
+     */
+    public function extend(Collection $products): void
+    {
+        $more = $products->reject(fn (Product $product): bool => isset($this->preparedIds[(int) $product->getKey()]))->values();
+
+        if ($more->isEmpty()) {
+            return;
+        }
+
+        foreach ($this->parts as $parts) {
+            foreach ($parts as $part) {
+                $this->prepared[spl_object_hash($part)] = array_replace_recursive($this->prepared[spl_object_hash($part)] ?? [], $part->prepare($more));
+            }
+        }
+
+        $this->remember($more);
+    }
+
+    /**
+     * @param  Collection<int, Product>  $products
+     */
+    private function remember(Collection $products): void
+    {
+        foreach ($products as $product) {
+            $this->preparedIds[(int) $product->getKey()] = true;
         }
     }
 

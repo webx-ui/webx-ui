@@ -388,7 +388,7 @@ final class PropertyTools
             Property::withTrashed()->whereKey((int) $id)->update(['position' => $position + 1]);
         }
 
-        $this->properties->flush();
+        $this->properties->reordered();
 
         return $this->list([]);
     }
@@ -718,8 +718,9 @@ final class PropertyTools
                 return ['dry_run' => true, 'would_be' => $work()];
             } finally {
                 DB::rollBack();
+                // Nothing reached the table; what this process read during the rehearsal did.
                 $this->properties->flush();
-                $this->sets->forget();
+                $this->sets->reset();
             }
         });
     }

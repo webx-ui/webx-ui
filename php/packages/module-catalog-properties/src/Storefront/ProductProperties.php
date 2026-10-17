@@ -53,8 +53,10 @@ final class ProductProperties
     ) {}
 
     /**
-     * Read a page of products at once, forgetting the last page's: a worker serving the next
-     * request from the same process must not print this one's values.
+     * Read a page of products at once — or more of the same page: the recommended ones over a
+     * landing's list come after the list itself, and what was read for the list stays. The last
+     * page's values go when its request is handled, or a worker's job starts, so that a worker
+     * serving the next request from the same process does not print this one's values.
      *
      * @param  iterable<Product>  $products
      */
@@ -66,7 +68,6 @@ final class ProductProperties
             $ids[] = (int) $product->id;
         }
 
-        $this->reset();
         $this->fetch($ids);
     }
 

@@ -104,7 +104,7 @@ final class PropertyController
             }
         });
 
-        $this->properties->flush();
+        $this->properties->reordered();
 
         return new JsonResponse(['data' => ['ids' => array_map('intval', $validated['ids'])]]);
     }

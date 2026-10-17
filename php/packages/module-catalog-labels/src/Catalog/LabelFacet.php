@@ -13,6 +13,7 @@ use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Facets\IndexField;
 use WebxUi\Catalog\Facets\OrderedFacet;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogLabels\Models\Label;
 
 /**
@@ -128,7 +129,13 @@ final class LabelFacet extends AbstractFacet implements OrderedFacet
      */
     private function load(array $values): Collection
     {
-        return Label::query()->where('is_visible', true)->whereKey($this->ids($values))->scopes(['ordered'])->get();
+        $ids = $this->ids($values);
+
+        // The same labels are asked for their names and their slugs while one filter is drawn,
+        // and then one at a time for a link each: read once a request.
+        $found = RequestMemo::pool('labels.pool', $ids, static fn (array $missing): Collection => Label::query()->where('is_visible', true)->whereKey($missing)->get());
+
+        return (new Collection($found))->sortBy([['position', 'asc'], ['id', 'asc']])->values();
     }
 
     /**

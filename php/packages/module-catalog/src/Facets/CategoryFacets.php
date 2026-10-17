@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog\Facets;
 
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Facades\DB;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Models\Category;
 
 /**
@@ -25,17 +25,20 @@ use WebxUi\Catalog\Models\Category;
  * A key in the settings whose module is gone is skipped, not dropped — the settings keep it, and
  * putting the module back brings the facet back where it was.
  *
- * Every setting shares one generation in the cache, and any save of any setting — or a move of
- * a category, which changes whom it inherits from — moves it on. A per-category key would have to
- * forget every descendant as well, and the tree is the one thing a cache key cannot see.
+ * Every category's answer is worked out at once and kept as one entry of the `catalog` cache
+ * group (WEBX_UI_CACHE.md): a save of any setting ({@see forget()}) or of any category — a move
+ * changes whom a branch inherits from — moves the group's version, and the entry with it. A
+ * per-category key would have to forget every descendant as well, and the tree is the one thing
+ * a cache key cannot see.
  */
 final class CategoryFacets
 {
-    private const GENERATION = 'webx.catalog.facets.generation';
+    /** The cache group the settings live in. */
+    public const GROUP = 'catalog';
 
     public function __construct(
         private readonly Facets $facets,
-        private readonly Cache $cache,
+        private readonly CacheGroups $cache,
         private readonly Config $config,
     ) {}
 
@@ -87,75 +90,65 @@ final class CategoryFacets
             return ['from' => null, 'facets' => null];
         }
 
-        $key = 'webx.catalog.facets.'.$this->generation().'.'.$category->getKey();
+        /** @var array<int, array{from: int|null, facets: list<array{key: string, visible: bool}>|null}> $all */
+        $all = $this->cache->remember('catalog.facets', [self::GROUP], fn (): array => $this->lookup(), localized: false);
 
-        /** @var array{from: int|null, facets: list<array{key: string, visible: bool}>|null} $resolved */
-        $resolved = $this->cache->rememberForever($key, fn (): array => $this->lookup($category));
-
-        return $resolved;
+        return $all[(int) $category->getKey()] ?? ['from' => null, 'facets' => null];
     }
 
-    /** Every category's answer is stale: a setting was saved or a branch moved. */
+    /** Every category's answer is stale: a setting was written without a model's event. */
     public function forget(): void
     {
-        $this->cache->forever(self::GENERATION, bin2hex(random_bytes(6)));
+        $this->cache->bump(self::GROUP);
     }
 
     /**
-     * @return array{from: int|null, facets: list<array{key: string, visible: bool}>|null}
+     * Whose settings each category is under, for every category at once: the rows of the table
+     * with their owners' bounds, matched against every category's bounds — two queries once per
+     * version, rather than two per category per request. The nearest owner wins.
+     *
+     * @return array<int, array{from: int|null, facets: list<array{key: string, visible: bool}>|null}>
      */
-    private function lookup(Category $category): array
+    private function lookup(): array
     {
-        // Fresh bounds: a node loaded before something was added under its ancestors has stale
-        // ones in memory (docs/pitfalls).
-        $bounds = Category::withTrashed()->whereKey($category->getKey())->first(['lft', 'rgt']);
-
-        if (! $bounds instanceof Category) {
-            return ['from' => null, 'facets' => null];
-        }
-
         $rows = DB::table('catalog_category_facets as facets')
             ->join('catalog_categories as owner', 'owner.id', '=', 'facets.category_id')
-            ->where('owner.lft', '<=', $bounds->lft)
-            ->where('owner.rgt', '>=', $bounds->rgt)
             ->orderByDesc('owner.depth')
             ->orderBy('facets.position')
             ->orderBy('facets.id')
-            ->get(['facets.category_id', 'facets.facet_key', 'facets.is_visible']);
+            ->get(['facets.category_id', 'facets.facet_key', 'facets.is_visible', 'owner.lft', 'owner.rgt']);
 
         if ($rows->isEmpty()) {
-            return ['from' => null, 'facets' => null];
+            return [];
         }
 
-        $from = (int) $rows->first()->category_id;
-        $facets = [];
+        /** @var array<int, array{lft: int, rgt: int, facets: list<array{key: string, visible: bool}>}> $owners deepest first */
+        $owners = [];
 
         foreach ($rows as $row) {
-            if ((int) $row->category_id !== $from) {
-                break;
-            }
-
-            $facets[] = ['key' => (string) $row->facet_key, 'visible' => (bool) $row->is_visible];
+            $owners[(int) $row->category_id] ??= ['lft' => (int) $row->lft, 'rgt' => (int) $row->rgt, 'facets' => []];
+            $owners[(int) $row->category_id]['facets'][] = ['key' => (string) $row->facet_key, 'visible' => (bool) $row->is_visible];
         }
 
-        return ['from' => $from, 'facets' => $facets];
+        $resolved = [];
+
+        // Fresh bounds of every category, the bin included: a node loaded before something was
+        // added under its ancestors has stale ones in memory (docs/pitfalls).
+        foreach (Category::withTrashed()->toBase()->get(['id', 'lft', 'rgt']) as $category) {
+            foreach ($owners as $id => $owner) {
+                if ($owner['lft'] <= (int) $category->lft && $owner['rgt'] >= (int) $category->rgt) {
+                    $resolved[(int) $category->id] = ['from' => $id, 'facets' => $owner['facets']];
+
+                    break;
+                }
+            }
+        }
+
+        return $resolved;
     }
 
     private function enabled(): bool
     {
         return (bool) $this->config->get('webx-catalog.fields.facets', false);
-    }
-
-    private function generation(): string
-    {
-        $generation = $this->cache->get(self::GENERATION);
-
-        if (is_string($generation) && $generation !== '') {
-            return $generation;
-        }
-
-        $this->forget();
-
-        return (string) $this->cache->get(self::GENERATION, '0');
     }
 }

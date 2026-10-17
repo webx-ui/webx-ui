@@ -21,7 +21,7 @@ brand page's address comes from `webx-ui/routing`, and its logo is picked from
 - **Panel**: module `catalog-brands` in the catalogue's group; screen `catalog.brand-form` (tabs
   `main`, `description-tab`, `seo-tab`, `history-tab`). The API is `catalog/brands` under the
   panel's API path. It has no permissions of its own: `catalog.view` reads and `catalog.manage`
-  writes.
+  writes. A brand saved moves the `catalog` cache group; what a page read of the brands is kept on the request.
 - **What it adds to the core**: the node `brand-card` / field `brand.id` in the `main` tab of
   `catalog.product-form`, a products-list column, the facet `brand` (indexable), the field `brand`
   of the search document, an exchange column, and the bulk action `set-brand`. It also adds the

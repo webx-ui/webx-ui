@@ -20,7 +20,8 @@ only through the core's registries. For products, the filter, the card, the engi
   `catalog.product.aside`.
 - **Panel**: module `catalog-stock` in the catalogue's group, under «Dictionaries»; screen
   `catalog.stock-status-form`. The API is `catalog/stock` under the panel's API path. It has no
-  permissions of its own: `catalog.view` reads and `catalog.manage` writes.
+  permissions of its own: `catalog.view` reads and `catalog.manage` writes. A status saved moves
+  the `catalog` cache group; the statuses of a page's products are read once a request (`Stock::of`).
 - **What it adds to the core**: the node `stock-card` / field `stock.status` in the `main` tab of
   `catalog.product-form` (after `pricing`), a products-list column, the facet `stock` (not
   indexable), the search document fields `stock` and `purchasable`, an exchange column, the bulk

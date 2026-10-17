@@ -61,6 +61,7 @@ final class StockAction implements BulkAction
 
         $before = Stock::of([$product->id])[(int) $product->id] ?? null;
         DB::table(StockStatus::LINKS)->updateOrInsert(['product_id' => $product->id], ['status_id' => $id]);
+        Stock::forget();
 
         if ($before?->id === $id) {
             // Written down, not changed: the product was in the default status without a row.

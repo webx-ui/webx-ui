@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogStock\Catalog;
 
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Purchase\Purchasability;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogStock\Models\StockStatus;
 
 /**
@@ -17,6 +20,8 @@ use WebxUi\CatalogStock\Models\StockStatus;
  */
 final class Stock
 {
+    private const MEMO = 'stock.of.';
+
     /**
      * @param  list<int|string>  $productIds
      * @return array<int, StockStatus> product id → status; left out only where there is no default
@@ -27,6 +32,25 @@ final class Stock
             return [];
         }
 
+        // Once a request for one set of products: the line on the card, the line beside the buy
+        // button, the purchase rule and the document all ask for the same page.
+        return RequestMemo::remember(self::MEMO.RequestMemo::ids($productIds), static fn (): array => self::lookup($productIds));
+    }
+
+    /** A status was put on a product, or taken off, in this request: what it knew is stale. */
+    public static function forget(): void
+    {
+        RequestMemo::forget(self::MEMO);
+        // The rule of the chain that reads the statuses answered from them.
+        Container::getInstance()->make(Purchasability::class)->forget();
+    }
+
+    /**
+     * @param  list<int|string>  $productIds
+     * @return array<int, StockStatus>
+     */
+    private static function lookup(array $productIds): array
+    {
         /** @var array<int, int> $rows */
         $rows = DB::table(StockStatus::LINKS)->whereIn('product_id', $productIds)->pluck('status_id', 'product_id')
             ->mapWithKeys(static fn (mixed $status, mixed $product): array => [(int) $product => (int) $status])

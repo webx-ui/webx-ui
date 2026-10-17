@@ -11,6 +11,7 @@ use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Facets\IndexField;
 use WebxUi\Catalog\Facets\SwatchedFacet;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogProperties\Models\PropertyValue;
 use WebxUi\Localization\Locales;
 use WebxUi\Media\Models\MediaFile;
@@ -157,10 +158,15 @@ class ValueFacet extends PropertyFacet implements SwatchedFacet
      */
     protected function load(array $values): Collection
     {
-        return PropertyValue::query()
+        $ids = self::ids($values);
+
+        // The same values are asked for their names, their slugs and their swatches while one
+        // filter is drawn, and then one at a time for a link each: read once a request.
+        $found = RequestMemo::pool('property-values.pool.'.$this->property->id, $ids, fn (array $missing): Collection => PropertyValue::query()
             ->where('property_id', $this->property->id)
-            ->whereKey(self::ids($values))
-            ->orderBy('lft')
-            ->get();
+            ->whereKey($missing)
+            ->get());
+
+        return (new Collection($found))->sortBy('lft')->values();
     }
 }

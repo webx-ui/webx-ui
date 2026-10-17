@@ -30,8 +30,9 @@ categories, the filter address, the storefront and the engine, read the core's `
   `category-properties`). The API is `catalog/properties`, `catalog/property-groups`,
   `catalog/categories/{id}/properties` and `catalog/property-sets/{category}`. It has no
   permissions of its own: `catalog.view` reads and `catalog.manage` writes.
-- **Cache**: the property lists and the sets by category live on generations of their own, dropped by the models'
-  events and by a reset of the `catalog` cache group («System → Cache», `CacheGroups::bump('catalog')`).
+- **Cache**: the list of properties and the sets of every category (worked out at once) are entries of the
+  `catalog` cache group; `Property`, `PropertyValue`, `PropertyGroup` and `PropertyInterval` move it, a set saved
+  (`PropertySets::save`) and a reorder (`Properties::reordered`) say so themselves.
 - **What it adds to the core**: the product-form field `properties.values`; a facet for each
   filterable property; products-list columns; search document fields; exchange columns by
   property code; the bulk actions `set-property`, `remove-property` and `clear-outside-set`;

@@ -90,6 +90,8 @@ final class BrandPart implements ProductPart
             DB::table(Brand::LINKS)->updateOrInsert(['product_id' => $product->id], ['brand_id' => $id]);
         }
 
+        Brands::forget();
+
         $locale = app(Locales::class)->current();
 
         return [[

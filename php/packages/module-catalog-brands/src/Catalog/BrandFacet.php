@@ -13,6 +13,7 @@ use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Facets\IndexField;
 use WebxUi\Catalog\Facets\OrderedFacet;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogBrands\Models\Brand;
 
 /**
@@ -130,8 +131,10 @@ final class BrandFacet extends AbstractFacet implements OrderedFacet
      */
     public function applySql(Builder $query, FacetValue $value): void
     {
-        $ids = Brand::query()->visible()->whereKey($this->ids($value->values))->pluck('id')
-            ->map(static fn (mixed $id): int => (int) $id)->all();
+        $chosen = $this->ids($value->values);
+        // Once a request: the engine narrows the list, the total and every facet's count by it.
+        $ids = RequestMemo::remember('brands.visible.'.RequestMemo::ids($chosen), static fn (): array => Brand::query()->visible()->whereKey($chosen)->pluck('id')
+            ->map(static fn (mixed $id): int => (int) $id)->all());
 
         $query->whereIn($query->getModel()->qualifyColumn('id'), $query->getQuery()->newQuery()
             ->from(Brand::LINKS)
@@ -156,7 +159,13 @@ final class BrandFacet extends AbstractFacet implements OrderedFacet
      */
     private function load(array $values): Collection
     {
-        return Brand::query()->visible()->whereKey($this->ids($values))->scopes(['ordered'])->get();
+        $ids = $this->ids($values);
+
+        // The same brands are asked for their names and their slugs while one filter is drawn,
+        // and then one at a time for a link each: read once a request.
+        $found = RequestMemo::pool('brands.pool', $ids, static fn (array $missing): Collection => Brand::query()->visible()->whereKey($missing)->get());
+
+        return (new Collection($found))->sortBy([['position', 'asc'], ['id', 'asc']])->values();
     }
 
     /**

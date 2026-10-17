@@ -26,7 +26,8 @@ use WebxUi\Seo\Sitemap\SitemapSource;
  * landing's, and the landing is a row of its own: it is left out here rather than written twice.
  *
  * One count per category, of the indexable facets only — on the database engine that is a
- * `group by` per facet per category, which is what a map built once a day can afford.
+ * `group by` per facet per category and nothing else (`countOnly`: no total, no page), which is
+ * what a map built once a day can afford.
  */
 final class FilterSitemap implements SitemapSource
 {
@@ -47,7 +48,8 @@ final class FilterSitemap implements SitemapSource
      */
     public function entries(string $locale): iterable
     {
-        foreach (Category::query()->visible()->orderBy('lft')->lazyById(200) as $category) {
+        // With the registry rows: the context of each category is built on its canonical path.
+        foreach (Category::query()->visible()->orderBy('lft')->with('routes')->lazyById(200) as $category) {
             if (! $category->hasUrlIn($locale)) {
                 continue;
             }
@@ -86,6 +88,7 @@ final class FilterSitemap implements SitemapSource
                 count: array_map(static fn ($facet): string => $facet->key(), $open),
                 perPage: 1,
                 filter: $context,
+                countOnly: true,
             ));
 
             $states = [];

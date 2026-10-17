@@ -16,7 +16,8 @@ through the core's registries. For products, the filter, the card and the engine
   becomes a class, `wx-catalog-badge--{tone}`, and the site's CSS decides the colour.
 - **Panel**: module `catalog-labels` in the catalogue's group, under «Dictionaries»; screen
   `catalog.label-form`. The API is `catalog/labels` under the panel's API path. It has no
-  permissions of its own: `catalog.view` reads and `catalog.manage` writes.
+  permissions of its own: `catalog.view` reads and `catalog.manage` writes. A label saved moves
+  the `catalog` cache group.
 - **What it adds to the core**: the node `labels-card` / field `labels.ids` in the `main` tab of
   `catalog.product-form`, a products-list column, the facet `label` (not indexable), the field
   `labels` of the search document, an exchange column, and the bulk actions `add-label` and

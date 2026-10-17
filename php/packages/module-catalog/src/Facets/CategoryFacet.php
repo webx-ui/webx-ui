@@ -10,6 +10,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Query\JoinClause;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Support\RequestMemo;
 
 /**
  * The category as a facet (§8.3 of the architecture): a tree whose values are category ids and
@@ -197,6 +198,17 @@ final class CategoryFacet extends AbstractFacet implements TreeFacet
      */
     public function subtreeIds(array $values): array
     {
+        // Once a request: the page's category is the scope of every facet counter, and each of
+        // them would otherwise read the tree again.
+        return RequestMemo::remember('category.subtree.'.RequestMemo::ids($values), fn (): array => $this->lookupSubtree($values));
+    }
+
+    /**
+     * @param  list<string>  $values
+     * @return list<int>
+     */
+    private function lookupSubtree(array $values): array
+    {
         $chosen = $this->load($values);
 
         if ($chosen->isEmpty()) {
@@ -225,6 +237,10 @@ final class CategoryFacet extends AbstractFacet implements TreeFacet
     {
         $ids = array_values(array_filter(array_map('intval', $values), static fn (int $id): bool => $id > 0));
 
-        return Category::query()->whereKey($ids)->orderBy('lft')->get();
+        // The same categories are asked for their names, their slugs and their parents while
+        // one filter is drawn, and then one at a time for a link each: read once a request.
+        $found = RequestMemo::pool('category.pool', $ids, static fn (array $missing): Collection => Category::query()->whereKey($missing)->get());
+
+        return (new Collection($found))->sortBy('lft')->values();
     }
 }

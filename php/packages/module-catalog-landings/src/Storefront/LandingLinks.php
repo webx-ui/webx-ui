@@ -33,6 +33,7 @@ final class LandingLinks
         private readonly Config $config,
         private readonly Facets $facets,
         private readonly Documents $documents,
+        private readonly LandingRewriter $rewriter,
     ) {}
 
     /**
@@ -44,6 +45,19 @@ final class LandingLinks
 
         if ($limit === 0) {
             return [];
+        }
+
+        // The rewriter read the landings of this category for the filter's links a moment ago,
+        // with their addresses: the same rows, narrowed here, rather than read again.
+        $loaded = $this->rewriter->loadedFor((int) $category->getKey());
+
+        if ($loaded !== null) {
+            $found = $loaded
+                ->filter(static fn (Landing $landing): bool => $landing->on_category && ($landing->products_count === null || $landing->products_count > 0))
+                ->sortBy([['position', 'asc'], ['id', 'asc']])
+                ->take($limit);
+
+            return $this->links(new Collection($found->values()->all()), $locale);
         }
 
         return $this->links($this->linkable($locale)
@@ -73,6 +87,62 @@ final class LandingLinks
     }
 
     /**
+     * The two lists under a landing's list — its neighbours and the same set elsewhere — in one
+     * query for the candidates of both and one for their addresses, rather than two of each.
+     *
+     * @return array{siblings: list<array{name: string, url: string}>, elsewhere: list<array{name: string, url: string}>}
+     */
+    public function neighbours(Landing $landing, string $locale): array
+    {
+        $siblings = $this->limit('siblings');
+        $elsewhere = $this->limit('elsewhere');
+        $set = $landing->set();
+        $first = $set->keys()[0] ?? null;
+        $sameSet = $elsewhere > 0 && $first !== null;
+
+        if ($siblings === 0 && ! $sameSet) {
+            return ['siblings' => [], 'elsewhere' => []];
+        }
+
+        $found = $this->linkable($locale)
+            ->whereKeyNot($landing->getKey())
+            ->when($sameSet, static fn (Builder $query): Builder => $query->leftJoin('catalog_categories', 'catalog_categories.id', '=', 'catalog_landings.category_id')->select('catalog_landings.*'))
+            ->where(function (Builder $either) use ($landing, $siblings, $sameSet, $first): void {
+                if ($siblings > 0) {
+                    $either->where(static function (Builder $same) use ($landing): void {
+                        $landing->category_id === null
+                            ? $same->whereNull('catalog_landings.category_id')
+                            : $same->where('catalog_landings.category_id', $landing->category_id);
+                    });
+                }
+
+                if ($sameSet) {
+                    $either->orWhere(fn (Builder $other): Builder => $other
+                        ->whereNotNull('catalog_landings.category_id')
+                        ->where('catalog_landings.category_id', '!=', $landing->category_id ?? 0)
+                        ->where('filters', 'like', $this->needle($first)));
+                }
+            })
+            ->orderBy($sameSet ? 'catalog_categories.lft' : 'catalog_landings.position')
+            ->orderBy('catalog_landings.position')
+            ->orderBy('catalog_landings.id')
+            ->get();
+
+        $own = $found
+            ->filter(static fn (Landing $other): bool => $other->category_id === $landing->category_id)
+            ->sortBy([['position', 'asc'], ['id', 'asc']])
+            ->take($siblings);
+        $others = $found
+            ->filter(static fn (Landing $other): bool => $other->category_id !== $landing->category_id && $other->set()->equals($set))
+            ->take($elsewhere);
+
+        return [
+            'siblings' => $this->links(new Collection($own->values()->all()), $locale),
+            'elsewhere' => $this->links(new Collection($others->values()->all()), $locale),
+        ];
+    }
+
+    /**
      * The same set on other bases, in the order of the categories' tree.
      *
      * @return list<array{name: string, url: string}>
@@ -87,13 +157,11 @@ final class LandingLinks
             return [];
         }
 
-        $needle = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], (string) json_encode($first)).'%';
-
         $found = $this->linkable($locale)
             ->whereKeyNot($landing->getKey())
             ->whereNotNull('catalog_landings.category_id')
             ->where('catalog_landings.category_id', '!=', $landing->category_id ?? 0)
-            ->where('filters', 'like', $needle)
+            ->where('filters', 'like', $this->needle($first))
             ->join('catalog_categories', 'catalog_categories.id', '=', 'catalog_landings.category_id')
             ->orderBy('catalog_categories.lft')
             ->select('catalog_landings.*')
@@ -215,6 +283,12 @@ final class LandingLinks
         }
 
         return $links;
+    }
+
+    /** The `like` that finds a set whose first facet is this one, as the column stores it. */
+    private function needle(string $facet): string
+    {
+        return '%'.str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], (string) json_encode($facet)).'%';
     }
 
     private function limit(string $list): int

@@ -69,7 +69,7 @@ final class CoreDocument implements DocumentContributor
             return [];
         }
 
-        $visible = array_flip(Product::query()->whereKey($ids)->visible()->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all());
+        $visible = array_flip(Product::visibleAmong(array_map('intval', $ids)));
 
         $categories = [];
 
