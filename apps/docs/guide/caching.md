@@ -32,6 +32,21 @@ Nothing is stored while a database transaction is open: the rows read inside it 
 back, and an agent's `dry_run` is exactly such a transaction. The value is computed and returned,
 not kept.
 
+## What every page reads
+
+An entry every page asks for — the settings, the languages, the block types — is declared by its
+reader, and the first read of a request brings all of them with the versions, in one more
+`many()`:
+
+```php
+$groups->prefetch('settings', ['settings'], localized: false);
+```
+
+On the `database` store this is the difference between one query for the cache and one for each
+entry. A name with a part only the request knows — a path, a hash — cannot be declared and is
+read on its own. What `remember()` read or computed is kept for the request too: the settings
+asked for ten times while a page renders are one read of the store.
+
 ## Declaring a group
 
 A module requires `webx-ui/cache`, registers its provider from its own `register()` — so the

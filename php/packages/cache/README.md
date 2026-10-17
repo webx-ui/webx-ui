@@ -98,7 +98,12 @@ events already.
 ## How the versions behave
 
 - Read once a request for every declared group in one `Cache::many()`, then kept in memory;
-  `forgetMemo()` drops them (a worker serving the next request, a test).
+  `forgetMemo()` drops them (a worker serving the next request, a test). What `remember()`
+  read or computed is kept with them: the settings asked for ten times while a page renders are
+  one read of the store.
+- An entry every page reads is declared — `prefetch('settings', ['settings'], localized: false)`
+  — and comes with the versions, in one more `many()` on the first read of a request: on the
+  `database` store a page otherwise paid a query for each of them.
 - A version starts at a random number, never at 1: a version evicted from the cache and seeded
   again at 1 would meet the entries of the old 1.
 - A version lives 30 days untouched; one that expired is seeded afresh — a miss, not a stale hit.
@@ -107,18 +112,20 @@ events already.
 
 ## API
 
-| Method                                               | What it does                                                     |
-| ---------------------------------------------------- | ---------------------------------------------------------------- |
-| `declare(group, title?)`                             | declare a group; idempotent, the first title stays               |
-| `bumpOn(group, ...models)`                           | declare and move on the models' events                           |
-| `onReset(group, fn)`                                 | a hook for a reset made by code                                  |
-| `bump(...groups)` / `bumpAll()`                      | move the versions; after the commit inside a transaction         |
-| `version(group)` / `versions(...groups)`             | the current versions, read once a request                        |
-| `key(name, depends, localized = true)`               | the key an entry built from these groups is stored under         |
-| `remember(name, depends, fn, ttl = null, localized)` | `Cache::remember()` on that key; nothing stored in a transaction |
-| `all()` / `ids()` / `has(group)`                     | the registry, for a screen, a command, a tool                    |
-| `forgetMemo(group?)`                                 | forget the versions read this request                            |
-| `enabled()` / `ttl()`                                | the `webx-cache` config                                          |
+| Method                                                                        | What it does                                                                    |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `declare(group, title?)`                                                      | declare a group; idempotent, the first title stays                              |
+| `bumpOn(group, ...models)`                                                    | declare and move on the models' events                                          |
+| `onReset(group, fn)`                                                          | a hook for a reset made by code                                                 |
+| `bump(...groups)` / `bumpAll()`                                               | move the versions; after the commit inside a transaction                        |
+| `version(group)` / `versions(...groups)`                                      | the current versions, read once a request                                       |
+| `key(name, depends, localized = true)`                                        | the key an entry built from these groups is stored under                        |
+| `remember(name, depends, fn, ttl = null, localized)`                          | `Cache::remember()` on that key; nothing stored in a transaction                |
+| `get(name, depends, localized)` / `put(name, depends, value, ttl, localized)` | the two halves of `remember()`, for a reader that decides what is worth keeping |
+| `prefetch(name, depends, localized)`                                          | read this entry with the versions, in one call, on the first read of a request  |
+| `all()` / `ids()` / `has(group)`                                              | the registry, for a screen, a command, a tool                                   |
+| `forgetMemo(group?)`                                                          | forget the versions and the values read this request                            |
+| `enabled()` / `ttl()`                                                         | the `webx-cache` config                                                         |
 
 An undeclared group in `bump()`, `key()` or `remember()` throws `InvalidArgumentException`: a
 typo in a group name must not pass as a group nobody resets.

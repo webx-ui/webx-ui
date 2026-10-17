@@ -217,7 +217,13 @@ class Page extends Model implements HasBreadcrumbs, HasSeoFallback, Visible
 
         $crumbs = [];
 
-        foreach ($this->pathFromRoot() as $node) {
+        // The ancestors with their addresses in one query each, rather than the registry asked
+        // once per step: `url()` answers from the loaded relation. The page itself keeps the
+        // rows it already has — the `<head>` loaded them before the trail is printed.
+        $path = $this->ancestors()->with('routes')->get();
+        $path->push($this->loadMissing('routes'));
+
+        foreach ($path as $node) {
             if ($node->isRoot() || (! $node->is($this) && ! $node->isVisible($locale))) {
                 continue;
             }
@@ -226,6 +232,18 @@ class Page extends Model implements HasBreadcrumbs, HasSeoFallback, Visible
         }
 
         return $crumbs;
+    }
+
+    /**
+     * What a line of the sitemap asks of a page, for a chunk at once: its addresses, for the
+     * `hreflang` set and the untranslated check. The date is the page's own column.
+     *
+     * @param  Builder<Page>  $query
+     * @return Builder<Page>
+     */
+    public function scopeForSitemap(Builder $query): Builder
+    {
+        return $query->with('routes');
     }
 
     /**

@@ -105,15 +105,21 @@ final class Alternates
     /**
      * The entity's canonical row in every language it has one in, prefixed.
      *
+     * Out of the `routes` relation, loaded once: the trail, the untranslated check and `url()`
+     * all read the same rows of the same entity, and a sitemap chunk loaded them with the list.
+     *
      * @return array<string, string>
      */
     private function entityPaths(Model $subject): array
     {
-        $rows = Route::query()->forEntity($subject)->canonical()->get();
+        /** @var iterable<Route> $rows the relation, loaded now if the subject came without it; a model without the trait is asked the registry */
+        $rows = in_array(HasUrl::class, class_uses_recursive($subject), true)
+            ? ($subject->getRelationValue('routes') ?? [])
+            : Route::query()->forEntity($subject)->canonical()->get();
         $paths = [];
 
         foreach ($rows as $row) {
-            if ($this->locales->has($row->locale)) {
+            if ($row->kind === Route::CANONICAL && $this->locales->has($row->locale)) {
                 $paths[$row->locale] = '/'.UrlNormaliser::join($this->site->prefix($row->locale), $row->path);
             }
         }

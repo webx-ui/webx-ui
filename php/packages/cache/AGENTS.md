@@ -11,8 +11,9 @@ through this registry. The groups themselves are declared by the packages that o
 
 - **`CacheGroups`** (singleton): `declare(group, title?)`, `bumpOn(group, ...models)`,
   `bump(...groups)`, `bumpAll()`, `onReset(group, fn)`, `remember(name, depends, fn, ttl?,
-localized?)`, `key(name, depends, localized?)`, `version(group)`, `versions(...)`, `all()`,
-  `ids()`, `has(group)`, `forgetMemo(group?)`, `enabled()`, `ttl()`.
+localized?)`, `get(…)` / `put(…)` (its two halves), `prefetch(name, depends, localized?)`,
+  `key(name, depends, localized?)`, `version(group)`, `versions(...)`, `all()`, `ids()`,
+  `has(group)`, `forgetMemo(group?)`, `enabled()`, `ttl()`.
 - **`CacheGroup`**: one group — `id`, `title()`, `models()`, `hooks()`.
 - **Keys** `webx:ver:<group>` for the versions, `webx:<name>:<locale|->:<group>.<v>…` for the
   entries; a tail over 180 characters is hashed (the `database` store's key column is 255).
@@ -20,7 +21,8 @@ localized?)`, `key(name, depends, localized?)`, `version(group)`, `versions(...)
   (`WEBX_CACHE_ENABLED`), `ttl` (`WEBX_CACHE_TTL`, a day).
 - **Rules the registry keeps**: a version starts at a random number, never 1; inside a
   transaction a move waits for the commit, once a group, and `remember()` stores nothing; the
-  versions are read once a request in one `many()`; an undeclared group throws.
+  versions are read once a request in one `many()`, the values `remember()` read with them, and
+  the entries declared with `prefetch()` in one more; an undeclared group throws.
 - Groups every WebX site has, declared by their owners: `locales` (`webx-ui/localization`),
   `routes` (`webx-ui/routing`), `theme` (`webx-ui/themes`), `screens` (`webx-ui/module-admin`).
 
@@ -30,6 +32,7 @@ localized?)`, `key(name, depends, localized?)`, `version(group)`, `versions(...)
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Cache something the site reads a lot         | `app(CacheGroups::class)->remember('name', ['menu', 'settings'], fn () => …)` — the groups it is built from                                                              |
 | The same data in every language              | `remember(…, localized: false)`                                                                                                                                          |
+| An entry every page reads                    | `prefetch('name', ['x'], localized: false)` from the provider — read with the versions, one `many()` for all of them, not a query each                                   |
 | A group for a module's data                  | in the provider's `register()`: `$this->app->register(CacheServiceProvider::class)`; in `boot()`: `declare('x', 'webx-x::module.title')`, `bumpOn('x', Model::class, …)` |
 | A write without an Eloquent event            | `bump('x')` right after the mass `update()`, `upsert`, raw query or import                                                                                               |
 | A cache that still lives on a key of its own | `onReset('x', fn () => $this->forget())` — the panel's button reaches it; drop it once on `remember()`                                                                   |
@@ -63,7 +66,9 @@ localized?)`, `key(name, depends, localized?)`, `version(group)`, `versions(...)
 - `php artisan webx:doctor` reports the store: `array` keeps nothing between requests and is a
   warning in production; `database` is swept hourly by `webx:cache:prune`.
 - On the `database` store, one `SELECT … FROM cache WHERE key IN (…)` a request for the
-  versions, however many groups a page depends on.
+  versions, however many groups a page depends on, and one more for everything `prefetch()`ed.
+- In a test, `forgetMemo()` between «requests»: what one read is kept for it, and a test that
+  travels in time or flushes the store without it reads the memo, not the store.
 
 ## Read more
 
