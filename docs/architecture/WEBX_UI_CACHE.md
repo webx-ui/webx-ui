@@ -55,6 +55,13 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
   загрузчик на запрос под версиями `press` + `routes`), `catalog` (`Category`, `Product`, `Brand`, `Label`, `StockStatus`, `Landing`, `Property`,
   `PropertyValue`, `PropertyGroup`, `PropertyInterval`; наборы свойств, список свойств и настройки
   фасетов — по одной записи `remember`).
+- **Панель** (этап 4, аудит §9.6): `block-usage` (`module-blocks`) — счётчики типов блоков на
+  страницах; двигается любой моделью `webx-blocks.entities` и `Region` (привязка повторяется при
+  чтении — сущности, названные после загрузки, тоже двигают), тихие писатели пакета (`Renamer`,
+  `LanguageShapes`, `StrayValues`) — `bump` сами. Слова манифеста — запись
+  `admin.manifest.<язык>.<отпечаток>` на `locales`, `routes`, `screens`, `settings`: в отпечатке
+  словарь, модули, конфиг и корень запроса; ничего о пользователе, кроме языка, — `meta` модулей
+  считается на каждый запрос.
 
 ### 2.2. Что двигает версию
 
