@@ -28,6 +28,7 @@
 | [WEBX_UI_CACHE.md](WEBX_UI_CACHE.md)                         | Кеш на версионных ключах: группы, версии, сброс по моделям и явный, экран «Кеш», MCP   | выпущено                               |
 | [WEBX_UI_PERFORMANCE_AUDIT.md](WEBX_UI_PERFORMANCE_AUDIT.md) | Производительность PHP: замеры «было/стало», находки, карта кеша, решения на утро      | задача webx-ui#16 выполнена            |
 | [WEBX_UI_PERFORMANCE.md](WEBX_UI_PERFORMANCE.md)             | Правила производительности модулей: N+1, кеш и сброс, индексы, пагинация, бюджеты      | действует                              |
+| [WEBX_UI_DEBUGBAR.md](WEBX_UI_DEBUGBAR.md)                   | Отладочная панель на сайте: SQL, время, блоки, кеш; MCP `debug_page`                   | спроектировано, не начато              |
 
 ## Модули
 
