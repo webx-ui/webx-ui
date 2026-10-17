@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Categories\HasCategories;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Auth\Models\CmsUser;
@@ -209,7 +210,7 @@ class Article extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallb
     {
         return $query
             ->with(['cover', 'routes'])
-            ->withMax(['versions as last_published_at' => static fn (Builder $versions): Builder => $versions->published()], 'created_at');
+            ->withMax(['versions as last_published_at' => static fn (Builder $versions): Builder => $versions->where('kind', EntityVersion::KIND_PUBLISHED)], 'created_at');
     }
 
     /**

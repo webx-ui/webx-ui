@@ -99,27 +99,31 @@ final class PerformanceTest extends TestCase
         $this->assertQueriesWithin(4, fn () => $this->get('/sitemap-article.xml')->assertOk());
     }
 
+    /**
+     * The feed, the article and the registry are cached on versioned keys; a save through the
+     * panel moves their groups, and the next request — in the same process, the way a worker
+     * serves it — reads the new rows. The newest article is the one on the first page.
+     */
     #[Test]
     public function a_page_shows_a_change_made_through_the_panel_at_once(): void
     {
-        // Left for the next session of the stage: the rename through the panel is not seen on
-        // the feed yet, and the cause is not found.
-        $this->markTestIncomplete('freshness through the panel: the second read still shows the old title');
         $this->seedBlog();
         $editor = $this->editor();
+        $newest = 'article-'.self::ARTICLES;
+        $title = 'Article '.self::ARTICLES;
 
-        $this->get('/blog')->assertOk()->assertSee('Article 1');
-        $this->get('/blog/article-1')->assertOk()->assertSee('Article 1');
+        $this->get('/blog')->assertOk()->assertSee($title);
+        $this->get('/blog/'.$newest)->assertOk()->assertSee($title);
 
-        $article = Article::query()->orderBy('id')->firstOrFail();
+        $article = Article::query()->where('slug->en', $newest)->firstOrFail();
         $this->actingAs($editor, 'cms')
-            ->putJson($this->api($article->getKey()), ['values' => ['title' => ['en' => 'Article one, renamed'], 'slug' => ['en' => 'article-one']]])
+            ->putJson($this->api($article->getKey()), ['values' => ['title' => ['en' => 'The newest, renamed'], 'slug' => ['en' => 'the-newest']]])
             ->assertOk();
         $this->actingAs($editor, 'cms')->postJson($this->api($article->getKey().'/publish'))->assertOk();
 
-        $this->get('/blog')->assertOk()->assertSee('Article one, renamed')->assertDontSee('>Article 1<', false);
-        $this->get('/blog/article-one')->assertOk()->assertSee('Article one, renamed');
-        $this->get('/blog/article-1')->assertRedirect();
+        $this->get('/blog')->assertOk()->assertSee('The newest, renamed')->assertDontSee('>'.$title.'<', false);
+        $this->get('/blog/the-newest')->assertOk()->assertSee('The newest, renamed');
+        $this->get('/blog/'.$newest)->assertRedirect('/blog/the-newest');
     }
 
     /**

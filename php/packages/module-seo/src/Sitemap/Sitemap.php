@@ -340,7 +340,7 @@ final class Sitemap
                     // history for `lastmod` — loaded for the chunk at once where the model
                     // says how (`scopeForSitemap`), rather than once per entity.
                     if (method_exists($prototype, 'scopeForSitemap')) {
-                        $query->forSitemap();
+                        $prototype->scopeForSitemap($query);
                     }
 
                     /** @var Collection<int, Model&Visible> $found */
