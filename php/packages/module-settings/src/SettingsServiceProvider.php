@@ -107,5 +107,7 @@ class SettingsServiceProvider extends ServiceProvider
 
         $groups->declare(Settings::GROUP, 'webx-settings::module.title');
         $groups->bumpOn(Settings::GROUP, Setting::class);
+        // Every page reads the settings: with the versions, in the same call.
+        $groups->prefetch('settings', [Settings::GROUP], localized: false);
     }
 }

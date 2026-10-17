@@ -320,6 +320,39 @@ final class CacheGroupsTest extends TestCase
     }
 
     #[Test]
+    public function the_entries_every_page_reads_come_with_the_versions_in_one_call(): void
+    {
+        $groups = $this->fresh('database');
+        $groups->declare('menu');
+        $groups->declare('settings');
+        $groups->prefetch('settings', ['settings'], localized: false);
+        $groups->prefetch('types', ['menu']);
+        $groups->remember('settings', ['settings'], static fn (): string => 'the settings', localized: false);
+        $groups->remember('types', ['menu'], static fn (): string => 'the types');
+        $groups->forgetMemo();
+
+        $queries = 0;
+        DB::listen(static function () use (&$queries): void {
+            $queries++;
+        });
+
+        // The next request: the versions and both entries in two calls, whichever is asked first.
+        $this->assertSame('the types', $groups->remember('types', ['menu'], static fn (): string => 'built again'));
+        $this->assertSame('the settings', $groups->remember('settings', ['settings'], static fn (): string => 'built again', localized: false));
+        $this->assertSame(2, $queries, 'the versions, then every declared entry — one `many()` each');
+
+        // A miss stays a miss: what the store has not got is computed by whoever asks for it.
+        $groups->prefetch('missing', ['menu']);
+        $groups->forgetMemo();
+        $this->assertSame('computed', $groups->remember('missing', ['menu'], static fn (): string => 'computed'));
+
+        // Moved, the old entry is not what the next request warms up with.
+        $groups->bump('menu');
+        $groups->forgetMemo();
+        $this->assertSame('rebuilt', $groups->remember('types', ['menu'], static fn (): string => 'rebuilt'));
+    }
+
+    #[Test]
     public function switched_off_it_computes_every_time(): void
     {
         config(['webx-cache.enabled' => false]);

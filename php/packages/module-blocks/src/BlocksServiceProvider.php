@@ -386,5 +386,13 @@ class BlocksServiceProvider extends ServiceProvider
 
         $groups->declare(Regions::GROUP, 'webx-blocks::module.regions');
         $groups->bumpOn(Regions::GROUP, Region::class);
+
+        // Every page reads the types and the regions the layout prints: with the versions, in
+        // the same call, rather than one query each on the `database` store.
+        $groups->prefetch('blocks.types', [BlockTypes::GROUP], localized: false);
+
+        foreach (array_keys($this->app->make(Regions::class)->declared()) as $name) {
+            $groups->prefetch('blocks.region.'.$name, [Regions::GROUP], localized: false);
+        }
     }
 }

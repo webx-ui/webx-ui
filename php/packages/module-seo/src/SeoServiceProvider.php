@@ -348,6 +348,9 @@ class SeoServiceProvider extends ServiceProvider
 
         $groups->declare(SeoRules::GROUP, 'webx-seo::module.title');
         $groups->bumpOn(SeoRules::GROUP, SeoUrl::class, SeoRedirect::class, SeoLinkBlock::class, SeoLinkItem::class);
+        // Every page asks the rules and the redirects: with the versions, in the same call.
+        $groups->prefetch('seo.rules.urls', [SeoRules::GROUP, CacheGroups::ROUTES], localized: false);
+        $groups->prefetch('seo.rules.redirects', [SeoRules::GROUP, CacheGroups::ROUTES], localized: false);
 
         $groups->declare(Sitemap::GROUP, 'Sitemap');
     }

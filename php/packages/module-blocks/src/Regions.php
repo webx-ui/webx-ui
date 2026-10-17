@@ -62,6 +62,14 @@ final class Regions
     private array $remembered = [];
 
     /**
+     * The fallbacks the store knows, read once: the header and the footer each asked for them
+     * on every page, and the answer is a hint that may lag a worker's lifetime without harm.
+     *
+     * @var array<string, string>|null
+     */
+    private ?array $known = null;
+
+    /**
      * The regions being drawn right now, outermost first. A shared block may stand inside
      * another, and one that ends up inside itself — published before publication checked for it —
      * would draw until the stack overflowed.
@@ -462,6 +470,19 @@ final class Regions
     }
 
     /** The strip over a region whose draft has a failing block, in the preview. */
+    /** @return array<string, string> */
+    private function known(): array
+    {
+        if ($this->known === null) {
+            $known = $this->cache->get(self::FALLBACKS);
+            /** @var array<string, string> $known */
+            $known = is_array($known) ? $known : [];
+            $this->known = $known;
+        }
+
+        return $this->known;
+    }
+
     private function banner(string $text): string
     {
         return '<div class="wx-region-error" data-wx-region-error style="padding:8px 12px;background:#fff4e5;color:#7a4b00;font:14px/1.4 system-ui,sans-serif;border:1px solid #f0c36d">'.e($text).'</div>';
@@ -476,11 +497,11 @@ final class Regions
         $this->remembered[$name] = $fallback;
 
         try {
-            $known = $this->cache->get(self::FALLBACKS);
-            $known = is_array($known) ? $known : [];
+            $known = $this->known();
 
             if (($known[$name] ?? null) !== $fallback) {
                 $known[$name] = $fallback;
+                $this->known = $known;
                 $this->cache->forever(self::FALLBACKS, $known);
             }
         } catch (Throwable) {

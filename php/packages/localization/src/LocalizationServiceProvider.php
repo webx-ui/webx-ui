@@ -82,6 +82,8 @@ class LocalizationServiceProvider extends ServiceProvider
 
         $groups->declare(CacheGroups::LOCALES);
         $groups->bumpOn(CacheGroups::LOCALES, Locale::class);
+        // Every page reads the languages: with the versions, in the same call.
+        $groups->prefetch('locales', [CacheGroups::LOCALES], localized: false);
     }
 
     /**

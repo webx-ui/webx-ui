@@ -86,6 +86,19 @@ final class CacheGroups
      */
     private array $values = [];
 
+    /**
+     * The entries every page reads — the settings, the languages, the block types, the rules
+     * of the SEO module — by name, declared by their readers. Read together with the versions on
+     * the first `remember()` of a request, in one `many()`: on the `database` store each would
+     * otherwise be a query of its own, and a page paid as much for its cache as for its content.
+     *
+     * @var array<string, array{depends: list<string>, localized: bool}>
+     */
+    private array $prefetch = [];
+
+    /** Whether the prefetched entries were read this request. */
+    private bool $warmed = false;
+
     public function __construct(
         private readonly Cache $cache,
         private readonly Dispatcher $events,
@@ -151,6 +164,22 @@ final class CacheGroups
     public function onReset(string $group, Closure $hook): void
     {
         $this->declare($group)->addHook($hook);
+    }
+
+    /**
+     * Read this entry with the versions, in the same `many()`, on the first read of a request:
+     * for a name every page asks for. A name with a part only the request knows — a path, a
+     * hash — cannot be declared, and is read on its own as before.
+     *
+     * @param  list<string>  $depends
+     */
+    public function prefetch(string $name, array $depends, bool $localized = true): void
+    {
+        foreach ($depends as $group) {
+            $this->declare($group);
+        }
+
+        $this->prefetch[$name] = ['depends' => $depends, 'localized' => $localized];
     }
 
     public function has(string $group): bool
@@ -256,6 +285,7 @@ final class CacheGroups
             return $compute();
         }
 
+        $this->warm();
         $key = $this->key($name, $depends, $localized);
 
         // A null is never kept: the store does not keep one either (`remember` computes it
@@ -276,6 +306,7 @@ final class CacheGroups
             return null;
         }
 
+        $this->warm();
         $key = $this->key($name, $depends, $localized);
 
         return $this->values[$key] ??= $this->cache->get($key);
@@ -308,6 +339,7 @@ final class CacheGroups
         // is as stale as the one that moved, and sorting them by group costs more than reading
         // the few of them again.
         $this->values = [];
+        $this->warmed = false;
 
         if ($group === null || $this->memo === null) {
             $this->memo = null;
@@ -327,6 +359,31 @@ final class CacheGroups
     public function ttl(): int
     {
         return max(1, (int) $this->config->get('webx-cache.ttl', self::DEFAULT_TTL));
+    }
+
+    /**
+     * The declared entries, read once a request in one call. Only what the store has is kept:
+     * a miss is computed by whoever asked, and an entry memoised already — read before the
+     * declaration came, or written this request — is left as it is.
+     */
+    private function warm(): void
+    {
+        if ($this->warmed || $this->prefetch === []) {
+            return;
+        }
+
+        $this->warmed = true;
+        $keys = [];
+
+        foreach ($this->prefetch as $name => $entry) {
+            $keys[] = $this->key($name, $entry['depends'], $entry['localized']);
+        }
+
+        foreach ($this->cache->many($keys) as $key => $value) {
+            if ($value !== null && ! array_key_exists($key, $this->values)) {
+                $this->values[$key] = $value;
+            }
+        }
     }
 
     private function bumpFor(ConnectionInterface $connection, string $group, bool $hooks = true): void
