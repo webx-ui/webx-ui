@@ -12,6 +12,8 @@ use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
+use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Debug\Support\CallSite;
@@ -85,6 +87,7 @@ final class ReportBuilder
             'views' => $this->views(),
             'cache' => $this->cache(),
             'request' => $this->request($request, $response),
+            'links' => $this->links($user, $request),
             'other' => [
                 'http' => array_values(array_map(static function (array $call): array {
                     unset($call['started']);
@@ -454,6 +457,44 @@ final class ReportBuilder
             'cookies' => array_values(array_map('strval', array_keys($request->cookies->all()))),
             'session' => $session,
             'connection' => DB::getDefaultConnection(),
+        ];
+    }
+
+    /**
+     * Where the bar may send this administrator in the panel: the record of the page, by the same
+     * registry and the same permission as the panel on the site, and the screen of a region. None
+     * where the administrator could not edit what is there — the bar only offers what works.
+     *
+     * @return array{page: string|null, region: string|null}
+     */
+    private function links(Model $user, Request $request): array
+    {
+        $panel = '/'.trim((string) $this->config->get('webx-admin.path', 'cms'), '/');
+        $can = static fn (string $permission): bool => $user instanceof HasPermissions && $user->hasPermission($permission);
+        $page = null;
+
+        $resolution = class_exists(Resolution::class) ? Resolution::of($request) : null;
+        $type = $resolution?->type?->type;
+
+        if ($resolution?->entity instanceof Model && is_string($type) && $this->container->bound(SiteBar::class)) {
+            try {
+                /** @var SiteBar $bar */
+                $bar = $this->container->make(SiteBar::class);
+                $link = $bar->link($type);
+
+                if ($link !== null && $can($link->permission)) {
+                    $edit = ($link->edit)($resolution->entity);
+                    $page = is_string($edit) && $edit !== '' ? $panel.'/'.ltrim($edit, '/') : null;
+                }
+            } catch (Throwable) {
+                $page = null;
+            }
+        }
+
+        return [
+            'page' => $page,
+            // The bar adds the region's name: one prefix, not one address per region drawn.
+            'region' => class_exists(Block::class) && $can('blocks.regions') ? $panel.'/regions/' : null,
         ];
     }
 

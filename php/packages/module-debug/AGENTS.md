@@ -23,6 +23,9 @@ what the resolver found (`webx-ui/routing`). The same report goes to an agent as
 - **Routes**: `GET /cms/_debug/bar.{hash}.js` (the script), `GET /api/cms/debug/reports` and
   `GET /api/cms/debug/reports/{id}` behind `cms.can:debug.view`, only the maker's — anybody
   else's id is a 404.
+- **Script** `resources/js/debug-bar.js`, no dependencies, in a shadow root: the summary line,
+  the panel with tabs (fetches the report on first open), height, state in `localStorage['wx-debug']`;
+  keeps left of the site panel's drawer by its `wx-bar:layout` event. Check it in a browser.
 - **Permission** `debug.view` (module `debug`), given to no role on install.
 - **MCP** tool `debug_page` (scope `debug:read`, permission `debug.view`), read only.
 - **Points of measure in other packages**, sent only while somebody listens:

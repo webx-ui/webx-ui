@@ -368,7 +368,26 @@ function start() {
     }
 
     if (state.open) ensureFrame()
+
+    layout()
   }
+
+  // How much of the window's right edge the drawer takes, for the debug bar along the bottom
+  // (WEBX_UI_DEBUGBAR.md, §11.3). A drawer as wide as the window says 0: whatever is under it
+  // stays under it. The attribute is for a bar that starts after the drawer was already open.
+  function layout() {
+    const width = drawer.offsetWidth
+    const right = state.open && width < window.innerWidth ? width : 0
+
+    if (state.open) host.setAttribute('data-open', String(right))
+    else host.removeAttribute('data-open')
+
+    window.dispatchEvent(new CustomEvent('wx-bar:layout', { detail: { right } }))
+  }
+
+  window.addEventListener('resize', () => {
+    if (state.open) layout()
+  })
 
   function setOpen(open) {
     state.open = open

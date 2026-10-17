@@ -39,7 +39,7 @@ final class DebugModule extends AbstractModule implements ProvidesMcpTools
 
     public function icon(): string
     {
-        return 'bug';
+        return 'monitor';
     }
 
     public function order(): int

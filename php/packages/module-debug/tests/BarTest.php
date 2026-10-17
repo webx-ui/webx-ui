@@ -54,6 +54,22 @@ final class BarTest extends TestCase
     }
 
     #[Test]
+    public function the_links_to_the_panel_are_only_those_the_administrator_may_follow(): void
+    {
+        $super = $this->admin();
+        $links = $this->reportOf($this->asAdmin($super, '/plain'), $super)['links'];
+
+        // A page of the site's own code has no record to open; the regions are one prefix.
+        $this->assertNull($links['page']);
+        $this->assertSame('/cms/regions/', $links['region']);
+
+        $reader = $this->admin(super: false, permissions: ['debug.view']);
+        $links = $this->reportOf($this->asAdmin($reader, '/plain'), $reader)['links'];
+
+        $this->assertNull($links['region'], 'Without blocks.regions the bar offers no region to open.');
+    }
+
+    #[Test]
     public function an_n_plus_one_is_grouped_by_shape_with_where_it_came_from(): void
     {
         $this->seedArticles();
