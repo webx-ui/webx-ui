@@ -1,9 +1,4 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import ProjectsPage from './ProjectsPage.vue'
-import TaskFormPage from './TaskFormPage.vue'
-import TaskPage from './TaskPage.vue'
-import TasksPage from './TasksPage.vue'
-import TasksSettingsPage from './TasksSettingsPage.vue'
 
 export interface TasksOptions {
   /** Where the section lives inside the panel. */
@@ -26,35 +21,35 @@ export function tasks(options: TasksOptions = {}): AdminModule {
     id: 'tasks',
     path,
     routes: [
-      { path, name: 'webx.tasks', component: TasksPage, props: base },
+      { path, name: 'webx.tasks', component: () => import('./TasksPage.vue'), props: base },
       {
         path: `${path}/projects`,
         name: 'webx.tasks.projects',
-        component: ProjectsPage,
+        component: () => import('./ProjectsPage.vue'),
         props: base,
       },
       {
         path: `${path}/settings`,
         name: 'webx.tasks.settings',
-        component: TasksSettingsPage,
+        component: () => import('./TasksSettingsPage.vue'),
         props: base,
       },
       {
         path: `${path}/new`,
         name: 'webx.tasks.new',
-        component: TaskFormPage,
+        component: () => import('./TaskFormPage.vue'),
         props: { ...base, id: null },
       },
       {
         path: `${path}/:id(\\d+)`,
         name: 'webx.tasks.task',
-        component: TaskPage,
+        component: () => import('./TaskPage.vue'),
         props: (route) => ({ ...base, id: id(route.params.id as string) }),
       },
       {
         path: `${path}/:id(\\d+)/edit`,
         name: 'webx.tasks.edit',
-        component: TaskFormPage,
+        component: () => import('./TaskFormPage.vue'),
         props: (route) => ({ ...base, id: id(route.params.id as string) }),
       },
     ],

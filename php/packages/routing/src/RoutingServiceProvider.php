@@ -8,6 +8,8 @@ use ArrayObject;
 use Illuminate\Support\Facades\Route as Router;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Cache\CacheGroups;
+use WebxUi\Cache\CacheServiceProvider;
 use WebxUi\Routing\Aliases\DatabaseAliases;
 use WebxUi\Routing\Aliases\RouteAliases;
 use WebxUi\Routing\Audit\RegistryCheck;
@@ -15,6 +17,7 @@ use WebxUi\Routing\Console\CheckRoutesCommand;
 use WebxUi\Routing\Console\RebuildRoutesCommand;
 use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Http\Controllers\ResolveController;
+use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Spelling\RegistrySpelling;
 
 /**
@@ -27,6 +30,10 @@ class RoutingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/webx-routing.php', 'webx-routing');
+
+        // The registry of cache groups has to be one singleton before `boot()` declares into it,
+        // whether the site found `webx-ui/cache` by discovery or a test listed the providers.
+        $this->app->register(CacheServiceProvider::class);
 
         $this->app->singleton(RouteTypes::class);
         // Stateless, and a singleton only so that whoever needs the language prefix — the
@@ -53,6 +60,7 @@ class RoutingServiceProvider extends ServiceProvider
 
         $this->registerFallback();
         $this->registerAudit();
+        $this->registerCacheGroup();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -63,6 +71,19 @@ class RoutingServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/webx-routing.php' => config_path('webx-routing.php'),
         ], 'webx-routing-config');
+    }
+
+    /**
+     * The `routes` cache group (WEBX_UI_CACHE.md §2.1): every address written through the model
+     * moves it; `RouteSync` says so itself after a write without a model event. The words the
+     * panel shows for it are the frame's, where there is one.
+     */
+    private function registerCacheGroup(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare(CacheGroups::ROUTES);
+        $groups->bumpOn(CacheGroups::ROUTES, Route::class);
     }
 
     /**

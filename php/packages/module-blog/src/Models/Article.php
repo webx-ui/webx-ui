@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Categories\HasCategories;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Auth\Models\CmsUser;
@@ -168,17 +169,48 @@ class Article extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallb
      * The history knows when the text last reached the site. One query per article, which the
      * sitemap pays once per build rather than per visit.
      */
+    /** The date of the last publication once read, or false until it was. */
+    private string|null|false $lastPublishedAt = false;
+
     public function visibleUpdatedAt(): ?CarbonInterface
     {
         $at = $this->published_at;
-        $last = $this->versions()->published()->max('created_at');
-        $republished = is_string($last) ? Carbon::parse($last) : null;
+        $republished = $this->lastPublishedAt();
 
         if ($at === null || $republished === null) {
             return $at ?? $republished;
         }
 
         return $republished->greaterThan($at) ? $republished : $at;
+    }
+
+    /**
+     * When the text last reached the site. One query per article, asked once: the `<head>`
+     * prints it twice (`article:modified_time`, `dateModified`). A list that loaded it as
+     * `last_published_at` — the sitemap, through {@see scopeForSitemap()} — is not asked at all.
+     */
+    private function lastPublishedAt(): ?CarbonInterface
+    {
+        if ($this->lastPublishedAt === false) {
+            $loaded = $this->attributes['last_published_at'] ?? $this->versions()->published()->max('created_at');
+            $this->lastPublishedAt = is_string($loaded) ? $loaded : null;
+        }
+
+        return $this->lastPublishedAt === null ? null : Carbon::parse($this->lastPublishedAt);
+    }
+
+    /**
+     * What a line of the sitemap asks of an article, for a chunk at once: the cover behind
+     * `og:image` and the date of its last publication.
+     *
+     * @param  Builder<Article>  $query
+     * @return Builder<Article>
+     */
+    public function scopeForSitemap(Builder $query): Builder
+    {
+        return $query
+            ->with(['cover', 'routes'])
+            ->withMax(['versions as last_published_at' => static fn (Builder $versions): Builder => $versions->where('kind', EntityVersion::KIND_PUBLISHED)], 'created_at');
     }
 
     /**

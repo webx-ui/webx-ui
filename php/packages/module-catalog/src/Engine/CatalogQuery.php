@@ -27,6 +27,10 @@ use WebxUi\Catalog\Sorts\Sorts;
  *
  * `filter` is the page the question comes from, for a facet source that decides which of its
  * facets belong there ({@see RelevantFacets}); without it the engine makes one from the context.
+ *
+ * `countOnly` asks for the counts and nothing else — no total, no page of ids — for a caller
+ * that reads only the facets, the sitemap of the filter's first levels. An engine that cannot
+ * tell the difference answers as it always does.
  */
 final class CatalogQuery
 {
@@ -62,6 +66,7 @@ final class CatalogQuery
         public readonly ?string $state = null,
         public readonly ?FilterContext $filter = null,
         public readonly bool $asTyped = false,
+        public readonly bool $countOnly = false,
     ) {}
 
     /** The same question for other words: an engine trying a correction. */

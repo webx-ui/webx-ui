@@ -45,7 +45,9 @@ final class ProductHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        $entity->loadMissing(['category', 'categories', 'images']);
+        // With the registry rows of the product and its main category: the trail, the markup and
+        // the `hreflang` lines all ask their addresses, and each would be a query otherwise.
+        $entity->loadMissing(['category.routes', 'categories', 'images', 'routes']);
         $this->parts->prepare(new Collection([$entity]));
 
         if (! $entity->isVisible()) {

@@ -265,6 +265,17 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
   `vi.spyOn(window, 'parent', 'get').mockReturnValue(frame.contentWindow)` и шпион на его
   `postMessage`. У нас: `BlocksSiteBarTab.test.ts`.
 
+- **Заглушка по имени перестала подменять компонент ядра, а в самом ядре всё верно.** Тесты
+  модулей берут `@webx-ui/core` из `dist`, а не из исходников: правка ядра без его сборки —
+  тест модуля видит старую версию (у нас: обёртка `WxRichText` без имени, `stubs: { WxRichText }`
+  молча не сработал, `getComponent` пуст). После правки ядра — `npx vite build` в
+  `packages/core` и только потом тесты модулей.
+- **Асинхронный компонент в jsdom не рисуется, ссылка на шаблон — `null`.**
+  `defineAsyncComponent` грузит модуль микрозадачами после монтирования; `flushPromises()` мало.
+  `await vi.dynamicImportSettled()`, затем `flush`. Обёртка и сам компонент могут называться
+  одинаково: `findComponent({ name })` вернёт обёртку без пропсов — брать
+  `findAllComponents({ name }).at(-1)`. У нас: `WxCodeEditor`, `WxRichText`, страницы модулей.
+
 ## Экраны панели
 
 - **Незаимпортированный компонент панели молча становится HTML-элементом.** `WxListScreen` живёт

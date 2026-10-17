@@ -29,8 +29,7 @@ final class CoreRules
         {
             public function refuse(Collection $products): array
             {
-                $visible = Product::query()->whereKey($products->modelKeys())->visible()->pluck('id')
-                    ->map(static fn (mixed $id): int => (int) $id)->all();
+                $visible = Product::visibleAmong(array_map('intval', $products->modelKeys()));
                 $refused = [];
 
                 foreach ($products as $product) {

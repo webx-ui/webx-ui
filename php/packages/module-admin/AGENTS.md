@@ -9,11 +9,10 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 
 ## What it owns
 
-- **Shell** — every address under `webx-admin.path` (default `cms`) serves one page that mounts
-  `#webx-app`; routing inside belongs to the front end. Its JSON lives under `webx-admin.api_path`
-  (default `api/cms`): `manifest`, `screens/{name}`, `links/*`, `collections`, `relations/{target}`,
-  `entities/{type}/{id}/notes`, `history/{type}/{id}`, `history/runs/{id}`, `uploads`, `locales`,
-  `translations/{locale}`. The panel's icons are served under its prefix too.
+- **Shell** — every address under `webx-admin.path` (default `cms`) serves one page that mounts `#webx-app`; routing
+  inside belongs to the front end. Its JSON lives under `webx-admin.api_path` (default `api/cms`): `manifest`,
+  `screens/{name}`, `links/*`, `collections`, `relations/{target}`, `entities/{type}/{id}/notes`, `history/{type}/{id}`,
+  `history/runs/{id}`, `uploads`, `locales`, `translations/{locale}`, `cache`. The panel's icons are served under its prefix too.
 - **Auth** — none of its own (see Do not). Modules put their API behind the middleware group
   `webx.panel` (`web`, `webx.panel-locale`, `cms.auth`, `webx.history`).
 - **Modules** — `ModuleRegistry`: a module (`AbstractModule`, `id()` required) is registered from a
@@ -25,35 +24,38 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
   `published_at`) and `HasVersions` (table `cms_versions`; `publish()` writes a version,
   `restoreVersion()` puts one back into the draft). `HasExtra` stores fields a patch adds in `extra`.
 - **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in
-  `HistoryTypes`. With `webx-ui/mcp` installed and a type registered: MCP tools `history_get`,
-  `history_runs`, resource `history://types`, scope `history:read`.
-- **Also** — tables `cms_notes` (`HasNotes`), `cms_relations` (`HasRelations`), `cms_uploads`
-  (chunked uploads, `UploadPurposes`); Blueprint macros `category()`, `categoryLinks()`; the
-  `@webxPart` / `@webxPartAssets` directives; the site password (`CloseSite`, `Openings`).
-- **Shortcodes** — the registry `WebxUi\Admin\Shortcodes\Shortcodes` (facade `Shortcodes`):
-  `register()`, `source()`, `html()`, `htmlIn()`, `plain()`, `text()`; directives `@shortcodes`,
-  `@shortcodesIn`, `@shortcodesPlain`; `GET /api/cms/shortcodes` for the panel's text fields.
-  `wx_text($value)` makes a plain string or a `ShortcodeText` a `ShortcodeText`, whose `trim*`,
-  `strip*` and `map()` change the typed text and stay HTML.
-- **Front end entry** — `resources/js/admin.ts` in the site, written from `stubs/panel.stub` (or
-  `panel-auth.stub` when module-auth is installed). Three regions are the installer's:
-  `// webx:imports`, `// webx:styles`, `// webx:modules`; everything outside them is the site's.
+  `HistoryTypes`. With `webx-ui/mcp`: MCP tools `history_get`, `history_runs`, resource
+  `history://types`, scope `history:read` (the frame registers a type of its own, so they are always there).
+- **Cache** — «System → Cache» (`cache.view`, `cache.reset`), `webx:cache:reset`, MCP `cache_reset`
+  (`dry_run`), every reset journalled; the group `screens` and the words of `locales`, `routes`, `theme`.
+  The registry itself (`WebxUi\Cache\CacheGroups`) is `webx-ui/cache`'s — read its AGENTS.md to cache or reset.
+- **Also** — tables `cms_notes` (`HasNotes`), `cms_relations` (`HasRelations`), `cms_uploads` (chunked uploads,
+  `UploadPurposes`); macros `category()`, `categoryLinks()`; `@webxPart` / `@webxPartAssets`; the site password (`CloseSite`, `Openings`).
+- **Shortcodes** — the registry `WebxUi\Admin\Shortcodes\Shortcodes` (facade `Shortcodes`): `register()`, `source()`,
+  `html()`, `htmlIn()`, `plain()`, `text()`; directives `@shortcodes`, `@shortcodesIn`, `@shortcodesPlain`; `GET /api/cms/shortcodes`
+  for the panel's text fields. `wx_text($value)` makes a string or a `ShortcodeText` a `ShortcodeText`, whose `trim*`, `strip*`
+  and `map()` change the typed text and stay HTML.
+- **Testing** — `Testing\CountsQueries` in a Testbench case: `assertQueriesWithin(N, fn () => $this->get(…))`
+  fails over the budget listing every statement, repeated ones (an N+1) called out; `assertNoRepeatedQueries()`, `recordQueries()`.
+- **Front end entry** — `resources/js/admin.ts` in the site, written from `stubs/panel.stub` (`panel-auth.stub` with
+  module-auth). Three regions are the installer's: `// webx:imports`, `// webx:styles`, `// webx:modules`; the rest is the site's.
 
 ### Commands
 
-| Command                                                                             | What it does                                                                                                                                                                                                                                           |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `webx:setup`                                                                        | database, `composer require` of the ticked modules, `webx:panel --sync`, npm build, migrate, demo, doctor. Run it again to add a module. With `--demo`, warns first about a language of `--locales` the demo is not written in (`Catalogue::demoGaps`) |
-| `webx:panel`                                                                        | writes the entry file; refuses if it exists unless `--sync` or `--force`; `--entry=` moves it                                                                                                                                                          |
-| `webx:panel --sync`                                                                 | tops up the three regions, `package.json`, the Vite input, `webx-admin.vite`, modules' `layout`, `AGENTS.md`                                                                                                                                           |
-| `webx:doctor`                                                                       | checks both halves, bundle, npm ranges, migrations, storage, layout, regions, languages, caches, Passport keys, site gate; repairs nothing. `--strict` fails on setup warnings, not `(content)` ones; `--json`                                         |
-| `webx:modules`, `webx:module:add`                                                   | list the modules a site can have; install one without the questions (`--no-build`)                                                                                                                                                                     |
-| `webx:demo`                                                                         | seed demo content; `--remove`, `--module=`, `--force`                                                                                                                                                                                                  |
-| `webx:make-module`                                                                  | a module class                                                                                                                                                                                                                                         |
-| `webx:boot`                                                                         | container start: wait for the database, migrate, cache                                                                                                                                                                                                 |
-| `webx:db:backup`, `webx:history:prune`, `webx:versions:prune`, `webx:prune-uploads` | scheduled by the package itself; need the system cron behind `schedule:run`                                                                                                                                                                            |
-| `webx:snapshot`                                                                     | packs content tables + the public disk into `storage/app/snapshots/<site>-<env>-<date>.tar.gz`; `--with-admins`, `--all`, `--no-media`, `--output=`                                                                                                    |
-| `webx:snapshot:restore <archive>`                                                   | **replaces this stand's content** with the archive's: backup first, stand-own tables untouched, addresses rewritten, files mirrored (`--keep-extra` to only add)                                                                                       |
+| Command                                                                                                 | What it does                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `webx:setup`                                                                                            | database, `composer require` of the ticked modules, `webx:panel --sync`, npm build, migrate, demo, doctor. Run it again to add a module. With `--demo`, warns first about a language of `--locales` the demo is not written in (`Catalogue::demoGaps`) |
+| `webx:panel`                                                                                            | writes the entry file; refuses if it exists unless `--sync` or `--force`; `--entry=` moves it                                                                                                                                                          |
+| `webx:panel --sync`                                                                                     | tops up the three regions, `package.json`, the Vite input, `webx-admin.vite`, modules' `layout`, `AGENTS.md`                                                                                                                                           |
+| `webx:doctor`                                                                                           | checks both halves, bundle, npm ranges, migrations, storage, layout, regions, languages, caches, Passport keys, site gate; repairs nothing. `--strict` fails on setup warnings, not `(content)` ones; `--json`                                         |
+| `webx:modules`, `webx:module:add`                                                                       | list the modules a site can have; install one without the questions (`--no-build`)                                                                                                                                                                     |
+| `webx:demo`                                                                                             | seed demo content; `--remove`, `--module=`, `--force`                                                                                                                                                                                                  |
+| `webx:make-module`                                                                                      | a module class and `tests/Feature/Cms/<Name>ModulePerformanceTest.php`, its query-budget and freshness tests to fill in                                                                                                                                |
+| `webx:boot`                                                                                             | container start: wait for the database, migrate, cache                                                                                                                                                                                                 |
+| `webx:db:backup`, `webx:history:prune`, `webx:versions:prune`, `webx:prune-uploads`, `webx:cache:prune` | scheduled by the package itself; need the system cron behind `schedule:run`                                                                                                                                                                            |
+| `webx:cache:reset [--group=]`                                                                           | moves the versions of the cache groups (all, or the ones named) — never `cache:clear`; writes a journal row                                                                                                                                            |
+| `webx:snapshot`                                                                                         | packs content tables + the public disk into `storage/app/snapshots/<site>-<env>-<date>.tar.gz`; `--with-admins`, `--all`, `--no-media`, `--output=`                                                                                                    |
+| `webx:snapshot:restore <archive>`                                                                       | **replaces this stand's content** with the archive's: backup first, stand-own tables untouched, addresses rewritten, files mirrored (`--keep-extra` to only add)                                                                                       |
 
 ### Moving content between stands
 
@@ -101,6 +103,7 @@ same address, are kept; a file that is not JSON is left alone with a warning (`A
 | A table of the site's own in snapshots  | `webx-admin.snapshot.tables` (`content`, `stand`, … ; `shop_*` is a prefix), or `SnapshotTables` from a provider                                                         |
 | A setting that stays on its stand       | its key in `webx-settings.stand_own`; a restore keeps this stand's value                                                                                                 |
 | A check of your own in `webx:doctor`    | `$this->app->make(DoctorChecks::class)->register(YourCheck::class)` in a provider                                                                                        |
+| Cache something the site reads a lot    | `WebxUi\Cache\CacheGroups::remember('name', ['menu', 'settings'], fn () => …)`; a mass write without a model → `bump('menu')`                                            |
 | A record of yours on the site's panel   | `SiteBar::entity(<RouteType type>, new EntityLink(...))` per address type: https://webx-ui.github.io/webx-ui/guide/site-bar-modules                                      |
 | A link source, note type, history type  | register into `LinkSources`, `NoteTypes`, `HistoryTypes` from a provider                                                                                                 |
 
@@ -116,8 +119,7 @@ whose target is gone throws when the screen is first built — a bug in whoever 
   `webx:panel --sync` replaces it. Site notes go under `## This project`.
 - Do not hand-wire a module between the `webx:` markers of `admin.ts` and forget the Composer
   half: `webx:panel --sync` wires what is installed, and `webx:doctor` fails on a half alone.
-- Do not route site pages under `webx-admin.path`: the shell answers every address below it.
-  Move the panel with `WEBX_ADMIN_PATH` instead.
+- Do not route site pages under `webx-admin.path`: the shell answers every address below it; move the panel with `WEBX_ADMIN_PATH`.
 - Do not add a column for one site's field on a module's table: a patch on a `HasExtra` model
   stores it in `extra`, and the next module release will not fight your migration.
 - Do not put a site live without `webx-ui/module-auth`: without it `webx-admin.middleware` is only
@@ -126,6 +128,8 @@ whose target is gone throws when the screen is first built — a bug in whoever 
 - Do not print anything for the panel on the site in a view (`@auth`, `data-*`): visitors get it too.
 - Do not write `cms_versions` or `cms_history` with SQL: use `publish()`, `restoreVersion()`
   then `publish()`, and `History::record()` — a raw row has no number, no author, no source.
+- Do not call `cache:clear` to refresh the site, and do not leave a mass write without its `bump()`:
+  a reset somebody had to press is a `bump` somebody forgot.
 
 ## Check your work
 
@@ -135,12 +139,12 @@ whose target is gone throws when the screen is first built — a bug in whoever 
 - Open `/<webx-admin.path>` and `GET /<webx-admin.api_path>/screens/<name>`: a broken patch
   fails there with the screen, the operation and the missing target.
 - With MCP: `history_get` on a record you changed shows the save, its source and the fields.
+- A module of the site: its `PerformanceTest` (from `webx:make-module`) is filled in and green — https://webx-ui.github.io/webx-ui/guide/performance.
 
 ## Read more
 
 - [README.md](README.md) in this directory — the module contract, manifest, drafts, backups, uploads.
 - New site, `webx:panel --sync`, `webx:doctor`: https://webx-ui.github.io/webx-ui/guide/new-site
-- Extending views and services: https://webx-ui.github.io/webx-ui/guide/extending
+- Extending views and services: https://webx-ui.github.io/webx-ui/guide/extending; moving content between stands: https://webx-ui.github.io/webx-ui/guide/snapshots
 - Screens and patches: https://webx-ui.github.io/webx-ui/guide/screens; their specification — https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_SCREENS.md
-- Moving content between stands: https://webx-ui.github.io/webx-ui/guide/snapshots
 - Specifications of the journal and of these guides: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_HISTORY.md, https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_AGENT_DOCS.md

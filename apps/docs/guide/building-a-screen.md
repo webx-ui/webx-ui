@@ -212,13 +212,27 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
       id: 'articles',
       path: `${path}/articles`,
       routes: [
-        { path: `${path}/articles`, component: ArticlesPage, props: { base: path } },
-        { path: `${path}/articles/:id(\\d+)`, component: ArticleEditorPage, props: { base: path } },
+        {
+          path: `${path}/articles`,
+          component: () => import('./ArticlesPage.vue'),
+          props: { base: path },
+        },
+        {
+          path: `${path}/articles/:id(\\d+)`,
+          component: () => import('./ArticleEditorPage.vue'),
+          props: { base: path },
+        },
       ],
     },
   ]
 }
 ```
+
+A page arrives when its route first opens: `() => import()` keeps it, and everything only it uses,
+out of what the panel downloads before it can draw anything. Export it from the package's index the
+same way, under its usual name — `export const WxArticlesPage = defineAsyncComponent(() =>
+import('./ArticlesPage.vue'))`. A page the index re-exports statically is pulled back into the
+index's chunk, with its dependencies, and the lazy route saves nothing.
 
 The section's own path travels as a prop, so a panel that mounted the module somewhere else still
 links between its own screens correctly. The navigation entry is built from the manifest: a module

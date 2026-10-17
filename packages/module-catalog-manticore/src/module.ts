@@ -1,5 +1,4 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import SearchIndexPage from './SearchIndexPage.vue'
 
 export interface CatalogManticoreOptions {
   /** Where the page lives inside the panel. */
@@ -21,7 +20,9 @@ export function catalogManticore(options: CatalogManticoreOptions = {}): AdminMo
     {
       id: 'search-index',
       path,
-      routes: [{ path, name: 'webx.search-index', component: SearchIndexPage }],
+      routes: [
+        { path, name: 'webx.search-index', component: () => import('./SearchIndexPage.vue') },
+      ],
     },
   ]
 }

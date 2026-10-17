@@ -16,12 +16,15 @@ use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Press\Audit\PressContentSource;
 use WebxUi\Press\Handlers\OutletHandler;
 use WebxUi\Press\Links\OutletLinkSource;
+use WebxUi\Press\Models\Article;
 use WebxUi\Press\Models\Outlet;
 use WebxUi\Press\Panel\OutletScreen;
 use WebxUi\Press\Panel\PressModule;
+use WebxUi\Press\Rendering\OutletLoader;
 use WebxUi\Press\Support\Kinds;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -48,11 +51,15 @@ class PressServiceProvider extends ServiceProvider
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-press.php', 'webx-press');
+
+        // One for the request: every `press()` of the page shares what it loaded.
+        $this->app->singleton(OutletLoader::class);
     }
 
     public function boot(): void
     {
         $this->registerSiteBar();
+        $this->registerCacheGroups();
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-press');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
@@ -169,6 +176,19 @@ class PressServiceProvider extends ServiceProvider
      * opens them (WEBX_UI_SITE_BAR.md, §6) — one entry for every type this section gives an
      * address, under the same type, because an address is what the bar starts from.
      */
+    /**
+     * The `press` cache group (WEBX_UI_CACHE.md §2): the outlets a page lists are loaded once a
+     * request under its version ({@see OutletLoader}), and an outlet or an article saved moves
+     * it. A reorder writes without events and bumps it by hand.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare(OutletLoader::GROUP, 'webx-press::module.press');
+        $groups->bumpOn(OutletLoader::GROUP, Outlet::class, Article::class);
+    }
+
     private function registerSiteBar(): void
     {
         $bar = $this->app->make(SiteBar::class);

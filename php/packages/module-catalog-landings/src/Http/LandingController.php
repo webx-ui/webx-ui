@@ -46,7 +46,7 @@ final class LandingController
         ]);
 
         $query = $request->boolean('trashed') ? Landing::onlyTrashed() : Landing::query();
-        $query->with('category')->orderBy('position')->orderBy('id');
+        $query->with(['category', 'routes'])->orderBy('position')->orderBy('id');
 
         $term = trim((string) ($validated['q'] ?? ''));
 
@@ -82,6 +82,7 @@ final class LandingController
         }
 
         $page = $query->paginate((int) ($validated['per_page'] ?? 50));
+        $this->resource->prime($page->getCollection());
 
         return new JsonResponse([
             ...$page->toArray(),

@@ -27,16 +27,16 @@ class IndexController
 
     public function __invoke(Request $request): Response
     {
-        $listing = $this->list->build($request, new EventQuery);
-
-        /** @var list<EventCategory> $categories */
-        $categories = EventCategory::query()->visible()->ordered()->with('routes')->get()
-            ->filter(static fn (EventCategory $category): bool => $category->hasUrlIn(app()->getLocale()))
-            ->values()
-            ->all();
+        // The navigation first, with its addresses: the cards under these categories then read
+        // the same rows instead of asking the registry for them a second time.
+        $categories = EventCategory::query()->visible()->ordered()->with('routes')->get();
+        $listing = $this->list->build($request, new EventQuery, $categories);
 
         return response($this->views->make('index', [
-            'categories' => $categories,
+            'categories' => $categories
+                ->filter(static fn (EventCategory $category): bool => $category->hasUrlIn(app()->getLocale()))
+                ->values()
+                ->all(),
             'listing' => $listing,
         ])->render());
     }

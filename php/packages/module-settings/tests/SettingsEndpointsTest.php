@@ -22,12 +22,13 @@ final class SettingsEndpointsTest extends TestCase
             ->getJson('/api/cms/manifest')
             ->assertOk()
             ->assertJsonPath('data.screens', ['settings.content', 'settings.index'])
-            ->assertJsonPath('data.modules.0.id', 'settings')
-            ->assertJsonPath('data.modules.0.group', 'system')
-            ->assertJsonPath('data.modules.0.title', 'Settings')
-            ->assertJsonPath('data.modules.0.meta.screen', 'settings.index')
-            ->assertJsonPath('data.modules.1.id', 'admins')
-            ->assertJsonPath('data.modules.1.group', 'system');
+            // After the frame's own journal module (0) and «Cache» (730).
+            ->assertJsonPath('data.modules.2.id', 'settings')
+            ->assertJsonPath('data.modules.2.group', 'system')
+            ->assertJsonPath('data.modules.2.title', 'Settings')
+            ->assertJsonPath('data.modules.2.meta.screen', 'settings.index')
+            ->assertJsonPath('data.modules.3.id', 'admins')
+            ->assertJsonPath('data.modules.3.group', 'system');
     }
 
     #[Test]

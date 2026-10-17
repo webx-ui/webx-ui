@@ -86,6 +86,9 @@ breaking change. The offered blocks carry their own look under `.b-press-*`.
   another outlet.
 - Do not delete rows with SQL: `press_delete` puts the outlet in the bin with its articles, and
   the panel restores it. A raw delete leaves its address in the routing registry behind.
+- Do not write outlets or articles without model events (a mass `update()`, raw SQL): the page
+  lists them from rows loaded once a request under the `press` cache group (`OutletLoader`), and
+  only a save or a `CacheGroups::bump('press')` — as the reorder does — tells it to load again.
 - Do not print `<title>`, the description or `og:image` in a site's copy of `outlet.blade.php`:
   with an empty SEO card the outlet names the page itself (`seoFallback()` — the name through the
   title template, the summary, the logo). A copy published before still has those blocks and the
@@ -98,6 +101,8 @@ breaking change. The offered blocks carry their own look under `.b-press-*`.
   there and is not in the sitemap. Open the page at the prefix with its block.
 - With MCP: read `press://catalog` first (`written_in`, `visible_in` per article), then
   `press_get`; every mutating tool takes `dry_run: true`.
+- `tests/PerformanceTest.php` holds the query budget of every public page and block: a change
+  that needs more queries says why there before raising a number.
 
 ## Read more
 

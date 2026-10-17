@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Panel;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Seo\Faq\PageFaq;
 use WebxUi\Seo\Features;
@@ -24,6 +25,7 @@ final class UrlRuleSource implements SeoSource
         private readonly SeoRules $rules,
         private readonly UrlMatcher $matcher,
         private readonly Config $config,
+        private readonly CacheGroups $groups,
     ) {}
 
     public function priority(): int
@@ -77,6 +79,27 @@ final class UrlRuleSource implements SeoSource
         $row = $this->matcher->match($url, $this->rules->urls());
         $id = $row === null ? null : ($row['id'] ?? null);
 
-        return is_numeric($id) ? SeoUrl::query()->find((int) $id) : null;
+        if (! is_numeric($id)) {
+            return null;
+        }
+
+        // One rule answers for many addresses — a wildcard over a whole section, every line of
+        // the sitemap under it — so the record is kept beside the compiled list, on the same
+        // groups, and read once a request.
+        $kept = $this->groups->remember(
+            'seo.rule.'.(int) $id,
+            [SeoRules::GROUP, CacheGroups::ROUTES],
+            static fn (): array => SeoUrl::query()->find((int) $id)?->getAttributes() ?? [],
+            localized: false,
+        );
+
+        if (! is_array($kept) || $kept === []) {
+            return null;
+        }
+
+        /** @var SeoUrl $rule */
+        $rule = (new SeoUrl)->newFromBuilder($kept);
+
+        return $rule;
     }
 }

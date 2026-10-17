@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Cache',
+    'lead' => 'Was sich die Website zwischen den Anfragen merkt – Menü, Einstellungen, Adressen – nach Gruppen. Ein Speichern im Panel setzt seine Gruppe selbst zurück; der Button ist für den Fall, dass die Website noch zeigt, was das Panel nicht mehr sagt.',
+    'store' => 'Speicher',
+    'store-array' => 'Nichts überlebt die Anfrage: jede Seite baut alles neu auf. Legen Sie in CACHE_STORE einen Speicher fest.',
+    'disabled' => 'Der versionierte Cache ist in der Konfiguration abgeschaltet.',
+    'ttl' => 'Einträge leben',
+    'ttl-value' => ':hours Std.',
+    'groups' => 'Gruppen',
+    'group' => 'Gruppe',
+    'version' => 'Version',
+    'models' => 'Zurückgesetzt durch',
+    'models-none' => 'Nur von Hand',
+    'no-groups' => 'Noch kein Modul hat eine Cache-Gruppe angemeldet.',
+    'reset-all' => 'Website-Cache zurücksetzen',
+    'reset-all-title' => 'Den ganzen Website-Cache zurücksetzen?',
+    'reset-all-text' => 'Alle Gruppen werden zurückgesetzt; die Website baut das Gecachte bei den nächsten Besuchen neu auf. Sitzungen und Anmeldungen bleiben unberührt. Wenn Sie das drücken mussten, hat sich etwas nicht selbst zurückgesetzt – sagen Sie den Betreuern der Website, welche Seite veraltet war.',
+    'reset-group' => 'Zurücksetzen',
+    'reset-group-title' => 'Den Cache «:group» zurücksetzen?',
+    'reset-group-text' => 'Was die Website aus dieser Gruppe gecacht hat, wird bei den nächsten Besuchen neu aufgebaut. Sitzungen und Anmeldungen bleiben unberührt.',
+    'reset' => 'Zurücksetzen',
+    'cancel' => 'Abbrechen',
+    'reset-done' => 'Der Cache ist zurückgesetzt.',
+    'reset-group-done' => 'Der Cache «:group» ist zurückgesetzt.',
+    'load-failed' => 'Der Zustand des Caches konnte nicht geladen werden.',
+    'refresh' => 'Aktualisieren',
+    'history' => 'Zurücksetzungen',
+    'history-groups' => 'Gruppen',
+    'forbidden' => 'Sie dürfen den Cache nicht zurücksetzen.',
+    'group-locales' => 'Sprachen',
+    'group-routes' => 'Adressen',
+    'group-screens' => 'Panel-Bildschirme',
+    'group-theme' => 'Theme',
+];

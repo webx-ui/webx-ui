@@ -250,3 +250,11 @@ the allowlist, which is what keeps the key in the document.
 
 Tiptap and ProseMirror are dependencies of `@webx-ui/core` and are installed with it. They are not
 bundled into our output, so an app that never imports `WxRichText` will not ship them.
+
+`WxRichText` is an async component: the editor and Tiptap are a chunk of their own that the
+browser fetches when a screen first draws the field, not with the app — about a fifth of what the
+panel used to download before anything appeared. Props, events and `v-model` are the same; a
+template ref points at the editor once it has arrived and is `null` until then. The HTML source
+view loads [`WxCodeEditor`](./code-editor) the same way, on first opening. In a jsdom test, wait
+for it with `await vi.dynamicImportSettled()`; a stub by name (`stubs: { WxRichText: … }`) still
+replaces it.

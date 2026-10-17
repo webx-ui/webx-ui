@@ -1,4 +1,4 @@
-import { createAdmin, type Admin, type AdminPlugin } from '@webx-ui/module-admin'
+import { cache, createAdmin, type Admin, type AdminPlugin } from '@webx-ui/module-admin'
 import { audit } from '@webx-ui/module-audit'
 import { admins, connect } from '@webx-ui/module-auth'
 import { banners } from '@webx-ui/module-banners'
@@ -102,6 +102,7 @@ const admin = createAdmin({
     audit(),
     tasks(),
     ...catalogManticore(),
+    cache(),
     admins(),
     connect(),
     historyDemo,

@@ -9,6 +9,7 @@ export const blocksMessages: Record<string, Messages> = {
   module: {
     title: 'Blocks',
     regions: 'Site regions',
+    usage: 'Where blocks are used',
   },
   page: {
     blocks: 'Blocks',

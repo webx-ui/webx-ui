@@ -5,24 +5,25 @@ declare(strict_types=1);
 namespace WebxUi\Menu;
 
 use Closure;
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Carbon;
-use Throwable;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
-use WebxUi\Menu\Models\Menu;
-use WebxUi\Menu\Models\MenuItem;
 
 /**
- * The built menus, kept per menu and per language.
+ * The built menus, kept per menu and per language in the `menu` cache group
+ * (WEBX_UI_CACHE.md).
  *
- * Forgotten by name rather than counted by version (§2, decision 14). The set of keys is known —
- * menus times languages — and a counter is the thing that looks cleaner and then misbehaves:
- * `increment` on a missing key does different things in different stores, and a counter that is
- * evicted comes back at zero, which brings records written under the old number back to life.
+ * An entry is built from the menu's own rows and from the address registry, so its key carries
+ * the versions of both groups: an item saved, dragged or deleted moves `menu`, a row of the
+ * registry written — a page renamed last week, and every page under it — moves `routes`, and
+ * either way the next read builds the tree again. What the registry cannot see — a page
+ * published, a title changed without touching the slug — the subscriber moves `menu` for
+ * ({@see CacheSubscriber}).
  *
- * Tags would have been the other obvious answer, and the `file` and `database` stores do not
- * have them at all — `file` being the default on exactly the small sites this is written for.
+ * One version for every menu: forgetting the header forgets the footer too. A tree is three
+ * queries to build, and a counter per menu would be a counter the panel and the agent's tool
+ * had to know the names of.
  *
  * What is kept is the parsed tree with no highlighting in it: which item is the current one
  * differs on every page, so it is worked out after the read. Next to the tree is `built_at`,
@@ -30,8 +31,10 @@ use WebxUi\Menu\Models\MenuItem;
  */
 final class MenuCache
 {
+    public const GROUP = 'menu';
+
     public function __construct(
-        private readonly Cache $cache,
+        private readonly CacheGroups $groups,
         private readonly Config $config,
         private readonly Locales $locales,
     ) {}
@@ -46,22 +49,16 @@ final class MenuCache
             return $build();
         }
 
-        $record = $this->cache->get($this->cacheKey($key, $locale));
-
-        if (is_array($record) && is_array($record['tree'] ?? null)) {
-            /** @var list<array<string, mixed>> $tree */
-            $tree = $record['tree'];
-
-            return $tree;
-        }
-
-        $tree = $build();
-
-        $this->cache->put(
-            $this->cacheKey($key, $locale),
-            ['built_at' => Carbon::now()->toAtomString(), 'tree' => $tree],
+        $record = $this->groups->remember(
+            $this->name($key, $locale),
+            self::depends(),
+            static fn (): array => ['built_at' => Carbon::now()->toAtomString(), 'tree' => $build()],
             $this->ttl(),
+            localized: false,
         );
+
+        /** @var list<array<string, mixed>> $tree */
+        $tree = is_array($record) && is_array($record['tree'] ?? null) ? $record['tree'] : $build();
 
         return $tree;
     }
@@ -78,7 +75,7 @@ final class MenuCache
         $oldest = null;
 
         foreach ($this->localeCodes() as $locale) {
-            $record = $this->cache->get($this->cacheKey($key, $locale));
+            $record = $this->groups->get($this->name($key, $locale), self::depends(), localized: false);
 
             if (! is_array($record) || ! is_string($record['built_at'] ?? null)) {
                 continue;
@@ -94,65 +91,25 @@ final class MenuCache
         return $oldest;
     }
 
-    /** One menu, in every language. */
+    /**
+     * Forget the built menus. Asked about one menu — the panel's button names one — and
+     * answered for all of them: the version is one number (see above).
+     */
     public function forget(?string $key): void
     {
         if ($key === null || $key === '') {
             return;
         }
 
-        foreach ($this->localeCodes() as $locale) {
-            $this->cache->forget($this->cacheKey($key, $locale));
-        }
+        $this->flush();
     }
 
     /**
-     * The menus an entity actually stands in, and no others.
-     *
-     * This is what `(entity_type, entity_id)` is indexed for: publishing a page forgets the
-     * header it is in and leaves the footer alone.
-     */
-    public function forgetForEntity(string $type, int|string $id): void
-    {
-        $menuIds = MenuItem::query()
-            ->where('entity_type', $type)
-            ->where('entity_id', $id)
-            ->distinct()
-            ->pluck('menu_id');
-
-        if ($menuIds->isEmpty()) {
-            return;
-        }
-
-        foreach (Menu::query()->whereKey($menuIds)->pluck('key') as $key) {
-            $this->forget(is_string($key) ? $key : null);
-        }
-    }
-
-    /**
-     * Every menu there is: what the configuration declares and what the table holds.
-     *
-     * The table is read behind a `try`, because this is reachable from a model event during a
-     * migration — an address written while the site is being installed — and a menu cache that
-     * has never been built is nothing to fail over.
+     * Every menu there is: the `menu` group moves, and whatever was built on it is a miss.
      */
     public function flush(): void
     {
-        $keys = array_keys((array) $this->config->get('webx-menu.menus', []));
-
-        try {
-            foreach (Menu::query()->pluck('key') as $key) {
-                if (is_string($key)) {
-                    $keys[] = $key;
-                }
-            }
-        } catch (Throwable) {
-            // No `menus` table yet.
-        }
-
-        foreach (array_unique($keys) as $key) {
-            $this->forget((string) $key);
-        }
+        $this->groups->bump(self::GROUP);
     }
 
     public function enabled(): bool
@@ -165,9 +122,19 @@ final class MenuCache
         return (int) ($this->config->get('webx-menu.cache.ttl') ?? 3600);
     }
 
-    public function cacheKey(string $key, string $locale): string
+    /**
+     * The groups a built menu depends on: its own rows and the addresses its items lead to.
+     *
+     * @return list<string>
+     */
+    public static function depends(): array
     {
-        return "webx-menu:{$key}:{$locale}";
+        return [self::GROUP, CacheGroups::ROUTES];
+    }
+
+    private function name(string $key, string $locale): string
+    {
+        return "menu:{$key}:{$locale}";
     }
 
     /**

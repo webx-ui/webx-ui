@@ -1,0 +1,704 @@
+# Производительность серверной части: аудит и план
+
+Задача webx-ui#16: PHP-половина должна быть быстрой «из коробки» на любом сайте WebX — минимум SQL
+на страницу, общий кеш с правильным сбросом, индексы под настоящие запросы. Этот документ — результат
+первого этапа (аудит и замеры «было») и план для следующих: кеш на версионных ключах, N+1 и
+индексы, экран «Кеш» в панели, гайдлайны. В конце задачи сюда дописывается «стало» (§9).
+
+Решения человека, которые не переоткрываем: кеш — на **версионных ключах, а не тегах**
+(теги Laravel работают только на Redis/Memcached, а скелет сайта ставит `CACHE_STORE=database`);
+сброс из панели — увеличением версий групп, **не** `cache:clear`; фронт тем (картинки, шрифты,
+CSS/JS) — только гайдлайнами, не кодом.
+
+Статус: задача выполнена (5 этапов из 5) — хелпер бюджета, механизм кеша на версионных ключах и экран «Кеш» выпущены,
+публичная часть (§9.1–9.4) и панель (§9.5–9.7) оптимизированы; §2 — «было», §9 — «стало».
+
+## 1. Как мерили
+
+Два стенда, потому что ни один сам по себе не показывает всего:
+
+- **Стартовый сайт на MariaDB** (`webx-starter-test`: набор «компания» — pages, blocks, menu,
+  media, inbox, seo, settings, audit, auth; `CACHE_STORE=database`, `SESSION_DRIVER=database`,
+  3 языка, 57 страниц, 169 адресов, 24 файла). Каждый URL — отдельным процессом PHP, чтобы
+  мемоизация синглтонов одного запроса не прятала работу следующего; считали `DB::listen`, время
+  `Kernel::handle()`, и прогоняли `EXPLAIN` по каждому `SELECT`. Это цифры «как у настоящего
+  посетителя» — вместе с ценой кеша и сессии в базе.
+- **Testbench с демо-данными каждого модуля** (`webx:demo` + 30–40 дополнительных записей, чтобы
+  N+1 было видно по росту): все модули с публичными страницами (blog, services, events, press,
+  recipes, vacancies, pages, catalog со спутниками), блочные модули (faq, reviews, team, tariffs,
+  banners, snippets, inbox), API панели каждого. Здесь кеш — `array`, то есть первая страница теста
+  «холодная», остальные — с рабочим кешем; это цифры «что делает сам модуль».
+
+Считали **хелпером бюджета запросов** `WebxUi\Admin\Testing\QueryTally` — тем же, которым
+следующие этапы закрепят бюджеты в тестах (§7). Повтор одной и той же формы запроса с разными
+параметрами (`in (?)` любой длины — одна форма) — признак N+1, хелпер их называет сам.
+
+## 2. Замеры «было»
+
+### 2.1. Стартовый сайт на MariaDB (набор «компания»)
+
+Публичная часть, анонимный посетитель, тёплый кеш. «Кеш/сессия» — сколько из запросов ушло в
+таблицы `cache` и `sessions`; «контент» — остальное.
+
+| Страница                              | Запросов | Кеш/сессия | Контент | БД, мс | Ответ, мс | Повторы (признак N+1)                                                                      |
+| ------------------------------------- | -------: | ---------: | ------: | -----: | --------: | ------------------------------------------------------------------------------------------ |
+| `/` (главная, холодный кеш)           |       57 |         29 |      28 |   23,3 |       209 | `menus`/`menu_items` 2×, запись в `cache` 2×                                               |
+| `/` (главная)                         |       27 |         17 |      10 |    8,1 |       167 | `routes` по записи 4×, `seo_meta` 3×                                                       |
+| `/about`                              |       33 |         17 |      16 |   13,5 |       178 | `routes` по записи 4×, `seo_meta` 3×, предки `pages` 2×, адрес из `routes` 2×              |
+| `/kitchen-sink`                       |       33 |         17 |      16 |   11,4 |       170 | то же                                                                                      |
+| `/kitchen-sink/blocks/cards`          |       44 |         17 |      27 |   17,0 |       197 | **`media_files where path in (?)` 7×** (по картинке), адрес 6×, `routes` 4×, `seo_meta` 3× |
+| `/kitchen-sink/modules/menu`          |       40 |         20 |      20 |   18,4 |       247 | `menus`/`menu_items` по блоку меню                                                         |
+| `/kitchen-sink/modules/faq-and-links` |       37 |         17 |      20 |   11,0 |       185 | как `/about` + блок ссылок                                                                 |
+| `/kitchen-sink/modules/form`          |       39 |         17 |      22 |   13,7 |       206 | + `inbox_forms`, `inbox_form_fields`                                                       |
+| `/kitchen-sink/modules/long-trail`    |       37 |         17 |      20 |   12,7 |       186 | предки `pages` 2× (крошки и JSON-LD)                                                       |
+| `/ru`, `/ru/o-saite`, `/pl/witryna/…` |    33–46 |      17–20 |   16–26 |  14–20 |   190–223 | как на `en`, плюс словарь языка при холодном кеше                                          |
+| `/sitemap.xml` (холодный)             |  **133** |         12 |     121 |   49,9 |       372 | **`routes where entity_type/entity_id/kind` 112×** — адрес каждой страницы отдельно        |
+| `/sitemap.xml` (тёплый)               |        5 |          4 |       1 |    2,8 |       109 | —                                                                                          |
+| `/sitemap-page.xml`                   |        6 |          6 |       0 |    2,9 |       106 | файл из кеша                                                                               |
+| `/no-such-page` (404)                 |        7 |          6 |       1 |    4,6 |       134 | —                                                                                          |
+| `/about` вошедшим администратором     |       32 |         17 |      15 |   12,4 |       167 | панель на сайте ничего не добавляет: `cms/_bar` грузится отдельным запросом                |
+
+Из 33 запросов типовой страницы **17 — инфраструктура**: 14 чтений `cache` (по одному на каждый
+`Cache::get`: настройки, словарь, SEO-правила, регионы, реестр типов блоков, меню, согласие — у
+каждого свой ключ), 2 чтения `sessions` и 1 запись сессии (гостю сессия пишется на каждый визит).
+То есть на драйвере `database` кеш сам стоит почти столько же запросов, сколько контент.
+
+Панель, суперадмин, тёплый кеш:
+
+| Эндпоинт                                  | Запросов | Кеш/сессия | БД, мс | Ответ, мс | Что заметно                                                                                                           |
+| ----------------------------------------- | -------: | ---------: | -----: | --------: | --------------------------------------------------------------------------------------------------------------------- |
+| `GET /cms` (оболочка)                     |        4 |          4 |    2,9 |       129 | —                                                                                                                     |
+| `GET /api/cms/manifest`                   |        5 |          5 |    4,7 |       122 | модули и права — без базы                                                                                             |
+| `GET /api/cms/locales`, `translations/en` |        6 |          5 |    5,7 |       127 | словарь из кеша                                                                                                       |
+| `GET /api/cms/screens/pages.form`         |        4 |          4 |    5,4 |       119 | экран — JSON с диска                                                                                                  |
+| `GET /api/cms/pages` (дерево, корень)     |       17 |          5 |    9,3 |       156 | 3 запроса `pages` с подзапросами `children_count`/`branch_count`, `routes` по записи 4×                               |
+| `GET /api/cms/pages/1`                    |       14 |          5 |    7,3 |       149 | `seo_meta` 2×, предки, число потомков                                                                                 |
+| `GET /api/cms/blocks` (холодный)          |       34 |         16 |   16,9 |       225 | **все `pages` целиком**, `blocks` дважды, `block_versions` всех 39 блоков с содержимым, миниатюры `blocks by slug` 3× |
+| `GET /api/cms/blocks` (тёплый)            |       21 |          7 |   10,9 |       145 | те же три полных выборки                                                                                              |
+| `GET /api/cms/blocks/1`                   |       13 |          7 |    6,7 |       139 | снова **все `pages`** и все `block_versions` — ради счётчика «где используется»                                       |
+| `GET /api/cms/menus`                      |       13 |         11 |    5,0 |       118 | 8 чтений `cache` на 2 меню                                                                                            |
+| `GET /api/cms/media/files` (24 файла)     |        7 |          4 |    4,5 |       128 | `count/sum` + страница; сортировка по `created_at` без индекса                                                        |
+| `GET /api/cms/inbox/forms/1/submissions`  |       15 |          5 |    5,5 |       123 | `inbox_statuses` трижды тремя разными запросами, два `count`                                                          |
+| `GET /api/cms/seo/links/addresses`        |       26 |          5 |    6,0 |       128 | **`routes` по адресу 20×** — путь каждой записи отдельным запросом                                                    |
+| `GET /api/cms/audit/runs/latest`          |        8 |          4 |    6,8 |       131 | 4 запроса к `audit_runs` за одним «последним»                                                                         |
+| остальные списки (seo, auth, settings, …) |      4–7 |          4 |    4–6 |   113–152 | —                                                                                                                     |
+
+Время ответа — внутри процесса (`Kernel::handle`), без веб-сервера: 105–130 мс здесь — это сам
+Laravel в контейнере с холодным opcache (загрузка 20 мс + маршруты + middleware). То, что
+добавляют страницы, — 40–130 мс поверх.
+
+### 2.2. Публичная часть модулей (Testbench, демо + 30 записей)
+
+Первая строка каждого блока — холодный запрос теста; «→» — рост с 30 дополнительными записями.
+Полные списки запросов — в отчёте этапа; здесь главное.
+
+| Модуль, страница                            | Запросов          | Повторы и откуда                                                                                                                                                                |
+| ------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| blog `/blog` (12 карточек)                  | 18 → 23           | `routes` по записи 13× — `card.blade.php:9` `$article->url()` + навигация рубрик                                                                                                |
+| blog статья                                 | 34                | `routes` 12×, `media_files` 2×, `seo_meta` 2×, `max(created_at) from cms_versions` 2× (`Article.php:246,282`)                                                                   |
+| blog рубрика                                | 23 → **39**       | `routes` 26× — по два на карточку (карточка + связанные)                                                                                                                        |
+| blog тег / автор                            | 14 → 23 / 20 → 28 | `routes` 14× / 16×                                                                                                                                                              |
+| blog `/sitemap.xml` (сборка)                | 41 → **191**      | `cms_versions max` 68×, `media_files by id` 66× (обложка на каждую запись и язык), `seo_urls by id` 35× (правило перечитывается по id на каждый адрес)                          |
+| services `/services`                        | 30 → **87**       | `routes` 81× — ≈2 на услугу + 1 на категорию                                                                                                                                    |
+| services категория                          | 17 → **77**       | `routes` 70×                                                                                                                                                                    |
+| services `/sitemap.xml`                     | 28 → **88**       | `media_files by id` 76× (обложка × языки)                                                                                                                                       |
+| events `/events`                            | 14 → 11           | **карточки 0 на строку** (`Cards.php:142-162` читает загруженные `routes`); `routes` 3× на категории навигации, категории загружены дважды                                      |
+| events событие                              | 22                | `routes` 7×, `media_files` 2×, pivot категорий услуг 2×                                                                                                                         |
+| recipes `/recipes` / рецепт                 | 23 → 19 / 29      | карточки 0 на строку; рецепт: `routes` 8×, `cms_relations` 3×                                                                                                                   |
+| vacancies `/careers`                        | 17 → 14           | `cms_relations role='form'` + `inbox_forms` по карточке с формой (`Cards.php:114` → `Vacancy::formSlug()` грузит связь по одному)                                               |
+| press `/press` (3 блока)                    | 44 → 42           | **9×** тройка `press_outlets exists(articles)` + `press_articles in` + `routes`: шаблон блока зовёт `press()->kind()` на каждый вид, фильтр в PHP после полной загрузки         |
+| pages `/about`, глубина 5                   | 12 / 19           | `routes` 10× (5 предков × 2 трейла крошек), `seo_meta` 2×, предки 2×                                                                                                            |
+| pages `/sitemap.xml`                        | 12 → **42**       | `routes forEntity canonical` 36× — hreflang на каждую страницу (`Alternates::entityPaths()`)                                                                                    |
+| catalog `/catalog` (корень)                 | 78                | набор свойств категории 9×2 (`PropertySets::lookup()` по категории), подмножество категорий ×3, `stock`/`brands` «of()» 2–3× — одни и те же товары готовятся несколько раз      |
+| catalog категория 8/24/48 карточек          | 69 / 67 / 67      | **плоско по карточкам**; повторы по фасетам: категория и её поддерево пересчитываются на каждый счётчик фасета (`SqlEngine::count()` → `base()` → `CategoryFacet::applySql`) 6× |
+| catalog карточка товара                     | 61                | `routes` 10× (крошки категорий: `Category::breadcrumbs()` — `url()` + `isVisible()` + `hasUrlIn()` на предка, и трейл дважды), `stock` 4×, `brands` 3×                          |
+| catalog поиск / подсказки                   | 50 / 7            | `LIKE '%…%'` по JSON — 12 мс против 4–6 у листинга                                                                                                                              |
+| catalog `/sitemap.xml` (сборка, 140 тов.)   | **512**           | `Product::isVisible()` exists 140×, `catalog_product_images limit 1` 140× (`mainImage()` без `with('images')`), **полный поиск движком с фасетами на каждую из 15 категорий**   |
+| catalog-landings посадочная                 | **111**           | `routes` 8×, поддерево 7×, `stock` 6×, `images limit 1` 3× (рекомендуемые без `with('images')`); товары готовятся дважды (страница + рекомендуемые)                             |
+| brands `/brands/<brand>`                    | 59                | тот же набор листинга                                                                                                                                                           |
+| faq / reviews / team / tariffs блок, 50 стр | 13–24 плоско      | только 2× предки страницы и 2× `routes` — общие для всех страниц конструктора                                                                                                   |
+| banners `<x-webx-banners>` 43 баннера       | 6–7 плоско        | демо: `media_files where path in (?)` 2×                                                                                                                                        |
+| snippets 3 места, +40 сниппетов             | 1                 | кеш `forever`                                                                                                                                                                   |
+| inbox форма / отправка                      | 2 / 12            | по `insert` на поле и на событие — ожидаемо                                                                                                                                     |
+| menu `menu('header')` холодно / тепло       | 3 / 0             | единственный модуль без запроса на пункт                                                                                                                                        |
+| blocks страница 2 региона, 30 блоков        | 13 → 7            | `block_bundles where hash` 5× на страницу (1 на дерево + 2 на регион, не кешируется), число блоков не влияет                                                                    |
+
+Устойчивая база страницы записи на двуязычном сайте с рабочим кешем: 1 резолвер + 1 запись +
+2 `seo_meta` + 1–2 альтернаты + 5 `block_bundles` ≈ **10 запросов до любой работы модуля**; статья
+блога добавляет 12 адресов, 2 обложки и 2 агрегата версий.
+
+### 2.3. API панели модулей (Testbench, страница списка 20 строк или без пагинации)
+
+| Эндпоинт                                                                                                     | Запросов               | На строку                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `blog/articles`                                                                                              | 36 → **110**           | 5: `routes`, рубрики, теги, связанные, `seo_meta` — `Revision::of()` + `url()`                                                              |
+| `blog/articles/1`                                                                                            | 24                     | `Revision` считается трижды (ресурс, форма, `keys()`)                                                                                       |
+| `services` (**без пагинации**)                                                                               | 30 → **119**           | 3: `routes`, категории, `seo_meta`; `?page=2` — те же 119                                                                                   |
+| `events`                                                                                                     | 32 → **88**            | 4: `routes`, категории, `cms_relations`, `seo_meta`; фильтры грузят до **1000 услуг** с категориями и обложками                             |
+| `recipes` (**без пагинации**)                                                                                | 50 → **227**           | 6: две связи `cms_relations`, `routes`, категории, нутриенты, `seo_meta`                                                                    |
+| `vacancies` (**без пагинации**)                                                                              | 26 → **145**           | 4                                                                                                                                           |
+| `pages?flat=1` / `?parent=`                                                                                  | 9 → **39** / 4 → 34    | 1: `routes` на страницу (до 500 строк); `Editors::of()` грузит все строки `cms_versions` листа                                              |
+| `pages/6` (глубина 5)                                                                                        | 24                     | `routes` 2× на предка, `count(*)` потомков на предка                                                                                        |
+| `catalog/products` (20 / 50)                                                                                 | 36 / 35                | **плоско**; 11 счётчиков фасетов на каждый GET списка, `count(*)` дважды                                                                    |
+| `catalog/categories` (дерево)                                                                                | 3                      | — (в Testbench; на большом каталоге — join подсчёта по nested-set на каждый запрос)                                                         |
+| `catalog/landings`                                                                                           | 17                     | 1 `routes` + запрос подписей **на каждый фасет каждой строки**                                                                              |
+| `press`, `faq`, `reviews`, `team`, `tariffs`, `banners`, `snippets`, `media`, `inbox`, `menu`, `seo`, `auth` | 1–12                   | без построчной работы; `press` грузит полные статьи ради счётчика; `media/directories/{id}/contents` — `LIKE` по каждой таблице со ссылками |
+| `blocks`, `blocks/catalog`, `blocks/{id}`                                                                    | 11 / 6 / 6 (Testbench) | в Testbench контент пуст; на стартовом сайте — **полный проход всех записей всех сущностей** (`Usage::counts()`), см. §2.1                  |
+
+### 2.4. Бутстрап панели и бандл
+
+- На **каждый запрос PHP, включая страницы сайта**, провайдеры регистрируют ≈58 JSON-файлов
+  экранов (≈230 КБ): читают, декодируют, валидируют `ScreenValidator::screen`, накладывают ≈30
+  патчей (`ScreenRegistry::register()`, `module-admin/src/Screens/ScreenRegistry.php:40-62`).
+  Ничего не отложено и не кешируется между запросами.
+- `GET translations/{locale}`: ключ кеша считается через `glob` + `filemtime` по всем lang-файлам
+  всех пакетов (≈260 файлов) **на каждый запрос, даже при попадании в кеш**
+  (`DictionaryBuilder::fingerprint()`); ответ без `ETag`/`Cache-Control` — браузер качает словарь
+  целиком при каждом открытии панели и каждом `cms/_bar`.
+- `GET manifest`: `Backups::latest()` обходит каталог бэкапов и `stat` каждого файла ради одной
+  даты; `TasksModule::manifest()` делает `COUNT` задач.
+- `GET screens/{name}`: под FPM реестр строится заново на каждый запрос (патчи, `checkDefaults`,
+  типы полей); клиент кеширует на визит.
+- Панель на сайте: `Loader::hash()` читает 36 КБ JS и 16 КБ CSS и считает sha256 **на каждую
+  страницу** вошедшего администратора (`module-admin/src/SiteBar/Loader.php:17-31`).
+- Редактор каждые 20 с шлёт heartbeat, который пересчитывает `Revision` (те же 2–5 запросов, что у
+  строки списка).
+- **Бандл**: `dist` npm-пакетов — ≈2,84 МБ / **≈662 КБ gzip** (core 145 КБ, blocks 71, admin 53,
+  catalog 47, audit 31, inbox 28, seo 25, blog 25, auth 22, media 23, остальные по 1–21), CSS 483 /
+  66 КБ gzip. Снаружи этого — `vue`, Reka, Tiptap, CodeMirror с **7 языковыми пакетами**, которые
+  core импортирует статически. **Кодового разделения нет**: `panel.stub` и `main.ts` импортируют все
+  модули статически, в маршрутах модулей нет `() => import()`, `cms/_bar` грузит весь бандл.
+
+### 2.5. Индексы: EXPLAIN на MariaDB и разбор запросов
+
+Стенд маленький (48 страниц, 169 адресов), поэтому `type=ALL` там часто выбор оптимизатора, а не
+отсутствие индекса; ниже — только то, что подтверждено схемой миграций.
+
+| Приоритет            | Таблица, запрос                                                                                                                                                | Где                                                                                                                                                              | Предложение                                                                                               |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Высокий**          | `media_files where path in (…)` — на каждой публичной странице с картинками; `path` `varchar(2048)` без индекса                                                | `module-media/src/Screens/MediaFiles.php:52`; зовут карточки всех модулей, `LibraryUrls`, `LibraryImages` (og:image), баннеры, `HasCover`, `MediaAlias::resolve` | префиксный индекс `path(255)` сырым выражением (utf8mb4 × 2048 > лимит ключа 3072); не уникальный         |
+| **Высокий** (панель) | `audit_issues where page_id = … and ignored_by is null` — коррелированный `count` на строку списка страниц аудита                                              | `module-audit/src/Pages/PageQuery.php:34`                                                                                                                        | `(page_id, ignored_by)`                                                                                   |
+| Средний              | `audit_links where to_page_id = ?` без `run_id`; `host in (…) group by host`                                                                                   | `module-audit/.../PageController.php:144`, `HostController.php:200-204`                                                                                          | `(to_page_id)`, `(host, run_id)`                                                                          |
+| Средний              | `blog_articles`: `deleted_at is null and published_at <= now order by pinned desc, published_at desc, id desc limit`                                           | `module-blog/src/Rendering/Feed.php:104-112`                                                                                                                     | `(deleted_at, pinned, published_at)` вместо одиночного `pinned`                                           |
+| Средний              | `catalog_products`: `is_published and deleted_at is null … order by priority desc, created_at desc, id desc`                                                   | `module-catalog/src/Engine/SqlEngine.php:47-77`, `Sorts/CoreSort.php:54`                                                                                         | `(is_published, deleted_at, priority, created_at)`; одиночные `is_published`, `deleted_at` станут лишними |
+| Средний              | `routes where entity_type=? and kind=? and locale=? and id>? order by id limit 500` — сборка sitemap чанками; `where kind=?` в алиасах и адресах SEO           | `module-seo/src/Sitemap/Sitemap.php:326-330`, `RegistryHealth.php:82`, `SeoLinkController::addresses`                                                            | `(entity_type, locale, kind)` (InnoDB добавит `id`), `(kind)`                                             |
+| Средний (панель)     | `media_files [directory_id=?] order by created_at desc` + `count/sum(size)`                                                                                    | `module-media/src/Http/Controllers/FileController.php:47-68`                                                                                                     | `(directory_id, created_at)`                                                                              |
+| Средний (панель)     | `cms_history where event='run' … order by id desc`; пруннер по `event`, `created_at`                                                                           | `module-admin/src/History/HistoryReader.php:63-80`, `HistoryPruner.php:40-60`                                                                                    | `(event, subject_type)` и/или `(event, created_at)`                                                       |
+| Низкий               | `inbox_submissions (form_id, status_id, read_at)`; `seo_link_blocks (locale, path(191))`; `pages (parent_id, lft)`; `tasks_stages (status, status_changed_at)` | `ListQuery.php:138-178`, `LinkBlocks.php:77`, `PageController.php:183`, `Queue.php:37`                                                                           | по месту                                                                                                  |
+
+Чего индексом не вылечить (документировать в гайдлайнах, не чинить): поиск панели `LIKE '%x%'` по
+JSON-пути на каждый язык (`HasTranslations::whereTranslationLikeAny`), фильтры по `slug->locale`
+категорий и 404-обработчики каталога, `LIKE '%"key"%'` по JSON `filters` посадочных
+(`LandingLinks.php:89-98`), `whereDate(valid_through)` вакансий, `CASE`/`coalesce` в `ORDER BY`
+(события, пресса, популярность каталога, `ArticleList`), `json_unquote` в сортировке по имени.
+
+Лишние индексы: `blog_article_rubric (rubric_id)` — префикс `(rubric_id, item_position)`;
+`media_files (name_lower)` (только `LIKE '%…'`), `media_files (hash)` (всегда с `directory_id`);
+`blocks (is_enabled, sort)` — по `is_enabled` никто не фильтрует; `catalog_product_popularity
+(score)`, `press_articles (published_on)`, `vacancies (valid_through)` — за выражениями не
+используются.
+
+Что sqlite в тестах прячет от MariaDB: внешние ключи MariaDB индексирует сама, sqlite — нет
+(тесты идут без индексов на `catalog_products.category_id`, `blog_articles.author_id`, …);
+лимит длины ключа есть только у MariaDB (индекс на `path` 2048 в sqlite создастся, в MariaDB
+упадёт миграция — ловит только `scripts/php-smoke.sh`); `LIKE 'x%'` по `unique(locale, path)`
+индексом идёт только в MariaDB; коллация `_ci` и PAD SPACE делают `About` и `about ` дублями
+только там.
+
+## 3. Карта кеша: что и где кешируется сейчас
+
+Тегов `Cache::tags()` нет нигде — ни в коде, ни в тестах (`MenuCache.php:24-25` объясняет почему).
+Все кеши — через `Illuminate\Contracts\Cache\Repository` по умолчанию, без предположений о драйвере,
+кроме `Cache::lock` (`Indexer.php:147`, `ViewCounter.php:86-95` с откатом без лока) и
+`add`+`increment` в `Refusals.php:34-35`.
+
+Три стиля сброса: **forget по ключу** (Settings, Locales, BlockTypes, Regions, SeoRules, MenuCache,
+Snippets); **поколение** — `forever(random)`, старые записи доживают TTL (LinkBlocks, Sitemap,
+Thumbnails, catalog Properties/PropertySets/CategoryFacets); **отпечаток в ключе**
+(DictionaryBuilder по `filemtime` lang-файлов, контентно-адресуемые TemplateCompiler и Bundles).
+
+| Кеш                                                | Файл                                                                                                                                            | Данные, ключ, TTL                                                                                                                  | Сброс                                                                                                                                                                              | Риск старых данных                                                                                                                                                            |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Settings                                           | `module-settings/src/Settings.php:53-66`                                                                                                        | вся таблица; `webx.settings`; 86400; `WEBX_SETTINGS_CACHE`                                                                         | `Setting` saved/deleted, `save()`/`clear()`, `StoredContentRewritten`; `SettingsSaved` сбрасывает Contacts, Sitemap/LinkBlocks при `seo.*`, Consent                                | сырой `DB::table('settings')`                                                                                                                                                 |
+| Locales                                            | `localization/src/Locales.php:251-275`                                                                                                          | активные `locales`; `webx.localization.locales`; 86400                                                                             | только `seed()` и `webx:locales:clear`; **у модели `Locale` сброса нет** (`Models/Locale.php:40-58`); не кешируется внутри транзакции (`:362-367`)                                 | любая правка через модель — 24 ч старых языков; сегодня правит только seed                                                                                                    |
+| DictionaryBuilder                                  | `localization/src/Translations/DictionaryBuilder.php`                                                                                           | словарь панели на язык; ключ с отпечатком lang-файлов; 86400                                                                       | сам, по `filemtime`                                                                                                                                                                | отпечаток считается на каждый запрос (§2.4)                                                                                                                                   |
+| MenuCache                                          | `module-menu/src/MenuCache.php:43-67`                                                                                                           | дерево меню на меню и язык; `webx-menu:{key}:{locale}`; 3600                                                                       | `CacheSubscriber`: `MenuItem` saved/deleted/**moved**, `Menu`, `Route` saved/deleted, каждая модель-`LinkSource` saved/deleted/restored; `StoredContentRewritten`; кнопка в панели | массовые записи `RouteSync` (`routing/src/RouteSync.php:88,103,215,352,397`), массовый unpublish импорта каталога (`Importer.php:739`), `fixTree()`, публикация по расписанию |
+| BlockTypes                                         | `module-blocks/src/BlockTypes.php:82-122`                                                                                                       | опубликованные типы; `webx.blocks.types`; 86400                                                                                    | `Block` saved/deleted, `StoredContentRewritten`, `webx:blocks:clear`, Importer                                                                                                     | `ReorderController.php:47` — массовый `update(position)` без сброса (низкий: порядок реестра по `sort`)                                                                       |
+| Regions                                            | `module-blocks/src/Regions.php:166-185`                                                                                                         | дерево региона; `webx.blocks.regions.{name}`; TTL конфига                                                                          | `Region` saved (при смене `blocks`/`published_at`/`name`)/deleted, явные forget в `Renamer`/`LanguageShapes` после `saveQuietly`, `StoredContentRewritten`, `webx:blocks:clear`    | подсказка фолбэков `…:fallbacks` — forever, не сбрасывается (только подсказка)                                                                                                |
+| Thumbnails                                         | `module-blocks/src/Rendering/Thumbnails.php`                                                                                                    | HTML-образец на версию типа и язык; поколение + индекс (read-modify-write, не атомарно)                                            | `Block` saved/deleted, `StoredContentRewritten`, clear, Importer                                                                                                                   | гонка на индексе                                                                                                                                                              |
+| Bundles (БД)                                       | `module-blocks/src/Rendering/Bundles.php:107-169`                                                                                               | `block_bundles` по хешу набора версий — контентно-адресуемо                                                                        | не нужен                                                                                                                                                                           | **1 чтение на дерево + 2 на регион на каждой странице** (§2.2)                                                                                                                |
+| SeoRules                                           | `module-seo/src/Panel/SeoRules.php:35-125`                                                                                                      | скомпилированные правила и редиректы; `webx.seo.rules.{urls,redirects}`; 86400                                                     | `SeoRedirect`, `SeoUrl` saved/deleted; wildcard-слушатель `eloquent.*` для `Route`; счётчик хитов — `increment` без события намеренно                                              | массовые `RouteSync`; не слушает `StoredContentRewritten`                                                                                                                     |
+| LinkBlocks                                         | `module-seo/src/Links/LinkBlocks.php:75-115`                                                                                                    | блок перелинковки на донора; `{base}.{gen}.{md5}`; TTL конфига                                                                     | `refresh()` — новое поколение по `Route`, любому `Visible`, `SeoLinkBlock`/`Item`, `SeoRedirect`, `seo.*` настройкам                                                               | `LinkWriter.php:165` массовое удаление элементов **после** смены поколения внутри транзакции (гонка); импорт, `RouteSync`, расписание; тестов сброса нет                      |
+| Sitemap                                            | `module-seo/src/Sitemap/Sitemap.php:188-240,681-720`                                                                                            | файлы, индекс, статистика; поколение; 86400                                                                                        | wildcard по `Route`, `SeoMeta`, `SeoUrl`, `Visible` (saved/deleted/restored/moved), `seo.*`, `webx:seo:sitemap`, панель                                                            | массовые записи, `Locale`, расписание                                                                                                                                         |
+| Snippets Codes                                     | `module-snippets/src/Output/Codes.php:36-69`                                                                                                    | все включённые сниппеты по местам; `webx-snippets.codes`; **forever**                                                              | `Snippet` saved/deleted/restored/forceDeleted, reorder, после MCP-репетиции                                                                                                        | без TTL любой обход — навсегда; не слушает `StoredContentRewritten`                                                                                                           |
+| Consent seen, Video posters                        | `widgets/src/Consent.php:131-158`, `Video/Posters.php`                                                                                          | forever                                                                                                                            | `forgetSeen()` по настройке; постеры — не сбрасываются                                                                                                                             | низкий                                                                                                                                                                        |
+| Catalog Properties / PropertySets / CategoryFacets | `module-catalog-properties/src/Catalog/Properties.php:34-86`, `PropertySets.php:130-157`, `module-catalog/src/Facets/CategoryFacets.php:84-160` | списки и наборы на категорию; поколение; **forever**                                                                               | `Property` события + reorder; `PropertySets::save` (сырой `DB::table`) + `moved` категории; `FacetSettings::save` + `moved`                                                        | удаление/восстановление категории поколение не двигает; тестов сброса у Properties/Sets нет                                                                                   |
+| Manticore (живой счётчик, схема, флаг «лежит»)     | `module-catalog-manticore/src/ManticoreEngine.php`, `Manticore.php`                                                                             | 30–60 с                                                                                                                            | TTL                                                                                                                                                                                | —                                                                                                                                                                             |
+| ViewCounter                                        | `module-catalog/src/Popularity/ViewCounter.php`                                                                                                 | накопленные просмотры; forever под локом                                                                                           | сбрасывается в БД задачей                                                                                                                                                          | **запись в кеш на каждый просмотр товара**                                                                                                                                    |
+| routing, themes                                    | —                                                                                                                                               | кеша нет: `Resolver::match` ходит в `routes` на каждый запрос; темы — файлы-указатели и `manifest.json`, читаются на каждый рендер | `webx:theme:sync` меняет указатели                                                                                                                                                 | под Octane синглтоны тем (`ThemeChain`, `Tokens`, …) переживают sync                                                                                                          |
+
+Общие свойства, которые надо учесть в дизайне групп (этап 2):
+
+- **Почти весь сброс идёт внутри транзакции писателя** (в `saved`/`deleted`), `afterCommit` нет
+  нигде, кроме `RecordEvents.php:91`. Конкурентный читатель между forget и commit может положить в
+  кеш старые строки до TTL; у `forever`-кешей — до следующей правки. **MCP `dry_run`**
+  (`mcp/src/Rehearsal.php:38-52`: запись и откат) поднимает те же события — всё, что прочитано во
+  время репетиции, кешируется с откаченных строк. Защищены только Locales (не кеширует в
+  транзакции), Blocks Importer и SnippetsTools (явный forget после отката); категории, события,
+  пресса, FAQ, рецепты, отзывы, услуги, уведомления, задачи — нет.
+- **Восстановление снимка** делает `cache:clear` + `view:clear` + хуки (`webx:locales:clear`,
+  `webx:blocks:clear`, `webx:seo:sitemap`, `webx:catalog:index --rebuild`) — покрыто, но
+  `cache:clear` сносит весь store (сессии в `database` не трогает, но локи и лимиты — да).
+- `StoredContentRewritten` (сырой `UPDATE` после оптимизации картинок) слушают Settings, Menu,
+  Blocks, Media — не слушают Snippets, SeoRules, Sitemap, LinkBlocks.
+- **Мемоизация на запрос** (`$loaded` у Settings, Locales, BlockTypes, SeoRules, Properties,
+  PropertySets; `Renderer::$used`, `MediaFiles`, `Contacts`, `Consent::$answer`, inbox `Forms`)
+  под FPM умирает с процессом, под Octane живёт: `RequestReceived` сбрасывает только каталожные.
+
+Что публичная страница читает из базы **без кеша** на каждом запросе: резолвер адреса
+(`Resolver.php:123-127`), запись, `seo_meta` записи (дважды — `Seo::head()` и `Alternates`),
+`SeoUrl::find` при совпавшем правиле, альтернаты `Route::forEntity()->canonical()`, предки
+крошек (дважды — компонент и JSON-LD), `block_bundles` по хешу, фолбэк шапки темы без меню
+(`Page::roots()…` + `url()` на страницу), переключатель языков, баннеры
+(`BannerQuery.php:101,164` — кеша нет вовсе), форма инбокса, постеры видео; из кеша — настройки,
+контакты, языки, SEO-правила, сниппеты, типы блоков, регионы, меню, согласие, свойства каталога.
+
+## 4. Находки по приоритету
+
+Эффект — на типовую страницу или список; риск — правки; объём — S/M/L. Строки с ① — одна общая
+причина, которая закрывает сразу десяток строк в §2.
+
+| #   | Находка                                                                                                                                                                                                                                                                                                                                                                                                     | Эффект                                                                              | Риск                                 | Объём | Где                                                                                                                                                                                                                                                                                                                                                  | Лечение (имя)                                                                                                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------ | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 ① | **`HasUrl::url()` всегда ходит в `routes`**, даже когда связь `routes` уже загружена: `routeCanonical()` строит новый запрос. Это главный N+1 всей системы: карточки блога и услуг, навигация категорий, крошки (× глубина × 2 трейла), все ресурсы панели (`$canonical` выбран из загруженной связи, а следом `url()` идёт в базу снова), sitemap pages (hreflang на каждую запись), `seo/links/addresses` | 12–80 запросов на список, 10 на карточку товара, 36 на sitemap                      | низкий                               | S     | `routing/src/HasUrl.php:91-112`; вызовы: `module-blog/resources/views/partials/card.blade.php:9`, `Article::breadcrumbs()`, `module-services` list/category views, `module-catalog/src/Models/Category.php:320-333`, `module-pages/src/Models/Page.php:212-226`, `*Resource.php` всех модулей, `LandingResource.php:35`, `Alternates::entityPaths()` | `routeCanonical()` читает загруженную связь (`relationLoaded('routes')`) + мемо на запрос; списки — `with('routes')`; эталон уже есть: `module-events/src/Rendering/Cards.php:142-162`  |
+| 2 ① | **Трейл крошек строится дважды** на каждой странице записи: `<x-webx-seo::breadcrumbs>` и JSON-LD `BreadcrumbList`; `Breadcrumbs::trail()` — синглтон без мемоизации. У каталога на каждого предка ещё `isVisible()` (`exists`) и `hasUrlIn()`                                                                                                                                                              | ×2 предков, `routes`, `seo_meta` на каждой странице                                 | низкий                               | S     | `module-seo/src/Rendering/Breadcrumbs.php:42`, `Seo.php:476-484`, `View/Components/Breadcrumbs.php:35`; `Category.php:230-240,320-333`                                                                                                                                                                                                               | мемоизация трейла на запрос по (subject, locale); у категорий — видимость предков одним запросом                                                                                        |
+| 3   | **`Usage::counts()` блоков обходит `cursor()` все строки всех контентных сущностей** и декодирует их деревья блоков — на списке блоков, в пикере блоков каждого редактора, в show/update/publish/компонентах. На стартовом сайте это «все `pages` целиком» + все `block_versions` трижды                                                                                                                    | растёт со всем сайтом; на каждом открытии редактора                                 | низкий                               | M     | `module-blocks/src/Panel/Usage.php:38-49,267-297`; `BlockController.php:55,91,118,179,210`, `ComponentController.php:49`, `PublishController.php:62`                                                                                                                                                                                                 | кеш счётчиков в группе `blocks`, сброс по сохранению контента; из `catalog()` счётчики убрать; индекс использования при сохранении страницы                                             |
+| 4   | **`Revision::of()` в каждой строке списка**: pluck связей через методы (всегда запрос) + `seoValue()` → `seo()->first()`; в форме считается трижды; heartbeat каждые 20 с — те же запросы                                                                                                                                                                                                                   | 3–6 запросов на строку: 110/119/145/227 на список                                   | средний (хеш должен остаться тем же) | M     | `module-{blog,events,recipes,services,vacancies}/src/Panel/Revision.php`; `module-seo/src/HasSeo.php:121-126`; `ArticleForm.php:80`; `EditingController::ping()`                                                                                                                                                                                     | ids из загруженных связей, `with('seo')`; или `revision` только в форме, не в списке                                                                                                    |
+| 5   | **Списки без пагинации** с построчной работой: services, recipes, vacancies; `pages?flat=1` до 500 строк                                                                                                                                                                                                                                                                                                    | растёт с таблицей                                                                   | средний (фронт ждёт все строки)      | M     | `RecipeController.php:44`, `ServiceController.php:37`, `VacancyController.php:42`, `PageController.php:40,254`                                                                                                                                                                                                                                       | `paginate` или потолок; минимум — закрыть #1 и #4                                                                                                                                       |
+| 6   | **Sitemap**: на каждую запись — `isVisible()` exists, `mainImage()`/`cover` без eager, `max(created_at) from cms_versions`, `SeoUrl::find` по совпавшему правилу; `FilterSitemap` делает **полный поиск движком с фасетами на каждую категорию**                                                                                                                                                            | 512 запросов на 140 товаров, 191 на 34 статьи; 10k товаров ≈ 20k запросов на сборку | низкий                               | M     | `module-seo/src/Sitemap/Sitemap.php:330-364`, `Panel/UrlRuleSource.php:65-71`, `module-catalog/src/Seo/FilterSitemap.php:48-100`, `Product.php:206,221,392`, `Article.php:174`, `HasCover.php:35-42`                                                                                                                                                 | `with(['cover','images','seo'])`, видимость и `lastmod` агрегатами на чанк, правило из уже скомпилированного списка; `FilterSitemap` — по счётчикам без полного поиска                  |
+| 7   | **Фасеты каталога пересчитывают область категории на каждый счётчик**: `SqlEngine::count()` → `base()` → `CategoryFacet::applySql()` → `subtreeIds()` (`Category::whereKey()->get()` + pluck) 6× на листинг, 7× на посадочную, 30× в sitemap; 11 счётчиков фасетов на каждый GET списка панели                                                                                                              | ≈12 лишних на листинг; 1/3 запросов списка панели                                   | низкий                               | S     | `module-catalog/src/Engine/SqlEngine.php:134-136,207-215`, `Facets/CategoryFacet.php:142-145,198-229`                                                                                                                                                                                                                                                | мемо поддерева на запрос; счётчики фасетов в панели — по запросу фронта, не всегда                                                                                                      |
+| 8   | **Спутники каталога готовят одни и те же товары 2–4 раза**: `Stock::of()`, `Brands::of()` зовутся из `*Part::prepare`, `*Line` (JSON-LD), `*Document`; `StorefrontParts::prepare()` на посадочной — для страницы и для рекомендуемых отдельно; подписи и бейджи грузят справочники независимо                                                                                                               | 8–12 на листинг и карточку                                                          | низкий                               | S     | `module-catalog-stock/src/Catalog/Stock.php:24-31`, `module-catalog-brands/src/Catalog/Brands.php:21-28`, `module-catalog/src/Storefront/StorefrontParts.php:58-67`, `module-catalog-landings/src/Storefront/LandingViews.php:89-93`                                                                                                                 | мемо `of()` по набору id на запрос; один `prepare` на страницу                                                                                                                          |
+| 9   | **Кеш на драйвере `database` — 14 SQL-чтений на страницу** (по ключу на кеш) — больше, чем контент. Дизайн групп с версиями добавит ещё по чтению на группу, если версии не читать одним `many()`                                                                                                                                                                                                           | 14 из 33 запросов страницы                                                          | средний                              | M     | §2.1; `Settings`, `DictionaryBuilder`, `SeoRules`, `Regions`, `BlockTypes`, `MenuCache`, `Consent`, `Codes`                                                                                                                                                                                                                                          | версии групп — одним `Cache::many()` на запрос; общие данные страницы — одной записью («shell» страницы); см. §6                                                                        |
+| 10  | **`block_bundles` по хешу** — 1 на дерево + 2 на регион на каждой странице, контентно-адресуемо и всё равно из базы                                                                                                                                                                                                                                                                                         | 5 на страницу                                                                       | низкий                               | S     | `module-blocks/src/Rendering/Bundles.php:107,169`                                                                                                                                                                                                                                                                                                    | в группу `blocks` (ключ — хеш, инвалидация не нужна), мемо на запрос                                                                                                                    |
+| 11  | **Экраны панели регистрируются на каждый запрос**, включая страницы сайта: 58 JSON, валидация, 30 патчей                                                                                                                                                                                                                                                                                                    | каждый запрос, CPU и диск                                                           | низкий–средний                       | M     | `module-admin/src/Screens/ScreenRegistry.php:40-62,238-249`; `registerScreens()` провайдеров                                                                                                                                                                                                                                                         | отложенная регистрация (путь вместо дерева, `callAfterResolving`), кеш собранных деревьев (`webx:screens:cache` или группа `screens`)                                                   |
+| 12  | **Бандл без кодового разделения**: 662 КБ gzip своего + Tiptap, CodeMirror с 7 языками статически; `cms/_bar` грузит всё                                                                                                                                                                                                                                                                                    | первая загрузка панели и каждого `_bar`                                             | низкий–средний                       | M     | `packages/core/dist/index.js:1-20`, `packages/*/src/module.ts`, `module-admin/stubs/panel.stub`, `apps/playground/src/panel/main.ts`                                                                                                                                                                                                                 | `component: () => import()` в маршрутах модулей, `defineAsyncComponent` для редакторов кода и rich-text, языки CodeMirror лениво — **гайдлайн фронта и отдельная задача, не этот трек** |
+| 13  | **`media_files.path` без индекса** — `where path in (?)` на каждой странице с картинками, 7× на странице карточек                                                                                                                                                                                                                                                                                           | полный скан на страницу; у библиотеки до ~10k файлов                                | низкий                               | S     | §2.5                                                                                                                                                                                                                                                                                                                                                 | префиксный индекс                                                                                                                                                                       |
+| 14  | **`Alternates` считает `Seo::for()` второй раз** на каждый другой язык (второй `seo_meta`, второй поиск правила) + `Route::forEntity()->canonical()->get()`                                                                                                                                                                                                                                                 | 2–3 на страницу                                                                     | низкий                               | S     | `module-seo/src/Rendering/Seo.php:214-221,408`, `Rendering/Alternates.php:59-80,112`                                                                                                                                                                                                                                                                 | мемо `Seo::for()` по (subject, locale) на запрос                                                                                                                                        |
+| 15  | **Пресса: блоки зовут `press()` на каждый вид** — 9 полных загрузок издания+статьи+адреса на страницу, фильтр по виду в PHP                                                                                                                                                                                                                                                                                 | 27 из 42 запросов страницы                                                          | низкий                               | S     | `module-press/src/Rendering/PressQuery.php:86-106`, шаблоны `press-outlets.json`, `press-logos`, `press-articles`                                                                                                                                                                                                                                    | `kind` в SQL, один загрузчик на запрос                                                                                                                                                  |
+| 16  | **Вакансии: форма на карточку** — `Vacancy::formSlug()` грузит `cms_relations` + `inbox_forms` по одной; рецепт — `cms_relations` по связанному                                                                                                                                                                                                                                                             | 2 на карточку с формой                                                              | низкий                               | S     | `module-vacancies/src/Models/Vacancy.php:477-483`, `Cards.php:114`; `HasRelations.php:81-90`                                                                                                                                                                                                                                                         | `Relations::load()` на коллекцию карточек, которые рендерятся                                                                                                                           |
+| 17  | **Обложки по строке**: события и рецепты в панели (`cover()` → `MediaFiles::find` на строку), `EventTarget`/`RecipeTarget` в пикерах; посадочные — рекомендуемые без `with('images')`                                                                                                                                                                                                                       | 1 на строку                                                                         | низкий                               | S     | `EventResource.php:39`, `RecipeResource.php:37`, `Relations/{Event,Recipe}Target.php`, `LandingViews.php:89`                                                                                                                                                                                                                                         | `MediaFiles::load($paths)` до map, как в reviews/team/press                                                                                                                             |
+| 18  | **`RecordQuery` без SQL-лимита**: коллекции сайта («последние 3») грузят все записи и режут в PHP                                                                                                                                                                                                                                                                                                           | все строки на блок                                                                  | средний                              | M     | `module-admin/src/Collections/RecordQuery.php:247-260`                                                                                                                                                                                                                                                                                               | условие языка в SQL (JSON-путь не null) или выборка чанками до заполнения лимита                                                                                                        |
+| 19  | **Фильтры списков событий и рецептов грузят до 1000 услуг** с категориями и обложками на каждый GET                                                                                                                                                                                                                                                                                                         | каждый список                                                                       | низкий                               | S     | `EventController.php:74-79`, `RecipeController.php:59-63`                                                                                                                                                                                                                                                                                            | только id и title; или фильтры отдельным эндпоинтом                                                                                                                                     |
+| 20  | **Списки версий** — `select *` с `payload` (снимок записи, cast) без лимита ради номера, автора и комментария                                                                                                                                                                                                                                                                                               | вес ответа и память                                                                 | низкий                               | S     | `module-admin/src/Versions/HasVersions.php:66`, `*VersionController::index`                                                                                                                                                                                                                                                                          | `select` метаданных, лимит                                                                                                                                                              |
+| 21  | **Бутстрап панели**: отпечаток словаря `glob`+`filemtime` на каждый запрос и без HTTP-кеша; `manifest` — обход каталога бэкапов и `COUNT` задач; реестр экранов строится заново на каждый `screens/{name}`; `Loader::hash()` панели на сайте — sha256 52 КБ на каждую страницу админа                                                                                                                       | каждое открытие панели                                                              | низкий                               | S     | `DictionaryBuilder::fingerprint()`, `Manifest/ManifestBuilder.php:120-138`, `TasksModule.php:75-85`, `SiteBar/Loader.php:17-31`                                                                                                                                                                                                                      | отпечаток и хеш — в кеш по `mtime`; `ETag`/`Cache-Control` на словарь; бейдж задач — в кеш на минуту                                                                                    |
+| 22  | **Пресса в панели грузит полные статьи ради счётчика**; `pages` `Editors::of()` грузит все строки версий листа; `home()` дважды; `tasks` — 5 `COUNT` на запрос; `TagList::outOfIndex()` — все noindex-теги; `audit/runs/latest` — 4 запроса за одним; `inbox` — статусы трижды                                                                                                                              | мелочь, но на каждый запрос                                                         | низкий                               | S     | `OutletList.php:24`, `module-pages/src/Panel/Editors.php`, `PageController.php:59,179`, `TaskController::index`, `TagList.php:146-161`, `RunController@latest`, `ListQuery.php:433`                                                                                                                                                                  | по месту                                                                                                                                                                                |
+| 23  | **Reorder — `UPDATE` на строку**; перенос страницы — синхронный пересчёт адресов поддерева (транзакция + `Route::forEntity` + upsert на язык на потомка)                                                                                                                                                                                                                                                    | O(поддерево × языки) на перенос                                                     | средний                              | M     | `module-admin/src/Categories/Ordering.php:66-99`, `routing/src/RouteObserver.php:113-123`                                                                                                                                                                                                                                                            | один `CASE`-update; пересчёт поддерева пачкой или в очереди                                                                                                                             |
+| 24  | **Поиск панели — `LIKE '%x%'` по JSON на каждый язык** во всех списках и пикерах                                                                                                                                                                                                                                                                                                                            | полный скан на каждый ввод                                                          | высокий (поведение)                  | L     | `localization/src/HasTranslations.php:266-284`                                                                                                                                                                                                                                                                                                       | **не чинить сейчас** — записать в гайдлайны; при росте — генерируемые колонки или Manticore                                                                                             |
+
+Не трогаем, уже хорошо: карточки событий и рецептов (0 на строку), список товаров (плоско), меню
+(0 после кеша), инбокс, медиа, SEO-списки, администраторы, общие категории, баннеры, отзывы,
+команда, миниатюры прессы.
+
+## 5. Предлагаемые группы кеша и их модели
+
+Группа — счётчик-версия в кеше (`webx:ver:<group>`), версия входит в ключ записи, сброс группы —
+`Cache::increment` (атомарно). Начальная версия — не 1, а по времени/случайная (защита от коллизий
+после вытеснения записи версии). Версии читаются **один раз за запрос одним `many()`**
+(иначе на `database` каждая группа — запрос). Пакет объявляет группы и модели
+(`bumpOn('menu', MenuItem::class, …)` → автосброс на `saved/deleted/restored/moved`); пути без
+событий Eloquent — явный `bump('…')`. Имена API — по стилю проекта, ниже иллюстрация.
+
+| Группа     | Модели (saved / deleted / restored / forceDeleted / **moved**)                                                                                                                                                            | Явные `bump` (пути без событий)                                                                                                        | Что в неё переедет                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `settings` | `Setting`                                                                                                                                                                                                                 | `StoredContentRewritten`; восстановление снимка                                                                                        | Settings, Contacts, Consent seen                                                    |
+| `locales`  | `Localization\Models\Locale` (**сегодня хуков нет**)                                                                                                                                                                      | массовый `is_default` в `Locale.php:53-56`; `webx:locales:seed`; словарь — отпечатком lang-файлов (оставить)                           | Locales, DictionaryBuilder                                                          |
+| `routes`   | `Route`, `TrashedAlias`                                                                                                                                                                                                   | все массовые записи `RouteSync` (`:88,103-124,215-218,352-356,397`), откат `RouteObserver.php:62-63`                                   | резолвер (сегодня без кеша), hreflang-альтернаты, `url()` по записи                 |
+| `menu`     | `Menu`, `MenuItem` (+moved), `Route`, все `LinkSource`: `Page`, `Article`/`Author`/`Tag`/`Rubric`, категории admin, `Event`, `Product`, catalog `Category`, `Outlet`, `Recipe`, `Service`, `Vacancy` (+moved у вложенных) | `RouteSync`; `Importer.php:739` (массовый unpublish); `HasNestedSet::fixTree`; публикация по расписанию (время, см. §8)                | MenuCache (сегодняшний `CacheSubscriber` — готовый список)                          |
+| `regions`  | `Region`                                                                                                                                                                                                                  | `Renamer`/`LanguageShapes` после `saveQuietly` (сегодня forget явный); `webx:blocks:clear`                                             | Regions                                                                             |
+| `blocks`   | `Block`, `BlockVersion`; контентные модели с деревьями блоков (`Page`, `Article`, `Service`, …) — для счётчиков использования                                                                                             | `ReorderController.php:47`; Importer после отката репетиции; `LayerSync`; `webx:blocks:clear`                                          | BlockTypes, Thumbnails, `Usage::counts()`, `block_bundles` (по хешу)                |
+| `seo`      | `SeoUrl`, `SeoRedirect`, `SeoMeta`, `SeoLinkBlock`, `SeoLinkItem`, `Route`, все `Visible`                                                                                                                                 | `LinkWriter.php:165`; `RouteSync`; `Importer.php:739`; `seo.*` настройки; `StoredContentRewritten`                                     | SeoRules, LinkBlocks, крошки/альтернаты страницы                                    |
+| `sitemap`  | то же, что `seo`, плюс `Locale`                                                                                                                                                                                           | те же + расписание                                                                                                                     | Sitemap (отдельно от `seo`: сборка дорогая, сбрасывать реже)                        |
+| `snippets` | `Snippet`                                                                                                                                                                                                                 | `SnippetOrder`; MCP-репетиция; `StoredContentRewritten`                                                                                | Codes (**с TTL** вместо forever)                                                    |
+| `banners`  | `Banner`, `Place`                                                                                                                                                                                                         | `PlaceEditor.php:135` (массовые позиции)                                                                                               | `BannerQuery` (сегодня без кеша)                                                    |
+| `catalog`  | `Product` и его части, `Category` (+moved), `Brand`, `Label`, `StockStatus`, `Property`, `PropertyValue`, `Landing`                                                                                                       | `Importer.php:739`; `FacetSettings::save`, `PropertySets::save` (сырой `DB::table`); `ValueMerger`/`ProductValues`; `Catalog::touch()` | Properties, PropertySets, CategoryFacets, дерево категорий панели, счётчики фасетов |
+| `screens`  | —                                                                                                                                                                                                                         | деплой (отпечаток файлов), `webx:panel --sync`                                                                                         | собранные деревья экранов, манифест модулей                                         |
+| `theme`    | —                                                                                                                                                                                                                         | `webx:theme:sync`, `view:clear`                                                                                                        | файлы-указатели не нужны; только для «сбросить всё» из панели                       |
+
+Общие правила для реализации: сброс — **после коммита** (`afterCommit`), чтобы читатель между
+forget и commit не закешировал старое; при `transactionLevel() > 0` не писать в кеш (как Locales) —
+это закрывает и MCP `dry_run`; `StoredContentRewritten` → bump всех групп, читающих пути файлов;
+TTL у всех записей (на `database` — чистка просроченных в планировщике, `cache:prune-stale-tags`
+не для нас, нужен свой `DELETE … WHERE expiration < now`); восстановление снимка — bump всех
+групп вместо `cache:clear`.
+
+## 6. Полностраничный кеш для анонимных — только как вариант
+
+Не делаем в этой задаче. Факты для решения потом:
+
+- Гостю на каждой странице **пишется сессия** (`insert into sessions`) — полностраничный кеш
+  отдаёт ответ до `StartSession`, значит без сессии; формы инбокса берут CSRF отдельным запросом
+  `/webx/widgets/csrf` — это уже совместимо, но `@csrf` в Blade чужих тем — нет.
+- Персональное на странице: панель на сайте для администратора (`Cache-Control: private, no-store`
+  уже стоит), баннер согласия (ответ в cookie, разметка одна), сниппеты по согласию (решаются на
+  клиенте), счётчик просмотров товара (пишет в кеш — при полностраничном кеше перестанет считать),
+  редиректы (`increment hits`), счётчик «просмотрено сегодня» сниппетов.
+- Ключ: URL + язык + `Accept-Language`? + cookie согласия; инвалидация — bump группы `pages`
+  (любой `Visible`) — проще, чем точечная. Хранить на `database` — большие строки, нужен TTL короткий.
+- Альтернатива дешевле: кеш фрагментов (шапка, подвал, карточка) по группам из §5 — то, что и так
+  делает этап 2 (`Fragments::remember('header', depends: ['menu','settings','theme'], …)`).
+
+Рекомендация на утро: не делать; вернуться после этапа 2, когда будут цифры «стало».
+
+## 7. Хелпер бюджета запросов
+
+`WebxUi\Admin\Testing\CountsQueries` (трейт для Testbench-кейса любого пакета) и
+`WebxUi\Admin\Testing\QueryTally`:
+
+```php
+use CountsQueries;
+
+$response = $this->assertQueriesWithin(12, fn () => $this->get('/blog'));   // бюджет — потолок
+$this->assertNoRepeatedQueries(fn () => $this->get('/services'));           // N+1 при любом счёте
+$tally = $this->recordQueries(fn () => menu('header'));                      // count(), time(), repeated(), describe()
+```
+
+При провале печатает каждый запрос с подставленными параметрами и отдельно — повторившиеся
+формы (`in (?, ?, ?)` любой длины — одна форма), то есть сразу показывает, где N+1. Лог запросов
+теста оставляет как был. Тест — `module-admin/tests/QueryBudgetTest.php`. Этапы 2–3 закрепляют
+этим бюджет на каждый тип страницы и список панели; бюджет — потолок, под которым страница
+помещается сегодня, а не цель: поднимать его можно только с объяснением в тесте.
+
+## 8. Решения на утро
+
+Развилки, где выбран самый осторожный вариант; альтернативы — человеку.
+
+1. **Где живёт `CacheGroups`** — в `module-admin` (все модули его требуют) или отдельной библиотекой
+   `cache` (без панели библиотека по правилу имён)? Осторожно: `module-admin`, пока нет сайта без
+   панели, которому нужен кеш. Альтернатива: библиотека с первого дня, чтобы `routing`/`localization`
+   (не зависят от `module-admin`) могли объявлять группы без обратной зависимости — **это важнее,
+   чем кажется**: группы `routes` и `locales` нужны именно этим пакетам. Предлагается библиотека
+   `webx-ui/cache`, `module-admin` её требует.
+2. **`url()` читает загруженную связь** — меняет наблюдаемое поведение: после коллизии суффикса
+   загруженная `routes` может отстать от реестра (`HasUrl.php:103-105` объясняет, почему сегодня
+   всегда читают реестр). Осторожно: использовать загруженную связь только когда она есть, после
+   `save()` сбрасывать мемо. Альтернатива: оставить `url()` как есть и переводить вызовы на `urlOf()`
+   руками (десятки мест, легко пропустить).
+3. **Публикация по расписанию** (`published_at <= now` без события) — ни одна группа не узнаёт.
+   Осторожно: планировщик раз в минуту ищет записи, у которых `published_at` перешёл через «сейчас»
+   с прошлого тика, и делает bump. Альтернатива: ключи записей включают «час» (грубо, лишние промахи).
+4. **Пагинация services/recipes/vacancies** — фронт ждёт все строки. Осторожно: сначала #1/#4/#17
+   (строки станут дешёвыми), пагинацию — отдельно с правкой фронта. Альтернатива: потолок 500 как у
+   `pages?flat=1`.
+5. **Счётчики фасетов в списке товаров панели** (11 запросов на каждый GET) — убирать за флаг
+   запроса (фронт запрашивает при открытии фильтра) или кешировать в `catalog`? Осторожно: кеш по
+   группе (сброс по товару — часто, но дёшево). Альтернатива: `?with=facets`.
+6. **Бандл панели** (#12) — в этой задаче только гайдлайн фронта; код-сплиттинг маршрутов модулей
+   — отдельная задача после. Если человек хочет сейчас — это M и трогает все `module.ts`.
+7. **Поиск `LIKE '%x%'` по JSON** (#24) — оставить, записать в гайдлайны порог («до ~5k записей
+   приемлемо, дальше — Manticore/генерируемые колонки»).
+8. **Лишние индексы** (§2.5) — удалять или оставить? Осторожно: не трогать в этой задаче, записать.
+9. **Чистка просроченного кеша на `database`** — своя команда в планировщике `webx:cache:prune`
+   или полагаться на `cache:prune-stale-tags`/автоудаление при чтении (Laravel удаляет
+   просроченную запись при `get`, но не те, что никто не читает). Осторожно: своя команда раз в час.
+
+## 9. Стало
+
+Этап 3 (публичная часть): те же стенды, что в §2, после кеша на версионных ключах, `url()` из
+загруженных адресов, предзагрузки картинок и правок N+1 по модулям. HTML страниц до и после
+совпадает байт в байт (дампы сверялись в каждом модуле).
+
+### 9.1. Стартовый сайт на MariaDB (набор «компания», `CACHE_STORE=database`)
+
+Тёплый кеш, анонимный посетитель, каждый URL отдельным процессом (зонд как в §2.1). «Кеш» —
+чтения таблицы `cache`: одно — версии всех групп, одно — записи, объявленные `prefetch`
+(настройки, языки, типы блоков, регионы, правила SEO), остальное — имена, которые знает только
+запрос (адрес резолвера, бандл блоков, по меню на меню, блок ссылок, подсказка фолбэков, согласие).
+
+| Страница                              |  Было | Стало | Кеш/сессия | Ответ, мс | Повторы                                                                             |
+| ------------------------------------- | ----: | ----: | ---------: | --------: | ----------------------------------------------------------------------------------- |
+| `/` (главная, холодный кеш)           |    57 |    55 |       28/3 |       150 | первый визит после сброса: 12 записей в `cache`, меню и регионы по одному на каждое |
+| `/` (главная)                         |    27 |    16 |        9/3 |        99 | —                                                                                   |
+| `/about`                              |    33 |    18 |        9/3 |        80 | — (`routes` 4×, `seo_meta` 3×, предки 2× — ушли)                                    |
+| `/kitchen-sink`                       |    33 |    18 |        9/3 |        72 | —                                                                                   |
+| `/kitchen-sink/blocks/cards`          |    44 |    19 |        9/3 |        93 | — (`media_files` 7× → 1: предзагрузка картинок всех блоков)                         |
+| `/kitchen-sink/modules/menu`          |    40 |    18 |        9/3 |        84 | —                                                                                   |
+| `/kitchen-sink/modules/faq-and-links` |    37 |    18 |        9/3 |        67 | —                                                                                   |
+| `/kitchen-sink/modules/form`          |    39 |    20 |        9/3 |       103 | —                                                                                   |
+| `/kitchen-sink/modules/long-trail`    |    37 |    18 |        9/3 |        89 | —                                                                                   |
+| `/ru`, `/ru/o-saite`                  | 33–46 | 16–18 |        9/3 |     72–96 | —                                                                                   |
+| `/sitemap.xml` (холодный)             |   133 |    18 |        6/0 |       178 | по одному запросу на язык: чанк `routes`, `pages`, `seo_meta`, адреса               |
+| `/sitemap.xml` (тёплый)               |     5 |     3 |        3/0 |        27 | —                                                                                   |
+| `/sitemap-page.xml`                   |     6 |     4 |        4/0 |        27 | —                                                                                   |
+| `/no-such-page` (404)                 |     7 |     7 |        3/3 |        35 | —                                                                                   |
+
+Что осталось у типовой страницы из 18: 9 чтений кеша, 3 сессии (гостю сессия пишется — §6),
+1 резолвер, 1 запись, 1 `seo_meta`, 1–3 работы модуля. Индексы §2.5 поставлены (кроме «лишних»
+— не трогали, решение 8 §8) и проверены на MariaDB: миграции накатываются и откатываются, префикс
+`path(255)` у `media_files` виден в `information_schema`.
+
+### 9.2. Публичная часть модулей (Testbench, те же наборы, что в §2.2)
+
+Первое число — холодный запрос (пустое хранилище, пустое мемо), второе — тёплый; «бюджет» —
+потолок в `tests/PerformanceTest.php` модуля, под которым страница помещается сегодня, на тёплых
+списках ещё `assertNoRepeatedQueries`.
+
+| Модуль, страница                          | Было (§2.2) | Стало холодно / тепло |       Бюджет | Что ушло                                                                                                                  |
+| ----------------------------------------- | ----------: | --------------------: | -----------: | ------------------------------------------------------------------------------------------------------------------------- |
+| blog `/blog`                              |          23 |              15 / ≤12 |        30/12 | `routes` по карточке (`with('routes')`)                                                                                   |
+| blog статья                               |          34 |              30 / ≤24 |        36/24 | `routes` 12×, `seo_meta` 2×, `max(cms_versions)` 2×                                                                       |
+| blog рубрика / тег / автор                |     39 / 28 |              17 / ≤14 |        30/14 | `routes` 26×                                                                                                              |
+| blog RSS                                  |           — |              10 / ≤14 |           14 | —                                                                                                                         |
+| blog `/sitemap.xml` (сборка)              |         191 |                   ≤40 |         40/4 | `cms_versions max` 68× и обложки — пачкой (`scopeForSitemap`)                                                             |
+| pages главная (12 блоков)                 |           — |                12 / 5 |         16/8 | `routes forEntity` 2×                                                                                                     |
+| pages глубина 5 (en и uk)                 |          19 |                13 / 6 |         18/9 | предки по одному, `routes` по предку 5×, `forEntity` 2× (`Untranslated`)                                                  |
+| pages `/sitemap.xml` (сборка)             |          42 |                    12 |         20/4 | `routes forEntity` 36× — `Untranslated::source()`, не `Alternates`                                                        |
+| vacancies `/careers` / с фильтром         |          14 |        11 / 6, 12 / 7 |         14/8 | `cms_relations`/`inbox_forms` по группе и дважды на фильтре — карточки один раз на список                                 |
+| vacancies вакансия / sitemap              |           — |             11 / 6, 9 |         14/8 | повторов не было                                                                                                          |
+| events `/events` / категория              |          11 |        11 / 6, 13 / 7 |         14/9 | `routes` категорий 2× — адреса навигации делятся с карточками                                                             |
+| events событие / `.ics`                   |          22 |        15 / 10, 6 / 3 |        18/12 | `routes` 2×, `services` и pivot 2× — ids связи без загрузки таргетов                                                      |
+| events sitemap (4 обложки)                |           — |                    17 |           22 | `media_files` по обложке — `scopeWithCovers` пачкой                                                                       |
+| recipes `/recipes` / категория            |          19 |      17 / 12, 19 / 13 |        20/14 | `routes` категорий 2×                                                                                                     |
+| recipes рецепт                            |          29 |               29 / 23 |        32/26 | `routes` по одной 6×, нутриенты 2×, сервисы 2× — связанные с `routes`/`nutrients`, похожие грузят связи только показанным |
+| recipes sitemap (4 обложки)               |           — |                    17 |           22 | обложки пачкой                                                                                                            |
+| services `/services` (33 карточки)        |          87 |                13 / 8 |        16/10 | `routes` 42× (карточки, категории, ItemList) — `with('routes')` у обеих групп                                             |
+| services категория / услуга               |          77 |        12 / 6, 12 / 7 |   15/8, 15/9 | `routes` 13×                                                                                                              |
+| services `/sitemap.xml` (сборка)          |          88 |                    11 |           16 | `media_files` 33× — `scopeForSitemap` с обложкой                                                                          |
+| press `/press` (3 блока) / издание        |          42 |      18 / 11, 15 / 10 | 24/14, 18/12 | тройка издания+статьи+адреса 9–10× — один загрузчик изданий на запрос                                                     |
+| press блоки логотипов / каталога / статей |           — |   7 / 3, 6 / 3, 7 / 4 |         10/6 | каталог по видам: 8 полных загрузок → 1                                                                                   |
+| catalog `/catalog` корень                 |          78 |               43 / 36 |        48/40 | `PropertySets::lookup` 9×2 — наборы всех категорий одной записью; `routes` верхних категорий                              |
+| catalog категория / с фасетом             |          69 |      43 / 35, 43 / 35 |        48/40 | поддерево 6× и справочники фасетов по одному — мемо на запрос, пул значений                                               |
+| catalog карточка                          |          61 |               31 / 23 |        36/28 | `routes` 10× (крошки), `stock` 4×, `brands` 3× — предки с адресами одним запросом, `of()` мемо                            |
+| catalog поиск / подсказки                 |      50 / 7 |            37 / 31, 7 |    42/36, 10 | справочники мемо; `LIKE` по JSON остался (§2.5)                                                                           |
+| catalog `/sitemap.xml` (сборка, 140 тов.) |         512 |                    85 |          100 | `isVisible` и `mainImage` по товару — `scopeForSitemap`; `FilterSitemap` считает без страницы                             |
+| catalog-landings посадочная               |         111 |               50 / 42 |        56/48 | второй `prepare` всей страницы, свойства по карточке 15× — рекомендуемые дополняют подготовленное                         |
+| catalog-brands бренд / список             |          59 |        23 / 18, 6 / 2 |        28/22 | видимые id бренда 3× — мемо                                                                                               |
+
+### 9.3. Что сделано
+
+- **Одна причина — десятки строк:** `HasUrl::url()` и `routeCanonical()` отвечают из загруженной
+  связи `routes` (после синхронизации адресов связь сбрасывается); списки, предки, связанные и
+  чанки sitemap грузят её `with('routes')`. `Untranslated` и `Alternates` читают те же строки.
+- **Раз на запрос:** карточка SEO (`HasSeo`), трейл крошек (атрибут запроса), версии групп и
+  значения `remember`/`get` (мемо `CacheGroups`), поддерево/справочники там, где модуль повторял.
+- **На версионных ключах:** настройки, языки, меню (одна версия на все, зависят от `routes`),
+  типы блоков, регионы, бандлы, правила и редиректы SEO, блоки ссылок, сниппеты, sitemap, резолвер
+  адресов (попадания в `routes`). `prefetch` — записи каждой страницы одним `many()`.
+- **Картинки страницы одним запросом:** маркер `PreloadsValues`, обход дерева блоков до рендера
+  (вложенные списки и повторители), `MediaFiles::load()` копит ключи до первого `find()`.
+- **Sitemap:** `scopeForSitemap()` модели — обложки, адреса и `lastmod` на чанк; файлы под
+  версией группы `sitemap`.
+- **Индексы** (§2.5, высокий и средний приоритет) новыми миграциями; **бюджеты и свежесть** —
+  `PerformanceTest` в каждом модуле.
+
+### 9.4. Открыто после этапа 3
+
+- 9 чтений кеша на страницу на `database` (имена, которые знает только запрос) — спека кеша §8.6.
+- Сессия гостю на каждой странице (3 запроса) — §6, вместе с решением о полностраничном кеше.
+- Панель: #3 (`Usage::counts()`), #4 (`Revision::of()`), #5 (пагинация), #11 (экраны на каждый
+  запрос), #19–#23 — не этот этап. Бандл (#12) и поиск `LIKE` (#24) — гайдлайны. Закрыто этапом 4,
+  кроме #5, #11 и #24 — §9.7.
+
+### 9.5. Панель (этап 4)
+
+Те же стенды. Testbench — наборы `PerformanceTest` модулей (30 записей с рубриками, тегами,
+связями, карточкой SEO), тёплый запрос суперадмина после одного прогревочного; стартовый сайт —
+§2.1, каждый адрес отдельным процессом. Ответы всех измеренных адресов панели и MCP до и после
+совпадают байт в байт (дампы, даты и токен превью вырезаны); словарь отличается одним новым словом.
+
+| Адрес (Testbench)                                  |      Было |     Стало |    Бюджет | Что ушло                                                                                                 |
+| -------------------------------------------------- | --------: | --------: | --------: | -------------------------------------------------------------------------------------------------------- |
+| blog `articles` (20 строк) / `?page=2`             |   90 / 50 |        12 |        14 | `Revision::of()` на строку: рубрики, теги, связанные и `seo_meta` — из загруженного, `related` только id |
+| blog статья (форма)                                |        21 |        17 |        20 | `seo_meta` один раз                                                                                      |
+| blog MCP `articles_list` (30)                      |        68 |        10 |        12 | профиль автора и его адрес на строку — `authorProfile.routes` на страницу                                |
+| events `events` / событие                          |   68 / 11 |     9 / 6 |    12 / 8 | категории и `cms_relations` на строку — `categoryKeys()` и `Relations::loadIds()`                        |
+| recipes `recipes` (30, без страниц) / рецепт       |  158 / 18 |    10 / 7 |    12 / 9 | категории, нутриенты, две роли `cms_relations`, `seo_meta` на строку                                     |
+| services `services` (30, без страниц) / услуга     |    71 / 9 |     6 / 7 |     8 / 9 | категории и `seo_meta` на строку                                                                         |
+| vacancies `vacancies` (30, без страниц) / вакансия |   94 / 10 |     6 / 5 |     8 / 7 | категории, форма и `seo_meta` на строку                                                                  |
+| vacancies MCP `vacancies_list` (30)                |       109 |         7 |         9 | категории и форма по строке — одним запросом на список                                                   |
+| pages уровень / `?flat=1` / форма                  | 8 / 3 / 7 | 6 / 3 / 7 | 8 / 5 / 9 | главная читалась дважды; `Editors::of()` читает одну версию на страницу, не все                          |
+| blocks список / каталог                            |     5 / 5 |     4 / 4 |     6 / 6 | `Usage::counts()` — на ключе группы `block-usage`: обход всех сущностей сайта один раз до правки         |
+| catalog-landings список / MCP                      |   13 / 13 |     6 / 7 |     8 / 9 | адрес и подписи фасетов по строке — `with('routes')` и `LandingResource::prime()`                        |
+| inbox заявки (30) / вкладка / поиск                |        12 |         9 |        10 | статусы читались 3–4 раза — один раз на список                                                           |
+| inbox заявка                                       |        11 |        10 |        12 | то же                                                                                                    |
+| catalog `products` 20 и 50 строк                   |        35 |        35 |        40 | не менялось: плоско (20 и 50 строк — одна цена, тест), 11 счётчиков фасетов — §9.7                       |
+| press, MCP-списки events/recipes/services          |       3–6 |       3–6 |       5–7 | не было построчной работы — закреплено бюджетом                                                          |
+
+Фильтры списков событий и рецептов больше не строят строки пикера на тысячу услуг (категории,
+обложки, видимость) ради id и названия — `RelationTarget::names()`. Списки версий читают метаданные
+без `payload` (`EntityVersion::scopeWithoutPayload()`). Бюджеты — тест
+`the_panel_fits_its_budgets_and_does_not_grow_with_the_rows` в `PerformanceTest` blog, events,
+recipes, services, vacancies, pages (с блоками), press, catalog, catalog-landings и
+`module-inbox/tests/PerformanceTest.php`: список, форма, MCP-список, `assertNoRepeatedQueries`.
+
+**Бутстрап.** Сборка манифеста холодным процессом (переводы заголовков 13 модулей, брендинг,
+адрес главной) — 17,5 → 4,4 мс: половина слов и сайта лежит на версионном ключе (§9.6); целиком
+холодный запрос манифеста на стартовом сайте — 29,7 → 27,0 мс (среднее 15 процессов) при одном
+чтении кеша больше на `database`. Словарь панели (204 КБ на стартовом сайте) отдаётся с `ETag` и
+`private, no-cache`: повторное открытие панели и каждой панели на сайте — 304 без тела. Не меняли
+по замеру: отпечаток словаря (`glob` + `filemtime`) — 0,27 мс, хеш скрипта панели на сайте —
+0,04 мс, регистрация всех 56 экранов — 1,4 мс на процесс (§9.7).
+
+**Бандл панели** (что качает первое открытие; `vite build` сайта и плейграунда, gzip):
+
+| Сборка                             |           Было |  Стало | Отложено до первого использования |
+| ---------------------------------- | -------------: | -----: | --------------------------------: |
+| Стартовый сайт, 11 модулей         | 839 КБ, 1 файл | 477 КБ |                   395 КБ, 31 файл |
+| Плейграунд, все модули (`/panel/`) |        1012 КБ | 514 КБ |                  597 КБ, 84 файла |
+
+`WxCodeEditor` (CodeMirror и 7 языков, до 300 КБ gzip) и `WxRichText` (Tiptap и ProseMirror, до
+190 КБ) — асинхронные компоненты ядра: то же имя экспорта, те же пропсы и события, ссылка на
+шаблон указывает на сам редактор, но приходит он вместе с первым экраном, где он есть. Страницы
+маршрутов модулей — `component: () => import('./ArticlesPage.vue')`, а индекс экспортирует их
+`defineAsyncComponent` под прежними именами: страница, которую индекс реэкспортирует статически,
+возвращается в главный чанк вместе со своими зависимостями. `createAdmin({ modules })` и сайтовый
+`admin.ts` не менялись. Проверено в Chromium на `/panel/` плейграунда: 76 маршрутов рисуются,
+исключений нет, CodeMirror появляется в редакторе блока, Tiptap — в ответе вопроса FAQ.
+
+### 9.6. Кеш панели
+
+- **`block-usage`** (`module-blocks`, «Где используются блоки») — счётчики типов блоков на
+  страницах (`Usage::counts()`): обход всех записей всех сущностей `webx-blocks.entities` и
+  регионов. Двигается сохранением, удалением и восстановлением любой из этих моделей (привязка
+  повторяется при чтении, так что сущности, названные после загрузки, тоже двигают), явный `bump`
+  — у тихих писателей пакета: `Renamer`, `LanguageShapes`, `StrayValues`. Тест свежести —
+  `PanelTest::the_counts_follow_the_pages_at_once`.
+- **Слова манифеста** — `admin.manifest.<язык панели>.<отпечаток>` на группах `locales`, `routes`,
+  `screens` и `settings` (если есть): заголовки модулей и групп, брендинг, адрес главной, списки
+  языков. В имени — отпечаток словаря (`DictionaryBuilder::version()`), классы модулей, конфиг
+  панели и языков, `app.url` и корень текущего запроса (сайт на двух доменах не отдаёт одному
+  адрес другого). **Ничего о пользователе, кроме языка:** `meta` модулей (бейдж задач и всё, что
+  модуль решает по правам), дата бэкапа, путь, часовой пояс считаются на каждый запрос — тест
+  `ManifestCacheTest` (два администратора с разными правами на тёплом кеше, свежесть по группе,
+  конфигу, модулю и хосту), свежесть названия через настройки — `BrandingTest`.
+
+### 9.7. Решения на утро (этап 4)
+
+1. **Пагинация списков с ручным порядком** (services, recipes, vacancies, press, faq, reviews,
+   team) — не вводилась: порядок перетаскивается целиком, а реордер пишет весь видимый список,
+   потолок спрятал бы строки из порядка. Вместо неё строки стали плоскими — цена списка не растёт с
+   числом строк (тесты). Альтернатива — страницы и перетаскивание внутри страницы с правкой фронта.
+2. **Счётчики фасетов в списке товаров панели** (11 из 35 запросов) — не кешировались: на
+   Manticore индекс обновляется очередью после сброса группы, и кеш сохранил бы старые числа под
+   новой версией. Альтернатива — `?with=facets` (фронт просит счётчики, когда открыт фильтр).
+3. **Регистрация экранов на каждый запрос** (1,4 мс на 56 экранов) — оставлена: ленивая
+   регистрация перенесла бы ошибку описания из загрузки в первый показ экрана, а это поведение
+   публичного API. Альтернатива — кеш собранных деревьев по `filemtime` и группе `screens`.
+4. **Подсчёт ветки в списке страниц** (`withBranchCount`) — оставлен: на 3000 страниц плоский
+   список из 500 строк стоит 150 мс, разбиение `OR` на две суммы и граница по `lft` дают 130–135 мс
+   (MariaDB, синтетика) — в пределах шума, не лечится индексом. Альтернатива — хранить число
+   потомков в строке и пересчитывать при переносе.
+5. **Асинхронные экспорты страниц модулей** — `WxArticlesPage` и другие теперь
+   `defineAsyncComponent` с теми же пропсами: в маршруте и шаблоне работают как раньше, синхронный
+   тест сайта с такой страницей должен дождаться загрузки (`vi.dynamicImportSettled()`). У
+   `WxCodeEditor`/`WxRichText` обёртка названа именем компонента — заглушка по имени в тестах
+   сайта продолжает работать. Альтернатива — отдельная точка входа `@webx-ui/module-*/pages`.
+6. **Индексы под фильтры панели** — по замеру на MariaDB добавлены `media_files (created_at)`
+   («все файлы», 30 000: 4,2 → 0,05 мс) и `inbox_submissions (form_id, status_id)` (счётчики
+   вкладок, 20 000 заявок формы: 6,6 → 2,5 мс). Список блога сортируется по
+   `coalesce(published_at, updated_at)` — индексом не лечится; поиск `LIKE` по JSON (#24) — гайдлайн.
+
+## 10. Итог задачи
+
+### 10.1. Было → стало
+
+Подробные таблицы — §9.1 (стартовый сайт), §9.2 (публичная часть модулей), §9.5 (панель); здесь —
+главное. Стенд MariaDB — `CACHE_STORE=database`, тёплый кеш, каждый URL отдельным процессом;
+Testbench — холодный запрос, кеш `array`.
+
+| Что                                         |              Было |                               Стало |
+| ------------------------------------------- | ----------------: | ----------------------------------: |
+| Типовая страница стартового сайта (MariaDB) |     33–44 запроса |                               16–20 |
+| из них чтений таблицы `cache`               |                16 |                                   9 |
+| `/sitemap.xml` холодный / тёплый (MariaDB)  |           133 / 5 |                              18 / 3 |
+| services `/services` (33 карточки)          |                87 |                                  13 |
+| blog рубрика / sitemap блога                |          39 / 191 |                           17 / ≤ 40 |
+| catalog карточка / sitemap (140 товаров)    |          61 / 512 |                             31 / 85 |
+| catalog-landings посадочная                 |               111 |                                  50 |
+| Панель: recipes список (30, без страниц)    |               158 |                                  10 |
+| Панель: blog список 20 строк / MCP-список   |           90 / 68 |                             12 / 10 |
+| Панель: vacancies MCP-список                |               109 |                                   7 |
+| Манифест панели, сборка холодным процессом  |           17,5 мс |                              4,4 мс |
+| Словарь панели при повторном открытии       | 204 КБ каждый раз |               304 без тела (`ETag`) |
+| Бандл панели, первая загрузка (gzip)        |  839 КБ / 1012 КБ | 477 КБ / 514 КБ (сайт / плейграунд) |
+| `media_files (created_at)`, 30 000 файлов   |            4,2 мс |                             0,05 мс |
+
+Что держит результат: тесты-бюджеты `PerformanceTest` в 11 модулях (каждый тип публичной страницы
+холодно и тепло, списки, формы и MCP-списки панели, `assertNoRepeatedQueries` на тёплых списках) и
+тесты свежести на каждую группу кеша; правила для новых модулей — [`WEBX_UI_PERFORMANCE.md`](WEBX_UI_PERFORMANCE.md),
+чек-лист — `CLAUDE.md` §6, обязательный набор — реестр пакетов; фронт тем — правила 36–41
+`RULES.md` и две новые автопроверки `webx:theme:check` (этап 5).
+
+### 10.2. Этап 5: гайдлайны
+
+- Спека [`WEBX_UI_PERFORMANCE.md`](WEBX_UI_PERFORMANCE.md) и гайд `apps/docs/guide/performance.md`:
+  N+1 и загрузка связей, кеш и правила сброса, индексы, пагинация, бюджеты и свежесть, обязательный
+  набор модуля.
+- `CLAUDE.md` §6 — чек-лист перед сдачей; реестр пакетов — «Правило: производительность у каждого
+  модуля»; формат `AGENTS.md` — строка про бюджет и свежесть в «Check your work» (и сами
+  `AGENTS.md` blog, catalog, catalog-brands, catalog-landings, inbox, module-admin).
+- `webx:make-module` пишет `tests/Feature/Cms/<Name>ModulePerformanceTest.php` — заготовку бюджета
+  и свежести (`markTestIncomplete`, пока не заполнена).
+- Темы: правила 36–41 (`RULES.md`, спека тем §16.1), раздел «Speed» гайда `styles.md`, шаг в
+  `themes.md`. `webx:theme:check`: `<img>` без `width`/`height` в видах и шаблонах блоков слоёв —
+  отказ (`Checks\ImageCheck`, правило 37); шрифт `.woff` вместо `.woff2` — заметка (правило 39).
+  `theme-default` и стартовый сайт проходят без находок.
+
+### 10.3. Решения на утро — все этапы
+
+Везде выбран самый осторожный вариант; альтернатива — человеку.
+
+**Этап 1 (аудит, §8)** — закрыты этапами 2–4, кроме: публикация по расписанию (§8.3: планировщик
+двигает группу, когда `published_at` перешёл через «сейчас» — не делалось; меню и sitemap узнают
+о такой записи по TTL записи кеша — сутки, `webx-cache.ttl`); лишние индексы (§8.8 — не удалялись); поиск `LIKE` по JSON (§8.7 — порог
+~5 000 записей записан в правила, §4.3).
+
+**Этап 2 (механизм кеша, `WEBX_UI_CACHE.md` §8)**
+
+1. Склейка сбросов вне транзакции — не склеиваем; импортам — транзакция или массовая запись +
+   `bump`. Альтернатива — дебаунс до конца запроса.
+2. Модуль `history` теперь на каждом сайте (тип `cache` в каркасе). Альтернатива — скрывать модули
+   без навигации.
+3. Реестр групп — отдельная библиотека `webx-ui/cache` (решение человека); **при релизе** создать
+   зеркало `webx-ui/cache` и отправить на Packagist до мержа релизного PR.
+
+**Этап 3 (публичная часть)**
+
+4. `Product` в `bumpOn('catalog')` — один `increment` на чанк импорта (277 против 264 мс на 140
+   строк); убирается одной строкой.
+5. Одна версия на все меню. Альтернатива — версия на меню (`menu:<key>`).
+6. Пресса: `kind` фильтруется над загруженными изданиями, а не в SQL.
+7. Группы `events`/`recipes` для навигации категорий не заводились (2 запроса не стоят сброса).
+8. `Seo::for()` не мемоизирован (второй вызов — 0 запросов).
+9. 9 чтений кеша на страницу на `database` — оставлено; альтернатива — «оболочка страницы» или
+   `prefetch` имён меню из конфига темы (`WEBX_UI_CACHE.md` §8.6).
+10. Сессия гостю (3 запроса на страницу) и полностраничный кеш — не делались (§6).
+
+**Этап 4 (панель, §9.7)**
+
+11. Пагинация списков с ручным порядком — не вводилась; списки плоские по цене (тесты).
+12. Счётчики фасетов в списке товаров — не кешировались (Manticore догоняет очередью);
+    альтернатива — `?with=facets`.
+13. Регистрация экранов на каждый запрос (1,4 мс) — оставлена.
+14. Подсчёт ветки страниц — оставлен (разница в шуме).
+15. Асинхронные экспорты страниц модулей под прежними именами; альтернатива — отдельная точка
+    входа `@webx-ui/module-*/pages`.
+
+**Этап 5 (гайдлайны)**
+
+16. Новые правила тем — номерами 36–41 в конце списка, после «Проверки»: номер правила — часть
+    вывода `webx:theme:check` и тестов, перенумерация 32–35 сломала бы ссылки. Альтернатива —
+    раздел «Скорость» перед «Проверкой» с перенумерацией.
+17. `<img>` без `width`/`height` — **отказ** проверки (как просит этап): сайт со своей темой, где
+    такие картинки есть, после обновления получит красный `webx:theme:check`. Альтернатива —
+    заметка на один релиз, затем отказ.
+18. Шрифт `.woff` — **заметка**, не отказ: страница рисует те же буквы. Альтернатива — отказ.
+19. **Preload основного шрифта не рекомендуется**, хотя бриф этапа его называл: движок сознательно
+    не печатает `preload` (спека тем §15.3 — preload качает файл на каждой странице, на любом
+    языке), и гайдлайн не может советовать обратное без правки движка. Альтернатива — ключ
+    манифеста `"preload": "latin"` для одноязычного сайта, отдельной задачей.
+20. `loading="lazy"` и `fetchpriority` не проверяются машиной: первый экран известен только
+    браузеру. Альтернатива — проверка в Playwright на стартовом сайте (LCP-картинка не ленивая).
+21. Заготовка бюджет-теста `webx:make-module` — `markTestIncomplete` (видна, но не красная).
+    Альтернатива — рабочий тест на манифест панели, который ничего не говорит о модуле.
+22. `AgentDocsCoverageTest` содержание «Check your work» не проверяет (правило формата — про
+    смысл); строка о бюджете добавлена в `AGENTS.md` всех модулей с `PerformanceTest`.

@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Models;
 
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -20,6 +21,7 @@ use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Exceptions\CatalogException;
 use WebxUi\Catalog\Routing\CatalogMisses;
 use WebxUi\Catalog\Seo\ProductMarkup;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Contracts\Visible;
@@ -88,6 +90,9 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
 
     protected $table = 'catalog_products';
 
+    /** The request memo of {@see isVisible()}, by id. */
+    private const VISIBLE = 'product.visible.';
+
     /** @var list<string> */
     protected $fillable = [
         'sku', 'barcode', 'external_id', 'name', 'slug', 'summary', 'description',
@@ -147,7 +152,11 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
         // Every door into the table marks the product for the engine — the form, an import, a
         // satellite's own save — so none of them has to remember to. A second mark from a caller
         // that marks as well is ignored by the queue; under `SqlEngine` nothing is written at all.
-        $touch = static fn (self $product) => app(Catalog::class)->touch([$product->getKey()]);
+        $touch = static function (self $product): void {
+            app(Catalog::class)->touch([$product->getKey()]);
+            // What this request knew of the product — whether it is on the site, its verdict — is from before the write.
+            RequestMemo::forget('product.');
+        };
         static::saved($touch);
         static::deleted($touch);
         static::registerModelEvent('restored', $touch);
@@ -224,7 +233,66 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
             return false;
         }
 
-        return static::query()->whereKey($this->getKey())->visible()->exists();
+        // Asked of the same product by the handler, the purchase rule and the SEO source of one
+        // page, and of every product of a sitemap chunk already found visible (`scopeForSitemap`);
+        // forgotten by any save of a product or a category in the request.
+        return in_array((int) $this->getKey(), static::visibleAmong([(int) $this->getKey()]), true);
+    }
+
+    /**
+     * Which of these products are on the site (§5), in one query for the ones this request has
+     * not asked about yet — the purchase rule, the search document and {@see isVisible()} all
+     * ask it of the same products while one page is drawn.
+     *
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    public static function visibleAmong(array $ids): array
+    {
+        $visible = [];
+        $unknown = [];
+
+        foreach (array_values(array_unique($ids)) as $id) {
+            $known = RequestMemo::remember(self::VISIBLE.$id, static fn (): ?bool => null);
+
+            if ($known === null) {
+                $unknown[] = $id;
+            } elseif ($known) {
+                $visible[] = $id;
+            }
+        }
+
+        if ($unknown !== []) {
+            $found = static::query()->whereKey($unknown)->visible()->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
+
+            foreach ($unknown as $id) {
+                RequestMemo::put(self::VISIBLE.$id, in_array($id, $found, true));
+            }
+
+            $visible = [...$visible, ...$found];
+        }
+
+        return $visible;
+    }
+
+    /**
+     * What a line of the sitemap asks of a product, for a chunk at once: the main picture behind
+     * `og:image`, the registry rows behind its addresses — and the answer to {@see isVisible()},
+     * which the map asks of every row through its SEO sources after it chose the rows with
+     * {@see scopeVisible()}: a row found that way is visible, and need not be asked again.
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeForSitemap(Builder $query): Builder
+    {
+        return $query
+            ->with(['images', 'routes'])
+            ->afterQuery(static function (Collection $products): void {
+                foreach ($products as $product) {
+                    RequestMemo::put(self::VISIBLE.$product->getKey(), true);
+                }
+            });
     }
 
     /**

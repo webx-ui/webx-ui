@@ -92,6 +92,8 @@ boot instead of failing quietly. Values the screen does not name are dropped on 
   everybody; a draft is seen through the preview link the panel's editor gives.
 - With MCP: `pages_tree`, then `pages_get` by address (`"/"` is the home page); every tool that
   changes something takes `dry_run: true` first.
+- `tests/PerformanceTest.php` is the query budget of every public page (home, a page five
+  levels deep, the sitemap); a change that needs more queries says why there before raising one.
 
 ## Read more
 

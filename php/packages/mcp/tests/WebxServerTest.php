@@ -37,7 +37,7 @@ final class WebxServerTest extends TestCase
         $context = $this->server()->createContext();
 
         $this->assertSame(
-            ['site_info', 'media_library_find_unused', 'seo_get_seo', 'seo_bulk_update_seo'],
+            ['site_info', 'history_get', 'history_runs', 'media_library_find_unused', 'seo_get_seo', 'seo_bulk_update_seo', 'cache_reset'],
             $context->tools()->map(static fn ($tool): string => $tool->name())->values()->all(),
         );
 
@@ -52,7 +52,7 @@ final class WebxServerTest extends TestCase
         $this->assertTrue($get['annotations']['readOnlyHint']);
         $this->assertSame(['id'], $get['inputSchema']['required']);
 
-        $this->assertSame(['seo://audit/missing-title'], $context->resources()->map(static fn ($resource): string => $resource->uri())->values()->all());
+        $this->assertSame(['history://types', 'seo://audit/missing-title'], $context->resources()->map(static fn ($resource): string => $resource->uri())->values()->all());
         $this->assertSame(['suggest_titles'], $context->prompts()->map(static fn ($prompt): string => $prompt->name())->values()->all());
     }
 
@@ -279,11 +279,11 @@ final class WebxServerTest extends TestCase
         $this->actingAs(new GenericUser(['id' => 1]), 'web')
             ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
             ->assertOk()
-            ->assertJsonCount(4, 'result.tools');
+            ->assertJsonCount(7, 'result.tools');
 
         // The local stdio server, where there is no request: the tests above build the
         // context the same way, so the full list is the one they already assert.
-        $this->assertCount(4, $this->server()->createContext()->tools());
+        $this->assertCount(7, $this->server()->createContext()->tools());
     }
 
     #[Test]
@@ -317,7 +317,8 @@ final class WebxServerTest extends TestCase
     {
         $this->register(new SeoModule);
 
-        WebxServer::resource(new RegistryResource($this->tools()->resources()[0]))
+        // After the frame's own `history://types`.
+        WebxServer::resource(new RegistryResource($this->tools()->resources()[1]))
             ->assertOk()
             ->assertSee('[]');
 
@@ -340,7 +341,7 @@ final class WebxServerTest extends TestCase
         $this->actingAs(new GenericUser(['id' => 1]), 'web')
             ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
             ->assertOk()
-            ->assertJsonPath('result.tools.1.name', 'seo_get_seo');
+            ->assertJsonPath('result.tools.3.name', 'seo_get_seo');
 
         $this->actingAs(new GenericUser(['id' => 1]), 'web')
             ->postJson('/api/cms/mcp', $this->rpc('tools/call', ['name' => 'seo_get_seo', 'arguments' => ['id' => '3']]))

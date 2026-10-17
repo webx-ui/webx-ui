@@ -29,7 +29,7 @@ final class PageVersionController
 {
     public function index(Page $page): JsonResponse
     {
-        $versions = $page->publishedVersions()->get();
+        $versions = $page->publishedVersions()->withoutPayload()->get();
         $authors = Authors::names($versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
 
         return ApiResponse::data(

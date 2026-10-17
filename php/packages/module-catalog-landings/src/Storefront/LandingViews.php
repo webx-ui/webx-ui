@@ -59,10 +59,9 @@ final class LandingViews
         $owner = $page instanceof CatalogPage ? $page->subject() : null;
         $plain = $owner instanceof Landing && ! $page->isFiltered();
 
-        $view->with([
-            'siblings' => $plain ? $this->links->siblings($owner, $page->context->locale) : [],
-            'elsewhere' => $plain ? $this->links->elsewhere($owner, $page->context->locale) : [],
-        ]);
+        $view->with($plain
+            ? $this->links->neighbours($owner, $page->context->locale)
+            : ['siblings' => [], 'elsewhere' => []]);
     }
 
     public function product(View $view): void
@@ -86,11 +85,12 @@ final class LandingViews
         }
 
         /** @var Collection<int, Product> $products */
-        $products = $landing->recommended()->visible($page->context->locale)->limit($limit)->get();
+        $products = $landing->recommended()->visible($page->context->locale)->with(['images', 'routes'])->limit($limit)->get();
 
         if ($products->isNotEmpty()) {
-            // The cards' own points — badges, the brand — are told about these products too.
-            $this->parts->prepare(new Collection([...$page->products->items(), ...$products->all()]));
+            // The cards' own points — badges, the brand — are told about these products too,
+            // beside what they prepared for the page's own.
+            $this->parts->extend($products);
         }
 
         return $products;

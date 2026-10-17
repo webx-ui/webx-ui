@@ -15,6 +15,8 @@ use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Cache\CacheGroups;
+use WebxUi\Cache\CacheServiceProvider;
 use WebxUi\Themes\Console\CheckCommand;
 use WebxUi\Themes\Console\EjectCommand;
 use WebxUi\Themes\Console\ExtractCommand;
@@ -45,6 +47,10 @@ class ThemeServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/webx-themes.php', 'webx-themes');
+
+        // The registry of cache groups has to be one singleton before `boot()` declares into it,
+        // whether the site found `webx-ui/cache` by discovery or a test listed the providers.
+        $this->app->register(CacheServiceProvider::class);
 
         $this->app->singleton(ThemeLocator::class, fn (Application $app) => new ThemeLocator($app->basePath()));
 
@@ -77,6 +83,10 @@ class ThemeServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // The `theme` cache group (WEBX_UI_CACHE.md §2.1) has no model: `webx:theme:sync` and the
+        // panel's button move it. The words the panel shows for it are the frame's.
+        $this->app->make(CacheGroups::class)->declare(CacheGroups::THEME);
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/webx-themes.php' => config_path('webx-themes.php'),

@@ -123,7 +123,7 @@ REPOSITORY="$(
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-recipes module-events module-press module-team module-banners module-vacancies module-tariffs module-catalog module-catalog-brands module-catalog-labels module-catalog-properties module-catalog-stock module-catalog-manticore module-snippets module-notifications module-media nested-set routing; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-recipes module-events module-press module-team module-banners module-vacancies module-tariffs module-catalog module-catalog-brands module-catalog-labels module-catalog-properties module-catalog-stock module-catalog-manticore module-snippets module-notifications module-media nested-set routing cache; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"

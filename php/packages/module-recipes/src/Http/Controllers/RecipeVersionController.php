@@ -24,7 +24,7 @@ final class RecipeVersionController
 {
     public function index(Request $request, Recipe $recipe): JsonResponse
     {
-        $versions = $recipe->publishedVersions()->get();
+        $versions = $recipe->publishedVersions()->withoutPayload()->get();
         $authors = Authors::names($request->user(), $versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
 
         return ApiResponse::data(

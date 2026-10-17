@@ -6,12 +6,11 @@ namespace WebxUi\Press\Rendering;
 
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use WebxUi\Admin\Collections\RecordQuery;
 use WebxUi\Press\Models\Article;
 use WebxUi\Press\Models\Outlet;
-use WebxUi\Routing\Models\Route;
 
 /**
  * `press()` — the outlets and the articles a template may show, as cards rather than models
@@ -81,17 +80,19 @@ final class PressQuery extends RecordQuery
         return $this->withStep('kinds', $given === [] ? null : array_values(array_unique($given)));
     }
 
-    /** @return Builder<Outlet>|Builder<Article> */
+    /**
+     * The outlets come from {@see OutletLoader} — loaded once a request, however many blocks
+     * of the page ask — and are narrowed in {@see models()}; this is the query of the articles.
+     *
+     * @return Builder<Article>
+     */
     protected function newQuery(string $locale): Builder
     {
-        $canonical = static fn (Relation $routes) => $routes->where('locale', $locale)->where('kind', Route::CANONICAL);
-
-        if (! $this->listsArticles()) {
-            return Outlet::query()->visibleIn($locale)->with(['articles', 'routes' => $canonical]);
-        }
-
         $featured = $this->featuredOnly();
 
+        // Without `outlet`: the loader has every outlet an article may be seen in, with its
+        // registry row, and `cards()` hands them over — one list of outlets a request, not one
+        // for the articles and one for the logos.
         return Article::query()
             ->visibleIn($locale)
             ->whereIn('outlet_id', static function ($outlets) use ($featured): void {
@@ -102,29 +103,66 @@ final class PressQuery extends RecordQuery
                 if ($featured) {
                     $outlets->where('featured', true);
                 }
-            })
-            ->with(['outlet.routes' => $canonical]);
+            });
+    }
+
+    /**
+     * The outlets, out of the rows loaded once a request: `only`, `except`, `featured` and the
+     * kinds decided here, in the order of the list, the limit last — the same steps in the
+     * same order as the query of the articles takes them. The articles are the query.
+     *
+     * @return EloquentCollection<int, Outlet|Article>
+     */
+    public function models(): EloquentCollection
+    {
+        if ($this->listsArticles()) {
+            return parent::models();
+        }
+
+        $locale = $this->resolvedLocale();
+        $only = $this->onlyIds();
+        $except = $this->exceptIds();
+        $featured = $this->featuredOnly();
+        /** @var list<Outlet|Article> $records */
+        $records = [];
+
+        foreach ($this->loader()->outlets($locale) as $outlet) {
+            $id = (int) $outlet->getKey();
+
+            if (($only !== null && ! in_array($id, $only, true)) || in_array($id, $except, true)) {
+                continue;
+            }
+
+            if (($featured && ! $outlet->featured) || ! $this->shownIn($outlet, $locale)) {
+                continue;
+            }
+
+            $records[] = $outlet;
+        }
+
+        if ($only !== null) {
+            $order = array_flip($only);
+            usort($records, static fn (Outlet $a, Outlet $b): int => ($order[(int) $a->getKey()] ?? PHP_INT_MAX) <=> ($order[(int) $b->getKey()] ?? PHP_INT_MAX));
+        }
+
+        if ($this->limit() !== null) {
+            $records = array_slice($records, 0, $this->limit());
+        }
+
+        return new EloquentCollection($records);
     }
 
     protected function narrow(Builder $query, string $locale): void
     {
-        if ($this->listsArticles()) {
-            if ($this->kinds() !== null) {
-                $query->whereIn($query->getModel()->qualifyColumn('kind'), $this->kinds());
-            }
-
-            return;
-        }
-
-        if ($this->featuredOnly()) {
-            $query->where($query->getModel()->qualifyColumn('featured'), true);
+        if ($this->kinds() !== null) {
+            $query->whereIn($query->getModel()->qualifyColumn('kind'), $this->kinds());
         }
     }
 
     protected function order(Builder $query, ?int $category): void
     {
-        // Through `scopes()`: PHPStan finds neither scope on a builder of the union.
-        $query->scopes($query->getModel() instanceof Article ? 'byDate' : 'ordered');
+        // Through `scopes()`: PHPStan finds no `byDate()` on a builder of a generic model.
+        $query->scopes('byDate');
     }
 
     protected function shownIn(Model $record, string $locale): bool
@@ -145,7 +183,18 @@ final class PressQuery extends RecordQuery
         $cards = Container::getInstance()->make(Cards::class);
 
         if ($this->listsArticles()) {
-            return $cards->articles(array_values(array_filter($records, static fn (Model $record): bool => $record instanceof Article)), $locale);
+            $articles = array_values(array_filter($records, static fn (Model $record): bool => $record instanceof Article));
+            $outlets = $this->loader()->outletsById($locale);
+
+            // An article seen in the language is of an outlet the loader has; one it has not —
+            // a row changed between the two queries — reads its own.
+            foreach ($articles as $article) {
+                if (isset($outlets[$article->outlet_id])) {
+                    $article->setRelation('outlet', $outlets[$article->outlet_id]);
+                }
+            }
+
+            return $cards->articles($articles, $locale);
         }
 
         return $cards->outlets(array_values(array_filter($records, static fn (Model $record): bool => $record instanceof Outlet)), $locale);
@@ -163,6 +212,11 @@ final class PressQuery extends RecordQuery
         return $outlet->articles->contains(
             static fn (Article $article): bool => $article->visibleIn($locale) && in_array($article->kindKey(), $kinds, true),
         );
+    }
+
+    private function loader(): OutletLoader
+    {
+        return Container::getInstance()->make(OutletLoader::class);
     }
 
     private function listsArticles(): bool

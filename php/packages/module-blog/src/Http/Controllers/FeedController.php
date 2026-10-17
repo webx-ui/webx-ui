@@ -40,7 +40,7 @@ class FeedController
             'articles' => $this->feed->all(),
             // The menu of the blog. Handed over rather than left to the view to query, so that
             // a site rewriting the view does not have to know how a hidden rubric is spelled.
-            'rubrics' => Rubric::query()->visible()->inMenuOrder()->get(),
+            'rubrics' => Rubric::query()->visible()->inMenuOrder()->with('routes')->get(),
         ])->render());
     }
 

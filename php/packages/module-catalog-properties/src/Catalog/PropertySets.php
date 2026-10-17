@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace WebxUi\CatalogProperties\Catalog;
 
 use Illuminate\Container\Container;
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
@@ -28,21 +28,20 @@ use WebxUi\CatalogProperties\Models\Property;
  * and the document see those properties, and a value of any other is kept but shown nowhere
  * (decision 6). {@see whereInSet()} is that rule as SQL, for the queries that read many products.
  *
- * One generation in the cache for every category, as the core's facet settings do: a save of any
- * set, or a move of a branch, changes whom a whole subtree inherits from, and a per-category key
- * cannot see the tree.
+ * Every category's set is worked out at once and kept as one entry of the `catalog` cache group
+ * (WEBX_UI_CACHE.md), as the core's facet settings are: a save of any set ({@see forget()}) or of
+ * any category — a move changes whom a whole subtree inherits from — moves the group's version,
+ * and a per-category key could not see the tree.
  */
 final class PropertySets
 {
-    private const GENERATION = 'webx.catalog-properties.sets.generation';
-
     public const TABLE = 'catalog_category_property';
 
-    /** @var array<int, list<array{property: int, from: int}>> */
-    private array $memo = [];
+    /** @var array<int, list<array{property: int, from: int}>>|null every category's set, once read */
+    private ?array $memo = null;
 
     public function __construct(
-        private readonly Cache $cache,
+        private readonly CacheGroups $cache,
         private readonly Properties $properties,
     ) {}
 
@@ -70,15 +69,11 @@ final class PropertySets
             return [];
         }
 
-        if (! isset($this->memo[$id])) {
-            /** @var list<array{property: int, from: int}> $rows */
-            $rows = $this->cache->rememberForever('webx.catalog-properties.sets.'.$this->generation().'.'.$id, fn (): array => $this->lookup($id));
-            $this->memo[$id] = $rows;
-        }
-
+        /** @var array<int, list<array{property: int, from: int}>> $sets */
+        $sets = $this->memo ??= $this->cache->remember('catalog-properties.sets', [Properties::GROUP], fn (): array => $this->lookup(), localized: false);
         $live = $this->properties->all();
 
-        return array_values(array_filter($this->memo[$id], static fn (array $row): bool => isset($live[$row['property']])));
+        return array_values(array_filter($sets[$id] ?? [], static fn (array $row): bool => isset($live[$row['property']])));
     }
 
     /**
@@ -150,17 +145,17 @@ final class PropertySets
         $this->touchSubtree($category);
     }
 
-    /** Every set is stale: one was saved, or a branch moved. */
+    /** Every set is stale: one was written without a model's event. */
     public function forget(): void
     {
-        $this->memo = [];
-        $this->cache->forever(self::GENERATION, bin2hex(random_bytes(6)));
+        $this->memo = null;
+        $this->cache->bump(Properties::GROUP);
     }
 
     /** Forget only what this process remembers — a queue worker, between jobs. */
     public function reset(): void
     {
-        $this->memo = [];
+        $this->memo = null;
     }
 
     /**
@@ -202,40 +197,47 @@ final class PropertySets
     }
 
     /**
-     * @return list<array{property: int, from: int}>
+     * The set in force of every category at once: the rows of the table with their owners'
+     * bounds, matched against every category's bounds — two queries once per version, rather
+     * than two per category per request. Ancestors first, each in its owner's order.
+     *
+     * @return array<int, list<array{property: int, from: int}>>
      */
-    private function lookup(int $id): array
+    private function lookup(): array
     {
-        $bounds = Category::withTrashed()->find($id, ['id', 'lft', 'rgt']);
+        $rows = DB::table(self::TABLE.' as own')
+            ->join('catalog_categories as owner', 'owner.id', '=', 'own.category_id')
+            ->orderBy('owner.lft')
+            ->orderBy('own.position')
+            ->get(['own.property_id', 'own.category_id', 'owner.lft', 'owner.rgt']);
 
-        if (! $bounds instanceof Category) {
+        if ($rows->isEmpty()) {
             return [];
         }
 
-        $rows = DB::table(self::TABLE.' as own')
-            ->join('catalog_categories as owner', 'owner.id', '=', 'own.category_id')
-            ->where('owner.lft', '<=', $bounds->lft)
-            ->where('owner.rgt', '>=', $bounds->rgt)
-            ->orderBy('owner.lft')
-            ->orderBy('own.position')
-            ->get(['own.property_id', 'own.category_id']);
+        $sets = [];
 
-        $set = [];
+        // Fresh bounds of every category, the bin included: a node loaded before something was
+        // added under its ancestors has stale ones in memory (docs/pitfalls).
+        foreach (Category::withTrashed()->toBase()->get(['id', 'lft', 'rgt']) as $category) {
+            $set = [];
 
-        foreach ($rows as $row) {
-            $property = (int) $row->property_id;
-            // The first owner wins: a row a descendant had before an ancestor took the property is
-            // not a second place for it.
-            $set[$property] ??= ['property' => $property, 'from' => (int) $row->category_id];
+            foreach ($rows as $row) {
+                if ((int) $row->lft > (int) $category->lft || (int) $row->rgt < (int) $category->rgt) {
+                    continue;
+                }
+
+                $property = (int) $row->property_id;
+                // The first owner wins: a row a descendant had before an ancestor took the
+                // property is not a second place for it.
+                $set[$property] ??= ['property' => $property, 'from' => (int) $row->category_id];
+            }
+
+            if ($set !== []) {
+                $sets[(int) $category->id] = array_values($set);
+            }
         }
 
-        return array_values($set);
-    }
-
-    private function generation(): string
-    {
-        $generation = $this->cache->get(self::GENERATION);
-
-        return is_string($generation) ? $generation : '0';
+        return $sets;
     }
 }

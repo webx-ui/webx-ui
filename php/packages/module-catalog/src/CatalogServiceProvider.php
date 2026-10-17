@@ -24,6 +24,7 @@ use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Audit\CatalogChecks;
 use WebxUi\Catalog\Bulk\Actions\ExtraCategoryAction;
 use WebxUi\Catalog\Bulk\Actions\PublicationAction;
@@ -91,6 +92,7 @@ use WebxUi\Catalog\Seo\UnavailableSource;
 use WebxUi\Catalog\Sorts\CoreSort;
 use WebxUi\Catalog\Sorts\Sorts;
 use WebxUi\Catalog\Storefront\StorefrontParts;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\Formatters\SlugId;
@@ -159,6 +161,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         // The catalogue's own checks of the site audit, when the audit is installed (§7 of its
         // spec): what a shop forgets to fill in.
@@ -394,15 +397,11 @@ class CatalogServiceProvider extends ServiceProvider
         $this->app->make(DoctorChecks::class)->register(ExchangeCheck::class);
         $this->app->make(DoctorChecks::class)->register(RootCheck::class);
 
-        // A category moved to another branch inherits another branch's facets; nested-set moves
-        // without an `updated`, and says so with an event of its own.
-        $this->app->make(Dispatcher::class)->listen('eloquent.moved: '.Category::class, function (): void {
-            $this->app->make(CategoryFacets::class)->forget();
-        });
-
-        // The sources' facets are kept for a request; a worker's next job is another request.
+        // The sources' facets and what a request worked out of the tree and the products are kept
+        // for a request; a worker's next job is another request.
         $this->app->make(Dispatcher::class)->listen(JobProcessing::class, function (): void {
             $this->app->make(Facets::class)->flush();
+            RequestMemo::forget();
         });
     }
 
@@ -615,5 +614,21 @@ class CatalogServiceProvider extends ServiceProvider
             permission: 'catalog.manage',
             kind: 'webx-admin::site-bar.kind-product',
         ));
+    }
+
+    /**
+     * The `catalog` cache group (WEBX_UI_CACHE.md §2): the facets' settings by category live on
+     * it, and the satellites put what they keep — the properties, the sets — beside them. A
+     * category's save or move (whom a branch inherits from) and a product's save move it; a
+     * product is saved by the thousand in an import, but the import and the bulk actions write a
+     * chunk in one transaction, and the library moves the version once per commit. What is
+     * written without a model's event — a setting, a set, a mass unpublish — says so itself.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare('catalog', 'webx-catalog::module.title');
+        $groups->bumpOn('catalog', Category::class, Product::class);
     }
 }

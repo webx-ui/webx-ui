@@ -24,7 +24,7 @@ final class ServiceVersionController
 {
     public function index(Service $service): JsonResponse
     {
-        $versions = $service->publishedVersions()->get();
+        $versions = $service->publishedVersions()->withoutPayload()->get();
         $authors = Authors::names($versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
 
         return ApiResponse::data(

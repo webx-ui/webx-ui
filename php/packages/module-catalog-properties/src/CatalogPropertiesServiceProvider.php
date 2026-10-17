@@ -6,6 +6,7 @@ namespace WebxUi\CatalogProperties;
 
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategorySources;
@@ -13,6 +14,7 @@ use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Exchange\ExchangeColumns;
@@ -24,6 +26,7 @@ use WebxUi\Catalog\Panel\ProductColumns;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Search\SearchContributors;
 use WebxUi\Catalog\Storefront\StorefrontParts;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogProperties\Catalog\ProductValues;
 use WebxUi\CatalogProperties\Catalog\Properties;
 use WebxUi\CatalogProperties\Catalog\PropertiesDocument;
@@ -36,6 +39,7 @@ use WebxUi\CatalogProperties\Mcp\PropertiesResource;
 use WebxUi\CatalogProperties\Mcp\PropertyTools;
 use WebxUi\CatalogProperties\Models\Property;
 use WebxUi\CatalogProperties\Models\PropertyGroup;
+use WebxUi\CatalogProperties\Models\PropertyInterval;
 use WebxUi\CatalogProperties\Models\PropertyValue;
 use WebxUi\CatalogProperties\Panel\PropertiesModule;
 use WebxUi\CatalogProperties\Panel\PropertyColumns;
@@ -85,6 +89,7 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-properties');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-properties');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         $this->registerScreens();
         $this->registerHistory();
@@ -209,14 +214,39 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         // A branch moved inherits another branch's properties: every set is stale, and the
         // products of the branch show and are found by other ones (§3.2).
         $events->listen('eloquent.moved: '.Category::class, function (Category $category): void {
+            // The cached sets go with the `catalog` group, which the move itself bumps; what
+            // this process holds of them must go now.
             $sets = $this->app->make(PropertySets::class);
-            $sets->forget();
+            $sets->reset();
             $sets->touchSubtree($category);
         });
+
+        // What a request read of the values — the names and the slugs in a filter — is from
+        // before a value was written.
+        foreach (CacheGroups::EVENTS as $event) {
+            $events->listen('eloquent.'.$event.': '.PropertyValue::class, static fn () => RequestMemo::forget('property-values.'));
+        }
 
         $events->listen(JobProcessing::class, function (): void {
             $this->app->make(Properties::class)->reset();
             $this->app->make(PropertySets::class)->reset();
+            $this->app->make(ProductProperties::class)->reset();
         });
+
+        // One page's values are that page's: the next request of the same process starts clean.
+        $events->listen(RequestHandled::class, function (): void {
+            $this->app->make(ProductProperties::class)->reset();
+        });
+    }
+
+    /**
+     * What this satellite keeps — the list of properties, the sets by category — lives in the
+     * `catalog` cache group (WEBX_UI_CACHE.md), and the reference books that make it up move the
+     * group when saved. A set is written without a model's event and says so itself
+     * (`PropertySets::save()`), as does a reorder (`Properties::reordered()`).
+     */
+    private function registerCacheGroups(): void
+    {
+        $this->app->make(CacheGroups::class)->bumpOn(Properties::GROUP, Property::class, PropertyValue::class, PropertyGroup::class, PropertyInterval::class);
     }
 }

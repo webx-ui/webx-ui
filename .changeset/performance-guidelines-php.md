@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+Guidelines that keep a site fast, and two checks that hold them (webx-ui#16, stage 5). `themes`: `webx:theme:check` names an `<img>` in the views or block templates of a theme layer that has no `width` and `height` (rule 37 — the page jumps when the picture arrives; a size under a Blade condition counts, a tag that takes `$attributes` is not judged), and notes a font that is `.woff` rather than `.woff2` without failing (rule 39); `RULES.md` has six new rules, 36–41, on pictures, their size, what loads first, fonts, scripts on demand and measuring. **A theme of your own with `<img>` tags without a size now fails the check** — add `width`/`height`. `module-admin`: `webx:make-module` also writes `tests/Feature/Cms/<Name>ModulePerformanceTest.php`, a query-budget and a freshness test to fill in (incomplete until then; kept on a second run without `--force`). The guide `guide/performance` collects the rules for modules: N+1, cache groups and their resets, indexes, pagination, budget and freshness tests.

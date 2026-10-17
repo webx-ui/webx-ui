@@ -33,6 +33,7 @@
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
         "php": "^8.4",
+        "webx-ui/cache": "^0.76.0",
         "webx-ui/localization": "^0.76.0",
         "webx-ui/mcp": "^0.76.0",
         "webx-ui/module-admin": "^0.76.0",

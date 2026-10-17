@@ -25,7 +25,8 @@ catalogue's name and scopes. For the filter, its facets and the storefront views
   (tabs `main`, `texts-tab`, `recommended-tab`, `seo-tab`, `history-tab`). The API is under
   `/api/cms/catalog/landings` (with `count`, `facets`, `generate`, `publish`, `unpublish`,
   `restore`). It has no permissions of its own: `catalog.view` reads and `catalog.manage`
-  writes.
+  writes. A landing saved moves the `catalog` cache group. Query budgets of its pages:
+  `tests/PerformanceTest.php`.
 - **Command** `webx:catalog-landings:count` (`--all`), which runs on the package's own schedule:
   every fifteen minutes, and with `--all` nightly.
 - **MCP** tools `catalog_landings_list`, `_get`, `_facets`, `_count`, `_create`, `_update`,
@@ -71,6 +72,8 @@ Landing form node ids: `naming`, `name`, `category`, `set`, `slug`, `display`, `
 - `php artisan webx:catalog-landings:count --all`, then the count in the panel's list.
 - With MCP: read `catalog://landings` first, and use `catalog_landings_facets` to get the codes
   and slugs a set is written in. Every write takes `dry_run: true`.
+- `tests/PerformanceTest.php` holds the query budget of a landing, a category and a product with
+  collections, the sitemap file and the panel's list; a change that needs more says why there.
 
 ## Read more
 

@@ -11,6 +11,7 @@ use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Snippets\Checks\PlacesCheck;
 use WebxUi\Snippets\Doctor\SnippetPlaces;
@@ -57,10 +58,9 @@ class SnippetsServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-snippets');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-snippets');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         Blade::component('webx-snippets', Place::class);
-
-        $this->forgetOnChange();
         $this->registerScreens();
         $this->registerHistory();
 
@@ -77,19 +77,6 @@ class SnippetsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-snippets'),
         ], 'webx-snippets-lang');
-    }
-
-    /** Every write the site would print differently after: the cached list goes (§5.7). */
-    private function forgetOnChange(): void
-    {
-        $forget = function (): void {
-            $this->app->make(Codes::class)->forget();
-        };
-
-        Snippet::saved($forget);
-        Snippet::deleted($forget);
-        Snippet::restored($forget);
-        Snippet::forceDeleted($forget);
     }
 
     /**
@@ -127,5 +114,18 @@ class SnippetsServiceProvider extends ServiceProvider
             module: SnippetsModule::ID,
             label: 'webx-snippets::module.snippet',
         );
+    }
+
+    /**
+     * The `snippets` cache group (WEBX_UI_CACHE.md §2): a snippet saved moves it, and a move
+     * forgets the codes kept on a key of their own — so that «reset the site cache» reaches them
+     * until they live on a versioned key.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare(Codes::GROUP, 'webx-snippets::module.title');
+        $groups->bumpOn(Codes::GROUP, Snippet::class);
     }
 }

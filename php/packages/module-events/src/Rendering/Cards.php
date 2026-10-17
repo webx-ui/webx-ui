@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Events\Rendering;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use WebxUi\Events\Models\Event;
@@ -34,8 +35,12 @@ use WebxUi\Routing\Models\Route;
  */
 final class Cards
 {
-    /** What a list of events is loaded with, so that no card goes back to the database. */
-    public const RELATIONS = ['routes', 'categories.routes'];
+    /**
+     * What a list of events is loaded with, so that no card goes back to the database. The
+     * addresses of the categories are not here: {@see events()} reads them for the whole list at
+     * once, and skips the ones the page around the list loaded already ({@see ListPage}).
+     */
+    public const RELATIONS = ['routes', 'categories'];
 
     public function __construct(
         private readonly MediaFiles $files,
@@ -49,6 +54,7 @@ final class Cards
     public function events(array $events, string $locale): array
     {
         $paths = [];
+        $categories = [];
 
         foreach ($events as $event) {
             foreach (is_array($event->gallery) ? $event->gallery : [] as $picture) {
@@ -56,10 +62,23 @@ final class Cards
                     $paths[] = $picture['path'];
                 }
             }
+
+            if ($event->relationLoaded('categories')) {
+                foreach ($event->getRelation('categories') as $category) {
+                    $categories[] = $category;
+                }
+            }
         }
 
         // Every picture of the list in one query of the library rather than one per card.
         $this->files->load($paths);
+
+        // And the addresses of every category of the list in one query of the registry — the
+        // same category under two events is two instances, and the registry is asked once for
+        // the id. None at all when the page loaded them already.
+        if ($categories !== []) {
+            (new EloquentCollection($categories))->loadMissing('routes');
+        }
 
         return array_map(fn (Event $event): array => $this->event($event, $locale), $events);
     }

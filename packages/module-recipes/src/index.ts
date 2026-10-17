@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 export {
   recipes,
   recipeCategoriesOptions,
@@ -13,9 +14,9 @@ export {
   useRecipeEditor,
   type RecipeEditorContext,
 } from './editor'
-export { default as WxRecipesPage } from './RecipesPage.vue'
+export const WxRecipesPage = defineAsyncComponent(() => import('./RecipesPage.vue'))
 export { default as WxRecipeCreateDialog } from './RecipeCreateDialog.vue'
-export { default as WxRecipeEditorPage } from './RecipeEditorPage.vue'
+export const WxRecipeEditorPage = defineAsyncComponent(() => import('./RecipeEditorPage.vue'))
 export { default as WxRecipeHistory } from './RecipeHistory.vue'
 export type {
   RecipeConflict,

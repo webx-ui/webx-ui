@@ -11,7 +11,7 @@ use WebxUi\Themes\Vocabulary;
 /**
  * What an agent reads before it touches a theme (THEMES §16) names everything there is: every
  * `webx:theme:*` command and every key of the manifest in the engine's AGENTS.md, every token of
- * the vocabulary in theme-default's, and the 35 rules in RULES.md, numbered as the check and the
+ * the vocabulary in theme-default's, and the 41 rules in RULES.md, numbered as the check and the
  * contract name them. A command or a token added without a line here is one no agent will use.
  */
 final class AgentsCoverageTest extends TestCase
@@ -40,13 +40,13 @@ final class AgentsCoverageTest extends TestCase
     }
 
     #[Test]
-    public function the_rules_are_the_thirty_five_of_the_spec_in_order(): void
+    public function the_rules_are_the_forty_one_of_the_spec_in_order(): void
     {
         $rules = (string) file_get_contents(dirname(__DIR__).'/RULES.md');
 
         preg_match_all('/^(\d+)\. (.*)$/m', $rules, $matches);
 
-        $this->assertSame(range(1, 35), array_map('intval', $matches[1]));
+        $this->assertSame(range(1, 41), array_map('intval', $matches[1]));
 
         foreach ($matches[2] as $index => $first) {
             $this->assertMatchesRegularExpression('/\*\*Do( not)?\*\*/', $first, 'rule '.($index + 1).' starts with **Do** or **Do not**');

@@ -24,6 +24,7 @@ final class MakeModuleCommandTest extends TestCase
     {
         (new Filesystem)->deleteDirectory($this->directory);
         (new Filesystem)->deleteDirectory($this->app->resourcePath('demo'));
+        (new Filesystem)->deleteDirectory($this->app->basePath('tests/Feature/Cms'));
 
         parent::tearDown();
     }
@@ -95,5 +96,40 @@ final class MakeModuleCommandTest extends TestCase
         $this->artisan('webx:make-module', ['name' => 'MediaLibrary'])->assertSuccessful();
 
         $this->assertFileExists($this->app->resourcePath('demo/media-library/.gitkeep'));
+    }
+
+    #[Test]
+    public function it_writes_a_query_budget_test_beside_the_module(): void
+    {
+        $this->artisan('webx:make-module', ['name' => 'MediaLibrary'])->assertSuccessful();
+
+        $path = $this->app->basePath('tests/Feature/Cms/MediaLibraryModulePerformanceTest.php');
+        $this->assertFileExists($path);
+
+        $contents = (string) file_get_contents($path);
+
+        $this->assertStringContainsString('namespace Tests\\Feature\\Cms;', $contents);
+        $this->assertStringContainsString('class MediaLibraryModulePerformanceTest extends TestCase', $contents);
+        $this->assertStringContainsString('use CountsQueries;', $contents);
+        $this->assertStringContainsString("\$this->get('/media-library')", $contents);
+        $this->assertStringNotContainsString('{{', $contents);
+
+        // Valid PHP, though it cannot be loaded here: Tests\TestCase is the site's.
+        exec(escapeshellarg(PHP_BINARY).' -l '.escapeshellarg($path).' 2>&1', $output, $status);
+        $this->assertSame(0, $status, implode("\n", $output));
+    }
+
+    #[Test]
+    public function a_budget_test_somebody_filled_in_is_kept_without_force(): void
+    {
+        $this->artisan('webx:make-module', ['name' => 'Pages'])->assertSuccessful();
+
+        $path = $this->app->basePath('tests/Feature/Cms/PagesModulePerformanceTest.php');
+        file_put_contents($path, '<?php // filled in');
+
+        (new Filesystem)->delete($this->directory.'/Modules/PagesModule.php');
+        $this->artisan('webx:make-module', ['name' => 'Pages'])->assertSuccessful();
+
+        $this->assertSame('<?php // filled in', file_get_contents($path));
     }
 }

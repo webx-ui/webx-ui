@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use WebxUi\Blocks\BlockType;
-use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Rendering\Calls;
 use WebxUi\Blocks\Rendering\Renderer;
@@ -103,8 +102,9 @@ class Block extends Model
         // registry's list; the pointers move through `saveVersion()` and `publish()`, which
         // save the row too. The thumbnails go with it, every one of them: a type that calls this
         // one prints it in its own picture.
+        // The registry itself lives in the `blocks` cache group, which the provider moves on
+        // every save of this model; only the thumbnails keep a generation of their own.
         $forget = static function (): void {
-            Container::getInstance()->make(BlockTypes::class)->forget();
             Container::getInstance()->make(Thumbnails::class)->forget();
         };
 

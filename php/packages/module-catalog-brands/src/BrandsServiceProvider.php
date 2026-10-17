@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\CatalogBrands;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,7 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Exchange\ExchangeColumns;
@@ -27,6 +29,7 @@ use WebxUi\Catalog\Panel\ProductColumns;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Rendering\ProductQuery;
 use WebxUi\Catalog\Storefront\StorefrontParts;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogBrands\Catalog\BrandAction;
 use WebxUi\CatalogBrands\Catalog\BrandColumn;
 use WebxUi\CatalogBrands\Catalog\BrandDocument;
@@ -86,6 +89,7 @@ class BrandsServiceProvider extends ServiceProvider
         $this->registerCatalog();
         $this->registerQuery();
         $this->registerStorefront();
+        $this->registerCacheGroups();
 
         $this->app->make(LinkSources::class)->register(new CategoryLinkSource(
             Brand::class,
@@ -283,6 +287,21 @@ class BrandsServiceProvider extends ServiceProvider
      * opens them (WEBX_UI_SITE_BAR.md, §6) — one entry for every type this section gives an
      * address, under the same type, because an address is what the bar starts from.
      */
+    /**
+     * A brand is a reference book of the `catalog` cache group (WEBX_UI_CACHE.md): its save moves
+     * the group. What this request read of the brands — the lines on the cards, the names in the
+     * filter — is forgotten with it.
+     */
+    private function registerCacheGroups(): void
+    {
+        $this->app->make(CacheGroups::class)->bumpOn('catalog', Brand::class);
+        $events = $this->app->make(Dispatcher::class);
+
+        foreach (CacheGroups::EVENTS as $event) {
+            $events->listen('eloquent.'.$event.': '.Brand::class, static fn () => RequestMemo::forget('brands.'));
+        }
+    }
+
     private function registerSiteBar(): void
     {
         $bar = $this->app->make(SiteBar::class);

@@ -105,7 +105,14 @@ final class VacancyQuery extends RecordQuery
             ));
         }
 
-        $cards = Container::getInstance()->make(Cards::class);
+        // Every card once, before the groups: a card is the same in whichever group it stands,
+        // and building them group by group would read the application forms once per group.
+        $cards = [];
+
+        foreach (Container::getInstance()->make(Cards::class)->vacancies($vacancies, $locale) as $card) {
+            $cards[(int) $card['id']] = $card;
+        }
+
         $groups = [];
 
         foreach ($categories as $category) {
@@ -122,7 +129,7 @@ final class VacancyQuery extends RecordQuery
                 'id' => $id,
                 'slug' => is_string($slug) && $slug !== '' ? $slug : null,
                 'title' => $category->displayName($locale),
-                'vacancies' => $cards->vacancies($this->limited($members), $locale),
+                'vacancies' => $this->pick($cards, $members),
             ];
         }
 
@@ -134,7 +141,7 @@ final class VacancyQuery extends RecordQuery
                     'id' => null,
                     'slug' => null,
                     'title' => (string) Container::getInstance()->make(Translator::class)->get('webx-vacancies::site.other', [], $locale),
-                    'vacancies' => $cards->vacancies($this->limited($others), $locale),
+                    'vacancies' => $this->pick($cards, $others),
                 ];
             }
         }
@@ -189,13 +196,21 @@ final class VacancyQuery extends RecordQuery
     }
 
     /**
-     * @param  list<Vacancy>  $vacancies
-     * @return list<Vacancy>
+     * The cards of these members of a group, in their order and no more of them than `take()`
+     * allows — `take()` counts per group.
+     *
+     * @param  array<int, array<string, mixed>>  $cards  by id
+     * @param  list<Vacancy>  $members
+     * @return list<array<string, mixed>>
      */
-    private function limited(array $vacancies): array
+    private function pick(array $cards, array $members): array
     {
         $limit = $this->limit();
+        $members = $limit === null ? $members : array_slice($members, 0, $limit);
 
-        return $limit === null ? $vacancies : array_slice($vacancies, 0, $limit);
+        return array_values(array_filter(array_map(
+            static fn (Vacancy $vacancy): ?array => $cards[(int) $vacancy->getKey()] ?? null,
+            $members,
+        )));
     }
 }

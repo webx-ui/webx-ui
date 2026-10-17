@@ -5,4 +5,5 @@ declare(strict_types=1);
 return [
     'title' => 'Блоки',
     'regions' => 'Зоны сайта',
+    'usage' => 'Где используются блоки',
 ];

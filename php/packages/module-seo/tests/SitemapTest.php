@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
@@ -202,6 +203,8 @@ final class SitemapTest extends TestCase
         $this->assertStringNotContainsString('/waiting<', $this->file());
 
         $this->travel(86401)->seconds();
+        // The next request: what this one read is kept for this one only.
+        $this->app->make(CacheGroups::class)->forgetMemo();
 
         $this->assertStringContainsString('/waiting<', $this->file());
     }

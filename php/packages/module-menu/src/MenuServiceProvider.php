@@ -15,8 +15,10 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Blocks\BlockOffers;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Menu\Audit\MenuLinks;
 use WebxUi\Menu\Models\Menu;
+use WebxUi\Menu\Models\MenuItem;
 use WebxUi\Menu\Panel\MenuModule;
 use WebxUi\Menu\Rendering\Builder;
 
@@ -57,6 +59,7 @@ class MenuServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-menu');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-menu');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         // Which menu item leads to an error or a redirect, for the site audit when it is
         // installed (§7 of its spec).
@@ -156,5 +159,19 @@ class MenuServiceProvider extends ServiceProvider
         $document['schema'] = $schema;
 
         return $document;
+    }
+
+    /**
+     * The `menu` cache group (WEBX_UI_CACHE.md §2): a menu or an item saved, deleted or moved
+     * moves it, and the built trees live on its versioned key together with the address
+     * registry's ({@see MenuCache}). The link sources are the subscriber's business
+     * ({@see CacheSubscriber}).
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare(MenuCache::GROUP, 'webx-menu::module.title');
+        $groups->bumpOn(MenuCache::GROUP, Menu::class, MenuItem::class);
     }
 }

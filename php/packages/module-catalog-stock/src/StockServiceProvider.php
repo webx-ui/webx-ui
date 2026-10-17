@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogStock;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Exchange\ExchangeColumns;
@@ -20,6 +22,7 @@ use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Purchase\Purchasability;
 use WebxUi\Catalog\Rendering\ProductQuery;
 use WebxUi\Catalog\Storefront\StorefrontParts;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogStock\Catalog\Stock;
 use WebxUi\CatalogStock\Catalog\StockAction;
 use WebxUi\CatalogStock\Catalog\StockColumn;
@@ -58,6 +61,7 @@ class StockServiceProvider extends ServiceProvider
 
         $this->registerScreens();
         $this->registerCatalog();
+        $this->registerCacheGroups();
         $this->registerQuery();
         $this->app->make(ModuleRegistry::class)->register($this->app->make(StockModule::class));
 
@@ -114,6 +118,21 @@ class StockServiceProvider extends ServiceProvider
      * The refusal is registered in the ordinary order: after the core's "not on sale", before its
      * "price on request", which the core registers as the last word whenever this boots.
      */
+    /**
+     * A stock status is a reference book of the `catalog` cache group (WEBX_UI_CACHE.md): its save moves
+     * the group. What this request read of them — the lines on the cards, the names in the
+     * filter — is forgotten with it.
+     */
+    private function registerCacheGroups(): void
+    {
+        $this->app->make(CacheGroups::class)->bumpOn('catalog', StockStatus::class);
+        $events = $this->app->make(Dispatcher::class);
+
+        foreach (CacheGroups::EVENTS as $event) {
+            $events->listen('eloquent.'.$event.': '.StockStatus::class, static fn () => RequestMemo::forget('stock.'));
+        }
+    }
+
     private function registerCatalog(): void
     {
         $this->app->make(ProductParts::class)->register(new StockPart);

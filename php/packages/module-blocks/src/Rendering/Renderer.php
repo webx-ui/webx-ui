@@ -102,7 +102,29 @@ final class Renderer
      */
     public function render(?iterable $blocks, ?object $entity = null): HtmlString
     {
+        $blocks = $this->preloaded($blocks);
+
         return new HtmlString($this->list($blocks, $entity, 0));
+    }
+
+    /**
+     * The list, walked once for what its fields load ahead ({@see Values::preload()}) — the
+     * pictures of every block in one query — and materialised, since a generator walked here
+     * would have nothing left for the render.
+     *
+     * @param  iterable<array-key, mixed>|null  $blocks
+     * @return array<array-key, mixed>|null
+     */
+    private function preloaded(?iterable $blocks): ?array
+    {
+        if ($blocks === null) {
+            return null;
+        }
+
+        $blocks = is_array($blocks) ? $blocks : iterator_to_array($blocks);
+        $this->values->preload($blocks, fn (string $slug): ?BlockType => $this->preview ? $this->types->draft($slug) : $this->types->find($slug));
+
+        return $blocks;
     }
 
     /**
@@ -131,7 +153,7 @@ final class Renderer
         $this->rootCalls = [];
 
         try {
-            $html = $this->list($blocks, $entity, 0);
+            $html = $this->list($this->preloaded($blocks), $entity, 0);
 
             return new RegionRender($html, $this->used, $this->regionFailures);
         } finally {

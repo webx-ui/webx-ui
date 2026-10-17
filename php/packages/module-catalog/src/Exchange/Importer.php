@@ -21,6 +21,7 @@ use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\Journal;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Exchange\Columns\ImagesColumn;
 use WebxUi\Catalog\Models\Product;
@@ -62,6 +63,7 @@ final class Importer
         private readonly Config $config,
         private readonly Container $container,
         private readonly Locales $locales,
+        private readonly CacheGroups $groups,
     ) {}
 
     /**
@@ -743,6 +745,9 @@ final class Importer
                 }
 
                 $this->catalog->touch($chunk);
+                // A mass update raises no model event: the `catalog` group is told here, once per
+                // chunk, after its commit.
+                $this->groups->bump('catalog');
             });
         }
 

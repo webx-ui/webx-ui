@@ -8,15 +8,11 @@ import { markRaw } from 'vue'
 import { createBlocksApi } from './api'
 import { WxTextarea } from '@webx-ui/core'
 import BlockDataField from './BlockDataField.vue'
-import BlockEditorPage from './BlockEditorPage.vue'
 import BlocksField from './BlocksField.vue'
-import BlocksPage from './BlocksPage.vue'
 import BlocksSiteBarTab from './BlocksSiteBarTab.vue'
 import FragmentField from './FragmentField.vue'
 import { seedBlocksMessages } from './i18n'
-import RegionEditorPage from './RegionEditorPage.vue'
 import RegionHistory from './RegionHistory.vue'
-import RegionsPage from './RegionsPage.vue'
 
 export interface BlocksOptions {
   /** Where the section lives inside the panel. */
@@ -54,11 +50,16 @@ export function blocks(options: BlocksOptions = {}): AdminModule {
       },
     ],
     routes: [
-      { path, name: 'webx.blocks', component: BlocksPage, props: { base: path } },
+      {
+        path,
+        name: 'webx.blocks',
+        component: () => import('./BlocksPage.vue'),
+        props: { base: path },
+      },
       {
         path: `${path}/:id(\\d+)`,
         name: 'webx.blocks.edit',
-        component: BlockEditorPage,
+        component: () => import('./BlockEditorPage.vue'),
         props: { base: path },
       },
     ],
@@ -111,11 +112,16 @@ export function regions(options: RegionsOptions = {}): AdminModule {
     blockLabels,
     path,
     routes: [
-      { path, name: 'webx.regions', component: RegionsPage, props: { base: path } },
+      {
+        path,
+        name: 'webx.regions',
+        component: () => import('./RegionsPage.vue'),
+        props: { base: path },
+      },
       {
         path: `${path}/:name`,
         name: 'webx.regions.edit',
-        component: RegionEditorPage,
+        component: () => import('./RegionEditorPage.vue'),
         props: { base: path },
       },
     ],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Blog\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
@@ -40,7 +41,12 @@ final class ArticleController
 
     public function index(Request $request): JsonResponse
     {
-        $page = $this->list->build($request)->paginate(
+        // `related` and `seo` are for the revision every row carries — only the ids of the one,
+        // the card of the other — read for the page at once rather than per row.
+        $page = $this->list->build($request)->with([
+            'seo',
+            'related' => static fn (BelongsToMany $related): BelongsToMany => $related->select('blog_articles.id'),
+        ])->paginate(
             min(100, max(5, (int) $request->integer('per_page', ArticleList::PER_PAGE))),
         );
 
@@ -146,7 +152,7 @@ final class ArticleController
 
     private function loaded(Article $article): Article
     {
-        return $article->loadMissing(['routes', 'rubrics', 'tags', 'author', 'cover']);
+        return $article->loadMissing(['routes', 'rubrics', 'tags', 'author', 'cover', 'seo']);
     }
 
     private function author(Request $request): ?int

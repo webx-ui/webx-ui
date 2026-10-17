@@ -1,7 +1,5 @@
 import { categoryRoutes, type AdminModule, type CategoriesOptions } from '@webx-ui/module-admin'
-import ServiceEditorPage from './ServiceEditorPage.vue'
 import ServiceHistory from './ServiceHistory.vue'
-import ServicesPage from './ServicesPage.vue'
 
 export interface ServicesOptions {
   /** Where the catalogue lives inside the panel. The categories sit under it. */
@@ -62,11 +60,16 @@ export function services(options: ServicesOptions = {}): AdminModule[] {
       id: 'services',
       path,
       routes: [
-        { path, name: 'webx.services', component: ServicesPage, props: { base: path } },
+        {
+          path,
+          name: 'webx.services',
+          component: () => import('./ServicesPage.vue'),
+          props: { base: path },
+        },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.services.edit',
-          component: ServiceEditorPage,
+          component: () => import('./ServiceEditorPage.vue'),
           props: { base: path },
         },
       ],

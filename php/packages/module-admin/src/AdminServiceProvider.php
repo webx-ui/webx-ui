@@ -23,11 +23,16 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Backups\Backups;
+use WebxUi\Admin\Cache\CacheModule;
+use WebxUi\Admin\Cache\CacheReset;
+use WebxUi\Admin\Cache\McpCacheModule;
 use WebxUi\Admin\Categories\CategoriesType;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Console\BackupCommand;
 use WebxUi\Admin\Console\BootCommand;
+use WebxUi\Admin\Console\CachePruneCommand;
+use WebxUi\Admin\Console\CacheResetCommand;
 use WebxUi\Admin\Console\DemoCommand;
 use WebxUi\Admin\Console\DoctorCommand;
 use WebxUi\Admin\Console\InstallCommand;
@@ -51,6 +56,7 @@ use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Editing\Purged;
 use WebxUi\Admin\Editing\RecordEvents;
+use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\KeepOutOfSearch;
 use WebxUi\Admin\Gate\Openings;
@@ -100,7 +106,10 @@ use WebxUi\Admin\Support\Parts;
 use WebxUi\Admin\Uploads\FreeSpace;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Admin\Uploads\Uploads;
+use WebxUi\Cache\CacheGroups;
+use WebxUi\Cache\CacheServiceProvider;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Translations\DictionaryBuilder;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Routing\SiteUrl;
 
@@ -147,6 +156,11 @@ class AdminServiceProvider extends ServiceProvider
 
         // What modules add to `webx:doctor` after the frame's own checks.
         $this->app->singleton(DoctorChecks::class);
+
+        // The cache groups and their versions (WEBX_UI_CACHE.md) are `webx-ui/cache`'s: registered
+        // here as well as by discovery, so that the registry is one singleton before any provider
+        // — this one, a module's, a test's list — declares a group into it.
+        $this->app->register(CacheServiceProvider::class);
 
         // Whose `storage` it is: what a command run as root hands its files back to.
         $this->app->bind(Ownership::class, static fn (): Ownership => new Ownership(storage_path()));
@@ -294,6 +308,8 @@ class AdminServiceProvider extends ServiceProvider
                 $app->bound(BrandingSource::class) ? $app->make(BrandingSource::class) : null,
                 // The language prefix of the site's home, when there is a registry to ask.
                 $app->bound(SiteUrls::class) ? $app->make(SiteUrls::class) : null,
+                $app->make(CacheGroups::class),
+                $app->make(DictionaryBuilder::class),
             ),
         );
     }
@@ -312,6 +328,8 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerBackupSchedule();
         $this->registerHistorySchedule();
         $this->registerUploadsSchedule();
+        $this->registerCache();
+        $this->registerCacheSchedule();
         $this->registerGate();
         $this->registerPurgedAnswer();
         $this->registerSiteBar();
@@ -347,6 +365,8 @@ class AdminServiceProvider extends ServiceProvider
         $this->commands([
             BackupCommand::class,
             BootCommand::class,
+            CachePruneCommand::class,
+            CacheResetCommand::class,
             DemoCommand::class,
             DoctorCommand::class,
             InstallCommand::class,
@@ -504,6 +524,59 @@ class AdminServiceProvider extends ServiceProvider
 
             $schedule->command(PruneHistoryCommand::class)
                 ->dailyAt((string) $config->get('webx-admin.history.prune_at', '03:40'))
+                ->onOneServer()
+                ->withoutOverlapping();
+        });
+    }
+
+    /**
+     * The groups every site has (WEBX_UI_CACHE.md §2.1) and the section «System → Cache» with its
+     * reset. The languages, the addresses and the theme are declared, with their models, by the
+     * libraries that own them — `localization`, `routing`, `themes` — which do not know the panel;
+     * the frame gives them the words the screen shows (the first title given stays, whoever came
+     * first), and owns `screens`. The module is the one with the agent's tool where `webx-ui/mcp`
+     * is installed; the frame does not require it.
+     */
+    private function registerCache(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare(CacheGroups::LOCALES, 'webx-admin::cache.group-locales');
+        $groups->declare(CacheGroups::ROUTES, 'webx-admin::cache.group-routes');
+        $groups->declare(CacheGroups::SCREENS, 'webx-admin::cache.group-screens');
+        $groups->declare(CacheGroups::THEME, 'webx-admin::cache.group-theme');
+
+        // A rewrite of stored content — paths of optimised images — touches rows of every module
+        // without a single model event: everything built from them is stale at once.
+        $this->app->make(Dispatcher::class)->listen(StoredContentRewritten::class, static function () use ($groups): void {
+            $groups->bumpAll();
+        });
+
+        $this->app->make(HistoryTypes::class)->register(
+            CacheReset::TYPE,
+            fields: ['groups' => 'webx-admin::cache.history-groups'],
+            permission: [CacheModule::VIEW, CacheModule::RESET],
+            module: CacheModule::ID,
+            label: 'webx-admin::cache.title',
+        );
+
+        $this->app->make(ModuleRegistry::class)->register(
+            interface_exists(ProvidesMcpTools::class)
+                ? $this->app->make(McpCacheModule::class)
+                : $this->app->make(CacheModule::class),
+        );
+    }
+
+    /**
+     * The hourly sweep of the `database` cache store: Laravel deletes an expired row only when
+     * it is asked for, and an entry under a version nobody reads any more is never asked for.
+     * On any other store the command is a no-op and says so.
+     */
+    private function registerCacheSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command(CachePruneCommand::class)
+                ->hourly()
                 ->onOneServer()
                 ->withoutOverlapping();
         });

@@ -79,6 +79,20 @@ class EntityVersion extends Model
     }
 
     /**
+     * Every column but the snapshot: a line of the history is a number, a date and a name, and
+     * the payload of a page made of blocks is kilobytes read and decoded for each line of it.
+     *
+     * @param  Builder<EntityVersion>  $query
+     * @return Builder<EntityVersion>
+     */
+    public function scopeWithoutPayload(Builder $query): Builder
+    {
+        return $query->select(array_map($this->qualifyColumn(...), [
+            'id', 'versionable_type', 'versionable_id', 'number', 'kind', 'is_pinned', 'author_id', 'source', 'comment', 'created_at',
+        ]));
+    }
+
+    /**
      * @param  Builder<EntityVersion>  $query
      * @return Builder<EntityVersion>
      */

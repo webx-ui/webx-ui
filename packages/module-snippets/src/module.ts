@@ -1,5 +1,4 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import SnippetsPage from './SnippetsPage.vue'
 
 export interface SnippetsOptions {
   /** Where the codes live inside the panel. */
@@ -20,6 +19,13 @@ export function snippets(options: SnippetsOptions = {}): AdminModule {
   return {
     id: 'snippets',
     path,
-    routes: [{ path, name: 'webx.snippets', component: SnippetsPage, props: { base: path } }],
+    routes: [
+      {
+        path,
+        name: 'webx.snippets',
+        component: () => import('./SnippetsPage.vue'),
+        props: { base: path },
+      },
+    ],
   }
 }

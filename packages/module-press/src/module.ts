@@ -1,5 +1,4 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import PressPage from './PressPage.vue'
 
 export interface PressOptions {
   /** Where the outlets live inside the panel. */
@@ -20,6 +19,13 @@ export function press(options: PressOptions = {}): AdminModule {
     path,
     // One route: the open outlet is in the address (`?outlet=`), beside the list it was opened
     // from, so a link to it is a link to both.
-    routes: [{ path, name: 'webx.press', component: PressPage, props: { base: path } }],
+    routes: [
+      {
+        path,
+        name: 'webx.press',
+        component: () => import('./PressPage.vue'),
+        props: { base: path },
+      },
+    ],
   }
 }

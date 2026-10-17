@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 export { faq, faqCategoriesOptions, type FaqOptions } from './module'
 export { createFaqApi, FAQ_API, type FaqApi } from './api'
 export { faqMessages } from './messages'
@@ -7,7 +8,7 @@ export {
   useQuestionEditor,
   type QuestionEditorContext,
 } from './editor'
-export { default as WxFaqQuestionsPage } from './QuestionsPage.vue'
+export const WxFaqQuestionsPage = defineAsyncComponent(() => import('./QuestionsPage.vue'))
 export { default as WxFaqQuestionPane } from './QuestionPane.vue'
 export { default as WxFaqAnchor } from './AnchorField.vue'
 export type {

@@ -1,9 +1,7 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import ChannelPage from './ChannelPage.vue'
 import ChannelsField from './ChannelsField.vue'
 import ChatsField from './ChatsField.vue'
 import EmailsField from './EmailsField.vue'
-import NotificationsPage from './NotificationsPage.vue'
 import TemplateField from './TemplateField.vue'
 
 export interface NotificationsOptions {
@@ -31,17 +29,22 @@ export function notifications(options: NotificationsOptions = {}): AdminModule {
     id: 'notifications',
     path,
     routes: [
-      { path, name: 'webx.notifications', component: NotificationsPage, props: { base: path } },
+      {
+        path,
+        name: 'webx.notifications',
+        component: () => import('./NotificationsPage.vue'),
+        props: { base: path },
+      },
       {
         path: `${path}/channels/new`,
         name: 'webx.notifications.new',
-        component: ChannelPage,
+        component: () => import('./ChannelPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/channels/:id(\\d+)`,
         name: 'webx.notifications.channel',
-        component: ChannelPage,
+        component: () => import('./ChannelPage.vue'),
         props: { base: path },
       },
     ],

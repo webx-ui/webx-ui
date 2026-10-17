@@ -17,8 +17,9 @@ final class ModuleRegistryTest extends TestCase
         // pages has order 10, media takes the default 0.
         $this->register(new PagesModule, new MediaModule);
 
+        // The frame's own two stand around them: the journal's tools at 0, «Cache» at 730.
         $this->assertSame(
-            ['media-library', 'pages'],
+            ['history', 'media-library', 'pages', 'cache'],
             array_map(fn ($module) => $module->id(), $this->registry()->all()),
         );
     }
@@ -46,12 +47,12 @@ final class ModuleRegistryTest extends TestCase
     #[Test]
     public function it_answers_about_what_it_holds(): void
     {
-        $this->assertSame(0, $this->registry()->count());
+        $this->assertSame(2, $this->registry()->count(), 'the frame registers its own two');
         $this->assertFalse($this->registry()->has('pages'));
 
         $this->register(new PagesModule);
 
-        $this->assertSame(1, $this->registry()->count());
+        $this->assertSame(3, $this->registry()->count());
         $this->assertTrue($this->registry()->has('pages'));
         $this->assertSame('pages', $this->registry()->get('pages')->id());
     }

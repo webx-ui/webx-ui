@@ -39,6 +39,7 @@ describe('the English here matches the English the server ships', () => {
     'collections',
     'relations',
     'site-bar',
+    'cache',
   ])('%s', (group) => {
     const ours = Object.keys(adminMessages[group] ?? {}).sort()
 

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Models\Route;
@@ -23,9 +24,12 @@ use WebxUi\Routing\Models\Route;
  * fallback is by definition tried when nothing else matched, so `/sign-up` and `/account/orders`
  * win without a word being said about registration order (§8.1).
  *
- * The cost of an address is one indexed query plus loading the entity. There is no cache and
- * that is a decision, not an omission (§2, decision 13): invalidating half a million rows every
- * time a category is renamed costs more than the lookup it saves.
+ * The cost of an address is one indexed query plus loading the entity. The query is kept in
+ * the `routes` cache group (WEBX_UI_CACHE.md): any row of the registry written moves the group,
+ * so a renamed category forgets every address at once rather than naming half a million keys —
+ * which is what decision 13 of §2 ruled out — and the lookups are read back on demand. Only
+ * addresses that are held are kept; a miss is a query, so that a crawl of random paths fills
+ * nothing.
  */
 class Resolver
 {
@@ -47,6 +51,7 @@ class Resolver
         private readonly Container $container,
         private readonly Misses $misses,
         private readonly Spelling $spelling,
+        private readonly CacheGroups $cache,
     ) {}
 
     public function resolve(Request $request): Response
@@ -118,6 +123,27 @@ class Resolver
      * prefix of everything — cannot swallow the site.
      */
     public function match(string $locale, string $path): ?Resolution
+    {
+        $name = 'routes.match:'.$locale.':'.$path;
+        $kept = $this->cache->get($name, [CacheGroups::ROUTES], localized: false);
+
+        if (is_array($kept) && is_array($kept['row'] ?? null) && is_string($kept['tail'] ?? null)) {
+            /** @var Route $row */
+            $row = (new Route)->newFromBuilder($kept['row']);
+
+            return new Resolution($row, $kept['tail']);
+        }
+
+        $found = $this->lookupRows($locale, $path);
+
+        if ($found !== null) {
+            $this->cache->put($name, [CacheGroups::ROUTES], ['row' => $found->route->getAttributes(), 'tail' => $found->tail], localized: false);
+        }
+
+        return $found;
+    }
+
+    private function lookupRows(string $locale, string $path): ?Resolution
     {
         /** @var list<Route> $rows */
         $rows = Route::query()

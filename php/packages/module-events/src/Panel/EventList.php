@@ -27,7 +27,7 @@ final class EventList
      */
     public function build(Request $request): Builder
     {
-        $query = Event::query()->with(['routes', 'categories']);
+        $query = Event::query()->with(['routes', 'categories'])->withCovers();
 
         if ($request->boolean('trashed')) {
             // The bin is a list of things to bring back, and the last thing thrown away is the

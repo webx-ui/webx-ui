@@ -24,7 +24,7 @@ final class VacancyVersionController
 {
     public function index(Request $request, Vacancy $vacancy): JsonResponse
     {
-        $versions = $vacancy->publishedVersions()->get();
+        $versions = $vacancy->publishedVersions()->withoutPayload()->get();
         $authors = Authors::names($request->user(), $versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
 
         return ApiResponse::data(

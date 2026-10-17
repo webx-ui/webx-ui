@@ -284,6 +284,37 @@ type in each state. The form around them (`<x-webx-form>`) adds `webx-form`, `__
 answer `__answer` and the refusal `__refusals`, `is-sending` and `--webx-form-*`
 ([The look of the form](./forms#the-look-of-the-form)); "Kitchen sink › Forms › Sending" sends one.
 
+### Speed
+
+The server half of a page is the packages' business ([Performance](./performance.md)); what the
+browser downloads after the HTML — pictures, fonts, scripts — is the theme's. Rules 36–41 of
+`RULES.md` in short:
+
+- **Pictures.** A photo is WebP or AVIF at the width the layout draws it: a picture of the media
+  library gives its preview and its file to `srcset`, with `sizes` saying how wide the cell is —
+  the gallery of `webx-ui/widgets` does exactly that. A library of old JPEGs and PNGs is converted
+  once with `php artisan webx:media:webp`, which rewrites every reference to the files.
+- **Their size.** Every `<img>` carries `width` and `height` — of the file, or the size the layout
+  draws it at — so the page keeps its place before the file arrives and the text below does not
+  jump. A picture of the library knows its size; one whose size is unknown may say it under a
+  condition (`@if ($picture['width']) width="…" height="…" @endif`). `webx:theme:check` names an
+  `<img>` of a theme's views and block templates that has neither.
+- **What loads first.** `loading="lazy"` on every picture below the first screen;
+  `fetchpriority="high"` on the one picture that is the largest thing of the first screen, the
+  hero. A lazy first screen gets its picture last.
+- **Fonts.** `.woff2`, one file per script ([Fonts](#fonts)), as few faces as the design needs —
+  a variable font is one file for all its weights. `@webxTheme` prints `font-display: swap`, so
+  the text shows in the fallback until the file is there. No preload: it downloads the file on
+  every page, whatever its language. The check notes a `.woff` file (a third larger) without
+  failing.
+- **Scripts and styles.** A widget's script and style come only with its component
+  (`<x-webx-slider>`, `<x-webx-map>`): a page without a slider downloads no slider. The map and the
+  video start when they come near the screen. A library of your own for one page goes into that
+  page's block or widget, not into `theme/src`.
+- **Measure.** The home page and the heaviest page, in the browser's performance panel or
+  Lighthouse at a phone's width: the largest picture (LCP), the jumps (CLS), the bytes. A fast
+  machine on the office network shows none of them.
+
 ## Blocks
 
 A block type — its fields, its template, its CSS and its script — is made in the panel under
@@ -409,7 +440,7 @@ when the built front end is older than its sources ("has changed since the bundl
 5. Show the change: reload, or `npm run build`; run `php artisan webx:doctor` and, on a site with
    a theme, `php artisan webx:theme:check` and the theme's test (`php artisan test`, the suite
    `Theme`). Read `php artisan webx:theme:show` before step 2 on a site with a theme: it names the
-   layer that owns each token and view. The 35 rules a theme keeps are in
+   layer that owns each token and view. The 41 rules a theme keeps are in
    `vendor/webx-ui/themes/RULES.md`.
 6. Look at a phone width as well as a wide one; for the panel, the dark theme too.
 7. Commit what the site owns: `theme/`, `resources/`, `public/` (not `public/build`, `public/themes`), `config/`, and the

@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 export { events, eventCategoriesOptions, type EventsOptions } from './module'
 export { createEventsApi, EVENTS_API, type EventsApi } from './api'
 export { eventsMessages } from './messages'
@@ -7,9 +8,9 @@ export {
   useEventEditor,
   type EventEditorContext,
 } from './editor'
-export { default as WxEventsPage } from './EventsPage.vue'
+export const WxEventsPage = defineAsyncComponent(() => import('./EventsPage.vue'))
 export { default as WxEventCreateDialog } from './EventCreateDialog.vue'
-export { default as WxEventEditorPage } from './EventEditorPage.vue'
+export const WxEventEditorPage = defineAsyncComponent(() => import('./EventEditorPage.vue'))
 export { default as WxEventHistory } from './EventHistory.vue'
 export type {
   EventConflict,

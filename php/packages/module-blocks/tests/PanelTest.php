@@ -327,6 +327,32 @@ final class PanelTest extends TestCase
         $this->assertSame(['Home', 'About'], array_column($usage->json('data'), 'title'));
     }
 
+    /**
+     * Where each type stands is a walk over every entity, kept on the `block-usage` group's
+     * versioned key: a page saved, a draft written, a page deleted — each moves it, and the next
+     * list counts again without anybody pressing «Reset cache».
+     */
+    #[Test]
+    public function the_counts_follow_the_pages_at_once(): void
+    {
+        config()->set('cache.default', 'array');
+        $this->publish('hero', '<section data-wx-block="hero">{{ $title }}</section>');
+        $editor = $this->editor(['blocks.view']);
+        $count = fn (): ?int => $this->firstWhere($this->actingAs($editor, 'cms')->getJson($this->api(''))->assertOk()->json('data'), 'slug', 'hero')['usage_count'] ?? null;
+
+        $this->assertSame(0, $count());
+
+        $home = Page::query()->create(['title' => 'Home', 'blocks' => [$this->node('hero', ['title' => 'Hi'])]]);
+        $this->assertSame(1, $count());
+
+        $about = Page::query()->create(['title' => 'About', 'blocks' => []]);
+        $about->saveDraft(['blocks' => [$this->node('hero', ['title' => 'Soon'])]]);
+        $this->assertSame(2, $count());
+
+        $home->delete();
+        $this->assertSame(1, $count());
+    }
+
     #[Test]
     public function the_history_lists_versions_and_restores_one_as_a_new_draft(): void
     {

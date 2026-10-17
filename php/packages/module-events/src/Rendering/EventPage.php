@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Events\Rendering;
 
 use Illuminate\Container\Container;
-use Illuminate\Database\Eloquent\Model;
+use WebxUi\Admin\Relations\Relations;
 use WebxUi\Events\Models\Event;
 use WebxUi\Localization\Locales;
 use WebxUi\Services\Rendering\ServiceQuery;
@@ -75,11 +75,15 @@ final class EventPage
      */
     private function services(Event $event, string $locale): array
     {
-        if (! class_exists(ServiceQuery::class)) {
+        // The module has to be on the site, not only on the disk: the rows point at a table its
+        // provider makes, and wait for it otherwise.
+        if (! class_exists(ServiceQuery::class) || ! Relations::targets()->has('service')) {
             return [];
         }
 
-        $ids = $event->related(Event::SERVICES)->map(static fn (Model $service): int => (int) $service->getKey())->all();
+        // The ids only: `services()` loads the records once, with what its cards need, and asks
+        // whether each may be shown — `related()` would have loaded them first, to be dropped.
+        $ids = $event->shownRelatedIds(Event::SERVICES);
 
         if ($ids === []) {
             return [];

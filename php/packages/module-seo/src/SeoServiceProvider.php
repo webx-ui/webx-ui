@@ -18,6 +18,7 @@ use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Fixes\AuditFixes;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Contracts\Visible;
@@ -112,6 +113,7 @@ class SeoServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-seo');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         $this->registerSources();
         $this->registerRendering();
@@ -227,15 +229,11 @@ class SeoServiceProvider extends ServiceProvider
                     $this->app->make(Sitemap::class)->refresh();
                 }
 
-                // A rule bound to an entity is compiled with the entity's current address (§18.2),
-                // so a new slug in the registry is a new compiled list.
-                if ($model instanceof RouteRow) {
-                    $this->app->make(SeoRules::class)->forget();
-                }
-
-                // Whether a link is broken depends on the registry and on visibility, and what it
-                // prints on its own rows and on redirects that replace addresses.
-                if ($model instanceof RouteRow || $model instanceof Visible || $model instanceof SeoLinkBlock || $model instanceof SeoLinkItem || $model instanceof SeoRedirect) {
+                // Whether a link is broken depends on visibility: an entity taken off the site
+                // moves the `seo` group. The registry is a group of its own that the compiled
+                // rules and the link blocks depend on, and this module's own rows move the
+                // group from the provider (`bumpOn`).
+                if ($model instanceof Visible) {
                     $this->app->make(LinkBlocks::class)->refresh();
                 }
             },
@@ -335,5 +333,25 @@ class SeoServiceProvider extends ServiceProvider
                 $kernel->pushMiddleware(RedirectRequests::class);
             }
         });
+    }
+
+    /**
+     * The `seo` and `sitemap` cache groups (WEBX_UI_CACHE.md §2). The compiled rules and the
+     * link blocks live on the `seo` group's key, with the address registry's beside it; the
+     * rules, the redirects and the link blocks move the group when saved. The sitemap is a group
+     * apart: its build is the expensive one, and `registerSitemap()` moves it from every visible
+     * record itself.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare(SeoRules::GROUP, 'webx-seo::module.title');
+        $groups->bumpOn(SeoRules::GROUP, SeoUrl::class, SeoRedirect::class, SeoLinkBlock::class, SeoLinkItem::class);
+        // Every page asks the rules and the redirects: with the versions, in the same call.
+        $groups->prefetch('seo.rules.urls', [SeoRules::GROUP, CacheGroups::ROUTES], localized: false);
+        $groups->prefetch('seo.rules.redirects', [SeoRules::GROUP, CacheGroups::ROUTES], localized: false);
+
+        $groups->declare(Sitemap::GROUP, 'Sitemap');
     }
 }

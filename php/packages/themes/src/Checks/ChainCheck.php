@@ -31,7 +31,8 @@ use WebxUi\Themes\Vocabulary;
  * And the icons (§13.1): each `icons/*.svg` of a layer can become a symbol that follows the
  * colour of the text, and the views and block templates of the layers name only icons the chain
  * has, never an inline `<svg>` ({@see IconCheck}); the pictures they ask for with `theme_asset()`
- * are files under `assets/` of a layer (§13.2, {@see AssetCheck}). And every language a layer
+ * are files under `assets/` of a layer (§13.2, {@see AssetCheck}), and every `<img>` says its
+ * `width` and `height` (rule 37, {@see ImageCheck}). And every language a layer
  * declares in `locales` has the words of the layout that `en` has (§15.2, {@see LineCheck}). And
  * the fonts of the layers are files of their own that cover the scripts of the site's languages
  * and of the languages the layer declares (§15.3, {@see FontCheck}). And the letters of the
@@ -45,6 +46,9 @@ final class ChainCheck
 {
     /** @var list<array{file: string, line: int|null, message: string}> */
     private array $findings = [];
+
+    /** @var list<array{file: string, line: int|null, message: string}> */
+    private array $notes = [];
 
     /** @var list<string> */
     private array $read = [];
@@ -80,6 +84,7 @@ final class ChainCheck
     public function run(): array
     {
         $this->findings = [];
+        $this->notes = [];
         $this->read = [];
         $this->blocks = 0;
         $this->icons = 0;
@@ -129,8 +134,19 @@ final class ChainCheck
         $fonts = FontCheck::check($this->chain, $this->siteLocales);
         $this->faces = $fonts['faces'];
         array_push($this->findings, ...$fonts['findings']);
+        array_push($this->notes, ...$fonts['notes']);
 
         return $this->findings;
+    }
+
+    /**
+     * What the last run advises without refusing: the chain works, but costs a visitor more.
+     *
+     * @return list<array{file: string, line: int|null, message: string}>
+     */
+    public function notes(): array
+    {
+        return $this->notes;
     }
 
     /** How many languages the layers declare for their words, summed over the layers that have words. */
@@ -185,7 +201,7 @@ final class ChainCheck
         foreach ($this->templates() as ['file' => $path, 'line' => $offset, 'source' => $template]) {
             $this->assets += count(AssetCheck::calls($template));
 
-            foreach ([...IconCheck::check($template, $names), ...AssetCheck::check($template, $exists)] as $finding) {
+            foreach ([...IconCheck::check($template, $names), ...AssetCheck::check($template, $exists), ...ImageCheck::check($template)] as $finding) {
                 $this->findings[] = $offset === null
                     ? ['file' => $path, 'line' => $finding['line'], 'message' => $finding['message']]
                     : ['file' => $path, 'line' => $offset, 'message' => "template, line {$finding['line']}: {$finding['message']}"];

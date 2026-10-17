@@ -22,6 +22,7 @@ use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\RegionContext;
 use WebxUi\Blocks\Rendering\RegionRender;
 use WebxUi\Blocks\Rendering\Renderer;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Routing\Resolution;
 
 /**
@@ -51,13 +52,22 @@ final class Regions
     /** The prefix of a region in a block type's `allowed_in`. */
     public const ALLOWED_IN = 'region:';
 
-    private const KEY = 'webx.blocks.regions.';
+    /** The cache group the published trees live in (WEBX_UI_CACHE.md). */
+    public const GROUP = 'regions';
 
     /** A colon cannot be part of a name, so no region can collide with the hints. */
     private const FALLBACKS = 'webx.blocks.regions:fallbacks';
 
     /** @var array<string, string> what this process has already written to the hints */
     private array $remembered = [];
+
+    /**
+     * The fallbacks the store knows, read once: the header and the footer each asked for them
+     * on every page, and the answer is a hint that may lag a worker's lifetime without harm.
+     *
+     * @var array<string, string>|null
+     */
+    private ?array $known = null;
 
     /**
      * The regions being drawn right now, outermost first. A shared block may stand inside
@@ -71,6 +81,7 @@ final class Regions
     public function __construct(
         private readonly Config $config,
         private readonly Cache $cache,
+        private readonly CacheGroups $groups,
         private readonly Renderer $renderer,
         private readonly Bundles $bundles,
         private readonly Views $views,
@@ -170,18 +181,25 @@ final class Regions
         }
 
         /** @var list<array<string, mixed>> $tree */
-        $tree = $this->cache->remember(
-            self::KEY.$name,
-            max(1, (int) $this->config->get('webx-blocks.cache.ttl', 86400)),
+        $tree = $this->groups->remember(
+            'blocks.region.'.$name,
+            [self::GROUP],
             fn (): array => $this->published($name),
+            max(1, (int) $this->config->get('webx-blocks.cache.ttl', 86400)),
+            localized: false,
         );
 
         return $tree;
     }
 
+    /**
+     * Throw the published trees away: the `regions` group moves, every region's with it — a
+     * version is one number, and the regions are few. A region saved through its model moves
+     * the group on its own; this is for a write that went round it.
+     */
     public function forget(string $name): void
     {
-        $this->cache->forget(self::KEY.$name);
+        $this->groups->bump(self::GROUP);
     }
 
     /**
@@ -452,6 +470,19 @@ final class Regions
     }
 
     /** The strip over a region whose draft has a failing block, in the preview. */
+    /** @return array<string, string> */
+    private function known(): array
+    {
+        if ($this->known === null) {
+            $known = $this->cache->get(self::FALLBACKS);
+            /** @var array<string, string> $known */
+            $known = is_array($known) ? $known : [];
+            $this->known = $known;
+        }
+
+        return $this->known;
+    }
+
     private function banner(string $text): string
     {
         return '<div class="wx-region-error" data-wx-region-error style="padding:8px 12px;background:#fff4e5;color:#7a4b00;font:14px/1.4 system-ui,sans-serif;border:1px solid #f0c36d">'.e($text).'</div>';
@@ -466,11 +497,11 @@ final class Regions
         $this->remembered[$name] = $fallback;
 
         try {
-            $known = $this->cache->get(self::FALLBACKS);
-            $known = is_array($known) ? $known : [];
+            $known = $this->known();
 
             if (($known[$name] ?? null) !== $fallback) {
                 $known[$name] = $fallback;
+                $this->known = $known;
                 $this->cache->forever(self::FALLBACKS, $known);
             }
         } catch (Throwable) {

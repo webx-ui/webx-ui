@@ -247,6 +247,8 @@ final class LandingTools
         }
 
         $page = $query->paginate(min(200, max(1, (int) ($arguments['per_page'] ?? 50))), page: max(1, (int) ($arguments['page'] ?? 1)));
+        $page->getCollection()->loadMissing('routes');
+        $this->resource->prime($page->getCollection());
 
         return [
             'count' => $page->total(),

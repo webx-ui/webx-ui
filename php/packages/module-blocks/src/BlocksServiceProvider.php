@@ -45,6 +45,9 @@ use WebxUi\Blocks\Fields\DataType;
 use WebxUi\Blocks\Fields\FragmentType;
 use WebxUi\Blocks\Fields\SlotType;
 use WebxUi\Blocks\Http\Middleware\EnsureEditing;
+use WebxUi\Blocks\Models\Block;
+use WebxUi\Blocks\Models\BlockVersion;
+use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Panel\BlocksModule;
 use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\RegionForm;
@@ -59,6 +62,7 @@ use WebxUi\Blocks\Rendering\TemplateCompiler;
 use WebxUi\Blocks\Rendering\Thumbnails;
 use WebxUi\Blocks\Tags\BlockTag;
 use WebxUi\Blocks\Themes\LayerSync;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Themes\Contracts\SyncStep;
 
 /**
@@ -135,6 +139,7 @@ class BlocksServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-blocks');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->registerCacheGroups();
 
         $this->registerMacro();
         $this->registerDirectives();
@@ -362,5 +367,38 @@ class BlocksServiceProvider extends ServiceProvider
 
             return sprintf('<?php echo app(%s)->tags(%s); ?>', var_export(Bundles::class, true), $what);
         });
+    }
+
+    /**
+     * The `blocks` and `regions` cache groups (WEBX_UI_CACHE.md §2): a block, a version or a
+     * region saved moves its group, and the registry of types, the bundles and the published
+     * trees of the regions live on the groups' versioned keys. The thumbnails keep a generation
+     * of their own, so a reset by code starts them afresh too; `webx:blocks:clear` stays for the
+     * compiled templates.
+     */
+    private function registerCacheGroups(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+
+        $groups->declare(BlockTypes::GROUP, 'webx-blocks::module.title');
+        $groups->bumpOn(BlockTypes::GROUP, Block::class, BlockVersion::class);
+        $groups->onReset(BlockTypes::GROUP, fn () => $this->app->make(Thumbnails::class)->forget());
+
+        $groups->declare(Regions::GROUP, 'webx-blocks::module.regions');
+        $groups->bumpOn(Regions::GROUP, Region::class);
+
+        // Where each type stands is a walk over every entity with content; it moves with any of
+        // them saved, and the quiet writers of this package (`Renamer`, `LanguageShapes`,
+        // `StrayValues`) say so themselves.
+        $groups->declare(Usage::GROUP, 'webx-blocks::module.usage');
+        $groups->bumpOn(Usage::GROUP, Region::class, ...$this->app->make(Usage::class)->models());
+
+        // Every page reads the types and the regions the layout prints: with the versions, in
+        // the same call, rather than one query each on the `database` store.
+        $groups->prefetch('blocks.types', [BlockTypes::GROUP], localized: false);
+
+        foreach (array_keys($this->app->make(Regions::class)->declared()) as $name) {
+            $groups->prefetch('blocks.region.'.$name, [Regions::GROUP], localized: false);
+        }
     }
 }

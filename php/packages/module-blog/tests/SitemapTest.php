@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Author;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\UrlMatcher;
 
@@ -42,6 +43,7 @@ final class SitemapTest extends TestCase
 
         // Nothing is saved when the date comes: the map finds out when what it built runs out.
         Carbon::setTestNow(Carbon::now()->addWeeks(2));
+        $this->nextRequest();
 
         $this->assertStringContainsString('/blog/next-week<', $this->map('article'));
     }
@@ -119,6 +121,7 @@ final class SitemapTest extends TestCase
         // rebuilt when a record changes, and a setting changing is not a record changing.
         config()->set('webx-blog.authors', false);
         cache()->flush();
+        $this->nextRequest();
 
         $this->assertStringNotContainsString('writer', $this->map('author'));
     }
@@ -157,6 +160,12 @@ final class SitemapTest extends TestCase
         ]);
 
         return Author::query()->create(['user_id' => $user->getKey(), 'title' => ucfirst($slug), 'slug' => $slug, 'is_public' => $public]);
+    }
+
+    /** What this request read is kept for this request only; the next one reads the store again. */
+    private function nextRequest(): void
+    {
+        $this->app->make(CacheGroups::class)->forgetMemo();
     }
 
     private function map(string $file): string

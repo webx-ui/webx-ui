@@ -1,0 +1,48 @@
+{
+    "name": "webx-ui/cache",
+    "description": "Cache on versioned keys for a WebX UI site: named groups of data, one version a group, an entry that goes when any group it was built from moves — on file and database stores as well as Redis.",
+    "keywords": ["laravel", "cache", "invalidation", "versioned-keys", "webx-ui"],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/cache"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/cache": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Cache\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Cache\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": ["WebxUi\\Cache\\CacheServiceProvider"]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Pamięć podręczna',
+    'lead' => 'Co witryna pamięta między żądaniami — menu, ustawienia, adresy — według grup. Zapis w panelu sam resetuje swoją grupę; przycisk jest na wypadek, gdy witryna wciąż pokazuje to, czego w panelu już nie ma.',
+    'store' => 'Magazyn',
+    'store-array' => 'Nic nie przetrwa żądania: każda strona buduje wszystko od nowa. Ustaw magazyn w CACHE_STORE.',
+    'disabled' => 'Wersjonowana pamięć podręczna jest wyłączona w konfiguracji.',
+    'ttl' => 'Wpisy żyją',
+    'ttl-value' => ':hours godz.',
+    'groups' => 'Grupy',
+    'group' => 'Grupa',
+    'version' => 'Wersja',
+    'models' => 'Resetują',
+    'models-none' => 'Tylko ręcznie',
+    'no-groups' => 'Żaden moduł nie zgłosił jeszcze grupy pamięci podręcznej.',
+    'reset-all' => 'Zresetuj pamięć podręczną witryny',
+    'reset-all-title' => 'Zresetować całą pamięć podręczną witryny?',
+    'reset-all-text' => 'Wszystkie grupy zostaną zresetowane; witryna odbuduje to, co zapamiętała, przy następnych odwiedzinach. Sesje i logowania pozostają nietknięte. Jeśli musiałeś to nacisnąć, coś nie zresetowało się samo — powiedz opiekunom witryny, która strona była nieaktualna.',
+    'reset-group' => 'Zresetuj',
+    'reset-group-title' => 'Zresetować pamięć podręczną «:group»?',
+    'reset-group-text' => 'To, co witryna zapamiętała z tej grupy, zostanie odbudowane przy następnych odwiedzinach. Sesje i logowania pozostają nietknięte.',
+    'reset' => 'Zresetuj',
+    'cancel' => 'Anuluj',
+    'reset-done' => 'Pamięć podręczna została zresetowana.',
+    'reset-group-done' => 'Pamięć podręczna «:group» została zresetowana.',
+    'load-failed' => 'Nie udało się wczytać stanu pamięci podręcznej.',
+    'refresh' => 'Odśwież',
+    'history' => 'Resety',
+    'history-groups' => 'Grupy',
+    'forbidden' => 'Nie możesz resetować pamięci podręcznej.',
+    'group-locales' => 'Języki',
+    'group-routes' => 'Adresy',
+    'group-screens' => 'Ekrany panelu',
+    'group-theme' => 'Motyw',
+];

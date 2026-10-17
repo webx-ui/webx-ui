@@ -1,10 +1,8 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import LandingEditorPage from './LandingEditorPage.vue'
 import LandingProductsField from './LandingProductsField.vue'
 import LandingSetField from './LandingSetField.vue'
 import LandingSlugField from './LandingSlugField.vue'
 import LandingSortField from './LandingSortField.vue'
-import LandingsPage from './LandingsPage.vue'
 
 export interface CatalogLandingsOptions {
   /** Where the catalogue lives inside the panel — the same as `catalog({ path })`. */
@@ -32,19 +30,19 @@ export function catalogLandings(options: CatalogLandingsOptions = {}): AdminModu
         {
           path: `${catalog}/landings`,
           name: 'webx.catalog-landings',
-          component: LandingsPage,
+          component: () => import('./LandingsPage.vue'),
           props,
         },
         {
           path: `${catalog}/landings/new`,
           name: 'webx.catalog-landings.new',
-          component: LandingEditorPage,
+          component: () => import('./LandingEditorPage.vue'),
           props,
         },
         {
           path: `${catalog}/landings/:id(\\d+)`,
           name: 'webx.catalog-landings.edit',
-          component: LandingEditorPage,
+          component: () => import('./LandingEditorPage.vue'),
           props,
         },
       ],

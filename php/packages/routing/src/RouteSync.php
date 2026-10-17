@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Exceptions\PathRejected;
 use WebxUi\Routing\Models\Route;
@@ -38,6 +39,7 @@ class RouteSync
         private readonly RouteTypes $types,
         private readonly UniquePath $unique,
         private readonly Locales $locales,
+        private readonly CacheGroups $cache,
     ) {}
 
     /**
@@ -87,6 +89,7 @@ class RouteSync
     {
         Route::query()->forEntity($entity)->delete();
         TrashedAlias::query()->forEntity($entity)->delete();
+        $this->invalidate();
     }
 
     /**
@@ -123,6 +126,7 @@ class RouteSync
 
             Route::query()->forEntity($entity)->delete();
         });
+        $this->invalidate();
     }
 
     /**
@@ -169,6 +173,7 @@ class RouteSync
         });
 
         $this->revivals[$this->key($entity)] = $revival;
+        $this->invalidate();
 
         return $revival;
     }
@@ -354,6 +359,7 @@ class RouteSync
             ->where('locale', $locale)
             ->whereKeyNot($canonical->getKey())
             ->update(['kind' => Route::ALIAS, 'target_id' => $canonical->getKey()]);
+        $this->invalidate();
     }
 
     private function belongsTo(Route $route, Model $entity): bool
@@ -395,6 +401,7 @@ class RouteSync
 
         if ($rows !== []) {
             Route::query()->upsert($rows, ['locale', 'path'], ['kind', 'target_id', 'entity_type', 'entity_id']);
+            $this->invalidate();
         }
 
         foreach ($moved as $entity) {
@@ -513,5 +520,14 @@ class RouteSync
         return str_contains($message, 'UNIQUE constraint failed')      // SQLite
             || str_contains($message, 'Duplicate entry')                // MySQL, MariaDB
             || str_contains($message, 'duplicate key value');           // PostgreSQL
+    }
+
+    /**
+     * Addresses written without an Eloquent event — a mass delete, an update, an upsert — tell
+     * the `routes` cache group themselves (WEBX_UI_CACHE.md §2).
+     */
+    private function invalidate(): void
+    {
+        $this->cache->bump(CacheGroups::ROUTES);
     }
 }

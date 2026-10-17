@@ -241,6 +241,12 @@ pipe`. `… | grep -q` под `pipefail`: grep уходит на первом с
 - **`site exec <сайт> php artisan tinker файл.php` висит до таймаута.** Tinker с файлом всё равно
   ждёт stdin. Скрипт — `tinker --execute="require 'storage/app/…/x.php';"` с `</dev/null` под
   `timeout 60`; русский текст — в файле, не в аргументе.
+- **`scripts/php-smoke.sh` локально (sqlite) падает на втором `webx:setup`: «The email has already been
+  taken», «webx:admin exited with 1».** В CI (MySQL) тот же скрипт зелёный. На sqlite сайт `create-project`
+  живёт в файле `site/laravel` (`DB_DATABASE=laravel`), а `SetupCommand::administrators()` считает
+  администраторов в `database/database.sqlite` — пустом файле скелета — и, не найдя ни одного, снова зовёт
+  `webx:admin`. К правкам не относится: проверять smoke против MySQL (`DB_CONNECTION=mysql …`, как в CI)
+  или чинить `administrators()` на путь из конфига.
 
 ## Shell и инструменты агента
 
@@ -296,6 +302,16 @@ pipe`. `… | grep -q` под `pipefail`: grep уходит на первом с
 - Было: Traefik выводил сайт из маршрутизации, потому что healthcheck `http://127.0.0.1/up` получал
   редирект на https. Починено: нормализация и редиректы `module-seo` не трогают health-маршрут и
   запрос на `127.0.0.1` без `X-Forwarded-*`.
+
+## Бандл панели
+
+- **Маршрут с `() => import()`, а страница всё равно в главном чанке.** Индекс пакета
+  реэкспортирует ту же страницу статически (`export { default as WxXPage } from './XPage.vue'`):
+  Rollup кладёт её в чанк индекса вместе со всем, что она тянет. `manualChunks` и отдельные точки
+  входа не спасают — общие со страницей хелперы уезжают в её чанк, и индекс грузит его ради них.
+  Проверка — первые строки `dist/index.js`: статических `import … from "./XPage-….js"` быть не
+  должно. Лечение — экспорт `defineAsyncComponent(() => import('./XPage.vue'))` под тем же
+  именем. Замер — `vite build` сайта и сумма чанков, которые грузит точка входа (манифест Vite).
 
 ## Плейграунд
 

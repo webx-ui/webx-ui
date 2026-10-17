@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 export { blog, rubricsOptions, type BlogOptions } from './module'
 export { createBlogApi, type BlogApi } from './api'
 export {
@@ -14,14 +15,14 @@ export {
   useArticleEditor,
   type ArticleEditorContext,
 } from './editor'
-export { default as WxArticlesPage } from './ArticlesPage.vue'
-export { default as WxTagsPage } from './TagsPage.vue'
-export { default as WxAuthorsPage } from './AuthorsPage.vue'
+export const WxArticlesPage = defineAsyncComponent(() => import('./ArticlesPage.vue'))
+export const WxTagsPage = defineAsyncComponent(() => import('./TagsPage.vue'))
+export const WxAuthorsPage = defineAsyncComponent(() => import('./AuthorsPage.vue'))
 export { default as WxAuthorPane } from './AuthorPane.vue'
 export { default as WxTagCreateDialog } from './TagCreateDialog.vue'
 export { default as WxTagMergeDialog } from './TagMergeDialog.vue'
 export { default as WxArticleCreateDialog } from './ArticleCreateDialog.vue'
-export { default as WxArticleEditorPage } from './ArticleEditorPage.vue'
+export const WxArticleEditorPage = defineAsyncComponent(() => import('./ArticleEditorPage.vue'))
 export { default as WxArticleSlug } from './ArticleSlug.vue'
 export { default as WxArticleAuthorField } from './ArticleAuthor.vue'
 export { default as WxArticleTags } from './ArticleTags.vue'

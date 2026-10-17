@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 export { vacancies, vacancyCategoriesOptions, type VacanciesOptions } from './module'
 export { createVacanciesApi, VACANCIES_API, type VacanciesApi } from './api'
 export { vacanciesMessages } from './messages'
@@ -7,9 +8,9 @@ export {
   useVacancyEditor,
   type VacancyEditorContext,
 } from './editor'
-export { default as WxVacanciesPage } from './VacanciesPage.vue'
+export const WxVacanciesPage = defineAsyncComponent(() => import('./VacanciesPage.vue'))
 export { default as WxVacancyCreateDialog } from './VacancyCreateDialog.vue'
-export { default as WxVacancyEditorPage } from './VacancyEditorPage.vue'
+export const WxVacancyEditorPage = defineAsyncComponent(() => import('./VacancyEditorPage.vue'))
 export { default as WxVacancyHistory } from './VacancyHistory.vue'
 export type {
   VacanciesList,

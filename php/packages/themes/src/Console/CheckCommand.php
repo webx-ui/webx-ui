@@ -24,7 +24,8 @@ use WebxUi\Themes\ThemeManifest;
  * have every key of `en` in each language a layer declares (§15.2, rule 26); and the fonts of the
  * layers are their own files with a file for every script the site's languages need (§15.3, rule
  * 27); and the letters take their colours from theme_token(), never var() or a literal (§7.5, rule
- * 25). The rest of §17's list joins with the stages that build what it checks. A package adds a
+ * 25); and every picture of the templates says its size, and the fonts are .woff2 — a note, not a
+ * refusal — (rules 37 and 39). The rest of §17's list joins with the stages that build what it checks. A package adds a
  * check of its own as a `ThemeCheckPart` — the places of the snippets module, say.
  *
  * A refusal, not advice: a finding is a line naming the file, the line, what and why, and the
@@ -36,7 +37,7 @@ class CheckCommand extends Command
         {path? : A theme to check instead of the site\'s: a directory with theme.json, or a package directory}
         {--locales= : The languages the fonts have to draw, comma-separated, instead of the site\'s}';
 
-    protected $description = 'Check that the theme chain knows only tokens: tokens.json, src/css of the layers, CSS of the modules and widgets, block types of the layers; and that its icons follow the text and exist, and that the assets its templates name exist, that its words have the keys of en in every declared locale, that its fonts cover the scripts of the site\'s languages, and that its letters take their colours from theme_token()';
+    protected $description = 'Check that the theme chain knows only tokens: tokens.json, src/css of the layers, CSS of the modules and widgets, block types of the layers; and that its icons follow the text and exist, and that the assets its templates name exist, that its words have the keys of en in every declared locale, that its fonts cover the scripts of the site\'s languages, and that its letters take their colours from theme_token(), and that its pictures say their size';
 
     public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeLocator $locator, ModuleStyles $modules): int
     {
@@ -57,7 +58,7 @@ class CheckCommand extends Command
         $locales = $this->locales();
         $check = new ChainCheck($chain, $bottom->all(), $modules->modules(), $locales);
         $findings = $check->run();
-        $notes = [];
+        $notes = $check->notes();
 
         foreach ($this->parts($chain) as $line) {
             $entry = ['file' => $line['file'], 'line' => $line['line'], 'message' => $line['message']];

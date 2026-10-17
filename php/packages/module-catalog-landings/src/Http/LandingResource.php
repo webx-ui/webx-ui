@@ -16,7 +16,44 @@ use WebxUi\CatalogLandings\Models\Landing;
  */
 final class LandingResource
 {
+    /**
+     * The words of the chosen values, by facet and value, read for a whole page of landings at
+     * once ({@see prime()}): each chip asked its facet on its own, one query a chip.
+     *
+     * @var array<string, array<string, string>>
+     */
+    private array $labels = [];
+
     public function __construct(private readonly Facets $facets) {}
+
+    /**
+     * Read the labels of every value these landings choose, one call per facet.
+     *
+     * @param  iterable<Landing>  $landings
+     */
+    public function prime(iterable $landings): void
+    {
+        $locale = app()->getLocale();
+        $wanted = [];
+
+        foreach ($landings as $landing) {
+            foreach ($landing->set()->all() as $key => $choice) {
+                foreach ($choice['values'] ?? [] as $value) {
+                    $wanted[$key][(string) $value] = $value;
+                }
+            }
+        }
+
+        $this->labels = [];
+
+        foreach ($wanted as $key => $values) {
+            $facet = $this->facets->find($key);
+
+            if ($facet !== null && $facet->kind() !== FacetKind::Range) {
+                $this->labels[$locale.':'.$key] = array_map(strval(...), $facet->labels(array_map(strval(...), array_values($values)), $locale));
+            }
+        }
+    }
 
     /**
      * @return array<string, mixed>
@@ -92,7 +129,7 @@ final class LandingResource
                 $text = trim(($min === null ? '' : $this->number($min)).' – '.($max === null ? '' : $this->number($max)));
             } else {
                 $values = $choice['values'] ?? [];
-                $labels = $facet->labels($values, $locale);
+                $labels = $this->labels[$locale.':'.$key] ?? $facet->labels($values, $locale);
                 $text = implode(', ', array_map(static fn (string $value): string => (string) ($labels[$value] ?? $value), $values));
             }
 

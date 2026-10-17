@@ -1,6 +1,4 @@
 import { categoryRoutes, type AdminModule, type CategoriesOptions } from '@webx-ui/module-admin'
-import VacanciesPage from './VacanciesPage.vue'
-import VacancyEditorPage from './VacancyEditorPage.vue'
 import VacancyHistory from './VacancyHistory.vue'
 
 export interface VacanciesOptions {
@@ -61,11 +59,16 @@ export function vacancies(options: VacanciesOptions = {}): AdminModule[] {
       id: 'vacancies',
       path,
       routes: [
-        { path, name: 'webx.vacancies', component: VacanciesPage, props: { base: path } },
+        {
+          path,
+          name: 'webx.vacancies',
+          component: () => import('./VacanciesPage.vue'),
+          props: { base: path },
+        },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.vacancies.edit',
-          component: VacancyEditorPage,
+          component: () => import('./VacancyEditorPage.vue'),
           props: { base: path },
         },
       ],

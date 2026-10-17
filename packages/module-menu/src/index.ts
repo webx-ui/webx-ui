@@ -1,8 +1,9 @@
+import { defineAsyncComponent } from 'vue'
 export { menu, type MenuOptions } from './module'
 export { createMenusApi, type MenusApi } from './api'
 export { menuMessages } from './messages'
 export { countBranch, findItem, movedId } from './tree'
-export { default as WxMenusPage } from './MenusPage.vue'
+export const WxMenusPage = defineAsyncComponent(() => import('./MenusPage.vue'))
 export { default as WxMenuTreePane } from './MenuTreePane.vue'
 export { default as WxMenuBranch } from './MenuBranch.vue'
 export { default as WxMenuItemDialog } from './MenuItemDialog.vue'

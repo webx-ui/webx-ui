@@ -33,7 +33,10 @@ class CategoryHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        $catalog = $this->catalog->build($request, (new RecipeQuery)->in((int) $entity->getKey()));
+        // The address of the category is printed by the trail and the `<head>`, and by every card
+        // filed under it: one reading of the registry for all of them.
+        $entity->loadMissing('routes');
+        $catalog = $this->catalog->build($request, (new RecipeQuery)->in((int) $entity->getKey()), [$entity]);
 
         return response($this->views->make('category', [
             'category' => $entity,

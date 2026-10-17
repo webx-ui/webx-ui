@@ -15,6 +15,7 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
 use WebxUi\Catalog\Events\ProductsIndexed;
 use WebxUi\Catalog\Filter\FilterUrls;
@@ -59,6 +60,10 @@ class CatalogLandingsServiceProvider extends ServiceProvider
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog-landings.php', 'webx-catalog-landings');
+
+        // One rewriter: the core's filter prepares it, and the links of the page read what it
+        // prepared rather than the table again.
+        $this->app->singleton(LandingRewriter::class);
     }
 
     public function boot(): void
@@ -74,6 +79,7 @@ class CatalogLandingsServiceProvider extends ServiceProvider
         $this->registerStorefront();
         $this->registerListeners();
         $this->registerHistory();
+        $this->registerCacheGroups();
 
         $this->app->make(ScreenRegistry::class)->register(Landing::SCREEN, __DIR__.'/../resources/screens/landing-form.json');
         $this->app->make(ModuleRegistry::class)->register($this->app->make(LandingsModule::class));
@@ -157,6 +163,15 @@ class CatalogLandingsServiceProvider extends ServiceProvider
      * What the journal shows for a landing: "Set", not `filters`. Read behind any of the
      * catalogue's permissions.
      */
+    /**
+     * A landing is a page of the `catalog` cache group (WEBX_UI_CACHE.md): its save moves the
+     * group, as a category's does.
+     */
+    private function registerCacheGroups(): void
+    {
+        $this->app->make(CacheGroups::class)->bumpOn('catalog', Landing::class);
+    }
+
     private function registerHistory(): void
     {
         $fields = [];

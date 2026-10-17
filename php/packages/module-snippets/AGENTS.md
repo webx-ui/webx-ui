@@ -26,7 +26,7 @@ and its journal `webx-ui/module-admin` — read their guides for those.
   Scopes `snippets:read`, `snippets:write`; every tool also needs `snippets.manage`.
 - **Checks**: a part of `webx:theme:check` (`Checks\PlacesCheck`) and the doctor check
   `Doctor\SnippetPlaces`.
-- **Cache** `webx-snippets.codes` (every enabled snippet), forgotten on save, delete and reorder;
+- **Cache** `webx-snippets.codes` (every enabled snippet), forgotten on save, delete and reorder, and by a reset of the `snippets` cache group («System → Cache»);
   `webx-snippets.seen` — the day each place was last printed on a page.
 - Also registered: demo content (`resources/demo`) — one snippet, switched off; the table moves
   with `webx:snapshot` as content.

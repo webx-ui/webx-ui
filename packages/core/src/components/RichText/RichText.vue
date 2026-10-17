@@ -32,7 +32,8 @@ import {
   type TokenRange,
 } from '../../composables/useTokens'
 import WxButton from '../Button/Button.vue'
-import WxCodeEditor from '../CodeEditor/CodeEditor.vue'
+// The source view only: CodeMirror comes when somebody opens it, not with every text field.
+import { WxCodeEditor } from '../CodeEditor'
 import WxRichTextToolbarButton from './ToolbarButton.vue'
 import { formatHtml, lostMarkup } from './source'
 import {

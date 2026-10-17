@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 export { services, serviceCategoriesOptions, type ServicesOptions } from './module'
 export { createServicesApi, SERVICES_API, type ServicesApi } from './api'
 export { servicesMessages } from './messages'
@@ -7,9 +8,9 @@ export {
   useServiceEditor,
   type ServiceEditorContext,
 } from './editor'
-export { default as WxServicesPage } from './ServicesPage.vue'
+export const WxServicesPage = defineAsyncComponent(() => import('./ServicesPage.vue'))
 export { default as WxServiceCreateDialog } from './ServiceCreateDialog.vue'
-export { default as WxServiceEditorPage } from './ServiceEditorPage.vue'
+export const WxServiceEditorPage = defineAsyncComponent(() => import('./ServiceEditorPage.vue'))
 export { default as WxServiceHistory } from './ServiceHistory.vue'
 export type {
   ServiceCategoryRef,

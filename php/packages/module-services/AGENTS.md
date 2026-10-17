@@ -105,6 +105,9 @@ any theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a
   A service in a hidden category still answers at its own address.
 - With MCP: read `services://catalog` first, then `services_get`; every tool that changes
   something takes `dry_run: true` first.
+- `tests/PerformanceTest.php` holds the query budget of every public page: a list loads `cover`
+  and `routes` with its rows (`Catalogue`, `Cards::RELATIONS`), and a change that needs more
+  queries says why there before raising a number.
 
 ## Read more
 

@@ -45,18 +45,22 @@ final class PageController
         $trashed = $request->boolean('trashed');
         $flat = $request->boolean('flat');
 
+        // Read once: the top level is the home page's children, and the home page is pinned
+        // above them — two reads of one row, with its addresses and its count, before.
+        $pinned = $trashed || $flat || $search !== '' || $request->has('parent') ? null : $this->home();
+
         $items = match (true) {
             $trashed => $this->bin($search),
             $search !== '' => $this->matches($search, $request),
             $flat => $this->everything($request),
-            default => $this->level($request),
+            default => $this->level($request, $pinned),
         };
 
         // The home page travels beside the level rather than in it: it is pinned above the
         // list, and its children are the level (§9). Only where there is a tree to pin it to —
         // a search, the bin and a flat list are flat, and in the flat one the home page is
         // simply the first row, because `lft` reads the tree from the top.
-        $home = $trashed || $flat || $search !== '' || $request->has('parent') ? null : $this->home();
+        $home = $pinned;
 
         $editors = Editors::of($home === null ? $items : [...$items, $home]);
 
@@ -173,10 +177,10 @@ final class PageController
      *
      * @return Collection<int, Page>
      */
-    private function level(Request $request): Collection
+    private function level(Request $request, ?Page $home): Collection
     {
         $parent = $request->query('parent');
-        $parentId = is_numeric($parent) ? (int) $parent : $this->home()?->getKey();
+        $parentId = is_numeric($parent) ? (int) $parent : ($home ?? $this->home())?->getKey();
 
         /** @var Collection<int, Page> $level */
         $level = $this->listing($request)

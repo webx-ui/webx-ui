@@ -49,7 +49,7 @@ final class Untranslated
 
         $source = null;
 
-        foreach (Route::query()->forEntity($entity)->canonical()->get() as $row) {
+        foreach ($this->canonicalRows($entity) as $row) {
             if ($row->locale === $locale) {
                 return null;
             }
@@ -94,6 +94,33 @@ final class Untranslated
         $source = $this->source($entity, $locale);
 
         return $source === null ? null : '/'.UrlNormaliser::join($this->site->prefix($source->locale), $source->path);
+    }
+
+    /**
+     * The entity's canonical rows, out of its `routes` relation where it has one: the `<head>`
+     * asks here once per language of the site, and the sitemap once per entity and language, so
+     * an entity whose rows were loaded with the list — or by the first of those askings — is not
+     * asked the registry again. A model without the trait is asked the registry directly.
+     *
+     * @return list<Route>
+     */
+    private function canonicalRows(Model $entity): array
+    {
+        if (! in_array(HasUrl::class, class_uses_recursive($entity), true)) {
+            return Route::query()->forEntity($entity)->canonical()->get()->all();
+        }
+
+        /** @var iterable<Route> $loaded the relation, loaded now if the entity came without it */
+        $loaded = $entity->getRelationValue('routes') ?? [];
+        $rows = [];
+
+        foreach ($loaded as $row) {
+            if ($row->kind === Route::CANONICAL) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
     }
 
     /**

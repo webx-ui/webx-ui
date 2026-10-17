@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Container\Container;
 use Throwable;
 use WebxUi\Admin\Doctor\Check;
+use WebxUi\Admin\Doctor\Checks\CacheStore;
 use WebxUi\Admin\Doctor\Checks\Halves;
 use WebxUi\Admin\Doctor\Checks\Helpers;
 use WebxUi\Admin\Doctor\Checks\Languages;
@@ -73,6 +74,7 @@ final class DoctorCommand extends Command
         Methods::class,
         PassportKeys::class,
         SiteGate::class,
+        CacheStore::class,
         Queue::class,
     ];
 

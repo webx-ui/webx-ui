@@ -11,6 +11,7 @@ use Illuminate\Support\HtmlString;
 use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Models\BlockBundle;
+use WebxUi\Cache\CacheGroups;
 
 /**
  * The styles and scripts of a page, as one file each.
@@ -36,6 +37,7 @@ final class Bundles
         private readonly Renderer $renderer,
         private readonly Config $config,
         private readonly UrlGenerator $url,
+        private readonly CacheGroups $cache,
     ) {}
 
     /**
@@ -104,7 +106,7 @@ final class Bundles
         }
 
         $hash = $this->hash($ordered);
-        $bundle = BlockBundle::query()->find($hash);
+        $bundle = $this->find($hash);
 
         if ($bundle instanceof BlockBundle) {
             return $bundle;
@@ -164,9 +166,32 @@ final class Bundles
         return $this->build($types);
     }
 
+    /**
+     * The row of a hash. A page asks for the same few hashes on every render — one for the
+     * tree, one per region — so the row is kept in the `blocks` cache group: the hash names
+     * the content, so a version of the group only has to outlive the row's own pruning.
+     */
     public function find(string $hash): ?BlockBundle
     {
-        return BlockBundle::query()->find($hash);
+        $name = 'blocks.bundle.'.$hash;
+        $kept = $this->cache->get($name, [BlockTypes::GROUP], localized: false);
+
+        if (is_array($kept) && $kept !== []) {
+            /** @var BlockBundle $bundle */
+            $bundle = (new BlockBundle)->newFromBuilder($kept);
+
+            return $bundle;
+        }
+
+        $bundle = BlockBundle::query()->find($hash);
+
+        // A row that is not there is not kept: the one that is about to be written would be
+        // hidden behind it, and a request for a hash nobody glued is nothing to remember.
+        if ($bundle instanceof BlockBundle) {
+            $this->cache->put($name, [BlockTypes::GROUP], $bundle->getAttributes(), localized: false);
+        }
+
+        return $bundle;
     }
 
     /**

@@ -1,14 +1,10 @@
 import { categoryRoutes, type AdminModule, type CategoriesOptions } from '@webx-ui/module-admin'
 import ArticleAuthor from './ArticleAuthor.vue'
-import ArticleEditorPage from './ArticleEditorPage.vue'
 import ArticleHistory from './ArticleHistory.vue'
 import ArticleRelated from './ArticleRelated.vue'
 import ArticleSlug from './ArticleSlug.vue'
 import ArticleTags from './ArticleTags.vue'
 import ArticleUnpublish from './ArticleUnpublish.vue'
-import ArticlesPage from './ArticlesPage.vue'
-import AuthorsPage from './AuthorsPage.vue'
-import TagsPage from './TagsPage.vue'
 
 export interface BlogOptions {
   /** Where the blog lives inside the panel. The three sections sit under it. */
@@ -78,13 +74,13 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
         {
           path: `${path}/articles`,
           name: 'webx.blog.articles',
-          component: ArticlesPage,
+          component: () => import('./ArticlesPage.vue'),
           props: { base: path },
         },
         {
           path: `${path}/articles/:id(\\d+)`,
           name: 'webx.blog.articles.edit',
-          component: ArticleEditorPage,
+          component: () => import('./ArticleEditorPage.vue'),
           props: { base: path },
         },
       ],
@@ -125,7 +121,7 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
         {
           path: `${path}/tags`,
           name: 'webx.blog.tags',
-          component: TagsPage,
+          component: () => import('./TagsPage.vue'),
           props: { base: path },
         },
       ],
@@ -139,7 +135,7 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
         {
           path: `${path}/authors`,
           name: 'webx.blog.authors',
-          component: AuthorsPage,
+          component: () => import('./AuthorsPage.vue'),
           props: { base: path },
         },
       ],

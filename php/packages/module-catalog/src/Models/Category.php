@@ -18,6 +18,7 @@ use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Catalog\Exceptions\CatalogException;
 use WebxUi\Catalog\Storefront\HasListingTexts;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileUrls;
@@ -115,6 +116,12 @@ class Category extends Model implements HasBreadcrumbs, HasListingTexts, HasSeoF
 
     protected static function booted(): void
     {
+        // Whatever this request worked out from the tree — a subtree, a trail, who is visible —
+        // is from before this write.
+        foreach (['saved', 'deleted', 'restored', 'moved'] as $event) {
+            static::registerModelEvent($event, static fn () => RequestMemo::forget());
+        }
+
         static::deleting(static function (self $category): void {
             if ($category->isForceDeleting()) {
                 return;
@@ -210,7 +217,9 @@ class Category extends Model implements HasBreadcrumbs, HasListingTexts, HasSeoF
             return false;
         }
 
-        return static::query()->whereKey($this->getKey())->visible()->exists();
+        // Asked of the same category by the handler, the trail and the SEO sources of one page;
+        // forgotten by any write to the tree in the request (`booted()`).
+        return RequestMemo::remember('category.visible.'.$this->getKey(), fn (): bool => static::query()->whereKey($this->getKey())->visible()->exists());
     }
 
     /**
@@ -319,15 +328,31 @@ class Category extends Model implements HasBreadcrumbs, HasListingTexts, HasSeoF
      */
     public function breadcrumbs(string $locale): array
     {
+        // Once a request: the visible trail and the `BreadcrumbList` of a listing ask for the
+        // same one, and the listing is not an entity the SEO module could keep it for.
+        return RequestMemo::remember('category.crumbs.'.$this->getKey().'.'.$locale, fn (): array => $this->buildBreadcrumbs($locale));
+    }
+
+    /**
+     * @return list<Crumb>
+     */
+    private function buildBreadcrumbs(string $locale): array
+    {
+        // The ancestors with their registry rows, and which of them are visible, in three
+        // queries whatever the depth — not a visibility check and an address per step.
+        $above = $this->ancestors()->with('routes')->get();
+        $visible = $above->isEmpty()
+            ? []
+            : static::query()->whereKey($above->modelKeys())->visible()->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
         $crumbs = [];
 
-        foreach ($this->pathFromRoot() as $node) {
-            if (! $node->is($this) && (! $node->isVisible($locale) || ! $node->hasUrlIn($locale))) {
-                continue;
+        foreach ($above as $node) {
+            if (in_array((int) $node->getKey(), $visible, true) && $node->hasUrlIn($locale)) {
+                $crumbs[] = new Crumb($node->displayName($locale), $node->url($locale));
             }
-
-            $crumbs[] = new Crumb($node->displayName($locale), $node->url($locale));
         }
+
+        $crumbs[] = new Crumb($this->displayName($locale), $this->url($locale));
 
         return $crumbs;
     }

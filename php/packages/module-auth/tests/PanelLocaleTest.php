@@ -87,6 +87,6 @@ final class PanelLocaleTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.locale', 'uk')
             // And a module's own name is translated with everything else.
-            ->assertJsonPath('data.modules.0.title', 'Адміністратори');
+            ->assertJsonPath('data.modules.2.title', 'Адміністратори');
     }
 }

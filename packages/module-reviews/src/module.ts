@@ -1,5 +1,4 @@
 import { categoryRoutes, type AdminModule, type CategoriesOptions } from '@webx-ui/module-admin'
-import ReviewsPage from './ReviewsPage.vue'
 
 export interface ReviewsOptions {
   /** Where the reviews live inside the panel. The categories sit under it. */
@@ -57,7 +56,14 @@ export function reviews(options: ReviewsOptions = {}): AdminModule[] {
       path,
       // One route: the open review is in the address (`?review=`), beside the list it was opened
       // from, so a link to it is a link to both.
-      routes: [{ path, name: 'webx.reviews', component: ReviewsPage, props: { base: path } }],
+      routes: [
+        {
+          path,
+          name: 'webx.reviews',
+          component: () => import('./ReviewsPage.vue'),
+          props: { base: path },
+        },
+      ],
     },
     {
       id: 'review-categories',

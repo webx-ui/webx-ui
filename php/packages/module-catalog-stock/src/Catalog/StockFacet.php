@@ -14,6 +14,7 @@ use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Facets\IndexField;
 use WebxUi\Catalog\Facets\OrderedFacet;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogStock\Models\StockStatus;
 
 /**
@@ -134,7 +135,13 @@ final class StockFacet extends AbstractFacet implements OrderedFacet
      */
     private function load(array $values): Collection
     {
-        return StockStatus::query()->where('is_visible', true)->whereKey($this->ids($values))->scopes(['ordered'])->get();
+        $ids = $this->ids($values);
+
+        // The same statuses are asked for their names and their slugs while one filter is drawn,
+        // and then one at a time for a link each: read once a request.
+        $found = RequestMemo::pool('stock.pool', $ids, static fn (array $missing): Collection => StockStatus::query()->where('is_visible', true)->whereKey($missing)->get());
+
+        return (new Collection($found))->sortBy([['position', 'asc'], ['id', 'asc']])->values();
     }
 
     /**

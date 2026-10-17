@@ -167,6 +167,15 @@ The editor starts at `minHeight` and grows with the document. Give it `maxHeight
 growing there and scrolls inside instead — the right choice inside a dialog, where the page must
 not become the thing that scrolls.
 
+## Loaded on demand
+
+`WxCodeEditor` is an async component: CodeMirror and its seven languages — up to 300 KB gzipped,
+a third of what the panel used to download before anything appeared — are a chunk the browser
+fetches when a screen first draws an editor. Props, events and `v-model` are the same, and a
+template ref points at the editor itself once it has arrived; until then it is `null`, so reach
+for `view` from a handler rather than straight after mounting. In a jsdom test, wait for it with
+`await vi.dynamicImportSettled()`; a stub by name (`stubs: { WxCodeEditor: … }`) still replaces it.
+
 ## Beyond the props
 
 `extensions` accepts any CodeMirror extensions and appends them to the editor's own: a custom

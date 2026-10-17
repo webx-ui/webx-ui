@@ -113,6 +113,8 @@ change. Without a theme the index prints a smaller look of its own inline.
   https://validator.schema.org. A closed one should show the note and no markup.
 - With MCP: read `vacancies://catalog` first (categories with their keys, currencies, country),
   then `vacancies_get`; every tool that changes something takes `dry_run: true` first.
+- Touched a list, a card or a page part: `tests/PerformanceTest.php` holds the query budget of
+  every public page — a query per card or per group fails it before anybody sees the site slow.
 
 ## Read more
 

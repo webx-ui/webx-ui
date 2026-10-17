@@ -45,7 +45,9 @@ final class SqlEngine implements CatalogEngine
     public function search(CatalogQuery $query): CatalogResult
     {
         $base = $this->base($query);
-        $total = (clone $base)->count();
+        // Counts only: neither the total nor a page — two queries the sitemap of the filter
+        // would throw away for every category.
+        $total = $query->countOnly ? 0 : (clone $base)->count();
         $term = trim((string) $query->search);
         $ids = [];
         $exact = [];

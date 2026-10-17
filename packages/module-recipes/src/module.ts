@@ -1,7 +1,5 @@
 import { categoryRoutes, type AdminModule, type CategoriesOptions } from '@webx-ui/module-admin'
-import RecipeEditorPage from './RecipeEditorPage.vue'
 import RecipeHistory from './RecipeHistory.vue'
-import RecipesPage from './RecipesPage.vue'
 
 export interface RecipesOptions {
   /** Where the recipes live inside the panel. The categories and the nutrients sit under it. */
@@ -92,11 +90,16 @@ export function recipes(options: RecipesOptions = {}): AdminModule[] {
       id: 'recipes',
       path,
       routes: [
-        { path, name: 'webx.recipes', component: RecipesPage, props: { base: path } },
+        {
+          path,
+          name: 'webx.recipes',
+          component: () => import('./RecipesPage.vue'),
+          props: { base: path },
+        },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.recipes.edit',
-          component: RecipeEditorPage,
+          component: () => import('./RecipeEditorPage.vue'),
           props: { base: path },
         },
       ],

@@ -23,8 +23,7 @@ final class Revision
     {
         $shown = $service->hasDraft() ? $service->withDraft() : $service;
 
-        /** @var list<int> $categories */
-        $categories = $service->categories()->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
+        $categories = $service->categoryKeys('categories');
 
         $content = [
             'title' => $shown->getAttribute('title'),

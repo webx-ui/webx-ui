@@ -116,7 +116,7 @@ theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a bre
 - Do not leave a `public/robots.txt` and expect the `seo.robots-txt` setting to work: the web
   server hands the file over before Laravel is asked. Delete the file or keep it and empty the
   setting.
-- Do not write `seo_urls` or `seo_redirects` with SQL: the compiled rules in the cache are
+- Do not write `seo_urls` or `seo_redirects` with SQL (or do, then `CacheGroups::bump('seo')`): the compiled rules in the cache are
   thrown away by the models' save and delete, and a raw write leaves the site matching the old
   list. Go through the panel, the API or the MCP tools.
 - Do not mark every address of a redirecting type `noindex` to get it out of the sitemap: the

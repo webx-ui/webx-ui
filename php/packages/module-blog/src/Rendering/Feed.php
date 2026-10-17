@@ -125,6 +125,7 @@ final class Feed
      */
     private function eagerLoad(): array
     {
-        return ['cover', 'rubrics', 'tags', 'author', 'authorProfile'];
+        // `routes` too: `url()` answers from the loaded rows, and without them a card is a query.
+        return ['cover', 'rubrics', 'tags', 'author', 'authorProfile', 'routes'];
     }
 }

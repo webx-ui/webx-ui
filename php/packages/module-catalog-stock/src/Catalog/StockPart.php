@@ -71,6 +71,7 @@ final class StockPart implements ProductPart
             DB::table(StockStatus::LINKS)->updateOrInsert(['product_id' => $product->id], ['status_id' => (int) $chosen]);
         }
 
+        Stock::forget();
         $after = Stock::of([$product->id])[(int) $product->id] ?? null;
 
         if ($before?->id === $after?->id) {

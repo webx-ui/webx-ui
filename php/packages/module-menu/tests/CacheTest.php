@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Menu\Tests;
 
 use Illuminate\Support\Facades\DB;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Menu\MenuCache;
 use WebxUi\Routing\Models\Route;
 
@@ -140,7 +141,12 @@ class CacheTest extends TestCase
         $this->assertSame(['What we do'], $this->labels());
     }
 
-    public function test_forgetting_one_menu_leaves_the_other_alone(): void
+    /**
+     * One version for every menu (WEBX_UI_CACHE.md): an item saved in the header rebuilds the
+     * footer too. A tree is three queries, and a counter per menu would be a counter the panel
+     * and the agent's tool had to know the names of.
+     */
+    public function test_forgetting_one_menu_forgets_the_other_too(): void
     {
         $header = $this->menu('header');
         $footer = $this->menu('footer');
@@ -154,14 +160,13 @@ class CacheTest extends TestCase
         $this->rename($inHeader->getKey(), 'About us');
         $this->rename($inFooter->getKey(), 'Terms of use');
 
-        // One item saved in the header: the header is rebuilt, the footer is not touched.
         $inHeader->touch();
 
         $this->assertSame(['About us'], $this->labels('header'));
-        $this->assertSame(['Terms'], $this->labels('footer'));
+        $this->assertSame(['Terms of use'], $this->labels('footer'));
     }
 
-    public function test_an_entity_only_forgets_the_menus_it_stands_in(): void
+    public function test_an_entity_saved_forgets_every_menu(): void
     {
         $header = $this->menu('header');
         $footer = $this->menu('footer');
@@ -177,7 +182,7 @@ class CacheTest extends TestCase
         $thing->update(['title' => ['en' => 'What we do']]);
 
         $this->assertSame(['What we do'], $this->labels('header'));
-        $this->assertSame(['Terms'], $this->labels('footer'));
+        $this->assertSame(['Terms of use'], $this->labels('footer'));
     }
 
     public function test_a_record_expires_on_its_own(): void
@@ -188,6 +193,8 @@ class CacheTest extends TestCase
 
         $this->rename($item->getKey(), 'Renamed');
         $this->travel(61)->minutes();
+        // The next request: what this one read is kept for this one only.
+        $this->app->make(CacheGroups::class)->forgetMemo();
 
         $this->assertSame(['Renamed'], $this->labels(), 'Anything a subscription missed grows out on its own.');
     }

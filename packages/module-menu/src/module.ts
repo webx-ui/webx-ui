@@ -1,5 +1,4 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import MenusPage from './MenusPage.vue'
 
 export interface MenuOptions {
   /** Where the section lives inside the panel. */
@@ -22,6 +21,6 @@ export function menu(options: MenuOptions = {}): AdminModule {
   return {
     id: 'menu',
     path,
-    routes: [{ path, name: 'webx.menus', component: MenusPage }],
+    routes: [{ path, name: 'webx.menus', component: () => import('./MenusPage.vue') }],
   }
 }

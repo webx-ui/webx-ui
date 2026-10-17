@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks\Models;
 
-use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Versions\HasDraft;
@@ -42,22 +41,6 @@ class Region extends Model
     public function blocksRoot(): string
     {
         return Regions::ALLOWED_IN.$this->name;
-    }
-
-    protected static function booted(): void
-    {
-        // The site reads the published tree from the cache, so whatever changes it drops the
-        // copy: a publication, taking it off, a row removed by `--prune`. A draft saved on every
-        // keystroke changes neither column and leaves the cache alone.
-        static::saved(static function (Region $region): void {
-            if ($region->wasRecentlyCreated || $region->wasChanged(['blocks', 'published_at', 'name'])) {
-                Container::getInstance()->make(Regions::class)->forget($region->name);
-            }
-        });
-
-        static::deleted(static function (Region $region): void {
-            Container::getInstance()->make(Regions::class)->forget($region->name);
-        });
     }
 
     /**

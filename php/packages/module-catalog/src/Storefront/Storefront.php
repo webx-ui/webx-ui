@@ -72,7 +72,8 @@ final class Storefront
         $context = new FilterContext(FilterContext::ROOT, $this->rootPath(), $this->locales->current(), $this->facets->all());
 
         return $this->listing($request, $context, $tail, 'webx-catalog::root', [], null, [
-            'categories' => Category::query()->visible()->whereNull('parent_id')->orderBy('lft')->get(),
+            // With their registry rows: the template links each, and `url()` answers from them.
+            'categories' => Category::query()->visible()->whereNull('parent_id')->orderBy('lft')->with('routes')->get(),
         ]);
     }
 

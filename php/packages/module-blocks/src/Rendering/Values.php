@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks\Rendering;
 
+use Closure;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\PreloadsValues;
 use WebxUi\Admin\Screens\ResolvesForEntity;
 use WebxUi\Admin\Screens\ResolvesMissing;
 use WebxUi\Admin\Screens\ScreenValues;
@@ -108,6 +110,110 @@ final readonly class Values
         }
 
         return $resolved;
+    }
+
+    /**
+     * What a list of blocks holds in fields whose type loads ahead ({@see PreloadsValues}),
+     * handed over by type once, before a block of the list is rendered: a page of seven picture
+     * blocks asked the library seven times, once per block, and asks it once. The nested lists
+     * and the items of a repeater are walked too.
+     *
+     * @param  iterable<array-key, mixed>  $blocks
+     * @param  Closure(string): ?BlockType  $typeOf
+     */
+    public function preload(iterable $blocks, Closure $typeOf): void
+    {
+        $stored = [];
+        $this->collect($blocks, $typeOf, $stored, 0);
+
+        foreach ($stored as $id => $values) {
+            $field = $this->types->get($id);
+
+            if ($field instanceof PreloadsValues) {
+                $field->preload($values);
+            }
+        }
+    }
+
+    /**
+     * @param  iterable<array-key, mixed>  $blocks
+     * @param  Closure(string): ?BlockType  $typeOf
+     * @param  array<string, list<mixed>>  $stored  by field type
+     */
+    private function collect(iterable $blocks, Closure $typeOf, array &$stored, int $depth): void
+    {
+        // The renderer stops at its own depth; this walk only has to stop somewhere.
+        if ($depth > 16) {
+            return;
+        }
+
+        foreach ($blocks as $node) {
+            if (! is_array($node) || ! is_string($node['type'] ?? null)) {
+                continue;
+            }
+
+            $type = $typeOf($node['type']);
+            $values = is_array($node['values'] ?? null) ? $node['values'] : [];
+
+            if (! $type instanceof BlockType) {
+                continue;
+            }
+
+            $this->collectFields(Schema::fields($type->schema, $this->types), $values, $typeOf, $stored, $depth);
+        }
+    }
+
+    /**
+     * The values of these fields — a block's, or one repeater item's, whose fields are named
+     * by `name` where a block's are named by `id` (the same bridge {@see Schema::fields()} makes).
+     *
+     * @param  array<string, array<string, mixed>>  $fields
+     * @param  array<array-key, mixed>  $values
+     * @param  Closure(string): ?BlockType  $typeOf
+     * @param  array<string, list<mixed>>  $stored
+     */
+    private function collectFields(array $fields, array $values, Closure $typeOf, array &$stored, int $depth): void
+    {
+        foreach ($fields as $name => $field) {
+            if (! array_key_exists($name, $values)) {
+                continue;
+            }
+
+            $value = $values[$name];
+            $id = (string) ($field['type'] ?? '');
+
+            if ($id === 'wx-blocks') {
+                if (is_iterable($value)) {
+                    $this->collect($value, $typeOf, $stored, $depth + 1);
+                }
+
+                continue;
+            }
+
+            if ($id === 'wx-repeater') {
+                $children = is_array($field['children'] ?? null) ? $field['children'] : [];
+                $itemFields = Schema::fields($children, $this->types);
+
+                foreach (is_array($value) ? $value : [] as $item) {
+                    if (is_array($item) && $depth < 16) {
+                        $this->collectFields($itemFields, $item, $typeOf, $stored, $depth + 1);
+                    }
+                }
+
+                continue;
+            }
+
+            if (! $this->types->get($id) instanceof PreloadsValues) {
+                continue;
+            }
+
+            // The language being read, the way `resolve()` picks it.
+            if ($this->locales->isMap($value, ($field['localized'] ?? false) === true)) {
+                $value = $this->pick($value);
+            }
+
+            $stored[$id][] = $value;
+        }
     }
 
     /**

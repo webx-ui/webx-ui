@@ -43,7 +43,13 @@ trait HasUrl
         // `restored` fires only on a model with `SoftDeletes`; on any other it is never raised.
         foreach (['created', 'updated', 'deleted', 'restored', 'moved'] as $event) {
             static::registerModelEvent($event, static function (Model $entity) use ($event): void {
-                Container::getInstance()->make(RouteObserver::class)->{$event}($entity);
+                try {
+                    Container::getInstance()->make(RouteObserver::class)->{$event}($entity);
+                } finally {
+                    // The registry was just rewritten for this entity; the rows it holds in
+                    // memory — the ones `url()` answers from — are from before the save.
+                    $entity->unsetRelation('routes');
+                }
             });
         }
     }
@@ -87,13 +93,30 @@ trait HasUrl
         return $types->forEntity($this)->formatter()->format($this, $locale);
     }
 
-    /** The row the registry actually holds, if the entity has been saved. */
+    /**
+     * The row the registry actually holds, if the entity has been saved.
+     *
+     * Out of the `routes` relation, loaded once: a list that did `with('routes')` has every
+     * row already, and an entity asked twice — the card and the trail, the trail and the
+     * `hreflang` lines — is one query rather than one per asking. The rows are dropped whenever
+     * the registry is rewritten for the entity (`bootHasUrl()`), so a suffix the registry
+     * settled on a collision is read back on the next call.
+     */
     public function routeCanonical(?string $locale = null): ?Route
     {
-        return $this->routes()
-            ->where('locale', $locale ?? $this->routeLocale())
-            ->where('kind', Route::CANONICAL)
-            ->first();
+        if (! $this->exists) {
+            return null;
+        }
+
+        $locale ??= $this->routeLocale();
+
+        foreach ($this->routes as $route) {
+            if ($route->kind === Route::CANONICAL && $route->locale === $locale) {
+                return $route;
+            }
+        }
+
+        return null;
     }
 
     /**

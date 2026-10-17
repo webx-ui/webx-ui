@@ -15,6 +15,7 @@ use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Screens\Tree;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
@@ -26,6 +27,7 @@ use WebxUi\Press\Models\Outlet;
 use WebxUi\Press\Panel\OutletForm;
 use WebxUi\Press\Panel\OutletList;
 use WebxUi\Press\Panel\OutletNames;
+use WebxUi\Press\Rendering\OutletLoader;
 use WebxUi\Press\Rendering\When;
 use WebxUi\Press\Support\Kinds;
 
@@ -446,6 +448,8 @@ final class PressTools
 
         $work = function () use ($ids): array {
             Ordering::move(Outlet::class, $ids);
+            // A mass write: no model event moves the group, so the site is told by hand.
+            $this->container->make(CacheGroups::class)->bump(OutletLoader::GROUP);
 
             return $this->list([]);
         };

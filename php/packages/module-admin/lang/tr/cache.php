@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Önbellek',
+    'lead' => 'Sitenin istekler arasında hatırladıkları — menü, ayarlar, adresler — gruplara göre. Paneldeki bir kayıt kendi grubunu kendisi sıfırlar; düğme, site panelin artık söylemediğini göstermeye devam ettiğinde içindir.',
+    'store' => 'Depo',
+    'store-array' => 'İstekten sonra hiçbir şey kalmaz: her sayfa her şeyi yeniden kurar. CACHE_STORE içinde bir depo belirleyin.',
+    'disabled' => 'Sürümlü önbellek yapılandırmada kapalı.',
+    'ttl' => 'Kayıtların ömrü',
+    'ttl-value' => ':hours sa',
+    'groups' => 'Gruplar',
+    'group' => 'Grup',
+    'version' => 'Sürüm',
+    'models' => 'Sıfırlayanlar',
+    'models-none' => 'Yalnızca elle',
+    'no-groups' => 'Henüz hiçbir modül bir önbellek grubu bildirmedi.',
+    'reset-all' => 'Site önbelleğini sıfırla',
+    'reset-all-title' => 'Sitenin tüm önbelleği sıfırlansın mı?',
+    'reset-all-text' => 'Tüm gruplar sıfırlanır; site önbelleğe aldıklarını sonraki ziyaretlerde yeniden kurar. Oturumlar ve girişler etkilenmez. Buna basmak zorunda kaldıysanız bir şey kendi kendine sıfırlanmamıştır: siteyi yürütenlere hangi sayfanın eski kaldığını söyleyin.',
+    'reset-group' => 'Sıfırla',
+    'reset-group-title' => '«:group» önbelleği sıfırlansın mı?',
+    'reset-group-text' => 'Sitenin bu gruptan önbelleğe aldıkları sonraki ziyaretlerde yeniden kurulur. Oturumlar ve girişler etkilenmez.',
+    'reset' => 'Sıfırla',
+    'cancel' => 'İptal',
+    'reset-done' => 'Önbellek sıfırlandı.',
+    'reset-group-done' => '«:group» önbelleği sıfırlandı.',
+    'load-failed' => 'Önbelleğin durumu yüklenemedi.',
+    'refresh' => 'Yenile',
+    'history' => 'Sıfırlamalar',
+    'history-groups' => 'Gruplar',
+    'forbidden' => 'Önbelleği sıfırlayamazsınız.',
+    'group-locales' => 'Diller',
+    'group-routes' => 'Adresler',
+    'group-screens' => 'Panel ekranları',
+    'group-theme' => 'Tema',
+];

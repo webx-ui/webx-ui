@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use WebxUi\Admin\Http\Controllers\CacheController;
 use WebxUi\Admin\Http\Controllers\CollectionController;
 use WebxUi\Admin\Http\Controllers\EditingController;
 use WebxUi\Admin\Http\Controllers\HistoryController;
@@ -78,6 +79,11 @@ Route::prefix((string) config('webx-admin.api_path'))
             ->whereNumber('id')->name('history.run');
         Route::get('history/{type}/{id}', [HistoryController::class, 'index'])
             ->where('type', '[a-z0-9_.-]+')->whereNumber('id')->name('history.index');
+
+        // «System → Cache» (WEBX_UI_CACHE.md §5): what is cached where, and the reset — behind
+        // the section's own permissions, asked in the controller as the frame's endpoints do.
+        Route::get('cache', [CacheController::class, 'show'])->name('cache.show');
+        Route::post('cache/reset', [CacheController::class, 'reset'])->name('cache.reset');
 
         // The heartbeat of an open editor: who else has the record open, and whether it moved
         // under it. The record is a registered one and names the permission it is read with.

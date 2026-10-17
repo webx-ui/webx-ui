@@ -111,6 +111,43 @@ trait HasCategories
 
             $relation->sync($payload);
         });
+
+        // What was loaded is yesterday's list now: {@see categoryKeys()} reads a loaded relation.
+        $this->unsetRelation($name ?? $this->categoryRelation());
+    }
+
+    /**
+     * The ids of the categories the record is in, as the site has them, in their order: from the
+     * relation when it is loaded — a row of the panel's list, which loaded it to draw the names —
+     * and by a query otherwise. Twenty rows hashing their revision were twenty queries.
+     *
+     * @param  string|null  $name  Another category relation of the record than the default one.
+     * @return list<int>
+     */
+    public function categoryKeys(?string $name = null): array
+    {
+        $name ??= $this->categoryRelation();
+
+        if ($this->relationLoaded($name)) {
+            /** @var iterable<int, Model> $loaded */
+            $loaded = $this->getRelation($name);
+            $ids = [];
+
+            foreach ($loaded as $category) {
+                $ids[] = (int) $category->getKey();
+            }
+
+            return $ids;
+        }
+
+        $relation = $this->categoryLinks($name);
+
+        /** @var list<int> $ids */
+        $ids = $relation->pluck($relation->getRelated()->getQualifiedKeyName())
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+
+        return $ids;
     }
 
     /**

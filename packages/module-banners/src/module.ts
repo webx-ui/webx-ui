@@ -1,6 +1,4 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import BannerEditorPage from './BannerEditorPage.vue'
-import BannersPage from './BannersPage.vue'
 import LayersField from './LayersField.vue'
 
 export interface BannersOptions {
@@ -24,18 +22,23 @@ export function banners(options: BannersOptions = {}): AdminModule {
     path,
     routes: [
       // The open place is in the address (`?place=`), so a link to it is a link to its banners.
-      { path, name: 'webx.banners', component: BannersPage, props: { base: path } },
+      {
+        path,
+        name: 'webx.banners',
+        component: () => import('./BannersPage.vue'),
+        props: { base: path },
+      },
       // A banner not written yet: the place it goes to rides in the query (`?place=hero`).
       {
         path: `${path}/new`,
         name: 'webx.banners.new',
-        component: BannerEditorPage,
+        component: () => import('./BannerEditorPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/:id(\\d+)`,
         name: 'webx.banners.edit',
-        component: BannerEditorPage,
+        component: () => import('./BannerEditorPage.vue'),
         props: { base: path },
       },
     ],

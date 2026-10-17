@@ -41,6 +41,9 @@ final class LandingHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
+        // With the registry rows of the landing and its base: the trail and the canonical path
+        // ask their addresses, and each would be a query otherwise.
+        $entity->loadMissing(['routes', 'category.routes']);
         $locale = $this->locales->current();
         $category = $entity->category_id === null ? null : $entity->category;
 

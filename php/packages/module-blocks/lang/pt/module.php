@@ -5,4 +5,5 @@ declare(strict_types=1);
 return [
     'title' => 'Blocos',
     'regions' => 'Zonas do site',
+    'usage' => 'Onde os blocos são usados',
 ];

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection as BaseCollection;
 use WebxUi\Admin\Categories\HasCategories;
 use WebxUi\Admin\Relations\HasRelations;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -19,6 +20,7 @@ use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Screens\MediaValues;
 use WebxUi\Recipes\Rendering\Similar;
 use WebxUi\Recipes\Seo\RecipeMarkup;
@@ -313,12 +315,7 @@ class Recipe extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallba
      */
     public function categoryIds(string $relation = 'categories'): array
     {
-        /** @var list<int> $ids */
-        $ids = $this->categoryLinks($relation)->pluck($this->categoryLinks($relation)->getRelated()->getQualifiedKeyName())
-            ->map(static fn (mixed $id): int => (int) $id)
-            ->all();
-
-        return $ids;
+        return $this->categoryKeys($relation);
     }
 
     /** Where a published draft hands back its categories: written by the save that follows. */
@@ -414,6 +411,47 @@ class Recipe extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallba
         $first = is_array($this->gallery) ? $this->gallery[0] ?? null : null;
 
         return $first === null ? null : Container::getInstance()->make(MediaValues::class)->resolve($first, $locale);
+    }
+
+    /**
+     * The covers of every recipe found read from the library at once: the cover is the first
+     * picture of the gallery, a key into the library, and `cover()` on each row of a list would
+     * otherwise look it up one at a time. For the panel's list, the picker and the sitemap.
+     *
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeWithCovers(Builder $query): Builder
+    {
+        // The hook also runs on what `pluck()` returns, which is no collection of models: hence
+        // the base collection, and the check of each item.
+        return $query->afterQuery(static function (BaseCollection $recipes): void {
+            $paths = [];
+
+            foreach ($recipes as $recipe) {
+                $first = $recipe instanceof Recipe && is_array($recipe->gallery) ? $recipe->gallery[0] ?? null : null;
+
+                if (is_array($first) && is_string($first['path'] ?? null)) {
+                    $paths[] = $first['path'];
+                }
+            }
+
+            if ($paths !== []) {
+                Container::getInstance()->make(MediaFiles::class)->load($paths);
+            }
+        });
+    }
+
+    /**
+     * What a line of the sitemap asks of a recipe, for a chunk at once: the cover behind
+     * `og:image`. The date is a column, and the address comes with the row of the registry.
+     *
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeForSitemap(Builder $query): Builder
+    {
+        return $this->scopeWithCovers($query);
     }
 
     /**

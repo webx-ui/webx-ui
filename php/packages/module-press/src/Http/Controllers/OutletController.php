@@ -9,11 +9,13 @@ use Illuminate\Http\Request;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Press\Http\Resources\OutletResource;
 use WebxUi\Press\Models\Outlet;
 use WebxUi\Press\Panel\OutletForm;
 use WebxUi\Press\Panel\OutletList;
+use WebxUi\Press\Rendering\OutletLoader;
 
 /**
  * The section's list, one outlet as its editor opens it, and the order (§4.10).
@@ -26,6 +28,7 @@ final class OutletController
     public function __construct(
         private readonly OutletList $list,
         private readonly OutletForm $form,
+        private readonly CacheGroups $groups,
     ) {}
 
     /** Every outlet at once — the list is where they are put in order, so it has no pages. */
@@ -82,6 +85,8 @@ final class OutletController
         $ids = $request->input('ids');
 
         Ordering::move(Outlet::class, is_array($ids) ? array_values(array_filter($ids, is_numeric(...))) : []);
+        // A mass write: no model event moves the group, so the site is told by hand.
+        $this->groups->bump(OutletLoader::GROUP);
 
         return ApiResponse::noContent();
     }

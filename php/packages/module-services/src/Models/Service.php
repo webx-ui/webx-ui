@@ -146,6 +146,18 @@ class Service extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     }
 
     /**
+     * What a line of the sitemap asks of a service, for a chunk at once: the cover behind
+     * `og:image` of its fallback card — one query per chunk rather than one per service.
+     *
+     * @param  Builder<Service>  $query
+     * @return Builder<Service>
+     */
+    public function scopeForSitemap(Builder $query): Builder
+    {
+        return $query->with('cover');
+    }
+
+    /**
      * Never published · on the site · on the site with edits · taken off it (§4.6).
      *
      * Never published and taken off look the same in the columns; the history tells them apart.

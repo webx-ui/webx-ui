@@ -465,17 +465,24 @@ describe('WxRichText', () => {
     async function openSource(props: Record<string, unknown>) {
       const wrapper = await mountEditor(props)
       await toolByLabel(wrapper, 'HTML source').trigger('click')
+      // The code editor arrives on first use (an async component): wait for it.
+      await vi.dynamicImportSettled()
       await flush()
       return wrapper
     }
 
+    /** The editor itself, not the async wrapper around it that carries the same name. */
+    function codeEditor(wrapper: Wrapper) {
+      return wrapper.findAllComponents({ name: 'WxCodeEditor' }).at(-1)!
+    }
+
     function typeSource(wrapper: Wrapper, html: string) {
-      wrapper.findComponent({ name: 'WxCodeEditor' }).vm.$emit('update:modelValue', html)
+      codeEditor(wrapper).vm.$emit('update:modelValue', html)
     }
 
     it('shows the document as indented HTML and hides the editor', async () => {
       const wrapper = await openSource({ modelValue: '<ul><li><p>One</p></li></ul>' })
-      const code = wrapper.findComponent({ name: 'WxCodeEditor' })
+      const code = codeEditor(wrapper)
 
       expect(code.props('modelValue')).toBe('<ul>\n  <li>\n    <p>One</p>\n  </li>\n</ul>')
       expect(code.props('language')).toBe('html')
@@ -540,7 +547,7 @@ describe('WxRichText', () => {
 
     it('lets a read-only field show its source', async () => {
       const wrapper = await openSource({ modelValue: '<p>Read me</p>', readonly: true })
-      const code = wrapper.findComponent({ name: 'WxCodeEditor' })
+      const code = codeEditor(wrapper)
 
       expect(code.exists()).toBe(true)
       expect(code.props('readonly')).toBe(true)

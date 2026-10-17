@@ -6,6 +6,8 @@ parameters:
     paths:
         - packages/module-admin/src
         - packages/module-admin/tests
+        - packages/cache/src
+        - packages/cache/tests
         - packages/localization/src
         - packages/localization/tests
         - packages/mcp/src

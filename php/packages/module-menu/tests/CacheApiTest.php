@@ -32,7 +32,8 @@ class CacheApiTest extends TestCase
         $this->assertNotNull($listed->json('data.0.cache.built_at'));
     }
 
-    public function test_resetting_one_menu_leaves_the_others_alone(): void
+    /** One version for every menu (WEBX_UI_CACHE.md): the button of one menu resets them all. */
+    public function test_resetting_one_menu_resets_the_others_too(): void
     {
         $this->item(['title' => ['en' => 'About'], 'target' => 'url', 'url' => '/about'], $this->menu('header'));
         $this->item(['title' => ['en' => 'Terms'], 'target' => 'url', 'url' => '/terms'], $this->menu('footer'));
@@ -47,7 +48,7 @@ class CacheApiTest extends TestCase
         $cache = $this->app->make(MenuCache::class);
 
         $this->assertNull($cache->builtAt('header'));
-        $this->assertNotNull($cache->builtAt('footer'), 'The footer was not the one asked about.');
+        $this->assertNull($cache->builtAt('footer'));
     }
 
     public function test_one_menu_is_reset_in_every_language(): void

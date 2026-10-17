@@ -41,6 +41,11 @@ question is about one of them.
   `seo-tab`, `history-tab`). Also the exchange forms `catalog.exchange-import` and
   `catalog.exchange-profile`. The API is under `/api/cms/catalog`. Permissions are
   `catalog.view`, `catalog.manage` and `catalog.delete`; satellites have none of their own.
+- **Cache group** `catalog` (WEBX_UI_CACHE.md): the facets' settings and what the satellites keep live on it;
+  `Category` and `Product` move it (an import or a bulk action commits a chunk, so one move a chunk), a write
+  without a model's event says so (`FacetSettings::write`, the importer's mass unpublish). What one page reads
+  twice — brands, stock, a facet's values, the subtree — is kept on the request (`Support\RequestMemo`).
+  Query budgets of every public page: `tests/PerformanceTest.php` (`WEBX_PERF_PRINT=1` prints the tallies).
 - **Registries** (singletons a satellite fills from its provider): `ProductParts`, `Facets`,
   `Sorts`, `Documents`, `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`,
   `StorefrontParts`, `Purchasability`, `PopularitySignals`, `CatalogEngines`, `FilterUrls`,
@@ -124,6 +129,8 @@ form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `barcod
   product shows up in search.
 - With MCP: read `catalog://fields` and `catalog://product-parts` first. Every write tool takes
   `dry_run: true`. `catalog_products_get` shows what was saved.
+- `tests/PerformanceTest.php` holds the query budget of every public page and the panel's list,
+  and that the site follows an edit, a move, a bulk action and an import at once — no cache reset.
 
 ## Read more
 

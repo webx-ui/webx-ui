@@ -83,6 +83,23 @@ class RelationTarget
     }
 
     /**
+     * The records by name only, in the model's own order — what a filter above a list draws.
+     * Without what a row of the picker loads beside each one (categories, a cover, whether the
+     * site shows it): a filter of a thousand services asked for all of that, and drew a name.
+     *
+     * @return list<array{id: int, title: string}>
+     */
+    public function names(string $locale, int $limit = 1000): array
+    {
+        $records = $this->order($this->query()->setEagerLoads([]))->limit($limit)->get();
+
+        return array_values($records->map(fn (Model $record): array => [
+            'id' => (int) $record->getKey(),
+            'title' => $this->title($record, $locale),
+        ])->all());
+    }
+
+    /**
      * The chosen records by id, in the order asked — what a form opens with. The bin included:
      * the editor has to see that a chosen service went there, not find it silently gone.
      *

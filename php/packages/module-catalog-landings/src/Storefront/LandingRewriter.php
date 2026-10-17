@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogLandings\Storefront;
 
+use Illuminate\Database\Eloquent\Collection;
 use WebxUi\Catalog\Facets\CategoryFacet;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Filter\FilterContext;
@@ -11,6 +12,7 @@ use WebxUi\Catalog\Filter\FilterState;
 use WebxUi\Catalog\Filter\FilterUrlRewriter;
 use WebxUi\Catalog\Filter\RewrittenUrl;
 use WebxUi\Catalog\Models\Category;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogLandings\Models\Landing;
 use WebxUi\Routing\Models\Route;
 
@@ -38,6 +40,9 @@ final class LandingRewriter implements FilterUrlRewriter
     /** @var array<string, list<array{landing: Landing, state: FilterState, size: int}>> base → its landings */
     private array $landings = [];
 
+    /** @var array<string, true> the bases the last prepare was asked about, with landings or without */
+    private array $prepared = [];
+
     private string $locale = '';
 
     public function __construct(private readonly Facets $facets) {}
@@ -45,6 +50,7 @@ final class LandingRewriter implements FilterUrlRewriter
     public function prepare(FilterContext $context, array $states): void
     {
         $this->landings = [];
+        $this->prepared = [];
         $this->locale = $context->locale;
 
         if (! in_array($context->context, [FilterContext::CATEGORY, FilterContext::ROOT], true)) {
@@ -59,10 +65,22 @@ final class LandingRewriter implements FilterUrlRewriter
 
         $root = isset($bases['root']);
         $ids = array_map('intval', array_keys(array_filter($bases, static fn (string|int $key): bool => $key !== 'root', ARRAY_FILTER_USE_KEY)));
+        $this->prepared = array_fill_keys(array_map('strval', array_keys($bases)), true);
 
-        $query = Landing::query()
+        // Once a request per base: the core prepares the rewriters for the filter's links and
+        // again for the page's own address, and the bases of the page are the same each time.
+        $memo = 'landings.bases.'.$context->locale;
+        $wanted = [...($root ? ['root'] : []), ...array_map('strval', $ids)];
+        /** @var array<string, list<Landing>> $read base → its landings, for every base asked so far */
+        $read = RequestMemo::remember($memo, static fn (): array => []);
+        $missing = array_values(array_diff($wanted, array_keys($read)));
+        $root = in_array('root', $missing, true);
+        $ids = array_map('intval', array_filter($missing, static fn (string $base): bool => $base !== 'root'));
+
+        $found = $missing === [] ? new Collection : Landing::query()
             ->visible($context->locale)
-            ->with(['category', 'routes' => static fn ($routes) => $routes->where('locale', $context->locale)->where('kind', Route::CANONICAL)])
+            // Of the base only its bounds, which is all `stands()` compares.
+            ->with(['category:id,lft,rgt', 'routes' => static fn ($routes) => $routes->where('locale', $context->locale)->where('kind', Route::CANONICAL)])
             ->where(static function ($where) use ($root, $ids): void {
                 $where->whereIn('category_id', $ids === [] ? [0] : $ids);
 
@@ -71,21 +89,52 @@ final class LandingRewriter implements FilterUrlRewriter
                 }
             })
             ->orderBy('position')
-            ->orderBy('id');
+            ->orderBy('id')
+            ->get();
 
-        foreach ($query->get() as $landing) {
-            $state = $landing->set()->state($this->facets);
-
-            if ($state->isEmpty()) {
-                continue;
-            }
-
-            $this->landings[$landing->category_id === null ? 'root' : (string) $landing->category_id][] = [
-                'landing' => $landing,
-                'state' => $state,
-                'size' => count($state->all()),
-            ];
+        foreach ($missing as $base) {
+            $read[$base] = [];
         }
+
+        foreach ($found as $landing) {
+            $read[$landing->category_id === null ? 'root' : (string) $landing->category_id][] = $landing;
+        }
+
+        RequestMemo::put($memo, $read);
+
+        foreach ($wanted as $base) {
+            foreach ($read[$base] as $landing) {
+                $state = $landing->set()->state($this->facets);
+
+                if ($state->isEmpty()) {
+                    continue;
+                }
+
+                $this->landings[$base][] = [
+                    'landing' => $landing,
+                    'state' => $state,
+                    'size' => count($state->all()),
+                ];
+            }
+        }
+    }
+
+    /**
+     * The landings of a base the last {@see prepare()} read, with their canonical rows — for a
+     * list on the same page that would otherwise read them again — or null when the base was
+     * not among the page's.
+     *
+     * @return Collection<int, Landing>|null
+     */
+    public function loadedFor(?int $categoryId): ?Collection
+    {
+        $base = $categoryId === null ? 'root' : (string) $categoryId;
+
+        if (! isset($this->prepared[$base])) {
+            return null;
+        }
+
+        return new Collection(array_map(static fn (array $row): Landing => $row['landing'], $this->landings[$base] ?? []));
     }
 
     public function rewrite(FilterContext $context, FilterState $state): ?RewrittenUrl

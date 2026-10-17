@@ -68,6 +68,16 @@ final class DictionaryBuilder
     }
 
     /**
+     * What the words of the panel in this language were built from, in a few characters — the
+     * part of a cache key that makes it follow the lang files of the packages and of the site
+     * (the panel's manifest carries translated titles too).
+     */
+    public function version(string $locale): string
+    {
+        return $this->fingerprint(LocaleCatalogue::normalise($locale));
+    }
+
+    /**
      * @return array{locale: string, fallback: string, namespaces: array<string, array<string, mixed>>}
      */
     private function collect(string $locale): array

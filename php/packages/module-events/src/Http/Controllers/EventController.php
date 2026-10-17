@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Editing\LastChange;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Admin\Relations\Relations;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Events\Http\Requests\EventRequest;
 use WebxUi\Events\Http\Resources\EventResource;
@@ -47,10 +48,13 @@ final class EventController
         $locale = $locales->content();
         $service = $targets->find('service');
 
-        $page = $this->list->build($request)->paginate(
+        // The SEO card is for the revision every row carries, which the agent's list does not.
+        $page = $this->list->build($request)->with('seo')->paginate(
             min(100, max(5, (int) $request->integer('per_page', EventList::PER_PAGE))),
         );
 
+        // The services each row hashes into its revision, for the page at once.
+        Relations::loadIds($page->getCollection(), Event::SERVICES);
         $page->through(static fn (Event $event): array => (new EventResource($event))->resolve($request));
 
         return new JsonResponse([
@@ -75,10 +79,7 @@ final class EventController
                     'id' => (int) $category->getKey(),
                     'title' => $category->displayName($locale),
                 ])->values()->all(),
-                'services' => $service === null ? null : array_map(
-                    static fn (array $row): array => ['id' => $row['id'], 'title' => $row['title']],
-                    $service->candidates('', $locale, 1000),
-                ),
+                'services' => $service?->names($locale),
             ],
         ]);
     }
@@ -160,7 +161,10 @@ final class EventController
 
     private function loaded(Event $event): Event
     {
-        return $event->loadMissing(['routes', 'categories']);
+        // The form, its revision and its relation field each read the services: once for all.
+        Relations::loadIds([$event], Event::SERVICES);
+
+        return $event->loadMissing(['routes', 'categories', 'seo']);
     }
 
     private function author(Request $request): ?int

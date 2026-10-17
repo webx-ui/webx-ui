@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\CatalogBrands\Catalog;
 
 use Illuminate\Support\Facades\DB;
+use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogBrands\Models\Brand;
 
 /**
@@ -13,6 +14,8 @@ use WebxUi\CatalogBrands\Models\Brand;
  */
 final class Brands
 {
+    private const MEMO = 'brands.of.';
+
     /**
      * @param  list<int|string>  $productIds
      * @param  bool  $visible  only the published ones — what the site shows; the panel sees all
@@ -24,6 +27,23 @@ final class Brands
             return [];
         }
 
+        // Once a request for one set of products: the line on the card, the line beside the buy
+        // button and the document all ask for the same page.
+        return RequestMemo::remember(self::MEMO.($visible ? 'visible.' : 'all.').RequestMemo::ids($productIds), static fn (): array => self::lookup($productIds, $visible));
+    }
+
+    /** A brand was put on a product, or taken off, in this request: what it knew is stale. */
+    public static function forget(): void
+    {
+        RequestMemo::forget(self::MEMO);
+    }
+
+    /**
+     * @param  list<int|string>  $productIds
+     * @return array<int, Brand>
+     */
+    private static function lookup(array $productIds, bool $visible): array
+    {
         /** @var array<int, int> $rows */
         $rows = DB::table(Brand::LINKS)->whereIn('product_id', $productIds)->pluck('brand_id', 'product_id')
             ->mapWithKeys(static fn (mixed $brand, mixed $product): array => [(int) $product => (int) $brand])

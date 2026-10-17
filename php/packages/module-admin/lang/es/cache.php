@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Caché',
+    'lead' => 'Lo que el sitio recuerda entre peticiones — el menú, los ajustes, las direcciones — por grupos. Guardar en el panel restablece su propio grupo; el botón es para cuando el sitio sigue mostrando lo que el panel ya no dice.',
+    'store' => 'Almacén',
+    'store-array' => 'Nada sobrevive a la petición: cada página lo construye todo de nuevo. Defina un almacén en CACHE_STORE.',
+    'disabled' => 'La caché versionada está desactivada en la configuración.',
+    'ttl' => 'Las entradas viven',
+    'ttl-value' => ':hours h',
+    'groups' => 'Grupos',
+    'group' => 'Grupo',
+    'version' => 'Versión',
+    'models' => 'Lo restablecen',
+    'models-none' => 'Solo a mano',
+    'no-groups' => 'Ningún módulo ha declarado aún un grupo de caché.',
+    'reset-all' => 'Restablecer la caché del sitio',
+    'reset-all-title' => '¿Restablecer toda la caché del sitio?',
+    'reset-all-text' => 'Se restablecen todos los grupos; el sitio reconstruye lo que tenía en caché en las próximas visitas. Las sesiones y los inicios de sesión no se tocan. Si tuvo que pulsar esto, algo no se restableció solo: diga a quien mantiene el sitio qué página estaba desactualizada.',
+    'reset-group' => 'Restablecer',
+    'reset-group-title' => '¿Restablecer la caché «:group»?',
+    'reset-group-text' => 'Lo que el sitio guardó en caché de este grupo se reconstruye en las próximas visitas. Las sesiones y los inicios de sesión no se tocan.',
+    'reset' => 'Restablecer',
+    'cancel' => 'Cancelar',
+    'reset-done' => 'La caché se ha restablecido.',
+    'reset-group-done' => 'La caché «:group» se ha restablecido.',
+    'load-failed' => 'No se pudo cargar el estado de la caché.',
+    'refresh' => 'Actualizar',
+    'history' => 'Restablecimientos',
+    'history-groups' => 'Grupos',
+    'forbidden' => 'No puede restablecer la caché.',
+    'group-locales' => 'Idiomas',
+    'group-routes' => 'Direcciones',
+    'group-screens' => 'Pantallas del panel',
+    'group-theme' => 'Tema',
+];
