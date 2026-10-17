@@ -209,6 +209,8 @@ back to English as well.
 1. `php artisan webx:theme:show` — what the chain gives and which layer owns it.
 2. The change, in `theme/`, through the cheapest door; the rules in `RULES.md`.
 3. `php artisan webx:theme:check` — no findings; the theme's test — green.
+   The pictures, fonts and scripts of the theme keep rules 36–41 ([Speed](./styles.md#speed)).
 4. Screenshots in a browser: the home page, an inner page, each module's page — on a desktop and
    at 375px, in every preset. jsdom does not check layout.
-5. A report to the person: what changed, through which door, which views are overridden.
+5. The home page and the heaviest page measured at a phone's width — LCP, CLS, bytes.
+6. A report to the person: what changed, through which door, which views are overridden.

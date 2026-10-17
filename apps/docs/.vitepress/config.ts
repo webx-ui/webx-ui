@@ -45,6 +45,7 @@ export default defineConfig({
             { text: 'Editing together', link: '/guide/editing-together' },
             { text: 'Building for the panel on the site', link: '/guide/site-bar-modules' },
             { text: 'Caching', link: '/guide/caching' },
+            { text: 'Performance', link: '/guide/performance' },
           ],
         },
         {

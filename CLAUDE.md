@@ -47,7 +47,8 @@ scripts/                                # link-panel, starter-site, sync-php-ver
 - Компоненты и их статус — только `apps/docs/guide/roadmap.md`.
 - Спеки — `docs/architecture/README.md`; ключевые: экраны (`WEBX_UI_SCREENS.md`, читать до правки
   любого экрана панели), адреса сайта (`WEBX_UI_ROUTING.md`: любой контентный модуль получает адрес
-  там), релиз (`WEBX_UI_PHP_RELEASE.md`), темы (`WEBX_UI_THEMES.md`), виджеты и формы сайта
+  там), релиз (`WEBX_UI_PHP_RELEASE.md`), производительность и кеш (`WEBX_UI_PERFORMANCE.md`,
+  `WEBX_UI_CACHE.md`), темы (`WEBX_UI_THEMES.md`), виджеты и формы сайта
   (`WEBX_UI_WIDGETS.md`), панель на сайте (`WEBX_UI_SITE_BAR.md`).
 - «Диалоги из кода» (`openModal`, `confirm`, …) — `apps/docs/guide/modals.md`; тосты — `useToast`.
 
@@ -132,6 +133,16 @@ scripts/                                # link-panel, starter-site, sync-php-ver
   `pnpm build` — до typecheck (доки резолвят `@webx-ui/core` из `dist`); typecheck только
   рекурсивный. Один тест — из корня: `npx vitest run <файл> --pool=forks --poolOptions.forks.singleFork`.
   PHP-половина — из `php/`: `composer lint && composer analyse && composer test`.
+- **Чек-лист производительности перед сдачей** — если тронуты публичная страница, список или форма
+  панели, MCP-список или кеш (правила — `WEBX_UI_PERFORMANCE.md`, гайд `guide/performance.md`):
+  - **N+1** — связи, которые трогает шаблон строки (`routes`, обложка, категории), грузятся
+    запросом на список; `assertNoRepeatedQueries` на тёплом списке зелёный;
+  - **кеш** — данные каждой страницы в `CacheGroups::remember` с группами; модели в `bumpOn`
+    своей группы; путь записи без события (массовый `update`, импорт, реордер, сырой SQL) — `bump()`;
+  - **индексы** — под новые `WHERE`/`ORDER BY`, проверены `EXPLAIN` на MariaDB, миграция
+    откатывается;
+  - **бюджет** — `PerformanceTest` модуля покрывает новую страницу и список, тест свежести — каждую
+    группу; поднятый бюджет — с причиной в тесте.
 - **`main` закрыт ruleset'ом с очередью мержа.** Нужен зелёный чек `Lint, typecheck, test, build`
   (агрегатор джобов `ci.yml`). В очередь — мутацией, `gh pr merge` не ставит:
   `gh api graphql -f query='mutation{enqueuePullRequest(input:{pullRequestId:"<id>"}){mergeQueueEntry{state position}}}'`,

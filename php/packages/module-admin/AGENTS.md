@@ -50,7 +50,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 | `webx:doctor`                                                                                           | checks both halves, bundle, npm ranges, migrations, storage, layout, regions, languages, caches, Passport keys, site gate; repairs nothing. `--strict` fails on setup warnings, not `(content)` ones; `--json`                                         |
 | `webx:modules`, `webx:module:add`                                                                       | list the modules a site can have; install one without the questions (`--no-build`)                                                                                                                                                                     |
 | `webx:demo`                                                                                             | seed demo content; `--remove`, `--module=`, `--force`                                                                                                                                                                                                  |
-| `webx:make-module`                                                                                      | a module class                                                                                                                                                                                                                                         |
+| `webx:make-module`                                                                                      | a module class and `tests/Feature/Cms/<Name>ModulePerformanceTest.php`, its query-budget and freshness tests to fill in                                                                                                                                |
 | `webx:boot`                                                                                             | container start: wait for the database, migrate, cache                                                                                                                                                                                                 |
 | `webx:db:backup`, `webx:history:prune`, `webx:versions:prune`, `webx:prune-uploads`, `webx:cache:prune` | scheduled by the package itself; need the system cron behind `schedule:run`                                                                                                                                                                            |
 | `webx:cache:reset [--group=]`                                                                           | moves the versions of the cache groups (all, or the ones named) — never `cache:clear`; writes a journal row                                                                                                                                            |
@@ -139,12 +139,12 @@ whose target is gone throws when the screen is first built — a bug in whoever 
 - Open `/<webx-admin.path>` and `GET /<webx-admin.api_path>/screens/<name>`: a broken patch
   fails there with the screen, the operation and the missing target.
 - With MCP: `history_get` on a record you changed shows the save, its source and the fields.
+- A module of the site: its `PerformanceTest` (from `webx:make-module`) is filled in and green — https://webx-ui.github.io/webx-ui/guide/performance.
 
 ## Read more
 
 - [README.md](README.md) in this directory — the module contract, manifest, drafts, backups, uploads.
 - New site, `webx:panel --sync`, `webx:doctor`: https://webx-ui.github.io/webx-ui/guide/new-site
-- Extending views and services: https://webx-ui.github.io/webx-ui/guide/extending
+- Extending views and services: https://webx-ui.github.io/webx-ui/guide/extending; moving content between stands: https://webx-ui.github.io/webx-ui/guide/snapshots
 - Screens and patches: https://webx-ui.github.io/webx-ui/guide/screens; their specification — https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_SCREENS.md
-- Moving content between stands: https://webx-ui.github.io/webx-ui/guide/snapshots
 - Specifications of the journal and of these guides: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_HISTORY.md, https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_AGENT_DOCS.md

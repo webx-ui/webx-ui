@@ -71,6 +71,8 @@ Brand form node ids: `naming`, `title`, `slug`, `logo`, `is-visible`, `is-featur
   search engines.
 - With MCP: run `catalog_brands_list`, then `catalog_products_get` on a product to see
   `brand.id`. Every write takes `dry_run: true` first.
+- `tests/PerformanceTest.php` holds the query budget of a brand, the list and the sitemap file;
+  a change that needs more queries says why there.
 
 ## Read more
 

@@ -34,8 +34,8 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   icons, fonts, module stylesheets (`ThemeReport`). Run it before you change the look.
 - **`webx:theme:check [path]`** — the rules a machine can hold (RULES.md): tokens.json values, CSS
   on tokens only (`Checks\CssCheck`) in the layers, widgets and modules, block types and their
-  schemas, icons and `theme_asset()` paths, words in every declared locale, fonts, letters. A line
-  per finding (file:line, what, why) and a non-zero exit.
+  schemas, icons and `theme_asset()` paths, words in every declared locale, fonts, letters, `<img>` without `width`/`height`. A
+  line per finding (file:line, what, why) and a non-zero exit; a `note:` (a `.woff` font) does not fail.
 - **`webx:theme:sync [--force] [--dry-run] [--adopt=<slug>]`** — the packaged layers' `dist/` and
   `assets/` to `public/themes/`, the modules' base look as one file, the icons as one sprite, then
   the steps tagged `webx-themes.sync` (`Contracts\SyncStep`): `module-blocks` puts the layers'
@@ -135,6 +135,6 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
 
 ## Read more
 
-- [RULES.md](RULES.md) — the 35 rules of a theme; [README.md](README.md) — the PHP API.
+- [RULES.md](RULES.md) — the 41 rules of a theme; [README.md](README.md) — the PHP API.
 - Guide: https://webx-ui.github.io/webx-ui/guide/themes
 - Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_THEMES.md

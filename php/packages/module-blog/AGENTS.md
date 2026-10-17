@@ -128,6 +128,9 @@ theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a bre
   404 to readers until its date; a draft is seen through the preview link the editor gives.
 - With MCP: `articles_list`, then `articles_get` by address (`"/blog/how-to-choose"`) — its
   `preview_url` is the draft as the site prints it; every mutating tool takes `dry_run: true`.
+- `tests/PerformanceTest.php` holds the query budget of the feed, an article, a rubric, a tag,
+  an author, the RSS feed, the sitemap and the panel's lists; a page shows a change made through
+  the panel at once, with no cache reset. A change that needs more queries says why there.
 
 ## Read more
 

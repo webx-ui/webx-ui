@@ -115,3 +115,26 @@ Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WE
     sideways scroll, `getComputedStyle` for whether a token really arrived.
 35. **Do** report to the person what changed, through which door and why, and which views are
     overridden. Whether the theme is good is the person's decision.
+
+## Speed
+
+36. **Do** serve a photo as WebP or AVIF, at the width the layout draws it: a picture of the media
+    library with its preview and its file in `srcset`/`sizes`, the way the gallery of
+    `webx-ui/widgets` does; an old library converted with `php artisan webx:media:webp`. **Do not** put a 3000px JPEG into a card 400px wide.
+37. **Do** give every `<img>` its `width` and `height` — of the file, or the size the layout draws
+    it at — so the page keeps its place before the file arrives. **Do not** leave the browser to
+    find the size out: the text below jumps when the picture loads. (check: `<img>` without both)
+38. **Do** write `loading="lazy"` on pictures below the first screen, and `fetchpriority="high"` on
+    the one picture that is the largest thing of the first screen (the hero). **Do not** make the
+    first screen lazy: its picture then arrives last.
+39. **Do** ship fonts as `.woff2`, one file per script (rule 27 gives each its `unicode-range`), as
+    few faces as the design needs — a variable font is one file for every weight; `@webxTheme`
+    prints `font-display: swap`. **Do not** add a `<link rel="preload">` for a font: a preload
+    downloads it on every page, whatever its language. (check: a font that is not `.woff2` —
+    a note)
+40. **Do** let a page load only what it shows: a widget's script and style come with its component
+    (`Widgets::need()`), the map, the video and anything heavy start when they come near the
+    screen. **Do not** put a library into the theme's own bundle for one page.
+41. **Do** measure the home page and the heaviest page of the site after a change of the look — in
+    the browser's performance panel or Lighthouse, at a phone's width: the largest picture
+    (LCP), the jumps (CLS), the bytes. **Do not** judge speed on a fast machine by eye.

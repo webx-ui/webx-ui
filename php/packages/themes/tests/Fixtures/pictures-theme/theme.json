@@ -1,0 +1,12 @@
+{
+  "theme": {
+    "title": "Pictures without their size",
+    "uses": ["webx-ui/theme-fixture"],
+    "fonts": [
+      {
+        "family": "Old Sans",
+        "files": { "latin": "fonts/old-sans-latin.woff" }
+      }
+    ]
+  }
+}

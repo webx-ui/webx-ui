@@ -129,6 +129,8 @@ form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `barcod
   product shows up in search.
 - With MCP: read `catalog://fields` and `catalog://product-parts` first. Every write tool takes
   `dry_run: true`. `catalog_products_get` shows what was saved.
+- `tests/PerformanceTest.php` holds the query budget of every public page and the panel's list,
+  and that the site follows an edit, a move, a bulk action and an import at once — no cache reset.
 
 ## Read more
 

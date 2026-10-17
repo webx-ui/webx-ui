@@ -72,6 +72,8 @@ Landing form node ids: `naming`, `name`, `category`, `set`, `slug`, `display`, `
 - `php artisan webx:catalog-landings:count --all`, then the count in the panel's list.
 - With MCP: read `catalog://landings` first, and use `catalog_landings_facets` to get the codes
   and slugs a set is written in. Every write takes `dry_run: true`.
+- `tests/PerformanceTest.php` holds the query budget of a landing, a category and a product with
+  collections, the sitemap file and the panel's list; a change that needs more says why there.
 
 ## Read more
 

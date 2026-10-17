@@ -23,16 +23,21 @@ final class FontCheck
 {
     /**
      * @param  list<string>  $locales  The site's languages.
-     * @return array{findings: list<array{file: string, line: int|null, message: string}>, faces: list<array{family: string, weight: string, style: string, files: array<string, string>, layer: ThemeManifest}>}
+     * @return array{findings: list<array{file: string, line: int|null, message: string}>, notes: list<array{file: string, line: int|null, message: string}>, faces: list<array{family: string, weight: string, style: string, files: array<string, string>, layer: ThemeManifest}>}
      */
     public static function check(ThemeChain $chain, array $locales): array
     {
         $findings = [];
+        $notes = [];
 
         foreach ($chain->layers as $layer) {
             foreach ($layer->fonts as $index => $entry) {
                 foreach (self::problems($layer, $entry) as $problem) {
                     $findings[] = ['file' => self::manifest($layer), 'line' => null, 'message' => "fonts[{$index}]: {$problem}"];
+                }
+
+                foreach (self::advice($entry) as $advice) {
+                    $notes[] = ['file' => self::manifest($layer), 'line' => null, 'message' => "fonts[{$index}]: {$advice}"];
                 }
             }
         }
@@ -64,7 +69,7 @@ final class FontCheck
             }
         }
 
-        return ['findings' => $findings, 'faces' => $faces];
+        return ['findings' => $findings, 'notes' => $notes, 'faces' => $faces];
     }
 
     /**
@@ -131,6 +136,29 @@ final class FontCheck
         }
 
         return $problems;
+    }
+
+    /**
+     * What works but costs the visitor more than it needs to (rule 39): a `.woff` is a third
+     * larger than the same font in `.woff2`, which every browser the site supports reads. Said as
+     * a note, not a finding — the page draws the same letters either way.
+     *
+     * @param  array<string, mixed>  $entry
+     * @return list<string>
+     */
+    public static function advice(array $entry): array
+    {
+        $advice = [];
+
+        foreach (is_array($entry['files'] ?? null) ? $entry['files'] : [] as $script => $path) {
+            $relative = is_string($path) ? ThemeAssets::normalise($path) : null;
+
+            if ($relative !== null && ThemeFonts::format($relative) === 'woff') {
+                $advice[] = "{$script}: assets/{$relative} is .woff — the same font in .woff2 is a third smaller (rule 39)";
+            }
+        }
+
+        return $advice;
     }
 
     private static function manifest(ThemeManifest $layer): string

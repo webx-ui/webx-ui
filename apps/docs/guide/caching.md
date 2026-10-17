@@ -4,7 +4,8 @@ A WebX site caches on versioned keys. Every group of data — the menu, the sett
 — has a version, a counter in the cache; an entry built from a group carries that version in its
 key, so moving the version is forgetting every entry built on the old one at once. It works on
 every store, `file` and `database` included, where Laravel's tags do not. The design and its
-reasons are in `docs/architecture/WEBX_UI_CACHE.md`. The registry is the library `webx-ui/cache`;
+reasons are in `docs/architecture/WEBX_UI_CACHE.md`; the rest of what keeps a module fast — N+1,
+indexes, budget tests — is [Performance](./performance.md). The registry is the library `webx-ui/cache`;
 the screen, the command and the agent's tool that reset through it are `webx-ui/module-admin`'s.
 
 **The rule:** a save in the panel resets its own group, and nobody ever needs the button. If

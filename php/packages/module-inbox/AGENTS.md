@@ -136,9 +136,9 @@ the log (`handled` on success); the visitor never notices. Example — guide, «
 - Send the form on the site, with and without JavaScript: the same errors under the same fields
   both ways, the thank-you, the submission in the panel, the letter (or `notify_error` says why);
   with a queue, `queued`, then `delivered` once a worker has sent it.
-- Handlers: a `handled` or `handler_error` line per handler in the log (card or `inbox_get`).
-- Channels: `inbox_get` → `channels`, a row per recipient; `failed` carries the error.
-- `php artisan webx:inbox:prune --dry-run` — what the configured ages would remove.
+- Handlers: a `handled` or `handler_error` line per handler in the log (card or `inbox_get`); channels: `inbox_get` → `channels`, a row per recipient, `failed` carries the error.
+- `php artisan webx:inbox:prune --dry-run` — what the configured ages would remove;
+  `tests/PerformanceTest.php` — the query budget of the panel's list and of a submission.
 - With MCP: `inbox_forms_list` — a switched-on form says `notifies: true` unless read only in the
   panel; the writing tools take `dry_run: true`.
 

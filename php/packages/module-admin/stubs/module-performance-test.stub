@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Tests\TestCase;
+use WebxUi\Admin\Testing\CountsQueries;
+
+/**
+ * The query budget of every page and list of the {{ title }} module, and the freshness of what it
+ * caches. A budget is a ceiling the page fits under today, not a target: a change that needs more
+ * says why here before raising the number.
+ *
+ * Guide: https://webx-ui.github.io/webx-ui/guide/performance
+ */
+class {{ class }}PerformanceTest extends TestCase
+{
+    use CountsQueries;
+
+    public function test_its_pages_fit_their_budgets_and_do_not_grow_with_the_rows(): void
+    {
+        $this->markTestIncomplete('Seed more rows than a page shows, then give each page and panel list of {{ id }} its budget.');
+
+        // A warm request first: what is measured is the page, not the first visitor after a deploy.
+        // $this->get('/{{ id }}')->assertOk();
+        //
+        // $this->assertQueriesWithin(12, fn () => $this->get('/{{ id }}')->assertOk());
+        // $this->assertNoRepeatedQueries(fn () => $this->get('/{{ id }}')->assertOk());
+    }
+
+    public function test_a_save_in_the_panel_is_on_the_site_at_once(): void
+    {
+        $this->markTestIncomplete('Save a record the way the panel does and assert the page shows the change.');
+
+        // $groups = $this->app->make(\WebxUi\Cache\CacheGroups::class);
+        // $before = $groups->version('{{ id }}');
+        //
+        // ... save through the panel's API, or a mass update followed by $groups->bump('{{ id }}')
+        //
+        // $groups->forgetMemo();
+        // $this->assertNotSame($before, $groups->version('{{ id }}'));
+    }
+}

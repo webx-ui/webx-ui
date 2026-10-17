@@ -31,7 +31,16 @@ final class MakeModuleCommand extends Command
         }
 
         $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $this->render($files, $namespace, $class, $id));
+        $files->put($path, $this->render($files, 'module.stub', $namespace, $class, $id));
+
+        // The budget comes with the module for the same reason: a module that never measured its
+        // pages is the ordinary way to have an N+1 nobody sees until a site has a thousand rows.
+        $test = $this->laravel->basePath('tests/Feature/Cms/'.$class.'PerformanceTest.php');
+
+        if (! $files->exists($test) || $this->option('force')) {
+            $files->ensureDirectoryExists(dirname($test));
+            $files->put($test, $this->render($files, 'module-performance-test.stub', 'Tests\\Feature\\Cms', $class, $id));
+        }
 
         // The demo folder comes with the module rather than being remembered later: a section
         // with nothing to show on a fresh site is the ordinary way to have no demo at all.
@@ -44,17 +53,18 @@ final class MakeModuleCommand extends Command
             "Register it: app(WebxUi\\Admin\\ModuleRegistry::class)->register(new \\{$namespace}\\{$class}());",
             'Do that from a service provider, so the panel knows about it on every request.',
             "Demo fixtures go in resources/demo/{$id}; seed() fills them in and webx:demo runs it.",
+            "Give its pages and lists their query budgets in tests/Feature/Cms/{$class}PerformanceTest.php.",
         ]);
 
         return self::SUCCESS;
     }
 
-    private function render(Filesystem $files, string $namespace, string $class, string $id): string
+    private function render(Filesystem $files, string $stub, string $namespace, string $class, string $id): string
     {
         return str_replace(
             ['{{ namespace }}', '{{ class }}', '{{ id }}', '{{ title }}'],
             [rtrim($namespace, '\\'), $class, $id, Str::headline($id)],
-            $files->get(__DIR__.'/../../stubs/module.stub'),
+            $files->get(__DIR__.'/../../stubs/'.$stub),
         );
     }
 }
