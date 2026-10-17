@@ -12,6 +12,7 @@ use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Schema;
 use WebxUi\Blocks\Themes\LayerSync;
 use WebxUi\Blocks\Themes\TypeHash;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Themes\Blocks\SchemaCompatibility;
 use WebxUi\Themes\Sync\SyncLine;
 use WebxUi\Themes\ThemeChain;
@@ -267,6 +268,35 @@ final class ThemeSyncTest extends TestCase
 
         $this->artisan('webx:theme:sync')
             ->expectsOutputToContain('the database is not reachable from here')
+            ->assertSuccessful();
+    }
+
+    /**
+     * A site on the `database` cache store loses the store with the database: the reset of the
+     * theme group is said, not thrown, or `composer update` fails after the files are in place.
+     */
+    #[Test]
+    public function without_a_reachable_cache_store_the_theme_reset_is_said_and_does_not_fail(): void
+    {
+        $this->layer('default', $this->hero());
+        $this->chain();
+
+        $this->app['config']->set('database.connections.unreachable', [
+            'driver' => 'sqlite',
+            'database' => $this->dir.'/no-such-directory/database.sqlite',
+        ]);
+        $this->app['config']->set('database.default', 'unreachable');
+        $this->app['config']->set('cache.stores.database.connection', 'unreachable');
+        $this->app['config']->set('cache.default', 'database');
+        $this->app['db']->purge('unreachable');
+        $this->app['cache']->forgetDriver('database');
+        $this->app->forgetInstance(LayerSync::class);
+        $this->app->forgetInstance(CacheGroups::class);
+        $this->app->forgetInstance('cache.store');
+        $this->app->forgetInstance('db.connection');
+
+        $this->artisan('webx:theme:sync')
+            ->expectsOutputToContain('the cache store is not reachable from here')
             ->assertSuccessful();
     }
 

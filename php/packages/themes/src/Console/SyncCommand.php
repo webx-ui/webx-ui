@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Themes\Console;
 
 use Illuminate\Console\Command;
+use Throwable;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\SyncStep;
@@ -101,9 +102,15 @@ class SyncCommand extends Command
         }
 
         // The pointers moved: whatever a site cached from the theme is built on the old ones
-        // (WEBX_UI_CACHE.md §2).
+        // (WEBX_UI_CACHE.md §2). The `database` store is out of reach wherever the database is —
+        // Composer runs this as the site's post-update-cmd there too, so say it and go on.
         if (! (bool) $this->option('dry-run')) {
-            $this->laravel->make(CacheGroups::class)->bump(CacheGroups::THEME);
+            try {
+                $this->laravel->make(CacheGroups::class)->bump(CacheGroups::THEME);
+            } catch (Throwable) {
+                $this->newLine();
+                $this->components->twoColumnDetail('cache', 'the cache store is not reachable from here — run php artisan webx:cache:reset --group=theme where it is');
+            }
         }
 
         if ($refused > 0) {

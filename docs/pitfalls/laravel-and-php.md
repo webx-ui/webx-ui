@@ -597,7 +597,9 @@ class_uses_recursive($entity), true)`.
 - **Всё, что идёт в `post-update-cmd` сайта, обязано жить без базы.** Composer бегает и там, где
   базы нет (сборка образа, хост, чей сайт ходит в базу контейнера), поэтому шаг типов блоков
   `webx:theme:sync` сначала проверяет соединение и без базы пишет «the database is not reachable
-  from here», не роняя команду. Ловит только PHP smoke, а он не в обязательном чеке очереди —
+  from here», не роняя команду. Кеш тоже база: на store `database` сброс группы `theme` падает
+  SQL-ошибкой, поэтому он в `try` и без базы пишет «the cache store is not reachable from here».
+  Ловит только PHP smoke, а он не в обязательном чеке очереди —
   смотреть глазами перед релизом: `gh run list --workflow "PHP smoke" --branch <ветка> --limit 3`.
 
 ## Passport, OAuth, MCP
