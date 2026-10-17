@@ -29,19 +29,19 @@
         "illuminate/http": "^13.0",
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/localization": "^0.76.0",
-        "webx-ui/mcp": "^0.76.0",
-        "webx-ui/module-admin": "^0.76.0",
-        "webx-ui/module-blocks": "^0.76.0",
-        "webx-ui/module-media": "^0.76.0",
-        "webx-ui/routing": "^0.76.0"
+        "webx-ui/localization": "^0.77.0",
+        "webx-ui/mcp": "^0.77.0",
+        "webx-ui/module-admin": "^0.77.0",
+        "webx-ui/module-blocks": "^0.77.0",
+        "webx-ui/module-media": "^0.77.0",
+        "webx-ui/routing": "^0.77.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-pages": "^0.76.0",
-        "webx-ui/module-services": "^0.76.0",
-        "webx-ui/themes": "^0.76.0"
+        "webx-ui/module-pages": "^0.77.0",
+        "webx-ui/module-services": "^0.77.0",
+        "webx-ui/themes": "^0.77.0"
     },
     "suggest": {
         "webx-ui/module-pages": "A page with a team block is the site's page of the team.",
@@ -69,7 +69,7 @@
         "webx": {
             "module": "team",
             "npm": {
-                "@webx-ui/module-team": "^0.1.16"
+                "@webx-ui/module-team": "^0.2.0"
             },
             "panel": {
                 "import": "import { team } from '@webx-ui/module-team'",
