@@ -1,9 +1,7 @@
 import type { AdminModule } from '@webx-ui/module-admin'
 import PageDanger from './PageDanger.vue'
-import PageEditorPage from './PageEditorPage.vue'
 import PageHistory from './PageHistory.vue'
 import PagePlace from './PagePlace.vue'
-import PagesPage from './PagesPage.vue'
 
 export interface PagesOptions {
   /** Where the section lives inside the panel. */
@@ -23,11 +21,16 @@ export function pages(options: PagesOptions = {}): AdminModule {
     id: 'pages',
     path,
     routes: [
-      { path, name: 'webx.pages', component: PagesPage, props: { base: path } },
+      {
+        path,
+        name: 'webx.pages',
+        component: () => import('./PagesPage.vue'),
+        props: { base: path },
+      },
       {
         path: `${path}/:id(\\d+)`,
         name: 'webx.pages.edit',
-        component: PageEditorPage,
+        component: () => import('./PageEditorPage.vue'),
         props: { base: path },
       },
     ],

@@ -1,16 +1,7 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import CategoriesPage from './CategoriesPage.vue'
-import CategoryEditorPage from './CategoryEditorPage.vue'
 import CategoryField from './CategoryField.vue'
-import DeletedPage from './DeletedPage.vue'
-import ExchangeImportPage from './ExchangeImportPage.vue'
-import ExchangePage from './ExchangePage.vue'
-import ExchangeProfilePage from './ExchangeProfilePage.vue'
-import ExchangeProfilesPage from './ExchangeProfilesPage.vue'
 import FacetsField from './FacetsField.vue'
 import GalleryField from './GalleryField.vue'
-import ProductEditorPage from './ProductEditorPage.vue'
-import ProductsPage from './ProductsPage.vue'
 import ToneField from './ToneField.vue'
 
 export interface CatalogOptions {
@@ -44,33 +35,48 @@ export function catalog(options: CatalogOptions = {}): AdminModule[] {
     path: `${path}/products`,
     routes: [
       { path, redirect: `${path}/products` },
-      { path: `${path}/products`, name: 'webx.catalog.products', component: ProductsPage, props },
+      {
+        path: `${path}/products`,
+        name: 'webx.catalog.products',
+        component: () => import('./ProductsPage.vue'),
+        props,
+      },
       {
         path: `${path}/products/:id(\\d+)`,
         name: 'webx.catalog.products.edit',
-        component: ProductEditorPage,
+        component: () => import('./ProductEditorPage.vue'),
         props,
       },
-      { path: `${path}/deleted`, name: 'webx.catalog.deleted', component: DeletedPage, props },
+      {
+        path: `${path}/deleted`,
+        name: 'webx.catalog.deleted',
+        component: () => import('./DeletedPage.vue'),
+        props,
+      },
       // The exchange (§8.1 of the exchange spec): under the products, like «Deleted» — reached
       // from their head, and lit in the navigation as the products.
-      { path: `${path}/exchange`, name: 'webx.catalog.exchange', component: ExchangePage, props },
+      {
+        path: `${path}/exchange`,
+        name: 'webx.catalog.exchange',
+        component: () => import('./ExchangePage.vue'),
+        props,
+      },
       {
         path: `${path}/exchange/import`,
         name: 'webx.catalog.exchange.import',
-        component: ExchangeImportPage,
+        component: () => import('./ExchangeImportPage.vue'),
         props,
       },
       {
         path: `${path}/exchange/profiles`,
         name: 'webx.catalog.exchange.profiles',
-        component: ExchangeProfilesPage,
+        component: () => import('./ExchangeProfilesPage.vue'),
         props,
       },
       {
         path: `${path}/exchange/profiles/:id(\\d+|new)`,
         name: 'webx.catalog.exchange.profile',
-        component: ExchangeProfilePage,
+        component: () => import('./ExchangeProfilePage.vue'),
         props,
       },
     ],
@@ -92,13 +98,13 @@ export function catalog(options: CatalogOptions = {}): AdminModule[] {
       {
         path: `${path}/categories`,
         name: 'webx.catalog.categories',
-        component: CategoriesPage,
+        component: () => import('./CategoriesPage.vue'),
         props,
       },
       {
         path: `${path}/categories/:id(\\d+)`,
         name: 'webx.catalog.categories.edit',
-        component: CategoryEditorPage,
+        component: () => import('./CategoryEditorPage.vue'),
         props,
       },
     ],

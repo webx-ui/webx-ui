@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 import { h, watch, type Component } from 'vue'
 import type { Admin, AdminPlugin } from '@webx-ui/module-admin'
 import LoginCard from './LoginCard.vue'
@@ -132,7 +133,7 @@ export { default as WxAdminsPage } from './AdminsPage.vue'
 export { default as WxAdminList } from './AdminList.vue'
 export { default as WxAgentCallList } from './CallList.vue'
 export { default as WxConnectionList } from './ConnectionList.vue'
-export { default as WxConnectPage } from './ConnectPage.vue'
+export const WxConnectPage = defineAsyncComponent(() => import('./ConnectPage.vue'))
 export { default as WxKeyList } from './KeyList.vue'
 export type {
   Admin,

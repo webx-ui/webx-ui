@@ -12,8 +12,6 @@ import { NAMESPACE, useCatalogPropertiesMessages } from './i18n'
 import IntervalsField from './IntervalsField.vue'
 import NumberExample from './NumberExample.vue'
 import ProductPropertiesField from './ProductPropertiesField.vue'
-import PropertiesPage from './PropertiesPage.vue'
-import PropertyEditorPage from './PropertyEditorPage.vue'
 import TypeField from './TypeField.vue'
 import ValuesField from './ValuesField.vue'
 
@@ -102,13 +100,13 @@ export function catalogProperties(options: CatalogPropertiesOptions = {}): Admin
         {
           path: `${catalog}/properties`,
           name: 'webx.catalog-properties',
-          component: PropertiesPage,
+          component: () => import('./PropertiesPage.vue'),
           props,
         },
         {
           path: `${catalog}/properties/:id(\\d+)`,
           name: 'webx.catalog-properties.edit',
-          component: PropertyEditorPage,
+          component: () => import('./PropertyEditorPage.vue'),
           props,
         },
         ...categoryRoutes(propertyGroupsOptions(options)).map(seeded),

@@ -1,5 +1,4 @@
 import { categoryRoutes, type AdminModule, type CategoriesOptions } from '@webx-ui/module-admin'
-import TariffsPage from './TariffsPage.vue'
 
 export interface TariffsOptions {
   /** Where the tariffs live inside the panel. The groups sit under it. */
@@ -60,7 +59,14 @@ export function tariffs(options: TariffsOptions = {}): AdminModule[] {
       path,
       // One route: the open tariff is in the address (`?tariff=`), beside the list it was opened
       // from, so a link to it is a link to both.
-      routes: [{ path, name: 'webx.tariffs', component: TariffsPage, props: { base: path } }],
+      routes: [
+        {
+          path,
+          name: 'webx.tariffs',
+          component: () => import('./TariffsPage.vue'),
+          props: { base: path },
+        },
+      ],
     },
     {
       id: 'tariff-groups',

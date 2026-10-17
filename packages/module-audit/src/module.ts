@@ -1,10 +1,4 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import AuditHostsPage from './AuditHostsPage.vue'
-import AuditIssuesPage from './AuditIssuesPage.vue'
-import AuditOverviewPage from './AuditOverviewPage.vue'
-import AuditPagesPage from './AuditPagesPage.vue'
-import AuditRunsPage from './AuditRunsPage.vue'
-import AuditSettingsPage from './AuditSettingsPage.vue'
 
 export interface AuditOptions {
   /** Where the section lives inside the panel. */
@@ -32,15 +26,35 @@ export function audit(options: AuditOptions = {}): AdminModule {
     id: 'audit',
     path,
     routes: [
-      { path, name: 'webx.audit', component: AuditOverviewPage, props },
-      { path: `${path}/issues`, name: 'webx.audit.issues', component: AuditIssuesPage, props },
-      { path: `${path}/pages`, name: 'webx.audit.pages', component: AuditPagesPage, props },
-      { path: `${path}/hosts`, name: 'webx.audit.hosts', component: AuditHostsPage, props },
-      { path: `${path}/runs`, name: 'webx.audit.runs', component: AuditRunsPage, props },
+      { path, name: 'webx.audit', component: () => import('./AuditOverviewPage.vue'), props },
+      {
+        path: `${path}/issues`,
+        name: 'webx.audit.issues',
+        component: () => import('./AuditIssuesPage.vue'),
+        props,
+      },
+      {
+        path: `${path}/pages`,
+        name: 'webx.audit.pages',
+        component: () => import('./AuditPagesPage.vue'),
+        props,
+      },
+      {
+        path: `${path}/hosts`,
+        name: 'webx.audit.hosts',
+        component: () => import('./AuditHostsPage.vue'),
+        props,
+      },
+      {
+        path: `${path}/runs`,
+        name: 'webx.audit.runs',
+        component: () => import('./AuditRunsPage.vue'),
+        props,
+      },
       {
         path: `${path}/settings`,
         name: 'webx.audit.settings',
-        component: AuditSettingsPage,
+        component: () => import('./AuditSettingsPage.vue'),
         props,
       },
     ],

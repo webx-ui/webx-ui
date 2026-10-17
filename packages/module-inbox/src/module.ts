@@ -1,9 +1,5 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import FormEditorPage from './FormEditorPage.vue'
 import FormField from './FormField.vue'
-import InboxPage from './InboxPage.vue'
-import StatusesPage from './StatusesPage.vue'
-import SubmissionPage from './SubmissionPage.vue'
 
 export interface InboxOptions {
   /** Where the section lives inside the panel. */
@@ -36,17 +32,22 @@ export function inbox(options: InboxOptions = {}): AdminModule {
     routes: [
       // The section's own path travels as a prop, so a panel that mounted it somewhere else
       // still links between its screens correctly.
-      { path, name: 'webx.inbox', component: InboxPage, props: { base: path } },
+      {
+        path,
+        name: 'webx.inbox',
+        component: () => import('./InboxPage.vue'),
+        props: { base: path },
+      },
       {
         path: `${path}/statuses`,
         name: 'webx.inbox.statuses',
-        component: StatusesPage,
+        component: () => import('./StatusesPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/forms/:id(\\d+)`,
         name: 'webx.inbox.form',
-        component: FormEditorPage,
+        component: () => import('./FormEditorPage.vue'),
         props: { base: path },
       },
       // A submission has an address of its own, not a dialog over the list (§11): it goes in
@@ -54,7 +55,7 @@ export function inbox(options: InboxOptions = {}): AdminModule {
       {
         path: `${path}/submissions/:id(\\d+)`,
         name: 'webx.inbox.submission',
-        component: SubmissionPage,
+        component: () => import('./SubmissionPage.vue'),
         props: { base: path },
       },
     ],

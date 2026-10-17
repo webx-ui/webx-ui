@@ -1,5 +1,4 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import SettingsPage from './SettingsPage.vue'
 
 export interface SettingsOptions {
   /** Where the section lives inside the panel. */
@@ -18,6 +17,6 @@ export function settings(options: SettingsOptions = {}): AdminModule {
   return {
     id: 'settings',
     path,
-    routes: [{ path, name: 'webx.settings', component: SettingsPage }],
+    routes: [{ path, name: 'webx.settings', component: () => import('./SettingsPage.vue') }],
   }
 }

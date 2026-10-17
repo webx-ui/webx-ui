@@ -1,12 +1,8 @@
 import { markRaw, type Component } from 'vue'
 import type { AdminModule } from '@webx-ui/module-admin'
-import SeoAliasesPage from './SeoAliasesPage.vue'
-import SeoLinksPage from './SeoLinksPage.vue'
 import SeoCard from './SeoCard.vue'
-import SeoRedirectsPage from './SeoRedirectsPage.vue'
 import SeoSiteBarTab from './SeoSiteBarTab.vue'
 import { seedSeoMessages } from './i18n'
-import SeoUrlsPage from './SeoUrlsPage.vue'
 
 export interface SeoOptions {
   /** Where the section lives inside the panel. */
@@ -42,13 +38,13 @@ export function seo(options: SeoOptions = {}): AdminModule {
       {
         path,
         name: 'webx.seo',
-        component: SeoUrlsPage,
+        component: () => import('./SeoUrlsPage.vue'),
         props: { base: path, mediaField },
       },
       {
         path: `${path}/redirects`,
         name: 'webx.seo.redirects',
-        component: SeoRedirectsPage,
+        component: () => import('./SeoRedirectsPage.vue'),
         props: { base: path },
       },
       // The trail of renames, from `webx-ui/routing`. The screen is here whether or not any
@@ -57,7 +53,7 @@ export function seo(options: SeoOptions = {}): AdminModule {
       {
         path: `${path}/aliases`,
         name: 'webx.seo.aliases',
-        component: SeoAliasesPage,
+        component: () => import('./SeoAliasesPage.vue'),
         props: { base: path },
       },
       // Interlinking (§18.4). Registered on every site, shown in the strip of views only where the
@@ -66,7 +62,7 @@ export function seo(options: SeoOptions = {}): AdminModule {
       {
         path: `${path}/links`,
         name: 'webx.seo.links',
-        component: SeoLinksPage,
+        component: () => import('./SeoLinksPage.vue'),
         props: { base: path },
       },
     ],

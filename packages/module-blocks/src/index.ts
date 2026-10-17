@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 export { blocks, regions, type BlocksOptions, type RegionsOptions } from './module'
 export {
   createBlocksApi,
@@ -51,14 +52,14 @@ export type { BlockAssets } from './frame'
 export { callTag, formSchema, kindOf } from './schema'
 export { default as WxBlocks } from './BlocksField.vue'
 export { default as WxBlocksSiteBarTab } from './BlocksSiteBarTab.vue'
-export { default as WxBlocksPage } from './BlocksPage.vue'
-export { default as WxBlockEditorPage } from './BlockEditorPage.vue'
+export const WxBlocksPage = defineAsyncComponent(() => import('./BlocksPage.vue'))
+export const WxBlockEditorPage = defineAsyncComponent(() => import('./BlockEditorPage.vue'))
 export { default as WxBlockPicker } from './BlockPicker.vue'
 export { default as WxBlockThumb } from './BlockThumb.vue'
 export { default as WxBlockStage } from './BlockStage.vue'
 export { default as WxFragmentField } from './FragmentField.vue'
-export { default as WxRegionsPage } from './RegionsPage.vue'
-export { default as WxRegionEditorPage } from './RegionEditorPage.vue'
+export const WxRegionsPage = defineAsyncComponent(() => import('./RegionsPage.vue'))
+export const WxRegionEditorPage = defineAsyncComponent(() => import('./RegionEditorPage.vue'))
 export type {
   BlockContent,
   BlockInput,

@@ -1,6 +1,5 @@
 import { categoryRoutes, type AdminModule, type CategoriesOptions } from '@webx-ui/module-admin'
 import AnchorField from './AnchorField.vue'
-import QuestionsPage from './QuestionsPage.vue'
 
 export interface FaqOptions {
   /** Where the questions live inside the panel. The categories sit under it. */
@@ -58,7 +57,14 @@ export function faq(options: FaqOptions = {}): AdminModule[] {
       path,
       // One route: the open question is in the address (`?question=`), beside the list it was
       // opened from, so a link to it is a link to both.
-      routes: [{ path, name: 'webx.faq', component: QuestionsPage, props: { base: path } }],
+      routes: [
+        {
+          path,
+          name: 'webx.faq',
+          component: () => import('./QuestionsPage.vue'),
+          props: { base: path },
+        },
+      ],
       /*
        * The one node of `faq.form` only this module can draw. A field in the screen's eyes — it
        * gets the label and the help of its node — but without a name, so nothing is bound.

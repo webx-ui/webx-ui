@@ -1,8 +1,9 @@
+import { defineAsyncComponent } from 'vue'
 export { banners, type BannersOptions } from './module'
 export { createBannersApi, type BannersApi } from './api'
 export { bannersMessages } from './messages'
-export { default as WxBannersPage } from './BannersPage.vue'
-export { default as WxBannerEditorPage } from './BannerEditorPage.vue'
+export const WxBannersPage = defineAsyncComponent(() => import('./BannersPage.vue'))
+export const WxBannerEditorPage = defineAsyncComponent(() => import('./BannerEditorPage.vue'))
 export { default as WxBannerLayers } from './LayersField.vue'
 export * from './layers'
 export type {

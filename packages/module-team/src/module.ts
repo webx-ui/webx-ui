@@ -1,5 +1,4 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import TeamPage from './TeamPage.vue'
 
 export interface TeamOptions {
   /** Where the team lives inside the panel. */
@@ -20,6 +19,8 @@ export function team(options: TeamOptions = {}): AdminModule {
     path,
     // One route: the open person is in the address (`?member=`), beside the list they were
     // opened from, so a link to them is a link to both.
-    routes: [{ path, name: 'webx.team', component: TeamPage, props: { base: path } }],
+    routes: [
+      { path, name: 'webx.team', component: () => import('./TeamPage.vue'), props: { base: path } },
+    ],
   }
 }

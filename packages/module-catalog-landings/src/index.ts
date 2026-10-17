@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 import './style.css'
 
 export { catalogLandings, type CatalogLandingsOptions } from './module'
@@ -17,8 +18,8 @@ export {
   useLandingEditor,
   type LandingEditorContext,
 } from './editor'
-export { default as WxCatalogLandingsPage } from './LandingsPage.vue'
-export { default as WxCatalogLandingEditor } from './LandingEditorPage.vue'
+export const WxCatalogLandingsPage = defineAsyncComponent(() => import('./LandingsPage.vue'))
+export const WxCatalogLandingEditor = defineAsyncComponent(() => import('./LandingEditorPage.vue'))
 export { default as WxCatalogLandingSet } from './LandingSetField.vue'
 export { default as WxCatalogLandingSlug } from './LandingSlugField.vue'
 export { default as WxCatalogLandingSort } from './LandingSortField.vue'

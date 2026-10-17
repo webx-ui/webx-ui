@@ -1,7 +1,5 @@
 import { categoryRoutes, type AdminModule, type CategoriesOptions } from '@webx-ui/module-admin'
-import EventEditorPage from './EventEditorPage.vue'
 import EventHistory from './EventHistory.vue'
-import EventsPage from './EventsPage.vue'
 
 export interface EventsOptions {
   /** Where the events live inside the panel. The categories sit under it. */
@@ -59,11 +57,16 @@ export function events(options: EventsOptions = {}): AdminModule[] {
       id: 'events',
       path,
       routes: [
-        { path, name: 'webx.events', component: EventsPage, props: { base: path } },
+        {
+          path,
+          name: 'webx.events',
+          component: () => import('./EventsPage.vue'),
+          props: { base: path },
+        },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.events.edit',
-          component: EventEditorPage,
+          component: () => import('./EventEditorPage.vue'),
           props: { base: path },
         },
       ],

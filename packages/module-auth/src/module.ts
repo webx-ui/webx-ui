@@ -1,7 +1,6 @@
 import { h, type Component } from 'vue'
 import type { AdminModule } from '@webx-ui/module-admin'
 import AdminsPage from './AdminsPage.vue'
-import ConnectPage from './ConnectPage.vue'
 
 export interface AdminsOptions {
   /** Where the section lives inside the panel. */
@@ -82,6 +81,6 @@ export function connect(options: ConnectOptions = {}): AdminModule {
   return {
     id: 'connect',
     path,
-    routes: [{ path, name: 'webx.connect', component: ConnectPage }],
+    routes: [{ path, name: 'webx.connect', component: () => import('./ConnectPage.vue') }],
   }
 }

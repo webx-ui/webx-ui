@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 import './style.css'
 
 export { catalogProperties, propertyGroupsOptions, type CatalogPropertiesOptions } from './module'
@@ -18,8 +19,10 @@ export {
   usePropertyEditor,
   type PropertyEditorContext,
 } from './editor'
-export { default as WxCatalogPropertiesPage } from './PropertiesPage.vue'
-export { default as WxCatalogPropertyEditor } from './PropertyEditorPage.vue'
+export const WxCatalogPropertiesPage = defineAsyncComponent(() => import('./PropertiesPage.vue'))
+export const WxCatalogPropertyEditor = defineAsyncComponent(
+  () => import('./PropertyEditorPage.vue'),
+)
 export { default as WxCatalogPropertyValues } from './ValuesField.vue'
 export { default as WxCatalogPropertyIntervals } from './IntervalsField.vue'
 export { default as WxCatalogCategoryProperties } from './CategoryPropertiesField.vue'
