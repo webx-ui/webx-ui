@@ -24,8 +24,15 @@ final class Catalogue
     public function __construct(private readonly Seo $seo) {}
 
     /**
+     * What a card of the listing prints, loaded with the list: the cover, and the registry rows
+     * `url()` answers from — without them every card is a query, and the `ItemList` another.
+     */
+    private const CARD = ['cover', 'routes'];
+
+    /**
      * The visible categories, in their order, each with its visible services in the order of that
-     * category. Three queries whatever the size — the services come in with the categories.
+     * category. Five queries whatever the size — the services, their covers and the addresses of
+     * both come in with the categories.
      *
      * @return EloquentCollection<int, ServiceCategory>
      */
@@ -36,13 +43,14 @@ final class Catalogue
             ->visible()
             ->ordered()
             ->with([
+                'routes',
                 'services' => static function (Relation $services): void {
                     $services->whereNotNull('services.published_at')
                         ->orderBy('service_category_service.item_position')
                         ->orderBy('services.position')
                         ->orderBy('services.id');
                 },
-                'services.cover',
+                ...array_map(static fn (string $relation): string => 'services.'.$relation, self::CARD),
             ])
             ->get();
 
@@ -63,7 +71,7 @@ final class Catalogue
         $services = Service::query()
             ->visible()
             ->whereDoesntHave('categories', static fn (Builder $categories): Builder => $categories->where('service_categories.is_visible', true))
-            ->with('cover')
+            ->with(self::CARD)
             ->orderBy('position')
             ->orderBy('id')
             ->get();
@@ -82,7 +90,7 @@ final class Catalogue
         $services = Service::query()
             ->visible()
             ->orderedIn((int) $category->getKey())
-            ->with('cover')
+            ->with(self::CARD)
             ->get();
 
         return $services;

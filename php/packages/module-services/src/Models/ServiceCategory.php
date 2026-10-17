@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Services\Models;
 
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -93,6 +94,18 @@ class ServiceCategory extends Model implements Category, HasBreadcrumbs, HasSeoF
     public function visibleUpdatedAt(): ?CarbonInterface
     {
         return $this->updated_at;
+    }
+
+    /**
+     * What a line of the sitemap asks of a category, for a chunk at once: the cover behind
+     * `og:image` of its fallback card — one query per chunk rather than one per category.
+     *
+     * @param  Builder<ServiceCategory>  $query
+     * @return Builder<ServiceCategory>
+     */
+    public function scopeForSitemap(Builder $query): Builder
+    {
+        return $query->with('cover');
     }
 
     /**

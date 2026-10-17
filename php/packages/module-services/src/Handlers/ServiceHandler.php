@@ -35,7 +35,9 @@ class ServiceHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        $entity->loadMissing(['cover', 'categories']);
+        // With the registry rows of the page's own address and of the category in the trail:
+        // `url()` answers from them, and without them each is a query.
+        $entity->loadMissing(['cover', 'routes', 'categories.routes']);
 
         return response($this->views->make('service', [
             'service' => $entity,
