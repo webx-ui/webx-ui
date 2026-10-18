@@ -734,6 +734,13 @@ wxtest-manticore`.
 - **Лимит размера под `Http::fake()` проверяется только на теле.** Фейк не вызывает `on_headers` и
   `progress` Guzzle — обрыв закачки на лету видно только на настоящем транспорте
   (`RemoteFetcherTest::a_real_transfer_stops_at_the_limit` поднимает `php -S`).
+- **Лимит размера пропускает gzip-бомбу.** С `decode_content` (по умолчанию у Guzzle — да) curl
+  сам просит сжатие и распаковывает, а `Content-Length` и `progress` считают **сжатые** байты:
+  300 КБ gzip становятся 300 МБ в памяти или на диске раньше, чем тело сравнят с лимитом. Сжатый
+  ответ распаковывать самому со счётом распакованных байт — `decode_content => false` и
+  `WebxUi\Admin\Remote\BoundedDecoder` (так делают `RemoteFetcher` и `SiteClient` аудита).
+  Проверка — пиковая память на настоящем транспорте
+  (`RemoteFetcherTest::a_compressed_answer_is_limited_by_what_it_decodes_to`).
 - **Ошибка скачивания показывает внутренности.** Текст `ConnectionException` называет хост, порт и
   IP, а «прочитать заголовок файла» (`inspect` импорта) отдаёт обратно что угодно — страницу
   ошибки, ответ сервиса метаданных. Сообщение — словами `FetchRefused`, ответ не того формата

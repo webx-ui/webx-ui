@@ -23,7 +23,10 @@ use Throwable;
  *   check and a private one to the connection (DNS rebinding) never gets the second question;
  * - redirects are followed by hand, `remote.max_redirects` at most, each hop checked the same way;
  * - the body stops at the caller's limit instead of filling the memory or the disk first, and
- *   every hop has a connect timeout and a timeout;
+ *   every hop has a connect timeout and a timeout. The limit counts decoded bytes: curl is not
+ *   let to decode (`decode_content` counts the compressed ones, so a gzip bomb would fill the
+ *   memory before the check), the body is asked for as `identity`, and one that comes
+ *   compressed all the same goes through {@see BoundedDecoder};
  * - a failure is said in plain words, never as the transport's error, which names internal
  *   hosts and ports — and never with the body of the answer.
  *
@@ -249,6 +252,8 @@ final class RemoteFetcher
                         throw new FetchRefused('too-large', FetchRefused::TOO_LARGE);
                     }
                 },
+                // Decoded here, by count (BoundedDecoder), not by curl before anybody counts.
+                'decode_content' => false,
                 ...$target->options(),
             ];
 
@@ -259,7 +264,7 @@ final class RemoteFetcher
             try {
                 $response = $this->http
                     ->withoutRedirecting()
-                    ->withHeaders($headers)
+                    ->withHeaders($headers + ['Accept-Encoding' => 'identity'])
                     ->connectTimeout(min($connectTimeout, max(1, $timeout)))
                     ->timeout(max(1, $timeout))
                     ->withOptions($options)
@@ -305,24 +310,26 @@ final class RemoteFetcher
             return new Fetched('', $type, $url, $response->status(), (int) $response->header('Content-Length'));
         }
 
-        if ($sink !== null) {
-            clearstatcache(true, $sink);
-            $size = is_file($sink) ? (int) filesize($sink) : 0;
+        $encoding = $response->header('Content-Encoding');
 
-            if ($size > $limit) {
-                throw self::tooLarge();
-            }
+        if (! BoundedDecoder::supports($encoding)) {
+            throw self::undecodable();
+        }
+
+        if ($sink !== null) {
+            $size = BoundedDecoder::decodeFile($sink, $encoding, $limit) ?? throw self::undecodable();
 
             return new Fetched('', $type, $url, $response->status(), $size, $sink);
         }
 
-        $body = $response->body();
-
-        if (strlen($body) > $limit) {
-            throw self::tooLarge();
-        }
+        $body = BoundedDecoder::decode($response->body(), $encoding, $limit) ?? throw self::undecodable();
 
         return new Fetched($body, $type, $url, $response->status(), strlen($body));
+    }
+
+    private static function undecodable(): FetchRefused
+    {
+        return new FetchRefused('The address answered in an encoding this site does not read.', FetchRefused::UNREACHABLE);
     }
 
     private static function tooLarge(): FetchRefused

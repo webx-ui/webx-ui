@@ -279,24 +279,7 @@ final class RemoteFetcherTest extends TestCase
     #[Test]
     public function a_real_transfer_stops_at_the_limit(): void
     {
-        $directory = sys_get_temp_dir().'/webx-remote-'.bin2hex(random_bytes(4));
-        mkdir($directory);
-        file_put_contents($directory.'/index.php', '<?php if ($_SERVER["REQUEST_URI"] === "/sized") { header("Content-Length: 5000000"); } echo str_repeat("x", 5000000);');
-        $port = random_int(20000, 40000);
-        $server = new Process([PHP_BINARY, '-S', "127.0.0.1:{$port}", '-t', $directory]);
-        $server->start();
-
-        try {
-            for ($tries = 0; $tries < 50 && @fsockopen('127.0.0.1', $port) === false; $tries++) {
-                usleep(100_000);
-            }
-
-            if (! $server->isRunning()) {
-                $this->markTestSkipped('No local server to fetch from.');
-            }
-
-            // Loopback is trusted here on purpose: the subject is the limit, not the address.
-            $fetcher = $this->fetcher()->trusting(['127.0.0.1']);
+        $this->serve('<?php if ($_SERVER["REQUEST_URI"] === "/sized") { header("Content-Length: 5000000"); } echo str_repeat("x", 5000000);', function (RemoteFetcher $fetcher, int $port): void {
             $path = (string) tempnam(sys_get_temp_dir(), 'webx-remote-test-');
 
             foreach (['/sized', '/streamed'] as $uri) {
@@ -312,11 +295,115 @@ final class RemoteFetcherTest extends TestCase
             }
 
             $this->assertSame(5000000, $fetcher->get("http://127.0.0.1:{$port}/streamed", 6_000_000)->size);
+        });
+    }
+
+    /**
+     * A gzip bomb: 64 MB of one letter is 64 KB compressed, under every count curl keeps. The
+     * limit is on the decoded bytes, so the refusal comes before they fill the memory or the disk.
+     */
+    #[Test]
+    public function a_compressed_answer_is_limited_by_what_it_decodes_to(): void
+    {
+        $this->serve('<?php
+            $file = __DIR__."/".trim($_SERVER["REQUEST_URI"], "/").".gz";
+            header("Content-Encoding: gzip");
+            header("Content-Length: ".filesize($file));
+            readfile($file);', function (RemoteFetcher $fetcher, int $port, string $directory): void {
+            self::gzipFile($directory.'/bomb.gz', 64 * 1024 * 1024);
+            self::gzipFile($directory.'/small.gz', 300_000);
+            $this->assertLessThan(1024 * 1024, filesize($directory.'/bomb.gz'));
+            $path = (string) tempnam(sys_get_temp_dir(), 'webx-remote-test-');
+
+            memory_reset_peak_usage();
+            $before = memory_get_usage();
+            $this->assertRefusedBy($fetcher, "http://127.0.0.1:{$port}/bomb", FetchRefused::TOO_LARGE, maxBytes: 1024 * 1024);
+
+            try {
+                $fetcher->download("http://127.0.0.1:{$port}/bomb", $path, 1024 * 1024);
+                $this->fail('A download past the limit was kept.');
+            } catch (FetchRefused $refused) {
+                $this->assertSame(FetchRefused::TOO_LARGE, $refused->reason);
+                $this->assertFileDoesNotExist($path);
+                $this->assertSame([], glob($path.'*') ?: []);
+            }
+
+            $this->assertLessThan(16 * 1024 * 1024, memory_get_peak_usage() - $before, 'The bomb was decoded whole before the limit.');
+
+            // Under the limit it is the decoded body that arrives, in memory and on disk.
+            $this->assertSame(str_repeat('a', 300_000), $fetcher->get("http://127.0.0.1:{$port}/small", 1024 * 1024)->body);
+            $this->assertSame(300_000, $fetcher->download("http://127.0.0.1:{$port}/small", $path, 1024 * 1024)->size);
+            $this->assertSame(str_repeat('a', 300_000), file_get_contents($path));
+            @unlink($path);
+        });
+    }
+
+    #[Test]
+    public function the_body_is_asked_for_uncompressed(): void
+    {
+        $this->dns->answer('files.example.com', ['93.184.216.34']);
+        Http::fake(['*' => Http::response('a,b')]);
+
+        $this->fetcher()->get('https://files.example.com/a.csv', 1024);
+
+        Http::assertSent(static fn ($request): bool => $request->header('Accept-Encoding') === ['identity']);
+    }
+
+    #[Test]
+    public function an_encoding_it_does_not_read_is_refused(): void
+    {
+        $this->dns->answer('files.example.com', ['93.184.216.34']);
+        Http::fake(['*' => Http::response('???', 200, ['Content-Encoding' => 'br'])]);
+
+        $this->assertRefused('https://files.example.com/a.csv', FetchRefused::UNREACHABLE);
+    }
+
+    /**
+     * A PHP server on this machine running `$code` as its router, for the real transport —
+     * `Http::fake()` never calls Guzzle's callbacks. Loopback is trusted on purpose: the subject
+     * is the limit, not the address.
+     *
+     * @param  callable(RemoteFetcher, int, string): void  $test
+     */
+    private function serve(string $code, callable $test): void
+    {
+        $directory = sys_get_temp_dir().'/webx-remote-'.bin2hex(random_bytes(4));
+        mkdir($directory);
+        file_put_contents($directory.'/index.php', $code);
+        $port = random_int(20000, 40000);
+        $server = new Process([PHP_BINARY, '-S', "127.0.0.1:{$port}", $directory.'/index.php']);
+        $server->start();
+
+        try {
+            for ($tries = 0; $tries < 50 && @fsockopen('127.0.0.1', $port) === false; $tries++) {
+                usleep(100_000);
+            }
+
+            if (! $server->isRunning()) {
+                $this->markTestSkipped('No local server to fetch from.');
+            }
+
+            $test($this->fetcher()->trusting(['127.0.0.1']), $port, $directory);
         } finally {
             $server->stop();
-            @unlink($directory.'/index.php');
+            array_map('unlink', glob($directory.'/*') ?: []);
             @rmdir($directory);
         }
+    }
+
+    /** `$bytes` letters gzipped into `$path`, a piece at a time. */
+    private static function gzipFile(string $path, int $bytes): void
+    {
+        $context = deflate_init(ZLIB_ENCODING_GZIP, ['level' => 9]);
+        $out = fopen($path, 'wb');
+        $piece = str_repeat('a', 1024 * 1024);
+
+        for ($left = $bytes; $left > 0; $left -= strlen($piece)) {
+            fwrite($out, (string) deflate_add($context, substr($piece, 0, min($left, strlen($piece))), ZLIB_NO_FLUSH));
+        }
+
+        fwrite($out, (string) deflate_add($context, '', ZLIB_FINISH));
+        fclose($out);
     }
 
     private function fetcher(): RemoteFetcher

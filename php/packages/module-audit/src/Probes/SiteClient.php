@@ -10,6 +10,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Throwable;
+use WebxUi\Admin\Remote\BoundedDecoder;
 use WebxUi\Admin\Remote\FetchRefused;
 use WebxUi\Admin\Remote\RemoteFetcher;
 
@@ -181,7 +182,10 @@ final class SiteClient
     private function configure(PendingRequest $request, string $url, array $pin = []): PendingRequest
     {
         return $request
-            ->withHeaders(['User-Agent' => (string) $this->config->get('webx-audit.user_agent', 'WebxAudit/1.0')])
+            ->withHeaders([
+                'User-Agent' => (string) $this->config->get('webx-audit.user_agent', 'WebxAudit/1.0'),
+                'Accept-Encoding' => 'gzip, deflate',
+            ])
             ->timeout(max(1, (int) $this->config->get('webx-audit.timeout', 15)))
             ->withoutRedirecting()
             ->withOptions($pin + $this->options($url));
@@ -192,16 +196,51 @@ final class SiteClient
         $stats = $response->handlerStats();
         $ttfb = $stats['starttransfer_time'] ?? null;
         $total = $stats['total_time'] ?? null;
+        $headers = $this->headers($response);
+        $body = $method === 'HEAD' ? '' : $this->body($response->body(), $headers, $limit);
 
         return new ProbeResponse(
             $url,
             $response->status(),
-            $this->headers($response),
-            $method === 'HEAD' ? '' : substr($response->body(), 0, $limit),
+            $headers,
+            $body,
             is_numeric($total) ? (int) round((float) $total * 1000) : $this->since($started),
             ttfb: is_numeric($ttfb) && (float) $ttfb > 0 ? (int) round((float) $ttfb * 1000) : null,
             protocol: $stats !== [] && self::http2() && str_starts_with($url, 'https:') ? $response->toPsrResponse()->getProtocolVersion() : null,
         );
+    }
+
+    /**
+     * The body decoded, at most `$limit` bytes of it however small it came compressed — a page
+     * that inflates to gigabytes costs the limit. The headers are then what Guzzle would have made
+     * of them: the original encoding and length moved aside, the length of what was decoded.
+     *
+     * @param  array<string, string>  $headers
+     */
+    private function body(string $raw, array &$headers, int $limit): string
+    {
+        $encoding = $headers['content-encoding'] ?? null;
+
+        if (! BoundedDecoder::encoded($encoding) || ! BoundedDecoder::supports($encoding)) {
+            return substr($raw, 0, $limit);
+        }
+
+        // A body that says gzip and is not is kept as it came, headers and all.
+        $decoded = BoundedDecoder::decode($raw, $encoding, $limit, truncate: true);
+
+        if ($decoded === null) {
+            return substr($raw, 0, $limit);
+        }
+
+        $headers['x-encoded-content-encoding'] = (string) $encoding;
+        unset($headers['content-encoding']);
+
+        if (isset($headers['content-length'])) {
+            $headers['x-encoded-content-length'] = $headers['content-length'];
+            $headers['content-length'] = (string) strlen($decoded);
+        }
+
+        return $decoded;
     }
 
     /**
@@ -220,9 +259,9 @@ final class SiteClient
      */
     private function options(string $url): array
     {
-        // Asked for and decoded by curl; Guzzle then moves the original header to
-        // `x-encoded-content-encoding`, which is where the compression check looks too.
-        $options = ['decode_content' => 'gzip, deflate', 'http_errors' => false];
+        // Asked for (`Accept-Encoding` above) but decoded here, not by curl: curl decodes before
+        // anybody counts, so a small gzip that inflates to gigabytes would fill the memory first.
+        $options = ['decode_content' => false, 'http_errors' => false];
 
         // Over TLS curl offers HTTP/2 and falls back to 1.1 when the server has no h2 — what a
         // browser does, and the only way `host.http2` learns what the server can.
