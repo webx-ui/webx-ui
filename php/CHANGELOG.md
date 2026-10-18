@@ -1,5 +1,15 @@
 # @webx-ui/php
 
+## 0.78.0
+
+### Minor Changes
+
+- 52da400: New package `webx-ui/module-debug`: a debug bar at the bottom of the site's pages for an administrator with the new permission `debug.view` (given to no role; a super administrator has it), never in production — there the package registers nothing at all. The server half: collectors of SQL with values, time, the file:line that issued each statement and repeats grouped by shape (likely N+1), a timeline down to each region and block, the blocks drawn and the theme layer of their types, the versioned cache read by group (memo / store / miss) and the versions, what the resolver found, outgoing HTTP, queued jobs, mail, counted events and the log. Collecting starts only when the request says it is an administrator's (the `wx_debug` cookie set at sign-in, or the token of `debug_page`) and is checked for real when the response is decided; a visitor pays no listener and no query. Reports live minutes in a cache store, only for their maker (`GET /api/cms/debug/reports[/{id}]`), with passwords, tokens, sessions and cookies masked as they are written. The MCP tool `debug_page` opens a path of the site as a visitor would, with a one-time token, and returns the same report. On the page for now: a summary line; the tabs come next.
+
+  `webx-ui/routing`, `webx-ui/module-blocks` and `webx-ui/cache` send new events only while somebody listens — `Resolving`/`Resolved`, `RegionRendering`/`RegionRendered`, `BlockRendering`/`BlockRendered`, `GroupRead` — so a site without a listener pays one check of an array. `webx-ui/module-admin`: what counts as a page of the site is `SiteBar\PageResponse`, shared by the panel on the site and the debug bar; the shape of a statement is `Support\SqlShape`, which `QueryTally::shape()` now calls.
+
+- 52da400: `webx-ui/module-debug`: the bar on the page is whole. The summary line opens a panel over the lower part of the window with the tabs SQL (statements with values, time, the place that issued them, transactions indented; repeated shapes grouped with «likely N+1», «show these»; slow ones marked; filter, order or by time, «Copy» and «Copy EXPLAIN»), Timeline (nested spans with the statements as marks; a click on a span narrows the SQL tab to its window), Blocks (regions and blocks with own and total time and statements, the theme layer of the type, the views and whose they are, «Open in panel» where the administrator may edit), Cache, Request, Other and History (the administrator's recent reports). Its height is dragged by the top edge; open, line or hidden to a dot, the tab, the height and the order are kept in `localStorage`. It stays left of the open drawer of the panel on the site — `webx-ui/module-admin`'s `site-bar.js` now sends `wx-bar:layout` with the width the drawer takes and marks its root with `data-open` — and a window narrower than 640 px gets a short line, the panel at full height and rows as cards. The words are in all ten languages; the report carries `links` to the panel.
+
 ## 0.77.0
 
 ### Minor Changes
