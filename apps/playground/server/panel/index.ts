@@ -180,7 +180,7 @@ import {
   revokeKey,
 } from './agents'
 import { dictionary, panelLocales } from './lang'
-import { registerRoles, usableScopes, withAccess } from './roles'
+import { currentAdmin, holds as mayDo, registerRoles, usableScopes, withAccess } from './roles'
 import type { ManifestModule } from '../../../../packages/module-admin/src/types'
 import {
   createRecipe,
@@ -2220,13 +2220,20 @@ on('DELETE', '/auth/connections/(\\d+)', ({ params }) => ({
   data: endConnection(Number(params[0])),
 }))
 
-on('GET', '/auth/keys', () => listKeys())
+/* Your own keys to everybody; everybody's with admins.manage, unless `mine` asks for your own. */
+on('GET', '/auth/keys', ({ query }) => {
+  const admin = currentAdmin()
+  const everybody = mayDo(admin, 'admins.manage') && query.get('mine') === null
+  const all = listKeys()
+
+  return everybody ? all : { ...all, data: all.data.filter((key) => key.user.id === admin.id) }
+})
 
 on('GET', '/auth/keys/scopes', ({ query }) => ({
   data: usableScopes(Number(query.get('admin')) || undefined, listKeys().meta.scopes),
 }))
 
-on('POST', '/auth/keys', ({ body }) => issueKey(body))
+on('POST', '/auth/keys', ({ body }) => issueKey(body, currentAdmin()))
 
 on('DELETE', '/auth/keys/(\\d+)', ({ params }) => ({ data: revokeKey(Number(params[0])) }))
 

@@ -61,6 +61,19 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Changing your own address
+    |---------------------------------------------------------------------------
+    |
+    | A new sign-in address is proven by a link in a letter to it. Null offers
+    | that wherever mail can leave the site (any transport but log and array,
+    | or a local machine); true or false settles it either way.
+    |
+    */
+
+    'email_change' => env('WEBX_AUTH_EMAIL_CHANGE'),
+
+    /*
+    |---------------------------------------------------------------------------
     | Consent
     |---------------------------------------------------------------------------
     |

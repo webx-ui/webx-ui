@@ -6,7 +6,7 @@ import {
   type AdminUser,
 } from '@webx-ui/module-admin'
 import { audit } from '@webx-ui/module-audit'
-import { admins, connect } from '@webx-ui/module-auth'
+import { admins, connect, createAuthSession, provideAuth } from '@webx-ui/module-auth'
 import { banners } from '@webx-ui/module-banners'
 import { blocks, regions } from '@webx-ui/module-blocks'
 import { blog } from '@webx-ui/module-blog'
@@ -57,6 +57,8 @@ const session: AdminPlugin = {
     admin.context.useSessionLoader(() =>
       admin.context.http.get<{ data: AdminUser }>('/api/cms/auth/me').then((body) => body.data),
     )
+    // The profile dialog's calls — name, password, address, interface — against the fixtures.
+    provideAuth(admin.app, createAuthSession(admin.context))
   },
 }
 

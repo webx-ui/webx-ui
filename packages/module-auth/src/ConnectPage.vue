@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 import { useAdmin, useTranslate, WxListScreen } from '@webx-ui/module-admin'
 import {
+  createModal,
   toast,
   WxAlert,
   WxButton,
@@ -15,7 +16,10 @@ import {
 import { copyText } from './clipboard'
 import ConnectionList from './ConnectionList.vue'
 import ContentRulesCard from './ContentRulesCard.vue'
+import KeyDialog from './KeyDialog.vue'
+import KeyList from './KeyList.vue'
 import { useAuthMessages } from './i18n'
+import type { McpKey } from './types'
 
 /**
  * How a person connects their own agent, on one page.
@@ -32,11 +36,24 @@ import { useAuthMessages } from './i18n'
  * Then the rules agents read before they write, when the site keeps them. Under them are their
  * own connections, because the first thing somebody does after connecting
  * is look for proof that it worked — and the second, weeks later, is come back to end it.
+ *
+ * Last, their own keys: the other way in, for a program with no browser to sign in with. They
+ * are here rather than in the profile because this is the page about letting programs in, and
+ * because an administrator without `admins.*` never sees the keys view of «Administrators»
+ * (WEBX_UI_PERMISSIONS.md §7). A key acts as its owner, so issuing one for yourself needs no
+ * permission and its scopes are only those your own permissions reach.
  */
 const admin = useAdmin()
 useAuthMessages()
 
 const t = useTranslate('webx-auth')
+
+const ownKeys = useTemplateRef<{ reload: () => void }>('own-keys')
+const issueKey = createModal<McpKey, { mine: boolean }>(KeyDialog)
+
+async function issue(): Promise<void> {
+  if (await issueKey({ mine: true })) ownKeys.value?.reload()
+}
 
 const copied = ref(false)
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
@@ -222,6 +239,23 @@ async function copy(value: string): Promise<void> {
           <connection-list scope="mine" />
         </wx-card>
       </section>
+
+      <section class="wx-connect__section">
+        <div class="wx-connect__head">
+          <wx-heading :level="2" size="sm">{{ t('connect.keys') }}</wx-heading>
+          <wx-button size="sm" variant="outline" @click="issue">
+            <template #icon><wx-icon name="plus" /></template>
+            {{ t('keys.issue') }}
+          </wx-button>
+        </div>
+        <wx-text size="sm" tone="muted" class="wx-connect__lead">{{
+          t('connect.keys-hint')
+        }}</wx-text>
+
+        <wx-card padding="none">
+          <key-list ref="own-keys" mine />
+        </wx-card>
+      </section>
     </div>
   </wx-list-screen>
 </template>
@@ -299,6 +333,15 @@ async function copy(value: string): Promise<void> {
   line-height: var(--wx-font-line-height-relaxed);
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* The heading and the button that adds to the list under it, apart; stacked when they meet. */
+.wx-connect__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wx-space-8);
 }
 
 .wx-connect__links {

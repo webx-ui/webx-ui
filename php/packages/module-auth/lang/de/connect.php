@@ -40,5 +40,7 @@ return [
     'mine' => 'Ihre Verbindungen',
     'rules' => 'Regeln für Agenten',
     'rules-hint' => 'Jeder verbundene Agent liest sie, bevor er etwas schreibt, das Besucher sehen.',
+    'keys' => 'Ihre Schlüssel',
+    'keys-hint' => 'Für ein Programm ohne Browser – einen nächtlichen Import, einen Warteschlangen-Wächter. Ein Schlüssel handelt in Ihrem Namen und darf nie mehr als Sie.',
 
 ];

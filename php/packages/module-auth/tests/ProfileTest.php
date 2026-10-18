@@ -6,6 +6,8 @@ namespace WebxUi\Auth\Tests;
 
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\History\HistoryEntry;
+use WebxUi\Auth\Models\CmsUser;
 
 /**
  * Editing yourself.
@@ -35,21 +37,66 @@ final class ProfileTest extends TestCase
     #[Test]
     public function what_a_person_is_allowed_to_do_is_not_theirs_to_change(): void
     {
-        // The whole reason this endpoint can be open to everybody: roles, super and active
-        // are not in it, so sending them changes nothing.
+        // The whole reason this endpoint can be open to everybody: roles, super, active and the
+        // address are not in it — and sending them is refused by name, not quietly dropped
+        // (WEBX_UI_PERMISSIONS.md §8).
         $admin = $this->admin();
         $this->actingAs($admin, 'cms');
 
         $this->putJson('api/cms/auth/me', [
-            'name' => 'Admin',
+            'name' => 'Renamed',
             'is_super' => true,
             'is_active' => false,
+            'roles' => [1],
+            'permissions' => ['admins.manage'],
             'email' => 'someone.else@example.test',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['is_super', 'is_active', 'roles', 'permissions', 'email'])
+            ->assertJsonMissingValidationErrors('name');
+
+        $fresh = $admin->fresh();
+        $this->assertSame('Admin', $fresh?->name);
+        $this->assertFalse($fresh->is_super);
+        $this->assertTrue($fresh->is_active);
+        $this->assertSame('admin@example.test', $fresh->email);
+        $this->assertSame([], $fresh->roles()->pluck('id')->all());
+    }
+
+    #[Test]
+    public function a_method_override_is_not_a_field(): void
+    {
+        // A host that lets through only GET and POST sends the real method in `_method`.
+        $this->actingAs($this->admin(), 'cms');
+
+        $this->postJson('api/cms/auth/me', ['_method' => 'PUT', 'name' => 'Renamed'])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Renamed');
+    }
+
+    #[Test]
+    public function every_change_of_yourself_is_in_the_history_and_the_password_only_as_a_fact(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin, 'cms');
+
+        $this->putJson('api/cms/auth/me', [
+            'name' => 'Renamed',
+            'password' => 'a-much-longer-secret',
+            'current_password' => 'correct-horse-battery',
         ])->assertOk();
 
-        $this->assertFalse($admin->fresh()->is_super);
-        $this->assertTrue($admin->fresh()->is_active);
-        $this->assertSame('admin@example.test', $admin->fresh()?->email);
+        $rows = HistoryEntry::query()
+            ->where('subject_type', CmsUser::TYPE)
+            ->where('subject_id', $admin->id)
+            ->where('event', HistoryEntry::UPDATED)
+            ->get();
+        $fields = $rows->flatMap(static fn (HistoryEntry $row): array => array_column($row->changes ?? [], 'field'))->all();
+
+        $this->assertContains('name', $fields);
+        $this->assertContains('password', $fields);
+        $this->assertSame($admin->id, $rows->first()?->admin_id);
+        $this->assertStringNotContainsString('a-much-longer-secret', (string) json_encode($rows->pluck('changes')));
     }
 
     #[Test]

@@ -6,6 +6,7 @@ namespace WebxUi\Auth\Http\Resources;
 
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
+use WebxUi\Auth\Profile\EmailChange;
 
 /**
  * What the panel is told about whoever is signed in.
@@ -39,6 +40,10 @@ final class CmsUserPayload
             // The key the photograph is stored under, as the admin resource sends it: which
             // library turns it into an address is the panel's business, not this package's.
             'avatar' => $user->avatar,
+            // Whether the profile may offer a new sign-in address: only where a letter can reach
+            // it (WEBX_UI_PERMISSIONS.md §8). Elsewhere the address is changed by whoever
+            // manages administrators.
+            'emailChange' => app(EmailChange::class)->available(),
             'lastLoginAt' => $user->last_login_at?->toIso8601String(),
             'roles' => $user->roles
                 ->map(static fn (Role $role): array => [

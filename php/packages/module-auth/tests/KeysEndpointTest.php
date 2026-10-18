@@ -59,6 +59,24 @@ final class KeysEndpointTest extends PassportTestCase
     }
 
     #[Test]
+    public function the_connect_page_lists_only_your_own_keys_even_to_a_manager(): void
+    {
+        // The page that connects an agent is about whoever reads it, not the whole team.
+        $manager = $this->manager();
+        $other = $this->admin('other@example.test');
+        $this->actingAs($manager, 'cms');
+
+        $mine = (int) $this->postJson('/api/cms/auth/keys', $this->input($manager))->assertCreated()->json('data.id');
+        $this->postJson('/api/cms/auth/keys', $this->input($other))->assertCreated();
+
+        $this->getJson('/api/cms/auth/keys')->assertOk()->assertJsonCount(2, 'data');
+        $this->getJson('/api/cms/auth/keys?mine=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $mine);
+    }
+
+    #[Test]
     public function a_key_carries_only_the_scopes_its_owners_permissions_reach(): void
     {
         $robot = $this->admin('robot@example.test');

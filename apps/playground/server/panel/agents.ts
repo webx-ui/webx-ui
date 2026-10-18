@@ -569,7 +569,10 @@ export function listKeys(): { data: McpKey[]; meta: { scopes: string[]; max_days
 }
 
 /** `POST /auth/keys`: a new row, and a secret that is shown once and never kept. */
-export function issueKey(body: Record<string, unknown>): { data: McpKey; token: string } {
+export function issueKey(
+  body: Record<string, unknown>,
+  issuer: { id: number; name: string },
+): { data: McpKey; token: string } {
   const user = admins.find((one) => one.id === Number(body.admin))
   const scopes =
     Array.isArray(body.scopes) && body.scopes.length > 0 ? body.scopes.map(String) : ['mcp:use']
@@ -581,7 +584,7 @@ export function issueKey(body: Record<string, unknown>): { data: McpKey; token: 
     id: Math.max(0, ...keys.map((one) => one.id)) + 1,
     name: String(body.name ?? ''),
     user: { id: Number(body.admin), name: user?.name ?? null },
-    created_by: { id: anna, name: admins.find((one) => one.id === anna)?.name ?? null },
+    created_by: { id: issuer.id, name: issuer.name },
     scopes,
     everything: scopes.includes('mcp:use'),
     state: 'live',

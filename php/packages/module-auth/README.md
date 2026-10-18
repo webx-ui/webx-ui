@@ -66,11 +66,14 @@ Several permissions mean any of them: `cms.can:pages.manage,pages.publish`.
 
 ## Signing in
 
-| Route                       | What it does                                  |
-| --------------------------- | --------------------------------------------- |
-| `POST /api/cms/auth/login`  | Session sign-in. Throttled.                   |
-| `POST /api/cms/auth/logout` | Ends it.                                      |
-| `GET /api/cms/auth/me`      | Who is signed in, with roles and permissions. |
+| Route                                | What it does                                                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `POST /api/cms/auth/login`           | Session sign-in. Throttled.                                                                                      |
+| `POST /api/cms/auth/logout`          | Ends it.                                                                                                         |
+| `GET /api/cms/auth/me`               | Who is signed in, with roles and permissions.                                                                    |
+| `PUT /api/cms/auth/me`               | Your own profile: name, photo, language, password with the current one. Any other field is a 422 under its name. |
+| `POST /api/cms/auth/me/email`        | A new sign-in address, with the current password: sends a letter with a signed link, changes nothing yet.        |
+| `GET /api/cms/auth/me/email/confirm` | The link in that letter. Moves the address once, then lands in the panel (`?email-change=done\|expired\|taken`). |
 
 The session is what authenticates the panel, so its API runs through the `web` group rather
 than the stateless `api` one. A stranger gets **401** rather than a redirect: there is no
@@ -83,6 +86,11 @@ account. An account switched off mid-session stops working at its next request, 
 sign-in.
 
 The shell at `/cms` stays public: it carries no data, and it is what draws the login form.
+
+A new address is offered only where a letter can leave the site: any mail transport but `log` and
+`array`, or a local machine. `webx-auth.email_change` (`WEBX_AUTH_EMAIL_CHANGE`) settles it either
+way; `me` says which as `emailChange`. Without mail the profile says that whoever manages
+administrators changes the address.
 
 ## What gets written down
 

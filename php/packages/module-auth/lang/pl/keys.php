@@ -56,4 +56,7 @@ return [
     'confirm' => 'Unieważnij',
     'revoked-done' => '„:name” unieważniony',
     'empty' => 'Nie wydano jeszcze żadnego klucza',
+    'lead-mine' => 'Klucz pozwala programowi — strażnikowi kolejki, nocnemu importowi — pracować w panelu w Twoim imieniu bez przeglądarki. Nigdy nie może więcej niż Ty i tylko w wybranych zakresach.',
+    'empty-mine' => 'Nie masz jeszcze kluczy',
+
 ];

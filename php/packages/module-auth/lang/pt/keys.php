@@ -56,4 +56,7 @@ return [
     'confirm' => 'Revogar',
     'revoked-done' => '«:name» foi revogada',
     'empty' => 'Nenhuma chave foi emitida',
+    'lead-mine' => 'Uma chave permite que um programa — um vigia de fila, uma importação noturna — trabalhe neste painel como você, sem navegador. Nunca pode mais do que você, e só nos escopos escolhidos.',
+    'empty-mine' => 'Você ainda não tem chaves',
+
 ];

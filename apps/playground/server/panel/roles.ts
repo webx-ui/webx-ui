@@ -48,6 +48,15 @@ const VISIBLE_WITH: Record<string, string[]> = {
 
 let current = 1
 
+/** What the profile may send, and nothing else (WEBX_UI_PERMISSIONS.md §8). */
+const PROFILE = ['name', 'avatar', 'locale', 'password', 'current_password']
+
+/** Every fixture administrator's current password, for the profile to ask for. */
+const PASSWORD = 'password'
+
+/** The theme and the panel on the site, per administrator — not columns of the fixture rows. */
+const preferences = new Map<number, { theme?: 'light' | 'dark' | null; siteBar?: boolean }>()
+
 export function currentAdmin(): Admin {
   return adminRows.find((row) => row.id === current) ?? adminRows[0]
 }
@@ -67,7 +76,7 @@ export function permissionsOf(admin: Admin): string[] {
   return [...held].sort()
 }
 
-function holds(admin: Admin, permission: string): boolean {
+export function holds(admin: Admin, permission: string): boolean {
   return admin.is_super || permissionsOf(admin).includes(permission)
 }
 
@@ -181,8 +190,9 @@ export function registerRoles(
     return word === `permissions.${action}` ? action : word
   }
 
-  on('GET', '/auth/me', () => {
+  const me = () => {
     const admin = currentAdmin()
+    const own = preferences.get(admin.id) ?? {}
 
     return {
       data: {
@@ -190,12 +200,90 @@ export function registerRoles(
         name: admin.name,
         email: admin.email,
         isSuper: admin.is_super,
-        locale: null,
-        avatar: null,
+        locale: admin.locale,
+        theme: own.theme ?? null,
+        siteBar: own.siteBar ?? true,
+        // A playground «sends» the letter into nowhere, the way a local machine logs it.
+        emailChange: true,
+        avatar: admin.avatar,
         roles: admin.roles,
         permissions: permissionsOf(admin),
       },
     }
+  }
+
+  on('GET', '/auth/me', me)
+
+  /* What a browser asks before its first write on a real site; nothing to hand out here. */
+  on('GET', '/auth/csrf-cookie', () => ({}))
+
+  /*
+   * Yourself (WEBX_UI_PERMISSIONS.md §8): the profile takes its own fields and refuses any other
+   * by name, the password only with the current one — which in the playground is `password`.
+   */
+  on('PUT', '/auth/me', ({ body, locale }) => {
+    const admin = currentAdmin()
+    const errors: Record<string, string[]> = {}
+
+    for (const field of Object.keys(body)) {
+      if (!PROFILE.includes(field)) {
+        errors[field] = [line(locale, 'webx-auth', 'profile.not-yours').replace(':field', field)]
+      }
+    }
+
+    if (String(body.name ?? '').trim() === '') errors.name = ['The name is required.']
+
+    if (body.password && body.current_password !== PASSWORD) {
+      errors.current_password = [line(locale, 'webx-auth', 'profile.wrong-password')]
+    }
+
+    if (Object.keys(errors).length > 0) throw fail(422, 'The given data was invalid.', errors)
+
+    admin.name = String(body.name)
+    admin.avatar = typeof body.avatar === 'string' ? body.avatar : null
+
+    return me()
+  })
+
+  on('POST', '/auth/me/email', ({ body, locale }) => {
+    const admin = currentAdmin()
+    const email = String(body.email ?? '').trim()
+    const errors: Record<string, string[]> = {}
+
+    if (body.current_password !== PASSWORD) {
+      errors.current_password = [line(locale, 'webx-auth', 'profile.wrong-password')]
+    }
+
+    if (!/^[^@\s]+@[^@\s]+$/.test(email)) errors.email = ['Enter an email address.']
+    else if (email === admin.email) errors.email = [line(locale, 'webx-auth', 'profile.email-same')]
+    else if (adminRows.some((row) => row.email === email)) errors.email = ['That address is taken.']
+
+    if (Object.keys(errors).length > 0) throw fail(422, 'The given data was invalid.', errors)
+
+    return { data: { email, minutes: 60 } }
+  })
+
+  on('PUT', '/auth/locale', ({ body }) => {
+    currentAdmin().locale = typeof body.locale === 'string' ? body.locale : null
+
+    return me()
+  })
+
+  on('PUT', '/auth/theme', ({ body }) => {
+    const id = currentAdmin().id
+    const theme = body.theme === 'light' || body.theme === 'dark' ? body.theme : null
+
+    preferences.set(id, { ...preferences.get(id), theme })
+
+    return me()
+  })
+
+  on('PUT', '/auth/site-bar', ({ body }) => {
+    const id = currentAdmin().id
+
+    preferences.set(id, { ...preferences.get(id), siteBar: body.enabled === true })
+
+    return me()
   })
 
   /* Not a real endpoint: how the playground's corner menu «signs in» as somebody else. */

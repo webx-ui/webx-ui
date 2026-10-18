@@ -7,6 +7,7 @@ namespace WebxUi\Auth\Http\Controllers;
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Http\JsonResponse;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Auth\Access\AccessRules;
 use WebxUi\Auth\Http\Requests\ProfileRequest;
 use WebxUi\Auth\Http\Resources\CmsUserPayload;
 use WebxUi\Auth\Models\CmsUser;
@@ -30,6 +31,7 @@ final class ProfileController
     public function __construct(
         private readonly AuthFactory $auth,
         private readonly Locales $locales,
+        private readonly AccessRules $rules,
     ) {}
 
     public function __invoke(ProfileRequest $request): JsonResponse
@@ -50,11 +52,20 @@ final class ProfileController
         }
 
         // Blank is an edit of everything else, not a request to have no password.
-        if ($request->filled('password')) {
+        $password = $request->filled('password');
+
+        if ($password) {
             $user->password = (string) $request->string('password');
         }
 
         $user->save();
+
+        // The name, the photograph and the language are written by the model itself; the
+        // password is not followed there, so that it changed is said here — the fact, never
+        // the value.
+        if ($password) {
+            $this->rules->recordPassword($user);
+        }
 
         return ApiResponse::data(CmsUserPayload::make($user->refresh()));
     }

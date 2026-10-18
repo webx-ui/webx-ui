@@ -2,8 +2,11 @@ import type { AdminContext } from '@webx-ui/module-admin'
 import type { IssuedMcpKey, McpKey, McpKeyInput, McpKeys } from './types'
 
 export interface KeysApi {
-  /** Live ones first: your own, or everybody's with `admins.manage`. */
-  list(): Promise<McpKeys>
+  /**
+   * Live ones first: your own, or everybody's with `admins.manage` — unless `mine` asks for
+   * your own even then.
+   */
+  list(options?: { mine?: boolean }): Promise<McpKeys>
   /**
    * The scopes a key for this administrator may carry — those their permissions reach, and
    * `mcp:use`. Yourself when nobody is named; somebody else needs `admins.manage`.
@@ -20,9 +23,12 @@ export function createKeysApi(admin: AdminContext): KeysApi {
   const base = `${admin.apiPath}/auth/keys`
 
   return {
-    list: () =>
+    list: (options) =>
       admin.http
-        .get<{ data: McpKey[]; meta: { scopes: string[]; max_days: number } }>(base)
+        .get<{ data: McpKey[]; meta: { scopes: string[]; max_days: number } }>(
+          base,
+          ...(options?.mine ? [{ query: { mine: 1 } }] : []),
+        )
         .then((body) => ({
           data: body.data,
           scopes: body.meta.scopes,

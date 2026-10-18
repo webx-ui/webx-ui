@@ -47,9 +47,10 @@ registered in `webx-ui/module-admin` — read their guides for those.
 
 Any of the four but `admins.audit` reads the roles (`GET roles`, `roles/permissions`, `roles/{role}`,
 `admins_list_roles`, `admins_list_permissions`). Open to every signed-in administrator, about
-themselves: `me` (read and profile), `locale`, `theme`, `site-bar`, `logout`, their own keys
-(`keys`, `keys/scopes`) and agent connections (`connections`), and the section «Connect an agent»
-(`connect` declares no permissions). The rules hold even for holders: nobody changes their own
+themselves: `me` (read and profile — its own fields only, any other is a 422 by name), `me/email`
+(a new address, moved by a signed link in a letter to it), `locale`, `theme`, `site-bar`, `logout`,
+their own keys (`keys?mine=1`, `keys/scopes`) and agent connections (`connections`), and the section
+«Connect an agent» (`connect` declares no permissions; it lists and issues their own keys). The rules hold even for holders: nobody changes their own
 roles, hands out more than they hold, or touches a super administrator without being one. A route
 or screen node the site adds next to the module asks the same: `cms.can:admins.view,admins.manage`
 to read, `cms.can:admins.manage` to write.
@@ -63,6 +64,8 @@ to read, `cms.can:admins.manage` to write.
 | The ready-made roles on an older site      | `php artisan webx:roles:defaults` — creates the missing ones, touches none that exist   |
 | An account an agent may connect as         | a role with just the permissions it needs, not `is_super`                               |
 | A key for a script or CI                   | Administrators → Keys, or `php artisan webx:mcp:token --name=ci --admin=... --days=365` |
+| A key for yourself, without `admins.*`     | Connect an agent → Your keys                                                            |
+| Changing your own address without mail     | `WEBX_AUTH_EMAIL_CHANGE=true` only if letters really leave; otherwise an admin edits it |
 | Your own middleware stack on the panel API | `'protect_panel' => false` in `config/webx-auth.php`, add `cms.auth` to your stack      |
 | Another sign-in rate limit                 | `'throttle'` (`attempts,minutes`, default `6,1`)                                        |
 | The panel's sign-in screen at another path | `'login_path'`, matching the `path` option of the `auth()` plugin                       |

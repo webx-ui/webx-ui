@@ -1,5 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 import { h, watch, type Component } from 'vue'
+import { toast } from '@webx-ui/core'
 import type { Admin, AdminPlugin } from '@webx-ui/module-admin'
 import LoginCard from './LoginCard.vue'
 import { libraryAvatarField, libraryAvatarResolver } from './avatars'
@@ -60,6 +61,11 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
         component: { render: () => h(LoginCard, { ...options.card }) },
       })
 
+      // Also after the sign-in that a link opened in a fresh browser goes through first.
+      admin.router.afterEach(() => {
+        if (admin.context.state.status === 'ready') announceEmailChange(admin)
+      })
+
       admin.router.beforeEach((to) => {
         if (to.meta.public === true) {
           return true
@@ -90,6 +96,8 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
             return
           }
 
+          if (status === 'ready') void admin.router.isReady().then(() => announceEmailChange(admin))
+
           if (status === 'ready' && current.path === path) {
             const next = current.query.next
 
@@ -109,6 +117,35 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
       )
     },
   }
+}
+
+/**
+ * The link in the letter that moves a sign-in address lands on the panel with a word for how it
+ * went (`?email-change=done|expired|taken`). Said once the panel is drawn — after a sign-in, if
+ * the link was opened in a browser that had none — and taken off the address, so a reload does
+ * not say it again.
+ */
+const announced = new WeakSet<object>()
+
+function announceEmailChange(admin: Admin): void {
+  const route = admin.router.currentRoute.value
+  const outcome = route.query['email-change']
+
+  if (outcome !== 'done' && outcome !== 'expired' && outcome !== 'taken') return
+
+  // The arrival and the panel becoming ready can both see the same address before it is
+  // cleaned: said once.
+  if (announced.has(route)) return
+  announced.add(route)
+
+  const t = admin.i18n.scope('webx-auth')
+  const query = { ...route.query }
+
+  delete query['email-change']
+  void admin.router.replace({ path: route.path, query, hash: route.hash })
+
+  if (outcome === 'done') toast.success(t('profile.email-done'))
+  else toast.danger(t(`profile.email-${outcome}`))
 }
 
 /** An absolute address on the same origin as the panel — the only kind worth following whole. */
@@ -168,6 +205,7 @@ export {
   authKey,
   avatarFieldKey,
   avatarResolverKey,
+  type EmailChangeSent,
   type ProfileInput,
 } from './session'
 export { default as WxProfileDialog } from './ProfileDialog.vue'

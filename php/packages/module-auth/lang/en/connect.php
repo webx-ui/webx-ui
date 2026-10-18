@@ -40,5 +40,7 @@ return [
     'mine' => 'Your connections',
     'rules' => 'Rules for agents',
     'rules-hint' => 'Every connected agent reads these before it writes anything a visitor will see.',
+    'keys' => 'Your keys',
+    'keys-hint' => 'For a program that runs without a browser — a nightly import, a queue watcher. A key acts as you and can never do more than you may.',
 
 ];

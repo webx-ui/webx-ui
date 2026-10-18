@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useAdmin, useTheme } from '@webx-ui/module-admin'
+import { WxProfileDialog } from '@webx-ui/module-auth'
 import {
+  createModal,
   WxAvatar,
   WxDivider,
   WxDropdown,
@@ -41,6 +43,13 @@ void admin.http
   .get<{ data: { id: number; name: string; email: string }[] }>('/api/cms/inbox/recipients')
   .then((body) => (people.value = body.data))
 
+/* Opened on the next turn, as the real menu does: the menu is a layer that would eat the click. */
+const editProfile = createModal<true>(WxProfileDialog)
+
+function openProfile(): void {
+  setTimeout(() => void editProfile(), 0)
+}
+
 async function signInAs(id: number): Promise<void> {
   await admin.http.put('/api/cms/auth/as', { id })
   location.reload()
@@ -66,6 +75,12 @@ const preference = computed({
         </template>
       </button>
     </template>
+
+    <wx-dropdown-item icon="user" @click="openProfile">
+      {{ admin.i18n.scope('webx-auth')('profile.menu') }}
+    </wx-dropdown-item>
+
+    <wx-divider spacing="sm" />
 
     <wx-dropdown-item disabled>
       <wx-text size="sm" tone="muted">{{ panel('theme.label') }}</wx-text>

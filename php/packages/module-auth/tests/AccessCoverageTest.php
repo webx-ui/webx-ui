@@ -21,6 +21,7 @@ final class AccessCoverageTest extends TestCase
         $this->assertPanelRoutesNeedPermission('WebxUi\\Auth\\', [
             'GET api/cms/auth/me' => 'yourself',
             'PUT api/cms/auth/me' => 'yourself: the profile',
+            'POST api/cms/auth/me/email' => 'yourself: a new sign-in address, proved by a letter to it',
             'PUT api/cms/auth/locale' => 'yourself: the language of the panel',
             'PUT api/cms/auth/theme' => 'yourself: light or dark',
             'PUT api/cms/auth/site-bar' => 'yourself: the panel on the site',

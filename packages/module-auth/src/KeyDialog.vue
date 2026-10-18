@@ -39,6 +39,17 @@ import type { McpKey } from './types'
  * a month, a quarter, a year, three, ten. There is no key without an end: a signature that
  * never expires is one nobody can take back by waiting.
  */
+const props = withDefaults(
+  defineProps<{
+    /**
+     * A key for whoever is signed in, from the page that connects their agent: no owner to
+     * choose, and no list of people to fetch — which somebody without `admins.view` could not.
+     */
+    mine?: boolean
+  }>(),
+  { mine: false },
+)
+
 const { open, resolve, dismiss } = useModal<McpKey>()
 
 const context = useAdmin()
@@ -54,7 +65,7 @@ const LIFETIMES = [30, 90, 365, 1095, 3650] as const
 
 const form = ref({
   name: '',
-  admin: null as number | null,
+  admin: (props.mine ? Number(context.state.user?.id) || null : null) as number | null,
   access: 'everything' as 'everything' | 'chosen',
   scopes: [] as string[],
   days: 365 as number,
@@ -95,6 +106,16 @@ const address = computed<string>(() => {
 watch(
   () => form.value.admin,
   (owner) => {
+    // Your own key asks without naming anybody: the same answer, and no lookup of a person.
+    if (props.mine) {
+      void keys.scopesFor().then(
+        (usable) => (scopes.value = usable),
+        (error) => toast.danger(message(error)),
+      )
+
+      return
+    }
+
     if (owner === null) {
       scopes.value = []
 
@@ -113,16 +134,19 @@ watch(
       (error) => toast.danger(message(error)),
     )
   },
+  { immediate: props.mine },
 )
 
-void admins.list({ active: 'yes', per_page: 100, sort: 'name' }).then(
-  (page) =>
-    (people.value = page.data.map((one) => ({
-      value: one.id,
-      label: `${one.name} · ${one.email}`,
-    }))),
-  (error) => toast.danger(message(error)),
-)
+if (!props.mine) {
+  void admins.list({ active: 'yes', per_page: 100, sort: 'name' }).then(
+    (page) =>
+      (people.value = page.data.map((one) => ({
+        value: one.id,
+        label: `${one.name} · ${one.email}`,
+      }))),
+    (error) => toast.danger(message(error)),
+  )
+}
 
 function errorOf(field: string): string | undefined {
   return errors.value[field]?.[0] ?? errors.value[`${field}.0`]?.[0]
@@ -207,13 +231,18 @@ function close(): void {
     </div>
 
     <div v-else class="wx-key-dialog">
-      <wx-text size="sm" tone="muted">{{ t('keys.lead') }}</wx-text>
+      <wx-text size="sm" tone="muted">{{ t(props.mine ? 'keys.lead-mine' : 'keys.lead') }}</wx-text>
 
       <wx-form-item :label="t('keys.name')" :error="errorOf('name')" :help="t('keys.name-hint')">
         <wx-input v-model="form.name" name="name" autocomplete="off" />
       </wx-form-item>
 
-      <wx-form-item :label="t('keys.who')" :error="errorOf('admin')" :help="t('keys.who-hint')">
+      <wx-form-item
+        v-if="!props.mine"
+        :label="t('keys.who')"
+        :error="errorOf('admin')"
+        :help="t('keys.who-hint')"
+      >
         <wx-select v-model="form.admin" :options="people" filterable name="admin" />
       </wx-form-item>
 

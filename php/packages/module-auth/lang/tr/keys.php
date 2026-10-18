@@ -56,4 +56,7 @@ return [
     'confirm' => 'İptal et',
     'revoked-done' => '“:name” iptal edildi',
     'empty' => 'Henüz anahtar oluşturulmadı',
+    'lead-mine' => 'Anahtar, bir programın — kuyruk bekçisi, gece içe aktarımı — bu panelde tarayıcısız olarak sizin adınıza çalışmasını sağlar. Asla sizden fazlasını yapamaz ve yalnızca seçtiğiniz kapsamlarda çalışır.',
+    'empty-mine' => 'Henüz anahtarınız yok',
+
 ];

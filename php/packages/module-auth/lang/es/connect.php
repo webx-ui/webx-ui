@@ -40,5 +40,7 @@ return [
     'mine' => 'Sus conexiones',
     'rules' => 'Reglas para agentes',
     'rules-hint' => 'Cada agente conectado las lee antes de escribir algo que verá un visitante.',
+    'keys' => 'Sus claves',
+    'keys-hint' => 'Para un programa que funciona sin navegador: una importación nocturna, un vigilante de cola. Una clave actúa como usted y nunca puede más que usted.',
 
 ];

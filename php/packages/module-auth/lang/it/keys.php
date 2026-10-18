@@ -56,4 +56,7 @@ return [
     'confirm' => 'Revoca',
     'revoked-done' => '«:name» è revocata',
     'empty' => 'Nessuna chiave emessa',
+    'lead-mine' => 'Una chiave permette a un programma — un guardiano della coda, un import notturno — di lavorare in questo pannello come te, senza browser. Non può mai più di te, e solo negli ambiti scelti.',
+    'empty-mine' => 'Non hai ancora chiavi',
+
 ];

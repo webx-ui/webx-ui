@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Auth\Http\Controllers\AdminController;
 use WebxUi\Auth\Http\Controllers\ConnectionController;
 use WebxUi\Auth\Http\Controllers\CsrfCookieController;
+use WebxUi\Auth\Http\Controllers\EmailChangeController;
 use WebxUi\Auth\Http\Controllers\KeyController;
 use WebxUi\Auth\Http\Controllers\McpCallController;
 use WebxUi\Auth\Http\Controllers\MeController;
@@ -31,12 +32,23 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
             ->middleware('throttle:'.(string) config('webx-auth.throttle'))
             ->name('login');
 
+        // The link in the letter that moves a sign-in address. Not behind the guard: it is
+        // opened from a mailbox, often on another device, and owning that mailbox is the proof.
+        // The signature and the fingerprint inside it are what the controller checks.
+        Route::get('me/email/confirm', [EmailChangeController::class, 'confirm'])
+            ->middleware(['throttle:'.(string) config('webx-auth.throttle'), 'webx.history'])
+            ->name('me.email.confirm');
+
         Route::middleware(['cms.auth', 'webx.history'])->group(function (): void {
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
             Route::get('me', MeController::class)->name('me');
             // Yourself, and only the parts of yourself that are yours to change. Deliberately
             // not behind 'admins.manage': that permission is about other people.
             Route::put('me', ProfileController::class)->name('me.update');
+            // A new sign-in address is asked for here and made by the link in a letter to it.
+            Route::post('me/email', [EmailChangeController::class, 'store'])
+                ->middleware('throttle:'.(string) config('webx-auth.throttle'))
+                ->name('me.email');
             Route::put('locale', PanelLocaleController::class)->name('locale');
             Route::put('theme', PanelThemeController::class)->name('theme');
             Route::put('site-bar', PanelSiteBarController::class)->name('site-bar');

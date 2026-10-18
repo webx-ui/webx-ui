@@ -42,6 +42,18 @@ export interface AuthSession {
    * a password to rotate.
    */
   updateProfile(profile: ProfileInput): Promise<AdminUser>
+  /**
+   * Ask for a new sign-in address. Changes nothing: a letter goes to the new address, and the
+   * link in it makes the move. Throws `HttpError` with a 422 under `email` where the site sends
+   * no mail, the address is taken, or the password is wrong (under `current_password`).
+   */
+  requestEmailChange(email: string, currentPassword: string): Promise<EmailChangeSent>
+}
+
+/** Where the letter went, and how long its link works. */
+export interface EmailChangeSent {
+  email: string
+  minutes: number
 }
 
 /** What somebody may send about themselves. A blank password is "leave it alone". */
@@ -140,6 +152,15 @@ export function createAuthSession(admin: AdminContext): AuthSession {
       // The corner of the panel is drawn from this, so the new name and the new photograph
       // are on screen before the dialog has finished closing.
       admin.setUser(body.data)
+
+      return body.data
+    },
+
+    async requestEmailChange(email, currentPassword) {
+      const body = await admin.http.post<{ data: EmailChangeSent }>(`${base}/me/email`, {
+        email,
+        current_password: currentPassword,
+      })
 
       return body.data
     },

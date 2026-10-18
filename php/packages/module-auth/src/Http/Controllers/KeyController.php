@@ -39,14 +39,17 @@ final class KeyController
         private readonly AccessRules $rules,
     ) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $caller = $this->caller();
         $everybody = $caller !== null && $caller->hasPermission('admins.manage');
+        // `?mine=1` narrows even a manager to their own: the page that connects an agent lists
+        // the keys of whoever is reading it, not the whole team's.
+        $mine = ! $everybody || $request->boolean('mine');
 
         /** @var People<int, Key> $keys */
         $keys = Key::query()
-            ->when(! $everybody, static fn ($query) => $query->where('cms_user_id', $caller?->getKey()))
+            ->when($mine, static fn ($query) => $query->where('cms_user_id', $caller?->getKey()))
             // Live ones first, newest first: the list is read to find a key to switch off, or
             // to see whether the one a script uses is still there.
             ->orderByRaw('case when revoked_at is null then 0 else 1 end')

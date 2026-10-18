@@ -40,5 +40,7 @@ return [
     'mine' => 'Bağlantılarınız',
     'rules' => 'Ajanlar için kurallar',
     'rules-hint' => 'Bağlı her ajan, ziyaretçinin göreceği bir şey yazmadan önce bunları okur.',
+    'keys' => 'Anahtarlarınız',
+    'keys-hint' => 'Tarayıcısız çalışan bir program için — gece içe aktarımı, kuyruk bekçisi. Anahtar sizin adınıza çalışır ve sizden fazlasını yapamaz.',
 
 ];
