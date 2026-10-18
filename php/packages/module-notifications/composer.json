@@ -35,10 +35,10 @@
         "illuminate/support": "^13.0",
         "illuminate/view": "^13.0",
         "mustache/mustache": "^3.2",
-        "webx-ui/localization": "^0.78.0",
-        "webx-ui/mcp": "^0.78.0",
-        "webx-ui/module-admin": "^0.78.0",
-        "webx-ui/module-auth": "^0.78.0"
+        "webx-ui/localization": "^0.79.0",
+        "webx-ui/mcp": "^0.79.0",
+        "webx-ui/module-admin": "^0.79.0",
+        "webx-ui/module-auth": "^0.79.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -63,7 +63,7 @@
         "webx": {
             "module": "notifications",
             "npm": {
-                "@webx-ui/module-notifications": "^0.2.0"
+                "@webx-ui/module-notifications": "^0.2.1"
             },
             "panel": {
                 "import": "import { notifications } from '@webx-ui/module-notifications'",

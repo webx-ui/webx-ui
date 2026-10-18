@@ -1,5 +1,58 @@
 # @webx-ui/module-auth
 
+## 0.14.0
+
+### Minor Changes
+
+- a33dc79: Keys for programs never reach further than their owner, and roles can be made through MCP (WEBX_UI_PERMISSIONS.md §7, §19).
+
+  `webx-ui/module-auth`:
+
+  - A key carries only the scopes its owner's permissions reach: `mcp:use` and each scope with at least one tool the owner may use. Anything else is refused with a validation error on `scopes` — in the panel and in `webx:mcp:token` alike, whoever issues it. `GET auth/keys/scopes?admin=` says which scopes a key for that administrator may carry. Every call is still checked against the owner's permissions of that moment, so a role taken away narrows their keys at once.
+  - Your own keys need no permission: `GET/POST/DELETE auth/keys` are no longer behind `admins.manage` as a whole. The list shows your own keys, or everybody's with `admins.manage` (`meta.can_see_everybody`). A key for somebody else still needs `admins.manage` and the rules against handing out more than you hold; switching off somebody else's key needs `admins.manage`, and a super administrator's key is switched off only by a super administrator or its owner. **Behaviour change:** an administrator with `admins.manage` but without super status can no longer revoke a super administrator's key.
+  - New MCP tools `admins_list_permissions`, `admins_create_role` and `admins_update_role` (behind `roles.manage`, with `dry_run`, the form's validation and the same rules as the screen «Roles»). `admins_list_roles` names who holds each role and is open to whoever reads roles in the panel (`admins.view`, `admins.manage`, `roles.manage`, `roles.assign`).
+  - `KeyRefused` names the field at fault (`$refused->field`).
+
+  `@webx-ui/module-auth`: the key dialog offers only the scopes of the chosen administrator; `KeysApi.scopesFor(admin)`.
+
+- a33dc79: The screen «Roles» and a panel that shows each administrator what they may open (WEBX_UI_PERMISSIONS.md §11, §18).
+
+  `webx-ui/module-auth`:
+
+  - Roles are edited from the panel: `POST/PUT/DELETE auth/roles` behind `roles.manage` and the rules against handing out more than you hold (a role gains only what its editor holds; a role you hold is not yours to edit or delete). `GET auth/roles/permissions` is the matrix — every permission an installed module declares, by module, with a label in the panel's language and whether the reader holds it; `GET auth/roles/{id}` names who holds it. A role may list only declared permissions, plus those it already had. Deleting a role takes it from its holders and writes a line in each one's history.
+  - `GET auth/roles` is now open to `roles.manage` and `roles.assign` as well as `admins.view|admins.manage`, and says of each role whether the reader holds it (`held`). `GET auth/me` gives each role its `id`.
+  - Ready-made roles (`editor`, `seo`, `leads`, `catalog`, `developer`, `viewer`), made of the modules installed and only where the code is free: by the first `webx:admin`, by a migration on a site that already has administrators, and by the new `webx:roles:defaults`.
+  - Front end: the view «Roles» under Administrators with the matrix dialog (`WxRoleList`, `WxRoleDialog`); each view of the section is shown only to whoever may open it; the administrator form shows the roles only with `roles.assign` and «Super administrator» only to a super administrator, and sends neither otherwise.
+
+  `webx-ui/module-admin`:
+
+  - The manifest says of every module whether the signed-in administrator may open it (`allowed`). A module without permissions of its own names the ones that open it with the new `WebxUi\Admin\Contracts\HasVisibility::visibleWith()` — the catalogue's dictionaries and the header and footer do. The cached half of the manifest stays one per language.
+  - Front end: the menu leaves out what is not allowed, and a page of such a section shows «No access» instead of drawing itself and failing.
+
+- a33dc79: The profile and your own keys (WEBX_UI_PERMISSIONS.md §8, §21).
+
+  `webx-ui/module-auth`:
+
+  - **`PUT auth/me` refuses what is not a profile field.** `name`, `avatar`, `locale`, `password`, `current_password` are taken; any other field (`roles`, `is_super`, `is_active`, `email`, …) is now a **422 under its own name** instead of being dropped silently. A password changed from the profile is a row of the account's history, as from the administrators form.
+  - **A new sign-in address is proved at that address.** `POST auth/me/email` (`email`, `current_password`) sends a letter with a signed link and changes nothing; `GET auth/me/email/confirm` — the link — moves the address once (every other link in flight dies with the old address) and lands in the panel with `?email-change=done|expired|taken`. Offered only where mail leaves the site (any transport but `log`/`array`, or a local machine); `webx-auth.email_change` / `WEBX_AUTH_EMAIL_CHANGE` settles it either way, and `me` reports it as `emailChange`. The letter is the publishable view `webx-auth::mail.email-change`.
+  - **`GET auth/keys?mine=1`** lists only the caller's keys, even for a holder of `admins.manage`.
+
+  `@webx-ui/module-auth`:
+
+  - **The «Your profile» dialog has sections**: profile, interface (language, theme, panel on the site — applied at once), password (the current one first), email (a link to the new address; where the site sends no mail, it says who changes it). A row leads to «Connect an agent» for agents and keys.
+  - **«Connect an agent» lists and issues your own keys** — for an administrator without `admins.*`, who never sees Administrators → Keys. `WxKeyList` and the key dialog take `mine`: no owner to choose and no list of people fetched.
+  - `AuthSession.requestEmailChange()`; the plugin says how a confirmation link went when the panel opens on it.
+
+  `@webx-ui/module-admin`: the drawer of a narrow panel closes on any change of page, not only on a pick from its menu — a link from the profile dialog in its foot no longer lands behind it.
+
+### Patch Changes
+
+- Updated dependencies [a33dc79]
+- Updated dependencies [a33dc79]
+- Updated dependencies [a33dc79]
+- Updated dependencies [a33dc79]
+  - @webx-ui/module-admin@0.31.0
+
 ## 0.13.0
 
 ### Minor Changes

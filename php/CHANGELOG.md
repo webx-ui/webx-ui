@@ -1,5 +1,110 @@
 # @webx-ui/php
 
+## 0.79.0
+
+### Minor Changes
+
+- a33dc79: `webx-ui/module-media`: an uploaded SVG can no longer run scripts on the site.
+
+  - **Types come from the bytes.** The extension a file is kept under and its `mime` are read from its content (`WebxUi\Media\Support\FileTypes`), not from the name or the type the client sent. A file whose name disagrees with its content is kept under the extension its content has (a PNG named `x.html` becomes `.png`); one whose content makes no listed type is refused. Browser documents — `html`, `xml`, `js`, `svgz`, PHP — are refused even when added to `upload.extensions`.
+  - **SVG is sanitized on upload** (`WebxUi\Media\Support\SvgSanitizer`, on top of the new dependency `rhukster/dom-sanitizer`, MIT): `<script>`, `on*` handlers, `<foreignObject>`, `javascript:` and `data:` addresses and anything pointing outside the drawing are removed; every `href` must be `#fragment`, except an inline PNG/JPEG/GIF/WebP in `<image>`. An SVG that is not a well-formed drawing is refused with a validation message. The stored file is the sanitized one, so its bytes and hash differ from what was sent. This applies to the panel's uploads, chunked uploads and `media_upload_from_url`.
+  - **`php artisan webx:media:sanitize-svg [--dry-run] [--id=…]`** runs SVGs already in the library through the sanitizer, keeps their keys, and lists file by file what was removed; it also lists SVGs it cannot sanitize and files kept under an extension the library no longer accepts.
+  - **Headers.** `files/{file}/source` answers with `X-Content-Type-Options: nosniff` and, for SVG, `Content-Security-Policy: default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox` (`WebxUi\Media\Support\ServeHeaders`). The public disk is served by the web server: the site skeleton's `docker/nginx.conf` and `public/.htaccess` now set the same headers on `/storage/`; existing sites add them by hand (module README, «Serving files»).
+
+  `webx-ui/module-inbox`: an attachment's `mime` is read from its bytes, not taken from the visitor's browser.
+
+- a33dc79: Private files, the library's pickers and the checks that asked the wrong permission (WEBX_UI_PERMISSIONS.md §22).
+
+  Composer packages:
+
+  - **Private files refuse a public disk.** `WebxUi\Admin\Support\PrivateDisk` (`module-admin`) calls a disk public when it has `visibility: public` or a local root inside the web root or `storage/app/public`. Attachments of submissions (`webx-inbox.disk`), the catalogue exchange (`webx-catalog.exchange.disk`) and database dumps (`webx-admin.backup.disk`) now throw a `RuntimeException` naming the setting before the first write, instead of serving visitors' files and exports to anyone with the address.
+  - **A catalogue export is its starter's** (choice 11 (a)). Everybody with the catalogue still sees the runs; the file — `runs/{id}/file` and `file_url` — is for whoever started the run and super administrators. Others get `file_url: null`, the new `file_yours: false`, and **403** from `runs/{id}/file`. An import address is shown to them without its query, fragment and user (`ExchangeRun::withoutSecrets()`). `ExchangeRun::toResponse()` takes the reader; `catalog_exchange_run` answers the same way.
+  - **Pickers count the `manage` of the same family**: the link picker, collections and relations let `x.manage` in where they asked for `x.view` alone (`AccessPolicy::sees()`, `AccessPolicy::seeing()`).
+  - **The content of a record through the blocks tools needs the record's section too**: `blocks_set_content` and `blocks_edit_content` ask the section's permission from `SiteBar::entity()` (`pages.manage` for a page) besides `blocks.manage`; `blocks_get_content` and `blocks_preview_url` ask its `view` or `manage`.
+  - **The rows of a history run** (`history/runs/{id}`, `history_runs` with `run_id`) are only those of types the reader may read. `HistoryReader::rowsOf()` takes `types:`.
+  - MCP tools brought in line with the panel's routes: `catalog_index_status` is behind `search-index.view|manage` (no longer `catalog.view`); the catalogue's read tools also take `catalog.delete`; the audit's read tools also take `audit.run`; `tasks_stage_release` also takes `tasks.manage` (scope `tasks:write` or `tasks:work`); `tasks_comment` also takes the scope `tasks:review`. The panel's notification preview (`POST notifications/preview`, `channels/{id}/preview`) is open to `notifications.view`, as the tool already was.
+  - The SEO interlinking and FAQ exports no longer leave an empty temporary file behind.
+
+  `@webx-ui/module-admin`: `AdminModule.pickImageWith` — the permissions that let somebody open `pickImage`; without one `admin.pickImage` is `null` and `wx-rich-text` draws no image button. The backup note shows with `settings.manage` too.
+
+  `@webx-ui/module-media`: the fields over the library (`wx-media`, `wx-gallery`, `wx-file`, `wx-files`) open the picker only for `media.view` or `media.manage`; without either they keep, caption and clear what is chosen and say the library is closed (`field.locked`). The module sets `pickImageWith` and does not ask the library for addresses without the right. New exports: `canBrowseMedia`, `MEDIA_BROWSE`.
+
+  `@webx-ui/module-catalog`: a finished export that is somebody else's says whose it is rather than «no longer kept» (`file_yours`).
+
+- a33dc79: Keys for programs never reach further than their owner, and roles can be made through MCP (WEBX_UI_PERMISSIONS.md §7, §19).
+
+  `webx-ui/module-auth`:
+
+  - A key carries only the scopes its owner's permissions reach: `mcp:use` and each scope with at least one tool the owner may use. Anything else is refused with a validation error on `scopes` — in the panel and in `webx:mcp:token` alike, whoever issues it. `GET auth/keys/scopes?admin=` says which scopes a key for that administrator may carry. Every call is still checked against the owner's permissions of that moment, so a role taken away narrows their keys at once.
+  - Your own keys need no permission: `GET/POST/DELETE auth/keys` are no longer behind `admins.manage` as a whole. The list shows your own keys, or everybody's with `admins.manage` (`meta.can_see_everybody`). A key for somebody else still needs `admins.manage` and the rules against handing out more than you hold; switching off somebody else's key needs `admins.manage`, and a super administrator's key is switched off only by a super administrator or its owner. **Behaviour change:** an administrator with `admins.manage` but without super status can no longer revoke a super administrator's key.
+  - New MCP tools `admins_list_permissions`, `admins_create_role` and `admins_update_role` (behind `roles.manage`, with `dry_run`, the form's validation and the same rules as the screen «Roles»). `admins_list_roles` names who holds each role and is open to whoever reads roles in the panel (`admins.view`, `admins.manage`, `roles.manage`, `roles.assign`).
+  - `KeyRefused` names the field at fault (`$refused->field`).
+
+  `@webx-ui/module-auth`: the key dialog offers only the scopes of the chosen administrator; `KeysApi.scopesFor(admin)`.
+
+- a33dc79: One policy decides every permission check of the panel (WEBX_UI_PERMISSIONS.md §4): `WebxUi\Admin\Access\AccessPolicy` in `webx-ui/module-admin`. A super administrator passes, anybody else holds what their roles list, joined; a call made with a token is the intersection of its scopes and its owner's permissions; a limit by record can be registered later with `constrain()` without any door changing. `CmsUser::hasPermission()`, `cms.can`, the MCP server (`Permissions`, `Scopes`) and the journal all ask it. An account that can say what it was granted implements `WebxUi\Admin\Access\HoldsPermissions` (`CmsUser` does); one that only answers `hasPermission()` keeps working.
+
+  `cms.can` and `cms.auth` now run before a route's model bindings: without the permission the answer is 403, not a 404 that tells whether the record exists.
+
+  `webx-ui/module-auth`:
+
+  - New permissions `roles.manage` (edit roles) and `roles.assign` (give and take roles). Assigning a role — in the administrator form, when creating one, and the MCP `admins_grant_role` / `admins_revoke_role` — needs `roles.assign` instead of `admins.manage`. A migration gives `roles.assign` to every role that has `admins.manage`, so nobody loses what they could do.
+  - The rules against handing out more than you hold (§6.2) live in `WebxUi\Auth\Access\AccessRules`, for the panel, MCP and keys alike: not your own roles, not a permission you do not hold (in an assignment, a new account, or a key for somebody else), not an account that holds more than you, only a super administrator makes or touches one, not a role you hold, and the last **active** super administrator stays one.
+  - **Behaviour change:** every refusal is a 403 with `message`, `rule` and, when it is the reason, `missing`. «Not on your own account» and «the last super administrator» used to be 422.
+  - **Behaviour change:** `PATCH auth/admins/{id}` changes the fields it is sent and nothing else. Leaving out `is_super` no longer takes the status away, leaving out `is_active` no longer switches the account on; `name` and `email` are optional on an edit.
+  - Accounts (`admins.admin`) and roles (`admins.role`) are in the journal: changed fields, who holds which roles before and after, that a password was changed, and every refusal (a new event, `refused`). Read with `admins.audit` or `admins.manage`.
+  - `WebxUi\Auth\Testing\AssertsPermissions` — the test every module carries: each panel route answers 401 to nobody and 403 to an administrator without permissions, each MCP tool is hidden from and refused to them, and every permission asked for is declared. Every package of the monorepo runs it (`AccessCoverageTest`).
+
+- a33dc79: The screen «Roles» and a panel that shows each administrator what they may open (WEBX_UI_PERMISSIONS.md §11, §18).
+
+  `webx-ui/module-auth`:
+
+  - Roles are edited from the panel: `POST/PUT/DELETE auth/roles` behind `roles.manage` and the rules against handing out more than you hold (a role gains only what its editor holds; a role you hold is not yours to edit or delete). `GET auth/roles/permissions` is the matrix — every permission an installed module declares, by module, with a label in the panel's language and whether the reader holds it; `GET auth/roles/{id}` names who holds it. A role may list only declared permissions, plus those it already had. Deleting a role takes it from its holders and writes a line in each one's history.
+  - `GET auth/roles` is now open to `roles.manage` and `roles.assign` as well as `admins.view|admins.manage`, and says of each role whether the reader holds it (`held`). `GET auth/me` gives each role its `id`.
+  - Ready-made roles (`editor`, `seo`, `leads`, `catalog`, `developer`, `viewer`), made of the modules installed and only where the code is free: by the first `webx:admin`, by a migration on a site that already has administrators, and by the new `webx:roles:defaults`.
+  - Front end: the view «Roles» under Administrators with the matrix dialog (`WxRoleList`, `WxRoleDialog`); each view of the section is shown only to whoever may open it; the administrator form shows the roles only with `roles.assign` and «Super administrator» only to a super administrator, and sends neither otherwise.
+
+  `webx-ui/module-admin`:
+
+  - The manifest says of every module whether the signed-in administrator may open it (`allowed`). A module without permissions of its own names the ones that open it with the new `WebxUi\Admin\Contracts\HasVisibility::visibleWith()` — the catalogue's dictionaries and the header and footer do. The cached half of the manifest stays one per language.
+  - Front end: the menu leaves out what is not allowed, and a page of such a section shows «No access» instead of drawing itself and failing.
+
+- a33dc79: The profile and your own keys (WEBX_UI_PERMISSIONS.md §8, §21).
+
+  `webx-ui/module-auth`:
+
+  - **`PUT auth/me` refuses what is not a profile field.** `name`, `avatar`, `locale`, `password`, `current_password` are taken; any other field (`roles`, `is_super`, `is_active`, `email`, …) is now a **422 under its own name** instead of being dropped silently. A password changed from the profile is a row of the account's history, as from the administrators form.
+  - **A new sign-in address is proved at that address.** `POST auth/me/email` (`email`, `current_password`) sends a letter with a signed link and changes nothing; `GET auth/me/email/confirm` — the link — moves the address once (every other link in flight dies with the old address) and lands in the panel with `?email-change=done|expired|taken`. Offered only where mail leaves the site (any transport but `log`/`array`, or a local machine); `webx-auth.email_change` / `WEBX_AUTH_EMAIL_CHANGE` settles it either way, and `me` reports it as `emailChange`. The letter is the publishable view `webx-auth::mail.email-change`.
+  - **`GET auth/keys?mine=1`** lists only the caller's keys, even for a holder of `admins.manage`.
+
+  `@webx-ui/module-auth`:
+
+  - **The «Your profile» dialog has sections**: profile, interface (language, theme, panel on the site — applied at once), password (the current one first), email (a link to the new address; where the site sends no mail, it says who changes it). A row leads to «Connect an agent» for agents and keys.
+  - **«Connect an agent» lists and issues your own keys** — for an administrator without `admins.*`, who never sees Administrators → Keys. `WxKeyList` and the key dialog take `mine`: no owner to choose and no list of people fetched.
+  - `AuthSession.requestEmailChange()`; the plugin says how a confirmation link went when the panel opens on it.
+
+  `@webx-ui/module-admin`: the drawer of a narrow panel closes on any change of page, not only on a pick from its menu — a link from the profile dialog in its foot no longer lands behind it.
+
+- a33dc79: An address somebody typed is downloaded from the public internet only, in every module.
+
+  - **`webx-ui/module-admin`: `WebxUi\Admin\Remote\RemoteFetcher`** — the shared way to fetch an address from an administrator, an editor or an agent: `get()`, `download()` (into a file), `head()`, and `check()` for a client of your own. Only `http(s)`; every address the name resolves to has to be public (loopback, private, link-local and cloud metadata, shared, reserved — in both families and inside IPv6 — are refused), the connection is pinned to the checked address (no DNS rebinding), redirects are followed by hand and checked the same way (`webx-admin.remote.max_redirects`, 3), each hop has a connect timeout and a timeout, the body stops at the caller's limit — counted in decoded bytes: the body is asked for as `identity`, and one compressed all the same is inflated by `WebxUi\Admin\Remote\BoundedDecoder` a piece at a time, so a gzip bomb is refused before it fills the memory or the disk. An answer in an encoding other than gzip or deflate is refused. A refusal is `FetchRefused` with a `reason`, in words that never carry the transport's error or the answer's body. New settings `webx-admin.remote.trusted_hosts` (`WEBX_REMOTE_TRUSTED_HOSTS`: hosts on the site's network that may be fetched anyway) and `webx-admin.remote.only_hosts` (`WEBX_REMOTE_ONLY_HOSTS`: when set, the only hosts anything is fetched from). For tests: `WebxUi\Admin\Testing\FakeHostResolver`.
+  - **`webx-ui/module-catalog`: import by address** — `exchange/inspect`, `exchange/import`, the queue and MCP `catalog_import` download through it: an internal address, a redirect into the network or a name resolving inside it is refused, and checked again when the queue downloads. An answer that is not a spreadsheet or a CSV (an error page, HTML, a binary) is refused without showing its header or rows, and a failure no longer quotes the transport's error. New settings `exchange.url_import` (`WEBX_CATALOG_EXCHANGE_URL_IMPORT=false` switches the import by address off) and `exchange.url_hosts` (`WEBX_CATALOG_EXCHANGE_URL_HOSTS`: the only hosts an import downloads from).
+  - **`webx-ui/module-catalog`: pictures and videos by link** (the gallery, its MCP tools, the import's pictures, video posters, the queued video download) go through the same check; a link to a video file on an internal address is refused before it is queued. A picture link larger than `images.max_size_kb` that turns out to be a video is still queued.
+  - **`webx-ui/module-media`**: `media_upload_from_url` uses the shared fetcher; `Remote\RemoteFetcher`, `Remote\Fetched` and `Remote\FetchRefused` keep their API, `Remote\HostResolver` is now a deprecated alias of `module-admin`'s, and `webx-media.remote.allow_hosts` still works next to `webx-admin.remote.trusted_hosts`.
+  - **`webx-ui/module-audit`**: an external link is asked only when its name resolves to the public internet, with the connection pinned; one that resolves inside the network is stored as a resource with an error instead of a request. A compressed page is decoded by the module, not by curl, and no further than the probe's body limit (2 MB, or the sitemap's): a small gzip that inflates to gigabytes no longer fills the memory. The compression checks read the same headers as before.
+
+### Patch Changes
+
+- a33dc79: How a module declares and checks its permissions is written down (guide `permissions`, WEBX_UI_PERMISSIONS.md §20).
+
+  `webx-ui/module-admin`: `php artisan webx:make-module` also writes `tests/Feature/Cms/<Name>ModuleAccessTest.php` — the test that every panel route and MCP tool of the module asks for a declared permission, built on `WebxUi\Auth\Testing\AssertsPermissions`. It is marked incomplete until the module serves its first route and tool. An existing file is kept without `--force`.
+
+  Every `AGENTS.md` of a package with panel routes or MCP tools has a `### Permissions` subsection: what each permission opens and what a route added next to the module should ask for.
+
+- a33dc79: `webx-ui/module-auth`: only a super administrator makes, unmakes, edits or deletes a super administrator, and only a super administrator issues a key that acts as one. Until now `admins.manage` was one request away from every permission there is — `is_super: true` on your own account, a new address and password on the owner's, or an `mcp:use` key in the owner's name. Each answers 403 «Only a super administrator can do that.» (`webx-auth::errors.only-super`, all ten languages).
+
+  `webx-ui/module-catalog`: exporting the «Deleted» list (`selection.trashed` in `POST exchange/export`, `deleted` in the MCP `catalog_export`) needs `catalog.delete`, like the list itself; without it the export is refused with 422 on `selection`.
+
 ## 0.78.0
 
 ### Minor Changes

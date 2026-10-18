@@ -1,5 +1,15 @@
 # @webx-ui/module-events
 
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [a33dc79]
+- Updated dependencies [a33dc79]
+- Updated dependencies [a33dc79]
+- Updated dependencies [a33dc79]
+  - @webx-ui/module-admin@0.31.0
+
 ## 0.3.0
 
 ### Minor Changes
