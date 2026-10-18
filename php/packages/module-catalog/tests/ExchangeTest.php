@@ -535,6 +535,25 @@ final class ExchangeTest extends TestCase
     }
 
     #[Test]
+    public function the_deleted_are_exported_only_by_who_may_see_them(): void
+    {
+        $this->product('Boot', null, ['sku' => 'B-1'])->delete();
+        $body = ['selection' => ['query' => [], 'trashed' => true], 'columns' => ['sku'], 'format' => 'csv'];
+
+        // «Deleted» is behind `catalog.delete`, and a file of it is the same list.
+        $this->actingAs($this->editor(['catalog.view', 'catalog.manage']), 'cms')
+            ->postJson($this->api('exchange/export'), $body)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('selection');
+        $this->assertSame(0, ExchangeRun::query()->count());
+
+        $this->actingAs($this->editor(['catalog.view', 'catalog.delete']), 'cms')
+            ->postJson($this->api('exchange/export'), $body)
+            ->assertOk()
+            ->assertJsonPath('data.rows_total', 1);
+    }
+
+    #[Test]
     public function the_prune_takes_old_files_then_old_runs(): void
     {
         $boot = $this->product('Boot', null, ['sku' => 'B-1']);

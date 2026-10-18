@@ -16,9 +16,10 @@ use WebxUi\Auth\Models\CmsUser;
 /**
  * The administrators of this panel.
  *
- * Two rules are enforced here rather than left to whoever is clicking: nobody can switch
- * themselves off or delete themselves, and the last super administrator cannot be taken away.
- * Both are ways to lock everybody out of a panel with no way back in.
+ * Three rules are enforced here rather than left to whoever is clicking: nobody can switch
+ * themselves off or delete themselves, the last super administrator cannot be taken away — both
+ * are ways to lock everybody out of a panel with no way back in — and only a super administrator
+ * makes or touches one, which is the way to take every permission there is.
  */
 final class AdminController
 {
@@ -55,6 +56,10 @@ final class AdminController
 
     public function store(AdminRequest $request): JsonResponse
     {
+        if ($this->reachesForSuper($request, null)) {
+            return ApiResponse::message(__('webx-auth::errors.only-super'), 403);
+        }
+
         $admin = new CmsUser($this->attributes($request));
         $admin->password = (string) $request->string('password');
         $admin->save();
@@ -66,6 +71,10 @@ final class AdminController
 
     public function update(AdminRequest $request, CmsUser $admin): JsonResponse
     {
+        if ($this->reachesForSuper($request, $admin)) {
+            return ApiResponse::message(__('webx-auth::errors.only-super'), 403);
+        }
+
         $refusal = $this->wouldLockEverybodyOut($request, $admin);
 
         if ($refusal !== null) {
@@ -93,6 +102,10 @@ final class AdminController
     {
         if ($this->isSelf($admin)) {
             return ApiResponse::message(__('webx-auth::errors.not-yourself'), 422);
+        }
+
+        if ($this->reachesForSuper(null, $admin)) {
+            return ApiResponse::message(__('webx-auth::errors.only-super'), 403);
         }
 
         if ($admin->is_super && $this->lastSuper($admin)) {
@@ -134,6 +147,22 @@ final class AdminController
         }
 
         return null;
+    }
+
+    /**
+     * Whether somebody who is not a super administrator is making one, or touching one — on
+     * themselves too: otherwise `admins.manage` is one tick away from every permission there is.
+     * The full policy against handing out more than you hold is WEBX_UI_PERMISSIONS.md §6.
+     */
+    private function reachesForSuper(?AdminRequest $request, ?CmsUser $admin): bool
+    {
+        $current = Auth::guard((string) config('webx-auth.guard'))->user();
+
+        if ($current instanceof CmsUser && $current->is_super) {
+            return false;
+        }
+
+        return ($request !== null && $request->boolean('is_super')) || ($admin !== null && $admin->is_super);
     }
 
     private function isSelf(CmsUser $admin): bool

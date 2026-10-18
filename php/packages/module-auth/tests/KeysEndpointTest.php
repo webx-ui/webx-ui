@@ -63,7 +63,7 @@ final class KeysEndpointTest extends PassportTestCase
     #[Test]
     public function a_key_sees_only_the_tools_of_its_scopes(): void
     {
-        $this->actingAs($this->manager(), 'cms');
+        $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
         $owner = $this->admin('owner@example.test', super: true);
 
         $token = (string) $this->postJson('/api/cms/auth/keys', $this->input($owner, ['admins:read']))->json('token');
@@ -81,9 +81,23 @@ final class KeysEndpointTest extends PassportTestCase
     }
 
     #[Test]
-    public function the_lifetime_is_chosen_up_to_ten_years(): void
+    public function only_a_super_administrator_issues_a_key_for_one(): void
     {
         $this->actingAs($this->manager(), 'cms');
+        $owner = $this->admin('owner@example.test', super: true);
+
+        // The key would act as the owner, and the manager would hold it.
+        $this->postJson('/api/cms/auth/keys', $this->input($owner))
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Only a super administrator can do that.');
+
+        $this->assertSame(0, Key::query()->count());
+    }
+
+    #[Test]
+    public function the_lifetime_is_chosen_up_to_ten_years(): void
+    {
+        $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
         $owner = $this->admin('owner@example.test', super: true);
 
         $response = $this->postJson('/api/cms/auth/keys', $this->input($owner, [], 3650))->assertCreated();
@@ -102,7 +116,7 @@ final class KeysEndpointTest extends PassportTestCase
     #[Test]
     public function what_cannot_be_issued_is_refused_and_nothing_is_written(): void
     {
-        $this->actingAs($this->manager(), 'cms');
+        $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
         $retired = $this->admin('retired@example.test', active: false);
         $owner = $this->admin('owner@example.test', super: true);
 
@@ -138,7 +152,7 @@ final class KeysEndpointTest extends PassportTestCase
     #[Test]
     public function a_revoked_key_stops_at_once_and_stays_in_the_list(): void
     {
-        $this->actingAs($this->manager(), 'cms');
+        $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
         $owner = $this->admin('owner@example.test', super: true);
 
         $issued = $this->postJson('/api/cms/auth/keys', $this->input($owner))->assertCreated();

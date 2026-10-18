@@ -175,6 +175,55 @@ final class AdminEndpointsTest extends TestCase
     }
 
     #[Test]
+    public function only_a_super_administrator_makes_or_touches_a_super_administrator(): void
+    {
+        $manager = $this->admin('manager@example.test');
+        $manager->roles()->attach($this->role('managers', ['admins.manage'])->getKey());
+        $owner = $this->admin('owner@example.test', super: true);
+        $anna = $this->admin('anna@example.test');
+        $this->actingAs($manager, 'cms');
+
+        // Not themselves: `admins.manage` would otherwise be one tick away from everything.
+        $this->patchJson("/api/cms/auth/admins/{$manager->id}", [
+            'name' => 'Manager',
+            'email' => 'manager@example.test',
+            'is_super' => true,
+        ])->assertForbidden()->assertJsonPath('message', 'Only a super administrator can do that.');
+
+        $this->patchJson("/api/cms/auth/admins/{$anna->id}", [
+            'name' => 'Anna',
+            'email' => 'anna@example.test',
+            'is_super' => true,
+        ])->assertForbidden();
+
+        $this->postJson('/api/cms/auth/admins', [
+            'name' => 'Boris',
+            'email' => 'boris@example.test',
+            'password' => 'correct-horse-battery',
+            'is_super' => true,
+        ])->assertForbidden();
+
+        // Nor the super administrator's own account: a new address or password is a takeover.
+        $this->patchJson("/api/cms/auth/admins/{$owner->id}", [
+            'name' => 'Owner',
+            'email' => 'manager+owner@example.test',
+            'is_super' => true,
+        ])->assertForbidden();
+        $this->deleteJson("/api/cms/auth/admins/{$owner->id}")->assertForbidden();
+
+        $this->assertFalse($manager->refresh()->is_super);
+        $this->assertFalse($anna->refresh()->is_super);
+        $this->assertSame('owner@example.test', $owner->refresh()->email);
+        $this->assertSame(0, CmsUser::query()->where('email', 'boris@example.test')->count());
+
+        // Everybody else is still theirs to manage.
+        $this->patchJson("/api/cms/auth/admins/{$anna->id}", [
+            'name' => 'Anna Smith',
+            'email' => 'anna@example.test',
+        ])->assertOk();
+    }
+
+    #[Test]
     public function the_roles_say_how_many_people_hold_them(): void
     {
         $this->actingAs($this->admin('me@example.test', super: true), 'cms');

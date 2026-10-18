@@ -8,4 +8,5 @@ return [
     'forbidden' => 'This account may not do that.',
     'not-yourself' => 'You cannot do that to your own account.',
     'last-super' => 'There has to be one super administrator left.',
+    'only-super' => 'Only a super administrator can do that.',
 ];

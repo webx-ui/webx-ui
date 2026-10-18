@@ -8,4 +8,5 @@ return [
     'forbidden' => 'Dieses Konto darf das nicht.',
     'not-yourself' => 'Das geht mit dem eigenen Konto nicht.',
     'last-super' => 'Ein Super-Administrator muss übrig bleiben.',
+    'only-super' => 'Das kann nur ein Super-Administrator tun.',
 ];

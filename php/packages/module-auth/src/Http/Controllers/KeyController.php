@@ -75,6 +75,14 @@ final class KeyController
         /** @var CmsUser $admin */
         $admin = CmsUser::query()->findOrFail($input['admin']);
 
+        // A key acts as the person it names: one for a super administrator, in the hands of
+        // somebody who is not one, is every permission there is.
+        $caller = $this->caller();
+
+        if ($admin->is_super && ! ($caller !== null && $caller->is_super)) {
+            return new JsonResponse(['message' => __('webx-auth::errors.only-super')], 403);
+        }
+
         try {
             $issued = $this->issuer->issue(
                 $admin,
