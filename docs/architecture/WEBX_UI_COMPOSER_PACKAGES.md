@@ -91,7 +91,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
   строка в `webx-auth::permissions` на всех десяти языках.
 - **Проверка** — маршрут панели в группе `webx.panel` с `cms.can` (чтение — `view,manage`,
   запись — `manage`); проверка по присланному или по записи — в контроллере через
-  `AccessPolicy::allows(, , )`; инструмент MCP — `permission:`, если
+  `AccessPolicy::allows($user, $permission, $record)`; инструмент MCP — `permission:`, если
   умолчание (`<id>.view|manage` на чтение, `<id>.manage` на запись) не подходит; узел экрана —
   `can`, кнопки — `context.can()`. Приватные файлы модуля — только своим маршрутом за правом
   модуля, не в медиатеке и не в публичной папке.
