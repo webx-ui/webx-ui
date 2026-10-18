@@ -23,6 +23,8 @@ localized?)`, `get(…)` / `put(…)` (its two halves), `prefetch(name, depends,
   transaction a move waits for the commit, once a group, and `remember()` stores nothing; the
   versions are read once a request in one `many()`, the values `remember()` read with them, and
   the entries declared with `prefetch()` in one more; an undeclared group throws.
+- **Event** `Events\GroupRead` (name, depends, source `memo`/`store`/`miss`) from `remember()` and
+  `get()` — made only while somebody listens (the debug bar, `webx-ui/module-debug`).
 - Groups every WebX site has, declared by their owners: `locales` (`webx-ui/localization`),
   `routes` (`webx-ui/routing`), `theme` (`webx-ui/themes`), `screens` (`webx-ui/module-admin`).
 

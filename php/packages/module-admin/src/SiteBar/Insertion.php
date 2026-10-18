@@ -9,11 +9,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Route;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Localization\Contracts\HasPanelLocale;
 use WebxUi\Localization\Locales;
@@ -42,6 +38,7 @@ final class Insertion
         private readonly Loader $loader,
         private readonly Locales $locales,
         private readonly Translator $translator,
+        private readonly PageResponse $pages,
     ) {}
 
     public function apply(Request $request, Response $response): void
@@ -112,64 +109,13 @@ final class Insertion
     /** The request and the response, before anybody is asked who is signed in. */
     private function isPage(Request $request, Response $response): bool
     {
-        if (! $this->wanted($request) || $response->getStatusCode() !== 200) {
-            return false;
-        }
-
-        if ($response instanceof StreamedResponse || $response instanceof BinaryFileResponse || $response instanceof JsonResponse) {
-            return false;
-        }
-
-        if (! str_contains((string) $response->headers->get('Content-Type', ''), 'text/html')) {
-            return false;
-        }
-
-        $content = $response->getContent();
-
-        return is_string($content) && stripos($content, '</body>') !== false;
+        return $this->wanted($request) && $this->pages->response($response);
     }
 
     /** The half of the decision the request alone answers: known before anything is rendered. */
     private function wanted(Request $request): bool
     {
-        if (! (bool) $this->config->get('webx-admin.site_bar.enabled', true) || ! $request->isMethod('GET')) {
-            return false;
-        }
-
-        // A preview, or the bar's own screen in its frame, is already the panel looking at the
-        // site; a bar inside it would be a bar inside the bar. Any frame rather than only one of
-        // this origin: a page somebody else frames is not a place to edit it from either.
-        if ($request->headers->get('Sec-Fetch-Dest') === 'iframe') {
-            return false;
-        }
-
-        $route = $request->route();
-
-        if (! $route instanceof Route || ! in_array('web', $route->gatherMiddleware(), true)) {
-            return false;
-        }
-
-        return ! $this->isServicePath($request->path());
-    }
-
-    /** The panel, its JSON and the previews are the panel's own pages, not the site's. */
-    private function isServicePath(string $path): bool
-    {
-        $prefixes = [
-            (string) $this->config->get('webx-admin.path', 'cms'),
-            (string) $this->config->get('webx-admin.api_path', 'api/cms'),
-            (string) $this->config->get('webx-blocks.preview.path', '_preview'),
-        ];
-
-        foreach ($prefixes as $prefix) {
-            $prefix = trim($prefix, '/');
-
-            if ($prefix !== '' && ($path === $prefix || str_starts_with($path, $prefix.'/'))) {
-                return true;
-            }
-        }
-
-        return false;
+        return (bool) $this->config->get('webx-admin.site_bar.enabled', true) && $this->pages->request($request);
     }
 
     /**

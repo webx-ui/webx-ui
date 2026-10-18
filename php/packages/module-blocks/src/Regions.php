@@ -8,6 +8,7 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Http\Request;
 use Illuminate\Support\HtmlString;
@@ -15,6 +16,8 @@ use Illuminate\Support\Str;
 use Illuminate\View\ComponentAttributeBag;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use WebxUi\Blocks\Events\RegionRendered;
+use WebxUi\Blocks\Events\RegionRendering;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Preview\PreviewGrant;
@@ -221,6 +224,29 @@ final class Regions
      */
     public function render(string $name, array $data = [], ?string $fallback = null): HtmlString
     {
+        $events = $this->container->bound('events') ? $this->container->make('events') : null;
+
+        // Told only to a listener — the debug bar's timeline — and otherwise one check of an array.
+        if (! $events instanceof Dispatcher || ! $events->hasListeners(RegionRendering::class)) {
+            return $this->printTag($name, $data, $fallback);
+        }
+
+        $events->dispatch(new RegionRendering($name));
+        $source = RegionRendered::EMPTY;
+
+        try {
+            return $this->printTag($name, $data, $fallback, $source);
+        } finally {
+            $events->dispatch(new RegionRendered($name, $source));
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  string  $source  what was printed: the tree, the fallback or nothing ({@see RegionRendered})
+     */
+    private function printTag(string $name, array $data = [], ?string $fallback = null, string &$source = RegionRendered::EMPTY): HtmlString
+    {
         if ($fallback !== null) {
             $this->remember($name, $fallback);
         }
@@ -228,6 +254,8 @@ final class Regions
         if (! $this->has($name)) {
             // A typo in the name must not quietly become a second header nobody can edit.
             $this->log()->warning("The layout prints the region [{$name}], which webx-blocks.regions does not declare; its fallback is printed instead.", ['region' => $name]);
+
+            $source = $fallback === null ? RegionRendered::EMPTY : RegionRendered::FALLBACK;
 
             return $this->fallback($fallback, $data);
         }
@@ -246,10 +274,14 @@ final class Regions
             // No table yet, a broken row: the region is down, the site is not.
             $this->container->make(ExceptionHandler::class)->report($failure);
 
+            $source = $fallback === null ? RegionRendered::EMPTY : RegionRendered::FALLBACK;
+
             return $this->mark($name, $this->fallback($fallback, $data), $preview);
         }
 
         if (self::visible($tree) === 0) {
+            $source = $fallback === null ? RegionRendered::EMPTY : RegionRendered::FALLBACK;
+
             return $this->mark($name, $this->fallback($fallback, $data), $preview);
         }
 
@@ -261,10 +293,13 @@ final class Regions
                 'blocks' => array_map(static fn (array $failure): string => $failure['type'].' ('.$failure['key'].')', $render->failures),
             ]);
 
+            $source = $fallback === null ? RegionRendered::EMPTY : RegionRendered::FALLBACK;
+
             return $this->fallback($fallback, $data);
         }
 
         $body = $render->html;
+        $source = RegionRendered::TREE;
 
         if ($preview && $render->failed()) {
             $body = $this->banner((string) __('webx-blocks::regions.preview-failed')).$body;

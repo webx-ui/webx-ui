@@ -119,6 +119,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `module-audit`              | аудит сайта без внешних сервисов                                      | `@webx-ui/module-audit`              |
 | `module-snippets`           | коды внешних сервисов в `<head>`/`<body>`                             | `@webx-ui/module-snippets`           |
 | `module-notifications`      | каналы уведомлений: Telegram, e-mail, шаблоны, журнал отправок        | `@webx-ui/module-notifications`      |
+| `module-debug`              | отладочная панель снизу страницы и MCP `debug_page`, не на проде      | —                                    |
 | **Разделы: контент**        |                                                                       |                                      |
 | `module-blog`               | статьи, рубрики, теги, лента                                          | `@webx-ui/module-blog`               |
 | `module-services`           | каталог услуг                                                         | `@webx-ui/module-services`           |
@@ -407,6 +408,17 @@ catch-all SPA, `ApiResponse` (пагинация Laravel как есть, 422). 
 после ответа. Журнал `notifications_deliveries` чистит `webx:notifications:prune`, проблемы
 называет `webx:doctor`. Права `notifications.view` / `notifications.manage`, раздел «Уведомления»
 в группе «Система».
+
+### `webx-ui/module-debug` — отладочная панель
+
+Спека — [`WEBX_UI_DEBUGBAR.md`](WEBX_UI_DEBUGBAR.md). Полоса снизу страницы сайта для администратора
+с правом `debug.view` (никакой роли при установке): SQL со значениями, местом вызова и повторами,
+шкала времени с регионами и блоками, слой темы типов блоков, версионный кеш по группам, резолвер,
+исходящие HTTP, очередь, письма, лог. На проде пакет не регистрирует ничего. Сбор начинается по
+cookie `wx_debug` или одноразовому токену `debug_page` и проверяется на выходе; отчёт — в кеше на
+минуты, только автору, секреты маскируются при записи. Точки замера — события `routing`,
+`module-blocks`, `cache`, которые создаются, только когда их слушают. Без npm-пары: полоса —
+ES-модуль в самом пакете.
 
 ### `webx-ui/module-faq` — вопросы и ответы
 

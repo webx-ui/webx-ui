@@ -46,6 +46,11 @@ $articles = Article::query()
 Lazy loading is not forbidden globally — `Model::preventLazyLoading()` would break sites that
 build on the modules. The budgets below hold the line instead.
 
+**Looking for an N+1 on a page:** open it with [the debug bar](./debugbar.md) — the SQL tab groups
+the repeated statements by shape and names the file and line, or the block, that asked — or ask
+`debug_page` for the page over MCP and read `repeated[].sites`. Fix it, look again, then pin it
+with `assertNoRepeatedQueries` below.
+
 ## Cache: versioned groups
 
 Data every page reads goes through a group, so that a save in the panel resets it and nothing

@@ -62,6 +62,8 @@ parameters:
         - packages/module-settings/tests
         - packages/module-snippets/src
         - packages/module-snippets/tests
+        - packages/module-debug/src
+        - packages/module-debug/tests
         - packages/module-team/src
         - packages/module-team/tests
         - packages/module-vacancies/src

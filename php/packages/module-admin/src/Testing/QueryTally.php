@@ -8,6 +8,7 @@ use Countable;
 use Illuminate\Container\Container;
 use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
+use WebxUi\Admin\Support\SqlShape;
 
 /**
  * The SQL a piece of work ran: how many statements, how long, and which of them repeated.
@@ -125,9 +126,7 @@ final class QueryTally implements Countable
     /** The SQL with its bindings-only differences removed. */
     public static function shape(string $sql): string
     {
-        $collapsed = preg_replace('/\(\s*\?(?:\s*,\s*\?)*\s*\)/', '(?)', $sql) ?? $sql;
-
-        return trim(preg_replace('/\s+/', ' ', $collapsed) ?? $collapsed);
+        return SqlShape::of($sql);
     }
 
     /**

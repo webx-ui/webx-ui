@@ -15,6 +15,7 @@ use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\TransactionRolledBack;
 use InvalidArgumentException;
+use WebxUi\Cache\Events\GroupRead;
 
 /**
  * Cache on versioned keys (WEBX_UI_CACHE.md).
@@ -288,6 +289,10 @@ final class CacheGroups
         $this->warm();
         $key = $this->key($name, $depends, $localized);
 
+        if ($this->events->hasListeners(GroupRead::class)) {
+            return $this->rememberTold($name, $depends, $key, $compute, $ttl);
+        }
+
         // A null is never kept: the store does not keep one either (`remember` computes it
         // again), and a `get()` that found nothing must not stand in for the value.
         return $this->values[$key] ??= $this->cache->remember($key, $ttl ?? $this->ttl(), $compute);
@@ -309,7 +314,49 @@ final class CacheGroups
         $this->warm();
         $key = $this->key($name, $depends, $localized);
 
-        return $this->values[$key] ??= $this->cache->get($key);
+        if (! $this->events->hasListeners(GroupRead::class)) {
+            return $this->values[$key] ??= $this->cache->get($key);
+        }
+
+        $source = isset($this->values[$key]) ? GroupRead::MEMO : null;
+        $value = $this->values[$key] ??= $this->cache->get($key);
+        $this->events->dispatch(new GroupRead($name, $depends, $source ?? ($value === null ? GroupRead::MISS : GroupRead::STORE)));
+
+        return $value;
+    }
+
+    /**
+     * `remember()` for a listener that wants to know where the value came from: the same read,
+     * with the compute wrapped to notice a miss.
+     *
+     * @template T
+     *
+     * @param  list<string>  $depends
+     * @param  Closure(): T  $compute
+     * @return T
+     */
+    private function rememberTold(string $name, array $depends, string $key, Closure $compute, ?int $ttl): mixed
+    {
+        if (isset($this->values[$key])) {
+            $this->events->dispatch(new GroupRead($name, $depends, GroupRead::MEMO));
+
+            return $this->values[$key];
+        }
+
+        $computed = false;
+        $value = $this->values[$key] = $this->cache->remember($key, $ttl ?? $this->ttl(), static function () use ($compute, &$computed): mixed {
+            $computed = true;
+
+            return $compute();
+        });
+
+        if ($value === null) {
+            unset($this->values[$key]);
+        }
+
+        $this->events->dispatch(new GroupRead($name, $depends, $computed ? GroupRead::MISS : GroupRead::STORE));
+
+        return $value;
     }
 
     /**

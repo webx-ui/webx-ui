@@ -139,7 +139,7 @@ whose target is gone throws when the screen is first built — a bug in whoever 
 - Open `/<webx-admin.path>` and `GET /<webx-admin.api_path>/screens/<name>`: a broken patch
   fails there with the screen, the operation and the missing target.
 - With MCP: `history_get` on a record you changed shows the save, its source and the fields.
-- A module of the site: its `PerformanceTest` (from `webx:make-module`) is filled in and green — https://webx-ui.github.io/webx-ui/guide/performance.
+- A module of the site: its `PerformanceTest` (from `webx:make-module`) is filled in and green — https://webx-ui.github.io/webx-ui/guide/performance; an N+1 on a page is found with `debug_page` (`webx-ui/module-debug`) before and after the fix.
 
 ## Read more
 
