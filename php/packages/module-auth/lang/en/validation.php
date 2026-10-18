@@ -7,4 +7,7 @@ return [
     'email' => 'email address',
     'password' => 'password',
     'roles' => 'roles',
+    'slug' => 'code',
+    'permissions' => 'permissions',
+    'unknown-permission' => 'No installed module declares the permission :permission.',
 ];

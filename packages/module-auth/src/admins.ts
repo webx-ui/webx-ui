@@ -8,7 +8,10 @@ import type {
   AgentCallFilters,
   AgentCallPage,
   AgentCallQuery,
+  PermissionRow,
   Role,
+  RoleDetails,
+  RoleInput,
 } from './types'
 
 export interface AdminsApi {
@@ -18,6 +21,14 @@ export interface AdminsApi {
   update(id: number, input: AdminInput): Promise<Admin>
   remove(id: number): Promise<void>
   roles(): Promise<Role[]>
+  /** One role with the people who hold it. */
+  role(id: number): Promise<RoleDetails>
+  /** Every permission a role may list, by module. */
+  permissions(): Promise<PermissionRow[]>
+  /** Behind `roles.manage`, like the two below. */
+  createRole(input: RoleInput): Promise<Role>
+  updateRole(id: number, input: RoleInput): Promise<Role>
+  removeRole(id: number): Promise<void>
   /** What agents did, newest first. Behind `admins.audit`. */
   calls(query?: AgentCallQuery): Promise<AgentCallPage>
 }
@@ -58,6 +69,18 @@ export function createAdminsApi(admin: AdminContext): AdminsApi {
     remove: (id) => admin.http.delete<void>(`${base}/admins/${id}`),
 
     roles: () => admin.http.get<{ data: Role[] }>(`${base}/roles`).then(data),
+
+    role: (id) => admin.http.get<{ data: RoleDetails }>(`${base}/roles/${id}`).then(data),
+
+    permissions: () =>
+      admin.http.get<{ data: PermissionRow[] }>(`${base}/roles/permissions`).then(data),
+
+    createRole: (input) => admin.http.post<{ data: Role }>(`${base}/roles`, input).then(data),
+
+    updateRole: (id, input) =>
+      admin.http.put<{ data: Role }>(`${base}/roles/${id}`, input).then(data),
+
+    removeRole: (id) => admin.http.delete<void>(`${base}/roles/${id}`),
 
     calls: (query = {}) =>
       admin.http

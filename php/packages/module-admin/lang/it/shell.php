@@ -11,4 +11,6 @@ return [
     'not-found-title' => 'Non c’è nulla a questo indirizzo',
     'not-found-description' => 'Forse l’indirizzo è scritto male, oppure la sezione a cui porta non è installata su questo sito.',
     'not-found-home' => 'Torna all’inizio',
+    'forbidden-title' => 'Accesso negato',
+    'forbidden-description' => 'I tuoi ruoli non aprono questa sezione. Se ti serve, chiedi a un amministratore.',
 ];

@@ -39,6 +39,15 @@ export const roles: Role[] = [
     permissions: ['admins.view', 'admins.audit'],
     users: 1,
   },
+  /* People and roles, and nothing of the content: what the screen «Roles» looks like to somebody
+     who may edit roles but holds little to put in them. */
+  {
+    id: 3,
+    slug: 'people',
+    name: 'Кадры',
+    permissions: ['admins.view', 'admins.manage', 'roles.manage', 'roles.assign', 'pages.view'],
+    users: 1,
+  },
 ]
 
 export const adminRows: Admin[] = admins.map((person, index) => ({
@@ -51,7 +60,11 @@ export const adminRows: Admin[] = admins.map((person, index) => ({
   locale: null,
   last_login_at: at(index * 7 + 1, 9, 12),
   created_at: '2026-06-01T08:00:00+03:00',
-  roles: index === 1 ? [roles[0]] : index === 2 ? [roles[1]] : [],
+  roles: (index === 1 ? [roles[0]] : index === 2 ? [roles[1], roles[2]] : []).map((one) => ({
+    id: one.id,
+    slug: one.slug,
+    name: one.name,
+  })),
 }))
 
 /** `days` days ago at the given hour, as the server would send it. */

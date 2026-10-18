@@ -314,6 +314,7 @@ class AdminServiceProvider extends ServiceProvider
                 $app->bound(SiteUrls::class) ? $app->make(SiteUrls::class) : null,
                 $app->make(CacheGroups::class),
                 $app->make(DictionaryBuilder::class),
+                $app->make(AccessPolicy::class),
             ),
         );
     }

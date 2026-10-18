@@ -11,4 +11,6 @@ return [
     'not-found-title' => 'No hay nada en esta dirección',
     'not-found-description' => 'Puede que la dirección esté mal escrita o que la sección a la que lleva no esté instalada en este sitio.',
     'not-found-home' => 'Volver al inicio',
+    'forbidden-title' => 'Sin acceso',
+    'forbidden-description' => 'Sus roles no abren esta sección. Si la necesita, pídalo a un administrador.',
 ];

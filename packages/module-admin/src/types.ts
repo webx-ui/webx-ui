@@ -102,6 +102,12 @@ export interface ManifestModule {
   /** The caption inside the group it stands under, or null among the group's plain entries. */
   section?: string | null
   permissions: string[]
+  /**
+   * Whether the signed-in administrator may open the section — any one of its permissions, or of
+   * those it is visible with. False keeps it out of the menu and puts «no access» in place of its
+   * pages; absent (an older server) is true. The server still answers 403 either way.
+   */
+  allowed?: boolean
   /** Whatever the server-side module wanted to say, in its own room. */
   meta: Record<string, unknown>
 }

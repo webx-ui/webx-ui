@@ -7,4 +7,7 @@ return [
     'email' => 'пошта',
     'password' => 'пароль',
     'roles' => 'ролі',
+    'slug' => 'код',
+    'permissions' => 'права',
+    'unknown-permission' => 'Право :permission не оголошено жодним встановленим модулем.',
 ];

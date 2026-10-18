@@ -7,6 +7,7 @@ namespace WebxUi\CatalogBrands\Panel;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Categories\CategoryForm;
 use WebxUi\Admin\Categories\Mcp\CategoryTools;
+use WebxUi\Admin\Contracts\HasVisibility;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Catalog\Panel\CatalogModule;
@@ -25,7 +26,7 @@ use WebxUi\Mcp\Tool;
  * `catalog_brands_list`, `_create`, `_update`, `_delete`, `_reorder`; a product's brand is
  * `catalog_products_update` with `brand.id`, or `catalog_bulk` with `set-brand`.
  */
-final class BrandsModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
+final class BrandsModule extends AbstractModule implements HasVisibility, ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
@@ -57,6 +58,17 @@ final class BrandsModule extends AbstractModule implements ProvidesDemo, Provide
     public function group(): string
     {
         return CatalogModule::GROUP;
+    }
+
+    /**
+     * No permission of its own: a dictionary of the catalogue opens to whoever may read or edit
+     * the catalogue, the same permissions its routes ask for (WEBX_UI_PERMISSIONS.md §11).
+     *
+     * @return list<string>
+     */
+    public function visibleWith(): array
+    {
+        return ['catalog.view', 'catalog.manage'];
     }
 
     /**

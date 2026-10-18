@@ -7,4 +7,7 @@ return [
     'email' => 'indirizzo email',
     'password' => 'password',
     'roles' => 'ruoli',
+    'slug' => 'codice',
+    'permissions' => 'permessi',
+    'unknown-permission' => 'Nessun modulo installato dichiara il permesso :permission.',
 ];

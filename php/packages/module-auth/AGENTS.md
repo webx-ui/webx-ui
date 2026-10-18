@@ -17,10 +17,14 @@ registered in `webx-ui/module-admin` — read their guides for those.
 - **Panel protection**: with `protect_panel` on, the panel API runs through
   `panel_api_middleware` (`web`, `cms.auth`, `webx.panel-locale`).
 - **API** under `/api/cms/auth`: `login`, `logout`, `me`, `locale`, `theme`, `connections`,
-  `roles`, `admins`, `mcp-calls`; the consent posts under `/oauth/consent`.
-- **Panel sections** `admins` (list, dialog, roles read-only, sign-in trail, agent calls) and
-  `connect` (shown only when the MCP door and Passport are there). Permissions `admins.view`,
-  `admins.manage`, `admins.audit`.
+  `roles` (list, `roles/permissions` — the matrix, `roles/{id}` with its holders; write behind
+  `roles.manage`), `admins`, `mcp-calls`; the consent posts under `/oauth/consent`.
+- **Panel sections** `admins` (list, dialog, the screen «Roles» with its matrix, sign-in trail,
+  agent calls) and `connect` (shown only when the MCP door and Passport are there). Permissions
+  `admins.view`, `admins.manage`, `admins.audit`, `roles.manage`, `roles.assign`.
+- **Ready-made roles** (`Access\DefaultRoles`): editor, seo, leads, catalog, developer, viewer —
+  made of the installed modules, only where the code is free, by the first `webx:admin`, by the
+  update migration and by `webx:roles:defaults`.
 - **MCP** tools `admins_list_admins`, `admins_list_roles`, `admins_grant_role`,
   `admins_revoke_role`, `admins_recent_sign_ins`, `admins_failed_sign_in_bursts`. Scopes
   `admins:read`, `admins:write`, `admins:audit`. No tool sets a password, creates an account or
@@ -36,7 +40,8 @@ registered in `webx-ui/module-admin` — read their guides for those.
 | You want                                   | Do this                                                                                 |
 | ------------------------------------------ | --------------------------------------------------------------------------------------- |
 | The first administrator                    | `php artisan webx:admin` — the first account is always super                            |
-| A role                                     | a `Role` row in a seeder (`slug`, `name`, `permissions`); the panel only assigns roles  |
+| A role                                     | Administrators → Roles, or a `Role` row in a seeder (`slug`, `name`, `permissions`)     |
+| The ready-made roles on an older site      | `php artisan webx:roles:defaults` — creates the missing ones, touches none that exist   |
 | An account an agent may connect as         | a role with just the permissions it needs, not `is_super`                               |
 | A key for a script or CI                   | Administrators → Keys, or `php artisan webx:mcp:token --name=ci --admin=... --days=365` |
 | Your own middleware stack on the panel API | `'protect_panel' => false` in `config/webx-auth.php`, add `cms.auth` to your stack      |

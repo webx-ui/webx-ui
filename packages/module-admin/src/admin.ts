@@ -161,6 +161,12 @@ export function createAdminContext(options: {
         continue
       }
 
+      // A section this administrator may not open is not offered: every click on it would end
+      // in «no access» (WEBX_UI_PERMISSIONS.md §11).
+      if (module.allowed === false) {
+        continue
+      }
+
       const path = registered.path ?? registered.routes?.[0]?.path
 
       if (path === undefined) {

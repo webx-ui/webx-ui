@@ -6,6 +6,7 @@ namespace WebxUi\CatalogLandings\Panel;
 
 use Illuminate\Container\Container;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasVisibility;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\ModuleRegistry;
@@ -20,7 +21,7 @@ use WebxUi\CatalogLandings\Demo\LandingsDemo;
  * No permissions of its own (decision 13): the catalogue's `catalog.view` reads, `catalog.manage`
  * writes. The agent's tools are served under the catalogue, as the properties' are (L4).
  */
-final class LandingsModule extends AbstractModule implements ProvidesDemo
+final class LandingsModule extends AbstractModule implements HasVisibility, ProvidesDemo
 {
     /** The satellites whose facets the demo's sets are made of. */
     private const SET_SOURCES = ['catalog-brands', 'catalog-labels', 'catalog-properties'];
@@ -50,6 +51,17 @@ final class LandingsModule extends AbstractModule implements ProvidesDemo
     public function group(): string
     {
         return CatalogModule::GROUP;
+    }
+
+    /**
+     * No permission of its own: a dictionary of the catalogue opens to whoever may read or edit
+     * the catalogue, the same permissions its routes ask for (WEBX_UI_PERMISSIONS.md §11).
+     *
+     * @return list<string>
+     */
+    public function visibleWith(): array
+    {
+        return ['catalog.view', 'catalog.manage'];
     }
 
     /**

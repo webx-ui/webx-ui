@@ -135,6 +135,8 @@ export { default as WxAgentCallList } from './CallList.vue'
 export { default as WxConnectionList } from './ConnectionList.vue'
 export const WxConnectPage = defineAsyncComponent(() => import('./ConnectPage.vue'))
 export { default as WxKeyList } from './KeyList.vue'
+export { default as WxRoleList } from './RoleList.vue'
+export { default as WxRoleDialog } from './RoleDialog.vue'
 export type {
   Admin,
   AdminInput,
@@ -153,7 +155,11 @@ export type {
   McpKey,
   McpKeyInput,
   McpKeys,
+  PermissionCell,
+  PermissionRow,
   Role,
+  RoleDetails,
+  RoleInput,
 } from './types'
 export {
   createAuthSession,

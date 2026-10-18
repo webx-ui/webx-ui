@@ -52,9 +52,23 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
             // something, or offer a picker of people to assign work to, needs the first and
             // has no business with the second.
             Route::middleware('cms.can:admins.view,admins.manage')->group(function (): void {
-                Route::get('roles', RoleController::class)->name('roles');
                 Route::get('admins', [AdminController::class, 'index'])->name('admins.index');
                 Route::get('admins/{admin}', [AdminController::class, 'show'])->name('admins.show');
+            });
+
+            // The roles: read by whoever deals with people or roles — the pickers that assign them,
+            // the screen that edits them — and written only with `roles.manage`, under the rules
+            // the controller asks (WEBX_UI_PERMISSIONS.md §6.2).
+            Route::middleware('cms.can:admins.view,admins.manage,roles.manage,roles.assign')->group(function (): void {
+                Route::get('roles', [RoleController::class, 'index'])->name('roles');
+                Route::get('roles/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
+                Route::get('roles/{role}', [RoleController::class, 'show'])->whereNumber('role')->name('roles.show');
+            });
+
+            Route::middleware('cms.can:roles.manage')->group(function (): void {
+                Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+                Route::put('roles/{role}', [RoleController::class, 'update'])->whereNumber('role')->name('roles.update');
+                Route::delete('roles/{role}', [RoleController::class, 'destroy'])->whereNumber('role')->name('roles.destroy');
             });
 
             Route::middleware('cms.can:admins.manage')->group(function (): void {

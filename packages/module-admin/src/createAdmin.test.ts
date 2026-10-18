@@ -362,6 +362,66 @@ describe('createAdmin', () => {
     expect(admin.context.nav.value.map((entry) => entry.id)).toEqual(['pages'])
   })
 
+  it('leaves out what the administrator may not open, and says «no access» at its address', async () => {
+    // The server builds the manifest for whoever asks (WEBX_UI_PERMISSIONS.md §11).
+    const closed: Manifest = {
+      ...manifest,
+      modules: [
+        {
+          id: 'pages',
+          title: 'Pages',
+          icon: null,
+          order: 0,
+          permissions: [],
+          allowed: true,
+          meta: {},
+        },
+        {
+          id: 'media',
+          title: 'Files',
+          icon: null,
+          order: 1,
+          permissions: ['media.view'],
+          allowed: false,
+          meta: {},
+        },
+      ],
+    }
+
+    window.history.replaceState({}, '', '/cms/media/folder')
+
+    const admin = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      routes: [rootRoute],
+      http: stubHttp({
+        get: ((url: string) =>
+          Promise.resolve(url.endsWith('/manifest') ? { data: closed } : answer(url))) as never,
+      }),
+      modules: [
+        { id: 'pages', routes: [{ path: '/pages', component: { render: () => h('p', 'pages') } }] },
+        {
+          id: 'media',
+          routes: [{ path: '/media/:rest(.*)*', component: { render: () => h('p', 'library') } }],
+        },
+      ],
+    })
+
+    await admin.mount()
+    await admin.router.isReady()
+    await flushPromises()
+
+    expect(admin.context.nav.value.map((entry) => entry.id)).toEqual(['pages'])
+    expect(document.body.textContent).toContain('No access')
+    expect(document.body.textContent).not.toContain('library')
+
+    await admin.router.push('/pages')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('pages')
+    expect(document.body.textContent).not.toContain('No access')
+  })
+
   it('carries the count a module puts under meta.badge, and nothing that is not one', async () => {
     const counted = (badge: unknown) => ({
       ...manifest,

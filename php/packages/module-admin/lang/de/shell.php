@@ -11,4 +11,6 @@ return [
     'not-found-title' => 'Unter dieser Adresse gibt es nichts',
     'not-found-description' => 'Die Adresse ist vielleicht falsch geschrieben, oder der Bereich, zu dem sie führt, ist auf dieser Website nicht installiert.',
     'not-found-home' => 'Zurück zum Anfang',
+    'forbidden-title' => 'Kein Zugriff',
+    'forbidden-description' => 'Ihre Rollen öffnen diesen Bereich nicht. Wenn Sie ihn brauchen, fragen Sie einen Administrator.',
 ];

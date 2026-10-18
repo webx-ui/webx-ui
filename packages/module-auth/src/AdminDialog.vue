@@ -22,7 +22,11 @@ import type { Admin, AdminInput, Role } from './types'
  * Creating an administrator and editing one — the same form, because they differ in one field.
  *
  * The password is required the first time and optional afterwards, and a blank one on an edit
- * means "leave it alone" rather than "set it to nothing". That is the only conditional here.
+ * means "leave it alone" rather than "set it to nothing".
+ *
+ * What the reader may not change is not on the form (WEBX_UI_PERMISSIONS.md §11): the roles need
+ * `roles.assign`, «Super administrator» needs to be one. A form without them does not send them,
+ * so a save never touches what it did not show — the server would refuse it anyway.
  */
 const props = withDefaults(
   defineProps<{
@@ -51,6 +55,8 @@ const t = useTranslate('webx-auth')
 const message = useErrorText()
 
 const roles = ref<Role[]>([])
+const canAssign = context.can('roles.assign')
+const isSuper = context.state.user?.isSuper === true
 const saving = ref(false)
 const errors = ref<Record<string, string[]>>({})
 
@@ -83,7 +89,7 @@ const localeOptions = computed(() => [
   ...i18n.state.panelLocales.map((one) => ({ value: one.code, label: one.nativeName })),
 ])
 
-void api.roles().then((all) => (roles.value = all))
+if (canAssign) void api.roles().then((all) => (roles.value = all))
 
 watch(
   () => props.admin,
@@ -116,10 +122,11 @@ async function save(): Promise<void> {
     email: form.value.email,
     avatar: form.value.avatar,
     is_active: form.value.is_active,
-    is_super: form.value.is_super,
     locale: form.value.locale === 'auto' ? null : form.value.locale,
-    roles: form.value.roles ?? [],
   }
+
+  if (canAssign) payload.roles = form.value.roles ?? []
+  if (isSuper) payload.is_super = form.value.is_super
 
   if (form.value.password) {
     payload.password = form.value.password
@@ -195,7 +202,7 @@ async function save(): Promise<void> {
             />
           </wx-form-item>
 
-          <wx-form-item :label="t('admins.roles')" :error="errorOf('roles')">
+          <wx-form-item v-if="canAssign" :label="t('admins.roles')" :error="errorOf('roles')">
             <wx-select v-model="form.roles" :options="roleOptions" multiple />
           </wx-form-item>
 
@@ -205,10 +212,10 @@ async function save(): Promise<void> {
 
           <wx-space size="md">
             <wx-checkbox v-model="form.is_active" :label="t('admins.active')" />
-            <wx-checkbox v-model="form.is_super" :label="t('admins.super')" />
+            <wx-checkbox v-if="isSuper" v-model="form.is_super" :label="t('admins.super')" />
           </wx-space>
 
-          <wx-text size="sm" tone="muted">{{ t('admins.super-hint') }}</wx-text>
+          <wx-text v-if="isSuper" size="sm" tone="muted">{{ t('admins.super-hint') }}</wx-text>
         </div>
       </div>
     </div>

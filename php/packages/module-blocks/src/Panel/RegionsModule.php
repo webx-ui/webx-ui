@@ -6,6 +6,7 @@ namespace WebxUi\Blocks\Panel;
 
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Contracts\HasVisibility;
 use WebxUi\Admin\Panel\SystemSections;
 
 /**
@@ -20,7 +21,7 @@ use WebxUi\Admin\Panel\SystemSections;
  * The permission is declared once, by the blocks module, so that the role editor lists it once;
  * this entry only answers to it.
  */
-final class RegionsModule extends AbstractModule implements HasNavSection
+final class RegionsModule extends AbstractModule implements HasNavSection, HasVisibility
 {
     public function id(): string
     {
@@ -51,6 +52,17 @@ final class RegionsModule extends AbstractModule implements HasNavSection
     public function navSection(): string
     {
         return SystemSections::SITE;
+    }
+
+    /**
+     * No permission of its own: the header and the footer are the blocks' `regions`, and the
+     * menu shows them to whoever may edit those (WEBX_UI_PERMISSIONS.md §11).
+     *
+     * @return list<string>
+     */
+    public function visibleWith(): array
+    {
+        return ['blocks.regions'];
     }
 
     /**

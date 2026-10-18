@@ -42,6 +42,7 @@ final class CmsUserPayload
             'lastLoginAt' => $user->last_login_at?->toIso8601String(),
             'roles' => $user->roles
                 ->map(static fn (Role $role): array => [
+                    'id' => $role->id,
                     'slug' => $role->slug,
                     'name' => $role->name,
                 ])

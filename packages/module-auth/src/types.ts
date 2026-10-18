@@ -10,6 +10,41 @@ export interface Role extends AdminRole {
   permissions: string[]
   /** How many administrators hold it — the number that makes a role safe or risky to change. */
   users: number
+  /**
+   * Whether the reader holds it. Such a role is somebody else's to edit (rule 5 of
+   * WEBX_UI_PERMISSIONS.md §6.2), so the form opens it read-only. Absent from an older server.
+   */
+  held?: boolean
+  /** A table row, for `WxTable`; see `Admin`. */
+  [key: string]: unknown
+}
+
+/** One role and the people it would be taken from, for the question before deleting it. */
+export interface RoleDetails extends Role {
+  holders: { id: number; name: string; email: string }[]
+}
+
+/** What the role form sends. A code left out is made from the name. */
+export interface RoleInput {
+  name: string
+  slug?: string | null
+  permissions: string[]
+}
+
+/** A permission as the matrix of the role form shows it. */
+export interface PermissionCell {
+  name: string
+  /** In the panel's language, from the server. */
+  label: string
+  /** Whether the reader holds it — what they do not hold, they cannot grant (rule 2). */
+  held: boolean
+}
+
+/** One module's row of the matrix, in the order of the menu. */
+export interface PermissionRow {
+  module: string
+  title: string
+  permissions: PermissionCell[]
 }
 
 export interface Admin {

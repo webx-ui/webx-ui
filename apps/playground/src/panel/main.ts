@@ -1,4 +1,10 @@
-import { cache, createAdmin, type Admin, type AdminPlugin } from '@webx-ui/module-admin'
+import {
+  cache,
+  createAdmin,
+  type Admin,
+  type AdminPlugin,
+  type AdminUser,
+} from '@webx-ui/module-admin'
 import { audit } from '@webx-ui/module-audit'
 import { admins, connect } from '@webx-ui/module-auth'
 import { banners } from '@webx-ui/module-banners'
@@ -42,18 +48,15 @@ import HistoryDemoPage from './HistoryDemoPage.vue'
  * `/api/cms/*` out of fixtures in memory.
  */
 
-/** What an auth module would do, minus signing anybody in. */
+/**
+ * What an auth module would do, minus signing anybody in: whoever the fixtures say is current —
+ * the super administrator, until the corner menu switches to somebody with less.
+ */
 const session: AdminPlugin = {
   install(admin: Admin) {
-    admin.context.useSessionLoader(async () => ({
-      id: 1,
-      name: 'Анна Ковальчук',
-      email: 'anna@webx-demo.test',
-      isSuper: true,
-      permissions: [],
-      locale: null,
-      avatar: null,
-    }))
+    admin.context.useSessionLoader(() =>
+      admin.context.http.get<{ data: AdminUser }>('/api/cms/auth/me').then((body) => body.data),
+    )
   },
 }
 

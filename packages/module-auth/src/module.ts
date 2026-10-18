@@ -16,8 +16,8 @@ export interface AdminsOptions {
   resolveAvatar?: (key: string) => Promise<string | null>
 }
 
-/** Which of the four views of the administrators section a route opens. */
-export type AdminsView = 'admins' | 'calls' | 'connections' | 'keys'
+/** Which of the five views of the administrators section a route opens. */
+export type AdminsView = 'admins' | 'roles' | 'calls' | 'connections' | 'keys'
 
 /**
  * The administrators, as a section of the panel.
@@ -43,6 +43,8 @@ export function admins(options: AdminsOptions = {}): AdminModule {
     path,
     routes: [
       { path, name: 'webx.admins', component: page('admins') },
+      // The roles: what the people above are allowed, as named sets of permissions.
+      { path: `${path}/roles`, name: 'webx.admins.roles', component: page('roles') },
       // What their agents did, which agents they let in, and their keys: more views of the same
       // section, each with an address of its own so that its filters survive a trip to the
       // people and back.

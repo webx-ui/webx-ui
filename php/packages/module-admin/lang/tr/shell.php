@@ -11,4 +11,6 @@ return [
     'not-found-title' => 'Bu adreste hiçbir şey yok',
     'not-found-description' => 'Adres yanlış yazılmış olabilir ya da götürdüğü bölüm bu sitede kurulu değil.',
     'not-found-home' => 'Başa dön',
+    'forbidden-title' => 'Erişim yok',
+    'forbidden-description' => 'Rolleriniz bu bölümü açmıyor. Gerekiyorsa bir yöneticiye başvurun.',
 ];

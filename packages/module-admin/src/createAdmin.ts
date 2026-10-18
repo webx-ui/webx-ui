@@ -120,7 +120,14 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
   const routes: RouteRecordRaw[] = [...(options.routes ?? [])]
 
   for (const module of modules) {
-    routes.push(...(module.routes ?? []))
+    // Each page knows its section, so the shell can tell an address the administrator may not
+    // open from one that is not there at all.
+    routes.push(
+      ...(module.routes ?? []).map((route) => ({
+        ...route,
+        meta: { module: module.id, ...route.meta },
+      })),
+    )
   }
 
   // The root, unless the panel brought its own — a project with a dashboard has already
