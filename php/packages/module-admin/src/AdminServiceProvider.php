@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use WebxUi\Admin\Access\AccessPolicy;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Cache\CacheModule;
 use WebxUi\Admin\Cache\CacheReset;
@@ -122,6 +123,9 @@ class AdminServiceProvider extends ServiceProvider
         // One registry for the request: modules register into it from their own providers,
         // and the manifest reads whatever is there by the time a request arrives.
         $this->app->singleton(ModuleRegistry::class);
+
+        // Whether somebody may do something, answered in one place for every door (WEBX_UI_PERMISSIONS.md §4).
+        $this->app->singleton(AccessPolicy::class);
 
         // Same for screens and the field types they are written in: modules and the project
         // add theirs from `boot()`, and the endpoints read the sum.

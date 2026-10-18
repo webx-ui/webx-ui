@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\Auth;
 
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Panel\SystemSections;
+use WebxUi\Auth\Access\AccessRules;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\LoginRecord;
 use WebxUi\Auth\Models\Role;
@@ -26,9 +29,11 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
 {
     use ProvidesMcpDefaults;
 
+    public const ID = 'admins';
+
     public function id(): string
     {
-        return 'admins';
+        return self::ID;
     }
 
     public function title(): string
@@ -57,11 +62,15 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
     }
 
     /**
+     * Access is managed apart from the modules and handed out apart (WEBX_UI_PERMISSIONS.md §6.1):
+     * the accounts, the roles, and who holds which are three permissions, not one, and none of
+     * them comes with any other.
+     *
      * @return list<string>
      */
     public function permissions(): array
     {
-        return ['admins.view', 'admins.manage', 'admins.audit'];
+        return ['admins.view', 'admins.manage', 'admins.audit', 'roles.manage', 'roles.assign'];
     }
 
     /**
@@ -116,7 +125,7 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
             Tool::mutating(
                 'grant_role',
                 'Give an administrator a role.',
-                static fn (array $arguments): array => self::changeRole($arguments, attach: true),
+                static fn (array $arguments, ?Authenticatable $user = null): array => self::changeRole($arguments, $user, attach: true),
                 [
                     'properties' => [
                         'email' => ['type' => 'string', 'description' => 'Who to change'],
@@ -125,12 +134,13 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
                     'required' => ['email', 'role'],
                 ],
                 scope: 'admins:write',
+                permission: 'roles.assign',
             ),
 
             Tool::mutating(
                 'revoke_role',
                 'Take a role away from an administrator.',
-                static fn (array $arguments): array => self::changeRole($arguments, attach: false),
+                static fn (array $arguments, ?Authenticatable $user = null): array => self::changeRole($arguments, $user, attach: false),
                 [
                     'properties' => [
                         'email' => ['type' => 'string', 'description' => 'Who to change'],
@@ -139,6 +149,7 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
                     'required' => ['email', 'role'],
                 ],
                 scope: 'admins:write',
+                permission: 'roles.assign',
             ),
 
             Tool::read(
@@ -185,16 +196,16 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
-    private static function changeRole(array $arguments, bool $attach): array
+    private static function changeRole(array $arguments, ?Authenticatable $user, bool $attach): array
     {
         $email = (string) ($arguments['email'] ?? '');
         $slug = (string) ($arguments['role'] ?? '');
         $dryRun = (bool) ($arguments['dry_run'] ?? false);
 
-        $user = CmsUser::query()->where('email', $email)->first();
+        $target = CmsUser::query()->where('email', $email)->first();
         $role = Role::query()->where('slug', $slug)->first();
 
-        if (! $user instanceof CmsUser) {
+        if (! $target instanceof CmsUser) {
             return ['ok' => false, 'reason' => "No administrator with the address [{$email}]."];
         }
 
@@ -202,27 +213,42 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
             return ['ok' => false, 'reason' => "No role with the slug [{$slug}]."];
         }
 
-        $had = $user->roles()->whereKey($role->getKey())->exists();
+        $had = $target->roles()->whereKey($role->getKey())->exists();
         $changes = $attach !== $had;
+
+        // The same rules as the form in the panel, before anything is shown as possible: a dry
+        // run that says yes to what the call would be refused is a lie told in advance.
+        $rules = Container::getInstance()->make(AccessRules::class);
+        $refusal = $changes
+            ? $rules->changeRoles($user instanceof CmsUser ? $user : null, $target, $attach ? [$role] : [])
+            : null;
+
+        if ($refusal !== null) {
+            return ['ok' => false, 'rule' => $refusal->rule, 'reason' => $refusal->message(), 'missing' => $refusal->missing];
+        }
 
         if ($dryRun || ! $changes) {
             return [
                 'ok' => true,
                 'would_change' => $changes,
-                'user' => $user->email,
+                'user' => $target->email,
                 'role' => $role->slug,
                 'applied' => false,
             ];
         }
 
+        $before = $target->roles()->pluck('slug')->map(static fn (mixed $slug): string => (string) $slug)->all();
+
         $attach
-            ? $user->roles()->attach($role->getKey())
-            : $user->roles()->detach($role->getKey());
+            ? $target->roles()->attach($role->getKey())
+            : $target->roles()->detach($role->getKey());
+
+        $rules->recordRoles($target, $before, $target->roles()->pluck('slug')->map(static fn (mixed $slug): string => (string) $slug)->all());
 
         return [
             'ok' => true,
             'would_change' => true,
-            'user' => $user->email,
+            'user' => $target->email,
             'role' => $role->slug,
             'applied' => true,
         ];

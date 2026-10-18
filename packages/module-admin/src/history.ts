@@ -3,7 +3,7 @@ import type { AdminContext } from './admin'
 
 /** What happened to a record. `run` is the parent row of an import or a bulk action. */
 export type HistoryEvent =
-  'created' | 'updated' | 'deleted' | 'restored' | 'published' | 'unpublished' | 'run'
+  'created' | 'updated' | 'deleted' | 'restored' | 'published' | 'unpublished' | 'refused' | 'run'
 
 /** Which door the change came through. */
 export type HistorySource = 'panel' | 'mcp' | 'import' | 'bulk' | 'api' | 'console'

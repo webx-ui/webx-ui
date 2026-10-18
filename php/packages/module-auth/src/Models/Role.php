@@ -6,9 +6,13 @@ namespace WebxUi\Auth\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use WebxUi\Admin\History\RecordsHistory;
 
 /**
  * A named set of permissions.
+ *
+ * Its changes go into the journal — which permissions came and went is the question an audit
+ * of access asks first; who holds it is written by whoever assigns it (WEBX_UI_PERMISSIONS.md §9).
  *
  * @property int $id
  * @property string $slug
@@ -17,6 +21,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class Role extends Model
 {
+    use RecordsHistory;
+
+    public const TYPE = 'admins.role';
+
     protected $table = 'cms_roles';
 
     protected $guarded = [];
@@ -35,6 +43,14 @@ class Role extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(CmsUser::class, 'cms_role_user', 'cms_role_id', 'cms_user_id');
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function historyFields(): ?array
+    {
+        return ['slug', 'name', 'permissions'];
     }
 
     public function grants(string $permission): bool

@@ -138,9 +138,9 @@ async function save(): Promise<void> {
     if (body?.errors) {
       errors.value = body.errors
     } else {
-      // The two refusals that keep a panel reachable — the last super administrator, and doing
-      // it to yourself — arrive as a 422 with a message and no field, which is the one shape
-      // the panel repeats back word for word.
+      // The rules about access — the last super administrator, doing it to yourself, handing
+      // out more than you hold — arrive as a 403 with a message and no field, which is the one
+      // shape the panel repeats back word for word.
       toast.danger(message(error))
     }
   } finally {

@@ -113,16 +113,16 @@ final class AdminEndpointsTest extends TestCase
             'name' => 'Me',
             'email' => 'me@example.test',
             'is_active' => false,
-        ])->assertStatus(422);
+        ])->assertForbidden()->assertJsonPath('rule', 'not-yourself');
 
         // And so is the last super administrator giving up being one.
         $this->patchJson("/api/cms/auth/admins/{$me->id}", [
             'name' => 'Me',
             'email' => 'me@example.test',
             'is_super' => false,
-        ])->assertStatus(422);
+        ])->assertForbidden()->assertJsonPath('rule', 'last-super');
 
-        $this->deleteJson("/api/cms/auth/admins/{$me->id}")->assertStatus(422);
+        $this->deleteJson("/api/cms/auth/admins/{$me->id}")->assertForbidden()->assertJsonPath('rule', 'not-yourself');
 
         $this->assertTrue($me->refresh()->is_super);
         $this->assertTrue($me->is_active);

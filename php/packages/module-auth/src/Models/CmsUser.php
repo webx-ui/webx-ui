@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Auth\Models;
 
 use Illuminate\Auth\Authenticatable;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,7 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
-use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Access\AccessPolicy;
+use WebxUi\Admin\Access\HoldsPermissions;
+use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Localization\Contracts\HasPanelLocale;
 
 /**
@@ -35,10 +38,14 @@ use WebxUi\Localization\Contracts\HasPanelLocale;
  * @property Carbon|null $last_login_at
  * @property Carbon|null $created_at
  */
-class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale, HasPermissions, OAuthenticatable
+class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale, HoldsPermissions, OAuthenticatable
 {
     use Authenticatable;
     use HasApiTokens;
+    use RecordsHistory;
+
+    /** The history type of an account (WEBX_UI_PERMISSIONS.md §9). */
+    public const TYPE = 'admins.admin';
 
     protected $table = 'cms_users';
 
@@ -88,26 +95,45 @@ class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale, 
     }
 
     /**
-     * A super administrator answers yes to everything: somebody has to be able to grant the
-     * first permission, and a panel whose only administrator has locked themselves out is
-     * worse than one with a documented bypass.
+     * Asked of the one policy rather than answered here (WEBX_UI_PERMISSIONS.md §4): a super
+     * administrator passes, anybody else holds what their roles list, joined.
      */
     public function hasPermission(string $permission): bool
     {
-        if ($this->is_super) {
-            return true;
-        }
-
-        return $this->roles->contains(static fn (Role $role): bool => $role->grants($permission));
+        return Container::getInstance()->make(AccessPolicy::class)->allows($this, $permission);
     }
 
     /**
-     * Everything this administrator may do, for the front end to hide what it must.
+     * Somebody has to be able to grant the first permission, and a panel whose only
+     * administrator has locked themselves out is worse than one with a documented bypass.
+     */
+    public function isSuperAdministrator(): bool
+    {
+        return (bool) $this->is_super;
+    }
+
+    /**
+     * What the roles grant, joined: empty for a super administrator, who is not limited by roles.
+     *
+     * @return list<string>
+     */
+    public function grantedPermissions(): array
+    {
+        return $this->is_super ? [] : $this->permissions();
+    }
+
+    /**
+     * Everything the roles of this account grant, for the front end to hide what it must; a
+     * super administrator gets an empty list, and the front end looks at `isSuper`.
      *
      * @return list<string>
      */
     public function permissions(): array
     {
+        if ($this->is_super) {
+            return [];
+        }
+
         $permissions = $this->roles
             ->flatMap(static fn (Role $role): array => $role->permissions ?? [])
             ->unique()
@@ -117,6 +143,18 @@ class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale, 
         sort($permissions);
 
         return $permissions;
+    }
+
+    /**
+     * What the journal follows. Not the sign-in time, the theme or the panel on the site: those
+     * change on their own every day and say nothing about who may do what. The password is
+     * never written, not even masked — that it changed is a row the door writes itself.
+     *
+     * @return list<string>|null
+     */
+    public function historyFields(): ?array
+    {
+        return ['name', 'email', 'avatar', 'is_active', 'is_super', 'locale'];
     }
 
     public function hasRole(string $slug): bool

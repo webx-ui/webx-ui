@@ -95,6 +95,22 @@ final class KeysEndpointTest extends PassportTestCase
     }
 
     #[Test]
+    public function nobody_issues_a_key_for_somebody_who_holds_more_than_they_do(): void
+    {
+        $this->actingAs($this->manager(), 'cms');
+        $editor = $this->admin('editor@example.test');
+        $editor->roles()->attach($this->role('editors', ['pages.manage']));
+
+        // The key would act as the editor: pages the manager may not touch, in the manager's hands.
+        $this->postJson('/api/cms/auth/keys', $this->input($editor))
+            ->assertForbidden()
+            ->assertJsonPath('rule', 'beyond-yours')
+            ->assertJsonPath('missing', ['pages.manage']);
+
+        $this->assertSame(0, Key::query()->count());
+    }
+
+    #[Test]
     public function the_lifetime_is_chosen_up_to_ten_years(): void
     {
         $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
@@ -211,7 +227,7 @@ final class KeysEndpointTest extends PassportTestCase
     private function manager(string $email = 'manager@example.test'): CmsUser
     {
         $manager = $this->admin($email);
-        $manager->roles()->attach($this->role('managers-'.md5($email), ['admins.manage']));
+        $manager->roles()->attach($this->role('managers-'.md5($email), ['admins.view', 'admins.manage']));
 
         return $manager;
     }

@@ -39,12 +39,15 @@ final class HistoryEntry extends Model
 
     public const UNPUBLISHED = 'unpublished';
 
+    /** Somebody asked for a change to access and was told no (WEBX_UI_PERMISSIONS.md §6.2, rule 8). */
+    public const REFUSED = 'refused';
+
     /** The parent row of an import or a bulk action. */
     public const RUN = 'run';
 
     public const EVENTS = [
         self::CREATED, self::UPDATED, self::DELETED, self::RESTORED,
-        self::PUBLISHED, self::UNPUBLISHED, self::RUN,
+        self::PUBLISHED, self::UNPUBLISHED, self::REFUSED, self::RUN,
     ];
 
     // A journal is written, never edited: there is no `updated_at` to keep.

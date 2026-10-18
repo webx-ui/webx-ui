@@ -357,6 +357,7 @@ export const adminMessages: Record<string, Messages> = {
     'event-restored': 'Restored',
     'event-published': 'Published',
     'event-unpublished': 'Unpublished',
+    'event-refused': 'Refused',
     'event-run': 'Run',
     'source-panel': 'in the panel',
     'source-mcp': 'through an agent',

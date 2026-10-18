@@ -13,6 +13,7 @@ return [
     'event-restored' => 'Geri yüklendi',
     'event-published' => 'Yayımlandı',
     'event-unpublished' => 'Yayından kaldırıldı',
+    'event-refused' => 'Reddedildi',
     'event-run' => 'Çalıştırma',
     'source-panel' => 'panelde',
     'source-mcp' => 'bir ajan aracılığıyla',

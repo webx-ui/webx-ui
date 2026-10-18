@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Mcp;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable;
+use WebxUi\Admin\Access\AccessPolicy;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Mcp\Registry\BoundTool;
 
@@ -20,6 +22,9 @@ use WebxUi\Mcp\Registry\BoundTool;
  * A caller with no permissions to ask about is not refused: there is nobody there (the local
  * stdio server), or whoever let them in did not hand the server an administrator, and that
  * middleware is the authority on what they may do.
+ *
+ * The answer itself is the panel's one policy ({@see AccessPolicy}), so a tool and the route
+ * behind the same work can never disagree about who may.
  */
 final class Permissions
 {
@@ -29,12 +34,6 @@ final class Permissions
             return true;
         }
 
-        foreach ($tool->permissions() as $permission) {
-            if ($user->hasPermission($permission)) {
-                return true;
-            }
-        }
-
-        return false;
+        return Container::getInstance()->make(AccessPolicy::class)->allows($user, $tool->permissions());
     }
 }
