@@ -62,7 +62,7 @@ question is about one of them.
 | `catalog.manage` | create, edit, publish, move products and categories, the gallery and videos, import and exchange profiles, every bulk action but delete and restore; the other `catalog:write` tools |
 | `catalog.delete` | delete and restore products and categories, the «Deleted» list, bulk delete and restore; `catalog_products_delete`, `_restore`, `catalog_categories_delete`, `_restore`              |
 
-`catalog.delete` alone also reads the panel's lists and forms. «Categories» (`catalog-categories`)
+`catalog.delete` alone also reads, in the panel and through the read tools. A run's file (`runs/{id}/file`, `file_url`) is its starter's and a super administrator's; others see the run with `file_yours: false` and an import address without its query. «Categories» (`catalog-categories`)
 and every satellite's section have no permission of their own: they open with `catalog.view` or
 `catalog.manage` (`visibleWith()`) and write with `catalog.manage`. A route or screen node the site
 adds next to the module asks the same: `cms.can:catalog.view,catalog.manage,catalog.delete` to read,

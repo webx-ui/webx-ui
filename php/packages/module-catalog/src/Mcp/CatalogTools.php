@@ -55,6 +55,12 @@ final class CatalogTools
 {
     private const DELETE = 'catalog.delete';
 
+    /**
+     * Who reads: the panel lets `catalog.delete` read the catalogue it deletes from, and so does
+     * this (§14.3 of the permissions spec) — the same three as the routes that read.
+     */
+    private const READERS = ['catalog.view', 'catalog.manage', 'catalog.delete'];
+
     public function __construct(private readonly Container $container) {}
 
     /**
@@ -92,6 +98,7 @@ final class CatalogTools
                     'page' => ['type' => 'integer'],
                     'per_page' => ['type' => 'integer', 'description' => 'At most 100; 20 when omitted.'],
                 ]],
+                permission: self::READERS,
             ),
 
             Tool::read(
@@ -100,6 +107,7 @@ final class CatalogTools
                 .'"<part>.<field>", its pictures and its address on the site.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->form()->describe($this->product($arguments))),
                 ['properties' => ['product' => $product], 'required' => ['product']],
+                permission: self::READERS,
             ),
 
             Tool::read(
@@ -107,6 +115,7 @@ final class CatalogTools
                 'Every category as a tree: name, slug, whether it is published and visible, how many live products '
                 .'it holds with its subcategories, its address. The ids products are filed under.',
                 fn (): array => ['categories' => $this->container->make(CategoryTree::class)->build()],
+                permission: self::READERS,
             ),
 
             Tool::mutating(
@@ -243,6 +252,7 @@ final class CatalogTools
                 .'duration } or null. Whether this site takes videos at all is in catalog://fields.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->gallery($this->product($arguments))),
                 ['properties' => ['product' => $product], 'required' => ['product']],
+                permission: self::READERS,
             ),
 
             Tool::mutating(

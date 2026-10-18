@@ -22,6 +22,11 @@ Route::prefix((string) config('webx-admin.api_path').'/notifications')
             Route::get('channels', [ChannelController::class, 'index'])->name('channels.index');
             Route::get('channels/{channel}', [ChannelController::class, 'show'])->whereNumber('channel')->name('channels.show');
             Route::get('deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
+            // A preview sends nothing and saves nothing: it reads the channel, so it is a reader's,
+            // the same as the agent's `notifications_preview` (§14.3 of the permissions spec). A POST
+            // only because a template not saved yet travels in the body.
+            Route::post('channels/{channel}/preview', [ToolController::class, 'preview'])->whereNumber('channel')->name('channels.preview');
+            Route::post('preview', [ToolController::class, 'preview'])->name('preview');
         });
 
         Route::middleware('cms.can:'.NotificationsModule::MANAGE)->group(function (): void {
@@ -32,9 +37,7 @@ Route::prefix((string) config('webx-admin.api_path').'/notifications')
             Route::delete('channels/{channel}/purge', [ChannelController::class, 'purge'])->whereNumber('channel')->name('channels.purge');
             Route::post('channels/{channel}/copy', [ChannelController::class, 'copy'])->whereNumber('channel')->name('channels.copy');
             Route::post('channels/{channel}/test', [ToolController::class, 'test'])->whereNumber('channel')->name('channels.test');
-            Route::post('channels/{channel}/preview', [ToolController::class, 'preview'])->whereNumber('channel')->name('channels.preview');
             Route::post('test', [ToolController::class, 'test'])->name('test');
-            Route::post('preview', [ToolController::class, 'preview'])->name('preview');
             Route::post('check', [ToolController::class, 'check'])->name('check');
             Route::post('find-recipients', [ToolController::class, 'findRecipients'])->name('find-recipients');
             Route::get('administrators', [ToolController::class, 'administrators'])->name('administrators');

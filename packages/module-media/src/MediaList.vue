@@ -13,6 +13,7 @@ import {
   type LocalizedValue,
 } from '@webx-ui/core'
 import { createMediaApi, type MediaApi } from './api'
+import { canBrowseMedia } from './access'
 import { details, nameFromPath, usePanelLocale } from './format'
 import { openMediaFiles, openMediaLibrary } from './openMediaPicker'
 import { useMediaMessages } from './i18n'
@@ -77,6 +78,14 @@ const locale = usePanelLocale()
 const admin: AdminContext | null = inject(adminKey, null)
 const api: MediaApi | null = admin ? createMediaApi(admin) : null
 
+/*
+ * Without the library the list still shows, orders, captions and drops what is chosen — that is
+ * the record's — but neither adds from the library nor opens it: both would answer 403 (choice
+ * 2(a) of the permissions spec). Nor does it ask the library about the keys: a refusal would read
+ * as «no longer in the library».
+ */
+const canBrowse = computed(() => canBrowseMedia(admin))
+
 /** The presets, spelled the way CSS wants them. Anything else is passed through as given. */
 const RATIOS: Record<string, string> = {
   '16/9': '16 / 9',
@@ -109,7 +118,7 @@ const files = ref<Record<string, MediaFile | null>>({})
 const asking = new Set<string>()
 
 async function resolve(paths: string[]): Promise<void> {
-  if (!api) return
+  if (!api || !canBrowse.value) return
 
   const wanted = paths.filter((path) => !(path in files.value) && !asking.has(path))
 
@@ -199,7 +208,7 @@ function setWords(index: number, key: 'alt' | 'title', next: unknown): void {
 }
 
 async function add(): Promise<void> {
-  if (props.disabled) return
+  if (props.disabled || !canBrowse.value) return
 
   const room = limit.value === null ? null : limit.value - items.value.length
   const chosen = await openMediaFiles({ accept: props.accept, max: room })
@@ -355,7 +364,7 @@ const hint = computed(() => {
               </wx-popover>
 
               <wx-action
-                v-if="!broken(item)"
+                v-if="!broken(item) && canBrowse"
                 type="goto"
                 :title="t('field.open')"
                 @click="openLibrary(item)"
@@ -381,9 +390,16 @@ const hint = computed(() => {
     </wx-sortable-list>
 
     <div class="wx-media-list__footer">
-      <wx-button size="sm" variant="outline" :disabled="disabled || full" @click="add">
+      <wx-button
+        v-if="canBrowse"
+        size="sm"
+        variant="outline"
+        :disabled="disabled || full"
+        @click="add"
+      >
         {{ t('field.add') }}
       </wx-button>
+      <span v-else class="wx-media-list__hint">{{ t('field.locked') }}</span>
 
       <span v-if="hint" class="wx-media-list__hint">{{ hint }}</span>
     </div>

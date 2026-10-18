@@ -33,8 +33,10 @@ final class McpTest extends TestCase
             $permissions[$tool->fullName()] = $tool->permissions();
         }
 
-        $this->assertSame(['catalog.view', 'catalog.manage'], $permissions['catalog_products_list']);
-        $this->assertSame(['catalog.view', 'catalog.manage'], $permissions['catalog_categories_tree']);
+        // `catalog.delete` reads too, as the panel's routes let it (§14.3 of the permissions spec).
+        $this->assertSame(['catalog.view', 'catalog.manage', 'catalog.delete'], $permissions['catalog_products_list']);
+        $this->assertSame(['catalog.view', 'catalog.manage', 'catalog.delete'], $permissions['catalog_products_get']);
+        $this->assertSame(['catalog.view', 'catalog.manage', 'catalog.delete'], $permissions['catalog_categories_tree']);
         $this->assertSame(['catalog.manage'], $permissions['catalog_products_update']);
         $this->assertSame(['catalog.manage'], $permissions['catalog_categories_move']);
         $this->assertSame(['catalog.manage'], $permissions['catalog_bulk']);

@@ -18,8 +18,9 @@ defineOptions({ name: 'WxBackupNote' })
  * only useful thing to say is "go and look at the cron".
  *
  * It renders nothing at all for a site that has switched the dump off, and nothing for an
- * administrator without `settings.view`: whoever may see the system section may see this, and
- * for everybody else it is a fact about the server that is none of their business.
+ * administrator without `settings.view` or `settings.manage`: whoever may see the system section
+ * may see this — the one who edits the settings included, since `manage` names no `view` by
+ * itself — and for everybody else it is a fact about the server that is none of their business.
  */
 const STALE_AFTER_HOURS = 48
 
@@ -28,7 +29,9 @@ const dates = useDates()
 const t = useTranslate('webx-admin')
 
 const backup = computed(() => admin.state.manifest?.backup ?? null)
-const visible = computed(() => backup.value !== null && admin.can('settings.view'))
+const visible = computed(
+  () => backup.value !== null && (admin.can('settings.view') || admin.can('settings.manage')),
+)
 
 const stale = computed(() => {
   const at = backup.value?.at

@@ -554,6 +554,34 @@ describe('createAdmin', () => {
     // The photograph once; the lost file again, since an upload may have brought it back.
     expect(resolved).toEqual([['me.jpg'], ['lost.jpg'], ['lost.jpg']])
   })
+  it('hands the editors a picture library only while the person may open it', () => {
+    const pick = () => Promise.resolve(null)
+    const admin = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      routes: [rootRoute],
+      modules: [{ id: 'media', pickImage: pick, pickImageWith: ['media.view', 'media.manage'] }],
+      http: stubHttp(),
+    })
+    const user = (permissions: string[]) => ({
+      id: 1,
+      name: 'Editor',
+      email: 'editor@example.test',
+      isSuper: false,
+      permissions,
+    })
+
+    admin.context.setUser(user(['pages.manage']))
+    expect(admin.context.pickImage).toBeNull()
+
+    // The same panel, somebody else signed in: it follows the person, not the boot.
+    admin.context.setUser(user(['media.manage']))
+    expect(admin.context.pickImage).toBe(pick)
+
+    admin.context.setUser({ ...user([]), isSuper: true })
+    expect(admin.context.pickImage).toBe(pick)
+  })
+
   it('opens on the section that claimed the root, and on the first one when none did', async () => {
     // Nothing answered at '/' until now: the routes are the modules', and none of them was
     // the front page. Signing in landed on a blank screen.

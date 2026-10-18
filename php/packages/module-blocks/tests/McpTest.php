@@ -9,6 +9,8 @@ use Laravel\Mcp\Server\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\SiteBar\EntityLink;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\Content;
 use WebxUi\Blocks\Models\Block;
@@ -401,6 +403,37 @@ final class McpTest extends TestCase
                 self::assertTrue(str_contains((string) $content['url'], '/_preview/note/'.$page->id.'?token=')
                 && $content['expires_in_minutes'] === 5, (string) json_encode($content));
             });
+    }
+
+    #[Test]
+    public function the_content_of_a_record_needs_its_sections_right_as_well(): void
+    {
+        $this->publish('text', '<p data-wx-block="text">{{ $body }}</p>');
+        $page = Page::query()->create(['title' => 'About', 'slug' => 'about', 'blocks' => []]);
+
+        // The section registers its records with the panel on the site, and that names the right
+        // the content of one is behind — the same the panel asks for the same write (§14.3).
+        $this->app->make(SiteBar::class)->entity('note', new EntityLink(
+            edit: static fn (): string => '/notes',
+            permission: 'notes.manage',
+            kind: 'note',
+        ));
+
+        $blocksOnly = $this->editor(['blocks.view', 'blocks.manage']);
+        $write = ['entity' => 'note', 'id' => $page->id, 'blocks' => [$this->node('text', ['body' => 'Hi'])]];
+
+        $this->agent('set_content', $write, $blocksOnly)->assertHasErrors(['[notes.manage]']);
+        $this->agent('get_content', ['entity' => 'note', 'id' => $page->id], $blocksOnly)
+            ->assertHasErrors(['[notes.view] or [notes.manage]']);
+        $this->agent('preview_url', ['entity' => 'note', 'id' => $page->id], $blocksOnly)
+            ->assertHasErrors(['[notes.view] or [notes.manage]']);
+
+        // A reader of the section reads; writing is its `manage`.
+        $reader = $this->editor(['blocks.view', 'blocks.manage', 'notes.view']);
+        $this->agent('get_content', ['entity' => 'note', 'id' => $page->id], $reader)->assertOk();
+        $this->agent('set_content', $write, $reader)->assertHasErrors(['[notes.manage]']);
+
+        $this->agent('set_content', $write + ['force' => true], $this->editor(['blocks.manage', 'notes.manage']))->assertOk();
     }
 
     #[Test]

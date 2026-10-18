@@ -59,6 +59,11 @@ final class McpTest extends TestCase
             }
         }
 
+        // Who starts a run reads what it found, as the panel lets `audit.run` (§14.3).
+        foreach (['audit_status', 'audit_issues', 'audit_pages', 'audit_page_get', 'audit_hosts'] as $reading) {
+            $this->assertSame(['audit.view', 'audit.run', 'audit.manage'], $registry->tool($reading)->permissions());
+        }
+
         $byId = array_column($catalogue['checks'] ?? [], null, 'id');
         $this->assertSame([ReplaceHost::ID], $byId['hosts.dev_content']['fixes'] ?? null);
         $this->assertNotSame('', $byId['hosts.dev_content']['why'] ?? '');

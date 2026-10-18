@@ -23,4 +23,5 @@ return [
     'remove-confirm' => 'Retirer',
     'count' => ':count sur :max',
     'at-least' => 'Au moins :count',
+    'locked' => 'La médiathèque ne vous est pas ouverte',
 ];

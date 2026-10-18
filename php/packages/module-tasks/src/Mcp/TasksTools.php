@@ -328,8 +328,9 @@ final class TasksTools
                     'reason' => ['type' => 'string'],
                     'agent' => $agent,
                 ], 'required' => ['stage']],
-                scope: self::WORK,
-                permission: 'tasks.work',
+                // The planner gives a stage back too, as the panel lets them (§14.3 of the permissions spec).
+                scope: [self::WRITE, self::WORK],
+                permission: ['tasks.manage', 'tasks.work'],
             ),
 
             Tool::mutating(
@@ -385,7 +386,8 @@ final class TasksTools
                     'body' => ['type' => 'string', 'description' => 'Markdown.'],
                     'agent' => $agent,
                 ], 'required' => ['task', 'body']],
-                scope: [self::WRITE, self::WORK],
+                // A reviewer's key comments too: the permission lets `tasks.review` in, and so does the scope.
+                scope: [self::WRITE, self::WORK, self::REVIEW],
                 permission: ['tasks.manage', 'tasks.work', 'tasks.review'],
             ),
 

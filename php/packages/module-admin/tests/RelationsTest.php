@@ -358,6 +358,8 @@ final class RelationsTest extends TestCase
             ->assertJsonCount(2, 'data');
 
         $this->actingAs(new Editor)->getJson('/api/cms/relations/chef')->assertForbidden();
+        // Who edits the chefs picks them too (§14.3).
+        $this->actingAs(new Editor(['kitchen.manage']))->getJson('/api/cms/relations/chef?q=ann')->assertOk()->assertJsonCount(2, 'data');
         $this->actingAs($editor)->getJson('/api/cms/relations/waiter')->assertNotFound();
     }
 

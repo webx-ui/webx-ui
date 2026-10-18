@@ -258,6 +258,14 @@ final class PanelTest extends TestCase
 
         Http::assertNothingSent();
         $this->assertSame(0, Delivery::query()->count());
+
+        // A reader previews too: it reads the channel, as `notifications_preview` does (§14.3).
+        $this->actingAs($this->admin(false, ['notifications.view']), 'cms')
+            ->postJson(self::API.'/channels/'.$channel->id.'/preview')
+            ->assertOk();
+        $this->actingAs($this->admin(false, ['notifications.view']), 'cms')
+            ->postJson(self::API.'/channels/'.$channel->id.'/test')
+            ->assertForbidden();
     }
 
     #[Test]

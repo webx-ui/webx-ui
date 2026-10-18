@@ -12,6 +12,7 @@ use RuntimeException;
 use Throwable;
 use WebxUi\Admin\Remote\FetchRefused;
 use WebxUi\Admin\Remote\RemoteFetcher;
+use WebxUi\Admin\Support\PrivateDisk;
 use WebxUi\Admin\Uploads\Upload;
 use WebxUi\Admin\Uploads\UploadRefused;
 use WebxUi\Admin\Uploads\Uploads;
@@ -34,7 +35,13 @@ final class ExchangeFiles
 
     public function disk(): Filesystem
     {
-        return Storage::disk((string) (config('webx-catalog.exchange.disk') ?: 'local'));
+        $name = (string) (config('webx-catalog.exchange.disk') ?: 'local');
+
+        // An export is the catalogue with every column its starter could read, prices included;
+        // on a public disk it is the catalogue for anyone with the address.
+        PrivateDisk::fromConfig()->assert($name, 'webx-catalog.exchange.disk');
+
+        return Storage::disk($name);
     }
 
     public function maxBytes(): int

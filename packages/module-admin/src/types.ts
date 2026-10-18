@@ -184,6 +184,12 @@ export interface AdminModule {
    */
   pickImage?: () => Promise<PickedImage | null>
   /**
+   * The permissions, any of which lets somebody open {@link pickImage}. Without one the panel
+   * hands the editors no picker, and they draw no image button that would only answer 403.
+   * Left out — anybody signed in.
+   */
+  pickImageWith?: string[]
+  /**
    * Where library keys live now, by key; `null` for a key the library no longer has.
    *
    * The other half of {@link pickImage}. A document keeps the key of every picture beside an

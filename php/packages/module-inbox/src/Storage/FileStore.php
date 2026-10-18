@@ -10,6 +10,7 @@ use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use WebxUi\Admin\Support\PrivateDisk;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionFile;
@@ -36,6 +37,10 @@ final class FileStore
     public function store(UploadedFile $upload, Submission $submission, Field $field): SubmissionFile
     {
         $path = $this->key($submission, $upload);
+
+        // A stranger's file on a public disk is a file for anyone with the address: refused
+        // before the first one lands there, rather than found later by a search engine.
+        PrivateDisk::fromConfig()->assert($this->diskName(), 'webx-inbox.disk');
 
         $this->disk()->putFileAs(dirname($path), $upload, basename($path));
 

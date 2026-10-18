@@ -236,6 +236,7 @@ final class HistoryModule extends AbstractModule implements ProvidesMcpTools
             $run,
             is_int($subject) || (is_string($subject) && ctype_digit($subject)) ? (int) $subject : null,
             $this->page($arguments),
+            types: $user === null ? null : array_keys($this->types->readable($user)),
         );
 
         return [

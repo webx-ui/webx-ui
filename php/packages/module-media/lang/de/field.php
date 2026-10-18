@@ -23,4 +23,5 @@ return [
     'remove-confirm' => 'Entfernen',
     'count' => ':count von :max',
     'at-least' => 'Mindestens :count',
+    'locked' => 'Die Mediathek ist für Sie nicht freigegeben',
 ];

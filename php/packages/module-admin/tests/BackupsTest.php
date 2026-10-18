@@ -183,6 +183,19 @@ final class BackupsTest extends TestCase
     }
 
     #[Test]
+    public function a_published_local_disk_is_refused(): void
+    {
+        // Local, and served: a dump there is the database for anyone who guesses its name.
+        config()->set('webx-admin.backup.disk', 'public');
+        config()->set('filesystems.disks.public', ['driver' => 'local', 'root' => storage_path('app/public'), 'visibility' => 'public']);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('[webx-admin.backup.disk]');
+
+        $this->backups()->directory();
+    }
+
+    #[Test]
     public function the_throwaway_tables_keep_their_structure_and_lose_their_rows(): void
     {
         $split = Dumper::split(

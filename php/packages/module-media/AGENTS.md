@@ -53,6 +53,12 @@ A route or screen node the site adds next to the module asks the same:
 `cms.can:media.view,media.manage` to read, `cms.can:media.upload,media.manage` to upload,
 `cms.can:media.manage` to change or delete.
 
+The fields over the library (`wx-media`, `wx-gallery`, `wx-file`, `wx-files`) and the image button
+of `wx-rich-text` open the picker only for `media.view` or `media.manage` (`canBrowseMedia()`,
+`pickImageWith`); without either a field keeps, captions and clears what is chosen and says the
+library is closed. The three permissions have been the module's since its first release: no
+migration of roles.
+
 ## Change it without forking
 
 | You want                                  | Do this                                                                                           |

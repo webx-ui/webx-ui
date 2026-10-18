@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Collections;
 
+use Illuminate\Container\Container;
+use WebxUi\Admin\Access\AccessPolicy;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Links\LinkSources;
 
@@ -57,7 +59,8 @@ final class CollectionSources
                     return true;
                 }
 
-                return $user instanceof HasPermissions && $user->hasPermission($permission);
+                // The `manage` of the same family counts too (§14.3): an editor picks what they edit.
+                return $user instanceof HasPermissions && Container::getInstance()->make(AccessPolicy::class)->sees($user, $permission);
             },
         ));
     }

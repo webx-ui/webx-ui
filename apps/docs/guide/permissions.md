@@ -119,10 +119,13 @@ Route::prefix((string) config('webx-admin.api_path'))
   links, collections, relations, history types, notes, uploads
   (`UploadPurposes::register(..., permission:)`), the panel on the site
   (`SiteBar::entity(..., new EntityLink(permission:))`). Give each of them the narrowest permission
-  that fits; there is no default to fall back on.
+  that fits; there is no default to fall back on. A link source, a collection source or a relation
+  target is given a `view` permission, and the picker lets the `manage` of the same family in too
+  (`AccessPolicy::sees()`): whoever edits services picks a service to link to.
 - **Private files of a module** — attachments of a lead, an export — are not in the file manager and
   never in a public folder: they are served by a route of the module behind the module's own
-  permission.
+  permission. Before the first write, ask `PrivateDisk::fromConfig()->assert($disk, 'your-module.disk')`
+  (`WebxUi\Admin\Support`): a disk the site set up as public is refused with the setting's name.
 
 ### MCP tools
 

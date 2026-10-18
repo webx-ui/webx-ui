@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\DatabaseManager;
+use WebxUi\Admin\Support\PrivateDisk;
 
 /**
  * The backup directory, and the one thing that fills it.
@@ -59,6 +60,11 @@ final class Backups
         if ($this->config->get("filesystems.disks.{$disk}.driver") !== 'local') {
             throw BackupFailed::notALocalDisk($disk);
         }
+
+        // A local disk can still be a published one — `public`, or a root under the web root —
+        // and a dump there is the database for anyone who guesses the file name.
+        (new PrivateDisk((array) $this->config->get('filesystems.disks', []), public_path(), storage_path('app/public')))
+            ->assert($disk, 'webx-admin.backup.disk');
 
         $root = rtrim((string) $this->config->get("filesystems.disks.{$disk}.root"), '/\\');
         $path = trim((string) $this->setting('path', 'backups'), '/\\');

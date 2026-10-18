@@ -13,8 +13,8 @@ use WebxUi\Mcp\Tool;
  * waits in the queue, or it is in the index as unpublished. The rebuild stays a person's, from
  * the panel or the console: it is minutes of load, and its time is theirs to choose.
  *
- * Served as the catalogue's own tool, with its scope and permission, and only on the Manticore
- * engine: on the database engine there is no index to ask about.
+ * Served as the catalogue's own tool, with its scope, behind the permission of the index screen,
+ * and only on the Manticore engine: on the database engine there is no index to ask about.
  */
 final class IndexTools
 {
@@ -44,6 +44,9 @@ final class IndexTools
                 ['properties' => [
                     'product' => ['type' => 'integer', 'description' => 'A product id, as catalog_products_list returns it.'],
                 ]],
+                // The right of the «Search index» screen, not the catalogue's: the same report
+                // there and here, behind the same door (§14.3 of the permissions spec).
+                permission: ['search-index.view', 'search-index.manage'],
             ),
         ];
     }

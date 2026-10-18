@@ -535,6 +535,67 @@ final class ExchangeTest extends TestCase
     }
 
     #[Test]
+    public function somebody_elses_run_is_seen_without_its_file_or_the_key_in_its_address(): void
+    {
+        $boot = $this->product('Boot', null, ['sku' => 'B-1']);
+        $starter = $this->editor();
+
+        $export = $this->actingAs($starter, 'cms')->postJson($this->api('exchange/export'), [
+            'selection' => ['ids' => [$boot->id]],
+            'columns' => ['sku', 'price'],
+            'format' => 'csv',
+        ])->assertOk()->assertJsonPath('data.file_yours', true)->json('data');
+
+        $this->actingAs($starter, 'cms')->get($this->api('exchange/runs/'.$export['id'].'/file'))->assertOk();
+
+        // Its columns were picked by the starter's permissions; a colleague with the catalogue
+        // sees the run, and the file is not theirs (choice 11 of the permissions spec).
+        $colleague = $this->editor(['catalog.view']);
+        $this->actingAs($colleague, 'cms')->getJson($this->api('exchange/runs/'.$export['id']))
+            ->assertOk()
+            ->assertJsonPath('data.file_url', null)
+            ->assertJsonPath('data.file_yours', false);
+        $this->actingAs($colleague, 'cms')->getJson($this->api('exchange/runs'))
+            ->assertOk()
+            ->assertJsonPath('data.0.file_url', null);
+        $this->actingAs($colleague, 'cms')->get($this->api('exchange/runs/'.$export['id'].'/file'))->assertForbidden();
+
+        $super = $this->editor([]);
+        $super->forceFill(['is_super' => true])->save();
+        $this->actingAs($super, 'cms')->getJson($this->api('exchange/runs/'.$export['id']))
+            ->assertJsonPath('data.file_yours', true);
+        $this->actingAs($super, 'cms')->get($this->api('exchange/runs/'.$export['id'].'/file'))->assertOk();
+
+        // An import by an address may carry a supplier's key in it: the starter sees it as given,
+        // everybody else the address without it.
+        $import = ExchangeRun::query()->create([
+            'direction' => 'import',
+            'format' => 'csv',
+            'status' => ExchangeRun::DONE,
+            'source' => 'https://user:secret@feed.example.test:8443/catalog.csv?token=abc#top',
+            'admin_id' => $starter->getKey(),
+        ]);
+
+        $this->actingAs($starter, 'cms')->getJson($this->api('exchange/runs/'.$import->id))
+            ->assertJsonPath('data.source', 'https://user:secret@feed.example.test:8443/catalog.csv?token=abc#top');
+        $this->actingAs($colleague, 'cms')->getJson($this->api('exchange/runs/'.$import->id))
+            ->assertJsonPath('data.source', 'https://feed.example.test:8443/catalog.csv?…');
+        $this->assertSame('https://feed.example.test/catalog.csv', ExchangeRun::withoutSecrets('https://feed.example.test/catalog.csv'));
+        $this->assertSame('prices.csv', ExchangeRun::withoutSecrets('prices.csv'));
+    }
+
+    #[Test]
+    public function a_public_disk_is_refused_for_the_exchange(): void
+    {
+        config(['webx-catalog.exchange.disk' => 'public', 'filesystems.disks.public.visibility' => 'public']);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('[webx-catalog.exchange.disk]');
+
+        $this->app->make(ExchangeFiles::class)->disk();
+    }
+
+    #[Test]
     public function the_deleted_are_exported_only_by_who_may_see_them(): void
     {
         $this->product('Boot', null, ['sku' => 'B-1'])->delete();

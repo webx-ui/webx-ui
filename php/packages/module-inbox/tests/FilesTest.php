@@ -50,6 +50,29 @@ final class FilesTest extends TestCase
     }
 
     #[Test]
+    public function a_public_disk_is_refused_before_a_strangers_file_lands_on_it(): void
+    {
+        // `WEBX_INBOX_DISK=public` would put a résumé under `/storage/inbox/...` for anyone with
+        // the address, past `inbox.view`. The setting is refused rather than trusted.
+        config(['webx-inbox.disk' => 'public']);
+        Storage::fake('public');
+        config(['filesystems.disks.public.visibility' => 'public']);
+        $this->withoutExceptionHandling();
+        $this->form('apply', [['name' => 'cv', 'type' => FieldType::File]]);
+
+        try {
+            $this->postJson($this->intake('apply'), [
+                'fields' => ['cv' => UploadedFile::fake()->create('resume.pdf', 20, 'application/pdf')],
+            ]);
+            $this->fail('A public disk took a visitor\'s file.');
+        } catch (\RuntimeException $refused) {
+            $this->assertStringContainsString('[webx-inbox.disk]', $refused->getMessage());
+        }
+
+        $this->assertSame([], Storage::disk('public')->allFiles());
+    }
+
+    #[Test]
     public function it_records_the_type_the_bytes_have_not_the_one_the_visitor_sent(): void
     {
         $this->form('apply', [

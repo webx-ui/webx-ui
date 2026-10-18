@@ -204,6 +204,7 @@ return [
     'exchange-error-whole-row' => 'the row',
     'exchange-file' => 'Download the file',
     'exchange-file-gone' => 'The file is no longer kept.',
+    'exchange-file-theirs' => 'The file is kept for whoever started the run and for super administrators.',
     'exchange-journal' => 'Changes in the journal',
     'exchange-journal-title' => 'What the run changed',
     'exchange-journal-empty' => 'Nothing changed.',

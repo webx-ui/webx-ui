@@ -12,12 +12,14 @@ use Illuminate\Contracts\Validation\Factory as ValidatorFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use WebxUi\Admin\Access\AccessPolicy;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Editing\AgentRevision;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\Tree;
+use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\BlockComponents;
 use WebxUi\Blocks\BlockLabel;
@@ -1812,9 +1814,13 @@ final class BlockTools
     }
 
     /**
-     * The one permission an entity needs on top of the tool's: a region is `blocks.regions`, and
-     * everything else is the section's own pair. Nobody to ask — a local run with no user — is
-     * not refused, the same rule as the tools themselves.
+     * What an entity needs on top of the tool's permission: a region is `blocks.regions`; a
+     * record is the blocks' pair and its section's right as well — the content of a page is the
+     * page, and the panel on the site asks `pages.manage` for the same write (§14.3 of the
+     * permissions spec). Reading asks the section's `view` or `manage`. A model no section
+     * registered with the panel on the site has no right to name, and keeps the blocks' pair
+     * alone. Nobody to ask — a local run with no user — is not refused, the same rule as the
+     * tools themselves.
      */
     private function authorise(Model $entity, ?Authenticatable $user, bool $write): void
     {
@@ -1822,17 +1828,35 @@ final class BlockTools
             return;
         }
 
-        $needs = $entity instanceof Region
-            ? ['blocks.regions']
-            : ($write ? ['blocks.manage'] : ['blocks.view', 'blocks.manage']);
+        if ($entity instanceof Region) {
+            $this->demand($user, ['blocks.regions']);
 
-        foreach ($needs as $permission) {
+            return;
+        }
+
+        $this->demand($user, $write ? ['blocks.manage'] : ['blocks.view', 'blocks.manage']);
+
+        $section = $this->container->make(SiteBar::class)->link($this->entities()->nameOf($entity))?->permission;
+
+        if ($section !== null) {
+            $this->demand($user, $write || ! str_ends_with($section, '.manage')
+                ? [$section]
+                : AccessPolicy::seeing(substr($section, 0, -strlen('.manage')).'.view'));
+        }
+    }
+
+    /**
+     * @param  list<string>  $any
+     */
+    private function demand(HasPermissions $user, array $any): void
+    {
+        foreach ($any as $permission) {
             if ($user->hasPermission($permission)) {
                 return;
             }
         }
 
-        throw new ToolFailure('Your administrator account may not do this: it needs ['.implode('] or [', $needs).'].');
+        throw new ToolFailure('Your administrator account may not do this: it needs ['.implode('] or [', $any).'].');
     }
 
     private function regionNames(): string

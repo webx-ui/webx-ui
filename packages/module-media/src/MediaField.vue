@@ -12,6 +12,7 @@ import {
   type LocalizedValue,
 } from '@webx-ui/core'
 import { createMediaApi } from './api'
+import { canBrowseMedia } from './access'
 import { openMediaPicker } from './openMediaPicker'
 import { useMediaMessages } from './i18n'
 import type { MediaAspect, MediaKind, MediaValue } from './types'
@@ -67,7 +68,15 @@ useMediaMessages()
 
 const t = useTranslate('webx-media')
 
-const api = createMediaApi(useAdmin())
+const admin = useAdmin()
+const api = createMediaApi(admin)
+
+/*
+ * Without the library the field still shows what is chosen and still lets it be cleared or
+ * captioned — that is the record's, not the library's — but it opens no dialog that would only
+ * answer 403 (choice 2(a) of the permissions spec).
+ */
+const canBrowse = computed(() => canBrowseMedia(admin))
 
 /** The presets, spelled the way CSS wants them. Anything else is passed through as given. */
 const RATIOS: Record<string, string> = {
@@ -88,7 +97,7 @@ const resolved = ref<Record<string, string>>({})
 watch(
   () => value.value?.path,
   async (path) => {
-    if (!path || value.value?.url || resolved.value[path]) return
+    if (!path || value.value?.url || resolved.value[path] || !canBrowse.value) return
 
     const file = await api.fileByPath(path)
 
@@ -129,7 +138,7 @@ function setWords(key: 'alt' | 'title', next: unknown): void {
 }
 
 async function choose(): Promise<void> {
-  if (props.disabled) return
+  if (props.disabled || !canBrowse.value) return
 
   const file = await openMediaPicker({ accept: props.accept })
 
@@ -161,8 +170,13 @@ function clear(): void {
     <span v-if="label" class="wx-media-field__label">{{ label }}</span>
 
     <div v-if="!value" class="wx-media-field__frame is-empty" :style="frameStyle">
-      <button type="button" class="wx-media-field__pick" :disabled="disabled" @click="choose">
-        {{ t('field.select') }}
+      <button
+        type="button"
+        class="wx-media-field__pick"
+        :disabled="disabled || !canBrowse"
+        @click="choose"
+      >
+        {{ canBrowse ? t('field.select') : t('field.locked') }}
       </button>
     </div>
 
@@ -179,8 +193,8 @@ function clear(): void {
       <button
         type="button"
         class="wx-media-field__picture"
-        :disabled="disabled"
-        :title="t('field.replace')"
+        :disabled="disabled || !canBrowse"
+        :title="canBrowse ? t('field.replace') : t('field.locked')"
         @click="choose"
       >
         <wx-image v-if="preview" :src="preview" fit="contain" width="100%" height="100%" />

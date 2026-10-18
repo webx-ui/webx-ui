@@ -122,6 +122,7 @@ export const mediaMessages: Record<string, Messages> = {
     'remove-confirm': 'Remove',
     count: ':count of :max',
     'at-least': 'At least :count',
+    locked: 'The file library is not open to you',
   },
   // The image editor is a component of the design system, so its words are props rather than
   // lines in the dictionary — the manager hands it these when it opens it.

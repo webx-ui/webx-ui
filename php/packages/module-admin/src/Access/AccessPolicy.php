@@ -132,6 +132,33 @@ final class AccessPolicy
         return null;
     }
 
+    /**
+     * Whether this account may see what a `view` permission guards in a picker — a link, a
+     * collection, a relation: the permission itself, or the `manage` of the same family.
+     *
+     * Choice 1(a) of the permissions spec: `manage` does not carry `view` in by itself, and every
+     * place that needs both names both. A route does it with `cms.can:x.view,x.manage`; a picker
+     * is given one permission by the module that registers it, so the second is named here,
+     * once, for all three. Somebody who edits the services and cannot pick a service to link to
+     * is not being protected from anything.
+     */
+    public function sees(mixed $user, string $permission): bool
+    {
+        return $this->allows($user, self::seeing($permission));
+    }
+
+    /**
+     * `services.view` → `services.view`, `services.manage`; anything else stays as it is.
+     *
+     * @return list<string>
+     */
+    public static function seeing(string $permission): array
+    {
+        return str_ends_with($permission, '.view')
+            ? [$permission, substr($permission, 0, -strlen('.view')).'.manage']
+            : [$permission];
+    }
+
     public function isSuper(mixed $user): bool
     {
         return $user instanceof HoldsPermissions && $user->isSuperAdministrator();

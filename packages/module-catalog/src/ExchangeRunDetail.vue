@@ -79,6 +79,9 @@ const fileGone = computed(
   () =>
     props.run.direction === 'export' && props.run.status === 'done' && props.run.file_url === null,
 )
+
+/** Kept, but somebody else's: saying «no longer kept» would send them looking for a bug. */
+const fileTheirs = computed(() => fileGone.value && props.run.file_yours === false)
 </script>
 
 <template>
@@ -134,6 +137,9 @@ const fileGone = computed(
       >
         {{ t('panel.exchange-file') }}
       </wx-button>
+      <wx-text v-else-if="fileTheirs" size="sm" tone="muted">
+        {{ t('panel.exchange-file-theirs') }}
+      </wx-text>
       <wx-text v-else-if="fileGone" size="sm" tone="muted">
         {{ t('panel.exchange-file-gone') }}
       </wx-text>

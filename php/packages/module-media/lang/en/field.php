@@ -23,4 +23,5 @@ return [
     'remove-confirm' => 'Remove',
     'count' => ':count of :max',
     'at-least' => 'At least :count',
+    'locked' => 'The file library is not open to you',
 ];
