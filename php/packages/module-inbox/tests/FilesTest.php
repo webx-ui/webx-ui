@@ -50,6 +50,23 @@ final class FilesTest extends TestCase
     }
 
     #[Test]
+    public function it_records_the_type_the_bytes_have_not_the_one_the_visitor_sent(): void
+    {
+        $this->form('apply', [
+            ['name' => 'cv', 'type' => FieldType::File, 'options' => ['extensions' => ['pdf']]],
+        ]);
+
+        $path = (string) tempnam(sys_get_temp_dir(), 'webx-inbox-test');
+        file_put_contents($path, "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n");
+
+        $this->postJson($this->intake('apply'), [
+            'fields' => ['cv' => new UploadedFile($path, 'resume.pdf', 'text/html', null, true)],
+        ])->assertOk();
+
+        $this->assertSame('application/pdf', Submission::query()->sole()->files->sole()->mime);
+    }
+
+    #[Test]
     public function it_refuses_a_file_that_is_too_big_or_of_the_wrong_kind(): void
     {
         $this->form('apply', [

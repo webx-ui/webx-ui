@@ -23,6 +23,7 @@ use WebxUi\Media\Audit\OrphanThumbnailsCheck;
 use WebxUi\Media\Audit\PruneThumbnailsFix;
 use WebxUi\Media\Console\ConvertToWebpCommand;
 use WebxUi\Media\Console\PruneThumbnailsCommand;
+use WebxUi\Media\Console\SanitizeSvgCommand;
 use WebxUi\Media\Http\Controllers\OldAddressController;
 use WebxUi\Media\Screens\FileFieldType;
 use WebxUi\Media\Screens\FilesFieldType;
@@ -130,7 +131,7 @@ class MediaServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([ConvertToWebpCommand::class, PruneThumbnailsCommand::class]);
+        $this->commands([ConvertToWebpCommand::class, PruneThumbnailsCommand::class, SanitizeSvgCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-media.php' => config_path('webx-media.php'),

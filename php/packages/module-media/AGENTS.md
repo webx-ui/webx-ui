@@ -23,6 +23,11 @@ guides when the question is about one of those. An entity's own attachments are 
 - **Convert to WebP** (`convert: true` of `media_optimize_images`, `webx:media:webp`): a new key
   with the same uuid, every reference rewritten (history included, `usage.rewrite_ignore`),
   the old key kept in `media_aliases` — its public address 301s to the new one. Off by default.
+- **Safe types**: a file's extension and `mime` are read from its bytes (`Support\FileTypes`),
+  never from the client; an SVG is kept as `Support\SvgSanitizer` made it (scripts, handlers and
+  outside addresses removed), one that cannot be sanitized is refused. `webx:media:sanitize-svg`
+  puts SVGs uploaded before that through it and lists what it removed. The panel answers with
+  `Support\ServeHeaders` (`nosniff`, CSP with `sandbox` for SVG).
 - **Chunked uploads**: the upload purpose `media.library` with module-admin's `uploads`
   protocol — the panel sends every file a piece at a time and `files/chunked` hands the finished
   one to the library through the same rules and pipeline as `POST files`.
@@ -61,6 +66,7 @@ A route or screen node the site adds next to the module asks the same:
 | Imagick instead of GD, other JPEG quality | `WEBX_MEDIA_IMAGE_DRIVER=imagick`; `image.quality`, `image.max_pixels` in the config              |
 | Other thumbnail sizes                     | `thumbs.widths`, `thumbs.fits` in the config                                                      |
 | Signed addresses that live longer         | `temporary_url_ttl` (seconds) — used only for a disk without a `url`                              |
+| SVGs uploaded before sanitizing           | `php artisan webx:media:sanitize-svg --dry-run` first, then without it                            |
 | Previews of files deleted long ago        | audit `media.orphan_thumbs` and its fix, or `php artisan webx:media:prune-thumbs --dry-run` first |
 | Edit the config at all                    | `php artisan vendor:publish --tag=webx-media-config`, keep only the keys you change               |
 | Other words in the panel                  | `php artisan vendor:publish --tag=webx-media-lang`                                                |
@@ -95,7 +101,11 @@ a migration of your own, bytes and rows together.
 - Do not ask for a thumbnail size outside `thumbs.widths` and `thumbs.fits`: it is refused, so
   one request cannot make the server resize anything to anything. Add the size to the config.
 - Do not widen `upload.extensions` with executable or script types: the list is a white list on
-  purpose, and what it lets in ends up on a public disk.
+  purpose, and what it lets in ends up on a public disk. Browser documents (`html`, `xml`, `js`,
+  `svgz`, PHP) are refused even when listed.
+- Do not serve the public disk without `X-Content-Type-Options: nosniff`, and SVG without the
+  policy in `ServeHeaders::SVG_POLICY`: `/storage/…` is answered by the web server, not by
+  Laravel — the rules are in the README, «Serving files».
 
 ## Check your work
 

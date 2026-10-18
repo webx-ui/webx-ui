@@ -11,6 +11,8 @@ return [
     'upload' => 'Ce fichier n’a pas été accepté.',
     'copy' => 'Le presse-papiers n’est pas disponible ici. L’adresse :',
     'unsupported-type' => 'Seuls ces fichiers peuvent être téléversés : :types.',
+    'type-mismatch' => 'Le contenu du fichier ne correspond pas à son type.',
+    'unsafe-svg' => 'Ce SVG ne peut pas être accepté : ce n’est pas un dessin SVG valide.',
     'file-too-large' => 'Le fichier dépasse :size Mo.',
     'too-many-files' => 'Pas plus de :count fichiers à la fois.',
     'file-not-found' => 'Ce fichier n’est pas dans la bibliothèque.',

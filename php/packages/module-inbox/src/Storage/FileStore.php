@@ -47,7 +47,8 @@ final class FileStore
             'path' => $path,
             'name' => Str::limit($original, 250, ''),
             'size' => (int) $upload->getSize(),
-            'mime' => $upload->getClientMimeType(),
+            // Read from the bytes: the type a stranger's browser declared is whatever they wanted.
+            'mime' => $upload->getMimeType() ?? 'application/octet-stream',
             'created_at' => Carbon::now(),
         ]);
     }

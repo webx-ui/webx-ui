@@ -9,9 +9,12 @@ use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use WebxUi\Media\Images\Optimizing\ImageOptimizer;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
+use WebxUi\Media\Support\FileTypes;
+use WebxUi\Media\Support\SvgSanitizer;
 
 /**
  * Everything that puts bytes on a disk or takes them off it.
@@ -33,6 +36,8 @@ final class FileStore
         private readonly FilesystemFactory $filesystems,
         private readonly Config $config,
         private readonly ImageOptimizer $optimizer,
+        private readonly FileTypes $types,
+        private readonly SvgSanitizer $svg,
     ) {}
 
     /**
@@ -42,23 +47,31 @@ final class FileStore
      * WebP no larger than it needs to be — and everything else as it came. The same bytes
      * already in that folder are the same file: the existing row comes back untouched, and
      * `wasRecentlyCreated` tells the caller which of the two happened.
+     *
+     * The extension and the type are the server's, read from the bytes ({@see FileTypes}); the
+     * client's are not believed. An SVG is kept as {@see SvgSanitizer} made it.
+     *
+     * @throws ValidationException when the bytes make no type the library keeps, or an SVG
+     *                             that cannot be made safe — the upload rules refuse both
+     *                             earlier, this is for a caller that skipped them
      */
     public function store(UploadedFile $upload, MediaDirectory $directory): MediaFile
     {
-        $extension = $this->extension($upload);
-        // Without parameters: a type taken from a header can arrive as `image/png; qs=0.7`, and
-        // the library compares types as they are written.
-        $mime = strtolower(trim(explode(';', (string) $upload->getClientMimeType())[0]));
+        [$extension, $mime] = $this->types->resolve($upload)
+            ?? throw ValidationException::withMessages(['file' => __('webx-media::errors.type-mismatch')]);
 
         // A path of the filesystem, deliberately: this is PHP's own temporary file, the one
         // place in the module where there is nothing remote to speak to.
+        $sanitized = $mime === FileTypes::SVG ? $this->sanitized($upload) : null;
+
         $optimized = $this->optimizer->handles($extension, $mime)
             ? $this->optimizer->optimize((string) file_get_contents($upload->getRealPath()), $extension, convert: true)
             : null;
 
         // Of what is kept, not of what arrived, so a second upload of the same photograph finds
         // the first — the pipeline makes the same bytes of it both times.
-        $hash = $optimized !== null ? md5($optimized->contents) : (string) md5_file($upload->getRealPath());
+        $kept = $optimized->contents ?? $sanitized;
+        $hash = $kept !== null ? md5($kept) : (string) md5_file($upload->getRealPath());
 
         $existing = MediaFile::query()
             ->where('directory_id', $directory->getKey())
@@ -74,14 +87,14 @@ final class FileStore
         if ($optimized !== null) {
             [$extension, $mime, $width, $height] = [$optimized->extension, $optimized->mime, $optimized->width, $optimized->height];
         } else {
-            [$width, $height] = $this->dimensions($upload);
+            [$width, $height] = $this->dimensions($upload, $mime);
         }
 
         $path = $this->key($hash, $extension);
         $disk = $this->disk();
 
-        if ($optimized !== null) {
-            $disk->put($path, $optimized->contents);
+        if ($kept !== null) {
+            $disk->put($path, $kept);
         } else {
             $disk->putFileAs(dirname($path), $upload, basename($path));
         }
@@ -98,7 +111,7 @@ final class FileStore
             'file_name' => Str::limit($this->named($original, $extension), 250, ''),
             'extension' => $extension,
             'mime' => $mime,
-            'size' => $optimized !== null ? strlen($optimized->contents) : (int) $upload->getSize(),
+            'size' => $kept !== null ? strlen($kept) : (int) $upload->getSize(),
             'width' => $width,
             'height' => $height,
             'optimized' => $optimized !== null ? $this->optimizer->signature() : null,
@@ -179,23 +192,23 @@ final class FileStore
         return pathinfo($original, PATHINFO_FILENAME).'.'.$extension;
     }
 
-    private function extension(UploadedFile $upload): string
+    private function sanitized(UploadedFile $upload): string
     {
-        $extension = strtolower($upload->getClientOriginalExtension());
+        $sanitized = $this->svg->sanitize((string) file_get_contents($upload->getRealPath()));
 
-        if ($extension === '') {
-            $extension = strtolower((string) $upload->guessExtension());
+        if ($sanitized === null) {
+            throw ValidationException::withMessages(['file' => __('webx-media::errors.unsafe-svg')]);
         }
 
-        return preg_replace('/[^a-z0-9]/', '', $extension) ?: 'bin';
+        return $sanitized->contents;
     }
 
     /**
      * @return array{0: int|null, 1: int|null}
      */
-    private function dimensions(UploadedFile $upload): array
+    private function dimensions(UploadedFile $upload, string $mime): array
     {
-        if (! str_starts_with($upload->getClientMimeType(), 'image/')) {
+        if (! str_starts_with($mime, 'image/')) {
             return [null, null];
         }
 

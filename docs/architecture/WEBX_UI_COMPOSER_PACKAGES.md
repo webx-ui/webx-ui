@@ -104,6 +104,23 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 - **`AGENTS.md`** — подраздел `### Permissions` в «What it owns»
   ([`WEBX_UI_AGENT_DOCS.md`](WEBX_UI_AGENT_DOCS.md) §2).
 
+## Правило: пользовательские файлы
+
+Файл, который прислал человек (админ панели или посетитель сайта), — чужой документ на домене
+сайта. Ловушки — раздел «Загрузки и пользовательские файлы» в `docs/pitfalls/laravel-and-php.md`.
+
+- **Тип — серверный.** Тип и расширение берутся из байтов (`getMimeType()`, в медиатеке —
+  `WebxUi\Media\Support\FileTypes`), а не из `getClientMimeType()` / `getClientOriginalExtension()`;
+  расширение ключа на диске — из белого списка и согласованное с содержимым. Документы браузера
+  (`html`, `xml`, `js`, `svgz`, PHP) не принимаются никогда.
+- **SVG — только санитизированный** (`WebxUi\Media\Support\SvgSanitizer`); несанитизируемый
+  отклоняется. Модуль, которому нужны картинки от людей, кладёт их через медиатеку, а не мимо неё.
+- **Отдача — с `nosniff`.** Ответ PHP с пользовательским файлом несёт заголовки
+  `WebxUi\Media\Support\ServeHeaders::for()` (для SVG — CSP с `sandbox`), а тип, который браузер
+  покажет страницей, уходит вложением (`ServeHeaders::disposition()`); файлы посетителей — всегда
+  вложением. Публичную папку отдаёт веб-сервер: заголовки — в `php/site/docker/nginx.conf` и
+  `public/.htaccess` скелета.
+
 ## Правило: имя пакета
 
 Всё, из чего состоит панель, — пакет с префиксом `module-`: каркас `webx-ui/module-admin` и

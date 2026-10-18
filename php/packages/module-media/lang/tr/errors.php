@@ -11,6 +11,8 @@ return [
     'upload' => 'Bu dosya kabul edilmedi.',
     'copy' => 'Pano burada kullanılamıyor. Adres:',
     'unsupported-type' => 'Yalnızca şunlar yüklenebilir: :types.',
+    'type-mismatch' => 'Dosyanın içeriği türüyle uyuşmuyor.',
+    'unsafe-svg' => 'Bu SVG kabul edilemez: geçerli bir SVG çizimi değil.',
     'file-too-large' => 'Dosya :size MB’tan büyük.',
     'too-many-files' => 'Bir seferde en fazla :count dosya.',
     'file-not-found' => 'Kitaplıkta böyle bir dosya yok.',

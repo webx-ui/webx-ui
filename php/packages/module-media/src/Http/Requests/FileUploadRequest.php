@@ -6,6 +6,7 @@ namespace WebxUi\Media\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use WebxUi\Media\Http\Controllers\FileController;
+use WebxUi\Media\Rules\SafeFileType;
 use WebxUi\Media\Rules\WithinPixelBudget;
 
 final class FileUploadRequest extends FormRequest
@@ -41,6 +42,8 @@ final class FileUploadRequest extends FormRequest
             // rather than trusting its name.
             'mimes:'.implode(',', self::extensions()),
             new WithinPixelBudget,
+            // Under which extension the bytes are kept, and whether an SVG among them is safe.
+            new SafeFileType,
         ];
     }
 
