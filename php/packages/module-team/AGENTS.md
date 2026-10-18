@@ -21,11 +21,21 @@ questions about those.
 - **Panel screen** `team.form` (nodes `person`, `photo`, `name`, `job-title`, `about`, `text`,
   `links`, `socials`, `social-row`, `social-network`, `social-url`, `services`, `settings`,
   `published`, `project-fields`); `services` is there only with `webx-ui/module-services`.
-- **API** under `/api/cms/team`; permissions `team.view`, `team.manage`.
+- **API** under `/api/cms/team`.
 - **MCP** tools `team_list`, `team_get`, `team_create`, `team_update`, `team_delete`,
   `team_reorder`; resource `team://catalog`. Scopes `team:read`, `team:write`.
 - Also registered: one top-level entry of the panel's menu, demo content (`resources/demo`);
   a theme with `demo/team/team.json` seeds that file instead.
+
+### Permissions
+
+| Permission    | Opens                                                                                                                                                    |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `team.view`   | the people, read-only; `team_list`, `team_get`; the team in a `wx-relations` picker (`team-member`) and in the collection source `team` of other screens |
+| `team.manage` | create, edit, reorder, delete and restore people; the `team:write` tools                                                                                 |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:team.view,team.manage` to read, `cms.can:team.manage` to write.
 
 ## Change it without forking
 

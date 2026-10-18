@@ -11,6 +11,8 @@ return [
     'upload' => 'Ten plik nie został przyjęty.',
     'copy' => 'Schowek jest tu niedostępny. Adres:',
     'unsupported-type' => 'Przesłać można tylko: :types.',
+    'type-mismatch' => 'Zawartość pliku nie odpowiada jego typowi.',
+    'unsafe-svg' => 'Tego SVG nie można przyjąć: to nie jest poprawny rysunek SVG.',
     'file-too-large' => 'Plik jest większy niż :size MB.',
     'too-many-files' => 'Nie więcej niż :count plików naraz.',
     'file-not-found' => 'Nie ma takiego pliku w bibliotece.',

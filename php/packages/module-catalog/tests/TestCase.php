@@ -7,6 +7,8 @@ namespace WebxUi\Catalog\Tests;
 use Illuminate\Foundation\Application;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Remote\HostResolver;
+use WebxUi\Admin\Testing\FakeHostResolver;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -64,6 +66,8 @@ abstract class TestCase extends Orchestra
         $app['config']->set('webx-seo.cache.enabled', false);
         // sqlite ignores foreign keys unless asked, and a restriction that does not exist would pass.
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
+        // No DNS in a test: every supplier's name is a public address unless the test says otherwise.
+        $app->instance(HostResolver::class, new FakeHostResolver);
     }
 
     protected function defineDatabaseMigrations(): void

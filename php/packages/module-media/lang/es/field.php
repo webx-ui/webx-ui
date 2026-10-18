@@ -23,4 +23,5 @@ return [
     'remove-confirm' => 'Quitar',
     'count' => ':count de :max',
     'at-least' => 'Al menos :count',
+    'locked' => 'No tienes acceso a la biblioteca de archivos',
 ];

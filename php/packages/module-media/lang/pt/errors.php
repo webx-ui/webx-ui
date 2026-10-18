@@ -11,6 +11,8 @@ return [
     'upload' => 'Esse ficheiro não foi aceite.',
     'copy' => 'A área de transferência não está disponível aqui. O endereço:',
     'unsupported-type' => 'Só podem ser carregados: :types.',
+    'type-mismatch' => 'O conteúdo do ficheiro não corresponde ao seu tipo.',
+    'unsafe-svg' => 'Este SVG não pode ser aceite: não é um desenho SVG válido.',
     'file-too-large' => 'O ficheiro é maior do que :size MB.',
     'too-many-files' => 'No máximo :count ficheiros de cada vez.',
     'file-not-found' => 'Esse ficheiro não está na biblioteca.',

@@ -56,4 +56,7 @@ return [
     'confirm' => 'Revoke',
     'revoked-done' => ':name is revoked',
     'empty' => 'No keys have been issued',
+    'lead-mine' => 'A key lets a program — a queue watcher, a nightly import — work in this panel as you, without a browser. It can never do more than you may, and only within the scopes you choose.',
+    'empty-mine' => 'You have no keys yet',
+
 ];

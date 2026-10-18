@@ -7,6 +7,7 @@ import MediaPage from './MediaPage.vue'
 import { mediaMessages } from './messages'
 import { createMediaApi } from './api'
 import { openMediaPicker } from './openMediaPicker'
+import { canBrowseMedia, MEDIA_BROWSE } from './access'
 
 export interface MediaOptions {
   /** Where the section lives inside the panel. */
@@ -56,12 +57,17 @@ export function media(options: MediaOptions = {}): AdminModule {
       // today has to still find its pictures after the library moves disks.
       return file ? { url: file.url, path: file.path } : null
     },
+    // An editor without the library gets no image button rather than one that opens on a 403.
+    pickImageWith: MEDIA_BROWSE,
     /**
      * Where those keys live now. One request per key, the way a media field resolves its own:
      * a document holds a handful of pictures, and the answer is the library's current one
      * rather than whatever host the paragraph was written on.
      */
     assetUrls: async (paths, admin) => {
+      // Not asked without the right: every key keeps the address it was saved with.
+      if (!canBrowseMedia(admin)) return Object.fromEntries(paths.map((path) => [path, null]))
+
       const api = createMediaApi(admin)
       const files = await Promise.all(paths.map((path) => api.fileByPath(path)))
 
@@ -72,6 +78,7 @@ export function media(options: MediaOptions = {}): AdminModule {
 
 export { mediaMessages }
 export { createMediaApi, type MediaApi } from './api'
+export { canBrowseMedia, MEDIA_BROWSE } from './access'
 export {
   MEDIA_UPLOAD_PURPOSE,
   useMediaUploads,

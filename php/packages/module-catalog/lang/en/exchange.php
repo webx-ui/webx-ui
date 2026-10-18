@@ -52,6 +52,8 @@ return [
         'not-a-url' => 'Not an http(s) address: :url',
         'too-large' => 'The file is larger than :max MB.',
         'unreachable' => 'The file could not be downloaded: :reason',
+        'url-off' => 'Importing from an address is switched off on this site: upload the file instead.',
+        'not-a-table' => 'The address answered with something that is not a spreadsheet or a CSV (:type), so it is not read.',
         'unknown-format' => 'The exchange reads and writes these files: :known.',
         'option' => 'The setting :name is one of: :allowed.',
         'mapping-unknown' => 'There is no column :code, or it is not yours to write.',

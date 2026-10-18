@@ -179,7 +179,11 @@ final class SearchIndexPageTest extends TestCase
         $this->assertNotNull($entry);
         $this->assertSame('system', $entry['group']);
 
-        $answer = $this->content($this->agent('catalog_index_status'));
+        // The right of the index screen, not the catalogue's (§14.3 of the permissions spec).
+        $this->assertSame(['search-index.view', 'search-index.manage'], $this->app->make(ToolRegistry::class)->tool('catalog_index_status')->permissions());
+
+        $this->agent('catalog_index_status')->assertHasErrors();
+        $answer = $this->content($this->agent('catalog_index_status', as: $this->editor(['catalog.view', 'search-index.view'])));
         $this->assertFalse($answer['connection']['available']);
         $this->assertSame(0, $answer['queue']['waiting']);
     }

@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Media\Images\MissingSource;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileStore;
+use WebxUi\Media\Support\ServeHeaders;
 
 /**
  * The picture itself, served by the panel rather than by the disk.
@@ -46,6 +47,9 @@ final class SourceController
             // The bytes at this key change when the picture is edited, and the address carries
             // no version — so it is the one address in the module that must not be kept.
             'Cache-Control' => 'private, no-store',
-        ]);
+            // On the panel's own origin: an SVG opened here must not be able to act as the
+            // person looking at it.
+            ...ServeHeaders::for($file->mime),
+        ], ServeHeaders::disposition($file->mime));
     }
 }

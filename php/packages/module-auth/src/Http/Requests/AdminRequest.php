@@ -23,9 +23,14 @@ final class AdminRequest extends FormRequest
         $existing = $this->route('admin');
         $id = $existing instanceof CmsUser ? $existing->getKey() : null;
 
+        // An edit sends what it changes (AdminController): a name or an address left out is
+        // left alone, one that is sent still has to be there.
+        $present = $id === null ? 'required' : 'sometimes';
+
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [$present, 'required', 'string', 'max:255'],
             'email' => [
+                $present,
                 'required',
                 'string',
                 'email',

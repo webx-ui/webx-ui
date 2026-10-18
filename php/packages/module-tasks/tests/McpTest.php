@@ -52,7 +52,9 @@ final class McpTest extends TestCase
         $this->assertSame(['tasks:work'], $scopes['tasks_stage_block']);
         $this->assertSame(['tasks:review'], $scopes['tasks_stage_accept']);
         $this->assertSame(['tasks:review'], $scopes['tasks_stage_rework']);
-        $this->assertSame(['tasks:write', 'tasks:work'], $scopes['tasks_comment']);
+        $this->assertSame(['tasks:write', 'tasks:work', 'tasks:review'], $scopes['tasks_comment']);
+        $this->assertSame(['tasks:write', 'tasks:work'], $scopes['tasks_stage_release']);
+        $this->assertSame(['tasks.manage', 'tasks.work'], $registry->tool('tasks_stage_release')->permissions());
         $this->assertSame(['tasks.review'], $registry->tool('tasks_stage_accept')->permissions());
 
         $uris = array_map(static fn ($resource): string => $resource->uri, $registry->resources());
@@ -198,7 +200,7 @@ final class McpTest extends TestCase
     }
 
     #[Test]
-    public function a_comment_is_open_to_the_planner_and_the_worker_and_closed_to_a_reader(): void
+    public function a_comment_is_open_to_the_planner_the_worker_and_the_reviewer_and_closed_to_a_reader(): void
     {
         $this->task(stages: ['One']);
 
@@ -206,8 +208,11 @@ final class McpTest extends TestCase
             $this->tool('tasks_comment', ['task' => 'shop#1', 'body' => 'Noted.', 'agent' => 'a'], $this->holder(['tasks.manage', 'tasks.work'], $scopes))->assertOk();
         }
 
+        // A reviewer's key, as the panel lets a reviewer comment.
+        $this->tool('tasks_comment', ['task' => 'shop#1', 'body' => 'Noted.', 'agent' => 'a'], $this->holder(['tasks.review'], ['tasks:review']))->assertOk();
+
         $this->tool('tasks_comment', ['task' => 'shop#1', 'body' => 'Noted.', 'agent' => 'a'], $this->holder(['tasks.view'], ['tasks:read']))
-            ->assertHasErrors(['[tasks:write] or [tasks:work]']);
+            ->assertHasErrors(['[tasks:write] or [tasks:work] or [tasks:review]']);
     }
 
     #[Test]

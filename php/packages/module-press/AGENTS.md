@@ -22,11 +22,22 @@ their guides for those.
 - **Offered block types** `press-logos`, `press-outlets`, `press-articles`, and in Blade
   `press()` — `press()->featured()->take(12)`, `press()->articles()->kind('interview')`.
 - **Panel screen** `press.outlet-form` (tabs `general`, `articles-tab`, `seo`); API under
-  `/api/cms/press`; permissions `press.view`, `press.manage`.
+  `/api/cms/press`.
 - **MCP** tools `press_list`, `press_get`, `press_create`, `press_update`, `press_delete`,
-  `press_reorder`, `press_articles_add`, `press_articles_update`, `press_articles_delete`,
-  `press_articles_move`. Resource `press://catalog`. Scopes `press:read`, `press:write`.
+  `press_reorder`, `press_restore`, `press_purge`, `press_articles_add`, `press_articles_update`,
+  `press_articles_delete`, `press_articles_move`. Resource `press://catalog`. Scopes `press:read`,
+  `press:write`.
 - Also registered: a link source for outlets, demo content (`resources/demo`).
+
+### Permissions
+
+| Permission     | Opens                                                                                         |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| `press.view`   | outlets and their articles, read-only: the list, the form, `press_list`, `press_get`          |
+| `press.manage` | create, edit, reorder, delete and restore outlets and their articles; the `press:write` tools |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:press.view,press.manage` to read, `cms.can:press.manage` to write.
 
 ## Change it without forking
 

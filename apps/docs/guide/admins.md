@@ -83,6 +83,23 @@ const roles = await api.roles()
 
 ## Roles
 
-Read-only, on purpose. A role is a set of permissions, and which permissions exist is decided by
-which modules are installed — editing that from a form would be editing the shape of the
-application from inside it. Roles are created in code or in a seeder; the panel assigns them.
+A role is a named set of permissions; an administrator may hold several, and their permissions add
+up. Which permissions exist is still decided by the modules installed — the view **Roles** of the
+section lists them as a matrix, one row per module in the order of the menu, and a role can only
+tick what a module declares.
+
+- Reading the roles takes `admins.view`, `admins.manage`, `roles.manage` or `roles.assign`;
+  editing them takes `roles.manage`, and giving them to people takes `roles.assign`.
+- Nobody hands out more than they hold: a permission the editor does not have is shown greyed out,
+  and a role the editor holds opens read-only. The server checks both again.
+- A new site gets ready-made roles — editor, SEO, leads, catalogue, developer, viewer — made of its
+  modules; `php artisan webx:roles:defaults` adds the missing ones later and touches none that exist.
+
+The menu is built for whoever is signed in: a section none of whose permissions they hold is left
+out, and its address shows «No access». The rules are in
+[the permissions specification](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_PERMISSIONS.md).
+
+```ts
+const matrix = await api.permissions()
+await api.createRole({ name: 'Editors', permissions: ['pages.view', 'pages.manage'] })
+```

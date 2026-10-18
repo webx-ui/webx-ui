@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Catalog\Exchange\ExchangeProfile;
+use WebxUi\Catalog\Exchange\ExchangeRun;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\Registry\ToolRegistry;
@@ -134,6 +135,19 @@ final class ExchangeMcpTest extends TestCase
         $this->assertSame([], $again['errors']);
 
         $this->agent('catalog_export', ['columns' => ['nope']])->assertHasErrors(['columns']);
+    }
+
+    #[Test]
+    public function the_deleted_are_exported_only_by_who_may_see_them(): void
+    {
+        $this->product('Boot', null, ['sku' => 'B-1'])->delete();
+
+        $this->agent('catalog_export', ['deleted' => true, 'format' => 'csv'], $this->editor(['catalog.view']))
+            ->assertHasErrors(['catalog.delete']);
+        $this->assertSame(0, ExchangeRun::query()->count());
+
+        $answer = $this->content($this->agent('catalog_export', ['deleted' => true, 'format' => 'csv'], $this->editor(['catalog.view', 'catalog.delete'])));
+        $this->assertSame(1, $answer['run']['rows_total']);
     }
 
     #[Test]

@@ -56,4 +56,7 @@ return [
     'confirm' => 'Revocar',
     'revoked-done' => '«:name» está revocada',
     'empty' => 'No se ha emitido ninguna clave',
+    'lead-mine' => 'Una clave permite a un programa — un vigilante de cola, una importación nocturna — trabajar en este panel como usted, sin navegador. Nunca puede más que usted, y solo en los ámbitos que elija.',
+    'empty-mine' => 'Aún no tiene claves',
+
 ];

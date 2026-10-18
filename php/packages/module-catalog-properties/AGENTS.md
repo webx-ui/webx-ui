@@ -28,8 +28,7 @@ categories, the filter address, the storefront and the engine, read the core's `
   `catalog.property-group-form`. It patches `catalog.product-form` (tab `properties-tab`, field
   `properties-values`) and `catalog.category-form` (tab `properties-tab`, field
   `category-properties`). The API is `catalog/properties`, `catalog/property-groups`,
-  `catalog/categories/{id}/properties` and `catalog/property-sets/{category}`. It has no
-  permissions of its own: `catalog.view` reads and `catalog.manage` writes.
+  `catalog/categories/{id}/properties` and `catalog/property-sets/{category}`.
 - **Cache**: the list of properties and the sets of every category (worked out at once) are entries of the
   `catalog` cache group; `Property`, `PropertyValue`, `PropertyGroup` and `PropertyInterval` move it, a set saved
   (`PropertySets::save`) and a reorder (`Properties::reordered`) say so themselves.
@@ -41,6 +40,20 @@ categories, the filter address, the storefront and the engine, read the core's `
   `catalog_property_values_*` (list, create, update, move, merge, delete),
   `catalog_property_groups_*`, `catalog_categories_properties` and `_set`. Resource:
   `catalog://properties`.
+
+### Permissions
+
+None of its own: the catalogue's permissions (`webx-ui/module-catalog`) open it, and the section
+shows to whoever holds `catalog.view` or `catalog.manage` (`visibleWith()`). The tools are served
+as the catalogue's, with its scopes.
+
+| Permission       | Opens                                                                                                                                                                                              |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `catalog.view`   | properties, values, groups and category sets read-only; `catalog_properties_list`, `_get`, `catalog_property_values_list`, `catalog_property_groups_list`, `_get`, `catalog_categories_properties` |
+| `catalog.manage` | create, edit, reorder, delete, restore properties and groups; values (create, edit, move, merge, delete), intervals, a category's set; the bulk actions; the write tools                           |
+
+A route or screen node the site adds next to the module asks the same: `cms.can:catalog.view,catalog.manage`
+to read, `cms.can:catalog.manage` to write.
 
 ## Change it without forking
 

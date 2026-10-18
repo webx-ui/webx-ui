@@ -29,16 +29,27 @@ about one of those.
   `seo`, `history`, `versions`) and `services.category-form` (`content`, `naming`, `title`,
   `slug`, `is-visible`, `lead`, `presentation`, `cover`, `project-fields`, `seo`; plus
   `blocks-tab`, `blocks` when category blocks are on).
-- **API** under `/api/cms/services` and `/api/cms/services/categories`; permissions
-  `services.view`, `services.manage`, `services.categories.manage`.
+- **API** under `/api/cms/services` and `/api/cms/services/categories`.
 - **MCP** tools `services_list`, `services_get`, `services_create`, `services_update`,
   `services_publish`, `services_unpublish`, `services_discard`, `services_versions`,
-  `services_version_restore`, `services_delete`, `services_reorder`, and
-  `service_categories_list`, `service_categories_create`, `service_categories_update`,
-  `service_categories_delete`, `service_categories_reorder`; resource `services://catalog`.
-  Scopes `services:read`, `services:write`, `service-categories:read`, `service-categories:write`.
+  `services_version_restore`, `services_delete`, `services_reorder`, `services_restore`,
+  `services_purge`, and `service_categories_list`, `service_categories_create`,
+  `service_categories_update`, `service_categories_delete`, `service_categories_reorder`; resource
+  `services://catalog`. Scopes `services:read`, `services:write`, `service-categories:read`,
+  `service-categories:write`.
 - Also registered: link sources (services and categories in every link picker), the sitemap entry
   of the index, demo content (`resources/demo`).
+
+### Permissions
+
+| Permission                   | Opens                                                                                                                                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `services.view`              | services and categories, read-only: the lists, the editor, versions; `services_list`, `services_get`, `services_versions`, `service_categories_list`, `service_categories_get`; services in other modules' relation pickers (the Services field) |
+| `services.manage`            | create, edit, reorder (the whole list and inside a category), publish, unpublish, discard, delete and restore services, restore a version; the `services:write` tools                                                                            |
+| `services.categories.manage` | categories: create, edit, reorder, delete; the `service-categories:write` tools                                                                                                                                                                  |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:services.view,services.manage` to read, `cms.can:services.manage` to write.
 
 ## Change it without forking
 

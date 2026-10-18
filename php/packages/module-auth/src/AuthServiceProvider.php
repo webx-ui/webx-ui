@@ -6,13 +6,18 @@ namespace WebxUi\Auth;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\CachesRoutes;
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
+use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Auth\Consent\ConsentScreen;
 use WebxUi\Auth\Console\CreateAdminCommand;
+use WebxUi\Auth\Console\DefaultRolesCommand;
 use WebxUi\Auth\Console\McpTokenCommand;
 use WebxUi\Auth\Events\AdminLoggedIn;
 use WebxUi\Auth\Events\AdminLoginFailed;
@@ -20,6 +25,9 @@ use WebxUi\Auth\Http\Middleware\Authenticate;
 use WebxUi\Auth\Http\Middleware\EnsurePermission;
 use WebxUi\Auth\Http\Middleware\SignInBeforeConsent;
 use WebxUi\Auth\Listeners\RecordSignIn;
+use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Auth\Models\Role;
+use WebxUi\Localization\Http\Middleware\SetPanelLocale;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -49,11 +57,14 @@ class AuthServiceProvider extends ServiceProvider
         $router = $this->app->make('router');
         $router->aliasMiddleware('cms.auth', Authenticate::class);
         $router->aliasMiddleware('cms.can', EnsurePermission::class);
+        $this->checkBeforeBinding();
 
         $this->routeConsent($router);
 
         $registry = $this->app->make(ModuleRegistry::class);
         $registry->register(new AuthModule);
+
+        $this->registerHistory();
 
         $connect = new ConnectModule($this->app->make('config'));
 
@@ -82,7 +93,72 @@ class AuthServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views' => resource_path('views/vendor/webx-auth'),
         ], 'webx-auth-views');
 
-        $this->commands([CreateAdminCommand::class, McpTokenCommand::class]);
+        $this->commands([CreateAdminCommand::class, DefaultRolesCommand::class, McpTokenCommand::class]);
+    }
+
+    /**
+     * Sign-in and permission before the route's models are looked up: otherwise somebody
+     * without the permission asks for `admins/7` and learns from a 404 or a 403 whether there is
+     * a seventh administrator. The panel's language goes first, so the refusal reads in it.
+     */
+    private function checkBeforeBinding(): void
+    {
+        if (! $this->app->bound(HttpKernelContract::class)) {
+            return;
+        }
+
+        $kernel = $this->app->make(HttpKernelContract::class);
+
+        if (! $kernel instanceof HttpKernel) {
+            return;
+        }
+
+        foreach ([SetPanelLocale::class, Authenticate::class, EnsurePermission::class] as $middleware) {
+            $kernel->addToMiddlewarePriorityBefore(SubstituteBindings::class, $middleware);
+        }
+    }
+
+    /**
+     * Who may do what, and every change to it, in the journal (WEBX_UI_PERMISSIONS.md §9):
+     * accounts, roles, and who holds which. Read by whoever audits access or manages people.
+     */
+    private function registerHistory(): void
+    {
+        $types = $this->app->make(HistoryTypes::class);
+        $readers = ['admins.audit', 'admins.manage'];
+
+        $types->register(
+            CmsUser::TYPE,
+            CmsUser::class,
+            fields: [
+                'name' => 'webx-auth::history.name',
+                'email' => 'webx-auth::history.email',
+                'avatar' => 'webx-auth::history.avatar',
+                'is_active' => 'webx-auth::history.is-active',
+                'is_super' => 'webx-auth::history.is-super',
+                'locale' => 'webx-auth::history.locale',
+                'password' => 'webx-auth::history.password',
+                'roles' => 'webx-auth::history.roles',
+                'refused' => 'webx-auth::history.refused',
+            ],
+            permission: $readers,
+            module: AuthModule::ID,
+            label: 'webx-auth::history.admin',
+        );
+
+        $types->register(
+            Role::TYPE,
+            Role::class,
+            fields: [
+                'slug' => 'webx-auth::history.slug',
+                'name' => 'webx-auth::history.name',
+                'permissions' => 'webx-auth::history.permissions',
+                'refused' => 'webx-auth::history.refused',
+            ],
+            permission: [...$readers, 'roles.manage'],
+            module: AuthModule::ID,
+            label: 'webx-auth::history.role',
+        );
     }
 
     /**

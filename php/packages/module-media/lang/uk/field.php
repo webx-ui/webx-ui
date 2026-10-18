@@ -23,4 +23,5 @@ return [
     'remove-confirm' => 'Прибрати',
     'count' => ':count із :max',
     'at-least' => 'Не менше :count',
+    'locked' => 'Медіатека вам недоступна',
 ];

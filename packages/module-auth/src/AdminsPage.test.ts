@@ -12,7 +12,7 @@ const empty = {
   filters: { users: [], tools: [] },
 }
 
-function panel(permissions: string[], current: 'admins' | 'calls' = 'admins') {
+function panel(permissions: string[], current: 'admins' | 'roles' | 'calls' = 'admins') {
   const get = vi
     .fn()
     .mockImplementation((url: string) =>
@@ -53,21 +53,24 @@ function panel(permissions: string[], current: 'admins' | 'calls' = 'admins') {
 }
 
 describe('WxAdminsPage', () => {
-  it('offers each further view only to somebody who may see it, and no strip for one view', async () => {
-    // Reading the list is not managing it and not auditing it: one view is no view.
+  it('offers each view only to somebody who may see it, and no strip for one view', async () => {
+    // Reading the list is not managing it and not auditing it; the roles are read with it.
     const { wrapper } = panel(['admins.view'])
     await flushPromises()
 
-    expect(wrapper.find('.wx-tabs').exists()).toBe(false)
+    expect(wrapper.findAll('.wx-tabs__tab').map((tab) => tab.text())).toEqual([
+      'Administrators',
+      'Roles',
+    ])
     expect(wrapper.find('.wx-admin-list').exists()).toBe(true)
 
+    // The log alone is one view, and the address of the people opens it instead of a 403.
     const { wrapper: auditor } = panel(['admins.audit'])
     await flushPromises()
 
-    expect(auditor.findAll('.wx-tabs__tab').map((tab) => tab.text())).toEqual([
-      'Administrators',
-      'Agent calls',
-    ])
+    expect(auditor.find('.wx-tabs').exists()).toBe(false)
+    expect(auditor.find('.wx-call-list').exists()).toBe(true)
+    expect(auditor.find('.wx-admin-list').exists()).toBe(false)
 
     // Everybody's connections are the same question as everybody's accounts, and a key speaks
     // for somebody's account.
@@ -76,9 +79,31 @@ describe('WxAdminsPage', () => {
 
     expect(manager.findAll('.wx-tabs__tab').map((tab) => tab.text())).toEqual([
       'Administrators',
+      'Roles',
       'Connections',
       'Keys',
     ])
+  })
+
+  it('lets whoever edits roles add one, and shows the rest of them the list only', async () => {
+    const { wrapper: editor } = panel(['roles.manage'], 'roles')
+    await flushPromises()
+
+    expect(editor.find('.wx-role-list').exists()).toBe(true)
+    expect(editor.text()).toContain('Add')
+
+    const { wrapper: reader } = panel(['admins.view'], 'roles')
+    await flushPromises()
+
+    expect(reader.find('.wx-role-list').exists()).toBe(true)
+    expect(reader.text()).not.toContain('Add')
+
+    // Somebody with none of it — an address typed by hand — is told so.
+    const { wrapper: nobody } = panel([], 'roles')
+    await flushPromises()
+
+    expect(nobody.find('.wx-role-list').exists()).toBe(false)
+    expect(nobody.find('.wx-result').exists()).toBe(true)
   })
 
   it('draws the log on its own address, and keeps `Add` for the people', async () => {

@@ -6,12 +6,13 @@ namespace WebxUi\Catalog\Exchange;
 
 use Closure;
 use Illuminate\Contracts\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use Throwable;
+use WebxUi\Admin\Remote\FetchRefused;
+use WebxUi\Admin\Remote\RemoteFetcher;
+use WebxUi\Admin\Support\PrivateDisk;
 use WebxUi\Admin\Uploads\Upload;
 use WebxUi\Admin\Uploads\UploadRefused;
 use WebxUi\Admin\Uploads\Uploads;
@@ -34,7 +35,13 @@ final class ExchangeFiles
 
     public function disk(): Filesystem
     {
-        return Storage::disk((string) (config('webx-catalog.exchange.disk') ?: 'local'));
+        $name = (string) (config('webx-catalog.exchange.disk') ?: 'local');
+
+        // An export is the catalogue with every column its starter could read, prices included;
+        // on a public disk it is the catalogue for anyone with the address.
+        PrivateDisk::fromConfig()->assert($name, 'webx-catalog.exchange.disk');
+
+        return Storage::disk($name);
     }
 
     public function maxBytes(): int
@@ -106,13 +113,47 @@ final class ExchangeFiles
     }
 
     /**
-     * Download an address into a temporary file, refusing past `exchange.max_bytes` before the
-     * body when the server says how large it is, and as soon as it grows past it when not.
+     * An address an import may be given: the switch `exchange.url_import` on, http(s), and a host
+     * `exchange.url_hosts` lets through when it names any. The network is the download's to
+     * check, on every redirect; this is what can be said before the run is queued.
+     *
+     * @throws ValidationException
+     */
+    public function assertUrl(string $url): void
+    {
+        if (! (bool) config('webx-catalog.exchange.url_import', true)) {
+            throw self::refused('url', 'url-off');
+        }
+
+        if (filter_var($url, FILTER_VALIDATE_URL) === false || ! in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            throw self::refused('url', 'not-a-url', ['url' => $url]);
+        }
+
+        try {
+            $this->fetcher()->check($url);
+        } catch (FetchRefused $refused) {
+            throw self::refused('url', 'unreachable', ['reason' => $refused->getMessage()]);
+        }
+    }
+
+    /**
+     * Download an address into a temporary file through the site's {@see RemoteFetcher}: public
+     * addresses only, checked on every redirect; refused past `exchange.max_bytes` before the body
+     * when the server says how large it is, and as soon as it grows past it when not.
+     *
+     * What came back has to look like a file of the exchange — a spreadsheet or text, never a
+     * page — or it is refused without a word of it: `inspect` shows the header and five rows of
+     * whatever it is given, and an error page read back that way is an answer the site was never
+     * meant to hand out.
      *
      * @throws RuntimeException with words for the run's errors
      */
     public function download(string $url): string
     {
+        if (! (bool) config('webx-catalog.exchange.url_import', true)) {
+            throw new RuntimeException((string) __('webx-catalog::exchange.errors.url-off'));
+        }
+
         $limit = $this->maxBytes();
         $temporary = tempnam(sys_get_temp_dir(), 'webx-exchange-');
 
@@ -121,34 +162,59 @@ final class ExchangeFiles
         }
 
         try {
-            $response = Http::timeout(600)->withOptions([
-                'sink' => $temporary,
-                'on_headers' => static function (ResponseInterface $headers) use ($limit): void {
-                    if ((int) $headers->getHeaderLine('Content-Length') > $limit) {
-                        throw new RuntimeException('too-large');
-                    }
-                },
-                'progress' => static function (int $total, int $downloaded) use ($limit): void {
-                    if ($downloaded > $limit) {
-                        throw new RuntimeException('too-large');
-                    }
-                },
-            ])->get($url);
-        } catch (Throwable $failed) {
-            @unlink($temporary);
-
-            throw new RuntimeException(str_contains($failed->getMessage(), 'too-large')
+            $fetched = $this->fetcher()->download($url, $temporary, $limit, timeout: 600);
+        } catch (FetchRefused $refused) {
+            throw new RuntimeException($refused->reason === FetchRefused::TOO_LARGE
                 ? (string) __('webx-catalog::exchange.errors.too-large', ['max' => intdiv($limit, 1048576)])
-                : (string) __('webx-catalog::exchange.errors.unreachable', ['reason' => $failed->getMessage()]), 0, $failed);
+                : (string) __('webx-catalog::exchange.errors.unreachable', ['reason' => $refused->getMessage()]), 0, $refused);
         }
 
-        if (! $response->successful()) {
+        if (! self::looksLikeExchange($temporary, $fetched->contentType)) {
             @unlink($temporary);
 
-            throw new RuntimeException((string) __('webx-catalog::exchange.errors.unreachable', ['reason' => 'HTTP '.$response->status()]));
+            throw new RuntimeException((string) __('webx-catalog::exchange.errors.not-a-table', ['type' => $fetched->contentType ?? '?']));
         }
 
         return $temporary;
+    }
+
+    /**
+     * A spreadsheet (a zip) or text that is not a web page: what the formats read. A CSV with a
+     * stray byte still reads; a page, an image or an archive of something else does not.
+     */
+    public static function looksLikeExchange(string $path, ?string $contentType): bool
+    {
+        if (in_array($contentType, ['text/html', 'application/xhtml+xml'], true)) {
+            return false;
+        }
+
+        $head = (string) @file_get_contents($path, length: 8192);
+
+        if (str_starts_with($head, "PK\x03\x04")) {
+            return true;
+        }
+
+        if (str_contains($head, "\0") && ! str_starts_with($head, "\xFF\xFE") && ! str_starts_with($head, "\xFE\xFF")) {
+            return false;
+        }
+
+        $start = strtolower(ltrim(preg_replace('/^\xEF\xBB\xBF/', '', $head) ?? $head));
+
+        foreach (['<!doctype', '<html', '<head', '<body', '<?xml', '<svg', '<script'] as $page) {
+            if (str_starts_with($start, $page)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function fetcher(): RemoteFetcher
+    {
+        /** @var list<string> $hosts */
+        $hosts = array_values(array_map('strval', (array) config('webx-catalog.exchange.url_hosts', [])));
+
+        return app(RemoteFetcher::class)->onlyHosts($hosts);
     }
 
     /**

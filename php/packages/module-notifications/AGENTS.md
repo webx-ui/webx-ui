@@ -17,9 +17,7 @@ of the panel and the MCP tools `notifications_*` edit channels; the panel and it
 - **Registries** `Providers` (`telegram`, `email`) and `NotificationEvents`.
 - **API for consumers** `Notifications::send()`; the job `Jobs\Deliver` — three attempts, after
   the response when the queue is `sync`; `Notifications::test()`, `retry()`, `deliveriesFor()`.
-- **Panel screen** `notifications.channel`, API under `/api/cms/notifications`. Two permissions,
-  `notifications.view` (channels and the log — with what visitors typed) and
-  `notifications.manage`; no role gets them on install.
+- **Panel screen** `notifications.channel`, API under `/api/cms/notifications`.
 - **MCP** tools `notifications_channels_list`, `_channel_get`, `_channel_create`, `_channel_update`,
   `_channel_delete`, `_channel_copy`, `_preview`, `_test`, `_find_chats`, `_deliveries`, `_retry`;
   resources `notifications://providers`, `notifications://events`, `notifications://channels`.
@@ -27,6 +25,17 @@ of the panel and the MCP tools `notifications_*` edit channels; the panel and it
 - **Command** `webx:notifications:prune {--days=} {--dry-run}`, scheduled daily; the doctor check
   `Doctor\NotificationsCheck`. Config `config/webx-notifications.php`.
 - Also registered: demo content (`resources/demo`) — one e-mail channel, switched off.
+
+### Permissions
+
+| Permission             | Opens                                                                                                                                                                                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `notifications.view`   | channels and the delivery log, read-only — with what visitors typed (`GET meta`, `channels`, `channels/{channel}`, `deliveries`); `notifications_channels_list`, `_channel_get`, `_preview`, `_deliveries`; the journal of a channel                                              |
+| `notifications.manage` | the same, plus create, edit, copy, delete, restore and purge channels, test and preview sends, find chats and recipients, the administrators picker, retry a delivery; `_channel_create`, `_channel_update`, `_channel_delete`, `_channel_copy`, `_test`, `_find_chats`, `_retry` |
+
+Ready-made roles: `leads` holds `notifications.view`, `developer` both. A route or screen node the
+site adds next to the module asks the same: `cms.can:notifications.view,notifications.manage` to
+read, `cms.can:notifications.manage` to write.
 
 ## Change it without forking
 

@@ -51,6 +51,12 @@ final class Exporter
         $chosen = $this->formats->find($format) ?? throw ExchangeFiles::refused('format', 'unknown-format', ['known' => implode(', ', $this->formats->keys())]);
         $codes = $this->codes($codes, $can);
         $trashed = filter_var($selection['trashed'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        // «Deleted» is behind its own permission in the panel; a file of it is the same list.
+        if ($trashed && $can !== null && ! $can('catalog.delete')) {
+            throw ExchangeFiles::refused('selection', 'forbidden', ['permission' => 'catalog.delete']);
+        }
+
         $ids = $this->selection->resolve($selection, $trashed, $this->locales->content());
 
         $context = $this->container->make(HistoryContext::class);

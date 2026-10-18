@@ -53,7 +53,11 @@ final class SeoFaqController
         $request->validate(['format' => ['nullable', Rule::in(['csv', 'xlsx'])]]);
 
         $format = (string) $request->input('format', 'csv');
-        $path = tempnam(sys_get_temp_dir(), 'wxf').'.'.$format;
+        // `tempnam()` makes the name by making the file; the writer needs the extension, so
+        // that file becomes this one rather than staying behind empty in the temp folder.
+        $reserved = (string) tempnam(sys_get_temp_dir(), 'wxf');
+        $path = $reserved.'.'.$format;
+        rename($reserved, $path);
 
         $export->write($path, $format);
 

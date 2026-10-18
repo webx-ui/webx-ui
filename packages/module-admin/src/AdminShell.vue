@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watchEffect } from 'vue'
+import { computed, onUnmounted, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { shellLayoutFor, useResponsiveShell, WxToaster } from '@webx-ui/core'
 import { useAdmin } from './admin'
 import { useTranslate } from './i18n'
+import AdminForbidden from './AdminForbidden.vue'
 import SiteLink from './SiteLink.vue'
 
 /**
@@ -54,6 +55,32 @@ const siteLabel = computed(() =>
 const route = useRoute()
 // Optional: a test may mount the shell without a router.
 const bare = computed(() => route?.meta?.bare === true)
+
+/*
+ * A new page shuts the drawer, whoever asked for it. The menu's own links do so as they are
+ * picked; a link from inside something the drawer opened — the profile dialog from the account
+ * corner at its foot — would otherwise land the person on a page hidden behind it.
+ */
+watch(
+  () => route?.path,
+  () => close(),
+)
+
+/*
+ * A page of a section the manifest says this administrator may not open: «no access» instead of
+ * the page, which would otherwise draw itself and fill with refusals. The section is whatever
+ * module the matched routes belong to (`meta.module`, set by `createAdmin`).
+ */
+const forbidden = computed(() =>
+  (route?.matched ?? []).some((record) => {
+    const id = record.meta.module
+
+    return (
+      typeof id === 'string' &&
+      admin.state.manifest?.modules.find((module) => module.id === id)?.allowed === false
+    )
+  }),
+)
 
 /*
  * The client's logo, when the settings hold one. The name never leaves: it is the alt of the
@@ -251,7 +278,8 @@ onUnmounted(() => {
       </wx-aside>
 
       <wx-main padding="none" class="wx-admin__screen">
-        <router-view />
+        <admin-forbidden v-if="forbidden" />
+        <router-view v-else />
       </wx-main>
     </wx-container>
 

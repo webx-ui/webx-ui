@@ -63,6 +63,7 @@ final class HistoryController
             $run,
             is_string($search) && ctype_digit($search) ? (int) $search : null,
             max(1, (int) $request->query('page', '1')),
+            types: array_keys($this->types->readable($request->user())),
         );
 
         return new JsonResponse([

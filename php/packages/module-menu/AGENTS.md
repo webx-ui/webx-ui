@@ -23,14 +23,23 @@ when the question is about one of those.
 - **Cache** `WebxUi\Menu\MenuCache`, per menu and language; saves, moves, deletes, address
   changes and publishing an entity an item points at forget it on their own.
 - **Panel section** `menu` (order 400, requires `pages`); API under `config('webx-admin.api_path')` + `/menus`, a menu
-  addressed by its key, with `cache/flush` for one menu or all; permissions `menu.view`,
-  `menu.manage` (the cache reset is `manage`).
+  addressed by its key, with `cache/flush` for one menu or all.
 - **MCP** tools `menu_list_menus`, `menu_get_tree`, `menu_add_link`, `menu_update_link`,
   `menu_move_link`, `menu_remove_link`; resource `menu://menus` (the catalogue and house rules);
   no prompt. Scopes `menu:read`, `menu:write`. Menus themselves are not made through MCP.
 - Also registered: audit checks `menu.broken` and `menu.redirect` when `webx-ui/module-audit` is
   installed, a block type `menu` offered to `webx-ui/module-blocks`, demo content
   (`resources/demo`).
+
+### Permissions
+
+| Permission    | Opens                                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `menu.view`   | the menus and their items, read-only; `menu_list_menus`, `menu_get_tree`                                            |
+| `menu.manage` | create, edit, delete a menu; add, edit, move, delete items; the cache reset (`cache/flush`); the `menu:write` tools |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:menu.view,menu.manage` to read, `cms.can:menu.manage` to write.
 
 ## Change it without forking
 

@@ -147,12 +147,13 @@ the same transaction.
   `DatabaseUsage`, reads the schema — foreign keys into `media_files`, and the last segment of
   the file's key (a uuid) inside text and JSON columns. History, logs and queues are skipped
   (`webx-media.usage.ignore`).
-- `upload_from_url` fetches only from the public internet: the host is resolved, every address
+- `upload_from_url` fetches only from the public internet, through `module-admin`'s
+  `RemoteFetcher` like every module: the host is resolved, every address
   is checked (loopback, private, link-local, reserved, in both families and inside IPv6), the
   connection is pinned to the checked address, and redirects are followed by hand and checked
   the same way. The type is sniffed from the bytes, the name gets an extension from the upload
   white list, and the panel's upload rules apply. `webx-media.remote.allow_hosts` names hosts on
-  the site's own network that may be fetched anyway.
+  the site's own network that may be fetched anyway, as does `webx-admin.remote.trusted_hosts`.
 
 ## Configuration
 
@@ -182,6 +183,48 @@ rather than the missing package.
 
 Uploads are limited by size and by a white list of types, and images are refused above
 `image.max_pixels` before they are decoded — a small file can still be a very large picture.
+
+## Serving files
+
+What people upload is served on the site's own origin, so two things hold.
+
+**Types come from the bytes.** The extension a file is kept under and its `mime` are read from its
+content (`WebxUi\Media\Support\FileTypes`), never from the name or the type the browser sent: a PNG
+named `x.html` is kept as `.png`. The extension must be on `upload.extensions` and agree with the
+content; browser documents — `html`, `xml`, `js`, `svgz`, PHP — are refused even when listed.
+
+**An SVG is sanitized.** It is a document, not a picture: opened by its address it runs scripts.
+Every SVG goes through `WebxUi\Media\Support\SvgSanitizer` on the way in — `rhukster/dom-sanitizer`
+(DOMPurify's allow-lists), then the module's own pass: no `on*` handler, no `<script>` or
+`<foreignObject>`, every `href` a fragment of the same document except an inline raster in
+`<image>`. One that is not a well-formed SVG is refused. For SVGs uploaded before:
+
+```bash
+php artisan webx:media:sanitize-svg --dry-run   # what would be removed, file by file
+php artisan webx:media:sanitize-svg             # write it; keys stay, the version in the address moves
+```
+
+It also lists SVGs that cannot be sanitized and files kept under an extension the library no
+longer accepts — check those and delete or re-upload them.
+
+**Headers.** What PHP serves (`files/{file}/source`) carries `X-Content-Type-Options: nosniff` and,
+for SVG, `Content-Security-Policy: default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox`.
+The public disk is served by the web server, so the same headers go into its configuration —
+the site skeleton has them in `docker/nginx.conf` and `public/.htaccess`:
+
+```nginx
+location /storage/ {
+    add_header X-Content-Type-Options nosniff always;
+    location ~* \.svg$ {
+        add_header X-Content-Type-Options nosniff always;
+        add_header Content-Security-Policy "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox" always;
+        try_files $uri /index.php?$query_string;
+    }
+    try_files $uri /index.php?$query_string;
+}
+```
+
+On S3 or behind a CDN, set them as response headers there. `php artisan serve` sets none.
 
 ## Chunked uploads
 

@@ -106,7 +106,7 @@ final class ExchangeTools
                 'One run of the exchange: its status (queued, running, done, stopped, failed), progress, the counts — created, '
                 .'updated, skipped, failed, absent — the first '.self::ERRORS.' errors (row, column, value, reason) with how '
                 .'many there are, and for a finished export the file_url.',
-                fn (array $arguments): array => $this->run($arguments),
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->run($arguments, $user),
                 ['properties' => ['run' => $run], 'required' => ['run']],
                 permission: self::ANY,
             ),
@@ -222,7 +222,7 @@ final class ExchangeTools
             $can,
         );
 
-        return $this->answer($run);
+        return $this->answer($run, $user);
     }
 
     /**
@@ -239,6 +239,12 @@ final class ExchangeTools
         }
 
         $files = $this->container->make(ExchangeFiles::class);
+
+        try {
+            $files->assertUrl($url);
+        } catch (ValidationException $refused) {
+            throw new ToolFailure($refused->getMessage());
+        }
 
         try {
             $temporary = $files->download($url);
@@ -275,19 +281,19 @@ final class ExchangeTools
 
         $run = $this->container->make(Exporter::class)->start($selection, $codes, $format, $profile?->id, $user, $this->can($user));
 
-        return $this->answer($run);
+        return $this->answer($run, $user);
     }
 
     /**
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
-    private function run(array $arguments): array
+    private function run(array $arguments, ?Authenticatable $user): array
     {
         $id = $arguments['run'] ?? null;
         $id = is_int($id) || (is_string($id) && ctype_digit($id)) ? (int) $id : throw new ToolFailure('run is an id.');
 
-        return $this->answer(ExchangeRun::query()->find($id) ?? throw new ToolFailure('There is no such run.'));
+        return $this->answer(ExchangeRun::query()->find($id) ?? throw new ToolFailure('There is no such run.'), $user);
     }
 
     /**
@@ -295,12 +301,12 @@ final class ExchangeTools
      *
      * @return array<string, mixed>
      */
-    private function answer(ExchangeRun $run): array
+    private function answer(ExchangeRun $run, ?Authenticatable $user): array
     {
         $errors = DB::table('catalog_exchange_errors')->where('run_id', $run->id);
 
         return [
-            'run' => $run->toResponse(),
+            'run' => $run->toResponse($user),
             'errors_total' => (clone $errors)->count(),
             'errors' => $errors->orderBy('row')->orderBy('id')->limit(self::ERRORS)->get(['row', 'column', 'value', 'message'])
                 ->map(static fn (object $error): array => (array) $error)->all(),

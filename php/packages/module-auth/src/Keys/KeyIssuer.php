@@ -11,6 +11,7 @@ use Laravel\Passport\ClientRepository;
 use Laravel\Passport\Passport;
 use LogicException;
 use RuntimeException;
+use WebxUi\Admin\Access\AccessPolicy;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Mcp\Keys\Key;
 use WebxUi\Mcp\Keys\Keys;
@@ -41,6 +42,7 @@ final class KeyIssuer
         private readonly ToolRegistry $tools,
         private readonly ClientRepository $clients,
         private readonly Keys $keys,
+        private readonly AccessPolicy $policy,
     ) {}
 
     /**
@@ -52,6 +54,34 @@ final class KeyIssuer
     public function known(): array
     {
         return [Scopes::OAUTH, ...$this->tools->scopes()];
+    }
+
+    /**
+     * The scopes a key for this administrator may carry: `mcp:use`, which is whatever they may
+     * do, and each module scope that reaches at least one tool they may use
+     * (WEBX_UI_PERMISSIONS.md §7). A scope that reaches nothing of theirs would be a key that
+     * promises more than it can do — and, the day they are given a role, more than anybody
+     * chose to hand that program.
+     *
+     * Only the issue is limited here. What a call may do is asked again on every call, scope ∩
+     * the owner's permissions of that moment, so a role taken away narrows the key at once.
+     *
+     * @return list<string>
+     */
+    public function usable(CmsUser $owner): array
+    {
+        $usable = [];
+
+        foreach ($this->tools->tools() as $tool) {
+            if ($this->policy->allows($owner, $tool->permissions())) {
+                array_push($usable, ...$tool->scopes());
+            }
+        }
+
+        $usable = array_values(array_unique($usable));
+        sort($usable);
+
+        return [Scopes::OAUTH, ...$usable];
     }
 
     /**
@@ -126,6 +156,16 @@ final class KeyIssuer
         // answers 403.
         if (! $admin->is_active) {
             throw new KeyRefused("The administrator [{$admin->email}] is switched off.");
+        }
+
+        // Here rather than in each door, so that the console cannot issue what the panel would not.
+        $beyond = array_values(array_diff($scopes, $this->usable($admin)));
+
+        if ($beyond !== []) {
+            throw new KeyRefused(
+                "The administrator [{$admin->email}] holds no permission that ".implode(', ', $beyond).' would reach. They may be given: '.implode(', ', $this->usable($admin)).'.',
+                'scopes',
+            );
         }
 
         $trouble = $this->missingSetup();

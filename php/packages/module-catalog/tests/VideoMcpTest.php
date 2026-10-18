@@ -59,7 +59,7 @@ final class VideoMcpTest extends TestCase
         foreach (self::TOOLS as $name => $access) {
             $this->assertArrayHasKey($name, $tools);
             $this->assertSame('catalog:'.$access, $tools[$name]->scope());
-            $this->assertSame($access === 'read' ? ['catalog.view', 'catalog.manage'] : ['catalog.manage'], $tools[$name]->permissions());
+            $this->assertSame($access === 'read' ? ['catalog.view', 'catalog.manage', 'catalog.delete'] : ['catalog.manage'], $tools[$name]->permissions());
         }
 
         // A reader reads the gallery and is refused every change to it.

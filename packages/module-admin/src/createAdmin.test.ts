@@ -362,6 +362,66 @@ describe('createAdmin', () => {
     expect(admin.context.nav.value.map((entry) => entry.id)).toEqual(['pages'])
   })
 
+  it('leaves out what the administrator may not open, and says «no access» at its address', async () => {
+    // The server builds the manifest for whoever asks (WEBX_UI_PERMISSIONS.md §11).
+    const closed: Manifest = {
+      ...manifest,
+      modules: [
+        {
+          id: 'pages',
+          title: 'Pages',
+          icon: null,
+          order: 0,
+          permissions: [],
+          allowed: true,
+          meta: {},
+        },
+        {
+          id: 'media',
+          title: 'Files',
+          icon: null,
+          order: 1,
+          permissions: ['media.view'],
+          allowed: false,
+          meta: {},
+        },
+      ],
+    }
+
+    window.history.replaceState({}, '', '/cms/media/folder')
+
+    const admin = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      routes: [rootRoute],
+      http: stubHttp({
+        get: ((url: string) =>
+          Promise.resolve(url.endsWith('/manifest') ? { data: closed } : answer(url))) as never,
+      }),
+      modules: [
+        { id: 'pages', routes: [{ path: '/pages', component: { render: () => h('p', 'pages') } }] },
+        {
+          id: 'media',
+          routes: [{ path: '/media/:rest(.*)*', component: { render: () => h('p', 'library') } }],
+        },
+      ],
+    })
+
+    await admin.mount()
+    await admin.router.isReady()
+    await flushPromises()
+
+    expect(admin.context.nav.value.map((entry) => entry.id)).toEqual(['pages'])
+    expect(document.body.textContent).toContain('No access')
+    expect(document.body.textContent).not.toContain('library')
+
+    await admin.router.push('/pages')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('pages')
+    expect(document.body.textContent).not.toContain('No access')
+  })
+
   it('carries the count a module puts under meta.badge, and nothing that is not one', async () => {
     const counted = (badge: unknown) => ({
       ...manifest,
@@ -494,6 +554,34 @@ describe('createAdmin', () => {
     // The photograph once; the lost file again, since an upload may have brought it back.
     expect(resolved).toEqual([['me.jpg'], ['lost.jpg'], ['lost.jpg']])
   })
+  it('hands the editors a picture library only while the person may open it', () => {
+    const pick = () => Promise.resolve(null)
+    const admin = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      routes: [rootRoute],
+      modules: [{ id: 'media', pickImage: pick, pickImageWith: ['media.view', 'media.manage'] }],
+      http: stubHttp(),
+    })
+    const user = (permissions: string[]) => ({
+      id: 1,
+      name: 'Editor',
+      email: 'editor@example.test',
+      isSuper: false,
+      permissions,
+    })
+
+    admin.context.setUser(user(['pages.manage']))
+    expect(admin.context.pickImage).toBeNull()
+
+    // The same panel, somebody else signed in: it follows the person, not the boot.
+    admin.context.setUser(user(['media.manage']))
+    expect(admin.context.pickImage).toBe(pick)
+
+    admin.context.setUser({ ...user([]), isSuper: true })
+    expect(admin.context.pickImage).toBe(pick)
+  })
+
   it('opens on the section that claimed the root, and on the first one when none did', async () => {
     // Nothing answered at '/' until now: the routes are the modules', and none of them was
     // the front page. Signing in landed on a blank screen.

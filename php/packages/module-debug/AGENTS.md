@@ -21,19 +21,27 @@ what the resolver found (`webx-ui/routing`). The same report goes to an agent as
 - **Reports**: in a cache store (`webx-debug.store`), key `webx:debug:<ulid>`, TTL
   `webx-debug.ttl` (600 s), the last `webx-debug.keep` (20) per administrator. No table.
 - **Routes**: `GET /cms/_debug/bar.{hash}.js` (the script), `GET /api/cms/debug/reports` and
-  `GET /api/cms/debug/reports/{id}` behind `cms.can:debug.view`, only the maker's — anybody
-  else's id is a 404.
+  `GET /api/cms/debug/reports/{id}`, only the maker's — anybody else's id is a 404.
 - **Script** `resources/js/debug-bar.js`, no dependencies, in a shadow root: the summary line,
   the panel with tabs (fetches the report on first open), height, state in `localStorage['wx-debug']`;
   keeps left of the site panel's drawer by its `wx-bar:layout` event. Check it in a browser.
-- **Permission** `debug.view` (module `debug`), given to no role on install.
-- **MCP** tool `debug_page` (scope `debug:read`, permission `debug.view`), read only.
+- **MCP** tool `debug_page` (scope `debug:read`), read only.
 - **Points of measure in other packages**, sent only while somebody listens:
   `WebxUi\Routing\Events\{Resolving,Resolved}`, `WebxUi\Blocks\Events\{RegionRendering,
 RegionRendered,BlockRendering,BlockRendered}`, `WebxUi\Cache\Events\GroupRead`.
 - **Config** `config/webx-debug.php`: `enabled` (`WEBX_DEBUGBAR`), `store`, `ttl`, `keep`,
   `slow_ms` (50), `repeat` (3), `limits`, `mask.{columns,tables,headers}`, `events`,
   `mcp.resolve_to` (`WEBX_DEBUGBAR_RESOLVE_TO`), `mcp.timeout`.
+
+### Permissions
+
+| Permission                    | Opens                                                                                                |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `debug.view` (module `debug`) | the bar on the site's pages, `GET debug/reports` and `debug/reports/{id}`, the MCP tool `debug_page` |
+
+In no ready-made role and given to none on install. The bar's script (`/cms/_debug/bar.{hash}.js`)
+has no middleware — the same file for everybody, no data. A route or screen node the site adds
+next to the module asks the same: `cms.can:debug.view`.
 
 ## Change it without forking
 

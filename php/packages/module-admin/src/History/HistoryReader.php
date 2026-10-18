@@ -82,11 +82,21 @@ final readonly class HistoryReader
     /**
      * The rows of one run, in the order they were written, or only those about one record.
      *
+     * `$types` narrows them to the types a reader may see. The run is let in by its own type, but
+     * a run can write rows of others — an import of products touches categories, a role removed
+     * touches every administrator who held it — and each row is behind its own type's permission
+     * (§14.3 of the permissions spec). `null` is everything: the console and the tests.
+     *
+     * @param  list<string>|null  $types
      * @return LengthAwarePaginator<int, HistoryEntry>
      */
-    public function rowsOf(HistoryEntry $run, ?int $subjectId = null, int $page = 1, int $perPage = self::PER_PAGE): LengthAwarePaginator
+    public function rowsOf(HistoryEntry $run, ?int $subjectId = null, int $page = 1, int $perPage = self::PER_PAGE, ?array $types = null): LengthAwarePaginator
     {
         $query = HistoryEntry::query()->with('run')->where('parent_id', $run->id);
+
+        if ($types !== null) {
+            $query->whereIn('subject_type', $types);
+        }
 
         if ($subjectId !== null) {
             $query->where('subject_id', $subjectId);

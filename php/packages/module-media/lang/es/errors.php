@@ -11,6 +11,8 @@ return [
     'upload' => 'Ese archivo no fue aceptado.',
     'copy' => 'El portapapeles no está disponible aquí. La dirección:',
     'unsupported-type' => 'Solo se pueden subir: :types.',
+    'type-mismatch' => 'El contenido del archivo no coincide con su tipo.',
+    'unsafe-svg' => 'Este SVG no se puede aceptar: no es un dibujo SVG válido.',
     'file-too-large' => 'El archivo supera :size MB.',
     'too-many-files' => 'No más de :count archivos a la vez.',
     'file-not-found' => 'Ese archivo no está en la biblioteca.',

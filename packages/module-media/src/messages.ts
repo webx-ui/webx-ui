@@ -122,6 +122,7 @@ export const mediaMessages: Record<string, Messages> = {
     'remove-confirm': 'Remove',
     count: ':count of :max',
     'at-least': 'At least :count',
+    locked: 'The file library is not open to you',
   },
   // The image editor is a component of the design system, so its words are props rather than
   // lines in the dictionary — the manager hands it these when it opens it.
@@ -207,6 +208,8 @@ export const mediaMessages: Record<string, Messages> = {
     upload: 'That file was not accepted.',
     copy: 'The clipboard is not available here. The address:',
     'unsupported-type': 'Only these can be uploaded: :types.',
+    'type-mismatch': "The file's content does not match its type.",
+    'unsafe-svg': 'This SVG cannot be accepted: it is not a well-formed SVG drawing.',
     'file-too-large': 'The file is larger than :size MB.',
     'too-many-files': 'No more than :count files at a time.',
     'file-not-found': 'There is no such file in the library.',

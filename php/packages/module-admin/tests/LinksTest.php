@@ -50,6 +50,9 @@ final class LinksTest extends TestCase
 
         $this->assertSame(['landing'], $this->types($this->sources()->allowed(new Editor)));
         $this->assertSame(['page', 'landing'], $this->types($this->sources()->allowed(new Editor(['pages.view']))));
+        // The `manage` of the same family links too (§14.3); another action of it does not.
+        $this->assertSame(['page', 'landing'], $this->types($this->sources()->allowed(new Editor(['pages.manage']))));
+        $this->assertSame(['landing'], $this->types($this->sources()->allowed(new Editor(['pages.delete', 'blog.pages.manage']))));
         // Nobody signed in still sees what nothing guards, which is what the picker in a panel
         // with no auth module installed at all is looking at.
         $this->assertSame(['landing'], $this->types($this->sources()->allowed(null)));

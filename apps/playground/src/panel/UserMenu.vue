@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAdmin, useTheme } from '@webx-ui/module-admin'
+import { WxProfileDialog } from '@webx-ui/module-auth'
 import {
+  createModal,
   WxAvatar,
   WxDivider,
   WxDropdown,
@@ -20,6 +22,10 @@ import {
  * so the choice lives in this browser alone. The language is here rather than in the shell
  * because the panel a client runs puts it wherever their account lives — and it belongs
  * somewhere, or the ten dictionaries the packages ship can only be looked at on a site.
+ *
+ * And who to be: the three fixture administrators, so the panel can be looked at as somebody who
+ * holds less than everything (WEBX_UI_PERMISSIONS.md §11). Switching reloads the page — the
+ * manifest, the menu and every `can()` are worked out for the new person, as after a sign-in.
  */
 defineProps<{ expanded?: boolean }>()
 
@@ -29,6 +35,25 @@ const theme = useTheme()
 const locales = computed(() => admin.i18n.state.panelLocales)
 const locale = computed(() => admin.i18n.state.locale)
 const panel = admin.i18n.scope('webx-admin')
+
+const user = computed(() => admin.state.user)
+const people = ref<{ id: number; name: string; email: string }[]>([])
+
+void admin.http
+  .get<{ data: { id: number; name: string; email: string }[] }>('/api/cms/inbox/recipients')
+  .then((body) => (people.value = body.data))
+
+/* Opened on the next turn, as the real menu does: the menu is a layer that would eat the click. */
+const editProfile = createModal<true>(WxProfileDialog)
+
+function openProfile(): void {
+  setTimeout(() => void editProfile(), 0)
+}
+
+async function signInAs(id: number): Promise<void> {
+  await admin.http.put('/api/cms/auth/as', { id })
+  location.reload()
+}
 
 const preference = computed({
   get: () => theme.state.preference,
@@ -40,16 +65,22 @@ const preference = computed({
   <wx-dropdown placement="top-start">
     <template #trigger>
       <button class="account" type="button">
-        <wx-avatar size="sm" name="Анна Ковальчук" />
+        <wx-avatar size="sm" :name="user?.name ?? ''" />
         <template v-if="expanded">
           <span class="account__who">
-            <span class="account__name">Анна Ковальчук</span>
-            <span class="account__email">anna@example.test</span>
+            <span class="account__name">{{ user?.name }}</span>
+            <span class="account__email">{{ user?.email }}</span>
           </span>
           <wx-icon name="chevron-up" size="sm" class="account__chevron" />
         </template>
       </button>
     </template>
+
+    <wx-dropdown-item icon="user" @click="openProfile">
+      {{ admin.i18n.scope('webx-auth')('profile.menu') }}
+    </wx-dropdown-item>
+
+    <wx-divider spacing="sm" />
 
     <wx-dropdown-item disabled>
       <wx-text size="sm" tone="muted">{{ panel('theme.label') }}</wx-text>
@@ -77,6 +108,17 @@ const preference = computed({
       @click="admin.setLocale(item.code)"
     >
       {{ item.nativeName }}
+    </wx-dropdown-item>
+
+    <wx-divider spacing="sm" />
+
+    <wx-dropdown-item
+      v-for="person in people"
+      :key="person.id"
+      :icon="person.id === user?.id ? 'check' : 'user'"
+      @click="signInAs(person.id)"
+    >
+      {{ person.name }}
     </wx-dropdown-item>
 
     <wx-divider spacing="sm" />

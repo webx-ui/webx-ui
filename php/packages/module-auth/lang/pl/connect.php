@@ -40,5 +40,7 @@ return [
     'mine' => 'Twoje połączenia',
     'rules' => 'Zasady dla agentów',
     'rules-hint' => 'Każdy podłączony agent czyta je, zanim napisze coś, co zobaczy odwiedzający.',
+    'keys' => 'Twoje klucze',
+    'keys-hint' => 'Dla programu działającego bez przeglądarki — nocnego importu, strażnika kolejki. Klucz działa w Twoim imieniu i nie może więcej niż Ty.',
 
 ];

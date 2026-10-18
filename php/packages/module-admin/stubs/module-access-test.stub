@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+use WebxUi\Auth\Testing\AssertsPermissions;
+
+/**
+ * Nothing of the {{ title }} module is open to an administrator who holds no permission, and every
+ * permission it asks for is one a module declares. A route open to every administrator on purpose
+ * is named below with the reason; anything else without `cms.can` fails here.
+ *
+ * Guide: https://webx-ui.github.io/webx-ui/guide/permissions
+ */
+class {{ class }}AccessTest extends TestCase
+{
+    use AssertsPermissions;
+    use RefreshDatabase;
+
+    public function test_every_panel_route_asks_for_a_declared_permission(): void
+    {
+        $this->markTestIncomplete('Take this line out once the module serves its first panel route.');
+
+        $this->assertPanelRoutesNeedPermission(config('webx-admin.api_path').'/{{ id }}/', [
+            // 'GET api/cms/{{ id }}/names' => 'Why every administrator may call it.',
+        ]);
+    }
+
+    public function test_every_mcp_tool_asks_for_a_declared_permission(): void
+    {
+        $this->markTestIncomplete('Take this line out once the module registers its first MCP tool.');
+
+        $this->assertToolsNeedPermission('{{ id }}');
+    }
+}

@@ -427,6 +427,46 @@ final class HistoryTest extends TestCase
     }
 
     #[Test]
+    public function a_run_shows_only_the_rows_of_types_the_reader_may_read(): void
+    {
+        $product = Product::query()->create(['price' => '100']);
+
+        // A run is let in by its own type, and may write rows of another — an import touching
+        // the administrators, say. Each row is behind its own type's permission (§14.3).
+        $run = History::run('catalog.product', ['what' => 'import'], function ($run) use ($product) {
+            $product->update(['price' => '120']);
+
+            return $run;
+        }, HistoryContext::IMPORT);
+
+        HistoryEntry::query()->forceCreate([
+            'parent_id' => $run->id,
+            'subject_type' => 'admins.admin',
+            'subject_id' => 7,
+            'event' => 'updated',
+            'source' => 'import',
+            'admin_name' => '',
+            'changes' => [['field' => 'email', 'from' => 'a@example.test', 'to' => 'b@example.test']],
+        ]);
+
+        $this->actingAs(new Editor(['catalog.view']))
+            ->getJson('/api/cms/history/runs/'.$run->id)
+            ->assertOk()
+            ->assertJsonPath('rows.total', 1)
+            ->assertJsonPath('rows.data.0.subject.type', 'catalog.product');
+
+        $this->actingAs(new Editor(['catalog.view', 'admins.view']))
+            ->getJson('/api/cms/history/runs/'.$run->id)
+            ->assertJsonPath('rows.total', 2);
+
+        $tool = $this->tool('runs');
+        $answer = ($tool->handler)(['run_id' => $run->id], new Editor(['catalog.view']));
+        $this->assertSame(['catalog.product'], array_column(array_column($answer['entries'], 'subject'), 'type'));
+        // Nobody to ask — the local server — reads it whole.
+        $this->assertSame(2, ($tool->handler)(['run_id' => $run->id], null)['total']);
+    }
+
+    #[Test]
     public function history_runs_shows_only_the_runs_of_types_the_reader_may_read(): void
     {
         History::run('catalog.product', ['what' => 'prices'], static fn () => null, HistoryContext::IMPORT);

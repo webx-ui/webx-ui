@@ -56,4 +56,7 @@ return [
     'confirm' => 'Widerrufen',
     'revoked-done' => '„:name“ ist widerrufen',
     'empty' => 'Es wurden noch keine Schlüssel ausgestellt',
+    'lead-mine' => 'Ein Schlüssel lässt ein Programm – einen Warteschlangen-Wächter, einen nächtlichen Import – ohne Browser in Ihrem Namen im Panel arbeiten. Er darf nie mehr als Sie und nur in den gewählten Bereichen.',
+    'empty-mine' => 'Sie haben noch keine Schlüssel',
+
 ];

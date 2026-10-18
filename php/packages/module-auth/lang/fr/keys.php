@@ -56,4 +56,7 @@ return [
     'confirm' => 'Révoquer',
     'revoked-done' => '« :name » est révoquée',
     'empty' => 'Aucune clé n\'a été émise',
+    'lead-mine' => 'Une clé permet à un programme — un veilleur de file, un import de nuit — de travailler dans ce panneau en votre nom, sans navigateur. Elle ne peut jamais plus que vous, et seulement dans les périmètres choisis.',
+    'empty-mine' => 'Vous n’avez pas encore de clé',
+
 ];

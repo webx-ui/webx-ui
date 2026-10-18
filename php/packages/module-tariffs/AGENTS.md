@@ -25,8 +25,7 @@ tariff has no page and no address — it reaches the site in a block (a slider, 
   `button`, `button-label`, `button-link`, `button-variant`, `settings`, `categories`, `services`,
   `published`, `project-fields`) and `tariffs.category-form` (`naming`, `title`, `is-visible`,
   `project-fields`).
-- **API** under `/api/cms/tariffs` and `/api/cms/tariffs/categories`; permissions `tariffs.view`,
-  `tariffs.manage`, `tariffs.groups.manage`.
+- **API** under `/api/cms/tariffs` and `/api/cms/tariffs/categories`.
 - **MCP** tools `tariffs_list`, `tariffs_get`, `tariffs_create`, `tariffs_update`,
   `tariffs_delete`, `tariffs_reorder`, and `tariff_groups_list`, `tariff_groups_create`,
   `tariff_groups_update`, `tariff_groups_delete`, `tariff_groups_reorder`; resource
@@ -34,6 +33,17 @@ tariff has no page and no address — it reaches the site in a block (a slider, 
   `tariff-groups:write`.
 - Also registered: the panel group `tariffs` (entries Tariffs and Groups), demo content
   (`resources/demo`).
+
+### Permissions
+
+| Permission              | Opens                                                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `tariffs.view`          | tariffs and groups, read-only: the lists, the form, `tariffs_list`, `tariffs_get`, `tariff_groups_list`, `tariff_groups_get` |
+| `tariffs.manage`        | create, edit, reorder (the whole list and inside a group), delete and restore tariffs; the `tariffs:write` tools             |
+| `tariffs.groups.manage` | groups: create, edit, reorder, delete; the `tariff-groups:write` tools                                                       |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:tariffs.view,tariffs.manage` to read, `cms.can:tariffs.manage` to write.
 
 ## Change it without forking
 

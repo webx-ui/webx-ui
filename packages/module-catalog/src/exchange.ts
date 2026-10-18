@@ -85,6 +85,11 @@ export interface ExchangeRun {
   admin_name: string | null
   /** The finished export by a signed address, while the file is kept; null otherwise. */
   file_url: string | null
+  /**
+   * Whether the file is this reader's to download: its starter's and a super administrator's.
+   * Absent from a server older than the rule, which means yes.
+   */
+  file_yours?: boolean
   started_at: string | null
   finished_at: string | null
   created_at: string | null

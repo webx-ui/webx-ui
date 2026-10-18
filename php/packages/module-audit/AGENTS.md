@@ -19,8 +19,7 @@ bring. The panel shell, screens and permissions are `webx-ui/module-admin`, the 
 - **Settings screen** `audit.settings` (`resources/screens/audit-settings.json`), values stored
   under `audit.*` in the site's settings. What is set there wins over the config file.
 - **API** under `<api_path>/audit` (`runs`, `runs/{run}/issues`, `runs/{run}/pages`, `hosts`,
-  `ignores`, `settings`, fixes under `runs/{run}/issues/{issue}/fixes`); permissions
-  `audit.view`, `audit.run`, `audit.manage`.
+  `ignores`, `settings`, fixes under `runs/{run}/issues/{issue}/fixes`).
 - **MCP** tools `audit_run`, `audit_status`, `audit_issues`, `audit_pages`, `audit_page_get`,
   `audit_hosts`, `audit_fix`, `audit_ignore`; resource `audit://checks` (the catalogue of
   checks). Scopes `audit:read`, `audit:write`.
@@ -34,6 +33,17 @@ bring. The panel shell, screens and permissions are `webx-ui/module-admin`, the 
   register theirs (`blocks.*`, `widgets.*`, `inbox.*`, …) — `audit://checks` lists every one installed.
 - **Page readers**: `WebxUi\Audit\Crawl\PageReaders` — a module's `AuditPageReader` reads its own
   facts off each crawled page (the HTML is not kept); its checks find them in `$page->fact('<id>')`.
+
+### Permissions
+
+| Permission     | Opens                                                                                                                                                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `audit.view`   | runs, findings, pages, hosts, ignores and settings, read-only (every `GET` of the API, the export); `audit_status`, `audit_issues`, `audit_pages`, `audit_page_get`, `audit_hosts` |
+| `audit.run`    | the panel's reads, plus start and cancel a run (`POST runs`, `runs/{run}/cancel`), `audit_run`                                                                                     |
+| `audit.manage` | everything: apply a fix, add and remove ignore rules, clear the runs, save the settings; `audit_fix`, `audit_ignore`                                                               |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:audit.view,audit.run,audit.manage` to read, `cms.can:audit.manage` to write.
 
 ## Change it without forking
 
@@ -80,6 +90,9 @@ The settings screen's node ids: `site`, `base-url`, `resolve-to`, `other-hosts`,
   Save through the owning module's models.
 - Do not start a run from the panel on a `sync` queue — it is refused (409), a crawl would run
   inside the request. Use `webx:audit:run` or a real queue worker.
+- Do not ask somebody else's host past `SiteClient::direct()`: an external link is asked only
+  when its name resolves to the public internet (`module-admin`'s `RemoteFetcher::check()`, the
+  connection pinned); one that resolves inside the network is a resource with an error, not a request.
 - Do not raise `concurrency` or `pages_limit` on a shared or production host without reason: the
   defaults keep the crawl polite. Prefer `exclude` for sections that need not be crawled.
 - Do not delete `audit_*` rows by hand to clean history: `keep_runs` and `keep_snapshots` prune

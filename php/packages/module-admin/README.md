@@ -320,6 +320,47 @@ for with `UploadPurposes` (permission, types, largest file) and takes the finish
 `useChunkedUpload()` in `@webx-ui/module-admin`; the whole of it is in
 [the guide](https://webx-ui.github.io/webx-ui/guide/uploads).
 
+## Fetching an address somebody typed
+
+An import by URL, a picture by link, an agent's "upload from this address" — the server fetching
+an address from a person is a way into the server's own network (`127.0.0.1`, a database on
+`10.0.0.5`, cloud metadata at `169.254.169.254`). Every module fetches such an address through
+`WebxUi\Admin\Remote\RemoteFetcher`, never with `Http::get()`:
+
+```php
+$fetched = app(RemoteFetcher::class)->get($url, maxBytes: 10 * 1024 * 1024, timeout: 20);
+$fetched = app(RemoteFetcher::class)->download($url, $temporaryPath, maxBytes: $limit, timeout: 600);
+$fetched = app(RemoteFetcher::class)->head($url);
+```
+
+- only `http` and `https`;
+- the host is resolved, **every** address it resolves to has to be public (no loopback, private,
+  link-local, shared, reserved or multicast range, in either family, nor an IPv6 address carrying
+  one of those), and the connection is pinned to the checked address — DNS rebinding gets no
+  second answer;
+- redirects are followed by hand, `webx-admin.remote.max_redirects` (3) at most, each hop checked
+  the same way;
+- `maxBytes` stops the body as it grows (and before it, when `Content-Length` says so), each hop
+  has a connect timeout and a timeout;
+- a refusal is `FetchRefused` with a `reason` (`scheme`, `host`, `private`, `unresolved`,
+  `too-large`, `timeout`, `unreachable`, `status`, `redirects`) and words that never carry the
+  transport's error or the body of the answer.
+
+`check($url)` alone gives the `Target` to pin a client of your own to (`$target->options()`), for
+a caller with its own pool — a redirect is then that caller's to check. `onlyHosts([...])` narrows
+the hosts for one caller (an import's list of suppliers), `trusting([...])` adds hosts the site
+trusts.
+
+| Setting                                              | Means                                                            |
+| ---------------------------------------------------- | ---------------------------------------------------------------- |
+| `remote.trusted_hosts` / `WEBX_REMOTE_TRUSTED_HOSTS` | hosts on the site's own network that may be fetched all the same |
+| `remote.only_hosts` / `WEBX_REMOTE_ONLY_HOSTS`       | when not empty, the only hosts anything is fetched from          |
+| `remote.max_redirects`, `remote.connect_timeout`     | 3 and 10 seconds                                                 |
+
+Hosts are exact names or `*.example.com` (any subdomain); the environment takes comma lists. In a
+test, bind `WebxUi\Admin\Testing\FakeHostResolver` as `HostResolver` — DNS without a network,
+every name a public address unless the test says otherwise.
+
 ## Configuration
 
 `config/webx-admin.php` covers the title, the two paths, the middleware groups, the version

@@ -16,8 +16,7 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   `SettingsSaved` carries the keys that changed.
 - **Panel screen** `settings.index`, nodes `tabs`, `general`, `general-card`, `project-name`
   (`general.project-name`), `branding`, `branding-card`, `logo` (`branding.logo`), `mark`
-  (`branding.mark`). API `GET` / `PUT` under `/api/cms/settings`; permissions `settings.view`,
-  `settings.manage`.
+  (`branding.mark`). API `GET` / `PUT` under `/api/cms/settings`.
 - **Content screen** `settings.content`, nodes `content-card`, `tone` (`content.tone`), `donts`
   (`content.donts`), `notes` (`content.notes`); API `GET` / `PUT` `/api/cms/settings/content`.
   The panel shows it on `module-auth`'s «Connect an agent» page, found by the manifest's
@@ -74,6 +73,17 @@ picture fields `webx-ui/module-media`, the languages of a localized value
 - Demo content (`resources/demo`), the content rules and the contacts included. A theme with
   `demo/settings/settings.json` seeds that file instead. Phones in demos and examples are
   `+800 …` (`+800 1234 5678`): a number of no country that validates — `+00…` does not.
+
+### Permissions
+
+| Permission        | Opens                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
+| `settings.view`   | both screens read-only (`GET settings`, `GET settings/content`), `settings_list`, `settings_get` |
+| `settings.manage` | the same, plus saving them (`PUT settings`, `PUT settings/content`) and `settings_set`           |
+
+A route or screen node the site adds next to the module — a field patched onto `settings.index`
+is saved by the same `PUT` — asks the same: `cms.can:settings.view,settings.manage` to read,
+`cms.can:settings.manage` to write.
 
 ## Change it without forking
 

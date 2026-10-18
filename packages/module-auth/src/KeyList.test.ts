@@ -22,18 +22,26 @@ function key(row: Partial<McpKey> & { id: number }): McpKey {
   }
 }
 
-function context(rows: McpKey[]) {
-  const get = vi.fn().mockImplementation((path: string) =>
+function context(rows: McpKey[], user: { id: number; name: string } | null = null) {
+  // Robot (2) may read and review tasks; the other one (3) only read them.
+  const usable: Record<number, string[]> = {
+    2: ['mcp:use', 'tasks:read', 'tasks:review'],
+    3: ['mcp:use', 'tasks:read'],
+  }
+
+  const get = vi.fn().mockImplementation((path: string, options?: { query?: { admin?: number } }) =>
     Promise.resolve(
-      path.endsWith('/auth/admins')
-        ? {
-            data: [{ id: 2, name: 'Robot Watcher', email: 'robot@example.test' }],
-            meta: { total: 1 },
-          }
-        : {
-            data: rows,
-            meta: { scopes: ['mcp:use', 'tasks:read', 'tasks:review'], max_days: 3650 },
-          },
+      path.endsWith('/auth/keys/scopes')
+        ? { data: usable[options?.query?.admin ?? 2] ?? [] }
+        : path.endsWith('/auth/admins')
+          ? {
+              data: [{ id: 2, name: 'Robot Watcher', email: 'robot@example.test' }],
+              meta: { total: 1 },
+            }
+          : {
+              data: rows,
+              meta: { scopes: ['mcp:use', 'tasks:read', 'tasks:review'], max_days: 3650 },
+            },
     ),
   )
 
@@ -57,7 +65,7 @@ function context(rows: McpKey[]) {
     basePath: '/cms',
     http: { get, post, delete: remove },
     i18n,
-    state: { manifest: null, user: null, status: 'ready', error: null },
+    state: { manifest: null, user, status: 'ready', error: null },
     can: () => true,
   } as unknown as AdminContext
 
@@ -141,6 +149,52 @@ describe('WxKeyList', () => {
   })
 })
 
+describe('your own keys', () => {
+  it('lists only your own, even for a manager, and does not say whose they are', async () => {
+    const { get, global } = context([key({ id: 1 })])
+    const wrapper = mount(KeyList, { global, props: { mine: true } })
+
+    await flushPromises()
+
+    expect(get).toHaveBeenCalledWith('/api/cms/auth/keys', { query: { mine: 1 } })
+    expect(wrapper.text()).toContain('queue watcher')
+    expect(wrapper.text()).not.toContain('Robot Watcher')
+  })
+
+  it('issues a key for yourself without choosing or looking up anybody', async () => {
+    // An administrator without admins.view could not list people: the dialog must not try.
+    const { get, post, global } = context([], { id: 2, name: 'Robot Watcher' })
+    const wrapper = mount(KeyDialog, { global, props: { mine: true }, attachTo: document.body })
+
+    await flushPromises()
+
+    expect(get).not.toHaveBeenCalledWith('/api/cms/auth/admins', expect.anything())
+    expect(get).toHaveBeenCalledWith('/api/cms/auth/keys/scopes', { query: { admin: undefined } })
+    expect(document.querySelector('[name="admin"]')).toBeNull()
+
+    const vm = wrapper.vm as unknown as {
+      form: { name: string; access: string; scopes: string[] }
+      scopeOptions: { value: string }[]
+      issue: () => Promise<void>
+    }
+
+    expect(vm.scopeOptions.map((one) => one.value)).toEqual(['tasks:read', 'tasks:review'])
+
+    vm.form.name = 'my script'
+    await vm.issue()
+    await flushPromises()
+
+    expect(post).toHaveBeenCalledWith('/api/cms/auth/keys', {
+      name: 'my script',
+      admin: 2,
+      scopes: [],
+      days: 365,
+    })
+
+    wrapper.unmount()
+  })
+})
+
 describe('the key dialog', () => {
   it('issues a key for the chosen administrator, for as long as chosen, and shows it once', async () => {
     const { post, global } = context([])
@@ -174,6 +228,35 @@ describe('the key dialog', () => {
 
     expect(secret).toBeDefined()
     expect(document.body.textContent).toContain('Copy the key now')
+
+    wrapper.unmount()
+  })
+
+  it('offers only the scopes of the owner, and drops the ones the next owner cannot use', async () => {
+    const { get, global } = context([])
+    const wrapper = mount(KeyDialog, { global, attachTo: document.body })
+
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      form: { admin: number | null; scopes: string[] }
+      scopeOptions: { value: string }[]
+    }
+
+    expect(vm.scopeOptions).toEqual([])
+
+    vm.form.admin = 2
+    await flushPromises()
+
+    expect(get).toHaveBeenCalledWith('/api/cms/auth/keys/scopes', { query: { admin: 2 } })
+    expect(vm.scopeOptions.map((one) => one.value)).toEqual(['tasks:read', 'tasks:review'])
+
+    vm.form.scopes = ['tasks:read', 'tasks:review']
+    vm.form.admin = 3
+    await flushPromises()
+
+    expect(vm.scopeOptions.map((one) => one.value)).toEqual(['tasks:read'])
+    expect(vm.form.scopes).toEqual(['tasks:read'])
 
     wrapper.unmount()
   })

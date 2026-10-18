@@ -42,7 +42,7 @@ final class PanelHistoryTest extends TestCase
 
         $this->putJson('api/cms/test-notes/7')->assertOk();
 
-        $row = HistoryEntry::query()->sole();
+        $row = HistoryEntry::query()->where('subject_type', 'test.note')->sole();
         $this->assertSame('panel', $row->source);
         $this->assertSame($admin->id, $row->admin_id);
         $this->assertSame('Admin', $row->admin_name);
@@ -53,7 +53,7 @@ final class PanelHistoryTest extends TestCase
     {
         $this->putJson('api/cms/test-notes/7')->assertUnauthorized();
 
-        $this->assertSame(0, HistoryEntry::query()->count());
+        $this->assertSame(0, HistoryEntry::query()->where('subject_type', 'test.note')->count());
     }
 
     private function signIn(CmsUser $admin): void

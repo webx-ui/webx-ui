@@ -11,4 +11,6 @@ return [
     'not-found-title' => 'There is nothing at this address',
     'not-found-description' => 'The address may be mistyped, or the section it leads to is not installed on this site.',
     'not-found-home' => 'Back to the start',
+    'forbidden-title' => 'No access',
+    'forbidden-description' => 'Your roles do not open this section. Ask an administrator if you need it.',
 ];

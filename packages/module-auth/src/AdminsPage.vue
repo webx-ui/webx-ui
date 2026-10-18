@@ -8,18 +8,20 @@ import {
   WxListScreen,
   type ScreenAction,
 } from '@webx-ui/module-admin'
-import { confirm, createModal, toast, type TabItem, type TabValue } from '@webx-ui/core'
+import { confirm, createModal, toast, WxResult, type TabItem, type TabValue } from '@webx-ui/core'
 import AdminDialog from './AdminDialog.vue'
 import AdminList from './AdminList.vue'
 import CallList from './CallList.vue'
 import ConnectionList from './ConnectionList.vue'
 import KeyDialog from './KeyDialog.vue'
 import KeyList from './KeyList.vue'
+import RoleDialog from './RoleDialog.vue'
+import RoleList from './RoleList.vue'
 import { createAdminsApi } from './admins'
 import { libraryAvatarField, libraryAvatarResolver } from './avatars'
 import type { AdminsView } from './module'
 import { useAuthMessages } from './i18n'
-import type { Admin, McpKey } from './types'
+import type { Admin, McpKey, Role } from './types'
 
 /**
  * The administrators section: the list, the form over it, the trail of what their agents did,
@@ -36,6 +38,11 @@ import type { Admin, McpKey } from './types'
  * second address. The calls are behind `admins.audit`, the permission the sign-in trail is
  * behind; everybody's connections are behind `admins.manage`, the one that is about other
  * people's accounts. Keys are behind it too: a key speaks for the administrator it names.
+ *
+ * The roles are a view of their own too (WEBX_UI_PERMISSIONS.md §11): read by whoever deals with
+ * people or roles at all, edited with `roles.manage`. Each view is shown only to whoever may
+ * open it; the section itself is in the menu for anybody holding one of its permissions, so an
+ * address of a view they may not open lands on the first one they may.
  *
  * The heading and `Add` used to live inside the card, which made this the one section of the
  * panel with no line of its own at the top. They stand outside it now, where every other list
@@ -63,18 +70,41 @@ const route = useRoute()
 useAuthMessages()
 
 const t = useTranslate('webx-auth')
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
 const list = useTemplateRef<{ reload: () => void }>('list')
 const keysView = useTemplateRef<{ reload: () => void }>('keys')
+const rolesView = useTemplateRef<{ reload: () => void }>('roles')
 const editing = ref<Admin | null>(null)
 
 const edit = createModal<Admin, { admin: Admin | null; avatarField?: Component }>(AdminDialog)
 const issueKey = createModal<McpKey>(KeyDialog)
+const editRole = createModal<Role, { role: Role | null; readOnly: boolean }>(RoleDialog)
 
 const canManage = context.can('admins.manage')
 const canAudit = context.can('admins.audit')
+const canSeePeople = canManage || context.can('admins.view')
+const canEditRoles = context.can('roles.manage')
+const canSeeRoles = canSeePeople || canEditRoles || context.can('roles.assign')
+
+/* Which views this administrator may open, in the order of the strip. */
+const allowed = computed<AdminsView[]>(() => {
+  const list: AdminsView[] = []
+
+  if (canSeePeople) list.push('admins')
+  if (canSeeRoles) list.push('roles')
+  if (canAudit) list.push('calls')
+  if (canManage) list.push('connections', 'keys')
+
+  return list
+})
+
+/* A view they may not open: the first one they may, or the panel's «no access» if none. */
+const shown = computed<AdminsView | null>(() =>
+  allowed.value.includes(props.current) ? props.current : (allowed.value[0] ?? null),
+)
 
 /** The section's name as the server translated it; the built-in English until it arrives. */
 const title = computed(
@@ -91,17 +121,20 @@ const title = computed(
  * signed in reaches them without a permission at all.
  */
 const views = computed<TabItem[] | undefined>(() => {
-  const items: TabItem[] = [{ value: 'admins', label: title.value }]
-
-  if (canAudit) items.push({ value: 'calls', label: t('calls.title') })
-  if (canManage) items.push({ value: 'connections', label: t('connections.title') })
-  if (canManage) items.push({ value: 'keys', label: t('keys.title') })
+  const labels: Record<AdminsView, string> = {
+    admins: title.value,
+    roles: t('roles.title'),
+    calls: t('calls.title'),
+    connections: t('connections.title'),
+    keys: t('keys.title'),
+  }
+  const items: TabItem[] = allowed.value.map((view) => ({ value: view, label: labels[view] }))
 
   return items.length > 1 ? items : undefined
 })
 
 const where = computed<TabValue>({
-  get: () => props.current,
+  get: () => shown.value ?? props.current,
   set: (next) => {
     const path = next === 'admins' ? props.base : `${props.base}/${String(next)}`
 
@@ -112,9 +145,23 @@ const where = computed<TabValue>({
 /* Short enough for a phone, where the name and the button share one line. `Add` belongs to
    the people, not to the log. */
 const actions = computed<ScreenAction[]>(() => {
+  if (shown.value === 'roles') {
+    return canEditRoles
+      ? [
+          {
+            key: 'new-role',
+            label: t('roles.new-short'),
+            icon: 'plus',
+            primary: true,
+            run: () => void openRole(null),
+          },
+        ]
+      : []
+  }
+
   if (!canManage) return []
 
-  if (props.current === 'admins') {
+  if (shown.value === 'admins') {
     return [
       {
         key: 'new',
@@ -126,7 +173,7 @@ const actions = computed<ScreenAction[]>(() => {
     ]
   }
 
-  if (props.current === 'keys') {
+  if (shown.value === 'keys') {
     return [
       {
         key: 'issue',
@@ -155,6 +202,44 @@ async function open(admin: Admin | null): Promise<void> {
   }
 }
 
+async function openRole(role: Role | null): Promise<void> {
+  if (await editRole({ role, readOnly: !canEditRoles })) rolesView.value?.reload()
+}
+
+/* Who loses it is asked first: the confirmation names them, so nobody deletes a role blind. */
+async function removeRole(role: Role): Promise<void> {
+  let holders: string[] = []
+
+  try {
+    holders = (await api.role(role.id)).holders.map((one) => one.name)
+  } catch (error) {
+    toast.danger(message(error))
+
+    return
+  }
+
+  const agreed = await confirm({
+    title: t('roles.delete-title', { name: role.name }),
+    message:
+      holders.length > 0
+        ? t('roles.delete-holders', { names: holders.join(', ') })
+        : t('roles.delete-text'),
+    confirmText: t('roles.delete'),
+    cancelText: t('roles.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    await api.removeRole(role.id)
+    toast.success(t('roles.deleted'))
+    rolesView.value?.reload()
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
 async function remove(admin: Admin): Promise<void> {
   const agreed = await confirm({
     title: t('admins.delete-title', { name: admin.name }),
@@ -178,9 +263,22 @@ async function remove(admin: Admin): Promise<void> {
 
 <template>
   <wx-list-screen v-model:view="where" :title="title" :views="views" :actions="actions">
-    <call-list v-if="current === 'calls'" />
-    <connection-list v-else-if="current === 'connections'" scope="all" />
-    <key-list v-else-if="current === 'keys'" ref="keys" />
+    <wx-result
+      v-if="shown === null"
+      status="403"
+      :title="panel('shell.forbidden-title')"
+      :subtitle="panel('shell.forbidden-description')"
+    />
+    <role-list
+      v-else-if="shown === 'roles'"
+      ref="roles"
+      :removable="canEditRoles"
+      @open="openRole"
+      @remove="removeRole"
+    />
+    <call-list v-else-if="shown === 'calls'" />
+    <connection-list v-else-if="shown === 'connections'" scope="all" />
+    <key-list v-else-if="shown === 'keys'" ref="keys" />
     <admin-list
       v-else
       ref="list"

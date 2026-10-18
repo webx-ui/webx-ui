@@ -161,6 +161,12 @@ export function createAdminContext(options: {
         continue
       }
 
+      // A section this administrator may not open is not offered: every click on it would end
+      // in «no access» (WEBX_UI_PERMISSIONS.md §11).
+      if (module.allowed === false) {
+        continue
+      }
+
       const path = registered.path ?? registered.routes?.[0]?.path
 
       if (path === undefined) {
@@ -239,7 +245,8 @@ export function createAdminContext(options: {
 
   // The first module that has a library wins. Two of them is not a case worth a setting: a
   // panel with two file managers has a bigger question to answer than which one this opens.
-  const pickImage = options.modules.find((module) => module.pickImage !== undefined)?.pickImage
+  const picker = options.modules.find((module) => module.pickImage !== undefined)
+  const pickImage = picker?.pickImage
   const assetUrls = options.modules.find((module) => module.assetUrls !== undefined)?.assetUrls
   const blockLabelsOf = options.modules.find(
     (module) => module.blockLabels !== undefined,
@@ -423,7 +430,14 @@ export function createAdminContext(options: {
     groups,
     siteUrl,
     types,
-    pickImage: pickImage ?? null,
+    // A getter, so that it follows who is signed in: the same panel switches administrators.
+    get pickImage() {
+      const allowed =
+        picker?.pickImageWith === undefined ||
+        picker.pickImageWith.some((permission) => context.can(permission))
+
+      return pickImage && allowed ? pickImage : null
+    },
     assetUrls: assetUrls ? cachedAssetUrls : null,
     blockLabels() {
       // Once for the session, and a failure is not remembered: the next notice asks again.

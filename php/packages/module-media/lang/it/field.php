@@ -23,4 +23,5 @@ return [
     'remove-confirm' => 'Togli',
     'count' => ':count di :max',
     'at-least' => 'Almeno :count',
+    'locked' => 'Non hai accesso alla libreria dei file',
 ];

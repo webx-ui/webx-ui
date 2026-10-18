@@ -143,6 +143,10 @@ scripts/                                # link-panel, starter-site, sync-php-ver
     откатывается;
   - **бюджет** — `PerformanceTest` модуля покрывает новую страницу и список, тест свежести — каждую
     группу; поднятый бюджет — с причиной в тесте.
+- **Новый экран, маршрут, инструмент MCP → право и тест** (модель — `WEBX_UI_PERMISSIONS.md`,
+  гайд `guide/permissions.md`): маршрут — `cms.can`, инструмент — `permission:` или умолчание,
+  узел экрана — `can`; новое право — в `permissions()` модуля и `### Permissions` его `AGENTS.md`;
+  `AccessCoverageTest` пакета зелёный, открытый маршрут — в его списке с причиной.
 - **`main` закрыт ruleset'ом с очередью мержа.** Нужен зелёный чек `Lint, typecheck, test, build`
   (агрегатор джобов `ci.yml`). В очередь — мутацией, `gh pr merge` не ставит:
   `gh api graphql -f query='mutation{enqueuePullRequest(input:{pullRequestId:"<id>"}){mergeQueueEntry{state position}}}'`,

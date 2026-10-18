@@ -24,17 +24,25 @@ photos `webx-ui/module-media`; the languages `webx-ui/localization`; the Service
   In Blade: `events()->take(3)`, `events()->past()`, `events()->in('slug')`,
   `events()->relatedTo('service', $service)`.
 - **Panel screens** `events.form` (tabs `event`, `settings`, `seo`, `history`) and
-  `events.category-form`; API under `/api/cms/events` and `/api/cms/events/categories`;
-  permissions `events.view`, `events.manage`, `events.categories.manage`.
-- **MCP** tools `events_list`, `events_get`, `events_create`, `events_update`,
-  `events_duplicate`, `events_publish`, `events_unpublish`, `events_discard`, `events_delete`,
-  `events_restore`, `events_purge`;
-  `event_categories_list`, `event_categories_create`, `event_categories_update`,
-  `event_categories_delete`, `event_categories_reorder`. Resource
-  `events://catalog`. Scopes `events:read`, `events:write`, `event-categories:read`,
-  `event-categories:write`.
+  `events.category-form`; API under `/api/cms/events` and `/api/cms/events/categories`.
+- **MCP** tools `events_list`, `events_get`, `events_create`, `events_update`, `events_duplicate`,
+  `events_publish`, `events_unpublish`, `events_discard`, `events_delete`, `events_restore`,
+  `events_purge`; `event_categories_list`, `event_categories_create`, `event_categories_update`,
+  `event_categories_delete`, `event_categories_reorder`. Resource `events://catalog`. Scopes
+  `events:read`, `events:write`, `event-categories:read`, `event-categories:write`.
 - Also registered: link sources for events and categories, a relation target (other modules can
   link to events), the index in the sitemap, demo content (`resources/demo`).
+
+### Permissions
+
+| Permission                 | Opens                                                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `events.view`              | events and categories, read-only: the lists, the editor, versions; `events_list`, `events_get`, `event_categories_list`, `event_categories_get`; events in other modules' relation pickers |
+| `events.manage`            | create, edit, duplicate, publish, unpublish, discard, delete and restore events, restore a version; the `events:write` tools                                                               |
+| `events.categories.manage` | categories: create, edit, reorder, delete; the `event-categories:write` tools                                                                                                              |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:events.view,events.manage` to read, `cms.can:events.manage` to write.
 
 ## Change it without forking
 

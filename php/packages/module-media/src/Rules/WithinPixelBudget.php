@@ -18,7 +18,7 @@ final class WithinPixelBudget implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (! $value instanceof UploadedFile || ! str_starts_with((string) $value->getClientMimeType(), 'image/')) {
+        if (! $value instanceof UploadedFile || ! str_starts_with((string) $value->getMimeType(), 'image/')) {
             return;
         }
 

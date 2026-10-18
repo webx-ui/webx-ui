@@ -13,6 +13,7 @@ return [
     'event-restored' => 'Wiederhergestellt',
     'event-published' => 'Veröffentlicht',
     'event-unpublished' => 'Veröffentlichung zurückgenommen',
+    'event-refused' => 'Abgelehnt',
     'event-run' => 'Lauf',
     'source-panel' => 'im Panel',
     'source-mcp' => 'über einen Agenten',

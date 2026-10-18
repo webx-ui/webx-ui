@@ -24,6 +24,18 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
+# What people uploaded (the media library's public disk): never sniffed into another type, and
+# an SVG — a document that can run scripts — allowed to draw and nothing else. The same as
+# docker/nginx.conf.
+<IfModule mod_headers.c>
+    <If "%{REQUEST_URI} =~ m#^/storage/# && -f %{REQUEST_FILENAME}">
+        Header set X-Content-Type-Options "nosniff"
+    </If>
+    <If "%{REQUEST_URI} =~ m#^/storage/.*\.svg$#i && -f %{REQUEST_FILENAME}">
+        Header set Content-Security-Policy "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox"
+    </If>
+</IfModule>
+
 # What Vite builds and `php artisan webx:theme:sync` publishes is named by its content, so a
 # browser may keep it forever: a changed file is a new address. The same as docker/nginx.conf.
 <IfModule mod_headers.c>

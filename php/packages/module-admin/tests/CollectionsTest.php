@@ -197,6 +197,12 @@ final class CollectionsTest extends TestCase
             ->getJson('/api/cms/collections')
             ->assertOk()
             ->assertExactJson(['data' => []]);
+
+        // Who edits the things places them too: `manage` names no `view`, and a picker asks for both (§14.3).
+        $this->actingAs(new Editor(['things.manage']))
+            ->getJson('/api/cms/collections')
+            ->assertOk()
+            ->assertJsonPath('data.0.key', 'entries');
     }
 
     private function type(): FieldType

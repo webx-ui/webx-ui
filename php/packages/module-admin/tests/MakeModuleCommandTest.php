@@ -120,6 +120,41 @@ final class MakeModuleCommandTest extends TestCase
     }
 
     #[Test]
+    public function it_writes_an_access_test_beside_the_module(): void
+    {
+        $this->artisan('webx:make-module', ['name' => 'MediaLibrary'])->assertSuccessful();
+
+        $path = $this->app->basePath('tests/Feature/Cms/MediaLibraryModuleAccessTest.php');
+        $this->assertFileExists($path);
+
+        $contents = (string) file_get_contents($path);
+
+        $this->assertStringContainsString('namespace Tests\\Feature\\Cms;', $contents);
+        $this->assertStringContainsString('class MediaLibraryModuleAccessTest extends TestCase', $contents);
+        $this->assertStringContainsString('use AssertsPermissions;', $contents);
+        $this->assertStringContainsString("config('webx-admin.api_path').'/media-library/'", $contents);
+        $this->assertStringContainsString("\$this->assertToolsNeedPermission('media-library');", $contents);
+        $this->assertStringNotContainsString('{{', $contents);
+
+        exec(escapeshellarg(PHP_BINARY).' -l '.escapeshellarg($path).' 2>&1', $output, $status);
+        $this->assertSame(0, $status, implode("\n", $output));
+    }
+
+    #[Test]
+    public function an_access_test_somebody_filled_in_is_kept_without_force(): void
+    {
+        $this->artisan('webx:make-module', ['name' => 'Pages'])->assertSuccessful();
+
+        $path = $this->app->basePath('tests/Feature/Cms/PagesModuleAccessTest.php');
+        file_put_contents($path, '<?php // filled in');
+
+        (new Filesystem)->delete($this->directory.'/Modules/PagesModule.php');
+        $this->artisan('webx:make-module', ['name' => 'Pages'])->assertSuccessful();
+
+        $this->assertSame('<?php // filled in', file_get_contents($path));
+    }
+
+    #[Test]
     public function a_budget_test_somebody_filled_in_is_kept_without_force(): void
     {
         $this->artisan('webx:make-module', ['name' => 'Pages'])->assertSuccessful();

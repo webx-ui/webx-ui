@@ -20,8 +20,8 @@ brand page's address comes from `webx-ui/routing`, and its logo is picked from
   button).
 - **Panel**: module `catalog-brands` in the catalogue's group; screen `catalog.brand-form` (tabs
   `main`, `description-tab`, `seo-tab`, `history-tab`). The API is `catalog/brands` under the
-  panel's API path. It has no permissions of its own: `catalog.view` reads and `catalog.manage`
-  writes. A brand saved moves the `catalog` cache group; what a page read of the brands is kept on the request.
+  panel's API path. A brand saved moves the `catalog` cache group; what a page read of the brands
+  is kept on the request.
 - **What it adds to the core**: the node `brand-card` / field `brand.id` in the `main` tab of
   `catalog.product-form`, a products-list column, the facet `brand` (indexable), the field `brand`
   of the search document, an exchange column, and the bulk action `set-brand`. It also adds the
@@ -29,7 +29,20 @@ brand page's address comes from `webx-ui/routing`, and its logo is picked from
   brands as link targets in menus.
 - **Template helper** `brands()`, which returns published brands as cards:
   `brands()->featured()->take(8)`.
-- **MCP** tools `catalog_brands_list`, `_create`, `_update`, `_delete`, `_reorder`.
+- **MCP** tools `catalog_brands_list`, `_get`, `_create`, `_update`, `_delete`, `_reorder`.
+
+### Permissions
+
+None of its own: the catalogue's permissions (`webx-ui/module-catalog`) open it, and the section
+shows to whoever holds `catalog.view` or `catalog.manage` (`visibleWith()`).
+
+| Permission       | Opens                                                                                                                   |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `catalog.view`   | brands read-only: the list, the form, the journal; `catalog_brands_list`, `catalog_brands_get`                          |
+| `catalog.manage` | create, edit, reorder, delete and restore brands; the `brand.id` field and the bulk action `set-brand`; the write tools |
+
+A route or screen node the site adds next to the module asks the same: `cms.can:catalog.view,catalog.manage`
+to read, `cms.can:catalog.manage` to write.
 
 ## Change it without forking
 

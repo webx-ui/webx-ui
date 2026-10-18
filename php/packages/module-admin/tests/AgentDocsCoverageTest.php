@@ -92,6 +92,30 @@ final class AgentDocsCoverageTest extends PlainTestCase
         }
     }
 
+    /**
+     * A package that serves the panel or an agent says what each of its permissions opens: an agent
+     * adding a route next to the module has to know which one to ask for, and `vendor` carries no
+     * tests to read it from.
+     */
+    #[Test]
+    public function a_guarded_package_names_its_permissions(): void
+    {
+        foreach ($this->packages() as $name => $path) {
+            if (! is_file($path.'/tests/AccessCoverageTest.php') || ! is_file($path.'/AGENTS.md')) {
+                continue;
+            }
+
+            $text = (string) file_get_contents($path.'/AGENTS.md');
+            $owns = (string) preg_replace('/\A.*?^## What it owns$(.*?)^## .*\z/ms', '$1', $text);
+
+            $this->assertMatchesRegularExpression(
+                '/^### Permissions$/m',
+                $owns,
+                "{$name}/AGENTS.md has no «### Permissions» under «## What it owns»",
+            );
+        }
+    }
+
     #[Test]
     public function the_guide_ships_with_the_package(): void
     {

@@ -11,6 +11,8 @@ return [
     'upload' => 'Diese Datei wurde nicht angenommen.',
     'copy' => 'Die Zwischenablage ist hier nicht verfügbar. Die Adresse:',
     'unsupported-type' => 'Hochgeladen werden können nur: :types.',
+    'type-mismatch' => 'Der Inhalt der Datei passt nicht zu ihrem Typ.',
+    'unsafe-svg' => 'Dieses SVG kann nicht angenommen werden: Es ist keine gültige SVG-Grafik.',
     'file-too-large' => 'Die Datei ist größer als :size MB.',
     'too-many-files' => 'Höchstens :count Dateien auf einmal.',
     'file-not-found' => 'Diese Datei gibt es in der Bibliothek nicht.',

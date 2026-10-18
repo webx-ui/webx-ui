@@ -8,6 +8,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Remote\HostResolver;
+use WebxUi\Admin\Testing\FakeHostResolver;
 use WebxUi\Audit\AuditServiceProvider;
 use WebxUi\Audit\Probes\CertificateReader;
 use WebxUi\Auth\AuthServiceProvider;
@@ -54,6 +56,8 @@ abstract class TestCase extends Orchestra
         $app['config']->set('app.env', 'production');
         $app['config']->set('app.debug', false);
         $app['config']->set('cache.default', 'array');
+        // No DNS in a test: somebody else's host is a public address unless the test says otherwise.
+        $app->instance(HostResolver::class, new FakeHostResolver);
         $app['config']->set('mail.default', 'smtp');
         $app['config']->set('queue.default', 'database');
         // Testbench has no public/storage; the test of that check asks for the link itself.

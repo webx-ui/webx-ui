@@ -6,6 +6,7 @@ namespace WebxUi\Auth\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
+use WebxUi\Auth\Access\DefaultRoles;
 use WebxUi\Auth\Models\CmsUser;
 
 final class CreateAdminCommand extends Command
@@ -23,7 +24,7 @@ final class CreateAdminCommand extends Command
      */
     public const PASSWORD_VARIABLE = 'WEBX_ADMIN_PASSWORD';
 
-    public function handle(): int
+    public function handle(DefaultRoles $roles): int
     {
         $name = (string) ($this->option('name') ?? $this->ask('Name'));
         $email = (string) ($this->option('email') ?? $this->ask('Email'));
@@ -56,7 +57,8 @@ final class CreateAdminCommand extends Command
             return self::FAILURE;
         }
 
-        $isSuper = (bool) $this->option('super') || CmsUser::query()->count() === 0;
+        $first = CmsUser::query()->count() === 0;
+        $isSuper = (bool) $this->option('super') || $first;
 
         $user = CmsUser::query()->create([
             'name' => $name,
@@ -71,6 +73,12 @@ final class CreateAdminCommand extends Command
             // Worth saying rather than leaving to be discovered: the first account has to be
             // able to grant permissions, so it holds all of them.
             $this->components->warn('This account is a super administrator and passes every permission check.');
+        }
+
+        // The first account is a new site: the roles somebody will hand out next come with it,
+        // made of the modules this site has (WEBX_UI_PERMISSIONS.md §12).
+        if ($first && ($created = $roles->seed()) !== []) {
+            $this->components->twoColumnDetail('Ready-made roles', implode(', ', $created));
         }
 
         return self::SUCCESS;

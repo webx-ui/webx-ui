@@ -23,4 +23,5 @@ return [
     'remove-confirm' => 'Çıkar',
     'count' => ':max içinden :count',
     'at-least' => 'En az :count',
+    'locked' => 'Dosya kitaplığına erişiminiz yok',
 ];

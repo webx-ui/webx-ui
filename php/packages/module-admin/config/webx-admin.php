@@ -367,4 +367,28 @@ return [
 
     'web_user' => env('WEBX_WEB_USER'),
 
+    /*
+    |---------------------------------------------------------------------------
+    | Fetching an address somebody typed
+    |---------------------------------------------------------------------------
+    |
+    | Every module downloads an address from an administrator or an agent
+    | (an import by URL, a picture by link) through `Remote\RemoteFetcher`,
+    | and only from the public internet: an address that is or resolves to
+    | loopback, a private network, link-local (cloud metadata) or another
+    | reserved range is refused, on every redirect. `trusted_hosts` names
+    | hosts on the site's own network that may be fetched all the same;
+    | `only_hosts`, when not empty, is the whole list of hosts that may be
+    | fetched at all. Both take exact names or `*.example.com`; comma lists
+    | in the environment.
+    |
+    */
+
+    'remote' => [
+        'trusted_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('WEBX_REMOTE_TRUSTED_HOSTS', ''))))),
+        'only_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('WEBX_REMOTE_ONLY_HOSTS', ''))))),
+        'max_redirects' => 3,
+        'connect_timeout' => 10,
+    ],
+
 ];

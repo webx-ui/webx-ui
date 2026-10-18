@@ -6,6 +6,7 @@ namespace WebxUi\CatalogProperties\Panel;
 
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Contracts\HasVisibility;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Catalog\Panel\CatalogModule;
@@ -21,7 +22,7 @@ use WebxUi\CatalogProperties\Mcp\PropertyTools;
  * writes. The agent's tools are not this module's: they are served under the catalogue
  * ({@see PropertyTools}), where their names belong.
  */
-final class PropertiesModule extends AbstractModule implements HasNavSection, ProvidesDemo
+final class PropertiesModule extends AbstractModule implements HasNavSection, HasVisibility, ProvidesDemo
 {
     public function __construct(private readonly PropertiesDemo $demo) {}
 
@@ -53,6 +54,17 @@ final class PropertiesModule extends AbstractModule implements HasNavSection, Pr
     public function navSection(): string
     {
         return CatalogModule::DICTIONARIES;
+    }
+
+    /**
+     * No permission of its own: a dictionary of the catalogue opens to whoever may read or edit
+     * the catalogue, the same permissions its routes ask for (WEBX_UI_PERMISSIONS.md §11).
+     *
+     * @return list<string>
+     */
+    public function visibleWith(): array
+    {
+        return ['catalog.view', 'catalog.manage'];
     }
 
     /**

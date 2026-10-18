@@ -31,9 +31,10 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "intervention/image": "^3.11",
-        "webx-ui/module-admin": "^0.78.0",
+        "rhukster/dom-sanitizer": "^1.0.19",
         "webx-ui/localization": "^0.78.0",
         "webx-ui/mcp": "^0.78.0",
+        "webx-ui/module-admin": "^0.78.0",
         "webx-ui/module-auth": "^0.78.0",
         "webx-ui/nested-set": "^0.78.0"
     },

@@ -13,6 +13,7 @@ return [
     'event-restored' => 'Відновлено',
     'event-published' => 'Опубліковано',
     'event-unpublished' => 'Знято з публікації',
+    'event-refused' => 'Відхилено',
     'event-run' => 'Прогін',
     'source-panel' => 'у панелі',
     'source-mcp' => 'через агента',

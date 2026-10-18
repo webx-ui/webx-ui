@@ -52,6 +52,7 @@ const session: AuthSession = {
   setTheme,
   setSiteBar,
   updateProfile: () => Promise.reject(new Error('not stubbed')),
+  requestEmailChange: () => Promise.reject(new Error('not stubbed')),
 }
 
 function draw(

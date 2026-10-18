@@ -31,6 +31,14 @@ import type { McpKey } from './types'
 /** Where a row stops being a row. */
 const CARDS = 560
 
+const props = withDefaults(
+  defineProps<{
+    /** Only the reader's own keys — the page that connects their agent — with no "who" column. */
+    mine?: boolean
+  }>(),
+  { mine: false },
+)
+
 const admin = useAdmin()
 const api = createKeysApi(admin)
 useAuthMessages()
@@ -53,7 +61,7 @@ const columns = computed<TableColumn<McpKey>[]>(() => {
 
   return [
     { key: 'name', label: t('keys.name'), minWidth: 200 },
-    { key: 'user', label: t('keys.who'), minWidth: 140 },
+    ...(props.mine ? [] : [{ key: 'user', label: t('keys.who'), minWidth: 140 }]),
     { key: 'scopes', label: t('keys.allowed'), minWidth: 180 },
     { key: 'expires_at', label: t('keys.expires'), minWidth: 120 },
     { key: 'last_used_at', label: t('keys.last-used'), minWidth: 120, hideBelow: 860 },
@@ -89,7 +97,7 @@ async function load(): Promise<void> {
   loading.value = true
 
   try {
-    rows.value = (await api.list()).data
+    rows.value = (await api.list({ mine: props.mine })).data
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -136,7 +144,7 @@ defineExpose({ reload: load })
       flush
       :loading="loading"
       :clickable="false"
-      :empty-text="t('keys.empty')"
+      :empty-text="t(props.mine ? 'keys.empty-mine' : 'keys.empty')"
       :cards-below="CARDS"
       :row-class="(row: McpKey) => (row.state === 'live' ? '' : 'is-ended')"
     >
@@ -191,7 +199,11 @@ defineExpose({ reload: load })
 
       <!-- Narrow, the name is the title and everything else is a line under it. -->
       <template #cell-card="{ row }">
-        <wx-entity-card variant="plain" :title="row.name" :subtitle="nameOf(row)">
+        <wx-entity-card
+          variant="plain"
+          :title="row.name"
+          :subtitle="props.mine ? issued(row) : nameOf(row)"
+        >
           <template #media>
             <span class="wx-key-list__glyph" aria-hidden="true"><wx-icon name="lock" /></span>
           </template>

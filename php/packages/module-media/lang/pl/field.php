@@ -23,4 +23,5 @@ return [
     'remove-confirm' => 'Usuń',
     'count' => ':count z :max',
     'at-least' => 'Co najmniej :count',
+    'locked' => 'Nie masz dostępu do biblioteki plików',
 ];

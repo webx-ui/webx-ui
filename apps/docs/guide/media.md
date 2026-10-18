@@ -166,7 +166,7 @@ manager itself is built on.
 A JPEG, PNG or still WebP is not stored as it arrived. It is turned the right way up, stripped of
 its metadata, scaled down to no more than 2560px on its long side, and saved as a WebP at quality
 82 — unless that comes out no smaller, and then the original bytes are kept. A GIF, an animated
-WebP, an SVG and everything that is not a picture go in untouched. Every way into the library goes
+WebP and everything that is not a picture go in untouched; an SVG is sanitized (below). Every way into the library goes
 through it: the panel's upload, the agent's `media_upload_from_url`, the demo content.
 
 The steps live in `config/webx-media.php` under `optimize`, and a project adds its own by
@@ -192,6 +192,24 @@ the pipeline stays a JPEG, only lighter. Each file remembers which settings it w
 pressing it twice does nothing the second time, and changing a setting brings everything back
 into the list. The panel sends ten at a time and shows the count; there is no queue to keep
 running. Behind `media.manage`; for an agent, `media_optimize_images`.
+
+## What people upload is not trusted
+
+A file in the library is served on the site's own origin, so the library decides what it is:
+
+- **The type comes from the bytes.** The extension a file is kept under and its type are read
+  from its content, never from its name or the type the browser sent — a PNG named `x.html` is kept
+  as `.png`. Browser documents (`html`, `xml`, `js`, `svgz`, PHP) are refused even if someone adds
+  them to `upload.extensions`.
+- **An SVG is sanitized.** An SVG opened by its address is a page that can run scripts. Scripts,
+  `on*` handlers, `<foreignObject>` and every address pointing outside the drawing are removed on
+  upload; an SVG that is not a well-formed drawing is refused. For files uploaded before that:
+  `php artisan webx:media:sanitize-svg --dry-run`, then without `--dry-run`.
+- **Headers.** Every file is served with `X-Content-Type-Options: nosniff`, and an SVG with a
+  `Content-Security-Policy` that only lets it draw, `sandbox` included. PHP's own answers carry
+  them; the public disk is served by the web server, and the site skeleton's `docker/nginx.conf`
+  and `public/.htaccess` set them there. An older site, S3 or a CDN needs the same rules added —
+  the module's README has them.
 
 ## What the addresses mean
 

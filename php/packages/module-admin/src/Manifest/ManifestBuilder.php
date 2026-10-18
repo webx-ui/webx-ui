@@ -6,9 +6,12 @@ namespace WebxUi\Admin\Manifest;
 
 use Illuminate\Contracts\Config\Repository;
 use Throwable;
+use WebxUi\Admin\Access\AccessPolicy;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Contracts\HasVisibility;
 use WebxUi\Admin\Contracts\Module;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\ModuleRegistry;
@@ -27,6 +30,10 @@ use WebxUi\Localization\Translations\DictionaryBuilder;
  * every module to say them. It lives on a versioned key ({@see words()}). Nothing in it depends on
  * who asks, beyond the language: what does (a module's `meta`, the badge of the tasks, the date of
  * the last dump) is worked out on every request, so one administrator never reads another's.
+ *
+ * Which sections this administrator may open is the same kind of half: `allowed` on each module,
+ * asked of the policy on every request (WEBX_UI_PERMISSIONS.md §11). The cached words stay one
+ * per language — no permission ever goes into their key, because nothing in them depends on one.
  */
 final class ManifestBuilder
 {
@@ -40,6 +47,7 @@ final class ManifestBuilder
         private readonly ?SiteUrls $site = null,
         private readonly ?CacheGroups $cache = null,
         private readonly ?DictionaryBuilder $dictionary = null,
+        private readonly ?AccessPolicy $policy = null,
     ) {}
 
     /**
@@ -59,7 +67,7 @@ final class ManifestBuilder
      *     backup: array{at: string|null, bytes: int|null}|null,
      * }
      */
-    public function build(): array
+    public function build(mixed $user = null): array
     {
         $locale = $this->locales->resolvePanel($this->locales->current());
         $modules = $this->registry->all();
@@ -89,7 +97,7 @@ final class ManifestBuilder
             // reads an event at the hour the site prints rather than at their own.
             'timezone' => $this->timezone(),
             'groups' => $words['groups'],
-            'modules' => array_map(fn (Module $module): array => $this->describe($module, $words['modules'][$module->id()] ?? $module->title()), $modules),
+            'modules' => array_map(fn (Module $module): array => $this->describe($module, $words['modules'][$module->id()] ?? $module->title(), $user), $modules),
             // Only the names: a screen travels on its own, when the page that needs it opens.
             'screens' => $this->screens->names(),
             'backup' => $this->backup(),
@@ -221,7 +229,7 @@ final class ManifestBuilder
     /**
      * @return array<string, mixed>
      */
-    private function describe(Module $module, string $title): array
+    private function describe(Module $module, string $title, mixed $user): array
     {
         return [
             'id' => $module->id(),
@@ -231,10 +239,43 @@ final class ManifestBuilder
             'group' => $module->group(),
             'section' => $module instanceof HasNavSection ? $module->navSection() : null,
             'permissions' => $module->permissions(),
+            // Whether this administrator may open it: the menu leaves out what is false, and an
+            // address typed by hand shows «no access» instead of a page of failed requests.
+            'allowed' => $this->allowed($module, $user),
             // Whatever the module itself wants to say, kept in its own room so it can never
             // shadow the fields above.
             'meta' => $module->manifest(),
         ];
+    }
+
+    /**
+     * A section opens to whoever holds any permission it is visible with — its own, or the ones
+     * it names through {@see HasVisibility}. One that names none is open to everybody signed in,
+     * and so is every section of a panel nobody signs in to.
+     */
+    private function allowed(Module $module, mixed $user): bool
+    {
+        $wanted = $module instanceof HasVisibility ? $module->visibleWith() : $module->permissions();
+
+        if ($wanted === [] || $user === null) {
+            return true;
+        }
+
+        if ($this->policy !== null) {
+            return $this->policy->allows($user, $wanted);
+        }
+
+        if (! $user instanceof HasPermissions) {
+            return false;
+        }
+
+        foreach ($wanted as $permission) {
+            if ($user->hasPermission($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

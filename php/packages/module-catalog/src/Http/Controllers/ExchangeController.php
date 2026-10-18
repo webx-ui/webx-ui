@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 use WebxUi\Admin\Contracts\HasPermissions;
@@ -77,9 +78,7 @@ final class ExchangeController
 
         $url = (string) $validated['url'];
 
-        if (filter_var($url, FILTER_VALIDATE_URL) === false || ! in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
-            throw ExchangeFiles::refused('url', 'not-a-url', ['url' => $url]);
-        }
+        $this->files->assertUrl($url);
 
         try {
             $temporary = $this->files->download($url);
@@ -113,7 +112,7 @@ final class ExchangeController
 
         $run = $this->importer->start($source, $mapping, $options, (bool) ($validated['dry_run'] ?? false), $profile?->id, $request->user(), $this->can($request));
 
-        return ApiResponse::data($run->toResponse(), $run->finished() ? 200 : 202);
+        return ApiResponse::data($run->toResponse($request->user()), $run->finished() ? 200 : 202);
     }
 
     /** `{ selection, profile_id | columns + format }` → the run. */
@@ -137,7 +136,7 @@ final class ExchangeController
 
         $run = $this->exporter->start((array) $validated['selection'], $codes, $format, $profile?->id, $request->user(), $this->can($request));
 
-        return ApiResponse::data($run->toResponse(), $run->finished() ? 200 : 202);
+        return ApiResponse::data($run->toResponse($request->user()), $run->finished() ? 200 : 202);
     }
 
     public function runs(Request $request): JsonResponse
@@ -153,12 +152,12 @@ final class ExchangeController
             $query->where('direction', $validated['direction']);
         }
 
-        return new JsonResponse($query->paginate((int) ($validated['per_page'] ?? 20))->through(static fn (ExchangeRun $run): array => $run->toResponse())->toArray());
+        return new JsonResponse($query->paginate((int) ($validated['per_page'] ?? 20))->through(static fn (ExchangeRun $run): array => $run->toResponse($request->user()))->toArray());
     }
 
-    public function show(int $run): JsonResponse
+    public function show(Request $request, int $run): JsonResponse
     {
-        return ApiResponse::data($this->run($run)->toResponse());
+        return ApiResponse::data($this->run($run)->toResponse($request->user()));
     }
 
     /** A page of the errors, or all of them as a CSV file with `?format=csv`. */
@@ -194,10 +193,20 @@ final class ExchangeController
         ]);
     }
 
-    /** The finished export, for the panel; the signed link of the run serves the same file. */
-    public function file(int $run): Response
+    /**
+     * The finished export, for the panel; the signed link of the run serves the same file. Only
+     * to its starter and a super administrator ({@see ExchangeRun::yours()}): 403 rather than 404,
+     * the run itself is no secret to anybody with the catalogue.
+     */
+    public function file(Request $request, int $run): Response
     {
-        return $this->download($this->run($run));
+        $found = $this->run($run);
+
+        if (! $found->yours($request->user())) {
+            throw new AccessDeniedHttpException(__('webx-catalog::panel.exchange-file-theirs'));
+        }
+
+        return $this->download($found);
     }
 
     /** The same file by the run's signed link, without a session behind it. */

@@ -53,7 +53,10 @@ function file(path: string, extra: Partial<MediaFile> = {}): MediaFile {
   }
 }
 
-const panel = { global: { provide: { [adminKey as symbol]: {} } } }
+const panel = { global: { provide: { [adminKey as symbol]: { can: () => true } } } }
+
+/** A panel whose administrator edits the record but holds nothing of the library. */
+const locked = { global: { provide: { [adminKey as symbol]: { can: () => false } } } }
 
 function picks(...files: MediaFile[]): void {
   vi.mocked(openMediaFiles).mockResolvedValueOnce(files)
@@ -119,6 +122,22 @@ describe('a gallery', () => {
     await wrapper.setProps({ modelValue: [{ path: 'a.jpg' }, { path: 'b.jpg' }] })
 
     expect(wrapper.find('.wx-media-list__footer button').attributes('disabled')).toBeDefined()
+  })
+})
+
+describe('without the library', () => {
+  it('keeps what is chosen but offers neither adding nor the library', async () => {
+    const wrapper = mount(GalleryField, { props: { modelValue: [{ path: 'a.jpg' }] }, ...locked })
+    await flushPromises()
+
+    // Nothing to add with, and a sentence instead of a button that would answer 403.
+    expect(wrapper.find('.wx-media-list__footer button').exists()).toBe(false)
+    expect(wrapper.find('.wx-media-list__footer').text()).toContain('field.locked')
+    // The captions and the way out of the list stay — they are the record's — and the way
+    // into the library goes. The key is not asked about, so it is not drawn as lost either.
+    expect(wrapper.findAll('.wx-media-list__tools button')).toHaveLength(2)
+    expect(wrapper.find('.wx-media-list__cell').classes()).not.toContain('is-broken')
+    expect(vi.mocked(openMediaFiles)).not.toHaveBeenCalled()
   })
 })
 

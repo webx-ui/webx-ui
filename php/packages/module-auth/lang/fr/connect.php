@@ -40,5 +40,7 @@ return [
     'mine' => 'Vos connexions',
     'rules' => 'Règles pour les agents',
     'rules-hint' => 'Chaque agent connecté les lit avant d\'écrire ce qu\'un visiteur verra.',
+    'keys' => 'Vos clés',
+    'keys-hint' => 'Pour un programme sans navigateur — un import de nuit, un veilleur de file. Une clé agit en votre nom et ne peut jamais plus que vous.',
 
 ];

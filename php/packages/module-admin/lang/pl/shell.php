@@ -11,4 +11,6 @@ return [
     'not-found-title' => 'Pod tym adresem nic nie ma',
     'not-found-description' => 'Adres może zawierać literówkę albo sekcja, do której prowadzi, nie jest zainstalowana na tej stronie.',
     'not-found-home' => 'Wróć na początek',
+    'forbidden-title' => 'Brak dostępu',
+    'forbidden-description' => 'Twoje role nie otwierają tej sekcji. Jeśli jej potrzebujesz, poproś administratora.',
 ];

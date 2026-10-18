@@ -30,15 +30,24 @@ read their guides when the question is about one of those.
   `lead`, `details`, `total-minutes`, `servings`, `taxonomy`, `categories`, `relations`,
   `services`, `related`, `project-fields`, `seo`, `history`, `versions`),
   `recipes.category-form` and `recipes.nutrient-form`.
-- **API** under `/api/cms/recipes`, `/api/cms/recipes/categories`, `/api/cms/recipes/nutrients`;
-  permissions `recipes.view`, `recipes.manage`, `recipes.categories.manage` (categories and
-  nutrients).
+- **API** under `/api/cms/recipes`, `/api/cms/recipes/categories`, `/api/cms/recipes/nutrients`.
 - **MCP** tools `recipes_list`, `recipes_get`, `recipes_create`, `recipes_update`,
-  `recipes_publish`, `recipes_unpublish`, `recipes_discard`, `recipes_delete`, `recipes_reorder`;
-  `recipe_categories_*` and `recipe_nutrients_*` (`list`, `create`, `update`, `delete`,
-  `reorder`); resource `recipes://catalog`. Scopes `recipes:read`, `recipes:write`,
-  `recipe-categories:write`, `recipe-nutrients:write` (and their `:read`).
+  `recipes_publish`, `recipes_unpublish`, `recipes_discard`, `recipes_delete`, `recipes_reorder`,
+  `recipes_restore`, `recipes_purge`; `recipe_categories_*` and `recipe_nutrients_*` (`list`, `get`,
+  `create`, `update`, `delete`, `reorder`); resource `recipes://catalog`. Scopes `recipes:read`,
+  `recipes:write`, `recipe-categories:write`, `recipe-nutrients:write` (and their `:read`).
 - Also registered: a link source, the panel group `recipes`, demo content (`resources/demo`).
+
+### Permissions
+
+| Permission                  | Opens                                                                                                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `recipes.view`              | recipes, categories and nutrients, read-only: the lists, the editor, versions; `recipes_list`, `recipes_get`, the `list` and `get` of categories and nutrients; recipes in other modules' relation pickers |
+| `recipes.manage`            | create, edit, reorder, publish, unpublish, discard, delete and restore recipes, restore a version; the `recipes:write` tools                                                                               |
+| `recipes.categories.manage` | categories and nutrients: create, edit, reorder, delete; the `recipe-categories:write` and `recipe-nutrients:write` tools                                                                                  |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:recipes.view,recipes.manage` to read, `cms.can:recipes.manage` to write.
 
 ## Change it without forking
 

@@ -988,9 +988,7 @@ final class Importer
         if (isset($source['url'])) {
             $url = (string) $source['url'];
 
-            if (filter_var($url, FILTER_VALIDATE_URL) === false || ! in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
-                throw ExchangeFiles::refused('url', 'not-a-url', ['url' => $url]);
-            }
+            $this->files->assertUrl($url);
 
             return basename((string) parse_url($url, PHP_URL_PATH));
         }

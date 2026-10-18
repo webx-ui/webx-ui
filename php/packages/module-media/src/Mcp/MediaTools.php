@@ -20,6 +20,7 @@ use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Remote\FetchRefused;
 use WebxUi\Media\Remote\RemoteFetcher;
+use WebxUi\Media\Rules\SafeFileType;
 use WebxUi\Media\Rules\WithinPixelBudget;
 use WebxUi\Media\Storage\FileStore;
 use WebxUi\Media\Storage\FileUrls;
@@ -434,7 +435,7 @@ final class MediaTools
         $maxSize = (int) config('webx-media.upload.max_size', 51200);
 
         $validator = Validator::make(['file' => $upload], [
-            'file' => ['required', 'file', 'max:'.$maxSize, 'mimes:'.implode(',', $extensions), new WithinPixelBudget],
+            'file' => ['required', 'file', 'max:'.$maxSize, 'mimes:'.implode(',', $extensions), new WithinPixelBudget, new SafeFileType],
         ], [
             'file.mimes' => (string) __('webx-media::errors.unsupported-type', ['types' => implode(', ', $extensions)]),
             'file.max' => (string) __('webx-media::errors.file-too-large', ['size' => round($maxSize / 1024)]),

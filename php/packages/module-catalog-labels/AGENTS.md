@@ -15,14 +15,26 @@ through the core's registries. For products, the filter, the card and the engine
 - **View** `webx-catalog-labels::badges`, printed at the point `catalog.card.badges`. The tone
   becomes a class, `wx-catalog-badge--{tone}`, and the site's CSS decides the colour.
 - **Panel**: module `catalog-labels` in the catalogue's group, under «Dictionaries»; screen
-  `catalog.label-form`. The API is `catalog/labels` under the panel's API path. It has no
-  permissions of its own: `catalog.view` reads and `catalog.manage` writes. A label saved moves
-  the `catalog` cache group.
+  `catalog.label-form`. The API is `catalog/labels` under the panel's API path. A label saved
+  moves the `catalog` cache group.
 - **What it adds to the core**: the node `labels-card` / field `labels.ids` in the `main` tab of
   `catalog.product-form`, a products-list column, the facet `label` (not indexable), the field
   `labels` of the search document, an exchange column, and the bulk actions `add-label` and
   `remove-label`. It also adds `products()->label('sale', 'new')`.
-- **MCP** tools `catalog_labels_list`, `_create`, `_update`, `_delete`, `_reorder`.
+- **MCP** tools `catalog_labels_list`, `_get`, `_create`, `_update`, `_delete`, `_reorder`.
+
+### Permissions
+
+None of its own: the catalogue's permissions (`webx-ui/module-catalog`) open it, and the section
+shows to whoever holds `catalog.view` or `catalog.manage` (`visibleWith()`).
+
+| Permission       | Opens                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `catalog.view`   | labels read-only: the list and the form; `catalog_labels_list`, `catalog_labels_get`                                                       |
+| `catalog.manage` | create, edit, reorder, delete and restore labels; the `labels.ids` field and the bulk actions `add-label`, `remove-label`; the write tools |
+
+A route or screen node the site adds next to the module asks the same: `cms.can:catalog.view,catalog.manage`
+to read, `cms.can:catalog.manage` to write.
 
 ## Change it without forking
 

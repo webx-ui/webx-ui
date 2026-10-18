@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Mcp;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable;
+use WebxUi\Admin\Access\AccessPolicy;
 
 /**
  * Whether the caller may use a tool of a given scope.
@@ -22,6 +24,9 @@ use Illuminate\Contracts\Auth\Authenticatable;
  * A caller without a token at all is not refused: either there is no caller (the local stdio
  * server, an artisan process that can do anything already), or a person is signed in through
  * a session, and the middleware that let them in is the authority on what they may do.
+ *
+ * Decided by the panel's one policy ({@see AccessPolicy::tokenAllows()}); this class only knows
+ * that `mcp:use` stands for every scope.
  */
 final class Scopes
 {
@@ -33,38 +38,19 @@ final class Scopes
 
     public static function allows(?Authenticatable $user, string $scope): bool
     {
-        if ($user === null || ! method_exists($user, 'tokenCan')) {
-            return true;
-        }
-
-        if (self::tokenOf($user) === null) {
-            return true;
-        }
-
-        return $user->tokenCan(self::OAUTH) || $user->tokenCan($scope);
+        return self::policy()->tokenAllows($user, [self::OAUTH, $scope]);
     }
 
     /**
      * The token the call came in with, whatever the model calls it.
-     *
-     * Passport names it both ways and answers null for a user who arrived by session;
-     * asking `tokenCan()` alone would not tell the two apart, and a session user would be
-     * refused everything rather than left to the middleware.
      */
     public static function tokenOf(Authenticatable $user): ?object
     {
-        foreach (['currentAccessToken', 'token'] as $method) {
-            if (! method_exists($user, $method)) {
-                continue;
-            }
+        return AccessPolicy::tokenOf($user);
+    }
 
-            $token = $user->{$method}();
-
-            if (is_object($token)) {
-                return $token;
-            }
-        }
-
-        return null;
+    private static function policy(): AccessPolicy
+    {
+        return Container::getInstance()->make(AccessPolicy::class);
     }
 }

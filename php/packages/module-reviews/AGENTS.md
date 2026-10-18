@@ -21,14 +21,24 @@ categories, screens and bin `webx-ui/module-admin` — read their guides for que
   `content`, `text`, `rating`, `reviewed-on`, `settings`, `published`, `categories`,
   `project-fields`) and `reviews.category-form` (`naming`, `title`, `is-visible`,
   `project-fields`).
-- **API** under `/api/cms/reviews` and `/api/cms/reviews/categories`; permissions `reviews.view`,
-  `reviews.manage`, `reviews.categories.manage`.
+- **API** under `/api/cms/reviews` and `/api/cms/reviews/categories`.
 - **MCP** tools `reviews_list`, `reviews_get`, `reviews_create`, `reviews_update`,
-  `reviews_delete`, `reviews_reorder`, and `review_categories_list`, `review_categories_create`,
+  `reviews_delete`, `reviews_reorder`, `reviews_restore`, `reviews_purge`, and `review_categories_list`, `review_categories_create`,
   `review_categories_update`, `review_categories_delete`, `review_categories_reorder`; resource
   `reviews://catalog`. Scopes `reviews:read`, `reviews:write`, `review-categories:read`,
   `review-categories:write`.
 - Also registered: the panel group `reviews`, demo content (`resources/demo`).
+
+### Permissions
+
+| Permission                  | Opens                                                                                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `reviews.view`              | reviews and categories, read-only: the lists, the form, `reviews_list`, `reviews_get`, `review_categories_list`, `review_categories_get` |
+| `reviews.manage`            | create, edit, reorder (the whole list and inside a category), delete and restore reviews; the `reviews:write` tools                      |
+| `reviews.categories.manage` | categories: create, edit, reorder, delete; the `review-categories:write` tools                                                           |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:reviews.view,reviews.manage` to read, `cms.can:reviews.manage` to write.
 
 ## Change it without forking
 

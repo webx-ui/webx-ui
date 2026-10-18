@@ -23,11 +23,14 @@ guides when the question is about one of those. An entity's own attachments are 
 - **Convert to WebP** (`convert: true` of `media_optimize_images`, `webx:media:webp`): a new key
   with the same uuid, every reference rewritten (history included, `usage.rewrite_ignore`),
   the old key kept in `media_aliases` — its public address 301s to the new one. Off by default.
+- **Safe types**: a file's extension and `mime` are read from its bytes (`Support\FileTypes`),
+  never from the client; an SVG is kept as `Support\SvgSanitizer` made it (scripts, handlers and
+  outside addresses removed), one that cannot be sanitized is refused. `webx:media:sanitize-svg`
+  puts SVGs uploaded before that through it and lists what it removed. The panel answers with
+  `Support\ServeHeaders` (`nosniff`, CSP with `sandbox` for SVG).
 - **Chunked uploads**: the upload purpose `media.library` with module-admin's `uploads`
   protocol — the panel sends every file a piece at a time and `files/chunked` hands the finished
   one to the library through the same rules and pipeline as `POST files`.
-- **Permissions** `media.view`, `media.upload`, `media.manage` — uploading is separate from
-  managing on purpose.
 - **MCP** tools `media_list_directories`, `media_list_files`, `media_search_files`,
   `media_get_file`, `media_create_directory`, `media_delete_directory` (empty folders only),
   `media_rename_file`, `media_move_files`, `media_upload_from_url` (public addresses only),
@@ -35,6 +38,26 @@ guides when the question is about one of those. An entity's own attachments are 
   an MCP error, not an `ok: false` answer.
 - Also registered: the panel section `media` (group `system`), demo files (`resources/demo`), and
   audit checks `media.missing_file`, `media.heavy`, `media.orphan_thumbs` when `webx-ui/module-audit` is installed.
+
+### Permissions
+
+Uploading is separate from managing on purpose.
+
+| Permission     | Opens                                                                                                                                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `media.view`   | folders and files read-only: lists, search, `by-path`, usage, `thumb`, `source`; the read tools (`media_list_*`, `media_search_files`, `media_get_file`) |
+| `media.upload` | sending files: `POST files`, `files/chunked`, the upload purpose `media.library`, `media_upload_from_url` — nothing else is written                      |
+| `media.manage` | everything: upload, rename, move, delete, edit and copy pictures, restore the original, optimise, folders; every `media:write` tool                      |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:media.view,media.manage` to read, `cms.can:media.upload,media.manage` to upload,
+`cms.can:media.manage` to change or delete.
+
+The fields over the library (`wx-media`, `wx-gallery`, `wx-file`, `wx-files`) and the image button
+of `wx-rich-text` open the picker only for `media.view` or `media.manage` (`canBrowseMedia()`,
+`pickImageWith`); without either a field keeps, captions and clears what is chosen and says the
+library is closed. The three permissions have been the module's since its first release: no
+migration of roles.
 
 ## Change it without forking
 
@@ -49,6 +72,7 @@ guides when the question is about one of those. An entity's own attachments are 
 | Imagick instead of GD, other JPEG quality | `WEBX_MEDIA_IMAGE_DRIVER=imagick`; `image.quality`, `image.max_pixels` in the config              |
 | Other thumbnail sizes                     | `thumbs.widths`, `thumbs.fits` in the config                                                      |
 | Signed addresses that live longer         | `temporary_url_ttl` (seconds) — used only for a disk without a `url`                              |
+| SVGs uploaded before sanitizing           | `php artisan webx:media:sanitize-svg --dry-run` first, then without it                            |
 | Previews of files deleted long ago        | audit `media.orphan_thumbs` and its fix, or `php artisan webx:media:prune-thumbs --dry-run` first |
 | Edit the config at all                    | `php artisan vendor:publish --tag=webx-media-config`, keep only the keys you change               |
 | Other words in the panel                  | `php artisan vendor:publish --tag=webx-media-lang`                                                |
@@ -79,11 +103,16 @@ a migration of your own, bytes and rows together.
   bin. `media_delete_directory` deletes only an empty folder, on purpose.
 - Do not point `media_upload_from_url` at the site itself or the local network: loopback,
   private, link-local and reserved addresses are refused, after resolving the name. A host on
-  the site's own network that must be fetched goes into `webx-media.remote.allow_hosts`.
+  the site's own network that must be fetched goes into `webx-media.remote.allow_hosts` (or
+  `WEBX_REMOTE_TRUSTED_HOSTS`, `module-admin`'s, for every module).
 - Do not ask for a thumbnail size outside `thumbs.widths` and `thumbs.fits`: it is refused, so
   one request cannot make the server resize anything to anything. Add the size to the config.
 - Do not widen `upload.extensions` with executable or script types: the list is a white list on
-  purpose, and what it lets in ends up on a public disk.
+  purpose, and what it lets in ends up on a public disk. Browser documents (`html`, `xml`, `js`,
+  `svgz`, PHP) are refused even when listed.
+- Do not serve the public disk without `X-Content-Type-Options: nosniff`, and SVG without the
+  policy in `ServeHeaders::SVG_POLICY`: `/storage/…` is answered by the web server, not by
+  Laravel — the rules are in the README, «Serving files».
 
 ## Check your work
 

@@ -178,9 +178,10 @@ import {
   listConnections,
   listKeys,
   revokeKey,
-  roles as adminRoles,
 } from './agents'
 import { dictionary, panelLocales } from './lang'
+import { currentAdmin, holds as mayDo, registerRoles, usableScopes, withAccess } from './roles'
+import type { ManifestModule } from '../../../../packages/module-admin/src/types'
 import {
   createRecipe,
   createTerm as createRecipeTerm,
@@ -438,8 +439,8 @@ function on(method: string, pattern: string, handler: Handler): void {
  * half of what a section's own screen is looked at next to. The names, icons and order are the
  * ones the PHP modules answer with, so what is on screen here is what a site gets.
  */
-on('GET', '/manifest', ({ locale }) => ({
-  data: {
+function manifestOf(locale: string) {
+  return {
     title: 'WebX Demo',
     // The site the panel runs — a made-up one: the playground has no site of its own.
     siteUrl: 'https://example.test/',
@@ -934,7 +935,13 @@ on('GET', '/manifest', ({ locale }) => ({
         icon: 'users',
         order: 900,
         group: 'system',
-        permissions: ['admins.view', 'admins.manage', 'admins.audit'],
+        permissions: [
+          'admins.view',
+          'admins.manage',
+          'admins.audit',
+          'roles.manage',
+          'roles.assign',
+        ],
         meta: { roles: true, loginLog: true },
       },
       {
@@ -951,8 +958,15 @@ on('GET', '/manifest', ({ locale }) => ({
       },
     ],
     screens: screenNames,
-  },
-}))
+  }
+}
+
+/* Built for whoever is signed in: each section says whether they may open it (§11). */
+on('GET', '/manifest', ({ locale }) => {
+  const manifest = manifestOf(locale)
+
+  return { data: { ...manifest, modules: withAccess(manifest.modules as ManifestModule[]) } }
+})
 
 on('GET', '/locales', () => ({ data: { panel: PANEL, content: CONTENT } }))
 
@@ -2138,10 +2152,16 @@ on('GET', '/inbox/recipients', () => ({ data: admins }))
  * The people, and the trail of what their agents did. Enough of `module-auth`'s API for its
  * section to open: the list with its search and filters, the roles the form offers, and the
  * call log with the filters the server derives from it. Nobody signs in here — the session is
- * the plugin in `main.ts` — so there is no `me`, `login` or `logout`.
+ * `roles.ts` — so there is no `login` or `logout`.
  */
 
-on('GET', '/auth/roles', () => ({ data: adminRoles }))
+/* The roles, the matrix and who is signed in: `./roles`. */
+registerRoles(
+  on,
+  (status, message, errors, extra) => new HttpFailure(status, message, undefined, errors, extra),
+  line,
+  (locale) => manifestOf(locale).modules as ManifestModule[],
+)
 
 on('GET', '/auth/admins/(\\d+)', ({ params }) => {
   const found = adminRows.find((row) => row.id === Number(params[0]))
@@ -2200,9 +2220,20 @@ on('DELETE', '/auth/connections/(\\d+)', ({ params }) => ({
   data: endConnection(Number(params[0])),
 }))
 
-on('GET', '/auth/keys', () => listKeys())
+/* Your own keys to everybody; everybody's with admins.manage, unless `mine` asks for your own. */
+on('GET', '/auth/keys', ({ query }) => {
+  const admin = currentAdmin()
+  const everybody = mayDo(admin, 'admins.manage') && query.get('mine') === null
+  const all = listKeys()
 
-on('POST', '/auth/keys', ({ body }) => issueKey(body))
+  return everybody ? all : { ...all, data: all.data.filter((key) => key.user.id === admin.id) }
+})
+
+on('GET', '/auth/keys/scopes', ({ query }) => ({
+  data: usableScopes(Number(query.get('admin')) || undefined, listKeys().meta.scopes),
+}))
+
+on('POST', '/auth/keys', ({ body }) => issueKey(body, currentAdmin()))
 
 on('DELETE', '/auth/keys/(\\d+)', ({ params }) => ({ data: revokeKey(Number(params[0])) }))
 

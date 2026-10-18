@@ -204,6 +204,7 @@ return [
     'exchange-error-whole-row' => 'строка',
     'exchange-file' => 'Скачать файл',
     'exchange-file-gone' => 'Файл больше не хранится.',
+    'exchange-file-theirs' => 'Файл доступен тому, кто запустил обмен, и суперадминистраторам.',
     'exchange-journal' => 'Изменения в журнале',
     'exchange-journal-title' => 'Что изменил прогон',
     'exchange-journal-empty' => 'Ничего не изменилось.',

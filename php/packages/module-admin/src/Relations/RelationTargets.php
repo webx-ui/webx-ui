@@ -8,6 +8,7 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use WebxUi\Admin\Access\AccessPolicy;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Contracts\HasPermissions;
 
@@ -89,7 +90,8 @@ final class RelationTargets
             return true;
         }
 
-        return $user instanceof HasPermissions && $user->hasPermission($target->permission);
+        // The `manage` of the same family counts too (§14.3): an editor picks what they edit.
+        return $user instanceof HasPermissions && Container::getInstance()->make(AccessPolicy::class)->sees($user, $target->permission);
     }
 
     public function forget(): void

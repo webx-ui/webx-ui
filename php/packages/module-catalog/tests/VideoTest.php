@@ -218,7 +218,8 @@ final class VideoTest extends TestCase
         Queue::assertPushed(FetchVideo::class, static fn (FetchVideo $job): bool => $job->product === $product->id && $job->image === null);
 
         // One that says what it is only by its header is recognised by the header.
-        Http::fake(['https://supplier.test/*' => Http::response(self::MP4, 200, ['Content-Type' => 'video/mp4'])]);
+        // A response per request: the address is asked once by the panel and once more by the queue.
+        Http::fake(['https://supplier.test/*' => static fn () => Http::response(self::MP4, 200, ['Content-Type' => 'video/mp4'])]);
         $this->actingAs($this->editor(), 'cms')->postJson($this->api("products/{$product->id}/images"), [
             'url' => 'https://supplier.test/stream?id=7',
         ])->assertStatus(202);

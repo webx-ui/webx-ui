@@ -539,6 +539,14 @@ values are created, what pictures by address do. The last step checks the file w
 or runs it, and can save everything as a **profile** — the same supplier's price list is then one
 step the next time.
 
+An address is downloaded from the public internet only — by the panel when it reads the columns,
+and again by the queue when the run starts: an address that is or resolves to loopback, a private
+network or cloud metadata is refused, on every redirect too, and an answer that is not a
+spreadsheet or a CSV (an error page) is refused without showing a word of it. A site switches the
+import by address off with `WEBX_CATALOG_EXCHANGE_URL_IMPORT=false`, or names the only hosts it
+downloads from with `WEBX_CATALOG_EXCHANGE_URL_HOSTS` (`feeds.example.com,*.cdn.example.com`).
+Pictures by address follow the same rule. The rule is `module-admin`'s `RemoteFetcher`.
+
 **Export** writes what the products list has picked — ticked rows or everything a filter finds —
 from «Actions», or the whole catalogue from «Exchange», with the columns of a profile or chosen on
 the spot.

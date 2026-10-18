@@ -11,6 +11,8 @@ return [
     'upload' => 'Questo file non è stato accettato.',
     'copy' => 'Gli appunti non sono disponibili qui. L’indirizzo:',
     'unsupported-type' => 'Si possono caricare solo: :types.',
+    'type-mismatch' => 'Il contenuto del file non corrisponde al suo tipo.',
+    'unsafe-svg' => 'Questo SVG non può essere accettato: non è un disegno SVG valido.',
     'file-too-large' => 'Il file supera :size MB.',
     'too-many-files' => 'Non più di :count file per volta.',
     'file-not-found' => 'Questo file non è nella libreria.',
