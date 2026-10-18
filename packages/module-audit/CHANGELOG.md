@@ -1,5 +1,15 @@
 # @webx-ui/module-audit
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [a33dc79]
+- Updated dependencies [a33dc79]
+- Updated dependencies [a33dc79]
+- Updated dependencies [a33dc79]
+  - @webx-ui/module-admin@0.31.0
+
 ## 0.5.0
 
 ### Minor Changes

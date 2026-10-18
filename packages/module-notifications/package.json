@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-notifications",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Notification channels for the WebX UI admin panel: Telegram and e-mail, Mustache templates in every language of the site with highlighting, suggestions and a live preview, and the log of every delivery.",
   "license": "MIT",
   "type": "module",
