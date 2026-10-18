@@ -42,6 +42,15 @@ final class MakeModuleCommand extends Command
             $files->put($test, $this->render($files, 'module-performance-test.stub', 'Tests\\Feature\\Cms', $class, $id));
         }
 
+        // And the test that keeps it closed: a route without cms.can is open to every administrator,
+        // and nothing else notices until somebody without a role reads what they should not.
+        $access = $this->laravel->basePath('tests/Feature/Cms/'.$class.'AccessTest.php');
+
+        if (! $files->exists($access) || $this->option('force')) {
+            $files->ensureDirectoryExists(dirname($access));
+            $files->put($access, $this->render($files, 'module-access-test.stub', 'Tests\\Feature\\Cms', $class, $id));
+        }
+
         // The demo folder comes with the module rather than being remembered later: a section
         // with nothing to show on a fresh site is the ordinary way to have no demo at all.
         $demo = $this->laravel->resourcePath('demo/'.$id);
@@ -54,6 +63,7 @@ final class MakeModuleCommand extends Command
             'Do that from a service provider, so the panel knows about it on every request.',
             "Demo fixtures go in resources/demo/{$id}; seed() fills them in and webx:demo runs it.",
             "Give its pages and lists their query budgets in tests/Feature/Cms/{$class}PerformanceTest.php.",
+            "Put every route behind cms.can and every tool behind a permission; tests/Feature/Cms/{$class}AccessTest.php holds them.",
         ]);
 
         return self::SUCCESS;

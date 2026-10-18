@@ -46,7 +46,7 @@ their guides when the question is about one of those.
   no phone or address fields of SEO's own.
 - **Public routes** `/robots.txt` (the `seo.robots-txt` setting; 404 while it is empty),
   `/sitemap.xml` and `/sitemap-{file}.xml`, one file per address type.
-- **Panel** module `seo` (group `system`); permissions `seo.view`, `seo.manage`; API under
+- **Panel** module `seo` (group `system`); API under
   `/api/cms/seo` (`urls`, `redirects`, `aliases` read only, `test-url`, `sitemap`, and `links`,
   `faq` only with the feature on).
 - **Screen patches**: an SEO tab on `settings.index` (node ids `seo`, `seo-card`, `default-og`,
@@ -63,6 +63,17 @@ their guides when the question is about one of those.
 - **Command** `php artisan webx:seo:sitemap`. Also registered: the field type `wx-seo`, audit
   checks and fixes when `webx-ui/module-audit` is installed, demo content (`resources/demo`; a theme's
   `demo/seo/pages.json` gives its own demo pages a FAQ and links in every language).
+
+### Permissions
+
+| Permission   | Opens                                                                                                                                                                            |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `seo.view`   | rules, redirects, aliases, the sitemap status, `test-url`, links and FAQ export — read-only; the read tools (`seo_urls_list`, `seo_test_url`, `seo_links_get`, `seo_faq_get`, …) |
+| `seo.manage` | rules, redirects, links, page FAQ: create, edit, delete, import, rebuild the sitemap; the `seo:write` tools; a rule for any address from the SEO tab of the panel on the site    |
+
+A record's own card (`seo-card` on its form, `seo/entity/{type}/{id}` from the panel on the site)
+is written with the record's section's permission, nothing of SEO. A route or screen node the site
+adds next to the module asks the same: `cms.can:seo.view,seo.manage` to read, `cms.can:seo.manage` to write.
 
 ## Change it without forking
 
@@ -96,11 +107,9 @@ their guides when the question is about one of those.
 The theme's contract (THEMES §10): the base look `resources/theme/seo.css` styles them under any
 theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a breaking change.
 
-- Trail: `webx-breadcrumbs`, `webx-breadcrumbs__list`, `webx-breadcrumbs__item`,
-  `webx-breadcrumbs__item--current`, `webx-breadcrumbs__link`.
+- Trail: `webx-breadcrumbs`, `webx-breadcrumbs__list`, `webx-breadcrumbs__item`, `webx-breadcrumbs__item--current`, `webx-breadcrumbs__link`.
 - FAQ: `webx-faq`, `webx-faq__heading`, `webx-faq__item`, `webx-faq__question`, `webx-faq__answer`.
-- Interlinking: `webx-links`, `webx-links__heading`, `webx-links__list`, `webx-links__item`,
-  `webx-links__link`.
+- Interlinking: `webx-links`, `webx-links__heading`, `webx-links__list`, `webx-links__item`, `webx-links__link`.
 
 ## Do not
 
@@ -110,18 +119,14 @@ theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a bre
   reaches a group, so the table would only fire for pages that still exist. It is global already.
 - Do not print your own `<title>`, description or canonical beside `@webxSeo`: the page gets two
   of each. Turn that part off in `print` instead.
-- Do not type `Article`, `Product` or `BreadcrumbList` JSON-LD into a rule by hand — it drifts
-  from the page. Let the entity generate it (`HasStructuredData`, `HasBreadcrumbs`); the JSON-LD
-  field of a rule is for one-off exceptions.
+- Do not type `Article`, `Product` or `BreadcrumbList` JSON-LD into a rule by hand: it drifts. Let the
+  entity generate it (`HasStructuredData`, `HasBreadcrumbs`); a rule's JSON-LD is for one-offs.
 - Do not leave a `public/robots.txt` and expect the `seo.robots-txt` setting to work: the web
-  server hands the file over before Laravel is asked. Delete the file or keep it and empty the
-  setting.
-- Do not write `seo_urls` or `seo_redirects` with SQL (or do, then `CacheGroups::bump('seo')`): the compiled rules in the cache are
-  thrown away by the models' save and delete, and a raw write leaves the site matching the old
-  list. Go through the panel, the API or the MCP tools.
-- Do not mark every address of a redirecting type `noindex` to get it out of the sitemap: the
-  handler that redirects implements `NotAPage`, and the whole type goes. A list of types in config
-  is not offered on purpose — it would drift from the binding.
+  server hands the file over first. Delete the file, or keep it and empty the setting.
+- Do not write `seo_urls` or `seo_redirects` with SQL without `CacheGroups::bump('seo')`: the cached
+  compiled rules go only with the models' save and delete. Use the panel, the API or the MCP tools.
+- Do not mark every address of a redirecting type `noindex` to get it out of the sitemap: its
+  handler implements `NotAPage` and the whole type goes (no config list on purpose: it would drift).
 - Do not add a redirect over a live address to "fix" it: it shadows the page. `seo_test_url`
   says what `webx-ui/routing` holds there; a renamed entity already left a 301 alias.
 
@@ -131,14 +136,14 @@ theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a bre
   saying and which source each part came from. The first question for "why is this title wrong".
 - View the page source: one `<title>`, one canonical, the JSON-LD blocks you expect.
 - `php artisan webx:seo:sitemap` builds the map and prints the count per file; `seo_sitemap_status`
-  says the same plus how many addresses were left out for noindex or a foreign canonical, and
-  under `excluded_types` the address types left out whole because their handler is `NotAPage`.
+  adds the addresses left out (noindex, a foreign canonical) and in `excluded_types` the `NotAPage` types.
 - Open an old address in the browser and check it answers 301 to the new one, in one hop.
 - With MCP: every `*_set` and `*_import` tool takes `dry_run: true` first.
 
 ## Read more
 
 - [README.md](README.md) in this directory — sources, matching (`exact`, `mask`, `regex`), the API.
+- Guides: https://webx-ui.github.io/webx-ui/guide/seo, site audit https://webx-ui.github.io/webx-ui/guide/audit
 - Guide: https://webx-ui.github.io/webx-ui/guide/seo
 - Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_SEO.md
 - Site audit: https://webx-ui.github.io/webx-ui/guide/audit

@@ -27,12 +27,21 @@ for those.
   layer editor, and its banners are printed only through these components.
 - **Button variants** `config('webx-banners.variants')` — `primary`, `secondary`, `link`.
 - **Cache group** `banners` (WEBX_UI_CACHE.md): moved by every `Banner` and `Place` save; a mass write says `CacheGroups::bump('banners')` itself.
-- **Panel screen** `banners.form`; API under `/api/cms/banners`; permissions `banners.view`,
-  `banners.manage`.
+- **Panel screen** `banners.form`; API under `/api/cms/banners`.
 - **MCP** tools `banners_places`, `banners_place_create`, `banners_place_delete`, `banners_list`,
   `banners_get`, `banners_create`, `banners_update`, `banners_delete`, `banners_reorder`.
   Resource `banners://catalog`. Scopes `banners:read`, `banners:write`.
 - Also registered: demo content (`resources/demo`) — no page or template is touched.
+
+### Permissions
+
+| Permission       | Opens                                                                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `banners.view`   | places and their banners, a banner, the theme's look for the layer editor — read-only; `banners_places`, `banners_list`, `banners_get` |
+| `banners.manage` | places: create, edit, delete; banners: create, edit, reorder, delete, restore; the `banners:write` tools                               |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:banners.view,banners.manage` to read, `cms.can:banners.manage` to write.
 
 ## Change it without forking
 

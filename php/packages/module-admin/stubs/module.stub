@@ -21,6 +21,11 @@ class {{ class }} extends AbstractModule implements ProvidesDemo
     }
 
     /**
+     * Everything the module checks, and nothing else: a role can only hold what is declared here.
+     * Reading routes and tools ask for `view` or `manage`, writing ones for `manage` — add an
+     * action of its own (`{{ id }}.delete`, `{{ id }}.export`) only where somebody would want it
+     * without the rest. Guide: https://webx-ui.github.io/webx-ui/guide/permissions
+     *
      * @return list<string>
      */
     public function permissions(): array

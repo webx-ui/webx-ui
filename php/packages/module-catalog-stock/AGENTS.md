@@ -19,14 +19,26 @@ only through the core's registries. For products, the filter, the card, the engi
 - **View** `webx-catalog-stock::status`, the status line at `catalog.card.meta` and
   `catalog.product.aside`.
 - **Panel**: module `catalog-stock` in the catalogue's group, under «Dictionaries»; screen
-  `catalog.stock-status-form`. The API is `catalog/stock` under the panel's API path. It has no
-  permissions of its own: `catalog.view` reads and `catalog.manage` writes. A status saved moves
-  the `catalog` cache group; the statuses of a page's products are read once a request (`Stock::of`).
+  `catalog.stock-status-form`. The API is `catalog/stock` under the panel's API path. A status
+  saved moves the `catalog` cache group; a page's products' statuses are read once a request (`Stock::of`).
 - **What it adds to the core**: the node `stock-card` / field `stock.status` in the `main` tab of
   `catalog.product-form` (after `pricing`), a products-list column, the facet `stock` (not
   indexable), the search document fields `stock` and `purchasable`, an exchange column, the bulk
   action `set-stock`, and `products()->inStock()`.
-- **MCP** tools `catalog_stock_list`, `_create`, `_update`, `_delete`, `_reorder`.
+- **MCP** tools `catalog_stock_list`, `_get`, `_create`, `_update`, `_delete`, `_reorder`.
+
+### Permissions
+
+None of its own: the catalogue's permissions (`webx-ui/module-catalog`) open it, and the section
+shows to whoever holds `catalog.view` or `catalog.manage` (`visibleWith()`).
+
+| Permission       | Opens                                                                                                                         |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `catalog.view`   | stock statuses read-only: the list and the form; `catalog_stock_list`, `catalog_stock_get`                                    |
+| `catalog.manage` | create, edit, reorder, delete and restore statuses; the `stock.status` field and the bulk action `set-stock`; the write tools |
+
+A route or screen node the site adds next to the module asks the same: `cms.can:catalog.view,catalog.manage`
+to read, `cms.can:catalog.manage` to write.
 
 ## Change it without forking
 

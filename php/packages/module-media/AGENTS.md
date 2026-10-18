@@ -26,8 +26,6 @@ guides when the question is about one of those. An entity's own attachments are 
 - **Chunked uploads**: the upload purpose `media.library` with module-admin's `uploads`
   protocol — the panel sends every file a piece at a time and `files/chunked` hands the finished
   one to the library through the same rules and pipeline as `POST files`.
-- **Permissions** `media.view`, `media.upload`, `media.manage` — uploading is separate from
-  managing on purpose.
 - **MCP** tools `media_list_directories`, `media_list_files`, `media_search_files`,
   `media_get_file`, `media_create_directory`, `media_delete_directory` (empty folders only),
   `media_rename_file`, `media_move_files`, `media_upload_from_url` (public addresses only),
@@ -35,6 +33,20 @@ guides when the question is about one of those. An entity's own attachments are 
   an MCP error, not an `ok: false` answer.
 - Also registered: the panel section `media` (group `system`), demo files (`resources/demo`), and
   audit checks `media.missing_file`, `media.heavy`, `media.orphan_thumbs` when `webx-ui/module-audit` is installed.
+
+### Permissions
+
+Uploading is separate from managing on purpose.
+
+| Permission     | Opens                                                                                                                                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `media.view`   | folders and files read-only: lists, search, `by-path`, usage, `thumb`, `source`; the read tools (`media_list_*`, `media_search_files`, `media_get_file`) |
+| `media.upload` | sending files: `POST files`, `files/chunked`, the upload purpose `media.library`, `media_upload_from_url` — nothing else is written                      |
+| `media.manage` | everything: upload, rename, move, delete, edit and copy pictures, restore the original, optimise, folders; every `media:write` tool                      |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:media.view,media.manage` to read, `cms.can:media.upload,media.manage` to upload,
+`cms.can:media.manage` to change or delete.
 
 ## Change it without forking
 

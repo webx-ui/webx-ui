@@ -13,20 +13,16 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
   inside belongs to the front end. Its JSON lives under `webx-admin.api_path` (default `api/cms`): `manifest`,
   `screens/{name}`, `links/*`, `collections`, `relations/{target}`, `entities/{type}/{id}/notes`, `history/{type}/{id}`,
   `history/runs/{id}`, `uploads`, `locales`, `translations/{locale}`, `cache`. The panel's icons are served under its prefix too.
-- **Auth** — none of its own (see Do not). Modules put their API behind the middleware group
-  `webx.panel` (`web`, `webx.panel-locale`, `cms.auth`, `webx.history`).
+- **Auth** — none of its own (see Do not). Modules put their API behind the middleware group `webx.panel` (`web`, `webx.panel-locale`, `cms.auth`, `webx.history`).
 - **Modules** — `ModuleRegistry`: a module (`AbstractModule`, `id()` required) is registered from a
-  provider and lands in the manifest with its title, icon, order, group and permissions. Two
-  modules with one id are refused. This package declares no permissions of its own.
+  provider and lands in the manifest with its title, icon, order, group and permissions. Two modules with one id are refused.
 - **Screens** — `ScreenRegistry` behind the `Screens` facade; field types in `FieldTypes`
   (`wx-input`, `wx-link`, `wx-repeater`, `wx-relations`, …), which check and cast what a screen saves.
-- **Drafts and versions** — traits `HasDraft` (the `$table->draft()` macro: `draft`,
-  `published_at`) and `HasVersions` (table `cms_versions`; `publish()` writes a version,
+- **Drafts and versions** — traits `HasDraft` (the `$table->draft()` macro: `draft`, `published_at`) and `HasVersions` (table `cms_versions`; `publish()` writes a version,
   `restoreVersion()` puts one back into the draft). `HasExtra` stores fields a patch adds in `extra`.
-- **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in
-  `HistoryTypes`. With `webx-ui/mcp`: MCP tools `history_get`, `history_runs`, resource
+- **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in `HistoryTypes`. With `webx-ui/mcp`: MCP tools `history_get`, `history_runs`, resource
   `history://types`, scope `history:read` (the frame registers a type of its own, so they are always there).
-- **Cache** — «System → Cache» (`cache.view`, `cache.reset`), `webx:cache:reset`, MCP `cache_reset`
+- **Cache** — «System → Cache», `webx:cache:reset`, MCP `cache_reset`
   (`dry_run`), every reset journalled; the group `screens` and the words of `locales`, `routes`, `theme`.
   The registry itself (`WebxUi\Cache\CacheGroups`) is `webx-ui/cache`'s — read its AGENTS.md to cache or reset.
 - **Also** — tables `cms_notes` (`HasNotes`), `cms_relations` (`HasRelations`), `cms_uploads` (chunked uploads,
@@ -59,8 +55,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 
 ### Moving content between stands
 
-`webx:snapshot` on one stand, `scp` the archive, `webx:snapshot:restore` on the other. Every
-package declares its tables in `SnapshotTables` as `content` (travels), `admins`
+`webx:snapshot` on one stand, `scp` the archive, `webx:snapshot:restore` on the other. Every package declares its tables in `SnapshotTables` as `content` (travels), `admins`
 (`--with-admins`), `stand` (enquiries, journals, tokens, audit; only `--all`), `derived` (emptied
 on restore) or `transient` (sessions, cache, queues, `migrations`; never). A restore refuses an
 archive with migrations this code lacks, refuses production without `--force`, and asks unless
@@ -70,13 +65,26 @@ archive with migrations this code lacks, refuses production without `--force`, a
 
 `webx:panel` (and so `--sync`) writes a block between `<!-- webx:agents -->` and
 `<!-- /webx:agents -->`: what the site is, the first rule (forms included), where its look lives
-(`RootFile::STYLES_GUIDE`), a link to `vendor/webx-ui/<pkg>/AGENTS.md` for every installed
-`webx-ui/*` package that has one, what to run after updating. The block is replaced whole on each
+(`RootFile::STYLES_GUIDE`), a link to `vendor/webx-ui/<pkg>/AGENTS.md` for every installed `webx-ui/*` package that has one, what to run after updating. The block is replaced whole on each
 run; everything outside it — the `## This project` section — is never touched. A hand-written file without markers keeps every word, with the block put on top.
 `CLAUDE.md` is written once as `@AGENTS.md`; an existing one without that line only gets a warning.
-Where `webx-ui/mcp` serves its HTTP endpoint (route `webx.mcp`), `.mcp.json` gets one server named
-after the site (`Site::name()`), at `app.url` + the route; other servers, and a key renamed over the
+Where `webx-ui/mcp` serves its HTTP endpoint (route `webx.mcp`), `.mcp.json` gets one server named after the site (`Site::name()`), at `app.url` + the route; other servers, and a key renamed over the
 same address, are kept; a file that is not JSON is left alone with a warning (`Agents\McpConfig`).
+
+### Permissions
+
+| Permission    | Opens                                                                |
+| ------------- | -------------------------------------------------------------------- |
+| `cache.view`  | «System → Cache», read-only: `GET cache`, the journal rows of resets |
+| `cache.reset` | the same, plus `POST cache/reset` and MCP `cache_reset`              |
+
+Everything else here is open to every signed-in administrator and asks inside: the manifest (a
+section shows to whoever holds one of its `permissions()`, or of `visibleWith()` with
+`HasVisibility`; with neither — to everybody), screens (nodes behind a permission are cut out),
+links, collections, relations, notes, history (`history_get`, `history_runs`), editing, uploads —
+each by the permission its registered source, type, record or upload purpose names. A route or
+screen node the site adds next to the module asks for its own module's: `cms.can:<id>.view,<id>.manage`
+to read, `cms.can:<id>.manage` to write (next to the cache: `cms.can:cache.view,cache.reset`, `cms.can:cache.reset`).
 
 ## Change it without forking
 
@@ -108,22 +116,16 @@ same address, are kept; a file that is not JSON is left alone with a warning (`A
 | A link source, note type, history type  | register into `LinkSources`, `NoteTypes`, `HistoryTypes` from a provider                                                                                                 |
 
 A patch addresses nodes by their `id`; every screen names its own (the module's guide lists them).
-Operations are `add`, `remove`, `replace`, `move`, `set`, applied in the order registered. A patch
-whose target is gone throws when the screen is first built — a bug in whoever wrote it.
+Operations are `add`, `remove`, `replace`, `move`, `set`, applied in the order registered. A patch whose target is gone throws when the screen is first built — a bug in whoever wrote it.
 
 ## Do not
 
-- Do not edit `vendor/webx-ui/module-admin` or copy it into the site: `composer update` overwrites
-  it. Every row above is the supported way; if none fits, say which seam is missing.
-- Do not write inside the `<!-- webx:agents -->` block of the root `AGENTS.md`: the next
-  `webx:panel --sync` replaces it. Site notes go under `## This project`.
-- Do not hand-wire a module between the `webx:` markers of `admin.ts` and forget the Composer
-  half: `webx:panel --sync` wires what is installed, and `webx:doctor` fails on a half alone.
+- Do not edit `vendor/webx-ui/module-admin` or copy it into the site: `composer update` overwrites it. Every row above is the supported way; if none fits, say which seam is missing.
+- Do not write inside the `<!-- webx:agents -->` block of the root `AGENTS.md`: the next `webx:panel --sync` replaces it. Site notes go under `## This project`.
+- Do not hand-wire a module between the `webx:` markers of `admin.ts` and forget the Composer half: `webx:panel --sync` wires what is installed, and `webx:doctor` fails on a half alone.
 - Do not route site pages under `webx-admin.path`: the shell answers every address below it; move the panel with `WEBX_ADMIN_PATH`.
-- Do not add a column for one site's field on a module's table: a patch on a `HasExtra` model
-  stores it in `extra`, and the next module release will not fight your migration.
-- Do not put a site live without `webx-ui/module-auth`: without it `webx-admin.middleware` is only
-  `web` and the panel is open to anyone.
+- Do not add a column for one site's field on a module's table: a patch on a `HasExtra` model stores it in `extra`, and the next module release will not fight your migration.
+- Do not put a site live without `webx-ui/module-auth`: without it `webx-admin.middleware` is only `web` and the panel is open to anyone.
 - Do not restore a snapshot onto a stand whose content you have not copied first: it is replaced.
 - Do not print anything for the panel on the site in a view (`@auth`, `data-*`): visitors get it too.
 - Do not write `cms_versions` or `cms_history` with SQL: use `publish()`, `restoreVersion()`
@@ -134,10 +136,8 @@ whose target is gone throws when the screen is first built — a bug in whoever 
 ## Check your work
 
 - `php artisan webx:doctor` (`--strict` on a deploy) — every failing line names the fix.
-- `php artisan webx:panel --sync` twice: the second run must say `already wired`,
-  `already lists what is installed` and change nothing.
-- Open `/<webx-admin.path>` and `GET /<webx-admin.api_path>/screens/<name>`: a broken patch
-  fails there with the screen, the operation and the missing target.
+- `php artisan webx:panel --sync` twice: the second run must say `already wired`, `already lists what is installed` and change nothing.
+- Open `/<webx-admin.path>` and `GET /<webx-admin.api_path>/screens/<name>`: a broken patch fails there with the screen, the operation and the missing target.
 - With MCP: `history_get` on a record you changed shows the save, its source and the fields.
 - A module of the site: its `PerformanceTest` (from `webx:make-module`) is filled in and green — https://webx-ui.github.io/webx-ui/guide/performance; an N+1 on a page is found with `debug_page` (`webx-ui/module-debug`) before and after the fix.
 

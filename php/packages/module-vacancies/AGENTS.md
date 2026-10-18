@@ -30,14 +30,25 @@ history and categories `webx-ui/module-admin`, the SEO card `webx-ui/module-seo`
   `hiring`, `is-closed`, `valid-through`, `posted-at`, `project-fields`, `seo`, `history`,
   `versions`) and `vacancies.category-form` (`naming`, `title`, `slug`, `is-visible`,
   `project-fields`). The `form` field is there only with `webx-ui/module-inbox`.
-- **API** under `/api/cms/vacancies` and `/api/cms/vacancies/categories`; permissions
-  `vacancies.view`, `vacancies.manage`, `vacancies.categories.manage`.
+- **API** under `/api/cms/vacancies` and `/api/cms/vacancies/categories`.
 - **MCP** tools `vacancies_list`, `vacancies_get`, `vacancies_create`, `vacancies_update`,
-  `vacancies_duplicate`, `vacancies_publish`, `vacancies_unpublish`, `vacancies_discard`, `vacancies_close`,
-  `vacancies_reopen`, `vacancies_delete`, `vacancies_reorder`, and `vacancy_categories_list`,
-  `_create`, `_update`, `_delete`, `_reorder`; resource `vacancies://catalog`. Scopes
-  `vacancies:read`, `vacancies:write`, `vacancy-categories:read`, `vacancy-categories:write`.
+  `vacancies_duplicate`, `vacancies_publish`, `vacancies_unpublish`, `vacancies_discard`,
+  `vacancies_close`, `vacancies_reopen`, `vacancies_delete`, `vacancies_reorder`, and
+  `vacancy_categories_list`, `_get`, `_create`, `_update`, `_delete`, `_reorder`; resource
+  `vacancies://catalog`. Scopes `vacancies:read`, `vacancies:write`, `vacancy-categories:read`,
+  `vacancy-categories:write`.
 - Also registered: a link source, the panel group `vacancies`, demo content (`resources/demo`).
+
+### Permissions
+
+| Permission                    | Opens                                                                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vacancies.view`              | vacancies and categories, read-only: the lists, the editor, versions; `vacancies_list`, `vacancies_get`, `vacancy_categories_list`, `vacancy_categories_get` |
+| `vacancies.manage`            | create, edit, duplicate, reorder, publish, unpublish, close, reopen, discard, delete and restore vacancies, restore a version; the `vacancies:write` tools   |
+| `vacancies.categories.manage` | categories: create, edit, reorder, delete; the `vacancy-categories:write` tools                                                                              |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:vacancies.view,vacancies.manage` to read, `cms.can:vacancies.manage` to write.
 
 ## Change it without forking
 

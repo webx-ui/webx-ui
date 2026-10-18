@@ -19,17 +19,26 @@ and its journal `webx-ui/module-admin` — read their guides for those.
   layout prints the three built-in places.
 - **Panel screen** `snippets.form`, nodes `content`, `name`, `place`, `code`, `settings`,
   `enabled`, `consent`, `on_stage`, `coverage`, `only_paths`, `except_paths`, `locales`,
-  `history`, `journal`. API under `/api/cms/snippets`. One permission, `snippets.manage`, which
-  no role gets on install — only a super administrator sees the section until it is granted.
+  `history`, `journal`. API under `/api/cms/snippets`.
 - **MCP** tools `snippets_list`, `snippets_get`, `snippets_create`, `snippets_update`,
   `snippets_delete`, `snippets_reorder`; resources `snippets://catalog`, `snippets://places`.
-  Scopes `snippets:read`, `snippets:write`; every tool also needs `snippets.manage`.
+  Scopes `snippets:read`, `snippets:write`.
 - **Checks**: a part of `webx:theme:check` (`Checks\PlacesCheck`) and the doctor check
   `Doctor\SnippetPlaces`.
 - **Cache** `webx-snippets.codes` (every enabled snippet), forgotten on save, delete and reorder, and by a reset of the `snippets` cache group («System → Cache»);
   `webx-snippets.seen` — the day each place was last printed on a page.
 - Also registered: demo content (`resources/demo`) — one snippet, switched off; the table moves
   with `webx:snapshot` as content.
+
+### Permissions
+
+| Permission        | Opens                                                                                                                                                                              |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `snippets.manage` | everything: the section «Codes» and every route under `/api/cms/snippets` (read, create, edit, reorder, delete, restore, purge), every `snippets_*` tool, the journal of a snippet |
+
+The only one, reading included: a code is JavaScript on every page. Of the ready-made roles only
+`developer` holds it; without it only a super administrator sees the section. A route or screen
+node the site adds next to the module asks the same: `cms.can:snippets.manage`.
 
 ## Change it without forking
 

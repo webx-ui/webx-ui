@@ -78,6 +78,32 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 - **`AGENTS.md`** называет бюджет-тест и проверку свежести в «Check your work»
   ([`WEBX_UI_AGENT_DOCS.md`](WEBX_UI_AGENT_DOCS.md) §2).
 
+## Правило: права у каждого модуля
+
+Модуль сдаётся закрытым: всё, что он отдаёт панели и агенту, стоит за правом, и это держит тест.
+Модель и правила — [`WEBX_UI_PERMISSIONS.md`](WEBX_UI_PERMISSIONS.md), гайд для автора модуля —
+`apps/docs/guide/permissions.md`.
+
+- **Объявление** — `Module::permissions()`: всё, что модуль проверяет, и только это. Имена
+  `<id>.<action>`; действия `view` и `manage`, отдельное — только где его захотят выдать без
+  остального (`inbox.update`, `media.upload`, `catalog.delete`). Раздел без своих прав, видимый
+  в меню, называет права видимости через `HasVisibility::visibleWith()`. Новое слово действия —
+  строка в `webx-auth::permissions` на всех десяти языках.
+- **Проверка** — маршрут панели в группе `webx.panel` с `cms.can` (чтение — `view,manage`,
+  запись — `manage`); проверка по присланному или по записи — в контроллере через
+  `AccessPolicy::allows(, , )`; инструмент MCP — `permission:`, если
+  умолчание (`<id>.view|manage` на чтение, `<id>.manage` на запись) не подходит; узел экрана —
+  `can`, кнопки — `context.can()`. Приватные файлы модуля — только своим маршрутом за правом
+  модуля, не в медиатеке и не в публичной папке.
+- **Тест «без права»** — `tests/AccessCoverageTest.php` на трейте
+  `WebxUi\Auth\Testing\AssertsPermissions`: каждый маршрут панели отвечает 401 без входа и 403
+  админу без прав, каждый инструмент не виден ему и отказывает, каждое проверяемое право объявлено.
+  Открытый по замыслу маршрут — в списке теста с причиной. Обязателен в каждом пакете с маршрутами
+  панели или инструментами MCP. Модуль сайта получает заготовку от `webx:make-module`
+  (`tests/Feature/Cms/<Name>ModuleAccessTest.php`).
+- **`AGENTS.md`** — подраздел `### Permissions` в «What it owns»
+  ([`WEBX_UI_AGENT_DOCS.md`](WEBX_UI_AGENT_DOCS.md) §2).
+
 ## Правило: имя пакета
 
 Всё, из чего состоит панель, — пакет с префиксом `module-`: каркас `webx-ui/module-admin` и

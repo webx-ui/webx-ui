@@ -20,13 +20,23 @@ from scratch: the tree is `webx-ui/nested-set`, the address `webx-ui/routing`, t
 - **Public view** `config('webx-pages.view')`, default `pages.show`, receiving `$page`; until the
   site has that view the package prints `webx-pages::show`, a bare document.
 - **Panel screen** `pages.form` (tabs `content`, `settings`, `seo`, `history`); API under
-  `/api/cms/pages`; permissions `pages.view`, `pages.manage`.
+  `/api/cms/pages`.
 - **MCP** tools `pages_tree`, `pages_get`, `pages_create`, `pages_update`, `pages_move`,
   `pages_publish`, `pages_unpublish`, `pages_delete`, `pages_restore`, `pages_discard`, `pages_versions`,
   `pages_version_restore`, `pages_purge`; resource `pages://sitemap`;
   prompt `build_page`. Scopes `pages:read`, `pages:write`.
 - Also registered: a link source (pages in every link picker), an audit content source when
   `webx-ui/module-audit` is installed, demo content (`resources/demo`).
+
+### Permissions
+
+| Permission     | Opens                                                                                                                                                           |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages.view`   | the tree, a page, its versions, the bin count — read-only; `pages_tree`, `pages_get`, `pages_versions`; pages in the link pickers                               |
+| `pages.manage` | create, edit, move, duplicate, publish, unpublish, discard, restore a version, delete, restore, purge; the `pages:write` tools; «Edit» on the panel on the site |
+
+A route or screen node the site adds next to the module asks the same:
+`cms.can:pages.view,pages.manage` to read, `cms.can:pages.manage` to write.
 
 ## Change it without forking
 

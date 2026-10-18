@@ -41,6 +41,7 @@ export default defineConfig({
             { text: 'Lists', link: '/guide/lists' },
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Extending', link: '/guide/extending' },
+            { text: 'Permissions', link: '/guide/permissions' },
             { text: 'Large uploads', link: '/guide/uploads' },
             { text: 'Editing together', link: '/guide/editing-together' },
             { text: 'Building for the panel on the site', link: '/guide/site-bar-modules' },

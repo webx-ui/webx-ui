@@ -18,15 +18,13 @@ question is about one of them.
 - **Address types** `catalog.category` (`/{slug}`, flat at any depth, `OnConflict::Fail`) and
   `catalog.product` (`/{slug}-{id}`, `OnConflict::Suffix`). Filters are path segments after a
   category (`/laptops/brand_apple/price_100-500`). The only query parameter is `?sort=`.
-- **Routes** `webx.catalog.search` (`/catalog/search`, always on), `webx.catalog.suggest`
-  (`/catalog/suggest?q=`, always on: HTML of the view `webx-catalog::suggest` — the first
-  `suggest.limit` products found (6) with a price, their count, «see all»; 204 for nothing asked;
-  `noindex`, `no-store`) and `webx.catalog.root` (`/catalog`, only with `root.enabled`). With a
-  language prefix, each is registered a second time. The search page's box is the widgets'
-  `<x-webx-suggest>` over it — a plain GET search without JavaScript.
-- **Views** `webx-catalog::category`, `root`, `search`, `suggest`, `product`, `product-unavailable`, `filter`
-  and `filter/*`, `grid`, `card`, `sort`, `pagination`, `breadcrumbs`. They render inside
-  `config('webx-catalog.layout')`.
+- **Routes** `webx.catalog.search` (`/catalog/search`), `webx.catalog.suggest` (`/catalog/suggest?q=`:
+  HTML of `webx-catalog::suggest` — the first `suggest.limit` (6) products with a price, their
+  count, «see all»; 204 for nothing asked; `noindex`, `no-store`), both always on, and
+  `webx.catalog.root` (`/catalog`, only with `root.enabled`); again under a language prefix. The
+  search box is the widgets' `<x-webx-suggest>` over it — a plain GET search without JavaScript.
+- **Views** `webx-catalog::category`, `root`, `search`, `suggest`, `product`, `product-unavailable`,
+  `filter`, `filter/*`, `grid`, `card`, `sort`, `pagination`, `breadcrumbs`, inside the layout.
 - **Gallery videos** on the product page are `<x-webx-video>` of `webx-ui/widgets`, the picture
   its poster and shape: YouTube waits for consent to `media`, a file is `<video preload="none">`.
   `VideoProviders` here decides what a row stores; a provider registered only here is handed to
@@ -39,27 +37,37 @@ question is about one of them.
 - **Panel screens** `catalog.product-form` (tabs `main`, `description-tab`, `images-tab`,
   `seo-tab`, `settings-tab`, `history-tab`) and `catalog.category-form` (`main`, `filters-tab`,
   `seo-tab`, `history-tab`). Also the exchange forms `catalog.exchange-import` and
-  `catalog.exchange-profile`. The API is under `/api/cms/catalog`. Permissions are
-  `catalog.view`, `catalog.manage` and `catalog.delete`; satellites have none of their own.
+  `catalog.exchange-profile`. The API is under `/api/cms/catalog`.
 - **Cache group** `catalog` (WEBX_UI_CACHE.md): the facets' settings and what the satellites keep live on it;
   `Category` and `Product` move it (an import or a bulk action commits a chunk, so one move a chunk), a write
   without a model's event says so (`FacetSettings::write`, the importer's mass unpublish). What one page reads
   twice — brands, stock, a facet's values, the subtree — is kept on the request (`Support\RequestMemo`).
   Query budgets of every public page: `tests/PerformanceTest.php` (`WEBX_PERF_PRINT=1` prints the tallies).
-- **Registries** (singletons a satellite fills from its provider): `ProductParts`, `Facets`,
-  `Sorts`, `Documents`, `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`,
-  `StorefrontParts`, `Purchasability`, `PopularitySignals`, `CatalogEngines`, `FilterUrls`,
-  `SearchContributors`, `VideoProviders`, `SatelliteTools`.
-- **MCP** tools `catalog_products_*` (list, get, create, update, publish, unpublish, delete,
-  restore), `catalog_products_gallery*`, `catalog_categories_*` (tree, create, update, move,
-  delete, restore), `catalog_bulk`, `catalog_import`, `catalog_export`, `catalog_exchange_columns`,
-  `catalog_exchange_run`, `catalog_exchange_profiles`. Resources: `catalog://facets`, `fields`,
-  `addresses`, `categories`, `product-parts`, `bulk-actions`, `exchange`. Scopes are
-  `catalog:read` and `catalog:write`.
-- **Commands** (all on the package's own schedule): `webx:catalog:index` (`--rebuild`),
-  `webx:catalog:flush-views`, `webx:catalog:popularity`, `webx:catalog:exchange-prune`. Also
-  registered: doctor checks for the engine, the exchange and the root; link sources;
-  `wx-collection`'s products source; the sitemap file `catalog-filters`; demo content.
+- **Registries** (singletons a satellite fills from its provider): `ProductParts`, `Facets`, `Sorts`, `Documents`,
+  `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`, `StorefrontParts`, `Purchasability`,
+  `PopularitySignals`, `CatalogEngines`, `FilterUrls`, `SearchContributors`, `VideoProviders`, `SatelliteTools`.
+- **MCP** tools `catalog_products_*` (list, get, create, update, publish, unpublish, delete, restore),
+  `catalog_products_gallery*`, `catalog_categories_*` (tree, create, update, move, delete, restore),
+  `catalog_bulk`, `catalog_import`, `catalog_export`, `catalog_exchange_columns`, `_run`, `_profiles`.
+  Resources: `catalog://facets`, `fields`, `addresses`, `categories`, `product-parts`, `bulk-actions`,
+  `exchange`. Scopes `catalog:read`, `catalog:write`.
+- **Commands** (all on the package's own schedule): `webx:catalog:index` (`--rebuild`), `webx:catalog:flush-views`,
+  `webx:catalog:popularity`, `webx:catalog:exchange-prune`. Also registered: doctor checks for the engine, the
+  exchange and the root; link sources; `wx-collection`'s products source; the sitemap file `catalog-filters`; demo content.
+
+### Permissions
+
+| Permission       | Opens                                                                                                                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `catalog.view`   | read-only: products, categories, facets, the journal, the exchange's columns, runs and profiles, an export; the read tools, `catalog_export`, `catalog_exchange_*`                   |
+| `catalog.manage` | create, edit, publish, move products and categories, the gallery and videos, import and exchange profiles, every bulk action but delete and restore; the other `catalog:write` tools |
+| `catalog.delete` | delete and restore products and categories, the «Deleted» list, bulk delete and restore; `catalog_products_delete`, `_restore`, `catalog_categories_delete`, `_restore`              |
+
+`catalog.delete` alone also reads the panel's lists and forms. «Categories» (`catalog-categories`)
+and every satellite's section have no permission of their own: they open with `catalog.view` or
+`catalog.manage` (`visibleWith()`) and write with `catalog.manage`. A route or screen node the site
+adds next to the module asks the same: `cms.can:catalog.view,catalog.manage,catalog.delete` to read,
+`cms.can:catalog.manage` to write, `cms.can:catalog.delete` to delete or restore.
 
 ## Change it without forking
 

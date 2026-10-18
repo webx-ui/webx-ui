@@ -43,9 +43,21 @@ an append-only journal. The panel shell, permissions and the module registry are
   system's comment). Settings screen `tasks.settings`, keys `tasks.notify.*` and
   `tasks.telegram.chats`; the bot token is encrypted under `tasks.telegram-token` and never read
   back. Command `webx:tasks:stale` (scheduled every 15 minutes). Config `config/webx-tasks.php`.
-- **Section** `tasks`; permissions `tasks.view`, `tasks.manage`, `tasks.work`, `tasks.review`.
+- **Section** `tasks`.
 - **Refusals** — `WebxUi\Tasks\Exceptions\TaskRefused` with a `reason` key; bad values are a
   `ValidationException`.
+
+### Permissions
+
+| Permission     | Opens                                                                                                                                                                                                                                                                                                                                         |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tasks.view`   | projects and tasks, read-only (`GET projects`, `tasks`, `tasks/{id}`); `tasks_projects_list`, `tasks_list`, `tasks_get`, `tasks_queue`                                                                                                                                                                                                        |
+| `tasks.manage` | the reads, plus projects, tasks and their stages: create, edit, `ready`, cancel, unblock and cancel a stage, release, comment, the settings screen and its test send; `tasks_projects_create`, `tasks_projects_update`, `tasks_create`, `tasks_update`, `tasks_ready`, `tasks_stage_unblock`, `tasks_cancel`, `tasks_comment`; the menu badge |
+| `tasks.work`   | the reads, plus an agent's side: `tasks_claim_next`, `tasks_stage_report`, `tasks_stage_release`, `tasks_stage_block`, `tasks_comment`; release and comment in the panel                                                                                                                                                                      |
+| `tasks.review` | the reads, plus accept or send back a stage (`stages/{id}/accept`, `rework`), comment; `tasks_stage_accept`, `tasks_stage_rework`, `tasks_comment`; the menu badge                                                                                                                                                                            |
+
+In no ready-made role. A route or screen node the site adds next to the module asks the same:
+`cms.can:tasks.view,tasks.manage,tasks.work,tasks.review` to read, `cms.can:tasks.manage` to write.
 
 ## Change it without forking
 

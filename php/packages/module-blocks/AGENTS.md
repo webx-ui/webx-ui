@@ -25,12 +25,10 @@ their guides when the question is about one of those.
 - **Rendering**: `Blocks::render($blocks, $entity)`, `$model->renderBlocks()`, `@webxBlocks` in the
   layout's head (styles and scripts of what the page rendered), `<x-webx-block type="…">` for a
   component, `<x-webx-blocks::region name="header" fallback="components.header" />` for a region.
-- **Routes**: bundles under `config('webx-blocks.bundles.path')` (`blocks/{hash}.css|js`,
-  `blocks/runtime.js`); the preview under `config('webx-blocks.preview.path')` (`_preview/{type}/{id}`,
-  `_preview/region/{name}`, `_preview/block-stage`).
+- **Routes**: bundles `blocks/{hash}.css|js`, `blocks/runtime.js` (`webx-blocks.bundles.path`);
+  preview `_preview/{type}/{id}`, `_preview/region/{name}`, `_preview/block-stage` (`webx-blocks.preview.path`).
 - **Panel**: sections `blocks` and `regions`; screen `regions.form` (nodes `tabs`, `content`,
-  `blocks`, `history`, `versions`); API under `/api/cms/blocks` and `/api/cms/regions`;
-  permissions `blocks.view`, `blocks.manage` (writes Blade), `blocks.regions` (edits regions).
+  `blocks`, `history`, `versions`); API under `/api/cms/blocks` and `/api/cms/regions`.
 - **MCP** tools `blocks_list`, `blocks_get`, `blocks_create`, `blocks_update` (also `rename_to`),
   `blocks_publish`, `blocks_delete`, `blocks_versions`, `blocks_version_restore`, `blocks_usage`,
   `blocks_render`, `blocks_get_content`, `blocks_set_content`, `blocks_edit_content`,
@@ -38,19 +36,28 @@ their guides when the question is about one of those.
   `blocks_region_discard`, `blocks_region_versions`, `blocks_region_restore`, `blocks_region_adopt`;
   resources `blocks://guidelines`, `blocks://schema`, `blocks://catalog`, `blocks://fields`,
   `blocks://site`, `blocks://shortcodes`; prompt `design_block`. Scopes `blocks:read`, `blocks:write`.
-- **Commands** `webx:blocks:export`, `webx:blocks:import`, `webx:blocks:offered`,
-  `webx:blocks:bundles`, `webx:blocks:clear`, `webx:blocks:regions`, `webx:blocks:prune`.
-- Also registered: field types `wx-data` and `wx-slot`, the registries `BlockOffers`,
-  `BlockShapes`, `BlockComponents`, demo content (`resources/demo`). With
-  `webx-ui/module-audit` installed: a content source for regions, the check
-  `blocks.stray_values` (one finding per entity whose blocks hold values for fields their type
-  does not define, repeater items included, live and draft) and its fix `blocks.prune-stray` —
-  the same `StrayValues` that `webx:blocks:prune` runs; a block of an unknown type is never
-  touched. With `webx-ui/themes` installed: the sync step `Themes\LayerSync` — `webx:theme:sync`
-  creates and updates the block types of the theme layers, marking each with `theme_source` (the
-  layer) and `theme_hash`; a slug whose `theme_source` is empty is the site's and is refused —
-  except the demo's `hero`/`text`/… left exactly as seeded, which `--adopt=<slug>` hands to the
-  theme. The demo never seeds a slug the theme layers carry (theme-default's `hero`, `text`).
+- **Commands** `webx:blocks:` `export`, `import`, `offered`, `bundles`, `clear`, `regions`, `prune`.
+- Also registered: field types `wx-data`, `wx-slot`; registries `BlockOffers`, `BlockShapes`,
+  `BlockComponents`; demo content (`resources/demo`). With module-audit: a content source for
+  regions, the check `blocks.stray_values` (values for fields the type does not define, repeater
+  items included, live and draft) and its fix `blocks.prune-stray` (what `webx:blocks:prune` runs;
+  a block of an unknown type is never touched). With `webx-ui/themes`: `Themes\LayerSync` —
+  `webx:theme:sync` creates and updates the theme layers' types, marked `theme_source` (the layer)
+  and `theme_hash`; a slug with empty `theme_source` is the site's and is refused, except the demo's
+  `hero`/`text`/… left as seeded (`--adopt=<slug>`). The demo never seeds a theme layer's slug.
+
+### Permissions
+
+| Permission       | Opens                                                                                                                                                                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `blocks.view`    | «Blocks» read-only: types, usage, versions, export; `blocks_list`, `blocks_get`, `blocks_versions`, `blocks_usage`, `blocks_render`; content of a record through `blocks_get_content`, `blocks_preview_url`                                                   |
+| `blocks.manage`  | types: create, edit, publish, reorder, import, delete, restore a version, customise a component — writing Blade; the `blocks:write` tools; a record's content through `blocks_set_content`, `blocks_edit_content`                                             |
+| `blocks.regions` | the section «Site regions» (`regions` shows by `visibleWith()`), `/api/cms/regions`, the `blocks_region*` tools and `blocks_regions`, a region's content through the content tools; also the catalogue, `fragments` and `render` the editor picks blocks from |
+
+`WEBX_BLOCKS_EDITING=false` makes every type write a 403 whatever the permission (types then come
+by `webx:blocks:import`); `blocks/content/{type}/{id}` (panel on the site) asks the record's section.
+A route or screen node the site adds next to the module asks the same: `cms.can:blocks.view,blocks.manage`
+to read, `cms.can:blocks.manage` to write, `cms.can:blocks.regions` for regions.
 
 ## Change it without forking
 
@@ -73,7 +80,6 @@ their guides when the question is about one of those.
 | A phone or e-mail that changes in one place | write `[phone]` in the text (`blocks://shortcodes` lists them); never the number. A site's own: `Shortcodes::register()` |
 | A type under another slug                   | «Identifier» in the type's settings, or `blocks_update` with `rename_to`: pages, regions and `allow` lists follow        |
 | A bad edit of a page undone                 | `pages_versions`, then `pages_version_restore` (services: `services_*`; a type: `blocks_versions`)                       |
-| Types read-only on production               | `WEBX_BLOCKS_EDITING=false`; types then arrive by `webx:blocks:import`                                                   |
 | Bundles written before the first visitor    | list the models in `entities`, run `webx:blocks:bundles --warm`                                                          |
 | Values of fields no type defines any more   | `php artisan webx:blocks:prune --dry-run`, then without the flag: live and draft, every listed model and the regions     |
 | Other words in the panel                    | `php artisan vendor:publish --tag=webx-blocks-lang`                                                                      |
@@ -93,40 +99,35 @@ draft; the site changes when a person publishes the entity (a region: `blocks_re
 `blocks_region_publish`, `blocks_region_unpublish`, `blocks_region_discard` and `blocks_region_restore` take
 the `revision` `blocks_get_content` gave for the region: a stale one is refused, and while somebody has the
 region open in the panel (`being_edited_by`) one is required — `force: true` goes ahead regardless.
-
-Every value is checked by its field type's rules — bounds, options, dates, colours, links
-(`http(s)`, `mailto`, `tel`, relative paths and `#anchors` only), library files, Inbox forms
-(`wx-inbox-form`: a slug no form has is refused with the slugs there are) — and every
-block against where it stands: a container field's `props.allow` and `props.max` (or the type's
-`allow`), a type's `allowed_in` and `max_per_entity`. A refusal names the block's key and the
-field (`hero [k1], field [title]: …`); the panel shows it under the field. `add` into a block
-whose type has no `wx-blocks` field is refused as "not a container".
+Every value is checked by its field type's rules (bounds, options, dates, colours, links — only
+`http(s)`, `mailto`, `tel`, relative paths, `#anchors` — library files, `wx-inbox-form` slugs),
+and every block against where it stands: a container's `props.allow`/`props.max` (or the type's
+`allow`), a type's `allowed_in` and `max_per_entity`. A refusal names the block's key and field
+(`hero [k1], field [title]: …`), shown under the field in the panel; `add` into a type without a
+`wx-blocks` field is refused as "not a container".
 
 ## Do not
 
-- Do not edit `vendor/webx-ui/module-blocks` or write a block type as a Blade file in the site:
-  types live in the tables so the panel, versions and preview see them. Make it in the panel or
-  over MCP and keep it in git with `webx:blocks:export`.
+- Do not edit `vendor/webx-ui/module-blocks` or write a type as a Blade file in the site: types live
+  in the tables for the panel, versions and preview. Make it in the panel or over MCP; git: `webx:blocks:export`.
 - Do not give `blocks.manage` to content editors: a template is Blade, Blade is PHP, saving one is
   running code. Regions need only `blocks.regions`.
 - Do not write rows of `blocks` or `block_versions` with SQL: a version is checked and compiled on
-  save, publishing renders it first, and the cache is forgotten only through the model (or by a reset of the `blocks` / `regions` cache groups, «System → Cache»). Use
-  `webx:blocks:import` or the tools.
+  save, publishing renders it first, the cache is forgotten only through the model (or a reset of
+  the `blocks` / `regions` groups, «System → Cache»). Use `webx:blocks:import` or the tools.
 - Do not rewrite the content of an entity with `saveQuietly()` or a query without `bump('block-usage')`:
   where each type stands is cached on that group and moves only with the models' events.
 - Do not publish a template that declares no `data-wx-block="{slug}"` on its root, marks it with
   anything but the exact slug, or uses variables the schema lacks: the script never runs, the
-  publish check refuses the last two. `blocks_render`
-  shows both before you publish.
+  publish check refuses the last two. `blocks_render` shows both before you publish.
 - Do not style with bare element selectors or `@media`: they reach the whole site. Prefix every
   selector with `.b-{slug}` and size with `@container`. On a site with a theme, no literal colour
   or font either — `var(--site-…)` of the theme's vocabulary, no fallback: saving warns.
 - Do not delete a type that stands on pages or that other types call: the API answers `409` or
   `422`, `blocks_delete` refuses. `blocks_usage` lists where it stands; remove it there first, or disable it.
 - Do not switch a field's `localized` on a type pages already use without reading the warning:
-  publishing converts the stored values (a plain value becomes the main language's; a map keeps
-  the main language) and refuses to drop text in other languages unless told to
-  (`drop_translations`).
+  publishing converts the stored values (a plain value becomes the main language's; a map keeps it)
+  and refuses to drop other languages' text unless told to (`drop_translations`).
 - Do not remove a region from the config and leave its row: run `webx:blocks:regions --prune`,
   which deletes the saved regions no longer declared, with their versions.
 
@@ -145,6 +146,5 @@ whose type has no `wx-blocks` field is refused as "not a container".
 - [README.md](README.md) in this directory — the PHP API, templates, bundles, preview, export.
 - Guide: https://webx-ui.github.io/webx-ui/guide/blocks
 - Regions guide: https://webx-ui.github.io/webx-ui/guide/layout-regions
-- Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_BLOCKS.md
-- Components (§24) and regions: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_BLOCKS.md,
-  https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_LAYOUT_REGIONS.md
+- Specification (components: §24): https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_BLOCKS.md
+- Regions spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_LAYOUT_REGIONS.md

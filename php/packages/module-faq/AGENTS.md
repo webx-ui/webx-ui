@@ -22,12 +22,23 @@ The block and its template are `webx-ui/module-blocks`, the markup `webx-ui/modu
   when the block shows all categories, off when it picks some. `config('webx-faq.markup')` is the
   site-wide switch.
 - **Panel screens** `faq.form` and `faq.category-form`; API under `/api/cms/faq/questions` and
-  `/api/cms/faq/categories`; permissions `faq.view`, `faq.manage`, `faq.categories.manage`.
+  `/api/cms/faq/categories`.
 - **MCP** tools `faq_list`, `faq_get`, `faq_create`, `faq_update`, `faq_delete`, `faq_reorder`;
   `faq_categories_list`, `faq_categories_create`, `faq_categories_update`,
   `faq_categories_delete`, `faq_categories_reorder`. Resource `faq://catalog`. Scopes `faq:read`,
   `faq:write`, `faq-categories:read`, `faq-categories:write`.
 - Also registered: demo content (`resources/demo`) — with `module-pages` a `/faq` page.
+
+### Permissions
+
+| Permission              | Opens                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| `faq.view`              | questions and categories, read-only: the lists, the form, `faq_list`, `faq_get`, `faq_categories_list` |
+| `faq.manage`            | create, edit, publish, reorder, delete and restore questions; the `faq:write` tools                    |
+| `faq.categories.manage` | categories: create, edit, reorder, delete; the `faq-categories:write` tools                            |
+
+A route or screen node the site adds next to the module asks the same: `cms.can:faq.view,faq.manage`
+to read, `cms.can:faq.manage` to write.
 
 ## Change it without forking
 

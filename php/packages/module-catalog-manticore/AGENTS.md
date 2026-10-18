@@ -18,14 +18,24 @@ those.
   database migrations of its own.
 - **Panel**: module `search-index` («System → Search index»), shown only on this engine. It shows
   the server, each language's table compared with the database, the queue, and «Rebuild». The API
-  is under `/api/cms/search-index` (`rebuild`). Permissions are `search-index.view` and
-  `search-index.manage`.
+  is under `/api/cms/search-index` (`rebuild`).
 - **View** `webx-catalog-manticore::unavailable`: the 503 page with `Retry-After`, shown when the
   server is down and the catalogue is larger than `webx-catalog.sql_engine_limit`.
 - **Doctor check**: it reports a missing prefix, a prefix that starts somebody else's tables, a
   server that does not answer, and a table that is out of date.
 - **MCP** tool `catalog_index_status` (read only). It reports the server, the tables and the
   queue, and with `product` it explains why one product is not found.
+
+### Permissions
+
+| Permission            | Opens                                                                |
+| --------------------- | -------------------------------------------------------------------- |
+| `search-index.view`   | «System → Search index» read-only: the server, the tables, the queue |
+| `search-index.manage` | the same, plus «Rebuild» (`POST /api/cms/search-index/rebuild`)      |
+
+`catalog_index_status` is served as the catalogue's tool: it asks `catalog.view` or `catalog.manage`,
+not these. A route or screen node the site adds next to the module asks the same:
+`cms.can:search-index.view,search-index.manage` to read, `cms.can:search-index.manage` to rebuild.
 
 ## Change it without forking
 

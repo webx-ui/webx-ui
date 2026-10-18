@@ -22,24 +22,33 @@ categories `webx-ui/module-admin`, the SEO card and redirects `webx-ui/module-se
 - **Publication is the date**: `published_at` in the future is scheduled, in the past is live.
   There is no queue and no separate flag.
 - **Panel screens** `blog.article-form` (tabs `content`, `settings`, `seo`, `history`) and
-  `blog.category-form` for a rubric; API under `/api/cms/blog` (`articles`, `rubrics`, `tags`);
-  permissions `blog.articles.view`, `blog.articles.manage`, `blog.taxonomy.manage`.
-- **MCP** tools `articles_list`, `articles_get`, `articles_create`, `articles_update`,
-  `articles_publish`, `articles_unpublish`, `articles_discard`, `articles_delete`; `rubrics_list`, `rubrics_create`,
-  `rubrics_update`, `rubrics_delete`, `rubrics_reorder`; `tags_list`, `tags_merge`. Resource
-  `blog://feed`, prompt `write_article`. Scopes `articles:read`, `articles:write`,
-  `rubrics:read`, `rubrics:write`, `tags:read`, `tags:write`.
+  `blog.category-form` for a rubric; API under `/api/cms/blog` (`articles`, `rubrics`, `tags`).
+- **MCP** tools `articles_list`, `articles_get`, `articles_create`, `articles_update`, `articles_publish`,
+  `articles_unpublish`, `articles_discard`, `articles_delete`; `rubrics_list`, `rubrics_create`,
+  `rubrics_update`, `rubrics_delete`, `rubrics_reorder`; `tags_list`, `tags_merge`. Resource `blog://feed`,
+  prompt `write_article`. Scopes `articles:*`, `rubrics:*`, `tags:*` (`read`, `write`).
 - **Author pages** (`WEBX_BLOG_AUTHORS=true`, off by default): `blog_authors` (`Author`) — a
   profile per administrator (name for readers, slug, role, photo, bio, `is_public`), address type
-  `author` (`blog/author/anna`, registered always; a closed page is a 404), view `author`,
-  section «Authors» with screen `blog.author-form` and permission `blog.authors.manage`, tools
-  `authors_list` and `authors_update`. The byline links only to an open page
-  (`Article::authorUrl()`); without a profile it is the account's name.
+  `author` (`blog/author/anna`, registered always; a closed page is a 404), view `author`, section
+  «Authors» with screen `blog.author-form`, tools `authors_list` and `authors_update`. The byline
+  links only to an open page (`Article::authorUrl()`); without a profile it is the account's name.
 - **A block** — the collection source `blog` (`ArticlesSource` over `ArticleQuery`: the feed's
   articles in the feed's order, rubrics as categories) and the offered block type `blog` «Latest
   articles», which prints the feed's cards (`ArticleQuery::block($value)` gives the models).
 - Also registered: link sources for articles, rubrics and tags, an SEO source for tag pages
   (`noindex` by default), the feed in the sitemap, demo content (`resources/demo`).
+
+### Permissions
+
+| Permission             | Opens                                                                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `blog.articles.view`   | articles read-only: the list, the editor, versions; reading rubrics and tags; `articles_list`, `articles_get`, `rubrics_list`, `rubrics_get`, `tags_list` |
+| `blog.articles.manage` | create, edit, publish, unpublish, discard, delete and restore articles, restore a version, add a tag from the editor; the `articles:write` tools          |
+| `blog.taxonomy.manage` | rubrics (create, edit, reorder, delete) and tags (rename, merge, mass actions, delete); the `rubrics:write` tools, `tags_merge`                           |
+| `blog.authors.manage`  | the section «Authors» and its API, `authors_list`, `authors_update`                                                                                       |
+
+A route or screen node the site adds next to the articles asks the same:
+`cms.can:blog.articles.view,blog.articles.manage` to read, `cms.can:blog.articles.manage` to write.
 
 ## Change it without forking
 
