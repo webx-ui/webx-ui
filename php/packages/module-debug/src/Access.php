@@ -7,6 +7,7 @@ namespace WebxUi\Debug;
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Cookie\QueueingFactory as Cookies;
 use Illuminate\Contracts\Encryption\StringEncrypter;
 use Illuminate\Database\Eloquent\Model;
@@ -41,10 +42,20 @@ final class Access
     public function __construct(
         private readonly Config $config,
         private readonly AuthFactory $auth,
-        private readonly StringEncrypter $encrypter,
+        private readonly Container $container,
         private readonly CacheFactory $cache,
         private readonly Cookies $cookies,
     ) {}
+
+    /**
+     * Taken when a token is made or read, not when the bar boots: the provider builds this class
+     * while the application starts, and a site without `APP_KEY` yet (`webx:setup`, `key:generate`,
+     * static analysis) has to start all the same.
+     */
+    private function encrypter(): StringEncrypter
+    {
+        return $this->container->make(StringEncrypter::class);
+    }
 
     public function enabled(): bool
     {
@@ -108,7 +119,7 @@ final class Access
     {
         $id = (string) Str::ulid();
 
-        $token = $this->encrypter->encryptString((string) json_encode([
+        $token = $this->encrypter()->encryptString((string) json_encode([
             'user' => $user->getKey(),
             'id' => $id,
             'nonce' => Str::random(24),
@@ -127,7 +138,7 @@ final class Access
     public function redeem(string $token): ?array
     {
         try {
-            $payload = json_decode($this->encrypter->decryptString($token), true, 4, JSON_THROW_ON_ERROR);
+            $payload = json_decode($this->encrypter()->decryptString($token), true, 4, JSON_THROW_ON_ERROR);
         } catch (Throwable) {
             return null;
         }
