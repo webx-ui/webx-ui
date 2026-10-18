@@ -11,6 +11,7 @@ use Laravel\Passport\AccessToken;
 use Laravel\Passport\Token;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Auth\Models\Role;
 use WebxUi\Mcp\Calls\Call;
 use WebxUi\Mcp\Keys\Key;
 use WebxUi\Mcp\Keys\Keys;
@@ -22,16 +23,130 @@ use WebxUi\Mcp\Keys\Keys;
 final class KeysEndpointTest extends PassportTestCase
 {
     #[Test]
-    public function the_keys_are_behind_the_manage_permission(): void
+    public function your_own_keys_need_no_permission_and_somebody_elses_need_manage(): void
     {
         $this->getJson('/api/cms/auth/keys')->assertUnauthorized();
 
         $editor = $this->admin('editor@example.test');
+        $editor->roles()->attach($this->role('readers', ['admins.view']));
+        $other = $this->admin('other@example.test');
         $this->actingAs($editor, 'cms');
 
-        $this->getJson('/api/cms/auth/keys')->assertForbidden();
-        $this->postJson('/api/cms/auth/keys', $this->input($editor))->assertForbidden();
+        // Your own: no more than you already are.
+        $mine = $this->postJson('/api/cms/auth/keys', $this->input($editor, ['admins:read']))->assertCreated();
+
+        // Somebody else's: speaking for them.
+        $this->postJson('/api/cms/auth/keys', $this->input($other))
+            ->assertForbidden()
+            ->assertJsonPath('rule', 'forbidden')
+            ->assertJsonPath('missing', ['admins.manage']);
+        $this->getJson('/api/cms/auth/keys/scopes?admin='.$other->getKey())->assertForbidden();
+
+        $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
+        $theirs = (int) $this->postJson('/api/cms/auth/keys', $this->input($other))->assertCreated()->json('data.id');
+
+        $this->actingAs($editor, 'cms');
+        $this->getJson('/api/cms/auth/keys')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', (int) $mine->json('data.id'))
+            ->assertJsonPath('meta.can_see_everybody', false);
+
+        $this->deleteJson("/api/cms/auth/keys/{$theirs}")->assertForbidden();
+        $this->deleteJson('/api/cms/auth/keys/'.(int) $mine->json('data.id'))
+            ->assertOk()
+            ->assertJsonPath('data.state', 'revoked');
+    }
+
+    #[Test]
+    public function a_key_carries_only_the_scopes_its_owners_permissions_reach(): void
+    {
+        $robot = $this->admin('robot@example.test');
+        $robot->roles()->attach($this->role('readers', ['admins.view']));
+        $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
+
+        $usable = (array) $this->getJson('/api/cms/auth/keys/scopes?admin='.$robot->getKey())->assertOk()->json('data');
+
+        $this->assertContains('mcp:use', $usable);
+        $this->assertContains('admins:read', $usable);
+        // Writing roles and reading the sign-in trail are behind permissions the robot lacks.
+        $this->assertNotContains('admins:write', $usable);
+        $this->assertNotContains('admins:audit', $usable);
+
+        // Even a super administrator cannot hand the robot a scope its owner could never use.
+        $this->postJson('/api/cms/auth/keys', $this->input($robot, ['admins:read', 'admins:write']))
+            ->assertJsonValidationErrors('scopes');
         $this->assertSame(0, Key::query()->count());
+
+        // The console is the same door.
+        $this->assertSame(1, Artisan::call('webx:mcp:token', ['--name' => 'cron', '--admin' => 'robot@example.test', '--scopes' => 'admins:audit']));
+        $this->assertSame(0, Key::query()->count());
+
+        $this->postJson('/api/cms/auth/keys', $this->input($robot, ['admins:read']))->assertCreated();
+    }
+
+    #[Test]
+    public function a_role_taken_from_the_owner_narrows_their_key_at_once(): void
+    {
+        $robot = $this->admin('robot@example.test');
+        $readers = $this->role('readers', ['admins.view']);
+        $robot->roles()->attach($readers);
+        $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
+
+        // Both the module scope and `mcp:use`: each is the owner's permissions of the moment.
+        foreach ([['admins:read'], []] as $scopes) {
+            $robot->roles()->sync([$readers->getKey()]);
+            $this->actingAs($this->admin('issuer-'.count($scopes).'@example.test', super: true), 'cms');
+            $token = (string) $this->postJson('/api/cms/auth/keys', $this->input($robot, $scopes))->assertCreated()->json('token');
+
+            $this->mcp('admins_list_admins', $token)->assertJsonPath('result.isError', false);
+            $this->assertContains('admins_list_admins', array_column((array) $this->rpc($token, 'tools/list')->json('result.tools'), 'name'));
+
+            $robot->roles()->detach();
+
+            // Out of the list is out of reach: the tool is not there to call any more.
+            $this->mcp('admins_list_admins', $token)
+                ->assertBadRequest()
+                ->assertJsonPath('error.message', 'Tool [admins_list_admins] not found.');
+            $this->assertNotContains('admins_list_admins', array_column((array) $this->rpc($token, 'tools/list')->json('result.tools'), 'name'));
+        }
+    }
+
+    #[Test]
+    public function a_role_is_made_through_a_key_under_the_rules_of_the_panel(): void
+    {
+        $manager = $this->admin('roles@example.test');
+        $manager->roles()->attach($this->role('role-makers', ['roles.manage', 'admins.view']));
+        $this->actingAs($manager, 'cms');
+
+        $token = (string) $this->postJson('/api/cms/auth/keys', $this->input($manager, ['admins:read', 'admins:write']))
+            ->assertCreated()
+            ->json('token');
+
+        $this->mcp('admins_create_role', $token, ['name' => 'Readers', 'permissions' => ['admins.view']])
+            ->assertJsonPath('result.isError', false);
+        $this->assertSame(['admins.view'], Role::query()->where('slug', 'readers')->sole()->permissions);
+
+        // Rule 2 through the same door: the answer says why, and nothing is made.
+        $refused = $this->mcp('admins_create_role', $token, ['name' => 'Wider', 'permissions' => ['admins.manage']]);
+        $this->assertStringContainsString('beyond-yours', (string) $refused->getContent());
+        $this->assertFalse(Role::query()->where('slug', 'wider')->exists());
+    }
+
+    #[Test]
+    public function a_super_administrators_key_is_switched_off_only_by_one_or_by_its_owner(): void
+    {
+        $owner = $this->admin('owner@example.test', super: true);
+        $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
+        $id = (int) $this->postJson('/api/cms/auth/keys', $this->input($owner))->assertCreated()->json('data.id');
+
+        $this->actingAs($this->manager(), 'cms');
+        $this->deleteJson("/api/cms/auth/keys/{$id}")
+            ->assertForbidden()
+            ->assertJsonPath('rule', 'only-super');
+
+        $this->actingAs($owner, 'cms');
+        $this->deleteJson("/api/cms/auth/keys/{$id}")->assertOk();
     }
 
     #[Test]
@@ -169,7 +284,8 @@ final class KeysEndpointTest extends PassportTestCase
     public function a_revoked_key_stops_at_once_and_stays_in_the_list(): void
     {
         $this->actingAs($this->admin('issuer@example.test', super: true), 'cms');
-        $owner = $this->admin('owner@example.test', super: true);
+        $owner = $this->admin('owner@example.test');
+        $owner->roles()->attach($this->role('readers', ['admins.view']));
 
         $issued = $this->postJson('/api/cms/auth/keys', $this->input($owner))->assertCreated();
         $token = (string) $issued->json('token');

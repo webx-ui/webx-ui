@@ -25,7 +25,17 @@ final class RoleRequest extends FormRequest
     public function rules(): array
     {
         $existing = $this->route('role');
-        $role = $existing instanceof Role ? $existing : null;
+
+        return self::rulesFor($existing instanceof Role ? $existing : null);
+    }
+
+    /**
+     * The same rules for every door that writes a role — the form and the MCP tools.
+     *
+     * @return array<string, mixed>
+     */
+    public static function rulesFor(?Role $role): array
+    {
         $present = $role === null ? 'required' : 'sometimes';
 
         /** @var AccessPolicy $policy */
@@ -61,6 +71,14 @@ final class RoleRequest extends FormRequest
      * @return array<string, string>
      */
     public function attributes(): array
+    {
+        return self::names();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function names(): array
     {
         return [
             'name' => (string) __('webx-auth::validation.name'),

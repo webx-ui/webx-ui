@@ -27,6 +27,10 @@ final class AccessCoverageTest extends TestCase
             'POST api/cms/auth/logout' => 'yourself',
             'GET api/cms/auth/connections' => 'your own agents; somebody else\'s are asked for admins.manage inside',
             'DELETE api/cms/auth/connections/{connection}' => 'your own agent; somebody else\'s are asked for admins.manage inside',
+            'GET api/cms/auth/keys' => 'your own keys; everybody\'s with admins.manage, asked inside',
+            'GET api/cms/auth/keys/scopes' => 'what your own key may carry; somebody else\'s is asked for admins.manage inside',
+            'POST api/cms/auth/keys' => 'a key for yourself; for somebody else admins.manage and the rules, asked inside',
+            'DELETE api/cms/auth/keys/{key}' => 'your own key; somebody else\'s is asked for admins.manage inside',
         ]);
 
         $this->assertToolsNeedPermission('admins');

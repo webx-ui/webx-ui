@@ -21,10 +21,11 @@ use WebxUi\Mcp\Scopes;
 /**
  * Keys for programs: the list, issuing one, and switching one off (WEBX_UI_MCP_ACCESS.md §12).
  *
- * All three behind `admins.manage`, the permission that is about other people's accounts: a
- * key acts as the administrator it names, so issuing one is speaking for them. Issuing one for
- * yourself is no different — a key is a secret that leaves the panel, unlike a connection,
- * which a person makes for themselves without handing anybody anything.
+ * Like connections, one endpoint answers two questions (WEBX_UI_PERMISSIONS.md §7). Your own keys
+ * are yours to list, issue and switch off without any permission: a key acts as the administrator
+ * it names and can never do more than they may, so one for yourself is no more than you already
+ * are. Somebody else's is speaking for them — `admins.manage`, under the rules {@see AccessRules}
+ * asks. Either way a key carries only the scopes its owner's permissions reach.
  *
  * The secret is in the answer to the issue and nowhere else, ever: Passport keeps only the
  * token's id, and the list shows names, scopes and dates.
@@ -40,8 +41,12 @@ final class KeyController
 
     public function index(): JsonResponse
     {
+        $caller = $this->caller();
+        $everybody = $caller !== null && $caller->hasPermission('admins.manage');
+
         /** @var People<int, Key> $keys */
         $keys = Key::query()
+            ->when(! $everybody, static fn ($query) => $query->where('cms_user_id', $caller?->getKey()))
             // Live ones first, newest first: the list is read to find a key to switch off, or
             // to see whether the one a script uses is still there.
             ->orderByRaw('case when revoked_at is null then 0 else 1 end')
@@ -57,11 +62,38 @@ final class KeyController
         return new JsonResponse([
             'data' => $keys->map(fn (Key $key): array => $this->row($key, $people))->values(),
             'meta' => [
-                // What a key may be issued with, so the form offers nothing the server refuses.
+                // What a key may be issued with at all; what one for a given owner may carry is
+                // `keys/scopes`, asked once the form knows whose key it is.
                 'scopes' => $this->issuer->known(),
                 'max_days' => KeyIssuer::MAX_DAYS,
+                'can_see_everybody' => $everybody,
             ],
         ]);
+    }
+
+    /**
+     * The scopes a key for this administrator may carry — yourself when nobody is named — so the
+     * form offers nothing the server refuses.
+     */
+    public function scopes(Request $request): JsonResponse
+    {
+        $input = $request->validate([
+            'admin' => ['nullable', 'integer', Rule::exists((new CmsUser)->getTable(), 'id')],
+        ]);
+
+        $caller = $this->caller();
+        $owner = isset($input['admin']) ? CmsUser::query()->findOrFail($input['admin']) : $caller;
+
+        if (! $owner instanceof CmsUser) {
+            abort(403);
+        }
+
+        // Somebody else's permissions are what their scopes give away: asked as for issuing.
+        if ($caller !== null && ! $caller->is($owner) && ! $caller->hasPermission('admins.manage')) {
+            abort(403);
+        }
+
+        return new JsonResponse(['data' => $this->issuer->usable($owner)]);
     }
 
     public function store(Request $request): JsonResponse
@@ -94,7 +126,7 @@ final class KeyController
                 $this->caller(),
             );
         } catch (KeyRefused $refused) {
-            throw ValidationException::withMessages(['admin' => $refused->getMessage()]);
+            throw ValidationException::withMessages([$refused->field => $refused->getMessage()]);
         }
 
         return new JsonResponse([
@@ -108,6 +140,13 @@ final class KeyController
     {
         /** @var Key $found */
         $found = Key::query()->findOrFail($key);
+        $owner = CmsUser::query()->find($found->cms_user_id);
+
+        $refusal = $this->rules->revokeKeyOf($this->caller(), $owner instanceof CmsUser ? $owner : null);
+
+        if ($refusal !== null) {
+            return $refusal->toResponse();
+        }
 
         $this->keys->revoke($found);
 

@@ -194,13 +194,19 @@ final class AccessRules
     }
 
     /**
-     * A key acts as the person it names (rule 7): one for a super administrator, or for somebody
-     * holding more than the issuer, is more than the issuer holds.
+     * A key acts as the person it names (rule 7). Your own needs nothing — it is no more than you
+     * already are; somebody else's is speaking for them, which is `admins.manage`, and one for a
+     * super administrator, or for somebody holding more than the issuer, is more than the issuer
+     * holds.
      */
     public function issueKeyFor(?CmsUser $actor, CmsUser $owner): ?Refusal
     {
         if ($actor === null || $actor->is_super || $actor->is($owner)) {
             return null;
+        }
+
+        if (! $this->policy->allows($actor, 'admins.manage')) {
+            return $this->refuse($actor, $owner, new Refusal(Refusal::FORBIDDEN, ['admins.manage']), 'key');
         }
 
         if ($owner->is_super) {
@@ -209,6 +215,28 @@ final class AccessRules
 
         if (! $this->policy->covers($actor, $owner)) {
             return $this->refuse($actor, $owner, new Refusal(Refusal::BEYOND_YOURS, $this->policy->missing($actor, $owner->grantedPermissions())), 'key');
+        }
+
+        return null;
+    }
+
+    /**
+     * Switching a key off hands nothing out, so taking one away from a program is open wider than
+     * issuing: your own always, anybody's with `admins.manage` — except a super administrator's,
+     * which is theirs or another super administrator's to switch off (§7).
+     */
+    public function revokeKeyOf(?CmsUser $actor, ?CmsUser $owner): ?Refusal
+    {
+        if ($actor === null || $actor->is_super || ($owner !== null && $actor->is($owner))) {
+            return null;
+        }
+
+        if (! $this->policy->allows($actor, 'admins.manage')) {
+            return $this->refuse($actor, $owner, new Refusal(Refusal::FORBIDDEN, ['admins.manage']), 'revoke-key');
+        }
+
+        if ($owner !== null && $owner->is_super) {
+            return $this->refuse($actor, $owner, new Refusal(Refusal::ONLY_SUPER), 'revoke-key');
         }
 
         return null;

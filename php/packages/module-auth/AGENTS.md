@@ -25,14 +25,18 @@ registered in `webx-ui/module-admin` — read their guides for those.
 - **Ready-made roles** (`Access\DefaultRoles`): editor, seo, leads, catalog, developer, viewer —
   made of the installed modules, only where the code is free, by the first `webx:admin`, by the
   update migration and by `webx:roles:defaults`.
-- **MCP** tools `admins_list_admins`, `admins_list_roles`, `admins_grant_role`,
-  `admins_revoke_role`, `admins_recent_sign_ins`, `admins_failed_sign_in_bursts`. Scopes
-  `admins:read`, `admins:write`, `admins:audit`. No tool sets a password, creates an account or
+- **MCP** tools `admins_list_admins`, `admins_list_roles` (with holders),
+  `admins_list_permissions`, `admins_create_role` and `admins_update_role` (`roles.manage`, same
+  rules as the screen), `admins_grant_role`, `admins_revoke_role` (`roles.assign`),
+  `admins_recent_sign_ins`, `admins_failed_sign_in_bursts`. Scopes `admins:read`,
+  `admins:write`, `admins:audit`. No tool sets a password, creates an account, deletes a role or
   issues a token.
 - **Commands** `webx:admin` (`--name`, `--email`, `--super`; password from `WEBX_ADMIN_PASSWORD`
   when nobody is there to ask) and `webx:mcp:token` (`--name`, `--scopes`, `--admin`, `--days`,
   `--json`, `--revoke-existing`) — the same key the panel issues under Administrators → Keys
-  (`/api/cms/auth/keys`, behind `admins.manage`), listed and revoked there.
+  (`/api/cms/auth/keys`: your own with no permission, somebody else's with `admins.manage`),
+  listed and revoked there. A key carries only scopes its owner's permissions reach
+  (`keys/scopes`), and every call is asked again: a role taken away narrows the key at once.
 - **Events** `AdminLoggedIn`, `AdminLoggedOut`, `AdminLoginFailed`.
 
 ## Change it without forking

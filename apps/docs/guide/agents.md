@@ -93,12 +93,15 @@ do not should.
 A script that creates sites, a watcher of a task queue, a CI job has nobody to press Allow. It
 gets a **key** instead, and sends it as `Authorization: Bearer …` to the same address.
 
-**In the panel:** _Administrators → Keys → Issue_ (behind `admins.manage`). Name the key, choose
-the administrator it acts as, what it may reach — everything that administrator may do, or the
-scopes you pick — and how long it lives: 30 days, 90 days, a year, three or ten. The key is shown
+**In the panel:** _Administrators → Keys → Issue_. A key for yourself needs no permission; one for
+somebody else needs `admins.manage`, and never for an administrator who holds more than you. Name
+the key, choose the administrator it acts as, what it may reach — everything that administrator
+may do, or the scopes you pick, of those their permissions reach — and how long it lives: 30 days, 90 days, a year, three or ten. The key is shown
 once, with a copy button and the server address; nobody can see it again, here or on the server.
 The list shows every key with whom it acts as, its scopes, when it runs out and when it was last
-used; _Revoke_ stops it at the next call.
+used; _Revoke_ stops it at the next call. A key is never more than its owner: every call is
+checked against the owner's permissions of that moment, so a role taken away narrows the key at
+once.
 
 **On the server**, the same key:
 

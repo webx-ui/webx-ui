@@ -23,17 +23,25 @@ function key(row: Partial<McpKey> & { id: number }): McpKey {
 }
 
 function context(rows: McpKey[]) {
-  const get = vi.fn().mockImplementation((path: string) =>
+  // Robot (2) may read and review tasks; the other one (3) only read them.
+  const usable: Record<number, string[]> = {
+    2: ['mcp:use', 'tasks:read', 'tasks:review'],
+    3: ['mcp:use', 'tasks:read'],
+  }
+
+  const get = vi.fn().mockImplementation((path: string, options?: { query?: { admin?: number } }) =>
     Promise.resolve(
-      path.endsWith('/auth/admins')
-        ? {
-            data: [{ id: 2, name: 'Robot Watcher', email: 'robot@example.test' }],
-            meta: { total: 1 },
-          }
-        : {
-            data: rows,
-            meta: { scopes: ['mcp:use', 'tasks:read', 'tasks:review'], max_days: 3650 },
-          },
+      path.endsWith('/auth/keys/scopes')
+        ? { data: usable[options?.query?.admin ?? 2] ?? [] }
+        : path.endsWith('/auth/admins')
+          ? {
+              data: [{ id: 2, name: 'Robot Watcher', email: 'robot@example.test' }],
+              meta: { total: 1 },
+            }
+          : {
+              data: rows,
+              meta: { scopes: ['mcp:use', 'tasks:read', 'tasks:review'], max_days: 3650 },
+            },
     ),
   )
 
@@ -174,6 +182,35 @@ describe('the key dialog', () => {
 
     expect(secret).toBeDefined()
     expect(document.body.textContent).toContain('Copy the key now')
+
+    wrapper.unmount()
+  })
+
+  it('offers only the scopes of the owner, and drops the ones the next owner cannot use', async () => {
+    const { get, global } = context([])
+    const wrapper = mount(KeyDialog, { global, attachTo: document.body })
+
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      form: { admin: number | null; scopes: string[] }
+      scopeOptions: { value: string }[]
+    }
+
+    expect(vm.scopeOptions).toEqual([])
+
+    vm.form.admin = 2
+    await flushPromises()
+
+    expect(get).toHaveBeenCalledWith('/api/cms/auth/keys/scopes', { query: { admin: 2 } })
+    expect(vm.scopeOptions.map((one) => one.value)).toEqual(['tasks:read', 'tasks:review'])
+
+    vm.form.scopes = ['tasks:read', 'tasks:review']
+    vm.form.admin = 3
+    await flushPromises()
+
+    expect(vm.scopeOptions.map((one) => one.value)).toEqual(['tasks:read'])
+    expect(vm.form.scopes).toEqual(['tasks:read'])
 
     wrapper.unmount()
   })

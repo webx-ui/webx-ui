@@ -180,7 +180,7 @@ import {
   revokeKey,
 } from './agents'
 import { dictionary, panelLocales } from './lang'
-import { registerRoles, withAccess } from './roles'
+import { registerRoles, usableScopes, withAccess } from './roles'
 import type { ManifestModule } from '../../../../packages/module-admin/src/types'
 import {
   createRecipe,
@@ -2221,6 +2221,10 @@ on('DELETE', '/auth/connections/(\\d+)', ({ params }) => ({
 }))
 
 on('GET', '/auth/keys', () => listKeys())
+
+on('GET', '/auth/keys/scopes', ({ query }) => ({
+  data: usableScopes(Number(query.get('admin')) || undefined, listKeys().meta.scopes),
+}))
 
 on('POST', '/auth/keys', ({ body }) => issueKey(body))
 

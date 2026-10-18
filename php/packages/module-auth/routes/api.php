@@ -48,6 +48,13 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
             Route::delete('connections/{connection}', [ConnectionController::class, 'destroy'])
                 ->name('connections.destroy');
 
+            // Keys for programs, the same way: your own need nothing, somebody else's are
+            // speaking for them — `admins.manage` and the rules, asked by the controller.
+            Route::get('keys', [KeyController::class, 'index'])->name('keys.index');
+            Route::get('keys/scopes', [KeyController::class, 'scopes'])->name('keys.scopes');
+            Route::post('keys', [KeyController::class, 'store'])->name('keys.store');
+            Route::delete('keys/{key}', [KeyController::class, 'destroy'])->name('keys.destroy');
+
             // Reading the list is not managing it: a module that wants to show who wrote
             // something, or offer a picker of people to assign work to, needs the first and
             // has no business with the second.
@@ -75,12 +82,6 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
                 Route::post('admins', [AdminController::class, 'store'])->name('admins.store');
                 Route::patch('admins/{admin}', [AdminController::class, 'update'])->name('admins.update');
                 Route::delete('admins/{admin}', [AdminController::class, 'destroy'])->name('admins.destroy');
-
-                // Keys for programs, which act as the administrator they name: issuing one is
-                // speaking for somebody, the very thing this permission is about.
-                Route::get('keys', [KeyController::class, 'index'])->name('keys.index');
-                Route::post('keys', [KeyController::class, 'store'])->name('keys.store');
-                Route::delete('keys/{key}', [KeyController::class, 'destroy'])->name('keys.destroy');
             });
 
             // What agents did, behind the permission the sign-in trail is behind: the same

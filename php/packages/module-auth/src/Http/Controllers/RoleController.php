@@ -7,7 +7,6 @@ namespace WebxUi\Auth\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Auth\Access\AccessRules;
 use WebxUi\Auth\Access\PermissionMatrix;
@@ -168,14 +167,7 @@ final class RoleController
             return (string) $request->string('slug');
         }
 
-        $base = Str::slug($name) ?: 'role';
-        $slug = $base;
-
-        for ($n = 2; Role::query()->where('slug', $slug)->exists(); $n++) {
-            $slug = $base.'-'.$n;
-        }
-
-        return $slug;
+        return Role::freeSlug($name);
     }
 
     private function actor(): ?CmsUser

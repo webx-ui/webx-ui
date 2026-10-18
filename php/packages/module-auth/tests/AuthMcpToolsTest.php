@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace WebxUi\Auth\Tests;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\LoginRecord;
+use WebxUi\Auth\Models\Role;
 use WebxUi\Mcp\Registry\ToolRegistry;
 
 final class AuthMcpToolsTest extends TestCase
@@ -29,6 +32,9 @@ final class AuthMcpToolsTest extends TestCase
                 'cache_reset',
                 'admins_list_admins',
                 'admins_list_roles',
+                'admins_list_permissions',
+                'admins_create_role',
+                'admins_update_role',
                 'admins_grant_role',
                 'admins_revoke_role',
                 'admins_recent_sign_ins',
@@ -183,5 +189,156 @@ final class AuthMcpToolsTest extends TestCase
 
         $this->assertCount(2, ($this->tool('admins_recent_sign_ins'))(['limit' => 2]));
         $this->assertCount(5, ($this->tool('admins_recent_sign_ins'))([]));
+    }
+
+    #[Test]
+    public function the_roles_are_listed_with_what_they_grant_and_who_holds_them(): void
+    {
+        $admin = $this->admin();
+        $admin->roles()->attach($this->role('editor', ['pages.view', 'pages.manage']));
+        $this->role('empty', []);
+
+        $rows = ($this->tool('admins_list_roles'))([]);
+
+        $this->assertSame(
+            [
+                ['slug' => 'editor', 'name' => 'Editor', 'permissions' => ['pages.view', 'pages.manage'], 'users' => ['admin@example.test']],
+                ['slug' => 'empty', 'name' => 'Empty', 'permissions' => [], 'users' => []],
+            ],
+            $rows,
+        );
+
+        // Whoever reads roles in the panel reads them here.
+        $this->assertSame(
+            ['admins.view', 'admins.manage', 'roles.manage', 'roles.assign'],
+            $this->app->make(ToolRegistry::class)->tool('admins_list_roles')->permissions(),
+        );
+    }
+
+    #[Test]
+    public function the_permissions_on_offer_say_which_the_caller_holds(): void
+    {
+        $manager = $this->manager(['roles.manage', 'admins.view']);
+
+        /** @var list<array{module: string, permissions: list<array{name: string, held: bool}>}> $matrix */
+        $matrix = ($this->tool('admins_list_permissions'))([], $manager);
+        $admins = array_values(array_filter($matrix, static fn (array $row): bool => $row['module'] === 'admins'))[0];
+
+        $held = array_column($admins['permissions'], 'held', 'name');
+        $this->assertTrue($held['roles.manage']);
+        $this->assertFalse($held['admins.manage']);
+    }
+
+    #[Test]
+    public function a_role_is_made_after_a_dry_run_that_says_what_it_would_grant(): void
+    {
+        $manager = $this->manager(['roles.manage', 'admins.view']);
+
+        $preview = ($this->tool('admins_create_role'))(['name' => 'People readers', 'permissions' => ['admins.view'], 'dry_run' => true], $manager);
+
+        $this->assertTrue($preview['ok']);
+        $this->assertFalse($preview['applied']);
+        $this->assertSame('people-readers', $preview['role']);
+        $this->assertSame(['admins.view'], $preview['gained']);
+        $this->assertFalse(Role::query()->where('slug', 'people-readers')->exists());
+
+        $made = ($this->tool('admins_create_role'))(['name' => 'People readers', 'permissions' => ['admins.view']], $manager);
+
+        $this->assertTrue($made['applied']);
+        $this->assertSame(['admins.view'], Role::query()->where('slug', 'people-readers')->sole()->permissions);
+
+        // The same name again gets a code of its own.
+        $this->assertSame('people-readers-2', ($this->tool('admins_create_role'))(['name' => 'People readers', 'permissions' => []], $manager)['role']);
+    }
+
+    #[Test]
+    public function a_role_is_edited_whole_or_by_what_it_gains_and_loses(): void
+    {
+        $role = $this->role('auditors', ['admins.view', 'admins.audit']);
+
+        $result = ($this->tool('admins_update_role'))(['role' => 'auditors', 'add' => ['admins.manage'], 'remove' => ['admins.audit']]);
+
+        $this->assertTrue($result['applied']);
+        $this->assertSame(['admins.manage'], $result['gained']);
+        $this->assertSame(['admins.audit'], $result['lost']);
+        $this->assertSame(['admins.view', 'admins.manage'], $role->refresh()->permissions);
+
+        ($this->tool('admins_update_role'))(['role' => 'auditors', 'name' => 'Auditors', 'permissions' => ['admins.audit']]);
+        $this->assertSame(['Auditors', ['admins.audit']], [$role->refresh()->name, $role->permissions]);
+
+        $same = ($this->tool('admins_update_role'))(['role' => 'auditors', 'permissions' => ['admins.audit']]);
+        $this->assertFalse($same['would_change']);
+
+        $this->assertFalse(($this->tool('admins_update_role'))(['role' => 'nope', 'name' => 'x'])['ok']);
+    }
+
+    #[Test]
+    public function a_permission_no_module_declares_is_refused_as_in_the_form(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        ($this->tool('admins_create_role'))(['name' => 'Typos', 'permissions' => ['pages.mange']]);
+    }
+
+    #[Test]
+    public function a_role_gains_only_what_its_editor_holds_even_in_a_dry_run(): void
+    {
+        $manager = $this->manager(['roles.manage', 'admins.view']);
+
+        // Rule 2: nothing handed out that the editor does not hold.
+        foreach ([true, false] as $dryRun) {
+            $refused = ($this->tool('admins_create_role'))(['name' => 'Wider', 'permissions' => ['admins.manage'], 'dry_run' => $dryRun], $manager);
+
+            $this->assertFalse($refused['ok']);
+            $this->assertSame('beyond-yours', $refused['rule']);
+            $this->assertSame(['admins.manage'], $refused['missing']);
+        }
+
+        $this->assertFalse(Role::query()->where('name', 'Wider')->exists());
+
+        $other = $this->role('others', ['admins.audit']);
+        $this->assertSame('beyond-yours', ($this->tool('admins_update_role'))(['role' => 'others', 'add' => ['admins.manage']], $manager)['rule']);
+
+        // Taking away what the editor does not hold hands nothing out.
+        $this->assertTrue(($this->tool('admins_update_role'))(['role' => 'others', 'remove' => ['admins.audit']], $manager)['applied']);
+        $this->assertSame([], $other->refresh()->permissions);
+    }
+
+    #[Test]
+    public function a_role_the_editor_holds_is_not_theirs_to_edit(): void
+    {
+        $manager = $this->manager(['roles.manage', 'admins.view']);
+        $own = $manager->roles()->sole();
+
+        // Rule 5: the way to widen yourself by the back door.
+        $refused = ($this->tool('admins_update_role'))(['role' => $own->slug, 'remove' => ['admins.view']], $manager);
+
+        $this->assertFalse($refused['ok']);
+        $this->assertSame('role-you-hold', $refused['rule']);
+        $this->assertSame(['roles.manage', 'admins.view'], $own->refresh()->permissions);
+    }
+
+    #[Test]
+    public function without_roles_manage_nothing_is_made_or_edited(): void
+    {
+        $assigner = $this->manager(['roles.assign', 'admins.view']);
+
+        $this->assertSame(['roles.manage'], $this->app->make(ToolRegistry::class)->tool('admins_create_role')->permissions());
+        $this->assertSame(['roles.manage'], $this->app->make(ToolRegistry::class)->tool('admins_update_role')->permissions());
+
+        // Should a client call the handler past the door, the rules still say no.
+        $this->assertSame('forbidden', ($this->tool('admins_create_role'))(['name' => 'Sneaky', 'permissions' => []], $assigner)['rule']);
+        $this->assertFalse(Role::query()->where('name', 'Sneaky')->exists());
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     */
+    private function manager(array $permissions): CmsUser
+    {
+        $manager = $this->admin('manager@example.test');
+        $manager->roles()->attach($this->role('managers', $permissions));
+
+        return $manager;
     }
 }

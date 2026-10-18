@@ -71,6 +71,30 @@ function holds(admin: Admin, permission: string): boolean {
   return admin.is_super || permissionsOf(admin).includes(permission)
 }
 
+/**
+ * `GET /auth/keys/scopes`: what a key for this administrator may carry — a scope whose tools
+ * their permissions reach, read the way the server derives a tool's permission from its scope.
+ */
+export function usableScopes(adminId: number | undefined, all: string[]): string[] {
+  const owner = adminRows.find((row) => row.id === adminId) ?? currentAdmin()
+  const special: Record<string, string[]> = {
+    'admins:read': ['admins.view', 'admins.manage', 'roles.manage', 'roles.assign'],
+    'admins:write': ['roles.manage', 'roles.assign'],
+    'admins:audit': ['admins.audit'],
+  }
+
+  return all.filter((scope) => {
+    if (scope === 'mcp:use') return true
+
+    const [module = '', access = ''] = scope.split(':')
+    const needs =
+      special[scope] ??
+      (access === 'read' ? [`${module}.view`, `${module}.manage`] : [`${module}.manage`])
+
+    return needs.some((permission) => holds(owner, permission))
+  })
+}
+
 /** The manifest's modules, each saying whether the current administrator may open it. */
 export function withAccess(modules: ManifestModule[]): ManifestModule[] {
   const admin = currentAdmin()

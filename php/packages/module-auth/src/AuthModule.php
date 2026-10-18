@@ -7,10 +7,13 @@ namespace WebxUi\Auth;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Validator;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Auth\Access\AccessRules;
+use WebxUi\Auth\Access\PermissionMatrix;
+use WebxUi\Auth\Http\Requests\RoleRequest;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\LoginRecord;
 use WebxUi\Auth\Models\Role;
@@ -21,15 +24,20 @@ use WebxUi\Mcp\Tool;
 /**
  * The panel section for administrators and roles.
  *
- * Its MCP tools stop where they should: an agent can see who has what and move people between
- * roles, and it cannot set a password, mint a token or create an account. Those are the
- * operations where a mistaken tool call is not a mistake you can review afterwards.
+ * Its MCP tools stop where they should: an agent can see who has what, make and edit roles and
+ * move people between them — under the same rules as the panel, each change in the journal and
+ * undone by the opposite call — and it cannot set a password, mint a token, delete a role or
+ * create an account. Those are the operations where a mistaken tool call is not a mistake you
+ * can review afterwards.
  */
 final class AuthModule extends AbstractModule implements HasNavSection, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
     public const ID = 'admins';
+
+    /** Who reads the roles: the same as `GET auth/roles`. */
+    private const ROLE_READERS = ['admins.view', 'admins.manage', 'roles.manage', 'roles.assign'];
 
     public function id(): string
     {
@@ -109,17 +117,65 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
 
             Tool::read(
                 'list_roles',
-                'List the roles and the permissions each one grants.',
+                'List the roles, the permissions each one grants and who holds it.',
                 static fn (): array => Role::query()
+                    ->with('users')
                     ->orderBy('slug')
                     ->get()
                     ->map(static fn (Role $role): array => [
                         'slug' => $role->slug,
                         'name' => $role->name,
                         'permissions' => $role->permissions ?? [],
+                        'users' => $role->users->sortBy('email')->pluck('email')->values()->all(),
                     ])
                     ->all(),
                 scope: 'admins:read',
+                // Whoever reads the roles in the panel: the people's managers and the roles' own.
+                permission: self::ROLE_READERS,
+            ),
+
+            Tool::read(
+                'list_permissions',
+                'Every permission a role may grant, by module, and whether you hold it — a role gets only what you hold.',
+                static fn (array $arguments, ?Authenticatable $user = null): array => Container::getInstance()
+                    ->make(PermissionMatrix::class)
+                    ->for($user),
+                scope: 'admins:read',
+                permission: self::ROLE_READERS,
+            ),
+
+            Tool::mutating(
+                'create_role',
+                'Make a role: a name and the permissions it grants (see list_permissions). Nobody holds it until it is granted.',
+                static fn (array $arguments, ?Authenticatable $user = null): array => self::saveRole($arguments, $user, creating: true),
+                [
+                    'properties' => [
+                        'name' => ['type' => 'string', 'description' => 'What the panel calls the role'],
+                        'slug' => ['type' => 'string', 'description' => 'Its code: lowercase letters, digits and dashes; made from the name when left out'],
+                        'permissions' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Permissions it grants, e.g. pages.manage'],
+                    ],
+                    'required' => ['name', 'permissions'],
+                ],
+                scope: 'admins:write',
+                permission: 'roles.manage',
+            ),
+
+            Tool::mutating(
+                'update_role',
+                'Rename a role or change what it grants: the whole list in permissions, or add and remove. Everybody who holds it gains or loses at once.',
+                static fn (array $arguments, ?Authenticatable $user = null): array => self::saveRole($arguments, $user, creating: false),
+                [
+                    'properties' => [
+                        'role' => ['type' => 'string', 'description' => 'Role slug'],
+                        'name' => ['type' => 'string', 'description' => 'A new name'],
+                        'permissions' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Every permission it should grant, replacing the list'],
+                        'add' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Permissions to add'],
+                        'remove' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Permissions to take away'],
+                    ],
+                    'required' => ['role'],
+                ],
+                scope: 'admins:write',
+                permission: 'roles.manage',
             ),
 
             Tool::mutating(
@@ -252,6 +308,78 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
             'role' => $role->slug,
             'applied' => true,
         ];
+    }
+
+    /**
+     * A new role, or an existing one renamed or given other permissions — validated as the form
+     * is ({@see RoleRequest}), and under the same rules: a role gains only what its editor holds
+     * (rule 2), and a role the editor holds is not theirs to edit (rule 5). A dry run asks both.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function saveRole(array $arguments, ?Authenticatable $user, bool $creating): array
+    {
+        $dryRun = (bool) ($arguments['dry_run'] ?? false);
+        $role = null;
+
+        if (! $creating) {
+            $slug = (string) ($arguments['role'] ?? '');
+            $role = Role::query()->where('slug', $slug)->first();
+
+            if (! $role instanceof Role) {
+                return ['ok' => false, 'reason' => "No role with the slug [{$slug}]."];
+            }
+        }
+
+        $strings = static fn (mixed $list): array => array_values(array_map('strval', (array) $list));
+        $before = $role->permissions ?? [];
+        $permissions = array_key_exists('permissions', $arguments) ? $strings($arguments['permissions']) : $before;
+        $permissions = array_merge($permissions, $strings($arguments['add'] ?? []));
+        $permissions = array_values(array_unique(array_diff($permissions, $strings($arguments['remove'] ?? []))));
+
+        $input = ['permissions' => $permissions];
+
+        foreach (['name', 'slug'] as $field) {
+            if (array_key_exists($field, $arguments) && ($creating || $field === 'name')) {
+                $input[$field] = $arguments[$field];
+            }
+        }
+
+        Validator::make($input, RoleRequest::rulesFor($role), [], RoleRequest::names())->validate();
+
+        $rules = Container::getInstance()->make(AccessRules::class);
+        $refusal = $rules->saveRole($user instanceof CmsUser ? $user : null, $role, $permissions);
+
+        if ($refusal !== null) {
+            return ['ok' => false, 'rule' => $refusal->rule, 'reason' => $refusal->message(), 'missing' => $refusal->missing];
+        }
+
+        $name = (string) ($input['name'] ?? $role?->name);
+        $gained = array_values(array_diff($permissions, $before));
+        $lost = array_values(array_diff($before, $permissions));
+        $changes = $creating || $gained !== [] || $lost !== [] || $name !== $role?->name;
+
+        $answer = [
+            'ok' => true,
+            'would_change' => $changes,
+            'role' => $role->slug ?? (isset($input['slug']) && $input['slug'] !== '' ? (string) $input['slug'] : Role::freeSlug($name)),
+            'name' => $name,
+            'gained' => $gained,
+            'lost' => $lost,
+            'applied' => false,
+        ];
+
+        if ($dryRun || ! $changes) {
+            return $answer;
+        }
+
+        $role ??= new Role(['slug' => $answer['role']]);
+        $role->name = $name;
+        $role->permissions = $permissions;
+        $role->save();
+
+        return ['applied' => true] + $answer;
     }
 
     /**

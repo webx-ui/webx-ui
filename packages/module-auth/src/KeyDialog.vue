@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
@@ -28,6 +28,11 @@ import type { McpKey } from './types'
  * that matters: the secret exists on this screen and nowhere else, and a toast that faded
  * before somebody copied it would mean issuing another. The dialog resolves with the key when
  * it is closed after issuing, so the list behind it can show the new row.
+ *
+ * The scopes on offer are the owner's: a key acts as the administrator it names and can never
+ * do more than they may, so a module none of whose tools they may use is not offered — the
+ * server would refuse it anyway (WEBX_UI_PERMISSIONS.md §7). Asked again whenever the owner
+ * changes.
  *
  * The lifetime is a choice of a few, not a date picker. A key is for something that runs
  * unattended, and the honest question is "how long until somebody has to come back to it" —
@@ -87,9 +92,27 @@ const address = computed<string>(() => {
   return typeof meta?.url === 'string' ? meta.url : ''
 })
 
-void keys.list().then(
-  (list) => (scopes.value = list.scopes),
-  (error) => toast.danger(message(error)),
+watch(
+  () => form.value.admin,
+  (owner) => {
+    if (owner === null) {
+      scopes.value = []
+
+      return
+    }
+
+    void keys.scopesFor(owner).then(
+      (usable) => {
+        // Only answers for the owner still chosen: a quick change of mind must not leave the
+        // scopes of the person before.
+        if (form.value.admin !== owner) return
+
+        scopes.value = usable
+        form.value.scopes = form.value.scopes.filter((scope) => usable.includes(scope))
+      },
+      (error) => toast.danger(message(error)),
+    )
+  },
 )
 
 void admins.list({ active: 'yes', per_page: 100, sort: 'name' }).then(
