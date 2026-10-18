@@ -7,6 +7,8 @@ namespace WebxUi\Audit\Tests;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Remote\HostResolver;
+use WebxUi\Admin\Testing\FakeHostResolver;
 use WebxUi\Audit\Crawl\RobotsRules;
 use WebxUi\Audit\Crawl\SitemapReader;
 use WebxUi\Audit\Runs\AuditIssue;
@@ -101,6 +103,23 @@ final class IndexingTest extends TestCase
         $external = AuditLink::query()->where('to_url', 'https://partner.example.org/gone')->first();
         $this->assertSame(404, $external?->status, 'The answer reaches the link.');
         $this->assertSame(1, AuditResource::query()->where('url', 'https://partner.example.org/gone')->count());
+    }
+
+    #[Test]
+    public function a_link_to_somebody_else_that_resolves_inside_the_network_is_not_asked(): void
+    {
+        // An editor's link to a name that answers a private address: the audit is no way in.
+        $this->app->instance(HostResolver::class, (new FakeHostResolver)->answer('partner.example.org', ['10.0.0.3']));
+        $asked = $this->fakeSite();
+
+        $this->artisan('webx:audit:run')->assertSuccessful();
+
+        $this->assertArrayNotHasKey('GET https://partner.example.org/gone', $asked);
+        $this->assertArrayNotHasKey('HEAD https://partner.example.org/moved', $asked);
+
+        $resource = AuditResource::query()->where('url', 'https://partner.example.org/gone')->sole();
+        $this->assertNull($resource->status);
+        $this->assertStringContainsString('not on the public internet', (string) $resource->error);
     }
 
     #[Test]

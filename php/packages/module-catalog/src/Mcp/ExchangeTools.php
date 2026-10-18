@@ -241,6 +241,12 @@ final class ExchangeTools
         $files = $this->container->make(ExchangeFiles::class);
 
         try {
+            $files->assertUrl($url);
+        } catch (ValidationException $refused) {
+            throw new ToolFailure($refused->getMessage());
+        }
+
+        try {
             $temporary = $files->download($url);
         } catch (Throwable $failure) {
             throw new ToolFailure('The file could not be fetched: '.$failure->getMessage());

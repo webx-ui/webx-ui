@@ -179,6 +179,11 @@ return [
     | what was exported — live on `disk` for `keep_hours`; the runs and their
     | errors for `keep_runs_days`.
     |
+    | An import may be given an address instead of a file: `url_import` off
+    | refuses it, `url_hosts` (exact names or `*.example.com`) is the whole
+    | list of hosts it is downloaded from when not empty. Either way only the
+    | public internet is fetched (`webx-admin.remote`).
+    |
     */
 
     'exchange' => [
@@ -187,6 +192,8 @@ return [
         'job_seconds' => 60,
         'max_errors' => 1000,
         'max_bytes' => 200 * 1024 * 1024,
+        'url_import' => (bool) env('WEBX_CATALOG_EXCHANGE_URL_IMPORT', true),
+        'url_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('WEBX_CATALOG_EXCHANGE_URL_HOSTS', ''))))),
         'csv_fallback_encoding' => 'Windows-1252',
         'disk' => env('WEBX_CATALOG_EXCHANGE_DISK', 'local'),
         'keep_hours' => 24,

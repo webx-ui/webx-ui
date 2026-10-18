@@ -90,6 +90,9 @@ The settings screen's node ids: `site`, `base-url`, `resolve-to`, `other-hosts`,
   Save through the owning module's models.
 - Do not start a run from the panel on a `sync` queue — it is refused (409), a crawl would run
   inside the request. Use `webx:audit:run` or a real queue worker.
+- Do not ask somebody else's host past `SiteClient::direct()`: an external link is asked only
+  when its name resolves to the public internet (`module-admin`'s `RemoteFetcher::check()`, the
+  connection pinned); one that resolves inside the network is a resource with an error, not a request.
 - Do not raise `concurrency` or `pages_limit` on a shared or production host without reason: the
   defaults keep the crawl polite. Prefer `exclude` for sections that need not be crawled.
 - Do not delete `audit_*` rows by hand to clean history: `keep_runs` and `keep_snapshots` prune

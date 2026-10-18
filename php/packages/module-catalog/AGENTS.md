@@ -36,8 +36,7 @@ question is about one of them.
   `catalog.listing.top`, `catalog.listing.bottom`.
 - **Panel screens** `catalog.product-form` (tabs `main`, `description-tab`, `images-tab`,
   `seo-tab`, `settings-tab`, `history-tab`) and `catalog.category-form` (`main`, `filters-tab`,
-  `seo-tab`, `history-tab`). Also the exchange forms `catalog.exchange-import` and
-  `catalog.exchange-profile`. The API is under `/api/cms/catalog`.
+  `seo-tab`, `history-tab`). Also the exchange forms `catalog.exchange-import` and `catalog.exchange-profile`. The API is under `/api/cms/catalog`.
 - **Cache group** `catalog` (WEBX_UI_CACHE.md): the facets' settings and what the satellites keep live on it;
   `Category` and `Product` move it (an import or a bulk action commits a chunk, so one move a chunk), a write
   without a model's event says so (`FacetSettings::write`, the importer's mass unpublish). What one page reads
@@ -71,26 +70,27 @@ adds next to the module asks the same: `cms.can:catalog.view,catalog.manage,cata
 
 ## Change it without forking
 
-| You want                                  | Do this                                                                                                                                                                  |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| The storefront inside the site's layout   | `WEBX_CATALOG_LAYOUT=layout` (`<x-layout>`); `webx:panel --sync` sets it                                                                                                 |
-| Different markup of a catalogue page      | `php artisan vendor:publish --tag=webx-catalog-views`, keep only the files you change                                                                                    |
-| A catalogue without prices                | `WEBX_CATALOG_PRICE=false` (form, facet, sorts, exchange and markup all go)                                                                                              |
-| `Offer` in the product's structured data  | `WEBX_CATALOG_CURRENCY` (ISO 4217)                                                                                                                                       |
-| No barcode / no videos                    | `WEBX_CATALOG_BARCODE=false` / `WEBX_CATALOG_VIDEO=false`                                                                                                                |
-| Each category picks its own filters       | `WEBX_CATALOG_CATEGORY_FACETS=true` (the «Filters» tab)                                                                                                                  |
-| A `/catalog` page over everything         | `WEBX_CATALOG_ROOT=true`; `WEBX_CATALOG_ROOT_PREFIX` moves it and the search                                                                                             |
-| Translated filter codes in addresses      | `facet_codes` in `config/webx-catalog.php` (`--tag=webx-catalog-config`)                                                                                                 |
-| Other suggestions under the search box    | override `webx-catalog::suggest` — keep `data-webx-option` on what can be chosen and `data-webx-section` + `data-webx-heading` on a group; `suggest.limit` in the config |
-| Another unit, sort order, page size       | `units` (+ its word via `--tag=webx-catalog-lang`), `sorts`, `default_sort`, `per_page`                                                                                  |
-| Popularity counted differently            | bind your own `PopularityFormula` in the container                                                                                                                       |
-| Thousands of products                     | `webx-ui/module-catalog-manticore` and `WEBX_CATALOG_ENGINE=manticore`                                                                                                   |
-| Other disks for pictures / exchange files | `WEBX_CATALOG_IMAGES_DISK` / `WEBX_CATALOG_EXCHANGE_DISK`                                                                                                                |
-| A field on the product form               | a patch `Screens::extend('catalog.product-form', [...])` plus a `ProductPart` in `ProductParts`                                                                          |
-| A dictionary of your own (a filter)       | a table keyed by `product_id`, then `ProductParts`, `Facets`, `Documents`, `ProductColumns`, `ExchangeColumns`                                                           |
-| Something in a card or on a product page  | a `StorefrontPart` registered at one of the points above                                                                                                                 |
-| A shelf of products in any template       | `products()->category('laptops')->sort('popular')->take(8)`; narrow it with `ProductQuery::macro`                                                                        |
-| A refusal to sell                         | a `PurchaseRule` in `Purchasability`                                                                                                                                     |
+| You want                                     | Do this                                                                                                                                                                  |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The storefront inside the site's layout      | `WEBX_CATALOG_LAYOUT=layout` (`<x-layout>`); `webx:panel --sync` sets it                                                                                                 |
+| Different markup of a catalogue page         | `php artisan vendor:publish --tag=webx-catalog-views`, keep only the files you change                                                                                    |
+| A catalogue without prices                   | `WEBX_CATALOG_PRICE=false` (form, facet, sorts, exchange and markup all go)                                                                                              |
+| `Offer` in the product's structured data     | `WEBX_CATALOG_CURRENCY` (ISO 4217)                                                                                                                                       |
+| No barcode / no videos                       | `WEBX_CATALOG_BARCODE=false` / `WEBX_CATALOG_VIDEO=false`                                                                                                                |
+| Each category picks its own filters          | `WEBX_CATALOG_CATEGORY_FACETS=true` (the «Filters» tab)                                                                                                                  |
+| A `/catalog` page over everything            | `WEBX_CATALOG_ROOT=true`; `WEBX_CATALOG_ROOT_PREFIX` moves it and the search                                                                                             |
+| Translated filter codes in addresses         | `facet_codes` in `config/webx-catalog.php` (`--tag=webx-catalog-config`)                                                                                                 |
+| Other suggestions under the search box       | override `webx-catalog::suggest` — keep `data-webx-option` on what can be chosen and `data-webx-section` + `data-webx-heading` on a group; `suggest.limit` in the config |
+| Another unit, sort order, page size          | `units` (+ its word via `--tag=webx-catalog-lang`), `sorts`, `default_sort`, `per_page`                                                                                  |
+| Popularity counted differently               | bind your own `PopularityFormula` in the container                                                                                                                       |
+| Thousands of products                        | `webx-ui/module-catalog-manticore` and `WEBX_CATALOG_ENGINE=manticore`                                                                                                   |
+| Other disks for pictures / exchange files    | `WEBX_CATALOG_IMAGES_DISK` / `WEBX_CATALOG_EXCHANGE_DISK`                                                                                                                |
+| No import by address / only suppliers' hosts | `WEBX_CATALOG_EXCHANGE_URL_IMPORT=false` / `WEBX_CATALOG_EXCHANGE_URL_HOSTS=feeds.example.com,*.cdn.example.com` (always the public internet only, `webx-admin.remote`)  |
+| A field on the product form                  | a patch `Screens::extend('catalog.product-form', [...])` plus a `ProductPart` in `ProductParts`                                                                          |
+| A dictionary of your own (a filter)          | a table keyed by `product_id`, then `ProductParts`, `Facets`, `Documents`, `ProductColumns`, `ExchangeColumns`                                                           |
+| Something in a card or on a product page     | a `StorefrontPart` registered at one of the points above                                                                                                                 |
+| A shelf of products in any template          | `products()->category('laptops')->sort('popular')->take(8)`; narrow it with `ProductQuery::macro`                                                                        |
+| A refusal to sell                            | a `PurchaseRule` in `Purchasability`                                                                                                                                     |
 
 Fields that are switched off are removed from the screen at boot, and so are never validated or
 saved. A satellite's fields on `catalog.product-form` are named `<part key>.<field>`. The core

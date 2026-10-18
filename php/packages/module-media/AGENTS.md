@@ -97,7 +97,8 @@ a migration of your own, bytes and rows together.
   bin. `media_delete_directory` deletes only an empty folder, on purpose.
 - Do not point `media_upload_from_url` at the site itself or the local network: loopback,
   private, link-local and reserved addresses are refused, after resolving the name. A host on
-  the site's own network that must be fetched goes into `webx-media.remote.allow_hosts`.
+  the site's own network that must be fetched goes into `webx-media.remote.allow_hosts` (or
+  `WEBX_REMOTE_TRUSTED_HOSTS`, `module-admin`'s, for every module).
 - Do not ask for a thumbnail size outside `thumbs.widths` and `thumbs.fits`: it is refused, so
   one request cannot make the server resize anything to anything. Add the size to the config.
 - Do not widen `upload.extensions` with executable or script types: the list is a white list on

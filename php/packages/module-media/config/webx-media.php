@@ -149,7 +149,8 @@ return [
     | that is or resolves to loopback, a private network, link-local (cloud
     | metadata) or another reserved range is refused. `allow_hosts` names
     | hosts on the site's own network that may be fetched all the same —
-    | exact host names, no wildcards.
+    | exact host names, no wildcards. The check is `module-admin`'s
+    | `RemoteFetcher`; `webx-admin.remote` holds the settings of every module.
     |
     */
 

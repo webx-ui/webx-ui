@@ -8,13 +8,12 @@ use finfo;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
-use Throwable;
 use WebxUi\Admin\History\HistoryEntry;
+use WebxUi\Admin\Remote\FetchRefused;
+use WebxUi\Admin\Remote\RemoteFetcher;
 use WebxUi\Admin\Uploads\ClaimedUpload;
 use WebxUi\Admin\Uploads\Uploads;
 use WebxUi\Catalog\Catalog;
@@ -29,7 +28,8 @@ use WebxUi\Catalog\Models\ProductImage;
  * Straight onto the catalogue's disk under `catalog/{id div 1000}/{id}/{hash}.{ext}`: a thousand
  * products to a folder, so no directory grows to hundreds of thousands of entries, and the hash
  * as the name, so a file is never overwritten under a cached address. Uploaded by the editor,
- * or fetched from an address — which is how an import brings them, from its queue.
+ * or fetched from an address — which is how an import brings them, from its queue. Every address
+ * goes through `module-admin`'s {@see RemoteFetcher}: the public internet only, on every redirect.
  *
  * A video is never a row of its own: it is attached to a picture, which becomes its poster
  * (decision 1). A provider's link brings its cover as that picture; a file comes either through
@@ -61,6 +61,7 @@ final class Gallery
         private readonly VideoProviders $providers,
         private readonly Catalog $catalog,
         private readonly Config $config,
+        private readonly RemoteFetcher $fetcher,
     ) {}
 
     public function videoEnabled(): bool
@@ -133,16 +134,23 @@ final class Gallery
         $limit = (int) $this->config->get('webx-catalog.images.max_size_kb', 10240) * 1024;
 
         try {
-            $response = Http::timeout(20)->withOptions(['stream' => true])->get($url);
-        } catch (Throwable) {
+            $response = $this->fetcher->get($url, $limit, timeout: 20);
+        } catch (FetchRefused $refused) {
+            // Too large for a picture may be a video that says nothing about itself in its address.
+            if ($refused->reason === FetchRefused::TOO_LARGE) {
+                if ($this->answersWithVideo($url)) {
+                    $this->assertVideoEnabled('url');
+
+                    return $this->queue($product, $url);
+                }
+
+                throw self::refused('url', 'image-too-large');
+            }
+
             throw self::refused('url', 'image-unreachable');
         }
 
-        $type = self::mime((string) $response->header('Content-Type'));
-
-        if (! $response->successful()) {
-            throw self::refused('url', 'image-unreachable');
-        }
+        $type = (string) $response->contentType;
 
         // A link that says nothing about itself and turns out to be a video: the download is the
         // queue's, not this request's.
@@ -152,7 +160,7 @@ final class Gallery
             return $this->queue($product, $url);
         }
 
-        $contents = $response->body();
+        $contents = $response->body;
 
         if (! isset(self::TYPES[$type]) || @getimagesizefromstring($contents) === false) {
             throw self::refused('url', 'image-not-a-picture');
@@ -286,31 +294,13 @@ final class Gallery
 
         try {
             try {
-                $response = Http::timeout(3600)->withOptions([
-                    'sink' => $temporary,
-                    // Refused before a byte of the body when the server says how large it is.
-                    'on_headers' => static function (ResponseInterface $headers) use ($limit): void {
-                        if ((int) $headers->getHeaderLine('Content-Length') > $limit) {
-                            throw new RuntimeException('too-large');
-                        }
-                    },
-                    'progress' => static function (int $total, int $downloaded) use ($limit): void {
-                        if ($downloaded > $limit) {
-                            throw new RuntimeException('too-large');
-                        }
-                    },
-                ])->get($url);
-            } catch (Throwable $failed) {
-                throw new RuntimeException(str_contains($failed->getMessage(), 'too-large')
+                // Refused before a byte of the body when the server says how large it is.
+                $this->fetcher->download($url, $temporary, $limit, timeout: 3600);
+            } catch (FetchRefused $failed) {
+                throw new RuntimeException($failed->reason === FetchRefused::TOO_LARGE
                     ? "The video at [{$url}] is larger than ".($limit / 1048576).' MB.'
                     : "The video at [{$url}] could not be downloaded: {$failed->getMessage()}", 0, $failed);
             }
-
-            if (! $response->successful()) {
-                throw new RuntimeException("The video at [{$url}] answered {$response->status()}.");
-            }
-
-            clearstatcache(true, $temporary);
 
             $image ??= $this->placeholder($product);
             $name = basename((string) parse_url($url, PHP_URL_PATH)) ?: 'video';
@@ -417,15 +407,15 @@ final class Gallery
 
         foreach ($provider->posterUrls($id) as $poster) {
             try {
-                $response = Http::timeout(20)->get($poster);
-            } catch (Throwable) {
+                $response = $this->fetcher->get($poster, (int) $this->config->get('webx-catalog.images.max_size_kb', 10240) * 1024, timeout: 20);
+            } catch (FetchRefused) {
                 continue;
             }
 
-            $type = self::mime((string) $response->header('Content-Type'));
+            $type = (string) $response->contentType;
 
-            if ($response->successful() && isset(self::TYPES[$type]) && @getimagesizefromstring($response->body()) !== false) {
-                $picture = [$response->body(), self::TYPES[$type]];
+            if (isset(self::TYPES[$type]) && @getimagesizefromstring($response->body) !== false) {
+                $picture = [$response->body, self::TYPES[$type]];
 
                 break;
             }
@@ -450,6 +440,13 @@ final class Gallery
 
     private function queue(Product $product, string $url, ?ProductImage $image = null): QueuedVideo
     {
+        // Said to the editor now rather than by a failed job later; the queue checks it again.
+        try {
+            $this->fetcher->check($url);
+        } catch (FetchRefused) {
+            throw self::refused('url', 'image-unreachable');
+        }
+
         FetchVideo::dispatch((int) $product->getKey(), $url, $image?->getKey() === null ? null : (int) $image->getKey())
             ->afterCommit();
 
@@ -489,12 +486,12 @@ final class Gallery
     private function answersWithVideo(string $url): bool
     {
         try {
-            $response = Http::timeout(10)->head($url);
-        } catch (Throwable) {
+            $response = $this->fetcher->head($url);
+        } catch (FetchRefused) {
             return false;
         }
 
-        return $response->successful() && isset(self::VIDEO_EXTENSIONS[self::mime((string) $response->header('Content-Type'))]);
+        return isset(self::VIDEO_EXTENSIONS[(string) $response->contentType]);
     }
 
     private static function looksLikeVideoFile(string $url): bool
@@ -502,11 +499,6 @@ final class Gallery
         $extension = strtolower(pathinfo((string) parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
 
         return in_array($extension, self::VIDEO_EXTENSIONS, true);
-    }
-
-    private static function mime(string $header): string
-    {
-        return strtolower(trim(explode(';', $header)[0]));
     }
 
     private function productOf(ProductImage $image): Product

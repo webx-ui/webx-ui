@@ -10,6 +10,8 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Throwable;
+use WebxUi\Admin\Remote\FetchRefused;
+use WebxUi\Admin\Remote\RemoteFetcher;
 
 /**
  * The site knocking on its own door by its public name (decision 6).
@@ -18,6 +20,11 @@ use Throwable;
  * setting names one (`CURLOPT_RESOLVE`), so an audit inside Docker or behind NAT reaches the site
  * without hairpinning and still sees what a visitor sees. Redirects are never followed: a chain
  * is a list of answers, and the checks read every step.
+ *
+ * Somebody else's host (`direct()`) is asked only on the public internet: a link on a page is
+ * typed by an editor, and an audit that checks it must not become a way into the server's own
+ * network. Its address goes through `module-admin`'s {@see RemoteFetcher} check, and the
+ * connection is pinned to the checked address.
  */
 final class SiteClient
 {
@@ -26,9 +33,13 @@ final class SiteClient
 
     private ?string $resolveTo = null;
 
+    /** Somebody else's host: checked to be on the public internet before it is asked. */
+    private bool $external = false;
+
     public function __construct(
         private readonly Factory $http,
         private readonly Config $config,
+        private readonly RemoteFetcher $fetcher,
     ) {}
 
     /** The same client, connecting to `$address` for every host it is asked about. */
@@ -59,7 +70,10 @@ final class SiteClient
      */
     public function direct(): self
     {
-        return $this->resolvingTo(null);
+        $client = $this->resolvingTo(null);
+        $client->external = true;
+
+        return $client;
     }
 
     /** `HEAD`, and `GET` when the server does not do `HEAD` (§3, stage 5). */
@@ -84,21 +98,33 @@ final class SiteClient
         }
 
         $started = microtime(true);
+        $answers = [];
+        $pins = [];
 
-        $responses = $this->http->pool(function (Pool $pool) use ($requests): array {
+        foreach ($requests as $key => $request) {
+            try {
+                $pins[(string) $key] = $this->pin($request[1]);
+            } catch (FetchRefused $refused) {
+                $answers[(string) $key] = new ProbeResponse($request[1], null, error: $refused->getMessage());
+            }
+        }
+
+        $responses = $pins === [] ? [] : $this->http->pool(function (Pool $pool) use ($requests, $pins): array {
             $pending = [];
 
-            foreach ($requests as $key => $request) {
-                [$method, $url] = $request;
-                $pending[] = $this->configure($pool->as((string) $key), $url)->withHeaders($request[2] ?? [])->send($method, $url);
+            foreach ($pins as $key => $pin) {
+                [$method, $url] = $requests[$key];
+                $pending[] = $this->configure($pool->as((string) $key), $url, $pin)->withHeaders($requests[$key][2] ?? [])->send($method, $url);
             }
 
             return $pending;
         });
 
-        $answers = [];
-
         foreach ($requests as $key => $request) {
+            if (isset($answers[(string) $key])) {
+                continue;
+            }
+
             [$method, $url] = $request;
             $response = $responses[(string) $key] ?? null;
 
@@ -107,7 +133,14 @@ final class SiteClient
                 : new ProbeResponse($url, null, ms: $this->since($started), error: $response instanceof Throwable ? $response->getMessage() : 'No answer.');
         }
 
-        return $answers;
+        $ordered = [];
+
+        // In the order asked, refused or not.
+        foreach (array_keys($requests) as $key) {
+            $ordered[(string) $key] = $answers[(string) $key];
+        }
+
+        return $ordered;
     }
 
     private function send(string $method, string $url, int $limit = self::BODY_LIMIT): ProbeResponse
@@ -115,7 +148,13 @@ final class SiteClient
         $started = microtime(true);
 
         try {
-            $response = $this->configure($this->http->createPendingRequest(), $url)->send($method, $url);
+            $pin = $this->pin($url);
+        } catch (FetchRefused $refused) {
+            return new ProbeResponse($url, null, ms: $this->since($started), error: $refused->getMessage());
+        }
+
+        try {
+            $response = $this->configure($this->http->createPendingRequest(), $url, $pin)->send($method, $url);
         } catch (Throwable $failure) {
             return new ProbeResponse($url, null, ms: $this->since($started), error: $failure->getMessage());
         }
@@ -123,13 +162,29 @@ final class SiteClient
         return $this->answer($response, $method, $url, $started, $limit);
     }
 
-    private function configure(PendingRequest $request, string $url): PendingRequest
+    /**
+     * The connection's pin for somebody else's host — refused when it is not on the public
+     * internet; nothing for the site's own, which `resolve_to` reaches.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws FetchRefused
+     */
+    private function pin(string $url): array
+    {
+        return $this->external ? $this->fetcher->check($url)->options() : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $pin
+     */
+    private function configure(PendingRequest $request, string $url, array $pin = []): PendingRequest
     {
         return $request
             ->withHeaders(['User-Agent' => (string) $this->config->get('webx-audit.user_agent', 'WebxAudit/1.0')])
             ->timeout(max(1, (int) $this->config->get('webx-audit.timeout', 15)))
             ->withoutRedirecting()
-            ->withOptions($this->options($url));
+            ->withOptions($pin + $this->options($url));
     }
 
     private function answer(Response $response, string $method, string $url, float $started, int $limit = self::BODY_LIMIT): ProbeResponse

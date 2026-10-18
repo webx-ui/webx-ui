@@ -147,12 +147,13 @@ the same transaction.
   `DatabaseUsage`, reads the schema — foreign keys into `media_files`, and the last segment of
   the file's key (a uuid) inside text and JSON columns. History, logs and queues are skipped
   (`webx-media.usage.ignore`).
-- `upload_from_url` fetches only from the public internet: the host is resolved, every address
+- `upload_from_url` fetches only from the public internet, through `module-admin`'s
+  `RemoteFetcher` like every module: the host is resolved, every address
   is checked (loopback, private, link-local, reserved, in both families and inside IPv6), the
   connection is pinned to the checked address, and redirects are followed by hand and checked
   the same way. The type is sniffed from the bytes, the name gets an extension from the upload
   white list, and the panel's upload rules apply. `webx-media.remote.allow_hosts` names hosts on
-  the site's own network that may be fetched anyway.
+  the site's own network that may be fetched anyway, as does `webx-admin.remote.trusted_hosts`.
 
 ## Configuration
 

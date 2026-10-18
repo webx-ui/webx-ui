@@ -27,12 +27,13 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
   The registry itself (`WebxUi\Cache\CacheGroups`) is `webx-ui/cache`'s — read its AGENTS.md to cache or reset.
 - **Also** — tables `cms_notes` (`HasNotes`), `cms_relations` (`HasRelations`), `cms_uploads` (chunked uploads,
   `UploadPurposes`); macros `category()`, `categoryLinks()`; `@webxPart` / `@webxPartAssets`; the site password (`CloseSite`, `Openings`).
+- **Fetching an address** — `Remote\RemoteFetcher`: `get()`, `download()`, `head()`, `check()` (a pin for a client of your own); public internet only, checked after DNS and on every redirect, `FetchRefused` with a `reason`; hosts of the site's network — `WEBX_REMOTE_TRUSTED_HOSTS`, the only hosts — `WEBX_REMOTE_ONLY_HOSTS`.
 - **Shortcodes** — the registry `WebxUi\Admin\Shortcodes\Shortcodes` (facade `Shortcodes`): `register()`, `source()`,
   `html()`, `htmlIn()`, `plain()`, `text()`; directives `@shortcodes`, `@shortcodesIn`, `@shortcodesPlain`; `GET /api/cms/shortcodes`
   for the panel's text fields. `wx_text($value)` makes a string or a `ShortcodeText` a `ShortcodeText`, whose `trim*`, `strip*`
   and `map()` change the typed text and stay HTML.
 - **Testing** — `Testing\CountsQueries` in a Testbench case: `assertQueriesWithin(N, fn () => $this->get(…))`
-  fails over the budget listing every statement, repeated ones (an N+1) called out; `assertNoRepeatedQueries()`, `recordQueries()`.
+  fails over the budget listing every statement, repeated ones (an N+1) called out; `assertNoRepeatedQueries()`, `recordQueries()`; `Testing\FakeHostResolver` — DNS for `RemoteFetcher` without a network.
 - **Front end entry** — `resources/js/admin.ts` in the site, written from `stubs/panel.stub` (`panel-auth.stub` with
   module-auth). Three regions are the installer's: `// webx:imports`, `// webx:styles`, `// webx:modules`; the rest is the site's.
 
@@ -128,10 +129,9 @@ Operations are `add`, `remove`, `replace`, `move`, `set`, applied in the order r
 - Do not put a site live without `webx-ui/module-auth`: without it `webx-admin.middleware` is only `web` and the panel is open to anyone.
 - Do not restore a snapshot onto a stand whose content you have not copied first: it is replaced.
 - Do not print anything for the panel on the site in a view (`@auth`, `data-*`): visitors get it too.
-- Do not write `cms_versions` or `cms_history` with SQL: use `publish()`, `restoreVersion()`
-  then `publish()`, and `History::record()` — a raw row has no number, no author, no source.
-- Do not call `cache:clear` to refresh the site, and do not leave a mass write without its `bump()`:
-  a reset somebody had to press is a `bump` somebody forgot.
+- Do not write `cms_versions` or `cms_history` with SQL: use `publish()`, `restoreVersion()` then `publish()`, and `History::record()` — a raw row has no number, no author, no source.
+- Do not call `cache:clear` to refresh the site, and do not leave a mass write without its `bump()`: a reset somebody had to press is a `bump` somebody forgot.
+- Do not download an address an administrator, an editor or an agent typed with `Http::get()`: only `RemoteFetcher` keeps the server's own network out of reach.
 
 ## Check your work
 
