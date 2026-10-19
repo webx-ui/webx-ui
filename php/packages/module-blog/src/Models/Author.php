@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blog\Seo\Trail;
+use WebxUi\Blog\Support\PublishedAuthors;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileUrls;
@@ -116,7 +117,40 @@ class Author extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
             return false;
         }
 
-        return $this->publishedArticles()->exists();
+        return $this->hasPublished();
+    }
+
+    /**
+     * Something of theirs is on the site now — the visibility and the `robots` of the page.
+     *
+     * Read off `withExists('publishedArticles')` when a list loaded it, else asked of the
+     * request's {@see PublishedAuthors}: the handler, the SEO fallback, every `hreflang` line and
+     * the switcher ask it of one page, and not always of the same instance.
+     */
+    public function hasPublished(): bool
+    {
+        $authors = Container::getInstance()->make(PublishedAuthors::class);
+        $loaded = $this->getAttribute('published_articles_exists');
+
+        if ($loaded !== null) {
+            $authors->put((int) $this->user_id, (bool) $loaded);
+
+            return (bool) $loaded;
+        }
+
+        return $authors->has((int) $this->user_id);
+    }
+
+    /**
+     * What a line of the sitemap asks of a profile — its `robots` — for a chunk at once; a list
+     * of authors anywhere else does the same `withExists`.
+     *
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeForSitemap(Builder $query): Builder
+    {
+        return $query->withExists('publishedArticles');
     }
 
     /**
@@ -224,7 +258,7 @@ class Author extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
         $name = $this->name($locale);
         $data = SeoData::fallback($name !== '' ? $name : null, $this->bioHtml($locale) ?: null, $this->photoUrl(), $name !== '' ? $name : null);
 
-        return $this->publishedArticles()->exists() ? $data : $data->with(robots: self::ROBOTS_EMPTY);
+        return $this->hasPublished() ? $data : $data->with(robots: self::ROBOTS_EMPTY);
     }
 
     /**

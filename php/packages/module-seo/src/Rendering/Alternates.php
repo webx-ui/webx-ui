@@ -11,6 +11,7 @@ use WebxUi\Localization\Locales;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\RouteCache;
 use WebxUi\Routing\SiteUrl;
 use WebxUi\Routing\UrlNormaliser;
 
@@ -105,17 +106,21 @@ final class Alternates
     /**
      * The entity's canonical row in every language it has one in, prefixed.
      *
-     * Out of the `routes` relation, loaded once: the trail, the untranslated check and `url()`
-     * all read the same rows of the same entity, and a sitemap chunk loaded them with the list.
+     * Out of the `routes` relation when a sitemap chunk loaded it with the list; otherwise out of
+     * `RouteCache`, where `url()`, the trail and the switcher read the same rows of the same
+     * entity — the request's memory, then the site's cache, then one query.
      *
      * @return array<string, string>
      */
     private function entityPaths(Model $subject): array
     {
-        /** @var iterable<Route> $rows the relation, loaded now if the subject came without it; a model without the trait is asked the registry */
-        $rows = in_array(HasUrl::class, class_uses_recursive($subject), true)
-            ? ($subject->getRelationValue('routes') ?? [])
-            : Route::query()->forEntity($subject)->canonical()->get();
+        /** @var iterable<Route> $rows */
+        $rows = match (true) {
+            in_array(HasUrl::class, class_uses_recursive($subject), true) && $subject->relationLoaded('routes') => $subject->getRelation('routes'),
+            // A `webx-ui/routing` from before the cache asks the registry as it always did.
+            class_exists(RouteCache::class) => app(RouteCache::class)->canonical($subject),
+            default => Route::query()->forEntity($subject)->canonical()->get(),
+        };
         $paths = [];
 
         foreach ($rows as $row) {

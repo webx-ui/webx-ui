@@ -20,6 +20,7 @@ use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\HasBlocks;
 use WebxUi\Blog\Seo\Trail;
+use WebxUi\Blog\Support\PublishedAuthors;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
@@ -101,6 +102,17 @@ class Article extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallb
     public function translatable(): array
     {
         return ['title', 'slug', 'lead'];
+    }
+
+    protected static function booted(): void
+    {
+        // Who has something on the site, as this request knew it, is from before the write.
+        $forget = static function (): void {
+            Container::getInstance()->make(PublishedAuthors::class)->forget();
+        };
+        static::saved($forget);
+        static::deleted($forget);
+        static::restored($forget);
     }
 
     /**

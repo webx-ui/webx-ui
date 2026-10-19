@@ -48,6 +48,7 @@ use WebxUi\Blog\Rendering\ShownArticles;
 use WebxUi\Blog\Screens\AuthorType;
 use WebxUi\Blog\Screens\IdsType;
 use WebxUi\Blog\Seo\TagSource;
+use WebxUi\Blog\Support\PublishedAuthors;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -75,6 +76,7 @@ class BlogServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/webx-blog.php', 'webx-blog');
 
         $this->app->scoped(ShownArticles::class);
+        $this->app->scoped(PublishedAuthors::class);
     }
 
     public function boot(): void
