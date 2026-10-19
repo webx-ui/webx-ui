@@ -93,6 +93,76 @@ final class PanelSyncTest extends TestCase
     }
 
     #[Test]
+    public function a_fresh_entry_has_the_cache_screen_of_the_frame(): void
+    {
+        // «System → Cache» is module-admin's own section: its server half is on every site, so
+        // its client half goes into every entry — folded into the line that imports createAdmin.
+        $entry = $this->entry();
+
+        $this->artisan('webx:panel')->assertSuccessful();
+
+        $contents = $this->readFile($entry);
+
+        $this->assertSame(1, substr_count($contents, "from '@webx-ui/module-admin'"));
+        $this->assertStringContainsString("import { cache, createAdmin } from '@webx-ui/module-admin'", $contents);
+        $this->assertStringContainsString('cache(),', $contents);
+    }
+
+    #[Test]
+    public function an_older_entry_gets_the_cache_screen_on_sync(): void
+    {
+        $entry = $this->entry();
+        $this->writeFile($entry, $this->handWritten());
+
+        $this->artisan('webx:panel', ['--sync' => true])
+            ->expectsOutputToContain('webx-ui/module-admin')
+            ->assertSuccessful();
+
+        $contents = $this->readFile($entry);
+
+        $this->assertStringContainsString("import { cache } from '@webx-ui/module-admin'", $contents);
+        $this->assertStringContainsString('cache(),', $contents);
+    }
+
+    #[Test]
+    public function a_cache_screen_written_in_by_hand_is_not_registered_twice(): void
+    {
+        // Sites wired `cache()` themselves, under the closing marker, before module-admin
+        // declared it. Two registrations of one id is two entries in the menu and one route
+        // shadowing the other.
+        $entry = $this->entry();
+        $this->writeFile($entry, str_replace(
+            [
+                "import { createAdmin } from '@webx-ui/module-admin'",
+                "    // /webx:modules\n",
+            ],
+            [
+                "import { cache, createAdmin } from '@webx-ui/module-admin'",
+                "    // /webx:modules\n    cache(),\n",
+            ],
+            $this->handWritten(),
+        ));
+
+        $this->artisan('webx:panel', ['--sync' => true])->assertSuccessful();
+
+        $contents = $this->readFile($entry);
+
+        $this->assertSame(1, substr_count($contents, 'cache('));
+        $this->assertSame(1, substr_count($contents, "from '@webx-ui/module-admin'"));
+    }
+
+    #[Test]
+    public function a_registration_that_is_commented_out_is_not_one(): void
+    {
+        $entry = $this->entry();
+        $this->writeFile($entry, str_replace("    // /webx:modules\n", "    // /webx:modules\n    // cache(),\n", $this->handWritten()));
+
+        $this->artisan('webx:panel', ['--sync' => true])->assertSuccessful();
+
+        $this->assertStringContainsString("    cache(),\n", $this->readFile($entry));
+    }
+
+    #[Test]
     public function a_package_that_declares_nothing_is_simply_not_a_module(): void
     {
         // `nested-set` and `routing` have no npm half at all, and a package written before
@@ -200,7 +270,7 @@ final class PanelSyncTest extends TestCase
             import { seo } from '@webx-ui/module-seo'
 
             createAdmin({
-              modules: [pages(), seo(), admins(), connect()],
+              modules: [pages(), seo(), admins(), connect(), cache()],
               plugins: [auth()],
               userMenu: WxUserMenu,
             }).mount()
@@ -263,6 +333,39 @@ final class PanelSyncTest extends TestCase
 
         $this->assertArrayNotHasKey('@webx-ui/module-pages', $dependencies['dependencies'] ?? []);
         $this->assertSame('^0.3.0', $dependencies['devDependencies']['@webx-ui/module-pages']);
+    }
+
+    #[Test]
+    public function it_raises_a_range_that_never_reaches_the_half_the_server_needs(): void
+    {
+        // Below 1.0 the caret pins the minor: `^0.10.0` never installs the 0.13 the installed
+        // module-admin asks for, and the build would find out as a missing export.
+        $this->entry();
+        $manifest = $this->at('package.json');
+        $this->writeFile($manifest, json_encode([
+            'dependencies' => [
+                '@webx-ui/module-admin' => '^0.10.0',
+                '@webx-ui/module-pages' => 'file:../webx-ui/packages/module-pages',
+                '@webx-ui/module-seo' => '^0.5.0',
+                'vue' => '^3.4.0',
+            ],
+            'devDependencies' => ['@webx-ui/module-auth' => '^0.7.1'],
+        ], JSON_PRETTY_PRINT)."\n");
+
+        $this->artisan('webx:panel', ['--sync' => true])
+            ->expectsOutputToContain('@webx-ui/module-admin ^0.10.0 → ^0.13.0')
+            ->assertSuccessful();
+
+        $dependencies = json_decode($this->readFile($manifest), true);
+
+        $this->assertSame('^0.13.0', $dependencies['dependencies']['@webx-ui/module-admin']);
+        // Raised where it stands: moving somebody's dependency between sections is rude.
+        $this->assertSame('^0.8.0', $dependencies['devDependencies']['@webx-ui/module-auth']);
+        $this->assertArrayNotHasKey('@webx-ui/module-auth', $dependencies['dependencies']);
+        // A link, a newer range and one that already reaches the version are the site's.
+        $this->assertSame('file:../webx-ui/packages/module-pages', $dependencies['dependencies']['@webx-ui/module-pages']);
+        $this->assertSame('^0.5.0', $dependencies['dependencies']['@webx-ui/module-seo']);
+        $this->assertSame('^3.4.0', $dependencies['dependencies']['vue']);
     }
 
     #[Test]

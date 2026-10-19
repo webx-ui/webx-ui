@@ -182,7 +182,16 @@ php artisan webx:panel --sync
 ```
 
 adds its four lines to the entry file and its dependency to `package.json`, leaving everything
-else where it is. Run it twice and the second run changes nothing.
+else where it is. Run it twice and the second run changes nothing. A range already in
+`package.json` stays as the site wrote it unless npm could never reach the version the server
+needs under it — `^0.30.0` against `^0.31.0`: below 1.0 the caret pins the minor — and then it
+is raised in the section it stands in, and the command says so.
+
+The frame declares its own section the same way: «System → Cache» is `cache()` from
+`@webx-ui/module-admin`, so a fresh entry file has it and `--sync` adds it to an older one. A
+call already in the file counts wherever it stands, comments aside — a site that wrote
+`cache()` in by hand below `// /webx:modules` keeps that one line and gets no second.
+`webx:doctor` fails «Both halves» while a declared section is missing from the entry file.
 
 The entry file carries three pairs of markers — `webx:imports`, `webx:styles`, `webx:modules` —
 and the command writes between those and nowhere else. Everything outside them is the site's:

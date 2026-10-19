@@ -1,5 +1,5 @@
-import { createAdmin } from '@webx-ui/module-admin'
 // webx:imports
+import { createAdmin } from '@webx-ui/module-admin'
 import { auth, WxUserMenu } from '@webx-ui/module-auth'
 // /webx:imports
 

@@ -48,4 +48,52 @@ final class VersionRange
 
         return $floor !== null && $theirs !== null && version_compare($theirs, $floor, '<');
     }
+
+    /**
+     * Whether npm may install `$version` under the range at all.
+     *
+     * The other half of the question `below()` asks: `^3.4.0` starts below 3.5.0 and still lets
+     * npm reach it, `^0.30.0` does not let it reach 0.31.0 — the caret on a zero major pins the
+     * minor. Caret, tilde, x-ranges, bare versions and an upper `<` bound are read; a union, or
+     * a range that names a place, is taken to admit it, because rewriting what is not understood
+     * is worse than leaving it.
+     */
+    public static function admits(string $range, string $version): bool
+    {
+        $range = trim($range);
+        $floor = self::floor($range);
+
+        if ($floor === null || str_contains($range, '||')) {
+            return true;
+        }
+
+        if (version_compare($version, $floor, '<')) {
+            return false;
+        }
+
+        [$major, $minor, $patch] = array_map(intval(...), explode('.', $floor));
+
+        if (preg_match('/<\s*=?\s*v?(\d+(?:\.\d+){0,2})/', $range, $upper) === 1) {
+            return version_compare($version, (string) self::floor($upper[1]), str_contains($upper[0], '=') ? '<=' : '<');
+        }
+
+        if (str_contains($range, '>')) {
+            return true;
+        }
+
+        $ceiling = match (true) {
+            str_starts_with($range, '^') && $major > 0 => ($major + 1).'.0.0',
+            str_starts_with($range, '^') && $minor > 0 => '0.'.($minor + 1).'.0',
+            str_starts_with($range, '^') => '0.0.'.($patch + 1),
+            str_starts_with($range, '~') => "{$major}.".($minor + 1).'.0',
+            // `1`, `1.x` — the major; `1.2`, `1.2.x` — the minor; `1.2.3` — that version.
+            preg_match('/^=?v?\d+(?:\.[x*])*$/i', $range) === 1 => ($major + 1).'.0.0',
+            preg_match('/^=?v?\d+\.\d+(?:\.[x*])?$/i', $range) === 1 => "{$major}.".($minor + 1).'.0',
+            default => null,
+        };
+
+        return $ceiling === null
+            ? version_compare($version, $floor, '==')
+            : version_compare($version, $ceiling, '<');
+    }
 }

@@ -22,7 +22,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
   `restoreVersion()` puts one back into the draft). `HasExtra` stores fields a patch adds in `extra`.
 - **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in `HistoryTypes`. With `webx-ui/mcp`: MCP tools `history_get`, `history_runs`, resource
   `history://types`, scope `history:read` (the frame registers a type of its own, so they are always there).
-- **Cache** — «System → Cache», `webx:cache:reset`, MCP `cache_reset`
+- **Cache** — «System → Cache» (client half `cache()` from `@webx-ui/module-admin`, wired by `webx:panel --sync`), `webx:cache:reset`, MCP `cache_reset`
   (`dry_run`), every reset journalled; the group `screens` and the words of `locales`, `routes`, `theme`.
   The registry itself (`WebxUi\Cache\CacheGroups`) is `webx-ui/cache`'s — read its AGENTS.md to cache or reset.
 - **Also** — tables `cms_notes` (`HasNotes`), `cms_relations` (`HasRelations`), `cms_uploads` (chunked uploads,

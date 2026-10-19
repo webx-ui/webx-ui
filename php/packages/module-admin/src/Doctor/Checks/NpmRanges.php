@@ -86,6 +86,17 @@ final class NpmRanges implements Check
             )];
         }
 
+        $floor = VersionRange::floor($range);
+
+        // A range npm can never take up to the version — `^0.30.0` against `^0.31.0` — is the
+        // one `webx:panel --sync` raises; one that merely starts lower is a reinstall away.
+        if ($floor !== null && VersionRange::below($asked, $range) && ! VersionRange::admits($asked, $floor)) {
+            return [Diagnosis::fail(
+                'npm halves',
+                "package.json asks for {$package}@{$asked}, which never reaches the {$range} the installed Composer half needs — run `php artisan webx:panel --sync`, then `npm install`.",
+            )];
+        }
+
         if (VersionRange::below($asked, $range)) {
             return [Diagnosis::fail(
                 'npm halves',

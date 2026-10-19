@@ -144,13 +144,13 @@ A module of the panel is two packages — a Composer one on the server, an npm o
 and each Composer package names its own npm half, under `extra.webx` in its `composer.json`. The
 installer walks what is installed and tops up five things:
 
-| file                    | what it does                                                  | if you have already changed it |
-| ----------------------- | ------------------------------------------------------------- | ------------------------------ |
-| `resources/js/admin.ts` | adds the import, the stylesheet and the line in `modules: []` | leaves it                      |
-| `package.json`          | adds the npm halves that are missing                          | never moves a version          |
-| `vite.config.js`        | adds the entry to the `laravel()` plugin's input              | says so instead                |
-| `config/webx-*.php`     | the `vite` key, and `layout` for modules with public pages    | never over a value you chose   |
-| `AGENTS.md`             | the guide for code agents, see [below](#agent-guide)          | only its marked block          |
+| file                    | what it does                                                  | if you have already changed it                                     |
+| ----------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `resources/js/admin.ts` | adds the import, the stylesheet and the line in `modules: []` | leaves it                                                          |
+| `package.json`          | adds the npm halves that are missing                          | raises only a range that cannot reach the version the server needs |
+| `vite.config.js`        | adds the entry to the `laravel()` plugin's input              | says so instead                                                    |
+| `config/webx-*.php`     | the `vite` key, and `layout` for modules with public pages    | never over a value you chose                                       |
+| `AGENTS.md`             | the guide for code agents, see [below](#agent-guide)          | only its marked block                                              |
 
 The entry file is yours. Only the three marked regions are written into:
 

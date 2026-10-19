@@ -5,7 +5,7 @@ one version a group in the cache, and `remember()` on keys that carry those vers
 save moves a version and every entry built on the old one is a miss, on `file` and `database`
 stores as well as Redis. A library with no screen: the panel's «System → Cache», the command
 `webx:cache:reset` and the MCP tool `cache_reset` are `webx-ui/module-admin`'s and reset
-through this registry. The groups themselves are declared by the packages that own the data.
+through this registry (the screen's `cache()` reaches `admin.ts` through `webx:panel --sync`). The groups themselves are declared by the packages that own the data.
 
 ## What it owns
 

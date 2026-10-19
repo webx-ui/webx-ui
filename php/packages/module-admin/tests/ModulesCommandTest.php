@@ -9,6 +9,7 @@ use Illuminate\Support\Composer;
 use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Panel\PackageRegistry;
+use WebxUi\Admin\Panel\PanelPackage;
 use WebxUi\Admin\Setup\Catalogue;
 use WebxUi\Admin\Setup\Processes;
 
@@ -39,7 +40,14 @@ final class ModulesCommandTest extends TestCase
         $this->installed = $this->app->basePath('modules-installed.json');
 
         $this->install([
-            ['name' => 'webx-ui/module-admin', 'version' => '0.28.0'],
+            [
+                'name' => 'webx-ui/module-admin',
+                'version' => '0.28.0',
+                'extra' => ['webx' => [
+                    'module' => 'admin',
+                    'panel' => ['import' => "import { cache } from '@webx-ui/module-admin'", 'register' => 'cache()'],
+                ]],
+            ],
             ['name' => 'webx-ui/module-auth', 'version' => '0.28.0'],
             ['name' => 'webx-ui/module-pages', 'version' => '0.28.0'],
             [
@@ -271,7 +279,8 @@ final class ModulesCommandTest extends TestCase
         foreach ($this->files->glob(dirname(__DIR__, 2).'/*/composer.json') as $path) {
             $composer = json_decode((string) $this->files->get($path), true);
 
-            if (! is_array($composer) || ! isset($composer['extra']['webx']['panel'])) {
+            // The frame wires its own sections and is on every site; there is nothing to choose.
+            if (! is_array($composer) || ! isset($composer['extra']['webx']['panel']) || $composer['name'] === PanelPackage::FRAME) {
                 continue;
             }
 
@@ -322,6 +331,9 @@ final class ModulesCommandTest extends TestCase
         $this->assertSame('acme/module-widgets', $byId['widgets']['package']);
         $this->assertSame('@acme/module-widgets', $byId['widgets']['npm']);
         $this->assertTrue($byId['widgets']['installed']);
+
+        // The frame wires «System → Cache» like a module, and is not one to choose.
+        $this->assertNotContains('webx-ui/module-admin', array_column($modules, 'package'));
     }
 
     #[Test]
