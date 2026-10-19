@@ -1,5 +1,22 @@
 # @webx-ui/php
 
+## 0.79.1
+
+### Patch Changes
+
+- 7dfe0c2: `webx-ui/module-blog`: the page of an author asks whether they have something published once a
+  request, not once per part of the page that wants to know (the handler, `robots`, every `hreflang`
+  line and switcher link); the sitemap reads it with its list of authors (`withExists`).
+  `webx-ui/module-seo` and `webx-ui/widgets`: `hreflang` and the language switcher read an entity's
+  addresses through `RouteCache`, like `url()` — none from the registry on a warm cache.
+- 7dfe0c2: `webx-ui/routing`: a list of cards no longer asks the registry once per link. `url()` reads
+  `RouteCache` — the request's memory, then one `Cache::many()` of the site's cache (on Redis one
+  `MGET`), then one query a type — on keys that move with the `routes` cache group, so a renamed
+  or rebuilt address is seen at once on any cache store. `RecordQuery` preloads the addresses of its
+  records and their relations; `webx:routes:rebuild` moves every cached address.
+  `webx-ui/module-blog`: the block "Latest articles" draws the articles it resolved instead of
+  asking the feed for them a second time.
+
 ## 0.79.0
 
 ### Minor Changes
