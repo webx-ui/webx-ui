@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Blog\Tests;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Collections\Selection;
@@ -12,6 +14,8 @@ use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blog\Collections\ArticlesSource;
 use WebxUi\Blog\Rendering\ArticleQuery;
+use WebxUi\Cache\CacheGroups;
+use WebxUi\Routing\RouteCache;
 
 /**
  * The articles a block shows (§20): the top of the feed, narrowed by rubric, and the block the
@@ -84,6 +88,40 @@ final class BlockTest extends TestCase
 
         $this->assertSame([$first->getKey(), $second->getKey()], $models->modelKeys());
         $this->assertCount(0, ArticleQuery::block(null));
+    }
+
+    #[Test]
+    public function the_block_reads_each_kind_of_address_once_and_its_articles_once(): void
+    {
+        $this->artisan('webx:blocks:offered', ['--install' => true, '--module' => ['blog']])->assertSuccessful();
+
+        $belts = $this->tag('belts');
+        $filters = $this->tag('filters');
+
+        foreach (['first', 'second', 'third'] as $index => $slug) {
+            $this->article($slug, at: Carbon::now()->subDays($index + 1))->tags()->attach([$belts->getKey(), $filters->getKey()]);
+        }
+
+        // The first visitor: nothing in the store, nothing in this process.
+        Cache::flush();
+        $this->app->make(CacheGroups::class)->forgetMemo();
+        $this->app->forgetInstance(RouteCache::class);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $html = (string) $this->app->make(Renderer::class)->render([
+            ['key' => 'k1', 'type' => 'blog', 'values' => ['articles' => ['limit' => 3]]],
+        ]);
+        $queries = array_column(DB::getQueryLog(), 'query');
+        DB::disableQueryLog();
+
+        $routes = array_filter($queries, static fn (string $sql): bool => str_contains($sql, 'from "routes"'));
+        $articles = array_filter($queries, static fn (string $sql): bool => str_contains($sql, 'from "blog_articles"'));
+
+        // The articles and their tags: one query a type, the shared tags read once.
+        $this->assertCount(2, $routes, implode("\n", $routes));
+        $this->assertCount(1, $articles, implode("\n", $articles));
+        $this->assertStringContainsString(url('/blog/second'), $html);
     }
 
     private function source(): ArticlesSource

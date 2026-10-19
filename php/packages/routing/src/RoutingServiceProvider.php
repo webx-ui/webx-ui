@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Routing;
 
 use ArrayObject;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Support\Facades\Route as Router;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Audit\Checks\AuditChecks;
@@ -46,6 +48,9 @@ class RoutingServiceProvider extends ServiceProvider
         $this->app->singletonIf(Spelling::class, RegistrySpelling::class);
         $this->app->singleton(Resolver::class);
         $this->app->singleton(Misses::class);
+        // Scoped: what one request or one job read of the registry is not the next one's. Octane
+        // and the queue worker drop scoped instances between the two.
+        $this->app->scoped(RouteCache::class);
 
         // The one thing the registry offers a panel to read. Bound to an interface rather than
         // exposed as a class, because the screen that shows it lives in another package and a
@@ -84,6 +89,20 @@ class RoutingServiceProvider extends ServiceProvider
 
         $groups->declare(CacheGroups::ROUTES);
         $groups->bumpOn(CacheGroups::ROUTES, Route::class);
+
+        // The group moves after the commit, and this process may read again before it — inside
+        // the transaction that wrote, or after one rolled back (a `dry_run`): the memory of the
+        // addresses goes at once. Resolved on every event, so it is the current scope's.
+        $forget = function (): void {
+            $this->app->make(RouteCache::class)->forget();
+        };
+        $events = $this->app->make(Dispatcher::class);
+
+        foreach (['saved', 'deleted'] as $event) {
+            $events->listen('eloquent.'.$event.': '.Route::class, $forget);
+        }
+
+        $events->listen(TransactionRolledBack::class, $forget);
     }
 
     /**

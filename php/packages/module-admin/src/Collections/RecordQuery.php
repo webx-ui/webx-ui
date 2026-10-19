@@ -15,6 +15,7 @@ use IteratorAggregate;
 use Traversable;
 use WebxUi\Admin\Relations\Relations;
 use WebxUi\Localization\Locales;
+use WebxUi\Routing\RouteCache;
 
 /**
  * What a site helper like `services()` or `reviews()` is made of: the records a template may
@@ -264,7 +265,38 @@ abstract class RecordQuery implements Countable, IteratorAggregate
             $records = array_slice($records, 0, $this->limit);
         }
 
+        self::preloadUrls($records);
+
         return new EloquentCollection($records);
+    }
+
+    /**
+     * The addresses of the records and of what they were loaded with — the tags, the rubrics, the
+     * author of every card — in one read of the cache and a query a type for what it lacks, rather
+     * than a query each `url()`. Behind `class_exists`: the frame does not require
+     * `webx-ui/routing`, and a module without addresses has nothing to read.
+     *
+     * @param  list<Model>  $records
+     */
+    private static function preloadUrls(array $records): void
+    {
+        if ($records === [] || ! class_exists(RouteCache::class)) {
+            return;
+        }
+
+        $entities = $records;
+
+        foreach ($records as $record) {
+            foreach ($record->getRelations() as $related) {
+                if ($related instanceof Model) {
+                    $entities[] = $related;
+                } elseif ($related instanceof EloquentCollection) {
+                    array_push($entities, ...$related->all());
+                }
+            }
+        }
+
+        Container::getInstance()->make(RouteCache::class)->preload($entities);
     }
 
     /** @return array<string, mixed>|null */

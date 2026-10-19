@@ -79,6 +79,33 @@ $page->url();            // 'https://example.test/uk/about/mission'
 `type` is a name, not a class: it goes into Eloquent's morph map on registration, so moving `Page`
 between namespaces stays a refactor instead of a migration.
 
+## Addresses in a list
+
+`url()` answers from the `routes` relation when it is loaded and from `RouteCache` when it is
+not, so a card that prints an article and its tags does not cost a query per link. Three layers:
+
+1. **The request's memory.** An entity asked twice — the same tag on every card, the trail and the
+   `hreflang` lines — is not asked of anything the second time. Scoped to the request or the job,
+   so Octane and queue workers never carry it over.
+2. **The site's cache.** The addresses of a whole list in one `Cache::many()` — on Redis one
+   `MGET`. Arrays of scalars, never models; an entity without an address is cached too.
+3. **The registry.** One query a type for what the cache did not have, written back with
+   `putMany()`.
+
+A site helper built on `RecordQuery` (`services()`, the blog block, …) preloads its records and
+everything they were loaded with. A list of your own does the same before the cards:
+
+```php
+app(\WebxUi\Routing\RouteCache::class)->preload([...$articles, ...$articles->pluck('tags')->flatten()]);
+```
+
+The keys are `webx:route:v1:<type>:<id>:-:routes.<version>`: the version of the `routes` cache
+group ([Caching](./caching)) moves on every write to the registry — a save, a rename, a move in the
+tree, a delete, a restore, `RouteSync::bulk()`, `webx:routes:rebuild` — so a changed address is
+never read from the cache, a parent's move reaches its children, and nothing is flushed. It works
+on any store; on a Redis shared by several sites give each its own `CACHE_PREFIX`. Turned off with
+the rest of the site cache (`WEBX_CACHE_ENABLED=false`): the memory and the batch query stay.
+
 ## Formatters
 
 The address is built by the type's formatter, and a formatter is a **pure function of the entity**.

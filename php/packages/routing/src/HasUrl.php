@@ -96,11 +96,12 @@ trait HasUrl
     /**
      * The row the registry actually holds, if the entity has been saved.
      *
-     * Out of the `routes` relation, loaded once: a list that did `with('routes')` has every
-     * row already, and an entity asked twice — the card and the trail, the trail and the
-     * `hreflang` lines — is one query rather than one per asking. The rows are dropped whenever
-     * the registry is rewritten for the entity (`bootHasUrl()`), so a suffix the registry
-     * settled on a collision is read back on the next call.
+     * Out of the `routes` relation when it is loaded: a list that did `with('routes')` has every
+     * row already. Otherwise out of {@see RouteCache}: an entity asked twice — the card and the
+     * trail, the trail and the `hreflang` lines — is asked of nothing the second time, and a
+     * list that preloaded its records is one read of the cache for all of them. The rows are
+     * dropped whenever the registry is rewritten (`bootHasUrl()`, the `routes` cache group), so
+     * a suffix the registry settled on a collision is read back on the next call.
      */
     public function routeCanonical(?string $locale = null): ?Route
     {
@@ -110,7 +111,13 @@ trait HasUrl
 
         $locale ??= $this->routeLocale();
 
-        foreach ($this->routes as $route) {
+        // Not loaded — one card of a list, a tag on it — and the rows come from `RouteCache`:
+        // what the list preloaded, or one read of the cache, rather than a query an entity.
+        $routes = $this->relationLoaded('routes')
+            ? $this->routes
+            : Container::getInstance()->make(RouteCache::class)->canonical($this);
+
+        foreach ($routes as $route) {
             if ($route->kind === Route::CANONICAL && $route->locale === $locale) {
                 return $route;
             }
