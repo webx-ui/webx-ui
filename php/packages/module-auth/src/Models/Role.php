@@ -19,6 +19,7 @@ use WebxUi\Admin\History\RecordsHistory;
  * @property string $slug
  * @property string $name
  * @property list<string> $permissions
+ * @property list<string>|null $offered what a ready-made role has been offered so far; null for the site's own
  */
 class Role extends Model
 {
@@ -35,7 +36,7 @@ class Role extends Model
      */
     protected function casts(): array
     {
-        return ['permissions' => 'array'];
+        return ['permissions' => 'array', 'offered' => 'array'];
     }
 
     /**

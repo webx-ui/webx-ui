@@ -8,18 +8,24 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Doctor\Diagnosis;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Auth\Doctor\DefaultRolesOwed;
 use WebxUi\Auth\Models\Role;
 
 /**
  * The ready-made roles (WEBX_UI_PERMISSIONS.md §12): made of the modules a site has, never over
- * a role the site already has, never with the keys to the panel itself.
+ * a role the site already has, never with the keys to the panel itself; topped up with a module
+ * installed after them, never with what the owner took away.
  */
 final class DefaultRolesTest extends TestCase
 {
     use RefreshDatabase;
 
     private const MIGRATION = __DIR__.'/../database/migrations/2026_10_18_000001_seed_default_roles.php';
+
+    private const TOP_UP = __DIR__.'/../database/migrations/2026_10_19_000000_top_up_default_roles.php';
 
     #[Test]
     public function the_roles_hold_only_what_the_installed_modules_declare(): void
@@ -87,6 +93,159 @@ final class DefaultRolesTest extends TestCase
         $this->assertSame(['developer', 'viewer'], Role::query()->orderBy('id')->pluck('slug')->all());
     }
 
+    // -- Topping up ----------------------------------------------------------------------------
+
+    #[Test]
+    public function a_module_installed_after_the_roles_is_topped_up_into_them(): void
+    {
+        $this->install('pages', ['pages.view', 'pages.manage']);
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $this->install('snippets', ['snippets.manage']);
+        $this->install('notifications', ['notifications.view', 'notifications.manage']);
+
+        $this->artisan('webx:roles:defaults', ['--top-up' => true])
+            ->expectsOutputToContain('developer')
+            ->assertSuccessful();
+
+        $roles = Role::query()->pluck('permissions', 'slug');
+
+        $this->assertSame(['cache.view', 'cache.reset', 'snippets.manage', 'notifications.view', 'notifications.manage'], $roles['developer']);
+        $this->assertSame(['cache.view', 'pages.view', 'notifications.view'], $roles['viewer']);
+        $this->assertSame(['pages.view', 'pages.manage'], $roles['editor']);
+
+        // Topping up creates nothing: `leads` could be made now, but that is a person's call.
+        $this->assertFalse(Role::query()->where('slug', 'leads')->exists());
+
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+        $this->assertSame(['notifications.view'], Role::query()->where('slug', 'leads')->firstOrFail()->permissions);
+    }
+
+    #[Test]
+    public function a_permission_the_owner_took_away_does_not_come_back(): void
+    {
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $developer = Role::query()->where('slug', 'developer')->firstOrFail();
+        $developer->permissions = ['cache.view'];
+        $developer->save();
+
+        $this->install('snippets', ['snippets.manage']);
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $this->assertSame(['cache.view', 'snippets.manage'], $developer->refresh()->permissions);
+    }
+
+    #[Test]
+    public function the_sites_own_roles_and_what_is_never_handed_out_stay_as_they_are(): void
+    {
+        $own = $this->role('developer', ['cache.view']);
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $this->install('snippets', ['snippets.manage']);
+        $this->install('debug', ['debug.view']);
+        $this->install('tasks', ['tasks.view', 'tasks.manage']);
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $this->assertSame(['cache.view'], $own->refresh()->permissions);
+        $this->assertNull($own->offered);
+        $this->assertSame(['cache.view'], Role::query()->where('slug', 'viewer')->firstOrFail()->permissions);
+    }
+
+    #[Test]
+    public function running_it_again_changes_nothing(): void
+    {
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+        $this->install('snippets', ['snippets.manage']);
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $before = Role::query()->orderBy('id')->get(['slug', 'permissions', 'offered'])->toArray();
+
+        $this->artisan('webx:roles:defaults')->expectsOutputToContain('already there')->assertSuccessful();
+
+        $this->assertSame($before, Role::query()->orderBy('id')->get(['slug', 'permissions', 'offered'])->toArray());
+    }
+
+    #[Test]
+    public function a_dry_run_says_what_it_would_do_and_writes_nothing(): void
+    {
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+        $this->install('snippets', ['snippets.manage']);
+        $this->install('inbox', ['inbox.view', 'inbox.update']);
+
+        $this->artisan('webx:roles:defaults', ['--dry-run' => true])
+            ->expectsOutputToContain('snippets.manage')
+            ->expectsOutputToContain('inbox.view, inbox.update')
+            ->expectsOutputToContain('Dry run')
+            ->assertSuccessful();
+
+        $this->assertSame(['cache.view', 'cache.reset'], Role::query()->where('slug', 'developer')->firstOrFail()->permissions);
+        $this->assertFalse(Role::query()->where('slug', 'leads')->exists());
+    }
+
+    #[Test]
+    public function a_site_whose_roles_were_made_before_they_remembered_is_brought_up(): void
+    {
+        // The site as the release before this one left it: roles made of the modules then, no
+        // `offered`; one of them edited by the owner, one the site's own under a ready-made code.
+        $this->admin();
+        $this->install('pages', ['pages.view', 'pages.manage']);
+        $this->role('developer', ['cache.view']);
+        $this->role('viewer', ['cache.view', 'pages.view']);
+        $this->role('editor', ['pages.view', 'admins.view']);
+
+        $this->install('snippets', ['snippets.manage']);
+        $this->install('notifications', ['notifications.view', 'notifications.manage']);
+
+        $this->migrate(self::TOP_UP);
+
+        $roles = Role::query()->get()->keyBy('slug');
+
+        // Cache was there when the developer was made, so the reset it lacks was taken away.
+        $this->assertSame(['cache.view', 'snippets.manage', 'notifications.view', 'notifications.manage'], $roles['developer']->permissions);
+        $this->assertSame(['cache.view', 'pages.view', 'notifications.view'], $roles['viewer']->permissions);
+        $this->assertSame(['pages.view', 'admins.view'], $roles['editor']->permissions);
+        $this->assertNull($roles['editor']->offered);
+
+        // Not created by the migration either: missing may mean deleted.
+        $this->assertFalse(Role::query()->where('slug', 'leads')->exists());
+
+        // And the reset stays away afterwards.
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+        $this->assertNotContains('cache.reset', $roles['developer']->refresh()->permissions);
+    }
+
+    #[Test]
+    public function the_doctor_names_the_roles_behind_the_modules(): void
+    {
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $check = $this->app->make(DefaultRolesOwed::class);
+        $this->assertSame(Diagnosis::OK, $this->state($check));
+
+        $this->install('snippets', ['snippets.manage']);
+        $found = $check->run();
+
+        $this->assertSame(Diagnosis::WARN, $found[0]->state);
+        $this->assertStringContainsString('developer ← snippets.manage', $found[0]->detail);
+        $this->assertStringContainsString('webx:roles:defaults --top-up', $found[0]->detail);
+        $this->assertContains(DefaultRolesOwed::class, $this->app->make(DoctorChecks::class)->all());
+
+        $this->artisan('webx:roles:defaults', ['--top-up' => true])->assertSuccessful();
+        $this->assertSame(Diagnosis::OK, $this->state($check));
+
+        // A ready-made role the owner deleted is not something to nag about.
+        Role::query()->where('slug', 'viewer')->delete();
+        $afterDelete = $check->run();
+        $this->assertSame(Diagnosis::OK, $afterDelete[0]->state);
+    }
+
+    private function state(DefaultRolesOwed $check): string
+    {
+        return $check->run()[0]->state;
+    }
+
     /**
      * @param  list<string>  $permissions
      */
@@ -116,7 +275,12 @@ final class DefaultRolesTest extends TestCase
 
     private function up(): void
     {
-        $migration = require self::MIGRATION;
+        $this->migrate(self::MIGRATION);
+    }
+
+    private function migrate(string $file): void
+    {
+        $migration = require $file;
 
         if (! $migration instanceof Migration || ! method_exists($migration, 'up')) {
             self::fail('The migration has no up().');

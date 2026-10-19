@@ -129,6 +129,38 @@ final class DoctorTest extends TestCase
     }
 
     #[Test]
+    public function it_tells_a_range_that_reaches_a_version_from_one_that_never_will(): void
+    {
+        // Below 1.0 the caret pins the minor: `^0.30.0` never installs 0.31.
+        $this->assertFalse(VersionRange::admits('^0.30.0', '0.31.0'));
+        $this->assertTrue(VersionRange::admits('^0.31.0', '0.31.0'));
+        $this->assertTrue(VersionRange::admits('^3.4.0', '3.5.0'));
+        $this->assertFalse(VersionRange::admits('^3.4.0', '4.0.0'));
+        $this->assertFalse(VersionRange::admits('^0.0.3', '0.0.4'));
+        $this->assertFalse(VersionRange::admits('~1.2.0', '1.3.0'));
+        $this->assertTrue(VersionRange::admits('1.x', '1.9.0'));
+        $this->assertFalse(VersionRange::admits('1.2', '1.3.0'));
+        $this->assertFalse(VersionRange::admits('0.30.1', '0.31.0'));
+        $this->assertTrue(VersionRange::admits('>=0.30.0', '0.31.0'));
+        $this->assertFalse(VersionRange::admits('>=0.30.0 <0.31.0', '0.31.0'));
+        $this->assertTrue(VersionRange::admits('>=0.30.0 <=0.31.0', '0.31.0'));
+
+        // What is not understood, or names a place, is left to the site.
+        $this->assertTrue(VersionRange::admits('^0.29.0 || ^0.30.0', '0.31.0'));
+        $this->assertTrue(VersionRange::admits('file:../webx-ui/packages/module-admin', '0.31.0'));
+    }
+
+    #[Test]
+    public function a_range_that_cannot_reach_the_half_points_at_the_sync(): void
+    {
+        $this->packageJson(['@webx-ui/module-pages' => '^0.2.0', '@webx-ui/module-auth' => '^0.8.0', '@webx-ui/module-seo' => '^0.4.2']);
+
+        $details = $this->details((new NpmRanges($this->app, $this->files, $this->packages()))->run());
+
+        $this->assertStringContainsString('webx:panel --sync', $details);
+    }
+
+    #[Test]
     public function it_says_which_npm_half_is_a_minor_too_old(): void
     {
         // The caret pins the minor below 1.0, so a site asking a minor too low never reaches
@@ -309,6 +341,7 @@ final class DoctorTest extends TestCase
                 admins(),
                 connect(),
                 seo({ mediaField: WxMediaField }),
+                cache(),
                 // /webx:modules
               ],
             })
@@ -317,6 +350,64 @@ final class DoctorTest extends TestCase
         $details = $this->details($this->halves());
 
         $this->assertStringNotContainsString('installed on the server and not in', $details);
+    }
+
+    #[Test]
+    public function a_section_of_the_frame_without_its_client_half_is_red(): void
+    {
+        // «System → Cache»: the server half is module-admin itself, so the manifest lists the
+        // module on every site, and a panel without `cache()` answers its address with nothing.
+        $this->entry(<<<'TS'
+            // webx:imports
+            // /webx:imports
+            // webx:styles
+            // /webx:styles
+            createAdmin({
+              modules: [
+                // webx:modules
+                pages(),
+                admins(),
+                connect(),
+                seo(),
+                // /webx:modules
+                // cache(),
+              ],
+            })
+            TS);
+
+        $found = $this->halves();
+
+        $this->assertTrue($found[0]->failed());
+        $this->assertStringContainsString('webx-ui/module-admin (cache())', $this->details($found));
+    }
+
+    #[Test]
+    public function a_call_written_in_by_hand_outside_the_markers_is_wired(): void
+    {
+        // The way sites registered the cache screen before module-admin declared it.
+        $this->entry(<<<'TS'
+            import { cache, createAdmin } from '@webx-ui/module-admin'
+            // webx:imports
+            // /webx:imports
+            // webx:styles
+            // /webx:styles
+            createAdmin({
+              modules: [
+                // webx:modules
+                pages(),
+                admins(),
+                connect(),
+                seo(),
+                // /webx:modules
+                cache(),
+              ],
+            })
+            TS);
+
+        $details = $this->details($this->halves());
+
+        $this->assertStringNotContainsString('installed on the server and not in', $details);
+        $this->assertStringNotContainsString('no installed package claims', $details);
     }
 
     #[Test]

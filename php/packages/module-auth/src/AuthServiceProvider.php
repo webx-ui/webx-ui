@@ -12,6 +12,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -19,6 +20,7 @@ use WebxUi\Auth\Consent\ConsentScreen;
 use WebxUi\Auth\Console\CreateAdminCommand;
 use WebxUi\Auth\Console\DefaultRolesCommand;
 use WebxUi\Auth\Console\McpTokenCommand;
+use WebxUi\Auth\Doctor\DefaultRolesOwed;
 use WebxUi\Auth\Events\AdminLoggedIn;
 use WebxUi\Auth\Events\AdminLoginFailed;
 use WebxUi\Auth\Http\Middleware\Authenticate;
@@ -37,6 +39,10 @@ class AuthServiceProvider extends ServiceProvider
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
             $tables->admins('cms_users', 'cms_roles', 'cms_role_user');
             $tables->stand('cms_login_records');
+        });
+
+        $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
+            $checks->register(DefaultRolesOwed::class);
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-auth.php', 'webx-auth');

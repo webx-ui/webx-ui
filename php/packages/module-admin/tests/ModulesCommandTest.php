@@ -9,6 +9,7 @@ use Illuminate\Support\Composer;
 use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Panel\PackageRegistry;
+use WebxUi\Admin\Panel\PanelPackage;
 use WebxUi\Admin\Setup\Catalogue;
 use WebxUi\Admin\Setup\Processes;
 
@@ -39,7 +40,14 @@ final class ModulesCommandTest extends TestCase
         $this->installed = $this->app->basePath('modules-installed.json');
 
         $this->install([
-            ['name' => 'webx-ui/module-admin', 'version' => '0.28.0'],
+            [
+                'name' => 'webx-ui/module-admin',
+                'version' => '0.28.0',
+                'extra' => ['webx' => [
+                    'module' => 'admin',
+                    'panel' => ['import' => "import { cache } from '@webx-ui/module-admin'", 'register' => 'cache()'],
+                ]],
+            ],
             ['name' => 'webx-ui/module-auth', 'version' => '0.28.0'],
             ['name' => 'webx-ui/module-pages', 'version' => '0.28.0'],
             [
@@ -271,7 +279,8 @@ final class ModulesCommandTest extends TestCase
         foreach ($this->files->glob(dirname(__DIR__, 2).'/*/composer.json') as $path) {
             $composer = json_decode((string) $this->files->get($path), true);
 
-            if (! is_array($composer) || ! isset($composer['extra']['webx']['panel'])) {
+            // The frame wires its own sections and is on every site; there is nothing to choose.
+            if (! is_array($composer) || ! isset($composer['extra']['webx']['panel']) || $composer['name'] === PanelPackage::FRAME) {
                 continue;
             }
 
@@ -322,6 +331,9 @@ final class ModulesCommandTest extends TestCase
         $this->assertSame('acme/module-widgets', $byId['widgets']['package']);
         $this->assertSame('@acme/module-widgets', $byId['widgets']['npm']);
         $this->assertTrue($byId['widgets']['installed']);
+
+        // The frame wires «System → Cache» like a module, and is not one to choose.
+        $this->assertNotContains('webx-ui/module-admin', array_column($modules, 'package'));
     }
 
     #[Test]
@@ -345,6 +357,7 @@ final class ModulesCommandTest extends TestCase
         $this->assertSame([
             'composer require webx-ui/module-faq:^0.28.0 --no-interaction --no-progress',
             'artisan webx:panel --sync',
+            'artisan webx:roles:defaults --top-up',
             'npm install',
             'npm run build',
         ], $this->ran);
@@ -358,6 +371,7 @@ final class ModulesCommandTest extends TestCase
         $this->assertSame([
             'composer require acme/module-gallery --no-interaction --no-progress',
             'artisan webx:panel --sync',
+            'artisan webx:roles:defaults --top-up',
             'npm install',
         ], $this->ran);
     }
@@ -377,7 +391,31 @@ final class ModulesCommandTest extends TestCase
             ->expectsOutputToContain('already installed')
             ->assertSuccessful();
 
-        $this->assertSame(['artisan webx:panel --sync', 'npm install', 'npm run build'], $this->ran);
+        $this->assertSame(['artisan webx:panel --sync', 'artisan webx:roles:defaults --top-up', 'npm install', 'npm run build'], $this->ran);
+    }
+
+    #[Test]
+    public function roles_that_could_not_be_topped_up_do_not_stop_the_install(): void
+    {
+        // No database on a build machine: the module is installed, the deploy's boot tops up.
+        $this->exits = ['artisan webx:roles:defaults' => 1];
+
+        $this->artisan('webx:module:add', ['package' => 'faq', '--no-build' => true])
+            ->expectsOutputToContain('webx:roles:defaults --top-up when the database is there')
+            ->assertSuccessful();
+
+        $this->assertSame('npm install', $this->ran[3]);
+    }
+
+    #[Test]
+    public function a_site_without_accounts_has_no_roles_to_top_up(): void
+    {
+        $this->install([['name' => 'webx-ui/module-admin', 'version' => '0.28.0'], ['name' => 'webx-ui/module-pages', 'version' => '0.28.0']]);
+        $this->app->instance(Catalogue::class, new Catalogue($this->files, $this->installed));
+
+        $this->artisan('webx:module:add', ['package' => 'webx-ui/module-pages', '--no-build' => true])->assertSuccessful();
+
+        $this->assertSame(['artisan webx:panel --sync', 'npm install'], $this->ran);
     }
 
     #[Test]

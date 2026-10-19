@@ -9,7 +9,9 @@ cache store, `file` and `database` included, where Laravel's tags do not.
 
 Part of [WebX UI](https://github.com/webx-ui/webx-ui). The admin panel's «System → Cache»
 screen, the `webx:cache:reset` command and the MCP tool `cache_reset` live in
-`webx-ui/module-admin` and reset through this registry; the registry itself needs no panel.
+`webx-ui/module-admin` and reset through this registry; the registry itself needs no panel. The
+screen's client half, `cache()` from `@webx-ui/module-admin`, is put into the site's
+`resources/js/admin.ts` by `php artisan webx:panel --sync`.
 
 ## Requirements
 

@@ -6,6 +6,7 @@ namespace WebxUi\Admin\Console;
 
 use Illuminate\Console\Command;
 use WebxUi\Admin\Panel\PackageRegistry;
+use WebxUi\Admin\Panel\PanelPackage;
 use WebxUi\Admin\Setup\Catalogue;
 
 /**
@@ -66,7 +67,7 @@ final class ModulesCommand extends Command
         $found = [];
 
         foreach ($registry->packages() as $package) {
-            if ($package->module === null || ! $package->wiresThePanel() || $catalogue->idFor($package->name) !== null) {
+            if ($package->module === null || ! $package->wiresThePanel() || $package->name === PanelPackage::FRAME || $catalogue->idFor($package->name) !== null) {
                 continue;
             }
 

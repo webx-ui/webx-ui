@@ -12,6 +12,7 @@ use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Auth\Access\AccessRules;
+use WebxUi\Auth\Access\DefaultRoles;
 use WebxUi\Auth\Access\PermissionMatrix;
 use WebxUi\Auth\Http\Requests\RoleRequest;
 use WebxUi\Auth\Models\CmsUser;
@@ -179,6 +180,19 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
             ),
 
             Tool::mutating(
+                'sync_default_roles',
+                'Bring the ready-made roles up to the modules installed: add to each the permissions of modules installed after it that it was never offered, and create the ready-made roles that are missing. A permission somebody took away is not given back; the site\'s own roles are not touched.',
+                static fn (array $arguments, ?Authenticatable $user = null): array => self::syncDefaultRoles($arguments, $user),
+                [
+                    'properties' => [
+                        'create' => ['type' => 'boolean', 'default' => true, 'description' => 'Also create the ready-made roles that are missing; false only tops up the ones there are'],
+                    ],
+                ],
+                scope: 'admins:write',
+                permission: 'roles.manage',
+            ),
+
+            Tool::mutating(
                 'grant_role',
                 'Give an administrator a role.',
                 static fn (array $arguments, ?Authenticatable $user = null): array => self::changeRole($arguments, $user, attach: true),
@@ -307,6 +321,50 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
             'user' => $target->email,
             'role' => $role->slug,
             'applied' => true,
+        ];
+    }
+
+    /**
+     * The ready-made roles brought up to the modules installed, under the rules of the screen:
+     * what a role gains, the caller must hold (rule 2), and a role the caller holds is not theirs
+     * to edit (rule 5). A role refused is named and left as it is; the rest go ahead.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function syncDefaultRoles(array $arguments, ?Authenticatable $user): array
+    {
+        $dryRun = (bool) ($arguments['dry_run'] ?? false);
+        $create = (bool) ($arguments['create'] ?? true);
+
+        $roles = Container::getInstance()->make(DefaultRoles::class);
+        $rules = Container::getInstance()->make(AccessRules::class);
+        $plan = $roles->sync(dryRun: true, create: $create);
+        $allowed = [];
+        $refused = [];
+
+        foreach ([...$plan['created'], ...$plan['added']] as $slug => $gaining) {
+            $role = Role::query()->where('slug', $slug)->first();
+            $refusal = $rules->saveRole($user instanceof CmsUser ? $user : null, $role, [...($role->permissions ?? []), ...$gaining]);
+
+            if ($refusal === null) {
+                $allowed[] = $slug;
+            } else {
+                $refused[] = ['role' => $slug, 'rule' => $refusal->rule, 'reason' => $refusal->message(), 'missing' => $refusal->missing];
+            }
+        }
+
+        $done = $dryRun || $allowed === [] ? $plan : $roles->sync(create: $create, only: $allowed);
+        $created = array_intersect_key($done['created'], array_flip($allowed));
+        $added = array_intersect_key($done['added'], array_flip($allowed));
+
+        return [
+            'ok' => $refused === [],
+            'would_change' => $created !== [] || $added !== [],
+            'created' => $created,
+            'added' => $added,
+            'refused' => $refused,
+            'applied' => ! $dryRun && ($created !== [] || $added !== []),
         ];
     }
 

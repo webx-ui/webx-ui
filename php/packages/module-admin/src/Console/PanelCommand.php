@@ -9,6 +9,7 @@ use Illuminate\Filesystem\Filesystem;
 use WebxUi\Admin\Agents\AgentDocs;
 use WebxUi\Admin\Agents\McpConfig;
 use WebxUi\Admin\Agents\RootFile;
+use WebxUi\Admin\Doctor\VersionRange;
 use WebxUi\Admin\Panel\EntryFile;
 use WebxUi\Admin\Panel\PackageRegistry;
 use WebxUi\Admin\Panel\PanelPackage;
@@ -216,7 +217,7 @@ final class PanelCommand extends Command
     }
 
     /**
-     * Add the npm halves the installed packages ask for, without moving the ones already there.
+     * Add the npm halves the installed packages ask for, and raise a range that cannot reach one.
      *
      * @param  array<string, string>  $npm
      */
@@ -242,33 +243,69 @@ final class PanelCommand extends Command
             return;
         }
 
-        $dependencies = is_array($manifest['dependencies'] ?? null) ? $manifest['dependencies'] : [];
         $added = [];
+        $raised = [];
+        $missing = [];
 
         foreach ($npm as $package => $range) {
             // Somewhere in the manifest is enough: a site that keeps these under devDependencies
             // has them installed, and moving somebody's dependency between sections is rude.
             foreach (['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as $section) {
-                if (is_array($manifest[$section] ?? null) && array_key_exists($package, $manifest[$section])) {
-                    continue 2;
+                if (! is_array($manifest[$section] ?? null) || ! array_key_exists($package, $manifest[$section])) {
+                    continue;
                 }
+
+                $asked = $manifest[$section][$package];
+
+                if (is_string($asked) && $this->cannotReach($asked, $range)) {
+                    $manifest[$section][$package] = $range;
+                    $raised[] = "{$package} {$asked} → {$range}";
+                }
+
+                continue 2;
             }
 
-            $dependencies[$package] = $range;
-            $added[] = $package;
+            $missing[$package] = $range;
         }
 
-        if ($added === []) {
+        if ($missing !== []) {
+            $dependencies = is_array($manifest['dependencies'] ?? null) ? $manifest['dependencies'] : [];
+            $dependencies = [...$dependencies, ...$missing];
+            ksort($dependencies);
+            $manifest['dependencies'] = $dependencies;
+            $added = array_keys($missing);
+        }
+
+        if ($added === [] && $raised === []) {
             $this->components->twoColumnDetail('package.json', 'already asks for every half');
 
             return;
         }
 
-        ksort($dependencies);
-        $manifest['dependencies'] = $dependencies;
-
         $files->put($path, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
-        $this->components->info('package.json now asks for '.implode(', ', $added).'.');
+
+        if ($added !== []) {
+            $this->components->info('package.json now asks for '.implode(', ', $added).'.');
+        }
+
+        if ($raised !== []) {
+            $this->components->info('package.json raised '.implode(', ', $raised).'.');
+        }
+    }
+
+    /**
+     * Whether a range the site chose keeps npm from the version the server needs.
+     *
+     * A range the site chose is the site's, so only then is it moved: `^0.30.0` never installs
+     * the 0.31 a Composer half asks for — the caret on a zero major pins the minor — and the
+     * build finds out as `[MISSING_EXPORT]`. `^3.4.0` against `^3.5.0` reaches it and stays; so
+     * does a `file:` link, and a range newer than the one asked for.
+     */
+    private function cannotReach(string $asked, string $range): bool
+    {
+        $floor = VersionRange::floor($range);
+
+        return $floor !== null && VersionRange::below($asked, $range) && ! VersionRange::admits($asked, $floor);
     }
 
     /**

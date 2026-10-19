@@ -50,10 +50,16 @@ final class EntryFile
             : null;
     }
 
-    /** Whether a module's registration is already in the file, under any arguments. */
+    /**
+     * Whether a module's registration is already in the file, under any arguments.
+     *
+     * Anywhere in the file, comments aside — not only between the markers: a site that wrote a
+     * call in by hand before its package declared it (`cache()` under `// /webx:modules`) has the
+     * module registered all the same, and a second call would register the same id twice.
+     */
     public function registers(string $name): bool
     {
-        return preg_match('/\b'.preg_quote($name, '/').'\s*\(/', $this->scope('modules')) === 1;
+        return preg_match('/\b'.preg_quote($name, '/').'\s*\(/', $this->code()) === 1;
     }
 
     public function importsFrom(string $specifier): bool
@@ -148,6 +154,13 @@ final class EntryFile
     private function scope(string $region): string
     {
         return $this->region($region) ?? $this->contents;
+    }
+
+    /** The file without its comments: a call that is commented out is not made. */
+    private function code(): string
+    {
+        // `//` after a colon is a URL in a string, not a comment.
+        return preg_replace(['#/\*.*?\*/#s', '#(^|[^:])//.*$#m'], ['', '$1'], $this->contents) ?? $this->contents;
     }
 
     private function replace(string $search, string $replacement): void

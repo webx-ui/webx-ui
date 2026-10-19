@@ -13,7 +13,8 @@ use WebxUi\Admin\Setup\SetupFailed;
  * Install one module into a site that already has a panel: Composer, then the panel's front end.
  *
  * What a person does by hand after `webx:setup`, in the order it has to happen, for a script to
- * run without reading the output: `composer require`, `webx:panel --sync`, `npm install` and,
+ * run without reading the output: `composer require`, `webx:panel --sync`, the module's
+ * permissions into the ready-made roles (`webx:roles:defaults --top-up`), `npm install` and,
  * unless told otherwise, `npm run build`. Any package will do, the site's own and a third
  * party's included — the catalogue only lends its ids (`faq` for `webx-ui/module-faq`) and the
  * shared version range of the `webx-ui/*` packages.
@@ -55,6 +56,7 @@ final class ModuleAddCommand extends Command
             }
 
             $this->artisan(['webx:panel', '--sync'], 'webx:panel --sync');
+            $this->topUpRoles($catalogue);
 
             $npm = $processes->npm();
             $this->step([...$npm, 'install'], 'npm install');
@@ -125,6 +127,28 @@ final class ModuleAddCommand extends Command
 
         if (! $catalogue->has($package)) {
             throw SetupFailed::notInstalled($package);
+        }
+    }
+
+    /**
+     * The new module's permissions into the ready-made roles made before it, so the editor and
+     * the developer see it. Not fatal: the module is installed either way, and on a machine
+     * without the site's database — a build, a CI job — the deploy's `webx:boot` does the same.
+     */
+    private function topUpRoles(Catalogue $catalogue): void
+    {
+        if (! $catalogue->has('webx-ui/module-auth')) {
+            return;
+        }
+
+        $status = $this->processes->run(
+            [...$this->processes->artisan($this->laravel->basePath()), 'webx:roles:defaults', '--top-up'],
+            $this->laravel->basePath(),
+            output: fn (string $buffer) => $this->output->write($buffer),
+        );
+
+        if ($status !== 0) {
+            $this->components->warn('The ready-made roles were not topped up — php artisan webx:roles:defaults --top-up when the database is there.');
         }
     }
 

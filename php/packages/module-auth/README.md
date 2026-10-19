@@ -56,6 +56,25 @@ $user->permissions();                 // flattened, deduplicated, sorted
 
 A super administrator passes every check without holding any permission.
 
+### Ready-made roles
+
+`WebxUi\Auth\Access\DefaultRoles` holds six — editor, seo, leads, catalog, developer, viewer —
+each made only of what the installed modules declare. The first `webx:admin` creates them; a
+module installed later is topped up into them by every `webx:boot`, by `webx:module:add` and by
+`webx:roles:defaults`:
+
+```bash
+php artisan webx:roles:defaults            # create the missing ones, top up the rest
+php artisan webx:roles:defaults --top-up   # only top up — what deploys run
+php artisan webx:roles:defaults --dry-run  # role → permissions it would gain, nothing written
+```
+
+A ready-made role remembers what it has been offered (`cms_roles.offered`), and a top-up adds
+only what was never offered: a permission you took away from it stays away. A role whose
+`offered` is null is the site's own and is never touched, whatever its code. Deploys never
+create a missing role, because it may be missing because you deleted it. `webx:doctor` warns
+when a ready-made role has not been offered the permissions of a module installed after it.
+
 On your module's routes:
 
 ```php
@@ -108,6 +127,10 @@ at the sign-in trail:
 ```
 admins_list_admins              admins:read
 admins_list_roles              admins:read
+admins_list_permissions        admins:read
+admins_create_role             admins:write
+admins_update_role             admins:write
+admins_sync_default_roles      admins:write
 admins_grant_role              admins:write
 admins_revoke_role             admins:write
 admins_recent_sign_ins         admins:audit
@@ -118,7 +141,9 @@ There is deliberately **no tool that sets a password, mints a token, creates an 
 deletes one**. Those are the operations where a mistaken tool call is not a mistake you can
 review afterwards. A test asserts that no such tool appears.
 
-Both role tools honour `dry_run`, so an agent can be asked what it would change first.
+Every tool that writes honours `dry_run`, so an agent can be asked what it would change first.
+`admins_sync_default_roles` is `webx:roles:defaults` under the screen's rules: a role gains only
+what the caller holds, and a role refused is named in `refused` and left as it is.
 
 ### What agents did
 

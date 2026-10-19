@@ -14,6 +14,12 @@ namespace WebxUi\Admin\Panel;
 final readonly class PanelPackage
 {
     /**
+     * The frame: on every site, never chosen. Its own sections — «System → Cache» — are wired
+     * like any module's, but it is not a module one installs or lists.
+     */
+    public const FRAME = 'webx-ui/module-admin';
+
+    /**
      * @param  array<string, string>  $npm  Package name to the range the site should ask for.
      * @param  list<string>  $register  The calls that go into `modules: []`.
      * @param  array<string, true|list<string>>  $settings  The tabs of the site's settings the package prints
