@@ -21,11 +21,14 @@ registered in `webx-ui/module-admin` — read their guides for those.
 - **Panel sections** `admins` (list, dialog, the screen «Roles» with its matrix, sign-in trail,
   agent calls) and `connect` (shown only when the MCP door and Passport are there).
 - **Ready-made roles** (`Access\DefaultRoles`): editor, seo, leads, catalog, developer, viewer —
-  made of the installed modules, only where the code is free, by the first `webx:admin`, by the
-  update migration and by `webx:roles:defaults`.
+  made of the installed modules, only where the code is free, by the first `webx:admin` and by
+  `webx:roles:defaults`. A module installed later is topped up into them by `webx:boot`,
+  `webx:module:add` and the update migration: only what the role was never offered
+  (`cms_roles.offered`), so what the owner took away stays away; a role with `offered` null is
+  the site's own and never touched. Deploys only top up — a deleted ready-made role stays deleted.
 - **MCP** tools `admins_list_admins`, `admins_list_roles` (with holders),
   `admins_list_permissions`, `admins_create_role` and `admins_update_role` (same rules as the
-  screen), `admins_grant_role`, `admins_revoke_role`, `admins_recent_sign_ins`, `admins_failed_sign_in_bursts`. Scopes `admins:read`,
+  screen), `admins_sync_default_roles` (the command below, `create`/`dry_run`), `admins_grant_role`, `admins_revoke_role`, `admins_recent_sign_ins`, `admins_failed_sign_in_bursts`. Scopes `admins:read`,
   `admins:write`, `admins:audit`. No tool sets a password, creates an account, deletes a role or
   issues a token.
 - **Commands** `webx:admin` (`--name`, `--email`, `--super`; password from `WEBX_ADMIN_PASSWORD`
@@ -57,22 +60,22 @@ to read, `cms.can:admins.manage` to write.
 
 ## Change it without forking
 
-| You want                                   | Do this                                                                                 |
-| ------------------------------------------ | --------------------------------------------------------------------------------------- |
-| The first administrator                    | `php artisan webx:admin` — the first account is always super                            |
-| A role                                     | Administrators → Roles, or a `Role` row in a seeder (`slug`, `name`, `permissions`)     |
-| The ready-made roles on an older site      | `php artisan webx:roles:defaults` — creates the missing ones, touches none that exist   |
-| An account an agent may connect as         | a role with just the permissions it needs, not `is_super`                               |
-| A key for a script or CI                   | Administrators → Keys, or `php artisan webx:mcp:token --name=ci --admin=... --days=365` |
-| A key for yourself, without `admins.*`     | Connect an agent → Your keys                                                            |
-| Changing your own address without mail     | `WEBX_AUTH_EMAIL_CHANGE=true` only if letters really leave; otherwise an admin edits it |
-| Your own middleware stack on the panel API | `'protect_panel' => false` in `config/webx-auth.php`, add `cms.auth` to your stack      |
-| Another sign-in rate limit                 | `'throttle'` (`attempts,minutes`, default `6,1`)                                        |
-| The panel's sign-in screen at another path | `'login_path'`, matching the `path` option of the `auth()` plugin                       |
-| Another consent screen                     | `php artisan vendor:publish --tag=webx-auth-views`                                      |
-| Other words in the panel                   | `php artisan vendor:publish --tag=webx-auth-lang`                                       |
-| Publish the config                         | `php artisan vendor:publish --tag=webx-auth-config`                                     |
-| React to sign-ins                          | listen to `WebxUi\Auth\Events\AdminLoggedIn` / `AdminLoginFailed`                       |
+| You want                                   | Do this                                                                                               |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| The first administrator                    | `php artisan webx:admin` — the first account is always super                                          |
+| A role                                     | Administrators → Roles, or a `Role` row in a seeder (`slug`, `name`, `permissions`)                   |
+| The ready-made roles on an older site      | `php artisan webx:roles:defaults [--top-up] [--dry-run]` — creates the missing ones, tops up the rest |
+| An account an agent may connect as         | a role with just the permissions it needs, not `is_super`                                             |
+| A key for a script or CI                   | Administrators → Keys, or `php artisan webx:mcp:token --name=ci --admin=... --days=365`               |
+| A key for yourself, without `admins.*`     | Connect an agent → Your keys                                                                          |
+| Changing your own address without mail     | `WEBX_AUTH_EMAIL_CHANGE=true` only if letters really leave; otherwise an admin edits it               |
+| Your own middleware stack on the panel API | `'protect_panel' => false` in `config/webx-auth.php`, add `cms.auth` to your stack                    |
+| Another sign-in rate limit                 | `'throttle'` (`attempts,minutes`, default `6,1`)                                                      |
+| The panel's sign-in screen at another path | `'login_path'`, matching the `path` option of the `auth()` plugin                                     |
+| Another consent screen                     | `php artisan vendor:publish --tag=webx-auth-views`                                                    |
+| Other words in the panel                   | `php artisan vendor:publish --tag=webx-auth-lang`                                                     |
+| Publish the config                         | `php artisan vendor:publish --tag=webx-auth-config`                                                   |
+| React to sign-ins                          | listen to `WebxUi\Auth\Events\AdminLoggedIn` / `AdminLoginFailed`                                     |
 
 ## Do not
 
@@ -96,7 +99,8 @@ to read, `cms.can:admins.manage` to write.
 - Sign in to the panel as the new account: the menu shows only the sections its role allows.
 - With MCP: `admins_list_admins` and `admins_list_roles`; a role change through
   `admins_grant_role` with `dry_run: true` first.
-- `php artisan webx:doctor` — what is misconfigured on the site.
+- `php artisan webx:doctor` — what is misconfigured on the site, ready-made roles behind the
+  modules among it.
 
 ## Read more
 

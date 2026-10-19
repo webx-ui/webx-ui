@@ -357,6 +357,7 @@ final class ModulesCommandTest extends TestCase
         $this->assertSame([
             'composer require webx-ui/module-faq:^0.28.0 --no-interaction --no-progress',
             'artisan webx:panel --sync',
+            'artisan webx:roles:defaults --top-up',
             'npm install',
             'npm run build',
         ], $this->ran);
@@ -370,6 +371,7 @@ final class ModulesCommandTest extends TestCase
         $this->assertSame([
             'composer require acme/module-gallery --no-interaction --no-progress',
             'artisan webx:panel --sync',
+            'artisan webx:roles:defaults --top-up',
             'npm install',
         ], $this->ran);
     }
@@ -389,7 +391,31 @@ final class ModulesCommandTest extends TestCase
             ->expectsOutputToContain('already installed')
             ->assertSuccessful();
 
-        $this->assertSame(['artisan webx:panel --sync', 'npm install', 'npm run build'], $this->ran);
+        $this->assertSame(['artisan webx:panel --sync', 'artisan webx:roles:defaults --top-up', 'npm install', 'npm run build'], $this->ran);
+    }
+
+    #[Test]
+    public function roles_that_could_not_be_topped_up_do_not_stop_the_install(): void
+    {
+        // No database on a build machine: the module is installed, the deploy's boot tops up.
+        $this->exits = ['artisan webx:roles:defaults' => 1];
+
+        $this->artisan('webx:module:add', ['package' => 'faq', '--no-build' => true])
+            ->expectsOutputToContain('webx:roles:defaults --top-up when the database is there')
+            ->assertSuccessful();
+
+        $this->assertSame('npm install', $this->ran[3]);
+    }
+
+    #[Test]
+    public function a_site_without_accounts_has_no_roles_to_top_up(): void
+    {
+        $this->install([['name' => 'webx-ui/module-admin', 'version' => '0.28.0'], ['name' => 'webx-ui/module-pages', 'version' => '0.28.0']]);
+        $this->app->instance(Catalogue::class, new Catalogue($this->files, $this->installed));
+
+        $this->artisan('webx:module:add', ['package' => 'webx-ui/module-pages', '--no-build' => true])->assertSuccessful();
+
+        $this->assertSame(['artisan webx:panel --sync', 'npm install'], $this->ran);
     }
 
     #[Test]

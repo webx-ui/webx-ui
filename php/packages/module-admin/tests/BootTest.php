@@ -236,6 +236,21 @@ final class BootTest extends TestCase
         $this->assertNull($this->step($this->plan(['webx-ui/module-admin']), 'webx:admin'));
     }
 
+    // -- The ready-made roles ------------------------------------------------------------------
+
+    #[Test]
+    public function it_tops_up_the_ready_made_roles_on_every_boot(): void
+    {
+        $step = $this->step($this->plan(['webx-ui/module-admin', 'webx-ui/module-auth']), 'webx:roles:defaults');
+
+        $this->assertNotNull($step);
+        // Only topped up: a ready-made role the owner deleted is not brought back by a deploy.
+        $this->assertSame('php artisan webx:roles:defaults --top-up', $step->line());
+        $this->assertTrue($step->fatal);
+
+        $this->assertNull($this->step($this->plan(['webx-ui/module-admin']), 'webx:roles:defaults'));
+    }
+
     // -- Helpers -------------------------------------------------------------------------------
 
     /** @param  list<string>  $packages */

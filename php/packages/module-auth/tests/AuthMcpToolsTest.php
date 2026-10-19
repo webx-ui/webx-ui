@@ -7,6 +7,7 @@ namespace WebxUi\Auth\Tests;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Auth\Access\DefaultRoles;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\LoginRecord;
 use WebxUi\Auth\Models\Role;
@@ -35,6 +36,7 @@ final class AuthMcpToolsTest extends TestCase
                 'admins_list_permissions',
                 'admins_create_role',
                 'admins_update_role',
+                'admins_sync_default_roles',
                 'admins_grant_role',
                 'admins_revoke_role',
                 'admins_recent_sign_ins',
@@ -329,6 +331,55 @@ final class AuthMcpToolsTest extends TestCase
         // Should a client call the handler past the door, the rules still say no.
         $this->assertSame('forbidden', ($this->tool('admins_create_role'))(['name' => 'Sneaky', 'permissions' => []], $assigner)['rule']);
         $this->assertFalse(Role::query()->where('name', 'Sneaky')->exists());
+    }
+
+    #[Test]
+    public function the_ready_made_roles_are_brought_up_after_a_dry_run_that_says_how(): void
+    {
+        $this->app->make(DefaultRoles::class)->seed();
+        $developer = Role::query()->where('slug', 'developer')->firstOrFail();
+        $developer->permissions = ['cache.view'];
+        $developer->save();
+        Role::query()->where('slug', 'viewer')->delete();
+
+        $this->assertSame(['roles.manage'], $this->app->make(ToolRegistry::class)->tool('admins_sync_default_roles')->permissions());
+
+        $dry = ($this->tool('admins_sync_default_roles'))(['dry_run' => true]);
+
+        $this->assertTrue($dry['ok']);
+        $this->assertTrue($dry['would_change']);
+        $this->assertFalse($dry['applied']);
+        $this->assertSame(['viewer' => ['cache.view']], $dry['created']);
+        $this->assertSame([], $dry['added']);
+        $this->assertFalse(Role::query()->where('slug', 'viewer')->exists());
+
+        // Without creating, there is nothing to do: the reset was taken away and stays away.
+        $this->assertFalse(($this->tool('admins_sync_default_roles'))(['create' => false])['would_change']);
+
+        $done = ($this->tool('admins_sync_default_roles'))([]);
+
+        $this->assertTrue($done['applied']);
+        $this->assertTrue(Role::query()->where('slug', 'viewer')->exists());
+        $this->assertSame(['cache.view'], $developer->refresh()->permissions);
+    }
+
+    #[Test]
+    public function the_ready_made_roles_gain_only_what_the_caller_holds(): void
+    {
+        $manager = $this->manager(['roles.manage', 'admins.view', 'cache.view']);
+
+        foreach ([true, false] as $dryRun) {
+            $answer = ($this->tool('admins_sync_default_roles'))(['dry_run' => $dryRun], $manager);
+
+            // The viewer is made of what the manager holds; the developer would hand out the reset.
+            $this->assertFalse($answer['ok']);
+            $this->assertSame(['viewer' => ['cache.view']], $answer['created']);
+            $this->assertSame('developer', $answer['refused'][0]['role']);
+            $this->assertSame('beyond-yours', $answer['refused'][0]['rule']);
+        }
+
+        $this->assertFalse(Role::query()->where('slug', 'developer')->exists());
+        $this->assertTrue(Role::query()->where('slug', 'viewer')->exists());
     }
 
     /**

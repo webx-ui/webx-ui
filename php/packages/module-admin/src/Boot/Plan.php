@@ -60,6 +60,7 @@ final class Plan
             $this->blockTypes(),
             $this->themeFiles(),
             $this->administrator(),
+            $this->defaultRoles(),
             ...($cache ? $this->caches() : []),
         ]));
     }
@@ -209,6 +210,24 @@ final class Plan
             'there is somebody to sign in as',
             fatal: false,
             env: ['WEBX_ADMIN_PASSWORD' => $password],
+        );
+    }
+
+    /**
+     * The ready-made roles topped up with the permissions of modules installed after them, so
+     * that a module a release brings is seen by the editor and the developer without a manual
+     * step. Only topped up: a ready-made role the owner deleted stays deleted.
+     */
+    private function defaultRoles(): ?Step
+    {
+        if (! $this->catalogue->has('webx-ui/module-auth')) {
+            return null;
+        }
+
+        return new Step(
+            'webx:roles:defaults',
+            ['webx:roles:defaults', '--top-up'],
+            'the ready-made roles see the modules installed after them',
         );
     }
 

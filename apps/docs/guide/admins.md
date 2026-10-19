@@ -93,7 +93,13 @@ tick what a module declares.
 - Nobody hands out more than they hold: a permission the editor does not have is shown greyed out,
   and a role the editor holds opens read-only. The server checks both again.
 - A new site gets ready-made roles — editor, SEO, leads, catalogue, developer, viewer — made of its
-  modules; `php artisan webx:roles:defaults` adds the missing ones later and touches none that exist.
+  modules. A module installed later is topped up into them: every deploy (`webx:boot`) and
+  `webx:module:add` add its permissions to the ready-made roles whose definition names them. A
+  role remembers what it has been offered, so a permission you take away from it stays away, and
+  a role of your own — even one called `editor` — is never touched. Missing ready-made roles are
+  created only when you ask: `php artisan webx:roles:defaults` (`--top-up` to only add,
+  `--dry-run` to see what would change), or the MCP tool `admins_sync_default_roles`.
+  `webx:doctor` names the roles that are behind.
 
 The menu is built for whoever is signed in: a section none of whose permissions they hold is left
 out, and its address shows «No access». The rules are in
