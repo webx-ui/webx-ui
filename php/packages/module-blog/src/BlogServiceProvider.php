@@ -44,6 +44,7 @@ use WebxUi\Blog\Panel\BlogModule;
 use WebxUi\Blog\Panel\Revision;
 use WebxUi\Blog\Panel\RubricsModule;
 use WebxUi\Blog\Panel\TagsModule;
+use WebxUi\Blog\Rendering\ShownArticles;
 use WebxUi\Blog\Screens\AuthorType;
 use WebxUi\Blog\Screens\IdsType;
 use WebxUi\Blog\Seo\TagSource;
@@ -72,6 +73,8 @@ class BlogServiceProvider extends ServiceProvider
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-blog.php', 'webx-blog');
+
+        $this->app->scoped(ShownArticles::class);
     }
 
     public function boot(): void

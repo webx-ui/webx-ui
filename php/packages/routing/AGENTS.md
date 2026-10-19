@@ -15,7 +15,11 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
   `alias`), `target_id` (an alias points at the canonical row, so renames never chain),
   `entity_type`, `entity_id`; unique on `locale` + `path`.
 - **Trait** `HasUrl` — `routePath()`, `routeCanonical()`, `url()`, `routes()`, `hasUrlIn()`.
-- **Cache group** `routes` (`webx-ui/cache`, `CacheGroups::ROUTES`): every `Route` save moves it; `RouteSync` says so after its bulk writes. The panel names it; this package owns it.
+- **Cache group** `routes` (`webx-ui/cache`, `CacheGroups::ROUTES`): every `Route` save moves it; `RouteSync` says so after its bulk writes, `webx:routes:rebuild` after every run. The panel names it; this package owns it.
+- **`RouteCache`** (scoped): the canonical rows `url()` reads when `routes` is not loaded — the
+  request's memory, then one `many()` of the site's cache (`webx:route:v1:<type>:<id>` on the
+  group's version; on Redis one `MGET`), then one query a type, «no address» cached too.
+  `preload($entities)` before a list; `RecordQuery` does it for its records and their relations.
   Saving, moving, deleting and restoring the model keep the registry in step.
 - **Address types** registered with `app(RouteTypes::class)->register(new RouteType(...))`:
   `type` (the morph alias), `model`, `formatter`, `handler` (a `RouteHandler`), `acceptsTail`,
@@ -68,6 +72,10 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
 - Do not change slugs with a query-builder `update()` or an import that skips `RouteSync::bulk`:
   the model events never fire and the registry drifts. `webx:routes:check` finds it, `rebuild`
   repairs it.
+- Do not call `url()` in a loop over models nobody preloaded: each is a read of its own.
+  `app(RouteCache::class)->preload($models)` first, or `with('routes')`.
+- Do not write `routes` with the query builder without `CacheGroups::bump(CacheGroups::ROUTES)`:
+  the cached addresses outlive it. `webx:routes:rebuild` is the repair and bumps.
 - Do not add a catch-all route (`{any}`) in `routes/web.php`: it shadows every registry address.
   A route of your own for a fixed path is fine — it wins over the registry by design.
 - Do not read anything but the entity in a formatter (no request, no time, no config): a save,

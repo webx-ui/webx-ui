@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Routing;
 
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -529,5 +530,7 @@ class RouteSync
     private function invalidate(): void
     {
         $this->cache->bump(CacheGroups::ROUTES);
+        // From the container rather than injected: this is a singleton, the memory is scoped.
+        Container::getInstance()->make(RouteCache::class)->forget();
     }
 }

@@ -44,8 +44,9 @@ final class ArticleQuery extends RecordQuery
 
     /**
      * The articles a block's `wx-collection` value names, as models, in the order it names them —
-     * what the blog's own cards partial is handed. Asked again rather than trusted: the value was
-     * worked out from the same rule, a moment ago, and a model is what the card needs.
+     * what the blog's own cards partial is handed. The models the value was built from a moment
+     * ago, by the same rule ({@see ShownArticles}); asked again only for a value that was not
+     * resolved in this request — a stored one, a test's.
      *
      * @return EloquentCollection<int, Article>
      */
@@ -59,7 +60,11 @@ final class ArticleQuery extends RecordQuery
             }
         }
 
-        return $ids === [] ? new EloquentCollection : (new self)->only($ids)->models();
+        if ($ids === []) {
+            return new EloquentCollection;
+        }
+
+        return Container::getInstance()->make(ShownArticles::class)->take($ids) ?? (new self)->only($ids)->models();
     }
 
     protected function newQuery(string $locale): Builder
@@ -86,6 +91,8 @@ final class ArticleQuery extends RecordQuery
 
     protected function cards(array $records, string $locale): array
     {
+        Container::getInstance()->make(ShownArticles::class)->keep($records);
+
         return array_map(fn (Article $article): array => $this->card($article, $locale), $records);
     }
 

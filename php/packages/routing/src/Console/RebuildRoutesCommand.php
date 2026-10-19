@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Routing\Exceptions\PathRejected;
 use WebxUi\Routing\Exceptions\RoutingException;
 use WebxUi\Routing\Models\Route;
@@ -33,7 +34,7 @@ final class RebuildRoutesCommand extends Command
 
     protected $description = 'Recompute the addresses of every registered type and leave aliases behind';
 
-    public function handle(RouteTypes $types, RouteSync $sync, Container $container): int
+    public function handle(RouteTypes $types, RouteSync $sync, Container $container, CacheGroups $groups): int
     {
         try {
             $chosen = $this->chosen($types);
@@ -62,6 +63,13 @@ final class RebuildRoutesCommand extends Command
                     $failed += $this->rebuild($entity, $type, $sync, $dry, $rows);
                 }
             });
+        }
+
+        if (! $dry) {
+            // Every cached address goes, whether a row moved or not: the rows this repairs may
+            // have been written around the model — a restored dump, a script — and the cache
+            // still holds what was there before them.
+            $groups->bump(CacheGroups::ROUTES);
         }
 
         $this->report($rows, $dry, $failed);
