@@ -31,20 +31,20 @@
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
-        "webx-ui/cache": "^0.81.0",
-        "webx-ui/localization": "^0.81.0",
-        "webx-ui/module-admin": "^0.81.0",
-        "webx-ui/module-catalog": "^0.81.0",
-        "webx-ui/mcp": "^0.81.0",
-        "webx-ui/module-media": "^0.81.0",
-        "webx-ui/nested-set": "^0.81.0"
+        "webx-ui/cache": "^0.82.0",
+        "webx-ui/localization": "^0.82.0",
+        "webx-ui/module-admin": "^0.82.0",
+        "webx-ui/module-catalog": "^0.82.0",
+        "webx-ui/mcp": "^0.82.0",
+        "webx-ui/module-media": "^0.82.0",
+        "webx-ui/nested-set": "^0.82.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-catalog-brands": "^0.81.0",
-        "webx-ui/module-catalog-labels": "^0.81.0",
-        "webx-ui/module-catalog-stock": "^0.81.0"
+        "webx-ui/module-catalog-brands": "^0.82.0",
+        "webx-ui/module-catalog-labels": "^0.82.0",
+        "webx-ui/module-catalog-stock": "^0.82.0"
     },
     "autoload": {
         "psr-4": {
