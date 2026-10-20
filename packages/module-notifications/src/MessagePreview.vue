@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   localizedValue,
   useLocales,
@@ -18,7 +18,8 @@ import { telegramHtml } from './telegram'
  * The message as it goes out, drawn while the template is typed (§7.5): the event's examples
  * through the provider's escaping, by the renderer that `PreviewParityTest` holds to the server's.
  * Telegram as a bubble of the chat, with only the tags Telegram takes; a letter as its subject and
- * its text.
+ * its text, or — a letter whose template is HTML — its HTML in a frame that runs nothing: the
+ * template is the administrator's, and the preview is still no place to run it.
  *
  * The language is the one the editor is on, so switching it switches the preview with it.
  */
@@ -79,6 +80,30 @@ const unknownLine = computed(() =>
 
 const telegram = computed(() => channel.provider.value?.key === 'telegram')
 
+/*
+ * The letter's HTML as a mail client shows it: white, the client's own font, no script (the frame
+ * allows none) — only the same origin, so that its height can be read and nothing scrolls twice.
+ */
+const letter = computed(() =>
+  message.value?.html
+    ? '<!doctype html><html><head><meta charset="utf-8"><style>' +
+      'body{margin:0;padding:16px;background:#fff;color:#111827;' +
+      "font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;}" +
+      '</style></head><body>' +
+      message.value.body +
+      '</body></html>'
+    : '',
+)
+
+const frame = ref<HTMLIFrameElement | null>(null)
+const height = ref(240)
+
+function fit(): void {
+  const body = frame.value?.contentDocument?.body
+
+  if (body) height.value = Math.max(80, Math.ceil(body.scrollHeight))
+}
+
 const bubble = computed(() =>
   message.value === null || message.value.truncated ? '' : telegramHtml(message.value.body),
 )
@@ -110,7 +135,17 @@ const bubble = computed(() =>
           <wx-text size="sm" tone="muted">{{ t('panel.preview-subject') }}</wx-text>
           <wx-text weight="medium">{{ message.subject || '—' }}</wx-text>
         </div>
-        <div class="wx-notifications-preview__body">{{ message.body }}</div>
+        <iframe
+          v-if="message.html"
+          ref="frame"
+          class="wx-notifications-preview__frame"
+          sandbox="allow-same-origin"
+          :title="t('panel.preview')"
+          :srcdoc="letter"
+          :style="{ height: `${height}px` }"
+          @load="fit"
+        />
+        <div v-else class="wx-notifications-preview__body">{{ message.body }}</div>
       </div>
 
       <wx-text v-if="message.plain.trim() === ''" size="sm" tone="muted">
@@ -195,6 +230,12 @@ const bubble = computed(() =>
   border-bottom: 1px solid var(--wx-border-muted);
   background: var(--wx-bg-subtle);
   overflow-wrap: anywhere;
+}
+
+.wx-notifications-preview__frame {
+  display: block;
+  width: 100%;
+  border: 0;
 }
 
 .wx-notifications-preview__body {

@@ -193,6 +193,9 @@ final class McpTest extends TestCase
         $this->assertSame([], $byKey['body_start']['snippets']);
         $this->assertFalse($byKey['promo']['declared']);
         $this->assertSame($orphan->id, $byKey['promo']['snippets'][0]['id']);
+        // Switched on and on_stage (the helper's default): printed on this copy too.
+        $this->assertFalse($byKey['head']['snippets'][0]['silent_here']);
+        $this->assertFalse($listed['everything_printed']);
         // The list does not carry the code — snippets_get does.
         $this->assertArrayNotHasKey('code', $byKey['head']['snippets'][0]);
 

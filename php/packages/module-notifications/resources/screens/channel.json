@@ -57,14 +57,16 @@
       "children": [
         {
           "id": "subject",
-          "type": "wx-input",
+          "type": "wx-notifications-template",
           "name": "subject",
           "label": "trans::webx-notifications::screen.subject",
           "help": "trans::webx-notifications::screen.subject-help",
           "localized": true,
           "visible": { "when": "provider", "is": "email" },
           "props": {
-            "maxlength": 255
+            "singleLine": true,
+            "part": "subject",
+            "chips": false
           }
         },
         {

@@ -5,6 +5,8 @@ declare(strict_types=1);
 // The event `inbox.submission` of webx-ui/module-notifications: its name and the values its templates get.
 return [
     'event' => 'A submission of a form',
+    // The default letter: a note that answering it writes to whoever filled the form.
+    'reply' => 'Reply to this letter to answer the visitor: :address.',
     'vars' => [
         'form' => 'The name of the form',
         'form_slug' => 'The slug of the form',

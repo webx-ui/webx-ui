@@ -23,6 +23,8 @@ return [
     'except-paths' => 'Кроме путей: :count',
     'all-locales' => 'Все языки',
     'on-stage' => 'И на dev',
+    'not-here' => 'Не выводится на этой копии',
+    'not-here-help' => 'Сайт работает как «:environment» и выводит только коды с отметкой «И на dev/stage». На проде этот код выводится.',
     'off' => 'Выключен',
     'switch-on' => 'Включить «:title»',
     'switched-on' => 'Код на сайте.',

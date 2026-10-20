@@ -19,4 +19,6 @@ return [
     'cancel' => 'Annulla',
     'disconnect' => 'Puoi scollegarlo nel pannello: Amministratori → Connessioni.',
     'returns-to' => 'La risposta andrà a :host',
+    'refused-title' => 'Impossibile collegare l’applicazione',
+    'refused-text' => 'Il pannello non conosce questa applicazione, oppure chiede di inviare la risposta a un indirizzo con cui non è stata registrata. Riavvia il collegamento dall’applicazione; se si ripete, mostra questa pagina a chi gestisce il sito.',
 ];

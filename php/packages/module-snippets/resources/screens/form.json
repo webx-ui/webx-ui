@@ -31,7 +31,8 @@
           "label": "trans::webx-snippets::screen.code",
           "help": "trans::webx-snippets::screen.code-help",
           "props": {
-            "language": "html"
+            "language": "html",
+            "languageCompletions": true
           }
         }
       ]
@@ -43,7 +44,7 @@
       "children": [
         {
           "id": "enabled",
-          "type": "wx-switch",
+          "type": "wx-snippets-enabled",
           "name": "enabled",
           "label": "trans::webx-snippets::screen.enabled",
           "help": "trans::webx-snippets::screen.enabled-help"

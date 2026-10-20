@@ -50,8 +50,62 @@ export function oneLine(value: string): string {
 }
 
 /** Each provider's escaping, by key; a provider nobody knows here prints values as they are. */
-export function escapeFor(provider: string): Escape {
+export function escapeFor(provider: string, template = ''): Escape {
+  if (isHtmlLetter(provider, template)) return escapeHtmlValue
+
   return provider === 'telegram' ? escapeHtml : (value) => value
+}
+
+/** `EmailMarkup::isHtml()`: a letter's template that starts with a tag is HTML. */
+export function isHtmlLetter(provider: string, template: string): boolean {
+  return provider === 'email' && /^\s*<[a-zA-Z]/.test(template)
+}
+
+/** `Html::escape()`: a value in an HTML message, the visitor's line breaks kept as `<br>`. */
+export function escapeHtmlValue(value: string): string {
+  return escapeHtml(value).replace(/\r\n|\r|\n/g, '<br>')
+}
+
+function decodeEntities(text: string): string {
+  const area = document.createElement('textarea')
+
+  area.innerHTML = text
+
+  return area.value
+}
+
+const PARAGRAPHS = 'p|h[1-6]|table|ul|ol|blockquote|pre'
+const LINES = 'tr|div'
+
+/** `Html::plain()`: the text of an HTML letter, for its plain part — the same steps, in order. */
+export function htmlPlain(html: string): string {
+  let text = html.replace(/[ \t\r\n\f]+/g, ' ')
+
+  text = text.replace(
+    /<a\b[^>]*?\bhref\s*=\s*"([^"]*)"[^>]*>([\s\S]*?)<\/a\s*>/gi,
+    (_, rawHref: string, inner: string) => {
+      const href = decodeEntities(rawHref)
+      const words = decodeEntities(inner.replace(/<[^>]*>/g, '')).trim()
+
+      if (words === '' || words === href) return href
+
+      return /^(https?:|mailto:)/i.test(href) ? `${inner} (${rawHref})` : inner
+    },
+  )
+
+  text = text.replace(/<br\s*\/?>/gi, '\n')
+  text = text.replace(/<\/t[dh]\s*>\s*(?=<t[dh][\s>])/gi, ': ')
+  text = text.replace(/<li\b[^>]*>/gi, '\n- ')
+  text = text.replace(new RegExp(`<hr\\b[^>]*>|</?(?:${PARAGRAPHS})\\b[^>]*>`, 'gi'), '\n\n')
+  text = text.replace(new RegExp(`<div\\b[^>]*>|</(?:${LINES})\\s*>`, 'gi'), '\n')
+  text = decodeEntities(text.replace(/<[^>]*>/g, ''))
+
+  const lines = text.split('\n').map((line) => line.replace(/ {2,}/g, ' ').trim())
+
+  return lines
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 function parse(template: string): Token[] {
@@ -325,6 +379,8 @@ export interface RenderedMessage {
   /** Longer than the provider takes: sent as plain text, cut. */
   truncated: boolean
   unknown: string[]
+  /** A letter whose template is HTML: the body is the letter's HTML. */
+  html: boolean
 }
 
 export interface MessageInput {
@@ -341,7 +397,8 @@ export interface MessageInput {
 
 /** `Renderer::render()`: the message a channel would send on these values. */
 export function renderMessage(input: MessageInput): RenderedMessage {
-  const escape = escapeFor(input.provider)
+  const html = isHtmlLetter(input.provider, input.template)
+  const escape = escapeFor(input.provider, input.template)
   const event = input.event ?? null
   const known =
     event === null ? undefined : (name: string, sections: string[]) => knows(event, name, sections)
@@ -356,14 +413,18 @@ export function renderMessage(input: MessageInput): RenderedMessage {
     unknown = [...new Set([...unknown, ...rendered.unknown])]
   }
 
-  const plain = input.provider === 'telegram' ? plainOf(body.text) : body.text
+  const plain = html
+    ? htmlPlain(body.text)
+    : input.provider === 'telegram'
+      ? plainOf(body.text)
+      : body.text
   const limit = input.limit ?? null
 
   if (limit !== null && [...plain].length > limit) {
     const cut = `${[...plain].slice(0, limit - 1).join('')}…`
 
-    return { subject, body: escape(cut), plain: cut, truncated: true, unknown }
+    return { subject, body: escape(cut), plain: cut, truncated: true, unknown, html }
   }
 
-  return { subject, body: body.text, plain, truncated: false, unknown }
+  return { subject, body: body.text, plain, truncated: false, unknown, html }
 }

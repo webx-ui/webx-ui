@@ -24,6 +24,8 @@ export interface SnippetRow {
   /** Printed outside production too. */
   on_stage: boolean
   enabled: boolean
+  /** Switched on, and still not printed on this copy of the site: it is not `on_stage` (§5.5). */
+  silent_here?: boolean
   /** Its place in the order of its place, from zero. */
   position: number
   /** The size of the code — the limit is in bytes, not in characters. */

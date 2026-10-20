@@ -39,6 +39,7 @@ return [
     'tests-too-many' => 'Zu viele Tests in einer Minute. Versuchen Sie es in :seconds s erneut.',
     'cannot-find' => 'Dieser Anbieter kann nicht nach Empfängern suchen.',
     'date' => 'Kein Datum: :value.',
+    'no-sample' => 'Das Ereignis „:event“ hat keine Standardvorlage für diese Art von Kanal.',
     'telegram' => [
         'chat' => 'Ein Chat ist eine Zahl (Gruppen beginnen mit -100) oder der @username eines öffentlichen Kanals: „:chat“ ist keines von beiden.',
         'markup-tag' => 'Telegram erlaubt <:tag> in Nachrichten nicht. Erlaubt: :allowed.',
@@ -60,5 +61,9 @@ return [
         'site-nowhere' => 'Der Mailer der Website ist „:transport“: E-Mails gehen nirgendwohin. Richten Sie die Mail der Website ein oder geben Sie dem Kanal einen eigenen SMTP-Server.',
         'site-ok' => 'E-Mails gehen über die Mail der Website.',
         'smtp-ok' => 'Der SMTP-Server :host antwortet.',
+        'markup-tag' => 'Eine E-Mail erlaubt <:tag> nicht. Erlaubt: :allowed.',
+        'markup-attribute' => 'Eine E-Mail erlaubt das Attribut :attribute nicht. Erlaubt: :allowed.',
+        'markup-unclosed' => 'Das Tag <:tag> ist nicht geschlossen oder in falscher Reihenfolge geschlossen.',
+        'markup-lt' => 'Ein „<“, das kein Tag ist: Schreiben Sie stattdessen &lt;.',
     ],
 ];

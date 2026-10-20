@@ -196,6 +196,24 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_new_question_sent_without_a_name_is_named_after_its_title(): void
+    {
+        $this->form();
+
+        $content = $this->content($this->agent('form_save', [
+            'form' => 'contact',
+            'fields' => [
+                ['type' => 'tel', 'title' => ['en' => 'Your phone']],
+                ['type' => 'tel', 'title' => 'Your phone'],
+                ['type' => 'text', 'title' => ['en' => 'Name']],
+            ],
+        ])->assertOk());
+
+        // After the three the form had: one name each, the taken ones with a number after them.
+        $this->assertSame(['name', 'email', 'message', 'your_phone', 'your_phone_2', 'name_2'], array_column($content['fields'], 'name'));
+    }
+
+    #[Test]
     public function a_save_that_names_one_thing_changes_one_thing(): void
     {
         $form = $this->form();

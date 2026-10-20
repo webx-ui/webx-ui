@@ -57,7 +57,9 @@ up along every shared edge.
 
 `layout="vertical"` stacks each label over its value, which suits short figures in many columns —
 four or six facts across a card. The pairs become single grid items there, since there is nothing
-left to line up.
+left to line up. A label sits 2px over its value and the next pair 12, 16 or 24px further down
+(`sm`, `md`, `lg`), so a label never reads as the tail of the value above it. A fact that is a few
+lines of its own — who a letter went to — is still one pair: its rows go in the value.
 
 ## Descriptions
 

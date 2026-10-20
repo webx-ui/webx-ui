@@ -24,8 +24,11 @@ use Illuminate\Support\Str;
  * And then the machinery, which is the part worth reading twice. A site of this size registers
  * dozens of named GET routes that are nobody's page — the OAuth dance, `.well-known`, a runtime
  * script — and on the demo site they were the first eight entries in a list meant to save an
- * editor from remembering `/account`. What comes out is named by `webx-admin.links.exclude`, as
- * path masks, so a site can add its own without waiting for us.
+ * editor from remembering `/account`. A package says so where it registers such a route — the
+ * action attribute {@see self::SERVICE}, set on its group — so a preview, a form's token or a sitemap
+ * stylesheet stays out wherever the package moves it. What nobody of ours registers (Passport's
+ * OAuth dance, discovery documents, files) is named by `webx-admin.links.exclude`, as path masks, so
+ * a site can add its own without waiting for us.
  */
 final readonly class SiteRoutes
 {
@@ -35,7 +38,14 @@ final readonly class SiteRoutes
      *
      * @var list<string>
      */
-    public const EXCLUDE = ['.well-known/*', 'oauth/*', '*.js', '*.css', '*.json', '*.xml', '*.txt'];
+    public const EXCLUDE = ['.well-known/*', 'oauth/*', '*.js', '*.css', '*.json', '*.xml', '*.xsl', '*.txt'];
+
+    /**
+     * The route action attribute that marks a route as machinery: `Route::group([SiteRoutes::SERVICE
+     * => true], …)`. A plain string, so that a package which knows nothing of the panel — the forms
+     * of `webx-ui/widgets` — can set it all the same.
+     */
+    public const SERVICE = 'webx_service';
 
     public function __construct(
         private Router $router,
@@ -77,6 +87,11 @@ final readonly class SiteRoutes
         // Optional parameters count: `{path?}` is the panel's catch-all, and a route that takes
         // one has no single address for a menu item to point at.
         if (str_contains((string) $route->uri(), '{')) {
+            return false;
+        }
+
+        // Nested groups merge the attribute into a list of trues, hence "not empty" rather than "true".
+        if (! empty($route->getAction(self::SERVICE))) {
             return false;
         }
 

@@ -12,6 +12,7 @@ return [
     'field-add' => 'Add…',
     'field-searching' => 'Searching…',
     'field-nothing' => 'Nothing found.',
+    'field-all-chosen' => 'Everything there is is already chosen.',
     'field-empty' => 'Nothing chosen yet.',
     'field-remove' => 'Remove',
     'field-drag' => 'Drag to change the order',

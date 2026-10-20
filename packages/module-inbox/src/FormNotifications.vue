@@ -12,6 +12,7 @@ import {
   WxFormItem,
   WxInput,
   WxLink,
+  WxRadioGroup,
   WxSelect,
   WxSpace,
   WxText,
@@ -19,22 +20,33 @@ import {
 import { createInboxApi } from './api'
 import { option } from './options'
 import { isAdmin, problemOf } from './recipients'
-import type { FormOptions, InboxField, InboxRecipient, Recipient, RecipientState } from './types'
+import type {
+  FormOptions,
+  InboxField,
+  InboxRecipient,
+  NotifyVia,
+  Recipient,
+  RecipientState,
+} from './types'
 
 /**
- * Who hears that something arrived (§9).
+ * Who hears that something arrived (§9) — one card, and one way of hearing it.
  *
- * Two kinds of recipient and they are not interchangeable. An administrator is written to at
- * the address on their account and in the language they keep the panel in, so changing either
- * changes it everywhere; a typed address is written to in the language the submission came in.
- * The list offered is not every administrator but the ones who may open a submission — a
- * notification is a link, and sending one to somebody who gets a 403 looks like the panel is
- * broken rather than like the form is.
+ * On top, the field whose answer is the visitor's address: both ways use it — the letter as its
+ * Reply-To, a channel as `{{reply_to}}`. Below it the choice of how, when the notifications
+ * module is installed, and only the half that was chosen. A submission goes one way: a letter to
+ * the addresses and a message in a chat about the same thing was the same news twice, and a form
+ * set up for one way kept sending the other because nobody had emptied it. The half not chosen is
+ * kept as it is on the form, so switching back finds it where it was.
  *
- * Beside the letter, and never instead of it: the channels of the notifications module, when it
- * is installed (NOTIFICATIONS §15.2) — a Telegram chat, another letter with its own template.
- * The picker asks the event's target on the server for names, so this package needs nothing of
- * that module's code; a site without it never sees the card.
+ * Two kinds of recipient of a letter, and they are not interchangeable. An administrator is
+ * written to at the address on their account and in the language they keep the panel in; a typed
+ * address is written to in the language the submission came in. The administrators offered are
+ * the ones who may open a submission — a notification is a link, and sending one to somebody who
+ * gets a 403 looks like the panel is broken rather than like the form is.
+ *
+ * The channels are asked of the event's target on the server (NOTIFICATIONS §15.2), so this
+ * package needs nothing of that module's code; a site without it sees the letter and nothing else.
  */
 const props = defineProps<{
   fields: InboxField[]
@@ -43,6 +55,8 @@ const props = defineProps<{
   reported?: RecipientState[]
   /** Whether the notifications module is installed — the server says so on the form. */
   notifications?: boolean
+  /** How the form tells, as the server worked it out for a form saved before the choice. */
+  via?: NotifyVia
 }>()
 
 const options = defineModel<FormOptions>({ required: true })
@@ -56,6 +70,26 @@ const admins = ref<InboxRecipient[]>([])
 const recipients = option<Recipient[]>(options, 'recipients', [])
 const emailField = option<string>(options, 'email_field', '')
 const channels = option<number[]>(options, 'notify_channels', [])
+
+/*
+ * The form's own choice, or what the server worked out for one saved before there was a choice —
+ * written into the options the moment somebody picks, so a form that loses its channels later
+ * does not quietly change its way with them.
+ */
+const via = computed<NotifyVia>({
+  get: () => options.value.notify_via ?? props.via ?? 'email',
+  set: (value) => {
+    options.value = { ...options.value, notify_via: value }
+  },
+})
+
+const viaOptions = computed(() => [
+  { value: 'email', label: t('panel.via-email') },
+  { value: 'channels', label: t('panel.via-channels') },
+])
+
+/* Without the module there is no choice to make, and the letter is what goes. */
+const byLetter = computed(() => !props.notifications || via.value === 'email')
 
 const router = useRouter()
 
@@ -84,13 +118,26 @@ const adminOptions = computed(() =>
   admins.value.map((admin) => ({ value: admin.id, label: `${admin.name} · ${admin.email}` })),
 )
 
-/** The fields that could hold the sender's address, plus the option of naming none. */
+/**
+ * The fields that could hold the visitor's address, plus the option of naming none — by their
+ * label, which is what the editor wrote; the machine name is beside it only to tell two alike.
+ */
 const emailOptions = computed(() => [
   { value: '', label: t('panel.no-email-field') },
   ...props.fields
     .filter((field) => field.type === 'email')
-    .map((field) => ({ value: field.key, label: field.key })),
+    .map((field) => ({ value: field.key, label: fieldLabel(field) })),
 ])
+
+function fieldLabel(field: InboxField): string {
+  const title = Object.values(field.title ?? {}).find(
+    (line): line is string => typeof line === 'string' && line.trim() !== '',
+  )
+
+  if (title === undefined) return field.name ?? field.key
+
+  return field.name ? `${title} · ${field.name}` : title
+}
 
 /*
  * Only the administrators' problems are said beside the row: an address being typed is not
@@ -145,8 +192,26 @@ function setEmail(index: number, email: string): void {
 </script>
 
 <template>
-  <div class="wx-inbox-notifications">
-    <wx-card :title="t('panel.recipients')">
+  <wx-card
+    class="wx-inbox-notifications"
+    :title="props.notifications ? undefined : t('panel.recipients')"
+  >
+    <wx-form-item
+      :label="t('panel.email-field')"
+      :help="
+        props.notifications ? t('panel.email-field-help-channels') : t('panel.email-field-help')
+      "
+      :error="errors['options.email_field']?.[0]"
+    >
+      <wx-select v-model="emailField" :options="emailOptions" />
+    </wx-form-item>
+
+    <wx-form-item v-if="props.notifications" :label="t('panel.notify-via')">
+      <wx-radio-group v-model="via" :options="viaOptions" inline />
+    </wx-form-item>
+
+    <section v-if="byLetter" class="wx-inbox-notifications__way" data-way="email">
+      <wx-text v-if="props.notifications" weight="medium">{{ t('panel.recipients') }}</wx-text>
       <wx-text size="sm" tone="muted">{{ t('panel.recipients-help') }}</wx-text>
 
       <wx-alert
@@ -210,17 +275,10 @@ function setEmail(index: number, email: string): void {
           {{ t('panel.add-email') }}
         </wx-button>
       </wx-space>
+    </section>
 
-      <wx-form-item
-        :label="t('panel.email-field')"
-        :help="t('panel.email-field-help')"
-        :error="errors['options.email_field']?.[0]"
-      >
-        <wx-select v-model="emailField" :options="emailOptions" />
-      </wx-form-item>
-    </wx-card>
-
-    <wx-card v-if="props.notifications" :title="t('panel.notify-through')">
+    <section v-else class="wx-inbox-notifications__way" data-way="channels">
+      <wx-text weight="medium">{{ t('panel.notify-through') }}</wx-text>
       <wx-text size="sm" tone="muted">{{ t('panel.notify-through-help') }}</wx-text>
 
       <div class="wx-inbox-channels">
@@ -230,21 +288,25 @@ function setEmail(index: number, email: string): void {
           :sortable="false"
           :add-text="t('panel.pick-channels')"
           :empty-text="t('panel.no-channels')"
+          :none-text="t('panel.no-channels-yet')"
         />
         <wx-link v-if="canSetUp" :href="channelsLink" size="sm" @click="setUpChannels">{{
           t('panel.set-up-channels')
         }}</wx-link>
       </div>
-    </wx-card>
-  </div>
+    </section>
+  </wx-card>
 </template>
 
 <style scoped>
-/* The letter and the channels: two cards, the panel's step between them. */
-.wx-inbox-notifications {
+/*
+ * One way of telling under the shared field and the choice: its title, its help, its list. The
+ * rows of a way sit closer than the form items above them — they are one answer, not three.
+ */
+.wx-inbox-notifications__way {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-gap, var(--wx-space-16));
+  gap: var(--wx-space-4);
 }
 
 /*
@@ -256,7 +318,7 @@ function setEmail(index: number, email: string): void {
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-8);
-  margin-block: var(--wx-space-12);
+  margin-block: var(--wx-space-8) var(--wx-space-12);
   max-width: var(--wx-field-max-width, 640px);
 }
 
@@ -265,7 +327,7 @@ function setEmail(index: number, email: string): void {
   flex-direction: column;
   align-items: flex-start;
   gap: var(--wx-space-8);
-  margin-block-start: var(--wx-space-12);
+  margin-block-start: var(--wx-space-8);
   max-width: var(--wx-field-max-width, 640px);
 }
 

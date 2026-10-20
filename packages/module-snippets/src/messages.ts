@@ -77,6 +77,9 @@ export const snippetsMessages: Record<string, Messages> = {
     'except-paths': 'Except paths: :count',
     'all-locales': 'All languages',
     'on-stage': 'Dev too',
+    'not-here': 'Not printed on this copy',
+    'not-here-help':
+      'The site runs as “:environment” and prints only the codes marked “On dev and stage too”. Production prints this one.',
     off: 'Off',
     'switch-on': 'Switch on “:title”',
     'switched-on': 'The code is on the site.',

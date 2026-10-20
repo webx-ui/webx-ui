@@ -12,6 +12,7 @@ return [
     'field-add' => 'Ekle…',
     'field-searching' => 'Aranıyor…',
     'field-nothing' => 'Hiçbir şey bulunamadı.',
+    'field-all-chosen' => 'Var olan her şey zaten seçili.',
     'field-empty' => 'Henüz hiçbir şey seçilmedi.',
     'field-remove' => 'Kaldır',
     'field-drag' => 'Sırayı değiştirmek için sürükleyin',

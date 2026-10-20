@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
+  confirm,
   mustacheCompletions,
   mustacheProblems,
   useLocales,
@@ -12,10 +13,13 @@ import {
   type CodeEditorExposed,
   type LocalizedValue,
   type MustacheVariable,
+  toast,
 } from '@webx-ui/core'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useChannel } from './context'
+import { blankText, sampleOf, withSample } from './defaults'
 import { useNotificationsMessages } from './i18n'
+import { isHtmlLetter } from './render'
 import { snippetOf, variablesOf } from './variables'
 
 /**
@@ -27,6 +31,13 @@ import { snippetOf, variablesOf } from './variables'
  * are the way to find out what there is — and what is wrong with the template as it stands, by the
  * same rules the save refuses it with.
  *
+ * The same field is the subject of a letter, one line (`single-line`, `part: subject`, no
+ * `chips` under it): `{{` opens the same list there, and a variable clicked under the template
+ * goes into whichever of the two the caret was in last.
+ *
+ * Under the template, when the event has one for this kind of channel, "Insert the default
+ * template" puts the event's own message in — asking first if something is written already.
+ *
  * The event and the kind of channel come from the form around it (`provideChannel`); without one
  * the field still edits a template and offers Mustache's syntax alone.
  */
@@ -37,8 +48,21 @@ const props = withDefaults(
     localized?: boolean
     disabled?: boolean
     minHeight?: string
+    /** One line, for the subject. */
+    singleLine?: boolean
+    /** What of the message this is: the variables under the template write into the last one. */
+    part?: string
+    /** The variables and the default template under the field. */
+    chips?: boolean
   }>(),
-  { localized: false, disabled: undefined, minHeight: '200px' },
+  {
+    localized: false,
+    disabled: undefined,
+    minHeight: '200px',
+    singleLine: false,
+    part: 'template',
+    chips: true,
+  },
 )
 
 const model = defineModel<string | LocalizedValue | null>({ default: '' })
@@ -51,10 +75,6 @@ const locales = useLocales()
 const editor = ref<CodeEditorExposed | null>(null)
 
 const variables = computed<MustacheVariable[]>(() => variablesOf(channel.event.value))
-
-const language = computed(() =>
-  channel.provider.value?.key === 'telegram' ? 'mustache-html' : 'mustache',
-)
 
 const completions = computed(() =>
   mustacheCompletions(variables.value, {
@@ -79,6 +99,17 @@ const text = computed(() => {
   const active = locales.active.value || locales.list.value[0]?.code || ''
 
   return value[active] ?? ''
+})
+
+/* Telegram's HTML, a letter's HTML when it starts with a tag, else text. */
+const language = computed(() => {
+  if (props.singleLine) return 'mustache'
+
+  const provider = channel.provider.value?.key ?? ''
+
+  return provider === 'telegram' || isHtmlLetter(provider, text.value)
+    ? 'mustache-html'
+    : 'mustache'
 })
 
 /*
@@ -119,7 +150,7 @@ function example(variable: MustacheVariable): string {
   return typeof value === 'string' || typeof value === 'number' ? String(value) : ''
 }
 
-/** Into the editor where the caret is, and the caret after it. */
+/** Into this editor where the caret is, and the caret after it. */
 function insert(snippet: string): void {
   const view = editor.value?.view
 
@@ -134,6 +165,38 @@ function insert(snippet: string): void {
   })
   view.focus()
 }
+
+onMounted(() => channel.inserters.set(props.part, insert))
+onBeforeUnmount(() => {
+  if (channel.inserters.get(props.part) === insert) channel.inserters.delete(props.part)
+})
+
+const sample = computed(() => sampleOf(channel.event.value, channel.provider.value?.key))
+
+/** The event's default template in place of the message; asked first if it would replace text. */
+async function insertDefault(): Promise<void> {
+  const found = sample.value
+
+  if (found === null) return
+
+  const values = channel.values.value
+  const subject = channel.provider.value?.subject ?? false
+  const written = !blankText(values.template) || (subject && !blankText(values.subject))
+
+  if (written) {
+    const agreed = await confirm({
+      title: t('panel.default-title'),
+      message: t('panel.default-text'),
+      confirmText: t('panel.default-replace'),
+      cancelText: t('panel.cancel'),
+    })
+
+    if (!agreed) return
+  }
+
+  channel.values.value = withSample(channel.values.value, found, subject)
+  toast.info(t('panel.default-inserted'))
+}
 </script>
 
 <template>
@@ -146,13 +209,15 @@ function insert(snippet: string): void {
       :localized="props.localized"
       :disabled="props.disabled"
       :line-numbers="false"
-      line-wrapping
-      :min-height="props.minHeight"
+      :line-wrapping="!props.singleLine"
+      :single-line="props.singleLine"
+      :min-height="props.singleLine ? undefined : props.minHeight"
+      @focus="channel.focused.value = props.part"
     />
 
     <wx-alert v-for="line in said" :key="line" type="warning" variant="soft" :description="line" />
 
-    <div class="wx-notifications-template__variables">
+    <div v-if="props.chips" class="wx-notifications-template__variables">
       <wx-text size="sm" weight="medium">{{ t('panel.variables') }}</wx-text>
 
       <wx-text v-if="variables.length === 0" size="sm" tone="muted">
@@ -173,7 +238,7 @@ function insert(snippet: string): void {
               variant="outline"
               class="wx-notifications-template__chip"
               :disabled="props.disabled"
-              @click="insert(snippetOf(variable))"
+              @click="channel.insert(snippetOf(variable))"
             >
               <span class="wx-notifications-template__name">
                 {{ (variable.fields?.length ?? 0) > 0 ? `#${variable.name}` : variable.name }}
@@ -182,6 +247,18 @@ function insert(snippet: string): void {
           </wx-tooltip>
         </div>
       </template>
+
+      <div v-if="sample" class="wx-notifications-template__default">
+        <wx-button
+          size="sm"
+          variant="text"
+          icon="file-text"
+          :disabled="props.disabled"
+          @click="insertDefault"
+        >
+          {{ t('panel.default-insert') }}
+        </wx-button>
+      </div>
     </div>
   </div>
 </template>
@@ -204,6 +281,10 @@ function insert(snippet: string): void {
   display: flex;
   flex-wrap: wrap;
   gap: var(--wx-space-6);
+  margin-top: var(--wx-space-4);
+}
+
+.wx-notifications-template__default {
   margin-top: var(--wx-space-4);
 }
 

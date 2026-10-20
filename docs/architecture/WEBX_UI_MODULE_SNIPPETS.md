@@ -348,6 +348,9 @@ return [
   коды не выводятся» (§4.3).
 - Объявленное, но не встреченное на страницах место — подсказка у заголовка группы (§10.3).
 - Вне `production` — `WxAlert` вверху: «окружение `<env>`: на сайте только коды с „и на dev"».
+  У включённого кода без «и на dev» — серый бейдж «Не выводится на этой копии» в строке; на проде
+  его нет. Строка API и `snippets_list` несут `silent_here` (включён, не `on_stage`, окружение не из
+  `webx-snippets.environments`).
 
 ### 7.3 Форма (экран `snippets.form`)
 
@@ -359,12 +362,17 @@ return [
 - `code` — **`wx-code-editor`** с `language: "html"`: компонент ядра есть
   (`packages/core/src/components/CodeEditor`, CodeMirror, `@codemirror/lang-html` с вложенными
   JS и CSS), тип поля экрана есть (SCREENS, `wx-code-editor` → string). Нового компонента не нужно;
+  `languageCompletions: true` — подсказки самих языков: теги, атрибуты и их значения, закрытие тега
+  по `>`, в `<script>` — ключевые слова, заготовки, имена кода и глобальные объекты по точке, в
+  `<style>` — свойства и значения;
 - `consent` — `wx-segmented` / `wx-radio-group`: «Необходимые» / «Аналитика» / «Маркетинг» /
   «Медиа»;
 - `only_paths`, `except_paths` — `wx-tags-input` (список строк), подсказка с примером `/blog/*`;
 - `locales` — `wx-checkbox-group` из языков сайта, пусто — «все»;
 - `on_stage` — `wx-switch` «Показывать и на dev/stage»;
-- `enabled` — `wx-switch` «Включён»: «Сохранить» включённого кода — сразу на сайте;
+- `enabled` — `wx-snippets-enabled` (`wx-switch` с пометкой) «Включён»: «Сохранить» включённого кода —
+  сразу на сайте; вне прода у включённого кода без «и на dev» рядом — та же пометка «Не выводится на
+  этой копии», что в списке; она следует за переключателями формы, а не за сохранённым;
 - журнал — узел `wx-history` (WEBX_UI_HISTORY.md) с полным кодом «было/стало»; кнопки отката нет,
   старый код копируют из журнала.
 
@@ -406,14 +414,14 @@ return [
 `WebxUi\Snippets\Mcp\SnippetsTools`, `Arguments::strictAll([...])`, мутирующие — `Tool::mutating`
 (`dry_run` даёт сам `Tool`: проверить и сказать, что было бы, ничего не записав).
 
-| Имя                | Аргументы                                                                                                                     | Ответ                                                                                         |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `snippets_list`    | `place?`, `search?` (в названии и коде), `trashed?`                                                                           | по местам: id, name, place, place_declared, consent, охват, locales, on_stage, enabled, bytes |
-| `snippets_get`     | `snippet` (id)                                                                                                                | запись целиком, `code`                                                                        |
-| `snippets_create`  | `name`, `place`, `code`, `consent?`, `only_paths?`, `except_paths?`, `locales?`, `on_stage?`, `enabled?` (по умолчанию false) | запись + `warnings`                                                                           |
-| `snippets_update`  | `snippet`, любые поля create; не переданное — без изменений                                                                   | запись + `warnings`                                                                           |
-| `snippets_delete`  | `snippet`                                                                                                                     | в корзину; удаление насовсем — в панели                                                       |
-| `snippets_reorder` | `place`, `snippets` — все id места в новом порядке                                                                            | порядок места                                                                                 |
+| Имя                | Аргументы                                                                                                                     | Ответ                                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `snippets_list`    | `place?`, `search?` (в названии и коде), `trashed?`                                                                           | по местам: id, name, place, place_declared, consent, охват, locales, on_stage, enabled, silent_here, bytes |
+| `snippets_get`     | `snippet` (id)                                                                                                                | запись целиком, `code`                                                                                     |
+| `snippets_create`  | `name`, `place`, `code`, `consent?`, `only_paths?`, `except_paths?`, `locales?`, `on_stage?`, `enabled?` (по умолчанию false) | запись + `warnings`                                                                                        |
+| `snippets_update`  | `snippet`, любые поля create; не переданное — без изменений                                                                   | запись + `warnings`                                                                                        |
+| `snippets_delete`  | `snippet`                                                                                                                     | в корзину; удаление насовсем — в панели                                                                    |
+| `snippets_reorder` | `place`, `snippets` — все id места в новом порядке                                                                            | порядок места                                                                                              |
 
 - **Шесть инструментов.** `update` пишет колонки сразу, включая `enabled` — включение и
   выключение тоже через него; журнал пишется с агентом (источник `mcp`, `HistoryContext`).

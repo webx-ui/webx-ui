@@ -301,7 +301,9 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
   и `webx:panel --sync` читают его как Blade-компонент: «every page of that module answers 500».
   Свой смысл — под своим именем (`default_layout` в `module-banners`).
 - **Список «что есть у сайта» проверять на сайте со всеми пакетами** — в Testbench он почти пуст
-  и потому всегда правильный (маски `webx-admin.links.exclude`).
+  и потому всегда правильный. Служебный маршрут пакета (превью, токен формы, файл для роботов)
+  помечается при регистрации — `Route::group([SiteRoutes::SERVICE => true], …)`, тест
+  `NotOfferedAsLinksTest` пакета; маски `webx-admin.links.exclude` — для чужих (Passport, `.well-known`).
 - **Маршрут, которого нет, отвечает на POST 405, а не 404:** fallback `routing` принимает только
   GET. Проверять GET на 404, POST — на 404 или 405.
 - **`where` у группы маршрутов — массив:** `->where('key', '…')` падает внутри `RouteGroup`

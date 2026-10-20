@@ -93,6 +93,11 @@ const style = computed(() => ({ '--wx-descriptions-span': String(span.value) }))
   grid-column: span var(--wx-descriptions-span, 1);
 }
 
+/* The label's own leading is the air over it, not between it and its value. */
+.wx-descriptions__pair > .wx-descriptions__label {
+  line-height: var(--wx-font-line-height-tight);
+}
+
 /*
  * Folded to one column there is one track for a value and one for a pair, so every span
  * is one whatever it was asked for. Left alone, a pair spanning two columns still asked

@@ -26,6 +26,9 @@ const variables: MustacheVariable[] = [
   },
 ]
 
+/* The subject is one line: the same suggestions, and Enter never breaks it. */
+const subject = ref('New submission: {{form}}')
+
 const template = ref(`<b>{{form}}</b> from {{name}}
 {{#items}}
 {{label}}: {{value}}
@@ -50,6 +53,14 @@ const warning = computed(() => {
 
 <template>
   <div class="wx-demo wx-demo--stack">
+    <wx-code-editor
+      v-model="subject"
+      language="mustache"
+      :completions="completions"
+      :line-numbers="false"
+      single-line
+      aria-label="Subject"
+    />
     <wx-code-editor
       v-model="template"
       language="mustache-html"

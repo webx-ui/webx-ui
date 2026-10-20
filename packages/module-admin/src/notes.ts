@@ -4,6 +4,8 @@ import type { AdminContext } from './admin'
 export interface NoteAuthor {
   id: number
   name: string | null
+  /** The key their photograph is stored under, resolved by the panel; null draws initials. */
+  avatar?: string | null
 }
 
 /** One line somebody left on a record for whoever picks it up next. */

@@ -133,10 +133,23 @@ export interface CodeEditorProps {
    */
   completions?: CodeEditorCompletions
   /**
+   * Suggestions the language knows by itself while typing: HTML tags, attributes and their values
+   * with the tag closed on `>`, keywords, snippets, the code's own names and globals after a dot
+   * in JavaScript, properties and values in CSS — nested in HTML too. Ignored when `completions`
+   * is given: those replace it.
+   */
+  languageCompletions?: boolean
+  /**
    * Edits the document in every language the site publishes in, with a selector on the field;
    * the model is then `{ en: '…', uk: '…' }`.
    */
   localized?: boolean
+  /**
+   * One line, as tall as an input: Enter takes a suggestion and inserts no line break, a pasted
+   * line break becomes a space, Tab moves on to the next field. For a template of one line — the
+   * subject of a letter — that still wants highlighting and `completions`.
+   */
+  singleLine?: boolean
   /** Extra CodeMirror extensions, for anything this component does not wrap. */
   extensions?: Extension[]
 }

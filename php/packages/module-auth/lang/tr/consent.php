@@ -19,4 +19,6 @@ return [
     'cancel' => 'İptal',
     'disconnect' => 'Panelden bağlantısını kesebilirsiniz: Yöneticiler → Bağlantılar.',
     'returns-to' => 'Yanıt :host adresine gidecek',
+    'refused-title' => 'Uygulama bağlanamıyor',
+    'refused-text' => 'Panel bu uygulamayı tanımıyor ya da uygulama yanıtın kayıtlı olmadığı bir adrese gönderilmesini istiyor. Bağlantıyı uygulamadan yeniden başlatın; tekrar ederse bu sayfayı siteyi yöneten kişiye gösterin.',
 ];

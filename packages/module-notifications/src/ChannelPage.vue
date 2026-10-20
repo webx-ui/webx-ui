@@ -26,6 +26,7 @@ import {
 import type { Patch, ScreenModel } from '@webx-ui/schema'
 import { createNotificationsApi } from './api'
 import { provideChannel } from './context'
+import { fillOnEvent, sampleOf } from './defaults'
 import { useNotificationsMessages } from './i18n'
 import MessagePreview from './MessagePreview.vue'
 import TestDialog from './TestDialog.vue'
@@ -139,13 +140,15 @@ function take(detail: ChannelDetail): void {
   warnings.value = detail.warnings
 }
 
-/** What the server would answer for a channel with nothing in it yet, and the event's sample. */
+/** What the server would answer for a channel with nothing in it yet, and the event's default template. */
 function blank(found: NotificationsMeta): ScreenModel {
   const provider = typeof route.query.provider === 'string' ? route.query.provider : 'email'
   const event =
     typeof route.query.event === 'string' && route.query.event !== '' ? route.query.event : null
-  const definition = found.events.find((one) => one.key === event)
-  const sample = definition?.sample[provider] ?? definition?.sample['*']
+  const sample = sampleOf(
+    found.events.find((one) => one.key === event),
+    provider,
+  )
   const locale = locales.list.value[0]?.code ?? 'en'
   const settings: ScreenModel = {}
 
@@ -160,10 +163,13 @@ function blank(found: NotificationsMeta): ScreenModel {
     enabled: false,
     recipients: [],
     ...settings,
-    template: { [locale]: sample?.template ?? '' },
-    subject: { [locale]: sample?.subject ?? '' },
+    template: sample ? { ...sample.template } : { [locale]: '' },
+    subject: sample?.subject ? { ...sample.subject } : { [locale]: '' },
   }
 }
+
+// An event chosen for a channel whose message is still empty brings its default template.
+fillOnEvent(context, loading, () => toast.info(t('panel.default-inserted')))
 
 const administrators = ref<Administrator[]>([])
 

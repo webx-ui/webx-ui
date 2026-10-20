@@ -15,6 +15,7 @@ use WebxUi\Admin\Http\Resources\NoteResource;
 use WebxUi\Admin\Notes\Notable;
 use WebxUi\Admin\Notes\Note;
 use WebxUi\Admin\Notes\NoteTypes;
+use WebxUi\Admin\Support\Authors;
 
 /**
  * The notes of any record, through one address (§2.17 of the inbox spec).
@@ -53,7 +54,7 @@ final class NoteController
             $this->adminId($request),
         );
 
-        return ApiResponse::data(new NoteResource($note, $this->name($request)), 201);
+        return ApiResponse::data(new NoteResource($note, $this->person($request)), 201);
     }
 
     public function update(Request $request, Note $note): JsonResponse
@@ -64,7 +65,7 @@ final class NoteController
 
         $note->forceFill(['body' => trim((string) $request->input('body'))])->save();
 
-        return ApiResponse::data(new NoteResource($note, $this->name($request)));
+        return ApiResponse::data(new NoteResource($note, $this->person($request)));
     }
 
     public function destroy(Request $request, Note $note): JsonResponse
@@ -136,16 +137,14 @@ final class NoteController
     }
 
     /**
-     * The one name a just-written note needs: the writer's own.
+     * The one author a just-written note needs: the writer, with their photograph.
      *
-     * @return array<int, string>
+     * @return array<int, array{name: string, avatar: string|null}>
      */
-    private function name(Request $request): array
+    private function person(Request $request): array
     {
         $id = $this->adminId($request);
-        $user = $request->user();
-        $name = is_object($user) && isset($user->name) ? (string) $user->name : '';
 
-        return $id === null || $name === '' ? [] : [$id => $name];
+        return $id === null ? [] : Authors::people($request->user(), [$id]);
     }
 }

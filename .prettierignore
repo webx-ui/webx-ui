@@ -14,3 +14,7 @@ php/packages/*/composer.json
 php/site
 # Written by the tokens generator: a byte-for-byte copy of packages/tokens/dist/tokens.css.
 php/packages/module-admin/resources/css/tokens.css
+# Written by packages/core/scripts/server-styles.mjs from the components, byte for byte.
+php/packages/module-admin/resources/css/components.css
+# What the server renders, byte for byte: a snapshot the tests compare with.
+php/packages/module-inbox/tests/Fixtures/notifications

@@ -22,7 +22,9 @@ use WebxUi\Notifications\Notifications;
  * code in `vendor` but not the provider (a package discovered away) is a site without it.
  *
  * The letter of the form (`options.recipients`, `Mail\Notifier`) does not go through here: it is
- * the inbox's own and works beside the channels, with or without them (decision 11).
+ * the inbox's own. A form uses one of the two ({@see Form::notifyVia()}), and {@see through()} is
+ * where that choice meets the site: a form set to channels on a site that has lost the module gets
+ * its letter instead, so that a submission is never told to nobody without a word.
  */
 final class Channels
 {
@@ -35,6 +37,32 @@ final class Channels
         return class_exists(NotificationEvents::class)
             && $this->container->bound(NotificationEvents::class)
             && $this->container->make(NotificationEvents::class)->has(SubmissionEvent::KEY);
+    }
+
+    /**
+     * Whether a submission of this form goes to its channels — and so not to the addresses. Only
+     * with the module there: without it every form writes letters, whatever it was set to.
+     */
+    public function through(Form $form): bool
+    {
+        return $form->notifyVia() === Form::VIA_CHANNELS && $this->available();
+    }
+
+    /**
+     * Forms that were set to channels and cannot use them: the module is gone, so they write
+     * letters. Empty with the module — what `webx:doctor` warns about.
+     *
+     * @return list<Form>
+     */
+    public function stranded(): array
+    {
+        if ($this->available()) {
+            return [];
+        }
+
+        return array_values(Form::query()->enabled()->orderBy('id')->get()
+            ->filter(static fn (Form $form): bool => $form->notifyVia() === Form::VIA_CHANNELS)
+            ->all());
     }
 
     /**
@@ -125,9 +153,10 @@ final class Channels
     public function send(Submission $submission): int
     {
         $submission->loadMissing('form');
-        $ids = self::ids($submission->form?->option(self::OPTION));
+        $form = $submission->form;
+        $ids = self::ids($form?->option(self::OPTION));
 
-        if ($ids === [] || ! $this->available()) {
+        if ($ids === [] || $form === null || ! $this->through($form)) {
             return 0;
         }
 

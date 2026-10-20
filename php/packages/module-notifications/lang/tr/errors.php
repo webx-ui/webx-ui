@@ -39,6 +39,7 @@ return [
     'tests-too-many' => 'Bir dakikada çok fazla test. :seconds sn sonra yeniden deneyin.',
     'cannot-find' => 'Bu sağlayıcı alıcı arayamaz.',
     'date' => 'Tarih değil: :value.',
+    'no-sample' => '":event" olayının bu tür kanal için varsayılan şablonu yok.',
     'telegram' => [
         'chat' => 'Sohbet bir sayıdır (gruplarınki -100 ile başlar) ya da herkese açık bir kanalın @username adıdır: “:chat” ikisi de değil.',
         'markup-tag' => 'Telegram mesajda <:tag> kullanımına izin vermiyor. İzin verilenler: :allowed.',
@@ -60,5 +61,9 @@ return [
         'site-nowhere' => 'Sitenin e-posta aktarıcısı “:transport”: e-postalar hiçbir yere gitmiyor. Sitenin e-postasını ayarlayın ya da kanala kendi SMTP sunucusunu verin.',
         'site-ok' => 'E-postalar sitenin e-postası üzerinden gidiyor.',
         'smtp-ok' => ':host SMTP sunucusu yanıt veriyor.',
+        'markup-tag' => 'E-posta <:tag> kullanımına izin vermiyor. İzin verilenler: :allowed.',
+        'markup-attribute' => 'E-posta :attribute özniteliğine izin vermiyor. İzin verilenler: :allowed.',
+        'markup-unclosed' => '<:tag> etiketi kapatılmamış ya da yanlış sırada kapatılmış.',
+        'markup-lt' => 'Etiket olmayan bir “<”: yerine &lt; yazın.',
     ],
 ];

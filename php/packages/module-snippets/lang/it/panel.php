@@ -23,6 +23,8 @@ return [
     'except-paths' => 'Tranne i percorsi: :count',
     'all-locales' => 'Tutte le lingue',
     'on-stage' => 'Anche dev',
+    'not-here' => 'Non stampato su questa copia',
+    'not-here-help' => 'Il sito gira come «:environment» e stampa solo i codici segnati «Anche su dev e stage». In produzione questo viene stampato.',
     'off' => 'Disattivato',
     'switch-on' => 'Attiva «:title»',
     'switched-on' => 'Il codice è sul sito.',

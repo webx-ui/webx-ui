@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { slugify, useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
   WxAction,
+  WxAlert,
   WxButton,
   WxIcon,
   WxCheckbox,
@@ -17,6 +18,7 @@ import {
   WxDatePicker,
   WxTagsInput,
   WxText,
+  useLocales,
   type LocalizedValue,
 } from '@webx-ui/core'
 import LocalizedRichText from './LocalizedRichText.vue'
@@ -34,7 +36,15 @@ import type { InboxField, InboxForm } from './types'
  * `choices` array on a text field would be a column of empty strings in an export a year from
  * now.
  */
-const props = defineProps<{ field: InboxField | null; form: InboxForm }>()
+const props = withDefaults(
+  defineProps<{
+    field: InboxField | null
+    form: InboxForm
+    /** The names the form's other fields answer to. */
+    taken?: string[]
+  }>(),
+  { taken: () => [] },
+)
 
 const { resolve, dismiss, open } = useModal<InboxField>()
 
@@ -55,6 +65,13 @@ const title = ref<LocalizedValue>({})
 const placeholder = ref<LocalizedValue>({})
 const help = ref<LocalizedValue>({})
 const options = ref<FieldOptions>({})
+/*
+ * The name follows the label of a new field until somebody writes one: "Your phone" is
+ * `your_phone`, which is what `{{field.your_phone}}` in a channel's template and an integration
+ * read. Written by hand — or a field that already has one — it stays as it is.
+ */
+const named = ref(false)
+const locales = useLocales()
 const isEnabled = ref(true)
 const isRequired = ref(false)
 const isFullsize = ref(true)
@@ -73,10 +90,57 @@ watch(
     isRequired.value = field?.is_required ?? false
     isFullsize.value = field?.is_fullsize ?? true
     inTable.value = field?.in_table ?? false
+    named.value = field !== null
     errors.value = {}
   },
   { immediate: true },
 )
+
+/** The label in the language being edited, or the first one written. */
+function label(value: LocalizedValue): string {
+  const map = (value ?? {}) as Record<string, string>
+  const active = map[locales.active.value]
+
+  if (typeof active === 'string' && active.trim() !== '') return active
+
+  return Object.values(map).find((line) => typeof line === 'string' && line.trim() !== '') ?? ''
+}
+
+/** A machine name out of a label: Latin, `_` between words, a letter first, `_2` when taken. */
+function nameOf(words: string): string {
+  let base = slugify(words, '_').slice(0, 60).replace(/_+$/, '')
+
+  if (base === '') return ''
+  if (!/^[a-z]/.test(base)) base = `field_${base}`
+
+  let candidate = base
+
+  for (let suffix = 2; props.taken.includes(candidate); suffix++) candidate = `${base}_${suffix}`
+
+  return candidate
+}
+
+watch(
+  () => label(title.value),
+  (words) => {
+    if (!named.value) name.value = nameOf(words)
+  },
+)
+
+function writeName(value: string): void {
+  name.value = value
+  // Emptied, it goes back to following the label; anything else is somebody's choice.
+  named.value = value.trim() !== ''
+  if (!named.value) name.value = nameOf(label(title.value))
+}
+
+/** The name the field had, when it had one and is being given another. */
+const renamedFrom = computed(() => {
+  const was = props.field?.name ?? ''
+  const now = name.value.trim()
+
+  return was !== '' && now !== '' && now !== was ? was : null
+})
 
 const types = computed(() =>
   FIELD_TYPES.map((one) => ({ value: one, label: t(`fields.type-${one}`) })),
@@ -169,19 +233,9 @@ async function save(): Promise<void> {
     :width="720"
   >
     <div class="wx-inbox-field-form">
-      <div class="wx-inbox-field-form__row">
-        <wx-form-item :label="t('fields.type')">
-          <wx-select v-model="type" :options="types" />
-        </wx-form-item>
-
-        <wx-form-item
-          :label="t('fields.name')"
-          :help="t('fields.name-help')"
-          :error="errorOf('name')"
-        >
-          <wx-input v-model="name" placeholder="email" />
-        </wx-form-item>
-      </div>
+      <wx-form-item :label="t('fields.type')">
+        <wx-select v-model="type" :options="types" />
+      </wx-form-item>
 
       <wx-form-item :label="t('fields.title')" :error="errorOf('title')" required>
         <wx-input v-model="title" localized />
@@ -343,6 +397,31 @@ async function save(): Promise<void> {
         />
         <wx-checkbox v-model="inTable" :label="t('fields.in-table')" />
       </div>
+
+      <!-- Last and apart: the name is for templates and integrations, and the label above is
+           where it comes from. -->
+      <section class="wx-inbox-field-form__advanced">
+        <wx-text size="sm" weight="medium" tone="muted">{{ t('fields.advanced') }}</wx-text>
+
+        <wx-form-item
+          :label="t('fields.name')"
+          :help="t('fields.name-help', { name: name.trim() || 'name' })"
+          :error="errorOf('name')"
+        >
+          <wx-input
+            :model-value="name"
+            placeholder="phone"
+            @update:model-value="(value) => writeName(String(value ?? ''))"
+          />
+        </wx-form-item>
+
+        <wx-alert
+          v-if="renamedFrom"
+          type="warning"
+          variant="soft"
+          :description="t('fields.name-renamed', { old: renamedFrom, new: name.trim() })"
+        />
+      </section>
     </div>
 
     <template #footer>
@@ -375,6 +454,14 @@ async function save(): Promise<void> {
 /* Empty when the type has nothing to configure, and then it should take no room at all. */
 .wx-inbox-field-form__row:empty {
   display: none;
+}
+
+.wx-inbox-field-form__advanced {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-8);
+  padding-block-start: var(--wx-space-12);
+  border-block-start: 1px solid var(--wx-border-muted);
 }
 
 .wx-inbox-field-form__checks {

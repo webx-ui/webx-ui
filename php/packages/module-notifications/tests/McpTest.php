@@ -34,6 +34,7 @@ final class McpTest extends TestCase
         'notifications_channel_update' => ['notifications:write', ['notifications.manage'], true],
         'notifications_channel_delete' => ['notifications:write', ['notifications.manage'], true],
         'notifications_channel_copy' => ['notifications:write', ['notifications.manage'], true],
+        'notifications_default_template' => ['notifications:read', ['notifications.view', 'notifications.manage'], false],
         'notifications_preview' => ['notifications:read', ['notifications.view', 'notifications.manage'], false],
         'notifications_test' => ['notifications:write', ['notifications.manage'], true],
         'notifications_find_chats' => ['notifications:write', ['notifications.manage'], true],

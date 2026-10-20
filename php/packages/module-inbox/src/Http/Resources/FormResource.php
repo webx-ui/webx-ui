@@ -28,8 +28,9 @@ use WebxUi\Inbox\Notifications\Channels;
  *
  * `notifications` says whether `webx-ui/module-notifications` is installed — the editor shows
  * "Notify through" only then — and `channels` names what `options.notify_channels` holds, each
- * with whether it `sends` (NOTIFICATIONS §15.2). A form notifies when a letter reaches somebody
- * or a channel sends.
+ * with whether it `sends` (NOTIFICATIONS §15.2). `notify_via` is how the form is set to tell —
+ * `email` or `channels`, worked out for a form saved before the choice existed — and a form
+ * notifies when what that way reaches is somebody: a letter, or a channel that sends.
  *
  * `captcha` is the site's and not the form's: for each provider, how it runs (`checkbox`,
  * `invisible`, `v3`) and whether both halves of its keys are in the `.env`. A reCAPTCHA key of
@@ -61,8 +62,10 @@ final class FormResource extends JsonResource
             'is_enabled' => $form->is_enabled,
             'options' => $form->options ?? [],
             'recipients' => $recipients,
-            'notifies' => in_array(true, array_column($recipients, 'receives'), true)
-                || in_array(true, array_column($channels, 'sends'), true),
+            'notifies' => $notifications->through($form)
+                ? in_array(true, array_column($channels, 'sends'), true)
+                : in_array(true, array_column($recipients, 'receives'), true),
+            'notify_via' => $form->notifyVia(),
             'notifications' => $notifications->available(),
             'channels' => $channels,
             'position' => $form->position,

@@ -23,6 +23,8 @@ return [
     'except-paths' => 'Hariç yollar: :count',
     'all-locales' => 'Tüm diller',
     'on-stage' => 'Dev’de de',
+    'not-here' => 'Bu kopyada basılmıyor',
+    'not-here-help' => 'Site “:environment” olarak çalışıyor ve yalnızca “Dev ve stage’de de” işaretli kodları basıyor. Canlıda bu kod basılır.',
     'off' => 'Kapalı',
     'switch-on' => '“:title” kodunu aç',
     'switched-on' => 'Kod sitede.',

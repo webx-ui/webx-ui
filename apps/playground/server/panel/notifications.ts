@@ -1,5 +1,6 @@
 import type { HistoryEntry, HistoryPage } from '../../../../packages/module-admin/src/history'
 import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
+import { SUBMISSION_SAMPLES } from './notificationSamples'
 import {
   renderTemplate,
   TemplateRefusal,
@@ -242,16 +243,7 @@ const EVENTS = [
         fields: [],
       },
     ],
-    sample: {
-      telegram: {
-        template:
-          '<b>{{form}}</b>\n{{fields}}\n\n<a href="{{submission_url}}">Open in the panel</a>',
-      },
-      '*': {
-        subject: 'New submission: {{form}}',
-        template: '{{form}}\n\n{{fields}}\n\nOpen in the panel: {{submission_url}}',
-      },
-    },
+    sample: SUBMISSION_SAMPLES,
   },
   {
     key: 'shop.order',
@@ -297,9 +289,10 @@ const EVENTS = [
     ],
     sample: {
       '*': {
-        subject: 'Order {{number}}',
-        template:
-          'Order {{number}}\n{{#items}}\n- {{name}} × {{qty}}: {{price}}\n{{/items}}\nTotal {{total}}',
+        subject: { ru: 'Заказ {{number}}' },
+        template: {
+          ru: 'Заказ {{number}}\n{{#items}}\n- {{name}} × {{qty}}: {{price}}\n{{/items}}\nИтого {{total}}',
+        },
       },
     },
   },
@@ -791,6 +784,8 @@ export function notifyCandidates(target: string) {
           .join(' · '),
         thumb: null,
         visible: one.enabled && one.deleted_at === null,
+        // The target's own word for a channel that is off, as `ChannelTarget` answers it.
+        mark: one.enabled ? null : 'Off',
       },
       deleted: one.deleted_at !== null,
     }))

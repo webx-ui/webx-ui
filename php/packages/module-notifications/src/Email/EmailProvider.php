@@ -14,6 +14,7 @@ use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
 use Throwable;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Notifications\Contracts\Provider;
+use WebxUi\Notifications\Contracts\WritesHtml;
 use WebxUi\Notifications\Refusal;
 use WebxUi\Notifications\Sending\CheckResult;
 use WebxUi\Notifications\Sending\Credentials;
@@ -28,12 +29,14 @@ use WebxUi\Notifications\Sending\Recipient;
  *
  * The body is text (§17, question 4): the letter goes as `text/plain` as written and as
  * `text/html` with the whole text escaped, line breaks kept and addresses made links, inside the
- * package's frame. One letter to each recipient, so nobody sees the others' addresses.
+ * package's frame. A template that starts with a tag is HTML instead ({@see EmailMarkup}): its
+ * tags are checked on save, the values escaped into it, and the plain part read out of it. One
+ * letter to each recipient, so nobody sees the others' addresses.
  *
  * Recipients are the ones Inbox has always had — an administrator by id (the address follows the
  * account) or an address — plus an addressee of the event (decision 12).
  */
-final class EmailProvider implements Provider
+final class EmailProvider implements Provider, WritesHtml
 {
     public const KEY = 'email';
 
@@ -174,9 +177,28 @@ final class EmailProvider implements Provider
         return ($options['host'] ?? '') === '' || ($options['port'] ?? '') === '' ? 'missing-smtp' : null;
     }
 
+    public function isHtml(string $template): bool
+    {
+        return EmailMarkup::isHtml($template);
+    }
+
     public function checkTemplate(string $template): array
     {
-        return [];
+        if (! $this->isHtml($template)) {
+            return [];
+        }
+
+        $words = [];
+
+        foreach (EmailMarkup::problems($template) as [$problem, $what]) {
+            $words[] = $this->say('email.markup-'.$problem, [
+                'tag' => $what,
+                'attribute' => $what,
+                'allowed' => implode(', ', $problem === 'attribute' ? EmailMarkup::ATTRIBUTES : EmailMarkup::TAGS),
+            ]);
+        }
+
+        return array_values(array_unique($words));
     }
 
     /** The body is text; it is escaped whole when the letter's HTML is built. */
@@ -194,7 +216,10 @@ final class EmailProvider implements Provider
     {
         try {
             $this->mailer($credentials, $options)->send(
-                ['html' => new HtmlString($this->html($message->body)), 'text' => new HtmlString($message->body)],
+                [
+                    'html' => new HtmlString($message->html ? $this->frame($message->body) : $this->html($message->body)),
+                    'text' => new HtmlString($message->html ? $message->plain : $message->body),
+                ],
                 [],
                 function (MailMessage $mail) use ($message, $options, $to): void {
                     $mail->to($to->key, $to->label);
@@ -329,7 +354,13 @@ final class EmailProvider implements Provider
         $escaped = htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $linked = (string) preg_replace('~https?://[^\s<>"]+~u', '<a href="$0">$0</a>', $escaped);
 
-        return $this->views->file(dirname(__DIR__, 2).'/resources/views/mail/frame.blade.php', ['body' => new HtmlString(nl2br($linked, false))])->render();
+        return $this->frame(nl2br($linked, false));
+    }
+
+    /** The package's frame around a body that is HTML already. */
+    private function frame(string $body): string
+    {
+        return $this->views->file(dirname(__DIR__, 2).'/resources/views/mail/frame.blade.php', ['body' => new HtmlString($body)])->render();
     }
 
     /**

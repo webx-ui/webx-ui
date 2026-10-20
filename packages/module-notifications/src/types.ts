@@ -48,8 +48,17 @@ export interface NotificationEvent {
   label: string
   module: string
   variables: EventVariable[]
-  /** What a new channel starts with, by provider; `*` for any. */
-  sample: Record<string, { subject?: string | null; template: string }>
+  /**
+   * The default template by provider (`*` for any), a text per language of the site: what a new
+   * channel starts with and "Insert the default template" puts back.
+   */
+  sample: Record<string, EventSample>
+}
+
+/** An event's default template for one provider (`EventDefinition::samplesFor()`). */
+export interface EventSample {
+  subject: Record<string, string> | null
+  template: Record<string, string>
 }
 
 /** `GET meta`: what the site has. */

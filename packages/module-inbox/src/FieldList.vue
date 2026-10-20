@@ -46,7 +46,10 @@ const t = useTranslate('webx-inbox')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
-const edit = createModal<InboxField, { field: InboxField | null; form: InboxForm }>(FieldDialog)
+const edit = createModal<
+  InboxField,
+  { field: InboxField | null; form: InboxForm; taken: string[] }
+>(FieldDialog)
 
 function name(field: InboxField): string {
   return localizedValue(field.title, locales.active.value, field.key)
@@ -65,7 +68,9 @@ function marks(field: InboxField): string[] {
 const empty = computed(() => fields.value.length === 0)
 
 async function open(field: InboxField | null): Promise<void> {
-  const saved = await edit({ field, form: props.form })
+  // The names the other fields answer to: a new one made out of its label must not be one of them.
+  const taken = fields.value.filter((one) => one.id !== field?.id).map((one) => one.key)
+  const saved = await edit({ field, form: props.form, taken })
 
   if (!saved) return
 
@@ -156,7 +161,11 @@ async function reorder(): Promise<void> {
             <wx-badge v-if="!item.is_enabled" type="default">{{ t('panel.off') }}</wx-badge>
           </div>
           <wx-text size="sm" tone="muted" truncate>
-            <code>fields[{{ item.key }}]</code> · {{ marks(item).join(' · ') }}
+            <!-- A field nobody named answers to its row number, which means nothing to anybody
+                 reading the list: it shows no name rather than that one. -->
+            <template v-if="item.name"
+              ><code>{{ item.name }}</code> · </template
+            >{{ marks(item).join(' · ') }}
           </wx-text>
         </div>
       </template>

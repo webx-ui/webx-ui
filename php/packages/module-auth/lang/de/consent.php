@@ -19,4 +19,6 @@ return [
     'cancel' => 'Abbrechen',
     'disconnect' => 'Trennen können Sie ihn im Panel: Administratoren → Verbindungen.',
     'returns-to' => 'Die Antwort geht an :host',
+    'refused-title' => 'Die Anwendung lässt sich nicht verbinden',
+    'refused-text' => 'Das Panel kennt diese Anwendung nicht, oder sie möchte die Antwort an eine Adresse schicken, mit der sie nicht registriert wurde. Starten Sie die Verbindung in der Anwendung neu; wenn das wieder passiert, zeigen Sie diese Seite der Person, die die Website betreut.',
 ];

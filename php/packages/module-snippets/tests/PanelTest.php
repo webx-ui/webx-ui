@@ -7,6 +7,7 @@ namespace WebxUi\Snippets\Tests;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\History\HistoryEntry;
+use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Snippets\Models\Snippet;
 use WebxUi\Snippets\Output\Seen;
 
@@ -17,6 +18,8 @@ use WebxUi\Snippets\Output\Seen;
  */
 final class PanelTest extends TestCase
 {
+    use CountsQueries;
+
     private const API = '/api/cms/snippets';
 
     #[Test]
@@ -67,6 +70,24 @@ final class PanelTest extends TestCase
         // A place printed by a page carries the day; one never printed, or not declared, does not.
         $this->assertSame(now()->toDateString(), $places[2]['last_seen']);
         $this->assertSame([null, null, null], [$places[0]['last_seen'], $places[3]['last_seen'], $places[4]['last_seen']]);
+    }
+
+    #[Test]
+    public function a_code_switched_on_but_not_printed_on_this_copy_is_marked_and_production_marks_nothing(): void
+    {
+        $silent = $this->snippet('head', '<i>counter</i>', ['on_stage' => false]);
+        $this->snippet('head', '<i>chat</i>', ['on_stage' => true]);
+        $this->snippet('head', '<i>off</i>', ['on_stage' => false, 'enabled' => false]);
+
+        // The tests run as "testing": not an environment that prints everything.
+        $places = $this->actingAs($this->admin(), 'cms')->getJson(self::API)->assertOk()->assertJsonPath('everything_printed', false)->json('data');
+        $this->assertSame([true, false, false], array_column($places[0]['snippets'], 'silent_here'));
+        $this->actingAs($this->admin(), 'cms')->getJson(self::API.'/'.$silent->id)->assertOk()->assertJsonPath('data.snippet.silent_here', true);
+
+        config()->set('webx-snippets.environments', ['production', 'testing']);
+
+        $places = $this->actingAs($this->admin(), 'cms')->getJson(self::API)->assertOk()->assertJsonPath('everything_printed', true)->json('data');
+        $this->assertSame([false, false, false], array_column($places[0]['snippets'], 'silent_here'));
     }
 
     #[Test]
@@ -211,5 +232,45 @@ final class PanelTest extends TestCase
 
         // And the panel reads it back through the journal's own door.
         $this->actingAs($admin, 'cms')->getJson('/api/cms/history/snippets/'.$id)->assertOk()->assertJsonPath('data.0.changes.0.field', 'code');
+    }
+
+    /**
+     * The card's "History" draws a face: the author's photograph travels with the row, for every
+     * author of the page in one query, and an author deleted since keeps the name they signed with.
+     */
+    #[Test]
+    public function the_journal_carries_the_authors_photograph_and_survives_a_deleted_one(): void
+    {
+        [$first, $second, $gone] = [$this->admin(), $this->admin(), $this->admin()];
+        $first->forceFill(['avatar' => 'avatars/first.jpg'])->save();
+        $gone->forceFill(['avatar' => 'avatars/gone.jpg'])->save();
+
+        $id = $this->actingAs($first, 'cms')
+            ->postJson(self::API, ['values' => ['name' => 'Counter', 'place' => 'head', 'code' => '<script>1</script>']])
+            ->assertCreated()
+            ->json('data.snippet.id');
+        $this->actingAs($second, 'cms')->putJson(self::API.'/'.$id, ['values' => ['code' => '<script>2</script>']])->assertOk();
+
+        $theirs = $this->actingAs($gone, 'cms')
+            ->postJson(self::API, ['values' => ['name' => 'Chat', 'place' => 'body_end', 'code' => '<script>3</script>']])
+            ->assertCreated()
+            ->json('data.snippet.id');
+        $name = $gone->name;
+        $gone->delete();
+
+        $this->actingAs($first, 'cms');
+
+        $rows = $this->assertNoRepeatedQueries(
+            fn () => $this->getJson('/api/cms/history/snippets/'.$id)->assertOk()->json('data'),
+            'every author of the page is read in one query',
+        );
+        $byAuthor = array_column(array_column($rows, 'admin'), null, 'id');
+
+        $this->assertSame('avatars/first.jpg', $byAuthor[$first->id]['avatar']);
+        $this->assertNull($byAuthor[$second->id]['avatar'], 'no photograph is initials, not an error');
+
+        $this->getJson('/api/cms/history/snippets/'.$theirs)
+            ->assertOk()
+            ->assertJsonPath('data.0.admin', ['id' => $gone->id, 'name' => $name, 'avatar' => null]);
     }
 }

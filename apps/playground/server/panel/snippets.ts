@@ -423,7 +423,7 @@ export function snippetHistory(type: string, id: number): HistoryPage | null {
             event: 'updated',
             source: 'mcp',
             subject: { type, id },
-            admin: { id: 1, name: 'Анна Ковальчук' },
+            admin: { id: 1, name: 'Анна Ковальчук', avatar: 'reviews/anna-petrova.svg' },
             grant_id: 3,
             changes: [
               {
@@ -441,7 +441,7 @@ export function snippetHistory(type: string, id: number): HistoryPage | null {
             event: 'updated',
             source: 'panel',
             subject: { type, id },
-            admin: { id: 1, name: 'Анна Ковальчук' },
+            admin: { id: 1, name: 'Анна Ковальчук', avatar: 'reviews/anna-petrova.svg' },
             grant_id: null,
             changes: [{ field: 'enabled', label: 'Enabled', from: false, to: true }],
             run: null,

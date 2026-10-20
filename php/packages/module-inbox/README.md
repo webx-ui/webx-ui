@@ -33,8 +33,13 @@ none of those cheaply: building a column would mean walking inside a JSON docume
 an answer tied to its field would mean inventing a stability its keys do not have.
 
 Every field has a machine name, so the HTML says `fields[email]` rather than `field_17`. A site
-fills its hidden fields by that name, an export is headed by it, and renaming the label breaks
-neither. A field with no name of its own answers to `f{id}`.
+fills its hidden fields by that name, an export is headed by it, a channel's template reads it as
+`{{field.<name>}}`, and renaming the label breaks none of them. A new field that arrives without a
+name — from the editor, the API or an agent — is named after its label (`Fields\FieldNames`: «Ваш
+телефон» is `vash_telefon`, `_2` after a name the form has). Renaming a field keeps the answers
+it had (they point at it by id) and takes the form's e-mail field with it; a template that says
+`{{field.<old name>}}` has to be changed by hand. A field saved before names were given answers to
+`f{id}`, which the panel does not show.
 
 ## Answers keep a copy of the question
 
@@ -72,7 +77,11 @@ Validation comes from the fields, and errors come back under the names the input
 The answer is the widgets' `FormResponse`, the one every form of the site gets: a request that
 asks for JSON gets `{ ok, heading, message, redirect, html }` — the thank-you, or the form's
 address when it has one; anything else a redirect, there or back with the thank-you in the
-session. A refusal is Laravel's own 422, or the errors in the session.
+session. The address is a link like a menu item's (`options.redirect`, `WebxUi\Admin\Links\Link`):
+a record of the site opens in the language the submission came in, or in the main one when it
+has no translation (a record that is not on the site in either gets the thank-you instead); a
+path gets the visitor's language prefix; `https://…` goes as written. A plain string saved
+before is an address. A refusal is Laravel's own 422, or the errors in the session.
 
 ### The same thing sent twice
 
@@ -331,12 +340,24 @@ SubmissionReceived::sample($form, ['name' => 'Ada', 'message' => 'Hello'])->rend
 With [`webx-ui/module-notifications`](../module-notifications) installed — a suggestion, not a
 requirement — a form also notifies through the channels chosen under «Notify through»
 (`options.notify_channels`): Telegram, another letter with its own template, any provider a
-package adds. The letter above goes as before, beside them. The inbox declares the event
+package adds. A form tells one way, `options.notify_via`: `email` — the letter above — or
+`channels`, never both; the settings of the other way are kept for switching back. A form saved
+before the choice is `channels` when it has channels chosen (the migration writes it down). A
+form set to channels on a site without the module writes its letter instead, and `webx:doctor`
+names it. The inbox declares the event
 `inbox.submission` (`{{form}}`, `{{fields}}`, `{{field.<name>}}`, the list `{{#answers}}`,
 `{{submission_url}}`, the addressee `{{reply_to}}` and more), sends a submission from the site's
 form to each chosen channel (not one sent again inside the duplicate window, not one typed in by
 hand), and shows what came of it on the submission's card and in `inbox_get` (`channels`). The
 guide «Inbox» has the whole list.
+
+A new channel of the event starts with its default template, in every language the inbox is
+translated to (`Notifications\SubmissionTemplates`): for a letter, the built-in one laid out in
+HTML without any colour or name of a site — the answers as a table, the files, the button to the
+panel, the page, and a note that a reply goes to the visitor (`reply_to`); for Telegram, the form,
+an answer a line and the link. Its words are the letter's own (`webx-inbox::mail.*`) and
+`webx-inbox::notifications.reply`, so a site that rewords them in `lang/vendor/webx-inbox` gets
+its words in the default as well.
 
 ## After a submission is stored
 

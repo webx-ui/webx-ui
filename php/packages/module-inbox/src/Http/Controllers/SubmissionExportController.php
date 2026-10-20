@@ -97,10 +97,17 @@ final class SubmissionExportController
      */
     private function row(Submission $submission, array $fields): array
     {
-        $answers = [];
+        // By the field, not by the name the answer arrived under: a field renamed since keeps
+        // its older answers in its column. The name is for an answer whose field is gone.
+        $byField = [];
+        $byName = [];
 
         foreach ($submission->values as $value) {
-            $answers[$value->name] = (string) $value->readable();
+            if ($value->field_id !== null) {
+                $byField[(int) $value->field_id] = (string) $value->readable();
+            }
+
+            $byName[$value->name] = (string) $value->readable();
         }
 
         $assignee = AdminBrief::of($submission->assignee);
@@ -115,7 +122,7 @@ final class SubmissionExportController
         ];
 
         foreach ($fields as $field) {
-            $row[] = self::cell($answers[$field->key()] ?? '');
+            $row[] = self::cell($byField[(int) $field->getKey()] ?? $byName[$field->key()] ?? '');
         }
 
         return $row;

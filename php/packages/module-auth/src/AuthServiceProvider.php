@@ -25,6 +25,7 @@ use WebxUi\Auth\Events\AdminLoggedIn;
 use WebxUi\Auth\Events\AdminLoginFailed;
 use WebxUi\Auth\Http\Middleware\Authenticate;
 use WebxUi\Auth\Http\Middleware\EnsurePermission;
+use WebxUi\Auth\Http\Middleware\ExplainOAuthRefusal;
 use WebxUi\Auth\Http\Middleware\SignInBeforeConsent;
 use WebxUi\Auth\Listeners\RecordSignIn;
 use WebxUi\Auth\Models\CmsUser;
@@ -201,8 +202,9 @@ class AuthServiceProvider extends ServiceProvider
 
         $authorize = $router->getRoutes()->getByName('passport.authorizations.authorize');
 
-        // The panel's language for the person reading it, the way every panel page gets it.
-        $authorize?->middleware([SignInBeforeConsent::class, 'webx.panel-locale']);
+        // The panel's language for the person reading it, the way every panel page gets it, and a
+        // refusal said on a page of the panel rather than in JSON.
+        $authorize?->middleware([ExplainOAuthRefusal::class, SignInBeforeConsent::class, 'webx.panel-locale']);
     }
 
     private function consentEnabled(): bool

@@ -1934,12 +1934,18 @@ function withRecipients(item: InboxForm): InboxForm {
 
   // The notifications module is installed here: "Notify through" shows, with the chosen channels.
   const chosen = channelsOfForm(item.options.notify_channels)
+  // One way per form, as `Form::notifyVia()`: a form saved before the choice by what it had.
+  const via =
+    item.options.notify_via ??
+    ((item.options.notify_channels ?? []).length > 0 ? 'channels' : 'email')
 
   return {
     ...item,
     recipients,
-    notifies: recipients.some((one) => one.receives) || chosen.some((one) => one.sends),
+    notifies:
+      via === 'channels' ? chosen.some((one) => one.sends) : recipients.some((one) => one.receives),
     notifications: true,
+    notify_via: via,
     channels: chosen,
   }
 }
@@ -1986,7 +1992,10 @@ on('GET', '/inbox/forms/(\\d+)', ({ params }) => {
 on('PUT', '/inbox/forms/(\\d+)', ({ params, body }) => {
   const item = form(params[0])
 
-  Object.assign(item, omit(body, ['recipients', 'notifies', 'notifications', 'channels']))
+  Object.assign(
+    item,
+    omit(body, ['recipients', 'notifies', 'notifications', 'notify_via', 'channels']),
+  )
   item.updated_at = new Date().toISOString()
 
   return {
@@ -2506,7 +2515,7 @@ on('POST', '/entities/([\\w-]+)/(\\d+)/notes', ({ params, body }) => {
   const note = {
     id: Date.now(),
     body: String(body.body ?? ''),
-    author: { id: 1, name: 'Анна Ковальчук', avatar: null },
+    author: { id: 1, name: 'Анна Ковальчук', avatar: 'reviews/anna-petrova.svg' },
     created_at: new Date().toISOString(),
     updated_at: null,
   }
@@ -6013,7 +6022,24 @@ function detail(record: SubmissionRecord, query?: URLSearchParams) {
       error: record.notify_error,
       queued_at: null,
       delivered_at: record.notified_at,
-      recipients: [],
+      /* Two addresses, so the card shows the rows of a letter that went to more than one. */
+      recipients:
+        record.notified_at === null
+          ? []
+          : [
+              {
+                address: 'manager@example.com',
+                state: 'delivered' as const,
+                error: null,
+                at: record.notified_at,
+              },
+              {
+                address: 'sales@example.com',
+                state: record.notify_error !== null ? ('failed' as const) : ('delivered' as const),
+                error: record.notify_error,
+                at: record.notified_at,
+              },
+            ],
     },
     previous_id: index > 0 ? siblings[index - 1].id : null,
     next_id: index >= 0 && index < siblings.length - 1 ? siblings[index + 1].id : null,

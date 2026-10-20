@@ -81,6 +81,30 @@ class Field extends Model
         return $name !== '' ? $name : 'f'.$this->getKey();
     }
 
+    /**
+     * A field renamed takes the form's Reply-To with it: `email_field` holds the name, and a
+     * rename that left it behind would make every letter after it lose its Reply-To without a
+     * word. The answers already received need nothing — they point at the field by id and keep
+     * the name they arrived under.
+     */
+    protected static function booted(): void
+    {
+        static::updated(static function (Field $field): void {
+            if (! $field->wasChanged('name')) {
+                return;
+            }
+
+            $old = trim((string) $field->getOriginal('name'));
+            $old = $old !== '' ? $old : 'f'.$field->getKey();
+            $form = $field->form;
+
+            if ($form instanceof Form && $form->option('email_field') === $old) {
+                $form->options = [...($form->options ?? []), 'email_field' => $field->key()];
+                $form->save();
+            }
+        });
+    }
+
     /** One option of §4, with a default for the forms that predate it. */
     public function option(string $key, mixed $default = null): mixed
     {

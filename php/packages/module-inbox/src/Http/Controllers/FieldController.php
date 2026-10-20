@@ -6,6 +6,7 @@ namespace WebxUi\Inbox\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Inbox\Fields\FieldNames;
 use WebxUi\Inbox\Http\Requests\SaveFieldRequest;
 use WebxUi\Inbox\Http\Resources\FieldResource;
 use WebxUi\Inbox\Models\Field;
@@ -29,7 +30,15 @@ final class FieldController
 
     public function store(SaveFieldRequest $request, Form $form): JsonResponse
     {
-        $field = new Field($request->values());
+        $values = $request->values();
+
+        // The panel names a new field as its label is typed; a call that left the name out gets
+        // the same, rather than a field that answers to its row number.
+        if ($values['name'] === null) {
+            $values['name'] = FieldNames::fromTitle($values['title'], $form->fields->map(static fn (Field $one): string => $one->key())->values()->all());
+        }
+
+        $field = new Field($values);
         $field->form_id = (int) $form->getKey();
         $field->position = (int) $form->fields()->max('position') + 1;
         $field->save();

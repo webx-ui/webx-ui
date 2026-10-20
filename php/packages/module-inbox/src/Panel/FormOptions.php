@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\Panel;
 
+use WebxUi\Admin\Links\Link;
+use WebxUi\Admin\Links\LinkTarget;
+use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Notifications\Channels;
 
 /**
@@ -25,7 +28,7 @@ final class FormOptions
     public const TRANSLATED = ['thank-you.heading', 'thank-you.text', 'design.submit-text'];
 
     /** Plain strings. */
-    public const TEXT = ['redirect', 'email_field'];
+    public const TEXT = ['email_field'];
 
     public const CAPTCHAS = ['off', 'recaptcha', 'turnstile'];
 
@@ -57,6 +60,20 @@ final class FormOptions
             if ($text !== '') {
                 $options[$key] = $text;
             }
+        }
+
+        $redirect = self::redirect($input['redirect'] ?? null);
+
+        if ($redirect !== null) {
+            $options['redirect'] = $redirect->toArray();
+        }
+
+        // Kept for both ways and switched between: the addresses stay on a form told through
+        // channels, so going back to letters finds them as they were.
+        $via = $input[Form::NOTIFY_VIA] ?? null;
+
+        if (in_array($via, [Form::VIA_EMAIL, Form::VIA_CHANNELS], true)) {
+            $options[Form::NOTIFY_VIA] = $via;
         }
 
         $recipients = self::recipients($input['recipients'] ?? null);
@@ -127,6 +144,33 @@ final class FormOptions
         }
 
         return $recipients;
+    }
+
+    /**
+     * Where the visitor goes once the form is sent, as a link of the panel (`wx-link`): a record of
+     * the site, or an address — and nothing for the thank-you in place of the form.
+     *
+     * A plain string is what a form saved before there was a choice holds, and it is the address
+     * it always was. Opening in a new tab and `rel` are not kept: this is a redirect, not a link
+     * anybody clicks.
+     */
+    public static function redirect(mixed $input): ?Link
+    {
+        if (is_string($input)) {
+            $input = ['target' => LinkTarget::Url->value, 'url' => $input];
+        }
+
+        if (! is_array($input)) {
+            return null;
+        }
+
+        $link = Link::fromArray($input);
+
+        if ($link->isEmpty()) {
+            return null;
+        }
+
+        return new Link($link->target, $link->entityType, $link->entityId, $link->url, $link->hash);
     }
 
     /**

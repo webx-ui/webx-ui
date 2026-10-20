@@ -7,6 +7,10 @@ import type { NotificationEvent, NotificationProvider, NotificationsMeta } from 
  * the event chosen in it, which decide what the template suggests and which addressees there
  * are, and the record itself, which "Find chats" asks the saved token of.
  *
+ * The template fields of the form — the template and the subject — tell it which of them the
+ * caret was in last, so that a variable clicked under the template goes where the person was
+ * typing, the subject included.
+ *
  * Provided by the channel's page; a field drawn anywhere else gets an empty one and works as a
  * plain field — a template with only Mustache's syntax to suggest, chats without a search.
  */
@@ -17,6 +21,24 @@ export interface ChannelContext {
   id: Ref<number | null>
   provider: ComputedRef<NotificationProvider | null>
   event: ComputedRef<NotificationEvent | null>
+  /** The template field the caret was in last: `template`, `subject`. */
+  focused: Ref<string | null>
+  /** Each template field's way of putting text where its caret is, by part. */
+  inserters: Map<string, (snippet: string) => void>
+  /** Into the field the caret was in last, else the template. */
+  insert: (snippet: string) => void
+}
+
+function fields(): Pick<ChannelContext, 'focused' | 'inserters' | 'insert'> {
+  const focused = ref<string | null>(null)
+  const inserters = new Map<string, (snippet: string) => void>()
+
+  return {
+    focused,
+    inserters,
+    insert: (snippet) =>
+      (inserters.get(focused.value ?? '') ?? inserters.get('template'))?.(snippet),
+  }
 }
 
 const key: InjectionKey<ChannelContext> = Symbol('wx-notifications-channel')
@@ -34,6 +56,7 @@ export function provideChannel(
       () => meta.value?.providers.find((one) => one.key === values.value.provider) ?? null,
     ),
     event: computed(() => meta.value?.events.find((one) => one.key === values.value.event) ?? null),
+    ...fields(),
   }
 
   provide(key, context)
@@ -49,6 +72,7 @@ export function useChannel(): ChannelContext {
       id: ref(null),
       provider: computed(() => null),
       event: computed(() => null),
+      ...fields(),
     }
   )
 }

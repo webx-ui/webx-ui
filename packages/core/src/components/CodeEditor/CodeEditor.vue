@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends CodeEditorModelValue = string">
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
-import { Compartment, EditorState, type Extension } from '@codemirror/state'
+import { Compartment, EditorState, Prec, type Extension } from '@codemirror/state'
 import {
   EditorView,
   highlightActiveLine,
@@ -34,6 +34,7 @@ import { useFormField } from '../../composables/useFormField'
 import { useLocalized } from '../../composables/useLocalized'
 import LocalePicker from '../Locales/LocalePicker.vue'
 import { LANGUAGES } from './languages'
+import { languageCompletions } from './languageCompletions'
 import { highlightStyle } from './highlight'
 import type {
   CodeEditorCompletion,
@@ -62,7 +63,9 @@ const props = withDefaults(defineProps<CodeEditorProps>(), {
   tabSize: 2,
   lint: true,
   completions: undefined,
+  languageCompletions: false,
   localized: false,
+  singleLine: false,
   extensions: () => [],
 })
 
@@ -102,6 +105,8 @@ const compartments = {
   placeholder: new Compartment(),
   attributes: new Compartment(),
   completion: new Compartment(),
+  keys: new Compartment(),
+  line: new Compartment(),
   extra: new Compartment(),
 }
 
@@ -199,7 +204,7 @@ function toResult(result: CodeEditorCompletionResult, pos: number): CompletionRe
 function completionExtension(): Extension {
   const given = props.completions
 
-  if (given === undefined) return []
+  if (given === undefined) return props.languageCompletions ? languageCompletions() : []
 
   const source = (context: CompletionContext): CompletionResult | null => {
     if (typeof given === 'function') {
@@ -220,6 +225,57 @@ function completionExtension(): Extension {
   }
 
   return autocompletion({ override: [source], icons: false })
+}
+
+/*
+ * Tab indents a document; in a one-line field it moves on to the next field, as in any input.
+ */
+function keysExtension(): Extension {
+  return keymap.of([
+    ...closeBracketsKeymap,
+    ...defaultKeymap,
+    ...searchKeymap,
+    ...historyKeymap,
+    ...foldKeymap,
+    ...(props.singleLine ? [] : [indentWithTab]),
+  ])
+}
+
+/**
+ * One line, like an input: Enter takes a suggestion when the list is open (its keys come first)
+ * and does nothing otherwise, and a line break typed, pasted or dropped in becomes a space.
+ */
+function lineExtension(): Extension {
+  if (!props.singleLine) return []
+
+  const nothing = () => true
+
+  return [
+    Prec.high(
+      keymap.of([
+        { key: 'Enter', run: nothing },
+        { key: 'Shift-Enter', run: nothing },
+        { key: 'Mod-Enter', run: nothing },
+      ]),
+    ),
+    EditorState.transactionFilter.of((transaction) => {
+      if (!transaction.docChanged || transaction.newDoc.lines === 1) return transaction
+
+      const changes: { from: number; to: number; insert: string }[] = []
+
+      transaction.changes.iterChanges((from, to, _fromB, _toB, inserted) => {
+        changes.push({ from, to, insert: inserted.toString().replace(/\n/g, ' ') })
+      })
+
+      // A line break is one character, as is the space: the selection stays where it was.
+      return {
+        changes,
+        selection: transaction.selection,
+        effects: transaction.effects,
+        scrollIntoView: transaction.scrollIntoView,
+      }
+    }),
+  ]
 }
 
 function editableExtension(): Extension {
@@ -269,14 +325,8 @@ function buildState(doc: string): EditorState {
       highlightActiveLine(),
       highlightSelectionMatches(),
       syntaxHighlighting(highlightStyle),
-      keymap.of([
-        ...closeBracketsKeymap,
-        ...defaultKeymap,
-        ...searchKeymap,
-        ...historyKeymap,
-        ...foldKeymap,
-        indentWithTab,
-      ]),
+      compartments.keys.of(keysExtension()),
+      compartments.line.of(lineExtension()),
       compartments.language.of(languageExtension()),
       compartments.lint.of(lintExtension()),
       compartments.editable.of(editableExtension()),
@@ -372,9 +422,15 @@ watch(
 watch([() => props.ariaLabel, field.id, field.describedBy, field.status, field.disabled], () =>
   reconfigure(compartments.attributes, attributesExtension()),
 )
+watch([() => props.completions, () => props.languageCompletions], () =>
+  reconfigure(compartments.completion, completionExtension()),
+)
 watch(
-  () => props.completions,
-  () => reconfigure(compartments.completion, completionExtension()),
+  () => props.singleLine,
+  () => {
+    reconfigure(compartments.keys, keysExtension())
+    reconfigure(compartments.line, lineExtension())
+  },
 )
 watch(
   () => props.extensions,
@@ -407,6 +463,7 @@ const classes = computed(() => [
     'is-disabled': field.disabled.value,
     'is-readonly': props.readonly,
     'is-localized': locales.on.value,
+    'is-single-line': props.singleLine,
   },
 ])
 
@@ -531,6 +588,45 @@ defineExpose({
 
 .wx-code-editor :deep(.cm-line) {
   padding: 0 var(--wx-space-12);
+}
+
+/*
+ * One line: as tall as an input of the same size, the line in the middle, a long one scrolled
+ * sideways under the caret rather than wrapped.
+ */
+.wx-code-editor.is-single-line {
+  --wx-locale-picker-height: 24px;
+  --wx-locale-picker-top: 50%;
+  --wx-locale-picker-shift: calc(-1 * (var(--wx-locale-picker-height) / 2 + 3px));
+}
+
+.wx-code-editor.is-single-line :deep(.cm-editor) {
+  min-height: 0;
+  height: calc(var(--wx-size-control-md) - 2px);
+}
+
+.wx-code-editor--sm.is-single-line :deep(.cm-editor) {
+  height: calc(var(--wx-size-control-sm) - 2px);
+}
+
+.wx-code-editor--lg.is-single-line :deep(.cm-editor) {
+  height: calc(var(--wx-size-control-lg) - 2px);
+}
+
+.wx-code-editor.is-single-line :deep(.cm-scroller) {
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+/* CodeMirror pins the scroller's children to the top with !important; the line centres itself. */
+.wx-code-editor.is-single-line :deep(.cm-content) {
+  align-self: center;
+  min-height: 0;
+  padding: 0;
+}
+
+.wx-code-editor.is-single-line :deep(.cm-activeLine) {
+  background: transparent;
 }
 
 /* Room for the language chip, so the end of a long line is never under it. */

@@ -116,8 +116,8 @@ final class SubmissionController
     }
 
     /**
-     * The notification once more, to whoever the form names now (§9), and the channels' rows
-     * that failed or are stuck (NOTIFICATIONS §15.3).
+     * The notification once more, the way the form tells now: the letter to whoever it names
+     * (§9), or the channels' rows that failed or are stuck (NOTIFICATIONS §15.3).
      *
      * For a letter that failed, one stuck in a queue nobody works, or one that went to a spam
      * folder. A form that names nobody and has nothing to send again is refused out loud rather
@@ -127,13 +127,11 @@ final class SubmissionController
     {
         $submission->loadMissing('form');
 
-        $retried = $channels->retry($submission);
-
-        // A form that only notifies through channels has no letter to send again, and saying in
-        // its log that it names nobody would be wrong.
-        $letters = $retried !== [] && $notifier->recipients($submission) === []
-            ? 0
-            : $notifier->send($submission, $this->adminId($request));
+        // The way the form tells, as on arrival: a form told through channels sends their failed
+        // rows again and writes no letter, one told by letter writes its letter and nothing else.
+        $through = $submission->form !== null && $channels->through($submission->form);
+        $retried = $through ? $channels->retry($submission) : [];
+        $letters = $through ? 0 : $notifier->send($submission, $this->adminId($request));
 
         if ($letters === 0 && $retried === []) {
             throw new NobodyToNotify((string) $submission->form->slug);

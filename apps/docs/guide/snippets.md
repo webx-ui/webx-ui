@@ -43,7 +43,7 @@ The section is under **System**. `snippets({ path: '/codes' })` moves it inside 
 | -------------------- | --------------------------------------------------------------------------------------------- |
 | Name                 | For administrators only; the site never shows it.                                             |
 | Place                | Where on the page it is printed — one of the [places](#places).                               |
-| Code                 | What the service gave you, up to 64 KB, in an HTML editor with highlighting.                  |
+| Code                 | What the service gave you, up to 64 KB, in an HTML editor with highlighting and suggestions.  |
 | Cookie consent       | `necessary` is printed at once; the others wait for the visitor's [consent](#cookie-consent). |
 | Only on / Except     | Path masks without the language prefix: `/`, `/blog/*`. Empty «Only on» is the whole site.    |
 | Languages            | The languages of the site the code is printed in; none ticked is every language.              |
@@ -140,7 +140,9 @@ Things to know about a code that waits for consent:
 Every code is printed only where `APP_ENV` is one of `webx-snippets.environments` —
 `['production']` by default. Anywhere else only the codes marked **On dev and stage too** are
 printed: a counter on a copy of the site would count visits that never happened on the real one.
-The list in the panel says so at the top when the site is not in production.
+The list in the panel says so at the top when the site is not in production, and a code switched on
+without that mark carries a grey **Not printed on this copy** — in its row and beside **Enabled** in
+its form. In production there is no such mark.
 
 Codes are never printed in the panel (`/cms` and its API), in block previews and on the block stage,
 on the panel's error pages, or anywhere outside an HTTP request — mail, the queue, a block rendered

@@ -27,6 +27,13 @@ class Form extends Model
 {
     use HasTranslations;
 
+    /** The option that says how a submission is told about: {@see notifyVia()}. */
+    public const NOTIFY_VIA = 'notify_via';
+
+    public const VIA_EMAIL = 'email';
+
+    public const VIA_CHANNELS = 'channels';
+
     protected $table = 'inbox_forms';
 
     protected $guarded = [];
@@ -116,6 +123,27 @@ class Form extends Model
         $recipients = $this->option('recipients', []);
 
         return is_array($recipients) ? array_values(array_filter($recipients, 'is_array')) : [];
+    }
+
+    /**
+     * How a submission is told about (§9): a letter to the addresses, or the channels of the
+     * notifications module — one or the other, never both.
+     *
+     * What the form keeps, or, for a form saved before there was a choice, what it was doing: a
+     * form with channels chosen was a form somebody set up to use them. The setting of the mode
+     * that is not chosen stays in the options, so switching back brings it back as it was.
+     */
+    public function notifyVia(): string
+    {
+        $mode = $this->option(self::NOTIFY_VIA);
+
+        if (in_array($mode, [self::VIA_EMAIL, self::VIA_CHANNELS], true)) {
+            return $mode;
+        }
+
+        $channels = $this->option('notify_channels');
+
+        return is_array($channels) && $channels !== [] ? self::VIA_CHANNELS : self::VIA_EMAIL;
     }
 
     /**

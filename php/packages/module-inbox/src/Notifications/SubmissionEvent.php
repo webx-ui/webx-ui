@@ -58,14 +58,11 @@ final class SubmissionEvent
                 // An addressee (decision 12): a channel may write back to whoever filled the form.
                 new Variable('reply_to', $vars.'reply_to', example: 'visitor@site.test', address: 'email'),
             ],
+            // The default templates (decision 1): a starting point in every language there are words in.
             sample: [
-                'telegram' => [
-                    'template' => "<b>{{form}}</b>\n{{fields}}\n\n<a href=\"{{submission_url}}\">Open in the panel</a>",
-                ],
-                '*' => [
-                    'subject' => 'New submission: {{form}}',
-                    'template' => "{{form}}\n\n{{fields}}\n\nOpen in the panel: {{submission_url}}",
-                ],
+                'email' => SubmissionTemplates::email(...),
+                'telegram' => SubmissionTemplates::telegram(...),
+                '*' => SubmissionTemplates::text(...),
             ],
             url: static fn (array $values): ?string => is_string($values['submission_url'] ?? null) && $values['submission_url'] !== ''
                 ? $values['submission_url']

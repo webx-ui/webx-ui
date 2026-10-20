@@ -101,6 +101,7 @@ const languages = (Object.keys(samples) as CodeEditorLanguage[]).map((value) => 
 const language = ref<CodeEditorLanguage>('json')
 const code = ref(samples.json)
 const wrap = ref(false)
+const suggest = ref(true)
 const diagnostics = ref<CodeEditorDiagnostic[]>([])
 const editor = ref<CodeEditorExposed | null>(null)
 
@@ -132,6 +133,7 @@ const message = computed(() => {
         style="width: 160px"
       />
       <wx-switch v-model="wrap" size="sm">Wrap lines</wx-switch>
+      <wx-switch v-model="suggest" size="sm">Suggestions</wx-switch>
       <wx-button v-if="language === 'json'" size="sm" @click="editor?.format()">Format</wx-button>
       <span
         v-if="message"
@@ -150,6 +152,7 @@ const message = computed(() => {
       v-model="code"
       :language="language"
       :line-wrapping="wrap"
+      :language-completions="suggest"
       :status="status"
       placeholder="Paste something…"
       min-height="240px"

@@ -556,61 +556,65 @@ const details = computed(() => {
                     }}</a>
                     <span v-else class="wx-submission__detail">{{ row.value }}</span>
                   </wx-descriptions-item>
+
+                  <!-- One more pair rather than a block of its own: whether anybody was told is a
+                       fact about the submission like the rest, and it keeps their rhythm.
+                       An unsent notification is a mark on the submission, not a lost one
+                       (§2.10). Queued is not sent: on a site with a queue a worker sends it,
+                       and a worker can be missing or hold old mail settings (§9). -->
+                  <wx-descriptions-item :label="t('panel.tab-notifications')">
+                    <div class="wx-submission__notification">
+                      <wx-alert
+                        v-if="notification?.state === 'failed'"
+                        type="warning"
+                        :closable="false"
+                        :title="t('panel.notify-failed')"
+                      >
+                        <span class="wx-submission__detail">{{ notification.error }}</span>
+                      </wx-alert>
+                      <span v-else-if="notification?.state === 'queued'">
+                        {{ t('panel.notify-queued') }}
+                      </span>
+                      <span v-else-if="notification?.state === 'delivered'">
+                        {{ t('panel.notified') }}
+                      </span>
+                      <!-- Nobody named is not a letter waiting in the queue, and says so. -->
+                      <span v-else-if="namesNobody">{{ t('panel.notified-nobody') }}</span>
+                      <span v-else>{{ t('panel.not-notified') }}</span>
+
+                      <ul
+                        v-if="notification && notification.recipients.length > 0"
+                        class="wx-submission__recipients"
+                      >
+                        <li v-for="one in notification.recipients" :key="one.address">
+                          <span class="wx-submission__detail">{{ one.address }}</span>
+                          <wx-badge
+                            :type="
+                              one.state === 'failed'
+                                ? 'danger'
+                                : one.state === 'delivered'
+                                  ? 'success'
+                                  : 'default'
+                            "
+                          >
+                            {{ recipientState(one.state) }}
+                          </wx-badge>
+                        </li>
+                      </ul>
+
+                      <div
+                        v-if="
+                          canUpdate &&
+                          (notification?.state === 'failed' || notification?.state === 'queued')
+                        "
+                      >
+                        <wx-button size="sm" @click="notifyAgain">{{
+                          t('panel.notify-again')
+                        }}</wx-button>
+                      </div>
+                    </div>
+                  </wx-descriptions-item>
                 </wx-descriptions>
-
-                <!-- An unsent notification is a mark on the submission, not a lost one
-                     (§2.10). Queued is not sent: on a site with a queue a worker sends it,
-                     and a worker can be missing or hold old mail settings (§9). -->
-                <wx-alert
-                  v-if="notification?.state === 'failed'"
-                  type="warning"
-                  :closable="false"
-                  :title="t('panel.notify-failed')"
-                >
-                  <span class="wx-submission__detail">{{ notification.error }}</span>
-                </wx-alert>
-                <wx-text v-else-if="notification?.state === 'queued'" size="sm" tone="muted">
-                  {{ t('panel.notify-queued') }}
-                </wx-text>
-                <wx-text v-else-if="notification?.state === 'delivered'" size="sm" tone="muted">
-                  {{ t('panel.notified') }}
-                </wx-text>
-                <!-- Nobody named is not a letter waiting in the queue, and says so. -->
-                <wx-text v-else-if="namesNobody" size="sm" tone="muted">
-                  {{ t('panel.notified-nobody') }}
-                </wx-text>
-                <wx-text v-else size="sm" tone="muted">{{ t('panel.not-notified') }}</wx-text>
-
-                <ul
-                  v-if="notification && notification.recipients.length > 0"
-                  class="wx-submission__recipients"
-                >
-                  <li v-for="one in notification.recipients" :key="one.address">
-                    <wx-text size="sm">{{ one.address }}</wx-text>
-                    <wx-badge
-                      :type="
-                        one.state === 'failed'
-                          ? 'danger'
-                          : one.state === 'delivered'
-                            ? 'success'
-                            : 'default'
-                      "
-                    >
-                      {{ recipientState(one.state) }}
-                    </wx-badge>
-                  </li>
-                </ul>
-
-                <div
-                  v-if="
-                    canUpdate &&
-                    (notification?.state === 'failed' || notification?.state === 'queued')
-                  "
-                >
-                  <wx-button size="sm" @click="notifyAgain">{{
-                    t('panel.notify-again')
-                  }}</wx-button>
-                </div>
               </div>
             </wx-tab>
             <wx-tab v-if="channels" value="channels" :label="t('panel.channels')">
@@ -735,6 +739,12 @@ const details = computed(() => {
 
 .wx-submission__detail {
   overflow-wrap: anywhere;
+}
+
+.wx-submission__notification {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-8);
 }
 
 .wx-submission__recipients {

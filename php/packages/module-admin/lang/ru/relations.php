@@ -12,6 +12,7 @@ return [
     'field-add' => 'Добавить…',
     'field-searching' => 'Ищем…',
     'field-nothing' => 'Ничего не нашлось.',
+    'field-all-chosen' => 'Всё, что есть, уже выбрано.',
     'field-empty' => 'Пока ничего не выбрано.',
     'field-remove' => 'Убрать',
     'field-drag' => 'Перетащите, чтобы изменить порядок',

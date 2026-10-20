@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
-import type { EditorView } from '@codemirror/view'
+import { EditorView, runScopeHandlers } from '@codemirror/view'
 import { currentCompletions, startCompletion } from '@codemirror/autocomplete'
 import { provideLocales } from '../../composables/useLocalized'
 import WxCodeEditor from './CodeEditor.vue'
@@ -223,6 +223,136 @@ describe('WxCodeEditor', () => {
 
     expect(docOf(wrapper)).toBe('{{#items}}{{/items}}')
     expect(view.state.selection.main.head).toBe(10)
+  })
+
+  describe('languageCompletions', () => {
+    /** What the list offers with the caret after `text`, `after` past it. */
+    async function suggest(text: string, after = '') {
+      const wrapper = await mountEditor({
+        modelValue: text + after,
+        language: 'html',
+        languageCompletions: true,
+      })
+      const view = viewOf(wrapper)
+      view.dispatch({ selection: { anchor: text.length } })
+      startCompletion(view)
+      await vi.waitFor(() => expect(currentCompletions(view.state).length).toBeGreaterThan(0))
+
+      return { wrapper, view, labels: currentCompletions(view.state).map((one) => one.label) }
+    }
+
+    it('offers HTML tags, attributes and their values — at the end of the document too', async () => {
+      expect((await suggest('<scri')).labels).toContain('script')
+      expect((await suggest('<script ')).labels).toEqual(
+        expect.arrayContaining(['src', 'async', 'defer', 'type']),
+      )
+      expect((await suggest('<script type="')).labels).toContain('text/javascript')
+      // A tag's own attributes before the global ones every tag takes.
+      expect((await suggest('<script ')).labels.slice(0, 6)).toEqual(
+        expect.arrayContaining(['src', 'async', 'defer', 'type']),
+      )
+      expect((await suggest('<script a')).labels[0]).toBe('async')
+      expect((await suggest('<p>Hi</p>\n<style ')).labels).toContain('media')
+    })
+
+    it('offers JavaScript inside a script: snippets, keywords, own names and globals', async () => {
+      expect((await suggest('<script>\nconst counter = 1\nco')).labels).toEqual(
+        expect.arrayContaining(['counter', 'const', 'console']),
+      )
+      expect((await suggest('<script>\ntr')).labels).toContain('try')
+      expect((await suggest('<script>\nfunc')).labels).toContain('function')
+      expect((await suggest('<script>\ndocument.')).labels).toContain('querySelector')
+      expect((await suggest('<script>\nconsole.')).labels).toContain('log')
+      expect((await suggest('<script>\nwindow.')).labels).toContain('localStorage')
+    })
+
+    it('offers CSS properties and values inside a style', async () => {
+      expect((await suggest('<style>\n.a { col')).labels).toContain('color')
+      // The closing brace is there as soon as the opening one is typed.
+      expect((await suggest('<style>\n.a { display: ', ' }')).labels).toContain('flex')
+    })
+
+    it.each([
+      ['<script', '<script></script>'],
+      ['<style', '<style></style>'],
+      ['<div', '<div></div>'],
+      ['<script src="a.js"', '<script src="a.js"></script>'],
+    ])('closes %s on >, the caret between the tags', async (text, closed) => {
+      const wrapper = await mountEditor({
+        modelValue: text,
+        language: 'html',
+        languageCompletions: true,
+      })
+      const view = viewOf(wrapper)
+      const at = text.length
+      view.dispatch({ selection: { anchor: at } })
+      const insert = () =>
+        view.state.update({
+          changes: { from: at, insert: '>' },
+          selection: { anchor: at + 1 },
+          userEvent: 'input.type',
+        })
+      const handled = view.state
+        .facet(EditorView.inputHandler)
+        .some((handler) => handler(view, at, at, '>', insert))
+
+      expect(handled).toBe(true)
+      expect(docOf(wrapper)).toBe(closed)
+      expect(view.state.selection.main.head).toBe(at + 1)
+    })
+
+    it('gets out of the way: Esc closes the list, Enter without one breaks the line', async () => {
+      const { wrapper, view } = await suggest('<scri')
+      const key = (name: string) =>
+        runScopeHandlers(view, new KeyboardEvent('keydown', { key: name }), 'editor')
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      expect(key('Escape')).toBe(true)
+      expect(currentCompletions(view.state)).toHaveLength(0)
+
+      key('Enter')
+      expect(view.state.doc.lines).toBe(2)
+      expect(docOf(wrapper).startsWith('<scri\n')).toBe(true)
+    })
+
+    it('suggests nothing unless asked to', async () => {
+      const wrapper = await mountEditor({ modelValue: '<scri', language: 'html' })
+      const view = viewOf(wrapper)
+      view.dispatch({ selection: { anchor: 5 } })
+      startCompletion(view)
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      expect(currentCompletions(view.state)).toHaveLength(0)
+    })
+  })
+
+  it('keeps one line when single-line: Enter takes a suggestion and breaks no line', async () => {
+    const wrapper = await mountEditor({
+      modelValue: 'New: fo',
+      singleLine: true,
+      completions: [{ label: 'form' }],
+    })
+    const view = viewOf(wrapper)
+    const enter = () =>
+      runScopeHandlers(view, new KeyboardEvent('keydown', { key: 'Enter' }), 'editor')
+
+    expect(wrapper.find('.wx-code-editor').classes()).toContain('is-single-line')
+
+    // A line break pasted or typed in is a space.
+    view.dispatch({ changes: { from: 0, insert: 'One\ntwo ' } })
+    expect(docOf(wrapper)).toBe('One two New: fo')
+
+    view.dispatch({ selection: { anchor: view.state.doc.length } })
+    expect(enter()).toBe(true)
+    expect(docOf(wrapper)).toBe('One two New: fo')
+
+    startCompletion(view)
+    await vi.waitFor(() => expect(currentCompletions(view.state)).toHaveLength(1))
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    enter()
+    expect(docOf(wrapper)).toBe('One two New: form')
+    expect(view.state.doc.lines).toBe(1)
   })
 
   it('edits one language at a time when localized', async () => {

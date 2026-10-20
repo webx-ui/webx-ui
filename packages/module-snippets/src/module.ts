@@ -1,3 +1,4 @@
+import { defineAsyncComponent } from 'vue'
 import type { AdminModule } from '@webx-ui/module-admin'
 
 export interface SnippetsOptions {
@@ -27,5 +28,13 @@ export function snippets(options: SnippetsOptions = {}): AdminModule {
         props: { base: path },
       },
     ],
+    types: {
+      // "Enabled" with the mark of a code this copy of the site does not print.
+      // Loaded with the form, not with the panel: its words are the section's.
+      'wx-snippets-enabled': {
+        component: defineAsyncComponent(() => import('./EnabledField.vue')),
+        kind: 'field',
+      },
+    },
   }
 }

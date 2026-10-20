@@ -8,6 +8,7 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Localization\Locales;
+use WebxUi\Notifications\Events\EventDefinition;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\NotificationEvents;
@@ -181,27 +182,61 @@ final class ChannelForm
     }
 
     /**
+     * The event as the panel and an agent read it, its default templates in the site's languages.
+     *
+     * @return array<string, mixed>
+     */
+    public function event(EventDefinition $event): array
+    {
+        return $event->toArray($this->locales->codes(), $this->locales->defaultCode(), $this->locales->fallback());
+    }
+
+    /**
+     * The event's default template for a provider, a text per language of the site; null when the
+     * event has none for it.
+     *
+     * @return array{subject: array<string, string>|null, template: array<string, string>}|null
+     */
+    public function sample(EventDefinition $event, string $provider): ?array
+    {
+        return $event->samplesFor($provider, $this->locales->codes(), $this->locales->defaultCode(), $this->locales->fallback());
+    }
+
+    /**
+     * A new channel of an event without a template starts with the event's default one; any
+     * channel asked for it (`default_template: true`) gets it in place of its subject and template.
+     *
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
+     *
+     * @throws ValidationException
      */
     private function withSample(Channel $channel, array $input): array
     {
-        if ($channel->exists || array_key_exists('template', $input)) {
+        $reset = ($input['default_template'] ?? false) === true;
+        unset($input['default_template']);
+
+        if (! $reset && ($channel->exists || array_key_exists('template', $input))) {
             return $input;
         }
 
-        $event = is_string($input['event'] ?? null) ? $this->events->find($input['event']) : null;
-        $sample = $event?->sampleFor(is_string($input['provider'] ?? null) ? $input['provider'] : '');
+        $key = array_key_exists('event', $input) ? $input['event'] : $channel->event;
+        $provider = $input['provider'] ?? $channel->provider;
+        $event = is_string($key) ? $this->events->find($key) : null;
+        $sample = $event === null || ! is_string($provider) ? null : $this->sample($event, $provider);
 
         if ($sample === null) {
+            if ($reset) {
+                throw ValidationException::withMessages(['template' => (string) __('webx-notifications::errors.no-sample', ['event' => is_string($key) ? $key : ''])]);
+            }
+
             return $input;
         }
 
-        $locale = $this->locales->defaultCode();
-        $input['template'] = [$locale => $sample['template']];
+        $input['template'] = $sample['template'];
 
-        if (! array_key_exists('subject', $input) && $sample['subject'] !== null) {
-            $input['subject'] = [$locale => $sample['subject']];
+        if ($sample['subject'] !== null && ($reset || ! array_key_exists('subject', $input))) {
+            $input['subject'] = $sample['subject'];
         }
 
         return $input;

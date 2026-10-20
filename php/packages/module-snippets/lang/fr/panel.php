@@ -23,6 +23,8 @@ return [
     'except-paths' => 'Sauf les chemins : :count',
     'all-locales' => 'Toutes les langues',
     'on-stage' => 'Aussi en dev',
+    'not-here' => 'Non affiché sur cette copie',
+    'not-here-help' => 'Le site tourne en « :environment » et n’affiche que les codes marqués « Aussi en dev et stage ». En production, celui-ci est affiché.',
     'off' => 'Désactivé',
     'switch-on' => 'Activer « :title »',
     'switched-on' => 'Le code est sur le site.',

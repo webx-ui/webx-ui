@@ -15,6 +15,7 @@ use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mime\Email;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Inbox\Doctor\StrandedForms;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Submission;
@@ -79,7 +80,7 @@ final class NotificationChannelsTest extends TestCase
     }
 
     #[Test]
-    public function a_submission_goes_to_every_chosen_channel_by_its_template_and_the_letter_still_goes(): void
+    public function a_form_set_to_channels_sends_to_every_chosen_channel_by_its_template_and_writes_no_letter(): void
     {
         Http::fake(['telegram.test/*' => Http::response(['ok' => true, 'result' => ['message_id' => 1]])]);
 
@@ -118,9 +119,9 @@ final class NotificationChannelsTest extends TestCase
         $this->assertStringContainsString("Name: Alex <Doe>\nE-mail: visitor@site.test\nPhone: +0 000 000-00-00", (string) $channelLetters[0]->getTextBody());
         $this->assertSame('visitor@site.test', $channelLetters[0]->getReplyTo()[0]->getAddress());
 
-        // The form's own letter went beside them, as it always has.
-        $this->assertCount(1, array_filter($messages, static fn (Email $one): bool => $one->getTo()[0]->getAddress() === 'office@site.test'));
-        $this->assertNotNull($submission->refresh()->notified_at);
+        // One way: the addresses kept on the form for the letter are not written to as well.
+        $this->assertCount(0, array_filter($messages, static fn (Email $one): bool => $one->getTo()[0]->getAddress() === 'office@site.test'));
+        $this->assertNull($submission->refresh()->notified_at);
 
         // One row per recipient, about this submission.
         $rows = Delivery::query()->where('subject_id', $submission->id)->get();
@@ -291,6 +292,186 @@ final class NotificationChannelsTest extends TestCase
 
         Event::assertDispatched(SubmissionStored::class, static fn (SubmissionStored $event): bool => ! $event->repeated
             && $event->submission->value('name')?->value === 'Ada');
+    }
+
+    #[Test]
+    public function a_form_set_to_letters_writes_its_letter_and_tells_no_channel(): void
+    {
+        Http::fake(['telegram.test/*' => Http::response(['ok' => true])]);
+
+        $this->form('contact', [], [
+            'notify_via' => 'email',
+            'recipients' => [['email' => 'office@site.test']],
+            'notify_channels' => [$this->telegram()->id],
+        ]);
+
+        $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'ada@site.test']])->assertOk();
+
+        $this->assertSame(['office@site.test'], array_map(static fn (Email $one): string => $one->getTo()[0]->getAddress(), $this->sent()));
+        Http::assertNothingSent();
+        $this->assertSame(0, Delivery::query()->count());
+    }
+
+    #[Test]
+    public function the_way_is_saved_and_the_settings_of_the_other_way_are_kept_for_switching_back(): void
+    {
+        $telegram = $this->telegram();
+        $form = $this->form('contact');
+        $admin = $this->admin();
+        $save = fn (array $options) => $this->actingAs($admin, 'cms')->putJson($this->api("forms/{$form->id}"), [
+            'slug' => 'contact',
+            'title' => ['en' => 'Contact'],
+            'is_enabled' => true,
+            'options' => $options,
+        ]);
+
+        $both = ['recipients' => [['email' => 'office@site.test']], 'notify_channels' => [$telegram->id]];
+
+        $save([...$both, 'notify_via' => 'channels'])
+            ->assertOk()
+            ->assertJsonPath('data.notify_via', 'channels')
+            ->assertJsonPath('data.options.notify_via', 'channels')
+            // Kept, though nothing is written to it while the form tells its channels.
+            ->assertJsonPath('data.options.recipients.0.email', 'office@site.test')
+            ->assertJsonPath('data.notifies', true);
+
+        $save([...$both, 'notify_via' => 'email'])
+            ->assertOk()
+            ->assertJsonPath('data.notify_via', 'email')
+            ->assertJsonPath('data.options.notify_channels', [$telegram->id]);
+
+        $save([...$both, 'notify_via' => 'pigeon'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['options.notify_via']);
+    }
+
+    #[Test]
+    public function a_form_saved_before_the_choice_is_read_by_what_it_was_doing(): void
+    {
+        $withChannels = $this->form('contact', [], ['recipients' => [['email' => 'office@site.test']], 'notify_channels' => [$this->telegram()->id]]);
+        $withLetters = $this->form('callback', [], ['recipients' => [['email' => 'office@site.test']]]);
+
+        $this->assertSame('channels', $withChannels->notifyVia());
+        $this->assertSame('email', $withLetters->notifyVia());
+
+        $this->actingAs($this->admin(), 'cms')
+            ->getJson($this->api("forms/{$withChannels->id}"))
+            ->assertJsonPath('data.notify_via', 'channels');
+
+        // With the module there, a form set to channels is nothing for the doctor to say.
+        $this->assertSame([], $this->app->make(StrandedForms::class)->run());
+    }
+
+    #[Test]
+    public function the_audit_reads_the_way_the_form_is_set_to(): void
+    {
+        // Addresses on the form, but it tells a channel that is off: nobody hears about it.
+        $form = $this->form('contact', [], [
+            'notify_via' => 'channels',
+            'recipients' => [['email' => 'office@site.test']],
+            'notify_channels' => [$this->email(['enabled' => false])->id],
+        ]);
+
+        $this->actingAs($this->admin(), 'cms')
+            ->getJson($this->api("forms/{$form->id}"))
+            ->assertJsonPath('data.notifies', false);
+
+        // And the other way round: a channel that sends does not make up for a letter to nobody.
+        $form->update(['options' => ['notify_via' => 'email', 'notify_channels' => [$this->telegram()->id]]]);
+
+        $this->actingAs($this->admin(), 'cms')
+            ->getJson($this->api("forms/{$form->id}"))
+            ->assertJsonPath('data.notifies', false);
+    }
+
+    #[Test]
+    public function an_agent_reads_and_sets_the_way(): void
+    {
+        $telegram = $this->telegram();
+        $admin = $this->admin();
+        $this->form('contact', [], ['recipients' => [['email' => 'office@site.test']]]);
+
+        $this->assertSame('email', $this->agent('form_get', ['form' => 'contact'], $admin)['form']['notify_via']);
+
+        $saved = $this->agent('form_save', ['form' => 'contact', 'options' => [
+            'recipients' => [['email' => 'office@site.test']],
+            'notify_channels' => [$telegram->id],
+            'notify_via' => 'channels',
+        ]], $admin);
+
+        $this->assertSame('channels', $saved['form']['notify_via']);
+        $this->assertSame('channels', $saved['form']['options']['notify_via']);
+        $this->assertSame([['email' => 'office@site.test']], $saved['form']['options']['recipients']);
+    }
+
+    #[Test]
+    public function the_picker_offers_every_channel_for_the_event_before_anything_is_typed(): void
+    {
+        $telegram = $this->telegram();
+        $anyEvent = $this->email(['name' => 'Everything by mail']);
+        $off = $this->email(['name' => 'Night shift', 'enabled' => false]);
+        Channel::query()->create([
+            'name' => 'Orders',
+            'provider' => 'telegram',
+            'event' => 'shop.order',
+            'credentials' => ['token' => self::TOKEN],
+            'recipients' => [['chat_id' => '1']],
+            'template' => ['en' => '{{order}}'],
+            'enabled' => true,
+        ]);
+
+        // What the box asks for when it is opened: an empty query. The channel of the event and
+        // the ones for any event, not the one of another event; the switched-off one marked.
+        $rows = $this->actingAs($this->admin(), 'cms')
+            ->getJson('/api/cms/relations/notify-inbox-submission?q=')
+            ->assertOk()
+            ->json('data');
+
+        $byId = array_column($rows, null, 'id');
+        ksort($byId);
+        $this->assertSame([$telegram->id, $anyEvent->id, $off->id], array_keys($byId));
+        $this->assertNull($byId[$telegram->id]['mark']);
+        $this->assertSame('Off', $byId[$off->id]['mark']);
+        $this->assertStringContainsString('Telegram', (string) $byId[$telegram->id]['subtitle']);
+
+        // Typing narrows it.
+        $this->actingAs($this->admin(), 'cms')
+            ->getJson('/api/cms/relations/notify-inbox-submission?q=night')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $off->id);
+    }
+
+    #[Test]
+    public function sending_again_goes_the_way_the_form_tells(): void
+    {
+        Http::fake(['telegram.test/*' => Http::sequence()
+            ->push(['ok' => false, 'description' => 'Bad Request: chat not found'], 400)
+            ->push(['ok' => true])]);
+
+        $form = $this->form('contact', [], [
+            'notify_via' => 'channels',
+            'recipients' => [['email' => 'office@site.test']],
+            'notify_channels' => [$this->telegram()->id],
+        ]);
+        $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'ada@site.test']])->assertOk();
+        $submission = Submission::query()->sole();
+        $admin = $this->admin();
+
+        // Told through channels: the failed row goes again, the addresses kept on the form do not.
+        $this->actingAs($admin, 'cms')->postJson($this->api("submissions/{$submission->id}/notify"))->assertOk();
+        Http::assertSentCount(2);
+        $this->assertSame([], $this->sent());
+
+        // Switched to letters: the letter, and the channel is left alone.
+        $form->update(['options' => [...$form->options, 'notify_via' => 'email']]);
+        $dry = $this->agent('notify', ['submission' => $submission->id, 'dry_run' => true], $admin);
+        $this->assertSame(['office@site.test'], $dry['recipients']);
+        $this->assertSame([], $dry['would_retry']);
+
+        $this->actingAs($admin, 'cms')->postJson($this->api("submissions/{$submission->id}/notify"))->assertOk();
+        $this->assertSame(['office@site.test'], array_map(static fn (Email $one): string => $one->getTo()[0]->getAddress(), $this->sent()));
+        Http::assertSentCount(2);
     }
 
     private function telegram(): Channel

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Relations\RelationTargets;
@@ -24,6 +25,7 @@ use WebxUi\Inbox\Audit\NoRecipients;
 use WebxUi\Inbox\Audit\NotificationTrouble;
 use WebxUi\Inbox\Audit\SpamWithoutCaptcha;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
+use WebxUi\Inbox\Doctor\StrandedForms;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Notifications\SendToChannels;
@@ -58,6 +60,12 @@ class InboxServiceProvider extends ServiceProvider
                 $events->register(SubmissionEvent::definition());
             });
         }
+
+        // A form set to channels on a site without them is said in webx:doctor, which is the
+        // inbox's own check and runs whether or not the notifications module is there.
+        $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
+            $checks->register(StrandedForms::class);
+        });
 
         // Looked up by the rate limiter and then by the controller, within one request.
         $this->app->scoped(Forms::class);

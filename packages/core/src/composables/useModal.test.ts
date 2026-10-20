@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { createApp, defineComponent, h, inject, nextTick } from 'vue'
+import { createApp, defineComponent, h, inject, nextTick, ref } from 'vue'
+import { ComboboxContent, ComboboxItem, ComboboxPortal, ComboboxRoot } from 'reka-ui'
 import { confirm } from './confirm'
 import { connectModals, createModal, openModal, useModal } from './useModal'
 
@@ -153,6 +154,44 @@ describe('openModal', () => {
     })
 
     await expect(openModal(Broken, { duration: 0 })).rejects.toThrow('no')
+    expect(hosts()).toBe(0)
+  })
+
+  /*
+   * What a select did in a dialog: Reka refuses an item worth `''` while its list mounts, in a
+   * portal. Taking the tree away right there met the half-mounted list and threw again from the
+   * hook, so the dialog stayed on screen, dead.
+   */
+  it('takes itself away when a part mounted later throws in its setup', async () => {
+    const Parent = defineComponent({
+      setup() {
+        const open = ref(false)
+        return () =>
+          h('div', { class: 'parent' }, [
+            h('button', { class: 'boom', onClick: () => (open.value = true) }),
+            h(
+              ComboboxRoot,
+              { open: open.value },
+              {
+                default: () =>
+                  h(ComboboxPortal, null, {
+                    default: () =>
+                      h(ComboboxContent, null, {
+                        default: () => [h(ComboboxItem, { value: '' }, () => 'Any')],
+                      }),
+                  }),
+              },
+            ),
+          ])
+      },
+    })
+
+    const answer = openModal(Parent, { duration: 0 })
+    expect(document.querySelector('.parent')).not.toBeNull()
+
+    click('.boom')
+
+    await expect(answer).rejects.toThrow('empty string')
     expect(hosts()).toBe(0)
   })
 })
