@@ -37,6 +37,10 @@ The model holds the option's `value`, and `null` when nothing is picked. With `m
 array, empty when nothing is picked — never `null`, so the shape a backend receives does not change
 with the selection.
 
+An option may be worth `''` — the "All" of a filter, the "Any event" of a dialog. The field then
+shows its label rather than the placeholder, and picking it hands back `''`. A list without such an
+option treats `''` as nothing picked.
+
 ## Searching
 
 `filterable` turns the field into a search box that filters the options as you type.

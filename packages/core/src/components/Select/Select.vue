@@ -54,14 +54,35 @@ const open = ref(false)
  */
 const searchText = ref('')
 
+/**
+ * What an option worth `''` is called inside the combobox. Reka refuses an item with an empty
+ * value — it keeps `''` for "nothing picked" — and throws while drawing the list, so a filter's
+ * "All" or a dialog's "Any event" opened an empty list, and in a modal the error took the whole
+ * dialog down with it. The caller keeps its `''`; only Reka sees the stand-in.
+ */
+const EMPTY = '\u0000wx-select-empty'
+
+const toReka = (value: SelectValue) => (value === '' ? EMPTY : value)
+const fromReka = (value: unknown) => (value === EMPTY ? '' : (value as SelectValue))
+
 /** Reka wants an array for multiple and a bare value otherwise. */
 const selection = computed({
-  get: () => (props.multiple ? ((model.value as SelectValue[]) ?? []) : (model.value ?? null)),
+  get: () => {
+    if (props.multiple) return ((model.value as SelectValue[]) ?? []).map(toReka)
+    const value = model.value as SelectValue | null
+    return value === null || value === undefined ? null : toReka(value)
+  },
   set: (value) => {
-    model.value = value as SelectModelValue
-    emit('change', value as SelectModelValue)
+    const next = (
+      Array.isArray(value) ? value.map(fromReka) : value === null ? null : fromReka(value)
+    ) as SelectModelValue
+    model.value = next
+    emit('change', next)
   },
 })
+
+/** Whether a list offers `''` as an answer of its own, rather than as the empty field. */
+const offersEmpty = computed(() => props.options.some((option) => option.value === ''))
 
 const labelOf = (value: SelectValue) =>
   props.options.find((option) => option.value === value)?.label ?? String(value)
@@ -80,7 +101,9 @@ const singleLabel = computed(() => {
 const hasSelection = computed(() =>
   props.multiple
     ? selectedOptions.value.length > 0
-    : model.value !== null && model.value !== undefined && model.value !== '',
+    : model.value !== null &&
+      model.value !== undefined &&
+      (model.value !== '' || offersEmpty.value),
 )
 
 const showClear = computed(() => props.clearable && !field.disabled.value && hasSelection.value)
@@ -144,7 +167,7 @@ function openList() {
  * back to the raw value, so choosing "Maria Kovalenko" leaves "12" in the box.
  */
 function displayValue(value: unknown): string {
-  return value === null || value === undefined ? '' : labelOf(value as SelectValue)
+  return value === null || value === undefined ? '' : labelOf(fromReka(value))
 }
 
 /**
@@ -263,7 +286,7 @@ function removeTag(value: SelectValue) {
               v-for="option in options"
               :key="String(option.value)"
               class="wx-select__option"
-              :value="option.value"
+              :value="toReka(option.value)"
               :disabled="option.disabled"
             >
               <span class="wx-select__option-label">{{ option.label }}</span>

@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
+import { flushPromises } from '@vue/test-utils'
+import WxDialog from '../Dialog/Dialog.vue'
+import { openModal, useModal } from '../../composables/useModal'
 import WxSelect from './Select.vue'
 import WxFormItem from '../FormItem/FormItem.vue'
 
@@ -228,5 +231,107 @@ describe('WxSelect', () => {
     expect(select.classes()).toContain('wx-select--error')
     const labelFor = wrapper.get('label').attributes('for')
     expect(wrapper.find(`#${labelFor}`).exists()).toBe(true)
+  })
+})
+
+describe('WxSelect with an option worth an empty string', () => {
+  const withAll = [{ label: 'Any event', value: '' }, ...options]
+
+  it('shows that option as the value rather than an empty field', () => {
+    const wrapper = mountSelect({ options: withAll, modelValue: '' })
+
+    expect(wrapper.get('.wx-select__single').text()).toBe('Any event')
+  })
+
+  it('opens the list with every option, the empty one checked', async () => {
+    const wrapper = mountSelect({ options: withAll, modelValue: '' })
+
+    await wrapper.get('.wx-select__anchor').trigger('click')
+    await nextTick()
+
+    expect(optionTexts()).toEqual(['Any event', 'Draft', 'Published', 'Archived'])
+    expect(document.querySelector('.wx-select__option')?.getAttribute('data-state')).toBe('checked')
+  })
+
+  it("hands back '' when it is picked, and the value of any other", async () => {
+    const wrapper = mountSelect({ options: withAll, modelValue: 'draft' })
+
+    await wrapper.get('.wx-select__anchor').trigger('click')
+    await nextTick()
+    document.querySelector<HTMLElement>('.wx-select__option')?.click()
+    await nextTick()
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([''])
+    expect(wrapper.emitted('change')?.at(-1)).toEqual([''])
+  })
+})
+
+describe('WxSelect in a modal opened from code', () => {
+  const Picker = defineComponent({
+    setup() {
+      const { open, dismiss } = useModal<void>()
+      const event = ref('')
+
+      return () =>
+        h(
+          WxDialog,
+          { open: open.value, 'onUpdate:open': () => dismiss(), title: 'New channel' },
+          {
+            default: () => [
+              h(WxSelect, {
+                modelValue: event.value,
+                'onUpdate:modelValue': (value: unknown) => (event.value = String(value)),
+                options: [
+                  { label: 'Any event', value: '' },
+                  { label: 'A submission of a form', value: 'inbox.submission' },
+                ],
+              }),
+              h('span', { class: 'picked' }, event.value),
+            ],
+            footer: () => h('button', { class: 'cancel', onClick: () => dismiss() }, 'Cancel'),
+          },
+        )
+    },
+  })
+
+  it('shows the options, takes a pick, and leaves the dialog working', async () => {
+    const answer = openModal(Picker, { duration: 0 })
+    await flushPromises()
+
+    document.querySelector<HTMLElement>('.wx-dialog .wx-select__anchor')?.click()
+    await flushPromises()
+
+    expect(optionTexts()).toEqual(['Any event', 'A submission of a form'])
+
+    document.querySelectorAll<HTMLElement>('.wx-select__option')[1]?.click()
+    await flushPromises()
+
+    expect(document.querySelector('.picked')?.textContent).toBe('inbox.submission')
+    expect(document.querySelector('.wx-dialog .wx-select__single')?.textContent).toBe(
+      'A submission of a form',
+    )
+
+    document.querySelector<HTMLElement>('.wx-dialog .cancel')?.click()
+    await expect(answer).resolves.toBeUndefined()
+  })
+
+  it('closes the list on Escape and keeps the dialog open', async () => {
+    const answer = openModal(Picker, { duration: 0 })
+    await flushPromises()
+
+    document.querySelector<HTMLElement>('.wx-dialog .wx-select__anchor')?.click()
+    await flushPromises()
+    expect(optionTexts()).toHaveLength(2)
+
+    document.activeElement?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    )
+    await flushPromises()
+
+    expect(optionTexts()).toHaveLength(0)
+    expect(document.querySelector('.wx-dialog')).not.toBeNull()
+
+    answer.close()
+    await answer
   })
 })

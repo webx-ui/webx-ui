@@ -173,13 +173,19 @@ export function openModal<T = unknown>(
     setup() {
       provide(modalKey, handle as ModalHandle)
 
-      /* A modal that throws would otherwise leave the caller awaiting it for ever. */
+      /*
+       * A modal that throws would otherwise leave the caller awaiting it for ever. The node goes once
+       * the render is over: the error arrives mid-render, and taking the tree away right there threw a
+       * second error out of this very hook — the panel stayed on screen, dead to every click, and
+       * the first error was never seen. It is still printed, as Vue would have done.
+       */
       onErrorCaptured((error) => {
         if (!done) {
           done = true
           fail(error)
         }
-        unmount()
+        console.error(error)
+        queueMicrotask(unmount)
         return false
       })
 
