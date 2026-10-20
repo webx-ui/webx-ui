@@ -40,7 +40,8 @@ kept away from, the languages, and «Dev too» for a code printed outside produc
 
 The list also says:
 
-- outside production — that only the codes marked «On dev and stage too» are printed;
+- outside production — that only the codes marked «On dev and stage too» are printed, and on each
+  code switched on without that mark, «Not printed on this copy» (the form has it beside «Enabled»);
 - beside a declared place no page has printed yet — that the theme may have lost it;
 - for a place taken out of the config that still holds codes — that they are printed nowhere.
   Nothing is dropped into such a place; its codes are moved or switched off from their form.
@@ -48,7 +49,8 @@ The list also says:
 ## The form
 
 The `snippets.form` screen, described in JSON on the server: the name, the place (the places of the
-config), the code in a highlighting HTML editor, the consent category, the paths and languages, «On
+config), the code in an HTML editor with highlighting and suggestions — tags, attributes, the
+JavaScript of a `<script>` and the CSS of a `<style>` — the consent category, the paths and languages, «On
 dev and stage too», «Enabled», and the journal with the whole code before and after. Save with the
 button or `Ctrl+S`; a save of an enabled code is on the site at once.
 

@@ -97,7 +97,7 @@ prints it.
 - Open a page and view the source: the code is right after the viewport (`head`), right after
   `<body>` (`body_start`) or at the end (`body_end`); one waiting for consent is inside
   `<template data-webx-consent>` until the banner is answered. Outside production, only snippets
-  with `on_stage` are there.
+  with `on_stage` are there; `silent_here` in a row (panel API, `snippets_list`) marks the rest.
 - With MCP: read `snippets://places` and `snippets://catalog` first; every write takes
   `dry_run: true` and answers `warnings` about `<html>`, `<head>` or `<body>` in the code.
 

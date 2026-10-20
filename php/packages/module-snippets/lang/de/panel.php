@@ -23,6 +23,8 @@ return [
     'except-paths' => 'Außer Pfaden: :count',
     'all-locales' => 'Alle Sprachen',
     'on-stage' => 'Auch Dev',
+    'not-here' => 'Auf dieser Kopie nicht ausgegeben',
+    'not-here-help' => 'Die Website läuft als „:environment“ und gibt nur Codes mit „Auch auf Dev und Stage“ aus. In Produktion wird dieser ausgegeben.',
     'off' => 'Aus',
     'switch-on' => '„:title“ einschalten',
     'switched-on' => 'Der Code ist auf der Website.',

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Snippets\Panel;
 
+use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Snippets\Models\Snippet;
@@ -22,6 +24,8 @@ final class SnippetForm
         private readonly SnippetValues $values,
         private readonly Places $places,
         private readonly ConnectionInterface $db,
+        private readonly Application $app,
+        private readonly Config $config,
     ) {}
 
     /**
@@ -75,11 +79,20 @@ final class SnippetForm
             'locales' => $snippet->locales ?? [],
             'on_stage' => $snippet->on_stage,
             'enabled' => $snippet->enabled,
+            // Switched on and still not printed: this copy prints only the codes marked "on dev too" (§5.5).
+            'silent_here' => $snippet->enabled && ! $snippet->on_stage && ! $this->printsEverything(),
             'position' => $snippet->position,
             'bytes' => strlen($snippet->code),
             'updated_at' => $snippet->updated_at?->toAtomString(),
             'deleted_at' => $snippet->deleted_at?->toAtomString(),
         ];
+    }
+
+    private function printsEverything(): bool
+    {
+        $environments = array_values(array_filter((array) $this->config->get('webx-snippets.environments', ['production']), is_string(...)));
+
+        return $environments !== [] && $this->app->environment($environments);
     }
 
     /**

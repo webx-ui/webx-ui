@@ -11,8 +11,9 @@ import {
   type AdminContext,
 } from '@webx-ui/module-admin'
 import { localesKey } from '@webx-ui/core'
-import { coreTypes, type ScreenNode } from '@webx-ui/schema'
+import { coreTypes, type ScreenModel, type ScreenNode } from '@webx-ui/schema'
 import SnippetsPage from './SnippetsPage.vue'
+import { snippets } from './module'
 import type { SnippetDetail, SnippetPlace, SnippetRow, SnippetsList } from './types'
 
 function row(id: number, name: string, place: string, over: Partial<SnippetRow> = {}): SnippetRow {
@@ -73,10 +74,10 @@ function list(everything = true): SnippetsList {
   }
 }
 
-function detail(id: number, warnings: string[] = []): SnippetDetail {
+function detail(id: number, warnings: string[] = [], values: ScreenModel = {}): SnippetDetail {
   return {
     snippet: row(id, 'Promo', 'promo', { place_declared: false, enabled: false }),
-    values: { name: 'Promo', place: 'promo', code: '<i>x</i>', enabled: false },
+    values: { name: 'Promo', place: 'promo', code: '<i>x</i>', enabled: false, ...values },
     warnings,
   }
 }
@@ -84,16 +85,21 @@ function detail(id: number, warnings: string[] = []): SnippetDetail {
 /* The form without the code editor, which jsdom cannot draw: the editor is CodeMirror. */
 const screen: ScreenNode[] = [
   { id: 'name', type: 'wx-input', name: 'name' },
-  { id: 'enabled', type: 'wx-switch', name: 'enabled' },
+  { id: 'enabled', type: 'wx-snippets-enabled', name: 'enabled' },
+  { id: 'on_stage', type: 'wx-switch', name: 'on_stage' },
 ]
 
 let router: Router
 
-async function panel(query = '', options: { everything?: boolean; warnings?: string[] } = {}) {
+async function panel(
+  query = '',
+  options: { everything?: boolean; warnings?: string[]; values?: ScreenModel } = {},
+) {
   const get = vi.fn().mockImplementation((url: string) => {
     const one = /\/snippets\/(\d+)$/.exec(url)
 
-    if (one) return Promise.resolve({ data: detail(Number(one[1]), options.warnings) })
+    if (one)
+      return Promise.resolve({ data: detail(Number(one[1]), options.warnings, options.values) })
 
     return Promise.resolve(list(options.everything ?? true))
   })
@@ -115,7 +121,7 @@ async function panel(query = '', options: { everything?: boolean; warnings?: str
     i18n,
     state: { manifest: null, user: null, status: 'ready', error: null },
     can: () => true,
-    types: { ...coreTypes, ...adminTypes },
+    types: { ...coreTypes, ...adminTypes, ...snippets().types },
     loadScreen: () => Promise.resolve(screen),
     screenPatch: () => [],
   } as unknown as AdminContext
@@ -149,6 +155,11 @@ async function panel(query = '', options: { everything?: boolean; warnings?: str
   await flushPromises()
 
   return { wrapper, get, post, put }
+}
+
+/** The field of "Enabled" arrives with the form, a moment after it. */
+async function drawn(wrapper: { find: (selector: string) => { exists: () => boolean } }) {
+  await vi.waitFor(() => expect(wrapper.find('.wx-snippets-enabled').exists()).toBe(true))
 }
 
 afterEach(() => {
@@ -206,6 +217,52 @@ describe('WxSnippetsPage', () => {
 
     const { wrapper } = await panel('', { everything: false })
     expect(wrapper.text()).toContain('The site runs as “staging”')
+  })
+
+  it('marks a code switched on but not printed on a copy that is not production', async () => {
+    const live = await panel()
+    expect(live.wrapper.find('.wx-snippets-row__silent').exists()).toBe(false)
+    live.wrapper.unmount()
+
+    const { wrapper } = await panel('', { everything: false })
+    const marked = wrapper
+      .findAll('.wx-snippets-row')
+      .filter((one) => one.find('.wx-snippets-row__silent').exists())
+      .map((one) => one.find('.wx-snippets-row__name').text())
+
+    // Off, or marked "on dev too", is not what the mark is about.
+    expect(marked).toEqual(['Tag manager'])
+    const mark = wrapper.find('.wx-snippets-row__silent')
+    expect(mark.text()).toBe('Not printed on this copy')
+    expect(mark.attributes('title')).toContain('“staging”')
+  })
+
+  it('marks the form beside "Enabled", following the switches as they are flipped', async () => {
+    const values = { enabled: true, on_stage: false }
+    const { wrapper } = await panel('?snippet=4', { everything: false, values })
+    await drawn(wrapper)
+    const pane = () => wrapper.find('.wx-snippets-pane')
+    const mark = () => pane().find('.wx-snippets-enabled .wx-snippets-enabled__mark')
+
+    expect(mark().exists()).toBe(true)
+    expect(mark().text()).toBe('Not printed on this copy')
+
+    const [enabled, onStage] = pane().findAll('[role="switch"]')
+    await onStage!.trigger('click')
+    expect(mark().exists()).toBe(false)
+
+    await onStage!.trigger('click')
+    expect(mark().exists()).toBe(true)
+    await enabled!.trigger('click')
+    expect(mark().exists()).toBe(false)
+  })
+
+  it('puts no mark on the form in production', async () => {
+    const { wrapper } = await panel('?snippet=4', { values: { enabled: true, on_stage: false } })
+    await drawn(wrapper)
+
+    expect(wrapper.find('.wx-snippets-pane .wx-snippets-enabled').exists()).toBe(true)
+    expect(wrapper.find('.wx-snippets-enabled__mark').exists()).toBe(false)
   })
 
   it('writes the whole place when a code is moved inside it', async () => {

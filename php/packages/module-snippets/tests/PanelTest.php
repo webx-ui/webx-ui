@@ -73,6 +73,24 @@ final class PanelTest extends TestCase
     }
 
     #[Test]
+    public function a_code_switched_on_but_not_printed_on_this_copy_is_marked_and_production_marks_nothing(): void
+    {
+        $silent = $this->snippet('head', '<i>counter</i>', ['on_stage' => false]);
+        $this->snippet('head', '<i>chat</i>', ['on_stage' => true]);
+        $this->snippet('head', '<i>off</i>', ['on_stage' => false, 'enabled' => false]);
+
+        // The tests run as "testing": not an environment that prints everything.
+        $places = $this->actingAs($this->admin(), 'cms')->getJson(self::API)->assertOk()->assertJsonPath('everything_printed', false)->json('data');
+        $this->assertSame([true, false, false], array_column($places[0]['snippets'], 'silent_here'));
+        $this->actingAs($this->admin(), 'cms')->getJson(self::API.'/'.$silent->id)->assertOk()->assertJsonPath('data.snippet.silent_here', true);
+
+        config()->set('webx-snippets.environments', ['production', 'testing']);
+
+        $places = $this->actingAs($this->admin(), 'cms')->getJson(self::API)->assertOk()->assertJsonPath('everything_printed', true)->json('data');
+        $this->assertSame([false, false, false], array_column($places[0]['snippets'], 'silent_here'));
+    }
+
+    #[Test]
     public function a_save_is_on_the_site_at_once_and_a_new_code_is_off_until_switched_on(): void
     {
         $admin = $this->admin();

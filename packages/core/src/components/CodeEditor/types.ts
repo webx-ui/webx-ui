@@ -133,6 +133,13 @@ export interface CodeEditorProps {
    */
   completions?: CodeEditorCompletions
   /**
+   * Suggestions the language knows by itself while typing: HTML tags, attributes and their values
+   * with the tag closed on `>`, keywords, snippets, the code's own names and globals after a dot
+   * in JavaScript, properties and values in CSS — nested in HTML too. Ignored when `completions`
+   * is given: those replace it.
+   */
+  languageCompletions?: boolean
+  /**
    * Edits the document in every language the site publishes in, with a selector on the field;
    * the model is then `{ en: '…', uk: '…' }`.
    */

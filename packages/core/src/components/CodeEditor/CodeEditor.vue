@@ -34,6 +34,7 @@ import { useFormField } from '../../composables/useFormField'
 import { useLocalized } from '../../composables/useLocalized'
 import LocalePicker from '../Locales/LocalePicker.vue'
 import { LANGUAGES } from './languages'
+import { languageCompletions } from './languageCompletions'
 import { highlightStyle } from './highlight'
 import type {
   CodeEditorCompletion,
@@ -62,6 +63,7 @@ const props = withDefaults(defineProps<CodeEditorProps>(), {
   tabSize: 2,
   lint: true,
   completions: undefined,
+  languageCompletions: false,
   localized: false,
   singleLine: false,
   extensions: () => [],
@@ -202,7 +204,7 @@ function toResult(result: CodeEditorCompletionResult, pos: number): CompletionRe
 function completionExtension(): Extension {
   const given = props.completions
 
-  if (given === undefined) return []
+  if (given === undefined) return props.languageCompletions ? languageCompletions() : []
 
   const source = (context: CompletionContext): CompletionResult | null => {
     if (typeof given === 'function') {
@@ -420,9 +422,8 @@ watch(
 watch([() => props.ariaLabel, field.id, field.describedBy, field.status, field.disabled], () =>
   reconfigure(compartments.attributes, attributesExtension()),
 )
-watch(
-  () => props.completions,
-  () => reconfigure(compartments.completion, completionExtension()),
+watch([() => props.completions, () => props.languageCompletions], () =>
+  reconfigure(compartments.completion, completionExtension()),
 )
 watch(
   () => props.singleLine,

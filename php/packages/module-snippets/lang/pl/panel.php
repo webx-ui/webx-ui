@@ -23,6 +23,8 @@ return [
     'except-paths' => 'Poza ścieżkami: :count',
     'all-locales' => 'Wszystkie języki',
     'on-stage' => 'Także dev',
+    'not-here' => 'Nie wyświetla się na tej kopii',
+    'not-here-help' => 'Strona działa jako „:environment” i wyświetla tylko kody oznaczone „Także na dev i stage”. Na produkcji ten się wyświetla.',
     'off' => 'Wyłączony',
     'switch-on' => 'Włącz „:title”',
     'switched-on' => 'Kod jest na stronie.',

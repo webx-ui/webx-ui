@@ -63,7 +63,8 @@ final class SnippetsTools
             Tool::read(
                 'list',
                 'The snippets by place, in the order each place prints them: name, place, whether the place is still '
-                .'declared, consent category, paths, languages, on_stage, enabled and the size of the code — not the '
+                .'declared, consent category, paths, languages, on_stage, enabled, silent_here (switched on, yet not '
+                .'printed on this copy: it runs outside everything_printed and is not on_stage) and the size of the code — not the '
                 .'code itself (snippets_get has it). Places nobody declares any more come last, their snippets '
                 .'printed nowhere. Read this (or snippets://catalog) first: a second counter of the same service '
                 .'counts every visit twice.',

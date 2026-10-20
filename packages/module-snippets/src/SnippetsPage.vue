@@ -30,6 +30,7 @@ import {
 import { createSnippetsApi } from './api'
 import { useSnippetsMessages } from './i18n'
 import SnippetPane from './SnippetPane.vue'
+import { silentHere } from './copy'
 import { coverageOf, DRAG_GROUP, localesOf } from './summary'
 import type { SnippetPlace, SnippetRow } from './types'
 
@@ -456,6 +457,15 @@ function placeLabel(place: SnippetPlace): string {
                       <wx-badge v-if="item.on_stage" size="sm" round type="warning">
                         {{ t('panel.on-stage') }}
                       </wx-badge>
+                      <wx-badge
+                        v-if="silentHere(item, everythingPrinted)"
+                        class="wx-snippets-row__silent"
+                        size="sm"
+                        round
+                        :title="t('panel.not-here-help', { environment })"
+                      >
+                        {{ t('panel.not-here') }}
+                      </wx-badge>
                       <span class="wx-snippets-row__muted">{{ coverageOf(item, t) }}</span>
                       <span class="wx-snippets-row__locales">{{ localesOf(item, t) }}</span>
                     </span>
@@ -493,6 +503,8 @@ function placeLabel(place: SnippetPlace): string {
             :place="newPlace"
             :places="places"
             :inline="inline"
+            :environment="environment"
+            :everything-printed="everythingPrinted"
             @back="back"
             @saved="load"
             @created="created"

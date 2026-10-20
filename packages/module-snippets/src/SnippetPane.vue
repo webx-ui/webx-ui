@@ -15,6 +15,7 @@ import {
 } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 import { createSnippetsApi } from './api'
+import { provideSnippetsCopy, silentHere } from './copy'
 import { useSnippetsMessages } from './i18n'
 import type { SnippetDetail, SnippetPlace, SnippetRow } from './types'
 
@@ -44,8 +45,18 @@ const props = withDefaults(
     places?: SnippetPlace[]
     /** False in the drawer a narrow screen opens this in. */
     inline?: boolean
+    /** `APP_ENV` of the site, for the mark of a code it does not print. */
+    environment?: string
+    /** False outside the environments that print everything: only the codes marked "on dev too". */
+    everythingPrinted?: boolean
   }>(),
-  { place: 'head', places: () => [], inline: true },
+  {
+    place: 'head',
+    places: () => [],
+    inline: true,
+    environment: 'production',
+    everythingPrinted: true,
+  },
 )
 
 const emit = defineEmits<{
@@ -107,6 +118,14 @@ const orphaned = computed(() => {
 })
 
 provideHistorySubject({ id: computed(() => snippet.value?.id ?? null) })
+
+/* Read from the values on screen, not the saved row: the mark follows the switches as they are flipped. */
+provideSnippetsCopy({
+  environment: computed(() => props.environment),
+  silent: computed(() =>
+    silentHere({ enabled: true, on_stage: values.value.on_stage }, props.everythingPrinted),
+  ),
+})
 
 function take(detail: SnippetDetail): void {
   snippet.value = detail.snippet
