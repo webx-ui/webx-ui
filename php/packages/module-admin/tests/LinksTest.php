@@ -237,6 +237,25 @@ final class LinksTest extends TestCase
         $this->assertSame(['/account'], array_column($this->app->make(SiteRoutes::class)->all(), 'path'));
     }
 
+    /**
+     * A package marks its machinery where it registers it, so the route stays out wherever the
+     * package moves it: no mask would have caught a preview stage or a form's token.
+     */
+    #[Test]
+    public function a_route_marked_as_machinery_is_not_offered(): void
+    {
+        Route::get('account', static fn (): string => 'ok')->name('account');
+
+        Route::group([SiteRoutes::SERVICE => true], static function (): void {
+            Route::middleware('web')->prefix('forms')->group(static function (): void {
+                Route::get('csrf', static fn (): string => 'ok')->name('forms.csrf');
+            });
+            Route::get('_preview/block-stage', static fn (): string => 'ok')->name('blocks.stage');
+        });
+
+        $this->assertSame(['/account'], array_column($this->app->make(SiteRoutes::class)->all(), 'path'));
+    }
+
     /** A site names its own machinery without waiting for us to name it. */
     #[Test]
     public function a_site_may_add_masks_of_its_own(): void

@@ -134,9 +134,10 @@ return [
     |
     | Where a link field offers a path of this site, it offers the named GET
     | routes that take no parameters. Most of those are nobody's page: an
-    | authorisation dance, a discovery document, a script. These masks are what
-    | stays out of the list — add your own rather than replacing them, since the
-    | defaults are the machinery every installation has.
+    | authorisation dance, a discovery document, a script. Our packages mark
+    | their own (the `webx_service` route attribute); these masks are for the
+    | rest — add your own rather than replacing them, since the defaults are the
+    | machinery every installation has.
     |
     */
 
