@@ -6018,10 +6018,17 @@ function detail(record: SubmissionRecord, query?: URLSearchParams) {
         record.notified_at === null
           ? []
           : [
-              { address: 'manager@example.com', state: 'delivered' as const },
+              {
+                address: 'manager@example.com',
+                state: 'delivered' as const,
+                error: null,
+                at: record.notified_at,
+              },
               {
                 address: 'sales@example.com',
                 state: record.notify_error !== null ? ('failed' as const) : ('delivered' as const),
+                error: record.notify_error,
+                at: record.notified_at,
               },
             ],
     },

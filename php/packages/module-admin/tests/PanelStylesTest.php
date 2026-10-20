@@ -59,13 +59,16 @@ final class PanelStylesTest extends TestCase
     {
         $this->app['config']->set('webx-admin.vite', ['resources/js/admin.ts']);
 
-        $this->assertSame([], $this->app->make(PanelStyles::class)->urls());
+        $beforeTheBuild = $this->app->make(PanelStyles::class)->urls();
 
         file_put_contents($this->public.'/build/manifest.json', (string) json_encode([
             'resources/js/admin.ts' => ['file' => 'assets/admin-1.js', 'css' => ['assets/admin-1.css']],
         ]));
         file_put_contents($this->public.'/hot', 'http://localhost:5173');
 
-        $this->assertSame([], $this->app->make(PanelStyles::class)->urls());
+        $this->assertSame(['before' => [], 'dev server' => []], [
+            'before' => $beforeTheBuild,
+            'dev server' => $this->app->make(PanelStyles::class)->urls(),
+        ]);
     }
 }

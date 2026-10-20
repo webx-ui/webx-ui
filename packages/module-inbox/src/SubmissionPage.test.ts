@@ -279,8 +279,18 @@ describe('WxInboxSubmissionPage', () => {
         queued_at: null,
         delivered_at: '2026-09-18T08:10:00Z',
         recipients: [
-          { address: 'manager@example.test', state: 'delivered', error: null, at: null },
-          { address: 'sales@example.test', state: 'delivered', error: null, at: null },
+          {
+            address: 'manager@example.test',
+            state: 'delivered',
+            error: null,
+            at: '2026-09-18T08:10:00Z',
+          },
+          {
+            address: 'sales@example.test',
+            state: 'delivered',
+            error: null,
+            at: '2026-09-18T08:10:00Z',
+          },
         ],
       },
     })
