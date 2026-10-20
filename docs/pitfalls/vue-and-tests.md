@@ -149,6 +149,14 @@ RouteLocationRaw | boolean` компилировался в `{ type: Boolean }`:
   generic по модели (строка или карта языков), а `InstanceType` generic-компонент не берёт. Ref
   типизировать `ref<CodeEditorExposed | null>(null)`; `wrapper.findComponent(WxCodeEditor)` в
   тестах — `findComponent({ name: 'WxCodeEditor' })`.
+- **`findAllComponents({ name: 'WxCodeEditor' })` находит каждый редактор дважды, а сразу после
+  `mount` — ни одного `.cm-editor`.** Ядро отдаёт редактор ленивым: обёртка `defineAsyncComponent`
+  носит то же имя, что сам компонент, а CodeMirror грузится после первого рендера. В тесте —
+  дождаться `.cm-editor` (`vi.waitFor`) и брать компоненты, у которых есть `vm.view`.
+- **`align-items` у `.cm-scroller` не меняется ничем.** Базовая тема CodeMirror ставит ему
+  `flex-start !important`, и правило с любой специфичностью проигрывает: строка в однострочном
+  редакторе остаётся у верхнего края. Центрировать сам `.cm-content` — `align-self: center` и
+  `min-height: 0` (иначе он растянут на `100%`). Так сделан `single-line` у `WxCodeEditor`.
 - **`setEditable()` у Tiptap — это событие `update`, а не только переключатель.** Форма, которая
   на время публикации запирается и потом отпирается, заставляет каждый `WxRichText` «меняться»:
   пустое переводимое поле сервер отдаёт `[]` (пустой PHP-массив), редактор пишет в ответ

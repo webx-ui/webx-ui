@@ -53,7 +53,8 @@ delimiters, a tag that never ends — underlined in red. Neither CodeMirror nor 
 has Mustache for CodeMirror 6, so the tags are found by one scan of the document; the same scan is
 exported as `scanMustache()` for whatever else needs to know where a tag is.
 
-`mustacheCompletions(variables)` is the matching source of suggestions — type `{{`:
+`mustacheCompletions(variables)` is the matching source of suggestions — type `{{`, in the one-line
+subject above the template too:
 :::
 
 <CodeEditorMustacheDemo />
@@ -117,6 +118,17 @@ caret lands, as in a CodeMirror snippet), `detail`, `info`, `type` and `boost`.
 `localized` edits the document once per language the site publishes in, with the same chip in the
 corner as `WxInput` and `WxTextarea`; the model is then `{ en: '…', uk: '…' }`, and switching
 the language swaps the document without counting as an edit of either.
+
+## One line
+
+`single-line` makes the editor a field of one line, as tall as `WxInput` of its size — for a
+template that is one line, the subject of a letter, and still wants its highlighting and
+`completions`. Enter takes the suggestion in focus and otherwise does nothing, a line break typed
+or pasted in becomes a space, and `Tab` moves on to the next field instead of indenting.
+
+```vue
+<wx-code-editor v-model="subject" language="mustache" single-line :completions="completions" />
+```
 
 ## JSON is checked as you type
 
@@ -196,6 +208,7 @@ prop.
 | `lint`         | `boolean`                                        | `true`      | Run the language's linter, where there is one                     |
 | `completions`  | `CodeEditorCompletions`                          | —           | Suggestions: a list of words, or a function of the place          |
 | `localized`    | `boolean`                                        | `false`     | One document per language of the site                             |
+| `singleLine`   | `boolean`                                        | `false`     | One line, as tall as an input; Enter breaks no line               |
 | `extensions`   | `Extension[]`                                    | `[]`        | Extra CodeMirror extensions                                       |
 | `minHeight`    | `string`                                         | `'160px'`   | Height before the editor starts growing                           |
 | `maxHeight`    | `string`                                         | —           | Height at which it scrolls instead                                |

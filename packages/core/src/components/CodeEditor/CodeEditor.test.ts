@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
-import type { EditorView } from '@codemirror/view'
+import { runScopeHandlers, type EditorView } from '@codemirror/view'
 import { currentCompletions, startCompletion } from '@codemirror/autocomplete'
 import { provideLocales } from '../../composables/useLocalized'
 import WxCodeEditor from './CodeEditor.vue'
@@ -223,6 +223,35 @@ describe('WxCodeEditor', () => {
 
     expect(docOf(wrapper)).toBe('{{#items}}{{/items}}')
     expect(view.state.selection.main.head).toBe(10)
+  })
+
+  it('keeps one line when single-line: Enter takes a suggestion and breaks no line', async () => {
+    const wrapper = await mountEditor({
+      modelValue: 'New: fo',
+      singleLine: true,
+      completions: [{ label: 'form' }],
+    })
+    const view = viewOf(wrapper)
+    const enter = () =>
+      runScopeHandlers(view, new KeyboardEvent('keydown', { key: 'Enter' }), 'editor')
+
+    expect(wrapper.find('.wx-code-editor').classes()).toContain('is-single-line')
+
+    // A line break pasted or typed in is a space.
+    view.dispatch({ changes: { from: 0, insert: 'One\ntwo ' } })
+    expect(docOf(wrapper)).toBe('One two New: fo')
+
+    view.dispatch({ selection: { anchor: view.state.doc.length } })
+    expect(enter()).toBe(true)
+    expect(docOf(wrapper)).toBe('One two New: fo')
+
+    startCompletion(view)
+    await vi.waitFor(() => expect(currentCompletions(view.state)).toHaveLength(1))
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    enter()
+    expect(docOf(wrapper)).toBe('One two New: form')
+    expect(view.state.doc.lines).toBe(1)
   })
 
   it('edits one language at a time when localized', async () => {

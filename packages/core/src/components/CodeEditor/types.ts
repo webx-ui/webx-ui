@@ -137,6 +137,12 @@ export interface CodeEditorProps {
    * the model is then `{ en: '…', uk: '…' }`.
    */
   localized?: boolean
+  /**
+   * One line, as tall as an input: Enter takes a suggestion and inserts no line break, a pasted
+   * line break becomes a space, Tab moves on to the next field. For a template of one line — the
+   * subject of a letter — that still wants highlighting and `completions`.
+   */
+  singleLine?: boolean
   /** Extra CodeMirror extensions, for anything this component does not wrap. */
   extensions?: Extension[]
 }
