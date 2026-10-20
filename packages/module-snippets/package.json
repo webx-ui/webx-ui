@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-snippets",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Codes of outside services for the WebX UI admin panel: a tag manager, a counter or a chat pasted into the head or the body of every page, by place, with coverage, languages and cookie consent.",
   "license": "MIT",
   "type": "module",

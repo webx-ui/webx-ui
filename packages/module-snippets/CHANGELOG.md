@@ -1,5 +1,27 @@
 # @webx-ui/module-snippets
 
+## 0.3.0
+
+### Minor Changes
+
+- 9dcb323: Codes: the editor suggests HTML tags and attributes, the JavaScript of a `<script>` and the CSS of a
+  `<style>` as you type. Outside production a code switched on without «On dev and stage too» is
+  marked «Not printed on this copy» — in its row of the list and beside «Enabled» in its form, where
+  the mark follows the switches before the save. The form's «Enabled» is the screen type
+  `wx-snippets-enabled`.
+
+### Patch Changes
+
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+  - @webx-ui/module-admin@0.32.0
+  - @webx-ui/core@0.44.0
+  - @webx-ui/schema@0.9.4
+
 ## 0.2.1
 
 ### Patch Changes

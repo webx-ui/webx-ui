@@ -1,5 +1,71 @@
 # @webx-ui/php
 
+## 0.81.0
+
+### Minor Changes
+
+- 9dcb323: A form of the inbox tells one way: `options.notify_via` — `email` (the letter to its addresses) or
+  `channels` (the channels of the notifications module), never both; the settings of the other way
+  are kept. A migration writes the way of every existing form: `channels` when it has channels
+  chosen, `email` otherwise. A form set to channels on a site without the notifications module
+  writes its letter instead, and `webx:doctor` warns about it. The audit and `notifies` read the way
+  the form is set to, and so does sending again (the panel's button, `inbox_notify`): the letter, or the
+  channels' failed rows. `inbox_form_get` and the form's API return `notify_via`.
+
+  `options.redirect` is a link of the panel (`Links\Link`, the menu's shape): a record of the site
+  opens in the language the submission came in, or in the main one when it has no translation; a
+  path gets the visitor's language prefix; nothing is the thank-you in place of the form. The same
+  migration turns a saved address into an «Address» link, so it keeps going where it went.
+
+  A new field without a name is named after its label (`Fields\FieldNames`) in the panel's API and
+  in `inbox_form_save`. Renaming a field takes the form's e-mail field with it, and the export keeps
+  older answers in the field's column (by id, not by the name they arrived under).
+
+  The channels' relation target answers a `mark` («Off») for a switched-off channel.
+
+- 9dcb323: Default templates of notification events. `EventDefinition::$sample` is the event's default
+  template by provider: one text, or a function of the language that answers null where the module
+  has no words; a new channel of the event starts with it in every language it has (the main one
+  always), `default_template: true` on a save puts it back, and the MCP tool
+  `notifications_default_template` shows it with what it renders to. `inbox.submission` brings an
+  HTML letter (the answers as a table, the files, the button to the panel, the page, a note that a
+  reply goes to the visitor — neutral, no colour or name of a site), a Telegram message and a text,
+  in all ten languages of the inbox (`SubmissionTemplates`).
+
+  A letter's template that starts with a tag is HTML: its tags and attributes are checked on save
+  (tables, paragraphs, lists, links and inline styles; no script, form or handler), values are
+  escaped into it with their line breaks kept, and the plain part is read out of it. A template that
+  starts with text — every channel saved before — is sent exactly as it was.
+
+- 9dcb323: module-snippets: a code's row — in the panel's API and in `snippets_list` / `snippets_get` — carries
+  `silent_here`: switched on, yet not printed on this copy of the site, which runs outside
+  `webx-snippets.environments` while the code is not `on_stage`. The `snippets.form` screen draws
+  «Enabled» as `wx-snippets-enabled` (the switch with that mark) and turns on the language
+  suggestions of the code editor (`languageCompletions`), with the words on all ten languages.
+
+### Patch Changes
+
+- 9dcb323: The author of a note and of a line of the journal (`WxNotes`, `wx-history` — a submission's notes,
+  a code's history) is drawn with their photograph rather than initials. `webx-ui/module-admin` sends
+  the key of the photograph beside the name (`author.avatar`, `admin.avatar`), read for the whole
+  feed in one query (`Authors::people()`, `HistoryPresenter::page()`); the panel resolves the keys
+  through its library in one batch (`useAvatars`). Initials stay for nobody with a photograph, a panel
+  without a library and an account deleted since, which keeps the name it signed with.
+- 9dcb323: `webx-ui/module-admin`: the "Address" suggestions of a link field offer only pages a visitor opens.
+  A package marks its machinery where it registers it — the route attribute `SiteRoutes::SERVICE`,
+  set on a group — and `webx-ui/module-blocks` (previews, block stage, bundles), `webx-ui/module-seo`
+  (robots.txt, sitemaps and their stylesheet), `webx-ui/module-inbox` (script, form intake) and
+  `webx-ui/widgets` (form token, showcase) do. `*.xsl` joins the masks of `webx-admin.links.exclude`,
+  which stay for routes nobody of ours registers.
+- 9dcb323: The pages the panel serves outside its Vue app — the consent screen of an agent's connection
+  (`/oauth/authorize`), the plain one of `webx-ui/mcp`, the gate of a closed site — share one frame,
+  `webx-admin::page`, and draw the panel's own card, alert, checkbox, buttons and link by their
+  classes. The rules come from the components of `@webx-ui/core` (generated into
+  `resources/css/components.css`), so the buttons are the panel's size, font and colour; the frame
+  also links the stylesheets the site built for the panel (`PanelStyles`), which brings the panel's
+  typeface. A refused consent screen — an unknown application, an unregistered address — is a page
+  of the panel for a browser instead of an OAuth error in JSON; a program still gets the JSON.
+
 ## 0.80.0
 
 ### Minor Changes
