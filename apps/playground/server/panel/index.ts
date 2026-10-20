@@ -2506,7 +2506,7 @@ on('POST', '/entities/([\\w-]+)/(\\d+)/notes', ({ params, body }) => {
   const note = {
     id: Date.now(),
     body: String(body.body ?? ''),
-    author: { id: 1, name: 'Анна Ковальчук', avatar: null },
+    author: { id: 1, name: 'Анна Ковальчук', avatar: 'reviews/anna-petrova.svg' },
     created_at: new Date().toISOString(),
     updated_at: null,
   }

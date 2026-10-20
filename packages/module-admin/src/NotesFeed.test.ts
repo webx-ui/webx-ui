@@ -17,7 +17,7 @@ function note(over: Partial<EntityNote> & { id: number }): EntityNote {
   }
 }
 
-function feed(notes: EntityNote[], can = true) {
+function feed(notes: EntityNote[], can = true, assetUrls: AdminContext['assetUrls'] = null) {
   const get = vi.fn().mockResolvedValue({ data: notes })
   const post = vi
     .fn()
@@ -37,6 +37,7 @@ function feed(notes: EntityNote[], can = true) {
     i18n,
     state: { manifest: null, user: null, status: 'ready', error: null },
     can: () => true,
+    assetUrls,
   } as unknown as AdminContext
 
   return {
@@ -59,6 +60,30 @@ function feed(notes: EntityNote[], can = true) {
  * whoever wrote it, and the server says which those are.
  */
 describe('WxNotes', () => {
+  it("draws each author's photograph, asked of the library once for the feed", async () => {
+    const assetUrls = vi.fn().mockResolvedValue({ 'avatars/ada.jpg': '/storage/avatars/ada.jpg' })
+    const { wrapper } = feed(
+      [
+        note({ id: 1, author: { id: 1, name: 'Ada', avatar: 'avatars/ada.jpg' } }),
+        note({ id: 2, author: { id: 1, name: 'Ada', avatar: 'avatars/ada.jpg' } }),
+        note({ id: 3, author: { id: 2, name: 'Grace', avatar: null } }),
+      ],
+      true,
+      assetUrls,
+    )
+
+    await flushPromises()
+
+    expect(assetUrls).toHaveBeenCalledTimes(1)
+    expect(assetUrls).toHaveBeenCalledWith(['avatars/ada.jpg'])
+    expect(wrapper.findAll('.wx-avatar img').map((img) => img.attributes('src'))).toEqual([
+      '/storage/avatars/ada.jpg',
+      '/storage/avatars/ada.jpg',
+    ])
+    // No photograph, or an author deleted since: initials, and no error.
+    expect(wrapper.findAll('.wx-avatar')).toHaveLength(3)
+  })
+
   it('reads the feed of one record under its alias', async () => {
     const { wrapper, get } = feed([note({ id: 1 })])
 

@@ -43,8 +43,8 @@ final class HistoryController
             max(1, (int) $request->query('page', '1')),
         );
 
-        // As `->paginate()` has it: the table and the feed on the other side read that shape.
-        return new JsonResponse($page->through(fn (HistoryEntry $entry): array => $this->presenter->row($entry))->toArray());
+        // As `->paginate()` has it, with the page's rows presented together: one query for the authors.
+        return new JsonResponse(array_replace($page->toArray(), ['data' => $this->presenter->page($page->items(), $request->user())]));
     }
 
     public function run(Request $request, int $id): JsonResponse
@@ -67,8 +67,8 @@ final class HistoryController
         );
 
         return new JsonResponse([
-            'run' => $this->presenter->row($run) + ['rows' => $run->rows()->count()],
-            'rows' => $rows->through(fn (HistoryEntry $entry): array => $this->presenter->row($entry))->toArray(),
+            'run' => $this->presenter->page([$run], $request->user())[0] + ['rows' => $run->rows()->count()],
+            'rows' => array_replace($rows->toArray(), ['data' => $this->presenter->page($rows->items(), $request->user())]),
         ]);
     }
 

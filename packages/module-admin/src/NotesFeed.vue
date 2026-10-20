@@ -13,6 +13,7 @@ import {
 import DateText from './DateText.vue'
 import RowMenu from './RowMenu.vue'
 import { useAdmin } from './admin'
+import { useAvatars } from './avatars'
 import { useErrorText } from './errors'
 import { useTranslate } from './i18n'
 import { createNotesApi, type EntityNote } from './notes'
@@ -56,6 +57,7 @@ const t = useTranslate('webx-admin')
 const message = useErrorText()
 
 const notes = ref<EntityNote[]>([])
+const avatars = useAvatars(admin, () => notes.value.map((note) => note.author?.avatar))
 const loading = ref(true)
 const draft = ref('')
 const sending = ref(false)
@@ -181,7 +183,12 @@ function who(note: EntityNote): string {
 
     <ul v-else class="wx-notes__list">
       <li v-for="note in notes" :key="note.id" class="wx-note">
-        <wx-avatar :name="who(note)" size="sm" tone="auto" />
+        <wx-avatar
+          :name="who(note)"
+          :src="avatars.src(note.author?.avatar)"
+          size="sm"
+          tone="auto"
+        />
 
         <div class="wx-note__body">
           <div class="wx-note__head">

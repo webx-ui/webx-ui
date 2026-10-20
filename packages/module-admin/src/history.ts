@@ -30,7 +30,12 @@ export interface HistoryEntry {
   source: HistorySource
   subject: { type: string; id: number | null }
   /** The name as it was signed; `null` when nobody was signed in (a console command). */
-  admin: { id: number | null; name: string | null } | null
+  admin: {
+    id: number | null
+    name: string | null
+    /** The key of today's photograph — none for an account deleted since. */
+    avatar?: string | null
+  } | null
   /** The agent's connection, when the source is `mcp`. */
   grant_id: number | null
   changes: HistoryChange[]

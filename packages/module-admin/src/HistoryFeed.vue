@@ -12,6 +12,7 @@ import {
 } from '@webx-ui/core'
 import DateText from './DateText.vue'
 import { useAdmin } from './admin'
+import { useAvatars } from './avatars'
 import { useErrorText } from './errors'
 import {
   createHistoryApi,
@@ -55,6 +56,7 @@ const message = useErrorText()
 const subject = useHistorySubject()
 
 const entries = ref<HistoryEntry[]>([])
+const avatars = useAvatars(admin, () => entries.value.map((entry) => entry.admin?.avatar))
 const page = ref(1)
 const lastPage = ref(1)
 const loading = ref(false)
@@ -218,7 +220,12 @@ const runFailed = computed(() => {
 
     <ul v-else class="wx-history__list">
       <li v-for="entry in entries" :key="entry.id" class="wx-history-entry">
-        <wx-avatar :name="who(entry)" size="sm" tone="auto" />
+        <wx-avatar
+          :name="who(entry)"
+          :src="avatars.src(entry.admin?.avatar)"
+          size="sm"
+          tone="auto"
+        />
 
         <div class="wx-history-entry__body">
           <div class="wx-history-entry__head">
