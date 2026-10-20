@@ -38,13 +38,13 @@ are `webx-ui/module-auth`, the frame `webx-ui/module-admin`, languages `webx-ui/
 - **Who a form writes to** — `WebxUi\Inbox\Mail\Recipients` from `options.recipients` (`{ admin_id }`
   / `{ email }`); the API and MCP return `recipients` (each with `receives` and a `problem`:
   `admin_deleted`, `admin_inactive`, `invalid_email`) and `notifies` — `false`: nobody is told.
-- **Event** `SubmissionStored` — always fired; contract `SubmissionHandler` (config `handlers`).
-  **Panel**: one section, API `/api/cms/inbox`.
+- **Event** `SubmissionStored` — always fired; `SubmissionHandler` (config `handlers`). **Panel**: `/api/cms/inbox`.
 - **Channels** — only with `webx-ui/module-notifications` (a `suggest`): event `inbox.submission`
   (`Notifications\SubmissionEvent`), ids in `options.notify_channels`, sent by `SendToChannels` for
   the site's form, not a repeat; `channels` on a form and a submission (null without the module).
-- **MCP** tools `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`,
-  `inbox_get`, `inbox_set_status`, `inbox_notify`; scopes `inbox:read`, `inbox:write`.
+  Default templates (HTML letter, Telegram, text): `Notifications\SubmissionTemplates`, words `mail.*`.
+- **MCP** tools `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`, `inbox_get`,
+  `inbox_set_status`, `inbox_notify`; scopes `inbox:read`, `inbox:write`.
 - **Command** `webx:inbox:prune` (`--days`, `--spam-days`, `--dry-run`) — not scheduled by default.
 - **Audit** (`webx-ui/module-audit`): `inbox.no_recipients`, `inbox.notification` (`inbox_failed_days`,
   `inbox_queued_minutes`), `inbox.captcha_keys` (error), `inbox.captcha_unused` (notice), `inbox.spam_without_captcha`

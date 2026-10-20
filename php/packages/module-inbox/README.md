@@ -338,6 +338,14 @@ form to each chosen channel (not one sent again inside the duplicate window, not
 hand), and shows what came of it on the submission's card and in `inbox_get` (`channels`). The
 guide «Inbox» has the whole list.
 
+A new channel of the event starts with its default template, in every language the inbox is
+translated to (`Notifications\SubmissionTemplates`): for a letter, the built-in one laid out in
+HTML without any colour or name of a site — the answers as a table, the files, the button to the
+panel, the page, and a note that a reply goes to the visitor (`reply_to`); for Telegram, the form,
+an answer a line and the link. Its words are the letter's own (`webx-inbox::mail.*`) and
+`webx-inbox::notifications.reply`, so a site that rewords them in `lang/vendor/webx-inbox` gets
+its words in the default as well.
+
 ## After a submission is stored
 
 Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor

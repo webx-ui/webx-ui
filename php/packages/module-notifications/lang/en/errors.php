@@ -39,6 +39,7 @@ return [
     'tests-too-many' => 'Too many tests in a minute. Try again in :seconds s.',
     'cannot-find' => 'This provider cannot look for recipients.',
     'date' => 'Not a date: :value.',
+    'no-sample' => 'The event ":event" has no default template for this kind of channel.',
     'telegram' => [
         'chat' => 'A chat is a number (groups start with -100) or the @username of a public channel: ":chat" is neither.',
         'markup-tag' => 'Telegram does not allow <:tag> in a message. Allowed: :allowed.',
@@ -60,5 +61,9 @@ return [
         'site-nowhere' => 'The site\'s mailer is ":transport": letters go nowhere. Set the site\'s mail, or give the channel its own SMTP server.',
         'site-ok' => 'Letters go through the site\'s mail.',
         'smtp-ok' => 'The SMTP server :host answers.',
+        'markup-tag' => 'A letter does not allow <:tag>. Allowed: :allowed.',
+        'markup-attribute' => 'A letter does not allow the attribute :attribute. Allowed: :allowed.',
+        'markup-unclosed' => 'The tag <:tag> is not closed, or closed out of order.',
+        'markup-lt' => 'A "<" that is not a tag: write &lt; instead.',
     ],
 ];

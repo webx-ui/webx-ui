@@ -37,6 +37,7 @@ secret is set, and the journal writes its change as a mask.
 Declare the event in your provider without requiring this package:
 
 ```php
+use Illuminate\Support\Facades\Lang;
 use WebxUi\Notifications\Events\EventDefinition;
 use WebxUi\Notifications\Events\Variable;
 use WebxUi\Notifications\NotificationEvents;
@@ -51,7 +52,14 @@ if (class_exists(NotificationEvents::class)) {
                 new Variable('number', 'shop::notifications.number', example: '1024'),
                 new Variable('customer_email', 'shop::notifications.email', example: 'customer@example.com', address: 'email'),
             ],
-            sample: ['*' => ['subject' => 'Order {{number}}', 'template' => 'Order {{number}} is placed.']],
+            // The default template, by provider (`*` — any other): one text, or a function of the
+            // language answering null where the module has no words. A new channel starts with it.
+            sample: [
+                'email' => fn (string $locale): ?array => Lang::hasForLocale('shop::notifications.order', $locale)
+                    ? ['subject' => 'Order {{number}}', 'template' => '<p>'.e(trans('shop::notifications.order', [], $locale)).' {{number}}</p>']
+                    : null,
+                '*' => ['subject' => 'Order {{number}}', 'template' => 'Order {{number}} is placed.'],
+            ],
         ));
     });
 }

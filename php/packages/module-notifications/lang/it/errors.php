@@ -39,6 +39,7 @@ return [
     'tests-too-many' => 'Troppi test in un minuto. Riprova tra :seconds s.',
     'cannot-find' => 'Questo provider non può cercare destinatari.',
     'date' => 'Non è una data: :value.',
+    'no-sample' => 'L\'evento «:event» non ha un modello predefinito per questo tipo di canale.',
     'telegram' => [
         'chat' => 'Una chat è un numero (quelle di gruppo iniziano con -100) o lo @username di un canale pubblico: «:chat» non è né l\'uno né l\'altro.',
         'markup-tag' => 'Telegram non consente <:tag> in un messaggio. Consentiti: :allowed.',
@@ -60,5 +61,9 @@ return [
         'site-nowhere' => 'Il mailer del sito è «:transport»: le e-mail non vanno da nessuna parte. Configura la posta del sito o assegna al canale un server SMTP proprio.',
         'site-ok' => 'Le e-mail passano dalla posta del sito.',
         'smtp-ok' => 'Il server SMTP :host risponde.',
+        'markup-tag' => 'Un\'e-mail non consente <:tag>. Consentiti: :allowed.',
+        'markup-attribute' => 'Un\'e-mail non consente l\'attributo :attribute. Consentiti: :allowed.',
+        'markup-unclosed' => 'Il tag <:tag> non è chiuso, o è chiuso nell\'ordine sbagliato.',
+        'markup-lt' => 'Un «<» che non è un tag: scrivi &lt; al suo posto.',
     ],
 ];

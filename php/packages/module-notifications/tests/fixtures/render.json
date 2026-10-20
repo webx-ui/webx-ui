@@ -5,7 +5,10 @@
       "name": "telegram escapes the values and keeps its own markup",
       "provider": "telegram",
       "template": "<b>{{form}}</b>\n{{ name }}{{! never printed }}",
-      "values": { "form": "Contact <us>", "name": "O'Brien & \"Co\"" },
+      "values": {
+        "form": "Contact <us>",
+        "name": "O'Brien & \"Co\""
+      },
       "body": "<b>Contact &lt;us&gt;</b>\nO&#039;Brien &amp; &quot;Co&quot;",
       "plain": "Contact <us>\nO'Brien & \"Co\""
     },
@@ -17,8 +20,14 @@
         "number": "42",
         "total": "8.00",
         "items": [
-          { "name": "Tea <green>", "qty": "2" },
-          { "name": "Cup", "qty": "1" }
+          {
+            "name": "Tea <green>",
+            "qty": "2"
+          },
+          {
+            "name": "Cup",
+            "qty": "1"
+          }
         ]
       },
       "body": "Order 42\n- Tea &lt;green&gt; × 2\n- Cup × 1\nTotal 8.00"
@@ -27,7 +36,10 @@
       "name": "an empty list shows the inverted section",
       "provider": "telegram",
       "template": "Order {{number}}\n{{#items}}\n- {{name}}\n{{/items}}\n{{^items}}\nNo items\n{{/items}}",
-      "values": { "number": "42", "items": [] },
+      "values": {
+        "number": "42",
+        "items": []
+      },
       "body": "Order 42\nNo items\n",
       "unknown": ["name"]
     },
@@ -35,35 +47,57 @@
       "name": "inside a list a name is the row's field, then the event's",
       "provider": "email",
       "template": "{{#items}}{{number}}-{{name}};{{/items}}",
-      "values": { "number": "7", "name": "outer", "items": [{ "name": "a" }, { "qty": "1" }] },
+      "values": {
+        "number": "7",
+        "name": "outer",
+        "items": [
+          {
+            "name": "a"
+          },
+          {
+            "qty": "1"
+          }
+        ]
+      },
       "body": "7-a;7-outer;"
     },
     {
       "name": "'0' and '' are empty to a section, and '0' is still printed",
       "provider": "email",
       "template": "[{{note}}] {{#note}}yes{{/note}}{{^note}}no{{/note}} {{#blank}}yes{{/blank}}{{^blank}}none{{/blank}} {{#word}}{{word}}!{{/word}}",
-      "values": { "note": "0", "blank": "", "word": "hi" },
+      "values": {
+        "note": "0",
+        "blank": "",
+        "word": "hi"
+      },
       "body": "[0] no none hi!"
     },
     {
       "name": "triple braces and & are escaped like any value",
       "provider": "telegram",
       "template": "{{{form}}} {{&form}} {{form}}",
-      "values": { "form": "<i>x</i>" },
+      "values": {
+        "form": "<i>x</i>"
+      },
       "body": "&lt;i&gt;x&lt;/i&gt; &lt;i&gt;x&lt;/i&gt; &lt;i&gt;x&lt;/i&gt;"
     },
     {
       "name": "a dot is a field by its name, and a section of one field",
       "provider": "email",
       "template": "{{field.phone}} / {{#field.phone}}has a phone{{/field.phone}}{{^field.email}}, no e-mail{{/field.email}}",
-      "values": { "field.phone": "+0 000 000", "field.email": "" },
+      "values": {
+        "field.phone": "+0 000 000",
+        "field.email": ""
+      },
       "body": "+0 000 000 / has a phone, no e-mail"
     },
     {
       "name": "a value is never expanded a second time",
       "provider": "email",
       "template": "{{name}}",
-      "values": { "name": "{{secret}} {{#x}}y{{/x}}" },
+      "values": {
+        "name": "{{secret}} {{#x}}y{{/x}}"
+      },
       "body": "{{secret}} {{#x}}y{{/x}}"
     },
     {
@@ -71,7 +105,10 @@
       "provider": "email",
       "subject": "New: {{form}} <{{name}}>",
       "template": "{{form}}\n& {{name}}",
-      "values": { "form": "Line one\nline two", "name": "A & B" },
+      "values": {
+        "form": "Line one\nline two",
+        "name": "A & B"
+      },
       "subject_out": "New: Line one line two <A & B>",
       "body": "Line one\nline two\n& A & B"
     },
@@ -79,7 +116,9 @@
       "name": "a name with no value is empty and reported",
       "provider": "email",
       "template": "Hi {{who}}, {{form}}",
-      "values": { "form": "Contact" },
+      "values": {
+        "form": "Contact"
+      },
       "body": "Hi , Contact",
       "unknown": ["who"]
     },
@@ -88,7 +127,11 @@
       "provider": "telegram",
       "template": "<b>{{long}}</b>",
       "values": {},
-      "repeat": { "name": "long", "text": "a<", "times": 2100 },
+      "repeat": {
+        "name": "long",
+        "text": "a<",
+        "times": 2100
+      },
       "truncated": true,
       "length": 4096
     },
@@ -126,6 +169,40 @@
       "template": "{{ Name }}",
       "values": {},
       "error": "template-name"
+    },
+    {
+      "name": "a letter that starts with a tag is HTML: values escaped, their line breaks kept, the plain part read out of it",
+      "provider": "email",
+      "template": "<table role=\"presentation\">\n  {{#items}}\n  <tr>\n    <td style=\"color:#6b7280;\">{{name}}</td>\n    <td>{{qty}}</td>\n  </tr>\n  {{/items}}\n</table>\n<p>Note: {{note}}</p>\n<ul><li>{{number}}</li><li>&amp; more</li></ul>\n<a href=\"https://example.test/orders/{{number}}\">Open</a>",
+      "subject": "Order {{number}}",
+      "values": {
+        "number": "42",
+        "note": "Ring <twice> & wait\nthen leave it",
+        "items": [
+          {
+            "name": "Tea 'green'",
+            "qty": "2"
+          },
+          {
+            "name": "Cup",
+            "qty": "1"
+          }
+        ]
+      },
+      "body": "<table role=\"presentation\">\n  <tr>\n    <td style=\"color:#6b7280;\">Tea &#039;green&#039;</td>\n    <td>2</td>\n  </tr>\n  <tr>\n    <td style=\"color:#6b7280;\">Cup</td>\n    <td>1</td>\n  </tr>\n</table>\n<p>Note: Ring &lt;twice&gt; &amp; wait<br>then leave it</p>\n<ul><li>42</li><li>&amp; more</li></ul>\n<a href=\"https://example.test/orders/42\">Open</a>",
+      "plain": "Tea 'green': 2\nCup: 1\n\nNote: Ring <twice> & wait\nthen leave it\n\n- 42\n- & more\n\nOpen (https://example.test/orders/42)",
+      "subject_out": "Order 42"
+    },
+    {
+      "name": "a letter that starts with a tag: a link whose words are its address is said once",
+      "provider": "email",
+      "template": "<p>{{name}}</p><div><a href=\"{{url}}\">{{url}}</a></div>",
+      "values": {
+        "name": "A &amp; B",
+        "url": "https://example.test/?a=1&b=2"
+      },
+      "body": "<p>A &amp;amp; B</p><div><a href=\"https://example.test/?a=1&amp;b=2\">https://example.test/?a=1&amp;b=2</a></div>",
+      "plain": "A &amp; B\n\nhttps://example.test/?a=1&b=2"
     }
   ]
 }

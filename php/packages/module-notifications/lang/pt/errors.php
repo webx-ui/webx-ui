@@ -39,6 +39,7 @@ return [
     'tests-too-many' => 'Demasiados testes num minuto. Tente novamente dentro de :seconds s.',
     'cannot-find' => 'Este fornecedor não consegue procurar destinatários.',
     'date' => 'Não é uma data: :value.',
+    'no-sample' => 'O evento «:event» não tem modelo predefinido para este tipo de canal.',
     'telegram' => [
         'chat' => 'Um chat é um número (os de grupo começam por -100) ou o @username de um canal público: «:chat» não é nenhum dos dois.',
         'markup-tag' => 'O Telegram não permite <:tag> numa mensagem. Permitidas: :allowed.',
@@ -60,5 +61,9 @@ return [
         'site-nowhere' => 'O sistema de envio do site é «:transport»: as mensagens não vão para lado nenhum. Configure o e-mail do site ou dê ao canal o seu próprio servidor SMTP.',
         'site-ok' => 'As mensagens são enviadas pelo e-mail do site.',
         'smtp-ok' => 'O servidor SMTP :host responde.',
+        'markup-tag' => 'Um e-mail não permite <:tag>. Permitidas: :allowed.',
+        'markup-attribute' => 'Um e-mail não permite o atributo :attribute. Permitidos: :allowed.',
+        'markup-unclosed' => 'A etiqueta <:tag> não está fechada, ou está fechada fora de ordem.',
+        'markup-lt' => 'Um «<» que não é uma etiqueta: escreva &lt; em vez disso.',
     ],
 ];

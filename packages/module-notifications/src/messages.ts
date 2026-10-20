@@ -119,6 +119,12 @@ export const notificationsMessages: Record<string, Messages> = {
     'variables-help': 'A click puts it where the cursor is; type {{ to see them in the editor.',
     'variables-none':
       'A channel for any event knows no variables. Choose an event to get its list, or type the names it gives.',
+    'default-insert': 'Insert the default template',
+    'default-title': 'Replace the message with the default template?',
+    'default-text':
+      'The subject and the template in every language become the ones the event suggests. What is written now is lost once you save.',
+    'default-replace': 'Replace',
+    'default-inserted': "The event's default template is in the message. Save to keep it.",
     'variable-list': 'list of :fields',
     'problem-unclosed': 'The section {{#:name}} is not closed: end it with {{/:name}}.',
     'problem-stray': '{{/:name}} closes a section that was never opened.',

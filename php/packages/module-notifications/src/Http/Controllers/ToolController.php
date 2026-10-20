@@ -55,7 +55,7 @@ final class ToolController
                 'limit' => $provider->limit(),
                 'find_recipients' => $provider instanceof FindsRecipients,
             ], $this->providers->all())),
-            'events' => array_values(array_map(static fn (EventDefinition $event): array => $event->toArray(), $this->events->all())),
+            'events' => array_values(array_map(fn (EventDefinition $event): array => $this->form->event($event), $this->events->all())),
             'environment' => app()->environment(),
             'mode' => $this->notifications->mode(),
         ]);

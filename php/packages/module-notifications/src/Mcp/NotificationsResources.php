@@ -9,6 +9,7 @@ use WebxUi\Mcp\McpResource;
 use WebxUi\Notifications\Channels\ChannelForm;
 use WebxUi\Notifications\Contracts\FindsRecipients;
 use WebxUi\Notifications\Contracts\Provider;
+use WebxUi\Notifications\Email\EmailMarkup;
 use WebxUi\Notifications\Events\EventDefinition;
 use WebxUi\Notifications\Events\Variable;
 use WebxUi\Notifications\Models\Channel;
@@ -51,8 +52,8 @@ final class NotificationsResources
                 'notifications://events',
                 'Notification events',
                 'What modules notify about: each event\'s variables with examples, its lists and their fields, its '
-                .'addressees (variables that are an address a channel may write to), the sample a new channel starts '
-                .'with, the template syntax, and how many channels each event already has.',
+                .'addressees (variables that are an address a channel may write to), the default template of each '
+                .'provider in every language of the site (a new channel starts with it), the template syntax, and how many channels each event already has.',
                 fn (): array => $this->events(),
             ),
             new McpResource(
@@ -91,7 +92,7 @@ final class NotificationsResources
     {
         return match ($provider) {
             'telegram' => 'Telegram HTML, tags: '.implode(', ', array_keys(TelegramMarkup::TAGS)).'. Values are escaped; a tag opened inside a section closes in it.',
-            'email' => 'Plain text: the site frames it in a letter and escapes the whole body.',
+            'email' => 'Plain text, framed in a letter with the whole body escaped; or, when the template starts with a tag, HTML with these tags: '.implode(', ', array_keys(EmailMarkup::TAGS)).' and the attributes '.implode(', ', EmailMarkup::ATTRIBUTES).' — values escaped, line breaks kept, the plain-text part read out of it.',
             default => null,
         };
     }
@@ -108,6 +109,8 @@ final class NotificationsResources
             ->keyBy(static fn (Channel $row): string => (string) $row->event);
         $count = static fn (string $key, string $column): int => (int) ($counts->get($key)?->getAttribute($column) ?? 0);
 
+        $form = $this->container->make(ChannelForm::class);
+
         return [
             'syntax' => [
                 'engine' => 'Mustache, without partials ({{>x}}), delimiter changes ({{=<% %>=}}), pragmas or blocks.',
@@ -119,7 +122,7 @@ final class NotificationsResources
                 'check' => 'A channel of an event refuses a name the event does not have; a channel for any event only warns. notifications_preview renders without sending.',
             ],
             'events' => array_values(array_map(static fn (EventDefinition $event): array => [
-                ...$event->toArray(),
+                ...$form->event($event),
                 'lists' => array_values(array_map(static fn (Variable $variable): string => $variable->name, array_filter($event->variables, static fn (Variable $variable): bool => $variable->isList()))),
                 'addressees' => array_map(static fn (Variable $variable): array => ['name' => $variable->name, 'address' => $variable->address], $event->addressees()),
                 'channels' => $count($event->key, 'total'),

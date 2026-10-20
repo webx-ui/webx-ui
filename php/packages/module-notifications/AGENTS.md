@@ -19,7 +19,8 @@ of the panel and the MCP tools `notifications_*` edit channels; the panel and it
   the response when the queue is `sync`; `Notifications::test()`, `retry()`, `deliveriesFor()`.
 - **Panel screen** `notifications.channel`, API under `/api/cms/notifications`.
 - **MCP** tools `notifications_channels_list`, `_channel_get`, `_channel_create`, `_channel_update`,
-  `_channel_delete`, `_channel_copy`, `_preview`, `_test`, `_find_chats`, `_deliveries`, `_retry`;
+  `_channel_delete`, `_channel_copy`, `_default_template`, `_preview`, `_test`, `_find_chats`,
+  `_deliveries`, `_retry`;
   resources `notifications://providers`, `notifications://events`, `notifications://channels`.
   Scopes `notifications:read`, `notifications:write`.
 - **Command** `webx:notifications:prune {--days=} {--dry-run}`, scheduled daily; the doctor check
@@ -63,7 +64,11 @@ if (class_exists(NotificationEvents::class)) {
                 fields: ['name' => 'shop::notifications.vars.name', 'qty' => 'shop::notifications.vars.qty']),
             new Variable('customer_email', 'shop::notifications.vars.email', example: 'customer@example.com', address: 'email'),
         ],
-        sample: ['*' => ['subject' => 'Order {{number}}', 'template' => "Order {{number}}\n{{#items}}- {{name}} × {{qty}}\n{{/items}}"]],
+        sample: [
+            'email' => fn (string $locale): ?array => Lang::hasForLocale('shop::notifications.order', $locale)
+                ? ['subject' => 'Order {{number}}', 'template' => '<p>'.e(trans('shop::notifications.order', [], $locale)).'</p>'] : null,
+            '*' => ['subject' => 'Order {{number}}', 'template' => "Order {{number}}\n{{#items}}- {{name}} × {{qty}}\n{{/items}}"],
+        ],
         url: fn (array $values) => url('/cms/orders/'.($values['number'] ?? '')),
     )));
 }
@@ -79,6 +84,11 @@ app(Notifications::class)->send('shop.order', $order->notify_channels, [
 ], subject: $order, locale: $order->locale);
 ```
 
+`sample` is the event's **default template** by provider (`*` — any other): one text for every
+language, or a function of the language that answers null where the module has no words. A new
+channel starts with it in each language it has (the main one always); `default_template: true`
+puts it back. It passes the same check as a typed one — test it with `notifications_default_template`.
+
 A consumer as it is: `webx-ui/module-inbox`, `src/Notifications` — the event (`SubmissionEvent`), a
 listener of its own Laravel event calling `send()` (`SendToChannels`), and `Channels`: whether this
 module is there (`bound(NotificationEvents::class)`), the ids a form keeps, `deliveriesFor()`, `retry()`.
@@ -92,6 +102,8 @@ of the event — and `{{#name}}…{{/name}}` / `{{^name}}…{{/name}}` for there
 escaped by the provider; `{{{name}}}` and `{{&name}}` are the same as `{{name}}`. Partials,
 delimiter changes, pragmas, blocks and names in capitals are refused on save, with words that say
 what to fix. A channel of an event refuses names the event does not have; one for any event warns.
+A letter's template that starts with a tag is HTML (`Email\EmailMarkup`: table tags and inline
+styles; values escaped, line breaks kept, the plain part read out of it); otherwise it is text.
 
 A provider: `key()`, `fields()` (`Sending\Field`, `secret: true` goes to `credentials`),
 `recipients()` to check and shape them, `resolve()` to turn them into `Recipient`s at sending time,
@@ -117,7 +129,7 @@ A provider: `key()`, `fields()` (`Sending\Field`, `secret: true` goes to `creden
 
 ## Check your work
 
-- `php artisan webx:mcp-tools --module=notifications` — the eleven tools are there.
+- `php artisan webx:mcp-tools --module=notifications` — the twelve tools are there.
 - `php artisan webx:doctor` — the queue without a worker, deliveries stuck or failed lately,
   channels whose provider or event is gone, secrets that no longer decrypt, mail that goes nowhere.
 - With MCP: read `notifications://events` and `notifications://providers` first; try a template with

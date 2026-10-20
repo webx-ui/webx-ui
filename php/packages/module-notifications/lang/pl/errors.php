@@ -39,6 +39,7 @@ return [
     'tests-too-many' => 'Za dużo testów w ciągu minuty. Spróbuj ponownie za :seconds s.',
     'cannot-find' => 'Ten dostawca nie potrafi wyszukiwać odbiorców.',
     'date' => 'To nie jest data: :value.',
+    'no-sample' => 'Zdarzenie „:event” nie ma szablonu domyślnego dla tego rodzaju kanału.',
     'telegram' => [
         'chat' => 'Czat to liczba (grupy zaczynają się od -100) lub @username kanału publicznego: „:chat” nie jest żadnym z nich.',
         'markup-tag' => 'Telegram nie przyjmuje <:tag> w wiadomości. Dozwolone: :allowed.',
@@ -60,5 +61,9 @@ return [
         'site-nowhere' => 'Poczta witryny to „:transport”: wiadomości nigdzie nie trafiają. Skonfiguruj pocztę witryny lub ustaw kanałowi własny serwer SMTP.',
         'site-ok' => 'Wiadomości idą przez pocztę witryny.',
         'smtp-ok' => 'Serwer SMTP :host odpowiada.',
+        'markup-tag' => 'List nie przyjmuje <:tag>. Dozwolone: :allowed.',
+        'markup-attribute' => 'List nie przyjmuje atrybutu :attribute. Dozwolone: :allowed.',
+        'markup-unclosed' => 'Znacznik <:tag> nie jest zamknięty lub jest zamknięty w złej kolejności.',
+        'markup-lt' => '„<”, który nie jest znacznikiem: napisz &lt;.',
     ],
 ];

@@ -240,7 +240,7 @@ NotificationEvents::register(new EventDefinition(
         new Variable('form', 'webx-inbox::notifications.vars.form', example: 'Contact us'),
         // …
     ],
-    sample: ['subject' => '…', 'template' => '…'],      // чем заполнить новый канал (§2, решение 1)
+    sample: ['email' => fn (string $locale) => […], '*' => […]], // шаблон по умолчанию (§2, решение 1; §5.1)
     url: fn (array $vars) => $vars['submission_url'] ?? null, // ссылка «открыть» в журнале
 ));
 ```
@@ -263,6 +263,26 @@ NotificationEvents::register(new EventDefinition(
   Имя списка — без точки, адресатом список не бывает; пример — список строк с этими полями.
   Шаблон перебирает его секцией `{{#items}}…{{/items}}` (§7.2).
 - Событие без канала — норма: потребитель зовёт `send()` с пустым списком, ничего не происходит.
+
+### 5.1 Шаблоны по умолчанию
+
+`sample` — шаблон события по умолчанию **по ключу провайдера** (`*` — любой другой). Значение —
+`['subject' => …, 'template' => …]` (один текст на все языки — как раньше, только основной язык
+канала) или функция языка `fn (string $locale): ?array`, которая отвечает `null` на языке, где у
+модуля нет слов. `EventDefinition::samplesFor($provider, $locales, $main)` собирает шаблон так, как
+его хранит канал: языки сайта, на которых есть слова; основной — всегда (иначе запасной язык, иначе
+английский); языка без слов нет — канал пишет на нём основным, как любой канал (§7, «Языки»).
+
+- **Новый канал** события без `template` (панель, API, `notifications_channel_create`) получает
+  его; в панели — и канал, у которого при выборе события пусты и тема, и шаблон.
+- **«Вставить шаблон по умолчанию»** под шаблоном — заменяет тему и шаблон на всех языках; если
+  что-то написано — после подтверждения. API и MCP — `default_template: true` у сохранения
+  (`notifications_channel_update`, `dry_run`); нет шаблона у события для провайдера — отказ под
+  `template`. Существующие каналы сами не меняются никогда.
+- `notifications_default_template {event, provider, locale?}` — шаблон по языкам, `html` и
+  рендер на примерах (та же проверка, что при сохранении).
+- `GET meta` и `notifications://events` отдают `sample` уже по языкам сайта:
+  `{provider: {subject: {en: …}|null, template: {en: …}}}`.
 
 ## 6. Провайдеры из коробки
 
@@ -331,8 +351,14 @@ Telegram в момент заявки. Значения переменных э�
 **Тема и тело:** тема — шаблон одной строкой (значения без экранирования, переводы строк
 вырезаются). Тело — **текстовый шаблон**: письмо уходит `multipart` — `text/plain` как есть и
 `text/html`, где текст экранирован, переводы строк — `<br>`, адреса `http(s)://` — ссылки, в
-рамке пакета (`notifications::mail.frame`, публикуемая вьюха). HTML в шаблоне e-mail не
-разрешается (§17, вопрос 4). `Reply-To` — переменная события, если событие её объявило
+рамке пакета (`notifications::mail.frame`, публикуемая вьюха). Шаблон, который **начинается с
+тега**, — HTML (§17, вопрос 4, вариант b — понадобился для письма по умолчанию): `Email\EmailMarkup`
+проверяет теги и атрибуты при сохранении (таблицы, абзацы, списки, `a`, `style`, `width`, …; без
+`script`, `form`, `style`-тега и `on…`), значения экранируются (`Templates\Html::escape`,
+перевод строки — `<br>`), `text/plain` читается из HTML (`Html::plain`: абзац — пустая строка,
+строка таблицы — строка, ячейки — «подпись: значение», ссылка — слова и адрес). Шаблон, который
+начинается с текста, уходит как раньше. Провайдер сообщает это необязательным контрактом
+`Contracts\WritesHtml`; `Message::$html`. `Reply-To` — переменная события, если событие её объявило
 (`reply_to` у `inbox.submission`, §15.1).
 
 ### 6.3 «Найти чаты»
@@ -718,19 +744,20 @@ GET    meta                          notifications.view    провайдеры 
 / `notifications:write` (`mcp/src/Registry/BoundTool.php:40`), права — `notifications.view` /
 `notifications.manage`.
 
-| Имя                            | Аргументы                                                                                                                                             | Ответ                                                                     |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `notifications_channels_list`  | `provider?`, `event?`, `enabled?`, `trashed?`                                                                                                         | id, name, provider, event, recipients кратко, enabled, последняя отправка |
-| `notifications_channel_get`    | `channel`                                                                                                                                             | канал целиком; креденшелы — `credentials_set`                             |
-| `notifications_channel_create` | `name`, `provider`, `event?`, `credentials?`, `recipients`, `subject?`, `template?` (по умолчанию — `sample` события), `options?`, `enabled?` (false) | канал + `warnings`                                                        |
-| `notifications_channel_update` | `channel`, любые поля create кроме `provider`; `forget?: string[]`                                                                                    | канал + `warnings`                                                        |
-| `notifications_channel_delete` | `channel`                                                                                                                                             | в корзину                                                                 |
-| `notifications_channel_copy`   | `channel`, `name?`                                                                                                                                    | новый канал (выключен, креденшелы перенесены — §3.4)                      |
-| `notifications_preview`        | `channel?` и/или `provider`, `event?`, `subject?`, `template?`; `locale?`                                                                             | сообщение на примерах события, без отправки; отказ шаблона — словами      |
-| `notifications_test`           | `channel`, `recipient?`                                                                                                                               | по получателям: `sent` / ошибка                                           |
-| `notifications_find_chats`     | `channel` или `token`                                                                                                                                 | чаты: id, type, title, username                                           |
-| `notifications_deliveries`     | `channel?`, `event?`, `status?`, `subject_type?`+`subject_id?`, `since?`, `tests?`, `limit?`                                                          | строки журнала (`variables` — да: право `view` это даёт)                  |
-| `notifications_retry`          | `delivery`                                                                                                                                            | строка журнала после постановки                                           |
+| Имя                              | Аргументы                                                                                                                                             | Ответ                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `notifications_channels_list`    | `provider?`, `event?`, `enabled?`, `trashed?`                                                                                                         | id, name, provider, event, recipients кратко, enabled, последняя отправка |
+| `notifications_channel_get`      | `channel`                                                                                                                                             | канал целиком; креденшелы — `credentials_set`                             |
+| `notifications_channel_create`   | `name`, `provider`, `event?`, `credentials?`, `recipients`, `subject?`, `template?` (по умолчанию — `sample` события), `options?`, `enabled?` (false) | канал + `warnings`                                                        |
+| `notifications_channel_update`   | `channel`, любые поля create кроме `provider`; `forget?: string[]`                                                                                    | канал + `warnings`                                                        |
+| `notifications_channel_delete`   | `channel`                                                                                                                                             | в корзину                                                                 |
+| `notifications_channel_copy`     | `channel`, `name?`                                                                                                                                    | новый канал (выключен, креденшелы перенесены — §3.4)                      |
+| `notifications_default_template` | `event`, `provider`, `locale?`                                                                                                                        | шаблон по умолчанию по языкам, `html`, рендер на примерах (§5.1)          |
+| `notifications_preview`          | `channel?` и/или `provider`, `event?`, `subject?`, `template?`; `locale?`                                                                             | сообщение на примерах события, без отправки; отказ шаблона — словами      |
+| `notifications_test`             | `channel`, `recipient?`                                                                                                                               | по получателям: `sent` / ошибка                                           |
+| `notifications_find_chats`       | `channel` или `token`                                                                                                                                 | чаты: id, type, title, username                                           |
+| `notifications_deliveries`       | `channel?`, `event?`, `status?`, `subject_type?`+`subject_id?`, `since?`, `tests?`, `limit?`                                                          | строки журнала (`variables` — да: право `view` это даёт)                  |
+| `notifications_retry`            | `delivery`                                                                                                                                            | строка журнала после постановки                                           |
 
 - `credentials` — **только запись**: объект полей провайдера; не переданные секретные поля не
   меняются. Ни один ответ, включая `dry_run`, не содержит значений.
@@ -819,8 +846,12 @@ GET    meta                          notifications.view    провайдеры 
 | `reply_to`       | значение поля `options.email_field`, если похоже на адрес (для Reply-To §6.2) | `visitor@site.test`                           |
 
 `ip` и `user_agent` не переменные: в мессенджер персональные данные сверх формы не нужны.
-`sample` события: Telegram — `<b>{{form}}</b>\n{{fields}}\n\n<a href="{{submission_url}}">Open in the panel</a>`;
-e-mail — тема `New submission: {{form}}`, тело — то же текстом.
+Шаблоны по умолчанию (§5.1) — `Notifications\SubmissionTemplates`, на всех языках пакета, из слов
+встроенного письма (`webx-inbox::mail.*`) и `notifications.reply`: e-mail — тема «New submission:
+{{form}}» и HTML-письмо по структуре встроенного (форма и время, ответы таблицей `{{#answers}}`,
+файлы, кнопка «Открыть в панели», страница, UTM, «ответ уйдёт посетителю: {{reply_to}}») — без
+цветов и названий сайта; Telegram — форма, ответ на строку, файлы, страница, ссылка; любой другой
+провайдер — текст.
 
 Ссылку на заявку сейчас письмо строит от `url()` запроса
 (`module-inbox/src/Mail/SubmissionReceived.php:208-213`), задачи — от `app.url`

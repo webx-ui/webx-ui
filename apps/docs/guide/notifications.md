@@ -86,6 +86,29 @@ its own. Recipients are administrators of the panel — written to at the addres
 whatever it becomes — and typed addresses, one letter each, so nobody sees who else got it. The body
 is text: the letter wraps it in a frame, turns line breaks into lines and addresses into links.
 
+A template that **starts with a tag** is HTML instead — the way a letter with a table of answers and
+a button is laid out:
+
+```html
+<table role="presentation" width="100%">
+  {{#answers}}
+  <tr>
+    <td style="color:#6b7280;">{{label}}</td>
+    <td>{{value}}</td>
+  </tr>
+  {{/answers}}
+</table>
+<a href="{{submission_url}}" style="display:inline-block;padding:10px 18px;">Open in the panel</a>
+```
+
+The values are escaped into it, a visitor's line breaks kept as `<br>`; the plain part of the
+letter is read out of the HTML — a paragraph a blank line, a row a line, the cells of a row
+«label: value», a link its words and its address. The tags and attributes a letter takes are those
+of tables and inline styles (`table`, `tr`, `td`, `p`, `a`, `style`, `width`, … —
+`notifications://providers` lists them); a script, a form, a stylesheet or an `on…` attribute is
+refused on save, and so is a tag left open. A channel whose template starts with text sends exactly
+what it sent before.
+
 ### The address the event brings
 
 An event can say that one of its values is an address — the e-mail a visitor typed into a form, the
@@ -140,6 +163,24 @@ Under the editor the same variables are buttons that insert at the caret, and wh
 template stands there as it is typed: a section left open, a close of nothing, a name the event does
 not have, a partial. The save refuses the same things in the same words.
 
+The subject of a letter is the same editor in one line: `{{` opens the same list there, Enter takes
+a suggestion and never breaks the line. A variable button under the template writes into whichever
+of the two the caret was in last.
+
+### The default template
+
+An event brings a ready message for each kind of channel — a letter laid out in HTML, a short
+Telegram message — in every language its module is translated to. A new channel of the event starts
+with it, and so does a channel whose message is still empty when the event is chosen. Under the
+template, **Insert the default template** puts it back; over a message already written it asks
+first, and replaces the subject and the template in every language. A language the event has no
+words in is left empty, so the message goes in the site's main language there, as any channel's.
+
+For a form of the Inbox the letter is the form's own built-in one, neutral: the form and when it
+came, the answers as a table, the files, the button **Open in the panel**, the page it was sent from,
+and — when the form has an e-mail field — a note that a reply to the letter goes to the visitor. The
+Telegram message is the form, an answer a line, the files, the page and the link.
+
 ### Every language
 
 The subject and the template have a text per language of the site; one language is enough. A
@@ -150,7 +191,8 @@ was placed in — then the site's main language, then whichever the channel has.
 
 Beside the form (under it on a narrow screen) is the message as it would go out, drawn as it is
 typed, on the event's example values: a Telegram message as a bubble of the chat, a letter as its
-subject and its text. It is rendered in the browser by the same rules as on the server — the two are
+subject and its text — an HTML letter as it is laid out, in a frame that runs nothing. It is
+rendered in the browser by the same rules as on the server — the two are
 held together by one set of cases both of them run (`tests/fixtures/render.json`).
 
 ### A test
@@ -192,6 +234,7 @@ A module declares its events from its service provider — without requiring thi
 module works on a site that does not have it:
 
 ```php
+use Illuminate\Support\Facades\Lang;
 use WebxUi\Notifications\Events\EventDefinition;
 use WebxUi\Notifications\Events\Variable;
 use WebxUi\Notifications\NotificationEvents;
@@ -209,14 +252,27 @@ if (class_exists(NotificationEvents::class)) {
                     fields: ['name' => 'shop::notifications.name', 'qty' => 'shop::notifications.qty']),
                 new Variable('buyer_email', 'shop::notifications.email', example: 'buyer@site.test', address: 'email'),
             ],
-            sample: ['*' => ['subject' => 'Order {{number}}', 'template' => "Order {{number}}\n{{#items}}- {{name}} × {{qty}}\n{{/items}}"]],
+            sample: [
+                // A function of the language: the words of the module's own dictionary.
+                'email' => fn (string $locale): ?array => Lang::hasForLocale('shop::notifications.order', $locale) ? [
+                    'subject' => trans('shop::notifications.order', ['number' => '{{number}}'], $locale),
+                    'template' => '<p>'.e(trans('shop::notifications.order', ['number' => '{{number}}'], $locale)).'</p>',
+                ] : null,
+                // One text for every language: the main language's.
+                '*' => ['subject' => 'Order {{number}}', 'template' => "Order {{number}}\n{{#items}}- {{name}} × {{qty}}\n{{/items}}"],
+            ],
             url: fn (array $values) => url('/cms/orders/'.($values['number'] ?? '')),
         ),
     ));
 }
 ```
 
-and sends when it happens, with the values as they are now and the channels it keeps in its own
+`sample` is the event's default template, by provider key — `*` for any other: one text for
+every language, or a function of the language that answers `null` where the module has no words.
+A provider the event has none for simply has no default. The default passes the same check of names
+and markup as a template typed by hand, so a test of it goes out as it is.
+
+The module then sends when it happens, with the values as they are now and the channels it keeps in its own
 data. `send()` never throws: the order is placed whatever Telegram says.
 
 ```php
@@ -255,7 +311,9 @@ brings — `GET /api/cms/relations/notify-shop-order`.
 to copy (`php/packages/module-inbox/src/Notifications`):
 
 - **`SubmissionEvent`** — the definition of `inbox.submission` (the variables, the list `answers`,
-  the addressee `reply_to`, the samples) and `values(Submission)`, the snapshot of one submission.
+  the addressee `reply_to`, the default templates) and `values(Submission)`, the snapshot of one
+  submission. The templates themselves are `SubmissionTemplates` — a letter, a Telegram message
+  and a text for any other provider, built from the words of the built-in letter in each language.
   The provider registers it under `class_exists(NotificationEvents::class)`.
 - **`SendToChannels`** — a listener of the inbox's own Laravel event `SubmissionStored`: it skips
   a repeat and a submission typed in by hand, and calls `send()` with the ids the form keeps.
@@ -290,9 +348,11 @@ has the contract.
 ## For agents
 
 Everything the section does is an MCP tool: `notifications_channels_list`, `_channel_get`,
-`_channel_create`, `_channel_update`, `_channel_delete`, `_channel_copy`, `_preview`, `_test`,
-`_find_chats`, `_deliveries`, `_retry`, behind the scopes `notifications:read` and
-`notifications:write` and the same two permissions. Secrets are write-only there too. An agent reads
-`notifications://events` and `notifications://providers` first, tries a template with
-`notifications_preview` and every write with `dry_run: true`.
+`_channel_create`, `_channel_update`, `_channel_delete`, `_channel_copy`, `_default_template`,
+`_preview`, `_test`, `_find_chats`, `_deliveries`, `_retry`, behind the scopes `notifications:read`
+and `notifications:write` and the same two permissions. Secrets are write-only there too. An agent
+reads `notifications://events` and `notifications://providers` first, tries a template with
+`notifications_preview` and every write with `dry_run: true`. `notifications_default_template`
+gives an event's default template for a provider and what it renders to; a channel created without a
+template gets it, and `default_template: true` on `notifications_channel_update` puts it back.
 :::
