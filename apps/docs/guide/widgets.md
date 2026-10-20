@@ -129,9 +129,10 @@ no consent — the [site audit](./audit) notices it when something third-party i
 
 The phones, e-mails, addresses, hours and networks live once, on the **Contacts** tab of the
 settings; the widgets, the map and the SEO markup read them from there, and print nothing while it
-is empty. The tab draws phones, e-mails and addresses unless the site asks for more: a site with
-`<x-webx-hours>` or `<x-webx-socials>` adds `hours`, `messengers` or `socials` to
-`webx-settings.contacts.sections` ([Settings](/guide/settings#the-contacts-tab-and-which-parts-of-it-a-site-draws)).
+is empty. Which sections the tab draws is what the theme, the packages and the project declare
+([Settings](/guide/settings#tabs-only-where-something-uses-them)): a site with `<x-webx-hours>` or
+`<x-webx-socials>` in its own views lists `hours`, `messengers` or `socials` in its theme's
+`settings` or in `webx-settings.contacts.sections`.
 
 | Component                 | What it shows                                                                               |
 | ------------------------- | ------------------------------------------------------------------------------------------- |
@@ -140,6 +141,11 @@ is empty. The tab draws phones, e-mails and addresses unless the site asks for m
 | `<x-webx-contact-button>` | a round button in a corner: chats, the number, the form — above the cookie banner           |
 | `<x-webx-contact-bar>`    | "Call / Write / Request" along the bottom of a phone — one of the two, not both             |
 | `<x-webx-socials>`        | the networks as icons                                                                       |
+
+`theme-default` puts the contact button on every page that has contacts. A site that wants none
+sets `'contact_button' => false` in `config/webx-widgets.php`: the button is not printed wherever
+it is placed, and the contacts script is not loaded for it — other contact widgets on the page
+still load it for themselves. No need to override its view with an empty file.
 
 ## Language switcher
 

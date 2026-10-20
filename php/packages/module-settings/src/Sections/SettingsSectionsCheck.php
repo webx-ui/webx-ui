@@ -49,14 +49,28 @@ final class SettingsSectionsCheck implements Check
                 continue;
             }
 
+            $sources = $tab === SettingsSections::CONTACTS ? $this->sources() : '';
+
             $diagnoses[] = match (true) {
-                $who !== '' => Diagnosis::ok($subject, "shown — used by {$who}."),
-                $tab === SettingsSections::CONTACTS && $this->sections->transition() === 'theme' => Diagnosis::ok($subject, 'shown — the theme has not declared "settings" yet, so it is taken to print contacts. Declare them in its manifest: the rule goes in the next minor.'),
-                $tab === SettingsSections::CONTACTS => Diagnosis::warn($subject, "shown — contacts are stored but nothing declares them; add 'uses' => ['contacts'] to config/webx-settings.php (or \"settings\" to the theme's manifest). The tab is kept for now and hidden from the next minor on."),
+                $who !== '' => Diagnosis::ok($subject, "shown — used by {$who}.{$sources}"),
+                $tab === SettingsSections::CONTACTS && $this->sections->transition() === 'theme' => Diagnosis::ok($subject, 'shown — the theme has not declared "settings" yet, so it is taken to print contacts. Declare them in its manifest: the rule goes in the next minor.'.$sources),
+                $tab === SettingsSections::CONTACTS => Diagnosis::warn($subject, "shown — contacts are stored but nothing declares them; add 'uses' => ['contacts'] to config/webx-settings.php (or \"settings\" to the theme's manifest). The tab is kept for now and hidden from the next minor on.".$sources),
                 default => Diagnosis::ok($subject, 'shown — used by the panel itself.'),
             };
         }
 
         return $diagnoses;
+    }
+
+    /** Which sections of Contacts the form asks about, and who brought each list. */
+    private function sources(): string
+    {
+        $lists = [];
+
+        foreach ($this->sections->contactSources() as $who => $sections) {
+            $lists[] = ($sections === [] ? 'none' : implode(', ', $sections))." ({$who})";
+        }
+
+        return $lists === [] ? '' : ' Sections: '.implode('; ', $lists).'.';
     }
 }

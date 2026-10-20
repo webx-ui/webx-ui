@@ -73,14 +73,20 @@ class ThemeChainTest extends TestCase
     }
 
     #[Test]
-    public function the_settings_a_theme_prints_are_summed_down_the_chain(): void
+    public function the_nearest_layer_that_names_a_tab_decides_its_sections(): void
     {
-        $top = new ThemeManifest('top', '/top', true, settings: ['contacts' => ['phones', 'hours']]);
+        $top = new ThemeManifest('top', '/top', true, settings: ['contacts' => ['emails', 'socials']]);
         $silent = new ThemeManifest('silent', '/silent', false);
-        $base = new ThemeManifest('base', '/base', false, settings: ['contacts' => ['emails', 'phones']]);
+        $base = new ThemeManifest('base', '/base', false, settings: ['contacts' => ['phones', 'addresses', 'hours'], 'branding' => true]);
 
-        $this->assertSame(['contacts' => ['phones', 'hours', 'emails']], (new ThemeChain([$top, $silent, $base]))->settings());
-        $this->assertSame(['contacts' => true], (new ThemeChain([$top, new ThemeManifest('whole', '/whole', false, settings: ['contacts' => true])]))->settings());
+        // The child's list replaces the parent's; a tab the child leaves out is the parent's.
+        $this->assertSame(['contacts' => ['emails', 'socials'], 'branding' => true], (new ThemeChain([$top, $silent, $base]))->settings());
+        $this->assertSame(['top' => ['contacts' => ['emails', 'socials']], 'base' => ['branding' => true]], (new ThemeChain([$top, $silent, $base]))->settingsBy());
+        // A child that declares nothing inherits the whole declaration.
+        $this->assertSame(['contacts' => ['phones', 'addresses', 'hours'], 'branding' => true], (new ThemeChain([$silent, $base]))->settings());
+        $this->assertTrue((new ThemeChain([new ThemeManifest('whole', '/whole', true, settings: ['contacts' => true]), $base]))->settings()['contacts'] ?? null);
+        // An empty list drops the tab the parent printed.
+        $this->assertSame([], (new ThemeChain([new ThemeManifest('bare', '/bare', true, settings: ['contacts' => []]), $base]))->settings()['contacts']);
         // Saying nothing is not saying "none": module-settings tells the two apart.
         $this->assertNull((new ThemeChain([$silent]))->settings());
         $this->assertSame([], (new ThemeChain([$silent, new ThemeManifest('none', '/none', false, settings: [])]))->settings());

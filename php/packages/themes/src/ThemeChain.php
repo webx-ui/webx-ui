@@ -112,31 +112,47 @@ final readonly class ThemeChain
     }
 
     /**
-     * The tabs of the site's settings the theme prints, summed down the chain like `requires`:
-     * a tab one layer prints whole stays whole, lists of sections are joined. Null when no layer
-     * says anything about it — module-settings then falls back to its transition rule.
+     * The tabs of the site's settings the theme prints. Unlike `requires`, a tab is not summed
+     * down the chain: the layer nearest to the site that names it decides — a child theme that
+     * lists its own sections replaces its parent's list, one that leaves the tab out inherits it.
+     * A child prints its parent's views only where it does not override them, so only the child
+     * knows what of the parent's still reaches the page. Null when no layer says anything — then
+     * module-settings falls back to its transition rule.
      *
      * @return array<string, true|list<string>>|null
      */
     public function settings(): ?array
     {
-        $declared = array_filter(array_map(fn (ThemeManifest $layer) => $layer->settings, $this->layers), is_array(...));
+        $by = $this->settingsBy();
+
+        return $by === null ? null : array_merge([], ...array_values($by));
+    }
+
+    /**
+     * {@see settings()} by the layer each tab was taken from, so the doctor can say who decided.
+     *
+     * @return array<string, array<string, true|list<string>>>|null
+     */
+    public function settingsBy(): ?array
+    {
+        $declared = array_filter($this->layers, static fn (ThemeManifest $layer): bool => is_array($layer->settings));
 
         if ($declared === []) {
             return null;
         }
 
-        $settings = [];
+        $by = [];
+        $taken = [];
 
         foreach ($declared as $layer) {
-            foreach ($layer as $tab => $sections) {
-                $before = $settings[$tab] ?? [];
-                $settings[$tab] = $sections === true || $before === true
-                    ? true
-                    : array_values(array_unique([...$before, ...$sections]));
+            foreach ($layer->settings ?? [] as $tab => $sections) {
+                if (! isset($taken[$tab])) {
+                    $taken[$tab] = true;
+                    $by[$layer->name][$tab] = $sections;
+                }
             }
         }
 
-        return $settings;
+        return $by;
     }
 }

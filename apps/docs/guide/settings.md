@@ -75,7 +75,12 @@ itself:
 | the project | `uses` in `config/webx-settings.php`                          | `'uses' => ['contacts']`                        |
 
 A tab is `true` — the whole tab, sections as configured — or the list of its sections the user
-prints; the lists join `contacts.sections`, and a theme's are summed down its chain.
+prints. A theme's list comes from the layer of its chain nearest to the site that names the tab:
+a local theme that lists its own sections replaces its parent's, one that says nothing inherits
+them. The lists of packages and of the project are added to the theme's — they print what they
+print whatever the theme does. `contacts.sections` is `null` by default: phones, emails and
+addresses where the theme has not listed its sections, nothing more where it has; a list there is
+added like a package's. `php artisan webx:doctor` names who brought each section.
 `theme-default` declares phones, emails, addresses, hours and socials, so a site on it keeps the
 tab as it was. Widgets and SEO markup print contacts only when there are some and declare
 nothing — otherwise they would bring the tab to every site.

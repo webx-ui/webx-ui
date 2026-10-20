@@ -47,6 +47,11 @@ return [
     | panel itself and needs no word here. A tab nobody uses is hidden, its
     | stored values kept: `php artisan webx:doctor` says who uses what.
     |
+    | Down a chain of themes the layer nearest to the site that names a tab
+    | decides it: a local theme that lists its own contact sections replaces
+    | the list of the theme it stands on, one that says nothing inherits it.
+    | The lists of packages and of this file are added to the theme's.
+    |
     */
 
     'uses' => [],
@@ -67,10 +72,14 @@ return [
     | is not asked about what the site never shows; contacts() still returns
     | whatever is stored, and a screen patch aimed at its card still applies.
     |
+    | A list here is added to what the theme and packages declare. Null leaves
+    | it to them: phones, emails and addresses unless the theme lists its own
+    | sections, then exactly the theme's and the packages'.
+    |
     */
 
     'contacts' => [
-        'sections' => ['phones', 'emails', 'addresses'],
+        'sections' => null,
         // 'sections' => ['phones', 'emails', 'addresses', 'hours', 'messengers', 'socials'],
 
         'legacy' => [

@@ -20,13 +20,16 @@ use WebxUi\Themes\ThemeChain;
  * A tab is offered only when something on the site uses it, and only when what it needs is
  * installed. The users say so themselves, in the same places they already describe themselves:
  *
- * - a theme, under `settings` of its manifest (`extra.webx.theme` / `theme.json`), summed down
- *   the chain: `"settings": {"contacts": ["phones", "emails", "hours"]}`;
+ * - a theme, under `settings` of its manifest (`extra.webx.theme` / `theme.json`):
+ *   `"settings": {"contacts": ["phones", "emails", "hours"]}`. The layer of the chain nearest to
+ *   the site that names a tab decides it — a child theme's list replaces its parent's;
  * - a package, under `extra.webx.settings` of its composer.json;
  * - the project, in `webx-settings.uses`.
  *
- * Contacts are `true` or the list of their sections the user prints; the lists join
- * `webx-settings.contacts.sections`. Branding is used by the panel itself — its corner and the
+ * Contacts are `true` or the list of their sections the user prints. The lists of packages and
+ * the project join the theme's: they print what they print whatever the theme does. A list in
+ * `webx-settings.contacts.sections` joins them too; left null, it is the default sections only
+ * where the theme has not listed its own. Branding is used by the panel itself — its corner and the
  * consent screen — so it is always wanted and only its field type can take it away.
  *
  * A tab that is not offered is hidden, not cut out (see {@see ContactSections}): what is stored
@@ -141,19 +144,44 @@ final class SettingsSections
      */
     public function contactSections(): array
     {
-        $sections = ContactSections::configured($this->config->get('webx-settings.contacts.sections'));
+        return array_values(array_unique(array_merge([], ...array_values($this->contactSources()))));
+    }
 
-        foreach ($this->declarations() as $tabs) {
+    /**
+     * Who brought each section of Contacts, by who: `config/webx-settings.php`, `theme <name>`
+     * (the nearest layer that lists them), `package <name>`, or `default` when nobody listed any
+     * and the config leaves the sections to them.
+     *
+     * @return array<string, list<string>>
+     */
+    public function contactSources(): array
+    {
+        $configured = $this->config->get('webx-settings.contacts.sections');
+        $declarations = $this->declarations();
+        $sources = [];
+
+        if (is_array($configured)) {
+            $sources['config/webx-settings.php'] = ContactSections::configured($configured);
+        }
+
+        foreach ($declarations as $who => $tabs) {
             $declared = $tabs[self::CONTACTS] ?? true;
 
             if (is_array($declared)) {
                 // A theme or package from somewhere else may name a section this version has not
                 // got; the form simply has nothing to show for it.
-                $sections = [...$sections, ...array_intersect($declared, array_keys(ContactSections::NODES))];
+                $known = array_values(array_intersect($declared, array_keys(ContactSections::NODES)));
+                $sources[$who] = [...($sources[$who] ?? []), ...$known];
             }
         }
 
-        return array_values(array_unique($sections));
+        // The default fills in only for a site whose theme has not said what it prints: a theme
+        // that listed its sections would otherwise get phones and addresses it never shows.
+        if (! is_array($configured) && ! $this->themeListed($declarations)) {
+            $sources = ['default' => ContactSections::DEFAULT, ...$sources];
+        }
+
+        return $sources;
     }
 
     /**
@@ -194,11 +222,9 @@ final class SettingsSections
             $declarations['config/webx-settings.php'] = $config;
         }
 
-        $chain = $this->chain();
-        $theme = $chain?->settings();
-
-        if (is_array($theme) && $chain?->top() !== null) {
-            $declarations['theme '.$chain->top()->name] = $this->known($theme);
+        // Each tab is credited to the layer it was taken from, not to the top one.
+        foreach ($this->chain()?->settingsBy() ?? [] as $layer => $tabs) {
+            $declarations['theme '.$layer] = $this->known($tabs);
         }
 
         foreach ($this->app->make(PackageRegistry::class)->packages() as $package) {
@@ -250,6 +276,22 @@ final class SettingsSections
     private function known(array $tabs): array
     {
         return array_intersect_key($tabs, self::NEEDS);
+    }
+
+    /**
+     * Whether a layer of the theme listed the sections of Contacts — `true` leaves them to the config.
+     *
+     * @param  array<string, array<string, true|list<string>>>  $declarations
+     */
+    private function themeListed(array $declarations): bool
+    {
+        foreach ($declarations as $who => $tabs) {
+            if (str_starts_with($who, 'theme ') && is_array($tabs[self::CONTACTS] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function chain(): ?ThemeChain
