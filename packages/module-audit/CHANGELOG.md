@@ -1,5 +1,23 @@
 # @webx-ui/module-audit
 
+## 0.5.2
+
+### Patch Changes
+
+- 9dcb323: `WxDescriptions` with `layout="vertical"`: a label sits 2px over its value and the next pair stands
+  12, 16 or 24px off (`sm`, `md`, `lg`) instead of the same few pixels either way, so the pairs no
+  longer run together. In the Inbox, whether a submission was notified, and to whom, is one more pair
+  of its details, a row per address; the audit's "found / why / fix" is a `WxDescriptions` too.
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+  - @webx-ui/module-admin@0.32.0
+  - @webx-ui/core@0.44.0
+  - @webx-ui/schema@0.9.4
+
 ## 0.5.1
 
 ### Patch Changes

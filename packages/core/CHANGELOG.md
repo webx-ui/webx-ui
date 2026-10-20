@@ -1,5 +1,35 @@
 # @webx-ui/core
 
+## 0.44.0
+
+### Minor Changes
+
+- 9dcb323: `WxCodeEditor` has `language-completions`: the suggestions each language ships with, switched on
+  without a list of your own. HTML — tags, attributes and their values, the closing tag written on
+  `>`; JavaScript, alone or in a `<script>` — keywords, snippets (`if`, `for`, `function`, `try`…),
+  the names the code declares and the globals of the page after a dot (`document.`, `console.`,
+  `localStorage.`); CSS, alone or in a `<style>` — properties and values. An open `<script` or
+  `<style` at the very end of the document is still HTML's: it offers `src`, `async`, `defer` and is
+  closed on `>`. `Esc` closes the list; Enter without one is a line break.
+- 9dcb323: `WxCodeEditor` has `single-line`: a field of one line, as tall as `WxInput` of its size, for a
+  template that is one line — the subject of a letter — and still wants highlighting and
+  `completions`. Enter takes the suggestion in focus and otherwise breaks no line, a line break typed
+  or pasted in becomes a space, and `Tab` moves on to the next field.
+
+### Patch Changes
+
+- 9dcb323: `WxDescriptions` with `layout="vertical"`: a label sits 2px over its value and the next pair stands
+  12, 16 or 24px off (`sm`, `md`, `lg`) instead of the same few pixels either way, so the pairs no
+  longer run together. In the Inbox, whether a submission was notified, and to whom, is one more pair
+  of its details, a row per address; the audit's "found / why / fix" is a `WxDescriptions` too.
+- 9dcb323: `WxSelect` takes an option worth `''` — the "All" of a filter, the "Any event" of a dialog. Reka
+  refuses such an item and threw while drawing the list, so the list opened empty, and inside a modal
+  opened from code the error left the dialog on screen and dead to every click. The field now shows
+  that option's label instead of the placeholder and hands back `''` when it is picked.
+
+  `openModal` takes a modal whose component throws away once the render is over and prints the error,
+  instead of tearing the tree down mid-render and leaving a dead panel behind.
+
 ## 0.43.0
 
 ### Minor Changes

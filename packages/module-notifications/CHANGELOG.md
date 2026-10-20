@@ -1,5 +1,28 @@
 # @webx-ui/module-notifications
 
+## 0.3.0
+
+### Minor Changes
+
+- 9dcb323: The channel's form: the subject of a letter suggests the event's variables after `{{` as the
+  template does (one line), and a variable clicked under the template goes into whichever of the two
+  the caret was in last. Under the template, **Insert the default template** puts the event's own
+  message in — the subject and the template in every language it has — asking first when something is
+  written; a channel whose message is still empty gets it when its event is chosen. A letter whose
+  template starts with a tag is previewed as the HTML letter it is, in a frame that runs nothing.
+
+### Patch Changes
+
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+- Updated dependencies [9dcb323]
+  - @webx-ui/module-admin@0.32.0
+  - @webx-ui/core@0.44.0
+  - @webx-ui/schema@0.9.4
+
 ## 0.2.1
 
 ### Patch Changes
