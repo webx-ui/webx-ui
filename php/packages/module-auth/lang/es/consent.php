@@ -19,4 +19,6 @@ return [
     'cancel' => 'Cancelar',
     'disconnect' => 'Puede desconectarlo en el panel: Administradores → Conexiones.',
     'returns-to' => 'La respuesta irá a :host',
+    'refused-title' => 'No se puede conectar la aplicación',
+    'refused-text' => 'El panel no conoce esta aplicación, o pide enviar la respuesta a una dirección con la que no se registró. Vuelva a iniciar la conexión desde la aplicación; si se repite, muestre esta página a quien gestiona el sitio.',
 ];

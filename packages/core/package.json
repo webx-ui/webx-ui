@@ -41,7 +41,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && node scripts/server-styles.mjs",
     "dev": "vite build --watch",
     "typecheck": "vue-tsc -p tsconfig.json --noEmit"
   },

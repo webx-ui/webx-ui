@@ -19,4 +19,6 @@ return [
     'cancel' => 'Annuler',
     'disconnect' => 'Vous pouvez le déconnecter dans le panneau : Administrateurs → Connexions.',
     'returns-to' => 'La réponse sera envoyée à :host',
+    'refused-title' => 'Impossible de connecter l’application',
+    'refused-text' => 'Le panneau ne connaît pas cette application, ou elle demande d’envoyer la réponse à une adresse avec laquelle elle n’a pas été enregistrée. Relancez la connexion depuis l’application ; si cela se reproduit, montrez cette page à la personne qui gère le site.',
 ];

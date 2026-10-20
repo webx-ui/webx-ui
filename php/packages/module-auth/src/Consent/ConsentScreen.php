@@ -146,7 +146,7 @@ final class ConsentScreen
      * The site's own name and logo, from whoever supplies them to the panel; without a
      * source, the configured title.
      */
-    private function brand(): Branding
+    public function brand(): Branding
     {
         $brand = $this->container->bound(BrandingSource::class)
             ? $this->container->make(BrandingSource::class)->branding()

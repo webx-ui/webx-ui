@@ -110,6 +110,47 @@ final class ConsentScreenTest extends TestCase
         $page->assertSee('The answer goes to localhost');
     }
 
+    /**
+     * The panel's own controls, not ones drawn again: the buttons were a size taller and a size
+     * larger than the panel's, in the platform's font rather than the site's.
+     */
+    #[Test]
+    public function the_screen_is_drawn_with_the_panels_components_and_stylesheets(): void
+    {
+        $this->app['config']->set('webx-admin.assets', ['/webx/webx.css', '/webx/webx.js']);
+
+        $page = $this->actingAs($this->admin(), 'cms')->get($this->authorizeUrl($this->client()))->assertOk();
+
+        $page->assertSee('class="wx-button wx-button--primary wx-button--solid wx-button--md"', false);
+        $page->assertSee('class="wx-button wx-button--default wx-button--outline wx-button--md"', false);
+        $page->assertSee('class="wx-checkbox wx-checkbox--md"', false);
+        $page->assertSee('wx-alert wx-alert--warning wx-alert--soft', false);
+        // The rules of those classes, generated from the components, and the site's panel build.
+        $page->assertSee('.wx-button--md {', false);
+        $page->assertSee('<link rel="stylesheet" href="/webx/webx.css">', false);
+        $page->assertDontSee('/webx/webx.js', false);
+    }
+
+    #[Test]
+    public function a_refusal_is_a_page_of_the_panel_for_a_person_and_json_for_a_program(): void
+    {
+        $admin = $this->admin();
+        $url = '/oauth/authorize?'.http_build_query([
+            'client_id' => 'unknown',
+            'redirect_uri' => self::CALLBACK,
+            'response_type' => 'code',
+            'code_challenge' => str_repeat('a', 43),
+            'code_challenge_method' => 'S256',
+        ]);
+
+        $page = $this->actingAs($admin, 'cms')->get($url, ['Accept' => 'text/html'])->assertStatus(401);
+        $page->assertHeader('content-type', 'text/html; charset=utf-8');
+        $page->assertSee('The application cannot be connected');
+        $page->assertSee('<span class="code">invalid_client</span>', false);
+
+        $this->actingAs($admin, 'cms')->getJson($url)->assertStatus(401)->assertJsonPath('error', 'invalid_client');
+    }
+
     #[Test]
     public function a_person_who_may_only_look_is_told_so(): void
     {

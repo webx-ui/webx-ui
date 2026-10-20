@@ -22,4 +22,6 @@ return [
     'cancel' => 'Cancel',
     'disconnect' => 'You can disconnect it in the panel: Administrators → Connections.',
     'returns-to' => 'The answer goes to :host',
+    'refused-title' => 'The application cannot be connected',
+    'refused-text' => 'The panel does not know this application, or it asked to send the answer to an address it was not registered with. Start connecting again from the application; if this keeps happening, show this page to whoever runs the site.',
 ];

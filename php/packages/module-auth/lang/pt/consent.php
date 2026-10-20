@@ -19,4 +19,6 @@ return [
     'cancel' => 'Cancelar',
     'disconnect' => 'Você pode desconectá-lo no painel: Administradores → Ligações.',
     'returns-to' => 'A resposta irá para :host',
+    'refused-title' => 'Não é possível ligar a aplicação',
+    'refused-text' => 'O painel não conhece esta aplicação, ou ela pede para enviar a resposta para um endereço com o qual não foi registada. Inicie a ligação de novo a partir da aplicação; se voltar a acontecer, mostre esta página a quem gere o site.',
 ];

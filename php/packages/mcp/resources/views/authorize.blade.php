@@ -7,77 +7,63 @@
     that wants its own replaces it with `Passport::authorizationView()`.
 
     The address is shown, not only the name: a client chooses its own name, and "Site panel"
-    costs nothing to type.
+    costs nothing to type. In the frame of `webx-admin::page`: the panel's tokens and its
+    card and buttons by their own classes.
 --}}
 @php
     $redirect = $request->query('redirect_uri') ?: ($client->redirect_uris[0] ?? '');
     $host = parse_url((string) $redirect, PHP_URL_HOST) ?: (string) $redirect;
 @endphp
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow">
-    <title>{{ $client->name }}</title>
+@extends('webx-admin::page')
+
+@section('title', $client->name)
+
+@push('webx-page-styles')
     <style>
-        :root { color-scheme: light dark; --ink: #18181b; --muted: #71717a; --line: #e4e4e7; --paper: #fff; --back: #f4f4f5; --accent: #2563eb; }
-        @media (prefers-color-scheme: dark) {
-            :root { --ink: #fafafa; --muted: #a1a1aa; --line: #3f3f46; --paper: #18181b; --back: #09090b; }
-        }
-        body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px;
-               background: var(--back); color: var(--ink);
-               font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-        main { width: 100%; max-width: 420px; padding: 32px; border: 1px solid var(--line);
-               border-radius: 12px; background: var(--paper); }
-        h1 { margin: 0 0 16px; font-size: 20px; }
-        dl { margin: 0 0 24px; display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; }
-        dt { color: var(--muted); }
+        dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: var(--wx-space-8) var(--wx-space-16); }
+        dt { color: var(--wx-text-muted); }
         dd { margin: 0; overflow-wrap: anywhere; }
-        ul { margin: 0 0 24px; padding-left: 20px; color: var(--muted); }
-        form { display: inline; }
-        button { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--line);
-                 background: transparent; color: inherit; font: inherit; cursor: pointer; }
-        button.approve { background: var(--accent); border-color: var(--accent); color: #fff; }
-        .buttons { display: flex; gap: 12px; }
+        ul { margin: 0; padding-left: var(--wx-space-18); color: var(--wx-text-muted); }
     </style>
-</head>
-<body>
-    <main>
-        <h1>{{ $client->name }} is asking for access</h1>
+@endpush
 
-        <dl>
-            <dt>Signed in as</dt>
-            <dd>{{ $user->name }}</dd>
-            <dt>Sends you back to</dt>
-            <dd>{{ $host }}</dd>
-        </dl>
+@section('content')
+    <section class="wx-card wx-card--shadow-always wx-card--padding-lg">
+        <div class="wx-card__body wx-page__stack">
+            <h1 class="wx-page__title">{{ $client->name }} is asking for access</h1>
 
-        @if (count($scopes) > 0)
-            <ul>
-                @foreach ($scopes as $scope)
-                    <li>{{ $scope->description }}</li>
-                @endforeach
-            </ul>
-        @endif
+            <dl>
+                <dt>Signed in as</dt>
+                <dd>{{ $user->name }}</dd>
+                <dt>Sends you back to</dt>
+                <dd>{{ $host }}</dd>
+            </dl>
 
-        <p>It will act as you, and can do whatever your account can do. Allow it only if you
-           recognise both the application and the address above.</p>
+            @if (count($scopes) > 0)
+                <ul>
+                    @foreach ($scopes as $scope)
+                        <li>{{ $scope->description }}</li>
+                    @endforeach
+                </ul>
+            @endif
 
-        <div class="buttons">
-            <form method="post" action="{{ route('passport.authorizations.approve') }}">
-                @csrf
-                <input type="hidden" name="auth_token" value="{{ $authToken }}">
-                <button type="submit" class="approve">Allow</button>
-            </form>
+            <p>It will act as you, and can do whatever your account can do. Allow it only if you
+               recognise both the application and the address above.</p>
 
-            <form method="post" action="{{ route('passport.authorizations.deny') }}">
-                @csrf
-                @method('DELETE')
-                <input type="hidden" name="auth_token" value="{{ $authToken }}">
-                <button type="submit">Cancel</button>
-            </form>
+            <div class="wx-page__buttons">
+                <form method="post" action="{{ route('passport.authorizations.approve') }}">
+                    @csrf
+                    <input type="hidden" name="auth_token" value="{{ $authToken }}">
+                    <button type="submit" class="wx-button wx-button--primary wx-button--solid wx-button--md"><span class="wx-button__label">Allow</span></button>
+                </form>
+
+                <form method="post" action="{{ route('passport.authorizations.deny') }}">
+                    @csrf
+                    @method('DELETE')
+                    <input type="hidden" name="auth_token" value="{{ $authToken }}">
+                    <button type="submit" class="wx-button wx-button--default wx-button--outline wx-button--md"><span class="wx-button__label">Cancel</span></button>
+                </form>
+            </div>
         </div>
-    </main>
-</body>
-</html>
+    </section>
+@endsection

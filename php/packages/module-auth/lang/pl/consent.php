@@ -19,4 +19,6 @@ return [
     'cancel' => 'Anuluj',
     'disconnect' => 'Odłączyć go można w panelu: Administratorzy → Połączenia.',
     'returns-to' => 'Odpowiedź trafi do :host',
+    'refused-title' => 'Nie można połączyć aplikacji',
+    'refused-text' => 'Panel nie zna tej aplikacji albo prosi ona o wysłanie odpowiedzi na adres, z którym nie została zarejestrowana. Rozpocznij łączenie ponownie z aplikacji; jeśli to się powtarza, pokaż tę stronę osobie, która prowadzi witrynę.',
 ];

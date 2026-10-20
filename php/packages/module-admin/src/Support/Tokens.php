@@ -17,7 +17,22 @@ final class Tokens
 {
     public static function css(): string
     {
-        $css = file_get_contents(dirname(__DIR__, 2).'/resources/css/tokens.css');
+        return self::read('tokens.css');
+    }
+
+    /**
+     * The panel's own components — card, alert, checkbox, button, link — for such a page to write
+     * the same classes they render. Generated from the components by `@webx-ui/core`
+     * (`scripts/server-styles.mjs`), so a button there is the panel's button, not one drawn again.
+     */
+    public static function components(): string
+    {
+        return self::read('components.css');
+    }
+
+    private static function read(string $file): string
+    {
+        $css = file_get_contents(dirname(__DIR__, 2).'/resources/css/'.$file);
 
         return $css === false ? '' : $css;
     }
