@@ -19,7 +19,8 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   finding of the check. No panel setting for it (see Do not).
 - **`settings`** — the tabs of the site's settings the theme prints, so the panel offers them:
   `"settings": {"contacts": ["phones", "emails", "hours"]}` (a tab is `true` or the list of its
-  sections), summed down the chain by `ThemeChain::settings()`. `{}` says the theme prints none;
+  sections); per tab the nearest layer that names it decides (`ThemeChain::settings()`, by layer
+  `settingsBy()`) — a child's list replaces its parent's. `{}` says the theme prints none;
   no key at all keeps Contacts while module-settings' transition lasts. A theme that prints
   `contacts()` declares it — otherwise the tab is hidden and nobody can fill in what it prints.
 - **`Vocabulary`** — the token names and their types; a theme adds its own under `vocabulary` in

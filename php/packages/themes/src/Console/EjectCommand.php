@@ -252,7 +252,7 @@ class EjectCommand extends Command
             $merged['fonts'] = array_values($faces);
         }
 
-        // The settings tabs the package printed are still printed — by the views now copied here.
+        // The settings tabs the chain resolved to are still printed — by the views now copied here.
         $settings = (new ThemeChain([$local, $package]))->settings();
 
         if ($settings !== null) {

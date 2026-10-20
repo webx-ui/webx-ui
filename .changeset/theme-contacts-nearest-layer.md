@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+A local theme decides the sections of the Contacts tab: down a chain of themes the layer nearest to the site that names a tab in its `settings` decides it, so a child theme that lists `"contacts": ["emails", "messengers", "socials"]` replaces the list of `theme-default` (no more addresses, hours, special dates and time zone on a site without an office), and one that says nothing inherits it as before. The lists of packages (`extra.webx.settings`) and of the project (`webx-settings.uses`) are still added. `webx-settings.contacts.sections` is now `null` by default — phones, emails and addresses only where the theme has not listed its own sections; a list there is added like a package's. `webx:doctor` names who brought each section («Settings: contacts»). `ThemeChain::settingsBy()` gives the declaration by layer. `webx-widgets.contact_button => false` turns the quick-contact button off on the whole site: `<x-webx-contact-button>` prints nothing and does not claim the contacts script — no need to override its view with an empty file.

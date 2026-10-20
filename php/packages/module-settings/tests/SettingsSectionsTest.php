@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings\Tests;
 
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Doctor\Diagnosis;
+use WebxUi\Admin\Panel\PackageRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Settings\Models\Setting;
+use WebxUi\Settings\Sections\SettingsSections;
 use WebxUi\Settings\Sections\SettingsSectionsCheck;
 use WebxUi\Settings\Settings;
 use WebxUi\Themes\ThemeChain;
@@ -75,6 +78,44 @@ final class SettingsSectionsTest extends TestCase
     {
         $this->nobodyUsesThem($app);
         $app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('acme/bare-theme', __DIR__, false, settings: [])]));
+    }
+
+    /** A local theme on the default one that prints no office: no phones, addresses or hours. */
+    protected function childThemeThatNarrows(Application $app): void
+    {
+        $this->nobodyUsesThem($app);
+        $this->withMedia($app);
+        $app->instance(ThemeChain::class, new ThemeChain([
+            new ThemeManifest('theme', __DIR__, true, settings: ['contacts' => ['emails', 'messengers', 'socials']]),
+            $this->defaultTheme(),
+        ]));
+    }
+
+    /** A local theme on the default one that says nothing about settings: it prints the parent's. */
+    protected function childThemeThatInherits(Application $app): void
+    {
+        $this->nobodyUsesThem($app);
+        $this->withMedia($app);
+        $app->instance(ThemeChain::class, new ThemeChain([new ThemeManifest('theme', __DIR__, true), $this->defaultTheme()]));
+    }
+
+    /** The narrowing theme, and a package that prints the main number itself. */
+    protected function childThemeThatNarrowsAndAPackageWithPhones(Application $app): void
+    {
+        $this->childThemeThatNarrows($app);
+
+        $installed = sys_get_temp_dir().'/webx-settings-installed-'.getmypid().'.json';
+        file_put_contents($installed, (string) json_encode(['packages' => [
+            ['name' => 'acme/call-bar', 'extra' => ['webx' => ['settings' => ['contacts' => ['phones']]]]],
+        ]]));
+        $app->instance(PackageRegistry::class, new PackageRegistry(new Filesystem, $installed));
+    }
+
+    /** The narrowing theme, and a project that still lists addresses in its config. */
+    protected function childThemeThatNarrowsAndConfiguredSections(Application $app): void
+    {
+        $this->childThemeThatNarrows($app);
+        $app['config']->set('webx-settings.contacts.sections', ['addresses']);
     }
 
     /** The project asks for its logo on the panel to be editable, but has no file library. */
@@ -151,6 +192,72 @@ final class SettingsSectionsTest extends TestCase
     }
 
     #[Test]
+    #[DefineEnvironment('childThemeThatNarrows')]
+    public function a_child_theme_that_lists_its_sections_replaces_its_parents(): void
+    {
+        $keys = array_column($this->invoke('list'), 'key');
+
+        foreach (['contacts.emails', 'contacts.messengers', 'contacts.socials'] as $key) {
+            $this->assertContains($key, $keys);
+        }
+
+        // The parent's phones, addresses and hours — with special dates and the time zone — are gone.
+        foreach (['contacts.phones', 'contacts.addresses', 'contacts.hours', 'contacts.hours-exceptions', 'contacts.timezone'] as $key) {
+            $this->assertNotContains($key, $keys);
+        }
+
+        $tree = $this->app->make(ScreenRegistry::class)->tree(Settings::SCREEN);
+        $this->assertFalse(Tree::find($tree, 'contacts-addresses-card')['visible'] ?? true);
+        $this->assertFalse(Tree::find($tree, 'contacts-hours-card')['visible'] ?? true);
+
+        $said = $this->said('Settings: contacts');
+        $this->assertStringContainsString('used by theme theme.', $said);
+        $this->assertStringContainsString('emails, messengers, socials (theme theme)', $said);
+        $this->assertStringNotContainsString('webx-ui/theme-default', $said);
+    }
+
+    #[Test]
+    #[DefineEnvironment('childThemeThatInherits')]
+    public function a_child_theme_that_says_nothing_keeps_its_parents_sections(): void
+    {
+        $this->assertSame(
+            ['phones', 'emails', 'addresses', 'hours', 'socials'],
+            $this->app->make(SettingsSections::class)->contactSections(),
+        );
+
+        $keys = array_column($this->invoke('list'), 'key');
+        $this->assertContains('contacts.addresses', $keys);
+        $this->assertContains('contacts.timezone', $keys);
+        $this->assertStringContainsString('(theme webx-ui/theme-default)', $this->said('Settings: contacts'));
+    }
+
+    #[Test]
+    #[DefineEnvironment('childThemeThatNarrowsAndAPackageWithPhones')]
+    public function a_package_adds_its_sections_to_a_narrowing_theme(): void
+    {
+        $this->assertSame(
+            ['emails', 'messengers', 'socials', 'phones'],
+            $this->app->make(SettingsSections::class)->contactSections(),
+        );
+
+        $keys = array_column($this->invoke('list'), 'key');
+        $this->assertContains('contacts.phones', $keys);
+        $this->assertNotContains('contacts.addresses', $keys);
+        $this->assertStringContainsString('phones (package acme/call-bar)', $this->said('Settings: contacts'));
+    }
+
+    #[Test]
+    #[DefineEnvironment('childThemeThatNarrowsAndConfiguredSections')]
+    public function the_projects_listed_sections_are_added_to_a_narrowing_theme(): void
+    {
+        $this->assertSame(
+            ['addresses', 'emails', 'messengers', 'socials'],
+            $this->app->make(SettingsSections::class)->contactSections(),
+        );
+        $this->assertStringContainsString('addresses (config/webx-settings.php)', $this->said('Settings: contacts'));
+    }
+
+    #[Test]
     #[DefineEnvironment('brandingWithoutMedia')]
     public function branding_without_the_file_library_is_hidden_and_a_declared_one_is_warned_about(): void
     {
@@ -199,6 +306,12 @@ final class SettingsSectionsTest extends TestCase
 
         $this->assertTrue($this->visibility()['contacts']);
         $this->assertSame('+800 1234 5678', $this->getJson('/api/cms/settings')->assertOk()->json('data.values')['contacts.phones'][0]['number'] ?? null);
+    }
+
+    /** What `theme-default` declares, as the base of a chain. */
+    private function defaultTheme(): ThemeManifest
+    {
+        return new ThemeManifest('webx-ui/theme-default', __DIR__, false, settings: ['contacts' => ['phones', 'emails', 'addresses', 'hours', 'socials']]);
     }
 
     /**

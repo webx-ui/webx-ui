@@ -49,16 +49,18 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   `php artisan webx:settings:contacts --from=<key> [--as=phones|emails|addresses] [--dry-run]`
   moves contacts kept under a key of the site's own; `webx-settings.contacts.legacy` names such
   keys so they are read until then.
-  Which sections the tab draws is `webx-settings.contacts.sections` — `phones`, `emails`,
-  `addresses` (the default), `hours` (with special dates and the time zone), `messengers`,
-  `socials` — joined with the sections the users declare (below); one left out is hidden
+  Which sections the tab draws (`phones`, `emails`, `addresses`, `hours` with special dates and the
+  time zone, `messengers`, `socials`) is the theme's list joined with the packages' and the
+  project's (below); `webx-settings.contacts.sections` — null: `phones, emails, addresses` only
+  where the theme listed none; a list is added like a package's. One left out is hidden
   (`visible: false`), not cut out: `contacts()` still reads it and a patch aimed at its card still
   applies, but neither the form nor `settings_*` offer its keys. A misspelt section stops the boot.
 - **Tabs only where they are used** (`WebxUi\Settings\Sections\SettingsSections`): `branding` and
   `contacts` are offered only when something on the site uses them and their field types exist.
   Contacts are declared by whoever prints them — a theme under `settings` of its manifest
-  (`"settings": {"contacts": ["phones", "hours"]}`, `true` for the whole tab, summed down the
-  chain; `theme-default` declares phones, emails, addresses, hours, socials), a package under
+  (`"settings": {"contacts": ["phones", "hours"]}`, `true` for the whole tab; the nearest layer
+  that names it decides, so a local theme's list replaces `theme-default`'s phones, emails,
+  addresses, hours, socials; doctor names who brought each section), a package under
   `extra.webx.settings` of its composer.json (same shape), the project in `webx-settings.uses`
   (`['contacts']` or `['contacts' => ['phones', 'hours']]`). Branding is used by the panel itself
   and needs `wx-media` — without `webx-ui/module-media` it is hidden. Widgets and SEO read
@@ -87,21 +89,22 @@ is saved by the same `PUT` — asks the same: `cms.can:settings.view,settings.ma
 
 ## Change it without forking
 
-| You want                                | Do this                                                                                                                                         |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| A setting of the site's own             | a patch: `Screens::extend('settings.index', resource_path('screens/settings.json'))` in `AppServiceProvider::boot()`, adding a tab under `tabs` |
-| Read it on the site                     | `settings('<tab>.<field>', 'fallback')` (e.g. `settings('branding.logo')`) — current language, media resolved to its address                    |
-| A setting per language                  | `"localized": true` on the field in the patch                                                                                                   |
-| A content rule of the site's own        | a patch on `settings.content` adding a field under `content-card` named `content.<name>`; it comes out in `more`                                |
-| A phone, an e-mail typed once           | «Settings» → «Contacts»; in a template `contacts()->primaryPhone()`, in content a shortcode row holding the value — `[phone]`                   |
-| Hours, messengers or socials on the tab | list them in `webx-settings.contacts.sections` (publish `webx-settings-config`), not a screen patch                                             |
-| The site's own views print contacts     | `'uses' => ['contacts']` in `config/webx-settings.php`; a theme declares `"settings": {"contacts": [...]}` in its manifest instead              |
-| A package that prints contacts          | `"extra": {"webx": {"settings": {"contacts": ["phones"]}}}` in its composer.json                                                                |
-| React when settings change              | listen to `WebxUi\Settings\Events\SettingsSaved`                                                                                                |
-| The panel's brand from somewhere else   | bind your own `WebxUi\Admin\Contracts\BrandingSource`                                                                                           |
-| No cache while debugging                | `WEBX_SETTINGS_CACHE=false`                                                                                                                     |
-| Other words in the panel                | `php artisan vendor:publish --tag=webx-settings-lang`                                                                                           |
-| Publish the config                      | `php artisan vendor:publish --tag=webx-settings-config`                                                                                         |
+| You want                                    | Do this                                                                                                                                         |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| A setting of the site's own                 | a patch: `Screens::extend('settings.index', resource_path('screens/settings.json'))` in `AppServiceProvider::boot()`, adding a tab under `tabs` |
+| Read it on the site                         | `settings('<tab>.<field>', 'fallback')` (e.g. `settings('branding.logo')`) — current language, media resolved to its address                    |
+| A setting per language                      | `"localized": true` on the field in the patch                                                                                                   |
+| A content rule of the site's own            | a patch on `settings.content` adding a field under `content-card` named `content.<name>`; it comes out in `more`                                |
+| A phone, an e-mail typed once               | «Settings» → «Contacts»; in a template `contacts()->primaryPhone()`, in content a shortcode row holding the value — `[phone]`                   |
+| Hours, messengers or socials on the tab     | list them in `webx-settings.contacts.sections` (publish `webx-settings-config`), not a screen patch                                             |
+| Fewer sections than the parent theme prints | list the site's own in `settings.contacts` of `theme/theme.json` — it replaces the parent's list                                                |
+| The site's own views print contacts         | `'uses' => ['contacts']` in `config/webx-settings.php`; a theme declares `"settings": {"contacts": [...]}` in its manifest instead              |
+| A package that prints contacts              | `"extra": {"webx": {"settings": {"contacts": ["phones"]}}}` in its composer.json                                                                |
+| React when settings change                  | listen to `WebxUi\Settings\Events\SettingsSaved`                                                                                                |
+| The panel's brand from somewhere else       | bind your own `WebxUi\Admin\Contracts\BrandingSource`                                                                                           |
+| No cache while debugging                    | `WEBX_SETTINGS_CACHE=false`                                                                                                                     |
+| Other words in the panel                    | `php artisan vendor:publish --tag=webx-settings-lang`                                                                                           |
+| Publish the config                          | `php artisan vendor:publish --tag=webx-settings-config`                                                                                         |
 
 A patch addresses nodes by the `id`s above; a patch whose target is gone throws when the screen is first built. A
 server-side patch both draws a field and opens its key for writing; a client-side patch in

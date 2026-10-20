@@ -49,9 +49,13 @@ offers the «Contacts» tab only then — with the sections the theme prints:
 ```
 
 A tab is `true` (the whole tab) or the list of its sections — `phones`, `emails`, `addresses`,
-`hours`, `messengers`, `socials`; the layers are summed down the chain, so a local theme over
-`theme-default` adds to what the default prints. `"settings": {}` says the theme prints none of
-them. A manifest with no `settings` key at all keeps the tab while the transition of
+`hours`, `messengers`, `socials`. Down the chain the layer nearest to the site that names a tab
+decides it: a local theme over `theme-default` that lists its own sections replaces the default's
+list — a studio with no office and no opening hours declares
+`"settings": {"contacts": ["emails", "messengers", "socials"]}` and the editor is not asked about
+addresses, hours, special dates or the time zone; a local theme that says nothing keeps what the
+default prints. Packages and the project still add their sections on top. `"settings": {}` says
+the theme prints none of them. A manifest with no `settings` key at all keeps the tab while the transition of
 module-settings lasts (until the next minor) — declare it. `webx:theme:eject` carries the
 package's declaration into `theme/theme.json`. More in [Settings](/guide/settings#tabs-only-where-something-uses-them).
 

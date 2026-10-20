@@ -853,7 +853,9 @@ Google Maps не сделан (§19): это свой JavaScript API со сво
   Учитывает `safe-area-inset-bottom`.
 
 Обычно на сайте стоит одно из двух; оба на одной странице — замечание аудита `widgets.contact_both`
-(§15.2). `theme-default` ставит кнопку.
+(§15.2). `theme-default` ставит кнопку; сайт без неё выключает её ключом
+`webx-widgets.contact_button => false` — кнопки нет в HTML, где бы она ни стояла, и скрипт контактов
+ради неё не подключается.
 
 Классы: `webx-contact-button`, `__toggle`, `__list`, `__item`, `--<канал>`; `webx-contact-bar`,
 `__item`.
