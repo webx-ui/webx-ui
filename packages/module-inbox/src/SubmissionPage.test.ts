@@ -271,6 +271,36 @@ describe('WxInboxSubmissionPage', () => {
     expect(wrapper.find('.wx-actions').exists()).toBe(false)
   })
 
+  it('tells who got the letter as one more pair of the details, a row per address', async () => {
+    const sent = submission({
+      notification: {
+        state: 'delivered',
+        error: null,
+        queued_at: null,
+        delivered_at: '2026-09-18T08:10:00Z',
+        recipients: [
+          { address: 'manager@example.test', state: 'delivered', error: null, at: null },
+          { address: 'sales@example.test', state: 'delivered', error: null, at: null },
+        ],
+      },
+    })
+    const { wrapper } = await open(sent)
+
+    await wrapper.findAll('.wx-tabs__tab')[2]!.trigger('mousedown')
+    await nextTick()
+
+    // In the list and not under it: the same rhythm as every other fact about the submission.
+    const pair = wrapper
+      .findAll('.wx-descriptions__pair')
+      .find((one) => one.text().includes('The notification went out'))
+
+    expect(pair).toBeDefined()
+    expect(pair!.findAll('.wx-submission__recipients li').map((row) => row.text())).toEqual([
+      expect.stringMatching(/manager@example\.test\s*sent/),
+      expect.stringMatching(/sales@example\.test\s*sent/),
+    ])
+  })
+
   it('says a letter that never left, why, and sends it again', async () => {
     const failed = submission({
       notify_error: 'Connection could not be established with host "127.0.0.1:1025"',

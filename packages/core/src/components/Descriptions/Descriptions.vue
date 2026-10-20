@@ -118,25 +118,33 @@ const style = computed(() => ({
   gap: var(--wx-descriptions-row-gap) var(--wx-descriptions-column-gap);
 }
 
+/*
+ * Stacked, a label sits a couple of pixels over its value, and the next pair has to stand clearly
+ * further off — or a label reads as the tail of the value above it, which is what the same eight
+ * pixels inside and between pairs did. The gap between pairs is the one the size names.
+ */
 .wx-descriptions--vertical .wx-descriptions__list {
   grid-template-columns: repeat(var(--wx-descriptions-columns, 2), 1fr);
-  gap: var(--wx-descriptions-row-gap) var(--wx-descriptions-column-gap);
+  gap: var(--wx-descriptions-pair-gap) var(--wx-descriptions-column-gap);
 }
 
 .wx-descriptions--sm {
   --wx-descriptions-row-gap: var(--wx-space-6);
+  --wx-descriptions-pair-gap: var(--wx-space-12);
   --wx-descriptions-column-gap: var(--wx-space-12);
   --wx-descriptions-cell: var(--wx-space-6) var(--wx-space-10);
 }
 
 .wx-descriptions--md {
   --wx-descriptions-row-gap: var(--wx-space-8);
+  --wx-descriptions-pair-gap: var(--wx-space-16);
   --wx-descriptions-column-gap: var(--wx-space-16);
   --wx-descriptions-cell: var(--wx-space-8) var(--wx-space-12);
 }
 
 .wx-descriptions--lg {
   --wx-descriptions-row-gap: var(--wx-space-12);
+  --wx-descriptions-pair-gap: var(--wx-space-24);
   --wx-descriptions-column-gap: var(--wx-space-24);
   --wx-descriptions-cell: var(--wx-space-10) var(--wx-space-16);
 }

@@ -5,6 +5,8 @@ import {
   toast,
   WxBadge,
   WxButton,
+  WxDescriptions,
+  WxDescriptionsItem,
   WxPopover,
   WxSelect,
   WxTable,
@@ -177,14 +179,11 @@ onMounted(load)
                 @click.stop
               />
             </template>
-            <dl class="wx-audit-findings__texts">
-              <dt>{{ t('page.found') }}</dt>
-              <dd>{{ row.found }}</dd>
-              <dt>{{ t('page.why') }}</dt>
-              <dd>{{ row.why }}</dd>
-              <dt>{{ t('page.fix') }}</dt>
-              <dd>{{ row.fix }}</dd>
-            </dl>
+            <wx-descriptions :columns="1" layout="vertical" size="sm">
+              <wx-descriptions-item :label="t('page.found')">{{ row.found }}</wx-descriptions-item>
+              <wx-descriptions-item :label="t('page.why')">{{ row.why }}</wx-descriptions-item>
+              <wx-descriptions-item :label="t('page.fix')">{{ row.fix }}</wx-descriptions-item>
+            </wx-descriptions>
           </wx-popover>
         </span>
       </template>
@@ -215,20 +214,5 @@ onMounted(load)
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-6);
-}
-
-.wx-audit-findings__texts {
-  display: grid;
-  gap: var(--wx-space-4);
-  margin: 0;
-  font-size: var(--wx-font-size-sm);
-}
-
-.wx-audit-findings__texts dt {
-  color: var(--wx-text-muted);
-}
-
-.wx-audit-findings__texts dd {
-  margin: 0 0 var(--wx-space-8);
 }
 </style>

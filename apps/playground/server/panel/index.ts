@@ -6013,7 +6013,17 @@ function detail(record: SubmissionRecord, query?: URLSearchParams) {
       error: record.notify_error,
       queued_at: null,
       delivered_at: record.notified_at,
-      recipients: [],
+      /* Two addresses, so the card shows the rows of a letter that went to more than one. */
+      recipients:
+        record.notified_at === null
+          ? []
+          : [
+              { address: 'manager@example.com', state: 'delivered' as const },
+              {
+                address: 'sales@example.com',
+                state: record.notify_error !== null ? ('failed' as const) : ('delivered' as const),
+              },
+            ],
     },
     previous_id: index > 0 ? siblings[index - 1].id : null,
     next_id: index >= 0 && index < siblings.length - 1 ? siblings[index + 1].id : null,
