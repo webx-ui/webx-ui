@@ -20,12 +20,27 @@ defaults:
   run:
     working-directory: php
 
+# The merge queue asks the API which pull requests a group holds (scripts/release-pr.mjs).
+permissions:
+  contents: read
+  pull-requests: read
+
 # A pull request and the merge queue test only the packages the change reaches — the changed
 # ones and every package that requires them, by `require` in composer.json (see
 # scripts/affected.mjs). The decision is made inside the job, not with `paths-ignore` or a job
 # in front of it: the ruleset requires these two checks by name, and a check that never starts,
 # or is skipped because the job before it failed, either stalls the queue or passes unseen.
 # With nothing to test every step below is skipped and the check reports green.
+#
+# The version PR takes a light path (scripts/release-pr.mjs): it rewrites every composer.json,
+# so the rule above would run the whole suite on it, and again in its queue — about 17 minutes
+# of every release — for a change that only bumps versions on top of a main the queue already
+# proved. It counts as the version PR when the branch is changeset-release/main AND the
+# organisation's App opened it and pushed the run; in the queue, when every squash in the group
+# (`… (#N)` subjects between base_sha and the group's head) is such a PR — one other PR in the
+# group and the run is full. Either way the diff may hold only manifests, changelogs, consumed
+# changesets and lock files; a version PR edited by hand runs in full. The light path is the
+# same job with fewer steps, so the required checks still report.
 
 jobs:
   verify:
@@ -51,8 +66,35 @@ jobs:
         id: affected
         run: node ../scripts/affected.mjs --php "$BASE"
 
+      - name: Is it the version PR
+        id: release
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        env:
+          EVENT: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          ACTOR: ${{ github.actor }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The queue's group is a chain of squash commits on top of base_sha, at most five
+          # (max_entries_to_build); a shallow checkout has only its head.
+          if [ "$EVENT" = merge_group ]; then git fetch --no-tags --deepen=10 origin "$GITHUB_SHA"; fi
+          node ../scripts/release-pr.mjs "$BASE"
+
+      # none — nothing to check; light — the version PR; full — what affected.mjs found.
+      - name: Choose the path
+        env:
+          PHP: ${{ steps.affected.outputs.php }}
+          LIGHT: ${{ steps.release.outputs.light }}
+        run: |
+          if [ "$LIGHT" = true ]; then path=light; elif [ "$PHP" = none ]; then path=none; else path=full; fi
+          echo "PHP_PATH=$path" >> "$GITHUB_ENV"
+          echo "PHP CI path: $path"
+
       - uses: shivammathur/setup-php@v2
-        if: steps.affected.outputs.php != 'none'
+        if: env.PHP_PATH != 'none' && (env.PHP_PATH == 'full' || matrix.php == '8.4')
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, pdo_sqlite, sqlite3
@@ -61,15 +103,24 @@ jobs:
 
       # The manifests read the same on every PHP.
       - name: Validate manifests
-        if: steps.affected.outputs.php != 'none' && matrix.php == '8.4'
+        if: env.PHP_PATH != 'none' && matrix.php == '8.4'
         run: |
           composer validate --no-check-all --no-check-publish
-          for manifest in packages/*/composer.json; do
-            ( cd "$(dirname "$manifest")" && composer validate --strict )
+          for manifest in packages/*/composer.json site/composer.json; do
+            ( cd "$(dirname "$manifest")" && composer validate --strict --no-check-lock )
           done
 
+      # The one thing a version PR can get wrong: a constraint between our packages, or a pin in
+      # the path repository, that is not the shared version. The script that wrote them is
+      # idempotent, so running it again must change nothing.
+      - name: Versions agree
+        if: env.PHP_PATH == 'light' && matrix.php == '8.4'
+        run: |
+          node ../scripts/sync-php-version.mjs
+          git diff --exit-code -- composer.json packages/*/composer.json site/composer.json
+
       - name: Cache Composer downloads
-        if: steps.affected.outputs.php != 'none'
+        if: env.PHP_PATH == 'full'
         uses: actions/cache@v4
         with:
           path: ~/.cache/composer/files
@@ -77,7 +128,7 @@ jobs:
           restore-keys: composer-${{ matrix.php }}-
 
       - name: Install dependencies
-        if: steps.affected.outputs.php != 'none'
+        if: env.PHP_PATH == 'full'
         run: composer install --no-interaction --no-progress
 
       # Style and static analysis do not depend on the runtime the tests run on, so they run once,
@@ -85,7 +136,7 @@ jobs:
       # keep a cache keyed by file content: a fresh checkout reuses it and only what changed is
       # looked at again (a cold Pint takes over a minute, a warm one seconds; PHPStan alike).
       - name: Restore the lint and analysis caches
-        if: steps.affected.outputs.php != 'none' && matrix.php == '8.4'
+        if: env.PHP_PATH == 'full' && matrix.php == '8.4'
         uses: actions/cache@v4
         with:
           path: |
@@ -95,13 +146,13 @@ jobs:
           restore-keys: php-lint-${{ matrix.php }}-
 
       - name: Lint
-        if: steps.affected.outputs.php != 'none' && matrix.php == '8.4'
+        if: env.PHP_PATH == 'full' && matrix.php == '8.4'
         run: vendor/bin/pint --test --parallel --cache-file=.pint.cache
 
       - name: Analyse
-        if: steps.affected.outputs.php != 'none' && matrix.php == '8.4'
+        if: env.PHP_PATH == 'full' && matrix.php == '8.4'
         run: vendor/bin/phpstan analyse --no-progress
 
       - name: Test
-        if: steps.affected.outputs.php != 'none'
+        if: env.PHP_PATH == 'full'
         run: vendor/bin/phpunit ${{ steps.affected.outputs.php_tests }}
