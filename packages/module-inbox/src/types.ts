@@ -1,5 +1,5 @@
 import type { LocalizedValue } from '@webx-ui/core'
-import type { RelationCandidate } from '@webx-ui/module-admin'
+import type { LinkValue, RelationCandidate } from '@webx-ui/module-admin'
 
 /** The kinds of question a form can ask (§4). Mirrors `WebxUi\Inbox\Fields\FieldType`. */
 export const FIELD_TYPES = [
@@ -98,15 +98,24 @@ export interface RecipientState {
   problem: RecipientProblem | null
 }
 
+/** A letter to the form's addresses, or the channels of the notifications module. */
+export type NotifyVia = 'email' | 'channels'
+
 /** The settings of a form (§5). Every key is literal, dots included. */
 export interface FormOptions {
   'thank-you.heading'?: LocalizedValue
   'thank-you.text'?: LocalizedValue
   'design.submit-text'?: LocalizedValue
-  redirect?: string
+  /**
+   * Where the visitor goes instead of the thank-you: a link of the panel. A string is what a
+   * form saved before there was a choice holds — an address.
+   */
+  redirect?: LinkValue | string
   recipients?: Recipient[]
   email_field?: string
-  /** Channels of the notifications module a submission from the site also goes to (NOTIFICATIONS §15.2). */
+  /** How a submission is told about: a letter to `recipients`, or `notify_channels` — not both. */
+  notify_via?: NotifyVia
+  /** Channels of the notifications module a submission from the site goes to (NOTIFICATIONS §15.2). */
   notify_channels?: number[]
   'antispam.honeypot'?: boolean
   'antispam.min_seconds'?: number
@@ -130,6 +139,11 @@ export interface InboxForm {
   notifies?: boolean
   /** Whether `webx-ui/module-notifications` is installed: "Notify through" shows only then. */
   notifications?: boolean
+  /**
+   * How the form is set to tell, worked out by the server for a form saved before the choice
+   * existed. Optional only because an older server does not send it.
+   */
+  notify_via?: NotifyVia
   /** The channels `options.notify_channels` holds, as saved, each with whether it sends. */
   channels?: FormChannel[]
   position: number

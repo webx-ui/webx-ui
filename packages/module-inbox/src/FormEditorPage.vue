@@ -213,6 +213,7 @@ async function save(): Promise<void> {
             :errors="errors"
             :reported="form.recipients"
             :notifications="form.notifications"
+            :via="form.notify_via"
           />
         </wx-tab>
 

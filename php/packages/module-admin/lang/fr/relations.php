@@ -12,6 +12,7 @@ return [
     'field-add' => 'Ajouter…',
     'field-searching' => 'Recherche…',
     'field-nothing' => 'Rien n’a été trouvé.',
+    'field-all-chosen' => 'Tout ce qui existe est déjà choisi.',
     'field-empty' => 'Rien n’est encore choisi.',
     'field-remove' => 'Retirer',
     'field-drag' => 'Faites glisser pour changer l’ordre',

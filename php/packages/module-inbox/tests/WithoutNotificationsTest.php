@@ -7,7 +7,9 @@ namespace WebxUi\Inbox\Tests;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Inbox\Doctor\StrandedForms;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Mail\SubmissionReceived;
 use WebxUi\Inbox\Models\Submission;
@@ -78,5 +80,30 @@ final class WithoutNotificationsTest extends TestCase
         $this->actingAs($this->editor(), 'cms')
             ->postJson($this->api("submissions/{$submission->id}/notify"))
             ->assertStatus(422);
+    }
+
+    #[Test]
+    public function a_form_set_to_channels_writes_letters_when_the_module_is_gone_and_the_doctor_says_so(): void
+    {
+        Mail::fake();
+
+        $this->form('contact', [], [
+            'notify_via' => 'channels',
+            'recipients' => [['email' => 'office@site.test']],
+            'notify_channels' => [3],
+        ]);
+        $this->form('callback', [], ['notify_via' => 'email', 'recipients' => [['email' => 'office@site.test']]]);
+
+        $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'ada@site.test']])->assertOk();
+
+        // Not lost without a word: the addresses kept on the form are written to.
+        Mail::assertQueued(SubmissionReceived::class, static fn (SubmissionReceived $mail): bool => $mail->hasTo('office@site.test'));
+
+        $this->assertContains(StrandedForms::class, $this->app->make(DoctorChecks::class)->all());
+
+        $found = $this->app->make(StrandedForms::class)->run();
+        $this->assertCount(1, $found);
+        $this->assertTrue($found[0]->warned());
+        $this->assertStringContainsString('form "contact"', $found[0]->detail);
     }
 }

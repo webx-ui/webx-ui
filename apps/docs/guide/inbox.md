@@ -52,9 +52,16 @@ whether it becomes a column of the submission list. A JSON array gives none of t
 building a column would mean walking inside a document, and keeping an answer tied to its field
 would mean inventing a stability its keys do not have.
 
+::: v-pre
 Every field has a machine name, so the HTML says `fields[email]` and not `field_17`. A site fills
-its hidden fields by that name, the CSV is headed by it, and renaming the label breaks neither. A
-field nobody named answers to `f{id}`.
+its hidden fields by that name, the CSV is headed by it, a channel's template reads it as
+`{{field.<name>}}`, and renaming the label breaks none of them. The field's dialog asks for the
+type, then the label, and keeps the name under «Advanced»: a new field is named after its label as
+it is typed («Your phone» → `your_phone`, `_2` after a taken one) until somebody writes a name; an
+agent's or an API's field without one gets the same. Renaming a field warns that
+`{{field.<old name>}}` in channel templates stops working; the answers already received stay with
+the field — they point at it by id, and the export keeps them in its column.
+:::
 
 Eleven types: `text` · `email` · `tel` · `textarea` · `select` · `radio` · `checkbox` · `consent`
 · `date` · `file` · `hidden`. A multiple answer is written twice — joined by commas in `value`,
@@ -247,6 +254,14 @@ that asks for JSON gets `{ ok, heading, message, redirect, html }` — the form'
 address when it has one — and anything else a redirect: there, or back to the page with the
 thank-you in the session. A form whose thank-you nobody wrote still says «Thank you».
 
+**Where the visitor goes after sending** is chosen the way a menu item's link is — «This site»,
+«An address», «Nowhere» (the default: the thank-you in place of the form). A page of the site is
+kept as the page, not as its address, and opens in the language the form was sent in, or in the
+main language when it has no translation; a page that is not on the site gets the thank-you. A
+path typed as an address gets the visitor's language prefix by the routing rules (`/thank-you` →
+`/ru/thank-you`), `https://…` goes as written. The value is `options.redirect` in the same shape
+as a menu link, in the API and in `inbox_form_save`; an address saved before is an «Address».
+
 **The same thing sent twice.** Answers are hashed, and the same hash from the same form inside
 fifteen minutes updates the submission it matches rather than making a second one. Outside that
 window it is a new submission: without a window, the same enquiry sent again next month would
@@ -342,8 +357,11 @@ theme's colours. A theme rewrites the letter in `views/vendor/webx-inbox/mail/su
 The letter is the inbox's own and needs nothing else. With
 [`webx-ui/module-notifications`](./notifications) installed, a form can also notify through its
 **channels** — a Telegram chat, another letter with a template of its own, a provider a package
-adds — and the two work side by side: the letter goes to the recipients above, and each chosen
-channel gets the submission by its own template. The inbox does not require that package; without
+adds — instead of the letter: a form tells **one way**, chosen on its Notifications tab under «How
+to tell about a submission» (`options.notify_via`: `email` or `channels`). The settings of the
+way not chosen stay on the form, so switching back finds them; a form saved before the choice is
+`channels` when it had channels chosen, `email` otherwise. A form set to channels on a site that
+has since lost the module writes its letter to its addresses instead, and `webx:doctor` warns. The inbox does not require that package; without
 it nothing about channels shows.
 
 - **The event `inbox.submission`.** The inbox declares it for the channels. A template gets
@@ -353,8 +371,11 @@ it nothing about channels shows.
   `{{files}}`, `{{page}}`, `{{locale}}`, `{{utm}}` and `{{reply_to}}` — the answer of the form's
   e-mail field. `reply_to` is also an **addressee**: an e-mail channel of this event can write to
   the visitor, and its letters answer to them. The IP and the browser are not variables.
-- **«Notify through».** The Notifications tab of the form's editor gets a second card: the channels
-  of this event and the ones for any event, chosen with search. The ids are kept in
+- **The Notifications tab.** One card: on top the field with the visitor's address (the letter's
+  Reply-To, `{{reply_to}}` in channels), then the switch, then the chosen way. «Notify through»
+  offers, as soon as it is opened, the channels of this event and the ones for any event (name and
+  provider, a switched-off one marked «Off»); typing filters them. With none at all it says «No
+  channels yet». The ids are kept in
   `options.notify_channels`; a channel deleted for good drops out on save, one in the bin stays and
   is logged as skipped. «Set up channels» leads to the section, for whoever may manage it.
 - **When it is sent.** Once the submission is stored, from the site's form only — not for the same
@@ -362,10 +383,10 @@ it nothing about channels shows.
   template in the language the submission came in.
 - **What came of it.** The submission's card has a «Channels» tab — a row per recipient: sent,
   queued, failed with the error, or skipped with the reason — and a warning above it when a channel
-  did not deliver. «Send the notification again» sends the letter and the channels' failed rows. The
+  did not deliver. «Send the notification again» goes the way the form tells: the letter, or the channels' failed rows. The
   same is `channels` in `inbox_get`; `inbox_notify` takes `channels: false` to leave them alone.
-- A form **notifies** — for the editor's warning and the audit's `inbox.no_recipients` — when a
-  letter reaches somebody or a chosen channel is switched on.
+- A form **notifies** — for the editor's warning and the audit's `inbox.no_recipients` — when the
+  way it is set to reaches somebody: a letter to an address, or a chosen channel that is switched on.
   :::
 
 ## After a submission is stored

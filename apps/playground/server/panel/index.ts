@@ -1934,12 +1934,18 @@ function withRecipients(item: InboxForm): InboxForm {
 
   // The notifications module is installed here: "Notify through" shows, with the chosen channels.
   const chosen = channelsOfForm(item.options.notify_channels)
+  // One way per form, as `Form::notifyVia()`: a form saved before the choice by what it had.
+  const via =
+    item.options.notify_via ??
+    ((item.options.notify_channels ?? []).length > 0 ? 'channels' : 'email')
 
   return {
     ...item,
     recipients,
-    notifies: recipients.some((one) => one.receives) || chosen.some((one) => one.sends),
+    notifies:
+      via === 'channels' ? chosen.some((one) => one.sends) : recipients.some((one) => one.receives),
     notifications: true,
+    notify_via: via,
     channels: chosen,
   }
 }
@@ -1986,7 +1992,10 @@ on('GET', '/inbox/forms/(\\d+)', ({ params }) => {
 on('PUT', '/inbox/forms/(\\d+)', ({ params, body }) => {
   const item = form(params[0])
 
-  Object.assign(item, omit(body, ['recipients', 'notifies', 'notifications', 'channels']))
+  Object.assign(
+    item,
+    omit(body, ['recipients', 'notifies', 'notifications', 'notify_via', 'channels']),
+  )
   item.updated_at = new Date().toISOString()
 
   return {

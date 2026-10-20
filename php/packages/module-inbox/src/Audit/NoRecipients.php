@@ -39,8 +39,12 @@ final class NoRecipients extends ModuleCheck
         $forms = Form::query()->enabled()->orderBy('position')->orderBy('id')->get();
         Recipients::load($forms);
 
+        $channels = app(Channels::class);
+
         foreach ($forms as $form) {
-            if (Recipients::notifies($form) || app(Channels::class)->notifies($form)) {
+            // By the way the form is set to tell: a letter to nobody is not made up for by a
+            // channel the form does not use, and the other way round.
+            if ($channels->through($form) ? $channels->notifies($form) : Recipients::notifies($form)) {
                 continue;
             }
 

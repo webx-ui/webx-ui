@@ -522,11 +522,12 @@ defineExpose({ create: byHand })
               style="width: 180px"
               @update:model-value="moveTo"
             />
+            <!-- Words only, like the select beside it: the bar reads as one line of text, and an
+                 icon on just one of its controls made that one look like something else. -->
             <wx-button
               size="sm"
               variant="outline"
               type="danger"
-              icon="trash"
               @click="remove(selected.map((row) => row.id))"
             >
               {{ t('panel.delete') }}

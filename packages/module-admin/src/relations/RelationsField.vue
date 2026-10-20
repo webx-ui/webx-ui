@@ -51,6 +51,11 @@ const props = withDefaults(
     disabled?: boolean
     addText?: string
     emptyText?: string
+    /**
+     * What the open list says when the target has nothing to offer at all — not "nothing found",
+     * which is about the words typed: "No channels yet".
+     */
+    noneText?: string
   }>(),
   {
     max: null,
@@ -58,6 +63,7 @@ const props = withDefaults(
     disabled: false,
     addText: undefined,
     emptyText: undefined,
+    noneText: undefined,
   },
 )
 
@@ -78,6 +84,8 @@ const forbidden = ref(false)
 const candidates = ref<RelationCandidate[]>([])
 const searching = ref(false)
 const term = ref('')
+/** The term the candidates are for; null until the first search. */
+const searched = ref<string | null>(null)
 
 const chosen = computed(() => normaliseRelations(value.value))
 
@@ -118,6 +126,7 @@ watch(
     missing.value = new Set()
     forbidden.value = false
     candidates.value = []
+    searched.value = null
     void name(chosen.value)
   },
 )
@@ -153,7 +162,7 @@ const options = computed<AutocompleteOption[]>(() =>
     .filter((one) => one.id !== self.value && !chosen.value.includes(one.id))
     .map((one) => ({
       value: one.title,
-      description: [one.subtitle, one.visible ? null : t('relations.field-hidden')]
+      description: [one.subtitle, hiddenMark(one)]
         .filter((part): part is string => typeof part === 'string' && part !== '')
         .join(' · '),
       id: one.id,
@@ -166,6 +175,7 @@ async function search(query: string): Promise<void> {
   try {
     const found = await api.value.search(query)
     candidates.value = found
+    searched.value = query
     remember(found)
   } catch (error) {
     candidates.value = []
@@ -173,6 +183,35 @@ async function search(query: string): Promise<void> {
   } finally {
     searching.value = false
   }
+}
+
+/*
+ * The box searches as somebody types, and a click into an empty one typed nothing: the list
+ * opened on "Nothing found" over a target that had records. Opening it is a search for what is
+ * in it now — everything, when that is nothing.
+ */
+function onOpen(): void {
+  if (searched.value !== term.value && !searching.value) void search(term.value)
+}
+
+/**
+ * What the open list says when it has no rows. Asked with nothing typed, it is about the target:
+ * it has nothing yet, or everything it has is already in the list. Only words that match nothing
+ * are "nothing found".
+ */
+const nothingText = computed(() => {
+  if (searched.value !== '') return t('relations.field-nothing')
+
+  if (candidates.value.length === 0) return props.noneText ?? t('relations.field-nothing')
+
+  return t('relations.field-all-chosen')
+})
+
+/** The target's own word for a record it would not use — "Off" for a channel — or the field's. */
+function hiddenMark(one: RelationCandidate): string | null {
+  if (one.mark) return one.mark
+
+  return one.visible ? null : t('relations.field-hidden')
 }
 
 function pick(option: AutocompleteOption): void {
@@ -207,7 +246,7 @@ function mark(row: Row): string | null {
 
   if (row.candidate.trashed === true) return t('relations.field-trashed')
 
-  return row.candidate.visible ? null : t('relations.field-hidden')
+  return hiddenMark(row.candidate)
 }
 </script>
 
@@ -263,11 +302,12 @@ function mark(row: Row): string | null {
         teleport
         :loading="searching"
         :loading-text="t('relations.field-searching')"
-        :empty-text="t('relations.field-nothing')"
+        :empty-text="nothingText"
         :placeholder="placeholder"
         :aria-label="placeholder"
         :disabled="props.disabled || full"
         @search="search"
+        @open="onOpen"
         @select="pick"
       />
     </div>

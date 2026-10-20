@@ -784,6 +784,8 @@ export function notifyCandidates(target: string) {
           .join(' · '),
         thumb: null,
         visible: one.enabled && one.deleted_at === null,
+        // The target's own word for a channel that is off, as `ChannelTarget` answers it.
+        mark: one.enabled ? null : 'Off',
       },
       deleted: one.deleted_at !== null,
     }))

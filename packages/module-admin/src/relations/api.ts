@@ -16,6 +16,8 @@ export interface RelationCandidate {
   visible: boolean
   /** In the bin — a kind of hidden that says where to look. Only names of the chosen carry it. */
   trashed?: boolean
+  /** The target's word for a record it shows but would not use — "Off" for a channel. */
+  mark?: string | null
 }
 
 export interface RelationsApi {

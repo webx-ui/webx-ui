@@ -153,6 +153,62 @@ final class PanelFieldsTest extends TestCase
     }
 
     #[Test]
+    public function a_new_question_without_a_name_is_named_after_its_label(): void
+    {
+        $form = $this->form('contact', [['name' => 'vash_telefon', 'title' => 'Phone']]);
+        $create = fn (array $title) => $this->actingAs($this->editor(), 'cms')
+            ->postJson($this->api("forms/{$form->getKey()}/fields"), ['type' => 'tel', 'title' => $title])
+            ->assertCreated();
+
+        // Taken already: the next one along, never a number nobody can read.
+        $create(['ru' => 'Ваш телефон', 'en' => ''])->assertJsonPath('data.name', 'vash_telefon_2');
+        $create(['en' => 'Your e-mail / name'])->assertJsonPath('data.name', 'your_e_mail_name');
+        $create(['en' => '2nd phone'])->assertJsonPath('data.name', 'field_2nd_phone');
+    }
+
+    #[Test]
+    public function renaming_a_question_keeps_the_answers_it_had_and_the_reply_to_of_the_form(): void
+    {
+        $form = $this->form('contact', [], ['email_field' => 'email']);
+        $email = $form->fields->firstWhere('name', 'email');
+        $this->assertInstanceOf(Field::class, $email);
+
+        $submission = $this->submission($form);
+        $submission->values()->create([
+            'form_id' => $form->getKey(),
+            'field_id' => $email->getKey(),
+            'name' => 'email',
+            'label' => 'Email',
+            'type' => 'email',
+            'value' => 'ada@site.test',
+        ]);
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api("fields/{$email->getKey()}"), ['name' => 'visitor_email', 'type' => 'email', 'title' => ['en' => 'Email']])
+            ->assertOk()
+            ->assertJsonPath('data.key', 'visitor_email');
+
+        // The Reply-To goes with the field rather than staying behind on a name nobody has.
+        $this->assertSame('visitor_email', $form->refresh()->option('email_field'));
+
+        // The answer is the field's by id: its column of the export still has it.
+        $csv = $this->actingAs($this->editor(), 'cms')
+            ->get($this->api("forms/{$form->getKey()}/submissions/export"))
+            ->assertOk()
+            ->streamedContent();
+
+        $this->assertStringContainsString('Email (visitor_email)', $csv);
+        $this->assertStringContainsString('ada@site.test', $csv);
+
+        // And the submission reads as it arrived.
+        $this->actingAs($this->editor(), 'cms')
+            ->getJson($this->api("submissions/{$submission->getKey()}"))
+            ->assertOk()
+            ->assertJsonPath('data.values.0.field_id', $email->getKey())
+            ->assertJsonPath('data.values.0.value', 'ada@site.test');
+    }
+
+    #[Test]
     public function a_name_with_a_dot_in_it_is_refused(): void
     {
         $form = $this->form('contact');

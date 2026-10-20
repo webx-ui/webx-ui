@@ -59,9 +59,10 @@ final class ChannelTarget extends RelationTarget
 
     /**
      * The row, with the channel's provider and state under their own names: the field draws an
-     * icon by the one and a mark by the other.
+     * icon by the one and a mark by the other. `mark` is the word for a channel that is off — the
+     * field's own «not on the site» is about pages, and a channel is not on any site.
      *
-     * @return array{id: int, title: string, subtitle: string|null, thumb: string|null, visible: bool, trashed: bool, provider?: string, enabled?: bool}
+     * @return array{id: int, title: string, subtitle: string|null, thumb: string|null, visible: bool, trashed: bool, provider?: string, enabled?: bool, mark?: string|null}
      */
     public function row(Model $record, string $locale): array
     {
@@ -70,6 +71,7 @@ final class ChannelTarget extends RelationTarget
         if ($record instanceof Channel) {
             $row['provider'] = $record->provider;
             $row['enabled'] = $record->enabled;
+            $row['mark'] = $record->enabled ? null : (string) __('webx-notifications::panel.off');
         }
 
         return $row;

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Panel;
 
 use Closure;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Http\Requests\SaveFormRequest;
@@ -70,6 +72,22 @@ final class FormInput
                 }
 
                 $fail((string) trans('webx-inbox::errors.email-field'));
+            }],
+            'options.'.Form::NOTIFY_VIA => ['nullable', Rule::in([Form::VIA_EMAIL, Form::VIA_CHANNELS])],
+            // The same link a menu item holds, refused for the same reasons: a record of a section
+            // the site does not have, an address that would run script. A plain string is an
+            // address, as forms saved before the choice kept it.
+            'options.redirect' => ['nullable', static function (string $attribute, mixed $value, Closure $fail): void {
+                if (is_string($value)) {
+                    $value = ['target' => 'url', 'url' => $value];
+                }
+
+                $rules = app(FieldTypes::class)->get('wx-link')?->rules([]) ?? [];
+                $check = Validator::make(['redirect' => $value], ['redirect' => $rules], [], ['redirect' => (string) trans('webx-inbox::panel.redirect')]);
+
+                if ($check->fails()) {
+                    $fail((string) $check->errors()->first('redirect'));
+                }
             }],
         ];
     }

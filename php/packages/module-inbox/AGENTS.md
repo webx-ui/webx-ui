@@ -11,11 +11,11 @@ are `webx-ui/module-auth`, the frame `webx-ui/module-admin`, languages `webx-ui/
 - **Tables** `inbox_forms`, `inbox_form_fields`, `inbox_statuses`, `inbox_submissions`,
   `inbox_submission_values`, `inbox_submission_files`, `inbox_submission_events`. The migrations
   seed five statuses (New, In progress, Done, Rejected, Spam).
-- **A field is a row** with a machine name: inputs are `fields[email]`, an export is headed by it,
-  one without it answers to `f{id}`. An answer keeps the field's name, label and type as they were.
+- **A field is a row** with a machine name (`fields[email]`, the export, `{{field.<name>}}`): a new one without it is
+  named from its label (`Fields\FieldNames`, `_2` if taken). An answer keeps its field's id, name, label and type.
 - **Public door** `POST {webx-inbox.path}/{slug}` (default `/webx/forms/{slug}`, `webx.inbox.submit`) — the
   `web` group without CSRF, so pages cached whole keep working. Answers the widgets' `FormResponse`
-  (`{ ok, heading, message, redirect, html }`; a redirect with the thank-you without script), 422 keyed `fields.<name>`.
+  (`{ ok, heading, message, redirect, html }`), 422 keyed `fields.<name>`. `options.redirect` is a menu-style link: a record in the submission's language, else the main one.
 - **Blade tag** `<x-webx-inbox::form slug="contact" />`, with `:values` for hidden fields by
   machine name and `placement="footer"` (adds `webx-inbox-form--footer`, remembered on the
   submission). An unknown or switched-off slug prints nothing.
@@ -41,17 +41,17 @@ are `webx-ui/module-auth`, the frame `webx-ui/module-admin`, languages `webx-ui/
 - **Event** `SubmissionStored` — always fired; `SubmissionHandler` (config `handlers`). **Panel**: `/api/cms/inbox`.
 - **Channels** — only with `webx-ui/module-notifications` (a `suggest`): event `inbox.submission`
   (`Notifications\SubmissionEvent`), ids in `options.notify_channels`, sent by `SendToChannels` for
-  the site's form, not a repeat; `channels` on a form and a submission (null without the module).
+  the site's form, not a repeat; `channels` on a form and a submission (null without the module). One way
+  per form: `options.notify_via` `email`|`channels`; `channels` without the module writes letters (`webx:doctor` warns).
   Default templates (HTML letter, Telegram, text): `Notifications\SubmissionTemplates`, words `mail.*`.
 - **MCP** tools `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`, `inbox_get`,
-  `inbox_set_status`, `inbox_notify`; scopes `inbox:read`, `inbox:write`.
-- **Command** `webx:inbox:prune` (`--days`, `--spam-days`, `--dry-run`) — not scheduled by default.
+  `inbox_set_status`, `inbox_notify`; scopes `inbox:read`, `inbox:write`. **Command** `webx:inbox:prune` (`--days`, `--spam-days`, `--dry-run`) — not scheduled by default.
 - **Audit** (`webx-ui/module-audit`): `inbox.no_recipients`, `inbox.notification` (`inbox_failed_days`,
   `inbox_queued_minutes`), `inbox.captcha_keys` (error), `inbox.captcha_unused` (notice), `inbox.spam_without_captcha`
   (warning; `inbox_spam_min` 3 spam + refusals in `inbox_spam_days` 30), `inbox.legacy_views` (warning: a pre-engine `form.blade.php`).
 - **Field type** `wx-inbox-form` (`Screens\FormFieldType`; component in `@webx-ui/module-inbox`): a form
-  chosen by name, kept by **slug**; a slug no form has is refused when new, kept when already held.
-- Also registered: a relation target for forms (`inbox-form`, rows with `slug`), notes on submissions, demo content.
+  chosen by name, kept by **slug**; a slug no form has is refused when new, kept when already held. Also: relation target
+  `inbox-form` (rows with `slug`), notes on submissions, demo content.
 
 ### Permissions
 
@@ -89,7 +89,7 @@ submissions, `cms.can:inbox.update` to change them, `cms.can:inbox.manage` for f
 | Send submissions to a CRM or mailing list   | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below                                                                                  |
 | Write back to the visitor (a gift, a PDF)   | the same: a handler on that form's slug that sends a mailable to its e-mail field                                                                          |
 | Anything else once a submission is stored   | a listener of `WebxUi\Inbox\Events\SubmissionStored` (`Event::listen`), `ShouldQueue`                                                                      |
-| A submission also in Telegram               | a channel of `inbox.submission`, then `inbox_form_save` `options.notify_channels`                                                                          |
+| A submission in Telegram instead of letters | a channel of `inbox.submission`, then `inbox_form_save` `options.notify_via: channels`, `notify_channels`                                                  |
 | A letter sent again                         | the submission's menu in the panel; MCP `inbox_notify` (`dry_run` first)                                                                                   |
 
 ### Classes

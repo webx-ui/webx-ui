@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use WebxUi\Admin\Links\LinkTarget;
+use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
 use WebxUi\Inbox\Antispam\Inspection;
@@ -19,9 +21,12 @@ use WebxUi\Inbox\Antispam\Throttle;
 use WebxUi\Inbox\Antispam\Verdict;
 use WebxUi\Inbox\Mail\Notifier;
 use WebxUi\Inbox\Models\Form;
+use WebxUi\Inbox\Notifications\Channels;
+use WebxUi\Inbox\Panel\FormOptions;
 use WebxUi\Inbox\Submissions\Intake;
 use WebxUi\Inbox\Submissions\Rules;
 use WebxUi\Inbox\Support\Forms;
+use WebxUi\Localization\Locales;
 use WebxUi\Widgets\Forms\FormResponse;
 
 /**
@@ -44,6 +49,9 @@ final class SubmitController
         private readonly Forms $forms,
         private readonly Throttle $throttle,
         private readonly Refusals $refusals,
+        private readonly Channels $channels,
+        private readonly LinkUrls $urls,
+        private readonly Locales $locales,
     ) {}
 
     public function __invoke(Request $request, string $slug): JsonResponse|RedirectResponse
@@ -106,8 +114,11 @@ final class SubmitController
         $this->throttle->hit($form, $request);
 
         // Last, and on its own: everything above it is the submission, and a mail server that
-        // is down must not undo any of it (§2.10).
-        $this->notifier->send($submission);
+        // is down must not undo any of it (§2.10). A form that tells its channels instead is
+        // sent to them by the stored event (`SendToChannels`), not written a letter as well.
+        if (! $this->channels->through($form)) {
+            $this->notifier->send($submission);
+        }
 
         return $this->accepted($form, $request);
     }
@@ -210,10 +221,36 @@ final class SubmitController
         return is_string($value) && $value !== '' ? $value : null;
     }
 
+    /**
+     * Where the visitor goes instead of the thank-you, in the language the form was sent in — the
+     * language the page was printed in (`SpeakTheLanguageOfThePage`).
+     *
+     * A record of the site is its version in that language, or in the main one when it has none:
+     * a visitor of the Russian page is better off on the English thank-you than on a 404. A record
+     * that is not on the site in either — a draft, the bin, deleted — is no place to send anybody,
+     * and the visitor gets the thank-you where the form was. An address is the editor's, and a path
+     * of this site gets the visitor's language the way every hand-written link does.
+     */
     private function redirect(Form $form): ?string
     {
-        $redirect = $form->option('redirect');
+        $link = FormOptions::redirect($form->option('redirect'));
 
-        return is_string($redirect) && trim($redirect) !== '' ? trim($redirect) : null;
+        if ($link === null) {
+            return null;
+        }
+
+        if ($link->target !== LinkTarget::Entity) {
+            return $this->urls->href($link, app()->getLocale());
+        }
+
+        foreach (array_unique([app()->getLocale(), $this->locales->defaultCode()]) as $locale) {
+            $candidate = $this->urls->candidate($link, $locale);
+
+            if ($candidate !== null && $candidate->available && $candidate->url !== null) {
+                return $this->urls->hrefWith($link, $candidate, $locale);
+            }
+        }
+
+        return null;
     }
 }

@@ -56,11 +56,19 @@ const CHANNELS = [
 async function panel(loaded: InboxForm = form, at = '/inbox/forms/1') {
   const get = vi.fn().mockImplementation((url: string) =>
     Promise.resolve({
-      data: url.includes('/relations/') ? CHANNELS : url.endsWith('/recipients') ? [] : loaded,
+      data: url.includes('/relations/')
+        ? CHANNELS
+        : url.endsWith('/recipients') || url.includes('/links/')
+          ? []
+          : loaded,
     }),
   )
   const put = vi.fn().mockResolvedValue({ data: form })
-  const post = vi.fn().mockResolvedValue({ data: field({ id: 12, key: 'budget' }) })
+  const post = vi
+    .fn()
+    .mockImplementation((url: string) =>
+      Promise.resolve({ data: url.includes('/links/') ? [] : field({ id: 12, key: 'budget' }) }),
+    )
 
   const i18n = createI18n()
 
@@ -227,6 +235,7 @@ describe('WxInboxFormEditor', () => {
     const withModule = await panel({
       ...form,
       notifications: true,
+      notify_via: 'channels',
       options: { ...form.options, notify_channels: [3] },
       channels: [
         {
@@ -253,6 +262,7 @@ describe('WxInboxFormEditor', () => {
     const { wrapper, put } = await panel({
       ...form,
       notifications: true,
+      notify_via: 'channels',
       options: { ...form.options, notify_channels: [3] },
     })
 
@@ -262,6 +272,104 @@ describe('WxInboxFormEditor', () => {
     expect(put).toHaveBeenCalledWith(
       '/api/cms/inbox/forms/1',
       expect.objectContaining({ options: expect.objectContaining({ notify_channels: [3] }) }),
+    )
+  })
+  it('tells one way: the switch shows the chosen half and keeps the settings of the other', async () => {
+    const { wrapper, put } = await panel({
+      ...form,
+      notifications: true,
+      notify_via: 'email',
+      options: {
+        ...form.options,
+        recipients: [{ email: 'office@example.com' }],
+        notify_channels: [3],
+      },
+    })
+
+    const way = () => wrapper.get('.wx-inbox-notifications__way').attributes('data-way')
+
+    expect(wrapper.text()).toContain('Field with the visitor’s address')
+    expect(wrapper.text()).toContain('{{reply_to}}')
+    expect(way()).toBe('email')
+    expect(wrapper.findAll('.wx-inbox-notifications__way')).toHaveLength(1)
+    expect(wrapper.text()).not.toContain('Notify through')
+
+    wrapper.getComponent({ name: 'WxRadioGroup' }).vm.$emit('update:modelValue', 'channels')
+    await flushPromises()
+
+    expect(way()).toBe('channels')
+    expect(wrapper.text()).toContain('Notify through')
+    expect(wrapper.text()).not.toContain('Who is written to')
+
+    await wrapper.get('.wx-action-bar button').trigger('click')
+    await flushPromises()
+
+    expect(put).toHaveBeenCalledWith(
+      '/api/cms/inbox/forms/1',
+      expect.objectContaining({
+        options: expect.objectContaining({
+          notify_via: 'channels',
+          notify_channels: [3],
+          // Not wiped: switching back finds the addresses where they were.
+          recipients: [{ email: 'office@example.com' }],
+        }),
+      }),
+    )
+  })
+
+  it('has no switch without the notifications module: the letter, with the visitor’s field', async () => {
+    const { wrapper } = await panel({ ...form, notify_via: 'channels' })
+
+    expect(wrapper.text()).toContain('Who is written to')
+    expect(wrapper.text()).toContain('Field with the visitor’s address')
+    expect(wrapper.text()).not.toContain('How to tell about a submission')
+    expect(wrapper.text()).not.toContain('{{reply_to}}')
+    expect(wrapper.get('.wx-inbox-notifications__way').attributes('data-way')).toBe('email')
+  })
+  it('reads an address saved before the choice as “An address”, and “Nowhere” clears it', async () => {
+    const { wrapper, put } = await panel({
+      ...form,
+      options: { ...form.options, redirect: '/thank-you' },
+    })
+
+    const picker = wrapper.getComponent({ name: 'WxLinkPicker' })
+    expect(picker.props('modelValue')).toMatchObject({ target: 'url', url: '/thank-you' })
+    // A redirect is not clicked: no new tab, no rel to choose.
+    expect(picker.props('attributes')).toBe(false)
+
+    picker.vm.$emit('update:modelValue', { ...picker.props('modelValue'), target: 'none' })
+    await flushPromises()
+
+    expect(picker.props('modelValue')).toMatchObject({ target: 'none' })
+
+    await wrapper.get('.wx-action-bar button').trigger('click')
+    await flushPromises()
+
+    const sent = put.mock.calls.at(-1)?.[1] as { options: Record<string, unknown> }
+    expect(sent.options).not.toHaveProperty('redirect')
+  })
+
+  it('keeps a page of the site as the record, not as its address', async () => {
+    const { wrapper, put } = await panel()
+
+    const page = {
+      target: 'entity',
+      entity_type: 'page',
+      entity_id: 7,
+      url: null,
+      hash: null,
+      new_tab: false,
+      rel: [],
+    }
+    wrapper.getComponent({ name: 'WxLinkPicker' }).vm.$emit('update:modelValue', page)
+    await flushPromises()
+
+    await wrapper.get('.wx-action-bar button').trigger('click')
+    await flushPromises()
+
+    expect(put).toHaveBeenCalledWith(
+      '/api/cms/inbox/forms/1',
+      expect.objectContaining({ options: expect.objectContaining({ redirect: page }) }),
     )
   })
 })

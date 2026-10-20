@@ -222,9 +222,15 @@ Spam (`is_spam`, `is_closed`).
 thank-you.heading*      заголовок после отправки
 thank-you.text*         текст, wysiwyg
 design.submit-text*     надпись на кнопке
-redirect                адрес вместо сообщения (пусто — сообщение)
+redirect                ссылка как у пункта меню (Links\Link): запись сайта — на языке заявки, без
+                        перевода — на основном; адрес — с префиксом языка посетителя; нет — сообщение.
+                        Строка из старых форм — «Адрес» (миграция 2026_10_20)
 recipients[]            { admin_id } или { email } — кому письмо
-email_field             машинное имя поля, которое считается адресом отправителя (Reply-To)
+email_field             машинное имя поля с адресом посетителя: Reply-To письма, {{reply_to}} каналов;
+                        переименование поля переносит его
+notify_via              email | channels — как сообщать о заявке: письмом на адреса или каналами
+                        уведомлений, не обоими (NOTIFICATIONS §15.2). Нет ключа — channels, если
+                        выбраны каналы. channels без модуля уведомлений — письмо + webx:doctor
 antispam.honeypot       вкл/выкл, по умолчанию вкл
 antispam.min_seconds    «слишком быстро» — 3 по умолчанию, 0 выключает
 antispam.captcha        off | recaptcha | turnstile

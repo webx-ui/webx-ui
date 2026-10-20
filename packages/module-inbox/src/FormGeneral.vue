@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useTranslate } from '@webx-ui/module-admin'
+import { computed } from 'vue'
+import { emptyLink, useTranslate, WxLinkPicker, type LinkValue } from '@webx-ui/module-admin'
 import { WxCard, WxFormItem, WxInput, WxSwitch, type LocalizedValue } from '@webx-ui/core'
 import LocalizedRichText from './LocalizedRichText.vue'
 import { option } from './options'
@@ -26,7 +27,26 @@ const t = useTranslate('webx-inbox')
 const heading = option<LocalizedValue>(options, 'thank-you.heading', {})
 const text = option<LocalizedValue>(options, 'thank-you.text', {})
 const submit = option<LocalizedValue>(options, 'design.submit-text', {})
-const redirect = option<string>(options, 'redirect', '')
+/*
+ * Where the visitor goes instead of the thank-you: a link like a menu item's — a record of the
+ * site, which the server opens in the visitor's language, or an address. Nothing chosen is
+ * "Nowhere", the thank-you in place of the form. A plain string is what a form saved before the
+ * choice holds, and it is an address.
+ */
+const stored = option<LinkValue | string | null>(options, 'redirect', null)
+
+const redirect = computed<LinkValue | null>({
+  get: (): LinkValue => {
+    const value = stored.value
+
+    if (typeof value === 'string') return { ...emptyLink(), target: 'url', url: value }
+
+    return value ?? { ...emptyLink(), target: 'none' }
+  },
+  set: (value: LinkValue | null) => {
+    stored.value = value === null || value.target === 'none' ? null : value
+  },
+})
 </script>
 
 <template>
@@ -64,8 +84,13 @@ const redirect = option<string>(options, 'redirect', '')
         <localized-rich-text v-model="text" />
       </wx-form-item>
 
-      <wx-form-item :label="t('panel.redirect')" :help="t('panel.redirect-help')">
-        <wx-input v-model="redirect" placeholder="/thank-you" />
+      <wx-form-item
+        :label="t('panel.redirect')"
+        :help="t('panel.redirect-help')"
+        :error="errors['options.redirect']?.[0]"
+      >
+        <!-- A redirect is not clicked: a new tab and rel mean nothing for it. -->
+        <wx-link-picker v-model="redirect" :attributes="false" />
       </wx-form-item>
     </wx-card>
   </div>

@@ -14,6 +14,7 @@ use WebxUi\Admin\Support\Authors;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Inbox\Exceptions\InboxException;
 use WebxUi\Inbox\Exceptions\NobodyToNotify;
+use WebxUi\Inbox\Fields\FieldNames;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Http\Controllers\FormController;
 use WebxUi\Inbox\Http\Resources\FieldResource;
@@ -94,8 +95,10 @@ final class InboxTools
                 .'allows, and the name it travels under. This is the shape of the data the public intake expects '
                 .'— the answer says where that door is and what a submission has to carry. `form.recipients` '
                 .'and `form.notifies` say who a submission would be written to; an empty list and '
-                .'`notifies: false` mean nobody is. With the notifications module installed (`form.notifications: true`), '
-                .'`form.channels` names the channels in `options.notify_channels`, each with whether it `sends`.',
+                .'`notifies: false` mean nobody is. `form.notify_via` is how a submission is told about: `email` — a letter to the recipients, '
+                .'or `channels` — the channels of the notifications module, never both. With that module installed (`form.notifications: true`), '
+                .'`form.channels` names the channels in `options.notify_channels`, each with whether it `sends`. '
+                .'`options.redirect` is where the visitor goes after sending, as a link: absent — the thank-you in place of the form.',
                 fn (array $arguments): array => $this->formGet($arguments),
                 ['properties' => ['form' => $form], 'required' => ['form']],
                 permission: 'inbox.manage',
@@ -119,13 +122,20 @@ final class InboxTools
                     'is_enabled' => ['type' => 'boolean', 'description' => 'A form that is off is a 404 to the site and keeps everything it has received.'],
                     'options' => ['type' => 'object', 'description' => 'The settings, as inbox_form_get returns them: recipients, the thank-you, the antispam. Unknown keys are dropped. '
                         .'`notify_channels` — ids of channels of the notifications module (notifications_channels_list with event inbox.submission) '
-                        .'that a submission from the site is also sent to; ids no channel has are dropped. Only with that module installed.'],
+                        .'that a submission from the site is sent to; ids no channel has are dropped. Only with that module installed. '
+                        .'`notify_via` — "email" (a letter to `recipients`) or "channels" (`notify_channels`): one or the other, the settings of the other are kept. '
+                        .'A form set to channels on a site without the notifications module writes letters instead. '
+                        .'`email_field` — the name of the e-mail field whose answer is the visitor\'s address: the Reply-To of the letter, {{reply_to}} in channels. '
+                        .'`redirect` — where the visitor goes after sending, the same link a menu item holds: '
+                        .'{ "target": "entity", "entity_type": "page", "entity_id": 12 } — a record of the site (the kinds of record a menu link takes: page, article …), opened in the language the form was sent in, or in the main one when it has no translation; '
+                        .'{ "target": "url", "url": "/thank-you" } — an address, a path of this site gets the visitor\'s language prefix; '
+                        .'null or { "target": "none" } — the thank-you in place of the form.'],
                     'fields' => [
                         'type' => 'array',
                         'description' => 'The questions to add or change.',
                         'items' => ['type' => 'object', 'properties' => [
                             'id' => ['type' => 'integer', 'description' => 'The field to change; omit for a new one.'],
-                            'name' => ['type' => 'string', 'description' => 'The machine name: what the HTML calls it, and what CSV and the intake key it by. Letters, digits, - and _.'],
+                            'name' => ['type' => 'string', 'description' => 'The machine name: what the HTML calls it, what CSV and the intake key it by, and {{field.<name>}} in the templates of notification channels. Letters, digits, - and _. Omitted on a new field, it is made from the title: "Your phone" → your_phone, with _2 after a name the form has. Renaming a field breaks {{field.<old name>}} in channel templates; answers already received stay with the field.'],
                             'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · file · hidden.'],
                             'title' => ['type' => ['string', 'object'], 'description' => 'The label, in one language or in all of them.'],
                             'is_required' => ['type' => 'boolean'],
@@ -201,16 +211,15 @@ final class InboxTools
 
             Tool::mutating(
                 'notify',
-                'Send the notification about a submission again, to whoever the form names now — for a letter '
-                .'that failed or has been queued for long. Fix what made it fail first (the mail settings, a '
+                'Send the notification about a submission again, the way its form tells now (form.notify_via) — the letter to '
+                .'whoever the form names, for one that failed or has been queued for long, or the rows of its channels that failed or are stuck. Fix what made it fail first (the mail settings, a '
                 .'queue worker that holds old settings and needs a restart): otherwise it fails the same way. '
                 .'On a site with a queue the answer is "queued"; inbox_get a little later says whether it left. '
-                .'The rows of the form\'s channels that failed or are stuck go again too, unless channels: false. '
-                .'A form that names nobody and has no channel row to send again is refused.',
+                .'channels: false leaves the channels alone. A form with nobody and no channel row to send to again is refused.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->notify($arguments, $user)),
                 ['properties' => [
                     'submission' => ['type' => 'integer'],
-                    'channels' => ['type' => 'boolean', 'description' => 'Also send again the channel rows that failed or are stuck; true when omitted.'],
+                    'channels' => ['type' => 'boolean', 'description' => 'For a form told through channels: send again its rows that failed or are stuck; true when omitted.'],
                 ], 'required' => ['submission']],
                 permission: 'inbox.update',
             ),
@@ -225,8 +234,10 @@ final class InboxTools
     {
         $submission = $this->submission($arguments['submission'] ?? null);
         $notifier = $this->container->make(Notifier::class);
-        $recipients = $notifier->recipients($submission);
-        $channels = ($arguments['channels'] ?? true) !== false;
+        // The way the form tells, as on arrival: a letter, or the channels' rows — not both.
+        $through = $submission->form !== null && $this->container->make(Channels::class)->through($submission->form);
+        $recipients = $through ? [] : $notifier->recipients($submission);
+        $channels = $through && ($arguments['channels'] ?? true) !== false;
         $retry = $channels ? $this->container->make(Channels::class)->retry($submission, dryRun: true) : [];
 
         if ($recipients === [] && $retry === []) {
@@ -475,6 +486,13 @@ final class InboxTools
         )->validate();
 
         $values = FieldInput::values($input);
+
+        // A new question without a name gets one out of its label, as it does in the panel —
+        // against the names as the earlier entries of this call leave them.
+        if ($field === null && $values['name'] === null) {
+            $values['name'] = FieldNames::fromTitle($values['title'], array_map('strval', array_keys($names)));
+        }
+
         $name = $values['name'];
 
         if (is_string($name)) {

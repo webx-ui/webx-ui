@@ -195,6 +195,25 @@ describe('WxInboxSubmissionList', () => {
     expect(wrapper.text()).toContain('Export')
   })
 
+  it('offers to delete a pile in words alone, like the rest of the bar', async () => {
+    const rows = [row(1, { name: 'Ada' }), row(2, { name: 'Grace' })]
+    const { wrapper } = panel(rows)
+    await flushPromises()
+
+    wrapper.getComponent({ name: 'WxTable' }).vm.$emit('selection-change', [1, 2], rows)
+    await flushPromises()
+
+    const bar = wrapper.get('.wx-submissions__mass')
+    const remove = bar
+      .findAllComponents({ name: 'WxButton' })
+      .find((one: { text(): string }) => one.text() === 'Delete')
+
+    expect(bar.text()).toContain('2 selected')
+    expect(remove).toBeDefined()
+    expect(remove!.props('icon')).toBeFalsy()
+    expect(remove!.find('.wx-icon').exists()).toBe(false)
+  })
+
   it('has no placement filter while the form has come in from one place only', async () => {
     const { wrapper } = panel([row(1, { name: 'Ada' })], () => true, ['footer'])
 

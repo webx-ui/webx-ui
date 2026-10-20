@@ -174,4 +174,72 @@ describe('WxRelationsField', () => {
     expect(wrapper.find('button[aria-label="Remove"]').exists()).toBe(false)
     expect(wrapper.findComponent({ name: 'WxSortableList' }).props('disabled')).toBe(true)
   })
+  it('asks for every candidate as soon as the box opens, before anything is typed', async () => {
+    const { wrapper, get } = field([1])
+    await flushPromises()
+
+    const box = wrapper.findComponent({ name: 'WxAutocomplete' })
+    box.vm.$emit('open')
+    await flushPromises()
+
+    // A click into the empty box once opened on "Nothing found" over a target full of records.
+    expect(get).toHaveBeenLastCalledWith('/api/cms/relations/service', { query: { q: '' } })
+    expect(box.props('options').map((one: { id: number }) => one.id)).toEqual([2, 3, 4])
+
+    // Opened again with nothing new typed, it does not ask twice.
+    box.vm.$emit('open')
+    await flushPromises()
+    expect(get).toHaveBeenCalledTimes(2)
+  })
+
+  it('says the target has nothing yet apart from a search that matched nothing', async () => {
+    const { wrapper, get } = field([], { noneText: 'No channels yet.' })
+    await flushPromises()
+
+    const box = wrapper.findComponent({ name: 'WxAutocomplete' })
+    box.vm.$emit('search', 'nothing like this')
+    await flushPromises()
+    expect(box.props('emptyText')).toBe('Nothing found.')
+
+    get.mockImplementation(() => Promise.resolve({ data: [] }))
+    box.vm.$emit('search', '')
+    await flushPromises()
+    expect(box.props('emptyText')).toBe('No channels yet.')
+  })
+
+  it('says when everything the target has is chosen already, not that nothing was found', async () => {
+    const { wrapper } = field([1, 2, 3, 4], { noneText: 'No channels yet.' })
+    await flushPromises()
+
+    const box = wrapper.findComponent({ name: 'WxAutocomplete' })
+    box.vm.$emit('open')
+    await flushPromises()
+
+    expect(box.props('options')).toEqual([])
+    expect(box.props('emptyText')).toBe('Everything there is is already chosen.')
+  })
+
+  it('marks a candidate in the target’s own word when it has one', async () => {
+    const { wrapper, get } = field([])
+    get.mockImplementation(() =>
+      Promise.resolve({
+        data: [
+          {
+            id: 7,
+            title: 'Night shift',
+            subtitle: 'Telegram',
+            thumb: null,
+            visible: false,
+            mark: 'Off',
+          },
+        ],
+      }),
+    )
+
+    const box = wrapper.findComponent({ name: 'WxAutocomplete' })
+    box.vm.$emit('search', '')
+    await flushPromises()
+
+    expect(box.props('options')[0]).toMatchObject({ description: 'Telegram · Off' })
+  })
 })
