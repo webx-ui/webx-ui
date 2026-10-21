@@ -76,6 +76,17 @@ final class ThemeProbeTest extends TestCase
     }
 
     #[Test]
+    public function text_that_does_not_read_in_the_dark_scheme_is_named_too(): void
+    {
+        $this->files->put($this->app->basePath('probed-theme/tokens.json'), json_encode([
+            'defaults' => ['color-text' => '#111111', 'color-bg' => '#ffffff'],
+            'schemes' => ['dark' => ['color-bg' => '#0d0f0e']],
+        ]));
+
+        $this->assertStringContainsString('dark scheme: color-text on color-bg is 1.0', implode("\n", $this->probe()->unreadable()));
+    }
+
+    #[Test]
     public function the_look_names_what_changed_between_two_chains(): void
     {
         $locator = $this->app->make(ThemeLocator::class);

@@ -108,10 +108,19 @@ final readonly class ThemeManifest
         $fail = ThemeException::invalidTokens(...);
         $data = self::read($file, $fail);
 
-        $unknown = array_diff(array_keys($data), ['defaults', 'presets', 'vocabulary']);
+        $unknown = array_diff(array_keys($data), ['defaults', 'presets', 'schemes', 'vocabulary']);
 
         if ($unknown !== []) {
-            throw $fail($file, 'unknown key "'.implode('", "', $unknown).'"; a tokens.json has "defaults", "presets" and "vocabulary".');
+            throw $fail($file, 'unknown key "'.implode('", "', $unknown).'"; a tokens.json has "defaults", "presets", "schemes" and "vocabulary".');
+        }
+
+        // One scheme besides the light one the defaults are (§7.6): a name the engine does not
+        // print would be values that never reach a page.
+        $schemes = self::map($data, 'schemes', $file);
+        $unknown = array_diff(array_keys($schemes), ['dark']);
+
+        if ($unknown !== []) {
+            throw $fail($file, 'unknown scheme "'.implode('", "', $unknown).'" under "schemes"; there is only "dark" — the defaults are the light scheme.');
         }
 
         $presets = [];
@@ -134,7 +143,7 @@ final readonly class ThemeManifest
                 ?? throw $fail($file, "\"{$name}\" has an unknown type \"{$type}\"; the types are ".implode(', ', array_column(TokenType::cases(), 'value')).'.');
         }
 
-        return new TokenFile($file, self::values($data, 'defaults', $file), $presets, $vocabulary);
+        return new TokenFile($file, self::values($data, 'defaults', $file), $presets, $vocabulary, self::values($schemes, 'dark', $file, 'schemes'));
     }
 
     /**

@@ -29,7 +29,7 @@ final class ShowCommandTest extends TestCase
     {
         $tokens = $this->report()['tokens'];
 
-        $this->assertSame(['type' => 'color', 'value' => '#c0392b', 'resolved' => null, 'from' => self::fixture('site/theme')], $tokens['color-accent']);
+        $this->assertSame(['type' => 'color', 'value' => '#c0392b', 'resolved' => null, 'from' => self::fixture('site/theme'), 'dark' => null, 'dark_from' => null], $tokens['color-accent']);
         $this->assertSame('webx-ui/theme-fixture', $tokens['color-bg']['from'], 'what the local theme does not set comes from below');
         $this->assertSame('color', $tokens['color-olive']['type'], 'a name a layer added to the vocabulary');
     }

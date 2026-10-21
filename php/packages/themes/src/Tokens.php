@@ -92,6 +92,57 @@ class Tokens
         return $this->sources ?? [];
     }
 
+    /**
+     * The values of the dark scheme (§7.6): `schemes.dark` of every layer merged bottom up, the
+     * way the defaults are, so a higher layer retunes one dark token without repeating the rest.
+     * Only the tokens that change: one without a dark value keeps its light value in the dark,
+     * and the page does not print it twice. A preset recolours the light scheme only.
+     *
+     * @return array<string, string> In the vocabulary's order; empty when no layer has a dark scheme.
+     */
+    public function dark(): array
+    {
+        return $this->merged(fn (TokenFile $file): array => $file->dark)[0];
+    }
+
+    /**
+     * The layer whose `schemes.dark` gives each value of {@see dark()}.
+     *
+     * @return array<string, string>
+     */
+    public function darkSources(): array
+    {
+        return $this->merged(fn (TokenFile $file): array => $file->dark)[1];
+    }
+
+    /**
+     * One set of a tokens.json merged down the chain, with the layer each value comes from.
+     *
+     * @param  callable(TokenFile): array<string, string>  $set
+     * @return array{array<string, string>, array<string, string>}
+     */
+    private function merged(callable $set): array
+    {
+        $values = [];
+        $sources = [];
+
+        foreach ($this->files() as $layer => $file) {
+            $values = [...$values, ...$set($file)];
+            $sources = [...$sources, ...array_fill_keys(array_keys($set($file)), $layer)];
+        }
+
+        $ordered = [[], []];
+
+        foreach ($this->vocabulary()->names() as $name) {
+            if (isset($values[$name])) {
+                $ordered[0][$name] = $values[$name];
+                $ordered[1][$name] = $sources[$name];
+            }
+        }
+
+        return $ordered;
+    }
+
     public function get(string $name): ?string
     {
         return $this->values()[$name] ?? null;
@@ -183,18 +234,52 @@ class Tokens
      * `:root { --site-…: … }` for the inline `<style>` of `@webxTheme`. Every value is checked
      * against its type once more on the way out: the values are already checked on the way in,
      * and this is the line that must hold if one of those checks is ever loosened.
+     *
+     * With a dark scheme (§7.6) the dark values follow twice: under the visitor's
+     * `prefers-color-scheme: dark` unless the site said `data-theme="light"` on `<html>`, and
+     * under `data-theme="dark"` whatever the system says — the switch is the site's, the
+     * contract is this attribute. The only `@media` by scheme of a page is this one.
      */
     public function css(): string
     {
+        $lines = $this->declarations($this->values());
+
+        if ($lines === []) {
+            return '';
+        }
+
+        $dark = $this->declarations($this->dark());
+
+        if ($dark === []) {
+            return ":root {\n".implode("\n", $lines)."\n}";
+        }
+
+        $lines[] = '  color-scheme: light dark;';
+        $nested = array_map(static fn (string $line): string => '  '.$line, $dark);
+
+        return implode("\n", [
+            ":root {\n".implode("\n", $lines)."\n}",
+            "@media (prefers-color-scheme: dark) {\n  :root:not([data-theme=\"light\"]) {\n".implode("\n", $nested)."\n  }\n}",
+            ":root[data-theme=\"dark\"] {\n".implode("\n", [...$dark, '  color-scheme: dark;'])."\n}",
+            ":root[data-theme=\"light\"] {\n  color-scheme: light;\n}",
+        ]);
+    }
+
+    /**
+     * @param  array<string, string>  $values
+     * @return list<string>
+     */
+    private function declarations(array $values): array
+    {
         $lines = [];
 
-        foreach ($this->values() as $name => $value) {
+        foreach ($values as $name => $value) {
             if ($this->vocabulary()->accepts($name, $value)) {
                 $lines[] = "  --site-{$name}: {$value};";
             }
         }
 
-        return $lines === [] ? '' : ":root {\n".implode("\n", $lines)."\n}";
+        return $lines;
     }
 
     /**
@@ -218,6 +303,8 @@ class Tokens
             foreach ($file->presets as $name => $preset) {
                 $this->check($file->path, $preset['tokens'], "preset \"{$name}\"");
             }
+
+            $this->check($file->path, $file->dark, 'schemes.dark');
 
             $files[$layer->name] = $file;
         }

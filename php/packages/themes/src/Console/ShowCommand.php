@@ -18,7 +18,7 @@ class ShowCommand extends Command
 {
     protected $signature = 'webx:theme:show {--json : Print the report as JSON}';
 
-    protected $description = 'Show the theme chain: its layers, the tokens and where each value comes from, the preset, the views and what they override, the block types, icons, fonts and module stylesheets';
+    protected $description = 'Show the theme chain: its layers, the tokens and where each value comes from, light and dark, the preset, the views and what they override, the block types, icons, fonts and module stylesheets';
 
     public function handle(ThemeChain $chain): int
     {
@@ -72,12 +72,16 @@ class ShowCommand extends Command
         $this->line('  Chosen by "preset" in the manifest of a layer; the panel does not change the look.');
 
         $this->section('Tokens');
-        $this->table(['Token', 'Type', 'Value', 'From'], array_map(
+        // The dark columns only for a chain with a dark scheme (§7.6): elsewhere they would be empty.
+        $dark = array_filter(array_column($report['tokens'], 'dark')) !== [];
+
+        $this->table(['Token', 'Type', 'Value', 'From', ...($dark ? ['Dark', 'Dark from'] : [])], array_map(
             static fn (string $name, array $token): array => [
                 "--site-{$name}",
                 $token['type'],
                 $token['resolved'] === null ? $token['value'] : "{$token['value']} = {$token['resolved']}",
                 $token['from'],
+                ...($dark ? [$token['dark'] ?? 'as light', $token['dark_from'] ?? ''] : []),
             ],
             array_keys($report['tokens']),
             $report['tokens'],

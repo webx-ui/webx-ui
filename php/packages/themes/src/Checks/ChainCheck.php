@@ -111,6 +111,19 @@ final class ChainCheck
             $this->findings[] = ['file' => '', 'line' => null, 'message' => $failure->getMessage()];
         }
 
+        // Text against its background in every palette a page can show, the dark scheme's too
+        // (rule 29, §7.6). A note here: the theme's own test holds it to the ratio
+        // (Testing\ThemeContract), and a site whose preset reads a little under it still opens.
+        // A tokens.json that does not read is already said above.
+        try {
+            foreach (ContrastCheck::failures($this->chain) as $failure) {
+                $this->notes[] = ['file' => '', 'line' => null, 'message' => "{$failure} (rule 29)"];
+            }
+
+            $this->staleDark();
+        } catch (ThemeException) {
+        }
+
         foreach ($this->stylesheets() as $file) {
             $this->read[] = $file;
 
@@ -357,6 +370,8 @@ final class ChainCheck
             $sets["preset \"{$name}\""] = $preset['tokens'];
         }
 
+        $sets['schemes.dark'] = $file->dark;
+
         foreach ($sets as $where => $values) {
             foreach ($values as $name => $value) {
                 $type = $vocabulary->type($name);
@@ -371,6 +386,48 @@ final class ChainCheck
                     $this->findings[] = ['file' => $file->path, 'line' => $at === false ? null : substr_count($source, "\n", 0, $at) + 1, 'message' => $message];
                 }
             }
+        }
+    }
+
+    /**
+     * A layer that recolours a token in its defaults while its dark value still comes from a
+     * layer below (§7.6): that value was picked against the old palette and likely does not go
+     * with the new one. Advice, not a refusal — the dark value may still be right.
+     */
+    private function staleDark(): void
+    {
+        $light = [];
+        $dark = [];
+        $files = [];
+
+        // Bottom first, so a later layer wins the name the way the merge does.
+        foreach (array_values(array_reverse($this->chain->layers)) as $position => $layer) {
+            $file = $layer->tokens();
+            $files[$position] = [$layer->name, $file];
+
+            foreach (array_keys($file->defaults) as $name) {
+                $light[$name] = $position;
+            }
+
+            foreach (array_keys($file->dark) as $name) {
+                $dark[$name] = $position;
+            }
+        }
+
+        foreach ($light as $name => $position) {
+            if (! isset($dark[$name]) || $dark[$name] >= $position) {
+                continue;
+            }
+
+            [$layer, $file] = $files[$position];
+            $source = (string) file_get_contents($file->path);
+            $at = strpos($source, '"'.$name.'"');
+
+            $this->notes[] = [
+                'file' => $file->path,
+                'line' => $at === false ? null : substr_count($source, "\n", 0, $at) + 1,
+                'message' => "{$layer} recolours \"{$name}\" in its defaults, but its dark value still comes from {$files[$dark[$name]][0]} — set it under schemes.dark too, or the dark scheme keeps a colour picked for another palette",
+            ];
         }
     }
 

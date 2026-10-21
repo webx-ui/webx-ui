@@ -37,7 +37,7 @@ final readonly class ThemeReport
      *     below: list<string>,
      *     preset: string|null,
      *     presets: array<string, array{title: string, tokens: array<string, string>}>,
-     *     tokens: array<string, array{type: string, value: string, resolved: string|null, from: string}>,
+     *     tokens: array<string, array{type: string, value: string, resolved: string|null, from: string, dark: string|null, dark_from: string|null}>,
      *     views: list<array{view: string, from: string, hides: list<string>}>,
      *     blocks: list<array{slug: string, from: string, file: string, hides: list<string>}>,
      *     icons: array<string, string>,
@@ -75,12 +75,17 @@ final readonly class ThemeReport
     }
 
     /**
-     * @return array<string, array{type: string, value: string, resolved: string|null, from: string}>
+     * Each token with its dark value (§7.6) and the layer that gives it; null for both when the
+     * dark scheme keeps the light value.
+     *
+     * @return array<string, array{type: string, value: string, resolved: string|null, from: string, dark: string|null, dark_from: string|null}>
      */
     private function tokenRows(): array
     {
         $rows = [];
         $sources = $this->tokens->sources();
+        $dark = $this->tokens->dark();
+        $darkSources = $this->tokens->darkSources();
 
         foreach ($this->tokens->values() as $name => $value) {
             $resolved = $this->tokens->resolved($name);
@@ -91,6 +96,8 @@ final readonly class ThemeReport
                 // Only where it says more than the value: a reference to another token.
                 'resolved' => $resolved === $value ? null : $resolved,
                 'from' => $sources[$name] ?? '',
+                'dark' => $dark[$name] ?? null,
+                'dark_from' => $darkSources[$name] ?? null,
             ];
         }
 
