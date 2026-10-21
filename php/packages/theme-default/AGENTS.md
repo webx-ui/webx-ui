@@ -39,7 +39,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   `site-footer__inner|nav|link|copy`, `site-error`, `site-error__code|home`, `site-prose` (prose typography outside `<main>`, and
   the muted colours of quotes, captions and `small` inside a block, which otherwise keep the
   block's own colour).
-- **`blocks/`** — the six block types every site with this theme gets from `webx:theme:sync`
+- **`blocks/`** — the six block types `webx:setup` (or `webx:blocks:import --theme`) puts on a site
   (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only:
   - `hero` — `title`, `subtitle`, two buttons (`button_*`, `second_*`), `tone`
     `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`;
@@ -104,7 +104,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 | Restyle the header, footer or prose      | `theme/src/css/theme.css`, on the `site-*` classes above                                            |
 | Other markup in the header or footer     | `theme/views/components/header.blade.php` (or `footer`)                                             |
 | A different document                     | `theme/views/components/layout.blade.php`, copied from here                                         |
-| Another look of one of the six blocks    | `theme/blocks/<slug>.json` by the same slug, every field kept with its type; `webx:theme:sync`      |
+| Another look of one of the six blocks    | `theme/blocks/<slug>.json`, every field kept; `webx:blocks:import --theme --replace=<slug>`         |
 | A section of a page full width           | class `site-bleed` on the direct child of `<main>`                                                  |
 | Another drawing of an icon, or a new one | `theme/icons/<name>.svg` in `currentColor`, then `webx:theme:sync`                                  |
 | Another picture of the theme             | `theme/assets/<same path>`, then `webx:theme:sync`                                                  |

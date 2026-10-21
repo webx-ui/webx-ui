@@ -41,10 +41,9 @@ their guides when the question is about one of those.
   `BlockComponents`; demo content (`resources/demo`). With module-audit: a content source for
   regions, the check `blocks.stray_values` (values for fields the type does not define, repeater
   items included, live and draft) and its fix `blocks.prune-stray` (what `webx:blocks:prune` runs;
-  a block of an unknown type is never touched). With `webx-ui/themes`: `Themes\LayerSync` —
-  `webx:theme:sync` creates and updates the theme layers' types, marked `theme_source` (the layer)
-  and `theme_hash`; a slug with empty `theme_source` is the site's and is refused, except the demo's
-  `hero`/`text`/… left as seeded (`--adopt=<slug>`). The demo never seeds a theme layer's slug.
+  a block of an unknown type is never touched). Deploy, `webx:theme:sync` and `composer update`
+  never write a type; `webx:blocks:import --theme` reads the theme layers (`theme_source`/`theme_hash`
+  are kept for the debug panel only). The demo never seeds a theme layer's slug.
 
 ### Permissions
 
@@ -66,7 +65,8 @@ to read, `cms.can:blocks.manage` to write, `cms.can:blocks.regions` for regions.
 | A block type of the site's own              | make it in the panel's «Blocks», or `blocks_create` → `blocks_render` → `blocks_publish` over MCP                        |
 | The site's types in git                     | `php artisan webx:blocks:export` writes `resources/blocks/{slug}.json`; `webx:blocks:import --publish` reads them back   |
 | Blocks from another site or a catalogue     | «Blocks» → Export (a pack with the components they call), Import there; the command reads the same pack                  |
-| The block types of the site's theme         | `theme/blocks/<slug>.json`, then `php artisan webx:theme:sync` — not import; a type edited in the panel is kept          |
+| The block types of the site's theme         | `theme/blocks/<slug>.json`, then `php artisan webx:blocks:import --theme`, once, by a person                             |
+| Overwrite a type the site already has       | `webx:blocks:import --replace=<slug>` (repeat per type, no `*`); without it a different type is `differs, kept`          |
 | The types a module offers (FAQ accordion…)  | `php artisan webx:blocks:offered --install`; a slug the site has, or the theme carries, is not touched                   |
 | A region in the layout                      | declare it under `regions` in `config/webx-blocks.php` and print `<x-webx-blocks::region>` with a `fallback`             |
 | A type only for one region                  | `"region:header"` in the type's `allowed_in`; `allow` and `max` on the region limit what it takes                        |

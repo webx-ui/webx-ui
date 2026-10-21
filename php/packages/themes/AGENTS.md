@@ -40,10 +40,11 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   on tokens only (`Checks\CssCheck`) in the layers, widgets and modules, block types and their
   schemas, icons and `theme_asset()` paths, words in every declared locale, fonts, letters, `<img>` without `width`/`height`. A
   line per finding (file:line, what, why) and a non-zero exit; a `note:` (a `.woff` font) does not fail.
-- **`webx:theme:sync [--force] [--dry-run] [--adopt=<slug>]`** — the packaged layers' `dist/` and
+- **`webx:theme:sync [--force] [--dry-run]`** — the packaged layers' `dist/` and
   `assets/` to `public/themes/`, the modules' base look as one file, the icons as one sprite, then
-  the steps tagged `webx-themes.sync` (`Contracts\SyncStep`): `module-blocks` puts the layers'
-  block types on the site. A refused line exits non-zero. Without a theme it publishes only the
+  the steps tagged `webx-themes.sync` (`Contracts\SyncStep`, files only; `--force` copies again).
+  It never writes a block type: the layers' types are `webx:blocks:import --theme`, run by a person.
+  A refused line exits non-zero. Without a theme it publishes only the
   packages below the themes (`BottomLayers`: the widgets' scripts, which `@webxWidgets` links).
   A real sync moves the `theme` cache group (`webx-ui/cache`, `CacheGroups::THEME`), which this package declares.
 - **`webx:theme:make <name> --local [--uses=…]`** — the local theme `webx:setup` gives every site:
@@ -133,8 +134,8 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
 - `php artisan webx:theme:show` — before you start: what the chain gives, and which layer owns the
   value you are about to change.
 - `php artisan webx:theme:check` — no findings; the theme's test (`ThemeContract`) — green.
-- `php artisan webx:theme:sync --dry-run` — what would be published, and what would happen to each
-  block type of the layers.
+- `php artisan webx:theme:sync --dry-run` — what would be published;
+  `webx:blocks:import --theme --dry-run` — what would happen to each block type of the layers.
 - After `extract` or `eject`: the command's last line says «The same look» — otherwise it lists
   every token, view, block, icon, asset, font or word that changed.
 - Open a page in a browser, on a desktop and at 375px, in every preset and, with `schemes.dark`,

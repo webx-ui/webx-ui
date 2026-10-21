@@ -14,7 +14,7 @@ use WebxUi\Blocks\Exceptions\BlocksException;
  * slug is left alone whatever it looks like now.
  *
  * A slug the theme chain carries is the theme's (THEMES §10.3): it is not installed from the
- * offer, and the line says `webx:theme:sync` puts the theme's type there instead.
+ * offer, and the line says `webx:blocks:import --theme` puts the theme's type there instead.
  *
  * `webx:setup` runs this with `--install` for the modules somebody chose. On a site that adds a
  * module to a panel it already has, it is the one line in the module's README.
@@ -55,7 +55,7 @@ final class OfferedCommand extends Command
             if (! $install) {
                 $this->components->twoColumnDetail($label, match (true) {
                     $offers->present($offer['slug']) => 'on the site',
-                    ($layer = $offers->carriedBy($offer['slug'])) !== null => "{$layer} carries it — webx:theme:sync puts that one on the site",
+                    ($layer = $offers->carriedBy($offer['slug'])) !== null => "{$layer} carries it — webx:blocks:import --theme puts that one on the site",
                     default => 'not installed',
                 });
 
@@ -78,7 +78,7 @@ final class OfferedCommand extends Command
             $this->components->twoColumnDetail($label, match ($status) {
                 BlockOffers::INSTALLED => 'installed and published',
                 BlockOffers::DRAFT => 'installed as a draft — it does not render on its sample; open it in the panel',
-                BlockOffers::CARRIED => $offers->carriedBy($offer['slug']).' carries it — left to webx:theme:sync',
+                BlockOffers::CARRIED => $offers->carriedBy($offer['slug']).' carries it — left to webx:blocks:import --theme',
                 default => 'on the site — left alone',
             });
         }

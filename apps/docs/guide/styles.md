@@ -333,24 +333,26 @@ styles travel with it and reach only the pages that show it.
 A theme carries block types too, as `blocks/<slug>.json` — the files `webx:blocks:export` writes. A
 type of an upper layer replaces the one of a lower layer with the same slug, whole; its schema may
 add fields but keeps every field below with the same type, or the content filled in for the lower
-type is lost. `php artisan webx:theme:sync` puts the resulting set on the site, and is run by
-`webx:setup` and by `composer update` (the site's `post-update-cmd`):
+type is lost. `webx:setup` puts the resulting set on a new site; after that it moves only when a
+person says so — a deploy, `webx:theme:sync` and `composer update` never write a block type, so
+what a client changed in the panel stays:
 
-| What the site has                               | What sync does                                                 |
-| ----------------------------------------------- | -------------------------------------------------------------- |
-| no type by that slug                            | creates it from the layer and publishes it                     |
-| the theme's type, not edited here since         | publishes a new version from the file; the same file — nothing |
-| the theme's type, edited in the panel since     | keeps the edit and says so; `--force` overwrites it            |
-| a type of its own (or a module's) by that slug  | refuses: taking it over would overwrite somebody's work        |
-| the blocks demo's type, exactly as it seeded it | refuses and says so; `--adopt=<slug>` hands it to the theme    |
-| a type a layer stopped carrying                 | keeps it — pages may stand on it                               |
+```bash
+php artisan webx:blocks:import --theme --dry-run      # what the layers would change
+php artisan webx:blocks:import --theme --publish      # create the types the site lacks
+php artisan webx:blocks:import --theme --replace=hero # take the layer's hero over the site's
+```
 
-The blocks demo does not seed a slug the theme carries, so on a new site the theme's `hero` and
-`text` are the ones that stand. A site that got the demo before its theme carried them hears it
-from sync — «It is the blocks demo's hero, unchanged» — and `php artisan webx:theme:sync
---adopt=hero,text` gives them to the theme: a new version from the theme's file, the demo's in the
-history, the pages on them keeping their content. Only a copy nobody changed is adopted; anything
-else under the slug stays the site's.
+| What the site has                | What import does                                                            |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| no type by that slug             | creates it from the layer (`--publish` publishes it)                        |
+| the same type                    | nothing — `unchanged`                                                       |
+| a type by that slug that differs | keeps it and prints the difference; `--replace=<slug>` writes a new version |
+| a type a layer stopped carrying  | keeps it — pages may stand on it                                            |
+
+Whoever changed the site's type — the client, a module, an older release of the theme — import
+does not take it over unasked: replacing is by name, one type at a time, and the version before
+stays in the history. A type deleted in the panel is not brought back by anything but an import.
 
 ### The six blocks of the default theme
 
@@ -371,10 +373,11 @@ picture of `media-text` goes above its words, whatever the window. Their pages, 
 a narrow column each, are on the starter site under Kitchen sink › Blocks. Another look of one of
 them is the same slug in `theme/blocks/` with every field kept — not a `hero-2`.
 
-A type whose CSS breaks [the tokens rule](#css-knows-only-tokens) is refused by sync, not just
-warned of — `webx:theme:check` lists the same findings first. The usual path of a site's own block:
+A type whose CSS breaks [the tokens rule](#css-knows-only-tokens) is refused by the import, not
+just warned of — `webx:theme:check` lists the same findings first. The usual path of a site's own block:
 make it in the panel, then `php artisan webx:blocks:export hero --path=theme/blocks` and commit —
-the site's look is then all in git, not only in its database.
+the site's look is then all in git, not only in its database, and another copy of the site takes
+it with `php artisan webx:blocks:import --theme`, once.
 
 The rules a block type has to follow are in [Blocks](./blocks.md).
 

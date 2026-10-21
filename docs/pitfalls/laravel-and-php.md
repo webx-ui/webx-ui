@@ -618,10 +618,16 @@ class_uses_recursive($entity), true)`.
   `LocalesConfig::rewriteFallback()`.
 - **`vendor:publish` миграций Passport штампует копию временем публикации** — второй прогон даёт
   дубль и «table already exists». Публиковать один раз (`SetupCommand::missingPassportMigrations()`).
+- **Новый блок темы не появился на сайте после деплоя или `composer update`.** Так и задумано:
+  `webx:boot`, `webx:theme:sync` и `post-update-cmd` типов блоков не пишут — тип на работающем
+  сайте принадлежит клиенту (`WEBX_UI_BLOCK_SCHEMAS.md`). Поставить —
+  `php artisan webx:blocks:import --theme --dry-run`, посмотреть план, затем без `--dry-run` (с
+  `--publish`). Тип, который на сайте уже есть, импорт оставляет (`differs, kept`) и печатает
+  расхождение; взять версию файла — `--replace=<slug>`, по одному. Файлы `resources/blocks` —
+  то же самое без `--theme`. «Отказ `this site has a type of its own by this slug`» больше не
+  бывает: `theme:sync` блоков не трогает.
 - **Всё, что идёт в `post-update-cmd` сайта, обязано жить без базы.** Composer бегает и там, где
-  базы нет (сборка образа, хост, чей сайт ходит в базу контейнера), поэтому шаг типов блоков
-  `webx:theme:sync` сначала проверяет соединение и без базы пишет «the database is not reachable
-  from here», не роняя команду. Кеш тоже база: на store `database` сброс группы `theme` падает
+  базы нет (сборка образа, хост, чей сайт ходит в базу контейнера). Кеш — база: на store `database` сброс группы `theme` падает
   SQL-ошибкой, поэтому он в `try` и без базы пишет «the cache store is not reachable from here».
   Ловит только PHP smoke, а он не в обязательном чеке очереди —
   смотреть глазами перед релизом: `gh run list --workflow "PHP smoke" --branch <ветка> --limit 3`.

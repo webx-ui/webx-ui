@@ -10,6 +10,7 @@ use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Blocks\Panel\CallCycle;
 use WebxUi\Blocks\Panel\Exchange;
 use WebxUi\Blocks\Panel\Importer;
+use WebxUi\Blocks\Panel\ReplaceRefused;
 
 /**
  * Export and import from the section (§17.1): the command's files, moved by a person.
@@ -18,6 +19,9 @@ use WebxUi\Blocks\Panel\Importer;
  * the download, so the request stays an ordinary authenticated call. The import takes the file's
  * contents the same way — the panel reads the file it was given — and is asked twice: once with
  * `dry_run` to show what would happen, then for real. Both answers are the same rows.
+ *
+ * A type the site already has is kept (BLOCK_SCHEMAS §5): the plan shows how it differs, the
+ * person ticks the ones to take from the file, and only those come back in `replace`.
  */
 final class ExchangeController
 {
@@ -45,10 +49,17 @@ final class ExchangeController
             return $this->refuse((string) __('webx-blocks::exchange.not-a-pack'));
         }
 
+        $replace = $request->input('replace', []);
+        $replace = is_array($replace) ? array_values(array_map('strval', array_filter($replace, 'is_string'))) : [];
+
         try {
-            $rows = $importer->import($documents, $request->boolean('dry_run'), $request->boolean('publish'));
+            $rows = $importer->import($documents, $request->boolean('dry_run'), $request->boolean('publish'), $replace);
         } catch (CallCycle $cycle) {
             return $this->refuse((string) __('webx-blocks::exchange.cycle', ['path' => implode(' → ', $cycle->path)]));
+        } catch (ReplaceRefused $refused) {
+            return $this->refuse($refused->reason === ReplaceRefused::ALL
+                ? (string) __('webx-blocks::exchange.replace-all')
+                : (string) __('webx-blocks::exchange.replace-unknown', ['slug' => $refused->slug]), 'replace');
         }
 
         return ApiResponse::data($rows);
@@ -68,8 +79,8 @@ final class ExchangeController
         return is_string($file) ? json_decode($file, true) : $file;
     }
 
-    private function refuse(string $message): JsonResponse
+    private function refuse(string $message, string $field = 'file'): JsonResponse
     {
-        return new JsonResponse(['message' => $message, 'errors' => ['file' => [$message]]], 422);
+        return new JsonResponse(['message' => $message, 'errors' => [$field => [$message]]], 422);
     }
 }

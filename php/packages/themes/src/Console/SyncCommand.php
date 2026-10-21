@@ -20,25 +20,24 @@ use WebxUi\Themes\ThemeManifest;
  * the themes' and those of the packages below them, the widgets; of a local theme only its
  * `assets/`, since the site's Vite builds the rest — the base look of the installed
  * modules as one stylesheet (§10.2), the icons of the chain as one sprite (§13.1), and then
- * whatever the packages
- * registered as a {@see SyncStep}: the block types of the layers, when `webx-ui/module-blocks` is
- * installed (§9.2). Run it after `composer update` — a theme update that was installed but not
- * synced still renders with the old stylesheet and the old blocks.
+ * whatever other packages registered as a {@see SyncStep}. Run it after `composer update` — a
+ * theme update that was installed but not synced still renders with the old stylesheet.
  *
- * Idempotent: `webx:setup`, the site's `post-update-cmd` and whoever updates many sites at once
- * all call it. A refused line — a block type that breaks §8, a slug the site already uses for a
- * type of its own — makes it exit non-zero after doing everything else. `--adopt` names what the
- * steps may take over from the site, which they never do unasked: for the block types, only a
- * copy of the blocks demo that nobody changed.
+ * Files only. The block types of the layers are not put on the site here (BLOCK_SCHEMAS §3): this
+ * runs on every deploy and every `composer update`, and a type on a running site is the client's
+ * to change — `webx:blocks:import --theme` puts the layers' types there, asked by a person.
+ *
+ * Idempotent: `webx:setup`, the site's `post-update-cmd`, `webx:boot` and whoever updates many
+ * sites at once all call it. A refused line of a step makes it exit non-zero after doing
+ * everything else.
  */
 class SyncCommand extends Command
 {
     protected $signature = 'webx:theme:sync
-        {--force : Copy the files again even if they have not changed, and overwrite block types changed on this site}
-        {--dry-run : Say what would be done without touching public/ or the database}
-        {--adopt=* : Hand these block types of the site to the theme — only an untouched copy of the blocks demo (comma-separated or repeated)}';
+        {--force : Copy the files again even if they have not changed}
+        {--dry-run : Say what would be done without touching public/}';
 
-    protected $description = 'Publish the built files and assets of the theme layers to public/themes, and put the block types of the layers on the site';
+    protected $description = 'Publish the built files and assets of the theme layers to public/themes (block types: webx:blocks:import --theme)';
 
     public function handle(ThemeChain $chain, BottomLayers $bottom, ThemeAssets $assets, ModuleStyles $modules, ThemeIcons $icons): int
     {
@@ -78,11 +77,10 @@ class SyncCommand extends Command
         $this->components->twoColumnDetail('icons — the sprite of the chain', $this->icons($icons));
 
         $refused = 0;
-        $adopt = $this->adopt();
 
         /** @var SyncStep $step */
         foreach ($this->laravel->tagged(SyncStep::TAG) as $step) {
-            $lines = $step->sync($chain, (bool) $this->option('force'), (bool) $this->option('dry-run'), $adopt);
+            $lines = $step->sync($chain, (bool) $this->option('force'), (bool) $this->option('dry-run'));
 
             if ($lines === []) {
                 continue;
@@ -121,26 +119,6 @@ class SyncCommand extends Command
         }
 
         return self::SUCCESS;
-    }
-
-    /**
-     * `--adopt=hero,text` and `--adopt=hero --adopt=text` alike.
-     *
-     * @return list<string>
-     */
-    private function adopt(): array
-    {
-        $named = [];
-
-        foreach ((array) $this->option('adopt') as $value) {
-            foreach (explode(',', (string) $value) as $slug) {
-                if (trim($slug) !== '') {
-                    $named[] = trim($slug);
-                }
-            }
-        }
-
-        return array_values(array_unique($named));
     }
 
     /** The `resources/theme` stylesheets of the installed modules, as one file (§10.2). */

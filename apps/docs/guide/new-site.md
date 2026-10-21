@@ -466,12 +466,16 @@ php artisan webx:boot --pretend    # the list, without running any of it
 ```
 
 It waits for the database, migrates, links storage, writes Passport's keys if they are not
-there yet, seeds the languages and clears the dictionary the release before it built, imports
-the block types the repository carries, creates the first administrator out of the environment,
-tops up the ready-made roles with the permissions of modules installed after them, and caches
-configuration, routes, views and events. Which of those a site needs it works out
-from what is installed, so a module added six months from now brings its step with it — and
-`--no-cache` is the development container's whole difference.
+there yet, seeds the languages and clears the dictionary the release before it built, creates the
+first administrator out of the environment, tops up the ready-made roles with the permissions of
+modules installed after them, and caches configuration, routes, views and events. Which of those a
+site needs it works out from what is installed, so a module added six months from now brings its
+step with it — and `--no-cache` is the development container's whole difference.
+
+It never writes a block type, even when the repository carries `resources/blocks/`: a deploy that
+did would overwrite what the client changed in the panel. Types reach a site by
+`php artisan webx:blocks:import` (`--theme` for the theme's), run once by a person — see
+[Blocks › Export and import](./blocks.md#export-and-import).
 
 Every step is idempotent, because every boot runs all of them. The one thing it will not do is
 publish Passport's migrations: the copy is stamped with the minute it was made, so a boot that

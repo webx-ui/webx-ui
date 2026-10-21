@@ -24,6 +24,10 @@ use WebxUi\Admin\Setup\SetupFailed;
  * the old ones. The migrations are not run: the module's tables are the deploy's business, the
  * same `migrate --force` that every release of the site runs.
  *
+ * The block types a module offers are not put on the site (BLOCK_SCHEMAS §3): a module is added
+ * to a running site the same way, and a type there is the client's. The last lines say which
+ * command puts them there, for a person to run where they are wanted.
+ *
  * Running it again is not an error. An installed package skips Composer and still gets the
  * rest, which is also how a run that stopped at npm is finished.
  */
@@ -77,7 +81,19 @@ final class ModuleAddCommand extends Command
         $this->components->info("{$package} is installed.");
         $this->components->twoColumnDetail('Then', 'php artisan migrate — its tables are not created yet');
 
+        $id = $catalogue->idFor($package);
+
+        if ($id !== null && $catalogue->has('webx-ui/module-blocks') && $this->offersBlocks($package)) {
+            $this->components->twoColumnDetail('Its block types', "php artisan webx:blocks:offered --install --module={$id} — not put on the site by themselves");
+        }
+
         return self::SUCCESS;
+    }
+
+    /** Read from the files: this process booted before the package was there, so its provider never ran. */
+    private function offersBlocks(string $package): bool
+    {
+        return (glob($this->laravel->basePath("vendor/{$package}/resources/blocks/*.json")) ?: []) !== [];
     }
 
     /**

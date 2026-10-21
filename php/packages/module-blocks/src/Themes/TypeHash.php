@@ -8,10 +8,12 @@ use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\Exchange;
+use WebxUi\Blocks\Panel\TypeDiff;
 
 /**
  * One hash for a block type, whether it is read from a layer's file or from the site's tables
- * (THEMES §9.2) — so that «the site has not touched what the theme put» is one comparison.
+ * (THEMES §9.2). `webx:blocks:import --theme` keeps the file's in `theme_hash` beside the layer
+ * it came from, for the debug panel; whether a type differs from its file is {@see TypeDiff}'s.
  *
  * Not the hash of the file's bytes: an export writes `version` and `exported_at`, which change on
  * every export of the same type, and the panel's save normalises what it is sent (trims, types,

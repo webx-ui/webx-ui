@@ -13,24 +13,25 @@ use WebxUi\Blocks\Demo\BlocksDemo;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\BlockInput;
-use WebxUi\Blocks\Themes\LayerSync;
+use WebxUi\Blocks\Panel\Importer;
+use WebxUi\Blocks\Themes\LayerSource;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\InboxServiceProvider;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Settings\Settings;
 use WebxUi\Settings\SettingsServiceProvider;
 use WebxUi\Themes\Blocks\SchemaCompatibility;
-use WebxUi\Themes\Sync\SyncLine;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
- * The six blocks of `webx-ui/theme-default` (THEMES §9.1) on a site, through the real sync: they
- * publish — publishing renders each sample —, every variant prints, and the demo of this package
- * yields to them (§23, TH2.3): it does not seed a slug the theme carries, and a site that got the
- * demo first hands its untouched copy over only when asked with `--adopt`.
+ * The six blocks of `webx-ui/theme-default` (THEMES §9.1) on a site, through the real import
+ * (`webx:blocks:import --theme`, what `webx:setup` runs): they publish — publishing renders each
+ * sample —, every variant prints, and the demo of this package yields to them (§23, TH2.3): it
+ * does not seed a slug the theme carries, and a site that got the demo first keeps its copy until
+ * someone names it with `--replace`.
  */
 final class ThemeDefaultBlocksTest extends TestCase
 {
@@ -74,11 +75,11 @@ final class ThemeDefaultBlocksTest extends TestCase
         $lines = $this->sync();
 
         foreach (self::SIX as $slug) {
-            $this->assertLine($slug, 'created from '.self::THEME, $lines);
+            $this->assertLine($slug, Importer::CREATED, $lines);
         }
 
         $this->assertSame(self::SIX, Block::query()->whereNotNull('published_version_id')->orderBy('slug')->pluck('slug')->all());
-        $this->assertSame([], array_values(array_filter($lines, static fn (SyncLine $line): bool => $line->refused)));
+        $this->assertSame([], array_values(array_filter($lines, static fn (array $row): bool => $row['error'] !== null)));
     }
 
     #[Test]
@@ -180,55 +181,36 @@ final class ThemeDefaultBlocksTest extends TestCase
         $this->assertFalse(Block::query()->where('slug', 'text')->exists());
         $this->assertStringContainsString('The block type hero comes with the theme', implode(' ', $ledger->takeNotes()));
 
-        // So the next sync is not refused, and `columns` takes the theme's text.
+        // So the import creates the theme's, and `columns` takes the theme's text.
         $lines = $this->sync();
-        $this->assertLine('hero', 'created from '.self::THEME, $lines);
-        $this->assertLine('text', 'created from '.self::THEME, $lines);
+        $this->assertLine('hero', Importer::CREATED, $lines);
+        $this->assertLine('text', Importer::CREATED, $lines);
         $this->assertSame(['text'], Block::query()->where('slug', 'columns')->firstOrFail()->allow);
     }
 
+    /** A site that got the demo first keeps its hero — it is the site's now — until someone names it. */
     #[Test]
-    public function an_untouched_demo_type_is_refused_with_the_way_out_and_adopted_when_asked(): void
+    public function a_demo_type_seeded_before_differs_and_is_replaced_only_by_name(): void
     {
         $hero = $this->oldDemo('hero');
 
-        $refused = $this->line('hero', $this->sync());
-        $this->assertTrue($refused->refused);
-        $this->assertStringContainsString("It is the blocks demo's hero, unchanged: webx:theme:sync --adopt=hero hands it to the theme", $refused->detail);
-
-        $this->assertLine('hero', 'would be adopted from '.self::THEME." (the blocks demo's, untouched)", $this->sync(dryRun: true, adopt: ['hero']));
+        $this->assertLine('hero', Importer::DIFFERS, $this->sync());
         $this->assertNull($hero->fresh()?->theme_source);
+        $this->assertSame(1, BlockVersion::query()->where('block_id', $hero->id)->count());
 
-        $this->artisan('webx:theme:sync', ['--adopt' => ['hero,text']])
-            ->expectsOutputToContain('adopted from '.self::THEME)
+        $this->artisan('webx:blocks:import', ['--theme' => true, '--replace' => ['hero'], '--publish' => true])
+            ->expectsOutputToContain('replaced · v1 → v2 · published v2')
             ->assertSuccessful();
 
         $hero = $hero->fresh();
         $this->assertSame(self::THEME, $hero?->theme_source);
         $this->assertSame(2, BlockVersion::query()->where('block_id', $hero->id)->count(), 'the demo version stays in the history');
-        $this->assertLine('hero', 'unchanged', $this->sync());
+        $this->assertLine('hero', Importer::UNCHANGED, $this->sync());
 
         // A page written for the demo's hero prints in the theme's.
         $html = $this->render([$this->node('hero', ['title' => 'Old page', 'subtitle' => 'Its line', 'button_label' => 'Its button', 'button_url' => '/x'])]);
         $this->assertStringContainsString('<h1 class="b-hero__title">Old page</h1>', $html);
         $this->assertStringContainsString('<a class="b-hero__button" href="/x">Its button</a>', $html);
-    }
-
-    #[Test]
-    public function a_demo_type_somebody_changed_is_not_adopted(): void
-    {
-        $hero = $this->oldDemo('hero');
-        $hero->saveVersion(['styles' => ".b-hero {\n    padding: 1em;\n}\n"]);
-        $hero->publish();
-
-        $own = $this->line('hero', $this->sync());
-        $this->assertTrue($own->refused);
-        $this->assertStringContainsString('Rename or delete it in the panel', $own->detail);
-
-        $asked = $this->line('hero', $this->sync(adopt: ['hero']));
-        $this->assertTrue($asked->refused);
-        $this->assertStringContainsString('not adopted — --adopt takes only the blocks demo\'s copy nobody has changed', $asked->detail);
-        $this->assertNull($hero->fresh()?->theme_source);
     }
 
     /**
@@ -245,17 +227,17 @@ final class ThemeDefaultBlocksTest extends TestCase
         $this->assertNull($offers->carriedBy('faq'));
 
         $this->artisan('webx:blocks:offered', ['--module' => ['tariffs']])
-            ->expectsOutputToContain(self::THEME.' carries it')
+            ->expectsOutputToContain(self::THEME.' carries it — webx:blocks:import --theme puts that one on the site')
             ->assertSuccessful();
 
         $this->assertSame(BlockOffers::CARRIED, $offers->install($offer));
         $this->artisan('webx:blocks:offered', ['--install' => true, '--module' => ['tariffs']])->assertSuccessful();
         $this->assertSame(0, Block::query()->count(), 'nothing is installed from the offer');
 
-        // The theme's type is the one sync puts there; afterwards the slug is simply taken.
-        $this->assertLine('cta', 'created from '.self::THEME, $this->sync());
+        // The theme's type is the one the import puts there; afterwards the slug is simply taken.
+        $this->assertLine('cta', Importer::CREATED, $this->sync());
         $this->assertSame(BlockOffers::PRESENT, $offers->install($offer));
-        $this->assertNotSame(BlockVersion::SOURCE_IMPORT, Block::query()->where('slug', 'cta')->firstOrFail()->publishedVersion?->source);
+        $this->assertSame(self::THEME, Block::query()->where('slug', 'cta')->value('theme_source'));
     }
 
     /**
@@ -310,37 +292,25 @@ final class ThemeDefaultBlocksTest extends TestCase
     }
 
     /**
-     * @param  list<string>  $adopt
-     * @return list<SyncLine>
+     * The theme's types through the import `webx:setup` runs, by slug.
+     *
+     * @return array<string, array{status: string, error: string|null}>
      */
-    private function sync(bool $dryRun = false, array $adopt = []): array
+    private function sync(): array
     {
-        return $this->app->make(LayerSync::class)->sync($this->app->make(ThemeChain::class), false, $dryRun, $adopt);
+        $rows = $this->app->make(Importer::class)->import(LayerSource::read($this->app->make(ThemeChain::class)), publish: true);
+
+        return array_column($rows, null, 'slug');
     }
 
     /**
-     * @param  list<SyncLine>  $lines
+     * @param  array<string, array{status: string, error: string|null}>  $rows
      */
-    private function line(string $subject, array $lines): SyncLine
+    private function assertLine(string $slug, string $status, array $rows): void
     {
-        foreach ($lines as $line) {
-            if ($line->subject === $subject) {
-                return $line;
-            }
-        }
-
-        $this->fail("No line for {$subject}: ".json_encode($lines));
-    }
-
-    /**
-     * @param  list<SyncLine>  $lines
-     */
-    private function assertLine(string $subject, string $detail, array $lines): void
-    {
-        $line = $this->line($subject, $lines);
-
-        $this->assertSame($detail, $line->detail);
-        $this->assertFalse($line->refused, $line->detail);
+        $this->assertArrayHasKey($slug, $rows);
+        $this->assertNull($rows[$slug]['error']);
+        $this->assertSame($status, $rows[$slug]['status']);
     }
 
     /**

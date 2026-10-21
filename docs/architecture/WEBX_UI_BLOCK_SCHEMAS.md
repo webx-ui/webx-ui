@@ -1,7 +1,7 @@
 # Схемы блоков: кто их ставит и когда
 
-Статус: **спека на утверждение** (webx-ui#40, этап 2). Реализация — этап 3. После выпуска документ
-описывает то, что есть; §9 сжимается в «Выпуск».
+Статус: **реализовано** (webx-ui#40), выходит minor-релизом `@webx-ui/php`. Документ описывает то,
+что есть; план реализации и открытые вопросы сжаты в §7 «Выпуск».
 
 Схема блока — это тип в таблице `blocks`: манифест, поля, шаблон, стили, скрипт и версии. Документ
 отвечает на один вопрос: какая команда и когда пишет тип в базу сайта. Формат файла типа — §17
@@ -46,19 +46,19 @@ resources/blocks/*.json   webx:blocks:import --theme   theme/blocks/*.json     (
 
 ## 3. Команды после перехода
 
-| Команда                                | Схемы блоков                                                                                             | Что меняется                                                                                                                               |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `webx:boot`                            | **не пишет**                                                                                             | уходит шаг `webx:blocks:import --publish` (`Plan::blockTypes`); шаг `webx:theme:sync` остаётся, он теперь только про ассеты                |
-| `webx:theme:sync`                      | **не пишет**                                                                                             | публикует сборки и ассеты слоёв, стили модулей, спрайт иконок. `LayerSync` из него уходит; `--force` — только файлы; `--adopt` уходит      |
-| `post-update-cmd` сайта (`theme:sync`) | **не пишет**                                                                                             | строка в `composer.json` уже установленных сайтов остаётся и сама становится безопасной                                                    |
-| `webx:module:add`                      | **не пишет**                                                                                             | после установки печатает подсказку, если модуль предлагает блоки: `php artisan webx:blocks:offered --install --module=<id>` (§8, вопрос 2) |
-| `webx:setup`                           | создаёт недостающие: блоки темы, потом предложения выбранных модулей                                     | `syncTheme` = `theme:sync` (ассеты) + `webx:blocks:import --theme --publish`; `installOfferedBlocks` — как сейчас                          |
-| `webx:setup` повторно                  | создаёт только то, чего нет                                                                              | существующие типы не трогает: импорт по правилу §4, предложения — `present`                                                                |
-| `webx:blocks:import`                   | создаёт новые; существующие — только `--replace=<slug>`                                                  | §4                                                                                                                                         |
-| `webx:blocks:export`                   | не пишет в базу                                                                                          | без изменений                                                                                                                              |
-| `webx:blocks:offered [--install]`      | создаёт недостающие, существующий slug — `present`                                                       | без изменений. Slug, который несёт тема, — `carried`, подсказка: `webx:blocks:import --theme` вместо `theme:sync`                          |
-| `webx:demo`                            | демо ставит недостающие типы (`BlockOffers::install`, `BlocksDemo::seed`), `--remove` убирает по журналу | без изменений, кроме подсказки про slug темы (та же замена `theme:sync` → `import --theme`)                                                |
-| панель «Импорт» (`ExchangeController`) | создаёт новые; существующие — только отмеченные человеком                                                | §5                                                                                                                                         |
+| Команда                                | Схемы блоков                                                                                             | Что меняется                                                                                                                          |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `webx:boot`                            | **не пишет**                                                                                             | уходит шаг `webx:blocks:import --publish` (`Plan::blockTypes`); шаг `webx:theme:sync` остаётся, он теперь только про ассеты           |
+| `webx:theme:sync`                      | **не пишет**                                                                                             | публикует сборки и ассеты слоёв, стили модулей, спрайт иконок. `LayerSync` из него уходит; `--force` — только файлы; `--adopt` уходит |
+| `post-update-cmd` сайта (`theme:sync`) | **не пишет**                                                                                             | строка в `composer.json` уже установленных сайтов остаётся и сама становится безопасной                                               |
+| `webx:module:add`                      | **не пишет**                                                                                             | после установки печатает подсказку, если модуль предлагает блоки: `php artisan webx:blocks:offered --install --module=<id>`           |
+| `webx:setup`                           | создаёт недостающие: блоки темы, потом предложения выбранных модулей                                     | `syncTheme` = `theme:sync` (ассеты) + `webx:blocks:import --theme --publish`; `installOfferedBlocks` — как сейчас                     |
+| `webx:setup` повторно                  | создаёт только то, чего нет                                                                              | существующие типы не трогает: импорт по правилу §4, предложения — `present`                                                           |
+| `webx:blocks:import`                   | создаёт новые; существующие — только `--replace=<slug>`                                                  | §4                                                                                                                                    |
+| `webx:blocks:export`                   | не пишет в базу                                                                                          | без изменений                                                                                                                         |
+| `webx:blocks:offered [--install]`      | создаёт недостающие, существующий slug — `present`                                                       | без изменений. Slug, который несёт тема, — `carried`, подсказка: `webx:blocks:import --theme` вместо `theme:sync`                     |
+| `webx:demo`                            | демо ставит недостающие типы (`BlockOffers::install`, `BlocksDemo::seed`), `--remove` убирает по журналу | без изменений, кроме подсказки про slug темы (та же замена `theme:sync` → `import --theme`)                                           |
+| панель «Импорт» (`ExchangeController`) | создаёт новые; существующие — только отмеченные человеком                                                | §5                                                                                                                                    |
 
 `webx:demo` и `offered --install` остаются dev-командами: на проде их никто не зовёт сам, а
 вызванные руками они не трогают существующих типов.
@@ -167,80 +167,30 @@ MCP-инструмента импорта нет; если появится — 
 - **Релиз** — minor с заметкой в changeset `@webx-ui/php` («deploy no longer writes block types;
   import with `webx:blocks:import`») и, при правке диалога, `@webx-ui/module-blocks`.
 
-## 7. План реализации (этап 3)
+## 7. Выпуск
 
-### 7.1 Код
+Реализовано в webx-ui#40, этап 3:
 
-1. `module-admin/src/Boot/Plan.php` — убрать `blockTypes()` и его вызов.
-2. `themes/src/Console/SyncCommand.php` — убрать цикл по `SyncStep`, `--adopt`, слова про блоки в
-   описании и `--force`. Контракт `Contracts\SyncStep` и тег оставить (публичный контракт, вопрос 3).
-3. `module-blocks` — `BlocksServiceProvider` больше не тегирует `LayerSync`; `Themes\LayerSync`
-   удалить, её проверки (`refusal`, словарь, `incompatible`) перенести в источник `--theme`
-   импорта. `BlocksDemo::untouched` — удалить, если больше не нужен.
-4. `module-blocks/src/Panel/Importer.php` — параметр `replace` (list of slugs), статусы `differs` и
-   `replaced` вместо `updated`, `diff` в строке, проверка `replace` до записи, `theme_source` /
-   `theme_hash` для документов из слоёв.
-5. `module-blocks/src/Panel/TypeDiff.php` — новый, §4.1.
-6. `module-blocks/src/Console/ImportCommand.php` — `--theme`, `--replace`, вывод §4.1, коды выхода.
-7. `module-blocks/src/Http/Controllers/ExchangeController.php` — `replace` из запроса.
-8. `packages/module-blocks` — `BlockImportDialog.vue` (переключатель, расхождение), `api.ts`,
-   `types.ts` (`BlockImportStatus`, `diff`), словарь.
-9. `module-admin/src/Console/SetupCommand.php` — `syncTheme`: `theme:sync`, затем
-   `webx:blocks:import --theme --publish`; `syncAfterUpdates` без изменений.
-10. `module-admin/src/Console/ModuleAddCommand.php` — подсказка про `offered --install`.
-11. Подсказки `BlockOffers::CARRIED` (`OfferedCommand`) и `BlocksDemo` — `import --theme`.
-
-### 7.2 Тесты
-
-- `module-admin/tests/BootTest.php`: `it_brings_the_database_up_to_the_block_types_in_the_repository`
-  (:153) — перевернуть в «boot не пишет типы, даже когда `resources/blocks` есть»; поправить :163,
-  :183, :191.
-- `module-admin/tests/SetupThemeTest.php` (:194, :222, :247): setup ставит блоки темы импортом до
-  предложений; `post-update-cmd` по-прежнему `theme:sync`; повторный setup не трогает изменённый тип.
-- `module-blocks/tests/ThemeSyncTest.php` → новый `ImportThemeTest`: создание, `unchanged`,
-  изменённый в панели и по MCP — `differs` и не тронут, `--replace` пишет версию и прежняя
-  восстанавливается, несовместимое перекрытие — `failed`, тип модуля под slug темы — `differs`
-  (бывший отказ). Отдельно: `theme:sync` и `theme:sync --force` не меняют ни одного типа.
-- `module-blocks/tests` импорт файлов (новый `ImportCommandTest` или существующий): `differs` не
-  перезаписан, `--replace=<slug>`, `--replace=*` и неизвестный slug — exit 1 без записи, `--dry-run`
-  с `--replace`, открытый черновик, вывод расхождения (`TypeDiffTest` — поля `+ − ~`, шаблон,
-  стили, строка).
-- `ThemeDefaultBlocksTest`: `an_untouched_demo_type_is_refused_with_the_way_out_and_adopted_when_asked`
-  и `a_demo_type_somebody_changed_is_not_adopted` (:72, :239) — удалить вместе с `--adopt`;
-  `an_offer_yields_to_a_slug_the_theme_carries` — оставить, сверить подсказку.
-- `DemoTest` (:162, :185) — текст подсказки.
-- `themes/tests/LayerBlocksTest` — `LayerBlocks` остаётся; тесты регистрации шага — по факту.
-- Тест контроллера обмена: план с `diff`, `replace`, 422 на чужой slug. `BlockImportDialog.test.ts` —
-  переключатель у `differs`, в запрос уходят только отмеченные.
-- `TestCase` модулей (faq, team, menu, services, press, widgets, reviews, tariffs, recipes) ставят
-  типы через `offered --install` — не меняются.
-- `scripts/php-smoke.sh`: setup `--demo` и повторный setup проходят; добавить проверку, что вывод
-  `webx:theme:sync` не содержит раздела «Block types».
-
-### 7.3 Доки
-
-- `WEBX_UI_THEMES.md` §9.2 (sync — только ассеты, блоки — `import --theme`), §10.3 (`carried`), упоминания
-  `theme:sync` в §17; `WEBX_UI_MODULE_BLOCKS.md` §17 и §17.1 (правило §4–§5 отсюда); `WEBX_UI_NEW_SITE.md`.
-- `apps/docs/guide`: `styles.md:336-337`, `blocks.md:541-544`, `themes.md:186`, `new-site.md:469-471`,
-  `collections.md:240`, `widgets.md:395`, `layout-regions.md:243,327`; страницы модулей с
-  `offered --install` (faq, reviews, press, team, tariffs, recipes, menu, services, blog) — сверить, что
-  обещания «поставит деплой» нет.
-- README модулей (faq, menu, recipes, reviews, services, tariffs, team, press, widgets:273,349,
-  module-inbox:121) и `AGENTS.md`: module-blocks:45,69-70, theme-default:42, faq:47, press:46, blog, menu,
-  team, reviews, tariffs, services, widgets.
-- Этот документ: §9 «Выпуск», статус в `README.md`.
-
-## 8. Открытые вопросы
-
-1. **Имя флага слоёв темы.** Рекомендую `--theme` (булев): источник у слоёв один — итоговый набор
-   цепочки. Альтернатива `--from=theme` имеет смысл, только если появятся другие источники
-   (предложения модулей); для них уже есть `webx:blocks:offered`.
-2. **`webx:module:add` и предложения модуля.** Рекомендую только печатать подсказку с командой: ставить
-   самому — нарушение п.1, а модуль на проде добавляют тем же путём, что и на dev.
-3. **Контракт `SyncStep` без реализаций.** Рекомендую оставить интерфейс и тег: это публичный контракт
-   `themes`, удалять его в minor незачем, а другой пакет может публиковать через него файлы.
-4. **Колонки `theme_source` / `theme_hash`.** Рекомендую оставить и заполнять при `import --theme`:
-   `module-debug` показывает по `theme_source`, из какого слоя тип; миграции не нужно. Удалить можно
-   позже, если не пригодятся.
-5. **Предупреждение в `webx:doctor`** о блоках темы, которых нет на сайте или которые отличаются.
-   Рекомендую не делать сейчас: то же показывает `webx:blocks:import --theme --dry-run`, а срок жёсткий.
+- **Код.** `Boot\Plan` без шага импорта; `webx:theme:sync` без `--adopt`, `--force` — только
+  файлы. `Contracts\SyncStep` и тег `webx-themes.sync` остались (публичный контракт для файлов),
+  `$adopt` из сигнатуры убран; `module-blocks` шаг больше не регистрирует, `Themes\LayerSync` и
+  `BlocksDemo::untouched` удалены. Слои читает `Themes\LayerSource` (проверки §8 и совместимости
+  перекрытия — строкой `failed`). `Panel\Importer` — статусы `differs`/`replaced` вместо `updated`,
+  `replace`, `diff`/`from`/`draft` в строке, `theme_source`/`theme_hash` для документов слоёв;
+  `Panel\TypeDiff`, `Panel\ReplaceRefused`. `webx:setup` — `theme:sync`, затем
+  `webx:blocks:import --theme --publish` (только с темой и `module-blocks`). `webx:module:add` —
+  подсказка, если в `vendor/<пакет>/resources/blocks` есть файлы. Панель — переключатель «Replace» в
+  `BlockImportDialog`, слова в словаре `module-blocks` на всех языках.
+- **Тесты.** `ImportThemeTest` (вместо `ThemeSyncTest`): создание, `unchanged`, `differs` после
+  правки по MCP и после новой версии темы, открытый черновик, `--replace` поштучно, `*`/`all`/чужой
+  slug — отказ, `failed` по §8 и по перекрытию, и гарантия деплоя: шаги `Boot\Plan`,
+  `theme:sync` и `theme:sync --force` не меняют тип, изменённый по MCP, и не возвращают удалённый.
+  `TypeDiffTest`; `ExchangeTest` — команда и панель (`replace`, 422); `BootTest`,
+  `SetupThemeTest`, `ThemeDefaultBlocksTest` (тесты `--adopt` заменены одним на `--replace`),
+  `SyncCommandTest`, `BlockImportDialog.test.ts`.
+- **Решения по открытым вопросам** (человек, 21.10.2026): флаг слоёв — `--theme`; `module:add` только
+  подсказывает; `SyncStep` остаётся; `theme_source`/`theme_hash` остаются и заполняются импортом
+  слоёв, без миграции; предупреждения в `webx:doctor` нет — то же показывает
+  `webx:blocks:import --theme --dry-run`.
+- **Ловушка** — «новый блок темы не появился после деплоя» в `docs/pitfalls/laravel-and-php.md`;
+  лишние значения после смены схемы — §17.2 `WEBX_UI_MODULE_BLOCKS.md`.

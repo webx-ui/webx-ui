@@ -9,29 +9,29 @@
 
 ## Справочники
 
-| Файл                                                         | О чём                                                                                      | Статус                                    |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ----------------------------------------- |
-| [WEBX_UI_COMPOSER_PACKAGES.md](WEBX_UI_COMPOSER_PACKAGES.md) | Реестр composer-пакетов: назначение, состав, npm-пара                                      | действует                                 |
-| [WEBX_UI_PHP_RELEASE.md](WEBX_UI_PHP_RELEASE.md)             | Релиз: npm, зеркала php-пакетов для Packagist, канал `next`                                | действует                                 |
-| [WEBX_UI_RELEASE_SPEED.md](WEBX_UI_RELEASE_SPEED.md)         | Скорость релиза: как мерить и замеры от PR до Packagist                                    | замеры                                    |
-| [WEBX_UI_SCREENS.md](WEBX_UI_SCREENS.md)                     | Экраны панели как JSON-дерево, патчи, реестр типов                                         | действует; не все экраны переведены       |
-| [WEBX_UI_ROUTING.md](WEBX_UI_ROUTING.md)                     | Плоский реестр адресов сайта и резолвер                                                    | выпущено                                  |
-| [WEBX_UI_NEW_SITE.md](WEBX_UI_NEW_SITE.md)                   | Новый сайт одной командой: скелет, `webx:setup`                                            | выпущено                                  |
-| [WEBX_UI_MCP_ACCESS.md](WEBX_UI_MCP_ACCESS.md)               | Подключение AI-агентов: OAuth, согласие, журнал                                            | выпущено                                  |
-| [WEBX_UI_PERMISSIONS.md](WEBX_UI_PERMISSIONS.md)             | Права панели: модель, карта прав модулей, защита от повышения прав, готовые роли, миграция | аудит и спека (webx-ui#17, этап 1)        |
-| [WEBX_UI_BLOCK_FRAGMENTS.md](WEBX_UI_BLOCK_FRAGMENTS.md)     | Общий блок: зона, которую ставят блоком на страницу или тегом в шаблон                     | выпущено                                  |
-| [WEBX_UI_LAYOUT_REGIONS.md](WEBX_UI_LAYOUT_REGIONS.md)       | Шапка и подвал сайта деревьями блоков                                                      | выпущено                                  |
-| [WEBX_UI_BLOCK_SCHEMAS.md](WEBX_UI_BLOCK_SCHEMAS.md)         | Схемы блоков: кто ставит типы, деплой их не пишет, импорт с расхождениями и `--replace`    | спека на утверждение (webx-ui#40, этап 2) |
-| [WEBX_UI_CATALOG.md](WEBX_UI_CATALOG.md)                     | Каталог товаров: ядро и спутники, контракты, таблица статусов (§10)                        | волна A выпущена, волна B не начата       |
-| [WEBX_UI_HISTORY.md](WEBX_UI_HISTORY.md)                     | Журнал изменений в module-admin, узел `wx-history`                                         | выпущено                                  |
-| [WEBX_UI_AGENT_DOCS.md](WEBX_UI_AGENT_DOCS.md)               | `AGENTS.md` в пакетах и корневой файл сайта                                                | AG1–AG4 выпущены, AG5 впереди             |
-| [WEBX_UI_THEMES.md](WEBX_UI_THEMES.md)                       | Тема по умолчанию и локальная тема сайта: слои, токены, блоки, модули, правила агентов     | TH1–TH5 выпущены; §21 не начат            |
-| [WEBX_UI_WIDGETS.md](WEBX_UI_WIDGETS.md)                     | Виджеты сайта и формы сайта (§17–§18)                                                      | W1–W6 выпущены                            |
-| [WEBX_UI_SITE_BAR.md](WEBX_UI_SITE_BAR.md)                   | Панель на сайте для вошедшего администратора: ссылка в панель, SEO, правка блоков          | выпущено; проверка на телефоне открыта    |
-| [WEBX_UI_CACHE.md](WEBX_UI_CACHE.md)                         | Кеш на версионных ключах: группы, версии, сброс по моделям и явный, экран «Кеш», MCP       | выпущено                                  |
-| [WEBX_UI_PERFORMANCE_AUDIT.md](WEBX_UI_PERFORMANCE_AUDIT.md) | Производительность PHP: замеры «было/стало», находки, карта кеша, решения на утро          | задача webx-ui#16 выполнена               |
-| [WEBX_UI_PERFORMANCE.md](WEBX_UI_PERFORMANCE.md)             | Правила производительности модулей: N+1, кеш и сброс, индексы, пагинация, бюджеты          | действует                                 |
-| [WEBX_UI_DEBUGBAR.md](WEBX_UI_DEBUGBAR.md)                   | Отладочная панель на сайте: SQL, время, блоки, кеш; MCP `debug_page`                       | спроектировано, не начато                 |
+| Файл                                                         | О чём                                                                                      | Статус                                 |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | -------------------------------------- |
+| [WEBX_UI_COMPOSER_PACKAGES.md](WEBX_UI_COMPOSER_PACKAGES.md) | Реестр composer-пакетов: назначение, состав, npm-пара                                      | действует                              |
+| [WEBX_UI_PHP_RELEASE.md](WEBX_UI_PHP_RELEASE.md)             | Релиз: npm, зеркала php-пакетов для Packagist, канал `next`                                | действует                              |
+| [WEBX_UI_RELEASE_SPEED.md](WEBX_UI_RELEASE_SPEED.md)         | Скорость релиза: как мерить и замеры от PR до Packagist                                    | замеры                                 |
+| [WEBX_UI_SCREENS.md](WEBX_UI_SCREENS.md)                     | Экраны панели как JSON-дерево, патчи, реестр типов                                         | действует; не все экраны переведены    |
+| [WEBX_UI_ROUTING.md](WEBX_UI_ROUTING.md)                     | Плоский реестр адресов сайта и резолвер                                                    | выпущено                               |
+| [WEBX_UI_NEW_SITE.md](WEBX_UI_NEW_SITE.md)                   | Новый сайт одной командой: скелет, `webx:setup`                                            | выпущено                               |
+| [WEBX_UI_MCP_ACCESS.md](WEBX_UI_MCP_ACCESS.md)               | Подключение AI-агентов: OAuth, согласие, журнал                                            | выпущено                               |
+| [WEBX_UI_PERMISSIONS.md](WEBX_UI_PERMISSIONS.md)             | Права панели: модель, карта прав модулей, защита от повышения прав, готовые роли, миграция | аудит и спека (webx-ui#17, этап 1)     |
+| [WEBX_UI_BLOCK_FRAGMENTS.md](WEBX_UI_BLOCK_FRAGMENTS.md)     | Общий блок: зона, которую ставят блоком на страницу или тегом в шаблон                     | выпущено                               |
+| [WEBX_UI_LAYOUT_REGIONS.md](WEBX_UI_LAYOUT_REGIONS.md)       | Шапка и подвал сайта деревьями блоков                                                      | выпущено                               |
+| [WEBX_UI_BLOCK_SCHEMAS.md](WEBX_UI_BLOCK_SCHEMAS.md)         | Схемы блоков: кто ставит типы, деплой их не пишет, импорт с расхождениями и `--replace`    | реализовано (webx-ui#40)               |
+| [WEBX_UI_CATALOG.md](WEBX_UI_CATALOG.md)                     | Каталог товаров: ядро и спутники, контракты, таблица статусов (§10)                        | волна A выпущена, волна B не начата    |
+| [WEBX_UI_HISTORY.md](WEBX_UI_HISTORY.md)                     | Журнал изменений в module-admin, узел `wx-history`                                         | выпущено                               |
+| [WEBX_UI_AGENT_DOCS.md](WEBX_UI_AGENT_DOCS.md)               | `AGENTS.md` в пакетах и корневой файл сайта                                                | AG1–AG4 выпущены, AG5 впереди          |
+| [WEBX_UI_THEMES.md](WEBX_UI_THEMES.md)                       | Тема по умолчанию и локальная тема сайта: слои, токены, блоки, модули, правила агентов     | TH1–TH5 выпущены; §21 не начат         |
+| [WEBX_UI_WIDGETS.md](WEBX_UI_WIDGETS.md)                     | Виджеты сайта и формы сайта (§17–§18)                                                      | W1–W6 выпущены                         |
+| [WEBX_UI_SITE_BAR.md](WEBX_UI_SITE_BAR.md)                   | Панель на сайте для вошедшего администратора: ссылка в панель, SEO, правка блоков          | выпущено; проверка на телефоне открыта |
+| [WEBX_UI_CACHE.md](WEBX_UI_CACHE.md)                         | Кеш на версионных ключах: группы, версии, сброс по моделям и явный, экран «Кеш», MCP       | выпущено                               |
+| [WEBX_UI_PERFORMANCE_AUDIT.md](WEBX_UI_PERFORMANCE_AUDIT.md) | Производительность PHP: замеры «было/стало», находки, карта кеша, решения на утро          | задача webx-ui#16 выполнена            |
+| [WEBX_UI_PERFORMANCE.md](WEBX_UI_PERFORMANCE.md)             | Правила производительности модулей: N+1, кеш и сброс, индексы, пагинация, бюджеты          | действует                              |
+| [WEBX_UI_DEBUGBAR.md](WEBX_UI_DEBUGBAR.md)                   | Отладочная панель на сайте: SQL, время, блоки, кеш; MCP `debug_page`                       | спроектировано, не начато              |
 
 ## Модули
 

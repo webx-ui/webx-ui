@@ -302,7 +302,8 @@ have to say yes: turning the feature on does not make everybody who writes a pub
 
 The module offers a block type, **Latest articles** (`blog`): a heading, the articles and a link
 to the feed. Install it once with `php artisan webx:blocks:offered --install --module=blog` (a
-theme with a `blog` block of its own puts that one instead), then put it on the home page.
+theme with a `blog` block of its own brings that one instead, with
+`webx:blocks:import --theme`), then put it on the home page.
 
 - **Which articles** — the field «Articles» is a `wx-collection` of the source `blog`: all of
   them or the rubrics you pick, and how many. The order is the feed's: pinned first, then the

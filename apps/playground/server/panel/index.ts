@@ -1438,6 +1438,15 @@ on('POST', '/blocks/import', ({ body }) => {
 
   const dryRun = body.dry_run === true
   const publish = body.publish === true
+  const replace = Array.isArray(body.replace) ? body.replace.map(String) : []
+  const slugs = (list as Record<string, unknown>[]).map((document) => String(document.slug ?? ''))
+  const unknown = replace.find((slug) => !slugs.includes(slug))
+
+  // As the server: a type the site has is replaced only by name, never all at once.
+  if (unknown !== undefined) {
+    const message = `The file has no type ${unknown} to replace it with.`
+    throw new HttpFailure(422, message, undefined, { replace: [message] })
+  }
 
   return {
     data: (list as Record<string, unknown>[]).map((document) => {
@@ -1452,6 +1461,9 @@ on('POST', '/blocks/import', ({ body }) => {
         writes: false,
         version: null as number | null,
         published: null as number | null,
+        from: null as number | null,
+        draft: false,
+        diff: null as ReturnType<typeof importDiff> | null,
         error: null as string | null,
       }
 
@@ -1469,16 +1481,34 @@ on('POST', '/blocks/import', ({ body }) => {
       const existing = blockTypes.find((type) => type.slug === slug)
       const writes =
         existing === undefined || JSON.stringify(contentOf(existing)) !== JSON.stringify(content)
-      const status = existing === undefined ? 'created' : writes ? 'updated' : 'unchanged'
+      const diff =
+        existing === undefined || !writes ? null : importDiff(contentOf(existing), content)
+      const status =
+        existing === undefined
+          ? 'created'
+          : !writes
+            ? 'unchanged'
+            : replace.includes(slug)
+              ? 'replaced'
+              : 'differs'
+      const from = (existing?.draft ?? existing?.published)?.number ?? null
+      const known = {
+        ...row,
+        status,
+        writes: status === 'created' || status === 'replaced',
+        from,
+        draft: existing?.draft != null,
+        diff,
+      }
+
+      if (status === 'unchanged' || status === 'differs') return known
 
       if (dryRun) {
         // With publishing asked, the plan carries what the checks would say.
         const failure = publish ? templateFailure(content.template) : null
 
         return {
-          ...row,
-          status,
-          writes,
+          ...known,
           error: failure === null ? null : `would not be published — ${failure.reason}`,
         }
       }
@@ -1515,7 +1545,7 @@ on('POST', '/blocks/import', ({ body }) => {
         type.draft = {
           number: next(type),
           source: 'import',
-          comment: `Imported from ${name}`,
+          comment: `${existing === undefined ? 'Imported' : 'Replaced'} from ${name}`,
           author_id: 1,
           author: 'Анна Ковальчук',
           created_at: now,
@@ -1539,10 +1569,37 @@ on('POST', '/blocks/import', ({ body }) => {
         }
       }
 
-      return { ...row, status, writes, version, published, error }
+      return { ...known, version, published, error }
     }),
   }
 })
+
+/** How a type here differs from the file, roughly as the server tells it: `+` is the file's. */
+function importDiff(
+  site: NonNullable<BlockType['content']>,
+  file: NonNullable<BlockType['content']>,
+) {
+  const ids = (schema: unknown[]) =>
+    schema.map((node) => String((node as { id?: unknown }).id ?? '')).filter(Boolean)
+  const before = ids(site.schema as unknown[])
+  const after = ids(file.schema as unknown[])
+  const lines = (from: string | null, to: string | null) => {
+    const a = (from ?? '').split('\n')
+    const b = (to ?? '').split('\n')
+    return {
+      added: b.filter((l) => !a.includes(l)).length,
+      removed: a.filter((l) => !b.includes(l)).length,
+    }
+  }
+  const diff: Record<string, unknown> = {}
+  const added = after.filter((id) => !before.includes(id))
+  const removed = before.filter((id) => !after.includes(id))
+  if (added.length > 0 || removed.length > 0) diff.fields = { added, removed, changed: [] }
+  if (site.template !== file.template) diff.template = lines(site.template, file.template)
+  if (site.styles !== file.styles) diff.styles = lines(site.styles, file.styles)
+  if (site.script !== file.script) diff.script = lines(site.script, file.script)
+  return diff
+}
 
 on('POST', '/blocks', ({ body }) => {
   const now = new Date().toISOString()
