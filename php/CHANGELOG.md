@@ -1,5 +1,16 @@
 # @webx-ui/php
 
+## 0.83.0
+
+### Minor Changes
+
+- df40426: Themes: a dark scheme for the visitor. A layer's `tokens.json` takes `"schemes": { "dark": { … } }` — the same tokens, merged up the chain like `defaults`. With it `@webxTheme` prints the dark values under `prefers-color-scheme: dark` (unless `data-theme="light"` is on `<html>`) and under `data-theme="dark"`, with `color-scheme`; without it the output is unchanged. The theme's test (`ThemeContract`) measures the contrast of rule 29 in the dark scheme too, `webx:theme:check` says it as notes, notes a light token recoloured over a dark value left from a layer below, and refuses `@media (prefers-color-scheme)` in a theme's CSS; `webx:theme:show` gives each token its dark value and its layer. Letters stay light. The switch is the site's: the guide shows a button and the early script that sets `data-theme` before the first paint.
+
+### Patch Changes
+
+- df40426: `webx:doctor`: a new level, `note` — worth knowing, nothing to do for the site to work. Snapshots left in storage, relations kept for a module that is not installed and a site on sqlite are notes now: shown with `(note)`, counted apart, and never a reason for `--strict` to stop a deploy. `--json` gains `ok` (the exit code), `level` on every line (`ok`, `note`, `content`, `warn`, `fail`) and `notes`; `state` stays `warn` for all three kinds of warning. The snapshots line says how to delete an archive already restored.
+- df40426: `webx-ui/site`: a new site trusts the proxy in front of it from private networks and localhost (`trustProxies` in `bootstrap/app.php`), so that behind Traefik or a hosting platform its links, assets and redirects come out `https://` — no more mixed content and a blank `/cms`. A public address is still not believed. The skeleton's own tests now run in the smoke right after `create-project`.
+
 ## 0.82.0
 
 ### Minor Changes
