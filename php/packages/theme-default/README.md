@@ -45,7 +45,8 @@ specificity: a local theme, a module or a block overrides it by writing the rule
 
 ```bash
 composer require webx-ui/theme-default
-php artisan webx:theme:sync
+php artisan webx:theme:sync                       # files only
+php artisan webx:blocks:import --theme --publish  # the six block types, once
 ```
 
 and `WEBX_THEME=webx-ui/theme-default` (or a local `theme/` that `uses` it) in `.env`.

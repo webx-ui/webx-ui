@@ -8,29 +8,27 @@ use WebxUi\Themes\Sync\SyncLine;
 use WebxUi\Themes\ThemeChain;
 
 /**
- * Something `webx:theme:sync` brings up to date besides the built files — the block types of
- * the layers, put on the site by `webx-ui/module-blocks` (spec §9.2).
+ * Something `webx:theme:sync` brings up to date besides the built files of the layers — files
+ * another package publishes from them.
+ *
+ * Not the site's data: the command runs on every deploy and every `composer update`, so a step
+ * that wrote the database would overwrite what the site changed. The block types of the layers
+ * left this contract for that reason (BLOCK_SCHEMAS §3) and are imported by a person instead.
  *
  * Tagged `webx-themes.sync` in the container. The engine does not know the packages that
- * register a step: a package below the themes knows the engine, never the other way round, so
- * a site without the blocks module syncs its assets and nothing else.
+ * register a step: a package below the themes knows the engine, never the other way round.
  */
 interface SyncStep
 {
     public const string TAG = 'webx-themes.sync';
 
-    /** What the step syncs, as the heading of its lines: «Block types». */
+    /** What the step syncs, as the heading of its lines. */
     public function title(): string;
 
     /**
-     * One line per thing the step looked at. A refused line makes the command fail; a kept one
-     * does not — it is the site's own work, left alone on purpose.
+     * One line per thing the step looked at. A refused line makes the command fail.
      *
-     * `$adopt` is what the person running the command named with `--adopt`: things of the site's
-     * own the step may hand to the layers, which it never does unasked.
-     *
-     * @param  list<string>  $adopt
      * @return list<SyncLine>
      */
-    public function sync(ThemeChain $chain, bool $force, bool $dryRun, array $adopt = []): array;
+    public function sync(ThemeChain $chain, bool $force, bool $dryRun): array;
 }

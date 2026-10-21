@@ -516,12 +516,17 @@ final class SetupCommand extends Command
 
     /**
      * The layers onto the site (THEMES §9.2): their built CSS, which reaches a page only from
-     * public/themes, and their block types, which go into the tables — so after `migrate`, and
-     * before the modules' offers, so that a slug the chain carries is the chain's type rather
-     * than the one a module offers (§10.3). And once more after every `composer update`, which
-     * is when a new release of a layer arrives: the line goes into the site's `post-update-cmd`.
+     * public/themes — once more after every `composer update`, which is when a new release of a
+     * layer arrives: the line goes into the site's `post-update-cmd`.
      *
-     * Not fatal: the site still opens, with less style, and the command is one line to run again.
+     * And their block types, which go into the tables, once: a new site is a developer's, and it
+     * should open with the blocks its theme draws (BLOCK_SCHEMAS §3). By the import, which
+     * creates what is missing and leaves a type the site has alone — so a second setup changes
+     * nothing — after `migrate` and before the modules' offers, so that a slug the chain carries
+     * is the chain's type rather than the one a module offers (§10.3). Never again after this:
+     * neither `composer update` nor a deploy writes block types.
+     *
+     * Not fatal: the site still opens, with less style, and each command is one line to run again.
      *
      * A site without a theme syncs too when it has the widgets: the scripts of its forms, which
      * `@webxWidgets` in its layout links, come from public/themes the same way.
@@ -533,6 +538,11 @@ final class SetupCommand extends Command
         }
 
         $this->artisan(['webx:theme:sync'], 'webx:theme:sync', fatal: false);
+
+        if ($this->theme->themed && $this->catalogue->has('webx-ui/module-blocks')) {
+            $this->artisan(['webx:blocks:import', '--theme', '--publish'], 'webx:blocks:import --theme', fatal: false);
+        }
+
         $this->syncAfterUpdates($files);
     }
 

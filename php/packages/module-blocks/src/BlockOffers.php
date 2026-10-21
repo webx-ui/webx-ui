@@ -27,7 +27,7 @@ use WebxUi\Themes\ThemeChain;
  * again — it may have been rebuilt from top to bottom, exactly as {@see Demo\BlocksDemo} assumes.
  *
  * On a site with a theme the chain comes first (THEMES §10.3): a slug a theme layer carries in
- * `blocks/` is the theme's to put on the site, with `webx:theme:sync`, and the offer stands back —
+ * `blocks/` is the theme's to put on the site, with `webx:blocks:import --theme`, and the offer stands back —
  * a theme that ships its own «services» is sure that is the one a new site gets. A type already
  * on the site is still never touched: «once» is the stronger rule.
  *

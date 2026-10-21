@@ -218,29 +218,51 @@ final class SetupThemeTest extends TestCase
         $this->assertFileDoesNotExist($this->app->resourcePath('css/app.css'));
     }
 
+    /**
+     * A new site opens with the blocks its theme draws (BLOCK_SCHEMAS §3): the import puts the
+     * layers' types in once, after migrate and before the offers, so that a slug the chain carries
+     * is the chain's. After that only the files follow updates — post-update-cmd is the sync, which
+     * writes no block types.
+     */
     #[Test]
-    public function the_layers_are_synced_after_migrate_and_before_the_offers_and_after_every_update(): void
+    public function the_layers_are_synced_and_their_block_types_imported_after_migrate_and_before_the_offers(): void
     {
+        $installed = (array) json_decode((string) $this->files->get($this->installed), true);
+        $installed['packages'][] = ['name' => 'webx-ui/module-blocks', 'version' => '0.28.0'];
+        $this->files->put($this->installed, (string) json_encode($installed));
+
         $this->runSetup()->assertSuccessful();
 
         $migrate = array_search('artisan migrate --force', $this->ran, true);
         $sync = array_search('artisan webx:theme:sync', $this->ran, true);
+        $import = array_search('artisan webx:blocks:import --theme --publish', $this->ran, true);
         $this->assertIsInt($migrate);
         $this->assertIsInt($sync);
-        // Block types go into the tables, and a slug the chain carries is the chain's, not an offer's.
+        $this->assertIsInt($import);
         $this->assertLessThan($sync, $migrate);
+        $this->assertLessThan($import, $migrate);
 
         foreach ($this->ran as $index => $line) {
             if (str_contains($line, 'webx:blocks:offered')) {
-                $this->assertLessThan($index, $sync);
+                $this->assertLessThan($index, $import);
             }
         }
 
         $composer = (string) $this->files->get($this->app->basePath('composer.json'));
         $this->assertSame(1, substr_count($composer, '@php artisan webx:theme:sync --ansi'));
+        $this->assertStringNotContainsString('webx:blocks:import', $composer, 'composer update writes no block types');
 
         $this->runSetup()->assertSuccessful();
         $this->assertSame(1, substr_count((string) $this->files->get($this->app->basePath('composer.json')), 'webx:theme:sync'), 'added once');
+    }
+
+    #[Test]
+    public function without_the_blocks_module_nothing_is_imported(): void
+    {
+        $this->runSetup()->assertSuccessful();
+
+        $this->assertContains('artisan webx:theme:sync', $this->ran);
+        $this->assertEmpty(array_filter($this->ran, fn (string $line): bool => str_contains($line, 'webx:blocks:')));
     }
 
     #[Test]

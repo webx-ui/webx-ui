@@ -21,6 +21,7 @@
 | [WEBX_UI_PERMISSIONS.md](WEBX_UI_PERMISSIONS.md)             | Права панели: модель, карта прав модулей, защита от повышения прав, готовые роли, миграция | аудит и спека (webx-ui#17, этап 1)     |
 | [WEBX_UI_BLOCK_FRAGMENTS.md](WEBX_UI_BLOCK_FRAGMENTS.md)     | Общий блок: зона, которую ставят блоком на страницу или тегом в шаблон                     | выпущено                               |
 | [WEBX_UI_LAYOUT_REGIONS.md](WEBX_UI_LAYOUT_REGIONS.md)       | Шапка и подвал сайта деревьями блоков                                                      | выпущено                               |
+| [WEBX_UI_BLOCK_SCHEMAS.md](WEBX_UI_BLOCK_SCHEMAS.md)         | Схемы блоков: кто ставит типы, деплой их не пишет, импорт с расхождениями и `--replace`    | реализовано (webx-ui#40)               |
 | [WEBX_UI_CATALOG.md](WEBX_UI_CATALOG.md)                     | Каталог товаров: ядро и спутники, контракты, таблица статусов (§10)                        | волна A выпущена, волна B не начата    |
 | [WEBX_UI_HISTORY.md](WEBX_UI_HISTORY.md)                     | Журнал изменений в module-admin, узел `wx-history`                                         | выпущено                               |
 | [WEBX_UI_AGENT_DOCS.md](WEBX_UI_AGENT_DOCS.md)               | `AGENTS.md` в пакетах и корневой файл сайта                                                | AG1–AG4 выпущены, AG5 впереди          |

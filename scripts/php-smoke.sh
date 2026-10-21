@@ -1320,6 +1320,37 @@ grep -qE 'class="([^"]* )?site-header[ "]' <<< "$REMOVED_HEADER" \
 grep -q 'b-demo-header' <<< "$REMOVED_HEADER" && fail 'the demo header outlived the removal'
 note 'the removal gives the site back its header from code'
 
+step "Block types: the deploy leaves them to the site"
+# BLOCK_SCHEMAS §1: setup put the theme's types in once; after that neither theme:sync (the
+# post-update-cmd, the deploy) nor --force writes a type. A type changed on the site stays, one
+# deleted there stays deleted, and only webx:blocks:import, a slug at a time, takes the file's.
+THEME_TYPES="$(site_artisan tinker --execute="echo WebxUi\Blocks\Models\Block::query()->whereNotNull('theme_source')->count();" | tail -n 1)"
+[ "${THEME_TYPES:-0}" -ge 6 ] || fail "setup put $THEME_TYPES of the theme's block types on the site, not the six of theme-default"
+
+site_artisan tinker --execute="\$b = WebxUi\Blocks\Models\Block::query()->where('slug', 'hero')->firstOrFail(); \$b->forceFill(['title' => 'Changed on the site'])->save(); WebxUi\Blocks\Models\Block::query()->where('slug', 'cta')->firstOrFail()->delete();" > /dev/null
+
+site_artisan webx:theme:sync --force > "$WORKDIR/sync-force.log" 2>&1 \
+    || { cat "$WORKDIR/sync-force.log" >&2; fail 'webx:theme:sync --force did not succeed'; }
+grep -q 'Block types' "$WORKDIR/sync-force.log" && { cat "$WORKDIR/sync-force.log" >&2; fail 'webx:theme:sync still writes block types'; }
+
+KEPT="$(site_artisan tinker --execute="echo WebxUi\Blocks\Models\Block::query()->where('slug', 'hero')->value('title').'|'.WebxUi\Blocks\Models\Block::query()->where('slug', 'cta')->count();" | tail -n 1)"
+[ "$KEPT" = 'Changed on the site|0' ] || fail "theme:sync --force touched the site's types: $KEPT"
+note 'theme:sync --force kept a type changed on the site and did not bring back a deleted one'
+
+site_artisan webx:blocks:import --theme --dry-run > "$WORKDIR/import-theme.log" 2>&1 \
+    || { cat "$WORKDIR/import-theme.log" >&2; fail 'webx:blocks:import --theme failed'; }
+grep -q 'differs, kept' "$WORKDIR/import-theme.log" || { cat "$WORKDIR/import-theme.log" >&2; fail 'the import did not say hero differs'; }
+grep -q -- '--replace=hero' "$WORKDIR/import-theme.log" || { cat "$WORKDIR/import-theme.log" >&2; fail 'the import did not say how to replace hero'; }
+grep -q 'would create' "$WORKDIR/import-theme.log" || { cat "$WORKDIR/import-theme.log" >&2; fail 'the import did not say it would create the deleted cta'; }
+site_artisan webx:blocks:import --theme --replace='*' > "$WORKDIR/import-all.log" 2>&1 \
+    && { cat "$WORKDIR/import-all.log" >&2; fail 'webx:blocks:import --replace=* was not refused'; }
+site_artisan webx:blocks:import --theme --replace=hero --publish > "$WORKDIR/import-replace.log" 2>&1 \
+    || { cat "$WORKDIR/import-replace.log" >&2; fail 'webx:blocks:import --replace=hero failed'; }
+
+KEPT="$(site_artisan tinker --execute="echo WebxUi\Blocks\Models\Block::query()->where('slug', 'hero')->value('title').'|'.WebxUi\Blocks\Models\Block::query()->where('slug', 'cta')->whereNotNull('published_version_id')->count();" | tail -n 1)"
+[ "$KEPT" = 'Hero|1' ] || { cat "$WORKDIR/import-replace.log" >&2; fail "the import did not take hero from the theme and create and publish cta: $KEPT"; }
+note 'webx:blocks:import --theme: created what was missing, kept what differs, replaced only the named type, refused --replace=*'
+
 # --------------------------------------------------------------------------------------------
 #
 # A site with no public part: the panel, its settings and the task queue, and nothing a visitor

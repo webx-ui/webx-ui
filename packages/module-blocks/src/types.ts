@@ -360,7 +360,28 @@ export interface BlockExport {
   missing: string[]
 }
 
-export type BlockImportStatus = 'created' | 'updated' | 'unchanged' | 'failed'
+/**
+ * A type the site has is the site's: `differs` leaves it as it is, `replaced` is one the person
+ * named to take the file's version (BLOCK_SCHEMAS §5).
+ */
+export type BlockImportStatus = 'created' | 'unchanged' | 'differs' | 'replaced' | 'failed'
+
+/** Lines a text of the file adds and removes against the site's. */
+export interface BlockImportLines {
+  added: number
+  removed: number
+}
+
+/** How a type on the site differs from its file; only what differs is there. `+` is the file's. */
+export interface BlockImportDiff {
+  fields?: { added: string[]; removed: string[]; changed: { key: string; what: string }[] }
+  template?: BlockImportLines
+  styles?: BlockImportLines
+  script?: BlockImportLines
+  sample?: BlockImportLines
+  /** The row's settings that differ: `title`, `icon`, `allow`… */
+  row?: string[]
+}
 
 /** One type of an import: what would happen to it, or what did. */
 export interface BlockImportRow {
@@ -373,6 +394,12 @@ export interface BlockImportRow {
   writes: boolean
   version: number | null
   published: number | null
+  /** The number of the site's version it was compared with: the open draft, or the published one. */
+  from: number | null
+  /** A draft is open on the site: it is what the file was compared with. */
+  draft: boolean
+  /** How the site's type differs from the file — on `differs` and `replaced`, else null. */
+  diff: BlockImportDiff | null
   /** Why the type was refused, or — beside a status that is not `failed` — why it stayed a draft. */
   error: string | null
 }

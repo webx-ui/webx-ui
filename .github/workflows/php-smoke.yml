@@ -7,10 +7,13 @@ name: PHP smoke
 # config:cache.
 
 on:
-  push:
-    branches: [main]
+  # Nightly rather than on every push to main: a run takes a runner for minutes, and on a release
+  # day it took one from the release itself. An hour after ci.yml and php-ci.yml, not with them.
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
   # Not a required check, so a path filter is safe here: a pull request that leaves the Composer
-  # half alone has nothing to install. A push to main still runs it every time.
+  # half alone has nothing to install.
   pull_request:
     paths:
       - 'php/**'
@@ -21,9 +24,41 @@ concurrency:
   group: php-smoke-${{ github.ref }}
   cancel-in-progress: true
 
+# Not on the version PR (scripts/release-pr.mjs, the same answer ci.yml and php-ci.yml read): it
+# rewrites every composer.json, so the path filter lets it in, yet it only bumps versions on top
+# of code the day's pull request already ran through here — and the smoke was the last check of
+# the release to go green. Not required by the ruleset, so the job is skipped outright rather
+# than run with nothing in it. The merge queue does not run the smoke at all: no merge_group.
 jobs:
+  release:
+    name: Is it the version PR
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      BASE: ${{ github.event.pull_request.base.sha }}
+    outputs:
+      light: ${{ steps.release.outputs.light }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Fetch the base
+        run: git fetch --no-tags --depth=1 origin "$BASE"
+      - name: Is it the version PR
+        id: release
+        env:
+          EVENT: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          ACTOR: ${{ github.actor }}
+        run: node scripts/release-pr.mjs "$BASE"
+
   smoke:
     name: Install into a real Laravel app
+    needs: release
+    # On schedule and dispatch the job above is skipped and leaves no answer, so the smoke runs;
+    # if it fails, the smoke runs too — the full run is never wrong, only slower.
+    if: ${{ !cancelled() && needs.release.outputs.light != 'true' }}
     runs-on: ubuntu-latest
 
     services:

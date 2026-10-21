@@ -1,13 +1,14 @@
-// Decides whether PHP CI may take the light path: the change is the version PR alone, and it
+// Decides whether CI may take the light path: the change is the version PR alone, and it
 // touches nothing but what `pnpm version-packages` writes. That PR bumps versions, changelogs
 // and the constraints between our packages on top of a main the merge queue already proved
 // green, and because it rewrites every composer.json, scripts/affected.mjs would otherwise send
-// it through the whole suite — twice, on the PR and again in the queue. php-ci.yml reads the
-// answer; the light path validates the manifests and that the versions agree, nothing more.
+// it through the whole suite — twice, on the PR and again in the queue. php-ci.yml and ci.yml
+// read the answer: the PHP light path validates the manifests and that the versions agree, the
+// JS one installs, builds and checks the format of the changed files, nothing more.
 //
 //   node scripts/release-pr.mjs <base-sha>
 //
-// Reads the event from the environment php-ci.yml sets (EVENT, REPOSITORY, and for a pull
+// Reads the event from the environment both workflows set (EVENT, REPOSITORY, and for a pull
 // request HEAD_REF, HEAD_REPO, PR_AUTHOR, ACTOR) and prints `light=true|false` plus `reason=…`,
 // appending both to $GITHUB_OUTPUT when it is set. Anything it cannot prove answers `false`:
 // the full run is never wrong, only slower.

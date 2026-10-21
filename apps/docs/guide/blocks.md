@@ -510,45 +510,52 @@ its own. Two commands close that:
 ```bash
 php artisan webx:blocks:export             # resources/blocks/{slug}.json, one per published type
 php artisan webx:blocks:export hero --draft --path=/tmp/blocks
-php artisan webx:blocks:import             # back in, as drafts; a version only where content differs
+php artisan webx:blocks:import             # the types the site lacks, as drafts; the rest are kept
 php artisan webx:blocks:import --publish   # …and publish what passes the checks
 php artisan webx:blocks:import --dry-run   # say what would change
+php artisan webx:blocks:import --replace=hero  # take the file's hero over the site's
 ```
 
 A file is the row's settings and one version's content, flat, pretty-printed for a diff. Import
-checks it by the rules the panel checks a save with, brings the row up to date, writes a version
-only when the content differs from the one being edited — importing the same files twice writes
-nothing — and, with `--publish`, runs the publish checks and publishes what passes; a type that
-fails is left as a draft and the command says so with its exit code. Keep the export in the
-repository as a seed for a fresh install and as the thing that gets reviewed; moving types from a
-local site to a production one becomes two commands.
+checks it by the rules the panel checks a save with and creates the types the site does not have;
+with `--publish` it runs the publish checks and publishes what passes — a type that fails is left
+as a draft and the command says so with its exit code. **A type the site already has is never
+overwritten**: the same as the file, it is `unchanged`; different, it is `differs, kept`, and the
+command prints what differs — fields added, removed or changed, lines of the template, styles,
+script and sample, the row's settings. Whoever changed it, the client included, the site's version
+stays. To take the file's, name the type: `--replace=<slug>`, repeated or comma-separated, writes a
+new version from the file and leaves the one before in the history. There is no «replace all» —
+`--replace=*` and a slug the files do not carry are refused before anything is written. Keep the
+export in the repository as a seed for a fresh install and as the thing that gets reviewed; moving
+types from a local site to a production one becomes two commands, the second run once, by a person.
 
 The same files move through the section too, for whoever has no shell on the site. **Export** at
 the top of «Blocks» — and on a type's editor, with that type ticked — takes the ticked types and
 every component they call, so the file works on a site that has none of them, and saves one
 `.json`: a pack, the command's documents in a list under `"format": "webx-blocks"`, what is called
 first. **Import** reads such a pack, or a single file the command wrote, and asks the server twice:
-first without writing, to show what each type would become — new, updated, unchanged or refused,
-and why — then for real. Types come in as drafts, an existing one gets a new draft version, and
-the switch beside the button publishes what passes the checks — switched on, the plan runs those
-checks as well, so a type they would hold back says so before anything is written. The command reads packs as well,
+first without writing, to show what each type would become — new, differing, unchanged or refused,
+and why — then for real. Types come in as drafts. A type the site already has and that differs
+shows its difference folded under the row and a «Replace» switch, off by default: only the rows
+switched on get a new draft version, and there is no «select all». The switch beside the button
+publishes what passes the checks — switched on, the plan runs those checks as well, so a type they would hold back says so before anything is written. The command reads packs as well,
 so a file from the panel can go into `resources/blocks` as it is.
 
 Export needs only to see the section; import is `blocks.manage` and a site with editing on, like
 making a type by hand.
 
 On a site with a theme the same files have a third home: `theme/blocks/`, and the `blocks/` of every
-theme layer below it. Those are put on the site by `php artisan webx:theme:sync`, not by import —
-it remembers which layer put a type there and keeps whatever the site changed since
-([Styles › Blocks of the theme](./styles.md#blocks-of-the-theme)). A version it writes says «theme»
-in the history. The default theme brings six — `hero`, `text`, `media-text`, `cards`, `cta`,
-`contact` ([Styles › The six blocks](./styles.md#the-six-blocks-of-the-default-theme)) — and on a
+theme layer below it. `webx:setup` puts them on a new site; after that
+`php artisan webx:blocks:import --theme` reads the layers instead of `resources/blocks`, by the same
+rules — `webx:theme:sync`, a deploy and `composer update` never write a block type
+([Styles › Blocks of the theme](./styles.md#blocks-of-the-theme)). The default theme brings six —
+`hero`, `text`, `media-text`, `cards`, `cta`, `contact` ([Styles › The six blocks](./styles.md#the-six-blocks-of-the-default-theme)) — and on a
 site with it the demo's own `hero` and `text` are not seeded: the theme's stand in their place.
 
 The two drift apart quietly, so export on the day you edit. A type changed in the panel and not
 written back leaves the file describing the release before: the site is fine, because the site
-reads the database — what breaks is the next fresh install, the next deploy that seeds from the
-files, and the test run that builds a page out of them. That is a failure somewhere else
+reads the database — what breaks is the next fresh install, the next copy of the site imported from
+the files, and the test run that builds a page out of them. That is a failure somewhere else
 entirely, one release later, and it reads like a broken package rather than a stale file.
 
 ## For an agent: MCP

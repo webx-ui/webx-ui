@@ -16,14 +16,18 @@ import {
 } from '@webx-ui/core'
 import { createBlocksApi } from './api'
 import { useBlocksMessages } from './i18n'
-import type { BlockImportRow, BlockImportStatus } from './types'
+import type { BlockImportDiff, BlockImportRow, BlockImportStatus } from './types'
 
 /**
  * "Import" (§17.1): a file in, asked about twice. First the server reads it without writing —
- * what each type would become: new, updated, unchanged or refused, and why — then, once the
- * person has seen that, for real. A type that is already here is not replaced: it gets a new
- * draft version, so the site keeps drawing what it drew until someone publishes, unless the
- * switch to publish is on.
+ * what each type would become: new, unchanged, different from the file or refused, and why —
+ * then, once the person has seen that, for real.
+ *
+ * A type that is already here is the site's (BLOCK_SCHEMAS §5): where it differs from the file
+ * the row says how and is left alone, unless the person switches "Replace" on for that one row.
+ * There is no switch for all of them — every replacement is a type someone looked at. A replaced
+ * type gets a new draft version, so the site keeps drawing what it drew until someone publishes,
+ * unless the switch to publish is on.
  *
  * Resolves with the rows written, so the section can fetch its list again; a run where some
  * type stayed behind keeps the dialog open on the result, because a toast would be gone before
@@ -46,26 +50,33 @@ const rows = ref<BlockImportRow[] | null>(null)
 /** Why the file was refused as a whole: not JSON, not a pack, a circle among its types. */
 const refusal = ref<string | null>(null)
 const publish = ref(false)
+/** The slugs the person chose to take from the file, row by row. */
+const replace = ref<string[]>([])
 const reading = ref(false)
 const importing = ref(false)
 /** The rows are the outcome, not the plan: the import has run. */
 const done = ref(false)
 
-const STATUS: Record<BlockImportStatus, 'success' | 'primary' | 'default' | 'danger'> = {
-  created: 'success',
-  updated: 'primary',
-  unchanged: 'default',
-  failed: 'danger',
-}
+const STATUS: Record<BlockImportStatus, 'success' | 'primary' | 'default' | 'warning' | 'danger'> =
+  {
+    created: 'success',
+    unchanged: 'default',
+    differs: 'warning',
+    replaced: 'primary',
+    failed: 'danger',
+  }
 
 const writable = computed(() => (rows.value ?? []).filter((row) => row.status !== 'failed'))
 const changes = computed(() =>
-  writable.value.filter((row) => row.status !== 'unchanged' || (publish.value && row.writes)),
+  writable.value.filter((row) => row.status === 'created' || row.status === 'replaced'),
 )
 
-/** Nothing to write and nothing to publish: the button would be a promise of nothing. */
+/** Everything is already here as the file has it: the button would be a promise of nothing. */
 const upToDate = computed(
-  () => rows.value !== null && writable.value.length > 0 && changes.value.length === 0,
+  () =>
+    rows.value !== null &&
+    writable.value.length > 0 &&
+    writable.value.every((row) => row.status === 'unchanged'),
 )
 
 function choose(): void {
@@ -89,6 +100,7 @@ async function onFile(event: Event): Promise<void> {
 
   name.value = chosen.name
   rows.value = null
+  replace.value = []
   refusal.value = null
   done.value = false
   reading.value = true
@@ -121,6 +133,7 @@ async function plan(): Promise<void> {
       name: name.value ?? undefined,
       dryRun: true,
       publish: publish.value,
+      replace: replace.value,
     })
   } catch (error) {
     rows.value = null
@@ -128,9 +141,17 @@ async function plan(): Promise<void> {
   }
 }
 
-watch(publish, () => {
+watch([publish, replace], () => {
   if (rows.value !== null && !done.value) void plan()
 })
+
+function replacing(slug: string): boolean {
+  return replace.value.includes(slug)
+}
+
+function toggle(slug: string, on: boolean): void {
+  replace.value = on ? [...replace.value, slug] : replace.value.filter((one) => one !== slug)
+}
 
 async function run(): Promise<void> {
   importing.value = true
@@ -139,8 +160,9 @@ async function run(): Promise<void> {
     const result = await api.importPack(file.value ?? '', {
       name: name.value ?? undefined,
       publish: publish.value,
+      replace: replace.value,
     })
-    const written = result.filter((row) => row.status !== 'failed' && row.status !== 'unchanged')
+    const written = result.filter((row) => row.status === 'created' || row.status === 'replaced')
 
     toast.success(t('exchange.imported', { count: written.length }))
 
@@ -167,6 +189,30 @@ function close(): void {
 
 function statusLabel(row: BlockImportRow): string {
   return t(`exchange.status-${row.status}`)
+}
+
+/** The diff as label → line, the way the command prints it: `+` is the file's, `−` the site's. */
+function diffLines(diff: BlockImportDiff): { label: string; text: string }[] {
+  const lines: { label: string; text: string }[] = []
+
+  if (diff.fields) {
+    const parts = [
+      ...diff.fields.added.map((key) => `+ ${key}`),
+      ...diff.fields.removed.map((key) => `− ${key}`),
+      ...diff.fields.changed.map((one) => `~ ${one.key} (${one.what})`),
+    ]
+    lines.push({ label: t('exchange.diff-fields'), text: parts.join('  ') })
+  }
+
+  for (const key of ['template', 'styles', 'script', 'sample'] as const) {
+    const text = diff[key]
+    if (text)
+      lines.push({ label: t(`exchange.diff-${key}`), text: `+${text.added} −${text.removed}` })
+  }
+
+  if (diff.row) lines.push({ label: t('exchange.diff-row'), text: diff.row.join(', ') })
+
+  return lines
 }
 </script>
 
@@ -214,6 +260,15 @@ function statusLabel(row: BlockImportRow): string {
                   >
                   <template v-if="done && row.version !== null"> · v{{ row.version }}</template>
                 </span>
+                <details v-if="row.diff" class="wx-block-import__diff">
+                  <summary>{{ t('exchange.replace-help') }}</summary>
+                  <dl>
+                    <template v-for="line in diffLines(row.diff)" :key="line.label">
+                      <dt>{{ line.label }}</dt>
+                      <dd>{{ line.text }}</dd>
+                    </template>
+                  </dl>
+                </details>
                 <span
                   v-if="row.error"
                   class="wx-block-import__error"
@@ -221,9 +276,18 @@ function statusLabel(row: BlockImportRow): string {
                   >{{ row.error }}</span
                 >
               </div>
-              <wx-badge :type="STATUS[row.status]" variant="soft" size="sm">
-                {{ statusLabel(row) }}
-              </wx-badge>
+              <div class="wx-block-import__state">
+                <wx-badge :type="STATUS[row.status]" variant="soft" size="sm">
+                  {{ statusLabel(row) }}
+                </wx-badge>
+                <wx-switch
+                  v-if="row.diff && !done"
+                  size="sm"
+                  :model-value="replacing(row.slug)"
+                  :label="t('exchange.replace')"
+                  @update:model-value="toggle(row.slug, $event === true)"
+                />
+              </div>
             </li>
           </ul>
 
@@ -316,6 +380,36 @@ function statusLabel(row: BlockImportRow): string {
 .wx-block-import__meta {
   font-size: var(--wx-font-size-xs);
   color: var(--wx-text-muted);
+}
+
+.wx-block-import__state {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: var(--wx-space-4);
+}
+
+.wx-block-import__diff {
+  font-size: var(--wx-font-size-xs);
+  color: var(--wx-text-muted);
+}
+
+.wx-block-import__diff summary {
+  cursor: pointer;
+}
+
+.wx-block-import__diff dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--wx-space-2) var(--wx-space-8);
+  margin: var(--wx-space-4) 0 0;
+}
+
+.wx-block-import__diff dd {
+  margin: 0;
+  font-family: var(--wx-font-family-mono);
+  overflow-wrap: anywhere;
 }
 
 .wx-block-import__error {

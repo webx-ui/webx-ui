@@ -33,6 +33,9 @@ function row(slug: string, status: string, extra: Record<string, unknown> = {}) 
     writes: status !== 'unchanged',
     version: null,
     published: null,
+    from: null,
+    draft: false,
+    diff: null,
     error: null,
     ...extra,
   }
@@ -62,8 +65,8 @@ describe('WxBlockImportDialog', () => {
   it('shows what the file would do before it writes anything, then imports', async () => {
     const post = vi
       .fn()
-      .mockResolvedValueOnce({ data: [row('badge', 'created'), row('hero', 'updated')] })
-      .mockResolvedValueOnce({ data: [row('badge', 'created'), row('hero', 'updated')] })
+      .mockResolvedValueOnce({ data: [row('badge', 'created'), row('hero', 'unchanged')] })
+      .mockResolvedValueOnce({ data: [row('badge', 'created'), row('hero', 'unchanged')] })
 
     mount(BlockImportDialog, { attachTo: document.body, ...context({ post }) })
     await flushPromises()
@@ -74,9 +77,10 @@ describe('WxBlockImportDialog', () => {
       name: 'pack.json',
       dry_run: true,
       publish: false,
+      replace: [],
     })
     expect(document.body.textContent).toContain('New')
-    expect(document.body.textContent).toContain('Updated')
+    expect(document.body.textContent).toContain('Unchanged')
 
     button('Import').click()
     await flushPromises()
@@ -86,6 +90,7 @@ describe('WxBlockImportDialog', () => {
       name: 'pack.json',
       dry_run: false,
       publish: false,
+      replace: [],
     })
   })
 
@@ -109,8 +114,60 @@ describe('WxBlockImportDialog', () => {
       name: 'pack.json',
       dry_run: true,
       publish: true,
+      replace: [],
     })
     expect(document.body.textContent).toContain('would not be published')
+  })
+
+  /* A type the site has stays the site's: replaced only when its own switch is on. */
+  it('keeps a type that differs unless its row is switched to replace', async () => {
+    const diff = { fields: { added: ['subtitle'], removed: [], changed: [] }, row: ['title'] }
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [row('badge', 'differs', { diff }), row('hero', 'differs', { diff })],
+      })
+      .mockResolvedValueOnce({
+        data: [row('badge', 'differs', { diff }), row('hero', 'replaced', { diff })],
+      })
+      .mockResolvedValueOnce({
+        data: [row('badge', 'differs', { diff }), row('hero', 'replaced', { diff, version: 2 })],
+      })
+
+    mount(BlockImportDialog, { attachTo: document.body, ...context({ post }) })
+    await flushPromises()
+    await choose(JSON.stringify(pack))
+
+    expect(document.body.textContent).toContain('Differs, kept')
+    expect(document.body.textContent).toContain('+ subtitle')
+    expect(document.body.textContent).not.toContain('Select all')
+    expect(button('Import').disabled).toBe(true)
+
+    // The switches: one per differing row, then the one to publish.
+    const switches = document.body.querySelectorAll<HTMLInputElement>('[role=switch]')
+    expect(switches).toHaveLength(3)
+    switches[1]!.click()
+    await flushPromises()
+
+    expect(post).toHaveBeenLastCalledWith('/api/cms/blocks/import', {
+      file: JSON.stringify(pack),
+      name: 'pack.json',
+      dry_run: true,
+      publish: false,
+      replace: ['hero'],
+    })
+    expect(button('Import').disabled).toBe(false)
+
+    button('Import').click()
+    await flushPromises()
+
+    expect(post).toHaveBeenLastCalledWith('/api/cms/blocks/import', {
+      file: JSON.stringify(pack),
+      name: 'pack.json',
+      dry_run: false,
+      publish: false,
+      replace: ['hero'],
+    })
   })
 
   it('says a file that is not JSON is not, without asking the server', async () => {

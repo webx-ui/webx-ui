@@ -183,7 +183,7 @@ and the test name a rule by its number.
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `webx:theme:show [--json]`               | the layers, every token with the layer or preset that set it, every view with what it hides, blocks, icons, fonts |
 | `webx:theme:check [path]`                | the rules a machine can hold; a line per finding (file:line, what, why), non-zero exit                            |
-| `webx:theme:sync [--dry-run]`            | publishes `dist/`, `assets/`, the sprite and the modules' base look; puts the layers' block types on the site     |
+| `webx:theme:sync [--dry-run]`            | publishes `dist/`, `assets/`, the sprite and the modules' base look; never writes a block type                    |
 | `webx:theme:make theme --local --uses=…` | the local theme `webx:setup` gives every new site                                                                 |
 | `webx:theme:make vendor/name [--uses=…]` | a packaged theme in `packages/<name>`, over `webx-ui/theme-default` unless told otherwise                         |
 | `webx:theme:extract vendor/name`         | the site's local theme becomes a package the site then stands on                                                  |
@@ -279,7 +279,7 @@ php artisan webx:theme:sync
 ```
 
 Until they run, the site has no theme stylesheet. The block types the theme brings stay on the
-site: `sync` sees the same type now carried by the package and only notes its new source. A new
+site as they are: they are the site's now, and no sync touches them. A new
 `theme/` for this site's own differences is `php artisan webx:theme:make theme --local
 --uses=acme/theme-clinic`.
 

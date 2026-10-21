@@ -51,10 +51,11 @@ export interface BlocksApi {
   /**
    * What the file would do (`dryRun`), or what it did. Drafts, unless `publish` is asked for.
    * The file goes as its text: the server compares it with what is stored, whitespace included.
+   * A type the site has is only written over when its slug is in `replace`.
    */
   importPack(
     file: string,
-    options?: { name?: string; dryRun?: boolean; publish?: boolean },
+    options?: { name?: string; dryRun?: boolean; publish?: boolean; replace?: string[] },
   ): Promise<BlockImportRow[]>
 }
 
@@ -129,6 +130,7 @@ export function createBlocksApi(admin: AdminContext): BlocksApi {
           name: options.name,
           dry_run: options.dryRun === true,
           publish: options.publish === true,
+          replace: options.replace ?? [],
         })
         .then(data),
   }

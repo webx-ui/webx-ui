@@ -248,9 +248,11 @@ hands to blocks through `webx.provide()`, for the editor and for an agent.
 ```bash
 php artisan webx:blocks:export             # resources/blocks/{slug}.json, one per published type
 php artisan webx:blocks:export hero --draft
-php artisan webx:blocks:import             # back in, as drafts; a version only where content differs
+php artisan webx:blocks:import             # the types the site lacks, as drafts; the rest are kept
 php artisan webx:blocks:import --publish   # …and publish what passes the checks
 php artisan webx:blocks:import --dry-run
+php artisan webx:blocks:import --theme     # the theme layers' types instead of resources/blocks
+php artisan webx:blocks:import --replace=hero  # take the file's hero over the site's
 ```
 
 The section does the same with **Export** and **Import**: a pack of the ticked types and the
@@ -259,8 +261,16 @@ The command reads those packs too.
 
 A block does not travel through git on its own; the files do. Each is the row's settings and one
 version's content, flat and pretty-printed for a diff. Import checks a file by the rules the panel
-checks a save with, writes a version only when the content differs from the one being edited, and
-with `--publish` runs the publish checks — a type that fails stays a draft and the exit code says so.
+checks a save with, creates the types the site does not have, and with `--publish` runs the
+publish checks — a type that fails stays a draft and the exit code says so. A type the site already
+has is never overwritten: it is `unchanged`, or `differs, kept` with the difference printed. Only
+`--replace=<slug>`, named per type, writes a new version from the file; the one before stays in the
+history. In the section the same is a «Replace» switch on each differing row, off by default.
+
+Nothing else writes types on a live site: `webx:boot`, `webx:theme:sync` and `composer update`
+leave them alone, so what the client changed in the panel stays. `webx:setup` installs the
+theme's types and the chosen modules' offers on a new site; after that it is this command, run
+once by a person.
 
 ## MCP
 

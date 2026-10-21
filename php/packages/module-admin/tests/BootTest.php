@@ -149,22 +149,21 @@ final class BootTest extends TestCase
 
     // -- Block types -------------------------------------------------------------------------
 
+    /**
+     * A type on a running site is the client's (BLOCK_SCHEMAS §1): no step of a boot writes block
+     * types, not even when the repository carries their files — those are brought over by a
+     * person, with webx:blocks:import.
+     */
     #[Test]
-    public function it_brings_the_database_up_to_the_block_types_in_the_repository(): void
+    public function it_writes_no_block_types_even_where_the_repository_carries_them(): void
     {
         $this->write($this->app->resourcePath('blocks/hero.json'), '{"key":"hero"}');
+        config()->set('webx-themes.theme', 'theme');
 
-        $lines = $this->lines($this->plan(['webx-ui/module-admin', 'webx-ui/module-blocks']));
+        $lines = $this->lines($this->plan(['webx-ui/module-admin', 'webx-ui/module-blocks', 'webx-ui/themes', 'webx-ui/widgets']));
 
-        $this->assertContains('php artisan webx:blocks:import --publish', $lines);
-    }
-
-    #[Test]
-    public function it_imports_nothing_where_there_are_no_files_to_import(): void
-    {
-        $lines = $this->lines($this->plan(['webx-ui/module-admin', 'webx-ui/module-blocks']));
-
-        $this->assertNotContains('php artisan webx:blocks:import --publish', $lines);
+        $this->assertSame([], array_values(array_filter($lines, static fn (string $line): bool => str_contains($line, 'webx:blocks:'))));
+        $this->assertContains('php artisan webx:theme:sync', $lines, 'the theme files still go out — they are files, not the site\'s data');
     }
 
     // -- The theme -----------------------------------------------------------------------------
@@ -263,7 +262,6 @@ final class BootTest extends TestCase
         ]));
 
         return new Plan(
-            $this->app,
             $this->files,
             $this->app->make(Repository::class),
             new Catalogue($this->files, $path),

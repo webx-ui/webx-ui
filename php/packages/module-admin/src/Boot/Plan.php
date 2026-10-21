@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Boot;
 
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\Filesystem;
 use Laravel\Passport\Passport;
 use WebxUi\Admin\Setup\Catalogue;
@@ -33,7 +32,6 @@ use WebxUi\Admin\Setup\Catalogue;
 final class Plan
 {
     public function __construct(
-        private readonly Application $app,
         private readonly Filesystem $files,
         private readonly Repository $config,
         private readonly Catalogue $catalogue,
@@ -57,7 +55,6 @@ final class Plan
             $this->storageLink(),
             $this->passportKeys(),
             ...$this->locales(),
-            $this->blockTypes(),
             $this->themeFiles(),
             $this->administrator(),
             $this->defaultRoles(),
@@ -137,32 +134,13 @@ final class Plan
     }
 
     /**
-     * Block types travel as files, so the repository is what a fresh database is brought up to.
-     *
-     * Idempotent in both directions: a type edited in the panel since is a newer version
-     * rather than a conflict, and a type the files no longer mention is left alone.
-     */
-    private function blockTypes(): ?Step
-    {
-        if (! $this->catalogue->has('webx-ui/module-blocks')) {
-            return null;
-        }
-
-        if ($this->files->glob($this->app->resourcePath('blocks/*.json')) === []) {
-            return null;
-        }
-
-        return new Step(
-            'webx:blocks:import',
-            ['webx:blocks:import', '--publish'],
-            'the block types this repository describes',
-        );
-    }
-
-    /**
      * The built CSS and assets of the packaged theme layers, which reach a page only from
      * `public/themes` — generated, so not in the repository and not in a fresh container.
      * Unchanged files are left alone, so every boot after the first costs a hash.
+     *
+     * Files only: no step of a boot writes block types (BLOCK_SCHEMAS §1). A type on a running
+     * site is the client's, and a deploy that put the repository's or the theme's version back
+     * would undo their work; a new type is brought over by `webx:blocks:import`, by a person.
      */
     private function themeFiles(): ?Step
     {

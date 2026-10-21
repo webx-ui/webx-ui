@@ -19,7 +19,6 @@ use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\RegionWriter;
 use WebxUi\Blocks\Regions;
-use WebxUi\Blocks\Themes\TypeHash;
 
 /**
  * Three block types, so that a fresh site has something to build a page out of: a hero, a
@@ -36,10 +35,10 @@ use WebxUi\Blocks\Themes\TypeHash;
  * `theme-default`, whose pages stand on them.
  *
  * A type the theme carries in `blocks/` is not the demo's to seed at all (THEMES §23, TH2.3):
- * `webx:theme:sync` puts it on the site, and a demo copy under the same slug would be a type of
- * the site's own that every later sync refuses to take over (§9.2, step 6). `webx:setup` syncs
+ * `webx:blocks:import --theme` puts it on the site, and a demo copy under the same slug would
+ * hide the theme's version behind one nobody asked for. `webx:setup` imports the theme's types
  * before the demo runs, so the slug is usually taken by then anyway; this is for the demo run on
- * a site whose theme was never synced.
+ * a site whose theme's types were never imported.
  */
 final class BlocksDemo
 {
@@ -72,7 +71,7 @@ final class BlocksDemo
         foreach ([...self::TYPES, ...$this->themeTypes()] as $slug) {
             if (in_array($slug, $carried, true)) {
                 if (! Block::query()->where('slug', $slug)->exists()) {
-                    $ledger->note("The block type {$slug} comes with the theme: php artisan webx:theme:sync puts it on the site.");
+                    $ledger->note("The block type {$slug} comes with the theme: php artisan webx:blocks:import --theme puts it on the site.");
                 }
 
                 continue;
@@ -113,7 +112,7 @@ final class BlocksDemo
             }
 
             if ($status === BlockOffers::CARRIED) {
-                $ledger->note("The block type {$offer['slug']} comes with the theme: php artisan webx:theme:sync puts it on the site.");
+                $ledger->note("The block type {$offer['slug']} comes with the theme: php artisan webx:blocks:import --theme puts it on the site.");
 
                 continue;
             }
@@ -189,19 +188,6 @@ final class BlocksDemo
             // `columns` allows `text`: on a site where the theme's text is not synced yet, there is no text to allow.
             $ledger->note("The block type {$slug} is left as a draft: {$refused->getMessage()}");
         }
-    }
-
-    /**
-     * Whether a type on the site is still exactly what the demo seeded under its slug — nobody's
-     * work, so `webx:theme:sync --adopt` may hand it to the theme (THEMES §23, TH2.3).
-     */
-    public static function untouched(Block $block): bool
-    {
-        $document = in_array($block->slug, [...self::TYPES, ...array_column(self::REGIONS, 'type')], true) ? self::document($block->slug) : null;
-
-        return $document !== null
-            && $block->draft_version_id === null
-            && TypeHash::ofPublished($block) === TypeHash::ofDocument($document);
     }
 
     /**

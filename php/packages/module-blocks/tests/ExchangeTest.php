@@ -82,16 +82,25 @@ final class ExchangeTest extends TestCase
 
         $this->assertSame(1, $hero->versions()->count());
 
-        // With --publish the checks run and the draft goes live.
+        // --publish is for what the import writes: a type the site has, unchanged, is not its to publish.
         $this->artisan('webx:blocks:import', ['--path' => $this->dir, '--publish' => true])
-            ->expectsOutputToContain('published v1')
+            ->doesntExpectOutputToContain('published v1')
             ->assertSuccessful();
 
-        $this->assertSame(1, $hero->refresh()->publishedVersion?->number);
+        $this->assertNull($hero->refresh()->publishedVersion);
+
+        // On a site without it, the checks run and the new type goes live.
+        $hero->delete();
+
+        $this->artisan('webx:blocks:import', ['--path' => $this->dir, '--publish' => true])
+            ->expectsOutputToContain('created · v1 · published v1')
+            ->assertSuccessful();
+
+        $this->assertSame(1, Block::query()->where('slug', 'hero')->firstOrFail()->publishedVersion?->number);
     }
 
     #[Test]
-    public function a_changed_file_writes_a_new_version_and_a_dry_run_only_says_so(): void
+    public function a_changed_file_is_kept_out_until_its_type_is_named_and_a_dry_run_only_says_so(): void
     {
         $this->publish('hero', '<section data-wx-block="hero">{{ $title }}</section>');
 
@@ -102,8 +111,15 @@ final class ExchangeTest extends TestCase
         $document['title'] = 'Hero banner';
         file_put_contents("{$this->dir}/hero.json", json_encode($document));
 
-        $this->artisan('webx:blocks:import', ['--path' => $this->dir, '--dry-run' => true])
-            ->expectsOutputToContain('would write a version')
+        // (б) The site's type stays as it is, and the lines say how the file differs.
+        $this->artisan('webx:blocks:import', ['--path' => $this->dir])
+            ->expectsOutputToContain('differs, kept')
+            ->expectsOutputToContain('differs (+1 −1 lines)')
+            ->expectsOutputToContain("--path={$this->dir} --replace=hero")
+            ->assertSuccessful();
+
+        $this->artisan('webx:blocks:import', ['--path' => $this->dir, '--replace' => ['hero'], '--dry-run' => true])
+            ->expectsOutputToContain('would replace · would write a version')
             ->assertSuccessful();
 
         $hero = Block::query()->where('slug', 'hero')->firstOrFail();
@@ -111,13 +127,22 @@ final class ExchangeTest extends TestCase
         $this->assertSame('Hero', $hero->title);
         $this->assertSame(1, $hero->versions()->count());
 
-        $this->artisan('webx:blocks:import', ['slug' => ['hero'], '--path' => $this->dir])->assertSuccessful();
+        // (в) Named, it is written over as a new draft version.
+        $this->artisan('webx:blocks:import', ['slug' => ['hero'], '--path' => $this->dir, '--replace' => ['hero']])
+            ->expectsOutputToContain('replaced · v1 → v2')
+            ->assertSuccessful();
 
         $hero->refresh();
 
         $this->assertSame('Hero banner', $hero->title);
         $this->assertSame(2, $hero->draftVersion?->number);
+        $this->assertSame('Replaced from hero.json', $hero->draftVersion->comment);
         $this->assertSame(1, $hero->publishedVersion?->number);
+
+        // (г) Never all of them at once.
+        $this->artisan('webx:blocks:import', ['--path' => $this->dir, '--replace' => ['*']])
+            ->expectsOutputToContain('there is no replacing every type at once')
+            ->assertFailed();
     }
 
     #[Test]
@@ -322,5 +347,52 @@ final class ExchangeTest extends TestCase
             ->assertJsonValidationErrors('file');
 
         $this->assertNull(Block::query()->where('slug', 'ping')->first(), 'a circle is refused before anything is written');
+    }
+
+    /** BLOCK_SCHEMAS §5: the plan says how a type differs, and only the rows the person ticked are written over. */
+    #[Test]
+    public function the_panel_keeps_a_type_that_differs_unless_it_is_named_in_replace(): void
+    {
+        $this->publish('hero', '<section data-wx-block="hero">{{ $title }}</section>');
+        $this->publish('quote', '<blockquote data-wx-block="quote">{{ $text }}</blockquote>');
+
+        $editor = $this->editor();
+        $pack = $this->actingAs($editor, 'cms')->getJson('/api/cms/blocks/export')->json('data');
+
+        foreach ($pack['blocks'] as $index => $document) {
+            $pack['blocks'][$index]['title'] = $document['title'].', again';
+            $pack['blocks'][$index]['schema'][] = ['id' => 'note', 'type' => 'wx-input'];
+        }
+
+        $plan = $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => $pack, 'dry_run' => true])
+            ->assertOk();
+
+        $rows = array_column($plan->json('data'), null, 'slug');
+        $this->assertSame('differs', $rows['hero']['status']);
+        $this->assertSame(['note'], $rows['hero']['diff']['fields']['added']);
+        $this->assertSame(['title'], $rows['hero']['diff']['row']);
+        $this->assertSame(1, $rows['hero']['from']);
+
+        $done = $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/import', ['file' => $pack, 'replace' => ['hero']])
+            ->assertOk();
+
+        $rows = array_column($done->json('data'), null, 'slug');
+        $this->assertSame('replaced', $rows['hero']['status']);
+        $this->assertSame(2, $rows['hero']['version']);
+        $this->assertSame('differs', $rows['quote']['status']);
+        $this->assertSame('Hero, again', Block::query()->where('slug', 'hero')->value('title'));
+        $this->assertSame('Quote', Block::query()->where('slug', 'quote')->value('title'));
+
+        // A slug the file does not carry, or all of them: refused before anything is written.
+        foreach ([['nope'], ['*']] as $replace) {
+            $this->actingAs($editor, 'cms')
+                ->postJson('/api/cms/blocks/import', ['file' => $pack, 'replace' => [...$replace, 'quote']])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('replace');
+        }
+
+        $this->assertSame('Quote', Block::query()->where('slug', 'quote')->value('title'));
     }
 }

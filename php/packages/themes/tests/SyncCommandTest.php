@@ -29,22 +29,30 @@ final class SyncCommandTest extends TestCase
     {
         $step = $this->step([new SyncLine('hero', 'created from webx-ui/theme-fixture')]);
 
-        $this->artisan('webx:theme:sync', ['--force' => true, '--dry-run' => true, '--adopt' => ['hero,text', ' text', 'cta']])
+        $this->artisan('webx:theme:sync', ['--force' => true, '--dry-run' => true])
             ->expectsOutputToContain('Fake step')
             ->expectsOutputToContain('created from webx-ui/theme-fixture')
             ->assertSuccessful();
 
-        // --adopt comma-separated and repeated alike, each name once.
-        $this->assertSame([[true, true, ['hero', 'text', 'cta']]], $step->calls);
+        $this->assertSame([[true, true]], $step->calls);
+    }
+
+    /** What took over a site's own work no longer exists: a call that still names it fails loudly. */
+    #[Test]
+    public function adopt_is_gone(): void
+    {
+        $this->expectExceptionMessage('The "--adopt" option does not exist.');
+
+        $this->artisan('webx:theme:sync', ['--adopt' => ['hero']]);
     }
 
     #[Test]
     public function a_refused_line_fails_the_command(): void
     {
-        $this->step([new SyncLine('note', 'unchanged'), SyncLine::refused('hero', 'this site has a type of its own by this slug')]);
+        $this->step([new SyncLine('note', 'unchanged'), SyncLine::refused('font', 'not a font file')]);
 
         $this->artisan('webx:theme:sync')
-            ->expectsOutputToContain('this site has a type of its own by this slug')
+            ->expectsOutputToContain('not a font file')
             ->expectsOutputToContain('1 refused')
             ->assertFailed();
     }
