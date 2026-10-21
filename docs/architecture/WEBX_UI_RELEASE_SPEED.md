@@ -140,8 +140,8 @@ version PR #503 — `light` (`reason=the version PR, versions only`), 0:20; ег
 
 Схема прогонов на один релиз: PR ветки дня — полный (затронутое) CI и PHP CI, его очередь — так
 же; version PR и его очередь — лёгкие CI (~2 мин) и PHP CI (~20 с), smoke пропущен; мерж — только Release, сплит
-и Docs. Ожидание: «очередь version PR → мерж» ещё короче (JS-гейт в очереди был ~6 минут), Release
-не ждёт раннера.
+и Docs. Ожидание: JS CI в очереди version PR держится около минуты (21.10 — 1:02 против 3:56 в
+очереди PR дня), без `push: main` Release не ждёт раннера.
 
 **Проверить на ближайшем релизе:** `gh run list --workflow ci.yml` и `--workflow php-ci.yml` — ни
 одного прогона с `event=push`; JS CI version PR и его `merge_group` ≈ 2 минуты, в логе «Is it the
