@@ -200,7 +200,7 @@ final class RelationsTest extends TestCase
 
         $diagnoses = $this->app->make(RelationsCheck::class)->run();
         $this->assertCount(1, $diagnoses);
-        $this->assertTrue($diagnoses[0]->warned());
+        $this->assertSame('note', $diagnoses[0]->level(), 'kept on purpose, so a strict deploy goes on');
         $this->assertStringContainsString('1 of dish point at chef', $diagnoses[0]->detail);
     }
 

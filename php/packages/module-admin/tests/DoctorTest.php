@@ -595,6 +595,38 @@ final class DoctorTest extends TestCase
     }
 
     #[Test]
+    public function a_strict_deploy_does_not_stop_on_a_note(): void
+    {
+        $this->findings(Diagnosis::note('Snapshots', '1 in storage/app/snapshots, 48 MB, the oldest from 2026-01-01.'));
+
+        $this->artisan('webx:doctor', ['--strict' => true])
+            ->expectsOutputToContain('(note) Snapshots: 1 in storage/app/snapshots')
+            ->expectsOutputToContain('Everything this site needs is in place. 1 note to know about.')
+            ->assertExitCode(0);
+    }
+
+    #[Test]
+    public function a_note_does_not_cover_a_failure_or_a_warning(): void
+    {
+        $this->findings(
+            Diagnosis::note('Snapshots', '1 in storage/app/snapshots.'),
+            Diagnosis::warn('Queue', 'jobs wait and nobody takes them.'),
+        );
+
+        $this->artisan('webx:doctor', ['--strict' => true])
+            ->expectsOutputToContain('1 worth mentioning, and --strict says that is enough to stop. 1 note to know about.')
+            ->assertExitCode(1);
+
+        $this->findings(
+            Diagnosis::note('Snapshots', '1 in storage/app/snapshots.'),
+            Diagnosis::fail('Storage', 'run php artisan storage:link'),
+        );
+
+        $this->assertSame(1, Artisan::call('webx:doctor', ['--strict' => true, '--json' => true]));
+        $this->assertFalse(json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR)['ok']);
+    }
+
+    #[Test]
     public function a_strict_deploy_stops_on_a_failure(): void
     {
         $this->findings(Diagnosis::fail('Storage', 'run php artisan storage:link'));
@@ -610,6 +642,7 @@ final class DoctorTest extends TestCase
             Diagnosis::ok('Storage', 'public/storage points at the library.'),
             Diagnosis::warn('Queue', 'jobs wait and nobody takes them.'),
             Diagnosis::content('Regions', 'The shared block [request] is placed on no page.'),
+            Diagnosis::note('Snapshots', '1 in storage/app/snapshots.'),
         );
 
         $code = Artisan::call('webx:doctor', ['--json' => true, '--strict' => true]);
@@ -617,15 +650,22 @@ final class DoctorTest extends TestCase
 
         $this->assertSame(1, $code);
         $this->assertSame([
+            'ok' => false,
             'checks' => [
-                ['state' => 'ok', 'subject' => 'Storage', 'detail' => 'public/storage points at the library.', 'content' => false],
-                ['state' => 'warn', 'subject' => 'Queue', 'detail' => 'jobs wait and nobody takes them.', 'content' => false],
-                ['state' => 'warn', 'subject' => 'Regions', 'detail' => 'The shared block [request] is placed on no page.', 'content' => true],
+                ['state' => 'ok', 'level' => 'ok', 'subject' => 'Storage', 'detail' => 'public/storage points at the library.', 'content' => false],
+                ['state' => 'warn', 'level' => 'warn', 'subject' => 'Queue', 'detail' => 'jobs wait and nobody takes them.', 'content' => false],
+                ['state' => 'warn', 'level' => 'content', 'subject' => 'Regions', 'detail' => 'The shared block [request] is placed on no page.', 'content' => true],
+                ['state' => 'warn', 'level' => 'note', 'subject' => 'Snapshots', 'detail' => '1 in storage/app/snapshots.', 'content' => false],
             ],
             'failed' => 0,
             'warned' => 1,
             'content' => 1,
+            'notes' => 1,
         ], $report);
+
+        // Without --strict the same report passes, and says so.
+        $this->assertSame(0, Artisan::call('webx:doctor', ['--json' => true]));
+        $this->assertTrue(json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR)['ok']);
     }
 
     // -- bundle ------------------------------------------------------------------------------

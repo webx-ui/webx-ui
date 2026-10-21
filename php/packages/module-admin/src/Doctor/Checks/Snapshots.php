@@ -43,9 +43,11 @@ final class Snapshots implements Check
         $summary = count($archives).' in '.$where.', '.SnapshotCommand::size($bytes);
 
         if ($oldest < time() - self::STALE_DAYS * 86400) {
-            return [Diagnosis::warn(
+            // A note, not a warning: an archive left after a transfer is how every site that took
+            // its content from another stand looks, and stopping its deploy for it stops all of them.
+            return [Diagnosis::note(
                 'Snapshots',
-                $summary.', the oldest from '.date('Y-m-d', $oldest).'. Each holds the site\'s content, and one made with --all its enquiries — delete the ones already restored.',
+                $summary.', the oldest from '.date('Y-m-d', $oldest).'. Each holds the site\'s content, and one made with --all its enquiries — delete the ones already restored: rm '.$where.'/<name>.tar.gz.',
             )];
         }
 

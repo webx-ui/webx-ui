@@ -287,6 +287,12 @@ pipe`. `… | grep -q` под `pipefail`: grep уходит на первом с
 - **Том берёт содержимое из образа один раз, а ключи Passport лежат в `storage/`.** Скелетный
   `docker/entrypoint.sh` создаёт дерево `storage` на каждой загрузке, том — на весь `storage`;
   сайт со своим Dockerfile — сверить.
+- **Деплой на хостинге: `app.check` failed при здоровом сайте** (контейнер healthy, `/up` 200).
+  Шаг — `webx:doctor --strict --json`, а `--strict` роняет на каждом `Diagnosis::warn`. Справочное
+  («Snapshots: 1 in storage/app/snapshots …» после переноса контента) обязано быть
+  `Diagnosis::note` — видно с `(note)` и `level: note`, `--strict` не роняет. Проверка новой строки
+  doctor: сайт работает так же, как без неё, — `note`; нужно действие до следующего деплоя —
+  `warn`. Тест — `--strict` с одной этой строкой возвращает 0 (`SnapshotsTest`, `DoctorTest`).
 - **Порт Vite в контейнере публикуется одинаковым с обеих сторон:** `public/hot` пишет тот порт,
   который слушает сервер, и `5199:5173` даёт страницу с ассетами в никуда.
 - **`webx:doctor`: «has changed since the bundle was built» на свежем образе.** Слой сборки фронта

@@ -362,6 +362,22 @@ the catalogue's root hides. They are marked `(content)`, counted apart in the cl
 never stop a deploy, not even a strict one: an editor mends them in the panel, and holding the
 release back would not.
 
+Others are about nothing that is wrong — a state the site is in on purpose, said so somebody
+knows: snapshots left in `storage/app/snapshots` after content was carried over, relations kept
+for a module that may come back, a site run on sqlite. They are marked `(note)`, counted apart
+too, and never stop a deploy either. The rule a check follows, and a check of your own should:
+
+| Level     | What it means                                            | `--strict` |
+| --------- | -------------------------------------------------------- | ---------- |
+| `ok`      | in place                                                 | passes     |
+| `note`    | worth knowing, nothing to do for the site to work        | passes     |
+| `content` | mended in the panel by an editor                         | passes     |
+| `warn`    | the setup needs somebody to act — the deploy should wait | stops      |
+| `fail`    | something the site needs is not in place                 | stops      |
+
+`Diagnosis::note()`, `::content()`, `::warn()` and `::fail()` make each; when in doubt between a
+note and a warning, ask whether a deploy should stop until somebody acts.
+
 A platform that decides by the report rather than reads it asks for JSON — the exit code is the
 same:
 
@@ -371,15 +387,22 @@ php artisan webx:doctor --strict --json
 
 ```json
 {
-  "checks": [{ "state": "warn", "subject": "Regions", "detail": "…", "content": true }],
+  "ok": true,
+  "checks": [
+    { "state": "warn", "level": "content", "subject": "Regions", "detail": "…", "content": true },
+    { "state": "warn", "level": "note", "subject": "Snapshots", "detail": "…", "content": false }
+  ],
   "failed": 0,
   "warned": 0,
-  "content": 1
+  "content": 1,
+  "notes": 1
 }
 ```
 
-`warned` counts the warnings about the setup and `content` the rest, never one line twice, so
-`failed + warned > 0` is exactly what `--strict` stops on.
+`ok` is the exit code said in the report. `level` names each line as in the table above; `state`
+stays `warn` for all three kinds of warning, for a reader that knows only ok / warn / fail.
+`warned` counts the warnings about the setup, `content` and `notes` the rest, never one line
+twice, so `failed + warned > 0` is exactly what `--strict` stops on.
 
 ## What the skeleton gives you, and what to delete
 
