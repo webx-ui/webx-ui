@@ -1305,6 +1305,21 @@ note 'the second run changed nothing'
 
 expect 200 "$(status "$SITE_BASE/")" 'GET / after the second run'
 
+step "Take the demo out"
+# The regions are rows the demo created, and the journal takes them back: the site prints the
+# header from code again, which is the whole promise of a fallback.
+site_artisan webx:demo --remove --no-interaction > "$WORKDIR/demo-remove.log" 2>&1 \
+    || { cat "$WORKDIR/demo-remove.log" >&2; fail 'webx:demo --remove did not succeed'; }
+
+# Not through `/`: the removal puts the home page back as the unpublished draft it was, and it
+# answers 404. The tag itself, rendered by the application, is the same question.
+REMOVED_HEADER="$(site_artisan tinker --execute="echo Illuminate\Support\Facades\Blade::render('<x-webx-blocks::region name=\"header\" fallback=\"components.header\" />');")"
+# The header is the widget's (<x-webx-header class="site-header">): the class is one of several.
+grep -qE 'class="([^"]* )?site-header[ "]' <<< "$REMOVED_HEADER" \
+    || fail "without the demo the header is not the one from code: $REMOVED_HEADER"
+grep -q 'b-demo-header' <<< "$REMOVED_HEADER" && fail 'the demo header outlived the removal'
+note 'the removal gives the site back its header from code'
+
 step "Block types: the deploy leaves them to the site"
 # BLOCK_SCHEMAS §1: setup put the theme's types in once; after that neither theme:sync (the
 # post-update-cmd, the deploy) nor --force writes a type. A type changed on the site stays, one
@@ -1322,33 +1337,19 @@ KEPT="$(site_artisan tinker --execute="echo WebxUi\Blocks\Models\Block::query()-
 [ "$KEPT" = 'Changed on the site|0' ] || fail "theme:sync --force touched the site's types: $KEPT"
 note 'theme:sync --force kept a type changed on the site and did not bring back a deleted one'
 
-site_artisan webx:blocks:import --theme > "$WORKDIR/import-theme.log" 2>&1 \
+site_artisan webx:blocks:import --theme --dry-run > "$WORKDIR/import-theme.log" 2>&1 \
     || { cat "$WORKDIR/import-theme.log" >&2; fail 'webx:blocks:import --theme failed'; }
 grep -q 'differs, kept' "$WORKDIR/import-theme.log" || { cat "$WORKDIR/import-theme.log" >&2; fail 'the import did not say hero differs'; }
 grep -q -- '--replace=hero' "$WORKDIR/import-theme.log" || { cat "$WORKDIR/import-theme.log" >&2; fail 'the import did not say how to replace hero'; }
+grep -q 'would create' "$WORKDIR/import-theme.log" || { cat "$WORKDIR/import-theme.log" >&2; fail 'the import did not say it would create the deleted cta'; }
 site_artisan webx:blocks:import --theme --replace='*' > "$WORKDIR/import-all.log" 2>&1 \
     && { cat "$WORKDIR/import-all.log" >&2; fail 'webx:blocks:import --replace=* was not refused'; }
 site_artisan webx:blocks:import --theme --replace=hero --publish > "$WORKDIR/import-replace.log" 2>&1 \
     || { cat "$WORKDIR/import-replace.log" >&2; fail 'webx:blocks:import --replace=hero failed'; }
 
-KEPT="$(site_artisan tinker --execute="echo WebxUi\Blocks\Models\Block::query()->where('slug', 'hero')->value('title').'|'.WebxUi\Blocks\Models\Block::query()->where('slug', 'cta')->count();" | tail -n 1)"
-[ "$KEPT" = 'Hero|1' ] || { cat "$WORKDIR/import-replace.log" >&2; fail "the import did not take hero from the theme and create cta: $KEPT"; }
+KEPT="$(site_artisan tinker --execute="echo WebxUi\Blocks\Models\Block::query()->where('slug', 'hero')->value('title').'|'.WebxUi\Blocks\Models\Block::query()->where('slug', 'cta')->whereNotNull('published_version_id')->count();" | tail -n 1)"
+[ "$KEPT" = 'Hero|1' ] || { cat "$WORKDIR/import-replace.log" >&2; fail "the import did not take hero from the theme and create and publish cta: $KEPT"; }
 note 'webx:blocks:import --theme: created what was missing, kept what differs, replaced only the named type, refused --replace=*'
-
-step "Take the demo out"
-# The regions are rows the demo created, and the journal takes them back: the site prints the
-# header from code again, which is the whole promise of a fallback.
-site_artisan webx:demo --remove --no-interaction > "$WORKDIR/demo-remove.log" 2>&1 \
-    || { cat "$WORKDIR/demo-remove.log" >&2; fail 'webx:demo --remove did not succeed'; }
-
-# Not through `/`: the removal puts the home page back as the unpublished draft it was, and it
-# answers 404. The tag itself, rendered by the application, is the same question.
-REMOVED_HEADER="$(site_artisan tinker --execute="echo Illuminate\Support\Facades\Blade::render('<x-webx-blocks::region name=\"header\" fallback=\"components.header\" />');")"
-# The header is the widget's (<x-webx-header class="site-header">): the class is one of several.
-grep -qE 'class="([^"]* )?site-header[ "]' <<< "$REMOVED_HEADER" \
-    || fail "without the demo the header is not the one from code: $REMOVED_HEADER"
-grep -q 'b-demo-header' <<< "$REMOVED_HEADER" && fail 'the demo header outlived the removal'
-note 'the removal gives the site back its header from code'
 
 # --------------------------------------------------------------------------------------------
 #
