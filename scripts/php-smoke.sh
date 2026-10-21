@@ -1158,6 +1158,15 @@ note 'no layout of its own, and no routes taking addresses from the registry'
 cp "$SITE/.env.example" "$SITE/.env"
 site_artisan key:generate --quiet
 
+step "Run the skeleton's own tests"
+# Nothing in php/ runs them: they belong to the site, and this is the first place the skeleton
+# is an application. Before setup, so that what they hold is what create-project hands over.
+(
+    cd "$SITE"
+    env -u DB_CONNECTION -u DB_HOST -u DB_PORT -u DB_DATABASE -u DB_USERNAME -u DB_PASSWORD \
+        "$PHP_BIN" vendor/bin/phpunit --no-progress
+) || fail "the skeleton's own tests failed"
+
 step "Run webx:setup"
 SETUP_DB="${DB_DATABASE:-webx}_site"
 

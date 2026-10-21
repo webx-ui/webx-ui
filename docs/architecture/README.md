@@ -13,6 +13,7 @@
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | -------------------------------------- |
 | [WEBX_UI_COMPOSER_PACKAGES.md](WEBX_UI_COMPOSER_PACKAGES.md) | Реестр composer-пакетов: назначение, состав, npm-пара                                      | действует                              |
 | [WEBX_UI_PHP_RELEASE.md](WEBX_UI_PHP_RELEASE.md)             | Релиз: npm, зеркала php-пакетов для Packagist, канал `next`                                | действует                              |
+| [WEBX_UI_RELEASE_SPEED.md](WEBX_UI_RELEASE_SPEED.md)         | Скорость релиза: как мерить и замеры от PR до Packagist                                    | замеры                                 |
 | [WEBX_UI_SCREENS.md](WEBX_UI_SCREENS.md)                     | Экраны панели как JSON-дерево, патчи, реестр типов                                         | действует; не все экраны переведены    |
 | [WEBX_UI_ROUTING.md](WEBX_UI_ROUTING.md)                     | Плоский реестр адресов сайта и резолвер                                                    | выпущено                               |
 | [WEBX_UI_NEW_SITE.md](WEBX_UI_NEW_SITE.md)                   | Новый сайт одной командой: скелет, `webx:setup`                                            | выпущено                               |

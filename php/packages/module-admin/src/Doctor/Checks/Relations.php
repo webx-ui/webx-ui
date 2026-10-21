@@ -51,7 +51,7 @@ final class Relations implements Check
         $found = [];
 
         foreach ($orphans as $row) {
-            $found[] = Diagnosis::warn(
+            $found[] = Diagnosis::note(
                 'relations',
                 "{$row->total} of {$row->owner_type} point at {$row->target_type}, which no installed module answers for — "
                 .'they are kept for the module to come back; if it is gone for good, delete them: '

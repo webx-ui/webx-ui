@@ -47,7 +47,7 @@ use WebxUi\Admin\Doctor\DoctorChecks;
 final class DoctorCommand extends Command
 {
     protected $signature = 'webx:doctor
-                            {--strict : Treat anything worth mentioning about the setup as a failure — for a deploy that should stop; notes on the content never stop it}
+                            {--strict : Treat a warning about the setup as a failure — for a deploy that should stop; notes, and notes on the content, never stop it}
                             {--json : Print the findings as JSON, for a platform that decides by them}';
 
     protected $description = 'Check that this site is set up the way it has to be: both halves, storage, layout, migrations, caches';
@@ -90,6 +90,8 @@ final class DoctorCommand extends Command
         $failed = 0;
         $warned = 0;
         $content = 0;
+        $notes = 0;
+        $stops = false;
 
         foreach ([...self::CHECKS, ...$container->make(DoctorChecks::class)->all()] as $class) {
             foreach ($this->diagnose($container, $class) as $diagnosis) {
@@ -100,19 +102,22 @@ final class DoctorCommand extends Command
                 }
 
                 $failed += $diagnosis->failed() ? 1 : 0;
-                $warned += $diagnosis->warned() && ! $diagnosis->content ? 1 : 0;
-                $content += $diagnosis->warned() && $diagnosis->content ? 1 : 0;
+                $warned += $diagnosis->level() === Diagnosis::WARN ? 1 : 0;
+                $content += $diagnosis->level() === 'content' ? 1 : 0;
+                $notes += $diagnosis->level() === 'note' ? 1 : 0;
+                $stops = $stops || $diagnosis->stops((bool) $this->option('strict'));
             }
         }
 
-        $stops = $failed > 0 || ($warned > 0 && $this->option('strict'));
-
         if ($json) {
-            // For a platform that decides by it: `warned` and `content` never count the same
-            // line twice, so `failed + warned > 0` is exactly what --strict stops on.
+            // For a platform that decides by it: `warned`, `content` and `notes` never count the
+            // same line twice, so `failed + warned > 0` is exactly what --strict stops on, and
+            // `ok` is the exit code said in the report itself.
             $this->line((string) json_encode([
+                'ok' => ! $stops,
                 'checks' => array_map(static fn (Diagnosis $diagnosis): array => [
                     'state' => $diagnosis->state,
+                    'level' => $diagnosis->level(),
                     'subject' => $diagnosis->subject,
                     'detail' => $diagnosis->detail,
                     'content' => $diagnosis->content,
@@ -120,6 +125,7 @@ final class DoctorCommand extends Command
                 'failed' => $failed,
                 'warned' => $warned,
                 'content' => $content,
+                'notes' => $notes,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
             return $stops ? self::FAILURE : self::SUCCESS;
@@ -127,24 +133,24 @@ final class DoctorCommand extends Command
 
         $this->newLine();
 
-        $notes = $content > 0 ? " {$content} ".($content === 1 ? 'note' : 'notes').' on the content — mended in the panel.' : '';
+        $tail = ($notes > 0 ? " {$notes} ".($notes === 1 ? 'note' : 'notes').' to know about.' : '')
+            .($content > 0 ? " {$content} ".($content === 1 ? 'note' : 'notes').' on the content — mended in the panel.' : '');
 
         if ($failed > 0) {
-            $this->components->error($failed.' of the things this site needs '.($failed === 1 ? 'is' : 'are').' not in place.'.$notes);
+            $this->components->error($failed.' of the things this site needs '.($failed === 1 ? 'is' : 'are').' not in place.'.$tail);
 
             return self::FAILURE;
         }
 
         if ($stops) {
-            $this->components->error($warned.' worth mentioning, and --strict says that is enough to stop.'.$notes);
+            $this->components->error($warned.' worth mentioning, and --strict says that is enough to stop.'.$tail);
 
             return self::FAILURE;
         }
 
         $this->components->info(match (true) {
-            $warned > 0 => "Nothing is broken; {$warned} worth knowing about.".$notes,
-            $content > 0 => 'Everything this site needs is in place.'.$notes,
-            default => 'Everything this site needs is in place.',
+            $warned > 0 => "Nothing is broken; {$warned} worth knowing about.".$tail,
+            default => 'Everything this site needs is in place.'.$tail,
         });
 
         return self::SUCCESS;
@@ -175,13 +181,17 @@ final class DoctorCommand extends Command
     {
         $mark = match ($diagnosis->state) {
             Diagnosis::OK => '<fg=green>✓</>',
-            Diagnosis::WARN => '<fg=yellow>!</>',
+            Diagnosis::WARN => $diagnosis->note ? '<fg=cyan>i</>' : '<fg=yellow>!</>',
             default => '<fg=red>✗</>',
         };
 
         // One line each, written out rather than laid out in two columns: what a check has to
         // say is a sentence with a command in it, and a column would either wrap it or cut it.
-        $kind = $diagnosis->content ? ' <fg=gray>(content)</>' : '';
+        $kind = match ($diagnosis->level()) {
+            'content' => ' <fg=gray>(content)</>',
+            'note' => ' <fg=gray>(note)</>',
+            default => '',
+        };
 
         $this->line("  {$mark}{$kind} <options=bold>{$diagnosis->subject}</>: {$diagnosis->detail}");
     }

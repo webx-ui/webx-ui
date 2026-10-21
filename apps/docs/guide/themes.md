@@ -24,7 +24,7 @@ from below:
 | Part                         | What it is                                                                          |
 | ---------------------------- | ----------------------------------------------------------------------------------- |
 | `theme.json` / composer.json | the manifest: `title`, `uses`, `requires`, `locales`, `fonts`, `preset`, `settings` |
-| `tokens.json`                | `defaults`, `presets` and the layer's own `vocabulary`                              |
+| `tokens.json`                | `defaults`, `presets`, `schemes.dark` and the layer's own `vocabulary`              |
 | `src/css`, `src/js`          | the stylesheet (and, rarely, a script) on `var(--site-…)` only                      |
 | `views/`                     | Blade views: the layout, the header, an override of a module's view                 |
 | `blocks/`                    | block types by slug, in the format `webx:blocks:export` writes                      |
@@ -58,6 +58,106 @@ default prints. Packages and the project still add their sections on top. `"sett
 the theme prints none of them. A manifest with no `settings` key at all keeps the tab while the transition of
 module-settings lasts (until the next minor) — declare it. `webx:theme:eject` carries the
 package's declaration into `theme/theme.json`. More in [Settings](/guide/settings#tabs-only-where-something-uses-them).
+
+## The dark scheme
+
+A theme may give the same tokens a second set of values, which the visitor sees when their system
+is dark or when the site set `data-theme="dark"` on `<html>`. It lives in `tokens.json`, beside
+`defaults`:
+
+```json
+{
+  "defaults": { "color-bg": "#f7f7f4", "color-text": "#121413", "color-accent": "#2e49f5" },
+  "schemes": {
+    "dark": { "color-bg": "#0d0f0e", "color-text": "#ecede8", "color-accent": "#8394ff" }
+  }
+}
+```
+
+`schemes` has only `dark` — the light scheme is `defaults`. The names are those of the
+vocabulary, each value of its token's type. The set merges up the chain like `defaults`: a local
+theme retunes one dark token of the theme below without repeating the rest, and a token with no
+dark value keeps its light one in the dark. A preset recolours the light scheme only.
+
+With a dark set, `@webxTheme` prints, after the light `:root`:
+
+```css
+:root {
+  /* light values */
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    /* dark values */
+  }
+}
+:root[data-theme='dark'] {
+  /* dark values */
+  color-scheme: dark;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+```
+
+Without one it prints exactly what it always did. That `@media` is the only one by scheme on the
+page: the theme's CSS does not write `prefers-color-scheme` (`webx:theme:check` says so), and
+`light-dark()` in a token is a workaround, not the way — its contrast is not measured, and the
+engine sets neither `color-scheme` nor `data-theme` for it.
+
+The contract is the attribute: `data-theme="dark"` or `"light"` on `<html>` overrides the system,
+no attribute follows it. The switch is the site's to draw — there is no widget for it. A button in
+the theme's header, and its script in `theme/src/js/theme.js`:
+
+```html
+<button type="button" class="site-scheme" data-scheme-toggle aria-pressed="false">Dark mode</button>
+```
+
+```js
+const root = document.documentElement
+const isDark = () =>
+  root.dataset.theme
+    ? root.dataset.theme === 'dark'
+    : matchMedia('(prefers-color-scheme: dark)').matches
+
+for (const button of document.querySelectorAll('[data-scheme-toggle]')) {
+  button.setAttribute('aria-pressed', String(isDark()))
+  button.addEventListener('click', () => {
+    const scheme = isDark() ? 'light' : 'dark'
+    root.dataset.theme = scheme
+    button.setAttribute('aria-pressed', String(scheme === 'dark'))
+    try {
+      localStorage.setItem('site-scheme', scheme)
+    } catch {
+      // Private mode or blocked storage: the choice lasts until the page is left.
+    }
+  })
+}
+```
+
+The remembered choice has to be on `<html>` before the first paint, or a dark visitor sees the
+light page flash first: a module script runs too late. So a few lines go inline at the top of
+`<head>` of the layout — `views/components/layout.blade.php` of the local theme, copied from the
+layer below (`webx:theme:show` says which) — above `@webxTheme`:
+
+```html
+<script>
+  try {
+    const scheme = localStorage.getItem('site-scheme')
+    if (scheme === 'dark' || scheme === 'light') document.documentElement.dataset.theme = scheme
+  } catch {}
+</script>
+```
+
+The layout of `theme-default` keeps `@stack('head')` as well, but it stands after the stylesheets;
+for this script the top of `<head>` is the place.
+
+The theme's test measures the contrast of rule 29 in the dark scheme too (`dark scheme`,
+`preset warm, dark scheme`), a dark token left unset counting with its light value;
+`webx:theme:check` says the same as notes, and notes a layer that recoloured a token in its
+`defaults` while the dark value of it still comes from a layer below. `webx:theme:show` gives each
+token its dark value and the layer it comes from, or «as light». Letters stay light:
+`theme_token()` returns the light value.
 
 ## Four doors, cheapest first
 

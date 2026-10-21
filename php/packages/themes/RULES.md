@@ -29,8 +29,10 @@ Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WE
 6. **Do not** put a fallback into `var()`: `var(--site-x, #fff)` does not repaint. There are three
    prefixes — `--site-*` a token of the site, `--webx-*` a package's own variable, `--wx-*` the
    panel, never on the public site. **Do not** invent a fourth. (check §8)
-7. **Do** put the brand's values into the `defaults` of the local theme, and variants into
-   presets. **Do not** copy a theme to make a variant of it.
+7. **Do** put the brand's values into the `defaults` of the local theme, variants into presets,
+   and the dark scheme into `schemes.dark` (§7.6). **Do not** copy a theme to make a variant of
+   it. **Do not** write `light-dark()` into a token: its contrast is not checked, and the engine
+   does not set `color-scheme` and `data-theme` for it.
 8. **Do** name the site's preset with `"preset"` in the manifest. **Do not** choose it with an
    environment variable or a setting in the database: the look of the site is all in git.
    (check: a preset the chain does not have)
@@ -45,7 +47,8 @@ Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WE
     `AGENTS.md`. **Do not** style them by tags or nesting (`.webx-catalog-listing > div > a`): the
     markup inside may change, the classes are the contract.
 12. **Do** let the container decide the width: `@container`. **Do not** use `@media` by width in
-    blocks and `src/css`. (check §8)
+    blocks and `src/css`. **Do not** write `@media (prefers-color-scheme)` either: the engine
+    prints the dark scheme from `tokens.json` and honours `data-theme` on `<html>`. (check §8)
 13. **Do not** write bare element selectors (`h2`, `a`, `img`) outside the typography of prose,
     under its class.
 14. **Do not** use `!important`, except for the utility ones (`[hidden]`): a cascade problem is
@@ -97,10 +100,10 @@ Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WE
 
 ## Accessibility and layout
 
-29. **Do** keep the contrast of text and background in every preset at WCAG AA or above (4.5:1 for
-    text, 3:1 for large text and controls). (contract: `text`/`bg`, `text`/`surface`,
-    `text-muted`/`bg` and `surface`, `accent-contrast`/`accent`, `accent`/`bg`, by the merged
-    values of each preset)
+29. **Do** keep the contrast of text and background in every preset and in the dark scheme at
+    WCAG AA or above (4.5:1 for text, 3:1 for large text and controls). (contract: `text`/`bg`,
+    `text`/`surface`, `text-muted`/`bg` and `surface`, `accent-contrast`/`accent`, `accent`/`bg`,
+    by the merged values of each preset and of its dark scheme; a note in `webx:theme:check`)
 30. **Do** give everything interactive a visible focus (`:focus-visible`) and a target of at least
     44×44 on a phone.
 31. **Do not** let the page scroll sideways at a width of 360px.

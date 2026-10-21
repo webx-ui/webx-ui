@@ -12,6 +12,7 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 use Throwable;
 use WebxUi\Themes\Checks\ChainCheck;
+use WebxUi\Themes\Checks\ContrastCheck;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
@@ -27,15 +28,8 @@ use WebxUi\Themes\Vocabulary;
  */
 final class ThemeProbe
 {
-    /** Text and its background, by token: body text, quiet text, the accent as text and as a button (rule 29). */
-    public const array PAIRS = [
-        ['color-text', 'color-bg'],
-        ['color-text', 'color-surface'],
-        ['color-text-muted', 'color-bg'],
-        ['color-text-muted', 'color-surface'],
-        ['color-accent-contrast', 'color-accent'],
-        ['color-accent', 'color-bg'],
-    ];
+    /** Text and its background, by token (rule 29) — {@see ContrastCheck::PAIRS}. */
+    public const array PAIRS = ContrastCheck::PAIRS;
 
     private ?ThemeChain $chain = null;
 
@@ -106,39 +100,16 @@ final class ThemeProbe
     }
 
     /**
-     * Pairs of text and background below WCAG AA (4.5:1), in the defaults and in every preset of
-     * the chain merged over them (rule 29). Only colours written as hex can be measured; a pair
-     * in another notation is left to the eye, not failed.
+     * Pairs of text and background below WCAG AA (4.5:1), in the defaults, in every preset of
+     * the chain merged over them and, when a layer has one, in the dark scheme of each (rule 29,
+     * §7.6). Only colours written as hex can be measured; a pair in another notation is left to
+     * the eye, not failed.
      *
      * @return list<string>
      */
     public function unreadable(): array
     {
-        $defaults = [];
-
-        foreach (array_reverse($this->chain()->layers) as $layer) {
-            $defaults = [...$defaults, ...$layer->tokens()->defaults];
-        }
-
-        $palettes = ['defaults' => $defaults];
-
-        foreach ((new Tokens($this->chain()))->presets() as $name => $preset) {
-            $palettes["preset {$name}"] = [...$defaults, ...$preset['tokens']];
-        }
-
-        $failures = [];
-
-        foreach ($palettes as $palette => $values) {
-            foreach (self::PAIRS as [$fore, $back]) {
-                $ratio = self::contrast(self::resolve($values, $fore), self::resolve($values, $back));
-
-                if ($ratio !== null && $ratio < 4.5) {
-                    $failures[] = sprintf('%s: %s on %s is %.2f:1, below 4.5:1', $palette, $fore, $back, $ratio);
-                }
-            }
-        }
-
-        return $failures;
+        return ContrastCheck::failures($this->chain());
     }
 
     /**
@@ -225,50 +196,5 @@ final class ThemeProbe
     public function staleDist(): ?string
     {
         return $this->theme()->local ? null : ThemeSources::stale($this->theme()->path);
-    }
-
-    /** @param array<string, string> $values */
-    private static function resolve(array $values, string $name): ?string
-    {
-        $value = $values[$name] ?? null;
-
-        for ($depth = 0; $depth < 10 && $value !== null && preg_match('/^var\(--site-([a-z0-9-]+)\)$/', $value, $match) === 1; $depth++) {
-            $value = $values[$match[1]] ?? null;
-        }
-
-        return $value;
-    }
-
-    private static function contrast(?string $fore, ?string $back): ?float
-    {
-        $lighter = self::luminance($fore);
-        $darker = self::luminance($back);
-
-        if ($lighter === null || $darker === null) {
-            return null;
-        }
-
-        if ($lighter < $darker) {
-            [$lighter, $darker] = [$darker, $lighter];
-        }
-
-        return ($lighter + 0.05) / ($darker + 0.05);
-    }
-
-    private static function luminance(?string $colour): ?float
-    {
-        if ($colour === null || preg_match('/^#([0-9a-f]{3}|[0-9a-f]{6})$/i', $colour, $match) !== 1) {
-            return null;
-        }
-
-        $hex = strlen($match[1]) === 3 ? preg_replace('/(.)/', '$1$1', $match[1]) : $match[1];
-
-        $channels = array_map(static function (string $pair): float {
-            $channel = hexdec($pair) / 255;
-
-            return $channel <= 0.04045 ? $channel / 12.92 : (($channel + 0.055) / 1.055) ** 2.4;
-        }, str_split((string) $hex, 2));
-
-        return 0.2126 * $channels[0] + 0.7152 * $channels[1] + 0.0722 * $channels[2];
     }
 }

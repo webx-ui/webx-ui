@@ -25,11 +25,14 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   `contacts()` declares it — otherwise the tab is hidden and nobody can fill in what it prints.
 - **`Vocabulary`** — the token names and their types; a theme adds its own under `vocabulary` in
   tokens.json. **`Tokens`** — the merged values: layers bottom up → the preset; `sources()` says
-  which layer or preset set each.
+  which layer or preset set each. `schemes.dark` of tokens.json merges the same way (`dark()`,
+  `darkSources()`): only the tokens that change in the dark scheme.
 - **`@webxTheme`** — `<style>:root { --site-… }</style>`, the fonts' `@font-face`, the widgets, the
   modules' base look, then every layer's stylesheet bottom up (a packaged layer's `dist/theme.css`
-  and `dist/theme.js` if built); nothing without a theme. **`theme_token($name, $default)`** — a
-  merged value for mail, with a reference to another token resolved.
+  and `dist/theme.js` if built); nothing without a theme. With a dark set, the dark values follow
+  under `prefers-color-scheme: dark` (unless `data-theme="light"` on `<html>`) and under
+  `data-theme="dark"`. **`theme_token($name, $default)`** — a merged light value for mail, with
+  a reference to another token resolved.
 - **`webx:theme:show [--json]`** — the layers, every token with its type, value and the layer or
   preset that set it, every view of the layers with what serves it and whom it hides, block types,
   icons, fonts, module stylesheets (`ThemeReport`). Run it before you change the look.
@@ -85,6 +88,7 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
 | Change a colour, a font, a radius                   | `theme/tokens.json` → `defaults`                                               |
 | A token the vocabulary does not have                | `theme/tokens.json` → `vocabulary` (a role name), then `defaults`              |
 | Draw the site in another palette                    | `theme/tokens.json` → `presets`; `"preset": "<name>"` in `theme/theme.json`    |
+| A dark scheme for the visitor                       | `theme/tokens.json` → `schemes.dark`; a switch sets `data-theme` on `<html>`   |
 | Restyle a module's page                             | `theme/src/css` on its classes (its `AGENTS.md`, «Classes»)                    |
 | Add to a module's page at a point                   | `theme/views/parts/<point>.blade.php`                                          |
 | Override a module's page (the expensive door)       | `theme/views/vendor/<ns>/<view>.blade.php`, copied from the current version    |
@@ -107,6 +111,7 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   to the rest never reach the site. When the site really leaves the theme, `webx:theme:eject`.
 - Do not write a colour or a font literally in CSS, a fallback into `var(--site-x, …)` or `@media`
   by width: `var(--site-…)` and `@container` — `tokens.json` is the one place for a literal.
+  Nor `@media (prefers-color-scheme)` or `light-dark()`: the dark values go in `schemes.dark`.
 - Do not invent a prefix: `--site-*` a token, `--webx-*` a package's own variable, `--wx-*` the
   panel — never on the public site.
 - Do not edit `public/themes/`: copies, replaced by the next sync. Do not commit a packaged theme's
@@ -132,7 +137,8 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   block type of the layers.
 - After `extract` or `eject`: the command's last line says «The same look» — otherwise it lists
   every token, view, block, icon, asset, font or word that changed.
-- Open a page in a browser, on a desktop and at 375px, in every preset: jsdom does not check layout.
+- Open a page in a browser, on a desktop and at 375px, in every preset and, with `schemes.dark`,
+  in the dark scheme (`colorScheme: 'dark'` in Playwright): jsdom does not check layout.
 
 ## Read more
 

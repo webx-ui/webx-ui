@@ -17,6 +17,7 @@ use WebxUi\Themes\Vocabulary;
  *  - no fallback inside `var(--site-…)`: it is a literal value again, only quieter (a block's own
  *    variable, `var(--team-columns, 3)`, keeps its default);
  *  - no `@media` by width: the container decides.
+ *  - no `@media` by `prefers-color-scheme`: the engine prints the dark scheme from tokens.json.
  *
  * `tokens.json` is the one place a literal value is legal, and it is not CSS. Declarations inside
  * `@font-face` and `@property` describe a font or a property rather than paint anything, and are
@@ -86,6 +87,11 @@ final class CssCheck
             if ($kind === 'prelude') {
                 if (preg_match('/^@media\b[^{]*?\b(?:min-|max-|device-)?width\b/i', $text) === 1) {
                     $findings[] = new CssFinding(CssProblem::MediaWidth, self::lineAt($source, $offset), self::shorten($text));
+                }
+
+                // The dark scheme is the engine's to print (§7.6): a theme's own would ignore data-theme.
+                if (preg_match('/^@media\b[^{]*?\bprefers-color-scheme\b/i', $text) === 1) {
+                    $findings[] = new CssFinding(CssProblem::MediaScheme, self::lineAt($source, $offset), self::shorten($text));
                 }
 
                 continue;

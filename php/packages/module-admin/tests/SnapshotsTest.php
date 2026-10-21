@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Testing\PendingCommand;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionClassConstant;
+use WebxUi\Admin\Console\DoctorCommand;
 use WebxUi\Admin\Doctor\Checks\Snapshots;
 use WebxUi\Admin\Doctor\Diagnosis;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Snapshots\Manifest;
 use WebxUi\Admin\Snapshots\MediaDisk;
 use WebxUi\Admin\Snapshots\Restorer;
@@ -19,6 +23,7 @@ use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Snapshots\Snapshotter;
 use WebxUi\Admin\Snapshots\Tar;
 use WebxUi\Admin\Snapshots\UrlRewriter;
+use WebxUi\Admin\Tests\Fixtures\FixedCheck;
 
 /**
  * `webx:snapshot` and `webx:snapshot:restore` on SQLite: what travels, what stays, and every
@@ -367,8 +372,43 @@ final class SnapshotsTest extends TestCase
 
             touch($directory.'/old.tar.gz', time() - 30 * 86400);
             $this->assertSame(Diagnosis::WARN, $check->run()[0]->state);
+            $this->assertSame('note', $check->run()[0]->level());
+            $this->assertStringContainsString('rm storage/app/snapshots/<name>.tar.gz', $check->run()[0]->detail);
         } finally {
             unlink($directory.'/old.tar.gz');
+        }
+    }
+
+    #[Test]
+    public function an_old_archive_does_not_stop_a_strict_deploy(): void
+    {
+        // Every other check is silenced: on a bare test site they have their own things to say.
+        $checks = (new ReflectionClassConstant(DoctorCommand::class, 'CHECKS'))->getValue();
+
+        foreach ([...$checks, ...$this->app->make(DoctorChecks::class)->all()] as $other) {
+            if ($other !== Snapshots::class) {
+                $this->app->instance($other, new FixedCheck);
+            }
+        }
+
+        $archive = $this->app->make(Snapshotter::class)->directory().'/old.tar.gz';
+        $this->write($archive, 'x');
+        touch($archive, time() - 30 * 86400);
+
+        try {
+            $this->artisan('webx:doctor', ['--strict' => true])
+                ->expectsOutputToContain('(note) Snapshots: 1 in storage/app/snapshots')
+                ->expectsOutputToContain('1 note to know about.')
+                ->assertExitCode(0);
+
+            $this->assertSame(0, Artisan::call('webx:doctor', ['--strict' => true, '--json' => true]));
+            $report = json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR);
+
+            $this->assertTrue($report['ok']);
+            $this->assertSame(['warn', 'note', 'Snapshots'], [$report['checks'][0]['state'], $report['checks'][0]['level'], $report['checks'][0]['subject']]);
+            $this->assertSame([0, 0, 1], [$report['failed'], $report['warned'], $report['notes']]);
+        } finally {
+            unlink($archive);
         }
     }
 

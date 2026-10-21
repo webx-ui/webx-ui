@@ -14,6 +14,14 @@ namespace WebxUi\Admin\Doctor;
  * A warning is either about how the site is built or about what is in it. The second sort — a
  * shared block nobody placed, a property code that clashes with a column — is mended in the panel
  * by an editor, not by whoever deploys, so `--strict` lets it through and says it apart.
+ *
+ * A note is a warning about nothing that is wrong: a state the site is in on purpose, said so a
+ * person knows — snapshots left after a transfer, rows kept for a module that may come back. The
+ * site works exactly as it would without it, so `--strict` lets it through as well. The rule for
+ * a new line: if a deploy should stop until somebody acts, it is a warning; if not, a note.
+ *
+ * `level()` names all five apart, for a platform that decides by them; `state` stays `warn` for
+ * the three kinds of warning, so a reader that knows only ok / warn / fail reads them as before.
  */
 final readonly class Diagnosis
 {
@@ -28,6 +36,7 @@ final readonly class Diagnosis
         public string $subject,
         public string $detail,
         public bool $content = false,
+        public bool $note = false,
     ) {}
 
     public static function ok(string $subject, string $detail): self
@@ -50,6 +59,15 @@ final readonly class Diagnosis
         return new self(self::WARN, $subject, $detail, true);
     }
 
+    /**
+     * Something worth knowing that is neither broken nor waiting for anybody: shown, and never a
+     * reason to stop a deploy, not even a strict one.
+     */
+    public static function note(string $subject, string $detail): self
+    {
+        return new self(self::WARN, $subject, $detail, note: true);
+    }
+
     /** Something broken, said together with the one command that mends it. */
     public static function fail(string $subject, string $detail): self
     {
@@ -64,5 +82,21 @@ final readonly class Diagnosis
     public function warned(): bool
     {
         return $this->state === self::WARN;
+    }
+
+    /** Whether `--strict` stops on this line: a failure, or a warning about the setup. */
+    public function stops(bool $strict): bool
+    {
+        return $this->failed() || ($strict && $this->warned() && ! $this->content && ! $this->note);
+    }
+
+    /** @return 'ok'|'note'|'content'|'warn'|'fail' */
+    public function level(): string
+    {
+        return match (true) {
+            $this->note => 'note',
+            $this->content => 'content',
+            default => $this->state,
+        };
     }
 }

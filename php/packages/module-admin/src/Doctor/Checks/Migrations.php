@@ -72,7 +72,7 @@ final class Migrations implements Check
         }
 
         if ($driver === 'sqlite') {
-            $found[] = Diagnosis::warn(
+            $found[] = Diagnosis::note(
                 'Database',
                 'sqlite keeps quiet about three things a real server refuses — foreign keys, defaults longer than their column, and migrations of one package ordered against another. Develop on the engine the site will run on.',
             );

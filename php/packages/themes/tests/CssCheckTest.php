@@ -118,7 +118,7 @@ final class CssCheckTest extends PlainTestCase
     }
 
     #[Test]
-    public function only_a_media_query_by_width_is_a_finding(): void
+    public function only_a_media_query_by_width_or_by_colour_scheme_is_a_finding(): void
     {
         $css = <<<'CSS'
             @media (min-width: 40rem) { .a { gap: 0; } }
@@ -126,11 +126,13 @@ final class CssCheckTest extends PlainTestCase
             @media (prefers-reduced-motion: reduce) { .a { transition: none; } }
             @media (scripting: none), print { .a { display: none; } }
             @container (min-width: 30rem) { .a { gap: 0; } }
+            @media (prefers-color-scheme: dark) { .a { gap: 0; } }
             CSS;
 
         $this->assertSame([
             [CssProblem::MediaWidth, 1, '@media (min-width: 40rem)'],
             [CssProblem::MediaWidth, 2, '@media screen and (max-width: 600px)'],
+            [CssProblem::MediaScheme, 6, '@media (prefers-color-scheme: dark)'],
         ], self::found($css));
     }
 
