@@ -130,13 +130,21 @@ version PR #503 — `light` (`reason=the version PR, versions only`), 0:20; ег
   как всегда.
 - **Smoke — ночью в 04:00 UTC** (на час позже CI, чтобы не делить раннеры) и вручную; PR,
   трогающие `php/**`, гоняют его как раньше.
+- **Smoke не идёт у version PR.** На 0.83.0 релизный PR #503 шёл от открытия до зелёных чеков
+  6:36, и последним был smoke (`pull_request` по `paths`: релиз меняет все `composer.json`), хотя
+  тот же код прошёл его в PR ветки дня. Теперь джоба «Is it the version PR» в `php-smoke.yml`
+  спрашивает `scripts/release-pr.mjs` (тот же признак и env), и при `light=true` джоба smoke
+  пропускается целиком: в ruleset'е обязательны только агрегатор JS CI и два PHP CI, так что
+  пустой зелёный прогон не нужен. В очереди мержа smoke не гонялся и раньше — `merge_group` в его
+  `on:` нет (у #503 в очереди только CI и PHP CI, прогон 39579050008).
 
 Схема прогонов на один релиз: PR ветки дня — полный (затронутое) CI и PHP CI, его очередь — так
-же; version PR и его очередь — лёгкие CI (~2 мин) и PHP CI (~20 с); мерж — только Release, сплит
+же; version PR и его очередь — лёгкие CI (~2 мин) и PHP CI (~20 с), smoke пропущен; мерж — только Release, сплит
 и Docs. Ожидание: «очередь version PR → мерж» ещё короче (JS-гейт в очереди был ~6 минут), Release
 не ждёт раннера.
 
 **Проверить на ближайшем релизе:** `gh run list --workflow ci.yml` и `--workflow php-ci.yml` — ни
 одного прогона с `event=push`; JS CI version PR и его `merge_group` ≈ 2 минуты, в логе «Is it the
 version PR» — `light=true`; у PR ветки дня — `light=false` и полный набор джобов; ожидание раннера
-у «Version or publish» (разница `createdAt` прогона и `startedAt` джоба).
+у «Version or publish» (разница `createdAt` прогона и `startedAt` джоба); PHP smoke version PR —
+`light=true` и джоба smoke skipped, у PR ветки дня — smoke как раньше.
