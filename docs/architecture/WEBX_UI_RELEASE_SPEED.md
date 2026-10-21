@@ -84,3 +84,36 @@ version PR → мерж» ≈ 4–5 вместо 8–12; итог ≈ 28–30 м
 выше. Сверх обычного — проверить в логах прогонов PHP CI version PR и его `merge_group`, что шаг
 «Choose the path» напечатал `PHP CI path: light` (на PR ветки дня — `full` или `none`), и
 длительность джобов `PHP lint, analyse, test (8.4)` (`gh run view <id> --json jobs`).
+
+Подтверждено релизом 0.83.0 (#503, 21.10.2026): `PHP CI path: light` и на PR, и в его
+`merge_group`, джобы 9–22 секунды.
+
+## Прогоны без повторов (webx-ui#33)
+
+Сделано так:
+
+- **CI и PHP CI не слушают `push: main`.** В `main` попадает дерево группы очереди, которое оба
+  воркфлоу уже проверили; повторный прогон (~2 × 10 минут на мерж) ничего не доказывал, а раннер
+  отнимал — Release ждал его 3,5 минуты. От прогона CI на `main` ничего не зависит
+  (`workflow_run` нигде нет; бейдж README показывает последний прогон ветки по умолчанию — им
+  теперь будет ночной). Остались `pull_request`, `merge_group`, `schedule` (03:00 UTC) и
+  `workflow_dispatch`.
+- **JS CI релизного PR и его очереди — лёгкий путь на `scripts/release-pr.mjs`.** Тот же признак,
+  что у PHP CI: джоба «What the change reaches» отдаёт `light`, и при `true` вместо lint,
+  typecheck, тестов, доков и Manticore идёт одна джоба «Version PR installs and builds»
+  (`install --frozen-lockfile`, `build`, prettier по изменённым файлам). Раньше признаком был
+  `github.head_ref`, а в `merge_group` он пустой — очередь релизного PR гоняла полный гейт.
+  Обязательные чеки (агрегатор `Lint, typecheck, test, build` и `No client names`) отчитываются
+  как всегда.
+- **Smoke — ночью в 04:00 UTC** (на час позже CI, чтобы не делить раннеры) и вручную; PR,
+  трогающие `php/**`, гоняют его как раньше.
+
+Схема прогонов на один релиз: PR ветки дня — полный (затронутое) CI и PHP CI, его очередь — так
+же; version PR и его очередь — лёгкие CI (~2 мин) и PHP CI (~20 с); мерж — только Release, сплит
+и Docs. Ожидание: «очередь version PR → мерж» ещё короче (JS-гейт в очереди был ~6 минут), Release
+не ждёт раннера.
+
+**Проверить на ближайшем релизе:** `gh run list --workflow ci.yml` и `--workflow php-ci.yml` — ни
+одного прогона с `event=push`; JS CI version PR и его `merge_group` ≈ 2 минуты, в логе «Is it the
+version PR» — `light=true`; у PR ветки дня — `light=false` и полный набор джобов; ожидание раннера
+у «Version or publish» (разница `createdAt` прогона и `startedAt` джоба).

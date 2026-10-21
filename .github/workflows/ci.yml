@@ -1,8 +1,8 @@
 name: CI
 
+# No push to main: what lands there is the merge queue's group, already checked here — a second
+# run on the same tree only took a runner from the release. The nightly run catches the rest.
 on:
-  push:
-    branches: [main]
   pull_request:
   # The merge queue builds main plus the PR and needs the required check to report on it.
   merge_group:
@@ -15,6 +15,11 @@ concurrency:
   group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
+# The merge queue asks the API which pull requests a group holds (scripts/release-pr.mjs).
+permissions:
+  contents: read
+  pull-requests: read
+
 # The steps used to run one after another in a single job (6.5 minutes). Only typecheck, the
 # tests and the docs need the packages built — the docs and the module tests resolve their
 # neighbours from `dist` — so lint and format start at once, and every job builds for itself:
@@ -22,14 +27,16 @@ concurrency:
 #
 # The version PR is the exception. It changes versions, changelogs and the PHP constraints on
 # top of a main that already passed this workflow — and the merge queue keeps main green by
-# construction — so it only has to prove that it still installs and builds.
+# construction — so it only has to prove that it still installs, builds and is formatted. Which
+# run is the version PR, on the pull request and in its queue alike, scripts/release-pr.mjs
+# decides — the same answer php-ci.yml reads; `changes` passes it on as `light`.
 #
 # A pull request and the merge queue check only what the change reaches: `changes` runs
 # scripts/affected.mjs against the base and the jobs below read its answer. A text-only change
 # runs lint alone; the jobs it skips still leave `verify` green, which is why a skip is decided
 # here and never with `paths-ignore` — a workflow that does not start reports no check at all,
-# and the queue waits for the required one forever. A push to main and the nightly run have no
-# base and check everything.
+# and the queue waits for the required one forever. The nightly run and a manual one have no base
+# and check everything.
 
 jobs:
   changes:
@@ -43,6 +50,7 @@ jobs:
       node_tests: ${{ steps.affected.outputs.node_tests }}
       docs: ${{ steps.affected.outputs.docs }}
       manticore: ${{ steps.affected.outputs.manticore }}
+      light: ${{ steps.release.outputs.light }}
     steps:
       - uses: actions/checkout@v5
       # `pnpm ls --filter ...[<base>]` reads manifests only: no install needed.
@@ -52,10 +60,27 @@ jobs:
         run: git fetch --no-tags --depth=1 origin "$BASE"
       - id: affected
         run: node scripts/affected.mjs "$BASE"
+      - name: Is it the version PR
+        id: release
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        env:
+          EVENT: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          ACTOR: ${{ github.actor }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The queue's group is a chain of squash commits on top of base_sha, at most five
+          # (max_entries_to_build); a shallow checkout has only its head.
+          if [ "$EVENT" = merge_group ]; then git fetch --no-tags --deepen=10 origin "$GITHUB_SHA"; fi
+          node scripts/release-pr.mjs "$BASE"
 
   lint:
     name: Lint and format
-    if: github.head_ref != 'changeset-release/main'
+    needs: changes
+    if: needs.changes.outputs.light != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -91,7 +116,7 @@ jobs:
   typecheck:
     name: Typecheck ${{ matrix.shard }}/${{ strategy.job-total }}
     needs: changes
-    if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.node != 'none'
+    if: needs.changes.outputs.light != 'true' && needs.changes.outputs.node != 'none'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -125,7 +150,7 @@ jobs:
   test:
     name: Test ${{ matrix.shard }}/${{ strategy.job-total }}
     needs: changes
-    if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.node != 'none'
+    if: needs.changes.outputs.light != 'true' && needs.changes.outputs.node != 'none'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -152,7 +177,7 @@ jobs:
   docs:
     name: Build docs
     needs: changes
-    if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.docs == 'true'
+    if: needs.changes.outputs.light != 'true' && needs.changes.outputs.docs == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -170,8 +195,11 @@ jobs:
 
   release-pr:
     name: Version PR installs and builds
-    if: github.head_ref == 'changeset-release/main'
+    needs: changes
+    if: needs.changes.outputs.light == 'true'
     runs-on: ubuntu-latest
+    env:
+      BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -182,6 +210,12 @@ jobs:
       # The ranges `workspace:^` turns into are what a version PR can break.
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      # What changesets wrote, not the whole tree: a second or so instead of most of a minute.
+      - name: Format of the changed files
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE"
+          git diff --name-only --no-renames --diff-filter=d "$BASE" HEAD \
+            | xargs --no-run-if-empty pnpm exec prettier --check --ignore-unknown
 
   # The catalogue's engine tests against a real Manticore (decision 26 of the Manticore spec): the
   # same scenarios as the database engine, with `--fail-on-skipped` so that a server that never
@@ -189,7 +223,7 @@ jobs:
   manticore:
     name: PHP on Manticore
     needs: changes
-    if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.manticore == 'true'
+    if: needs.changes.outputs.light != 'true' && needs.changes.outputs.manticore == 'true'
     runs-on: ubuntu-latest
     services:
       manticore:
@@ -237,7 +271,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       WEBX_FORBIDDEN_NAMES: ${{ secrets.FORBIDDEN_NAMES }}
-      RANGE_FROM: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+      RANGE_FROM: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
       RANGE_TO: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
       PR_TEXT: ${{ github.event.pull_request.title }} ${{ github.event.pull_request.body }}
     steps:

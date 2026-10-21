@@ -1,8 +1,7 @@
 name: PHP CI
 
+# No push to main: what lands there is the merge queue's group, already checked here (see ci.yml).
 on:
-  push:
-    branches: [main]
   pull_request:
   # Required by the merge queue: a PR is checked against main without its neighbours, and two
   # green PRs have made main red before. The queue builds them together.

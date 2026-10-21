@@ -7,10 +7,13 @@ name: PHP smoke
 # config:cache.
 
 on:
-  push:
-    branches: [main]
+  # Nightly rather than on every push to main: a run takes a runner for minutes, and on a release
+  # day it took one from the release itself. An hour after ci.yml and php-ci.yml, not with them.
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
   # Not a required check, so a path filter is safe here: a pull request that leaves the Composer
-  # half alone has nothing to install. A push to main still runs it every time.
+  # half alone has nothing to install.
   pull_request:
     paths:
       - 'php/**'
