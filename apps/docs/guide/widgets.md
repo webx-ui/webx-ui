@@ -270,6 +270,50 @@ What a long page needs, each loading only where it stands:
   above the cookie banner, the contact bar and the quick contact of its corner. Without JavaScript
   it is a link to `#top` where the template put it.
 
+## Smooth scrolling
+
+A notch of the mouse wheel moves the page in one stretched glide that eases out, instead of a jump
+of a hundred pixels — what designs made with Lenis show. Off by default; the theme switches it on
+with one attribute on the layout's `<html>` (or `<body>`), and writes no script of its own:
+
+```blade
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-webx-smooth-scroll>
+```
+
+The server sees the attribute and loads the widget's own file, Lenis built in; a page without it
+never loads Lenis. The settings, each an attribute beside the switch or a token in the theme's CSS
+(the attribute wins):
+
+| Attribute                                 | Token                                  | Default | What                                            |
+| ----------------------------------------- | -------------------------------------- | ------- | ----------------------------------------------- |
+| `data-webx-smooth-scroll-duration`        | `--webx-smooth-scroll-duration`        | `1.1s`  | the length of a glide (`1.1`, `1.1s`, `1100ms`) |
+| `data-webx-smooth-scroll-easing`          | `--webx-smooth-scroll-easing`          | `quart` | `quart`, `cubic`, `expo` or `sine`, eased out   |
+| `data-webx-smooth-scroll-wheel`           | `--webx-smooth-scroll-wheel`           | `0.9`   | how far a notch goes, against the browser's     |
+| `data-webx-smooth-scroll-anchor-duration` | `--webx-smooth-scroll-anchor-duration` | `1.4s`  | the way to an anchor, eased in and out          |
+
+It switches itself off, and the page scrolls natively:
+
+- **with reduced motion** asked for by the visitor;
+- **on a touch screen** — no hover and a coarse pointer: the finger has the system's own inertia;
+- **without JavaScript** — anchors slide with the theme's own `html { scroll-behavior: smooth }`,
+  if it has one: the widget sets it aside only while the glide runs (`html.webx-smooth-scroll`);
+- **under a modal** — a dialog, the mobile menu, a form in a dialog (`html.webx-scroll-locked`)
+  pause it; closing resumes it.
+
+What scrolls inside the page scrolls itself: any element that can scroll that way, dialogs, the
+lightbox, the map, the panels of the dropdown and the suggestions. Anything else of the theme's
+that takes the wheel — a canvas, a custom list — gets `data-webx-scroll-native`.
+
+A link to an anchor of the same page (`#prices`, `/#prices` on the home page) glides to it and
+stops under a sticky header: the header keeps the page's `scroll-padding-top`, and an anchor's own
+`scroll-margin-top` counts too. The anchor goes into the address, so Back returns. A link activated
+from the keyboard keeps the browser's jump, which also moves the focus there. The page still
+scrolls itself — `position: sticky`, `data-webx-reveal` and the header's `hide-on-scroll` see
+the usual scroll events. A script of the theme may glide too: `webx.scrollTo(target, options)` (Lenis'
+`scrollTo`) exists while the widget runs.
+
+Inertial scrolling is this widget only: a theme does not bring Lenis or another library of its own.
+
 ## Counters and countdown
 
 ```blade

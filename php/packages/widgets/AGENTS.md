@@ -56,9 +56,10 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Page tools** — a `<table>` without a class gets a scrolling `.webx-table` frame (server-side);
   `data-webx-reveal="up|fade|scale|stagger"`; `<x-webx-back-to-top>`; `<x-webx-share>`;
   `<x-webx-counter :value>`; `<x-webx-countdown to ended>`; `<x-webx-compare :before :after>`;
-  `<x-webx-toc for depth side>`; `<x-webx-pagination :paginator>`;
-  `<x-webx-load-more :paginator pages="covered|shown">` (fetches the next page's HTML);
+  `<x-webx-toc for depth side>`; `<x-webx-pagination :paginator>`; `<x-webx-load-more :paginator pages="covered|shown">`;
   `<x-webx-notice-bar place="notice">` (a `module-banners` place, closed versions remembered).
+- **Smooth scrolling** — `data-webx-smooth-scroll` on the layout's `<html>`/`<body>` (Lenis; `-duration`,
+  `-easing`, `-wheel` or `--webx-smooth-scroll-*`); native under reduced motion, touch, no JS, a modal, `[data-webx-scroll-native]`.
 - **Fields** — `<x-webx-field type name label hint required>` for every form of the site; `type`
   `text` `email` `tel` `url` `password` `number` `textarea` `select` `radio` `checkbox`
   (`:choices` → a group, without → one tick) `consent` `date` `file` `hidden`. Value `old()`, error
@@ -93,9 +94,8 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `--<variant>`, states `is-*` (`is-open`, `is-current`, `is-flipped`, `is-invalid`, `is-sending`…);
   each component's view lists its own. `html.webx-js` once the runtime runs,
   `html.webx-scroll-locked` under a modal, `html.webx-header-sticky` while the header sticks.
-- **Tokens and words** — `--webx-<name>-*` per widget on `:root` from `--site-*`;
-  `--webx-header-height` is kept live — the `top` of anything sticky. Words
-  `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
+- **Tokens and words** — `--webx-<name>-*` per widget on `:root` from `--site-*`; `--webx-header-height`
+  is kept live — the `top` of anything sticky. Words `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
 
 ## Change it without forking
 
