@@ -32,7 +32,6 @@ describe('the English here matches the English the server ships', () => {
     'manager',
     'field',
     'editor',
-    'lightbox',
     'dialogs',
     'errors',
     'files',

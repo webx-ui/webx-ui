@@ -29,8 +29,11 @@ export interface RecipeRow {
   /** The language of `path` when it is the site's main one, shown because this language has none. */
   address_locale?: string | null
   url: string | null
-  /** The first picture of the gallery, which is what every card of the site shows. */
-  cover: { thumb: string | null } | null
+  /**
+   * The first picture of the gallery, which is what every card of the site shows: the thumbnail
+   * for the row, `url` the full picture a click on it opens.
+   */
+  cover: { thumb: string | null; url?: string | null } | null
   /** `total_minutes`: how long it takes, all of it. */
   minutes: number | null
   status: RecipeStatus

@@ -58,6 +58,46 @@ And the component itself, for a screen that holds the state:
 </template>
 ```
 
+## In the admin panel
+
+Every picture the panel shows small opens large the same way: a click on it opens this gallery
+over the whole set it stands in — all the pictures of a product, all the files of a gallery field,
+all the covers of a page of a list — on the full picture, never the thumbnail, and in the panel's
+language. `@webx-ui/module-admin` keeps that in one place.
+
+**`WxPreviewThumb`** makes whatever is in its slot a button that opens the gallery. It keeps its
+click to itself, so a thumbnail in a row of a table or a tree opens the picture rather than the
+record, and a drag that starts on it is still the list's:
+
+```vue
+<script setup lang="ts">
+import { WxPreviewThumb } from '@webx-ui/module-admin'
+
+const covered = computed(() => rows.value.filter((row) => row.cover))
+const covers = computed(() =>
+  covered.value.map((row) => ({ src: row.cover.url, thumb: row.cover.thumb, alt: row.title })),
+)
+</script>
+
+<template>
+  <wx-preview-thumb v-if="row.cover" fill :items="covers" :start="covered.indexOf(row)">
+    <img :src="row.cover.thumb" alt="" />
+  </wx-preview-thumb>
+</template>
+```
+
+| Prop    | Type               | Default          | Description                                      |
+| ------- | ------------------ | ---------------- | ------------------------------------------------ |
+| `items` | `LightboxSource[]` | —                | The set the gallery pages through, full pictures |
+| `start` | `number`           | `0`              | Which of them this thumbnail is                  |
+| `label` | `string`           | "View full size" | Accessible name, in the panel's language         |
+| `fill`  | `boolean`          | `false`          | Takes the whole box it stands in — a cover cell  |
+
+**`useLightbox()`** is the same from code, for a thumbnail that is already a link or a button of
+its own: `open(items, start)`, `labels()` for the words, and `click(event, items, start)`, which
+opens on a plain click and leaves Ctrl, Shift or the middle button to the browser — a thumbnail that
+links to the file still opens it in a tab. The words are `webx-admin::lightbox.*`.
+
 ## Items
 
 An item is the address of a picture, or an object:

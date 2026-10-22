@@ -9,6 +9,7 @@ import {
   WxDate,
   WxFilterChips,
   WxListScreen,
+  WxPreviewThumb,
   WxRowMenu,
   type AppliedFilter,
   type RowAction,
@@ -166,6 +167,24 @@ const views = computed<TabItem[]>(() => {
 })
 
 /** Absent from every row when the site switched prices off — then the column is not drawn. */
+/*
+ * The covers of the rows on screen, large: a click on one opens them all, the full pictures, in
+ * the order of the list (`useLightbox`).
+ */
+const covered = computed(() => (page.value?.data ?? []).filter((one) => one.image))
+const covers = computed(() =>
+  covered.value.map((one) => ({
+    src: one.image!.url,
+    thumb: one.image!.thumb ?? undefined,
+    alt: one.name,
+    caption: one.name,
+  })),
+)
+
+function coverOf(row: ProductRow): number {
+  return covered.value.indexOf(row)
+}
+
 const priced = computed(() => (page.value?.data ?? []).some((row) => 'price' in row))
 const extra = computed(() => page.value?.columns ?? [])
 
@@ -767,7 +786,9 @@ const actions = computed<ScreenAction[]>(() => {
 
         <template #cell-image="{ row }">
           <span class="wx-catalog-products__image" :class="{ 'is-empty': !row.image }">
-            <img v-if="row.image" :src="row.image.thumb ?? row.image.url" alt="" loading="lazy" />
+            <wx-preview-thumb v-if="row.image" fill :items="covers" :start="coverOf(row)">
+              <img :src="row.image.thumb ?? row.image.url" alt="" loading="lazy" />
+            </wx-preview-thumb>
             <wx-icon v-else name="image" size="sm" />
           </span>
         </template>

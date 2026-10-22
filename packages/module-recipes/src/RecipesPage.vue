@@ -6,6 +6,7 @@ import {
   useErrorText,
   useTranslate,
   WxListScreen,
+  WxPreviewThumb,
   WxRowMenu,
   type RowAction,
   type ScreenAction,
@@ -86,6 +87,24 @@ const view = computed<TabValue>({
 })
 
 const inBin = computed(() => view.value === 'trashed')
+
+/*
+ * The covers of the rows on screen, large: a click on one opens them all, the full pictures, in
+ * the order of the list (`useLightbox`).
+ */
+const covered = computed(() => rows.value.filter((one) => one.cover?.thumb))
+const covers = computed(() =>
+  covered.value.map((one) => ({
+    src: one.cover!.url ?? one.cover!.thumb!,
+    thumb: one.cover!.thumb ?? undefined,
+    alt: one.title,
+    caption: one.title,
+  })),
+)
+
+function coverOf(row: RecipeRow): number {
+  return covered.value.indexOf(row)
+}
 
 function idIn(name: string): number | null {
   const raw = route.query[name]
@@ -416,7 +435,14 @@ const actions = computed<ScreenAction[]>(() =>
               <!-- The picture's box, never the picture: `<img>` has `min-width: auto`, and a
                    photograph would take the row (CLAUDE.md §4). -->
               <span class="wx-recipe-row__cover" :class="{ 'is-empty': !item.cover?.thumb }">
-                <img v-if="item.cover?.thumb" :src="item.cover.thumb" alt="" loading="lazy" />
+                <wx-preview-thumb
+                  v-if="item.cover?.thumb"
+                  fill
+                  :items="covers"
+                  :start="coverOf(item)"
+                >
+                  <img :src="item.cover.thumb" alt="" loading="lazy" />
+                </wx-preview-thumb>
                 <wx-icon v-else name="image" size="sm" />
               </span>
 

@@ -1,6 +1,15 @@
+<script lang="ts">
+import type { LightboxItem } from '@webx-ui/core'
+
+/** A value's picture in the gallery of the tree: the full one, and the value it belongs to. */
+export interface ValuePicture extends LightboxItem {
+  id: number
+}
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useTranslate } from '@webx-ui/module-admin'
+import { useTranslate, WxPreviewThumb } from '@webx-ui/module-admin'
 import { NAMESPACE } from './i18n'
 import type { ValueNode } from './types'
 
@@ -11,7 +20,26 @@ import type { ValueNode } from './types'
  */
 defineOptions({ name: 'WxCatalogPropertyValueRow' })
 
-const props = defineProps<{ node: ValueNode; locale: string }>()
+const props = withDefaults(
+  defineProps<{
+    node: ValueNode
+    locale: string
+    /** The pictures of the tree, which a click on this one pages through. */
+    pictures?: ValuePicture[]
+  }>(),
+  { pictures: () => [] },
+)
+
+/* This value's own picture alone, when the tree has not handed over the rest. */
+const gallery = computed(() => {
+  const found = props.pictures.findIndex((one) => one.id === props.node.id)
+
+  if (found >= 0) return { items: props.pictures, start: found }
+
+  const image = props.node.image
+
+  return { items: image ? [{ src: image.url, thumb: image.thumb ?? undefined }] : [], start: 0 }
+})
 
 const t = useTranslate(NAMESPACE)
 
@@ -24,12 +52,18 @@ const slug = computed(() => {
 
 <template>
   <span class="wx-catalog-value-row">
-    <img
+    <wx-preview-thumb
       v-if="props.node.image"
-      class="wx-catalog-value-row__image"
-      :src="props.node.image.thumb ?? props.node.image.url"
-      alt=""
-    />
+      class="wx-catalog-value-row__open"
+      :items="gallery.items"
+      :start="gallery.start"
+    >
+      <img
+        class="wx-catalog-value-row__image"
+        :src="props.node.image.thumb ?? props.node.image.url"
+        alt=""
+      />
+    </wx-preview-thumb>
     <span
       v-else-if="props.node.color"
       class="wx-catalog-value-row__swatch"

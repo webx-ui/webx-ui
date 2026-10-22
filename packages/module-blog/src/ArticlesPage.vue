@@ -9,6 +9,7 @@ import {
   WxListScreen,
   WxFilterChips,
   rowMenuWidth,
+  WxPreviewThumb,
   WxRowMenu,
   type AppliedFilter,
   type RowAction,
@@ -112,6 +113,24 @@ const query = computed(() => ({
   sort: typeof route.query.sort === 'string' ? route.query.sort : null,
   page: Number(route.query.page ?? 1) || 1,
 }))
+
+/*
+ * The covers of the rows on screen, large: a click on one opens them all, the full pictures, in
+ * the order of the list (`useLightbox`).
+ */
+const covered = computed(() => (page.value?.data ?? []).filter((one) => one.cover?.thumb))
+const covers = computed(() =>
+  covered.value.map((one) => ({
+    src: one.cover!.url ?? one.cover!.thumb!,
+    thumb: one.cover!.thumb ?? undefined,
+    alt: one.title,
+    caption: one.title,
+  })),
+)
+
+function coverOf(row: ArticleRow): number {
+  return covered.value.indexOf(row)
+}
 
 function number(value: unknown): number | null {
   return typeof value === 'string' && value !== '' ? Number(value) || null : null
@@ -551,7 +570,9 @@ const actions = computed<ScreenAction[]>(() =>
 
         <template #cell-cover="{ row }">
           <span class="wx-articles__cover" :class="{ 'is-empty': !row.cover }">
-            <img v-if="row.cover?.thumb" :src="row.cover.thumb" alt="" loading="lazy" />
+            <wx-preview-thumb v-if="row.cover?.thumb" fill :items="covers" :start="coverOf(row)">
+              <img :src="row.cover.thumb" alt="" loading="lazy" />
+            </wx-preview-thumb>
             <wx-icon v-else name="image" size="sm" />
           </span>
         </template>

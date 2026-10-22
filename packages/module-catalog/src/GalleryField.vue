@@ -4,6 +4,7 @@ import {
   uploadFingerprint,
   useAdmin,
   useErrorText,
+  useLightbox,
   useTranslate,
   WxRowMenu,
   type RowAction,
@@ -21,6 +22,7 @@ import {
   WxSortableList,
   WxText,
   WxUpload,
+  type LightboxItem,
   type LocalizedValue,
   type UploadFile,
 } from '@webx-ui/core'
@@ -83,6 +85,8 @@ useCatalogMessages()
 const t = useTranslate('webx-catalog')
 const panel = useTranslate('webx-admin')
 const message = useErrorText()
+
+const lightbox = useLightbox()
 
 const uploads = ref<UploadFile[]>([])
 const address = ref('')
@@ -154,6 +158,35 @@ function caption(image: ProductImage, field: 'alt' | 'title', text: unknown): vo
   clearTimeout(timer)
   timer = setTimeout(() => void saveGallery(t('panel.gallery-captions-failed')), PAUSE)
 }
+
+/** A caption in the language the form is on, else in whichever language has one. */
+function words(value: LocalizedValue | null | undefined): string {
+  if (!value) return ''
+
+  return value[locales.active.value] || Object.values(value).find(Boolean) || ''
+}
+
+/*
+ * The whole gallery, large: the full pictures rather than the thumbnails, and a row with a video
+ * is the video, its picture the poster — the order is the one the storefront shows.
+ */
+const gallery = computed<LightboxItem[]>(() =>
+  images.value.map((image) => {
+    const name = image.path.split('/').pop() ?? ''
+
+    return {
+      src: image.url,
+      thumb: image.thumb ?? undefined,
+      alt: words(image.alt) || name,
+      caption: words(image.title) || words(image.alt) || name,
+      video: image.video
+        ? image.video.embed
+          ? { embed: image.video.embed }
+          : { src: image.video.url }
+        : undefined,
+    }
+  }),
+)
 
 function moved(): void {
   void saveGallery(t('panel.gallery-reorder-failed'))
@@ -486,13 +519,15 @@ onBeforeUnmount(() => {
       >
         <template #default="{ item, index }">
           <div class="wx-catalog-gallery__item">
-            <!-- A row with a video opens the video: the picture is only its poster. -->
+            <!-- A row with a video opens the video: the picture is only its poster. A plain click
+                 opens the gallery over the panel; Ctrl or the middle button, the file in a tab. -->
             <a
               class="wx-catalog-gallery__thumb"
               :href="(item as ProductImage).video?.url ?? (item as ProductImage).url"
               target="_blank"
               rel="noopener"
-              :title="(item as ProductImage).video ? t('panel.video-open') : undefined"
+              :title="(item as ProductImage).video ? t('panel.video-open') : panel('lightbox.view')"
+              @click="lightbox.click($event, gallery, index)"
             >
               <img :src="(item as ProductImage).thumb ?? (item as ProductImage).url" alt="" />
               <wx-badge
@@ -671,6 +706,11 @@ onBeforeUnmount(() => {
   border-radius: var(--wx-radius-sm);
   background: var(--wx-bg-subtle);
   border: 1px solid var(--wx-border-default);
+}
+
+/* The row's picture opens the gallery; a video still uploading has nothing to open yet. */
+a.wx-catalog-gallery__thumb {
+  cursor: zoom-in;
 }
 
 .wx-catalog-gallery__thumb img {

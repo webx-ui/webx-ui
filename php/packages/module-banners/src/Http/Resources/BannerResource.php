@@ -30,11 +30,14 @@ final class BannerResource extends JsonResource
     {
         /** @var Banner $banner */
         $banner = $this->resource;
+        $picture = $this->picture($banner);
 
         return [
             'id' => (int) $banner->getKey(),
             'title' => BannerNames::of($banner, app(Locales::class)),
-            'thumb' => $this->thumb($banner),
+            'thumb' => $picture['thumb'] ?? $picture['url'] ?? null,
+            // The full picture, for the gallery a click on the thumbnail opens.
+            'image' => $picture['url'] ?? null,
             'video' => $banner->mediaPath('video') !== null,
             'enabled' => $banner->enabled,
             'position' => (int) $banner->position,
@@ -43,15 +46,18 @@ final class BannerResource extends JsonResource
         ];
     }
 
-    private function thumb(Banner $banner): ?string
+    /** @return array<string, string> the `thumb` and `url` the library has for the picture */
+    private function picture(Banner $banner): array
     {
         if ($banner->mediaPath('image') === null) {
-            return null;
+            return [];
         }
 
         $image = app(MediaValues::class)->resolve($banner->image);
-        $thumb = $image['thumb'] ?? $image['url'] ?? null;
 
-        return is_string($thumb) && $thumb !== '' ? $thumb : null;
+        return array_filter([
+            'thumb' => $image['thumb'] ?? null,
+            'url' => $image['url'] ?? null,
+        ], fn (mixed $address): bool => is_string($address) && $address !== '');
     }
 }

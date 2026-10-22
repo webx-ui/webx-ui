@@ -50,7 +50,8 @@ final class EventResource extends JsonResource
             // The language of the address when it is the site's main one, shown because this
             // language has none: the row says so in a tooltip rather than instead of the address.
             'address_locale' => $fallback,
-            'cover' => $cover === null ? null : ['thumb' => $cover['thumb'] ?? $cover['url'] ?? null],
+            // The thumbnail for the row, the full picture for the gallery a click on it opens.
+            'cover' => $cover === null ? null : ['thumb' => $cover['thumb'] ?? $cover['url'] ?? null, 'url' => $cover['url'] ?? null],
             'starts_at' => $shown->starts_at?->toAtomString(),
             'ends_at' => $shown->ends_at?->toAtomString(),
             'all_day' => (bool) $shown->all_day,

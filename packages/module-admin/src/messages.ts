@@ -271,6 +271,19 @@ export const adminMessages: Record<string, Messages> = {
     yes: 'Yes',
     cancel: 'Cancel',
   },
+  // The words of `WxLightbox`, the gallery every thumbnail of the panel opens (`useLightbox`).
+  lightbox: {
+    gallery: 'Gallery',
+    previous: 'Previous',
+    next: 'Next',
+    close: 'Close',
+    'zoom-in': 'Zoom in',
+    'zoom-out': 'Zoom out',
+    original: 'Open the original',
+    counter: ':index of :total',
+    play: 'Play',
+    view: 'View full size',
+  },
   dates: {
     today: 'today at :time',
     yesterday: 'yesterday at :time',

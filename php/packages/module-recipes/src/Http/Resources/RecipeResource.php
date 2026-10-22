@@ -48,7 +48,8 @@ final class RecipeResource extends JsonResource
             // The language of the address when it is the site's main one, shown because this
             // language has none: the row says so in a tooltip rather than instead of the address.
             'address_locale' => $fallback,
-            'cover' => $cover === null ? null : ['thumb' => $cover['thumb'] ?? $cover['url'] ?? null],
+            // The thumbnail for the row, the full picture for the gallery a click on it opens.
+            'cover' => $cover === null ? null : ['thumb' => $cover['thumb'] ?? $cover['url'] ?? null, 'url' => $cover['url'] ?? null],
             'minutes' => $shown->total_minutes,
             'status' => $recipe->status(),
             'position' => (int) $recipe->position,

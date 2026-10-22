@@ -86,9 +86,10 @@ describe('a gallery', () => {
     const wrapper = mount(GalleryField, { props: { modelValue: [{ path: 'a.jpg' }] }, ...panel })
     await flushPromises()
 
-    // Three: the captions, the way into the library, and taking it out of the list. Two would
-    // mean the wrapper had declared `captions` and handed the list a `false` nobody asked for.
-    expect(wrapper.findAll('.wx-media-list__tools button')).toHaveLength(3)
+    // Four: a look at the picture, the captions, the way into the library, and taking it out of
+    // the list. Three would mean the wrapper had declared `captions` and handed the list a
+    // `false` nobody asked for.
+    expect(wrapper.findAll('.wx-media-list__tools button')).toHaveLength(4)
     expect(wrapper.find('.wx-media-list__missing').exists()).toBe(false)
   })
 
@@ -103,6 +104,40 @@ describe('a gallery', () => {
     expect(wrapper.find('.wx-file-card__name').text()).toBe('gone.png')
     // No way into the library for a file that is not in it; the way out of the list stays.
     expect(wrapper.findAll('.wx-media-list__tools button')).toHaveLength(2)
+  })
+
+  it('opens the full pictures of the list on a click on one, and passes the documents by', async () => {
+    library['notes.pdf'] = file('notes.pdf', {
+      extension: 'pdf',
+      mime: 'application/pdf',
+      type: 'document',
+    })
+    const wrapper = mount(GalleryField, {
+      props: { modelValue: [{ path: 'a.jpg' }, { path: 'notes.pdf' }, { path: 'b.jpg' }] },
+      attachTo: document.body,
+      ...panel,
+    })
+    await flushPromises()
+
+    // A document has nothing to show large.
+    const cells = wrapper.findAll('.wx-media-list__cell')
+    expect(cells[1]!.find('.wx-file-card').classes()).not.toContain('is-viewable')
+
+    await cells[2]!.find('.wx-file-card__preview').trigger('click')
+    await flushPromises()
+
+    // The two pictures and not the document, on the one clicked, and the files themselves.
+    expect(document.querySelector('.wx-lightbox')).not.toBeNull()
+    expect(document.querySelector('.wx-lightbox__counter')?.textContent).toContain(
+      'lightbox.counter',
+    )
+    expect(document.querySelector('.wx-lightbox img[src="/storage/b.jpg"]')).not.toBeNull()
+
+    document
+      .querySelector('.wx-lightbox__frame')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+    wrapper.unmount()
   })
 
   it('tells the dialog how much room is left, and stops offering at the limit', async () => {
