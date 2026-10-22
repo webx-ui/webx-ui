@@ -99,6 +99,8 @@ return [
     'social-label' => 'Ad',
     'social-label-help' => 'Ekran okuyucu kullanan ziyaretçilere sesli okunur.',
     'phone-missing' => 'numarayı yazın.',
+    'address-missing' => 'adresi yazın.',
+    'coordinates-incomplete' => 'enlem ile boylamı birlikte girin ya da hiçbirini girmeyin.',
     'phone-no-country' => ':number numarasında ülke kodu yok. + ve kodla başlayın: +800 1234 5678.',
     'phone-invalid' => ':number bir telefon numarası değil.',
     'email-invalid' => ':email bir e-posta adresi değil.',

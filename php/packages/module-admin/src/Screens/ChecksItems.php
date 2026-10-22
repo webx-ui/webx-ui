@@ -19,8 +19,13 @@ interface ChecksItems
      * What is wrong inside the value, keyed by path from it — `2.number`, `0.title.en` — and
      * empty when nothing is. What concerns the list as a whole is left to `rules()`.
      *
+     * `$held` is the items the field kept before — an empty list when it kept none — and turns on
+     * the checks only a new item has to pass: a key no field names is refused unless an item held
+     * it already. Null when the caller cannot say what was kept, and then those checks are off.
+     *
      * @param  array<string, mixed>  $node
+     * @param  list<mixed>|null  $held
      * @return array<string, list<string>>
      */
-    public function itemErrors(mixed $value, array $node): array;
+    public function itemErrors(mixed $value, array $node, ?array $held = null): array;
 }

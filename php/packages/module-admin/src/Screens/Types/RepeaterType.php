@@ -21,6 +21,11 @@ use WebxUi\Localization\Locales;
  * rules its own type declares, per language where the child is localized, keep only the keys the
  * tree names, and resolve the lot for the site.
  *
+ * A key no field of the row names is refused rather than dropped when it is new: an agent that
+ * sent `street` for `address` was told the row was saved and found nothing. A key the field
+ * already held is let through and dropped as before — a field a screen has since removed still
+ * travels back with the panel's rows, and an editor's save must not fail on it.
+ *
  * A row that fails is named by its path — `offices.2.city` — through {@see ChecksItems}, so the
  * panel can mark the row and the field. Where a caller only runs `rules()`, the words say which row
  * it was instead, because "The City field is required" on its own tells nobody which city.
@@ -74,30 +79,123 @@ final class RepeaterType implements ChecksItems, FieldType
      * Every item checked by its own fields' rules, each problem under its row and field. A row
      * that is not a set of fields is the list's problem, and `rules()` reports it.
      *
+     * `$held` is what the field kept before, row by row ({@see ChecksItems}).
+     *
      * @param  Node  $node
+     * @param  list<mixed>|null  $held
      * @return array<string, list<string>>
      */
-    public function itemErrors(mixed $value, array $node): array
+    public function itemErrors(mixed $value, array $node, ?array $held = null): array
     {
         if (! is_array($value)) {
             return [];
         }
 
         $errors = [];
+        $fields = $this->itemFields($node);
+        $names = array_map(static fn (array $child): string => (string) $child['name'], $fields);
 
         foreach (array_values($value) as $position => $item) {
             if (! is_array($item)) {
                 continue;
             }
 
-            foreach ($this->itemFields($node) as $child) {
-                foreach ($this->messages($child, $item) as $path => $messages) {
+            if ($held !== null) {
+                foreach ($this->strayKeys($item, $names, $held) as $key) {
+                    $errors["{$position}.{$key}"] = [(string) __('webx-admin::screens.row-unknown-key', [
+                        'key' => $key,
+                        'keys' => implode(', ', $names),
+                    ])];
+                }
+            }
+
+            foreach ($fields as $child) {
+                foreach ($this->messages($child, $item, $held) as $path => $messages) {
                     $errors["{$position}.{$path}"] = $messages;
                 }
             }
         }
 
         return $errors;
+    }
+
+    /**
+     * The keys of a row no field names and no row the field held had either.
+     *
+     * @param  array<array-key, mixed>  $item
+     * @param  list<string>  $names
+     * @param  list<mixed>  $held
+     * @return list<string>
+     */
+    private function strayKeys(array $item, array $names, array $held): array
+    {
+        $kept = [];
+
+        foreach ($held as $row) {
+            if (is_array($row)) {
+                $kept += array_flip(array_map(strval(...), array_keys($row)));
+            }
+        }
+
+        return array_values(array_filter(
+            array_map(strval(...), array_keys($item)),
+            static fn (string $key): bool => ! in_array($key, $names, true) && ! isset($kept[$key]),
+        ));
+    }
+
+    /**
+     * What one item's fields take, for whoever writes a row without the form — an agent over MCP:
+     * each field's type, whether it is per language, and the bounds its rules hold it to.
+     *
+     * @param  Node  $node
+     * @return array<string, array<string, mixed>>
+     */
+    public function itemShape(array $node): array
+    {
+        $shape = [];
+
+        foreach ($this->itemFields($node) as $child) {
+            $props = is_array($child['props'] ?? null) ? $child['props'] : [];
+            $type = (string) $child['type'];
+            $field = ['type' => $type];
+
+            if (($child['localized'] ?? false) === true) {
+                $field['localized'] = true;
+            }
+
+            $kind = match (true) {
+                $type === 'wx-input-number' || $type === 'wx-slider' || $type === 'wx-rate' => 'number',
+                $type === 'wx-switch' || $type === 'wx-checkbox' => 'boolean',
+                $type === 'wx-time-picker' => 'time, HH:MM',
+                $type === 'wx-date-picker' => 'date, YYYY-MM-DD',
+                $type === 'wx-checkbox-group' || $type === 'wx-tags-input' => 'list',
+                $type === 'wx-repeater' => 'list of objects',
+                ($props['type'] ?? null) === 'url' => 'URL',
+                ($props['type'] ?? null) === 'email' => 'e-mail address',
+                default => 'string',
+            };
+            $field['value'] = $kind;
+
+            foreach (['min', 'max', 'maxlength'] as $bound) {
+                if (is_numeric($props[$bound] ?? null)) {
+                    $field[$bound] = $props[$bound] + 0;
+                }
+            }
+
+            $options = OptionType::values($child);
+
+            if ($options !== []) {
+                $field['options'] = $options;
+            }
+
+            if ($type === 'wx-repeater') {
+                $field['item'] = $this->itemShape($child);
+            }
+
+            $shape[(string) $child['name']] = $field;
+        }
+
+        return $shape;
     }
 
     /**
@@ -202,11 +300,14 @@ final class RepeaterType implements ChecksItems, FieldType
      * language of it as `title.en`, a row of a repeater inside as `links.0.url` — empty when
      * nothing is.
      *
+     * `$held` is the rows the field kept, for a repeater inside to read its own from.
+     *
      * @param  Node  $child
      * @param  array<string, mixed>  $item
+     * @param  list<mixed>|null  $held
      * @return array<string, list<string>>
      */
-    private function messages(array $child, array $item): array
+    private function messages(array $child, array $item, ?array $held): array
     {
         /** @var string $name */
         $name = $child['name'];
@@ -221,7 +322,19 @@ final class RepeaterType implements ChecksItems, FieldType
         if ($type instanceof ChecksItems && ! $this->isMap($child, $value)) {
             $nested = [];
 
-            foreach ($type->itemErrors($value, $child) as $path => $messages) {
+            $inner = null;
+
+            if ($held !== null) {
+                $inner = [];
+
+                foreach ($held as $row) {
+                    if (is_array($row) && is_array($row[$name] ?? null)) {
+                        array_push($inner, ...array_values($row[$name]));
+                    }
+                }
+            }
+
+            foreach ($type->itemErrors($value, $child, $inner) as $path => $messages) {
                 $nested["{$name}.{$path}"] = $messages;
             }
 

@@ -99,6 +99,8 @@ return [
     'social-label' => 'Name',
     'social-label-help' => 'Read aloud to visitors who use a screen reader.',
     'phone-missing' => 'type the number.',
+    'address-missing' => 'type the address.',
+    'coordinates-incomplete' => 'give both the latitude and the longitude, or neither.',
     'phone-no-country' => ':number has no country code. Start it with + and the code: +800 1234 5678.',
     'phone-invalid' => ':number is not a phone number.',
     'email-invalid' => ':email is not an e-mail address.',

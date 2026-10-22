@@ -99,6 +99,8 @@ return [
     'social-label' => 'Name',
     'social-label-help' => 'Wird Besuchern mit Screenreader vorgelesen.',
     'phone-missing' => 'Nummer eingeben.',
+    'address-missing' => 'Adresse eingeben.',
+    'coordinates-incomplete' => 'Breiten- und Längengrad angeben oder keinen von beiden.',
     'phone-no-country' => ':number hat keine Ländervorwahl. Beginnen Sie mit + und der Vorwahl: +800 1234 5678.',
     'phone-invalid' => ':number ist keine Telefonnummer.',
     'email-invalid' => ':email ist keine E-Mail-Adresse.',

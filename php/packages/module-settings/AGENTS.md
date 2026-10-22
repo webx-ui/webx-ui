@@ -27,6 +27,8 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   `settings:write`. Only keys the screen names can be written, checked with the screen's rules.
   `value: null` (or the string `"null"`) clears a key of any type — every language of a
   localized one; `{"de": null}` empties one language — and the site falls back to its default.
+  A list (`wx-repeater`) carries `item` in `settings_list`/`settings_get`: the keys of one row and
+  what each takes; a row key the screen does not name is refused, not dropped.
 - **Content rules** `WebxUi\Settings\ContentRules`: the `content.*` keys plus the site's
   languages (from `webx-ui/localization`), served as the MCP resource `settings://content-rules`
   (`languages`, `primary`, `tone`, `donts`, `notes`, `more`, `empty`); the MCP server's

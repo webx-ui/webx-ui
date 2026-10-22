@@ -80,7 +80,9 @@ final class ScreenValues
             }
 
             // A list of records names what is wrong by row and field, where the panel can show it.
-            $items = ! $localized && $type instanceof ChecksItems ? $type->itemErrors($value, $node) : [];
+            $items = ! $localized && $type instanceof ChecksItems
+                ? $type->itemErrors($value, $node, $held === null ? null : (is_array($held[$name] ?? null) ? array_values($held[$name]) : []))
+                : [];
 
             foreach ($items as $path => $messages) {
                 $errors["{$name}.{$path}"] = $messages;
