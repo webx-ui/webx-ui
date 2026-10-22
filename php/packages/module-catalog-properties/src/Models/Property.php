@@ -23,6 +23,7 @@ use WebxUi\Catalog\Filter\FilterAliases;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\CatalogProperties\Catalog\Properties;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\Slug;
 
 /**
  * A property of products (§2, §3 of the properties spec): a reference book, a number, a text or a
@@ -456,7 +457,8 @@ class Property extends Model
 
     /**
      * A language with a name and no code gets one made of the name (§3.4): transliterated by the
-     * language, `-` instead of anything else.
+     * language, `-` instead of anything else; a name of no letters (`%`) is `property-…`, a code
+     * saying nothing otherwise.
      */
     private function fillCodes(): void
     {
@@ -468,7 +470,7 @@ class Property extends Model
             $code = $codes[$locale] ?? null;
 
             if ((! is_string($code) || trim($code) === '') && is_string($title) && trim($title) !== '') {
-                $codes[$locale] = substr(Str::slug($title, '-', (string) $locale), 0, self::CODE_LENGTH);
+                $codes[$locale] = Slug::make($title, (string) $locale, self::CODE_LENGTH, 'property');
                 $changed = true;
             }
         }

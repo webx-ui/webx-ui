@@ -20,6 +20,8 @@ use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\CatalogLabels\Catalog\LabelFacet;
 use WebxUi\CatalogLabels\Models\Label;
+use WebxUi\Localization\Locales;
+use WebxUi\Localization\Models\Locale;
 
 /**
  * §2.1 and §9 of the dictionaries spec: several labels on a product, a filter that counts without
@@ -202,6 +204,26 @@ final class LabelsTest extends TestCase
         $this->assertSame('big-sale-2', $values['code']);
         $this->assertSame('neutral', $values['color']);
         $this->assertTrue($values['is_badge']);
+    }
+
+    #[Test]
+    public function a_code_is_made_of_the_name_in_the_sites_default_language_and_a_name_of_no_letters_says_it_is_a_label(): void
+    {
+        Locale::fromCode('uk', ['is_default' => true, 'sort' => 0])->save();
+        Locale::fromCode('ru', ['sort' => 1])->save();
+        $this->app->make(Locales::class)->forget();
+        $editor = $this->editor();
+
+        $code = fn (array $title): string => Label::query()->findOrFail(
+            $this->actingAs($editor, 'cms')->postJson($this->api('labels'), ['title' => $title])->assertCreated()->json('data.id'),
+        )->code;
+
+        // Russian first in the map, Ukrainian the site's language: the code is the Ukrainian one,
+        // transliterated the Ukrainian way — not `xit` of the English reading of «Хіт».
+        $this->assertSame('khit', $code(['ru' => 'Хит', 'uk' => 'Хіт']));
+        $this->assertSame('pid-rozmir', $code(['ru' => 'Под размер', 'uk' => 'Під розмір']));
+        $this->assertSame('label-20', $code(['uk' => '−20%', 'ru' => '−20%']));
+        $this->assertSame('label-20-2', $code(['uk' => '−20%']));
     }
 
     #[Test]

@@ -74,7 +74,7 @@ final readonly class CategoryTools
                 : "A {$one}: its id, or its title in any language.",
         ];
         $slug = $addressed
-            ? ['slug' => ['type' => ['string', 'object'], 'description' => 'The address part, the same shape as the title. Made out of the title when omitted.']]
+            ? ['slug' => ['type' => ['string', 'object'], 'description' => 'The address part, the same shape as the title. Made out of the title when omitted, transliterated by each title\'s language.']]
             : [];
 
         return Arguments::strictAll([

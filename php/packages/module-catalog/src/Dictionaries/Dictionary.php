@@ -17,6 +17,8 @@ use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 
 /**
  * A reference book of the catalogue with a code and a tone — labels, stock statuses (§2 of the
@@ -214,21 +216,21 @@ abstract class Dictionary extends Model implements Category
 
     /**
      * A code nobody holds, made out of what the shared code gave a new record: its slug, else its
-     * title. `sale`, then `sale-2`.
+     * title, in the site's default language first and transliterated by the language it is written
+     * in. A name of no letters is prefixed by the kind: `−20%` is `label-20`, not `20`. Then
+     * `sale`, `sale-2`.
      */
     private function freeCode(): string
     {
-        $base = '';
+        $slugs = $this->getTranslations('slug');
+        $names = [];
 
-        foreach ([...array_values($this->getTranslations('slug')), ...array_values($this->getTranslations('title'))] as $candidate) {
-            $base = is_string($candidate) ? Str::slug($candidate) : '';
-
-            if ($base !== '') {
-                break;
-            }
+        foreach ([...array_keys($slugs), ...array_keys($this->getTranslations('title'))] as $locale) {
+            $slug = $slugs[$locale] ?? null;
+            $names[$locale] = is_string($slug) && trim($slug) !== '' ? $slug : $this->getTranslation('title', (string) $locale, false);
         }
 
-        $base = substr($base === '' ? 'item' : $base, 0, self::CODE_LENGTH - 4);
+        $base = Slug::first($names, Container::getInstance()->make(Locales::class)->defaultCode(), self::CODE_LENGTH - 4, $this->codePrefix());
         $code = $base;
 
         for ($n = 2; static::withTrashed()->where('code', $code)->exists(); $n++) {
@@ -236,5 +238,11 @@ abstract class Dictionary extends Model implements Category
         }
 
         return $code;
+    }
+
+    /** What a code made of a name with no letters starts with: `label`, `stock-status`. */
+    protected function codePrefix(): string
+    {
+        return Str::kebab(class_basename(static::class));
     }
 }

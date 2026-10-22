@@ -6,12 +6,12 @@ namespace WebxUi\Admin\Categories;
 
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Categories\Http\CategoryResource;
 use WebxUi\Admin\Screens\ScreenRecord;
 use WebxUi\Admin\Screens\Types\SlugType;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 
 /**
  * A category as its screen reads and saves it — the one path for the panel and for an agent.
@@ -32,9 +32,9 @@ final class CategoryForm
     /**
      * A new category from a name, and an address made out of it where none was given.
      *
-     * `Str::slug` transliterates, so a Russian title gives a Latin address rather than a
-     * percent-encoded one — what a site wants and what nobody wants to type by hand. Whether the
-     * address is free is not asked here: only the registry sees every kind of page at once, and
+     * {@see Slug} transliterates by the title's language, so a Ukrainian or Russian title gives a
+     * Latin address rather than a percent-encoded one — what a site wants and what nobody wants to
+     * type by hand. Whether the address is free is not asked here: only the registry sees every kind of page at once, and
      * it answers by refusing the save with a 422 under `slug`.
      *
      * @param  class-string<Model&Category>  $model
@@ -160,7 +160,7 @@ final class CategoryForm
                 continue;
             }
 
-            $made = Str::slug($title);
+            $made = Slug::make($title, (string) $code);
 
             if ($made !== '') {
                 $slugs[$code] = $made;

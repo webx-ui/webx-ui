@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Catalog\Catalog;
@@ -24,6 +23,7 @@ use WebxUi\Catalog\Seo\ProductMarkup;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Routing\Models\Route;
@@ -536,7 +536,7 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
                 continue;
             }
 
-            $slug = Str::slug($name, '-', (string) $locale);
+            $slug = Slug::make($name, (string) $locale);
 
             if ($slug !== '') {
                 $slugs[$locale] = $slug;
