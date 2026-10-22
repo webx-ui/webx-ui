@@ -29,8 +29,10 @@ describe('the English here matches the English the server ships', () => {
   })
 })
 
-describe('the Russian has every line the English has', () => {
+const locales = ['ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr']
+
+describe.each(locales)('%s has every line the English has', (locale) => {
   it.each(Object.keys(catalogLabelsMessages))('%s', (group) => {
-    expect(keysOf('ru', group)).toEqual(keysOf('en', group))
+    expect(keysOf(locale, group)).toEqual(keysOf('en', group))
   })
 })

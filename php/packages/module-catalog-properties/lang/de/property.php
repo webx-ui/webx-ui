@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'tab-main' => 'Allgemein',
+    'tab-values' => 'Werte',
+    'tab-intervals' => 'Intervalle',
+    'tab-history' => 'Verlauf',
+    'card-values' => 'Werte',
+    'card-filter' => 'Filter und Suche',
+    'card-showing' => 'Wo sie angezeigt wird',
+    'title' => 'Name',
+    'code' => 'Code',
+    'code-help' => 'Lateinische Buchstaben, Ziffern und Bindestriche: die Eigenschaft in einer Filteradresse (color_black), je Sprache. Leer gelassen, entsteht er aus dem Namen.',
+    'type' => 'Typ',
+    'type-help' => 'Wird einmal gewählt: Die Werte der Produkte haben seine Form.',
+    'types' => [
+        'select' => 'Verzeichnis',
+        'number' => 'Zahl',
+        'text' => 'Text',
+        'bool' => 'Ja / Nein',
+    ],
+    'group_id' => 'Gruppe',
+    'is_multiple' => 'Mehrere Werte',
+    'is_tree' => 'Werte als Baum',
+    'leaves_only' => 'Nur die unterste Ebene',
+    'is_filterable' => 'Im Filter',
+    'filter_mode' => 'Filtern nach',
+    'modes' => [
+        'slider' => 'Schieberegler',
+        'intervals' => 'Intervalle',
+    ],
+    'is_indexable' => 'Seiten eines Werts für Suchmaschinen offen',
+    'is_searchable' => 'Suche nach Wert',
+    'in_card' => 'Auf der Karte im Katalog',
+    'on_page' => 'In den technischen Daten des Produkts',
+    'in_list' => 'Spalte in der Produktliste',
+    'value_order' => 'Reihenfolge der Werte',
+    'orders' => [
+        'alpha' => 'Alphabetisch',
+        'manual' => 'Von Hand',
+    ],
+    'has_color' => 'Werte haben eine Farbe',
+    'has_image' => 'Werte haben ein Bild',
+    'unit_prefix' => 'Vor der Zahl',
+    'unit_suffix' => 'Nach der Zahl',
+    'precision' => 'Nachkommastellen',
+    'toggle_slug' => 'Das Wort für «ja» in einer Adresse',
+    'seo_pattern' => 'Muster für den Seitentitel',
+    'seo-pattern-help' => '{category}, {property} und {value} werden ersetzt. Leer — das eigene Muster des Katalogs.',
+];

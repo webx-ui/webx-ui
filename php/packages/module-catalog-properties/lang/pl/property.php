@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'tab-main' => 'Główne',
+    'tab-values' => 'Wartości',
+    'tab-intervals' => 'Przedziały',
+    'tab-history' => 'Historia',
+    'card-values' => 'Wartości',
+    'card-filter' => 'Filtr i wyszukiwanie',
+    'card-showing' => 'Gdzie jest pokazywana',
+    'title' => 'Nazwa',
+    'code' => 'Kod',
+    'code-help' => 'Litery łacińskie, cyfry i myślniki: właściwość w adresie filtra (color_black), osobno dla każdego języka. Puste — tworzony z nazwy.',
+    'type' => 'Typ',
+    'type-help' => 'Wybierany raz: wartości produktów mają jego postać.',
+    'types' => [
+        'select' => 'Słownik',
+        'number' => 'Liczba',
+        'text' => 'Tekst',
+        'bool' => 'Tak / nie',
+    ],
+    'group_id' => 'Grupa',
+    'is_multiple' => 'Kilka wartości',
+    'is_tree' => 'Wartości w drzewie',
+    'leaves_only' => 'Tylko ostatni poziom',
+    'is_filterable' => 'W filtrze',
+    'filter_mode' => 'Filtruj według',
+    'modes' => [
+        'slider' => 'Suwak',
+        'intervals' => 'Przedziały',
+    ],
+    'is_indexable' => 'Strony jednej wartości otwarte dla wyszukiwarek',
+    'is_searchable' => 'Wyszukiwanie po wartości',
+    'in_card' => 'Na karcie w katalogu',
+    'on_page' => 'W specyfikacji produktu',
+    'in_list' => 'Kolumna na liście produktów',
+    'value_order' => 'Kolejność wartości',
+    'orders' => [
+        'alpha' => 'Alfabetycznie',
+        'manual' => 'Ręcznie',
+    ],
+    'has_color' => 'Wartości mają kolor',
+    'has_image' => 'Wartości mają obrazek',
+    'unit_prefix' => 'Przed liczbą',
+    'unit_suffix' => 'Po liczbie',
+    'precision' => 'Cyfry po przecinku',
+    'toggle_slug' => 'Słowo dla «tak» w adresie',
+    'seo_pattern' => 'Wzór tytułu strony',
+    'seo-pattern-help' => '{category}, {property} i {value} są podstawiane. Puste — własny wzór katalogu.',
+];

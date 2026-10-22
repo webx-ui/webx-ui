@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'tab-main' => 'Principale',
+    'tab-values' => 'Valori',
+    'tab-intervals' => 'Intervalli',
+    'tab-history' => 'Cronologia',
+    'card-values' => 'Valori',
+    'card-filter' => 'Filtro e ricerca',
+    'card-showing' => 'Dove viene mostrata',
+    'title' => 'Nome',
+    'code' => 'Codice',
+    'code-help' => 'Lettere latine, cifre e trattini: la proprietà nell’indirizzo di un filtro (color_black), per lingua. Se vuoto, si ricava dal nome.',
+    'type' => 'Tipo',
+    'type-help' => 'Si sceglie una volta sola: i valori dei prodotti ne prendono la forma.',
+    'types' => [
+        'select' => 'Dizionario',
+        'number' => 'Numero',
+        'text' => 'Testo',
+        'bool' => 'Sì / no',
+    ],
+    'group_id' => 'Gruppo',
+    'is_multiple' => 'Più valori',
+    'is_tree' => 'Valori ad albero',
+    'leaves_only' => 'Solo l’ultimo livello',
+    'is_filterable' => 'Nel filtro',
+    'filter_mode' => 'Filtra per',
+    'modes' => [
+        'slider' => 'Cursore',
+        'intervals' => 'Intervalli',
+    ],
+    'is_indexable' => 'Pagine di un singolo valore aperte ai motori di ricerca',
+    'is_searchable' => 'Ricerca per valore',
+    'in_card' => 'Sulla scheda nel catalogo',
+    'on_page' => 'Nelle specifiche del prodotto',
+    'in_list' => 'Colonna nell’elenco dei prodotti',
+    'value_order' => 'Ordine dei valori',
+    'orders' => [
+        'alpha' => 'Alfabetico',
+        'manual' => 'A mano',
+    ],
+    'has_color' => 'I valori hanno un colore',
+    'has_image' => 'I valori hanno un’immagine',
+    'unit_prefix' => 'Prima del numero',
+    'unit_suffix' => 'Dopo il numero',
+    'precision' => 'Cifre decimali',
+    'toggle_slug' => 'La parola per «sì» in un indirizzo',
+    'seo_pattern' => 'Modello del titolo della pagina',
+    'seo-pattern-help' => '{category}, {property} e {value} vengono sostituiti. Vuoto — il modello del catalogo.',
+];

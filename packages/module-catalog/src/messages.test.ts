@@ -29,9 +29,10 @@ describe('the English here matches the English the server ships', () => {
   })
 })
 
-/* The panel's own words are new to the server; Russian is the second language it ships (§17). */
-describe('the Russian has every line the panel says', () => {
+const locales = ['ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr']
+
+describe.each(locales)('%s has every line the panel says', (locale) => {
   it('panel', () => {
-    expect(keysOf('ru', 'panel')).toEqual(keysOf('en', 'panel'))
+    expect(keysOf(locale, 'panel')).toEqual(keysOf('en', 'panel'))
   })
 })

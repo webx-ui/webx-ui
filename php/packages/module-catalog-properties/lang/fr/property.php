@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'tab-main' => 'Général',
+    'tab-values' => 'Valeurs',
+    'tab-intervals' => 'Intervalles',
+    'tab-history' => 'Historique',
+    'card-values' => 'Valeurs',
+    'card-filter' => 'Filtre et recherche',
+    'card-showing' => 'Où elle s’affiche',
+    'title' => 'Nom',
+    'code' => 'Code',
+    'code-help' => 'Lettres latines, chiffres et tirets : la propriété dans l’adresse d’un filtre (color_black), pour chaque langue. Créé à partir du nom s’il reste vide.',
+    'type' => 'Type',
+    'type-help' => 'Choisi une fois pour toutes : les valeurs des produits en prennent la forme.',
+    'types' => [
+        'select' => 'Référentiel',
+        'number' => 'Nombre',
+        'text' => 'Texte',
+        'bool' => 'Oui / non',
+    ],
+    'group_id' => 'Groupe',
+    'is_multiple' => 'Plusieurs valeurs',
+    'is_tree' => 'Valeurs en arbre',
+    'leaves_only' => 'Dernier niveau seulement',
+    'is_filterable' => 'Dans le filtre',
+    'filter_mode' => 'Filtrer par',
+    'modes' => [
+        'slider' => 'Curseur',
+        'intervals' => 'Intervalles',
+    ],
+    'is_indexable' => 'Pages d’une seule valeur ouvertes aux moteurs de recherche',
+    'is_searchable' => 'Recherche par valeur',
+    'in_card' => 'Sur la fiche dans le catalogue',
+    'on_page' => 'Dans les caractéristiques du produit',
+    'in_list' => 'Colonne dans la liste des produits',
+    'value_order' => 'Ordre des valeurs',
+    'orders' => [
+        'alpha' => 'Alphabétique',
+        'manual' => 'À la main',
+    ],
+    'has_color' => 'Les valeurs ont une couleur',
+    'has_image' => 'Les valeurs ont une image',
+    'unit_prefix' => 'Avant le nombre',
+    'unit_suffix' => 'Après le nombre',
+    'precision' => 'Chiffres après la virgule',
+    'toggle_slug' => 'Le mot pour « oui » dans une adresse',
+    'seo_pattern' => 'Modèle du titre de page',
+    'seo-pattern-help' => '{category}, {property} et {value} sont remplacés. Vide — le modèle propre au catalogue.',
+];
