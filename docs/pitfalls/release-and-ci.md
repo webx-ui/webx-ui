@@ -191,7 +191,9 @@ PR и очередь проверяют только то, до чего дот�
   пушит git-теги параллельно; часть пушей может получить от GitHub `cannot lock ref … reference
 already exists` — гонка на самом GitHub, теги при этом созданы все. Джоба красная, `php-split`
   пропущен. Сначала `npm view` и `git ls-remote --tags claude`; если всё на месте — только ручной
-  `php-split`, без перезапуска.
+  `php-split`, без перезапуска. Другой случай — npm ответил `503 Service Unavailable` на часть
+  пакетов («Publish command exited with code 1, but some packages were published»): тут перезапуск
+  джоба нужен, он допубликует оставшиеся, а `php-split` после него — всё равно руками.
 - **Composer минут десять не видит новую версию, хотя Packagist её уже отдаёт.** `curl` на
   `repo.packagist.org/p2/webx-ui/<пакет>.json` показывает новую версию, а `composer update` отвечает
   «found … but it does not match the constraint»: его запрос попадает на узел CDN со старой копией
