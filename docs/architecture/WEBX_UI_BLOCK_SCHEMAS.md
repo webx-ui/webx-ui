@@ -9,11 +9,14 @@
 
 ## 1. Правило
 
-1. **Деплой и обновление пакетов схем не пишут.** `webx:boot`, `webx:theme:sync`, `composer update`
-   (`post-update-cmd`) и `webx:module:add` типы не создают и не обновляют. Флага, который разрешил бы это на деплое, нет: случайно включённый флаг затёр бы правки клиента.
-2. **Типы ставят только явные команды.** Это `webx:setup` (создание нового сайта — dev),
-   `webx:blocks:import`, `webx:blocks:offered --install` и `webx:demo`. Все они запускаются руками и
-   все **не трогают тип, который на сайте уже есть**.
+1. **Деплой, создание сайта и обновление пакетов схем не пишут.** `webx:setup`, `webx:boot`,
+   `webx:theme:sync`, `composer update` (`post-update-cmd`) и `webx:module:add` типы не создают и не обновляют. Флага, который разрешил бы это на деплое, нет: случайно включённый флаг затёр бы правки клиента.
+   `webx:setup` — не «создание dev»: платформа хостинга заводит им и стейджинг, и прод, поэтому он
+   не ставит ни блоков темы, ни предложений модулей и не кладёт демо на главную (решение 22.10).
+2. **Типы ставят только явные команды.** Это `webx:blocks:import`, `webx:blocks:offered --install`
+   и `webx:demo`. Все они запускаются руками и все **не трогают тип, который на сайте уже есть**.
+   `webx:setup` печатает их в конце для dev-копии, по порядку: импорт темы, предложения выбранных
+   модулей, демо.
 3. **Существующий тип перезаписывается только по имени.** Импорт показывает, чем тип на сайте
    отличается от файла, и оставляет его как есть. Перезапись — `--replace=<slug>`, по одному
    типу; массовой перезаписи нет. Перезапись пишет новую версию, откат — через историю версий.
@@ -25,7 +28,7 @@
 
 ```
 пакет (тема, модуль)        dev-сайт                  git сайта               стейджинг / прод
-blocks/*.json        ──►  webx:setup            ──►  webx:blocks:export  ──►  webx:blocks:import
+blocks/*.json        ──►  (руками)              ──►  webx:blocks:export  ──►  webx:blocks:import
 resources/blocks/*.json   webx:blocks:import --theme   theme/blocks/*.json     (руками, один раз)
                           webx:blocks:offered --install   или resources/blocks        │
                           адаптация в панели                                           ▼
@@ -34,9 +37,9 @@ resources/blocks/*.json   webx:blocks:import --theme   theme/blocks/*.json     (
 
 1. **Источник.** Тема несёт `blocks/*.json` в слоях, модуль предлагает `resources/blocks/*.json`
    через `BlockOffers`. Это заготовки, а не состояние сайта.
-2. **Dev.** Разработчик ставит заготовки явно (`webx:setup` для нового сайта, потом
-   `webx:blocks:import --theme`, `webx:blocks:offered --install`), смотрит их и адаптирует под
-   дизайн в панели.
+2. **Dev.** Разработчик ставит заготовки явно — командами, которые печатает `webx:setup`:
+   `webx:blocks:import --theme --publish`, `webx:blocks:offered --install`, при желании
+   `webx:demo`, — смотрит их и адаптирует под дизайн в панели.
 3. **Git.** Готовый тип выгружается: `webx:blocks:export --path=theme/blocks` (локальная тема) или
    в `resources/blocks`. Файл в git — предмет ревью и источник переноса.
 4. **Перенос.** На стейджинге или проде человек один раз запускает `webx:blocks:import` с нужным
@@ -52,8 +55,7 @@ resources/blocks/*.json   webx:blocks:import --theme   theme/blocks/*.json     (
 | `webx:theme:sync`                      | **не пишет**                                                                                             | публикует сборки и ассеты слоёв, стили модулей, спрайт иконок. `LayerSync` из него уходит; `--force` — только файлы; `--adopt` уходит |
 | `post-update-cmd` сайта (`theme:sync`) | **не пишет**                                                                                             | строка в `composer.json` уже установленных сайтов остаётся и сама становится безопасной                                               |
 | `webx:module:add`                      | **не пишет**                                                                                             | после установки печатает подсказку, если модуль предлагает блоки: `php artisan webx:blocks:offered --install --module=<id>`           |
-| `webx:setup`                           | создаёт недостающие: блоки темы, потом предложения выбранных модулей                                     | `syncTheme` = `theme:sync` (ассеты) + `webx:blocks:import --theme --publish`; `installOfferedBlocks` — как сейчас                     |
-| `webx:setup` повторно                  | создаёт только то, чего нет                                                                              | существующие типы не трогает: импорт по правилу §4, предложения — `present`                                                           |
+| `webx:setup`                           | **не пишет**, и демо не сеет                                                                             | `syncTheme` = только `theme:sync` (ассеты); в конце печатает команды для dev: `import --theme --publish`, `offered --install`, `demo` |
 | `webx:blocks:import`                   | создаёт новые; существующие — только `--replace=<slug>`                                                  | §4                                                                                                                                    |
 | `webx:blocks:export`                   | не пишет в базу                                                                                          | без изменений                                                                                                                         |
 | `webx:blocks:offered [--install]`      | создаёт недостающие, существующий slug — `present`                                                       | без изменений. Slug, который несёт тема, — `carried`, подсказка: `webx:blocks:import --theme` вместо `theme:sync`                     |
@@ -178,7 +180,7 @@ MCP-инструмента импорта нет; если появится — 
   перекрытия — строкой `failed`). `Panel\Importer` — статусы `differs`/`replaced` вместо `updated`,
   `replace`, `diff`/`from`/`draft` в строке, `theme_source`/`theme_hash` для документов слоёв;
   `Panel\TypeDiff`, `Panel\ReplaceRefused`. `webx:setup` — `theme:sync`, затем
-  `webx:blocks:import --theme --publish` (только с темой и `module-blocks`). `webx:module:add` —
+  `webx:blocks:import --theme --publish` (только с темой и `module-blocks`; убрано в webx-ui#46). `webx:module:add` —
   подсказка, если в `vendor/<пакет>/resources/blocks` есть файлы. Панель — переключатель «Replace» в
   `BlockImportDialog`, слова в словаре `module-blocks` на всех языках.
 - **Тесты.** `ImportThemeTest` (вместо `ThemeSyncTest`): создание, `unchanged`, `differs` после
@@ -194,3 +196,10 @@ MCP-инструмента импорта нет; если появится — 
   `webx:blocks:import --theme --dry-run`.
 - **Ловушка** — «новый блок темы не появился после деплоя» в `docs/pitfalls/laravel-and-php.md`;
   лишние значения после смены схемы — §17.2 `WEBX_UI_MODULE_BLOCKS.md`.
+- **Setup без схем** (webx-ui#46, этап 3; решение человека 22.10.2026): `webx:setup` схем блоков не ставит никогда —
+  платформа хостинга создаёт им стейджинг. Из него ушли `webx:blocks:import --theme --publish`,
+  `installOfferedBlocks` и `webx:demo`; флага-исключения нет. `--demo`/`--no-demo` остались для
+  старых скриптов и ничего не делают (`--demo` предупреждает). В конце setup печатает команды для
+  dev-копии и предупреждение о языках демо. Тесты: `SetupWritesNoTypesTest` (module-blocks — setup на
+  чистой базе с настоящими `migrate`, `theme:sync`, `blocks:*`, `demo` оставляет 0 типов),
+  `SetupThemeTest`. `scripts/starter-site.sh` и `scripts/php-smoke.sh` ставят блоки и демо явно.

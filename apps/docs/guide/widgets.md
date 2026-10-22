@@ -435,9 +435,9 @@ The fields of every form of the site — `<x-webx-field>` of fourteen types, its
 
 ## Blocks
 
-On a site with `module-blocks` and `module-media` the package offers eight block types — `webx:setup`
-installs them, or `php artisan webx:blocks:offered --install --module=widgets`. Installed, they
-belong to the site: an update never overwrites them.
+On a site with `module-blocks` and `module-media` the package offers eight block types —
+`php artisan webx:blocks:offered --install --module=widgets` installs them (`webx:setup` prints the
+line, it does not run it). Installed, they belong to the site: an update never overwrites them.
 
 | Block       | Fields                                                                         | Inside                     |
 | ----------- | ------------------------------------------------------------------------------ | -------------------------- |

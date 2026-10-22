@@ -1015,8 +1015,8 @@ Google Maps не сделан (§19): это свой JavaScript API со сво
 ### 15.1 Предложенные блоки
 
 `resources/blocks/*.json` — документы `webx:blocks:export`, предлагаются `BlockOffers` под именем
-`widgets`, если есть `module-blocks` и `module-media` (все стоят на полях библиотеки). `webx:setup`
-ставит их сам (`webx:blocks:offered --install --module=widgets`); дальше тип принадлежит сайту, тип
+`widgets`, если есть `module-blocks` и `module-media` (все стоят на полях библиотеки). Ставит их
+`webx:blocks:offered --install --module=widgets` (`webx:setup` только печатает её); дальше тип принадлежит сайту, тип
 с тем же slug в цепочке темы важнее (§10.3 спеки тем). Слова типов — английские, группа `media`.
 Стили блоков — на `em`, `currentColor` и прозрачности, без `--site-*`: блок предлагается и сайту без
 темы. Значения `default` читаются, как панель рисует, — блок, сохранённый до появления поля, ведёт

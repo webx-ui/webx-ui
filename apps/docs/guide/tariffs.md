@@ -38,7 +38,7 @@ their own, **Tariffs**.
 
 The last command installs the block type the module **offers** — **Tariffs**, slug `tariffs` — and
 publishes it. A type the site already has under that slug is never touched: once installed, the
-type is the site's to rewrite. `webx:setup` runs the command for a new site.
+type is the site's to rewrite. `webx:setup` only prints the command, for a dev copy.
 [Offered block types](/guide/collections#the-block-types-a-module-offers) explains the mechanism.
 
 Permissions: `tariffs.view` opens the list, `tariffs.manage` writes tariffs and their order,

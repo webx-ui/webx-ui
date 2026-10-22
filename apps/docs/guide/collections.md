@@ -241,9 +241,11 @@ php artisan webx:blocks:offered            # what is offered, and what of it is 
 php artisan webx:blocks:offered --install  # install and publish what is missing
 ```
 
-`webx:setup` runs the install for the modules somebody chooses. On a site that adds the module to
-an existing panel it is the one command the module's README names — `webx:module:add` prints it
-and installs nothing, and a deploy or `composer update` never does either. **A type with the same slug is
+Nothing installs it by itself. `webx:setup` prints the line for the modules somebody chose, for a dev
+copy — it makes staging and production sites too, and a type reaches those only by a person's
+import. On a site that adds the module to an existing panel it is the one command the module's
+README names — `webx:module:add` prints it and installs nothing, and a deploy or `composer update`
+never does either. **A type with the same slug is
 never touched** — the site may have rebuilt it from top to bottom. An offered type that does not
 draw on its own `sample` stays a draft, and the command exits with 1.
 

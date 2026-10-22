@@ -8,7 +8,6 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 
-use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;
@@ -55,8 +54,8 @@ final class SetupCommand extends Command
                             {--db-password= : That user\'s password}
                             {--admin= : The first administrator\'s email address}
                             {--admin-name= : What to call them}
-                            {--demo : Fill the site with demo content}
-                            {--no-demo : Leave the site empty}
+                            {--demo : Kept for old scripts: setup seeds no demo, `webx:demo` does}
+                            {--no-demo : Kept for old scripts: setup never seeds a demo}
                             {--theme= : The packaged theme the local theme/ stands on (webx-ui/theme-default)}
                             {--no-theme : No theme: the layout, the header, the footer and the styles are files of the site}
                             {--no-build : Leave npm alone — no install, no build}
@@ -113,7 +112,6 @@ final class SetupCommand extends Command
 
         try {
             $this->gather();
-            $this->warnAboutTheDemo();
             $this->writeEnvironment();
             $this->prepareDatabase();
             $this->installModules();
@@ -121,10 +119,8 @@ final class SetupCommand extends Command
             $this->wireThePanel($files);
             $this->migrate();
             $this->syncTheme($files);
-            $this->installOfferedBlocks();
             $this->createAdministrator();
             $this->build();
-            $this->seedDemo($files);
             $this->callTheDoctor();
         } catch (SetupFailed $failure) {
             $this->newLine();
@@ -134,6 +130,7 @@ final class SetupCommand extends Command
         }
 
         $this->summarise();
+        $this->adviseADevCopy();
 
         return self::SUCCESS;
     }
@@ -202,8 +199,6 @@ final class SetupCommand extends Command
             file_exists($this->laravel->resourcePath('views/components/layout.blade.php')),
             $this->public,
         );
-
-        $this->answers['demo'] = $this->wantsDemo() ? 'yes' : 'no';
 
         if (in_array('admins', $this->modules, true)) {
             $this->answers['admin'] = $this->answer(
@@ -330,43 +325,6 @@ final class SetupCommand extends Command
             ...$this->catalogue->withRequirements($chosen),
             ...$this->catalogue->installed(),
         ]));
-    }
-
-    private function wantsDemo(): bool
-    {
-        if ($this->option('no-demo')) {
-            return false;
-        }
-
-        if ($this->option('demo') || ! $this->input->isInteractive()) {
-            return true;
-        }
-
-        return confirm(label: 'Fill it with demo content to look at', default: true);
-    }
-
-    /**
-     * A language of the site the demo is not written in (spec WEBX_UI_THEMES.md §15.2), said
-     * before anything is installed, while leaving it out of `--locales` is still one word away.
-     * Only a warning: the demo seeds all the same, and a site that will translate it in the panel
-     * has nothing to change.
-     */
-    private function warnAboutTheDemo(): void
-    {
-        if ($this->answers['demo'] !== 'yes') {
-            return;
-        }
-
-        $codes = LocalesConfig::codes($this->answers['locales']);
-        $default = $codes[0] ?? 'en';
-
-        foreach ($this->catalogue->demoGaps($codes, $this->modules, $this->theme->package) as $locale => $ids) {
-            $this->components->warn(sprintf('The demo is not written in %s for: %s.', $locale, implode(', ', $ids)));
-            // A line of its own: the warning box wraps at the terminal's width, wherever it falls.
-            $this->line('  '.($locale === $default
-                ? 'It seeds in English there, under the default language.'
-                : "Those pages show the {$default} words in {$locale} until somebody translates them."));
-        }
     }
 
     // -- The steps -------------------------------------------------------------------------
@@ -519,14 +477,11 @@ final class SetupCommand extends Command
      * public/themes — once more after every `composer update`, which is when a new release of a
      * layer arrives: the line goes into the site's `post-update-cmd`.
      *
-     * And their block types, which go into the tables, once: a new site is a developer's, and it
-     * should open with the blocks its theme draws (BLOCK_SCHEMAS §3). By the import, which
-     * creates what is missing and leaves a type the site has alone — so a second setup changes
-     * nothing — after `migrate` and before the modules' offers, so that a slug the chain carries
-     * is the chain's type rather than the one a module offers (§10.3). Never again after this:
-     * neither `composer update` nor a deploy writes block types.
+     * Files only, never block types (BLOCK_SCHEMAS §1): the hosting platform makes its staging
+     * and production sites with this command too, and a type reaches those only by a person's
+     * import. A dev copy puts them on by the commands {@see adviseADevCopy()} prints.
      *
-     * Not fatal: the site still opens, with less style, and each command is one line to run again.
+     * Not fatal: the site still opens, with less style, and the command is one line to run again.
      *
      * A site without a theme syncs too when it has the widgets: the scripts of its forms, which
      * `@webxWidgets` in its layout links, come from public/themes the same way.
@@ -538,10 +493,6 @@ final class SetupCommand extends Command
         }
 
         $this->artisan(['webx:theme:sync'], 'webx:theme:sync', fatal: false);
-
-        if ($this->theme->themed && $this->catalogue->has('webx-ui/module-blocks')) {
-            $this->artisan(['webx:blocks:import', '--theme', '--publish'], 'webx:blocks:import --theme', fatal: false);
-        }
 
         $this->syncAfterUpdates($files);
     }
@@ -799,31 +750,6 @@ final class SetupCommand extends Command
         }
     }
 
-    /**
-     * The block types the chosen modules bring along (§3.4 of the FAQ spec): a FAQ is put on a
-     * page as a block, and a FAQ whose block the site has to build first is half a module.
-     *
-     * For the chosen modules (and the widgets, when installed) only, and never over a type the site already has — the command
-     * behind this leaves an existing slug alone, so a second run of setup changes nothing. Not
-     * fatal: a site without its FAQ block is a site to finish in the panel, not one to abandon.
-     */
-    private function installOfferedBlocks(): void
-    {
-        // A library that offers blocks is chosen by being installed: the widgets come with the
-        // theme, and their gallery and logos are blocks of every themed site.
-        $offering = [...$this->modules, ...($this->catalogue->has('webx-ui/widgets') ? ['widgets'] : [])];
-
-        if (! $this->catalogue->has('webx-ui/module-blocks') || $offering === []) {
-            return;
-        }
-
-        $this->artisan(
-            ['webx:blocks:offered', '--install', ...array_map(static fn (string $id): string => '--module='.$id, $offering)],
-            'webx:blocks:offered --install',
-            fatal: false,
-        );
-    }
-
     private function missingPassportMigrations(): bool
     {
         return glob($this->laravel->databasePath('migrations/*_create_oauth_auth_codes_table.php')) === [];
@@ -910,23 +836,6 @@ final class SetupCommand extends Command
         $this->mustRun([...$npm, 'run', 'build'], 'npm run build', fatal: false);
     }
 
-    private function seedDemo(Filesystem $files): void
-    {
-        if ($this->answers['demo'] !== 'yes') {
-            return;
-        }
-
-        if ($files->exists($this->laravel->storagePath('app/webx-demo.json'))) {
-            $this->components->twoColumnDetail('Demo content', 'already there — `php artisan webx:demo --remove` takes it out');
-
-            return;
-        }
-
-        // Not fatal: demo content is the least of what this command does, and a module that
-        // refuses to seed has already said why.
-        $this->artisan(['webx:demo'], 'webx:demo', fatal: false);
-    }
-
     private function callTheDoctor(): void
     {
         if (! $this->getApplication()?->has('webx:doctor')) {
@@ -951,6 +860,67 @@ final class SetupCommand extends Command
             $this->components->twoColumnDetail('Sign in', $this->answers['admin']);
             $this->components->twoColumnDetail('Password', $this->answers['password']);
             $this->components->warn('That password is printed once and stored nowhere. Change it from the panel.');
+        }
+    }
+
+    /**
+     * What setup leaves to a person: the block types and the demo, which write into the tables
+     * of the site and so are a developer's to ask for (BLOCK_SCHEMAS §3). In the order they go
+     * on: the theme's types first, so that a slug the chain carries is the chain's type rather
+     * than the one a module offers (§10.3); the demo last, because its pages stand on both.
+     */
+    private function adviseADevCopy(): void
+    {
+        $commands = [];
+
+        if ($this->catalogue->has('webx-ui/module-blocks')) {
+            if ($this->theme->themed) {
+                $commands[] = 'php artisan webx:blocks:import --theme --publish';
+            }
+
+            // A library that offers blocks is chosen by being installed, as the widgets are.
+            $offering = [...$this->modules, ...($this->catalogue->has(self::WIDGETS) ? ['widgets'] : [])];
+
+            if ($offering !== []) {
+                $commands[] = 'php artisan webx:blocks:offered --install '
+                    .implode(' ', array_map(static fn (string $id): string => '--module='.$id, $offering));
+            }
+        }
+
+        $commands[] = 'php artisan webx:demo';
+
+        $this->newLine();
+
+        if ($this->option('demo')) {
+            $this->components->warn('--demo is ignored: setup no longer seeds a demo.');
+        }
+
+        $this->components->info('Setup puts no block types and no demo on a site. On a dev copy, run:');
+        // Lines of their own rather than a list: a list wraps at the terminal's width, and these
+        // are to be copied whole.
+        foreach ($commands as $command) {
+            $this->line('  '.$command);
+        }
+
+        $this->warnAboutTheDemo();
+    }
+
+    /**
+     * A language of the site the demo is not written in (spec WEBX_UI_THEMES.md §15.2), said
+     * beside the command that seeds it. Only a warning: the demo seeds all the same, and a site
+     * that will translate it in the panel has nothing to change.
+     */
+    private function warnAboutTheDemo(): void
+    {
+        $codes = LocalesConfig::codes($this->answers['locales']);
+        $default = $codes[0] ?? 'en';
+
+        foreach ($this->catalogue->demoGaps($codes, $this->modules, $this->theme->package) as $locale => $ids) {
+            $this->components->warn(sprintf('The demo is not written in %s for: %s.', $locale, implode(', ', $ids)));
+            // A line of its own: the warning box wraps at the terminal's width, wherever it falls.
+            $this->line('  '.($locale === $default
+                ? 'It seeds in English there, under the default language.'
+                : "Those pages show the {$default} words in {$locale} until somebody translates them."));
         }
     }
 

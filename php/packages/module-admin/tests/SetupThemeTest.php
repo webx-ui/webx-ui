@@ -219,34 +219,36 @@ final class SetupThemeTest extends TestCase
     }
 
     /**
-     * A new site opens with the blocks its theme draws (BLOCK_SCHEMAS §3): the import puts the
-     * layers' types in once, after migrate and before the offers, so that a slug the chain carries
-     * is the chain's. After that only the files follow updates — post-update-cmd is the sync, which
-     * writes no block types.
+     * Setup writes no block types and seeds no demo (BLOCK_SCHEMAS §1): the hosting platform
+     * makes staging and production sites with it, and a type reaches those only by a person's
+     * import. The theme's files are synced after migrate, and post-update-cmd syncs them again;
+     * the commands that write types are printed for a dev copy, in the order they go on.
      */
     #[Test]
-    public function the_layers_are_synced_and_their_block_types_imported_after_migrate_and_before_the_offers(): void
+    public function the_layers_are_synced_and_the_block_types_are_left_to_the_commands_it_prints(): void
     {
         $installed = (array) json_decode((string) $this->files->get($this->installed), true);
         $installed['packages'][] = ['name' => 'webx-ui/module-blocks', 'version' => '0.28.0'];
+        $installed['packages'][] = ['name' => 'webx-ui/widgets', 'version' => '0.28.0'];
         $this->files->put($this->installed, (string) json_encode($installed));
 
-        $this->runSetup()->assertSuccessful();
+        $this->runSetup(['--demo' => true, '--no-demo' => false])
+            ->expectsOutputToContain('--demo is ignored')
+            ->expectsOutputToContain('Setup puts no block types and no demo on a site. On a dev copy, run:')
+            ->expectsOutputToContain('php artisan webx:blocks:import --theme --publish')
+            ->expectsOutputToContain('php artisan webx:blocks:offered --install --module=pages --module=admins --module=blocks --module=seo --module=settings --module=widgets')
+            ->expectsOutputToContain('php artisan webx:demo')
+            ->assertSuccessful();
 
         $migrate = array_search('artisan migrate --force', $this->ran, true);
         $sync = array_search('artisan webx:theme:sync', $this->ran, true);
-        $import = array_search('artisan webx:blocks:import --theme --publish', $this->ran, true);
         $this->assertIsInt($migrate);
         $this->assertIsInt($sync);
-        $this->assertIsInt($import);
         $this->assertLessThan($sync, $migrate);
-        $this->assertLessThan($import, $migrate);
-
-        foreach ($this->ran as $index => $line) {
-            if (str_contains($line, 'webx:blocks:offered')) {
-                $this->assertLessThan($index, $import);
-            }
-        }
+        $this->assertSame([], array_values(array_filter(
+            $this->ran,
+            fn (string $line): bool => str_contains($line, 'webx:blocks:') || str_contains($line, 'webx:demo'),
+        )));
 
         $composer = (string) $this->files->get($this->app->basePath('composer.json'));
         $this->assertSame(1, substr_count($composer, '@php artisan webx:theme:sync --ansi'));
@@ -257,9 +259,12 @@ final class SetupThemeTest extends TestCase
     }
 
     #[Test]
-    public function without_the_blocks_module_nothing_is_imported(): void
+    public function without_the_blocks_module_only_the_demo_is_advised(): void
     {
-        $this->runSetup()->assertSuccessful();
+        $this->runSetup()
+            ->doesntExpectOutputToContain('webx:blocks:')
+            ->expectsOutputToContain('php artisan webx:demo')
+            ->assertSuccessful();
 
         $this->assertContains('artisan webx:theme:sync', $this->ran);
         $this->assertEmpty(array_filter($this->ran, fn (string $line): bool => str_contains($line, 'webx:blocks:')));
@@ -278,13 +283,11 @@ final class SetupThemeTest extends TestCase
     }
 
     #[Test]
-    public function a_language_the_demo_is_not_written_in_is_warned_about_before_anything_is_installed(): void
+    public function a_language_the_demo_is_not_written_in_is_warned_about_beside_the_command_that_seeds_it(): void
     {
         $this->runSetup([
             '--modules' => 'pages,admins,faq',
             '--locales' => 'de,ru,pl',
-            '--no-demo' => false,
-            '--demo' => true,
         ])
             // The default language: the theme's demo stands in for the pages, so all three lack it.
             ->expectsOutputToContain('The demo is not written in de for: pages, faq')
@@ -296,9 +299,9 @@ final class SetupThemeTest extends TestCase
     }
 
     #[Test]
-    public function no_demo_no_warning(): void
+    public function a_language_the_demo_is_written_in_is_not_warned_about(): void
     {
-        $this->runSetup(['--modules' => 'pages,admins,faq', '--locales' => 'de'])
+        $this->runSetup(['--modules' => 'pages,admins,faq', '--locales' => 'en,ru'])
             ->doesntExpectOutputToContain('The demo is not written in')
             ->assertSuccessful();
     }

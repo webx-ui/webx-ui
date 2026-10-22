@@ -31,7 +31,7 @@ createAdmin({
 
 `press()` is one section and one entry of the menu — **Press**, without a group of its own. The last
 command installs the three block types the module **offers** and publishes them; a type the site
-already has under one of those slugs is never touched. `webx:setup` runs it for a new site.
+already has under one of those slugs is never touched. `webx:setup` only prints it, for a dev copy.
 [Offered block types](/guide/collections#the-block-types-a-module-offers) explains the mechanism.
 
 Permissions: `press.view` opens the list, `press.manage` writes — the order too, which is the order

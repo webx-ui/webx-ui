@@ -3,9 +3,11 @@
 # Tear down the starter site and build it again from nothing (spec WEBX_UI_THEMES.md §18.2).
 #
 # The starter site is what everybody who runs `webx:setup` today gets: the skeleton, the default
-# set of modules of a company site, three languages and the demo — and nothing done by hand. So
-# it is never patched, only rebuilt; anything that had to be fixed by hand afterwards belongs in
-# `webx:setup`, the theme or the skeleton. Run it after every change to any of the three.
+# set of modules of a company site, three languages and the demo — and nothing done by hand but
+# the three commands setup prints for a dev copy (the block types and the demo, which setup never
+# writes: BLOCK_SCHEMAS §1). So it is never patched, only rebuilt; anything that had to be fixed
+# by hand afterwards belongs in `webx:setup`, the theme or the skeleton. Run it after every change
+# to any of the three.
 #
 # It is wired to this checkout the way the other demo sites are: Composer through a path
 # repository (vendor/webx-ui/* are links into php/packages), npm through `file:` specifiers.
@@ -265,12 +267,19 @@ setup=(
     --name='WebX Starter' --domain="$NAME" --locales=en,ru,pl
     --db-connection=mariadb --db-host="$DB_HOST" --db-port="$DB_PORT"
     --db-username="$DB_USERNAME" --db-password="$DB_PASSWORD" --db="$DB_DATABASE"
-    --admin-name=Owner --demo --no-build
+    --admin-name=Owner --no-build
 )
 [ -n "$WITH" ] && setup+=(--modules="+$WITH")
 [ -n "$ADMIN" ] && setup+=(--admin="$ADMIN")
 [ -n "${COMPOSER_PHAR:-}" ] && setup+=(--composer="$(native "$COMPOSER_PHAR")")
 artisan "${setup[@]}"
+
+step 'Block types and the demo'
+# What setup prints for a dev copy, in its order: the theme's types, the offers of the modules on
+# the site, then the demo on top of both. The tests under tests/starter stand on all three.
+artisan webx:blocks:import --theme --publish --no-interaction
+artisan webx:blocks:offered --install --no-interaction
+artisan webx:demo --no-interaction
 
 step 'Point npm at this checkout and build'
 [ -d "$MONOREPO/packages/core/dist" ] || fail "packages/core/dist is missing — run pnpm build in $MONOREPO first."

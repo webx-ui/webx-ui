@@ -545,8 +545,8 @@ Export needs only to see the section; import is `blocks.manage` and a site with 
 making a type by hand.
 
 On a site with a theme the same files have a third home: `theme/blocks/`, and the `blocks/` of every
-theme layer below it. `webx:setup` puts them on a new site; after that
-`php artisan webx:blocks:import --theme` reads the layers instead of `resources/blocks`, by the same
+theme layer below it. Nothing puts them on a site by itself — `webx:setup` prints the line for a
+dev copy: `php artisan webx:blocks:import --theme` reads the layers instead of `resources/blocks`, by the same
 rules — `webx:theme:sync`, a deploy and `composer update` never write a block type
 ([Styles › Blocks of the theme](./styles.md#blocks-of-the-theme)). The default theme brings six —
 `hero`, `text`, `media-text`, `cards`, `cta`, `contact` ([Styles › The six blocks](./styles.md#the-six-blocks-of-the-default-theme)) — and on a

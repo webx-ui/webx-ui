@@ -36,8 +36,8 @@ panel.
 The last command installs the block type the module **offers** — **FAQ**, slug `faq` — and
 publishes it. Block types live in the database and are the site's to rewrite, so the module never
 puts it there by itself, and a type the site already has under that slug is never touched.
-`webx:setup` runs the command for a new site; on a site that already has a panel it is the one line
-to run by hand. [Offered block types](/guide/collections#the-block-types-a-module-offers) explains
+`webx:setup` never runs the command — it prints it at the end, for a dev copy — and anywhere else it
+is the one line to run by hand. [Offered block types](/guide/collections#the-block-types-a-module-offers) explains
 the mechanism.
 
 Permissions: `faq.view` opens the list, `faq.manage` writes (the order too), and

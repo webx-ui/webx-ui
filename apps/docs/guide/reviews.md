@@ -34,8 +34,8 @@ because the server puts both in the `reviews` group.
 
 The last command installs the block type the module **offers** — **Reviews**, slug `reviews` — and
 publishes it. A type the site already has under that slug is never touched: once installed, the
-type is the site's to rewrite. `webx:setup` runs the command for a new site; on a site that already
-has a panel it is the one line to run by hand.
+type is the site's to rewrite. `webx:setup` never runs the command: it prints it at the end, for a
+dev copy, and anywhere else it is the one line to run by hand.
 [Offered block types](/guide/collections#the-block-types-a-module-offers) explains the mechanism.
 
 Permissions: `reviews.view` opens the list, `reviews.manage` writes (the order too), and

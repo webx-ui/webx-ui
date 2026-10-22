@@ -142,7 +142,7 @@ value rather than as a mistake.
 
 The demo content (`webx:demo`) is written in English, Russian and Polish and keeps only the
 languages the site has; a language it lacks gets the default language's words, and the default one
-gets the English. `webx:setup` names such a language before it installs — see
+gets the English. `webx:setup` names such a language beside the `webx:demo` line it prints — see
 [demo content](./new-site.md#demo-content).
 
 ### Scripts and fonts

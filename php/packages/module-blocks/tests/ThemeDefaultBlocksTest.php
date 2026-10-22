@@ -28,7 +28,7 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
  * The six blocks of `webx-ui/theme-default` (THEMES §9.1) on a site, through the real import
- * (`webx:blocks:import --theme`, what `webx:setup` runs): they publish — publishing renders each
+ * (`webx:blocks:import --theme`, what `webx:setup` prints for a dev copy): they publish — publishing renders each
  * sample —, every variant prints, and the demo of this package yields to them (§23, TH2.3): it
  * does not seed a slug the theme carries, and a site that got the demo first keeps its copy until
  * someone names it with `--replace`.
@@ -292,7 +292,7 @@ final class ThemeDefaultBlocksTest extends TestCase
     }
 
     /**
-     * The theme's types through the import `webx:setup` runs, by slug.
+     * The theme's types through the import `webx:setup` prints, by slug.
      *
      * @return array<string, array{status: string, error: string|null}>
      */
