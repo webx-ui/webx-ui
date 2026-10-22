@@ -10,10 +10,14 @@ through the core's registries. For products, the filter, the card and the engine
 
 - **Tables** `catalog_labels` (`WebxUi\CatalogLabels\Models\Label`) and `catalog_label_product`.
   A label has a `code`, which appears in addresses as `label_sale` and is the same in every
-  language. It also has a tone (`color`), and the flags `is_badge` (drawn on the card) and
-  `is_visible` (offered in the filter).
+  language. It also has a colour (`color`): one of six tones (`neutral`, `primary`, `success`,
+  `warning`, `danger`, `info`), or a colour of its own as `#rrggbb` with `text_color` on it
+  (`#rrggbb`, or null for black or white by WCAG contrast). And the flags `is_badge` (drawn on
+  the card) and `is_visible` (offered in the filter).
 - **View** `webx-catalog-labels::badges`, printed at the point `catalog.card.badges`. The tone
-  becomes a class, `wx-catalog-badge--{tone}`, and the site's CSS decides the colour.
+  becomes a class, `wx-catalog-badge--{tone}`, and the site's CSS decides the colour. A colour of
+  its own becomes `wx-catalog-badge--custom` with `--webx-label-bg` / `--webx-label-fg` on the
+  element, read by `resources/theme/catalog-labels.css`.
 - **Panel**: module `catalog-labels` in the catalogue's group, under «Dictionaries»; screen
   `catalog.label-form`. The API is `catalog/labels` under the panel's API path. A label saved
   moves the `catalog` cache group.
@@ -22,6 +26,8 @@ through the core's registries. For products, the filter, the card and the engine
   `labels` of the search document, an exchange column, and the bulk actions `add-label` and
   `remove-label`. It also adds `products()->label('sale', 'new')`.
 - **MCP** tools `catalog_labels_list`, `_get`, `_create`, `_update`, `_delete`, `_reorder`.
+  `_create` and `_update` take `values` (`color`, `text_color`, `code`, flags); the answer
+  carries every value.
 
 ### Permissions
 
@@ -41,21 +47,29 @@ to read, `cms.can:catalog.manage` to write.
 | You want                            | Do this                                                                                       |
 | ----------------------------------- | --------------------------------------------------------------------------------------------- |
 | Badge colours of the site           | style `.wx-catalog-badge--{tone}` in the site's CSS                                           |
+| One label in a brand colour         | `color` = `#rrggbb` (form: «Own colour»); `text_color` only if contrast picks wrong           |
 | Different badge markup              | `php artisan vendor:publish --tag=webx-catalog-labels-views`, keep only `badges.blade.php`    |
 | A service label only for templates  | switch off both `is_badge` and `is_visible`; select it with `products()->label('code')`       |
 | Products with a label in a template | `products()->label('sale', 'new')->take(8)` (by code)                                         |
 | A field on the label form           | a patch: `Screens::extend('catalog.label-form', [...])`; `project-fields` is the place for it |
 | Other words in the panel            | `php artisan vendor:publish --tag=webx-catalog-labels-lang`                                   |
 
-Label form node ids: `naming`, `title`, `code`, `color`, `is-badge`, `is-visible`,
-`project-fields`.
+Label form node ids: `naming`, `title`, `code`, `color`, `text-color`, `is-badge`,
+`is-visible`, `project-fields`.
+
+### Classes
+
+- `wx-catalog-badges` — the list of badges on a card.
+- `wx-catalog-badge` — one badge; `wx-catalog-badge--<tone>` — its tone, the site paints it.
+- `wx-catalog-badge--custom` — a colour of its own: `background` and `color` from
+  `--webx-label-bg` / `--webx-label-fg` on the element. Restyle the shape, keep the variables.
 
 ## Do not
 
 - Do not edit `vendor/webx-ui/module-catalog-labels`, and do not copy it into the site. If no row
   above fits, the package is missing a seam: say so.
 - Do not hard-code colours for each label in the badge view. The tone is a class, so add the
-  colour in the site's CSS. Then a new label with an existing tone needs no template change.
+  colour in the site's CSS; a one-off colour is the label's own `#rrggbb`, not a CSS rule.
 - Do not delete a label that products still have (it is refused). First remove it with the bulk
   action `remove-label`.
 - Do not rename a label's `code` on a live site without a reason. Templates that call

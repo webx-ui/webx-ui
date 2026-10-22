@@ -48,6 +48,14 @@
 бейджа не рисует). `catalog_label_product` — ключ по паре, index на `product_id`.
 
 - **Тон, а не hex:** шаблон сайта кладёт тон в класс, панель рисует `WxTag` того же тона.
+- **Свой цвет — исключение для меток:** `color` = `#rrggbb` вместо тона (фирменный цвет акции),
+  `text_color` (string(7), nullable, миграция `2026_10_22`) — текст на нём; пусто — чёрный или
+  белый по контрасту WCAG (`Dictionary::contrastText`, во фронте — `contrastText`). У тона
+  `text_color` сбрасывается. Разрешает вид модели (`customColors()`): у статусов наличия — нет,
+  «в наличии» значит одно и то же на любом сайте. На сайте — `li.wx-catalog-badge--custom` с
+  `--webx-label-bg` / `--webx-label-fg` в `style`, их читает `resources/theme/catalog-labels.css`;
+  в панели — сплошной тег с переменными бейджа на элементе. MCP: `catalog_labels_create` и
+  `_update` принимают `values.color` / `values.text_color`, описание инструмента называет формат.
 - **Код, а не слаг:** меток мало, `/noutbuki/label_sale/` на всех языках один, и шаблон пишет
   `->label('sale')`, не зная id.
 - Удалить метку с товарами нельзя — сначала массовое «убрать метку».
@@ -133,15 +141,17 @@ index на `is_visible`. `position` — один порядок: справоч�
   `style.css` (его импортирует `extra.webx.panel.style`).
 - **Формы** — экраны `catalog.label-form`, `catalog.stock-status-form`, `catalog.brand-form`.
   Метка и статус — одна вкладка: название, код, тон, флаги. Тон — свой тип `wx-catalog-tone`
-  (`module-catalog`, на сервере — `OptionType`): шесть тегов и рядом сама запись с набираемым
-  названием. Бренд — «Основное» (название, слаг, логотип из `module-media`, публикация,
+  (`module-catalog`, на сервере — `ToneFieldType`): шесть тегов и рядом сама запись с набираемым
+  названием; с `props.custom` (метки) седьмой — «Свой цвет» с выбором фона, и поле
+  `text_color` (`wx-color-picker`, «Автоматически»), видимое только у своего цвета. Бренд — «Основное» (название, слаг, логотип из `module-media`, публикация,
   featured), «Описание», «SEO», «История» (id записи `wx-history` отдаёт общий редактор категорий).
 - **Слова разделов — в php:** общие экраны говорят «категория», поэтому у `label.php`,
   `status.php`, `brand.php` свои `new`, `empty`, `count`, `hidden` и прочие; тест паритета держит
   npm и php, русский и английский вровень.
 - **`wx-select` в `module-admin` понимает `source`:** варианты — записи списка по имени (как у
   `wx-categories`), без него — обычный `WxSelect`.
-- **Колонки спутников рисуются по форме значения**, не по ключу: список `{ name, color }` — теги,
+- **Колонки спутников рисуются по форме значения**, не по ключу: список `{ name, color }` — теги
+  (`color` = `#rrggbb` с `text` — сплошной тег в этих цветах),
   объект — тег, `{ name, visible: false }` — приглушённое имя, строка — строка. Прячутся по
   очереди: `layout: fixed` отдаёт `minWidth` названия соседям; ширины — по замеру содержимого,
   окно 1440 px держит все три колонки спутников.
@@ -187,7 +197,8 @@ index на `is_visible`. `position` — один порядок: справоч�
 
 ## 9. Витрина
 
-- **Вьюхи:** `webx-catalog-labels::badges` (`ul.wx-catalog-badges`, `li.wx-catalog-badge--<тон>`),
+- **Вьюхи:** `webx-catalog-labels::badges` (`ul.wx-catalog-badges`, `li.wx-catalog-badge--<тон>`
+  или `--custom` со своими цветами в переменных),
   `webx-catalog-stock::status` (`p.wx-catalog-stock--<тон>` плюс `--card` / `--product`),
   `webx-catalog-brands::line` (`p.wx-catalog-brand` с `--card` / `--product`, ссылка на страницу
   бренда). Стилей пакеты не несут — их оформляет тема сайта на токенах. Бейдж стоит внутри ссылки

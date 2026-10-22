@@ -7,6 +7,7 @@ namespace WebxUi\CatalogLabels\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Categories\CategoryKind;
 use WebxUi\Catalog\Dictionaries\Dictionary;
 use WebxUi\Catalog\Models\Product;
@@ -16,7 +17,11 @@ use WebxUi\Catalog\Models\Product;
  * card when `is_badge`, a value of the filter when `is_visible`; a label with neither is a
  * service one ("for the newsletter") that only a template or an agent picks products by.
  *
+ * Painted in a tone of the site, or in a colour of its own: `color` is then `#rrggbb` and
+ * `text_color` the text on it — `#rrggbb` too, or null for black or white by contrast.
+ *
  * @property bool $is_badge
+ * @property string|null $text_color
  */
 class Label extends Dictionary
 {
@@ -29,7 +34,7 @@ class Label extends Dictionary
     protected $table = 'catalog_labels';
 
     /** @var list<string> */
-    protected $fillable = ['title', 'code', 'color', 'is_visible', 'is_badge', 'position'];
+    protected $fillable = ['title', 'code', 'color', 'text_color', 'is_visible', 'is_badge', 'position'];
 
     /** @var array<string, string> */
     protected $casts = ['is_badge' => 'boolean'];
@@ -48,6 +53,10 @@ class Label extends Dictionary
             noun: 'label',
             plural: 'labels',
             items: 'products',
+            fields: '`color` is a tone of the site — '.implode(', ', self::TONES).' — or a colour of the label\'s own as '
+                .'`#rrggbb`; `text_color` is the text on a colour of its own, `#rrggbb`, or null for black or white by '
+                .'contrast (a tone ignores it). `code` is the label in addresses and templates, `is_badge` draws it on the '
+                .'card, `is_visible` offers it in the filter.',
         );
     }
 
@@ -72,7 +81,7 @@ class Label extends Dictionary
      */
     public function categoryFields(): array
     {
-        return [...parent::categoryFields(), 'is_badge'];
+        return [...parent::categoryFields(), 'text_color', 'is_badge'];
     }
 
     /**
@@ -80,7 +89,64 @@ class Label extends Dictionary
      */
     public function touchingFields(): array
     {
-        return [...parent::touchingFields(), 'is_badge'];
+        return [...parent::touchingFields(), 'text_color', 'is_badge'];
+    }
+
+    public function customColors(): bool
+    {
+        return true;
+    }
+
+    public function writeCategoryValue(string $field, mixed $value): void
+    {
+        if ($field === 'text_color') {
+            $this->setAttribute('text_color', self::normalColor($value));
+
+            return;
+        }
+
+        parent::writeCategoryValue($field, $value);
+    }
+
+    /**
+     * The two colours of a label painted in its own: `['background' => …, 'text' => …]`, the text
+     * worked out by contrast when none was chosen. Null for a label in a tone.
+     *
+     * @return array{background: string, text: string}|null
+     */
+    public function ownColors(): ?array
+    {
+        if (! $this->hasOwnColor()) {
+            return null;
+        }
+
+        $background = (string) $this->color;
+
+        return ['background' => $background, 'text' => $this->text_color ?? self::contrastText($background)];
+    }
+
+    /**
+     * A text colour only goes with a colour of the label's own: a tone takes both from the site,
+     * so one left behind by a switch to a tone is dropped rather than kept for nobody.
+     *
+     * @throws ValidationException
+     */
+    protected function assertValid(): void
+    {
+        $text = $this->getAttribute('text_color');
+
+        if (! $this->hasOwnColor()) {
+            $this->setAttribute('text_color', null);
+        } elseif ($text !== null && preg_match(self::HEX, (string) $text) !== 1) {
+            throw ValidationException::withMessages(['text_color' => [(string) __('webx-catalog-labels::errors.text-color')]]);
+        }
+
+        parent::assertValid();
+    }
+
+    protected function colorMessage(): string
+    {
+        return (string) __('webx-catalog-labels::errors.color', ['tones' => implode(', ', self::TONES)]);
     }
 
     /**

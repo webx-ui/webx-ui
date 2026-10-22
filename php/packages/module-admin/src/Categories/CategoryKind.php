@@ -29,6 +29,7 @@ final readonly class CategoryKind
      * @param  string  $plural  The key of the list in answers: "rubrics".
      * @param  string  $items  What is filed under a category, plural: "articles".
      * @param  bool  $single  An item is under one at most — a product's brand — so there is no main one among several.
+     * @param  string|null  $fields  What the kind's own fields of the editor hold, for an agent: told by `create` and `update`.
      */
     public function __construct(
         public string $model,
@@ -40,6 +41,7 @@ final readonly class CategoryKind
         public string $plural = 'categories',
         public string $items = 'items',
         public bool $single = false,
+        public ?string $fields = null,
     ) {}
 
     /** The key the number of items travels under: `articles_count`. */

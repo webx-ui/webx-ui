@@ -73,6 +73,7 @@ final readonly class CategoryTools
                 ? "A {$one}: its id, or its slug in any language."
                 : "A {$one}: its id, or its title in any language.",
         ];
+        $fields = $kind->fields === null ? '' : ' '.$kind->fields;
         $slug = $addressed
             ? ['slug' => ['type' => ['string', 'object'], 'description' => 'The address part, the same shape as the title. Made out of the title when omitted, transliterated by each title\'s language.']]
             : [];
@@ -114,11 +115,13 @@ final readonly class CategoryTools
                     ? 'The address is made out of the title unless a slug is given; an address another page already answers at is refused, not quietly changed. '
                     : '')
                 ."A title another {$one} already has, in any language, is refused. "
-                ."It is visible at once — a {$one} has no draft — so make one only when a person asked for it.",
-                fn (array $arguments): array => $this->attempt(fn (): array => $this->create($arguments)),
+                ."It is visible at once — a {$one} has no draft — so make one only when a person asked for it. "
+                ."The other fields of its editor go in `values`, as in {$this->toolName('update')}.".$fields,
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->create($arguments, $user)),
                 ['properties' => [
                     'title' => ['type' => ['string', 'object'], 'description' => 'The name: a string in the default language, or an object of language → text.'],
                     ...$slug,
+                    'values' => ['type' => 'object', 'description' => 'Optional: field name → value of the other fields of the editor, set together with the title.'],
                 ], 'required' => ['title']],
                 permission: $kind->manage,
             ),
@@ -129,7 +132,7 @@ final readonly class CategoryTools
                 .($addressed ? 'slug, ' : '')
                 .'visibility, and '
                 .'whatever else the screen of this site has. Only the fields you send change; the answer carries '
-                .'every value the editor now holds. It takes effect on the site at once.',
+                .'every value the editor now holds. It takes effect on the site at once.'.$fields,
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     $one => $category,
@@ -196,12 +199,34 @@ final readonly class CategoryTools
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
-    private function create(array $arguments): array
+    private function create(array $arguments, ?Authenticatable $user = null): array
     {
         $this->refuseTaken($arguments['title'] ?? null);
+        $values = $arguments['values'] ?? [];
 
-        $work = function () use ($arguments): array {
-            $category = $this->form->create($this->model, $arguments['title'] ?? null, $arguments['slug'] ?? null);
+        if (! is_array($values)) {
+            throw new ToolFailure('`values` must be an object of field name → value.');
+        }
+
+        if ($values !== []) {
+            Arguments::refuseUnknown($values, $this->fieldsOf(new $this->model), $this->toolName('create'));
+        }
+
+        $work = function () use ($arguments, $values, $user): array {
+            // One transaction: a value refused after the insert leaves no record behind.
+            $category = (new $this->model)->getConnection()->transaction(function () use ($arguments, $values, $user): Model {
+                $category = $this->form->create($this->model, $arguments['title'] ?? null, $arguments['slug'] ?? null);
+
+                if ($values !== []) {
+                    $this->form->save(
+                        $category,
+                        $values,
+                        $user instanceof HasPermissions ? static fn (string $permission): bool => $user->hasPermission($permission) : null,
+                    );
+                }
+
+                return $category;
+            });
 
             // Read back: a column the insert left to its default (`is_visible`) is not on the
             // model yet, and the answer would call a visible category hidden.

@@ -197,7 +197,7 @@ final class LabelsTest extends TestCase
             ->assertStatus(422)->assertJsonValidationErrors('code');
         $this->actingAs($editor, 'cms')->putJson($this->api("labels/{$id}"), ['values' => ['code' => 'Big_Sale']])
             ->assertStatus(422)->assertJsonValidationErrors('code');
-        $this->actingAs($editor, 'cms')->putJson($this->api("labels/{$id}"), ['values' => ['color' => '#ff0000']])
+        $this->actingAs($editor, 'cms')->putJson($this->api("labels/{$id}"), ['values' => ['color' => 'red']])
             ->assertStatus(422)->assertJsonValidationErrors('color');
 
         $values = $this->actingAs($editor, 'cms')->getJson($this->api("labels/{$id}"))->assertOk()->json('data.values');

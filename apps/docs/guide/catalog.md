@@ -466,7 +466,9 @@ search document, a column of the exchange and a place on the card.
 one in every language), a tone (`neutral`, `primary`, `success`, `warning`, `danger`, `info`) that
 the site turns into a class (`wx-catalog-badge--danger`) and paints itself, `is_badge` to draw it on
 the card and `is_visible` to offer it in the filter — both off, it is a service label for templates.
-Bulk actions: `add-label`, `remove-label`. A label still on products cannot be deleted.
+Instead of a tone a label can have a colour of its own, `#rrggbb` («Own colour» in the editor): the
+text on it is black or white by WCAG contrast unless `text_color` says otherwise, and the badge is
+`wx-catalog-badge--custom` with `--webx-label-bg` / `--webx-label-fg` set on the element. Bulk actions: `add-label`, `remove-label`. A label still on products cannot be deleted.
 
 **Stock** — in stock, out of stock, on order; the migration makes these three. One per product. A
 status with «can be bought» off refuses the product with the code `stock` and its own name. A

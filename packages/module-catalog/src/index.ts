@@ -4,7 +4,7 @@ export { createCatalogApi, productSearch, CATALOG_API, type CatalogApi } from '.
 export { catalogMessages } from './messages'
 export { dictionaryOptions, dictionarySection, type DictionaryOptions } from './dictionaries'
 export { FACET_PREFIX } from './filters'
-export { TONES, toneBadge, type Tone } from './tones'
+export { TONES, toneBadge, isOwnColor, contrastText, ownBadgeStyle, type Tone } from './tones'
 export {
   provideProductEditor,
   productEditorKey,

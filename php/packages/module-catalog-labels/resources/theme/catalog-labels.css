@@ -1,0 +1,17 @@
+/*
+ * module-catalog-labels: the base look of a badge in a colour of its own (THEMES §10.2).
+ *
+ * A badge in a tone is the site's to paint (`.wx-catalog-badge--sale` and the like), and this
+ * file leaves it alone. A label an editor painted in its own colour carries the two colours on
+ * the element, as `--webx-label-bg` and `--webx-label-fg`; this is the one rule that reads them.
+ * The values here are only what a badge looks like if a theme's own markup drops the variables —
+ * the element's style wins over them. The shape of a badge stays the theme's.
+ */
+
+.wx-catalog-badge--custom {
+  --webx-label-bg: var(--site-color-surface-muted);
+  --webx-label-fg: var(--site-color-text);
+
+  background: var(--webx-label-bg);
+  color: var(--webx-label-fg);
+}

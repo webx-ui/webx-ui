@@ -23,7 +23,13 @@ export const catalogLabelsMessages: Record<string, Messages> = {
       warning: 'Warning',
       danger: 'Danger',
       info: 'Info',
+      custom: 'Own colour',
     },
+    background: 'Background',
+    'text-color': 'Text colour',
+    'text-color-help':
+      'Black or white, whichever reads better on the background, unless you pick one.',
+    'text-auto': 'Automatic',
     badge: 'Badge on the card',
     'badge-help':
       'Off for a service label that only picks products, such as one for the newsletter.',
