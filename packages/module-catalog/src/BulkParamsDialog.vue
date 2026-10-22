@@ -34,6 +34,7 @@ const tree = useCategoryTree(context)
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 
 const values = reactive<Record<string, unknown>>({})
 
@@ -93,6 +94,7 @@ function apply(): void {
     >
       <wx-tree-select
         v-if="param.type === 'category'"
+        :empty-text="panel('filters.nothing-found')"
         :model-value="(values[param.name] as number | null | undefined) ?? null"
         :nodes="tree.nodes.value ?? []"
         node-key="id"

@@ -56,6 +56,7 @@ const router = useRouter()
 useCatalogPropertiesMessages()
 
 const t = useTranslate(NAMESPACE)
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const path = computed(() => `${props.base}/properties`)
@@ -259,6 +260,7 @@ async function reorder(): Promise<void> {
       />
       <wx-select
         v-model="group"
+        :empty-text="panel('filters.nothing-found')"
         :options="groups"
         :placeholder="t('panel.group-any')"
         :aria-label="t('property.group_id')"
@@ -279,6 +281,7 @@ async function reorder(): Promise<void> {
     <template v-else>
       <wx-sortable-list
         v-model="rows"
+        :drag-label="panel('filters.reorder')"
         class="wx-catalog-properties__list"
         plain
         item-key="id"

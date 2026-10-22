@@ -32,6 +32,7 @@ const address = useRecordAddress()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 
 type Choice = CategoryNode & { locked?: boolean }
 
@@ -82,6 +83,8 @@ onMounted(() => {
   <wx-tree-select
     v-bind="$attrs"
     v-model="model"
+    :filter-placeholder="panel('filters.search')"
+    :empty-text="panel('filters.nothing-found')"
     class="wx-catalog-category"
     :nodes="nodes"
     :multiple="props.multiple"

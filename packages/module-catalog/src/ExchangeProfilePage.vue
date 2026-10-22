@@ -53,6 +53,7 @@ const router = useRouter()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const list = computed(() => `${props.base}/exchange/profiles`)
@@ -306,6 +307,7 @@ const actions = computed<ScreenAction[]>(() => {
               />
               <wx-select
                 v-model="pair.code"
+                :empty-text="panel('filters.nothing-found')"
                 :options="targets"
                 filterable
                 clearable
@@ -366,6 +368,7 @@ const actions = computed<ScreenAction[]>(() => {
 
         <div v-if="canManage" class="wx-catalog-profile__add">
           <wx-select
+            :empty-text="panel('filters.nothing-found')"
             :model-value="adding"
             :options="spare"
             filterable

@@ -38,6 +38,7 @@ const editor = useCatalogCategoryEditor()
 useCatalogPropertiesMessages()
 
 const t = useTranslate(NAMESPACE)
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const locale = computed(() => admin.i18n.state.locale)
@@ -174,6 +175,7 @@ const typeOf = (row: PropertyRow) => t(`property.types.${row.type}`)
 
       <wx-sortable-list
         v-model="own"
+        :drag-label="panel('filters.reorder')"
         size="sm"
         item-key="id"
         :item-label="(row: PropertyRow) => propertyName(row, locale)"

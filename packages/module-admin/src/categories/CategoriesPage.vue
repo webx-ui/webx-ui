@@ -208,6 +208,7 @@ async function reorder(): Promise<void> {
       -->
       <wx-sortable-list
         v-model="rows"
+        :drag-label="t('filters.reorder')"
         class="wx-categories__list"
         hoverable
         plain

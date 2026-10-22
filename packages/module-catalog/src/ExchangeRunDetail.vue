@@ -30,6 +30,7 @@ const api = createExchangeApi(admin)
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const journal = createModal<void, { runId: number; base: string }>(ExchangeJournalDialog)
@@ -165,6 +166,7 @@ const fileTheirs = computed(() => fileGone.value && props.run.file_yours === fal
 
     <template v-if="run.failed > 0">
       <wx-table
+        :loading-text="panel('filters.loading')"
         :data="errors"
         :columns="columns"
         :loading="loading"

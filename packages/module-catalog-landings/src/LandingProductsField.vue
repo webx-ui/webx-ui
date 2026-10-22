@@ -31,6 +31,7 @@ const editor = useLandingEditor()
 useCatalogLandingsMessages()
 
 const t = useTranslate(NAMESPACE)
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const locked = computed(() => editor?.locked.value ?? false)
@@ -127,6 +128,7 @@ function drop(id: number): void {
 
     <wx-sortable-list
       v-model="items"
+      :drag-label="panel('filters.reorder')"
       item-key="id"
       item-label="name"
       size="sm"

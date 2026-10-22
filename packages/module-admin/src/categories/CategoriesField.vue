@@ -117,6 +117,7 @@ function remove(id: number): void {
   <div class="wx-categories-field">
     <wx-sortable-list
       v-model="rows"
+      :drag-label="t('filters.reorder')"
       plain
       size="sm"
       item-key="id"

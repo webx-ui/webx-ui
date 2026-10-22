@@ -58,6 +58,7 @@ const router = useRouter()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const step = ref(0)
@@ -494,6 +495,7 @@ function go(index: number): void {
           </div>
           <div class="wx-catalog-import__target" role="cell">
             <wx-select
+              :empty-text="panel('filters.nothing-found')"
               :model-value="mapping[one.cell] ?? null"
               :options="targetsFor(one.cell)"
               clearable

@@ -81,6 +81,7 @@ const locales = useLocales()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const uploads = ref<UploadFile[]>([])
@@ -475,6 +476,7 @@ onBeforeUnmount(() => {
       <wx-sortable-list
         v-if="images.length > 0"
         v-model="images"
+        :drag-label="panel('filters.reorder')"
         class="wx-catalog-gallery__list"
         item-key="id"
         :item-label="(image: ProductImage) => image.path.split('/').pop() ?? String(image.id)"

@@ -53,6 +53,7 @@ const editor = usePropertyEditor()
 useCatalogPropertiesMessages()
 
 const t = useTranslate(NAMESPACE)
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const property = computed(() => editor?.property.value ?? null)
@@ -407,6 +408,8 @@ async function moved(event: TreeDropEvent<ValueNode>): Promise<void> {
 
       <wx-tree
         v-else-if="searching"
+        :expand-label="panel('filters.expand')"
+        :collapse-label="panel('filters.collapse')"
         :model-value="found ?? []"
         class="wx-catalog-values__tree"
         :empty-text="found === null ? t('panel.searching') : t('panel.nothing-found')"
@@ -428,6 +431,9 @@ async function moved(event: TreeDropEvent<ValueNode>): Promise<void> {
         v-else
         v-model="roots"
         v-model:expanded="expanded"
+        :drag-label="panel('filters.reorder')"
+        :expand-label="panel('filters.expand')"
+        :collapse-label="panel('filters.collapse')"
         class="wx-catalog-values__tree"
         lazy
         :load="loadBranch"

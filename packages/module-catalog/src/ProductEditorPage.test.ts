@@ -213,7 +213,7 @@ describe('WxCatalogProductEditor', () => {
     await wrapper.findAll('.wx-tabs__tab')[1]!.trigger('mousedown')
     await flushPromises()
 
-    const grip = wrapper.find('.wx-catalog-gallery [aria-label^="Reorder"]')
+    const grip = wrapper.find('.wx-catalog-gallery .wx-sortable-list__grip')
 
     await grip.trigger('keydown', { key: ' ' })
     await grip.trigger('keydown', { key: 'ArrowDown' })

@@ -34,6 +34,7 @@ const editor = useCatalogCategoryEditor()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 
 const loading = ref(true)
 const failed = ref(false)
@@ -200,6 +201,7 @@ onMounted(load)
       <wx-sortable-list
         v-else
         v-model="rows"
+        :drag-label="panel('filters.reorder')"
         size="sm"
         item-key="key"
         item-label="label"

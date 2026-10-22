@@ -38,6 +38,7 @@ const editor = useLandingEditor()
 useCatalogLandingsMessages()
 
 const t = useTranslate(NAMESPACE)
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const locked = computed(() => editor?.locked.value ?? false)
@@ -257,6 +258,7 @@ const takenLink = computed(() =>
 
       <wx-select
         v-else
+        :empty-text="panel('filters.nothing-found')"
         class="wx-catalog-landing-set__values"
         :model-value="valuesOf(choice)"
         :options="optionsOf(String(key), choice)"
@@ -285,6 +287,7 @@ const takenLink = computed(() =>
     <div class="wx-catalog-landing-set__foot">
       <wx-select
         v-if="adding.length > 0"
+        :empty-text="panel('filters.nothing-found')"
         class="wx-catalog-landing-set__add"
         :model-value="null"
         :options="adding"

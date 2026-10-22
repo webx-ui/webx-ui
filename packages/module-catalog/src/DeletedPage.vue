@@ -49,6 +49,7 @@ const router = useRouter()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 type Row = DeletedProduct | DeletedCategory
@@ -177,6 +178,7 @@ function actionsFor(row: Row): RowAction[] {
       <wx-table
         :key="String(kind)"
         v-model:search="search"
+        :loading-text="panel('filters.loading')"
         :data="page"
         :columns="columns"
         row-key="id"

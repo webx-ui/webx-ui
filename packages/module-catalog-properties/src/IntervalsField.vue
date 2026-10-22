@@ -46,6 +46,7 @@ const editor = usePropertyEditor()
 useCatalogPropertiesMessages()
 
 const t = useTranslate(NAMESPACE)
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const property = computed(() => editor?.property.value ?? null)
@@ -170,6 +171,7 @@ async function save(): Promise<void> {
 
       <wx-sortable-list
         v-model="rows"
+        :drag-label="panel('filters.reorder')"
         class="wx-catalog-intervals__list"
         item-key="key"
         :item-label="(row: Row) => row.title[admin.i18n.state.locale] ?? ''"

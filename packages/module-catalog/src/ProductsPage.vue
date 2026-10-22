@@ -651,6 +651,7 @@ const actions = computed<ScreenAction[]>(() => {
         v-model:selected="selected"
         v-model:search="search"
         v-model:page="pageNumber"
+        :loading-text="admin('filters.loading')"
         :data="page"
         :columns="columns"
         row-key="id"
@@ -685,6 +686,8 @@ const actions = computed<ScreenAction[]>(() => {
           <wx-form-item v-for="facet in facets" :key="facet.key" :label="facet.label">
             <wx-tree-select
               v-if="facet.kind === 'tree'"
+              :filter-placeholder="admin('filters.search')"
+              :empty-text="admin('filters.nothing-found')"
               :model-value="treeChoice(facet.key)"
               :nodes="tree.nodes.value ?? []"
               node-key="id"
@@ -738,6 +741,7 @@ const actions = computed<ScreenAction[]>(() => {
 
             <wx-select
               v-else
+              :empty-text="admin('filters.nothing-found')"
               :model-value="valuesOf(facet.key)"
               :options="optionsOf(facet.key)"
               multiple
