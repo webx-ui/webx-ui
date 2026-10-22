@@ -1,5 +1,21 @@
 # @webx-ui/module-inbox
 
+## 0.9.1
+
+### Patch Changes
+
+- e42643b: Removing one row of a list asks first, in a small popover by the button («Delete?» — «Yes» / «Cancel»), instead of removing at once. `WxAction` gains `confirm`, `confirmText` and `cancelText`: with a question set, `click` comes only on a yes. `WxPopconfirm` puts the focus on Cancel, goes ahead on Enter and reads the question out as the panel's description. The panel's words are `useRemoveConfirm()` of `@webx-ui/module-admin` (`webx-admin::confirm.*`, ten languages); labels and categories of a record, related records, banner layers, landing products and sets, category properties, intervals, inbox choices, notification chats and emails, SEO links, FAQ rows and the mapping and column rows of an exchange profile ask with it. Deleting a whole record keeps its dialog.
+- e42643b: Shortcodes work in the texts of the modules, not only in blocks. A screen's `wx-rich-text` offers the site's shortcodes behind the `[]` button by default (`props.shortcodes: false` switches it off), and a `wx-input` or `wx-textarea` does when its node says `props.shortcodes: true` — a product's summary, an article's lead, a review. On the site those fields are printed through the new `WebxUi\Admin\Shortcodes\PageText` (`html()`, `text()`, `plain()`, `plainFromHtml()`), so a page, a card in a list, a feed and the JSON-LD of one record all show the value, never a bare `[phone]`; the record keeps the bracket. The inbox's thank-you and consent sentence take them too, printed before the visitor's answers go in. `module-admin` exports `takesShortcodes()` and `useShortcodesWhen()` for a module that draws an editor of its own.
+- e42643b: Addresses, anchors and codes made of a name are transliterated by the name's language in every module, not only in the catalog: articles, tags, events, pages, recipes, services, vacancies, FAQ anchors, press outlets, role codes and form field names. «Хіт» is `khit` in Ukrainian and `hit` in Russian, never `xit`. The panel's address field follows the title the same way as it is typed (`slugify(title, separator, locale)`, `useDefaultLocale()`). Existing addresses do not change.
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+  - @webx-ui/module-admin@0.33.0
+  - @webx-ui/core@0.45.0
+
 ## 0.9.0
 
 ### Minor Changes

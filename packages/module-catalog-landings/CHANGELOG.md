@@ -1,5 +1,23 @@
 # @webx-ui/module-catalog-landings
 
+## 0.2.3
+
+### Patch Changes
+
+- e42643b: The catalog and its satellites no longer fall back to the English defaults of core components in a translated panel: drag handles, branch toggles, table spinners, picker search boxes and their empty answers are said in the panel's language. The words live in `webx-admin::filters` (`loading`, `reorder`, `search`, `nothing-found`, `expand`, `collapse`) in all ten languages, for any module to hand to a core component.
+- e42643b: Removing one row of a list asks first, in a small popover by the button («Delete?» — «Yes» / «Cancel»), instead of removing at once. `WxAction` gains `confirm`, `confirmText` and `cancelText`: with a question set, `click` comes only on a yes. `WxPopconfirm` puts the focus on Cancel, goes ahead on Enter and reads the question out as the panel's description. The panel's words are `useRemoveConfirm()` of `@webx-ui/module-admin` (`webx-admin::confirm.*`, ten languages); labels and categories of a record, related records, banner layers, landing products and sets, category properties, intervals, inbox choices, notification chats and emails, SEO links, FAQ rows and the mapping and column rows of an exchange profile ask with it. Deleting a whole record keeps its dialog.
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+  - @webx-ui/module-catalog@0.10.0
+  - @webx-ui/module-admin@0.33.0
+  - @webx-ui/core@0.45.0
+  - @webx-ui/schema@0.9.5
+
 ## 0.2.2
 
 ### Patch Changes

@@ -29,18 +29,18 @@
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
         "illuminate/view": "^13.0",
-        "webx-ui/localization": "^0.84.0",
-        "webx-ui/mcp": "^0.84.0",
-        "webx-ui/module-admin": "^0.84.0",
-        "webx-ui/module-blocks": "^0.84.0",
-        "webx-ui/module-media": "^0.84.0",
-        "webx-ui/module-seo": "^0.84.0",
-        "webx-ui/routing": "^0.84.0"
+        "webx-ui/localization": "^0.85.0",
+        "webx-ui/mcp": "^0.85.0",
+        "webx-ui/module-admin": "^0.85.0",
+        "webx-ui/module-blocks": "^0.85.0",
+        "webx-ui/module-media": "^0.85.0",
+        "webx-ui/module-seo": "^0.85.0",
+        "webx-ui/routing": "^0.85.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/themes": "^0.84.0"
+        "webx-ui/themes": "^0.85.0"
     },
     "suggest": {
         "webx-ui/module-audit": "The site audit searches its content, drafts and hidden records included, for addresses of a development stand.",
@@ -68,7 +68,7 @@
         "webx": {
             "module": "services",
             "npm": {
-                "@webx-ui/module-services": "^0.3.3"
+                "@webx-ui/module-services": "^0.3.4"
             },
             "panel": {
                 "import": "import { services } from '@webx-ui/module-services'",

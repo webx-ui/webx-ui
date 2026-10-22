@@ -29,17 +29,17 @@
         "illuminate/http": "^13.0",
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/localization": "^0.84.0",
-        "webx-ui/mcp": "^0.84.0",
-        "webx-ui/module-admin": "^0.84.0",
-        "webx-ui/module-blocks": "^0.84.0",
-        "webx-ui/module-media": "^0.84.0"
+        "webx-ui/localization": "^0.85.0",
+        "webx-ui/mcp": "^0.85.0",
+        "webx-ui/module-admin": "^0.85.0",
+        "webx-ui/module-blocks": "^0.85.0",
+        "webx-ui/module-media": "^0.85.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-pages": "^0.84.0",
-        "webx-ui/module-services": "^0.84.0"
+        "webx-ui/module-pages": "^0.85.0",
+        "webx-ui/module-services": "^0.85.0"
     },
     "suggest": {
         "webx-ui/module-pages": "A page with a reviews block is the site's page of reviews.",
@@ -68,7 +68,7 @@
         "webx": {
             "module": "reviews",
             "npm": {
-                "@webx-ui/module-reviews": "^0.2.2"
+                "@webx-ui/module-reviews": "^0.2.3"
             },
             "panel": {
                 "import": "import { reviews } from '@webx-ui/module-reviews'",

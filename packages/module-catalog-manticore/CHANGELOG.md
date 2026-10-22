@@ -1,5 +1,19 @@
 # @webx-ui/module-catalog-manticore
 
+## 0.3.3
+
+### Patch Changes
+
+- e42643b: The catalog and its satellites no longer fall back to the English defaults of core components in a translated panel: drag handles, branch toggles, table spinners, picker search boxes and their empty answers are said in the panel's language. The words live in `webx-admin::filters` (`loading`, `reorder`, `search`, `nothing-found`, `expand`, `collapse`) in all ten languages, for any module to hand to a core component.
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+  - @webx-ui/module-admin@0.33.0
+  - @webx-ui/core@0.45.0
+
 ## 0.3.2
 
 ### Patch Changes

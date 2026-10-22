@@ -1,5 +1,19 @@
 # @webx-ui/module-vacancies
 
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+  - @webx-ui/module-admin@0.33.0
+  - @webx-ui/core@0.45.0
+  - @webx-ui/schema@0.9.5
+
 ## 0.3.2
 
 ### Patch Changes
