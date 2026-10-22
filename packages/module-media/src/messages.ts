@@ -217,6 +217,7 @@ export const mediaMessages: Record<string, Messages> = {
     accept: 'This field takes :kind only.',
     localized: 'A field of files cannot be translated — the captions inside it are.',
     missing: 'There is no file [:path] in the library: pick one from it.',
+    'missing-id': 'There is no file with id :id in the library: pick one from it.',
     kind: {
       image: 'images',
       video: 'video',
