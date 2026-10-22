@@ -90,6 +90,47 @@ final class ProductFormTest extends TestCase
     }
 
     #[Test]
+    public function a_new_product_without_a_unit_is_priced_per_piece(): void
+    {
+        $id = (int) $this->actingAs($this->editor(), 'cms')->postJson($this->api('products'), [
+            'values' => ['name' => ['en' => 'Belt']],
+        ])->assertCreated()->assertJsonPath('data.values.unit', 'pcs')->json('data.product.id');
+
+        $this->assertSame('pcs', DB::table('catalog_products')->where('id', $id)->value('unit'));
+
+        // Emptied in the form, it goes back to the default rather than to nothing.
+        $this->actingAs($this->editor(), 'cms')->putJson($this->api("products/{$id}"), [
+            'values' => ['unit' => null],
+        ])->assertOk()->assertJsonPath('data.values.unit', 'pcs');
+    }
+
+    #[Test]
+    public function a_product_saved_without_a_unit_reads_as_the_default_on_the_site_and_in_the_panel(): void
+    {
+        $product = $this->product('Belt', $this->category('belts'), ['price' => 100]);
+        DB::table('catalog_products')->where('id', $product->id)->update(['unit' => null]);
+
+        $this->assertSame('pcs', $product->refresh()->unit);
+        $this->actingAs($this->editor(), 'cms')->getJson($this->api("products/{$product->id}"))
+            ->assertOk()->assertJsonPath('data.values.unit', 'pcs');
+        $this->get("/belt-{$product->id}")->assertOk()->assertSee('/ pcs');
+    }
+
+    #[Test]
+    public function a_site_picks_its_own_default_unit_or_none(): void
+    {
+        config(['webx-catalog.default_unit' => 'kg']);
+        $this->assertSame('kg', $this->product('Flour')->unit);
+
+        config(['webx-catalog.default_unit' => null]);
+        $this->assertNull($this->product('Gift')->unit);
+
+        // A default the site does not list is no default.
+        config(['webx-catalog.default_unit' => 'parsec']);
+        $this->assertNull($this->product('Map')->unit);
+    }
+
+    #[Test]
     public function a_unit_not_in_the_config_is_refused(): void
     {
         $product = $this->product('Belt');

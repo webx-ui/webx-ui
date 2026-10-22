@@ -121,7 +121,8 @@ final class CatalogTools
             Tool::mutating(
                 'products_create',
                 'Create a product from the values of its editor. It is not on the site until it is published, and '
-                .'it cannot be published without a main category. The address is made from the name when no slug is given.',
+                .'it cannot be published without a main category. The address is made from the name when no slug is given; '
+                .'without a unit it is priced in the default one (default_unit in catalog://fields, usually pcs).',
                 fn (array $arguments): array => $this->write($arguments, fn (): array => $this->form()->describe(
                     $this->form()->save(new Product, $this->values($arguments)),
                 )),

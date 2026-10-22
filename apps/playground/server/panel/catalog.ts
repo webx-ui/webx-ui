@@ -188,6 +188,9 @@ category(13, 12, 1, 'Наушники', 'Headphones', 'naushniki')
 category(14, 12, 2, 'Колонки', 'Speakers', 'kolonki')
 category(15, 9, 2, 'Кабели', 'Cables', 'kabeli')
 
+/** `webx-catalog.default_unit`: what a product without a unit is priced in. */
+const DEFAULT_UNIT = 'pcs'
+
 const products: ProductRecord[] = []
 
 const CATALOGUE: [string, string, number | null, number, string][] = [
@@ -1308,8 +1311,11 @@ export function registerCatalog(
           break
         case 'sku':
         case 'barcode':
-        case 'unit':
           next[name] = typeof value === 'string' && value.trim() !== '' ? value.trim() : null
+          break
+        // Emptied, the unit goes back to `default_unit`, as the model does it.
+        case 'unit':
+          next.unit = typeof value === 'string' && value.trim() !== '' ? value.trim() : DEFAULT_UNIT
           break
         case 'price':
         case 'old_price':
@@ -1439,7 +1445,7 @@ export function registerCatalog(
       categories: [],
       price: null,
       old_price: null,
-      unit: 'pcs',
+      unit: DEFAULT_UNIT,
       priority: 0,
       is_published: false,
       seo: {},
@@ -1981,7 +1987,7 @@ export function registerCatalog(
       categories: [],
       price: null,
       old_price: null,
-      unit: 'pcs',
+      unit: DEFAULT_UNIT,
       priority: 0,
       is_published: false,
       seo: {},

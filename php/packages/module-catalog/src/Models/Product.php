@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Models;
 
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -141,6 +142,7 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     {
         static::saving(static function (self $product): void {
             $product->normaliseCodes();
+            $product->fillUnit();
             $product->fillSlugs();
             $product->assertSkuFree();
 
@@ -501,6 +503,39 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     public function recordHistory(string $event, array $changes = []): void
     {
         $this->writeHistory($event, $changes);
+    }
+
+    /**
+     * The unit a product is priced in when none was given: `webx-catalog.default_unit`, unless the
+     * site emptied it or named a unit it does not have.
+     */
+    public static function defaultUnit(): ?string
+    {
+        $unit = config('webx-catalog.default_unit');
+        $units = array_map('strval', (array) config('webx-catalog.units', []));
+
+        return is_string($unit) && in_array($unit, $units, true) ? $unit : null;
+    }
+
+    /**
+     * A product without a unit reads as one in the default unit — a row saved before there was a
+     * default as well — so the site, the panel, the API and an export all say "per piece".
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function unit(): Attribute
+    {
+        return Attribute::get(static fn (mixed $value): ?string => is_string($value) && $value !== '' ? $value : self::defaultUnit());
+    }
+
+    /** Every door in — the form, MCP, an import, a bulk run — writes the default rather than nothing. */
+    private function fillUnit(): void
+    {
+        $unit = $this->attributes['unit'] ?? null;
+
+        if (! is_string($unit) || $unit === '') {
+            $this->attributes['unit'] = self::defaultUnit();
+        }
     }
 
     /** An empty code is no code: `''` in a unique column would be a second product's clash. */

@@ -9,6 +9,7 @@ use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Tests\Fixtures\NotePart;
 use WebxUi\Mcp\McpResource;
@@ -81,6 +82,14 @@ final class McpTest extends TestCase
         $this->assertSame($product->id, $list['products'][0]['id']);
 
         $this->agent('catalog_products_unpublish', ['product' => $product->id], $reader)->assertHasErrors(['[catalog.manage]']);
+    }
+
+    #[Test]
+    public function a_product_created_without_a_unit_is_priced_per_piece(): void
+    {
+        $this->agent('catalog_products_create', ['values' => ['name' => ['en' => 'Boot']]])->assertOk()->assertSee('"unit":"pcs"');
+
+        $this->assertSame('pcs', Product::query()->sole()->unit);
     }
 
     #[Test]
