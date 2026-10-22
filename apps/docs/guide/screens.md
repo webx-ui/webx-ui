@@ -291,7 +291,8 @@ The value is an HTML string, it takes `localized`, and everything the node puts 
 It is `module-admin`'s and not the schema package's for two reasons, and both are things the
 editor does not know about. The first is language: a component of the design system carries
 English defaults and is translated by whoever opens it, so the toolbar's words come from the
-panel's own dictionary (`webx-admin::rich-text.*`). The second is pictures. The image button
+panel's own dictionary (`webx-admin::rich-text.*`). A module that draws an editor of its own hands it the same words
+with `useRichTextLabels()`. The second is pictures. The image button
 needs a library, the library is `module-media`, and `module-admin` cannot depend on it — the
 dependency runs the other way. So a module offers one:
 
@@ -476,7 +477,9 @@ extra props: a tab, for instance, takes its `value` from the node's id.
 
 A `field` is wrapped in a `WxFormItem`, which stops its control at the width a field is read at.
 An entry whose control is not a field in that sense — an editor, a table, a list of blocks — says
-`wide: true`, and the form item lets it take the whole width.
+`wide: true`, and the form item lets it take the whole width. A text editor is not one of them: `wx-rich-text`
+stops at the column like the fields above it, and a document that needs more room opens over the
+whole window from its toolbar.
 
 Two things the renderer does without being asked. A container — a card, a tab, a column — whose
 children are all hidden, or that was described with `children: []`, is not drawn: a screen can

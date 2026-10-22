@@ -39,4 +39,6 @@ return [
     'source-loss' => 'Düzenleyici bu işaretlemeyi tutmaz ve kaldıracak:',
     'source-drop' => 'Kaldır',
     'source-keep' => 'Düzenlemeye devam et',
+    'expand' => 'Genişlet',
+    'collapse' => 'Daralt',
 ];

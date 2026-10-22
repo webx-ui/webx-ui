@@ -56,6 +56,9 @@ export type RichTextLabelKey =
   | 'sourceLoss'
   | 'sourceDrop'
   | 'sourceKeep'
+  /** The button that opens the editor over the whole window, and the same button once it is. */
+  | 'expand'
+  | 'collapse'
 
 /**
  * What the editor calls its own buttons. It knows nothing about the panel it is opened in, so
@@ -123,6 +126,11 @@ export interface RichTextProps extends LocalizedFieldProps, TokenFieldProps {
   accept?: string[]
   /** What the buttons and the link bar are called, for a panel that is not in English. */
   labels?: RichTextLabels
+  /**
+   * Whether the toolbar offers to open the editor over the whole window. On by default for a
+   * document; an inline field is a line and never offers it.
+   */
+  expandable?: boolean
 }
 
 export interface RichTextEmits {
@@ -131,4 +139,6 @@ export interface RichTextEmits {
   blur: []
   /** An upload rejected. The editor stays untouched. */
   uploadError: [error: unknown, file: File]
+  /** Opened over the whole window, or given back to the form (the button or Esc). */
+  expand: [expanded: boolean]
 }

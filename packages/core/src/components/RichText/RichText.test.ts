@@ -59,6 +59,11 @@ function toolByLabel(wrapper: Wrapper, label: string) {
   return wrapper.get(`button[aria-label="${label}"]`)
 }
 
+/** The editor's own box. Its root is a teleport, so the wrapper itself has no classes. */
+function frameOf(wrapper: Wrapper) {
+  return wrapper.get('.wx-rich-text')
+}
+
 describe('WxRichText', () => {
   it('renders a toolbar and an editing surface', async () => {
     const wrapper = await mountEditor()
@@ -262,7 +267,7 @@ describe('WxRichText', () => {
 
     expect(editorOf(wrapper).isEditable).toBe(false)
     expect(toolByLabel(wrapper, 'Bold').attributes('disabled')).toBeDefined()
-    expect(wrapper.classes()).toContain('is-disabled')
+    expect(frameOf(wrapper).classes()).toContain('is-disabled')
   })
 
   it('leaves the model alone when it is locked and unlocked', async () => {
@@ -311,13 +316,155 @@ describe('WxRichText', () => {
   it('takes the error state from a form item', async () => {
     const wrapper = await mountEditor({ status: 'error' })
 
-    expect(wrapper.classes()).toContain('wx-rich-text--error')
+    expect(frameOf(wrapper).classes()).toContain('wx-rich-text--error')
   })
 
   it('renders only the tools it was given', async () => {
-    const wrapper = await mountEditor({ tools: ['bold', 'italic'] })
+    const wrapper = await mountEditor({ tools: ['bold', 'italic'], expandable: false })
 
     expect(wrapper.findAll('.wx-rich-text__tool')).toHaveLength(2)
+  })
+
+  describe('over the whole window', () => {
+    /** Once open the editor lives at the end of the body, out of the wrapper's reach. */
+    function frame(): HTMLElement {
+      return document.querySelector<HTMLElement>('.wx-rich-text.is-expanded')!
+    }
+
+    function expandButton(): HTMLButtonElement {
+      return frame().querySelector<HTMLButtonElement>('.wx-rich-text__expand')!
+    }
+
+    async function expand(wrapper: Wrapper) {
+      await toolByLabel(wrapper, 'Expand').trigger('click')
+      await flush()
+    }
+
+    it('moves the same editor to the end of the body and back', async () => {
+      const wrapper = await mountEditor({ modelValue: '<p>Long text</p>' })
+      const editor = editorOf(wrapper)
+
+      await expand(wrapper)
+
+      expect(frame().parentElement).toBe(document.body)
+      expect(wrapper.find('.wx-rich-text').exists()).toBe(false)
+      expect(expandButton().getAttribute('aria-label')).toBe('Collapse')
+      expect(editorOf(wrapper)).toBe(editor)
+      expect(wrapper.emitted('expand')).toEqual([[true]])
+
+      expandButton().click()
+      await flush()
+
+      expect(document.querySelector('.is-expanded')).toBeNull()
+      expect(wrapper.find('.wx-rich-text').exists()).toBe(true)
+      expect(wrapper.emitted('expand')).toEqual([[true], [false]])
+      wrapper.unmount()
+    })
+
+    it('keeps the caret where it was', async () => {
+      const wrapper = await mountEditor({ modelValue: '<p>One two three</p>' })
+      const editor = editorOf(wrapper) as EditorLike & {
+        state: { selection: { from: number; to: number } }
+      }
+      editor.commands.setTextSelection({ from: 5, to: 8 })
+
+      await expand(wrapper)
+
+      expect(editor.state.selection.from).toBe(5)
+      expect(editor.state.selection.to).toBe(8)
+      wrapper.unmount()
+    })
+
+    it('gives the form back on Esc', async () => {
+      const wrapper = await mountEditor()
+      await expand(wrapper)
+
+      frame().dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+      await flush()
+
+      expect(document.querySelector('.is-expanded')).toBeNull()
+      wrapper.unmount()
+    })
+
+    it('gives the form back on Esc typed in the text', async () => {
+      const wrapper = await mountEditor({ modelValue: '<p>Text</p>' })
+      await expand(wrapper)
+
+      frame()
+        .querySelector('.ProseMirror')!
+        .dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+        )
+      await flush()
+
+      expect(document.querySelector('.is-expanded')).toBeNull()
+      wrapper.unmount()
+    })
+
+    it('lets Esc close the link bar first', async () => {
+      const wrapper = await mountEditor()
+      await expand(wrapper)
+
+      frame().querySelector<HTMLButtonElement>('button[aria-label="Link"]')!.click()
+      await flush()
+      const input = frame().querySelector('.wx-rich-text__prompt-input')!
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      )
+      await flush()
+
+      expect(frame().querySelector('.wx-rich-text__prompt')).toBeNull()
+      expect(frame().classList).toContain('is-expanded')
+      wrapper.unmount()
+    })
+
+    it('switches the language in place', async () => {
+      const locales = twoLocales()
+      const wrapper = await mountEditor(
+        { modelValue: { en: '<p>Hello</p>', ru: '<p>Привет</p>' }, localized: true },
+        locales,
+      )
+      await expand(wrapper)
+
+      locales.active.value = 'ru'
+      await flush()
+
+      expect(frame().classList).toContain('is-expanded')
+      expect(editorOf(wrapper).getHTML()).toBe('<p>Привет</p>')
+      wrapper.unmount()
+    })
+
+    it('is not offered on a line, nor when turned off', async () => {
+      const line = await mountEditor({ inline: true })
+      expect(line.find('.wx-rich-text__expand').exists()).toBe(false)
+      line.unmount()
+
+      const off = await mountEditor({ expandable: false })
+      expect(off.find('.wx-rich-text__expand').exists()).toBe(false)
+      off.unmount()
+    })
+
+    it('is not offered inside a dialog, which would close under it', async () => {
+      const dialog = document.createElement('div')
+      dialog.setAttribute('role', 'dialog')
+      document.body.append(dialog)
+      const wrapper = mount(WxRichText, { attachTo: dialog })
+      await nextTick()
+      await nextTick()
+
+      expect(wrapper.find('.wx-rich-text__expand').exists()).toBe(false)
+      wrapper.unmount()
+      dialog.remove()
+    })
+
+    it('says it in the words it is given', async () => {
+      const wrapper = await mountEditor({ labels: { expand: 'Розгорнути' } })
+
+      expect(wrapper.find('button[aria-label="Розгорнути"]').exists()).toBe(true)
+      wrapper.unmount()
+    })
   })
 
   describe('the library key of a picture', () => {
@@ -401,7 +548,7 @@ describe('WxRichText', () => {
     it('stays a plain string when nobody asked for languages', async () => {
       const wrapper = await mountEditor({ modelValue: '<p>Hello</p>' }, twoLocales())
 
-      expect(wrapper.classes()).not.toContain('is-localized')
+      expect(frameOf(wrapper).classes()).not.toContain('is-localized')
       expect(wrapper.find('.wx-locale-picker').exists()).toBe(false)
     })
   })

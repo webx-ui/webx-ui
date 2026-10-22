@@ -141,8 +141,18 @@ RouteLocationRaw | boolean` компилировался в `{ type: Boolean }`:
   `role="alertdialog"` или своё `aria-labelledby` молча перезаписываются. Имя панели — имя кнопки,
   которая её открыла; вопрос и пояснение вешать через `aria-describedby` (`WxPopconfirm`). Тест
   на имя — с `attachTo: document.body`, иначе триггера нет в `document` и id не находится.
+- **Esc в тесте не уважает `preventDefault` вложенного обработчика.** `new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })`
+  создаётся некэнселлабельным: `preventDefault()` молчит, `defaultPrevented` остаётся `false`, и
+  внешний обработчик срабатывает, хотя в браузере не сработал бы. В тесте — `cancelable: true`.
+- **`wrapper.classes()` пуст у компонента с `<teleport>` в корне** (`WxRichText`): у обёртки нет
+  своего элемента. Классы — у `wrapper.get('.wx-rich-text')`; перенесённое в `body` — через
+  `document.querySelector`, `wrapper.find` его уже не видит.
 
 ## Редакторы: Tiptap, CodeMirror, датапикер, canvas
+
+- **Esc внутри Tiptap до формы не доходит.** ProseMirror тратит Escape на `selectParentNode` и
+  гасит событие (`defaultPrevented`), так что `@keydown.esc` на обёртке его пропускает. Своё
+  действие на Esc — в `editorProps.handleKeyDown` (так сворачивается развёрнутый `WxRichText`).
 
 - **Автодополнение `WxCodeEditor` молчит в браузере, хотя источник отдаёт варианты.** CodeMirror
   сравнивает набранное с текстом `from…to` результата: `to` за кареткой (захватить `}}`, которые

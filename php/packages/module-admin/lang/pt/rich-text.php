@@ -39,4 +39,6 @@ return [
     'source-loss' => 'O editor não mantém esta marcação e vai removê-la:',
     'source-drop' => 'Remover',
     'source-keep' => 'Continuar a editar',
+    'expand' => 'Expandir',
+    'collapse' => 'Reduzir',
 ];

@@ -50,9 +50,10 @@ import SlugField from './SlugField.vue'
  */
 export const adminTypes: TypeRegistry = {
   'wx-list': { component: ListScreen, kind: 'layout', labelProp: 'title' },
-  // Full width: an editor shares a row with nothing, and a form of two columns would give it
-  // half a line to write a page of text in.
-  'wx-rich-text': { component: RichTextField, kind: 'field', wide: true },
+  // The column of the form, like the fields above it: a panel as wide as a monitor made a line of
+  // two hundred characters, which nobody writes or reads. A document longer than the column
+  // leaves room for opens over the whole window from its toolbar instead.
+  'wx-rich-text': { component: RichTextField, kind: 'field' },
   // Wide as well: a row of the picker is a segmented switch, a section and a search box, and half
   // a form's width leaves the search box too narrow to read a page title in.
   'wx-link': { component: LinkField, kind: 'field', wide: true },

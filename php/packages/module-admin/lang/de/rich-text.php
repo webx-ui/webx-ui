@@ -39,4 +39,6 @@ return [
     'source-loss' => 'Der Editor behält dieses Markup nicht und entfernt es:',
     'source-drop' => 'Entfernen',
     'source-keep' => 'Weiter bearbeiten',
+    'expand' => 'Vergrößern',
+    'collapse' => 'Verkleinern',
 ];

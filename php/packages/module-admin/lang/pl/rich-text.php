@@ -39,4 +39,6 @@ return [
     'source-loss' => 'Edytor nie zachowuje tych znaczników i je usunie:',
     'source-drop' => 'Usuń',
     'source-keep' => 'Edytuj dalej',
+    'expand' => 'Rozwiń',
+    'collapse' => 'Zwiń',
 ];

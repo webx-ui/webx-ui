@@ -39,4 +39,6 @@ return [
     'source-loss' => 'L’éditeur ne conserve pas ce balisage et va le supprimer :',
     'source-drop' => 'Supprimer',
     'source-keep' => 'Continuer à modifier',
+    'expand' => 'Agrandir',
+    'collapse' => 'Réduire',
 ];

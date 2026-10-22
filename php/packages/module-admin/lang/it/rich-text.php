@@ -39,4 +39,6 @@ return [
     'source-loss' => 'L’editor non conserva questo markup e lo rimuoverà:',
     'source-drop' => 'Rimuovi',
     'source-keep' => 'Continua a modificare',
+    'expand' => 'Espandi',
+    'collapse' => 'Riduci',
 ];

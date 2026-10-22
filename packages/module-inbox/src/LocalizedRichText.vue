@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useLocales, WxLocales, WxRichText, type LocalizedValue } from '@webx-ui/core'
+import { useRichTextLabels } from '@webx-ui/module-admin'
 
 /**
  * Rich text in every language the site publishes in.
@@ -22,6 +23,9 @@ const props = withDefaults(defineProps<{ placeholder?: string; minHeight?: strin
 })
 
 const locales = useLocales()
+
+// The toolbar in the panel's language, as on every other editor of the panel.
+const labels = useRichTextLabels()
 
 const active = computed(() => {
   const chosen = locales.active.value
@@ -58,7 +62,12 @@ const text = computed({
 
 <template>
   <wx-locales v-if="locales.list.value.length > 0">
-    <wx-rich-text v-model="text" :placeholder="props.placeholder" :min-height="props.minHeight" />
+    <wx-rich-text
+      v-model="text"
+      :placeholder="props.placeholder"
+      :min-height="props.minHeight"
+      :labels="labels"
+    />
   </wx-locales>
 
   <wx-rich-text
@@ -66,5 +75,6 @@ const text = computed({
     v-model="text"
     :placeholder="props.placeholder"
     :min-height="props.minHeight"
+    :labels="labels"
   />
 </template>

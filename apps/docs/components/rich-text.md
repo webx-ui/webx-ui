@@ -128,7 +128,8 @@ opened in, so whoever opens it translates it:
 
 The keys are the tool keys, the table tools (`addRowAfter`, `deleteTable`, …), and
 `toolbar`, `linkAddress`, `youtubeAddress`, `apply`, `cancel`, `uploading`, and the three of the
-[source view](#html-source) — `sourceLoss`, `sourceDrop`, `sourceKeep`. A key left out
+[source view](#html-source) — `sourceLoss`, `sourceDrop`, `sourceKeep` — and `expand` and `collapse`, the two names of the
+[full-window](#over-the-whole-window) button. A key left out
 stays English rather than blank. In a WebX panel none of this is written by hand:
 [`wx-rich-text`](/guide/screens) is the same editor with the panel's dictionary already behind
 it.
@@ -162,6 +163,22 @@ whichever way it was typed — see [below](#sanitise-on-the-server-anyway).
 A read-only field still opens its source, to be read. A field that should not show it leaves
 `source` out of `tools`.
 
+## Over the whole window
+
+A field in a form is as wide as the column the form's other fields are — a line long enough to read
+— and a long description outgrows that height-wise long before it does width-wise. The button at
+the far end of the toolbar opens the same editor over the whole window: the caret and the
+selection stay where they were, the language chip still swaps the document, and the button or Esc
+gives the form back. Esc closes the link bar or the placeholder list first, when one is open.
+
+It is the same editor moved, not a copy: one history, one caret, nothing to reconcile on the way
+back. It moves to the end of the body, so a container that measures itself or a transformed sheet
+around the field does not clip it, and it sits above the page and below dialogs — the image button
+still opens the library over it. `expand` reports each change, with `true` or `false`.
+
+An inline field is a line and never offers it, a field inside a dialog or a sheet neither (the
+dialog would close at the first click into the text), and `:expandable="false"` turns it off.
+
 ## Inline
 
 A heading often carries a touch of markup — a coloured full stop, one word in italics — and a
@@ -193,30 +210,31 @@ the one the site reads, and a chip cannot be half-deleted into markup nobody can
 
 ## Props
 
-| Prop          | Type                                             | Default                  | Description                                                             |
-| ------------- | ------------------------------------------------ | ------------------------ | ----------------------------------------------------------------------- |
-| `modelValue`  | `string \| Record<string, string>`               | `''`                     | HTML content; a map per language under `localized`                      |
-| `placeholder` | `string`                                         | —                        | Shown while the document is empty                                       |
-| `inline`      | `boolean`                                        | `false`                  | One line with a few marks instead of a document — see [Inline](#inline) |
-| `tools`       | `RichTextTool[]`                                 | all; inline: three       | Which buttons appear, in order                                          |
-| `upload`      | `(file: File) => Promise<{ url, alt? }>`         | —                        | Handles pasted, dropped and picked files                                |
-| `pickImage`   | `() => Promise<string \| null>`                  | —                        | Opens a media library; `null` cancels                                   |
-| `accept`      | `string[]`                                       | image types              | MIME types accepted for upload                                          |
-| `localized`   | `boolean`                                        | `false`                  | Edits one language at a time; the model becomes a map                   |
-| `labels`      | `RichTextLabels`                                 | English                  | What the buttons and the link bar are called                            |
-| `tokens`      | `TokenOption[]`                                  | —                        | Placeholders to suggest on `[`, list from the button and draw as chips  |
-| `tokensTitle` | `string`                                         | `'Placeholders'`         | Heading of the list the button opens                                    |
-| `tokensLabel` | `string`                                         | `'Insert a placeholder'` | Name and tooltip of the button                                          |
-| `minHeight`   | `string`                                         | `'220px'`; inline: none  | Height before the editor starts growing                                 |
-| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`                   | Control size                                                            |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`              | Validation state                                                        |
-| `disabled`    | `boolean`                                        | `false`                  | Disables the editor and its toolbar                                     |
-| `readonly`    | `boolean`                                        | `false`                  | Content stays visible but cannot be edited                              |
-| `id`          | `string`                                         | generated                | Overrides the `id` the label points at; `WxFormItem` supplies one       |
-| `ariaLabel`   | `string`                                         | —                        | Label when there is no visible one                                      |
+| Prop          | Type                                             | Default                  | Description                                                                           |
+| ------------- | ------------------------------------------------ | ------------------------ | ------------------------------------------------------------------------------------- |
+| `modelValue`  | `string \| Record<string, string>`               | `''`                     | HTML content; a map per language under `localized`                                    |
+| `placeholder` | `string`                                         | —                        | Shown while the document is empty                                                     |
+| `inline`      | `boolean`                                        | `false`                  | One line with a few marks instead of a document — see [Inline](#inline)               |
+| `tools`       | `RichTextTool[]`                                 | all; inline: three       | Which buttons appear, in order                                                        |
+| `upload`      | `(file: File) => Promise<{ url, alt? }>`         | —                        | Handles pasted, dropped and picked files                                              |
+| `pickImage`   | `() => Promise<string \| null>`                  | —                        | Opens a media library; `null` cancels                                                 |
+| `accept`      | `string[]`                                       | image types              | MIME types accepted for upload                                                        |
+| `localized`   | `boolean`                                        | `false`                  | Edits one language at a time; the model becomes a map                                 |
+| `labels`      | `RichTextLabels`                                 | English                  | What the buttons and the link bar are called                                          |
+| `expandable`  | `boolean`                                        | `true`                   | Offers to open the editor over the whole window — see [above](#over-the-whole-window) |
+| `tokens`      | `TokenOption[]`                                  | —                        | Placeholders to suggest on `[`, list from the button and draw as chips                |
+| `tokensTitle` | `string`                                         | `'Placeholders'`         | Heading of the list the button opens                                                  |
+| `tokensLabel` | `string`                                         | `'Insert a placeholder'` | Name and tooltip of the button                                                        |
+| `minHeight`   | `string`                                         | `'220px'`; inline: none  | Height before the editor starts growing                                               |
+| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`                   | Control size                                                                          |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`              | Validation state                                                                      |
+| `disabled`    | `boolean`                                        | `false`                  | Disables the editor and its toolbar                                                   |
+| `readonly`    | `boolean`                                        | `false`                  | Content stays visible but cannot be edited                                            |
+| `id`          | `string`                                         | generated                | Overrides the `id` the label points at; `WxFormItem` supplies one                     |
+| `ariaLabel`   | `string`                                         | —                        | Label when there is no visible one                                                    |
 
 **Events:** `update:modelValue` (`string`), `change` (`string`), `focus`, `blur`,
-`upload-error` (`error`, `file`).
+`upload-error` (`error`, `file`), `expand` (`boolean`).
 
 `RichTextImage` is `{ url, path?, alt? }` — see [the key, not the address](#the-key-not-the-address).
 

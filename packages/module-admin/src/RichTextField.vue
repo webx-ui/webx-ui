@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, useAttrs, watch } from 'vue'
-import { WxRichText, type RichTextLabels, type RichTextModelValue } from '@webx-ui/core'
+import { WxRichText, type RichTextModelValue } from '@webx-ui/core'
 import { useAdmin } from './admin'
-import { useTranslate } from './i18n'
 import { richTextKeys, rewriteRichText } from './richTextAddresses'
+import { useRichTextLabels } from './richTextLabels'
 
 /**
  * `wx-rich-text` on a screen: the editor, in the panel's language, with the panel's library
@@ -21,7 +21,6 @@ import { richTextKeys, rewriteRichText } from './richTextAddresses'
 defineOptions({ name: 'WxRichTextField', inheritAttrs: false })
 
 const admin = useAdmin()
-const t = useTranslate('webx-admin')
 
 /*
  * The library is a module's, not the panel's, so a panel without a file manager hands the
@@ -68,44 +67,7 @@ function remember(value: unknown): void {
   sent = value
 }
 
-const labels = computed<RichTextLabels>(() => ({
-  bold: t('rich-text.bold'),
-  italic: t('rich-text.italic'),
-  accent: t('rich-text.accent'),
-  strike: t('rich-text.strike'),
-  code: t('rich-text.code'),
-  h2: t('rich-text.h2'),
-  h3: t('rich-text.h3'),
-  h4: t('rich-text.h4'),
-  bulletList: t('rich-text.bullet-list'),
-  orderedList: t('rich-text.ordered-list'),
-  blockquote: t('rich-text.blockquote'),
-  hr: t('rich-text.hr'),
-  link: t('rich-text.link'),
-  table: t('rich-text.table'),
-  image: t('rich-text.image'),
-  youtube: t('rich-text.youtube'),
-  undo: t('rich-text.undo'),
-  redo: t('rich-text.redo'),
-  source: t('rich-text.source'),
-  addRowAfter: t('rich-text.row-below'),
-  addRowBefore: t('rich-text.row-above'),
-  addColumnAfter: t('rich-text.column-after'),
-  addColumnBefore: t('rich-text.column-before'),
-  deleteRow: t('rich-text.delete-row'),
-  deleteColumn: t('rich-text.delete-column'),
-  mergeOrSplit: t('rich-text.merge-cells'),
-  deleteTable: t('rich-text.delete-table'),
-  toolbar: t('rich-text.toolbar'),
-  linkAddress: t('rich-text.link-address'),
-  youtubeAddress: t('rich-text.youtube-address'),
-  apply: t('rich-text.apply'),
-  cancel: t('rich-text.cancel'),
-  uploading: t('rich-text.uploading'),
-  sourceLoss: t('rich-text.source-loss'),
-  sourceDrop: t('rich-text.source-drop'),
-  sourceKeep: t('rich-text.source-keep'),
-}))
+const labels = useRichTextLabels()
 </script>
 
 <template>
