@@ -26,8 +26,8 @@ php artisan webx:blocks:offered --install --module=team
 ```
 
 The last line puts the offered block type **Team** on the site and publishes it. A type the site
-already has under the slug `team` is left alone: the site may have rewritten it. `webx:setup`
-runs this line by itself for a new site.
+already has under the slug `team` is left alone: the site may have rewritten it. `webx:setup` does
+not run this line: it prints it for a dev copy, and on staging and live a person runs it.
 
 Permissions: `team.view`, `team.manage`. The section is one entry of the panel's menu, **Team**,
 at the top level.

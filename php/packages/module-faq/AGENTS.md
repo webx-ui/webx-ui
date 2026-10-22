@@ -44,7 +44,7 @@ to read, `cms.can:faq.manage` to write.
 
 | You want                                  | Do this                                                                               |
 | ----------------------------------------- | ------------------------------------------------------------------------------------- |
-| The FAQ block on the site                 | `php artisan webx:blocks:offered --install --module=faq` (`webx:setup` runs it)       |
+| The FAQ block on the site                 | `php artisan webx:blocks:offered --install --module=faq` (`webx:setup` prints it)     |
 | A FAQ page at `/faq`                      | a page of `module-pages` with the FAQ block, every category and the filter on         |
 | «The payment questions» on a service page | the FAQ block with that category picked — markup stays off there by default           |
 | Different markup or styles of the block   | rewrite the block type `faq` in the panel; the site's copy is never overwritten       |

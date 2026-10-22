@@ -28,7 +28,8 @@ php artisan webx:blocks:offered --install --module=tariffs
 
 The last line puts the offered block type **Tariffs** on the site and publishes it. A type the
 site already has under the slug `tariffs` is left alone: the site may have rewritten it.
-`webx:setup` runs this line by itself for a new site.
+`webx:setup` does not run this line: it prints it for a dev copy, and on staging and live a person
+runs it.
 
 Permissions: `tariffs.view`, `tariffs.manage`, and `tariffs.groups.manage` for the groups — the
 tabs of a page of prices are a different job from the price on a card. The section is a group of
