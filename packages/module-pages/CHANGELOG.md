@@ -1,5 +1,21 @@
 # @webx-ui/module-pages
 
+## 0.6.4
+
+### Patch Changes
+
+- e42643b: Addresses, anchors and codes made of a name are transliterated by the name's language in every module, not only in the catalog: articles, tags, events, pages, recipes, services, vacancies, FAQ anchors, press outlets, role codes and form field names. «Хіт» is `khit` in Ukrainian and `hit` in Russian, never `xit`. The panel's address field follows the title the same way as it is typed (`slugify(title, separator, locale)`, `useDefaultLocale()`). Existing addresses do not change.
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+  - @webx-ui/module-admin@0.33.0
+  - @webx-ui/core@0.45.0
+  - @webx-ui/module-blocks@0.18.1
+  - @webx-ui/schema@0.9.5
+
 ## 0.6.3
 
 ### Patch Changes

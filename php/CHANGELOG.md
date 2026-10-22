@@ -1,5 +1,58 @@
 # @webx-ui/php
 
+## 0.85.0
+
+### Minor Changes
+
+- e42643b: A catalogue label can have a colour of its own besides the six tones: `color` = `#rrggbb`, and `text_color` for the text on it — black or white by WCAG contrast when left empty. The editor offers «Own colour» next to the tones with a colour picker and a live preview; the panel's list of products draws the label in its colours; the card prints `wx-catalog-badge--custom` with `--webx-label-bg` / `--webx-label-fg` on the element, read by the new base stylesheet `resources/theme/catalog-labels.css`. `catalog_labels_create` takes `values` now (any category kind's `_create` does), and the labels' tools describe both fields. Stock statuses stay on tones. New migration: `text_color` on `catalog_labels`.
+- e42643b: `webx-ui/module-inbox`: the visitor's answers in the thank-you. `{{field.<name>}}` in the heading or
+  the text of a form's thank-you is the answer to that field — escaped, wrapped in
+  `<em class="webx-form__answer-value">` for the theme; an empty answer, an unknown name and a file put
+  in nothing. The same in the JSON answer and after a POST without JavaScript.
+  `<x-webx-inbox::form slug="…" again />` turns on «Send another».
+
+  `webx-ui/widgets`: `<x-webx-form again>` — after a thank-you the answer takes the place of the
+  fields and `webx-form__again` («Send another», `widgets.form.again` in ten languages,
+  `again-label`) brings them back empty with the focus on the first field; without JavaScript it is a
+  link to the same page. Off by default. `FormResponse::message()` takes an `HtmlString` heading:
+  printed as HTML (`heading_html` in the JSON and the flash), its text in `heading`
+  (`FormResponse::plain()`).
+
+- e42643b: `webx:setup` no longer writes block types or seeds the demo: the hosting platform makes staging and production sites with it, and a block type reaches those only by a person's import. It used to run `webx:blocks:import --theme --publish`, `webx:blocks:offered --install` and `webx:demo`; now it prints them at the end, in that order, for a dev copy, with the warning about languages the demo is not written in. `--demo` and `--no-demo` are still accepted and change nothing (`--demo` says so). Scripts that relied on setup for the blocks or the demo run the three commands after it.
+- e42643b: Shortcodes work in the texts of the modules, not only in blocks. A screen's `wx-rich-text` offers the site's shortcodes behind the `[]` button by default (`props.shortcodes: false` switches it off), and a `wx-input` or `wx-textarea` does when its node says `props.shortcodes: true` — a product's summary, an article's lead, a review. On the site those fields are printed through the new `WebxUi\Admin\Shortcodes\PageText` (`html()`, `text()`, `plain()`, `plainFromHtml()`), so a page, a card in a list, a feed and the JSON-LD of one record all show the value, never a bare `[phone]`; the record keeps the bracket. The inbox's thank-you and consent sentence take them too, printed before the visitor's answers go in. `module-admin` exports `takesShortcodes()` and `useShortcodesWhen()` for a module that draws an editor of its own.
+- e42643b: `webx-ui/widgets`: smooth scrolling. `data-webx-smooth-scroll` on the layout's `<html>` or `<body>`
+  turns a notch of the wheel into one stretched glide (Lenis, built into the widget's own file and
+  loaded only where the attribute stands; off by default). Duration, easing, the wheel's distance and
+  the way to an anchor are attributes or `--webx-smooth-scroll-*` tokens. Native scrolling with
+  reduced motion, on touch screens and without JavaScript; paused under a modal; what scrolls inside
+  the page keeps its own wheel (`data-webx-scroll-native` for the theme's own); same-page anchors
+  glide under the sticky header and go into the address.
+
+### Patch Changes
+
+- e42643b: Codes and addresses made of a name go through one generator, `WebxUi\Localization\Slug`: transliterated by the name's own language, the site's default language first. A label «Хіт» is `khit`, not `xit`; a name with no letters is prefixed by its kind (`−20%` → `label-20`). Labels, stock statuses, properties, values, brands and categories of every module share it.
+- e42643b: A product saved without a unit — from the panel, MCP, an import or a bulk run — gets `webx-catalog.default_unit` (`pcs`), and one stored without a unit reads as it on the site and in the panel. A site sets another default there, or `null` for none.
+- e42643b: The catalog and its satellites no longer fall back to the English defaults of core components in a translated panel: drag handles, branch toggles, table spinners, picker search boxes and their empty answers are said in the panel's language. The words live in `webx-admin::filters` (`loading`, `reorder`, `search`, `nothing-found`, `expand`, `collapse`) in all ten languages, for any module to hand to a core component.
+- e42643b: The catalogue and its companions speak the ten shipped languages. `webx-ui/module-catalog`,
+  `-brands`, `-labels`, `-landings`, `-manticore`, `-properties` and `-stock` shipped only English and
+  Russian, so a panel in Ukrainian (or German, Polish, French, Spanish, Italian, Portuguese, Turkish)
+  showed keys such as `webx-catalog::module.title` in the menu and the list of permissions instead of
+  words. Now `uk`, `de`, `pl`, `fr`, `es`, `it`, `pt` and `tr` are there with every line English has
+  (machine translation, not yet read by native speakers — corrections are welcome).
+- e42643b: A field that holds a library file (`wx-media`, `wx-gallery`, `wx-file`, `wx-files`) takes the file by its id, as `{ id }`, by its key `{ path }`, or as the whole object `media_get_file` and `*_get` return — extra keys are dropped, an unknown id is refused by name. The same on every path of writing: the panel, MCP, blocks, repeaters. MCP describes it in the new resource `media://fields`, and the server's instructions point at it.
+
+  Laravel's validation messages come in the panel's language on a site with a theme: the lines of `webx-ui/localization` wrap the translation loader instead of being added to a bare `FileLoader`, which `webx-ui/themes` hides. A site in Ukrainian no longer answers with `validation.array`, and a line in the site's own `lang/` still wins.
+
+- e42643b: Every picture the panel shows small opens large: a click on it opens `WxLightbox` over the whole set it stands in, on the full picture and in the panel's language. `@webx-ui/module-admin` gains `WxPreviewThumb` (a thumbnail that is a button opening the gallery, keeping its click from the row) and `useLightbox()` (`open`, `labels`, and `click`, which leaves Ctrl and the middle button to a link); the words move from `webx-media::lightbox.*` to `webx-admin::lightbox.*` and gain `play` and `view`. Wired in: the product gallery (with its videos), the gallery and file fields and the picture field of forms — whose picture now opens large, swapping it is a button of the bar — the library (its double click and «View»), the covers of the lists of products, articles, events, services and recipes, the banners of a place, the pictures of property values and their dialog, the share picture of the SEO card and the pictures of an audited page. The panel rows of events and recipes carry `cover.url`, and those of banners `image`, for the full picture.
+- e42643b: Rich text in panel forms stops at the form's column like the fields above it, instead of
+  stretching across the whole screen. `WxRichText` gains a toolbar button that opens the same
+  editor over the whole window — caret, selection and language kept; the button or Esc gives the
+  form back (`expandable`, `expand` event, `expand`/`collapse` labels). The panel translates the
+  button into all ten languages.
+- e42643b: Removing one row of a list asks first, in a small popover by the button («Delete?» — «Yes» / «Cancel»), instead of removing at once. `WxAction` gains `confirm`, `confirmText` and `cancelText`: with a question set, `click` comes only on a yes. `WxPopconfirm` puts the focus on Cancel, goes ahead on Enter and reads the question out as the panel's description. The panel's words are `useRemoveConfirm()` of `@webx-ui/module-admin` (`webx-admin::confirm.*`, ten languages); labels and categories of a record, related records, banner layers, landing products and sets, category properties, intervals, inbox choices, notification chats and emails, SEO links, FAQ rows and the mapping and column rows of an exchange profile ask with it. Deleting a whole record keeps its dialog.
+- e42643b: A row of a `wx-repeater` with a key none of its fields names is refused under that row and key — `contacts.addresses.0.street`, with the keys a row takes — instead of being dropped while the write reported success; a key the field already held still goes through, so an older row saved from the panel does not fail. `settings_list` and `settings_get` describe what one row of a list takes (`item`: keys, value type, languages, options, bounds). An address of the contacts needs its text, and its coordinates come as a pair. A test reads `menu://menus` in all ten panel languages and fails on a link type named by its translation key.
+- e42643b: Addresses, anchors and codes made of a name are transliterated by the name's language in every module, not only in the catalog: articles, tags, events, pages, recipes, services, vacancies, FAQ anchors, press outlets, role codes and form field names. «Хіт» is `khit` in Ukrainian and `hit` in Russian, never `xit`. The panel's address field follows the title the same way as it is typed (`slugify(title, separator, locale)`, `useDefaultLocale()`). Existing addresses do not change.
+
 ## 0.84.0
 
 ### Minor Changes

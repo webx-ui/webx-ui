@@ -1,5 +1,27 @@
 # @webx-ui/admin
 
+## 0.33.0
+
+### Minor Changes
+
+- e42643b: Every picture the panel shows small opens large: a click on it opens `WxLightbox` over the whole set it stands in, on the full picture and in the panel's language. `@webx-ui/module-admin` gains `WxPreviewThumb` (a thumbnail that is a button opening the gallery, keeping its click from the row) and `useLightbox()` (`open`, `labels`, and `click`, which leaves Ctrl and the middle button to a link); the words move from `webx-media::lightbox.*` to `webx-admin::lightbox.*` and gain `play` and `view`. Wired in: the product gallery (with its videos), the gallery and file fields and the picture field of forms — whose picture now opens large, swapping it is a button of the bar — the library (its double click and «View»), the covers of the lists of products, articles, events, services and recipes, the banners of a place, the pictures of property values and their dialog, the share picture of the SEO card and the pictures of an audited page. The panel rows of events and recipes carry `cover.url`, and those of banners `image`, for the full picture.
+- e42643b: Rich text in panel forms stops at the form's column like the fields above it, instead of
+  stretching across the whole screen. `WxRichText` gains a toolbar button that opens the same
+  editor over the whole window — caret, selection and language kept; the button or Esc gives the
+  form back (`expandable`, `expand` event, `expand`/`collapse` labels). The panel translates the
+  button into all ten languages.
+- e42643b: Shortcodes work in the texts of the modules, not only in blocks. A screen's `wx-rich-text` offers the site's shortcodes behind the `[]` button by default (`props.shortcodes: false` switches it off), and a `wx-input` or `wx-textarea` does when its node says `props.shortcodes: true` — a product's summary, an article's lead, a review. On the site those fields are printed through the new `WebxUi\Admin\Shortcodes\PageText` (`html()`, `text()`, `plain()`, `plainFromHtml()`), so a page, a card in a list, a feed and the JSON-LD of one record all show the value, never a bare `[phone]`; the record keeps the bracket. The inbox's thank-you and consent sentence take them too, printed before the visitor's answers go in. `module-admin` exports `takesShortcodes()` and `useShortcodesWhen()` for a module that draws an editor of its own.
+
+### Patch Changes
+
+- e42643b: The catalog and its satellites no longer fall back to the English defaults of core components in a translated panel: drag handles, branch toggles, table spinners, picker search boxes and their empty answers are said in the panel's language. The words live in `webx-admin::filters` (`loading`, `reorder`, `search`, `nothing-found`, `expand`, `collapse`) in all ten languages, for any module to hand to a core component.
+- e42643b: Removing one row of a list asks first, in a small popover by the button («Delete?» — «Yes» / «Cancel»), instead of removing at once. `WxAction` gains `confirm`, `confirmText` and `cancelText`: with a question set, `click` comes only on a yes. `WxPopconfirm` puts the focus on Cancel, goes ahead on Enter and reads the question out as the panel's description. The panel's words are `useRemoveConfirm()` of `@webx-ui/module-admin` (`webx-admin::confirm.*`, ten languages); labels and categories of a record, related records, banner layers, landing products and sets, category properties, intervals, inbox choices, notification chats and emails, SEO links, FAQ rows and the mapping and column rows of an exchange profile ask with it. Deleting a whole record keeps its dialog.
+- e42643b: Addresses, anchors and codes made of a name are transliterated by the name's language in every module, not only in the catalog: articles, tags, events, pages, recipes, services, vacancies, FAQ anchors, press outlets, role codes and form field names. «Хіт» is `khit` in Ukrainian and `hit` in Russian, never `xit`. The panel's address field follows the title the same way as it is typed (`slugify(title, separator, locale)`, `useDefaultLocale()`). Existing addresses do not change.
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+  - @webx-ui/core@0.45.0
+  - @webx-ui/schema@0.9.5
+
 ## 0.32.0
 
 ### Minor Changes

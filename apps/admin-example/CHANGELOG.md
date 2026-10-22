@@ -1,5 +1,19 @@
 # @webx-ui/admin-example
 
+## 0.0.64
+
+### Patch Changes
+
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+- Updated dependencies [e42643b]
+  - @webx-ui/module-admin@0.33.0
+  - @webx-ui/core@0.45.0
+  - @webx-ui/module-auth@0.14.2
+
 ## 0.0.63
 
 ### Patch Changes
