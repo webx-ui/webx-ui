@@ -250,9 +250,28 @@ Validation comes from the fields, and errors come back under the names the input
 ```
 
 The answer is the one every form of the site gets, `FormResponse` of the widgets: a request
-that asks for JSON gets `{ ok, heading, message, redirect, html }` — the form's thank-you, or its
-address when it has one — and anything else a redirect: there, or back to the page with the
-thank-you in the session. A form whose thank-you nobody wrote still says «Thank you».
+that asks for JSON gets `{ ok, heading, heading_html, message, redirect, html }` — the form's
+thank-you, or its address when it has one — and anything else a redirect: there, or back to the
+page with the thank-you in the session. A form whose thank-you nobody wrote still says «Thank you».
+
+<!-- v-pre: the mustaches below are the thank-you's placeholders. -->
+
+::: v-pre
+
+**The visitor's answers in the thank-you.** `{{field.<name>}}` in the heading or the text of the
+thank-you is the answer to that field, by its machine name — the same names the channel templates
+use: «Thanks, `{{field.name}}`. We'll get back to you at `{{field.email}}`.» The value is escaped
+and wrapped in `<em class="webx-form__answer-value">` for the theme to style; an empty answer, a
+name the form does not have and a file field put in nothing. A choice is put in by its label, a
+consent in words. It is the same with and without JavaScript. A heading with an answer in it goes
+as `heading_html` (and its text as `heading`); one without stays text, as before.
+
+:::
+
+**Send another.** `<x-webx-inbox::form slug="request" again />` — after the thank-you the form
+shows «Send another» in place of its fields (`webx-form__again`): it brings the form back empty
+with the focus on the first field, and without JavaScript it is a link to the same page. Off by
+default ([Forms](./forms#send-another)).
 
 **Where the visitor goes after sending** is chosen the way a menu item's link is — «This site»,
 «An address», «Nowhere» (the default: the thank-you in place of the form). A page of the site is

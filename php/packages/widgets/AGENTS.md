@@ -65,14 +65,16 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   (`:choices` → a group, without → one tick) `consent` `date` `file` `hidden`. Value `old()`, error
   `$errors` by the dotted key (`fields.email` is written `fields[email]`); `autocomplete` and
   `inputmode` default by type; `class` on the field, other attributes on the control.
-- **The form** — `<x-webx-form :action method id bag :csrf>` around the fields and
+- **The form** — `<x-webx-form :action method id bag :csrf again>` around the fields and
   `<x-webx-form.submit>`: `@csrf`, `@method`, a hidden `_webx_form`. Without JavaScript a plain
   POST, each error back under its field. With it: sent in place, `X-XSRF-TOKEN`, one retry on 419,
   a 422 by field, no second submission, files with progress. `:csrf="false"` only for a door
-  guarded otherwise (inbox's intake).
+  guarded otherwise (inbox's intake). `again` (off by default) — «Send another» (`webx-form__again`)
+  in place of the fields after the thank-you: them back empty, focus on the first; no JS — a link.
 - **The answer** — `WebxUi\Widgets\Forms\FormResponse`: `FormResponse::message($heading, $html)`,
   `FormResponse::redirect($url)`, `FormResponse::html($view)` (a next step in place of the fields),
-  `FormResponse::ok()` (only the event); JSON to the script, a redirect with flash to a plain POST.
+  `FormResponse::ok()` (only the event); JSON to the script, a redirect with flash to a plain POST;
+  an `HtmlString` heading is HTML (`heading_html`, `FormResponse::plain()` — its text).
   Events on the `<form>`: `webx:form:submit` (cancelable, `detail.data`, `detail.wait(promise)`),
   `webx:form:success`, `webx:form:error`.
 - **Checks in the browser** — `<x-webx-form :rules="FormRules::for($rules, $attributes, $messages)">`
@@ -139,12 +141,10 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 
 - `webx:theme:sync` lists `webx-ui/widgets`; `runtime.css` is in `<head>`, `runtime.js` before
   `</body>`. Walk it with Tab; turn JavaScript off.
-- `php artisan webx:audit:run`, then `audit_issues` with `check: "widgets.before_consent"` —
-  nothing. The "Kitchen sink" pages of `theme-default` show each widget.
+- `php artisan webx:audit:run`, then `audit_issues` with `check: "widgets.before_consent"` — nothing. The "Kitchen sink" pages of `theme-default` show each widget.
 
 ## Read more
 
 - [README.md](README.md)
-- The guides: https://webx-ui.github.io/webx-ui/guide/widgets and
-  https://webx-ui.github.io/webx-ui/guide/forms (every rule, prop, class and event of the forms)
+- The guides: https://webx-ui.github.io/webx-ui/guide/widgets and https://webx-ui.github.io/webx-ui/guide/forms (every rule, prop, class and event of the forms)
 - The spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md

@@ -198,8 +198,8 @@ reload, and the audit's `widgets.form_script` names the page. `webx:setup --no-t
     alert (`role="alert"`) — both empty and without a box until there is something to say, so
     nothing on the page moves before.
 - **Words** — «The form could not be sent…» and «The page has been open too long…»
-  (`widgets.form.failed`, `widgets.form.expired`), «Close» of a dialog; props `failed-label`,
-  `expired-label`, `close-label`.
+  (`widgets.form.failed`, `widgets.form.expired`), «Close» of a dialog, «Send another»
+  (`widgets.form.again`); props `failed-label`, `expired-label`, `close-label`, `again-label`.
 
 ### The answer
 
@@ -221,8 +221,16 @@ return FormResponse::ok();
 | `::html($view)`              | in place of the fields — the next step of a checkout   | back to the page, in place of that form's fields    |
 | `::ok()`                     | nothing but `webx:form:success`                        | back to the page                                    |
 
-To the script it is JSON — `{ "ok": true, "heading", "message", "redirect", "html" }`, the answer
-Inbox gave first. The message is HTML and printed as it is: escape what a visitor wrote into it.
+To the script it is JSON — `{ "ok": true, "heading", "heading_html", "message", "redirect", "html" }`,
+the answer Inbox gave first. The message is HTML and printed as it is: escape what a visitor wrote
+into it. The heading is text and printed escaped — unless it is an `HtmlString`: then it is printed
+as it is (`heading_html`), and `heading` carries its text alone (`FormResponse::plain()`), for a
+reader of only that. Inbox answers so when its thank-you has the visitor's answers in it.
+
+```php
+return FormResponse::message(new HtmlString('Thanks, <em class="webx-form__answer-value">'.e($name).'</em>.'));
+```
+
 A controller that answers with a plain `redirect()` works too — the browser follows it and the
 form goes where it ended.
 
@@ -261,6 +269,19 @@ a modal.
 </x-webx-dialog>
 ```
 
+### Send another
+
+`<x-webx-form again>` — a form that is filled in more than once: a request after a request. After a
+thank-you (`::message()`) the answer takes the place of the fields, and under it a «Send another»
+(`webx-form__again`) brings them back empty, with the focus on the first field. Without JavaScript
+it is a link to the same page, which comes back without the answer, so the form is empty again. Off by default; hidden until the form is sent.
+
+```blade
+<x-webx-form :action="route('request')" again :again-label="__('Send another request')">
+    …
+</x-webx-form>
+```
+
 ### The look of the form
 
 | Classes                                          | What                                 |
@@ -270,6 +291,8 @@ a modal.
 | `__message` > `__answer` > `__heading`, `__text` | the live region and the answer in it |
 | `__error` > `__refusals` > `__refusal`           | the alert and what it says           |
 | `__progress`, `__done`                           | the upload, «Close» in a dialog      |
+| `__again`                                        | «Send another» (`again`)             |
+| `__answer-value`                                 | a visitor's answer in the thank-you  |
 
 Variables on `:root`: `--webx-form-gap`, `--webx-form-button-height`.
 
@@ -691,6 +714,7 @@ hand, and that is the point: it is the same engine as the two forms above.
 
 ```blade
 <x-webx-inbox::form slug="contact" :values="['product' => $product->id]" placement="footer" />
+<x-webx-inbox::form slug="request" again />  {{-- «Send another» after the thank-you --}}
 ```
 
 What it prints, in short:
@@ -719,8 +743,8 @@ What it prints, in short:
 - **The checks** are the intake's own rules — `required`, `email`, `max` of a line, `in` of the
   choices, `accepted` of a consent, `mimes` and `max` of a file, the dates' bounds, a phone's
   pattern — through `FormRules`, with each field's label: the browser says what a 422 would.
-- **The answer** is `FormResponse`: the form's thank-you (`::message()`), or its address
-  (`::redirect()`) when the form has one; an antispam refusal in the form's alert, a captcha's
+- **The answer** is `FormResponse`: the form's thank-you (`::message()`) with the visitor's answers
+  in it ([Inbox](./inbox#the-public-door)), or its address (`::redirect()`) when the form has one; an antispam refusal in the form's alert, a captcha's
   under the captcha.
 - **The Inbox's own** stays the Inbox's: the builder, the intake, the honeypot, the timestamp and
   the captcha — reCAPTCHA or Turnstile, run by `inbox.js` on `webx:form:submit` and reset after

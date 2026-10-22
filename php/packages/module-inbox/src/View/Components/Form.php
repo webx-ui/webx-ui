@@ -40,6 +40,9 @@ use WebxUi\Widgets\Forms\FormRules;
  * The form works with JavaScript switched off: a plain POST, and the page back with the errors
  * under the fields or the thank-you under them.
  *
+ * `again` — the thank-you in place of the fields, with a button that brings them back empty
+ * (`<x-webx-form again>`): a form that is filled in more than once, a request after a request.
+ *
  * A view the site published before W6.4 (no `<x-webx-form>` in it) is still handed everything it
  * was handed then, and its old script: an alias period, so a site that rewrote the form keeps a
  * working one until it moves to the engine (spec WIDGETS §20, W6.4; the audit's
@@ -73,6 +76,7 @@ final class Form extends Component
         // A constructor argument so that Blade takes it out of `$attributes`: otherwise it
         // would be printed on `<form>` as an attribute nobody reads.
         private readonly ?string $placement = null,
+        private readonly bool $again = false,
     ) {}
 
     public function render(): View|string
@@ -118,6 +122,7 @@ final class Form extends Component
             'files' => $this->files,
             'message' => $this->message($form),
             'values' => $this->prefill($fields, $mine),
+            'again' => $this->again,
         ]);
     }
 

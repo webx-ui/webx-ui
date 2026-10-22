@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\Http\Controllers;
 
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -25,6 +26,7 @@ use WebxUi\Inbox\Notifications\Channels;
 use WebxUi\Inbox\Panel\FormOptions;
 use WebxUi\Inbox\Submissions\Intake;
 use WebxUi\Inbox\Submissions\Rules;
+use WebxUi\Inbox\Submissions\ThankYou;
 use WebxUi\Inbox\Support\Forms;
 use WebxUi\Localization\Locales;
 use WebxUi\Widgets\Forms\FormResponse;
@@ -86,7 +88,7 @@ final class SubmitController
             $this->throttle->hit($form, $request);
             $this->refusals->record($form);
 
-            return $this->accepted($form, $request);
+            return $this->accepted($form, $request, ThankYou::sent($form, $request));
         }
 
         if ($inspection->verdict === Verdict::Reject) {
@@ -120,7 +122,7 @@ final class SubmitController
             $this->notifier->send($submission);
         }
 
-        return $this->accepted($form, $request);
+        return $this->accepted($form, $request, ThankYou::of($submission));
     }
 
     /**
@@ -176,12 +178,16 @@ final class SubmitController
      * form of the site (`FormResponse`, WIDGETS §17.4) — JSON `{ ok, heading, message, redirect,
      * html }` to the form's script, otherwise a redirect to the form's address or back to the page
      * with the thank-you, where the form that was sent shows it.
+     *
+     * The visitor's answers go into it where it says `{{field.<name>}}` (`ThankYou`).
+     *
+     * @param  array<string, string>  $answers
      */
-    private function accepted(Form $form, Request $request): JsonResponse|RedirectResponse
+    private function accepted(Form $form, Request $request, array $answers): JsonResponse|RedirectResponse
     {
         $redirect = $this->redirect($form);
-        $heading = $this->text($form, 'thank-you.heading');
-        $message = $this->text($form, 'thank-you.text');
+        $heading = ThankYou::heading($this->text($form, 'thank-you.heading'), $answers);
+        $message = ThankYou::text($this->text($form, 'thank-you.text'), $answers);
 
         // A form whose thank-you nobody filled in still has to say something: an answer with
         // neither is the engine's "only the event", and the visitor would be told nothing.
@@ -194,7 +200,10 @@ final class SubmitController
         // A view the site published before W6.4 knows no `_webx_form`, and reads its thank-you
         // where it always did (an alias period).
         if (! $request->expectsJson() && $redirect === null && ! $request->filled(FormResponse::FORM) && $request->hasSession()) {
-            $request->session()->flash('webx-inbox', ['ok' => true, 'form' => $form->slug, 'heading' => $heading, 'message' => $message, 'redirect' => null]);
+            // Its heading is text and printed escaped: the values go in without their tags.
+            $text = $heading instanceof Htmlable ? FormResponse::plain($heading) : $heading;
+
+            $request->session()->flash('webx-inbox', ['ok' => true, 'form' => $form->slug, 'heading' => $text, 'message' => $message, 'redirect' => null]);
         }
 
         return $answer->toResponse($request);
