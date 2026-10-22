@@ -8,7 +8,6 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use stdClass;
 use Throwable;
@@ -21,6 +20,7 @@ use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 use WebxUi\Pages\Exceptions\PagesException;
@@ -1199,16 +1199,22 @@ final class PageTools
     /**
      * The address made out of the name, language by language.
      *
-     * `Str::slug` transliterates, so a Russian title gives a Latin address rather than a
-     * percent-encoded one — the same thing the panel's dialog does when the editor writes a
-     * name and no address.
+     * {@see Slug} transliterates by each title's language, so a Russian title gives a Latin
+     * address rather than a percent-encoded one — the same thing the panel's dialog does when
+     * the editor writes a name and no address.
      *
      * @param  array<string, string>  $title
      * @return array<string, string>
      */
     private function slugFrom(array $title): array
     {
-        return array_filter(array_map(static fn (string $text): string => Str::slug($text), $title));
+        $slugs = [];
+
+        foreach ($title as $locale => $text) {
+            $slugs[$locale] = Slug::make($text, (string) $locale);
+        }
+
+        return array_filter($slugs);
     }
 
     /**

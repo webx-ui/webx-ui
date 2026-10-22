@@ -11,11 +11,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Media\Screens\MediaValues;
 use WebxUi\Press\Seo\OutletMarkup;
 use WebxUi\Press\Seo\Trail;
@@ -419,7 +419,7 @@ class Outlet extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
         }
 
         $default = Container::getInstance()->make(Locales::class)->defaultCode();
-        $given = $slugs[$default] ?? (reset($slugs) ?: Str::slug($this->displayTitle($default)));
+        $given = $slugs[$default] ?? (reset($slugs) ?: Slug::first($this->getTranslations('title'), $default));
 
         if ($given === '') {
             return false;

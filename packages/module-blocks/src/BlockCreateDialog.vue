@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { computed, inject, ref, watch } from 'vue'
+import {
+  i18nKey,
+  slugify as transliterate,
+  useAdmin,
+  useErrorText,
+  useTranslate,
+} from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -55,14 +61,19 @@ const groupOptions = computed(() =>
   groups.value.map((id) => ({ value: id, label: groupLabel(id, t) })),
 )
 
-/** A slug from the name, until the person types one of their own. Latin only: the identifier is code. */
+/** The name is typed in the panel's language, so it is transliterated by that one. */
+const panelLocale = inject(i18nKey, null)?.state.locale ?? 'en'
+
+/**
+ * A slug from the name, until the person types one of their own. Latin only, and a letter first:
+ * the identifier is code.
+ */
 function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+  return transliterate(text, '-', panelLocale)
+    .replace(/[^a-z0-9-]+/g, '')
     .replace(/^[^a-z]+/, '')
     .slice(0, 64)
+    .replace(/-+$/, '')
 }
 
 watch(

@@ -45,8 +45,8 @@ final class TagController
      */
     public function store(TagRequest $request, Locales $locales): JsonResponse
     {
-        $values = $request->values();
         $locale = $locales->defaultCode();
+        $values = $request->values($locale);
 
         // Born in the site's main language, not the panel's: a tag whose only name is in a
         // language the site is not published in has no address anywhere.

@@ -5,7 +5,7 @@ import { useModal, WxButton, WxDialog, WxFormItem, WxInput, WxSpace } from '@web
 import PagePicker from './PagePicker.vue'
 import { createPagesApi } from './api'
 import { usePagesMessages } from './i18n'
-import { slugify } from './slug'
+import { slugify, useDefaultLocale } from './slug'
 import type { PageRow } from './types'
 
 /**
@@ -32,9 +32,11 @@ const errors = ref<Record<string, string[]>>({})
 const field = useTemplateRef<HTMLElement>('field')
 
 const edited = ref(false)
+// The page is named in the site's main language (`PageController::store()`), so is its address.
+const locale = useDefaultLocale()
 
 watch(title, (value) => {
-  if (!edited.value) slug.value = slugify(value)
+  if (!edited.value) slug.value = slugify(value, '-', locale.value)
 })
 
 onMounted(async () => {

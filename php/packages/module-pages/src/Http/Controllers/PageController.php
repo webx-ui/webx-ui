@@ -93,7 +93,7 @@ final class PageController
         $parent = $this->parent($request->parentId());
         $locale = $locales->defaultCode();
 
-        $page = new Page(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
+        $page = new Page(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug($locale)]]);
         $page->appendTo($parent);
 
         return ApiResponse::data(new PageResource($page->refresh()->loadMissing('routes')), 201);

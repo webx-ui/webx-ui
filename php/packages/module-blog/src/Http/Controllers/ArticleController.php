@@ -86,7 +86,7 @@ final class ArticleController
     public function store(ArticleRequest $request, Locales $locales): JsonResponse
     {
         $locale = $locales->defaultCode();
-        $article = new Article(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
+        $article = new Article(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug($locale)]]);
         $article->author_id = $this->author($request);
         $article->save();
 

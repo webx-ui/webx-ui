@@ -22,6 +22,7 @@ use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Rehearsal;
@@ -874,7 +875,13 @@ final class ServiceTools
      */
     private function slugFrom(array $title): array
     {
-        return array_filter(array_map(static fn (string $text): string => Str::slug($text), $title));
+        $slugs = [];
+
+        foreach ($title as $locale => $text) {
+            $slugs[$locale] = Slug::make($text, (string) $locale);
+        }
+
+        return array_filter($slugs);
     }
 
     private function preview(Service $service, ?Authenticatable $user): ?string

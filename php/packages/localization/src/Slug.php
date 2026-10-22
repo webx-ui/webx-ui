@@ -18,17 +18,18 @@ final class Slug
 {
     /**
      * @param  string|null  $prefix  put before a result with no letter in it, or used alone for an empty one
+     * @param  string  $separator  between words: `-` in an address, `_` in a machine name
      */
-    public static function make(string $text, string $locale, int $max = 255, ?string $prefix = null): string
+    public static function make(string $text, string $locale, int $max = 255, ?string $prefix = null, string $separator = '-'): string
     {
-        $slug = Str::slug($text, '-', $locale);
+        $slug = Str::slug($text, $separator, $locale);
 
         if ($prefix !== null && preg_match('/[a-z]/', $slug) !== 1) {
-            $slug = $slug === '' ? $prefix : $prefix.'-'.$slug;
+            $slug = $slug === '' ? $prefix : $prefix.$separator.$slug;
         }
 
-        // A cut in the middle of a word must not leave the `-` an address cannot end with.
-        return rtrim(substr($slug, 0, $max), '-');
+        // A cut in the middle of a word must not leave the separator an address cannot end with.
+        return rtrim(substr($slug, 0, $max), $separator);
     }
 
     /**

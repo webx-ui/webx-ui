@@ -14,6 +14,7 @@ use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 
 /**
  * A question and its answer (§4.2 of the FAQ spec).
@@ -67,10 +68,9 @@ class Question extends Model
             }
 
             if (($question->anchor ?? '') === '') {
-                $question->anchor = $question->freeAnchor(Str::slug((string) $question->getTranslation(
-                    'question',
-                    app(Locales::class)->defaultCode(),
-                )));
+                $locale = app(Locales::class)->defaultCode();
+                $words = (string) $question->getTranslation('question', $locale);
+                $question->anchor = $question->freeAnchor(Slug::make($words, $locale));
             }
         });
 

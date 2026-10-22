@@ -103,6 +103,13 @@ describe('WxInboxFieldDialog', () => {
     expect(control('Name').props('modelValue')).toBe('vash_telefon_2')
     expect(document.body.textContent).toContain('{{field.vash_telefon_2}}')
 
+    // Transliterated by the label's language, as the server does it: Russian «Щука» is `schuka`,
+    // not the `shchuka` of a table that knows no language.
+    control('Label').vm.$emit('update:modelValue', { ru: 'Щука' })
+    await flushPromises()
+
+    expect(control('Name').props('modelValue')).toBe('schuka')
+
     control('Name').vm.$emit('update:modelValue', 'mobile')
     control('Label').vm.$emit('update:modelValue', { ru: 'Мобильный' })
     await flushPromises()

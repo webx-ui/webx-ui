@@ -74,7 +74,7 @@ final class ServiceController
     public function store(ServiceRequest $request, Locales $locales): JsonResponse
     {
         $locale = $locales->defaultCode();
-        $service = new Service(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
+        $service = new Service(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug($locale)]]);
         $service->save();
 
         return ApiResponse::data(new ServiceResource($this->loaded($service->refresh())), 201);

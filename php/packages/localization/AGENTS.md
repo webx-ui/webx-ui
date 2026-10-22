@@ -17,10 +17,11 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 - **Trait** `HasTranslations` with `translatable()`: `getTranslations()`, `setTranslations()`,
   `forLocale()`, `translationsToArray()`, scopes `whereTranslation`, `whereTranslationLike`,
   `orderByTranslation`. Stored as `{"en": "...", "uk": "..."}`.
-- **Generator** `WebxUi\Localization\Slug` — `make($text, $locale, $max, $prefix)` and
+- **Generator** `WebxUi\Localization\Slug` — `make($text, $locale, $max, $prefix, $separator)` and
   `first($texts, $default, …)`: every code and address part a module makes of a name. Transliterates
   by the name's language (`Хіт` is `khit` in uk, `hit` in ru — never `xit`); `$prefix` names a
-  result with no letter (`−20%` → `label-20`).
+  result with no letter (`−20%` → `label-20`). The panel's `slugify(title, separator, locale)`
+  (`@webx-ui/module-admin`) uses the same table, written by `scripts/transliteration.php`.
 - **Blueprint macros** `$table->translatable(...)` and `$table->dropTranslatable(...)` —
   nullable JSON columns.
 - **Middleware** aliases `webx.locale` (`SetLocale`, the public site) and `webx.panel-locale`
@@ -47,7 +48,7 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 ## Do not
 
 - Do not call `Str::slug()` without a language for a code or an address: it reads Cyrillic the
-  English way. Use `Slug::make()`.
+  English way. Use `Slug::make()`. `SlugCoverageTest` fails on such a call in any package's `src`.
 
 - Do not edit anything in `vendor/webx-ui/localization`. Every row above is the supported way;
   if none fits, the package is missing a seam — say so instead of working around it.

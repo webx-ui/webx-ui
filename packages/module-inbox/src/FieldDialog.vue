@@ -103,19 +103,23 @@ watch(
   { immediate: true },
 )
 
-/** The label in the language being edited, or the first one written. */
-function label(value: LocalizedValue): string {
+/** The label in the language being edited, or the first one written — with its language. */
+function label(value: LocalizedValue): [string, string] {
   const map = (value ?? {}) as Record<string, string>
   const active = map[locales.active.value]
 
-  if (typeof active === 'string' && active.trim() !== '') return active
+  if (typeof active === 'string' && active.trim() !== '') return [active, locales.active.value]
 
-  return Object.values(map).find((line) => typeof line === 'string' && line.trim() !== '') ?? ''
+  const first = Object.entries(map).find(
+    ([, line]) => typeof line === 'string' && line.trim() !== '',
+  )
+
+  return first === undefined ? ['', locales.active.value] : [first[1], first[0]]
 }
 
 /** A machine name out of a label: Latin, `_` between words, a letter first, `_2` when taken. */
-function nameOf(words: string): string {
-  let base = slugify(words, '_').slice(0, 60).replace(/_+$/, '')
+function nameOf([words, locale]: [string, string]): string {
+  let base = slugify(words, '_', locale).slice(0, 60).replace(/_+$/, '')
 
   if (base === '') return ''
   if (!/^[a-z]/.test(base)) base = `field_${base}`
