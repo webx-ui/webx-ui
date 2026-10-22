@@ -265,6 +265,12 @@ export const adminMessages: Record<string, Messages> = {
     expand: 'Expand',
     collapse: 'Collapse',
   },
+  // The question a row of a list asks in a popover before it goes (`useRemoveConfirm`).
+  confirm: {
+    remove: 'Delete?',
+    yes: 'Yes',
+    cancel: 'Cancel',
+  },
   dates: {
     today: 'today at :time',
     yesterday: 'yesterday at :time',

@@ -9,6 +9,7 @@ import {
 } from '@webx-ui/core'
 import { useAdmin } from '../admin'
 import { HttpError } from '../http'
+import { useRemoveConfirm } from '../confirm'
 import { useTranslate } from '../i18n'
 import {
   createRelationsApi,
@@ -72,6 +73,7 @@ const value = defineModel<number[] | null>({ default: () => [] })
 const admin = useAdmin()
 const owner = useRelationOwner()
 const t = useTranslate('webx-admin')
+const askRemove = useRemoveConfirm()
 
 const api = computed(() => createRelationsApi(admin, props.target))
 
@@ -283,6 +285,7 @@ function mark(row: Row): string | null {
           type="remove"
           size="sm"
           :title="t('relations.field-remove')"
+          v-bind="askRemove"
           @click="remove((item as Row).id)"
         />
       </template>

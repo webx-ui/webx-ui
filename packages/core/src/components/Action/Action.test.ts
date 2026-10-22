@@ -1,6 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
-import { markRaw } from 'vue'
+import { afterAll, afterEach, describe, expect, it } from 'vitest'
+import {
+  disableAutoUnmount,
+  enableAutoUnmount,
+  flushPromises,
+  mount,
+  type VueWrapper,
+} from '@vue/test-utils'
+import { markRaw, nextTick } from 'vue'
 import WxAction from './Action.vue'
 
 /*
@@ -8,6 +14,10 @@ import WxAction from './Action.vue'
  * fragment and `wrapper.element` is its anchor rather than the button.
  */
 const control = (wrapper: VueWrapper) => wrapper.get('button, a')
+
+/* The question is teleported; unmounting between tests takes it with it. */
+enableAutoUnmount(afterEach)
+afterAll(disableAutoUnmount)
 
 describe('WxAction', () => {
   it('is a button with the icon, the colour and the name of its type', () => {
@@ -100,5 +110,71 @@ describe('WxAction', () => {
   it('sizes itself, md by default', () => {
     expect(control(mount(WxAction)).classes()).toContain('wx-action--md')
     expect(control(mount(WxAction, { props: { size: 'sm' } })).classes()).toContain('wx-action--sm')
+  })
+
+  describe('with `confirm`', () => {
+    async function asked(props: Record<string, unknown> = {}) {
+      const wrapper = mount(WxAction, {
+        props: {
+          type: 'remove',
+          confirm: 'Delete?',
+          confirmText: 'Так',
+          cancelText: 'Ні',
+          ...props,
+        },
+        attachTo: document.body,
+      })
+      await control(wrapper).trigger('click')
+      await flushPromises()
+      return wrapper
+    }
+
+    const buttons = () => [
+      ...document.querySelectorAll<HTMLElement>('.wx-popconfirm__actions button'),
+    ]
+
+    it('asks before reporting the click, in its own words', async () => {
+      const wrapper = await asked()
+
+      expect(wrapper.emitted('click')).toBeUndefined()
+      expect(document.querySelector('.wx-popconfirm__title')?.textContent).toBe('Delete?')
+      expect(buttons().map((button) => button.textContent?.trim())).toEqual(['Ні', 'Так'])
+    })
+
+    it('reports the click on a yes, and only then', async () => {
+      const wrapper = await asked()
+
+      buttons()[1]!.click()
+      await nextTick()
+
+      expect(wrapper.emitted('click')).toHaveLength(1)
+      expect(wrapper.emitted('click')![0]![0]).toBeInstanceOf(MouseEvent)
+    })
+
+    it('reports nothing on a no', async () => {
+      const wrapper = await asked()
+
+      buttons()[0]!.click()
+      await nextTick()
+
+      expect(wrapper.emitted('click')).toBeUndefined()
+    })
+
+    it('asks nothing while disabled', async () => {
+      const wrapper = await asked({ disabled: true })
+
+      expect(document.querySelector('.wx-popconfirm')).toBeNull()
+      expect(wrapper.emitted('click')).toBeUndefined()
+    })
+
+    it('keeps the name and the look of the action', async () => {
+      const wrapper = mount(WxAction, {
+        props: { type: 'remove', title: 'Remove', confirm: 'Delete?' },
+      })
+
+      expect(control(wrapper).attributes('aria-label')).toBe('Remove')
+      expect(control(wrapper).classes()).toContain('wx-action--danger')
+      expect(control(wrapper).attributes('aria-haspopup')).toBe('dialog')
+    })
   })
 })

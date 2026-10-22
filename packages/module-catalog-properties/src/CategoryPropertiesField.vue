@@ -10,8 +10,9 @@ import {
   WxText,
   type SelectModelValue,
   type SelectOption,
+  WxPopconfirm,
 } from '@webx-ui/core'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import { useCatalogCategoryEditor } from '@webx-ui/module-catalog'
 import { createPropertiesApi } from './api'
 import { propertyName } from './format'
@@ -38,6 +39,7 @@ const editor = useCatalogCategoryEditor()
 useCatalogPropertiesMessages()
 
 const t = useTranslate(NAMESPACE)
+const askRemove = useRemoveConfirm()
 const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
@@ -193,15 +195,27 @@ const typeOf = (row: PropertyRow) => t(`property.types.${row.type}`)
         </template>
 
         <template #actions="{ item }">
-          <wx-button
+          <wx-popconfirm
             v-if="!locked"
-            size="sm"
-            variant="text"
-            icon="close"
+            :title="askRemove.confirm"
+            :confirm-text="askRemove.confirmText"
+            :cancel-text="askRemove.cancelText"
+            confirm-type="danger"
             :disabled="saving"
-            :aria-label="t('panel.set-remove', { name: propertyName(item as PropertyRow, locale) })"
-            @click="remove((item as PropertyRow).id)"
-          />
+            @confirm="remove((item as PropertyRow).id)"
+          >
+            <template #trigger>
+              <wx-button
+                size="sm"
+                variant="text"
+                icon="close"
+                :disabled="saving"
+                :aria-label="
+                  t('panel.set-remove', { name: propertyName(item as PropertyRow, locale) })
+                "
+              />
+            </template>
+          </wx-popconfirm>
         </template>
       </wx-sortable-list>
 

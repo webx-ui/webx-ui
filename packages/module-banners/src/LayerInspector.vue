@@ -14,8 +14,9 @@ import {
   WxText,
   WxTextarea,
   type LocalizedValue,
+  WxPopconfirm,
 } from '@webx-ui/core'
-import { useTranslate, WxLinkField, type LinkValue } from '@webx-ui/module-admin'
+import { useRemoveConfirm, useTranslate, WxLinkField, type LinkValue } from '@webx-ui/module-admin'
 import { WxMediaField } from '@webx-ui/module-media'
 import {
   clone,
@@ -59,6 +60,7 @@ const emit = defineEmits<{
 }>()
 
 const t = useTranslate('webx-banners')
+const askRemove = useRemoveConfirm()
 const locales = useLocales()
 
 const current = computed<LayerFrame>(() =>
@@ -296,10 +298,23 @@ function pickColor(key: 'color' | 'background', value: string | null): void {
         :aria-label="t('layers.name')"
         :disabled="disabled"
       />
-      <wx-button size="sm" variant="outline" danger :disabled="disabled" @click="emit('delete')">
-        <template #icon><wx-icon name="trash" /></template>
-        {{ t('layers.delete') }}
-      </wx-button>
+      <wx-popconfirm
+        :title="askRemove.confirm"
+        :confirm-text="askRemove.confirmText"
+        :cancel-text="askRemove.cancelText"
+        confirm-type="danger"
+        side="bottom"
+        align="end"
+        :disabled="disabled"
+        @confirm="emit('delete')"
+      >
+        <template #trigger>
+          <wx-button size="sm" variant="outline" danger :disabled="disabled">
+            <template #icon><wx-icon name="trash" /></template>
+            {{ t('layers.delete') }}
+          </wx-button>
+        </template>
+      </wx-popconfirm>
     </div>
 
     <template v-if="hasWords">

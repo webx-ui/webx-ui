@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useTranslate, WxRichTextField } from '@webx-ui/module-admin'
+import { useRemoveConfirm, useTranslate, WxRichTextField } from '@webx-ui/module-admin'
 import {
   WxAlert,
   WxFormItem,
@@ -42,6 +42,7 @@ const props = withDefaults(
 useSeoMessages()
 
 const t = useTranslate('webx-seo')
+const askRemove = useRemoveConfirm()
 
 /* The server's refusals by row, so a refused row unfolds and its header says so. */
 const rowErrors = computed(() =>
@@ -93,6 +94,9 @@ function labelOf(row: FaqRow, index: number): string {
       :row-errors="rowErrors"
       :add-label="t('faq.add')"
       :remove-label="t('faq.remove')"
+      confirm-remove
+      :remove-question="askRemove.confirm"
+      :cancel-label="askRemove.cancelText"
       :drag-label="t('faq.drag')"
       :empty-text="t('faq.none')"
     >

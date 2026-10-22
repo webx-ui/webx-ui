@@ -136,6 +136,11 @@ RouteLocationRaw | boolean` компилировался в `{ type: Boolean }`:
   панель Reka не рисует пункты там, где их ищут, и `document.querySelectorAll('.wx-dropdown-item')`
   пуст. Без заглушки, с `attachTo: document.body`: клик по кнопке-триггеру, `flushPromises()`,
   пункты — в `document`, как в `RowMenu.test.ts`.
+- **`role` и `aria-labelledby`, переданные в `PopoverContent`, в DOM не доезжают.** Reka ставит
+  панели `role="dialog"` и `aria-labelledby` на id триггера **после** пропсов и атрибутов, так что
+  `role="alertdialog"` или своё `aria-labelledby` молча перезаписываются. Имя панели — имя кнопки,
+  которая её открыла; вопрос и пояснение вешать через `aria-describedby` (`WxPopconfirm`). Тест
+  на имя — с `attachTo: document.body`, иначе триггера нет в `document` и id не находится.
 
 ## Редакторы: Tiptap, CodeMirror, датапикер, canvas
 

@@ -157,6 +157,29 @@ Answers `true` or `false`, never rejects.
 | `tone`        | `ButtonType`       | `'primary'`       | Colour of the yes; `danger` if it destroys |
 | `width`       | `number \| string` | `420`             | Width of the panel                         |
 
+### A row is not a record
+
+`confirm()` stops the screen to ask, and that is right for a whole record: an article, a product,
+a menu, a form with its submissions. Removing **one row of a list** inside a form — a label off a
+product, a choice out of a field, a chat out of a channel, a row of a repeater — is asked in a
+popover by the button instead: `WxAction`'s `confirm` prop, or
+[`WxPopconfirm`](/components/popconfirm) around any other button. The row the reader was looking at
+stays in view while they answer.
+
+In the panel the words of that popover come from `useRemoveConfirm()` of `@webx-ui/module-admin`:
+
+```vue
+<script setup lang="ts">
+import { useRemoveConfirm } from '@webx-ui/module-admin'
+
+const askRemove = useRemoveConfirm()
+</script>
+
+<template>
+  <wx-action type="remove" :title="t('labels-remove')" v-bind="askRemove" @click="remove(row)" />
+</template>
+```
+
 ## API
 
 ```ts

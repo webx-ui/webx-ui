@@ -40,6 +40,23 @@ And use neither when the action can simply be undone. A [toast with an Undo](/co
 better than a confirmation for anything reversible — it costs the reader nothing when they meant
 it, which is most of the time.
 
+## On a row action
+
+An icon button at the end of a row does not need the wrapper: [`WxAction`](/components/actions#asking-first)
+takes the question as its `confirm` prop and reports `click` only on a yes.
+
+```vue
+<wx-action type="remove" confirm="Delete?" @click="remove(row)" />
+```
+
+## Keyboard and screen readers
+
+The focus lands on the button that keeps things as they were — the question is one click away from
+what it would destroy, and a second press of the key that opened it must not be the answer.
+**Enter** goes ahead from anywhere in the panel, the way a dialog's default button does; **Escape**
+and a click outside are a cancel. The panel is a `dialog` named after the control that opened it,
+with the question and its explanation read out as the description.
+
 ## Ask about the consequence
 
 `Delete this order?` with `It cannot be brought back.` — not `Are you sure?`. The question should

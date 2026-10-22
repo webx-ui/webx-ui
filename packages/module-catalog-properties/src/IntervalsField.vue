@@ -11,7 +11,7 @@ import {
   WxText,
   type LocalizedValue,
 } from '@webx-ui/core'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import { createPropertiesApi } from './api'
 import { usePropertyEditor } from './editor'
 import { NAMESPACE, useCatalogPropertiesMessages } from './i18n'
@@ -46,6 +46,7 @@ const editor = usePropertyEditor()
 useCatalogPropertiesMessages()
 
 const t = useTranslate(NAMESPACE)
+const askRemove = useRemoveConfirm()
 const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
@@ -231,6 +232,7 @@ async function save(): Promise<void> {
             type="remove"
             :label="t('panel.delete')"
             :disabled="locked"
+            v-bind="askRemove"
             @click="remove((item as Row).key)"
           />
         </template>

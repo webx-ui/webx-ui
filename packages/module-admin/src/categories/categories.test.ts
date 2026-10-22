@@ -300,6 +300,13 @@ describe('wx-categories', () => {
     await flushPromises()
 
     await wrapper.findAll('.wx-sortable-list__row')[1]!.get('button').trigger('click')
+    await flushPromises()
+
+    // A row asks in a popover by its button before it goes.
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    expect(document.querySelector('.wx-popconfirm__title')?.textContent).toBe('Delete?')
+    document.querySelector<HTMLElement>('.wx-popconfirm__actions button:last-child')!.click()
+    await flushPromises()
 
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([[3, 1]])
   })

@@ -151,6 +151,13 @@ describe('WxRelationsField', () => {
       .findAll('.wx-sortable-list__row')[1]!
       .get('button[aria-label="Remove"]')
       .trigger('click')
+    await flushPromises()
+
+    // A row asks in a popover by its button before it goes.
+    expect(last()).toBeUndefined()
+    expect(document.querySelector('.wx-popconfirm__title')?.textContent).toBe('Delete?')
+    document.querySelector<HTMLElement>('.wx-popconfirm__actions button:last-child')!.click()
+    await flushPromises()
 
     expect(last()).toEqual([4, 1])
   })

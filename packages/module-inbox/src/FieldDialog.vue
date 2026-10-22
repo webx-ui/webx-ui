@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { slugify, useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import {
+  slugify,
+  useAdmin,
+  useErrorText,
+  useRemoveConfirm,
+  useTranslate,
+} from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -53,6 +59,7 @@ const api = createInboxApi(context)
 useInboxMessages()
 
 const t = useTranslate('webx-inbox')
+const askRemove = useRemoveConfirm()
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -285,7 +292,13 @@ async function save(): Promise<void> {
             :placeholder="t('fields.choice-label')"
             @update:model-value="(label) => setChoice(index, { label: label as LocalizedValue })"
           />
-          <wx-action icon="trash" :title="t('fields.delete')" @click="removeChoice(index)" />
+          <wx-action
+            icon="trash"
+            tone="danger"
+            :title="t('fields.delete')"
+            v-bind="askRemove"
+            @click="removeChoice(index)"
+          />
         </div>
 
         <wx-button variant="outline" size="sm" @click="addChoice">

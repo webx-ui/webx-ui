@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, useId, useTemplateRef, watch } from 'vue'
 import { PopoverArrow, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import WxButton from '../Button/Button.vue'
 import WxIcon from '../Icon/Icon.vue'
@@ -72,6 +72,42 @@ watch(open, (value, was) => {
   if (was && !answered && !props.loading) emit('cancel')
 })
 
+/*
+ * Focus lands on the button that keeps things as they were. The question is usually one click
+ * away from the thing it would destroy, and a second press of the same key — Space on a
+ * trigger that was focused, say — must not be the answer. Enter is the deliberate one: it goes
+ * ahead from anywhere in the panel, the way a dialog's default button does.
+ */
+const actions = useTemplateRef<HTMLElement>('actions')
+
+function focusCancel(event: Event) {
+  const first = actions.value?.querySelector<HTMLElement>('button:not([disabled])')
+  if (!first) return
+  event.preventDefault()
+  first.focus()
+}
+
+function onEnter(event: KeyboardEvent) {
+  if (event.isComposing || props.loading) return
+  /* Without this the focused Cancel would be pressed by the same key. */
+  event.preventDefault()
+  confirm()
+}
+
+const id = useId()
+const titleId = `${id}-title`
+const descriptionId = `${id}-description`
+
+/*
+ * Reka names the panel after its trigger — «Delete», the button that opened it — and that is a
+ * fair name. What it asks is read out after it as the description.
+ */
+const describedBy = computed(
+  () =>
+    [props.title && titleId, props.description && descriptionId].filter(Boolean).join(' ') ||
+    undefined,
+)
+
 const panelStyle = computed(() => {
   const { width } = props
   const bare = typeof width === 'number' || /^\d+(\.\d+)?$/.test(width)
@@ -91,23 +127,28 @@ defineExpose({ close: cancel })
       <popover-content
         v-bind="$attrs"
         class="wx-popconfirm"
+        :aria-describedby="describedBy"
         :side="side"
         :align="align"
         :side-offset="offset"
         :style="panelStyle"
+        @open-auto-focus="focusCancel"
+        @keydown.enter="onEnter"
       >
         <div class="wx-popconfirm__body">
           <wx-icon v-if="icon" class="wx-popconfirm__icon" :name="icon" />
 
           <div class="wx-popconfirm__text">
             <slot>
-              <p v-if="title" class="wx-popconfirm__title">{{ title }}</p>
-              <p v-if="description" class="wx-popconfirm__description">{{ description }}</p>
+              <p v-if="title" :id="titleId" class="wx-popconfirm__title">{{ title }}</p>
+              <p v-if="description" :id="descriptionId" class="wx-popconfirm__description">
+                {{ description }}
+              </p>
             </slot>
           </div>
         </div>
 
-        <div class="wx-popconfirm__actions">
+        <div ref="actions" class="wx-popconfirm__actions">
           <slot name="actions" :confirm="confirm" :cancel="cancel">
             <wx-button size="sm" variant="text" :disabled="loading" @click="cancel">
               {{ cancelText }}

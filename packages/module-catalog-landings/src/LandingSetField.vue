@@ -11,8 +11,9 @@ import {
   WxSelect,
   WxText,
   type SelectOption,
+  WxPopconfirm,
 } from '@webx-ui/core'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import { cleanSet, createLandingsApi } from './api'
 import { useLandingEditor } from './editor'
 import { NAMESPACE, useCatalogLandingsMessages } from './i18n'
@@ -38,6 +39,7 @@ const editor = useLandingEditor()
 useCatalogLandingsMessages()
 
 const t = useTranslate(NAMESPACE)
+const askRemove = useRemoveConfirm()
 const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
@@ -272,16 +274,26 @@ const takenLink = computed(() =>
         @update:model-value="(picked: unknown) => pick(String(key), picked)"
       />
 
-      <wx-button
-        variant="text"
-        size="sm"
+      <wx-popconfirm
+        :title="askRemove.confirm"
+        :confirm-text="askRemove.confirmText"
+        :cancel-text="askRemove.cancelText"
+        confirm-type="danger"
         :disabled="locked"
-        :aria-label="t('landing.set-remove')"
-        :title="t('landing.set-remove')"
-        @click="remove(String(key))"
+        @confirm="remove(String(key))"
       >
-        <template #icon><wx-icon name="close" /></template>
-      </wx-button>
+        <template #trigger>
+          <wx-button
+            variant="text"
+            size="sm"
+            :disabled="locked"
+            :aria-label="t('landing.set-remove')"
+            :title="t('landing.set-remove')"
+          >
+            <template #icon><wx-icon name="close" /></template>
+          </wx-button>
+        </template>
+      </wx-popconfirm>
     </div>
 
     <div class="wx-catalog-landing-set__foot">
