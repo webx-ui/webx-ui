@@ -106,7 +106,9 @@ export {
   forgetShortcodes,
   loadShortcodes,
   shortcodeToken,
+  takesShortcodes,
   useShortcodes,
+  useShortcodesWhen,
   type Shortcode,
   type ShortcodeToken,
 } from './shortcodes'

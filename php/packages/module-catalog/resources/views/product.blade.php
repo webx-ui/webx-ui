@@ -102,12 +102,18 @@
             @webxPart('catalog.product.aside', ['product' => $product, 'verdict' => $verdict], 'webx-catalog::points.product-aside')
         </div>
 
-        @if ($product->summary)
-            <p class="webx-catalog-product__summary">{{ $product->summary }}</p>
+        {{-- Printed through `summaryText()` and `descriptionHtml()`, never as stored: the site's
+             shortcodes in them become what they print, and the description's pictures point at
+             where they live now. --}}
+        @php($summary = $product->summaryText())
+        @php($description = $product->descriptionHtml())
+
+        @if ($summary !== null)
+            <p class="webx-catalog-product__summary">{{ $summary }}</p>
         @endif
 
-        @if ($product->description)
-            <div class="webx-catalog-product__description">{!! $product->description !!}</div>
+        @if ($description !== '')
+            <div class="webx-catalog-product__description">{!! $description !!}</div>
         @endif
 
         @webxPart('catalog.product.tabs', ['product' => $product], 'webx-catalog::points.product-tabs')

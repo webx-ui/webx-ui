@@ -98,7 +98,7 @@ final class ContentRules
             // A number typed by hand goes stale; `[phone]` does not. The full list, with what each
             // prints in a page, is `blocks://shortcodes` where blocks are installed.
             'shortcodes' => [
-                'rule' => 'Write the shortcode, never the value it holds: [phone], not the number. Keep every shortcode a text already has, such as [dot], exactly as it is. [[name]] prints a literal [name].',
+                'rule' => 'Write the shortcode, never the value it holds: [phone], not the number — in a block\'s text and in a module\'s descriptions, leads, answers and reviews; a title, a slug, a code or an SEO field prints the bracket as typed. Keep every shortcode a text already has, such as [dot], exactly as it is. [[name]] prints a literal [name].',
                 'list' => array_map(static fn (array $code): array => ['name' => $code['name'], 'plain' => $code['plain'], 'description' => $code['description']], $this->shortcodes->list()),
             ],
             'empty' => $tone === null && $notes === null && $donts === [] && $more === [],

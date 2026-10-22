@@ -16,6 +16,7 @@
         <time class="webx-blog-card__date" datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->locale(app()->getLocale())->isoFormat('LL') }}</time>
     @endif
     @if ($article->lead)
-        <p class="webx-blog-card__lead">{{ $article->lead }}</p>
+        {{-- Through PageText: the lead takes shortcodes, and a bare `[phone]` is not for a visitor. --}}
+        <p class="webx-blog-card__lead">{{ app(\WebxUi\Admin\Shortcodes\PageText::class)->text($article->lead) }}</p>
     @endif
 </li>

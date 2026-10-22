@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Categories\HasCategories;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Blocks\HasBlocks;
@@ -250,7 +251,8 @@ class Service extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
         ];
 
         $lead = $this->getTranslation('lead', $locale);
-        $description = is_string($lead) ? trim($lead) : '';
+        // The lead takes shortcodes; JSON-LD is text, so each one is its plain rendering here.
+        $description = is_string($lead) ? trim(app(PageText::class)->plain($lead)) : '';
 
         if ($description !== '') {
             $service['description'] = $description;

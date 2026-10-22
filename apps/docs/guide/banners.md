@@ -72,7 +72,7 @@ use; an administrator can add places of their own in the panel for a template th
 | `image_mobile` | a narrower crop for phones, shown below the breakpoint instead of `image`                                                 |
 | `video`        | a video from the library, played silently over the picture; the picture is its poster                                     |
 | `title`        | translatable                                                                                                              |
-| `text`         | translatable plain text; the template prints it with its line breaks                                                      |
+| `text`         | translatable plain text; the template prints it with its line breaks; takes shortcodes                                    |
 | `buttons`      | up to three: a translatable label, a [link](/guide/menu#an-item-points-at-one-of-three-things) and a look from the config |
 | `enabled`      | the whole of «on the site»: no draft, no schedule; a new banner starts **off**                                            |
 

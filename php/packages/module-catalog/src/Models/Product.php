@@ -17,6 +17,8 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\Admin\Shortcodes\PageText;
+use WebxUi\Admin\Shortcodes\ShortcodeText;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Exceptions\CatalogException;
 use WebxUi\Catalog\Routing\CatalogMisses;
@@ -387,6 +389,28 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     }
 
     /** The name to show, and something to show when there is none in this language. */
+    /**
+     * The summary as a page prints it: the same text, with the site's shortcodes in it printed
+     * ({@see PageText::text()}) — null where nothing is written.
+     */
+    public function summaryText(?string $locale = null): string|ShortcodeText|null
+    {
+        $summary = $this->getTranslation('summary', $locale ?? app()->getLocale());
+
+        return is_string($summary) && trim($summary) !== '' ? app(PageText::class)->text($summary) : null;
+    }
+
+    /**
+     * The description as a page prints it: the library pictures pointed at where they live now and
+     * the shortcodes printed — '' where nothing is written. The record keeps the brackets.
+     */
+    public function descriptionHtml(?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+
+        return app(PageText::class)->html($this->getTranslation('description', $locale), $locale);
+    }
+
     public function displayName(?string $locale = null): string
     {
         $name = $this->getTranslation('name', $locale);

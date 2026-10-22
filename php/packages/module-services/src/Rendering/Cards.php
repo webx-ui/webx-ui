@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Services\Rendering;
 
 use Illuminate\Database\Eloquent\Model;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Screens\MediaValues;
@@ -16,7 +17,9 @@ use WebxUi\Services\Models\ServiceCategory;
  * A service as a template reads it — plain data, not the model.
  *
  *     id, anchor, categories   what every element of a `wx-collection` carries
- *     title, url, lead         in the language asked for; `lead` is plain text
+ *     title, url, lead         in the language asked for; a service's `lead` is its text with the
+ *                              shortcodes in it — a string, or a ShortcodeText `{{ }}` prints as
+ *                              HTML — and a category's is the HTML of its rich text
  *     cover                    what a `wx-media` field hands over: url, thumb, width, height…
  *     fields                   the project's own fields (a patch on `services.form`), by name
  *
@@ -32,6 +35,7 @@ final class Cards
     public function __construct(
         private readonly MediaFiles $files,
         private readonly MediaValues $media,
+        private readonly PageText $pages,
     ) {}
 
     /**
@@ -81,7 +85,8 @@ final class Cards
             'categories' => $service->categories->map(static fn (ServiceCategory $category): int => (int) $category->getKey())->values()->all(),
             'title' => $this->text($service, 'title', $locale),
             'url' => $this->url($service, $locale),
-            'lead' => $this->text($service, 'lead', $locale),
+            // Through PageText: the lead takes shortcodes, and a bare `[phone]` is not for a visitor.
+            'lead' => $this->pages->text($this->text($service, 'lead', $locale)) ?? '',
             'cover' => $this->cover($service, $locale),
             'fields' => $fields,
         ];

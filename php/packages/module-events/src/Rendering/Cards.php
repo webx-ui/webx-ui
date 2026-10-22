@@ -7,6 +7,7 @@ namespace WebxUi\Events\Rendering;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Events\Models\Event;
 use WebxUi\Events\Models\EventCategory;
 use WebxUi\Media\Screens\MediaFiles;
@@ -138,7 +139,8 @@ final class Cards
             'id' => (int) $event->getKey(),
             'url' => $this->url($event, $locale),
             'title' => $event->text('title', $locale),
-            'lead' => $event->text('lead', $locale),
+            // The card a theme prints says what the event's page says under its heading.
+            'lead' => app(PageText::class)->text($event->text('lead', $locale)),
             'cover' => $gallery[0] ?? null,
             'gallery' => $gallery,
             'starts_at' => $event->starts_at?->toAtomString(),

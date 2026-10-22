@@ -4,6 +4,8 @@ import { WxRichText, type RichTextModelValue } from '@webx-ui/core'
 import { useAdmin } from './admin'
 import { richTextKeys, rewriteRichText } from './richTextAddresses'
 import { useRichTextLabels } from './richTextLabels'
+import { useTranslate } from './i18n'
+import { takesShortcodes, useShortcodesWhen } from './shortcodes'
 
 /**
  * `wx-rich-text` on a screen: the editor, in the panel's language, with the panel's library
@@ -68,11 +70,34 @@ function remember(value: unknown): void {
 }
 
 const labels = useRichTextLabels()
+
+/*
+ * The site's shortcodes behind the toolbar's `[]`: on unless the node says `shortcodes: false`,
+ * since the site prints every module's rich text through them. The flag is the node's and goes
+ * no further than here; a block's form brings `tokens` of its own and keeps them.
+ */
+const t = useTranslate('webx-admin')
+const wanted = () => attrs.tokens === undefined && takesShortcodes('wx-rich-text', attrs.shortcodes)
+const tokens = useShortcodesWhen(wanted)
+
+const passed = computed(() => {
+  const rest: Record<string, unknown> = { ...attrs }
+  delete rest.shortcodes
+
+  return wanted() && tokens.value.length > 0
+    ? {
+        tokensTitle: t('shortcodes.title'),
+        tokensLabel: t('shortcodes.insert'),
+        ...rest,
+        tokens: tokens.value,
+      }
+    : rest
+})
 </script>
 
 <template>
   <wx-rich-text
-    v-bind="$attrs"
+    v-bind="passed"
     :model-value="shown"
     :labels="labels"
     :pick-image="pickImage"

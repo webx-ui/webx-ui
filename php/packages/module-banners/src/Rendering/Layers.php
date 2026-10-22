@@ -8,6 +8,7 @@ use WebxUi\Admin\Links\Link;
 use WebxUi\Admin\Links\LinkCandidate;
 use WebxUi\Admin\Links\LinkTarget;
 use WebxUi\Admin\Links\LinkUrls;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Panel\LayerRules;
 use WebxUi\Banners\Variants;
@@ -20,7 +21,8 @@ use WebxUi\Media\Screens\MediaValues;
  * custom properties — numbers and checked colours only, so nothing a person typed reaches CSS.
  *
  *     id, type, tag            the layer, text|image|button|buttons, and the tag of a text
- *     text                     the words, plain; a template prints them through nl2br(e())
+ *     text                     the words, shortcodes resolved — a string or a ShortcodeText;
+ *                              a template prints them through nl2br(e())
  *     image                    a picture as the library resolves it
  *     button                   label, url, new_tab, rel, variant — as a button of the banner
  *     buttons                  the banner's buttons, as the card has them
@@ -49,6 +51,7 @@ final class Layers
         private readonly LinkUrls $urls,
         private readonly Variants $variants,
         private readonly Locales $locales,
+        private readonly PageText $text,
     ) {}
 
     /**
@@ -176,6 +179,10 @@ final class Layers
                 if (preg_replace('/[\s\p{P}]+/u', '', $layer['text']) === '') {
                     return null;
                 }
+
+                // Resolved once, after `{title}` and `{text}` are put in as typed: the banner's
+                // text resolved first and then the layer's would print `[[phone]]` as a number.
+                $layer['text'] = $this->text->text($layer['text']);
 
                 break;
             case 'image':

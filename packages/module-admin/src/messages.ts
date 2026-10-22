@@ -354,6 +354,11 @@ export const adminMessages: Record<string, Messages> = {
     expand: 'Expand',
     collapse: 'Collapse',
   },
+  // What a screen's text field calls the site's shortcodes behind its `[]` button.
+  shortcodes: {
+    title: 'Shortcodes',
+    insert: 'Insert a shortcode',
+  },
   // What one administrator writes on a record for the next one. Not the property of any
   // section: the same feed hangs off a submission, an order and a client, so the words are
   // the panel's own.

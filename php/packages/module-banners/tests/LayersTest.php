@@ -6,6 +6,7 @@ namespace WebxUi\Banners\Tests;
 
 use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Panel\BannerForm;
 
@@ -236,6 +237,32 @@ final class LayersTest extends TestCase
         $this->assertStringContainsString('&lt;/style&gt;&lt;script&gt;', $html);
         $this->assertStringNotContainsString('<script>alert(1)', $html);
         $this->assertSame(2, substr_count($html, 'class="webx-banner__stage"'));
+    }
+
+    /**
+     * The banner's text is offered the shortcodes in the panel, so it prints resolved — in the
+     * corner of a place without layers, and in a layer that puts `{text}` in, where it is resolved
+     * once: `[[phone]]` is still the bracket itself.
+     */
+    #[Test]
+    public function the_text_and_a_text_layer_resolve_their_shortcodes_once(): void
+    {
+        $this->app->make(Shortcodes::class)->register('phone', '<a href="tel:+80012345678">+800 1234 5678</a>', plain: '+800 1234 5678');
+        $this->banner('promo', attributes: ['text' => ['en' => "Call us:\n[phone]"]]);
+        $this->banner(attributes: [
+            'text' => ['en' => 'Type [[phone]] or call [phone]'],
+            'layers' => [self::text('{text}', extra: ['id' => 'words'])],
+        ]);
+
+        $promo = Blade::render('<x-webx-banners place="promo" />');
+
+        $this->assertStringContainsString("<p class=\"webx-banner__text\">Call us:<br />\n<a href=\"tel:+80012345678\">+800 1234 5678</a></p>", $promo);
+        $this->assertStringNotContainsString('[phone]', $promo);
+
+        $hero = Blade::render('<x-webx-banners place="hero" />');
+
+        $this->assertStringContainsString('<span class="webx-banner__inner">Type [phone] or call <a href="tel:+80012345678">+800 1234 5678</a></span>', $hero);
+        $this->assertStringNotContainsString('[[phone]]', $hero);
     }
 
     #[Test]

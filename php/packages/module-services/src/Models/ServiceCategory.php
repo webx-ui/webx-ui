@@ -13,8 +13,8 @@ use Illuminate\Support\Carbon;
 use WebxUi\Admin\Categories\Category;
 use WebxUi\Admin\Categories\CategoryKind;
 use WebxUi\Admin\Categories\IsCategory;
-use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Blocks\HasBlocks;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Routing\Contracts\Visible;
@@ -120,20 +120,14 @@ class ServiceCategory extends Model implements Category, HasBreadcrumbs, HasSeoF
 
     /**
      * The introduction as a page prints it: the document the editor wrote, with every library
-     * picture pointed at where it lives now — the document holds keys, not addresses.
+     * picture pointed at where it lives now — the document holds keys, not addresses — and its
+     * shortcodes replaced, so the visitor reads the phone rather than `[phone]`.
      */
     public function leadHtml(?string $locale = null): string
     {
         $stored = $this->getTranslation('lead', $locale ?? app()->getLocale());
 
-        if (! is_string($stored) || trim($stored) === '') {
-            return '';
-        }
-
-        $type = app(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return app(PageText::class)->html($stored, $locale);
     }
 
     /** The name, the introduction and the cover, for a category nobody wrote an SEO card for. */

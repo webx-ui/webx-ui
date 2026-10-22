@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Locales;
 use WebxUi\Media\Screens\MediaValues;
@@ -323,9 +324,10 @@ class Outlet extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
 
         $logo = $this->logoIn($locale);
 
+        // A meta description is text: the summary's shortcodes as the words they print.
         return SeoData::fallback(
             $this->displayTitle($locale),
-            $this->text('summary', $locale),
+            Container::getInstance()->make(PageText::class)->plain($this->text('summary', $locale)),
             $logo['url'] ?? null,
             is_string($logo['alt'] ?? null) ? $logo['alt'] : null,
         );

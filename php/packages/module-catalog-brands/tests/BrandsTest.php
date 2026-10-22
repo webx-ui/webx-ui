@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Engine\CatalogQuery;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
@@ -31,6 +32,18 @@ use WebxUi\Mcp\Registry\ToolRegistry;
  */
 final class BrandsTest extends TestCase
 {
+    #[Test]
+    public function a_brands_description_prints_the_sites_shortcodes(): void
+    {
+        app(Shortcodes::class)->register('phone', '<a href="tel:+80012345678">+800 1234 5678</a>', plain: '+800 1234 5678');
+        $this->product('Desk lamp', $this->brand('Acme', ['description' => '<p>Dealer line: [phone]</p>']), $this->category('lamps'));
+
+        $this->get('/brands/acme')
+            ->assertOk()
+            ->assertSee('<p>Dealer line: <a href="tel:+80012345678">+800 1234 5678</a></p>', false)
+            ->assertDontSee('[phone]', false);
+    }
+
     #[Test]
     public function a_brand_page_is_the_catalogue_narrowed_to_it_with_the_filter_tail_behind(): void
     {

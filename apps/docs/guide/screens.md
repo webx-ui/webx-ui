@@ -332,6 +332,36 @@ That happens on every save that goes through the type: a described screen (`Scre
 since `module-blocks` puts block values through their types as well, a rich text field inside a
 block — whether the editor saved it or an agent wrote it through a tool.
 
+### Shortcodes in a module's texts
+
+The site's [shortcodes](/guide/shortcodes) — `[phone]`, `[dot]` — work in every text a module shows
+a visitor, not only in blocks. The node says which fields take them:
+
+- `wx-rich-text` takes them **by default**: the `[]` button on the toolbar and suggestions after
+  `[`. `"props": { "shortcodes": false }` switches them off for a text the site does not print.
+- `wx-input` and `wx-textarea` take them **only when asked**, `"props": { "shortcodes": true }`:
+  the same input is a title that becomes a slug, a code or an SEO description, where a `[phone]`
+  would stay a bracket.
+- Leave them off titles and names (slugs, `<title>`, menus, JSON-LD names), SEO fields, slugs,
+  codes, addresses and prices.
+
+```json
+{
+  "id": "summary",
+  "type": "wx-textarea",
+  "name": "summary",
+  "localized": true,
+  "props": { "rows": 3, "shortcodes": true }
+}
+```
+
+The panel asks for the list once and hands it to the core field as `tokens`; the flag itself
+never reaches the field. **The site half is not optional:** a field that takes shortcodes is
+printed through `WebxUi\Admin\Shortcodes\PageText` — `html()` for a rich text, `text()` for a
+line or a paragraph, `plain()` and `plainFromHtml()` for JSON-LD, meta tags, feeds and search
+indexes — on the page, on its card in a list and in its markup alike. The record keeps the
+bracket: the panel, the agents and the exports read what was typed.
+
 ### Pictures move; documents do not
 
 `wx-media` keeps the library key and never the address, so a library that moves to another disk

@@ -7,6 +7,7 @@ namespace WebxUi\Tariffs\Tests;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Collections\CollectionSources;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Tariffs\Models\Tariff;
@@ -175,6 +176,29 @@ final class BlockTest extends TestCase
         $this->assertStringContainsString('<h3 class="b-tariffs__name">Growth</h3>', $html);
         $this->assertStringNotContainsString('<h3 class="b-tariffs__name">Starter</h3>', $html);
         $this->assertStringContainsString('<a href="http://localhost/services/seo">Seo</a>', $html);
+    }
+
+    /**
+     * The description and the features are offered the shortcodes in the panel, so the card
+     * resolves them; the badge is a label and prints as typed.
+     */
+    #[Test]
+    public function the_description_and_the_features_resolve_their_shortcodes(): void
+    {
+        $this->app->make(Shortcodes::class)->register('phone', '<a href="tel:+80012345678">+800 1234 5678</a>', plain: '+800 1234 5678');
+        $this->installBlock();
+        $this->tariff('Starter', attributes: [
+            'description' => ['en' => 'Questions? [phone]'],
+            'features' => [['text' => ['en' => 'Hotline [phone]']]],
+            'badge' => ['en' => '[phone]'],
+        ]);
+
+        $html = $this->render([$this->node()]);
+
+        $this->assertStringContainsString('<p class="b-tariffs__text">Questions? <a href="tel:+80012345678">+800 1234 5678</a></p>', $html);
+        $this->assertStringContainsString('<li>Hotline <a href="tel:+80012345678">+800 1234 5678</a></li>', $html);
+        $this->assertStringContainsString('<p class="b-tariffs__badge">[phone]</p>', $html);
+        $this->assertSame(1, substr_count($html, '[phone]'), 'only the badge keeps the bracket');
     }
 
     #[Test]

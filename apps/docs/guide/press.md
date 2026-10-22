@@ -39,20 +39,20 @@ of the strip of logos.
 
 ## Outlets and articles
 
-| Outlet        | What it is                                                                  |
-| ------------- | --------------------------------------------------------------------------- |
-| `logo`        | a picture from the library — kept as its key, never as an address           |
-| `title`       | translatable — a proper name, shown from any language that has it           |
-| `slug`        | translatable — the address of its page under the prefix                     |
-| `summary`     | translatable plain text — under the name, and the description of its page   |
-| `website_url` | `http://` or `https://` only                                                |
-| `featured`    | in the strip of logos, when the block asks for the marked ones only         |
-| `published`   | the whole of an outlet's life: no draft, no history; the bin brings it back |
+| Outlet        | What it is                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| `logo`        | a picture from the library — kept as its key, never as an address                           |
+| `title`       | translatable — a proper name, shown from any language that has it                           |
+| `slug`        | translatable — the address of its page under the prefix                                     |
+| `summary`     | translatable plain text — under the name, and the description of its page; takes shortcodes |
+| `website_url` | `http://` or `https://` only                                                                |
+| `featured`    | in the strip of logos, when the block asks for the marked ones only                         |
+| `published`   | the whole of an outlet's life: no draft, no history; the bin brings it back                 |
 
 | Article          | What it is                                                              |
 | ---------------- | ----------------------------------------------------------------------- |
 | `title`          | translatable — the headline as the outlet printed it                    |
-| `excerpt`        | translatable plain text — a sentence or two                             |
+| `excerpt`        | translatable plain text — a sentence or two; takes shortcodes           |
 | `kind`           | a key of `webx-press.kinds`, or none                                    |
 | `published_on`   | a day                                                                   |
 | `date_precision` | `day`, `month` or `year` — how much of the date is printed              |

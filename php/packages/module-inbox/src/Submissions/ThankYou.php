@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\Submissions;
 
+use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\HtmlString;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Submission;
@@ -49,6 +51,9 @@ final class ThankYou
     /**
      * The text is the panel's rich text, HTML already: only the values are escaped.
      *
+     * The site's shortcodes in it are printed first, and the visitor's answers go in after: a
+     * `[phone]` the administrator wrote is the number, one the visitor typed stays as typed.
+     *
      * @param  array<string, string>  $answers
      */
     public static function text(?string $html, array $answers): ?string
@@ -56,6 +61,8 @@ final class ThankYou
         if ($html === null) {
             return null;
         }
+
+        $html = Container::getInstance()->make(Shortcodes::class)->htmlIn($html);
 
         return (string) preg_replace_callback(self::PATTERN, static fn (array $match): string => self::value($answers[$match[1]] ?? ''), $html);
     }

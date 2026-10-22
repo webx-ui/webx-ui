@@ -138,7 +138,7 @@ final class BlockResources
     {
         return [
             'rules' => [
-                'Write a shortcode in any text, textarea or rich text field of a block: "Call us on [phone]". The content keeps the bracket; the page prints the value, so a changed number changes every page.',
+                'Write a shortcode in any text, textarea or rich text field of a block, and in the texts of a module a visitor reads — every rich text (a description, an answer) and the paragraphs its form offers them in (a product\'s summary, an article\'s lead, a review): "Call us on [phone]". The content keeps the bracket; the page prints the value, so a changed number changes every page. A title, a slug, a code or an SEO field prints the bracket as typed.',
                 'Never type a value a data shortcode holds — the phone, the e-mail, the address — by hand: use its shortcode.',
                 'Keep the shortcodes a text already has, [dot] above all: it is the site\'s styling, and replacing it with a full stop or with markup loses it.',
                 'Only the names listed here are shortcodes; anything else in brackets is printed as typed. [[name]] prints a literal [name].',

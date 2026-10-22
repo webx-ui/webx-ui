@@ -11,6 +11,7 @@ use WebxUi\Admin\Links\LinkCandidate;
 use WebxUi\Admin\Links\LinkTarget;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Relations\Relations;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Tariffs\Currencies;
@@ -27,11 +28,15 @@ use WebxUi\Tariffs\Variants;
  *     price, amount            the number or null, and the number as the language writes it ('' without)
  *     currency, symbol         the code or null, and its symbol — the code when the config lost it
  *     features                 the rows of "what is included" written in the language, in order
- *     description              plain text in the language asked for, else ''
+ *     description              in the language asked for, else ''
  *     button                   label, url, new_tab, rel, variant — or null
  *     featured                 the "recommended" mark
  *     service_links            id, title, url of the services the tariff is for; [] without them
  *     fields                   the project's own fields (a patch on `tariffs.form`), by name
+ *
+ * A feature and the description are an editor's sentences, so their shortcodes are resolved: each
+ * is a string, or a ShortcodeText when it holds one ({@see PageText::text()}). The name, the badge,
+ * the period, the price's words and the button's label are not — they are labels, not prose.
  *
  * Every card is built from what was loaded with the list, so a list of any length is the same few
  * queries: the relations once, the entities behind the buttons once per kind, the addresses of
@@ -47,6 +52,7 @@ final class Cards
         private readonly LinkUrls $urls,
         private readonly Currencies $currencies,
         private readonly Variants $variants,
+        private readonly PageText $text,
     ) {}
 
     /**
@@ -112,8 +118,8 @@ final class Cards
             'symbol' => $this->currencies->symbol($tariff->currency),
             'period' => $tariff->wordsIn('period', $locale, $default),
             'price_text' => $tariff->wordsIn('price_text', $locale, $default),
-            'features' => $tariff->featuresIn($locale),
-            'description' => $tariff->textIn('description', $locale),
+            'features' => array_map($this->text->text(...), $tariff->featuresIn($locale)),
+            'description' => $this->text->text($tariff->textIn('description', $locale)),
             'button' => $this->button($tariff, $locale, $candidates),
             'featured' => $tariff->featured,
             'service_links' => $this->serviceLinks($tariff, $locale),

@@ -15,8 +15,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection as BaseCollection;
 use WebxUi\Admin\Categories\HasCategories;
 use WebxUi\Admin\Relations\HasRelations;
-use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
+use WebxUi\Admin\Shortcodes\ShortcodeText;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Events\Seo\EventMarkup;
@@ -489,7 +490,7 @@ class Event extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructur
      * another language, for the reason the recipes give about nutrition: a card half in a foreign
      * language is worse than one card fewer.
      *
-     * @return list<array{title: string, text: string}>
+     * @return list<array{title: string, text: string|ShortcodeText}>
      */
     public function highlights(string $locale): array
     {
@@ -504,7 +505,8 @@ class Event extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructur
             $text = self::word($row['text'] ?? null, $locale);
 
             if ($title !== '' || $text !== '') {
-                $cards[] = ['title' => $title, 'text' => $text];
+                // The text is a paragraph the panel offers shortcodes in; the title is a heading.
+                $cards[] = ['title' => $title, 'text' => $text === '' ? '' : app(PageText::class)->text($text)];
             }
         }
 
@@ -532,20 +534,13 @@ class Event extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructur
 
     /**
      * The description as a page prints it: the library pictures in it pointed at where they live
-     * now — the document holds keys, not addresses.
+     * now — the document holds keys, not addresses — and the shortcodes in it replaced.
      */
     public function descriptionHtml(?string $locale = null): string
     {
         $stored = $this->getTranslation('description', $locale ?? app()->getLocale(), false);
 
-        if (! is_string($stored) || trim($stored) === '') {
-            return '';
-        }
-
-        $type = app(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return app(PageText::class)->html($stored, $locale);
     }
 
     /** One translated column in one language, with no fallback — '' where it is not written. */

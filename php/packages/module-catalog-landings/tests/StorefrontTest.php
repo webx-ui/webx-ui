@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\CatalogLandings\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\CatalogBrands\Models\Brand;
 use WebxUi\CatalogLandings\Models\Landing;
@@ -168,6 +169,22 @@ final class StorefrontTest extends TestCase
         $this->get('/laptops-apple')->assertOk()->assertSee('Above the list.')->assertSee('Under the pages.');
         $this->get('/laptops-apple?page=2')->assertOk()->assertDontSee('Above the list.')->assertDontSee('Under the pages.');
         $this->get('/laptops-apple/price_0-1000')->assertOk()->assertDontSee('Above the list.')->assertDontSee('Under the pages.');
+    }
+
+    #[Test]
+    public function the_landings_texts_print_the_sites_shortcodes(): void
+    {
+        app(Shortcodes::class)->register('phone', '<a href="tel:+80012345678">+800 1234 5678</a>', plain: '+800 1234 5678');
+        $this->landing('laptops-apple', $this->laptops, ['brand' => $this->brands([$this->apple])], [
+            'text_above' => '<p>Ask us: [phone]</p>',
+            'text_below' => '<p>Or call [phone].</p>',
+        ]);
+
+        $this->get('/laptops-apple')
+            ->assertOk()
+            ->assertSee('<p>Ask us: <a href="tel:+80012345678">+800 1234 5678</a></p>', false)
+            ->assertSee('<p>Or call <a href="tel:+80012345678">+800 1234 5678</a>.</p>', false)
+            ->assertDontSee('[phone]', false);
     }
 
     #[Test]

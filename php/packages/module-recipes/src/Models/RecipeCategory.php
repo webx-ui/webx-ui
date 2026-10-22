@@ -13,8 +13,8 @@ use Illuminate\Support\Carbon;
 use WebxUi\Admin\Categories\Category;
 use WebxUi\Admin\Categories\CategoryKind;
 use WebxUi\Admin\Categories\IsCategory;
-use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Media\Screens\MediaValues;
 use WebxUi\Recipes\Seo\Trail;
@@ -121,19 +121,12 @@ class RecipeCategory extends Model implements Category, HasBreadcrumbs, HasSeoFa
         );
     }
 
-    /** The introduction as a page prints it: library pictures pointed at where they live now. */
+    /** The introduction as a page prints it: library pictures pointed at where they live now, shortcodes replaced. */
     public function leadHtml(?string $locale = null): string
     {
         $stored = $this->getTranslation('lead', $locale ?? app()->getLocale(), false);
 
-        if (! is_string($stored) || trim($stored) === '') {
-            return '';
-        }
-
-        $type = app(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return app(PageText::class)->html($stored, $locale);
     }
 
     /**

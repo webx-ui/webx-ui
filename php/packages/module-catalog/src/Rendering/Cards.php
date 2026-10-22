@@ -43,7 +43,7 @@ final class Cards
                 ]))),
                 'name' => $product->displayName($locale),
                 'url' => $product->listedUrl($locale),
-                'summary' => $product->getTranslation('summary', $locale) ?: null,
+                'summary' => $product->summaryText($locale),
                 'sku' => $product->sku,
                 'price' => $priced && $product->price !== null ? (float) $product->price : null,
                 'old_price' => $priced && $product->old_price !== null ? (float) $product->old_price : null,

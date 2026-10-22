@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\View\Components;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\Component;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
 use WebxUi\Inbox\Fields\FieldType;
@@ -173,8 +175,8 @@ final class Form extends Component
                 // look puts two half ones to a row where the form has the room.
                 'half' => ! $field->is_fullsize,
                 // The consent's words are a sentence with a link in it, written in the panel:
-                // printed as they are, the same trust as the thank-you.
-                'consent' => $field->type === FieldType::Consent ? $field->optionText('text', $title) : null,
+                // printed as they are, the same trust as the thank-you, with the site's shortcodes.
+                'consent' => $field->type === FieldType::Consent ? Container::getInstance()->make(Shortcodes::class)->htmlIn((string) $field->optionText('text', $title)) : null,
             ];
         }
 

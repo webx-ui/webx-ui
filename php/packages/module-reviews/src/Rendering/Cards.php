@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Reviews\Rendering;
 
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\Locales;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Screens\MediaValues;
@@ -15,7 +16,8 @@ use WebxUi\Reviews\Models\ReviewCategory;
  *
  *     id, anchor, categories   what every element of a `wx-collection` carries
  *     name, job_title          in the language asked for, else in the default one; '' when none
- *     text                     plain text in the language asked for — without it there is no card
+ *     text                     in the language asked for — without it there is no card; a string,
+ *                              or a ShortcodeText when it holds a shortcode ({@see PageText::text()})
  *     rating, date, profile    an int from 1 to 5, `Y-m-d`, an address; each null when not given
  *     photo                    what a `wx-media` field hands over: url, thumb, width, height, alt…
  *     fields                   the project's own fields (a patch on `reviews.form`), by name
@@ -32,6 +34,7 @@ final class Cards
         private readonly MediaFiles $files,
         private readonly MediaValues $media,
         private readonly Locales $locales,
+        private readonly PageText $text,
     ) {}
 
     /**
@@ -84,7 +87,7 @@ final class Cards
             'name' => $name,
             'initials' => $this->initials($name),
             'job_title' => $review->wordsIn('job_title', $locale, $default),
-            'text' => $review->textIn($locale),
+            'text' => $this->text->text($review->textIn($locale)),
             'rating' => $review->rating,
             'date' => $review->reviewed_on?->toDateString(),
             'profile' => $review->profile_url,

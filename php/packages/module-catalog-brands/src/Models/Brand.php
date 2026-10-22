@@ -19,8 +19,8 @@ use WebxUi\Admin\Categories\Category;
 use WebxUi\Admin\Categories\CategoryKind;
 use WebxUi\Admin\Categories\IsCategory;
 use WebxUi\Admin\History\RecordsHistory;
-use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Filter\FilterAliases;
 use WebxUi\Catalog\Models\Product;
@@ -300,20 +300,11 @@ class Brand extends Model implements Category, HasSeoFallback, ListingSubject, V
 
     /**
      * The description as a page prints it: a document with every library picture pointed at where
-     * it lives now, as the rubric's introduction is.
+     * it lives now and the site's shortcodes printed, as the rubric's introduction is.
      */
     public function descriptionHtml(?string $locale = null): string
     {
-        $stored = $this->getTranslation('description', $locale ?? app()->getLocale());
-
-        if (! is_string($stored) || trim($stored) === '') {
-            return '';
-        }
-
-        $type = Container::getInstance()->make(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return Container::getInstance()->make(PageText::class)->html($this->getTranslation('description', $locale ?? app()->getLocale()), $locale);
     }
 
     /**

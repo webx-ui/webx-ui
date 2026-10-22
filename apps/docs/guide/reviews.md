@@ -43,16 +43,16 @@ Permissions: `reviews.view` opens the list, `reviews.manage` writes (the order t
 
 ## A review
 
-| Field         | What it is                                                                   |
-| ------------- | ---------------------------------------------------------------------------- |
-| `photo`       | a picture from the library — kept as its key, never as an address            |
-| `name`        | translatable                                                                 |
-| `job_title`   | translatable — or the company, or the city: what is printed under the name   |
-| `text`        | translatable plain text; the block prints it with its line breaks            |
-| `rating`      | a whole number from 1 to 5, or none — then the block draws no stars          |
-| `reviewed_on` | a date; printed if the template wants it, it orders and hides nothing        |
-| `profile_url` | `http://` or `https://` only; the block links the name with `rel="nofollow"` |
-| `published`   | the whole of a review's life: no draft, no history; the bin brings it back   |
+| Field         | What it is                                                                          |
+| ------------- | ----------------------------------------------------------------------------------- |
+| `photo`       | a picture from the library — kept as its key, never as an address                   |
+| `name`        | translatable                                                                        |
+| `job_title`   | translatable — or the company, or the city: what is printed under the name          |
+| `text`        | translatable plain text; the block prints it with its line breaks; takes shortcodes |
+| `rating`      | a whole number from 1 to 5, or none — then the block draws no stars                 |
+| `reviewed_on` | a date; printed if the template wants it, it orders and hides nothing               |
+| `profile_url` | `http://` or `https://` only; the block links the name with `rel="nofollow"`        |
+| `published`   | the whole of a review's life: no draft, no history; the bin brings it back          |
 
 **A review is shown in a language only when its text is written in it.** No other language stands
 in for the text: half a block of reviews in another language is worse than a shorter one. The name
@@ -128,7 +128,7 @@ The card:
     'name' => 'Anna Petrova',
     'initials' => 'AP',             // what stands in for a missing photo
     'job_title' => 'CEO, Acme',     // '' when there is none
-    'text' => "…\n…",               // plain text, in the language of the page
+    'text' => "…\n…",               // in the language of the page, shortcodes printed
     'rating' => 5,                  // or null
     'date' => '2026-09-20',         // or null
     'profile' => 'https://…',       // or null

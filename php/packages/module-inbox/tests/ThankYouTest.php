@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Submission;
 
@@ -43,6 +44,18 @@ final class ThankYouTest extends TestCase
                 'redirect' => null,
                 'html' => null,
             ]);
+    }
+
+    #[Test]
+    public function the_sites_shortcodes_in_the_thank_you_are_printed_and_the_visitors_brackets_are_not(): void
+    {
+        app(Shortcodes::class)->register('phone', '<a href="tel:+80012345678">+800 1234 5678</a>', plain: '+800 1234 5678');
+        $this->form('contact', [], ['thank-you.text' => ['en' => '<p>Call [phone], {{field.name}}.</p>']]);
+
+        // What the administrator wrote is the number; what the visitor typed stays as typed.
+        $this->postJson($this->intake(), ['fields' => ['name' => '[phone]', 'email' => 'ada@example.test']])
+            ->assertOk()
+            ->assertJsonPath('message', '<p>Call <a href="tel:+80012345678">+800 1234 5678</a>, <em class="webx-form__answer-value">[phone]</em>.</p>');
     }
 
     #[Test]

@@ -6,6 +6,7 @@ namespace WebxUi\Recipes\Rendering;
 
 use Illuminate\Container\Container;
 use WebxUi\Admin\Relations\Relations;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\Locales;
 use WebxUi\Recipes\Models\Recipe;
 use WebxUi\Recipes\Models\RecipeNutrient;
@@ -17,11 +18,11 @@ use WebxUi\Services\Rendering\ServiceQuery;
  *
  *     $recipe        the model — for `extra()`, SEO and anything a site's part wants of it
  *     $pictures      the gallery, resolved; the first is the cover
- *     $title, $lead
+ *     $title, $lead   the lead with its shortcodes resolved — print it with {{ }}
  *     $minutes, $servings
  *     $categories    [{ id, title, url }] — visible, with an address in this language
  *     $nutrients     [{ id, title }] — visible
- *     $ingredients, $method   HTML as stored (the field type cleaned it on the way in)
+ *     $ingredients, $method   HTML as stored (the field type cleaned it on the way in), shortcodes replaced
  *     $nutrition     [key => text] — only what is written in this language
  *     $services      cards of the visible related services, when `module-services` is here
  *     $similar       cards (§5.6)
@@ -52,7 +53,8 @@ final class RecipePage
             'recipe' => $recipe,
             'pictures' => $recipe->pictures($locale),
             'title' => (string) $recipe->getTranslation('title', $locale),
-            'lead' => (string) $recipe->getTranslation('lead', $locale),
+            // A paragraph the panel offers shortcodes in: `{{ }}` prints what this hands it.
+            'lead' => app(PageText::class)->text((string) $recipe->getTranslation('lead', $locale)),
             'minutes' => $recipe->total_minutes,
             'servings' => $recipe->servings,
             'categories' => $this->cards->categoryLinks($recipe, $locale),

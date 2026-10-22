@@ -7,6 +7,7 @@ namespace WebxUi\Recipes\Rendering;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use WebxUi\Admin\Relations\Relations;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Screens\MediaValues;
 use WebxUi\Recipes\Models\Recipe;
@@ -125,7 +126,8 @@ final class Cards
             'categories' => $recipe->categories->map(static fn (RecipeCategory $category): int => (int) $category->getKey())->values()->all(),
             'title' => $this->text($recipe, 'title', $locale),
             'url' => $this->url($recipe, $locale),
-            'lead' => $this->text($recipe, 'lead', $locale),
+            // The card says what the recipe's page says under its heading.
+            'lead' => app(PageText::class)->text($this->text($recipe, 'lead', $locale)),
             'cover' => $gallery[0] ?? null,
             'gallery' => $gallery,
             'minutes' => $recipe->total_minutes,

@@ -1,3 +1,4 @@
+import { WxInput, WxTextarea } from '@webx-ui/core'
 import type { TypeRegistry } from '@webx-ui/schema'
 import CategoriesField from './categories/CategoriesField.vue'
 import SourceSelect from './categories/SourceSelect.vue'
@@ -8,6 +9,7 @@ import HistoryFeed from './HistoryFeed.vue'
 import ListScreen from './ListScreen.vue'
 import RichTextField from './RichTextField.vue'
 import SlugField from './SlugField.vue'
+import { shortcodeTextField } from './ShortcodeTextField'
 
 /**
  * Node types the panel itself brings, under every module's and every project's.
@@ -44,11 +46,20 @@ import SlugField from './SlugField.vue'
  * `wx-relations` is a record pointing at records of another section — the services of a recipe,
  * its similar recipes — by id, in order (`relations/`).
  *
+ * `wx-input` and `wx-textarea` are the core's, over the schema's own, for one prop the panel
+ * reads: `shortcodes: true` offers the site's shortcodes in a text the site prints through them
+ * (`ShortcodeTextField`). `wx-rich-text` offers them unless it says `false`.
+ *
  * `wx-history` is who changed the record and what (WEBX_UI_HISTORY.md §5): a tab of any form is
  * `{ "type": "wx-history", "props": { "type": "catalog.product" } }`, and the record's id comes
  * from the editor hosting the screen (`provideHistorySubject`). It draws and edits nothing.
  */
 export const adminTypes: TypeRegistry = {
+  'wx-input': { component: shortcodeTextField(WxInput, 'wx-input', 'WxInputField'), kind: 'field' },
+  'wx-textarea': {
+    component: shortcodeTextField(WxTextarea, 'wx-textarea', 'WxTextareaField'),
+    kind: 'field',
+  },
   'wx-list': { component: ListScreen, kind: 'layout', labelProp: 'title' },
   // The column of the form, like the fields above it: a panel as wide as a monitor made a line of
   // two hundred characters, which nobody writes or reads. A document longer than the column

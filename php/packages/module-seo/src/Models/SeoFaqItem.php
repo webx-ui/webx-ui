@@ -7,7 +7,7 @@ namespace WebxUi\Seo\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -64,19 +64,13 @@ class SeoFaqItem extends Model
 
     /**
      * The answer as a page prints it: the document the editor wrote, with library pictures
-     * pointed at where they live now — the same way `module-faq` prints its answers.
+     * pointed at where they live now and the shortcodes replaced — the same way `module-faq`
+     * prints its answers.
      */
     public function answerHtml(string $locale): string
     {
         $stored = $this->getTranslation('answer', $locale, fallback: false);
 
-        if (! is_string($stored) || trim($stored) === '') {
-            return '';
-        }
-
-        $type = app(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return app(PageText::class)->html($stored, $locale);
     }
 }

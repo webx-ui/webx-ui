@@ -166,7 +166,8 @@
                   "props": {
                     "rows": 3,
                     "maxlength": 2000,
-                    "showCount": true
+                    "showCount": true,
+                    "shortcodes": true
                   }
                 }
               ]

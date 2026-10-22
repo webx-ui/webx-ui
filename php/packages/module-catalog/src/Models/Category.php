@@ -16,6 +16,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Catalog\Exceptions\CatalogException;
 use WebxUi\Catalog\Storefront\HasListingTexts;
 use WebxUi\Catalog\Support\RequestMemo;
@@ -306,12 +307,15 @@ class Category extends Model implements HasBreadcrumbs, HasListingTexts, HasSeoF
         return is_string($name) && trim($name) !== '' ? $name : '#'.$this->getKey();
     }
 
-    /** The description, above the products of the plain page. */
+    /**
+     * The description, above the products of the plain page: its library pictures pointed at where
+     * they live now and the site's shortcodes printed, as a page prints every rich text.
+     */
     public function textAbove(string $locale): ?string
     {
-        $description = $this->getTranslation('description', $locale);
+        $description = Container::getInstance()->make(PageText::class)->html($this->getTranslation('description', $locale), $locale);
 
-        return is_string($description) && trim($description) !== '' ? $description : null;
+        return $description !== '' ? $description : null;
     }
 
     /** A category has one text; the place under the pages is a landing's (decision 6 of the landings spec). */

@@ -7,6 +7,7 @@ namespace WebxUi\Recipes\Seo;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Recipes\Models\Recipe;
 use WebxUi\Recipes\Models\RecipeCategory;
 use WebxUi\Seo\Panel\DefaultsSource;
@@ -48,7 +49,7 @@ final class RecipeMarkup
         $lead = $recipe->getTranslation('lead', $locale);
 
         if (is_string($lead) && trim($lead) !== '') {
-            $markup['description'] = trim($lead);
+            $markup['description'] = trim(app(PageText::class)->plain($lead));
         }
 
         $images = array_values(array_filter(array_map(
@@ -78,13 +79,13 @@ final class RecipeMarkup
             }
         }
 
-        $ingredients = self::items($recipe->html('ingredients', $locale));
+        $ingredients = self::plainItems($recipe, 'ingredients', $locale);
 
         if ($ingredients !== []) {
             $markup['recipeIngredient'] = $ingredients;
         }
 
-        $steps = self::items($recipe->html('method', $locale));
+        $steps = self::plainItems($recipe, 'method', $locale);
 
         if ($steps !== []) {
             $markup['recipeInstructions'] = array_map(
@@ -110,6 +111,22 @@ final class RecipeMarkup
         }
 
         return $markup;
+    }
+
+    /**
+     * The items of a document as text for the markup. Read out of what is stored, not out of what
+     * the page prints: a shortcode on the page is HTML, and its text there is not always what it
+     * says as text — JSON-LD takes the plain rendering.
+     *
+     * @return list<string>
+     */
+    private static function plainItems(Recipe $recipe, string $attribute, string $locale): array
+    {
+        $stored = $recipe->getTranslation($attribute, $locale, false);
+        $text = app(PageText::class);
+        $items = array_map(static fn (string $item): string => trim($text->plain($item)), self::items(is_string($stored) ? $stored : ''));
+
+        return array_values(array_filter($items, static fn (string $item): bool => $item !== ''));
     }
 
     /** `PT45M`, `PT1H15M`, `PT2H` — ISO 8601, which is what `totalTime` takes. */
