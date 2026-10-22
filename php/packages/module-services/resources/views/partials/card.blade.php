@@ -13,6 +13,7 @@
         <h3 class="webx-services-card__title">{{ $service->title }}</h3>
     </a>
     @if ($service->lead)
-        <p class="webx-services-card__lead">{{ $service->lead }}</p>
+        {{-- Through PageText: the lead takes shortcodes, and a bare `[phone]` is not for a visitor. --}}
+        <p class="webx-services-card__lead">{{ app(\WebxUi\Admin\Shortcodes\PageText::class)->text($service->lead) }}</p>
     @endif
 </li>

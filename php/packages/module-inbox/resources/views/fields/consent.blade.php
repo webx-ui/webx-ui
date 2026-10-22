@@ -3,7 +3,8 @@
 
     Its words are the field's `text` option rather than its title, because they are a sentence
     with a link in it and not a caption — which is why they are printed raw. An administrator
-    wrote them in the panel; the same trust the thank-you is printed with.
+    wrote them in the panel; the same trust the thank-you is printed with, and the site's shortcodes
+    in them printed as they are there.
 --}}
 @php($text = $field->optionText('text', trim((string) $field->title)))
 <label class="wx-form__consent" for="{{ $id }}">
@@ -18,5 +19,5 @@
         @if ($describedBy !== null) aria-describedby="{{ $describedBy }}" @endif
         @if ($messages !== []) aria-invalid="true" @endif
     >
-    <span class="wx-form__consent-text">{!! $text !!}</span>
+    <span class="wx-form__consent-text">@shortcodesIn($text)</span>
 </label>

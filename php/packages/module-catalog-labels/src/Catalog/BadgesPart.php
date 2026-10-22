@@ -12,7 +12,8 @@ use WebxUi\Localization\Locales;
 
 /**
  * The badges on a card (`catalog.card.badges`): the labels drawn as badges, in the order of the
- * reference book, for the whole grid in one query. A service label is not a badge.
+ * reference book, for the whole grid in one query. A service label is not a badge. A label in a
+ * colour of its own carries both colours (`own`), the text worked out by contrast if none was set.
  */
 final class BadgesPart implements StorefrontPart
 {
@@ -40,6 +41,7 @@ final class BadgesPart implements StorefrontPart
                 'code' => $label->code,
                 'name' => $label->displayName($locale),
                 'color' => $label->color,
+                'own' => $label->ownColors(),
             ], $labels);
         }
 

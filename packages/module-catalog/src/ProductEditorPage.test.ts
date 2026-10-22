@@ -213,7 +213,7 @@ describe('WxCatalogProductEditor', () => {
     await wrapper.findAll('.wx-tabs__tab')[1]!.trigger('mousedown')
     await flushPromises()
 
-    const grip = wrapper.find('.wx-catalog-gallery [aria-label^="Reorder"]')
+    const grip = wrapper.find('.wx-catalog-gallery .wx-sortable-list__grip')
 
     await grip.trigger('keydown', { key: ' ' })
     await grip.trigger('keydown', { key: 'ArrowDown' })
@@ -225,6 +225,30 @@ describe('WxCatalogProductEditor', () => {
         { id: 1, alt: { en: 'Picture 1' }, title: {} },
       ],
     })
+  })
+
+  it('opens the whole gallery large on a click on a picture, on that picture', async () => {
+    const { wrapper } = await panel()
+
+    await wrapper.findAll('.wx-tabs__tab')[1]!.trigger('mousedown')
+    await flushPromises()
+
+    const thumbs = wrapper.findAll('.wx-catalog-gallery__thumb')
+
+    // Ctrl keeps the link's own way: the file in a tab of its own.
+    await thumbs[1]!.trigger('click', { ctrlKey: true })
+    expect(document.querySelector('.wx-lightbox')).toBeNull()
+
+    await thumbs[1]!.trigger('click')
+    await flushPromises()
+
+    expect(document.querySelector('.wx-lightbox img[src="/files/2.jpg"]')).not.toBeNull()
+    expect(document.querySelector('.wx-lightbox__caption')?.textContent).toContain('Picture 2')
+
+    document
+      .querySelector('.wx-lightbox__frame')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
   })
 
   it('saves the captions a moment after the last keystroke', async () => {

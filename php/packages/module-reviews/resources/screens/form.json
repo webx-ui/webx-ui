@@ -69,7 +69,8 @@
           "localized": true,
           "props": {
             "rows": 6,
-            "maxlength": 5000
+            "maxlength": 5000,
+            "shortcodes": true
           }
         },
         {

@@ -17,13 +17,19 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 - **Trait** `HasTranslations` with `translatable()`: `getTranslations()`, `setTranslations()`,
   `forLocale()`, `translationsToArray()`, scopes `whereTranslation`, `whereTranslationLike`,
   `orderByTranslation`. Stored as `{"en": "...", "uk": "..."}`.
+- **Generator** `WebxUi\Localization\Slug` — `make($text, $locale, $max, $prefix, $separator)` and
+  `first($texts, $default, …)`: every code and address part a module makes of a name. Transliterates
+  by the name's language (`Хіт` is `khit` in uk, `hit` in ru — never `xit`); `$prefix` names a
+  result with no letter (`−20%` → `label-20`). The panel's `slugify(title, separator, locale)`
+  (`@webx-ui/module-admin`) uses the same table, written by `scripts/transliteration.php`.
 - **Blueprint macros** `$table->translatable(...)` and `$table->dropTranslatable(...)` —
   nullable JSON columns.
 - **Middleware** aliases `webx.locale` (`SetLocale`, the public site) and `webx.panel-locale`
   (`SetPanelLocale`, the panel), plus `OneSpellingPerAddress` for a module's prefixed list route
   (route parameter `webxLocale`): an unknown language is a 404, the default's prefix a 301.
 - **Commands** `webx:locales:seed`, `webx:locales:clear`.
-- Validation lines in ten languages, appended behind the application's own `lang/`.
+- Validation lines in ten languages under the application's own `lang/`: `Translations\ValidationLines`
+  wraps `translation.loader` (as `themes` does), so a site's published line still wins.
 
 ## Change it without forking
 
@@ -42,6 +48,11 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 
 ## Do not
 
+- Do not call `Str::slug()` without a language for a code or an address: it reads Cyrillic the
+  English way. Use `Slug::make()`. `SlugCoverageTest` fails on such a call in any package's `src`.
+
+- Do not add the validation lines with `FileLoader::addPath()` or replace `translation.loader`:
+  another package wraps it (`themes`), and an added path is read after the site's `lang/`.
 - Do not edit anything in `vendor/webx-ui/localization`. Every row above is the supported way;
   if none fits, the package is missing a seam — say so instead of working around it.
 - Do not add a language by editing the config on a site that has migrated: the `locales` table

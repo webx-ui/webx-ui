@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blog\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
+use WebxUi\Localization\Slug;
 
 /**
  * Starting an article: a title, and the address made out of it.
@@ -48,13 +48,14 @@ final class ArticleRequest extends FormRequest
     /**
      * The address, made out of the title when the editor did not write one.
      *
-     * `Str::slug` transliterates, so a Russian title gives a Latin address rather than a
-     * percent-encoded one — which is what a site wants and what nobody wants to type by hand.
+     * {@see Slug} transliterates by the language the title is in, so a Russian title gives a
+     * Latin address rather than a percent-encoded one — which is what a site wants and what
+     * nobody wants to type by hand.
      */
-    public function slug(): string
+    public function slug(string $locale): string
     {
         $slug = trim((string) $this->input('slug', ''));
 
-        return $slug !== '' ? $slug : Str::slug($this->title());
+        return $slug !== '' ? $slug : Slug::make($this->title(), $locale);
     }
 }

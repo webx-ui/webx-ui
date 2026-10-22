@@ -6,6 +6,7 @@ namespace WebxUi\Events\Rendering;
 
 use DateTimeInterface;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Events\Models\Event;
 
 /**
@@ -40,7 +41,8 @@ final class Calendar
             'SUMMARY:'.self::escape($event->text('title', $locale)),
         ];
 
-        $lead = $event->text('lead', $locale);
+        // A calendar shows text, not HTML: a shortcode is its plain rendering there.
+        $lead = app(PageText::class)->plain($event->text('lead', $locale));
 
         if ($lead !== '') {
             $lines[] = 'DESCRIPTION:'.self::escape($lead);

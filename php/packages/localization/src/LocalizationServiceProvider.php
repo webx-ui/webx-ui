@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Localization;
 
+use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Translation\FileLoader;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cache\CacheServiceProvider;
 use WebxUi\Localization\Console\ClearLocalesCommand;
@@ -16,6 +16,7 @@ use WebxUi\Localization\Http\Middleware\SetLocale;
 use WebxUi\Localization\Http\Middleware\SetPanelLocale;
 use WebxUi\Localization\Models\Locale;
 use WebxUi\Localization\Translations\DictionaryBuilder;
+use WebxUi\Localization\Translations\ValidationLines;
 
 class LocalizationServiceProvider extends ServiceProvider
 {
@@ -34,6 +35,13 @@ class LocalizationServiceProvider extends ServiceProvider
             $app->make('config'),
         ));
 
+        // Extended rather than replaced, as `webx-ui/themes` does: whichever wraps the other, both
+        // answer, and the loader the site set up stays the one underneath.
+        $this->app->extend('translation.loader', static fn (Loader $loader): ValidationLines => new ValidationLines(
+            $loader,
+            __DIR__.'/../lang',
+        ));
+
         $this->app->singleton(DictionaryBuilder::class, static fn ($app): DictionaryBuilder => new DictionaryBuilder(
             $app,
             // Laravel binds the loader under a string, not the contract it implements.
@@ -48,7 +56,6 @@ class LocalizationServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
-        $this->addValidationLines();
         $this->registerBlueprintMacro();
         $this->registerCacheGroup();
 
@@ -84,29 +91,6 @@ class LocalizationServiceProvider extends ServiceProvider
         $groups->bumpOn(CacheGroups::LOCALES, Locale::class);
         // Every page reads the languages: with the versions, in the same call.
         $groups->prefetch('locales', [CacheGroups::LOCALES], localized: false);
-    }
-
-    /**
-     * Put this package's validation lines behind the application's own.
-     *
-     * Laravel ships them in English and nowhere else, so a panel translated into ten languages
-     * answers a bad form in English. `addPath` appends rather than replaces — the application's
-     * `lang/` is still read first, so publishing your own line still wins.
-     *
-     * The loader is bound under a string rather than under its interface, which is why this
-     * asks for it by name.
-     */
-    private function addValidationLines(): void
-    {
-        if (! $this->app->bound('translation.loader')) {
-            return;
-        }
-
-        $loader = $this->app->make('translation.loader');
-
-        if ($loader instanceof FileLoader) {
-            $loader->addPath(__DIR__.'/../lang');
-        }
     }
 
     /**

@@ -160,7 +160,7 @@ final class PressTools
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'outlet' => $outlet,
-                    'values' => ['type' => 'object', 'description' => 'Field name → value, as press_get returns them. title, slug and summary take a string (the default language) or { "en": "…" }; logo takes a library key.'],
+                    'values' => ['type' => 'object', 'description' => 'Field name → value, as press_get returns them. title, slug and summary take a string (the default language) or { "en": "…" }; logo takes a library file — its id, { "id" } or { "path" } (media://fields).'],
                 ], 'required' => ['outlet', 'values']],
                 permission: 'press.manage',
             ),

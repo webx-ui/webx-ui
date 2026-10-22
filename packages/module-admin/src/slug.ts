@@ -1,89 +1,67 @@
+import { computed, inject, type ComputedRef } from 'vue'
+import { i18nKey } from './i18n'
+import TRANSLITERATION from './transliteration.json'
+
 /**
- * Cyrillic and the other alphabets the panel is translated into, as the Latin a URL can hold.
+ * Letter by letter, the Latin a URL can hold — per language, as the server does it.
  *
- * The server transliterates too, and the same way — `Str::slug` is what actually decides an
- * address, `FieldNames` the name of a form field. This is the field following the title as it is typed, so that what the editor sees
- * before saving is what they get; where the two ever disagree, the server wins and the address
- * that comes back is the address.
+ * The server is what actually decides an address: `WebxUi\Localization\Slug`, which is
+ * `Str::slug($title, '-', $locale)`. This is the field following the title as it is typed, so
+ * that what the editor sees before saving is what they get. The table is the server's own,
+ * written out by `scripts/transliteration.php`: «Хіт» is `khit` in Ukrainian and `hit` in Russian,
+ * and without a language Cyrillic reads the English way, `xit`.
  */
-const TRANSLITERATION: Record<string, string> = {
-  а: 'a',
-  б: 'b',
-  в: 'v',
-  г: 'g',
-  ґ: 'g',
-  д: 'd',
-  е: 'e',
-  ё: 'e',
-  є: 'ie',
-  ж: 'zh',
-  з: 'z',
-  и: 'i',
-  і: 'i',
-  ї: 'i',
-  й: 'i',
-  к: 'k',
-  л: 'l',
-  м: 'm',
-  н: 'n',
-  о: 'o',
-  п: 'p',
-  р: 'r',
-  с: 's',
-  т: 't',
-  у: 'u',
-  ф: 'f',
-  х: 'h',
-  ц: 'ts',
-  ч: 'ch',
-  ш: 'sh',
-  щ: 'shch',
-  ъ: '',
-  ы: 'y',
-  ь: '',
-  э: 'e',
-  ю: 'iu',
-  я: 'ia',
-  ä: 'a',
-  ö: 'o',
-  ü: 'u',
-  ß: 'ss',
-  å: 'a',
-  ø: 'o',
-  æ: 'ae',
-  ç: 'c',
-  ğ: 'g',
-  ı: 'i',
-  ş: 's',
-  ą: 'a',
-  ć: 'c',
-  ę: 'e',
-  ł: 'l',
-  ń: 'n',
-  ó: 'o',
-  ś: 's',
-  ź: 'z',
-  ż: 'z',
+const TABLES = TRANSLITERATION as Record<string, Record<string, string>>
+
+const merged = new Map<string, Record<string, string>>()
+
+function tableOf(locale: string): Record<string, string> {
+  const language = locale.toLowerCase().split(/[-_]/)[0] ?? 'en'
+  let table = merged.get(language)
+
+  if (table === undefined) {
+    table = { ...TABLES.en, ...(language === 'en' ? {} : (TABLES[language] ?? {})) }
+    merged.set(language, table)
+  }
+
+  return table
+}
+
+/** For a character class: the separator is `-` or `_`, and `-` means a range there. */
+function escape(text: string): string {
+  return text.replace(/[\\\]^-]/g, (character) => `\\${character}`)
 }
 
 /**
  * A title as the last part of an address: lower case, Latin, words joined by hyphens — or by
- * another separator, as a machine name joins them with `_`.
+ * another separator, as a machine name joins them with `_` — transliterated by the language the
+ * title is written in. The steps are `Str::slug`'s, in its order.
  */
-export function slugify(title: string, separator = '-'): string {
-  return (
-    title
-      .toLowerCase()
-      .split('')
-      .map((character) => TRANSLITERATION[character] ?? character)
-      .join('')
-      // Accents that survived the map — `é`, `à` — come apart into a letter and a mark, and the
-      // mark is what has to go; `é` must not become `-`.
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z0-9]+/g, separator)
-      .split(separator)
-      .filter((word) => word !== '')
-      .join(separator)
-  )
+export function slugify(title: string, separator = '-', locale = 'en'): string {
+  const table = tableOf(locale)
+  const flip = separator === '-' ? '_' : '-'
+  const sep = escape(separator)
+
+  return Array.from(title, (character) => table[character] ?? character)
+    .join('')
+    .replace(new RegExp(`[${escape(flip)}]+`, 'gu'), separator)
+    .replaceAll('@', `${separator}at${separator}`)
+    .toLowerCase()
+    .replace(new RegExp(`[^${sep}\\p{L}\\p{N}\\s]+`, 'gu'), '')
+    .replace(new RegExp(`[${sep}\\s]+`, 'gu'), separator)
+    .replace(new RegExp(`^[${sep}]+|[${sep}]+$`, 'gu'), '')
+}
+
+/**
+ * The site's main language — the one a new record is named in, and so the one its address is
+ * transliterated by (`Locales::defaultCode()` on the server).
+ */
+export function useDefaultLocale(): ComputedRef<string> {
+  const i18n = inject(i18nKey, null)
+
+  return computed(() => {
+    const locales = i18n?.state.contentLocales ?? []
+
+    return (locales.find((locale) => locale.default) ?? locales[0])?.code ?? 'en'
+  })
 }

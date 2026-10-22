@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use WebxUi\Admin\Collections\RecordQuery;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
@@ -108,7 +109,8 @@ final class ArticleQuery extends RecordQuery
             'categories' => $article->rubrics->map(static fn (Rubric $rubric): int => (int) $rubric->getKey())->values()->all(),
             'title' => (string) $article->getTranslation('title', $locale),
             'url' => $article->url($locale),
-            'lead' => (string) $article->getTranslation('lead', $locale),
+            // Through PageText: the lead takes shortcodes, and a bare `[phone]` is not for a visitor.
+            'lead' => Container::getInstance()->make(PageText::class)->text((string) $article->getTranslation('lead', $locale)) ?? '',
             'cover' => $cover instanceof MediaFile
                 ? ['url' => Container::getInstance()->make(FileUrls::class)->url($cover), 'width' => $cover->width, 'height' => $cover->height]
                 : null,

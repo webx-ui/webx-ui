@@ -8,8 +8,9 @@ import {
   WxSortableList,
   WxText,
   type AutocompleteOption,
+  WxPopconfirm,
 } from '@webx-ui/core'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import { createCatalogApi } from '@webx-ui/module-catalog'
 import { useLandingEditor } from './editor'
 import { NAMESPACE, useCatalogLandingsMessages } from './i18n'
@@ -31,6 +32,8 @@ const editor = useLandingEditor()
 useCatalogLandingsMessages()
 
 const t = useTranslate(NAMESPACE)
+const askRemove = useRemoveConfirm()
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const locked = computed(() => editor?.locked.value ?? false)
@@ -127,6 +130,7 @@ function drop(id: number): void {
 
     <wx-sortable-list
       v-model="items"
+      :drag-label="panel('filters.reorder')"
       item-key="id"
       item-label="name"
       size="sm"
@@ -144,15 +148,24 @@ function drop(id: number): void {
         </span>
       </template>
       <template #actions="{ item }">
-        <wx-button
+        <wx-popconfirm
           v-if="!locked"
-          variant="text"
-          size="sm"
-          :aria-label="`${t('landing.recommended-remove')}: ${item.name}`"
-          @click="drop(item.id)"
+          :title="askRemove.confirm"
+          :confirm-text="askRemove.confirmText"
+          :cancel-text="askRemove.cancelText"
+          confirm-type="danger"
+          @confirm="drop(item.id)"
         >
-          <template #icon><wx-icon name="close" /></template>
-        </wx-button>
+          <template #trigger>
+            <wx-button
+              variant="text"
+              size="sm"
+              :aria-label="`${t('landing.recommended-remove')}: ${item.name}`"
+            >
+              <template #icon><wx-icon name="close" /></template>
+            </wx-button>
+          </template>
+        </wx-popconfirm>
       </template>
     </wx-sortable-list>
   </div>

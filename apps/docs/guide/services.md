@@ -240,7 +240,7 @@ of the page.
 | `only()`, `except()`, `take()`, `locale()`, `get()`, `first()` | The shared steps of [`RecordQuery`](/guide/collections#a-helper-for-templates-recordquery) |
 | `categories()`                                                 | The catalogue: visible categories, each with its `services`; empty ones drop               |
 
-A card is `id`, `anchor` (the slug), `categories` (ids), `title`, `url`, `lead` (plain text),
+A card is `id`, `anchor` (the slug), `categories` (ids), `title`, `url`, `lead` (text with its [shortcodes](/guide/shortcodes) printed — a string, or a `ShortcodeText` that `{{ }}` prints as it is),
 `cover` (what a `wx-media` field hands over: `url`, `thumb`, `width`, `height`, …, or null) and
 `fields` — the project's own fields by name. The editor's knobs are fields in the block's schema,
 passed to the query: a `wx-categories` field for `in()`, a number for `take()`. The whole list costs

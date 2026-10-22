@@ -327,7 +327,7 @@ final class RecipesDemo
     }
 
     /**
-     * The offered type, installed now if the site has not taken it — `webx:setup` usually has.
+     * The offered type, installed now if the site has not taken it — `webx:blocks:offered --install` usually has.
      * A type by that slug the site already has is left as it is, whatever it was made into.
      */
     private function blockType(DemoLedger $ledger): bool

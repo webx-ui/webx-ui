@@ -55,6 +55,7 @@ const router = useRouter()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const rows = ref<CategoryNode[]>([])
@@ -285,6 +286,7 @@ const actions = computed<ScreenAction[]>(() => {
     >
       <wx-table
         :key="loaded ? 'tree' : 'waiting'"
+        :loading-text="panel('filters.loading')"
         :data="data"
         :columns="columns"
         row-key="id"

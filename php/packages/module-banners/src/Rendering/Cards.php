@@ -8,6 +8,7 @@ use WebxUi\Admin\Links\Link;
 use WebxUi\Admin\Links\LinkCandidate;
 use WebxUi\Admin\Links\LinkTarget;
 use WebxUi\Admin\Links\LinkUrls;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Places;
 use WebxUi\Banners\Variants;
@@ -18,7 +19,9 @@ use WebxUi\Media\Screens\MediaValues;
  * A banner as a template reads it — plain data, not the model (§5.2 of the banners spec).
  *
  *     id, anchor, place        the banner, `banner-5`, and the key of its place
- *     title, text              in the language asked for, else '' — no fallback (decision 12)
+ *     title, text              in the language asked for, else '' — no fallback (decision 12); the
+ *                              text a string, or a ShortcodeText when it holds a shortcode
+ *                              ({@see PageText::text()}) — the title is a heading, kept as typed
  *     image                    what a `wx-media` field hands over: url, thumb, width, height, alt…;
  *                              null only in a place of words only (`'image' => false`)
  *     image_mobile             the same, or null — the template then takes `image`
@@ -46,6 +49,7 @@ final class Cards
         private readonly Variants $variants,
         private readonly Places $places,
         private readonly Layers $layers,
+        private readonly PageText $text,
     ) {}
 
     /**
@@ -120,7 +124,7 @@ final class Cards
             'anchor' => 'banner-'.$banner->getKey(),
             'place' => $banner->place?->key,
             'title' => $banner->wordsIn('title', $locale),
-            'text' => $banner->wordsIn('text', $locale),
+            'text' => $this->text->text($banner->wordsIn('text', $locale)),
             'image' => $image,
             'image_mobile' => $mobile,
             'video' => $this->video($banner->video),

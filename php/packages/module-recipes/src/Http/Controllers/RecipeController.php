@@ -81,7 +81,7 @@ final class RecipeController
         $locale = $locales->defaultCode();
 
         $recipe = $this->db->transaction(static function () use ($request, $locale): Recipe {
-            $recipe = new Recipe(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
+            $recipe = new Recipe(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug($locale)]]);
             $recipe->save();
 
             return $recipe;

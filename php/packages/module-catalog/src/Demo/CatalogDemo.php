@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Demo;
 
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Str;
 use ReflectionClass;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Catalog\Gallery\Gallery;
@@ -13,6 +12,7 @@ use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Models\ProductImage;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Reserved;
@@ -126,7 +126,7 @@ final class CatalogDemo
     {
         $category = new Category([
             'name' => [$locale => $name],
-            'slug' => [$locale => $this->freeSlug(Str::slug($name, '-', $locale), $locale)],
+            'slug' => [$locale => $this->freeSlug(Slug::make($name, $locale), $locale)],
             'description' => [$locale => '<p>'.$name.' of the demo shop: made up, to show how a category looks.</p>'],
             'is_published' => true,
         ]);

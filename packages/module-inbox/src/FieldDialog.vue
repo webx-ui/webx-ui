@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { slugify, useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import {
+  slugify,
+  useAdmin,
+  useErrorText,
+  useRemoveConfirm,
+  useTranslate,
+} from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -53,6 +59,7 @@ const api = createInboxApi(context)
 useInboxMessages()
 
 const t = useTranslate('webx-inbox')
+const askRemove = useRemoveConfirm()
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -96,19 +103,23 @@ watch(
   { immediate: true },
 )
 
-/** The label in the language being edited, or the first one written. */
-function label(value: LocalizedValue): string {
+/** The label in the language being edited, or the first one written — with its language. */
+function label(value: LocalizedValue): [string, string] {
   const map = (value ?? {}) as Record<string, string>
   const active = map[locales.active.value]
 
-  if (typeof active === 'string' && active.trim() !== '') return active
+  if (typeof active === 'string' && active.trim() !== '') return [active, locales.active.value]
 
-  return Object.values(map).find((line) => typeof line === 'string' && line.trim() !== '') ?? ''
+  const first = Object.entries(map).find(
+    ([, line]) => typeof line === 'string' && line.trim() !== '',
+  )
+
+  return first === undefined ? ['', locales.active.value] : [first[1], first[0]]
 }
 
 /** A machine name out of a label: Latin, `_` between words, a letter first, `_2` when taken. */
-function nameOf(words: string): string {
-  let base = slugify(words, '_').slice(0, 60).replace(/_+$/, '')
+function nameOf([words, locale]: [string, string]): string {
+  let base = slugify(words, '_', locale).slice(0, 60).replace(/_+$/, '')
 
   if (base === '') return ''
   if (!/^[a-z]/.test(base)) base = `field_${base}`
@@ -285,7 +296,13 @@ async function save(): Promise<void> {
             :placeholder="t('fields.choice-label')"
             @update:model-value="(label) => setChoice(index, { label: label as LocalizedValue })"
           />
-          <wx-action icon="trash" :title="t('fields.delete')" @click="removeChoice(index)" />
+          <wx-action
+            icon="trash"
+            tone="danger"
+            :title="t('fields.delete')"
+            v-bind="askRemove"
+            @click="removeChoice(index)"
+          />
         </div>
 
         <wx-button variant="outline" size="sm" @click="addChoice">

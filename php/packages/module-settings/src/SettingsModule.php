@@ -8,8 +8,10 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Screens\Tree;
+use WebxUi\Admin\Screens\Types\RepeaterType;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
@@ -95,14 +97,17 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
         return [
             Tool::read(
                 'list',
-                'List the settings the site has: key, label, type, and whether the value is per language.',
+                'List the settings the site has: key, label, type, and whether the value is per language. '
+                .'A list of records (wx-repeater) also gives `item`: the keys one record takes, each with its value '
+                .'(string, number, boolean, time HH:MM, URL…), `localized` for an object keyed by language code, '
+                .'`options` for the values allowed, and `min`/`max`/`maxlength`.',
                 static fn (): array => self::describe(),
                 scope: 'settings:read',
             ),
 
             Tool::read(
                 'get',
-                'Read one setting: the stored value and what the site sees.',
+                'Read one setting: the stored value and what the site sees; for a list of records, `item` — what one record takes.',
                 static function (array $arguments): array {
                     $key = (string) ($arguments['key'] ?? '');
                     $settings = app(Settings::class);
@@ -116,6 +121,7 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
                         'key' => $key,
                         'stored' => $settings->raw()[$key] ?? null,
                         'resolved' => $settings->get($key),
+                        ...self::item($key),
                     ];
                 },
                 [
@@ -128,7 +134,9 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
             Tool::mutating(
                 'set',
                 'Change one setting. A localized value is an object keyed by language code; a language set to null empties that language. '
-                .'Send null to clear a value — every language of a localized one — and the site then falls back to its default.',
+                .'Send null to clear a value — every language of a localized one — and the site then falls back to its default. '
+                .'A list of records is sent whole, each record with the keys its `item` (in the list of settings) names; a key it does not '
+                .'name is refused, not dropped.',
                 static fn (array $arguments): array => self::set($arguments),
                 [
                     'properties' => [
@@ -169,7 +177,29 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
             'label' => Tree::translate($node['label'] ?? $node['name'], static fn (string $key): string => (string) __($key)),
             'type' => $node['type'],
             'localized' => ($node['localized'] ?? false) === true,
+            ...self::item((string) $node['name']),
         ], $fields);
+    }
+
+    /**
+     * What one record of a list takes, under `item` — nothing for a setting that is not a list.
+     * An agent reading only `wx-repeater` wrote the records in a shape of its own guessing.
+     *
+     * @return array{item?: array<string, array<string, mixed>>}
+     */
+    private static function item(string $key): array
+    {
+        $node = null;
+
+        foreach (app(Settings::class)->fields() as $field) {
+            if ($field['name'] === $key) {
+                $node = $field;
+            }
+        }
+
+        $type = $node === null ? null : app(FieldTypes::class)->get((string) $node['type']);
+
+        return $type instanceof RepeaterType && $node !== null ? ['item' => $type->itemShape($node)] : [];
     }
 
     /**

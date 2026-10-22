@@ -11,7 +11,7 @@ import {
   WxText,
   type LocalizedValue,
 } from '@webx-ui/core'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import { createPropertiesApi } from './api'
 import { usePropertyEditor } from './editor'
 import { NAMESPACE, useCatalogPropertiesMessages } from './i18n'
@@ -46,6 +46,8 @@ const editor = usePropertyEditor()
 useCatalogPropertiesMessages()
 
 const t = useTranslate(NAMESPACE)
+const askRemove = useRemoveConfirm()
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const property = computed(() => editor?.property.value ?? null)
@@ -170,6 +172,7 @@ async function save(): Promise<void> {
 
       <wx-sortable-list
         v-model="rows"
+        :drag-label="panel('filters.reorder')"
         class="wx-catalog-intervals__list"
         item-key="key"
         :item-label="(row: Row) => row.title[admin.i18n.state.locale] ?? ''"
@@ -229,6 +232,7 @@ async function save(): Promise<void> {
             type="remove"
             :label="t('panel.delete')"
             :disabled="locked"
+            v-bind="askRemove"
             @click="remove((item as Row).key)"
           />
         </template>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Events\Seo;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Events\Models\Event;
 use WebxUi\Seo\Panel\DefaultsSource;
 
@@ -48,7 +49,9 @@ final class EventMarkup
             'eventAttendanceMode' => self::MODES[$event->attendance] ?? self::MODES[Event::OFFLINE],
         ];
 
-        $lead = $event->text('lead', $locale);
+        // JSON-LD is text: the page prints it through Seo, which says the same, but the markup is
+        // read on its own too.
+        $lead = app(PageText::class)->plain($event->text('lead', $locale));
 
         if ($lead !== '') {
             $markup['description'] = $lead;

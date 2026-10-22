@@ -74,3 +74,28 @@ export function useShortcodes(): ShallowRef<ShortcodeToken[]> {
 
   return tokens
 }
+
+/**
+ * Whether a screen's text field offers the site's shortcodes: the node says so with
+ * `props.shortcodes`. A rich text is on unless it says `false` — what it holds is words for a
+ * page, and the site prints every rich text of a module through the shortcodes. A line or a
+ * paragraph is off unless it says `true`: the same `wx-input` is a title that becomes a slug, a
+ * code, an SEO description, and a `[phone]` there would print as the bracket.
+ */
+export function takesShortcodes(type: string, flag: unknown): boolean {
+  return type === 'wx-rich-text' ? flag !== false : flag === true
+}
+
+/**
+ * The site's shortcodes for one field, asked of the panel only when the field takes them — a
+ * form of thirty inputs with two that do sends one request, not thirty. Outside a panel, or in
+ * one with no way to ask (a demo, a test), it stays empty.
+ */
+export function useShortcodesWhen(enabled: () => boolean): ShallowRef<ShortcodeToken[]> {
+  const admin = inject(adminKey, null)
+  const tokens = shallowRef<ShortcodeToken[]>([])
+
+  if (admin?.http && enabled()) void loadShortcodes(admin).then((list) => (tokens.value = list))
+
+  return tokens
+}

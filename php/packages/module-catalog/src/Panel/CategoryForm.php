@@ -14,6 +14,7 @@ use WebxUi\Catalog\Facets\CategoryFacets;
 use WebxUi\Catalog\Http\Resources\CategoryResource;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Seo\Fields;
@@ -216,7 +217,7 @@ final class CategoryForm
             $current = $slugs[$locale] ?? null;
 
             if ((! is_string($current) || trim($current) === '') && is_string($name) && trim($name) !== '') {
-                $slugs[$locale] = str($name)->slug('-', (string) $locale)->toString();
+                $slugs[$locale] = Slug::make($name, (string) $locale);
             }
         }
 

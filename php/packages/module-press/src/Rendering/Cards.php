@@ -8,6 +8,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use WebxUi\Admin\Screens\ScreenRecord;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Screens\Tree;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Press\Models\Article;
 use WebxUi\Press\Models\Outlet;
@@ -36,6 +37,9 @@ use WebxUi\Routing\Models\Route;
  *     target, url, pdf        where the title leads, the address, the PDF — each null when there is none
  *     fields                  the project's own fields of the article row, by name
  *
+ * The summary and the excerpt are an editor's sentences, so their shortcodes are resolved: each is
+ * a string, or a ShortcodeText when it holds one ({@see PageText::text()}). The titles are not.
+ *
  * Built from what was loaded with the list, so a list of any length is the same few queries.
  */
 final class Cards
@@ -45,6 +49,7 @@ final class Cards
         private readonly ScreenRecord $record,
         private readonly ScreenValues $values,
         private readonly Config $config,
+        private readonly PageText $text,
     ) {}
 
     /**
@@ -108,7 +113,7 @@ final class Cards
             'url' => $url,
             'link' => $url ?? $outlet->website(),
             'title' => $outlet->displayTitle($locale),
-            'summary' => $outlet->text('summary', $locale),
+            'summary' => $this->text->text($outlet->text('summary', $locale)),
             'logo' => $outlet->logoIn($locale),
             'website' => $outlet->website(),
             'featured' => $outlet->featured,
@@ -136,7 +141,7 @@ final class Cards
                 'logo' => $logo['url'] ?? null,
             ],
             'title' => $article->text('title', $locale),
-            'excerpt' => $article->text('excerpt', $locale),
+            'excerpt' => $this->text->text($article->text('excerpt', $locale)),
             'kind' => $kind,
             'kind_label' => $kind === null ? null : Kinds::label($kind, $locale),
             'date' => $article->published_on?->toDateString(),

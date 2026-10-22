@@ -248,9 +248,10 @@ final class PlacesTest extends TestCase
         $this->assertSame([$a->id, $b->id], array_column((array) $response->json('data'), 'id'));
 
         $row = (array) $response->json('data.0');
-        $this->assertSame(['id', 'title', 'thumb', 'video', 'enabled', 'position', 'updated_at', 'deleted_at'], array_keys($row));
+        $this->assertSame(['id', 'title', 'thumb', 'image', 'video', 'enabled', 'position', 'updated_at', 'deleted_at'], array_keys($row));
         $this->assertSame('A', $row['title']);
         $this->assertIsString($row['thumb']);
+        $this->assertIsString($row['image']);
         $this->assertTrue($row['video']);
         $this->assertTrue($row['enabled']);
 

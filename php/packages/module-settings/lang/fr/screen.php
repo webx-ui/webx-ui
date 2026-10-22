@@ -99,6 +99,8 @@ return [
     'social-label' => 'Nom',
     'social-label-help' => 'Lu à voix haute aux visiteurs qui utilisent un lecteur d’écran.',
     'phone-missing' => 'saisissez le numéro.',
+    'address-missing' => 'saisissez l’adresse.',
+    'coordinates-incomplete' => 'indiquez la latitude et la longitude, ou aucune des deux.',
     'phone-no-country' => ':number n’a pas d’indicatif de pays. Commencez par + et l’indicatif : +800 1234 5678.',
     'phone-invalid' => ':number n’est pas un numéro de téléphone.',
     'email-invalid' => ':email n’est pas une adresse e-mail.',

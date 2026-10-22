@@ -7,6 +7,7 @@ namespace WebxUi\Team\Tests;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Collections\CollectionSources;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Pages\Models\Page;
@@ -137,6 +138,20 @@ final class BlockTest extends TestCase
         $this->assertStringContainsString("First line.<br />\n&lt;b&gt;Second&lt;/b&gt; line.", $html);
         $this->assertMatchesRegularExpression('~<img class="b-team__photo" src="[^"]+" alt="Anna" width="400" height="400" loading="lazy">~', $html);
         $this->assertStringNotContainsString('b-team__initials', $html);
+    }
+
+    /** The text is offered the shortcodes in the panel, so the card resolves them. */
+    #[Test]
+    public function the_text_resolves_its_shortcodes(): void
+    {
+        $this->app->make(Shortcodes::class)->register('phone', '<a href="tel:+80012345678">+800 1234 5678</a>', plain: '+800 1234 5678');
+        $this->installBlock();
+        $this->member('Anna', attributes: ['text' => ['en' => "Book a visit:\n[phone]"]]);
+
+        $html = $this->render([$this->node()]);
+
+        $this->assertStringContainsString("Book a visit:<br />\n<a href=\"tel:+80012345678\">+800 1234 5678</a>", $html);
+        $this->assertStringNotContainsString('[phone]', $html);
     }
 
     #[Test]

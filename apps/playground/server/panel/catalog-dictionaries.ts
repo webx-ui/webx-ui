@@ -35,6 +35,8 @@ type On = (
 const SITE = 'https://shop.webx-demo.test'
 const DEFAULT = 'ru'
 const TONES = ['neutral', 'primary', 'success', 'warning', 'danger', 'info']
+/** A label's colour of its own, `Dictionary::HEX`. */
+const OWN = /^#[0-9a-f]{6}$/
 
 interface Common {
   id: number
@@ -47,7 +49,10 @@ interface Common {
 
 interface LabelRecord extends Common {
   code: string
+  /** A tone, or a colour of its own as `#rrggbb`. */
   color: string
+  /** The text on a colour of its own; null is black or white by contrast. */
+  text_color: string | null
   is_badge: boolean
 }
 
@@ -77,6 +82,8 @@ const labels: LabelRecord[] = [
     is_badge: false,
     is_visible: false,
   }),
+  // A colour of its own besides the tones; the text on it by contrast.
+  label(5, 'Эко', 'Eco', 'eco', '#2e7d32'),
 ]
 
 const statuses: StatusRecord[] = [
@@ -110,6 +117,7 @@ function label(
     title: { ru, en },
     code,
     color,
+    text_color: null,
     is_badge: true,
     is_visible: true,
     position: id,
@@ -179,6 +187,7 @@ for (let id = 1; id <= 400; id++) {
     id % 5 === 0 ? 2 : null,
     id % 9 === 1 ? 3 : null,
     id % 13 === 0 ? 4 : null,
+    id % 4 === 1 ? 5 : null,
   ].filter((one): one is number => one !== null)
 
   if (on.length > 0) labelsOf.set(id, on)
@@ -382,6 +391,7 @@ export function dictionaryCells(product: number, locale: string): Record<string,
       name: word(one.title, locale),
       code: one.code,
       color: one.color,
+      text: OWN.test(one.color) ? (one.text_color ?? contrastText(one.color)) : null,
     }))
   }
 
@@ -833,9 +843,25 @@ function tone(
   record: LabelRecord | StatusRecord,
   value: unknown,
   errors: Record<string, string[]>,
+  own = false,
 ): void {
-  if (typeof value === 'string' && TONES.includes(value)) record.color = value
-  else errors.color = ['One of the six tones.']
+  const color = typeof value === 'string' ? value.trim().toLowerCase() : null
+
+  if (color !== null && (TONES.includes(color) || (own && OWN.test(color)))) record.color = color
+  else
+    errors.color = [own ? 'One of the six tones, or a colour as #rrggbb.' : 'One of the six tones.']
+}
+
+/** `Dictionary::contrastText`: black or white, whichever WCAG says reads better on it. */
+function contrastText(background: string): string {
+  const channel = (at: number): number => {
+    const value = parseInt(background.slice(at, at + 2), 16) / 255
+
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  }
+  const luminance = 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5)
+
+  return 1.05 / (luminance + 0.05) >= (luminance + 0.05) / 0.05 ? '#ffffff' : '#000000'
 }
 
 const labelBook: Book<LabelRecord> = {
@@ -847,6 +873,8 @@ const labelBook: Book<LabelRecord> = {
     title: { ...record.title },
     code: record.code,
     color: record.color,
+    // A tone takes both colours from the site: a text colour left from a colour of its own is not one.
+    text_color: OWN.test(record.color) ? record.text_color : null,
     is_badge: record.is_badge,
     is_visible: record.is_visible,
   }),
@@ -856,8 +884,16 @@ const labelBook: Book<LabelRecord> = {
         code(record, labels, value, errors)
         return true
       case 'color':
-        tone(record, value, errors)
+        tone(record, value, errors, true)
         return true
+      case 'text_color': {
+        const text = typeof value === 'string' ? value.trim().toLowerCase() : ''
+
+        if (text === '') record.text_color = null
+        else if (OWN.test(text)) record.text_color = text
+        else errors.text_color = ['The text colour is #rrggbb, or empty for automatic.']
+        return true
+      }
       case 'is_badge':
         record.is_badge = value === true
         return true

@@ -89,17 +89,6 @@ export const mediaMessages: Record<string, Messages> = {
     collapse: 'Collapse',
     view: 'View',
   },
-  // The lightbox is a component of the design system too, so these are handed to it as props.
-  lightbox: {
-    gallery: 'Gallery',
-    previous: 'Previous',
-    next: 'Next',
-    close: 'Close',
-    'zoom-in': 'Zoom in',
-    'zoom-out': 'Zoom out',
-    original: 'Open the original',
-    counter: ':index of :total',
-  },
   // The picture field on a form, which is the module used from outside its own section.
   field: {
     select: 'Choose a picture',
@@ -228,6 +217,7 @@ export const mediaMessages: Record<string, Messages> = {
     accept: 'This field takes :kind only.',
     localized: 'A field of files cannot be translated — the captions inside it are.',
     missing: 'There is no file [:path] in the library: pick one from it.',
+    'missing-id': 'There is no file with id :id in the library: pick one from it.',
     kind: {
       image: 'images',
       video: 'video',

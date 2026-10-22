@@ -21,7 +21,16 @@ The questions that follow — name, domain, database, languages, modules, the fi
 — are `php artisan webx:setup`, and it is the same command on a site that is already running:
 run it again after installing a module and it wires in what is new and leaves the rest alone.
 
-At the end it prints the panel's address, the login and a generated password.
+At the end it prints the panel's address, the login and a generated password — and the commands
+setup leaves to you. Setup writes no block types and seeds no demo: the same command makes
+staging and production sites, and a block type reaches those only when somebody imports it. On a
+dev copy, run what it printed, in that order:
+
+```bash
+php artisan webx:blocks:import --theme --publish   # the theme's block types
+php artisan webx:blocks:offered --install          # the blocks the modules offer
+php artisan webx:demo                              # demo content, on top of both
+```
 
 ## Changing it, with an agent or without
 
@@ -38,7 +47,8 @@ the site.** Configure it, publish its views, patch its screens — the seams are
 
 ## What to delete first
 
-Everything here is yours, and two things are here only so that the first page is not blank:
+Everything here is yours, and two things are here only so that the first page is not blank (the
+demo content only when you seeded it):
 
 | what                                           | when                                            |
 | ---------------------------------------------- | ----------------------------------------------- |

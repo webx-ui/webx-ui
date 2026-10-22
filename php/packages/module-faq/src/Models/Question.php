@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use WebxUi\Admin\Categories\HasCategories;
-use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 
 /**
  * A question and its answer (§4.2 of the FAQ spec).
@@ -67,10 +68,9 @@ class Question extends Model
             }
 
             if (($question->anchor ?? '') === '') {
-                $question->anchor = $question->freeAnchor(Str::slug((string) $question->getTranslation(
-                    'question',
-                    app(Locales::class)->defaultCode(),
-                )));
+                $locale = app(Locales::class)->defaultCode();
+                $words = (string) $question->getTranslation('question', $locale);
+                $question->anchor = $question->freeAnchor(Slug::make($words, $locale));
             }
         });
 
@@ -131,20 +131,14 @@ class Question extends Model
 
     /**
      * The answer as a page prints it: the document the editor wrote, with every library picture
-     * pointed at where it lives now — the document holds keys, not addresses.
+     * pointed at where it lives now — the document holds keys, not addresses — and its shortcodes
+     * replaced, so the visitor reads the phone rather than `[phone]`.
      */
     public function answerHtml(string $locale): string
     {
         $stored = $this->getTranslation('answer', $locale, fallback: false);
 
-        if (! is_string($stored) || trim($stored) === '') {
-            return '';
-        }
-
-        $type = app(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return app(PageText::class)->html($stored, $locale);
     }
 
     /** The question in this language, and only this one. */

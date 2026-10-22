@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { WxBadge, WxText } from '@webx-ui/core'
-import { toneBadge } from './tones'
+import { isOwnColor, ownBadgeStyle, toneBadge } from './tones'
 import type { ColumnValue } from './types'
 
 /**
@@ -11,7 +11,8 @@ import type { ColumnValue } from './types'
  * - words or a number — as they are;
  * - a record `{ name }` — its name, muted when `visible: false` (a brand taken off the site stays
  *   on its products, and the list is where somebody sees that it does);
- * - a record with a tone, `{ name, color }` — a tag of that tone (a stock status);
+ * - a record with a tone, `{ name, color }` — a tag of that tone (a stock status); a colour of its
+ *   own, `#rrggbb`, with the text on it in `text` — a solid tag in those colours (a label);
  * - a list of those — tags side by side (labels), in the order the server gave.
  */
 defineOptions({ name: 'WxCatalogColumnValue' })
@@ -22,6 +23,7 @@ interface Piece {
   key: string
   name: string
   tone: string | null
+  text: string | null
   muted: boolean
 }
 
@@ -29,21 +31,28 @@ function piece(value: unknown, index: number): Piece | null {
   if (value === null || value === undefined || value === '') return null
 
   if (typeof value === 'object' && !Array.isArray(value) && 'name' in value) {
-    const record = value as { id?: unknown; name?: unknown; color?: unknown; visible?: unknown }
+    const record = value as {
+      id?: unknown
+      name?: unknown
+      color?: unknown
+      text?: unknown
+      visible?: unknown
+    }
 
     return {
       key: String(record.id ?? index),
       name: String(record.name ?? ''),
       tone: typeof record.color === 'string' ? record.color : null,
+      text: typeof record.text === 'string' ? record.text : null,
       muted: record.visible === false,
     }
   }
 
   if (typeof value === 'boolean') {
-    return { key: String(index), name: value ? '✓' : '—', tone: null, muted: !value }
+    return { key: String(index), name: value ? '✓' : '—', tone: null, text: null, muted: !value }
   }
 
-  return { key: String(index), name: String(value), tone: null, muted: false }
+  return { key: String(index), name: String(value), tone: null, text: null, muted: false }
 }
 
 const pieces = computed<Piece[]>(() =>
@@ -57,7 +66,15 @@ const pieces = computed<Piece[]>(() =>
   <span v-if="pieces.length === 0" class="wx-catalog-column-value is-empty">—</span>
   <span v-else class="wx-catalog-column-value">
     <template v-for="one in pieces" :key="one.key">
-      <wx-badge v-if="one.tone !== null" :type="toneBadge(one.tone)" size="sm">
+      <wx-badge
+        v-if="isOwnColor(one.tone)"
+        variant="solid"
+        size="sm"
+        :style="ownBadgeStyle(one.tone, one.text)"
+      >
+        {{ one.name }}
+      </wx-badge>
+      <wx-badge v-else-if="one.tone !== null" :type="toneBadge(one.tone)" size="sm">
         {{ one.name }}
       </wx-badge>
       <wx-text v-else size="sm" truncate :tone="one.muted ? 'muted' : undefined">

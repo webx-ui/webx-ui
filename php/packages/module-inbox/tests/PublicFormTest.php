@@ -443,7 +443,7 @@ final class PublicFormTest extends TestCase
 
         $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'ada@example.test']])
             ->assertOk()
-            ->assertExactJson(['ok' => true, 'heading' => 'Thank you', 'message' => '<p>We will write back.</p>', 'redirect' => null, 'html' => null]);
+            ->assertExactJson(['ok' => true, 'heading' => 'Thank you', 'heading_html' => null, 'message' => '<p>We will write back.</p>', 'redirect' => null, 'html' => null]);
     }
 
     #[Test]
@@ -479,7 +479,7 @@ final class PublicFormTest extends TestCase
         ], ['referer' => 'http://localhost/contact']);
 
         $response->assertRedirect('http://localhost/contact');
-        $response->assertSessionHas('webx-form', ['form' => 'webx-inbox-contact-2', 'heading' => 'Thank you', 'message' => '<p>We will write back.</p>', 'html' => null]);
+        $response->assertSessionHas('webx-form', ['form' => 'webx-inbox-contact-2', 'heading' => 'Thank you', 'heading_html' => null, 'message' => '<p>We will write back.</p>', 'html' => null]);
         $response->assertSessionMissing('webx-inbox');
         $this->assertSame(1, Submission::query()->count());
 

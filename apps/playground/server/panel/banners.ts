@@ -354,6 +354,7 @@ export function bannerRow(record: Banner, locale: string): Record<string, unknow
     id: record.id,
     title: pick(record.title, locale) || `#${record.id}`,
     thumb: picture?.thumb ?? null,
+    image: picture?.url ?? null,
     video: record.video !== null,
     enabled: record.enabled,
     position: record.position,

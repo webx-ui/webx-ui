@@ -61,7 +61,12 @@ cp .env.example .env && php artisan key:generate
 
 php artisan webx:setup --no-interaction \
   --modules=pages,media,seo,settings,blocks,inbox,menu,admins \
-  --db=example --locales=en,uk --demo
+  --db=example --locales=en,uk
+
+# a dev copy: the block types and the demo, which setup never writes
+php artisan webx:blocks:import --theme --publish
+php artisan webx:blocks:offered --install
+php artisan webx:demo
 ```
 
 `--no-scripts` is what skips the interactive run, and the two lines after it are the rest of
@@ -89,8 +94,21 @@ Under it, in the order they run:
 | [`webx:panel --sync`](#what-webx-panel-sync-touches) | the entry file, `package.json`, Vite, the config keys    |
 | `npm install && npm run build`                       | the panel's front end — the slow step                    |
 | `migrate`, `storage:link`, `webx:admin --super`      | the database and the first administrator                 |
-| [`webx:demo`](#demo-content)                         | something to look at                                     |
 | [`webx:doctor`](#webx-doctor)                        | says whether all of that actually stands up              |
+
+What it leaves out on purpose: **block types and the demo.** The hosting platform makes staging
+and production sites with this same command, and a block type reaches those only when a person
+imports it. So setup writes none — not the theme's, not the ones the modules offer — and puts
+nothing on the home page. It ends by printing the commands for a dev copy, in the order they go
+on:
+
+```bash
+php artisan webx:blocks:import --theme --publish                 # the theme's block types
+php artisan webx:blocks:offered --install --module=faq --module=… # what the chosen modules offer
+php artisan webx:demo                                            # demo content, on top of both
+```
+
+`--demo` and `--no-demo` are still accepted, so that old scripts run, and change nothing.
 
 Every one of those runs as its own `artisan` process, which matters more than it looks. The
 process running `webx:setup` booted before it rewrote `.env` and before `composer require`: its
@@ -235,8 +253,8 @@ the languages your site publishes in. If your main language is not among them it
 so a site in German still has a demo it can read. The FAQ, reviews, team, tariffs and banners are
 in English and Russian so far.
 
-`webx:setup --demo` says so before it installs anything, one line per language the chosen modules
-and theme do not speak:
+`webx:setup` says so beside the `webx:demo` line it prints, one line per language the chosen
+modules and theme do not speak:
 
 ```
 WARN  The demo is not written in de for: pages, faq, blocks, seo, settings.

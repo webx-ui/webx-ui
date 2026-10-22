@@ -19,4 +19,5 @@ return [
         'other' => 'inne pliki',
     ],
     'missing' => 'W bibliotece nie ma pliku [:path]: wybierz plik z biblioteki.',
+    'missing-id' => 'W bibliotece nie ma pliku o id :id: wybierz plik z biblioteki.',
 ];

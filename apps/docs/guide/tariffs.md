@@ -38,7 +38,7 @@ their own, **Tariffs**.
 
 The last command installs the block type the module **offers** — **Tariffs**, slug `tariffs` — and
 publishes it. A type the site already has under that slug is never touched: once installed, the
-type is the site's to rewrite. `webx:setup` runs the command for a new site.
+type is the site's to rewrite. `webx:setup` only prints the command, for a dev copy.
 [Offered block types](/guide/collections#the-block-types-a-module-offers) explains the mechanism.
 
 Permissions: `tariffs.view` opens the list, `tariffs.manage` writes tariffs and their order,
@@ -47,23 +47,23 @@ the price on a card.
 
 ## A tariff
 
-| Field            | What it is                                                                 |
-| ---------------- | -------------------------------------------------------------------------- |
-| `name`           | translatable; required in the default language — the one required field    |
-| `badge`          | translatable: the short line over the name                                 |
-| `price`          | a number, up to two digits after the point, below 10⁸; empty — no price    |
-| `currency`       | a code from the site's list (below); a new tariff starts in the first one  |
-| `period`         | translatable free text printed after the price: «/mo», «a year»            |
-| `price_text`     | translatable: the words printed when there is no number                    |
-| `features`       | the lines of «what is included», each translatable, in the editor's order  |
-| `description`    | translatable plain text; the block prints it with its line breaks          |
-| `button_label`   | translatable                                                               |
-| `button_link`    | a `wx-link` value — a page of the site or an address                       |
-| `button_variant` | the look of the button, from the site's list (below)                       |
-| `featured`       | «Recommended»: the card stands out, with the label the block gives it      |
-| `categories`     | the groups it is in — several, or none                                     |
-| `services`       | the services it is for — there only when `module-services` is installed    |
-| `published`      | the whole of a tariff's life: no draft, no history; the bin brings it back |
+| Field            | What it is                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| `name`           | translatable; required in the default language — the one required field             |
+| `badge`          | translatable: the short line over the name                                          |
+| `price`          | a number, up to two digits after the point, below 10⁸; empty — no price             |
+| `currency`       | a code from the site's list (below); a new tariff starts in the first one           |
+| `period`         | translatable free text printed after the price: «/mo», «a year»                     |
+| `price_text`     | translatable: the words printed when there is no number                             |
+| `features`       | the lines of «what is included», each translatable, in the editor's order           |
+| `description`    | translatable plain text; the block prints it with its line breaks; takes shortcodes |
+| `button_label`   | translatable                                                                        |
+| `button_link`    | a `wx-link` value — a page of the site or an address                                |
+| `button_variant` | the look of the button, from the site's list (below)                                |
+| `featured`       | «Recommended»: the card stands out, with the label the block gives it               |
+| `categories`     | the groups it is in — several, or none                                              |
+| `services`       | the services it is for — there only when `module-services` is installed             |
+| `published`      | the whole of a tariff's life: no draft, no history; the bin brings it back          |
 
 **Zero is a number.** `price = 0` prints «$0»; «Free» is the words instead of a price, with the
 number left empty.

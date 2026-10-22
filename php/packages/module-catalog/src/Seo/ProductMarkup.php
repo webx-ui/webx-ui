@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Seo;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Purchase\Purchasability;
 
@@ -127,6 +128,7 @@ final class ProductMarkup
 
     private function text(mixed $value): ?string
     {
-        return is_string($value) && trim($value) !== '' ? trim(strip_tags($value)) : null;
+        // JSON-LD is text to whoever reads it: a shortcode in the summary is its plain rendering.
+        return is_string($value) && trim($value) !== '' ? trim(app(PageText::class)->plainFromHtml($value)) : null;
     }
 }

@@ -1,4 +1,5 @@
 <script setup>
+import ActionConfirmDemo from '../components/demos/ActionConfirmDemo.vue'
 import ActionsDemo from '../components/demos/ActionsDemo.vue'
 </script>
 
@@ -75,6 +76,37 @@ up with the rows where it may — which is the whole point of a column of action
 `disabled` is the other half of that choice: the action is visible, greyed and inert, which says
 "not now" rather than "not for this record".
 
+## Asking first
+
+`confirm` is the question to ask before the action goes ahead. The button opens a small
+[Popconfirm](/components/popconfirm) beside itself, and `click` is reported only on a yes — so a row
+that was removed on `click` asks first by gaining one prop, and its handler stays as it was.
+
+<ActionConfirmDemo />
+
+```vue
+<template>
+  <wx-action
+    type="remove"
+    title="Take the label off"
+    confirm="Delete?"
+    confirm-text="Yes"
+    cancel-text="Cancel"
+    @click="remove(label)"
+  />
+</template>
+```
+
+The focus lands on _Cancel_; **Enter** goes ahead from anywhere in the popover, **Escape** and a click
+outside put it away. A `danger` action — `remove` is one — gets a red yes.
+
+This is for one row of a list: a label off a product, a choice out of a field, a recipient out of a
+channel. Deleting a whole record — something with a page, a history, a place in other lists — is
+worth a [dialog](/guide/modals#confirm) instead.
+
+In the admin panel the words come from `useRemoveConfirm()` of `@webx-ui/module-admin`, in the
+panel's language: `<wx-action type="remove" v-bind="askRemove" @click="…" />`.
+
 ## The tooltip
 
 `title` is drawn by `WxTooltip`, not by the browser: one shape across a panel, a delay of its own
@@ -140,22 +172,25 @@ stops mattering.
 
 ## WxAction props
 
-| Prop          | Type                                                           | Default  | Description                                |
-| ------------- | -------------------------------------------------------------- | -------- | ------------------------------------------ |
-| `type`        | `ActionType`                                                   | `'edit'` | What the action does — see the table above |
-| `icon`        | `string`                                                       | by type  | Icon to draw instead                       |
-| `tone`        | `'primary' \| 'danger' \| 'success' \| 'warning' \| 'neutral'` | by type  | Colour to use instead                      |
-| `title`       | `string`                                                       | —        | Tooltip, and the accessible name           |
-| `label`       | `string`                                                       | by type  | Accessible name on its own                 |
-| `href`        | `string`                                                       | —        | Renders an `<a>`                           |
-| `target`      | `string`                                                       | —        | Target of that link                        |
-| `as`          | `string \| Component`                                          | —        | Render through another component           |
-| `disabled`    | `boolean`                                                      | `false`  | Visible, greyed and inert                  |
-| `hidden`      | `boolean`                                                      | `false`  | Draws nothing, keeps the square            |
-| `size`        | `'sm' \| 'md' \| 'lg'`                                         | group's  | 30, 36 or 42 pixels                        |
-| `tooltipSide` | `'top'                                                         | 'right'  | 'bottom'                                   | 'left'` | `'top'` | Where the tooltip prefers to sit |
+| Prop          | Type                                                           | Default    | Description                                         |
+| ------------- | -------------------------------------------------------------- | ---------- | --------------------------------------------------- |
+| `type`        | `ActionType`                                                   | `'edit'`   | What the action does — see the table above          |
+| `icon`        | `string`                                                       | by type    | Icon to draw instead                                |
+| `tone`        | `'primary' \| 'danger' \| 'success' \| 'warning' \| 'neutral'` | by type    | Colour to use instead                               |
+| `title`       | `string`                                                       | —          | Tooltip, and the accessible name                    |
+| `label`       | `string`                                                       | by type    | Accessible name on its own                          |
+| `href`        | `string`                                                       | —          | Renders an `<a>`                                    |
+| `target`      | `string`                                                       | —          | Target of that link                                 |
+| `as`          | `string \| Component`                                          | —          | Render through another component                    |
+| `disabled`    | `boolean`                                                      | `false`    | Visible, greyed and inert                           |
+| `hidden`      | `boolean`                                                      | `false`    | Draws nothing, keeps the square                     |
+| `size`        | `'sm' \| 'md' \| 'lg'`                                         | group's    | 30, 36 or 42 pixels                                 |
+| `tooltipSide` | `'top' \| 'right' \| 'bottom' \| 'left'`                       | `'top'`    | Where the tooltip prefers to sit                    |
+| `confirm`     | `string`                                                       | —          | Asks this in a popover first; `click` only on a yes |
+| `confirmText` | `string`                                                       | `'Yes'`    | The button of that question that goes ahead         |
+| `cancelText`  | `string`                                                       | `'Cancel'` | The one that does not                               |
 
-**Events:** `click` (`MouseEvent`). **Slot:** `default` — replaces the icon.
+**Events:** `click` (`MouseEvent`) — with `confirm`, after the yes. **Slot:** `default` — replaces the icon.
 
 ## WxActions props
 

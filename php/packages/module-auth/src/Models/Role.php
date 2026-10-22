@@ -6,8 +6,8 @@ namespace WebxUi\Auth\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Str;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\Localization\Slug;
 
 /**
  * A named set of permissions.
@@ -58,7 +58,8 @@ class Role extends Model
     /** A code made from the name that no other role has yet — what MCP and the filters name it by. */
     public static function freeSlug(string $name): string
     {
-        $base = Str::slug($name) ?: 'role';
+        // Named in the panel, so in the language the panel is open in.
+        $base = Slug::make($name, app()->getLocale(), prefix: 'role');
         $slug = $base;
 
         for ($n = 2; static::query()->where('slug', $slug)->exists(); $n++) {

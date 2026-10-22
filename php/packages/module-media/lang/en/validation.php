@@ -21,4 +21,5 @@ return [
         'other' => 'other files',
     ],
     'missing' => 'There is no file [:path] in the library: pick one from it.',
+    'missing-id' => 'There is no file with id :id in the library: pick one from it.',
 ];

@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import WxIcon from '../Icon/Icon.vue'
 import WxTooltip from '../Tooltip/Tooltip.vue'
+import WxPopconfirm from '../Popconfirm/Popconfirm.vue'
+import Self from './Action.vue'
 import { useActions } from '../../composables/useActions'
 import type { ActionEmits, ActionProps, ActionTone, ActionType } from './types'
 import type { IconName } from '../Icon/types'
@@ -21,6 +23,9 @@ const props = withDefaults(defineProps<ActionProps>(), {
   hidden: false,
   size: undefined,
   tooltipSide: 'top',
+  confirm: undefined,
+  confirmText: undefined,
+  cancelText: undefined,
 })
 
 const emit = defineEmits<ActionEmits>()
@@ -104,6 +109,30 @@ const classes = computed(() => [
   { 'is-disabled': props.disabled },
 ])
 
+/*
+ * An action with `confirm` is the same action wrapped in a question: the button the reader
+ * clicked opens it, and `click` is reported only on a yes — so a screen that removed a row on
+ * `click` asks first by gaining one prop and changes nothing else. The yes carries the click
+ * that opened the question, which is the one a handler would have had before.
+ */
+const plain = computed(() => ({
+  ...props,
+  confirm: undefined,
+  confirmText: undefined,
+  cancelText: undefined,
+}))
+
+let asking: MouseEvent | null = null
+
+function ask(event: MouseEvent) {
+  asking = event
+}
+
+function confirmed() {
+  emit('click', asking ?? new MouseEvent('click'))
+  asking = null
+}
+
 function onClick(event: MouseEvent) {
   if (props.disabled) {
     event.preventDefault()
@@ -121,6 +150,20 @@ function onClick(event: MouseEvent) {
     :class="`wx-action--${size}`"
     aria-hidden="true"
   />
+
+  <wx-popconfirm
+    v-else-if="confirm"
+    :title="confirm"
+    :confirm-text="confirmText"
+    :cancel-text="cancelText"
+    :confirm-type="tone === 'danger' ? 'danger' : 'primary'"
+    :disabled="disabled"
+    @confirm="confirmed"
+  >
+    <template #trigger>
+      <self v-bind="{ ...plain, ...$attrs }" @click="ask" />
+    </template>
+  </wx-popconfirm>
 
   <wx-tooltip v-else :content="title" :disabled="!title" :side="tooltipSide">
     <component

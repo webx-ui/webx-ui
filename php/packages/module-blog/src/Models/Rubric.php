@@ -13,8 +13,8 @@ use Illuminate\Support\Carbon;
 use WebxUi\Admin\Categories\Category;
 use WebxUi\Admin\Categories\CategoryKind;
 use WebxUi\Admin\Categories\IsCategory;
-use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Blog\Seo\Trail;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Media\Models\MediaFile;
@@ -99,20 +99,14 @@ class Rubric extends Model implements Category, HasBreadcrumbs, HasSeoFallback, 
      * cropped picture keeps its key. So the addresses are worked out on every read, by the
      * same field type that cleaned the document on the way in. A panel with no `module-admin`
      * types registered at all gets the document as it was stored, which is the honest fallback:
-     * the words are right and the pictures are wherever they were.
+     * the words are right and the pictures are wherever they were. Its shortcodes are replaced
+     * on the same read, so the visitor reads the phone rather than `[phone]`.
      */
     public function leadHtml(?string $locale = null): string
     {
         $stored = $this->getTranslation('lead', $locale ?? app()->getLocale());
 
-        if (! is_string($stored) || trim($stored) === '') {
-            return '';
-        }
-
-        $type = app(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return app(PageText::class)->html($stored, $locale);
     }
 
     /**

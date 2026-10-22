@@ -133,7 +133,7 @@ template:
 | ---------------------- | --------------------------------------------------------------------------------- |
 | `id`, `anchor`         | the id, and the slug in this language                                             |
 | `categories`           | ids — what the block's filter compares; print `category_links`                    |
-| `title`, `url`, `lead` | in the language of the page; `lead` is plain text                                 |
+| `title`, `url`, `lead` | in the language of the page; `lead` is text with its shortcodes printed           |
 | `cover`, `gallery`     | pictures as `wx-media` gives them (`url`, `thumb`, `width`, `height`, `alt`)      |
 | `minutes`, `servings`  | numbers, or null; `Duration::format($card['minutes'])` writes the time out        |
 | `category_links`       | `[{ id, title, url }]` — visible, with an address; the first is the main one      |

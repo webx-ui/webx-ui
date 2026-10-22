@@ -10,6 +10,7 @@ use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Models\Category;
+use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Sorts\Sort;
 use WebxUi\Catalog\Sorts\Sorts;
@@ -44,7 +45,7 @@ final class CatalogResources
             new McpResource(
                 'catalog://fields',
                 'Units and switched-off fields',
-                'The units of measure this site uses; whether price, barcode, the filters of a category and videos '
+                'The units of measure this site uses and the one a product without a unit is priced in; whether price, barcode, the filters of a category and videos '
                 .'in the gallery are on, and how large a video file may be. A switched-off field '
                 .'is not on the form and is refused — do not offer it.',
                 fn (): array => $this->fields(),
@@ -115,7 +116,7 @@ final class CatalogResources
             'video_max_size_mb' => max(1, (int) $config->get('webx-catalog.videos.max_size_mb', 2048)),
             'video_types' => array_values(array_map('strval', (array) $config->get('webx-catalog.videos.types', []))),
             'units' => array_map(static fn (string $unit): array => ['value' => $unit, 'label' => (string) __('webx-catalog::units.'.$unit)], $units),
-            'default_unit' => (string) $config->get('webx-catalog.default_unit', 'pcs'),
+            'default_unit' => Product::defaultUnit(),
         ];
     }
 

@@ -7,4 +7,10 @@ return [
     'reset' => 'Tümünü sıfırla',
     'select-row' => 'Satırı seç',
     'select-all' => 'Bu sayfadaki tüm satırları seç',
+    'loading' => 'Yükleniyor',
+    'reorder' => 'Sırayı değiştir',
+    'search' => 'Ara',
+    'nothing-found' => 'Hiçbir şey bulunamadı',
+    'expand' => 'Genişlet',
+    'collapse' => 'Daralt',
 ];

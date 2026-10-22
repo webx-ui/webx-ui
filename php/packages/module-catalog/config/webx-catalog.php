@@ -57,9 +57,14 @@ return [
     | Keys, not words: the label of each is `webx-catalog::units.<key>` in the
     | module's dictionary, so a site adds a unit here and its word there.
     |
+    | `default_unit` is what a product gets when none is given — the form, MCP,
+    | an import — and what one saved without a unit reads as. Null: no default.
+    |
     */
 
     'units' => ['pcs', 'kg', 'g', 'm', 'm2', 'm3', 'l', 'pack', 'set'],
+
+    'default_unit' => 'pcs',
 
     /*
     |---------------------------------------------------------------------------
@@ -76,8 +81,6 @@ return [
     */
 
     'facet_codes' => [],
-
-    'default_unit' => 'pcs',
 
     /*
     |---------------------------------------------------------------------------

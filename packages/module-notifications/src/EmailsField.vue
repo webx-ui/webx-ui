@@ -10,7 +10,7 @@ import {
   WxSpace,
   WxText,
 } from '@webx-ui/core'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import { createNotificationsApi } from './api'
 import { useChannel } from './context'
 import { useNotificationsMessages } from './i18n'
@@ -32,6 +32,7 @@ const model = defineModel<EmailRecipient[] | null>({ default: () => [] })
 useNotificationsMessages()
 
 const t = useTranslate('webx-notifications')
+const askRemove = useRemoveConfirm()
 const channel = useChannel()
 const admin = useAdmin()
 
@@ -116,6 +117,7 @@ function adminOptionsFor(id: number) {
         icon="trash"
         tone="danger"
         :title="t('panel.remove')"
+        v-bind="askRemove"
         @click="remove(index)"
       />
     </div>

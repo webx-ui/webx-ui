@@ -325,7 +325,8 @@
                       "localized": true,
                       "props": {
                         "rows": 3,
-                        "maxlength": 2000
+                        "maxlength": 2000,
+                        "shortcodes": true
                       }
                     }
                   ]
@@ -372,7 +373,8 @@
                   "props": {
                     "rows": 3,
                     "maxlength": 2000,
-                    "showCount": true
+                    "showCount": true,
+                    "shortcodes": true
                   }
                 }
               ]

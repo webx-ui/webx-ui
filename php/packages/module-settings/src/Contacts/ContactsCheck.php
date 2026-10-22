@@ -50,6 +50,15 @@ final class ContactsCheck
         foreach (self::rows($stored, Contacts::KEYS['addresses']) as $row => $item) {
             $map = is_string($item['map'] ?? null) ? trim($item['map']) : '';
 
+            if (! self::hasText($item['address'] ?? null)) {
+                self::refuse($errors, 'addresses', $row, 'address', 'address-missing');
+            }
+
+            // Half a pair puts no pin anywhere, and the site would draw a map of nothing.
+            if (is_numeric($item['latitude'] ?? null) !== is_numeric($item['longitude'] ?? null)) {
+                self::refuse($errors, 'addresses', $row, is_numeric($item['latitude'] ?? null) ? 'longitude' : 'latitude', 'coordinates-incomplete');
+            }
+
             if ($map !== '' && ! Contacts::isWebLink($map)) {
                 self::refuse($errors, 'addresses', $row, 'map', 'link-invalid', ['url' => $map]);
             }
@@ -90,6 +99,18 @@ final class ContactsCheck
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
         }
+    }
+
+    /** Words in at least one language: a translated field is a map, an older one plain text. */
+    private static function hasText(mixed $value): bool
+    {
+        foreach (is_array($value) ? $value : [$value] as $one) {
+            if (is_string($one) && trim($one) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

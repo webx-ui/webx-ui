@@ -43,7 +43,7 @@ A route or screen node the site adds next to the module asks the same:
 
 | You want                              | Do this                                                                                                                                                                   |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The press blocks on the site          | `php artisan webx:blocks:offered --install --module=press` (`webx:setup` runs it)                                                                                         |
+| The press blocks on the site          | `php artisan webx:blocks:offered --install --module=press` (`webx:setup` prints it)                                                                                       |
 | A page at `/press`                    | a page of `module-pages` with the slug `press` and the logos or outlets block on it                                                                                       |
 | Outlet pages inside the site's header | `'layout' => 'layout'` in `config/webx-press.php` (`<x-layout>`), or `WEBX_PRESS_LAYOUT`                                                                                  |
 | One part of the outlet page different | `php artisan vendor:publish --tag=webx-press-views`, keep only that part                                                                                                  |

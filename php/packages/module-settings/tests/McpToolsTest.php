@@ -57,7 +57,11 @@ final class McpToolsTest extends TestCase
             ['key' => 'content.tone', 'label' => 'Tone of voice', 'type' => 'wx-textarea', 'localized' => false],
             ['key' => 'content.donts', 'label' => "Don'ts", 'type' => 'wx-textarea', 'localized' => false],
             ['key' => 'content.notes', 'label' => 'Notes for the agent', 'type' => 'wx-textarea', 'localized' => false],
-        ], $this->invoke('list'));
+        ], array_map(
+            // What one row of a list takes is ContactListsTest's.
+            static fn (array $one): array => array_diff_key($one, ['item' => true]),
+            $this->invoke('list'),
+        ));
     }
 
     #[Test]

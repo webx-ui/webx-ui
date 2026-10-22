@@ -54,6 +54,15 @@ export interface ActionProps {
   size?: ActionSize
   /** Which side of the button the tooltip prefers. It flips when there is no room. */
   tooltipSide?: TooltipSide
+  /**
+   * Asks this question in a popover by the button before going ahead: `click` comes only on a
+   * yes. For removing one row of a list — a whole record deserves a dialog.
+   */
+  confirm?: string
+  /** The button of that question that goes ahead. Defaults to `Yes`. */
+  confirmText?: string
+  /** The button of that question that does not. Defaults to `Cancel`. */
+  cancelText?: string
 }
 
 export interface ActionEmits {

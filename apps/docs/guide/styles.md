@@ -333,9 +333,9 @@ styles travel with it and reach only the pages that show it.
 A theme carries block types too, as `blocks/<slug>.json` — the files `webx:blocks:export` writes. A
 type of an upper layer replaces the one of a lower layer with the same slug, whole; its schema may
 add fields but keeps every field below with the same type, or the content filled in for the lower
-type is lost. `webx:setup` puts the resulting set on a new site; after that it moves only when a
-person says so — a deploy, `webx:theme:sync` and `composer update` never write a block type, so
-what a client changed in the panel stays:
+type is lost. The set moves only when a person says so — `webx:setup` prints the import for a dev
+copy and does not run it, and a deploy, `webx:theme:sync` and `composer update` never write a block
+type, so what a client changed in the panel stays:
 
 ```bash
 php artisan webx:blocks:import --theme --dry-run      # what the layers would change

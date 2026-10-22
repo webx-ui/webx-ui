@@ -99,6 +99,8 @@ return [
     'social-label' => 'Назва',
     'social-label-help' => 'Її прочитає вголос програма екранного доступу.',
     'phone-missing' => 'введіть номер.',
+    'address-missing' => 'введіть адресу.',
+    'coordinates-incomplete' => 'вкажіть і широту, і довготу або жодну.',
     'phone-no-country' => 'у номера :number немає коду країни. Почніть його з + і коду: +800 1234 5678.',
     'phone-invalid' => ':number — не номер телефону.',
     'email-invalid' => ':email — не адреса електронної пошти.',

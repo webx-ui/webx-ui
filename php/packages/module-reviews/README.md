@@ -25,7 +25,8 @@ php artisan webx:blocks:offered --install --module=reviews
 
 The last line puts the offered block type **Reviews** on the site and publishes it. A type the
 site already has under the slug `reviews` is left alone: the site may have rewritten it.
-`webx:setup` runs this line by itself for a new site.
+`webx:setup` does not run this line: it prints it for a dev copy, and on staging and live a person
+runs it.
 
 Permissions: `reviews.view`, `reviews.manage`, `reviews.categories.manage`.
 

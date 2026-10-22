@@ -121,6 +121,7 @@ final class InboxTools
                     'title' => ['type' => ['string', 'object'], 'description' => 'One language as a string, or every language as { "en": "…" }.'],
                     'is_enabled' => ['type' => 'boolean', 'description' => 'A form that is off is a 404 to the site and keeps everything it has received.'],
                     'options' => ['type' => 'object', 'description' => 'The settings, as inbox_form_get returns them: recipients, the thank-you, the antispam. Unknown keys are dropped. '
+                        .'`thank-you.heading` and `thank-you.text` may say {{field.<name>}}: the visitor\'s answer to that field, escaped; empty, unknown or a file — nothing. '
                         .'`notify_channels` — ids of channels of the notifications module (notifications_channels_list with event inbox.submission) '
                         .'that a submission from the site is sent to; ids no channel has are dropped. Only with that module installed. '
                         .'`notify_via` — "email" (a letter to `recipients`) or "channels" (`notify_channels`): one or the other, the settings of the other are kept. '

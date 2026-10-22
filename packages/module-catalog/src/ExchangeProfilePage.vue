@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
   useErrorText,
+  useRemoveConfirm,
   useTranslate,
   WxScreen,
   WxScreenHead,
@@ -53,7 +54,9 @@ const router = useRouter()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
+const askRemove = useRemoveConfirm()
 
 const list = computed(() => `${props.base}/exchange/profiles`)
 const id = computed(() => (route.params.id === 'new' ? null : Number(route.params.id)))
@@ -306,6 +309,7 @@ const actions = computed<ScreenAction[]>(() => {
               />
               <wx-select
                 v-model="pair.code"
+                :empty-text="panel('filters.nothing-found')"
                 :options="targets"
                 filterable
                 clearable
@@ -316,7 +320,9 @@ const actions = computed<ScreenAction[]>(() => {
               <wx-action
                 v-if="canManage"
                 icon="close"
+                tone="danger"
                 :label="t('panel.exchange-profile-remove')"
+                v-bind="askRemove"
                 @click="pairs.splice(index, 1)"
               />
             </div>
@@ -357,7 +363,9 @@ const actions = computed<ScreenAction[]>(() => {
               />
               <wx-action
                 icon="close"
+                tone="danger"
                 :label="t('panel.exchange-profile-remove')"
+                v-bind="askRemove"
                 @click="codes.splice(index, 1)"
               />
             </template>
@@ -366,6 +374,7 @@ const actions = computed<ScreenAction[]>(() => {
 
         <div v-if="canManage" class="wx-catalog-profile__add">
           <wx-select
+            :empty-text="panel('filters.nothing-found')"
             :model-value="adding"
             :options="spare"
             filterable

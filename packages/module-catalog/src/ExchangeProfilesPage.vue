@@ -37,6 +37,7 @@ const router = useRouter()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const rows = ref<ExchangeProfile[] | null>(null)
@@ -160,6 +161,7 @@ function actionsFor(row: ExchangeProfile): RowAction[] {
       :actions="actions"
     >
       <wx-table
+        :loading-text="panel('filters.loading')"
         :data="rows ?? []"
         :columns="columns"
         row-key="id"

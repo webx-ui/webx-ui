@@ -24,8 +24,8 @@ php artisan webx:blocks:offered --install --module=faq
 ```
 
 The last line puts the offered block type **FAQ** on the site and publishes it. A type the site
-already has under the slug `faq` is left alone: the site may have rewritten it. `webx:setup` runs
-this line by itself for a new site.
+already has under the slug `faq` is left alone: the site may have rewritten it. `webx:setup` does not run
+this line: it prints it for a dev copy, and on staging and live a person runs it.
 
 Permissions: `faq.view`, `faq.manage`, `faq.categories.manage`.
 

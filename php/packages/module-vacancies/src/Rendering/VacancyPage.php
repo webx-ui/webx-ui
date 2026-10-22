@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Vacancies\Rendering;
 
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\Locales;
 use WebxUi\Vacancies\Models\Vacancy;
 use WebxUi\Vacancies\Models\VacancyCategory;
@@ -15,7 +16,7 @@ use WebxUi\Vacancies\Support\Salary;
  * publishes and rewrites is markup over plain data, and no part asks the database for itself.
  *
  *     $vacancy        the model — for `extra()`, SEO and anything a site's part wants of it
- *     $title, $lead
+ *     $title, $lead   the lead with its shortcodes resolved — print it with {{ }}
  *     $closed         closed by hand or expired — the page says so and offers no application
  *     $workplace      onsite | remote | hybrid
  *     $city, $address words; '' for remote work
@@ -23,8 +24,8 @@ use WebxUi\Vacancies\Support\Salary;
  *     $salary         the editor's words, or the numbers as words where there are none; '' — none
  *     $valid_through  the last day in words, or ''
  *     $categories     the names of the visible categories — no links: they have no pages
- *     $description    HTML as stored (the field type cleaned it on the way in)
- *     $duties, $requirements, $benefits   the lines written in this language
+ *     $description    HTML as stored (the field type cleaned it on the way in), shortcodes replaced
+ *     $duties, $requirements, $benefits   the lines written in this language, shortcodes resolved
  *     $form           the slug of the application form, or null — a site prints it itself
  */
 final class VacancyPage
@@ -43,11 +44,14 @@ final class VacancyPage
         $locale = $this->locales->current();
         $place = $vacancy->hasPlace();
         $salary = $vacancy->text('salary', $locale);
+        $text = app(PageText::class);
+        // The lead and the lines of the lists are text the panel offers shortcodes in.
+        $lines = static fn (string $field): array => array_map($text->text(...), $vacancy->lines($field, $locale));
 
         return [
             'vacancy' => $vacancy,
             'title' => $vacancy->text('title', $locale),
-            'lead' => $vacancy->text('lead', $locale),
+            'lead' => $text->text($vacancy->text('lead', $locale)),
             'closed' => $vacancy->isClosed(),
             'workplace' => $vacancy->workplace,
             'city' => $place ? $vacancy->text('city', $locale) : '',
@@ -60,9 +64,9 @@ final class VacancyPage
                 $this->cards->visibleCategories($vacancy),
             ),
             'description' => $vacancy->descriptionHtml($locale),
-            'duties' => $vacancy->lines('duties', $locale),
-            'requirements' => $vacancy->lines('requirements', $locale),
-            'benefits' => $vacancy->lines('benefits', $locale),
+            'duties' => $lines('duties'),
+            'requirements' => $lines('requirements'),
+            'benefits' => $lines('benefits'),
             'form' => $vacancy->formSlug($locale),
         ];
     }

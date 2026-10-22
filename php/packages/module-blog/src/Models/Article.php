@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Categories\HasCategories;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
@@ -313,7 +314,8 @@ class Article extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallb
         ];
 
         $lead = $this->getTranslation('lead', $locale);
-        $description = is_string($lead) ? trim(html_entity_decode(strip_tags($lead), ENT_QUOTES | ENT_HTML5, 'UTF-8')) : '';
+        // The lead takes shortcodes; JSON-LD is text, so each one is its plain rendering here.
+        $description = is_string($lead) ? trim(Container::getInstance()->make(PageText::class)->plainFromHtml($lead)) : '';
 
         if ($description !== '') {
             $posting['description'] = $description;

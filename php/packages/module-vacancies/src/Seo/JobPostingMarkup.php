@@ -6,6 +6,7 @@ namespace WebxUi\Vacancies\Seo;
 
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Seo\Panel\DefaultsSource;
 use WebxUi\Vacancies\Models\Vacancy;
 use WebxUi\Vacancies\Support\Salary;
@@ -27,6 +28,7 @@ final class JobPostingMarkup
         private readonly DefaultsSource $defaults,
         private readonly Salary $salary,
         private readonly Translator $translator,
+        private readonly PageText $text,
     ) {}
 
     /**
@@ -70,7 +72,8 @@ final class JobPostingMarkup
             $lines = $vacancy->lines($field, $locale);
 
             if ($lines !== []) {
-                $markup[$property] = implode("\n", $lines);
+                // Text, not HTML: a shortcode in a line is its plain rendering here.
+                $markup[$property] = implode("\n", array_map($this->text->plain(...), $lines));
             }
         }
 
@@ -98,13 +101,14 @@ final class JobPostingMarkup
             }
 
             $heading = (string) $this->translator->get('webx-vacancies::vacancy.'.$field, [], $locale);
-            $items = implode('', array_map(static fn (string $line): string => '<li>'.e($line).'</li>', $lines));
+            // HTML like the description above it, so a shortcode is its HTML: `e()` hands that on.
+            $items = implode('', array_map(fn (string $line): string => '<li>'.e($this->text->text($line)).'</li>', $lines));
 
             $parts[] = '<h2>'.e($heading).'</h2><ul>'.$items.'</ul>';
         }
 
         if ($parts === []) {
-            return e($vacancy->text('lead', $locale));
+            return e($this->text->text($vacancy->text('lead', $locale)));
         }
 
         return implode("\n", $parts);

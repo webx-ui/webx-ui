@@ -13,6 +13,8 @@ use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\RegistryTool;
 use WebxUi\Mcp\Server\WebxServer;
+use WebxUi\Media\Models\MediaDirectory;
+use WebxUi\Media\Models\MediaFile;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Services\Models\Service;
 use WebxUi\Services\Models\ServiceCategory;
@@ -42,6 +44,8 @@ final class McpTest extends TestCase
         $this->assertSame(['services.categories.manage'], $registry->tool('service_categories_create')->permissions());
 
         $this->assertContains('services://catalog', array_map(static fn ($resource): string => $resource->uri, $registry->resources()));
+        // How the cover takes a file is the library's to say, once for every module.
+        $this->assertStringContainsString('media_get_file', json_encode(($this->resource(WebxServer::FILE_FIELDS)->handler)(), JSON_THROW_ON_ERROR));
     }
 
     #[Test]
@@ -285,6 +289,76 @@ final class McpTest extends TestCase
         $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']], 'force' => true])
             ->assertOk();
         $this->assertSame('Crowns and bridges', $crowns->refresh()->draftValues()['title']['en'] ?? null);
+    }
+
+    #[Test]
+    public function a_cover_is_taken_in_every_form_the_library_names_a_file_in(): void
+    {
+        // An agent names a file the way the library showed it: by id, or with the whole object
+        // `media_get_file` returned. Only the key with no id used to be taken.
+        $file = $this->picture();
+        $id = (int) $file->getKey();
+        $described = ['id' => $id, 'path' => $file->path, 'url' => 'https://cdn.test/'.$file->path, 'width' => 800, 'height' => 600, 'name' => 'Cover', 'mime' => 'image/webp'];
+
+        $forms = [
+            'an id' => $id,
+            'an id as text' => (string) $id,
+            '{ id }' => ['id' => $id],
+            '{ path }' => ['path' => $file->path],
+            'what media_get_file returns' => $described,
+            'the same with a caption' => $described + ['alt' => ['en' => 'A cover']],
+        ];
+
+        foreach ($forms as $form => $cover) {
+            $created = $this->content($this->agent('services_create', ['title' => 'Service '.$form, 'values' => ['cover' => $cover]]));
+            $stored = $created['values']['cover'] ?? null;
+
+            $this->assertIsArray($stored, $form);
+            $this->assertSame($file->path, $stored['path'], $form);
+            $this->assertSame(['path' => $file->path], $stored, $form);
+
+            // And what services_get hands back goes straight back in.
+            $read = $this->content($this->agent('services_get', ['service' => $created['service']['id']]));
+            $updated = $this->content($this->agent('services_update', [
+                'service' => $created['service']['id'],
+                'values' => ['cover' => $read['values']['cover']],
+                'revision' => $read['revision'],
+            ]));
+
+            $this->assertSame($stored, $updated['values']['cover'], $form);
+        }
+
+        // The cover of a service has no captions to keep (`captions: false`): the file is all.
+        $this->assertSame(['path' => $file->path], $stored);
+    }
+
+    #[Test]
+    public function a_cover_the_library_does_not_have_is_refused_with_the_forms_it_takes(): void
+    {
+        $this->agent('services_create', ['title' => 'Gone', 'values' => ['cover' => 999999]])
+            ->assertHasErrors(['There is no file with id 999999 in the library']);
+
+        $this->agent('services_create', ['title' => 'Odd', 'values' => ['cover' => ['file' => 'cover.webp']]])
+            ->assertHasErrors(['media_get_file']);
+
+        $this->assertSame(0, Service::query()->count());
+    }
+
+    private function picture(): MediaFile
+    {
+        return MediaFile::query()->create([
+            'directory_id' => MediaDirectory::query()->whereNull('parent_id')->firstOrFail()->getKey(),
+            'disk' => 'public',
+            'path' => 'media/ab/cd/cover.webp',
+            'hash' => str_repeat('c', 32),
+            'name' => 'Cover',
+            'file_name' => 'cover.webp',
+            'extension' => 'webp',
+            'mime' => 'image/webp',
+            'size' => 2048,
+            'width' => 800,
+            'height' => 600,
+        ]);
     }
 
     private function resource(string $uri): McpResource

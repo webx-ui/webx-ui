@@ -216,7 +216,7 @@ final class PressDemo
     }
 
     /**
-     * The offered types, installed now if the site has not taken them — `webx:setup` usually has.
+     * The offered types, installed now if the site has not taken them — `webx:blocks:offered --install` usually has.
      * A type by that slug the site already has is left as it is, whatever it was made into.
      */
     private function blockTypes(DemoLedger $ledger): bool

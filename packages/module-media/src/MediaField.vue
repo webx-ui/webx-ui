@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useLightbox, useTranslate } from '@webx-ui/module-admin'
 import {
   WxAction,
   WxActions,
@@ -13,6 +13,7 @@ import {
 } from '@webx-ui/core'
 import { createMediaApi } from './api'
 import { canBrowseMedia } from './access'
+import { nameFromPath } from './format'
 import { openMediaPicker } from './openMediaPicker'
 import { useMediaMessages } from './i18n'
 import type { MediaAspect, MediaKind, MediaValue } from './types'
@@ -67,6 +68,8 @@ const value = defineModel<MediaValue | null>({ default: null })
 useMediaMessages()
 
 const t = useTranslate('webx-media')
+const panel = useTranslate('webx-admin')
+const lightbox = useLightbox()
 
 const admin = useAdmin()
 const api = createMediaApi(admin)
@@ -158,6 +161,15 @@ async function choose(): Promise<void> {
   value.value = { ...value.value, path: file.path, url: file.url }
 }
 
+/** The picture, large: the full file the frame shows fitted. */
+function view(event: MouseEvent): void {
+  if (!preview.value || !value.value) return
+
+  const name = nameFromPath(value.value.path)
+
+  lightbox.click(event, [{ src: preview.value, alt: name, caption: name }])
+}
+
 /** Clears the field. The file stays in the library — it is very likely used somewhere else. */
 function clear(): void {
   value.value = null
@@ -187,15 +199,15 @@ function clear(): void {
         rule is a class plus an attribute, so a single class from outside loses to it — silently,
         and only in a browser.
 
-        The picture is also the way to swap it. A button labelled "replace" inside the captions
-        popover is a second place to look for something the picture itself already offers.
+        A click on the picture opens it large, as every picture of the panel does
+        (`useLightbox`); swapping it is a button of the bar.
       -->
       <button
         type="button"
         class="wx-media-field__picture"
-        :disabled="disabled || !canBrowse"
-        :title="canBrowse ? t('field.replace') : t('field.locked')"
-        @click="choose"
+        :disabled="!preview"
+        :title="panel('lightbox.view')"
+        @click="view"
       >
         <wx-image v-if="preview" :src="preview" fit="contain" width="100%" height="100%" />
         <span v-else class="wx-media-field__missing">{{ t('field.no-preview') }}</span>
@@ -203,6 +215,8 @@ function clear(): void {
 
       <div v-if="!disabled" class="wx-media-field__bar">
         <wx-actions size="sm">
+          <wx-action v-if="canBrowse" icon="refresh" :title="t('field.replace')" @click="choose" />
+
           <!--
           The captions are asked for where the picture is, not in a dialog over the whole form:
           what they describe has to stay in sight while they are being written.
@@ -337,11 +351,11 @@ function clear(): void {
   border-radius: var(--wx-radius-xs);
   overflow: hidden;
   background: transparent;
-  cursor: pointer;
+  cursor: zoom-in;
 }
 
 .wx-media-field__picture:disabled {
-  cursor: not-allowed;
+  cursor: default;
 }
 
 .wx-media-field__missing {

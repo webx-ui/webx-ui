@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Categories\HasCategories;
 use WebxUi\Admin\Relations\HasRelations;
-use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Localization\HasTranslations;
@@ -500,20 +500,13 @@ class Vacancy extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
 
     /**
      * The description as a page prints it: the library pictures in it pointed at where they live
-     * now — the document holds keys, not addresses.
+     * now — the document holds keys, not addresses — and the shortcodes in it replaced.
      */
     public function descriptionHtml(?string $locale = null): string
     {
         $stored = $this->getTranslation('description', $locale ?? app()->getLocale(), false);
 
-        if (! is_string($stored) || trim($stored) === '') {
-            return '';
-        }
-
-        $type = app(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return app(PageText::class)->html($stored, $locale);
     }
 
     /**

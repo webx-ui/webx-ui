@@ -268,8 +268,9 @@ has is never overwritten: it is `unchanged`, or `differs, kept` with the differe
 history. In the section the same is a «Replace» switch on each differing row, off by default.
 
 Nothing else writes types on a live site: `webx:boot`, `webx:theme:sync` and `composer update`
-leave them alone, so what the client changed in the panel stays. `webx:setup` installs the
-theme's types and the chosen modules' offers on a new site; after that it is this command, run
+leave them alone, so what the client changed in the panel stays. `webx:setup` does not
+write them either: it prints the commands for a dev copy (`webx:blocks:import --theme` and
+`webx:blocks:offered --install`). On a staging or live site a type arrives only by this command, run
 once by a person.
 
 ## MCP

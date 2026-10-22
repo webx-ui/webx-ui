@@ -202,6 +202,10 @@ list`): он переписывает общий `vendor/orchestra/testbench-cor
   и тесты, поднимающие приложение в этот момент, получают чужой набор провайдеров. Пока идёт
   прогон, `testbench` не звать; после — удалить `services.php` (он сгенерируется заново) и
   повторить. Список MCP-инструментов модуля проверяет его тест на `webx:mcp-tools`.
+  Стенд на `testbench serve` со своим `testbench.yaml` (`TESTBENCH_WORKING_PATH`) хуже: копия
+  yaml остаётся в том же `bootstrap/cache/testbench.yaml`, и **каждый** следующий прогон берёт её
+  провайдеры и базу — сотни ошибок до удаления файла. Стенд для браузера поднимать в сайте
+  (`site up`, стартовый сайт), а после такого стенда — удалить оба файла из `bootstrap/cache`.
 - **Страница, переписанная в Playwright через `page.route()` + `route.fulfill()`, остаётся без
   стилей и скриптов**, а в консоли «blocked by CORS policy: … more-private address space».
   Документ, отданный `fulfill`, для браузера уже не с адреса сайта, и Private Network Access режет

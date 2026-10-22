@@ -166,12 +166,68 @@ final class FieldTypeTest extends TestCase
     }
 
     #[Test]
+    public function a_file_is_kept_by_its_key_whatever_form_it_was_named_in(): void
+    {
+        // The forms an agent has: the id `media_get_file` showed, or the whole object it returned.
+        $file = $this->file();
+        $id = (int) $file->getKey();
+        $node = ['type' => 'wx-media', 'props' => ['accept' => 'image']];
+        $described = ['id' => $id, 'directory_id' => 1, 'path' => $file->path, 'name' => 'A picture', 'type' => 'image', 'mime' => 'image/jpeg', 'size' => 1024, 'width' => 800, 'height' => 600, 'url' => 'https://cdn.test/one.jpg'];
+
+        $forms = [
+            'an id' => [$id, ['path' => $file->path]],
+            'an id as text' => [(string) $id, ['path' => $file->path]],
+            '{ id }' => [['id' => $id], ['path' => $file->path]],
+            '{ id } with captions' => [['id' => $id, 'alt' => ['en' => 'A cat'], 'title' => 'Cat'], ['path' => $file->path, 'alt' => ['en' => 'A cat'], 'title' => 'Cat']],
+            '{ path }' => [['path' => $file->path], ['path' => $file->path]],
+            'the key as text' => [$file->path, ['path' => $file->path]],
+            'what media_get_file returns' => [$described, ['path' => $file->path]],
+            'what a *_get returns' => [$this->field()->resolve(['path' => $file->path, 'alt' => 'A cat'], $node), ['path' => $file->path, 'alt' => 'A cat']],
+            // The key wins: it is what is kept, and the id beside it is a leftover.
+            'a key and a stray id' => [['id' => 999999, 'path' => $file->path], ['path' => $file->path]],
+        ];
+
+        foreach ($forms as $form => [$value, $kept]) {
+            $this->assertSame([], $this->check($this->field()->rules($node), $value), $form);
+            $this->assertSame([], $this->field()->newValueProblems($value, $node), $form);
+            $this->assertSame($kept, $this->field()->store($value, $node), $form);
+        }
+    }
+
+    #[Test]
+    public function an_id_the_library_does_not_have_is_refused_by_name(): void
+    {
+        $node = ['type' => 'wx-media'];
+
+        foreach ([999999, '999999', ['id' => 999999]] as $value) {
+            $this->assertSame(['There is no file with id 999999 in the library: pick one from it.'], $this->check($this->field()->rules($node), $value));
+        }
+    }
+
+    #[Test]
+    public function a_value_that_names_no_file_says_how_one_is_named(): void
+    {
+        foreach ([['file' => 'one.jpg'], ['one.jpg'], true, ['id' => 0]] as $value) {
+            $errors = $this->check($this->field()->rules(['type' => 'wx-media']), $value);
+
+            $this->assertCount(1, $errors);
+            $this->assertStringStartsWith('This is not a file from the library.', $errors[0]);
+            $this->assertStringContainsString('media_get_file', $errors[0]);
+        }
+    }
+
+    #[Test]
     public function a_file_of_the_wrong_kind_is_refused(): void
     {
         $file = $this->file(['path' => 'media/ab/cd/terms.pdf', 'mime' => 'application/pdf', 'extension' => 'pdf']);
 
         $node = ['type' => 'wx-media', 'props' => ['accept' => 'image']];
         $errors = $this->check($this->field()->rules($node), ['path' => $file->path]);
+
+        $this->assertSame(['This field takes images only.'], $errors);
+
+        // Named by its id, the same file is the same refusal.
+        $errors = $this->check($this->field()->rules($node), (int) $file->getKey());
 
         $this->assertSame(['This field takes images only.'], $errors);
     }

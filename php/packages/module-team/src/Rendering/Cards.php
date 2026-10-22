@@ -7,6 +7,7 @@ namespace WebxUi\Team\Rendering;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use WebxUi\Admin\Relations\Relations;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\Locales;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Screens\MediaValues;
@@ -20,7 +21,8 @@ use WebxUi\Team\Networks;
  *     id, anchor, categories   what every element of a `wx-collection` carries; no categories here
  *     name, job_title          in the language asked for, else in the default one; '' when none
  *     initials                 what stands in for a missing photo
- *     text                     plain text in the language asked for, else '' (decision 8)
+ *     text                     in the language asked for, else '' (decision 8); a string, or a
+ *                              ShortcodeText when it holds a shortcode ({@see PageText::text()})
  *     photo                    what a `wx-media` field hands over: url, thumb, width, height, alt…
  *     socials                  network, label, url — in the editor's order, known networks only
  *     service_links            id, title, url of the services the person provides; [] without them
@@ -36,6 +38,7 @@ final class Cards
         private readonly MediaValues $media,
         private readonly Locales $locales,
         private readonly Networks $networks,
+        private readonly PageText $text,
     ) {}
 
     /**
@@ -79,7 +82,7 @@ final class Cards
             'name' => $name,
             'initials' => Member::initials($name),
             'job_title' => $member->wordsIn('job_title', $locale, $default),
-            'text' => $member->textIn($locale),
+            'text' => $this->text->text($member->textIn($locale)),
             'photo' => $this->photo($member, $locale),
             'socials' => $this->socials($member, $networks),
             'service_links' => $this->serviceLinks($member, $locale),

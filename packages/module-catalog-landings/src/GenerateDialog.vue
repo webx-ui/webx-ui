@@ -41,6 +41,8 @@ const locales = useLocales()
 useCatalogLandingsMessages()
 
 const t = useTranslate(NAMESPACE)
+const panel = useTranslate('webx-admin')
+const catalog = useTranslate('webx-catalog')
 const message = useErrorText()
 
 type Step = 'form' | 'preview' | 'run'
@@ -209,6 +211,9 @@ const rows = computed(() =>
         required
       >
         <wx-tree-select
+          :placeholder="catalog('panel.pick-categories')"
+          :filter-placeholder="panel('filters.search')"
+          :empty-text="panel('filters.nothing-found')"
           :model-value="categories"
           :nodes="tree.nodes.value ?? []"
           node-key="id"
@@ -238,6 +243,7 @@ const rows = computed(() =>
       <wx-form-item :label="t('generate.values')" :help="t('generate.values-help')">
         <wx-select
           v-model="values"
+          :empty-text="panel('filters.nothing-found')"
           :options="valueOptions"
           multiple
           filterable

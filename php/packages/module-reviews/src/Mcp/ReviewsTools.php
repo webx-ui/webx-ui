@@ -133,7 +133,7 @@ final class ReviewsTools
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'review' => $review,
-                    'values' => ['type' => 'object', 'description' => 'Field name → value, as reviews_get returns them. name, job_title and text take a string (the default language) or { "en": "…" }; photo takes a library key.'],
+                    'values' => ['type' => 'object', 'description' => 'Field name → value, as reviews_get returns them. name, job_title and text take a string (the default language) or { "en": "…" }; photo takes a library file — its id, { "id" } or { "path" } (media://fields).'],
                 ], 'required' => ['review', 'values']],
                 permission: 'reviews.manage',
             ),

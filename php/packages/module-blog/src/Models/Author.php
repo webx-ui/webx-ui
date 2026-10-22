@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
-use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blog\Seo\Trail;
 use WebxUi\Blog\Support\PublishedAuthors;
@@ -233,19 +233,12 @@ class Author extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
         return is_string($title) ? $title : '';
     }
 
-    /** The few lines about them, through the allowlist of their field type, as the page prints them. */
+    /** The few lines about them, through the allowlist of their field type and with the shortcodes replaced, as the page prints them. */
     public function bioHtml(?string $locale = null): string
     {
         $stored = $this->getTranslation('bio', $locale ?? app()->getLocale());
 
-        if (! is_string($stored) || trim($stored) === '') {
-            return '';
-        }
-
-        $type = Container::getInstance()->make(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return Container::getInstance()->make(PageText::class)->html($stored, $locale);
     }
 
     /**

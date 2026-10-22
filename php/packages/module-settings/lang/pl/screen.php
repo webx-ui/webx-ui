@@ -99,6 +99,8 @@ return [
     'social-label' => 'Nazwa',
     'social-label-help' => 'Odczytywana na głos przez czytnik ekranu.',
     'phone-missing' => 'wpisz numer.',
+    'address-missing' => 'wpisz adres.',
+    'coordinates-incomplete' => 'podaj szerokość i długość geograficzną albo żadnej.',
     'phone-no-country' => 'numer :number nie ma kodu kraju. Zacznij od + i kodu: +800 1234 5678.',
     'phone-invalid' => ':number nie jest numerem telefonu.',
     'email-invalid' => ':email nie jest adresem e-mail.',

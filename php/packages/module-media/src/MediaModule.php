@@ -10,10 +10,13 @@ use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Mcp\Tool;
 use WebxUi\Media\Demo\MediaDemo;
 use WebxUi\Media\Mcp\MediaTools;
+use WebxUi\Media\Screens\MediaValues;
 
 /**
  * The panel section for the file library.
@@ -96,5 +99,33 @@ final class MediaModule extends AbstractModule implements HasNavSection, Provide
     public function mcpTools(): array
     {
         return MediaTools::all();
+    }
+
+    /**
+     * How a file is written into a field of any module: the one thing about the library every
+     * other module's tools need, and none of them owns.
+     *
+     * @return list<McpResource>
+     */
+    public function mcpResources(): array
+    {
+        return [
+            new McpResource(
+                WebxServer::FILE_FIELDS,
+                'Fields that hold library files',
+                'How a cover, a photo, a logo or a gallery of any module takes its value: the forms a file '
+                .'may be given in, what is kept, and what is refused. Read it before writing such a field.',
+                static fn (): array => [
+                    'forms' => MediaValues::FORMS,
+                    'examples' => [62, ['id' => 62], ['path' => 'media/ab/cd/name.webp', 'alt' => ['en' => 'A caption']]],
+                    'kept' => '{ path, alt, title } — the key and the captions. The address is worked out when the site '
+                        .'prints the file, so url, width, height and the rest are never stored.',
+                    'refused' => 'An id or a key the library does not have, and a file of the wrong kind where the field '
+                        .'takes images (or documents) only. media_search_files finds a file by name; '
+                        .'media_upload_from_url puts one in the library first.',
+                    'lists' => 'A gallery or a list of files takes a list of these, in the order the site shows them.',
+                ],
+            ),
+        ];
     }
 }

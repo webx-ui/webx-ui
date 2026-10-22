@@ -136,6 +136,19 @@ final class ExchangeTest extends TestCase
     }
 
     #[Test]
+    public function a_new_row_without_a_unit_is_priced_per_piece(): void
+    {
+        $this->import("sku,name,unit\nN-1,No column,kg\n");
+        $this->import("sku,name\nN-2,No column\n");
+        $this->import("sku,name,unit\nN-3,Empty cell,\n");
+
+        $this->assertSame(
+            ['N-1' => 'kg', 'N-2' => 'pcs', 'N-3' => 'pcs'],
+            DB::table('catalog_products')->orderBy('sku')->pluck('unit', 'sku')->all(),
+        );
+    }
+
+    #[Test]
     public function update_only_skips_the_new_and_create_only_skips_the_found(): void
     {
         $this->product('Boot', null, ['sku' => 'B-1']);

@@ -66,10 +66,11 @@ Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WE
 18. **Do** make every text of a block a visitor reads a field of the schema with `localized`;
     fixed labels are `__('theme::…')`. **Do not** write a string into the template.
 19. **Do** make a slider, a lightbox, a video, a map, tabs, an accordion or a dialog with a
-    **widget**. **Do not** write your own script or bring your own library for them. Anything of a
-    third party (YouTube, maps, counters) goes only through a widget or with
-    `data-webx-consent`: before consent, a page makes no request to a third party. A script of
-    your own only for what the widgets lack, and by the contract of the entry.
+    **widget**, and inertial scrolling with `data-webx-smooth-scroll` on `<html>` alone. **Do not**
+    write your own script or bring your own library for them. Anything of a third party (YouTube,
+    maps, counters) goes only through a widget or with `data-webx-consent`: before consent, a page
+    makes no request to a third party. A script of your own only for what the widgets lack, and by
+    the contract of the entry.
 20. **Do** export a block made in the panel into `theme/blocks/`
     (`php artisan webx:blocks:export <slug> --path=theme/blocks`) and commit it. **Do not** leave a
     block only in the database: the next deployment from scratch loses it.

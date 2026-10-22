@@ -134,7 +134,9 @@ IconPicker ✅ — the icon set, picked from rather than typed into, see
 nothing, so anywhere an editor names an icon — a block type, a menu entry — the name has to come
 out of the set rather than out of a keyboard.
 EntityCard ✅ — one record as a row, see [EntityCard](/components/entity-card).
-Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions).
+Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions). `confirm`
+asks in a popover by the button before a row goes — the panel asks so for every row of a list,
+and keeps the dialog for a whole record.
 ActionBar ✅ — the same screen's buttons along the bottom of it, see
 [Layout](/components/layout#the-screen-s-own-bar). A panel's screens scroll natively, so the head
 goes with the scroll and takes the save button with it; the bar is where the button waits.

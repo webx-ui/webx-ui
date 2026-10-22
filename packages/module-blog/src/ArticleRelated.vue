@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
   WxAction,
@@ -35,6 +35,7 @@ const editor = useArticleEditor()
 useBlogMessages()
 
 const t = useTranslate('webx-blog')
+const askRemove = useRemoveConfirm()
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 const disabled = computed(() => props.disabled || editor?.disabled.value === true)
@@ -142,6 +143,7 @@ onBeforeUnmount(() => clearTimeout(timer))
           size="sm"
           :disabled="disabled"
           :title="t('article.related-remove')"
+          v-bind="askRemove"
           @click="remove((item as ArticleOption).id)"
         />
       </template>

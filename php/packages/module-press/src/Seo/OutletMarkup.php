@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Press\Seo;
 
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Press\Models\Article;
 use WebxUi\Press\Models\Outlet;
 
@@ -18,6 +19,10 @@ use WebxUi\Press\Models\Outlet;
  */
 final class OutletMarkup
 {
+    public function __construct(
+        private readonly PageText $text,
+    ) {}
+
     /**
      * @return array<string, mixed>|null
      */
@@ -71,7 +76,8 @@ final class OutletMarkup
             $markup['datePublished'] = $article->published_on->toDateString();
         }
 
-        $excerpt = $article->text('excerpt', $locale);
+        // Markup is text, not HTML: `[phone]` as the number it prints, not as a link.
+        $excerpt = $this->text->plain($article->text('excerpt', $locale));
 
         if ($excerpt !== '') {
             $markup['description'] = $excerpt;

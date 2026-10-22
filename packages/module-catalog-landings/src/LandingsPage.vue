@@ -63,6 +63,7 @@ useCatalogLandingsMessages()
 
 const t = useTranslate(NAMESPACE)
 const panel = useTranslate('webx-admin')
+const catalog = useTranslate('webx-catalog')
 const message = useErrorText()
 
 const generate = createModal<GenerateRun | null, { base: string }>(GenerateDialog)
@@ -353,6 +354,7 @@ onMounted(() => {
       <wx-table
         v-model:search="search"
         v-model:page="pageNumber"
+        :loading-text="panel('filters.loading')"
         :data="page"
         :columns="columns"
         row-key="id"
@@ -373,6 +375,9 @@ onMounted(() => {
         <template #filters>
           <wx-form-item :label="t('panel.filter-base')">
             <wx-tree-select
+              :placeholder="catalog('panel.any')"
+              :filter-placeholder="panel('filters.search')"
+              :empty-text="panel('filters.nothing-found')"
               :model-value="chosenBase"
               :nodes="baseNodes"
               node-key="id"

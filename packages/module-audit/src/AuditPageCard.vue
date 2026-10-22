@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxPreviewThumb } from '@webx-ui/module-admin'
 import {
   toast,
   WxAlert,
@@ -129,6 +129,15 @@ const tab = ref<TabValue>('overview')
 const links = ref<AuditPage<AuditLinkRow> | null>(null)
 const linksLoading = ref(false)
 const resources = ref<AuditPage<AuditResourceRow> | null>(null)
+
+/*
+ * The pictures of the page that answered, in the order of the table: what a click on one pages
+ * through (`useLightbox`). A broken one has nothing to show large.
+ */
+const shown = computed(() => (resources.value?.data ?? []).filter((row) => viewable(row)))
+const pictures = computed(() =>
+  shown.value.map((row) => ({ src: row.url, alt: row.alt ?? '', caption: row.alt || row.url })),
+)
 const resourcesLoading = ref(false)
 
 const resourceTabs: AuditResourceTab[] = ['images', 'css', 'js']
@@ -630,19 +639,33 @@ watch(tab, () => {
             <span v-if="resourceTab === 'images'" class="wx-audit-card__picture">
               <!-- Only a picture that answered is fetched: the stand's and a broken one keep the
                    placeholder rather than a request the browser is sure to lose. -->
+              <wx-preview-thumb
+                v-if="viewable(row)"
+                :items="pictures"
+                :start="shown.indexOf(row)"
+                :label="t('page.view-full')"
+              >
+                <wx-image
+                  :src="row.url"
+                  :alt="row.alt ?? ''"
+                  :width="48"
+                  :height="48"
+                  fit="cover"
+                  radius="var(--wx-radius-sm)"
+                  class="wx-audit-card__thumb"
+                />
+              </wx-preview-thumb>
               <wx-image
-                :src="viewable(row) ? row.url : undefined"
+                v-else
+                :src="undefined"
                 :alt="row.alt ?? ''"
                 :width="48"
                 :height="48"
                 fit="cover"
                 radius="var(--wx-radius-sm)"
-                preview
-                :preview-label="t('page.view-full')"
-                class="wx-audit-card__thumb"
-                :class="{ 'is-unviewable': !viewable(row) }"
+                class="wx-audit-card__thumb is-unviewable"
               >
-                <template v-if="!viewable(row)" #placeholder>
+                <template #placeholder>
                   <wx-icon name="image" />
                 </template>
               </wx-image>

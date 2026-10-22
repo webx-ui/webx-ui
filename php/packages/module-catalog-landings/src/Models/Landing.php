@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\History\RecordsHistory;
-use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Filter\FilterState;
 use WebxUi\Catalog\Models\Category;
@@ -332,19 +332,12 @@ class Landing extends Model implements HasDefaultSort, HasListingTexts, ListingS
 
     /**
      * A text as a page prints it: a document with every library picture pointed at where it lives
-     * now, as a brand's description is.
+     * now and the site's shortcodes printed, as a brand's description is.
      */
     private function richText(string $field, string $locale): ?string
     {
-        $stored = $this->getTranslation($field, $locale, false);
+        $html = Container::getInstance()->make(PageText::class)->html($this->getTranslation($field, $locale, false), $locale);
 
-        if (! is_string($stored) || trim($stored) === '') {
-            return null;
-        }
-
-        $type = Container::getInstance()->make(FieldTypes::class)->get('wx-rich-text');
-        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
-
-        return is_string($resolved) ? $resolved : $stored;
+        return $html !== '' ? $html : null;
     }
 }

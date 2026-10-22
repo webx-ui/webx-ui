@@ -12,6 +12,11 @@ else: `Call us on [phone]`. Two jobs:
 The content always stores the bracket. The page, the preview in the panel and `blocks_render`
 over MCP print the same result, because they share one renderer.
 
+Shortcodes work in the texts of the modules as well — a product's summary and description, a
+category's text, an article's lead, a FAQ answer, a review: every rich text of a module, and every
+paragraph its screen marks with `"shortcodes": true`. Which fields, and the rule a new one
+follows, are in [Screens](/guide/screens#shortcodes-in-a-module-s-texts).
+
 ## Data shortcodes from the panel
 
 «Settings» → «Shortcodes» is a list anybody with `settings.manage` can extend — no developer
@@ -144,6 +149,11 @@ For a field a block does not print — an article's title, a product's descripti
 | `@shortcodesIn($html)`    | trusted HTML (a rich text field) with the shortcodes replaced      |
 | `@shortcodesPlain($text)` | the text with the shortcodes as plain values, escaped — attributes |
 
+A module prints its own fields through `WebxUi\Admin\Shortcodes\PageText` — `html($stored,
+$locale)` for a rich text (library pictures and shortcodes), `text($text)` for a line or a
+paragraph, `plain()` and `plainFromHtml()` for JSON-LD and feeds — so that a page, a card and
+the markup of one record agree.
+
 In PHP: `Shortcodes::html($text)`, `Shortcodes::htmlIn($html)`, `Shortcodes::plain($text)`,
 `Shortcodes::text($html)` (tags out, then plain), `Shortcodes::list()`.
 
@@ -160,7 +170,7 @@ Both put a coloured full stop into a heading; they are for different things.
 
 ## In the panel
 
-Typing `[` in a text field of a block offers the shortcodes with their current values; a
+Typing `[` in a text field of a block — or in a module's rich text and marked paragraphs — offers the shortcodes with their current values; a
 shortcode already in the text is drawn as a chip, and the field's help lists them all. The
 preview prints them as the site does.
 

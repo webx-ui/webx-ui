@@ -7,6 +7,7 @@ namespace WebxUi\Vacancies\Rendering;
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Support\Collection;
 use WebxUi\Admin\Relations\Relations;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Vacancies\Models\Vacancy;
 use WebxUi\Vacancies\Models\VacancyCategory;
@@ -98,7 +99,8 @@ final class Cards
             'id' => (int) $vacancy->getKey(),
             'url' => $this->url($vacancy, $locale),
             'title' => $vacancy->text('title', $locale),
-            'lead' => $vacancy->text('lead', $locale),
+            // The card says what the vacancy's page says under its heading.
+            'lead' => app(PageText::class)->text($vacancy->text('lead', $locale)),
             'workplace' => $vacancy->workplace,
             'city' => $place ? $vacancy->text('city', $locale) : '',
             'address' => $place ? $vacancy->text('address', $locale) : '',

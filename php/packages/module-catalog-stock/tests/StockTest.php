@@ -18,6 +18,8 @@ use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\CatalogStock\Catalog\StockFacet;
 use WebxUi\CatalogStock\Catalog\StockRule;
 use WebxUi\CatalogStock\Models\StockStatus;
+use WebxUi\Localization\Locales;
+use WebxUi\Localization\Models\Locale;
 
 /**
  * §2.2 and §9 of the dictionaries spec: a product without a row is in the default status, a status
@@ -108,6 +110,23 @@ final class StockTest extends TestCase
         $this->assertSame(CoreRules::UNAVAILABLE, $verdicts[$hidden->id]->code);
         $this->assertSame(StockRule::CODE, $verdicts[$unpriced->id]->code);
         $this->assertSame(CoreRules::PRICE_ON_REQUEST, $verdicts[$orderable->id]->code);
+    }
+
+    #[Test]
+    public function a_new_status_takes_its_code_from_the_name_in_the_sites_default_language(): void
+    {
+        Locale::fromCode('uk', ['is_default' => true, 'sort' => 0])->save();
+        Locale::fromCode('ru', ['sort' => 1])->save();
+        $this->app->make(Locales::class)->forget();
+        $editor = $this->editor();
+
+        $code = fn (array $title): string => StockStatus::query()->findOrFail(
+            $this->actingAs($editor, 'cms')->postJson($this->api('stock'), ['title' => $title])->assertCreated()->json('data.id'),
+        )->code;
+
+        // The labels' path: the shared code of the panel, the generator of the localization package.
+        $this->assertSame('pid-zamovlennia', $code(['ru' => 'Под заказ', 'uk' => 'Під замовлення']));
+        $this->assertSame('stock-status-48', $code(['uk' => '48+']));
     }
 
     #[Test]

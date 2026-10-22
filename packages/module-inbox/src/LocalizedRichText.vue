@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useLocales, WxLocales, WxRichText, type LocalizedValue } from '@webx-ui/core'
+import { useRichTextLabels, useShortcodesWhen, useTranslate } from '@webx-ui/module-admin'
 
 /**
  * Rich text in every language the site publishes in.
@@ -22,6 +23,14 @@ const props = withDefaults(defineProps<{ placeholder?: string; minHeight?: strin
 })
 
 const locales = useLocales()
+
+// The toolbar in the panel's language, as on every other editor of the panel.
+const labels = useRichTextLabels()
+
+// The site's shortcodes behind the toolbar's `[]`: the thank-you and the consent sentence are
+// printed through them, the way every rich text of a module is.
+const shortcodes = useShortcodesWhen(() => true)
+const tAdmin = useTranslate('webx-admin')
 
 const active = computed(() => {
   const chosen = locales.active.value
@@ -58,7 +67,15 @@ const text = computed({
 
 <template>
   <wx-locales v-if="locales.list.value.length > 0">
-    <wx-rich-text v-model="text" :placeholder="props.placeholder" :min-height="props.minHeight" />
+    <wx-rich-text
+      v-model="text"
+      :placeholder="props.placeholder"
+      :min-height="props.minHeight"
+      :labels="labels"
+      :tokens="shortcodes.length > 0 ? shortcodes : undefined"
+      :tokens-title="tAdmin('shortcodes.title')"
+      :tokens-label="tAdmin('shortcodes.insert')"
+    />
   </wx-locales>
 
   <wx-rich-text
@@ -66,5 +83,9 @@ const text = computed({
     v-model="text"
     :placeholder="props.placeholder"
     :min-height="props.minHeight"
+    :labels="labels"
+    :tokens="shortcodes.length > 0 ? shortcodes : undefined"
+    :tokens-title="tAdmin('shortcodes.title')"
+    :tokens-label="tAdmin('shortcodes.insert')"
   />
 </template>

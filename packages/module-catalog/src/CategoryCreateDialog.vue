@@ -34,6 +34,7 @@ const locales = useLocales()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 
 const name = ref('')
 const parent = ref<TreeSelectValue>(props.parent)
@@ -87,6 +88,8 @@ async function submit(): Promise<void> {
     <wx-form-item :label="t('panel.field-parent')" :error="firstError(errors, 'parent_id')">
       <wx-tree-select
         v-model="parent"
+        :filter-placeholder="panel('filters.search')"
+        :empty-text="panel('filters.nothing-found')"
         :nodes="nodes"
         node-key="id"
         label-key="name"

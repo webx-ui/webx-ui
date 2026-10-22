@@ -11,7 +11,7 @@ import {
   WxSpace,
   WxText,
 } from '@webx-ui/core'
-import { useTranslate } from '@webx-ui/module-admin'
+import { useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import { useChannel } from './context'
 import FindChatsDialog from './FindChatsDialog.vue'
 import { useNotificationsMessages } from './i18n'
@@ -34,6 +34,7 @@ const model = defineModel<ChatRecipient[] | null>({ default: () => [] })
 useNotificationsMessages()
 
 const t = useTranslate('webx-notifications')
+const askRemove = useRemoveConfirm()
 const channel = useChannel()
 const find = createModal<
   FoundChat[],
@@ -135,6 +136,7 @@ async function search(): Promise<void> {
         icon="trash"
         tone="danger"
         :title="t('panel.remove')"
+        v-bind="askRemove"
         @click="remove(index)"
       />
     </div>

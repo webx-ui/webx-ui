@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Pages\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use WebxUi\Localization\Slug;
 use WebxUi\Pages\Models\Page;
 
 /**
@@ -67,14 +67,15 @@ final class PageRequest extends FormRequest
     /**
      * The address, made out of the name when the editor did not write one.
      *
-     * `Str::slug` transliterates, so a Russian title gives a Latin address rather than a
-     * percent-encoded one — which is what a site wants and what nobody wants to type by hand.
+     * {@see Slug} transliterates by the language the title is in, so a Russian title gives a
+     * Latin address rather than a percent-encoded one — which is what a site wants and what
+     * nobody wants to type by hand.
      */
-    public function slug(): string
+    public function slug(string $locale): string
     {
         $slug = trim((string) $this->input('slug', ''));
 
-        return $slug !== '' ? $slug : Str::slug($this->title());
+        return $slug !== '' ? $slug : Slug::make($this->title(), $locale);
     }
 
     public function parentId(): ?int

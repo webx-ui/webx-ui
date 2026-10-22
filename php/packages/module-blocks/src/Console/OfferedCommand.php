@@ -16,8 +16,9 @@ use WebxUi\Blocks\Exceptions\BlocksException;
  * A slug the theme chain carries is the theme's (THEMES §10.3): it is not installed from the
  * offer, and the line says `webx:blocks:import --theme` puts the theme's type there instead.
  *
- * `webx:setup` runs this with `--install` for the modules somebody chose. On a site that adds a
- * module to a panel it already has, it is the one line in the module's README.
+ * `webx:setup` prints this with `--install` for the modules somebody chose, for a dev copy, and
+ * never runs it (BLOCK_SCHEMAS §1). On a site that adds a module to a panel it already has, it is
+ * the one line in the module's README.
  */
 final class OfferedCommand extends Command
 {

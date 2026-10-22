@@ -41,6 +41,7 @@ const context = useAdmin()
 useCatalogManticoreMessages()
 
 const t = useTranslate('webx-catalog-manticore')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 const api = createSearchIndexApi(context)
 
@@ -278,6 +279,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 
         <wx-card bordered :title="t('panel.tables')">
           <wx-table
+            :loading-text="panel('filters.loading')"
             :data="report.tables"
             :columns="columns"
             row-key="table"

@@ -6,6 +6,7 @@ return [
     'unknown' => 'Non esiste una schermata chiamata :name.',
     'row' => 'Riga :number: :message',
     'row-shape' => 'Questa riga non è un insieme di campi.',
+    'row-unknown-key' => 'Questa riga non ha il campo «:key». Una riga accetta: :keys.',
     // The card a module's screen keeps for the fields a project patches in (`project-fields`).
     'project-fields' => 'Altro',
     // The words of a list of records on a described screen; the core has English only.

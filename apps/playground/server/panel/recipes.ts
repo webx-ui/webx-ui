@@ -876,10 +876,10 @@ function pictures(value: unknown): { url: string; thumb: string; alt: string }[]
   })
 }
 
-function cover(values: ScreenModel): { thumb: string | null } | null {
+function cover(values: ScreenModel): { thumb: string | null; url: string | null } | null {
   const first = pictures(values.gallery)[0]
 
-  return first === undefined ? null : { thumb: first.thumb }
+  return first === undefined ? null : { thumb: first.thumb, url: first.url }
 }
 
 function named(kind: TermKind, list: number[], locale: string): RecipeTermRef[] {

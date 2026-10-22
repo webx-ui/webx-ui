@@ -53,6 +53,7 @@ const router = useRouter()
 useCatalogMessages()
 
 const t = useTranslate('webx-catalog')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const exporter = createModal<ExchangeRun, { selection?: BulkSelection | null }>(
@@ -202,6 +203,7 @@ function progress(run: ExchangeRun): number {
     >
       <wx-table
         v-model:expanded="expanded"
+        :loading-text="panel('filters.loading')"
         :data="page"
         :columns="columns"
         row-key="id"

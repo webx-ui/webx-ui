@@ -433,7 +433,7 @@ view/manage нет: смотреть зону без права её прави�
 Рендер `<x-dynamic-component>` в тестах (сцена, лейаут фикстуры) — со сбросом статических свойств
 `DynamicComponent` в `setUp()`/`tearDown()` (`docs/pitfalls/laravel-and-php.md`).
 
-Настоящим приложением (`scripts/php-smoke.sh`): после `webx:setup --demo` главная отвечает шапкой
+Настоящим приложением (`scripts/php-smoke.sh`): после `webx:setup` и `webx:demo` главная отвечает шапкой
 из блоков, в `<body>` есть `<link>` набора зоны; после `webx:demo --remove` — запасная шапка
 (рендер тега через `tinker`).
 

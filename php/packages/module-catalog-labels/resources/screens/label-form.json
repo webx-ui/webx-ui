@@ -41,6 +41,30 @@
               { "label": "trans::webx-catalog-labels::label.tones.warning", "value": "warning" },
               { "label": "trans::webx-catalog-labels::label.tones.danger", "value": "danger" },
               { "label": "trans::webx-catalog-labels::label.tones.info", "value": "info" }
+            ],
+            "custom": true,
+            "customLabel": "trans::webx-catalog-labels::label.tones.custom",
+            "pickLabel": "trans::webx-catalog-labels::label.background"
+          }
+        },
+        {
+          "id": "text-color",
+          "type": "wx-color-picker",
+          "name": "text_color",
+          "label": "trans::webx-catalog-labels::label.text-color",
+          "help": "trans::webx-catalog-labels::label.text-color-help",
+          "props": {
+            "clearable": true,
+            "placeholder": "trans::webx-catalog-labels::label.text-auto"
+          },
+          "visible": {
+            "all": [
+              { "when": "color", "not": "neutral" },
+              { "when": "color", "not": "primary" },
+              { "when": "color", "not": "success" },
+              { "when": "color", "not": "warning" },
+              { "when": "color", "not": "danger" },
+              { "when": "color", "not": "info" }
             ]
           }
         },

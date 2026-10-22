@@ -34,6 +34,14 @@ final class MediaFiles
     private array $wanted = [];
 
     /**
+     * Rows looked up by id — an agent names a file the way `media_get_file` showed it — again
+     * including the ids that were not found.
+     *
+     * @var array<int, MediaFile|null>
+     */
+    private array $byId = [];
+
+    /**
      * Makes sure every one of these keys will be known, in one query with everything else
      * loaded ahead of the next `find()`.
      *
@@ -56,6 +64,37 @@ final class MediaFiles
         }
 
         return $this->found[$path] ?? null;
+    }
+
+    /**
+     * The rows behind these ids, in one query for those not asked about yet.
+     *
+     * @param  list<int>  $ids
+     */
+    public function loadIds(array $ids): void
+    {
+        $missing = array_values(array_unique(array_filter($ids, fn (int $id): bool => ! array_key_exists($id, $this->byId))));
+
+        if ($missing === []) {
+            return;
+        }
+
+        foreach ($missing as $id) {
+            $this->byId[$id] = null;
+        }
+
+        foreach (MediaFile::query()->whereIn('id', $missing)->get() as $file) {
+            $this->byId[(int) $file->getKey()] = $file;
+            // Whatever is found by id is about to be asked for by its key.
+            $this->found[$file->path] = $file;
+        }
+    }
+
+    public function findById(int $id): ?MediaFile
+    {
+        $this->loadIds([$id]);
+
+        return $this->byId[$id] ?? null;
     }
 
     /** Everything noted since the last look-up, in one query (and one more for the aliases). */
@@ -93,5 +132,6 @@ final class MediaFiles
     {
         $this->found = [];
         $this->wanted = [];
+        $this->byId = [];
     }
 }

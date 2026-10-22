@@ -11,6 +11,7 @@ use WebxUi\Admin\Facades\Screens;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Admin\Screens\Types\RepeaterType;
 
 final class RepeaterTypeTest extends TestCase
 {
@@ -152,5 +153,43 @@ final class RepeaterTypeTest extends TestCase
         $resolved = $this->values()->resolveAll('settings.index', ['contacts.offices' => null]);
 
         $this->assertSame([], $resolved['contacts.offices']);
+    }
+
+    #[Test]
+    public function a_key_no_field_names_is_refused_when_new_and_let_through_when_held(): void
+    {
+        try {
+            $this->values()->validate('settings.index', [
+                'contacts.offices' => [['city' => ['ru' => 'Киев'], 'street' => 'Main st.']],
+            ], held: []);
+
+            $this->fail('the repeater kept quiet about a key none of its fields names');
+        } catch (ValidationException $exception) {
+            $this->assertSame(
+                ['contacts.offices.0.street' => ['This row has no field "street". A row takes: city, floor, main.']],
+                $exception->errors(),
+            );
+        }
+
+        // A field a screen has since removed travels back with the panel's rows: dropped, not refused.
+        $stored = $this->values()->validate('settings.index', [
+            'contacts.offices' => [['city' => ['ru' => 'Киев'], 'street' => 'Main st.']],
+        ], held: ['contacts.offices' => [['city' => ['ru' => 'Киев'], 'street' => 'Old st.']]]);
+
+        $this->assertSame(['contacts.offices' => [['city' => ['ru' => 'Киев']]]], $stored);
+    }
+
+    #[Test]
+    public function the_shape_of_one_item_names_each_key_and_what_it_takes(): void
+    {
+        $node = $this->app->make(ScreenRegistry::class)->fields('settings.index')[1];
+        $type = $this->app->make(FieldTypes::class)->get('wx-repeater');
+
+        $this->assertInstanceOf(RepeaterType::class, $type);
+        $this->assertSame([
+            'city' => ['type' => 'wx-input', 'localized' => true, 'value' => 'string'],
+            'floor' => ['type' => 'wx-input-number', 'value' => 'number', 'min' => 1, 'max' => 30],
+            'main' => ['type' => 'wx-switch', 'value' => 'boolean'],
+        ], $type->itemShape($node));
     }
 }

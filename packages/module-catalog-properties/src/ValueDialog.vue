@@ -10,7 +10,7 @@ import {
   WxSpace,
   type LocalizedValue,
 } from '@webx-ui/core'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxPreviewThumb } from '@webx-ui/module-admin'
 import { openMediaPicker } from '@webx-ui/module-media'
 import { createPropertiesApi, type ValueInput } from './api'
 import { NAMESPACE } from './i18n'
@@ -49,10 +49,15 @@ const words = (map: PropertyValue['title'] | undefined): LocalizedValue =>
 
 const name = ref<LocalizedValue>(words(props.value?.title))
 const slug = ref<LocalizedValue>(words(props.value?.slug))
-const color = ref<string | null>(props.value?.color ?? null)
-const picture = ref<{ id: number; url: string } | null>(
+const swatch = ref<string | null>(props.value?.color ?? null)
+/* `url` is the full picture, for the gallery a click on the thumbnail opens. */
+const picture = ref<{ id: number; url: string; thumb: string } | null>(
   props.value?.image
-    ? { id: props.value.image.id, url: props.value.image.thumb ?? props.value.image.url }
+    ? {
+        id: props.value.image.id,
+        url: props.value.image.url,
+        thumb: props.value.image.thumb ?? props.value.image.url,
+      }
     : null,
 )
 const saving = ref(false)
@@ -75,7 +80,7 @@ const written = () => Object.values(name.value).some((line) => line.trim() !== '
 async function pick(): Promise<void> {
   const file = await openMediaPicker({ accept: 'image' })
 
-  if (file) picture.value = { id: file.id, url: file.thumb ?? file.url }
+  if (file) picture.value = { id: file.id, url: file.url, thumb: file.thumb ?? file.url }
 }
 
 async function submit(): Promise<void> {
@@ -88,7 +93,7 @@ async function submit(): Promise<void> {
   // and turning it back on brings the colour back.
   const input: ValueInput = { title: name.value, slug: slug.value }
 
-  if (props.color) input.color = color.value
+  if (props.color) input.color = swatch.value
   if (props.image) input.image_id = picture.value?.id ?? null
 
   try {
@@ -118,12 +123,14 @@ async function submit(): Promise<void> {
     </wx-form-item>
 
     <wx-form-item v-if="props.color" :label="t('value.color')" :error="errorOf('color')">
-      <wx-color-picker v-model="color" clearable :aria-label="t('value.color')" />
+      <wx-color-picker v-model="swatch" clearable :aria-label="t('value.color')" />
     </wx-form-item>
 
     <wx-form-item v-if="props.image" :label="t('value.image')" :error="errorOf('image_id')">
       <div class="wx-catalog-value-dialog__picture">
-        <img v-if="picture" :src="picture.url" alt="" />
+        <wx-preview-thumb v-if="picture" :items="[{ src: picture.url, thumb: picture.thumb }]">
+          <img :src="picture.thumb" alt="" />
+        </wx-preview-thumb>
         <wx-button size="sm" variant="outline" icon="image" @click="pick">
           {{ picture ? t('panel.picture-change') : t('panel.picture-pick') }}
         </wx-button>

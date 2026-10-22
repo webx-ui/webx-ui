@@ -9,6 +9,7 @@ import {
   type SelectOption,
 } from '@webx-ui/core'
 import { useAdmin } from '../admin'
+import { useRemoveConfirm } from '../confirm'
 import { useTranslate } from '../i18n'
 import { createCategoriesApi } from './api'
 
@@ -58,6 +59,7 @@ const value = defineModel<number[] | null>({ default: () => [] })
 
 const admin = useAdmin()
 const t = useTranslate('webx-admin')
+const askRemove = useRemoveConfirm()
 
 interface Choice {
   id: number
@@ -117,6 +119,7 @@ function remove(id: number): void {
   <div class="wx-categories-field">
     <wx-sortable-list
       v-model="rows"
+      :drag-label="t('filters.reorder')"
       plain
       size="sm"
       item-key="id"
@@ -139,6 +142,7 @@ function remove(id: number): void {
           size="sm"
           :disabled="props.disabled"
           :title="props.removeText ?? t('categories.field-remove')"
+          v-bind="askRemove"
           @click="remove((item as Choice).id)"
         />
       </template>

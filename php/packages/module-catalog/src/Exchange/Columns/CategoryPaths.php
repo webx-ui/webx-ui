@@ -9,6 +9,7 @@ use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Exchange\RowError;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Panel\CategoryForm;
+use WebxUi\Localization\Slug;
 
 /**
  * A category as a file names it (§7.1 of the exchange spec): the path of names from the root,
@@ -115,7 +116,7 @@ final class CategoryPaths
         // tree — «Gaskets» under two branches — so a taken slug gets a number rather than failing
         // every row of the second branch.
         $form = app(CategoryForm::class);
-        $base = str($name)->slug('-', $this->locale)->toString();
+        $base = Slug::make($name, $this->locale);
 
         for ($attempt = 1; ; $attempt++) {
             $values = ['name' => [$this->locale => $name], 'is_published' => true];

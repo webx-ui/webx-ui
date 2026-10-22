@@ -1199,7 +1199,6 @@ WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" site_artisan webx:setup \
     --locales=en,ru \
     --admin="site@example.test" \
     --admin-name=Smoke \
-    --demo \
     --no-build \
     "${SETUP_DATABASE[@]}" "${SETUP_COMPOSER[@]}"
 
@@ -1225,8 +1224,24 @@ grep -q '^WEBX_THEME=theme$' "$SITE/.env" || fail '.env does not name the local 
 [ -f "$SITE/public/themes/webx-ui/theme-default/current" ] || fail 'theme-default was not synced to public/themes'
 note 'theme/ over webx-ui/theme-default, named in .env and published'
 
+# BLOCK_SCHEMAS §1: the platform makes staging and production sites with setup too, so it writes
+# no block type and seeds no demo — it prints the commands that do, for a dev copy.
+SETUP_TYPES="$(site_artisan tinker --execute="echo WebxUi\Blocks\Models\Block::query()->count();" | tail -n 1)"
+[ "$SETUP_TYPES" = "0" ] || fail "setup put $SETUP_TYPES block types on the site, not none"
+[ -f "$SITE/storage/app/webx-demo.json" ] && fail 'setup seeded the demo'
+note 'no block types and no demo'
+
+step "Dev copy: the block types and the demo, by hand"
+# What setup prints for a dev copy, in its order: the theme's types first, so that a slug the
+# chain carries is the chain's rather than an offer's, the offers next, the demo on top of both.
+site_artisan webx:blocks:import --theme --publish > "$WORKDIR/import-dev.log" 2>&1 \
+    || { cat "$WORKDIR/import-dev.log" >&2; fail 'webx:blocks:import --theme --publish failed'; }
+site_artisan webx:blocks:offered --install > "$WORKDIR/offered-dev.log" 2>&1 \
+    || { cat "$WORKDIR/offered-dev.log" >&2; fail 'webx:blocks:offered --install failed'; }
+site_artisan webx:demo --no-interaction > "$WORKDIR/demo-dev.log" 2>&1 \
+    || { cat "$WORKDIR/demo-dev.log" >&2; fail 'webx:demo failed'; }
 [ -f "$SITE/storage/app/webx-demo.json" ] || fail 'the demo journal is not there'
-note 'the demo journal is there'
+note 'the theme types, the offers and the demo are on, and the demo journal is there'
 
 step "Run webx:doctor"
 # Against the real database, which is the half of this the doctor cannot be tested on anywhere
@@ -1287,7 +1302,6 @@ site_artisan webx:setup \
     --modules=all \
     --locales=en,ru \
     --admin="site@example.test" \
-    --demo \
     --no-build \
     "${SETUP_DATABASE[@]}" "${SETUP_COMPOSER[@]}" > "$WORKDIR/setup-again.log" 2>&1 \
     || { cat "$WORKDIR/setup-again.log" >&2; fail 'the second webx:setup did not succeed'; }
@@ -1321,11 +1335,11 @@ grep -q 'b-demo-header' <<< "$REMOVED_HEADER" && fail 'the demo header outlived 
 note 'the removal gives the site back its header from code'
 
 step "Block types: the deploy leaves them to the site"
-# BLOCK_SCHEMAS §1: setup put the theme's types in once; after that neither theme:sync (the
+# BLOCK_SCHEMAS §1: the import above put the theme's types in once; after that neither theme:sync (the
 # post-update-cmd, the deploy) nor --force writes a type. A type changed on the site stays, one
 # deleted there stays deleted, and only webx:blocks:import, a slug at a time, takes the file's.
 THEME_TYPES="$(site_artisan tinker --execute="echo WebxUi\Blocks\Models\Block::query()->whereNotNull('theme_source')->count();" | tail -n 1)"
-[ "${THEME_TYPES:-0}" -ge 6 ] || fail "setup put $THEME_TYPES of the theme's block types on the site, not the six of theme-default"
+[ "${THEME_TYPES:-0}" -ge 6 ] || fail "the import put $THEME_TYPES of the theme's block types on the site, not the six of theme-default"
 
 site_artisan tinker --execute="\$b = WebxUi\Blocks\Models\Block::query()->where('slug', 'hero')->firstOrFail(); \$b->forceFill(['title' => 'Changed on the site'])->save(); WebxUi\Blocks\Models\Block::query()->where('slug', 'cta')->firstOrFail()->delete();" > /dev/null
 

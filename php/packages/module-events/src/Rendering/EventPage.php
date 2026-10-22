@@ -6,6 +6,7 @@ namespace WebxUi\Events\Rendering;
 
 use Illuminate\Container\Container;
 use WebxUi\Admin\Relations\Relations;
+use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Events\Models\Event;
 use WebxUi\Localization\Locales;
 use WebxUi\Services\Rendering\ServiceQuery;
@@ -50,7 +51,8 @@ final class EventPage
             'event' => $event,
             'pictures' => $event->pictures($locale),
             'title' => $event->text('title', $locale),
-            'lead' => $event->text('lead', $locale),
+            // A paragraph the panel offers shortcodes in: `{{ }}` prints what this hands it.
+            'lead' => app(PageText::class)->text($event->text('lead', $locale)),
             'when' => When::of($event, $locale),
             'past' => $past,
             'online' => $event->attendance === Event::ONLINE,

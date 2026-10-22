@@ -27,7 +27,7 @@ import { NAMESPACE, useCatalogPropertiesMessages } from './i18n'
 import MergeDialog from './MergeDialog.vue'
 import type { PropertyValue, ValueNode } from './types'
 import ValueDialog from './ValueDialog.vue'
-import ValueRow from './ValueRow.vue'
+import ValueRow, { type ValuePicture } from './ValueRow.vue'
 
 /**
  * `wx-catalog-property-values`: the reference book of a property (§7.1, «Values»).
@@ -53,6 +53,7 @@ const editor = usePropertyEditor()
 useCatalogPropertiesMessages()
 
 const t = useTranslate(NAMESPACE)
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const property = computed(() => editor?.property.value ?? null)
@@ -176,6 +177,33 @@ function each(fn: (node: ValueNode) => void, nodes: ValueNode[] = roots.value): 
 
   if (nodes === roots.value && found.value) for (const node of found.value) fn(node)
 }
+
+/*
+ * The pictures of the values on screen, in the order of the tree — or of the search — and only
+ * the loaded branches: what the picture of a row pages through (`useLightbox`).
+ */
+const pictures = computed<ValuePicture[]>(() => {
+  const list: ValuePicture[] = []
+  const walk = (nodes: ValueNode[]) => {
+    for (const node of nodes) {
+      if (node.image) {
+        list.push({
+          id: node.id,
+          src: node.image.url,
+          thumb: node.image.thumb ?? undefined,
+          alt: node.label,
+          caption: node.label,
+        })
+      }
+
+      if (node.children && !searching.value) walk(node.children)
+    }
+  }
+
+  walk(searching.value ? (found.value ?? []) : roots.value)
+
+  return list
+})
 
 function replace(value: PropertyValue): void {
   each((node) => {
@@ -407,13 +435,15 @@ async function moved(event: TreeDropEvent<ValueNode>): Promise<void> {
 
       <wx-tree
         v-else-if="searching"
+        :expand-label="panel('filters.expand')"
+        :collapse-label="panel('filters.collapse')"
         :model-value="found ?? []"
         class="wx-catalog-values__tree"
         :empty-text="found === null ? t('panel.searching') : t('panel.nothing-found')"
         :aria-label="t('property.tab-values')"
       >
         <template #default="{ node }">
-          <value-row :node="node as ValueNode" :locale="locale" />
+          <value-row :node="node as ValueNode" :locale="locale" :pictures="pictures" />
         </template>
         <template #actions="{ node }">
           <wx-row-menu
@@ -428,6 +458,9 @@ async function moved(event: TreeDropEvent<ValueNode>): Promise<void> {
         v-else
         v-model="roots"
         v-model:expanded="expanded"
+        :drag-label="panel('filters.reorder')"
+        :expand-label="panel('filters.expand')"
+        :collapse-label="panel('filters.collapse')"
         class="wx-catalog-values__tree"
         lazy
         :load="loadBranch"
@@ -439,7 +472,7 @@ async function moved(event: TreeDropEvent<ValueNode>): Promise<void> {
         @drop="moved"
       >
         <template #default="{ node }">
-          <value-row :node="node as ValueNode" :locale="locale" />
+          <value-row :node="node as ValueNode" :locale="locale" :pictures="pictures" />
         </template>
         <template #actions="{ node }">
           <wx-row-menu

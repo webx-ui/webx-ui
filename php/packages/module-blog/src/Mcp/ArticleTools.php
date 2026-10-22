@@ -10,7 +10,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Editing\AgentRevision;
@@ -28,6 +27,7 @@ use WebxUi\Blog\Panel\ArticleList;
 use WebxUi\Blog\Panel\Instant;
 use WebxUi\Blog\Panel\Revision;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 use WebxUi\Routing\Models\Route;
@@ -741,16 +741,22 @@ final class ArticleTools
     /**
      * The address made out of the title, language by language.
      *
-     * `Str::slug` transliterates, so a Russian title gives a Latin address rather than a
-     * percent-encoded one — the same thing the panel's dialog does when the editor writes a name
-     * and no address.
+     * {@see Slug} transliterates by each title's language, so a Russian title gives a Latin
+     * address rather than a percent-encoded one — the same thing the panel's dialog does when
+     * the editor writes a name and no address.
      *
      * @param  array<string, string>  $title
      * @return array<string, string>
      */
     private function slugFrom(array $title): array
     {
-        return array_filter(array_map(static fn (string $text): string => Str::slug($text), $title));
+        $slugs = [];
+
+        foreach ($title as $locale => $text) {
+            $slugs[$locale] = Slug::make($text, (string) $locale);
+        }
+
+        return array_filter($slugs);
     }
 
     private function preview(Article $article, ?Authenticatable $user): ?string

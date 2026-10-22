@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, ref, type Component } from 'vue'
-import { adminKey, useTranslate } from '@webx-ui/module-admin'
+import { adminKey, useTranslate, WxPreviewThumb } from '@webx-ui/module-admin'
 import {
   localizedValue,
   useLocales,
@@ -307,7 +307,9 @@ function tone(count: number, limit: number): 'muted' | 'warning' {
                 <!-- Empty is not a mistake to point at: a site fills the picture in from the
                      record itself, and only it knows with what. Said rather than left blank,
                      because a blank rectangle reads as "nothing will be shown". -->
-                <img v-if="share.image" :src="share.image" alt="" />
+                <wx-preview-thumb v-if="share.image" fill :items="[share.image]">
+                  <img :src="share.image" alt="" />
+                </wx-preview-thumb>
                 <wx-text v-else size="sm" tone="muted">{{ t('card.share-auto') }}</wx-text>
               </div>
 

@@ -81,7 +81,7 @@ final class VacancyController
         $locale = $locales->defaultCode();
 
         $vacancy = $this->db->transaction(static function () use ($request, $form, $locale): Vacancy {
-            $vacancy = $form->blank([$locale => $request->title()], [$locale => $request->slug()]);
+            $vacancy = $form->blank([$locale => $request->title()], [$locale => $request->slug($locale)]);
             $vacancy->save();
 
             return $vacancy;

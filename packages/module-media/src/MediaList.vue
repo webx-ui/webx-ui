@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, ref, watch } from 'vue'
-import { adminKey, useTranslate, type AdminContext } from '@webx-ui/module-admin'
+import { adminKey, useLightbox, useTranslate, type AdminContext } from '@webx-ui/module-admin'
 import {
   WxAction,
   WxActions,
@@ -168,6 +168,54 @@ function thumbOf(item: MediaValue): string | undefined {
   return file && api ? (api.thumb(file, 320, 320) ?? undefined) : undefined
 }
 
+/* ------------------------------------------------------------------ looking --- */
+
+const lightbox = useLightbox()
+
+/** The pictures of the list, in its order: what a card's preview pages through. */
+const pictures = computed(() =>
+  items.value.flatMap((item, index) => {
+    const file = fileOf(item)
+
+    return file?.type === 'image' ? [{ index, file }] : []
+  }),
+)
+
+function isPicture(index: number): boolean {
+  return pictures.value.some((picture) => picture.index === index)
+}
+
+/** The full picture, not the thumbnail the card shows — and the gallery is every picture here. */
+function view(index: number, event?: MouseEvent): void {
+  const items = pictures.value.map(({ file }) => ({
+    src: file.url,
+    thumb: api?.thumb(file, 160, 160) ?? undefined,
+    alt: file.name,
+    caption: file.name,
+  }))
+  const start = pictures.value.findIndex((picture) => picture.index === index)
+
+  if (start < 0) return
+
+  if (event) {
+    lightbox.click(event, items, start)
+  } else {
+    lightbox.open(items, start)
+  }
+}
+
+/*
+ * A click on the preview, not on the buttons over it: those are a card's own. A drag of the card
+ * is no click, so ordering the list by hand never opens the gallery.
+ */
+function previewClicked(event: MouseEvent, index: number): void {
+  const target = event.target as Element | null
+
+  if (!target?.closest('.wx-file-card__preview') || target.closest('button, a, input')) return
+
+  view(index, event)
+}
+
 function metaOf(item: MediaValue): string {
   const file = fileOf(item)
 
@@ -305,6 +353,8 @@ const hint = computed(() => {
             :thumbnail="thumbOf(item)"
             :type="fileOf(item)?.mime"
             :size="layout === 'rows' ? 'sm' : 'md'"
+            :class="{ 'is-viewable': isPicture(index) }"
+            @click="previewClicked($event, index)"
           >
             <template #meta>
               <span v-if="broken(item)" class="wx-media-list__missing">
@@ -364,6 +414,13 @@ const hint = computed(() => {
               </wx-popover>
 
               <wx-action
+                v-if="isPicture(index)"
+                type="view"
+                :title="t('manager.view')"
+                @click="view(index)"
+              />
+
+              <wx-action
                 v-if="!broken(item) && canBrowse"
                 type="goto"
                 :title="t('field.open')"
@@ -411,6 +468,11 @@ const hint = computed(() => {
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-8);
+}
+
+/* A picture opens large on a click; the card's own buttons over it keep their pointer. */
+.wx-media-list .wx-file-card.is-viewable .wx-file-card__preview {
+  cursor: zoom-in;
 }
 
 .wx-media-list__label {

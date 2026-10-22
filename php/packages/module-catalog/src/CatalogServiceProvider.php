@@ -18,7 +18,6 @@ use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
-use WebxUi\Admin\Screens\Types\OptionType;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -76,6 +75,7 @@ use WebxUi\Catalog\Panel\CatalogModule;
 use WebxUi\Catalog\Panel\CategoryFieldType;
 use WebxUi\Catalog\Panel\FacetsFieldType;
 use WebxUi\Catalog\Panel\ProductColumns;
+use WebxUi\Catalog\Panel\ToneFieldType;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Popularity\PopularityFormula;
 use WebxUi\Catalog\Popularity\PopularitySignals;
@@ -296,9 +296,7 @@ class CatalogServiceProvider extends ServiceProvider
         $fields = $this->app->make(FieldTypes::class);
         $fields->register('wx-catalog-category', new CategoryFieldType);
         $fields->register('wx-catalog-facets', new FacetsFieldType);
-        // The tone of a reference book's record (labels, stock): one of the screen's options, drawn
-        // by the panel as a tag of that tone rather than as a word.
-        $fields->register('wx-catalog-tone', new OptionType);
+        $fields->register('wx-catalog-tone', new ToneFieldType);
     }
 
     /**

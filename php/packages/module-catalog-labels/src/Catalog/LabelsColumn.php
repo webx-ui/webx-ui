@@ -36,6 +36,7 @@ final class LabelsColumn implements ProductColumn
                 'name' => $label->displayName($locale),
                 'code' => $label->code,
                 'color' => $label->color,
+                'text' => $label->ownColors()['text'] ?? null,
             ], $labels);
         }
 

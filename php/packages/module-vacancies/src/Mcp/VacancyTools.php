@@ -9,7 +9,6 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Categories\CategoryException;
@@ -23,6 +22,7 @@ use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 use WebxUi\Routing\Models\Route;
@@ -997,7 +997,13 @@ final class VacancyTools
      */
     private function slugFrom(array $title): array
     {
-        return array_filter(array_map(static fn (string $text): string => Str::slug($text), $title));
+        $slugs = [];
+
+        foreach ($title as $locale => $text) {
+            $slugs[$locale] = Slug::make($text, (string) $locale);
+        }
+
+        return array_filter($slugs);
     }
 
     /** Only with `module-blocks`, which draws previews; a vacancy it cannot sign is still worth reading. */

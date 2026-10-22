@@ -39,7 +39,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   `site-footer__inner|nav|link|copy`, `site-error`, `site-error__code|home`, `site-prose` (prose typography outside `<main>`, and
   the muted colours of quotes, captions and `small` inside a block, which otherwise keep the
   block's own colour).
-- **`blocks/`** — the six block types `webx:setup` (or `webx:blocks:import --theme`) puts on a site
+- **`blocks/`** — the six block types `webx:blocks:import --theme` puts on a site (`webx:setup` only prints it)
   (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only:
   - `hero` — `title`, `subtitle`, two buttons (`button_*`, `second_*`), `tone`
     `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`;

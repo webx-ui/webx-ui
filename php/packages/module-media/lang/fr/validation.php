@@ -19,4 +19,5 @@ return [
         'other' => "d'autres fichiers",
     ],
     'missing' => 'La bibliothèque n\'a pas de fichier [:path] : choisissez-en un dedans.',
+    'missing-id' => 'La bibliothèque n\'a pas de fichier avec l\'id :id : choisissez-en un dedans.',
 ];

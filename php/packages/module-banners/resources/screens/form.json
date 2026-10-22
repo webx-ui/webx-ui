@@ -87,7 +87,8 @@
           "localized": true,
           "props": {
             "rows": 4,
-            "maxlength": 2000
+            "maxlength": 2000,
+            "shortcodes": true
           }
         }
       ]

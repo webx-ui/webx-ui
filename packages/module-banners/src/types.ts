@@ -64,6 +64,8 @@ export interface BannerRow {
   title: string
   /** The thumbnail of the picture, or `null` when the library no longer has it. */
   thumb: string | null
+  /** The full picture, for the gallery a click on the thumbnail opens. */
+  image?: string | null
   /** Whether a video plays over the picture on the site. */
   video: boolean
   enabled: boolean

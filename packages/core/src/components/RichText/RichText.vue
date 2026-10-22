@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import {
   Extension,
   Mark,
@@ -77,6 +77,7 @@ const props = withDefaults(defineProps<RichTextProps>(), {
   tokens: undefined,
   tokensTitle: 'Placeholders',
   tokensLabel: 'Insert a placeholder',
+  expandable: true,
 })
 
 /**
@@ -94,6 +95,8 @@ const DEFAULT_LABELS: RichTextLabels = {
   sourceLoss: 'The editor does not keep this markup and will remove it:',
   sourceDrop: 'Remove it',
   sourceKeep: 'Keep editing',
+  expand: 'Expand',
+  collapse: 'Collapse',
 }
 
 function label(key: RichTextLabelKey): string {
@@ -305,7 +308,9 @@ const editor = useEditor({
   extensions: props.inline ? inlineExtensions() : documentExtensions(),
   editorProps: {
     // The list's keys first: Enter picks a placeholder rather than splitting the paragraph.
-    handleKeyDown: (_view, event) => tokens.keydown(event, insertToken),
+    // Then Esc, which ProseMirror would otherwise spend on selecting the paragraph around the
+    // caret — and which over the whole window means "give me the form back".
+    handleKeyDown: (_view, event) => tokens.keydown(event, insertToken) || collapseOnEscape(event),
     ...(props.inline
       ? {
           // Pasted lines become one line: the breaks would otherwise vanish between the words
@@ -429,6 +434,60 @@ function browseTokens(): void {
   tokens.browse({ from, to }, caretAnchor(from))
 }
 
+/**
+ * The editor over the whole window, for a document longer than the form leaves room for.
+ *
+ * The same editor, moved rather than copied: a second one would have its own history and its
+ * own caret, and closing it would mean deciding which of the two documents is the real one.
+ * Moved to the end of the body rather than fixed where it stands, because a panel puts editors
+ * inside containers that measure themselves (`container-type`) and inside transformed sheets,
+ * and either one turns `position: fixed` into "fixed to that box".
+ */
+const expanded = ref(false)
+
+/*
+ * Not from inside a dialog or a sheet: a dialog keeps focus within itself and closes on a press
+ * outside it, and an editor at the end of the body is outside it — the first click into the text
+ * would close the dialog under it.
+ */
+const inLayer = ref(false)
+onMounted(() => {
+  inLayer.value = Boolean(rootRef.value?.closest('[role="dialog"]'))
+})
+
+const canExpand = computed(() => props.expandable && !props.inline && !inLayer.value)
+
+function setExpanded(value: boolean): void {
+  if (expanded.value === value) return
+  expanded.value = value
+  // A list anchored to the caret would stay where the caret used to be.
+  tokens.close()
+  emit('expand', value)
+  // Moving the editor drops the browser's caret; the editor still knows where it was, and
+  // focusing puts it back — over the window and back in the form alike.
+  void nextTick(() => {
+    if (source.value === null) editor.value?.commands.focus()
+  })
+}
+
+/**
+ * Esc gives the form back — unless something inside the editor already answered it: the link
+ * bar closing, the placeholder list closing.
+ */
+function collapseOnEscape(event: KeyboardEvent): boolean {
+  if (event.key !== 'Escape' || !expanded.value) return false
+  event.stopPropagation()
+  setExpanded(false)
+  return true
+}
+
+function onEscape(event: KeyboardEvent): void {
+  if (!expanded.value || event.defaultPrevented) return
+  event.preventDefault()
+  event.stopPropagation()
+  setExpanded(false)
+}
+
 const isEmpty = computed(() => editor.value?.isEmpty ?? true)
 const inTable = computed(() => editor.value?.isActive('table') ?? false)
 
@@ -442,6 +501,7 @@ const classes = computed(() => [
     'is-readonly': props.readonly,
     'is-localized': locales.on.value,
     'is-inline': props.inline,
+    'is-expanded': expanded.value,
   },
 ])
 
@@ -702,136 +762,150 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="rootRef" :class="classes">
-    <div class="wx-rich-text__toolbar" role="toolbar" :aria-label="ariaLabel ?? label('toolbar')">
-      <template v-for="(tool, index) in visibleTools" :key="`${tool}-${index}`">
-        <span v-if="tool === 'divider'" class="wx-rich-text__divider" aria-hidden="true" />
-        <wx-rich-text-toolbar-button
-          v-else
-          :icon="TOOL_META[tool].icon"
-          :text="TOOL_META[tool].text"
-          :label="label(tool)"
-          :active="isActive(tool)"
-          :disabled="toolDisabled(tool)"
-          @click="run(tool)"
-        />
-      </template>
-
-      <wx-rich-text-toolbar-button
-        v-if="hasTokens"
-        class="wx-rich-text__tokens"
-        icon="token"
-        :label="tokensLabel"
-        :active="tokens.open.value && tokens.browsing.value"
-        :disabled="!editable || source !== null"
-        @mousedown.prevent
-        @click="browseTokens"
-      />
-
-      <span v-if="uploading > 0" class="wx-rich-text__uploading">{{ label('uploading') }}</span>
-    </div>
-
-    <wx-token-menu
-      v-if="hasTokens"
-      :open="tokens.open.value"
-      :items="tokens.items.value"
-      :active="tokens.active.value"
-      :anchor="tokens.anchor.value"
-      :list-id="tokenListId"
-      :title="tokens.browsing.value ? tokensTitle : undefined"
-      :owner="rootRef"
-      @choose="(token) => tokens.choose(token, insertToken)"
-      @hover="(index) => (tokens.active.value = index)"
-      @close="tokens.close()"
-    />
-
-    <locale-picker
-      v-if="locales.on.value"
-      :locales="locales.list.value"
-      :active="locales.active.value"
-      @choose="chooseLocale"
-    />
-
-    <div
-      v-if="inTable && editable && source === null"
-      class="wx-rich-text__toolbar wx-rich-text__toolbar--table"
-    >
-      <wx-rich-text-toolbar-button
-        v-for="tool in TABLE_TOOLS"
-        :key="tool.key"
-        :icon="tool.icon"
-        :label="label(tool.key)"
-        @click="runTableCommand(tool.key)"
-      />
-    </div>
-
-    <form v-if="prompt" class="wx-rich-text__prompt" @submit.prevent="applyPrompt">
-      <label class="wx-rich-text__prompt-label" :for="`${field.id.value}-prompt`">
-        {{ label(prompt.kind === 'link' ? 'linkAddress' : 'youtubeAddress') }}
-      </label>
-      <input
-        :id="`${field.id.value}-prompt`"
-        v-model="prompt.value"
-        class="wx-rich-text__prompt-input"
-        type="url"
-        :placeholder="prompt.kind === 'link' ? 'https://example.com' : 'https://youtu.be/…'"
-        @keydown.esc="prompt = null"
-      />
-      <wx-rich-text-toolbar-button icon="check" :label="label('apply')" @click="applyPrompt" />
-      <wx-rich-text-toolbar-button icon="close" :label="label('cancel')" @click="prompt = null" />
-    </form>
-
-    <div v-if="losing" class="wx-rich-text__prompt wx-rich-text__loss" role="alert">
-      <p class="wx-rich-text__loss-text">
-        {{ label('sourceLoss') }}
-        <template v-for="(item, index) in losing" :key="item">
-          <code>{{ item }}</code
-          ><template v-if="index < losing.length - 1">, </template>
+  <teleport to="body" :disabled="!expanded">
+    <div ref="rootRef" :class="classes" @keydown.esc="onEscape">
+      <div class="wx-rich-text__toolbar" role="toolbar" :aria-label="ariaLabel ?? label('toolbar')">
+        <template v-for="(tool, index) in visibleTools" :key="`${tool}-${index}`">
+          <span v-if="tool === 'divider'" class="wx-rich-text__divider" aria-hidden="true" />
+          <wx-rich-text-toolbar-button
+            v-else
+            :icon="TOOL_META[tool].icon"
+            :text="TOOL_META[tool].text"
+            :label="label(tool)"
+            :active="isActive(tool)"
+            :disabled="toolDisabled(tool)"
+            @click="run(tool)"
+          />
         </template>
-      </p>
-      <wx-button size="sm" type="danger" variant="outline" @click="closeSource(true)">
-        {{ label('sourceDrop') }}
-      </wx-button>
-      <wx-button size="sm" variant="text" @click="losing = null">{{
-        label('sourceKeep')
-      }}</wx-button>
-    </div>
 
-    <div v-if="source !== null" class="wx-rich-text__source">
-      <wx-code-editor
-        :model-value="source"
-        language="html"
-        line-wrapping
-        :min-height="bodyHeight"
-        :readonly="readonly"
-        :disabled="field.disabled.value"
-        :aria-label="label('source')"
-        @update:model-value="onSourceInput"
-        @focus="onSourceFocus(true)"
-        @blur="onSourceFocus(false)"
+        <wx-rich-text-toolbar-button
+          v-if="hasTokens"
+          class="wx-rich-text__tokens"
+          icon="token"
+          :label="tokensLabel"
+          :active="tokens.open.value && tokens.browsing.value"
+          :disabled="!editable || source !== null"
+          @mousedown.prevent
+          @click="browseTokens"
+        />
+
+        <span v-if="uploading > 0" class="wx-rich-text__uploading">{{ label('uploading') }}</span>
+
+        <wx-rich-text-toolbar-button
+          v-if="canExpand"
+          class="wx-rich-text__expand"
+          :icon="expanded ? 'collapse' : 'expand'"
+          :label="label(expanded ? 'collapse' : 'expand')"
+          :disabled="field.disabled.value"
+          @mousedown.prevent
+          @click="setExpanded(!expanded)"
+        />
+      </div>
+
+      <wx-token-menu
+        v-if="hasTokens"
+        :open="tokens.open.value"
+        :items="tokens.items.value"
+        :active="tokens.active.value"
+        :anchor="tokens.anchor.value"
+        :list-id="tokenListId"
+        :title="tokens.browsing.value ? tokensTitle : undefined"
+        :owner="rootRef"
+        @choose="(token) => tokens.choose(token, insertToken)"
+        @hover="(index) => (tokens.active.value = index)"
+        @close="tokens.close()"
+      />
+
+      <locale-picker
+        v-if="locales.on.value"
+        :locales="locales.list.value"
+        :active="locales.active.value"
+        @choose="chooseLocale"
+      />
+
+      <div
+        v-if="inTable && editable && source === null"
+        class="wx-rich-text__toolbar wx-rich-text__toolbar--table"
+      >
+        <wx-rich-text-toolbar-button
+          v-for="tool in TABLE_TOOLS"
+          :key="tool.key"
+          :icon="tool.icon"
+          :label="label(tool.key)"
+          @click="runTableCommand(tool.key)"
+        />
+      </div>
+
+      <form v-if="prompt" class="wx-rich-text__prompt" @submit.prevent="applyPrompt">
+        <label class="wx-rich-text__prompt-label" :for="`${field.id.value}-prompt`">
+          {{ label(prompt.kind === 'link' ? 'linkAddress' : 'youtubeAddress') }}
+        </label>
+        <input
+          :id="`${field.id.value}-prompt`"
+          v-model="prompt.value"
+          class="wx-rich-text__prompt-input"
+          type="url"
+          :placeholder="prompt.kind === 'link' ? 'https://example.com' : 'https://youtu.be/…'"
+          @keydown.esc.prevent="prompt = null"
+        />
+        <wx-rich-text-toolbar-button icon="check" :label="label('apply')" @click="applyPrompt" />
+        <wx-rich-text-toolbar-button icon="close" :label="label('cancel')" @click="prompt = null" />
+      </form>
+
+      <div v-if="losing" class="wx-rich-text__prompt wx-rich-text__loss" role="alert">
+        <p class="wx-rich-text__loss-text">
+          {{ label('sourceLoss') }}
+          <template v-for="(item, index) in losing" :key="item">
+            <code>{{ item }}</code
+            ><template v-if="index < losing.length - 1">, </template>
+          </template>
+        </p>
+        <wx-button size="sm" type="danger" variant="outline" @click="closeSource(true)">
+          {{ label('sourceDrop') }}
+        </wx-button>
+        <wx-button size="sm" variant="text" @click="losing = null">{{
+          label('sourceKeep')
+        }}</wx-button>
+      </div>
+
+      <div v-if="source !== null" class="wx-rich-text__source">
+        <wx-code-editor
+          :model-value="source"
+          language="html"
+          line-wrapping
+          :min-height="bodyHeight"
+          :readonly="readonly"
+          :disabled="field.disabled.value"
+          :aria-label="label('source')"
+          @update:model-value="onSourceInput"
+          @focus="onSourceFocus(true)"
+          @blur="onSourceFocus(false)"
+        />
+      </div>
+
+      <!-- Hidden rather than unmounted: ProseMirror keeps its view, history and selection. -->
+      <div v-show="source === null" class="wx-rich-text__body" :style="{ minHeight: bodyHeight }">
+        <span v-if="placeholder && isEmpty" class="wx-rich-text__placeholder">{{
+          placeholder
+        }}</span>
+        <editor-content
+          :editor="editor"
+          class="wx-rich-text__content"
+          :aria-describedby="field.describedBy.value"
+        />
+      </div>
+
+      <input
+        v-if="upload && !pickImage"
+        ref="fileInput"
+        class="wx-rich-text__file"
+        type="file"
+        :accept="accept.join(',')"
+        multiple
+        @change="onFilePicked"
       />
     </div>
-
-    <!-- Hidden rather than unmounted: ProseMirror keeps its view, history and selection. -->
-    <div v-show="source === null" class="wx-rich-text__body" :style="{ minHeight: bodyHeight }">
-      <span v-if="placeholder && isEmpty" class="wx-rich-text__placeholder">{{ placeholder }}</span>
-      <editor-content
-        :editor="editor"
-        class="wx-rich-text__content"
-        :aria-describedby="field.describedBy.value"
-      />
-    </div>
-
-    <input
-      v-if="upload && !pickImage"
-      ref="fileInput"
-      class="wx-rich-text__file"
-      type="file"
-      :accept="accept.join(',')"
-      multiple
-      @change="onFilePicked"
-    />
-  </div>
+  </teleport>
 </template>
 
 <style scoped>
@@ -896,6 +970,42 @@ defineExpose({
 
 .wx-rich-text__toolbar--table {
   background: var(--wx-bg-subtle);
+}
+
+/*
+ * Over the window, above the panel and below its dialogs — the image button opens the library
+ * over the editor. The page under it is not scrolled to; the document scrolls inside.
+ */
+.wx-rich-text.is-expanded {
+  position: fixed;
+  inset: 0;
+  z-index: var(--wx-z-index-overlay);
+  border: 0;
+  border-radius: 0;
+  /* Out of the panel, so out of what the panel's shell sets for text — as a dialog is. */
+  font-family: var(--wx-font-family-sans);
+  font-size: var(--wx-font-size-md);
+  line-height: var(--wx-font-line-height-normal);
+}
+
+.wx-rich-text.is-expanded .wx-rich-text__body,
+.wx-rich-text.is-expanded .wx-rich-text__source {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.wx-rich-text.is-expanded .wx-rich-text__source :deep(.wx-code-editor) {
+  border-radius: 0;
+}
+
+/* At the far end of the toolbar, beside the language: it is about the field, not the text. */
+.wx-rich-text__expand {
+  margin-left: auto;
+}
+
+.wx-rich-text__uploading + .wx-rich-text__expand {
+  margin-left: 0;
 }
 
 .wx-rich-text__divider {

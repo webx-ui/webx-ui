@@ -285,7 +285,8 @@
                       "label": "trans::webx-vacancies::screen.line",
                       "localized": true,
                       "props": {
-                        "maxlength": 500
+                        "maxlength": 500,
+                        "shortcodes": true
                       }
                     }
                   ]
@@ -315,7 +316,8 @@
                       "label": "trans::webx-vacancies::screen.line",
                       "localized": true,
                       "props": {
-                        "maxlength": 500
+                        "maxlength": 500,
+                        "shortcodes": true
                       }
                     }
                   ]
@@ -345,7 +347,8 @@
                       "label": "trans::webx-vacancies::screen.line",
                       "localized": true,
                       "props": {
-                        "maxlength": 500
+                        "maxlength": 500,
+                        "shortcodes": true
                       }
                     }
                   ]
@@ -391,7 +394,8 @@
                   "props": {
                     "rows": 3,
                     "maxlength": 2000,
-                    "showCount": true
+                    "showCount": true,
+                    "shortcodes": true
                   }
                 }
               ]

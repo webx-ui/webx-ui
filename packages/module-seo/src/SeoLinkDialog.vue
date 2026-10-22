@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -16,6 +16,7 @@ import {
   WxSwitch,
   WxText,
   type AutocompleteOption,
+  WxPopconfirm,
 } from '@webx-ui/core'
 import { createSeoApi } from './api'
 import { useSeoMessages } from './i18n'
@@ -37,6 +38,7 @@ const api = createSeoApi(context)
 useSeoMessages()
 
 const t = useTranslate('webx-seo')
+const askRemove = useRemoveConfirm()
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
@@ -285,13 +287,22 @@ function close(): void {
         </template>
 
         <template #actions="{ index }">
-          <wx-button
-            variant="text"
-            size="sm"
-            icon="trash"
-            :aria-label="t('links.remove-link')"
-            @click="drop(index)"
-          />
+          <wx-popconfirm
+            :title="askRemove.confirm"
+            :confirm-text="askRemove.confirmText"
+            :cancel-text="askRemove.cancelText"
+            confirm-type="danger"
+            @confirm="drop(index)"
+          >
+            <template #trigger>
+              <wx-button
+                variant="text"
+                size="sm"
+                icon="trash"
+                :aria-label="t('links.remove-link')"
+              />
+            </template>
+          </wx-popconfirm>
         </template>
       </wx-sortable-list>
 

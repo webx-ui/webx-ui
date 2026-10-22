@@ -73,4 +73,29 @@ describe('a picture field', () => {
     // Clearing the field is the record's business, not the library's.
     expect(wrapper.find('.wx-media-field__bar').exists()).toBe(true)
   })
+
+  it('opens a chosen picture large on a click, and swaps it from the bar', async () => {
+    const wrapper = mount(MediaField, {
+      props: { modelValue: { path: '2026/cover.jpg', url: '/storage/2026/cover.jpg' } },
+      attachTo: document.body,
+      ...panel(() => true),
+    })
+
+    await wrapper.find('.wx-media-field__picture').trigger('click')
+    await flushPromises()
+
+    // The picture, not the library: choosing another one is a button of its own.
+    expect(vi.mocked(openMediaPicker)).not.toHaveBeenCalled()
+    expect(document.querySelector('.wx-lightbox img[src="/storage/2026/cover.jpg"]')).not.toBeNull()
+
+    document
+      .querySelector('.wx-lightbox__frame')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+
+    await wrapper.find('.wx-media-field__bar button').trigger('click')
+
+    expect(vi.mocked(openMediaPicker)).toHaveBeenCalledWith({ accept: 'image' })
+    wrapper.unmount()
+  })
 })

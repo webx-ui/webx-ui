@@ -64,7 +64,7 @@ final class RecipeCard
             ['name' => 'categories', 'type' => 'list<int>', 'description' => 'Ids of the categories, what the block filter compares. Use category_links to print them.'],
             ['name' => 'title', 'type' => 'string', 'description' => 'The title in this language.'],
             ['name' => 'url', 'type' => 'string', 'description' => 'The address of the recipe page.'],
-            ['name' => 'lead', 'type' => 'string', 'description' => 'The lead as plain text.'],
+            ['name' => 'lead', 'type' => 'string', 'description' => 'The lead, its shortcodes resolved: print it with {{ }}, not through a string function.'],
             ['name' => 'cover', 'type' => '{url, thumb, width, height, alt}|null', 'description' => 'The first picture of the gallery.'],
             ['name' => 'gallery', 'type' => 'list<{url, thumb, width, height, alt}>', 'description' => 'Every picture, resolved.'],
             ['name' => 'minutes', 'type' => 'int|null', 'description' => 'Total time in minutes; WebxUi\Recipes\Rendering\Duration::format() writes it out.'],

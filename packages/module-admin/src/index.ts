@@ -40,6 +40,8 @@ export {
 export { adminMessages } from './messages'
 export { renderMarkdown } from './markdown'
 export { createDates, useDates, type DateLike, type Dates } from './dates'
+export { useRemoveConfirm, type RemoveConfirm } from './confirm'
+export { useLightbox, type PanelLightbox } from './lightbox'
 export { pluralForm, type PluralForm } from './plural'
 export { errorText, useErrorText } from './errors'
 export { useBodyKeys } from './keys'
@@ -104,7 +106,9 @@ export {
   forgetShortcodes,
   loadShortcodes,
   shortcodeToken,
+  takesShortcodes,
   useShortcodes,
+  useShortcodesWhen,
   type Shortcode,
   type ShortcodeToken,
 } from './shortcodes'
@@ -203,6 +207,7 @@ export { default as WxListScreen } from './ListScreen.vue'
 export { default as WxScreenHead } from './ScreenHead.vue'
 export { rowMenuWidth } from './rowMenu'
 export { default as WxRowMenu } from './RowMenu.vue'
+export { default as WxPreviewThumb } from './PreviewThumb.vue'
 export { default as WxSaveState } from './SaveState.vue'
 export { default as WxFilterChips } from './FilterChips.vue'
 export { default as WxBackButton } from './BackButton.vue'
@@ -216,8 +221,9 @@ export { default as WxEditingAlerts } from './EditingAlerts.vue'
 export { default as WxDrafts } from './DraftsList.vue'
 export { default as WxBackupNote } from './BackupNote.vue'
 export { default as WxRichTextField } from './RichTextField.vue'
+export { useRichTextLabels } from './richTextLabels'
 export { useAvatars } from './avatars'
-export { slugify } from './slug'
+export { slugify, useDefaultLocale } from './slug'
 export { default as WxLinkPicker } from './LinkPicker.vue'
 export { default as WxLinkField } from './LinkField.vue'
 export { default as WxCategoriesPage } from './categories/CategoriesPage.vue'

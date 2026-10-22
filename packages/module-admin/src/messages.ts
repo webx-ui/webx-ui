@@ -250,11 +250,39 @@ export const adminMessages: Record<string, Messages> = {
   // and the way out of all of them at once. The names of the filters themselves belong to
   // whatever is being filtered, and travel with that module's own words. The checkboxes of a
   // list that can be selected say what they do to a screen reader, and do it here too.
+  // So do the words the core list components default to in English — the spinner, the drag
+  // handle, the branch toggle, the search box and the empty answer of a picker — for a module
+  // to hand them over.
   filters: {
     title: 'Filters',
     reset: 'Reset all',
     'select-row': 'Select row',
     'select-all': 'Select every row on this page',
+    loading: 'Loading',
+    reorder: 'Reorder',
+    search: 'Search',
+    'nothing-found': 'Nothing found',
+    expand: 'Expand',
+    collapse: 'Collapse',
+  },
+  // The question a row of a list asks in a popover before it goes (`useRemoveConfirm`).
+  confirm: {
+    remove: 'Delete?',
+    yes: 'Yes',
+    cancel: 'Cancel',
+  },
+  // The words of `WxLightbox`, the gallery every thumbnail of the panel opens (`useLightbox`).
+  lightbox: {
+    gallery: 'Gallery',
+    previous: 'Previous',
+    next: 'Next',
+    close: 'Close',
+    'zoom-in': 'Zoom in',
+    'zoom-out': 'Zoom out',
+    original: 'Open the original',
+    counter: ':index of :total',
+    play: 'Play',
+    view: 'View full size',
   },
   dates: {
     today: 'today at :time',
@@ -323,6 +351,13 @@ export const adminMessages: Record<string, Messages> = {
     'source-loss': 'The editor does not keep this markup and will remove it:',
     'source-drop': 'Remove it',
     'source-keep': 'Keep editing',
+    expand: 'Expand',
+    collapse: 'Collapse',
+  },
+  // What a screen's text field calls the site's shortcodes behind its `[]` button.
+  shortcodes: {
+    title: 'Shortcodes',
+    insert: 'Insert a shortcode',
   },
   // What one administrator writes on a record for the next one. Not the property of any
   // section: the same feed hangs off a submission, an order and a client, so the words are

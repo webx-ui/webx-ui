@@ -15,7 +15,8 @@
         `webx_placement` — the intake stands outside the site's own middleware,
       · the honeypot and the timestamp — the antispam that costs the visitor nothing,
       · the captcha block — `data-webx-field="captcha"` is where the intake's word about it goes,
-      · `data-webx-form` on the form — the hook for a site's own script (`webx:form:success`).
+      · `data-webx-form` on the form — the hook for a site's own script (`webx:form:success`),
+      · `:again="$again"` — `<x-webx-inbox::form again>`, the way back to the fields after the thank-you.
 
     Classes: webx-inbox-form (+ --<placement>), __fields, __field, __field--half, __captcha,
     __actions, __honeypot; the rest are the widgets' webx-form-* and webx-field-*.
@@ -25,6 +26,7 @@
     :csrf="false"
     :id="$formId"
     :rules="$rules"
+    :again="$again"
     data-webx-form="{{ $form->slug }}"
     {{ $attributes->class(['webx-inbox-form', 'webx-inbox-form--'.$placement => $placement !== null]) }}
 >

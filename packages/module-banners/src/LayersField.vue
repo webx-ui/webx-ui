@@ -8,8 +8,9 @@ import {
   WxSortableList,
   WxText,
   WxTooltip,
+  WxPopconfirm,
 } from '@webx-ui/core'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
 import { createMediaApi } from '@webx-ui/module-media'
 import { createBannersApi } from './api'
 import { useBannerEditor } from './editor'
@@ -61,6 +62,7 @@ const api = createBannersApi(admin)
 useBannersMessages()
 
 const t = useTranslate('webx-banners')
+const askRemove = useRemoveConfirm()
 
 const layers = computed<BannerLayer[]>(() => props.modelValue ?? [])
 const place = computed(() => editor?.place.value?.layers ?? null)
@@ -800,15 +802,25 @@ const viewModel = computed<string | number>({
                 <wx-icon :name="frameOf(item as BannerLayer).hidden ? 'eye-off' : 'eye'" />
               </template>
             </wx-button>
-            <wx-button
-              size="sm"
-              variant="text"
+            <wx-popconfirm
+              :title="askRemove.confirm"
+              :confirm-text="askRemove.confirmText"
+              :cancel-text="askRemove.cancelText"
+              confirm-type="danger"
               :disabled="disabled"
-              :aria-label="t('layers.delete')"
-              @click="remove((item as BannerLayer).id)"
+              @confirm="remove((item as BannerLayer).id)"
             >
-              <template #icon><wx-icon name="trash" /></template>
-            </wx-button>
+              <template #trigger>
+                <wx-button
+                  size="sm"
+                  variant="text"
+                  :disabled="disabled"
+                  :aria-label="t('layers.delete')"
+                >
+                  <template #icon><wx-icon name="trash" /></template>
+                </wx-button>
+              </template>
+            </wx-popconfirm>
           </template>
         </wx-sortable-list>
       </div>

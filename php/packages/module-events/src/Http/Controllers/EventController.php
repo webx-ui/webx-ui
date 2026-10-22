@@ -100,7 +100,7 @@ final class EventController
         $locale = $locales->defaultCode();
 
         $event = $this->db->transaction(static function () use ($request, $locale): Event {
-            $event = new Event(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
+            $event = new Event(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug($locale)]]);
             $event->save();
 
             return $event;

@@ -59,22 +59,22 @@
 
 ### `catalog_products`
 
-| Колонка                                  | Тип                           | Примечание                                     |
-| ---------------------------------------- | ----------------------------- | ---------------------------------------------- |
-| `id`                                     | bigint                        | ещё и суффикс адреса                           |
-| `sku`                                    | string(64), null, **unique**  | уникальность включает удалённые                |
-| `barcode`                                | string(64), null, index       | колонка есть всегда, конфиг прячет             |
-| `external_id`                            | string(64), null, unique      | ключ учётной системы (GUID 1С) для интегратора |
-| `name`                                   | json                          | переводимое                                    |
-| `slug`                                   | json                          | переводимое; из названия, не уникально (§4)    |
-| `summary`                                | json, null                    | короткий текст без разметки: сетка, фиды, meta |
-| `description`                            | json, null                    | rich-text                                      |
-| `category_id`                            | FK `catalog_categories`, null | основная; `restrictOnDelete` — категории soft  |
-| `price`, `old_price`                     | decimal(12,2), null           | колонки есть всегда, конфиг прячет             |
-| `unit`                                   | string(16), null              | ключ из `webx-catalog.units`                   |
-| `priority`                               | int, default 0, index         | ручной вес для сортировки по умолчанию         |
-| `is_published`                           | bool, index                   |                                                |
-| `deleted_at`, `created_at`, `updated_at` |                               | index на `deleted_at` и `created_at`           |
+| Колонка                                  | Тип                           | Примечание                                           |
+| ---------------------------------------- | ----------------------------- | ---------------------------------------------------- |
+| `id`                                     | bigint                        | ещё и суффикс адреса                                 |
+| `sku`                                    | string(64), null, **unique**  | уникальность включает удалённые                      |
+| `barcode`                                | string(64), null, index       | колонка есть всегда, конфиг прячет                   |
+| `external_id`                            | string(64), null, unique      | ключ учётной системы (GUID 1С) для интегратора       |
+| `name`                                   | json                          | переводимое                                          |
+| `slug`                                   | json                          | переводимое; из названия, не уникально (§4)          |
+| `summary`                                | json, null                    | короткий текст без разметки: сетка, фиды, meta       |
+| `description`                            | json, null                    | rich-text                                            |
+| `category_id`                            | FK `catalog_categories`, null | основная; `restrictOnDelete` — категории soft        |
+| `price`, `old_price`                     | decimal(12,2), null           | колонки есть всегда, конфиг прячет                   |
+| `unit`                                   | string(16), null              | ключ из `webx-catalog.units`; пусто — `default_unit` |
+| `priority`                               | int, default 0, index         | ручной вес для сортировки по умолчанию               |
+| `is_published`                           | bool, index                   |                                                      |
+| `deleted_at`, `created_at`, `updated_at` |                               | index на `deleted_at` и `created_at`                 |
 
 SEO — `HasSeo` из `module-seo` (своя таблица), как у всех сущностей.
 
@@ -565,7 +565,10 @@ return [
 ];
 ```
 
-Подписи единиц — в словаре модуля (`webx-catalog::units.pcs` → «шт.»).
+Подписи единиц — в словаре модуля (`webx-catalog::units.pcs` → «шт.»). `default_unit` (`pcs`) — единица
+товара, у которого её не передали: модель пишет её при любом сохранении (форма, MCP, импорт, массовые
+действия), а товар с `unit = null` в базе читается в ней же — без миграции данных. `null` или единица не
+из `units` — дефолта нет.
 
 ## 14. Регистрации
 

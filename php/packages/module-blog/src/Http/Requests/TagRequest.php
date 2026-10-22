@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blog\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Str;
+use WebxUi\Localization\Slug;
 
 /**
  * Renaming a tag, or making one (§10).
@@ -48,7 +48,7 @@ final class TagRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
-    public function values(): array
+    public function values(?string $locale = null): array
     {
         $values = [];
 
@@ -62,7 +62,7 @@ final class TagRequest extends FormRequest
             $values['slug'] = $slug;
         } elseif ($this->isMethod('POST')) {
             // Made out of the title, transliterated, the way every address in this package is.
-            $values['slug'] = Str::slug((string) ($values['title'] ?? ''));
+            $values['slug'] = Slug::make((string) ($values['title'] ?? ''), $locale ?? app()->getLocale());
         }
 
         if ($this->has('noindex')) {

@@ -18,6 +18,7 @@ import {
   useAdmin,
   useErrorText,
   useTranslate,
+  WxPreviewThumb,
   WxRowMenu,
   WxScreenHead,
   type RowAction,
@@ -94,6 +95,20 @@ const layout = computed(() => {
 
   return known.includes(props.place.layout) ? t(`places.layout-${props.place.layout}`) : ''
 })
+
+/*
+ * The pictures of the place, large: a click on one opens them all, the full pictures, in the
+ * order the place shows them (`useLightbox`).
+ */
+const pictured = computed(() => rows.value.filter((row) => row.thumb))
+const pictures = computed(() =>
+  pictured.value.map((row) => ({
+    src: row.image ?? row.thumb!,
+    thumb: row.thumb!,
+    alt: row.title,
+    caption: row.title,
+  })),
+)
 
 async function load(): Promise<void> {
   loading.value = true
@@ -305,7 +320,14 @@ const actions = computed<ScreenAction[]>(() =>
             :class="{ 'is-off': !item.enabled && !inBin }"
           >
             <span class="wx-banner-row__thumb">
-              <img v-if="item.thumb" :src="item.thumb" alt="" loading="lazy" />
+              <wx-preview-thumb
+                v-if="item.thumb"
+                fill
+                :items="pictures"
+                :start="pictured.indexOf(item)"
+              >
+                <img :src="item.thumb" alt="" loading="lazy" />
+              </wx-preview-thumb>
               <wx-icon v-else name="image" size="sm" :aria-label="t('banner.no-picture')" />
             </span>
 

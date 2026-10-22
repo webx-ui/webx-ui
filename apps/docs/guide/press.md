@@ -31,7 +31,7 @@ createAdmin({
 
 `press()` is one section and one entry of the menu — **Press**, without a group of its own. The last
 command installs the three block types the module **offers** and publishes them; a type the site
-already has under one of those slugs is never touched. `webx:setup` runs it for a new site.
+already has under one of those slugs is never touched. `webx:setup` only prints it, for a dev copy.
 [Offered block types](/guide/collections#the-block-types-a-module-offers) explains the mechanism.
 
 Permissions: `press.view` opens the list, `press.manage` writes — the order too, which is the order
@@ -39,20 +39,20 @@ of the strip of logos.
 
 ## Outlets and articles
 
-| Outlet        | What it is                                                                  |
-| ------------- | --------------------------------------------------------------------------- |
-| `logo`        | a picture from the library — kept as its key, never as an address           |
-| `title`       | translatable — a proper name, shown from any language that has it           |
-| `slug`        | translatable — the address of its page under the prefix                     |
-| `summary`     | translatable plain text — under the name, and the description of its page   |
-| `website_url` | `http://` or `https://` only                                                |
-| `featured`    | in the strip of logos, when the block asks for the marked ones only         |
-| `published`   | the whole of an outlet's life: no draft, no history; the bin brings it back |
+| Outlet        | What it is                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| `logo`        | a picture from the library — kept as its key, never as an address                           |
+| `title`       | translatable — a proper name, shown from any language that has it                           |
+| `slug`        | translatable — the address of its page under the prefix                                     |
+| `summary`     | translatable plain text — under the name, and the description of its page; takes shortcodes |
+| `website_url` | `http://` or `https://` only                                                                |
+| `featured`    | in the strip of logos, when the block asks for the marked ones only                         |
+| `published`   | the whole of an outlet's life: no draft, no history; the bin brings it back                 |
 
 | Article          | What it is                                                              |
 | ---------------- | ----------------------------------------------------------------------- |
 | `title`          | translatable — the headline as the outlet printed it                    |
-| `excerpt`        | translatable plain text — a sentence or two                             |
+| `excerpt`        | translatable plain text — a sentence or two; takes shortcodes           |
 | `kind`           | a key of `webx-press.kinds`, or none                                    |
 | `published_on`   | a day                                                                   |
 | `date_precision` | `day`, `month` or `year` — how much of the date is printed              |

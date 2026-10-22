@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\View\Components;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\Component;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
 use WebxUi\Inbox\Fields\FieldType;
@@ -39,6 +41,9 @@ use WebxUi\Widgets\Forms\FormRules;
  *
  * The form works with JavaScript switched off: a plain POST, and the page back with the errors
  * under the fields or the thank-you under them.
+ *
+ * `again` — the thank-you in place of the fields, with a button that brings them back empty
+ * (`<x-webx-form again>`): a form that is filled in more than once, a request after a request.
  *
  * A view the site published before W6.4 (no `<x-webx-form>` in it) is still handed everything it
  * was handed then, and its old script: an alias period, so a site that rewrote the form keeps a
@@ -73,6 +78,7 @@ final class Form extends Component
         // A constructor argument so that Blade takes it out of `$attributes`: otherwise it
         // would be printed on `<form>` as an attribute nobody reads.
         private readonly ?string $placement = null,
+        private readonly bool $again = false,
     ) {}
 
     public function render(): View|string
@@ -118,6 +124,7 @@ final class Form extends Component
             'files' => $this->files,
             'message' => $this->message($form),
             'values' => $this->prefill($fields, $mine),
+            'again' => $this->again,
         ]);
     }
 
@@ -168,8 +175,8 @@ final class Form extends Component
                 // look puts two half ones to a row where the form has the room.
                 'half' => ! $field->is_fullsize,
                 // The consent's words are a sentence with a link in it, written in the panel:
-                // printed as they are, the same trust as the thank-you.
-                'consent' => $field->type === FieldType::Consent ? $field->optionText('text', $title) : null,
+                // printed as they are, the same trust as the thank-you, with the site's shortcodes.
+                'consent' => $field->type === FieldType::Consent ? Container::getInstance()->make(Shortcodes::class)->htmlIn((string) $field->optionText('text', $title)) : null,
             ];
         }
 

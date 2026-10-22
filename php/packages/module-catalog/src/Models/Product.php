@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Models;
 
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,9 +15,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\Admin\Shortcodes\PageText;
+use WebxUi\Admin\Shortcodes\ShortcodeText;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Exceptions\CatalogException;
 use WebxUi\Catalog\Routing\CatalogMisses;
@@ -24,6 +26,7 @@ use WebxUi\Catalog\Seo\ProductMarkup;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Routing\Models\Route;
@@ -141,6 +144,7 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     {
         static::saving(static function (self $product): void {
             $product->normaliseCodes();
+            $product->fillUnit();
             $product->fillSlugs();
             $product->assertSkuFree();
 
@@ -385,6 +389,28 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     }
 
     /** The name to show, and something to show when there is none in this language. */
+    /**
+     * The summary as a page prints it: the same text, with the site's shortcodes in it printed
+     * ({@see PageText::text()}) — null where nothing is written.
+     */
+    public function summaryText(?string $locale = null): string|ShortcodeText|null
+    {
+        $summary = $this->getTranslation('summary', $locale ?? app()->getLocale());
+
+        return is_string($summary) && trim($summary) !== '' ? app(PageText::class)->text($summary) : null;
+    }
+
+    /**
+     * The description as a page prints it: the library pictures pointed at where they live now and
+     * the shortcodes printed — '' where nothing is written. The record keeps the brackets.
+     */
+    public function descriptionHtml(?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+
+        return app(PageText::class)->html($this->getTranslation('description', $locale), $locale);
+    }
+
     public function displayName(?string $locale = null): string
     {
         $name = $this->getTranslation('name', $locale);
@@ -503,6 +529,39 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
         $this->writeHistory($event, $changes);
     }
 
+    /**
+     * The unit a product is priced in when none was given: `webx-catalog.default_unit`, unless the
+     * site emptied it or named a unit it does not have.
+     */
+    public static function defaultUnit(): ?string
+    {
+        $unit = config('webx-catalog.default_unit');
+        $units = array_map('strval', (array) config('webx-catalog.units', []));
+
+        return is_string($unit) && in_array($unit, $units, true) ? $unit : null;
+    }
+
+    /**
+     * A product without a unit reads as one in the default unit — a row saved before there was a
+     * default as well — so the site, the panel, the API and an export all say "per piece".
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function unit(): Attribute
+    {
+        return Attribute::get(static fn (mixed $value): ?string => is_string($value) && $value !== '' ? $value : self::defaultUnit());
+    }
+
+    /** Every door in — the form, MCP, an import, a bulk run — writes the default rather than nothing. */
+    private function fillUnit(): void
+    {
+        $unit = $this->attributes['unit'] ?? null;
+
+        if (! is_string($unit) || $unit === '') {
+            $this->attributes['unit'] = self::defaultUnit();
+        }
+    }
+
     /** An empty code is no code: `''` in a unique column would be a second product's clash. */
     private function normaliseCodes(): void
     {
@@ -536,7 +595,7 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
                 continue;
             }
 
-            $slug = Str::slug($name, '-', (string) $locale);
+            $slug = Slug::make($name, (string) $locale);
 
             if ($slug !== '') {
                 $slugs[$locale] = $slug;

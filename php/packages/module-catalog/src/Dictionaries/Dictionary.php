@@ -17,6 +17,8 @@ use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 
 /**
  * A reference book of the catalogue with a code and a tone — labels, stock statuses (§2 of the
@@ -26,8 +28,10 @@ use WebxUi\Localization\HasTranslations;
  * It is the shared category code of the panel ({@see IsCategory}) with three things of its own.
  * The **code** is one for every language (`/laptops/label_sale/` on all of them), so it is a
  * column rather than the translated slug the shared code makes on create: the slug is emptied on
- * every save, and the code is made from it when none was given. The **tone** is a word, never a
- * hex: the site turns it into a class, the panel into a tag of the same tone. And an **edit** that
+ * every save, and the code is made from it when none was given. The **tone** is a word: the site
+ * turns it into a class, the panel into a tag of the same tone. A kind that allows it
+ * ({@see customColors()}, labels) keeps a colour of its own, `#rrggbb`, in the same column
+ * instead, and the site paints it through variables on the element. And an **edit** that
  * changes what products show or how they are found marks them for the engine in one query.
  *
  * `is_visible` of the shared code is "in the filter" here (`is_filterable` of the spec): a record
@@ -61,6 +65,9 @@ abstract class Dictionary extends Model implements Category
     public const CODE = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
 
     public const CODE_LENGTH = 32;
+
+    /** A colour of its own, where the kind allows one ({@see customColors()}): `#rrggbb`. */
+    public const HEX = '/^#[0-9a-f]{6}$/';
 
     /**
      * The products this record is on, for the engine to read again after an edit — a query, never
@@ -128,7 +135,7 @@ abstract class Dictionary extends Model implements Category
     {
         match ($field) {
             'code' => $this->setAttribute('code', Str::lower(trim((string) $value))),
-            'color' => $this->setAttribute('color', trim((string) $value)),
+            'color' => $this->setAttribute('color', self::normalColor($value) ?? ''),
             default => $this->writeOwnValue($field, $value),
         };
     }
@@ -203,8 +210,8 @@ abstract class Dictionary extends Model implements Category
             $errors['code'] = [(string) __('webx-catalog::errors.dictionary-code-taken')];
         }
 
-        if (! in_array($this->getAttribute('color'), self::TONES, true)) {
-            $errors['color'] = [(string) __('webx-catalog::errors.dictionary-tone', ['tones' => implode(', ', self::TONES)])];
+        if (! in_array($this->getAttribute('color'), self::TONES, true) && ! $this->hasOwnColor()) {
+            $errors['color'] = [$this->colorMessage()];
         }
 
         if ($errors !== []) {
@@ -213,22 +220,72 @@ abstract class Dictionary extends Model implements Category
     }
 
     /**
+     * Whether a record of this kind may be painted in a colour of its own besides a tone: a label
+     * may (a shop's «Sale» in its brand red), a stock status may not — «in stock» means the same
+     * thing on every site, and the tone says it.
+     */
+    public function customColors(): bool
+    {
+        return false;
+    }
+
+    /** Painted in a colour of its own, `#rrggbb`, rather than in a tone of the site. */
+    public function hasOwnColor(): bool
+    {
+        return $this->customColors() && preg_match(self::HEX, (string) $this->getAttribute('color')) === 1;
+    }
+
+    /**
+     * The text that reads on a background, by the contrast of WCAG 2: black or white, whichever is
+     * further from it. The panel's preview works it out the same way (`contrastText` of
+     * `@webx-ui/module-catalog`).
+     */
+    public static function contrastText(string $background): string
+    {
+        $channel = static function (string $pair): float {
+            $value = hexdec($pair) / 255;
+
+            return $value <= 0.04045 ? $value / 12.92 : (($value + 0.055) / 1.055) ** 2.4;
+        };
+
+        $hex = ltrim($background, '#');
+        $luminance = 0.2126 * $channel(substr($hex, 0, 2)) + 0.7152 * $channel(substr($hex, 2, 2)) + 0.0722 * $channel(substr($hex, 4, 2));
+
+        // Against white the ratio is 1.05 / (L + 0.05), against black (L + 0.05) / 0.05.
+        return 1.05 / ($luminance + 0.05) >= ($luminance + 0.05) / 0.05 ? '#ffffff' : '#000000';
+    }
+
+    /** A colour as it is kept: trimmed and lower-cased, `#ABC123` and `#abc123` being one. */
+    protected static function normalColor(mixed $value): ?string
+    {
+        $color = is_string($value) ? Str::lower(trim($value)) : null;
+
+        return $color === null || $color === '' ? null : $color;
+    }
+
+    /** What a refused colour is told: the tones, and the own colour where the kind has one. */
+    protected function colorMessage(): string
+    {
+        return (string) __('webx-catalog::errors.dictionary-tone', ['tones' => implode(', ', self::TONES)]);
+    }
+
+    /**
      * A code nobody holds, made out of what the shared code gave a new record: its slug, else its
-     * title. `sale`, then `sale-2`.
+     * title, in the site's default language first and transliterated by the language it is written
+     * in. A name of no letters is prefixed by the kind: `−20%` is `label-20`, not `20`. Then
+     * `sale`, `sale-2`.
      */
     private function freeCode(): string
     {
-        $base = '';
+        $slugs = $this->getTranslations('slug');
+        $names = [];
 
-        foreach ([...array_values($this->getTranslations('slug')), ...array_values($this->getTranslations('title'))] as $candidate) {
-            $base = is_string($candidate) ? Str::slug($candidate) : '';
-
-            if ($base !== '') {
-                break;
-            }
+        foreach ([...array_keys($slugs), ...array_keys($this->getTranslations('title'))] as $locale) {
+            $slug = $slugs[$locale] ?? null;
+            $names[$locale] = is_string($slug) && trim($slug) !== '' ? $slug : $this->getTranslation('title', (string) $locale, false);
         }
 
-        $base = substr($base === '' ? 'item' : $base, 0, self::CODE_LENGTH - 4);
+        $base = Slug::first($names, Container::getInstance()->make(Locales::class)->defaultCode(), self::CODE_LENGTH - 4, $this->codePrefix());
         $code = $base;
 
         for ($n = 2; static::withTrashed()->where('code', $code)->exists(); $n++) {
@@ -236,5 +293,11 @@ abstract class Dictionary extends Model implements Category
         }
 
         return $code;
+    }
+
+    /** What a code made of a name with no letters starts with: `label`, `stock-status`. */
+    protected function codePrefix(): string
+    {
+        return Str::kebab(class_basename(static::class));
     }
 }

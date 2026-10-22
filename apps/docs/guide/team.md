@@ -34,22 +34,22 @@ there is nothing to group it with.
 
 The last command installs the block type the module **offers** — **Team**, slug `team` — and
 publishes it. A type the site already has under that slug is never touched: once installed, the
-type is the site's to rewrite. `webx:setup` runs the command for a new site.
+type is the site's to rewrite. `webx:setup` only prints the command, for a dev copy.
 [Offered block types](/guide/collections#the-block-types-a-module-offers) explains the mechanism.
 
 Permissions: `team.view` opens the list, `team.manage` writes — the order too.
 
 ## A person
 
-| Field       | What it is                                                                   |
-| ----------- | ---------------------------------------------------------------------------- |
-| `photo`     | a picture from the library — kept as its key, never as an address            |
-| `name`      | translatable; required in the default language — the one required field      |
-| `job_title` | translatable                                                                 |
-| `text`      | translatable plain text; the block prints it with its line breaks            |
-| `socials`   | links `{ network, url }` in the editor's order; `http://` or `https://` only |
-| `services`  | the services they provide — there only when `module-services` is installed   |
-| `published` | the whole of a person's life: no draft, no history; the bin brings them back |
+| Field       | What it is                                                                          |
+| ----------- | ----------------------------------------------------------------------------------- |
+| `photo`     | a picture from the library — kept as its key, never as an address                   |
+| `name`      | translatable; required in the default language — the one required field             |
+| `job_title` | translatable                                                                        |
+| `text`      | translatable plain text; the block prints it with its line breaks; takes shortcodes |
+| `socials`   | links `{ network, url }` in the editor's order; `http://` or `https://` only        |
+| `services`  | the services they provide — there only when `module-services` is installed          |
+| `published` | the whole of a person's life: no draft, no history; the bin brings them back        |
 
 **Nobody is hidden over a language.** A published person is shown in every language of the site. A
 name or a job title that is not written in the language is taken from the default one; a text that

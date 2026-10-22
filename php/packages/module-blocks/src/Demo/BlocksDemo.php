@@ -36,9 +36,9 @@ use WebxUi\Blocks\Regions;
  *
  * A type the theme carries in `blocks/` is not the demo's to seed at all (THEMES §23, TH2.3):
  * `webx:blocks:import --theme` puts it on the site, and a demo copy under the same slug would
- * hide the theme's version behind one nobody asked for. `webx:setup` imports the theme's types
- * before the demo runs, so the slug is usually taken by then anyway; this is for the demo run on
- * a site whose theme's types were never imported.
+ * hide the theme's version behind one nobody asked for. The commands `webx:setup` prints import
+ * the theme's types before the demo runs, so the slug is usually taken by then anyway; this is
+ * for the demo run on a site whose theme's types were never imported.
  */
 final class BlocksDemo
 {
@@ -86,7 +86,7 @@ final class BlocksDemo
 
     /**
      * The offered types the theme's pages stand on — the gallery and logos of `webx-ui/widgets`
-     * on the showcase of `theme-default`. `webx:setup` installs them before the demo runs; this
+     * on the showcase of `theme-default`. The commands `webx:setup` prints install them first; this
      * is for a site that never did, so that the pages the demo writes are pages it can print.
      * Installed the way the command installs them, and journalled, so `--remove` takes them.
      */

@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'tab-main' => 'Genel',
+    'tab-values' => 'Değerler',
+    'tab-intervals' => 'Aralıklar',
+    'tab-history' => 'Geçmiş',
+    'card-values' => 'Değerler',
+    'card-filter' => 'Filtre ve arama',
+    'card-showing' => 'Nerede gösterilir',
+    'title' => 'Ad',
+    'code' => 'Kod',
+    'code-help' => 'Latin harfleri, rakamlar ve kısa çizgiler: filtre adresindeki özellik (color_black), her dil için. Boş bırakılırsa addan oluşturulur.',
+    'type' => 'Tür',
+    'type-help' => 'Bir kez seçilir: ürünlerin değerleri bu biçimde olur.',
+    'types' => [
+        'select' => 'Başvuru listesi',
+        'number' => 'Sayı',
+        'text' => 'Metin',
+        'bool' => 'Evet / hayır',
+    ],
+    'group_id' => 'Grup',
+    'is_multiple' => 'Birden fazla değer',
+    'is_tree' => 'Değerler ağaç biçiminde',
+    'leaves_only' => 'Yalnızca son düzey',
+    'is_filterable' => 'Filtrede',
+    'filter_mode' => 'Filtre biçimi',
+    'modes' => [
+        'slider' => 'Kaydırıcı',
+        'intervals' => 'Aralıklar',
+    ],
+    'is_indexable' => 'Tek değerli sayfalar arama motorlarına açık',
+    'is_searchable' => 'Değere göre arama',
+    'in_card' => 'Katalogdaki kartta',
+    'on_page' => 'Ürünün teknik özelliklerinde',
+    'in_list' => 'Ürün listesinde sütun',
+    'value_order' => 'Değerlerin sırası',
+    'orders' => [
+        'alpha' => 'Alfabetik',
+        'manual' => 'Elle',
+    ],
+    'has_color' => 'Değerlerin rengi var',
+    'has_image' => 'Değerlerin görseli var',
+    'unit_prefix' => 'Sayıdan önce',
+    'unit_suffix' => 'Sayıdan sonra',
+    'precision' => 'Ondalık basamak',
+    'toggle_slug' => 'Adreste «evet» için kelime',
+    'seo_pattern' => 'Sayfa başlığı şablonu',
+    'seo-pattern-help' => '{category}, {property} ve {value} yerine konur. Boş — kataloğun kendi şablonu.',
+];

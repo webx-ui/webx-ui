@@ -291,7 +291,8 @@ The value is an HTML string, it takes `localized`, and everything the node puts 
 It is `module-admin`'s and not the schema package's for two reasons, and both are things the
 editor does not know about. The first is language: a component of the design system carries
 English defaults and is translated by whoever opens it, so the toolbar's words come from the
-panel's own dictionary (`webx-admin::rich-text.*`). The second is pictures. The image button
+panel's own dictionary (`webx-admin::rich-text.*`). A module that draws an editor of its own hands it the same words
+with `useRichTextLabels()`. The second is pictures. The image button
 needs a library, the library is `module-media`, and `module-admin` cannot depend on it — the
 dependency runs the other way. So a module offers one:
 
@@ -330,6 +331,36 @@ space where each ended, and the limit is 2000 characters rather than an article'
 That happens on every save that goes through the type: a described screen (`ScreenValues`) and,
 since `module-blocks` puts block values through their types as well, a rich text field inside a
 block — whether the editor saved it or an agent wrote it through a tool.
+
+### Shortcodes in a module's texts
+
+The site's [shortcodes](/guide/shortcodes) — `[phone]`, `[dot]` — work in every text a module shows
+a visitor, not only in blocks. The node says which fields take them:
+
+- `wx-rich-text` takes them **by default**: the `[]` button on the toolbar and suggestions after
+  `[`. `"props": { "shortcodes": false }` switches them off for a text the site does not print.
+- `wx-input` and `wx-textarea` take them **only when asked**, `"props": { "shortcodes": true }`:
+  the same input is a title that becomes a slug, a code or an SEO description, where a `[phone]`
+  would stay a bracket.
+- Leave them off titles and names (slugs, `<title>`, menus, JSON-LD names), SEO fields, slugs,
+  codes, addresses and prices.
+
+```json
+{
+  "id": "summary",
+  "type": "wx-textarea",
+  "name": "summary",
+  "localized": true,
+  "props": { "rows": 3, "shortcodes": true }
+}
+```
+
+The panel asks for the list once and hands it to the core field as `tokens`; the flag itself
+never reaches the field. **The site half is not optional:** a field that takes shortcodes is
+printed through `WebxUi\Admin\Shortcodes\PageText` — `html()` for a rich text, `text()` for a
+line or a paragraph, `plain()` and `plainFromHtml()` for JSON-LD, meta tags, feeds and search
+indexes — on the page, on its card in a list and in its markup alike. The record keeps the
+bracket: the panel, the agents and the exports read what was typed.
 
 ### Pictures move; documents do not
 
@@ -476,7 +507,9 @@ extra props: a tab, for instance, takes its `value` from the node's id.
 
 A `field` is wrapped in a `WxFormItem`, which stops its control at the width a field is read at.
 An entry whose control is not a field in that sense — an editor, a table, a list of blocks — says
-`wide: true`, and the form item lets it take the whole width.
+`wide: true`, and the form item lets it take the whole width. A text editor is not one of them: `wx-rich-text`
+stops at the column like the fields above it, and a document that needs more room opens over the
+whole window from its toolbar.
 
 Two things the renderer does without being asked. A container — a card, a tab, a column — whose
 children are all hidden, or that was described with `children: []`, is not drawn: a screen can

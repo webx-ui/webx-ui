@@ -15,10 +15,10 @@ are `webx-ui/module-auth`, the frame `webx-ui/module-admin`, languages `webx-ui/
   named from its label (`Fields\FieldNames`, `_2` if taken). An answer keeps its field's id, name, label and type.
 - **Public door** `POST {webx-inbox.path}/{slug}` (default `/webx/forms/{slug}`, `webx.inbox.submit`) — the
   `web` group without CSRF, so pages cached whole keep working. Answers the widgets' `FormResponse`
-  (`{ ok, heading, message, redirect, html }`), 422 keyed `fields.<name>`. `options.redirect` is a menu-style link: a record in the submission's language, else the main one.
+  (`{ ok, heading, heading_html, message, redirect, html }`), 422 keyed `fields.<name>`. `{{field.<name>}}` in `thank-you.heading`/`thank-you.text` is the visitor's answer, escaped, in `<em class="webx-form__answer-value">` (`Submissions\ThankYou`); empty, unknown, a file — nothing. `options.redirect` is a menu-style link: a record in the submission's language, else the main one.
 - **Blade tag** `<x-webx-inbox::form slug="contact" />`, with `:values` for hidden fields by
   machine name and `placement="footer"` (adds `webx-inbox-form--footer`, remembered on the
-  submission). An unknown or switched-off slug prints nothing.
+  submission), `again` — «Send another» after the thank-you (`<x-webx-form again>`). An unknown or switched-off slug prints nothing.
 - **The form is drawn by the widgets' form engine** (`webx-ui/widgets`, guide «Forms»):
   `<x-webx-form :csrf="false">` around an `<x-webx-field>` per field (the eleven types are the
   widgets' own), checked in the browser by the intake's own rules in the validator's words

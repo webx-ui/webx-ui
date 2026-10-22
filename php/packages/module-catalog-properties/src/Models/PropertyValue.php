@@ -18,6 +18,7 @@ use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Filter\FilterAliases;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\Slug;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\NestedSet\HasNestedSet;
 
@@ -252,7 +253,8 @@ class PropertyValue extends Model
             $slug = $slugs[$locale] ?? null;
 
             if ((! is_string($slug) || trim($slug) === '') && is_string($title) && trim($title) !== '') {
-                $base = substr(Str::slug($title, '-', (string) $locale), 0, self::SLUG_LENGTH - 4);
+                // Digits alone are a value's fair slug (`20` of «20 mm» is `20-mm`, of «20» — `20`).
+                $base = Slug::make($title, (string) $locale, self::SLUG_LENGTH - 4);
                 $base = $base === '' ? 'value' : $base;
                 $free = $base;
 

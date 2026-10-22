@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useLightbox, useTranslate } from '@webx-ui/module-admin'
 import {
   createModal,
   openImageEditor,
-  openLightbox,
-  type OpenLightboxOptions,
   toast,
   useElementWidth,
   WxAction,
@@ -84,6 +82,7 @@ const t = useTranslate('webx-media')
 const locale = usePanelLocale()
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
+const lightbox = useLightbox()
 
 /**
  * The image editor's words, in the language the panel is being read in.
@@ -91,20 +90,6 @@ const message = useErrorText()
  * Read when the editor is opened rather than kept in a computed: the dialog is mounted outside
  * the app, so it is handed plain strings once and nothing re-renders it afterwards.
  */
-/** The same, for the lightbox. */
-function lightboxLabels(): OpenLightboxOptions {
-  return {
-    ariaLabel: t('lightbox.gallery'),
-    prevLabel: t('lightbox.previous'),
-    nextLabel: t('lightbox.next'),
-    closeLabel: t('lightbox.close'),
-    zoomInLabel: t('lightbox.zoom-in'),
-    zoomOutLabel: t('lightbox.zoom-out'),
-    originalLabel: t('lightbox.original'),
-    counterText: (index: number, total: number) => t('lightbox.counter', { index, total }),
-  }
-}
-
 function editorLabels(): Record<string, string> {
   return {
     title: t('editor.title'),
@@ -674,14 +659,14 @@ function view(file: MediaFile): void {
     return
   }
 
-  openLightbox(
+  lightbox.open(
     pictures.map((row) => ({
       src: row.url,
       thumb: api.thumb(row, 160, 160) ?? undefined,
       alt: row.name,
       caption: row.name,
     })),
-    { start, ...lightboxLabels() },
+    start,
   )
 }
 

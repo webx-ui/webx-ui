@@ -7,6 +7,7 @@ namespace WebxUi\Reviews\Tests;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Collections\CollectionSources;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Pages\Models\Page;
@@ -147,6 +148,25 @@ final class BlockTest extends TestCase
 
         $this->assertStringContainsString("First line.<br />\n&lt;b&gt;Second&lt;/b&gt; line.", $html);
         $this->assertStringContainsString('<a class="b-reviews__name" href="https://example.com/anna" rel="nofollow noopener" target="_blank">Anna</a>', $html);
+    }
+
+    /**
+     * The text is offered the shortcodes in the panel, so the card resolves them: the visitor
+     * reads the number, the record keeps the bracket, and `[[phone]]` is the bracket itself.
+     */
+    #[Test]
+    public function the_text_resolves_its_shortcodes_once(): void
+    {
+        $this->app->make(Shortcodes::class)->register('phone', '<a href="tel:+80012345678">+800 1234 5678</a>', plain: '+800 1234 5678');
+        $this->installBlock();
+        $review = $this->review('Anna', attributes: ['text' => ['en' => "Call <b>[phone]</b>.\nOr type [[phone]]."]]);
+
+        $html = $this->render([$this->node()]);
+
+        $this->assertStringContainsString('Call &lt;b&gt;<a href="tel:+80012345678">+800 1234 5678</a>&lt;/b&gt;.<br />', $html);
+        $this->assertStringContainsString('Or type [phone].', $html);
+        $this->assertStringNotContainsString('[[phone]]', $html);
+        $this->assertSame("Call <b>[phone]</b>.\nOr type [[phone]].", $review->refresh()->getTranslation('text', 'en'));
     }
 
     #[Test]
