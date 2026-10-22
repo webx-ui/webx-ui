@@ -146,7 +146,7 @@ final class TeamTools
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'member' => $member,
-                    'values' => ['type' => 'object', 'description' => 'Field name → value, as team_get returns them. name, job_title and text take a string (the default language) or { "en": "…" }; photo takes a library key; socials a list of { network, url }.'],
+                    'values' => ['type' => 'object', 'description' => 'Field name → value, as team_get returns them. name, job_title and text take a string (the default language) or { "en": "…" }; photo takes a library file — its id, { "id" } or { "path" } (media://fields); socials a list of { network, url }.'],
                 ], 'required' => ['member', 'values']],
                 permission: 'team.manage',
             ),

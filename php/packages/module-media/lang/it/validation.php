@@ -19,4 +19,5 @@ return [
         'other' => 'altri file',
     ],
     'missing' => 'Nella libreria non c\'è il file [:path]: scegline uno da lì.',
+    'missing-id' => 'Nella libreria non c\'è alcun file con id :id: scegline uno da lì.',
 ];

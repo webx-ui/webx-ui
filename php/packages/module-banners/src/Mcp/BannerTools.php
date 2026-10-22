@@ -21,6 +21,7 @@ use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 use WebxUi\Media\Models\MediaFile;
+use WebxUi\Media\Screens\MediaValues;
 
 /**
  * What an agent can do with banners (§5.7 of the banners spec).
@@ -183,7 +184,7 @@ final class BannerTools
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'banner' => $banner,
-                    'values' => ['type' => 'object', 'description' => 'Field name → value, as banners_get returns them. Media take a library key; buttons a list of { label, link, variant }; layers the whole list (banners://layers).'],
+                    'values' => ['type' => 'object', 'description' => 'Field name → value, as banners_get returns them. Media take a library file — its id, { "id" } or { "path" } (media://fields); buttons a list of { label, link, variant }; layers the whole list (banners://layers).'],
                     'place' => $place + ['description' => 'Move it to this place, at the end. Where it is when omitted.'],
                 ], 'required' => ['banner']],
                 permission: 'banners.manage',
@@ -529,9 +530,9 @@ final class BannerTools
     }
 
     /**
-     * A library key as `wx-media` stores it. `wx-media` lets a key the library does not have
-     * through — the panel only offers keys it has; an agent types them, and a typo would be a
-     * banner that never shows, without a word.
+     * A file in any of the forms `wx-media` takes ({@see MediaValues::FORMS}), as it stores it.
+     * `wx-media` lets a key the library does not have through — the panel only offers keys it
+     * has; an agent types them, and a typo would be a banner that never shows, without a word.
      *
      * @return array<string, mixed>|null
      */
@@ -541,11 +542,11 @@ final class BannerTools
             return null;
         }
 
-        $value = is_string($value) ? ['path' => trim($value)] : $value;
-        $path = is_array($value) ? ($value['path'] ?? null) : null;
+        $value = $this->container->make(MediaValues::class)->normalize($value);
+        $path = $value['path'] ?? null;
 
-        if (! is_array($value) || ! is_string($path) || trim($path) === '') {
-            throw new ToolFailure('A picture or a video is its library key — "media/ab/cd/spring.jpg" — or { "path": "…" }.');
+        if ($value === null || ! is_string($path)) {
+            throw new ToolFailure('A picture or a video is a file of the library. '.MediaValues::FORMS);
         }
 
         if (! MediaFile::query()->where('path', $path)->exists()) {

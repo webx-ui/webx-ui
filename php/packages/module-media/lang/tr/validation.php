@@ -19,4 +19,5 @@ return [
         'other' => 'diğer dosyalar',
     ],
     'missing' => 'Kitaplıkta [:path] dosyası yok: oradan bir dosya seçin.',
+    'missing-id' => 'Kitaplıkta :id kimlikli bir dosya yok: oradan bir dosya seçin.',
 ];

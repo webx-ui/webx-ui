@@ -98,6 +98,47 @@ final class WebxServerTest extends TestCase
     }
 
     #[Test]
+    public function the_instructions_say_how_a_file_is_written_only_when_the_library_serves_it(): void
+    {
+        $this->register(new SeoModule);
+
+        $this->assertStringNotContainsString(WebxServer::FILE_FIELDS, $this->server()->createContext()->instructions);
+
+        $this->register(new class extends AbstractModule implements ProvidesMcpTools
+        {
+            use ProvidesMcpDefaults;
+
+            public function id(): string
+            {
+                return 'media';
+            }
+
+            /**
+             * @return list<Tool>
+             */
+            public function mcpTools(): array
+            {
+                return [];
+            }
+
+            /**
+             * @return list<McpResource>
+             */
+            public function mcpResources(): array
+            {
+                return [new McpResource(WebxServer::FILE_FIELDS, 'File fields', 'How a file is written.', static fn (): array => [])];
+            }
+        });
+
+        $server = $this->server();
+        $server->start();
+
+        $instructions = $server->createContext()->instructions;
+        $this->assertStringContainsString('takes the file by its id', $instructions);
+        $this->assertSame(1, substr_count($instructions, WebxServer::FILE_FIELDS), 'Started twice, said once.');
+    }
+
+    #[Test]
     public function an_empty_schema_still_goes_out_as_an_object(): void
     {
         $this->register(new MediaLibraryModule);

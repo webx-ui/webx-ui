@@ -40,6 +40,34 @@ final class ListFieldTypeTest extends TestCase
     }
 
     #[Test]
+    public function a_gallery_named_by_ids_is_checked_in_one_query_and_kept_by_its_keys(): void
+    {
+        $files = [$this->file('one.jpg'), $this->file('two.jpg'), $this->file('three.jpg')];
+        $gallery = $this->type('wx-gallery');
+        $node = ['type' => 'wx-gallery'];
+        $value = [(int) $files[0]->getKey(), ['id' => (int) $files[1]->getKey(), 'alt' => 'Second'], ['path' => $files[2]->path]];
+
+        $queries = 0;
+        DB::listen(static function () use (&$queries): void {
+            $queries++;
+        });
+
+        $this->assertSame([], $this->check($gallery->rules($node), $value));
+        $this->assertSame(2, $queries, 'one for the ids, one for the keys');
+
+        $this->assertSame([
+            ['path' => $files[0]->path],
+            ['path' => $files[1]->path, 'alt' => 'Second'],
+            ['path' => $files[2]->path],
+        ], $gallery->store($value, $node));
+
+        $this->assertSame(
+            ['File 2: There is no file with id 999999 in the library: pick one from it.'],
+            $this->check($gallery->rules($node), [(int) $files[0]->getKey(), 999999]),
+        );
+    }
+
+    #[Test]
     public function a_gallery_is_read_back_in_one_query(): void
     {
         // The whole point of the type: ten pictures used to be ten round trips, because every

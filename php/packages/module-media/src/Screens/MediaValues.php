@@ -21,11 +21,20 @@ use WebxUi\Media\Support\MediaType;
  * the resolve are written once here. What differs between `wx-media`, `wx-gallery`, `wx-file`
  * and `wx-files` is how many elements there are and what the field looks like, and neither of
  * those is the server's business.
+ *
+ * What may arrive is wider than what is kept. The panel sends `{ path, alt, title, url }`; an agent
+ * names a file the way the library showed it — by id, as `{ id }`, or with the whole object
+ * `media_get_file` or an entity's `*_get` handed back — and every one of those is the same file.
+ * {@see self::normalize()} turns each into the element, and the rules, the store and the check for
+ * a new key all read through it, so a form one of them took the others take too.
  */
 final class MediaValues
 {
-    /** The keys one element may arrive with; `url` is taken and then dropped by {@see self::store()}. */
-    public const SHAPE = 'array:path,alt,title,url';
+    /** How a file is named in a value, for an agent: said where a value is refused and in `media://fields`. */
+    public const FORMS = 'A file from the media library is given by its id (62), as { "id": 62 }, by its key '
+        .'{ "path": "media/ab/cd/name.webp" } (a plain "media/…" string too), or as the whole object media_get_file '
+        .'or an entity\'s *_get returns: other keys are ignored, alt and title are kept as captions. '
+        .'A list of files (a gallery) is a list of these.';
 
     public function __construct(
         private readonly MediaFiles $files,
@@ -46,7 +55,9 @@ final class MediaValues
             return [$this->refusal()];
         }
 
-        return ['nullable', self::SHAPE, function (string $attribute, mixed $value, Closure $fail) use ($accept): void {
+        // No `array:` rule: an id is a number, and the object `media_get_file` returns has keys
+        // the element does not keep. What is a file is decided by `normalize()`, in the closure.
+        return ['nullable', function (string $attribute, mixed $value, Closure $fail) use ($accept): void {
             $problem = $this->problem($value, $accept);
 
             if ($problem !== null) {
@@ -88,6 +99,7 @@ final class MediaValues
 
             // The kind of file is read off the row, and the row is fetched for the resolve
             // anyway — so the whole list is fetched here at once rather than a query per item.
+            $this->files->loadIds($this->ids($value));
             $this->files->load($this->paths($value));
 
             foreach (array_values($value) as $position => $item) {
@@ -120,7 +132,8 @@ final class MediaValues
         $missing = [];
 
         foreach ($elements as $element) {
-            $path = is_array($element) ? ($element['path'] ?? null) : null;
+            // Named by id, the file was found by its row already — or the rules refused it.
+            $path = $this->normalize($element)['path'] ?? null;
 
             if (is_string($path) && $path !== '' && ! $this->files->find($path) instanceof MediaFile) {
                 $missing[] = (string) __('webx-media::validation.missing', ['path' => $path]);
@@ -140,19 +153,78 @@ final class MediaValues
      */
     public function store(mixed $value): ?array
     {
-        if (! is_array($value) || ! is_string($value['path'] ?? null) || $value['path'] === '') {
+        return $this->normalize($value);
+    }
+
+    /**
+     * One element as it is kept — `{ path, alt, title }` — from any form a file may arrive in
+     * ({@see self::FORMS}); null when the value names no file: a shape nothing reads, or an id
+     * the library does not have.
+     *
+     * The key wins over the id when both are sent: it is what is stored, and an id beside it is
+     * the leftover of an object copied from `media_get_file`.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function normalize(mixed $value): ?array
+    {
+        $id = $this->id($value);
+
+        if ($id !== null) {
+            $path = $this->files->findById($id)?->path;
+        } elseif (is_string($value)) {
+            $path = trim($value);
+        } elseif (is_array($value) && ! array_is_list($value)) {
+            $path = $value['path'] ?? null;
+        } else {
+            $path = null;
+        }
+
+        if (! is_string($path) || $path === '') {
             return null;
         }
 
-        $stored = ['path' => $value['path']];
+        $stored = ['path' => $path];
 
         foreach (['alt', 'title'] as $caption) {
-            if (isset($value[$caption]) && $value[$caption] !== '') {
+            if (is_array($value) && isset($value[$caption]) && $value[$caption] !== '') {
                 $stored[$caption] = $value[$caption];
             }
         }
 
         return $stored;
+    }
+
+    /**
+     * The id a value names a file by — a number, a string of digits, `{ id }` — when it does not
+     * name it by its key; null otherwise.
+     */
+    private function id(mixed $value): ?int
+    {
+        if (is_array($value) && ! array_is_list($value)) {
+            if (is_string($value['path'] ?? null) && $value['path'] !== '') {
+                return null;
+            }
+
+            $value = $value['id'] ?? null;
+        }
+
+        if (is_string($value) && ctype_digit($value)) {
+            $value = (int) $value;
+        }
+
+        return is_int($value) && $value > 0 ? $value : null;
+    }
+
+    /**
+     * The ids a list names its files by, to be looked up in one query.
+     *
+     * @param  array<int|string, mixed>  $items
+     * @return list<int>
+     */
+    private function ids(array $items): array
+    {
+        return array_values(array_filter(array_map($this->id(...), $items), is_int(...)));
     }
 
     /**
@@ -348,15 +420,23 @@ final class MediaValues
      */
     private function problem(mixed $value, ?string $accept): ?string
     {
-        if (! is_array($value) || ! is_string($value['path'] ?? null) || $value['path'] === '') {
-            return (string) __('webx-media::validation.shape');
+        $element = $this->normalize($value);
+
+        if ($element === null) {
+            $id = $this->id($value);
+
+            // Said with the forms a file is named in: whoever sent this — an agent, nearly
+            // always — has to know what to send instead, not only that this was not it.
+            return $id !== null
+                ? (string) __('webx-media::validation.missing-id', ['id' => $id])
+                : (string) __('webx-media::validation.shape').' '.self::FORMS;
         }
 
         if ($accept === null) {
             return null;
         }
 
-        $file = $this->files->find($value['path']);
+        $file = $this->files->find($element['path']);
 
         // Checked against the row that is fetched for the resolve anyway, so there is no query
         // here that was not going to happen. A key the library does not have is nothing to check.

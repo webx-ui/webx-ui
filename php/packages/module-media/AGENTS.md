@@ -14,7 +14,9 @@ guides when the question is about one of those. An entity's own attachments are 
   A file row remembers its own `disk` and `path`, plus `original_path` once it has been edited.
 - **Field types** `wx-media`, `wx-gallery`, `wx-file`, `wx-files` for described screens. They
   store only `{ path, alt, title }`; the address, `thumb`, size and dimensions are resolved on
-  read. `alt` and `title` live in the value, not in the library.
+  read. `alt` and `title` live in the value, not in the library. A value may arrive as an id,
+  `{ id }`, `{ path }`, a key string or the object `media_get_file` / `*_get` returns
+  (`MediaValues::normalize()`; extra keys dropped); an unknown id is refused by name.
 - **Asset addresses**: binds `WebxUi\Admin\Contracts\AssetUrls` to `LibraryUrls`, which is how
   pictures inside a `wx-rich-text` value find their address.
 - **API** under `{webx-admin.api_path}/media` (`directories`, `files`, `files/chunked`,
@@ -35,7 +37,8 @@ guides when the question is about one of those. An entity's own attachments are 
   `media_get_file`, `media_create_directory`, `media_delete_directory` (empty folders only),
   `media_rename_file`, `media_move_files`, `media_upload_from_url` (public addresses only),
   `media_optimize_images`, `media_delete_files`. Scopes `media:read`, `media:write`. A refusal is
-  an MCP error, not an `ok: false` answer.
+  an MCP error, not an `ok: false` answer. Resource `media://fields`: how any module's file field
+  takes its value; the server's instructions point at it.
 - Also registered: the panel section `media` (group `system`), demo files (`resources/demo`), and
   audit checks `media.missing_file`, `media.heavy`, `media.orphan_thumbs` when `webx-ui/module-audit` is installed.
 

@@ -45,6 +45,13 @@ final class WebxServer extends Server
      */
     public const CONTENT_RULES = 'settings://content-rules';
 
+    /**
+     * How a field that holds a library file takes its value, served by `webx-ui/module-media`.
+     * Every module with a cover or a photo has such a field, and so may a project's own fields,
+     * so it is said once for all of them rather than in each tool.
+     */
+    public const FILE_FIELDS = 'media://fields';
+
     protected string $instructions = <<<'MARKDOWN'
         This is the admin panel of a site built on WebX UI. Every tool belongs to a module of
         the panel and is named `<module>_<tool>`.
@@ -106,6 +113,16 @@ final class WebxServer extends Server
                 $this->instructions .= "\n\nBefore you write or edit anything a visitor will read, read `".self::CONTENT_RULES.'`: '
                     .'the languages of the site and which one is primary, the tone of voice, and what never to say. '
                     .'Follow them in every language you write.';
+
+                break;
+            }
+        }
+
+        foreach ($registry->resources() as $resource) {
+            if ($resource->uri === self::FILE_FIELDS && ! str_contains($this->instructions, self::FILE_FIELDS)) {
+                $this->instructions .= "\n\nA field that holds a file from the media library — a cover, a photo, a logo, a gallery — "
+                    .'takes the file by its id, as { "id": … }, by its key { "path": "media/…" }, or as the object media_get_file '
+                    .'returns; `'.self::FILE_FIELDS.'` says it in full.';
 
                 break;
             }
