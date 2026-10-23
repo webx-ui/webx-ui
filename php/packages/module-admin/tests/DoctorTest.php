@@ -7,6 +7,7 @@ namespace WebxUi\Admin\Tests;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,7 @@ use WebxUi\Admin\Doctor\Checks\NpmRanges;
 use WebxUi\Admin\Doctor\Checks\PanelOpens;
 use WebxUi\Admin\Doctor\Checks\Queue;
 use WebxUi\Admin\Doctor\Checks\Regions;
+use WebxUi\Admin\Doctor\Checks\TrustedProxies;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Doctor\VersionRange;
@@ -104,6 +106,38 @@ final class DoctorTest extends TestCase
 
         Schema::drop('jobs');
         $this->assertSame(Diagnosis::FAIL, $this->app->make(Queue::class)->run()[0]->state);
+    }
+
+    // -- trusted proxies ---------------------------------------------------------------------
+
+    #[Test]
+    public function trusting_every_address_as_a_proxy_is_a_warning(): void
+    {
+        $found = function (mixed $config, mixed $bootstrap = null): Diagnosis {
+            $this->app['config']->set('trustedproxy.proxies', $config);
+            TrustProxies::flushState();
+
+            if ($bootstrap !== null) {
+                TrustProxies::at($bootstrap);
+            }
+
+            return $this->app->make(TrustedProxies::class)->run()[0];
+        };
+
+        try {
+            $states = [
+                $found(['127.0.0.0/8', '10.0.0.0/8', 'fc00::/7'])->state,
+                $found('*')->state,
+                $found('10.0.0.0/8, 0.0.0.0/0')->state,
+                // `trustProxies(at: ...)` in bootstrap/app.php wins over the config, here as in the middleware.
+                $found(['10.0.0.0/8'], '*')->state,
+            ];
+
+            $this->assertSame([Diagnosis::OK, Diagnosis::WARN, Diagnosis::WARN, Diagnosis::WARN], $states);
+            $this->assertStringContainsString('TRUSTED_PROXIES', $found('*')->detail);
+        } finally {
+            TrustProxies::flushState();
+        }
     }
 
     // -- npm ranges --------------------------------------------------------------------------

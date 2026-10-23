@@ -8,6 +8,7 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Seo\Models\SeoRedirect;
@@ -177,6 +178,20 @@ final class NormaliseTest extends TestCase
         $this->assertSame(301, $this->visit('http://127.0.0.1/about', ['REMOTE_ADDR' => '172.18.0.4'])->getStatusCode());
         // A name is how a visitor and the audit ask, from this machine or not.
         $this->assertSame(301, $this->visit('http://shop.example.com/about')->getStatusCode());
+    }
+
+    /**
+     * Global middleware runs on every request, a site before `migrate` and a test without the
+     * tables included: neither the tab nor the table being there yet is a 500 on every page.
+     */
+    #[Test]
+    public function a_site_without_the_tables_still_answers(): void
+    {
+        Schema::drop('cms_settings');
+        Schema::drop('seo_redirects');
+        $this->app->make('cache')->flush();
+
+        $this->get('http://www.shop.example.com/about')->assertOk()->assertSee('about');
     }
 
     /**

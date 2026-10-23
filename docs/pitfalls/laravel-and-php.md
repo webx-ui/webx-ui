@@ -343,6 +343,17 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
   GET. Проверять GET на 404, POST — на 404 или 405.
 - **`where` у группы маршрутов — массив:** `->where('key', '…')` падает внутри `RouteGroup`
   `array_merge(): Argument #1 must be of type array`.
+- **Тест прокси на сайте видит https с публичного адреса, хотя доверие — частным сетям.**
+  Относительный путь в `$this->get('/…')` тест достраивает от `APP_URL`; в `.env` сайта там
+  `https://…`, и запрос защищённый ещё до `TrustProxies`. Схему и IP за прокси проверять запросом
+  на полный `http://localhost/…` (`php/site/tests/Feature/TrustedProxiesTest.php`). Кому сайт
+  верит `X-Forwarded-*` — `config/trustedproxy.php` (`TRUSTED_PROXIES`); у сайтов, созданных
+  раньше, — `trustProxies(at:)` в `bootstrap/app.php`, который перебивает конфиг; `*` —
+  предупреждение `webx:doctor`.
+- **Глобальный middleware, читающий базу, отвечает 500 на каждый запрос сайта без таблиц** — до
+  `migrate`, в тесте сайта без `RefreshDatabase`. Нормализация и редиректы `module-seo`
+  ловят `QueryException` и пропускают запрос; новый глобальный middleware — так же (тест —
+  `a_site_without_the_tables_still_answers` в `module-seo/tests/NormaliseTest.php`).
 - **Путь `health:` из `bootstrap/app.php` в рантайме не узнать** — только рефлексией
   `PreventRequestsDuringMaintenance::$neverPrevent` (`Http\Probes` плюс `webx-seo.probes`).
   Глобальный редиректящий middleware обязан его пропускать, иначе healthcheck контейнера получает 301. В тесте — `PreventRequestsDuringMaintenance::except()` и `flushState()`.
