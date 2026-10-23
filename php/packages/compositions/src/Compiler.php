@@ -133,6 +133,19 @@ final class Compiler
         return self::NAMESPACE.'::'.$name;
     }
 
+    /**
+     * The manifest on disk, or null when nothing is compiled yet.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function current(): ?array
+    {
+        $file = $this->path.'/manifest.php';
+        $manifest = is_file($file) ? @include $file : null;
+
+        return is_array($manifest) ? $manifest : null;
+    }
+
     public function tree(string $composition, string $handle = 'default'): Tree
     {
         return $this->builder()->build($composition, $handle);

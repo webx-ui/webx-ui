@@ -8,8 +8,11 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Compositions\Console\ClearCommand;
 use WebxUi\Compositions\Console\CompileCommand;
+use WebxUi\Compositions\Console\ShowCommand;
+use WebxUi\Compositions\Doctor\CompositionsCheck;
 use WebxUi\Compositions\View\Components\Place;
 
 /**
@@ -34,6 +37,9 @@ class CompositionsServiceProvider extends ServiceProvider
             $app->configPath('webx-compositions.php'),
         ));
 
+        // What the show command, the theme's check and the doctor read: the sources, not the compiled set.
+        $this->app->bind(Inspector::class, fn (Application $app) => new Inspector($app->make(Layers::class), new Probe($app['view'], $app['blade.compiler'])));
+
         $this->app->scoped(Compositions::class, function (Application $app): Compositions {
             $check = $app['config']->get('webx-compositions.check');
 
@@ -50,12 +56,20 @@ class CompositionsServiceProvider extends ServiceProvider
     {
         Blade::component('webx-composition::place', Place::class);
 
+        // The compiled set against its sources, in the frame's `webx:doctor` — where the frame is
+        // installed; the engine does not need it.
+        if (class_exists(DoctorChecks::class)) {
+            $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
+                $checks->register(CompositionsCheck::class);
+            });
+        }
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/webx-compositions.php' => config_path('webx-compositions.php'),
             ], 'webx-compositions-config');
 
-            $this->commands([CompileCommand::class, ClearCommand::class]);
+            $this->commands([CompileCommand::class, ClearCommand::class, ShowCommand::class]);
         }
     }
 }

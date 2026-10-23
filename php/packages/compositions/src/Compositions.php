@@ -163,10 +163,7 @@ class Compositions
     /** @return array<string, mixed>|null */
     private function read(): ?array
     {
-        $file = $this->compiler->path().'/manifest.php';
-        $manifest = is_file($file) ? @include $file : null;
-
-        return is_array($manifest) ? $manifest : null;
+        return $this->compiler->current();
     }
 
     /**
