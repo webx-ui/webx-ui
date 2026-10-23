@@ -176,7 +176,24 @@ defineExpose({ messages, hasError })
   flex-direction: column;
   gap: var(--wx-space-4);
   min-width: 0;
-  max-width: var(--wx-field-max-width, 640px);
+  max-width: var(--wx-field-max-width, var(--wx-size-field, 640px));
+}
+
+/*
+ * A text editor is a field — it is read and typed into — but its toolbar is a row of twenty
+ * buttons that the field's width breaks in two. A cap of its own, a little wider and still
+ * fixed: at `--wx-size-field-wide` the whole toolbar, language chip included, is one line, and
+ * a narrower card still wraps it group by group. Never below the screen's own field width, so
+ * a screen that widened its fields does not see the editor come out narrower than an input.
+ * Under language tabs too (`WxLocales`). A one-line editor (`inline`) is an input and keeps
+ * the input's width; `wide` still wins.
+ */
+.wx-form-item:not(.wx-form-item--wide)
+  > .wx-form-item__control:has(
+    > .wx-rich-text:not(.is-inline),
+    > .wx-locales .wx-rich-text:not(.is-inline)
+  ) {
+  max-width: max(var(--wx-field-max-width, var(--wx-size-field, 640px)), var(--wx-size-field-wide));
 }
 
 /* Its own control, not every control inside it: a field that says it is wide because it holds

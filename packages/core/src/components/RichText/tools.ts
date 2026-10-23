@@ -30,6 +30,23 @@ export const DEFAULT_TOOLS: RichTextTool[] = [
   'source',
 ]
 
+/**
+ * The toolbar's buttons as the groups its dividers mark out.
+ *
+ * A toolbar narrower than its buttons wraps, and it wraps a group at a time: bold without italic
+ * on the next line reads as a different set of buttons. The dividers become the groups' edges,
+ * so none is left at the start or the end of a line, and two dividers in a row, or one at either
+ * end of the list, do not make an empty group.
+ */
+export function groupTools(tools: RichTextTool[]): Exclude<RichTextTool, 'divider'>[][] {
+  const groups: Exclude<RichTextTool, 'divider'>[][] = [[]]
+  for (const tool of tools) {
+    if (tool === 'divider') groups.push([])
+    else groups[groups.length - 1].push(tool)
+  }
+  return groups.filter((group) => group.length > 0)
+}
+
 /** What an inline field offers: the marks a line of a heading is ever given. */
 export const INLINE_TOOLS: RichTextTool[] = ['bold', 'italic', 'accent']
 

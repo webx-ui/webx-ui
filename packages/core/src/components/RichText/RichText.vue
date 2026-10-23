@@ -42,6 +42,7 @@ import {
   INLINE_TOOLS,
   TABLE_TOOLS,
   TOOL_META,
+  groupTools,
   type TableToolKey,
 } from './tools'
 import type {
@@ -665,7 +666,11 @@ function toolVisible(tool: RichTextTool): boolean {
   return true
 }
 
-const visibleTools = computed(() => toolList.value.filter(toolVisible))
+/** The placeholder button rides the last group, so a field without tools still has one. */
+const toolGroups = computed(() => {
+  const groups = groupTools(toolList.value.filter(toolVisible))
+  return groups.length === 0 && hasTokens.value ? [[]] : groups
+})
 
 function isActive(tool: RichTextTool): boolean {
   if (tool === 'source') return source.value !== null
@@ -765,41 +770,54 @@ defineExpose({
   <teleport to="body" :disabled="!expanded">
     <div ref="rootRef" :class="classes" @keydown.esc="onEscape">
       <div class="wx-rich-text__toolbar" role="toolbar" :aria-label="ariaLabel ?? label('toolbar')">
-        <template v-for="(tool, index) in visibleTools" :key="`${tool}-${index}`">
-          <span v-if="tool === 'divider'" class="wx-rich-text__divider" aria-hidden="true" />
-          <wx-rich-text-toolbar-button
-            v-else
-            :icon="TOOL_META[tool].icon"
-            :text="TOOL_META[tool].text"
-            :label="label(tool)"
-            :active="isActive(tool)"
-            :disabled="toolDisabled(tool)"
-            @click="run(tool)"
-          />
-        </template>
+        <div class="wx-rich-text__groups">
+          <div class="wx-rich-text__group-list">
+            <div v-for="(group, at) in toolGroups" :key="at" class="wx-rich-text__group">
+              <wx-rich-text-toolbar-button
+                v-for="tool in group"
+                :key="tool"
+                :icon="TOOL_META[tool].icon"
+                :text="TOOL_META[tool].text"
+                :label="label(tool)"
+                :active="isActive(tool)"
+                :disabled="toolDisabled(tool)"
+                @click="run(tool)"
+              />
 
-        <wx-rich-text-toolbar-button
-          v-if="hasTokens"
-          class="wx-rich-text__tokens"
-          icon="token"
-          :label="tokensLabel"
-          :active="tokens.open.value && tokens.browsing.value"
-          :disabled="!editable || source !== null"
-          @mousedown.prevent
-          @click="browseTokens"
-        />
+              <!-- With the source beside it: both are about the markup rather than the text. -->
+              <wx-rich-text-toolbar-button
+                v-if="hasTokens && at === toolGroups.length - 1"
+                class="wx-rich-text__tokens"
+                icon="token"
+                :label="tokensLabel"
+                :active="tokens.open.value && tokens.browsing.value"
+                :disabled="!editable || source !== null"
+                @mousedown.prevent
+                @click="browseTokens"
+              />
+            </div>
 
-        <span v-if="uploading > 0" class="wx-rich-text__uploading">{{ label('uploading') }}</span>
+            <!--
+              About the field rather than the text, so a group of its own — right after the last
+              one. Pushed to the far end it stood alone across the second line from everything.
+            -->
+            <div v-if="canExpand || uploading > 0" class="wx-rich-text__group">
+              <span v-if="uploading > 0" class="wx-rich-text__uploading">{{
+                label('uploading')
+              }}</span>
 
-        <wx-rich-text-toolbar-button
-          v-if="canExpand"
-          class="wx-rich-text__expand"
-          :icon="expanded ? 'collapse' : 'expand'"
-          :label="label(expanded ? 'collapse' : 'expand')"
-          :disabled="field.disabled.value"
-          @mousedown.prevent
-          @click="setExpanded(!expanded)"
-        />
+              <wx-rich-text-toolbar-button
+                v-if="canExpand"
+                class="wx-rich-text__expand"
+                :icon="expanded ? 'collapse' : 'expand'"
+                :label="label(expanded ? 'collapse' : 'expand')"
+                :disabled="field.disabled.value"
+                @mousedown.prevent
+                @click="setExpanded(!expanded)"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <wx-token-menu
@@ -942,12 +960,19 @@ defineExpose({
 /*
  * The chip sits in the top corner, over the end of the toolbar rather than over the text: a
  * document is written from the top left and that corner has to stay clear. The toolbar keeps
- * its distance so the last button is not underneath it.
+ * its distance so the last button is not underneath it — on every line, since the chip unrolls
+ * downwards over the lines below.
+ *
+ * Centred on the first line of buttons (the toolbar's padding and half a 30px button), not
+ * pinned to the corner: a chip a few pixels above the buttons beside it reads as misplaced.
  */
 .wx-rich-text.is-localized {
   --wx-locale-picker-height: 20px;
-  --wx-locale-picker-top: var(--wx-space-4);
-  --wx-locale-picker-shift: 0;
+  --wx-locale-picker-top: calc(var(--wx-space-6) + 15px);
+}
+
+.wx-rich-text.is-inline.is-localized {
+  --wx-locale-picker-top: calc(var(--wx-space-2) + 15px);
 }
 
 .wx-rich-text.is-localized .wx-rich-text__toolbar:first-child {
@@ -966,6 +991,48 @@ defineExpose({
   gap: var(--wx-space-2);
   padding: var(--wx-space-6);
   border-bottom: 1px solid var(--wx-border-muted);
+}
+
+/*
+ * Groups wrap whole, and the divider is the leading edge of a group rather than an element
+ * between two: a line can then start with a group but never with a divider. The list is pulled
+ * left by one divider's slot and the box around it clips, so the divider of a group that opens
+ * a line — the first one included — lands outside and is not drawn. Nothing is measured, so a
+ * card that narrows rewraps the toolbar without a frame of hanging lines.
+ *
+ * The clipping box reaches 4px into the toolbar's padding, so a focus ring on an edge button is
+ * not cut off, and the divider, 6px past the box's content edge, still is.
+ */
+.wx-rich-text__groups {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: calc(-1 * var(--wx-space-4));
+  padding: var(--wx-space-4);
+  overflow: clip;
+}
+
+.wx-rich-text__group-list {
+  --wx-rich-text-divider-slot: calc(var(--wx-space-4) * 2 + 1px + var(--wx-space-2));
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-2);
+  margin-left: calc(-1 * var(--wx-rich-text-divider-slot));
+}
+
+.wx-rich-text__group {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-2);
+}
+
+.wx-rich-text__group::before {
+  content: '';
+  flex: 0 0 1px;
+  height: 18px;
+  margin: 0 var(--wx-space-4);
+  background: var(--wx-border-default);
 }
 
 .wx-rich-text__toolbar--table {
@@ -999,24 +1066,7 @@ defineExpose({
   border-radius: 0;
 }
 
-/* At the far end of the toolbar, beside the language: it is about the field, not the text. */
-.wx-rich-text__expand {
-  margin-left: auto;
-}
-
-.wx-rich-text__uploading + .wx-rich-text__expand {
-  margin-left: 0;
-}
-
-.wx-rich-text__divider {
-  width: 1px;
-  height: 18px;
-  margin: 0 var(--wx-space-4);
-  background: var(--wx-border-default);
-}
-
 .wx-rich-text__uploading {
-  margin-left: auto;
   padding: 0 var(--wx-space-8);
   color: var(--wx-text-muted);
   font-size: var(--wx-font-size-sm);
@@ -1101,6 +1151,12 @@ defineExpose({
  */
 .wx-rich-text.is-inline .wx-rich-text__toolbar {
   padding: var(--wx-space-2) var(--wx-space-4);
+}
+
+/* One group and no dividers to hide; the clipping box must not reach into the text. */
+.wx-rich-text.is-inline .wx-rich-text__groups {
+  margin: 0;
+  padding: 0;
 }
 
 .wx-rich-text.is-inline .wx-rich-text__body {

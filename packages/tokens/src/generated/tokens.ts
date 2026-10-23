@@ -122,7 +122,9 @@ export const tokens = {
     "size": {
       "control-sm": "34px",
       "control-md": "42px",
-      "control-lg": "50px"
+      "control-lg": "50px",
+      "field": "640px",
+      "field-wide": "768px"
     },
     "z-index": {
       "base": "0",
@@ -365,6 +367,8 @@ export const lightVars: Record<string, string> = {
   '--wx-size-control-sm': "34px",
   '--wx-size-control-md': "42px",
   '--wx-size-control-lg': "50px",
+  '--wx-size-field': "640px",
+  '--wx-size-field-wide': "768px",
   '--wx-z-index-base': "0",
   '--wx-z-index-sticky': "800",
   '--wx-z-index-dropdown': "1000",

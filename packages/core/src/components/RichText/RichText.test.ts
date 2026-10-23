@@ -325,6 +325,69 @@ describe('WxRichText', () => {
     expect(wrapper.findAll('.wx-rich-text__tool')).toHaveLength(2)
   })
 
+  /*
+   * Only the structure: how a narrow toolbar wraps is layout, which jsdom does not compute — that
+   * is checked in a browser.
+   */
+  describe('the toolbar', () => {
+    function groups(wrapper: Wrapper): string[][] {
+      return wrapper
+        .findAll('.wx-rich-text__group')
+        .map((group) => group.findAll('button').map((button) => button.attributes('aria-label')!))
+    }
+
+    it('lays the buttons out in the groups the dividers mark, in their order', async () => {
+      const wrapper = await mountEditor({ pickImage: () => Promise.resolve(null) })
+
+      expect(groups(wrapper)).toEqual([
+        ['Bold', 'Italic', 'Strikethrough', 'Inline code'],
+        ['Heading 2', 'Heading 3', 'Heading 4'],
+        ['Bulleted list', 'Numbered list', 'Quote', 'Divider'],
+        ['Link', 'Table', 'Image', 'YouTube video'],
+        ['Undo', 'Redo'],
+        ['HTML source'],
+        ['Expand'],
+      ])
+    })
+
+    it('draws no divider of its own between the groups, so none can start or end a line', async () => {
+      const wrapper = await mountEditor({
+        tools: ['divider', 'bold', 'divider', 'divider', 'italic', 'divider'],
+        expandable: false,
+      })
+
+      expect(groups(wrapper)).toEqual([['Bold'], ['Italic']])
+      expect(wrapper.find('.wx-rich-text__divider').exists()).toBe(false)
+    })
+
+    it('keeps the placeholder button beside the source, in the last group of tools', async () => {
+      const wrapper = await mountEditor({ tokens: [{ name: 'phone', value: '+1 555 0100' }] })
+      const all = groups(wrapper)
+
+      expect(all.at(-2)).toEqual(['HTML source', 'Insert a placeholder'])
+      expect(all.at(-1)).toEqual(['Expand'])
+    })
+
+    it('still offers placeholders when it was given no tools', async () => {
+      const wrapper = await mountEditor({
+        tools: [],
+        expandable: false,
+        tokens: [{ name: 'phone', value: '+1 555 0100' }],
+      })
+
+      expect(groups(wrapper)).toEqual([['Insert a placeholder']])
+    })
+
+    it('puts the language chip in the editor beside the toolbar, and only when localized', async () => {
+      const localized = await mountEditor({ localized: true, modelValue: {} }, twoLocales())
+      const plain = await mountEditor()
+
+      expect(localized.find('.wx-rich-text__toolbar + .wx-locale-picker').exists()).toBe(true)
+      expect(localized.get('.wx-locale-picker__current').text().toLowerCase()).toBe('en')
+      expect(plain.find('.wx-locale-picker').exists()).toBe(false)
+    })
+  })
+
   describe('over the whole window', () => {
     /** Once open the editor lives at the end of the body, out of the wrapper's reach. */
     function frame(): HTMLElement {

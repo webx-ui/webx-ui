@@ -100,13 +100,19 @@ then `WxForm`.
 
 ### How wide a field is
 
-A field is read and typed into, so the control stops at `--wx-field-max-width` — 640px — however
+A field is read and typed into, so the control stops at `--wx-field-max-width` — 640px,
+`--wx-size-field` — however
 wide the screen is. An input stretched across a 2000px monitor is a line whose end is a screen away
 from its label, and a form of them has no shape at all. The label, the hint and the error under the
 control are text and wrap on their own.
 
-What is not a field in that sense — a rich-text editor, a table, a list of blocks — says so with
-`wide`, and a screen that wants a different measure sets the variable:
+A rich-text editor is a field with a toolbar twenty buttons long, so it stops a little further
+out, at `--wx-size-field-wide` — 768px, the width at which the whole toolbar and the language chip
+are one line — and never short of the screen's own field width. A one-line (`inline`) editor keeps
+the input's width.
+
+What is not a field in that sense — a table, a list of blocks — says so with `wide`, and a screen
+that wants a different measure sets the variable:
 
 ```css
 .my-screen {
