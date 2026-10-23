@@ -141,7 +141,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 
 Всё, из чего состоит панель, — пакет с префиксом `module-`: каркас `webx-ui/module-admin` и
 разделы; npm-пара называется так же (`@webx-ui/module-admin`). Библиотека, которая живёт и без
-панели, — без префикса: `nested-set`, `cache`, `localization`, `mcp`, `routing`, `themes`, `widgets`,
+панели, — без префикса: `nested-set`, `cache`, `compositions`, `localization`, `mcp`, `routing`, `themes`, `widgets`,
 `theme-default`. По имени видно, панель это или библиотека.
 
 Идентификатор модуля (`Module::id()`, он же префикс прав `<id>.<action>`, областей MCP
@@ -158,6 +158,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | **Библиотеки**              |                                                                       |                                      |
 | `nested-set`                | деревья Eloquent (nested set)                                         | —                                    |
 | `cache`                     | кеш на версионных ключах: группы, версии, `remember` с зависимостями  | — (экран «Кеш» в `module-admin`)     |
+| `compositions`              | составные виды деревом с id: слои, патчи темы, компиляция в Blade     | —                                    |
 | `localization`              | языки сайта, переводимые атрибуты, словарь панели                     | — (i18n в `module-admin`)            |
 | `mcp`                       | контракт инструментов модуля, MCP-сервер, OAuth и ключи агентов       | экраны в `module-auth`               |
 | `routing`                   | плоский реестр публичных адресов и резолвер                           | —                                    |
@@ -274,6 +275,13 @@ HTTP на `{api_path}/mcp`. Подключение агента — OAuth чер
 `theme_token()`, команды `webx:theme:*`, проверка CSS на токены, `Testing\ThemeContract`.
 `theme-default` — значение каждого токена, оболочка страницы, типографика прозы; нейтральная точка
 старта, написанная, чтобы её перекрывали. Каждый новый сайт `webx:setup` получает свою `theme/`.
+
+### `webx-ui/compositions` — составные виды
+
+Спека — [`WEBX_UI_COMPOSITIONS.md`](WEBX_UI_COMPOSITIONS.md). Составной вид (`layout`, потом страницы
+модулей) — дерево узлов с `id` в JSON: пакет даёт базу, модули добавляют свои куски, тема и сайт
+патчат дерево по `id` — без копии вида. Итог компилируется в обычные Blade-виды, по одному на
+композицию × хендл, на `webx:boot` и по `mtime` источников. Дерево `layout` — у `theme-default`.
 
 ### `webx-ui/widgets` — виджеты сайта
 
