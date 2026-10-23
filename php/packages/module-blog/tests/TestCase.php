@@ -22,6 +22,8 @@ use WebxUi\Blog\BlogServiceProvider;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
+use WebxUi\Compositions\CompositionsServiceProvider;
+use WebxUi\Compositions\Testing\IsolatedCompositions;
 use WebxUi\Localization\Locales;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\Mcp\McpServiceProvider;
@@ -32,6 +34,9 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    // The article is a composition, and a test that patches it compiles a set of its own.
+    use IsolatedCompositions;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -41,6 +46,7 @@ abstract class TestCase extends Orchestra
         return [
             LocalizationServiceProvider::class,
             RoutingServiceProvider::class,
+            CompositionsServiceProvider::class,
             AdminServiceProvider::class,
             AuthServiceProvider::class,
             McpServiceProvider::class,
@@ -67,6 +73,7 @@ abstract class TestCase extends Orchestra
         // sqlite ignores foreign keys unless it is asked to, and half the promises of the
         // migrations live in them: without this a cascade that does not exist still passes.
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
+        $this->isolateCompositions($app);
     }
 
     protected function defineDatabaseMigrations(): void

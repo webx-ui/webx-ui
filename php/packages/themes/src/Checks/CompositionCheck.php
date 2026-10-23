@@ -243,20 +243,34 @@ final class CompositionCheck implements ThemeCheckPart
         $lines = [];
 
         foreach ($compositions as $composition) {
-            $relative = 'components/'.str_replace('.', '/', $composition).'.blade.php';
+            // A component of a theme (`layout` → components/layout), or the view of a module's page
+            // a site copied over its namespace (`blog.article` → vendor/webx-blog/article).
+            $relatives = ['components/'.str_replace('.', '/', $composition).'.blade.php'];
+            $place = '<x-webx-composition::place id=\"body\" only=\"added\" />';
 
-            foreach ($viewPaths as $directory) {
-                $file = rtrim($directory, '/').'/'.$relative;
+            if (str_contains($composition, '.')) {
+                [$module, $view] = explode('.', $composition, 2);
+                $relatives[] = "vendor/webx-{$module}/".str_replace('.', '/', $view).'.blade.php';
+            }
 
-                if (! is_file($file)) {
-                    continue;
+            foreach ($relatives as $relative) {
+                foreach ($viewPaths as $directory) {
+                    $file = rtrim($directory, '/').'/'.$relative;
+
+                    if (! is_file($file)) {
+                        continue;
+                    }
+
+                    if (str_starts_with($relative, 'vendor/')) {
+                        $place = "<x-webx-composition::place composition=\"{$composition}\" id=\"…\" only=\"added\" />";
+                    }
+
+                    if (! str_contains((string) file_get_contents($file), "composition_view('{$composition}'")) {
+                        $lines[] = ['file' => $file, 'line' => null, 'note' => true, 'message' => "overrides the composition {$composition}: compositions/{$composition}/*.json of the themes and the modules' pieces are not printed here. A patch replaces the copy — php artisan webx:composition:show {$composition} --blade prints what the composition gives — or keep it and bring the pieces with {$place}"];
+                    }
+
+                    break;
                 }
-
-                if (! str_contains((string) file_get_contents($file), "composition_view('{$composition}'")) {
-                    $lines[] = ['file' => $file, 'line' => null, 'note' => true, 'message' => "overrides the composition {$composition}: compositions/{$composition}/*.json of the themes and the modules' pieces are not printed here. A patch replaces the copy — php artisan webx:composition:show {$composition} --blade prints what the composition gives — or keep it and bring the pieces with <x-webx-composition::place id=\"body\" only=\"added\" />"];
-                }
-
-                break;
             }
         }
 

@@ -13,15 +13,8 @@
         <link rel="alternate" type="application/rss+xml" title="{{ trans('webx-blog::blog.rss') }}" href="{{ route('webx.blog.rss') }}">
     </x-slot:head>
 
-<article class="webx-blog-article">
-    <header class="webx-blog-article__header">
-        @include('webx-blog::article.breadcrumbs')
-        @include('webx-blog::article.title')
-        @include('webx-blog::article.meta')
-        @include('webx-blog::article.cover')
-    </header>
-    @include('webx-blog::article.content')
-    @include('webx-blog::article.tags')
-</article>
-@include('webx-blog::article.related')
+    {{-- The page itself is the composition blog.article (COMPOSITIONS §10): a theme moves, removes,
+         replaces and adds its nodes by id in compositions/blog.article/*.json instead of copying
+         this file. --}}
+    @include(composition_view('blog.article', 'blog.article'))
 </x-dynamic-component>

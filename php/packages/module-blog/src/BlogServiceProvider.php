@@ -90,9 +90,10 @@ class BlogServiceProvider extends ServiceProvider
 
         // The page types its views name to the layout, so a theme's file for a misspelt one is a
         // finding of webx:theme:check (COMPOSITIONS §4).
-        if (class_exists(Compositions::class)) {
-            Compositions::handles('blog', ['blog.article', 'blog.author', 'blog.feed', 'blog.rubric', 'blog.tag']);
-        }
+        // The page of an article is the composition blog.article (COMPOSITIONS §10); the handles
+        // are what the five pages name the layout with.
+        Compositions::load(__DIR__.'/../resources/compositions');
+        Compositions::handles('blog', ['blog.article', 'blog.author', 'blog.feed', 'blog.rubric', 'blog.tag']);
 
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 

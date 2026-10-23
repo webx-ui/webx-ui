@@ -55,6 +55,7 @@ A route or screen node the site adds next to the articles asks the same:
 | You want                                | Do this                                                                                                    |
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | The blog inside the site's header       | `'layout' => 'layout'` in `config/webx-blog.php` (`<x-layout>`), or `WEBX_BLOG_LAYOUT`                     |
+| A piece of the article moved, gone, new | `theme/compositions/blog.article/default.json` by node id (below), not a copy of the article's view        |
 | Different markup of a page              | write `resources/views/blog/article.blade.php` (or `feed`, `rubric`, `tag`, `rss`)                         |
 | Another card in every listing           | `views/parts/blog/card.blade.php` in the theme: the point `blog.card`, given `$article`, prints one `<li>` |
 | A page printed by another view          | `WEBX_BLOG_VIEW_ARTICLE`, `_FEED`, `_RUBRIC`, `_TAG`, `_RSS`                                               |
@@ -74,6 +75,11 @@ A route or screen node the site adds next to the articles asks the same:
 The layout component's contract is two slots, `head` and the default one, plus `@stack('head')`
 beside `{{ $head }}`; `php artisan webx:panel --sync` sets `layout` when the site has
 `resources/views/components/layout.blade.php`. The RSS has no layout.
+
+An article inside the layout is the composition `blog.article` (guide: compositions). Its nodes:
+`article`, `article.header`, `article.breadcrumbs`, `article.title`, `article.meta`, `article.cover`,
+`article.content` (protected), `article.tags`, `article.related`; leaves `webx-blog::article.*` see
+`$article`, `$related`. `webx:composition:show blog.article --origin` prints the final tree.
 
 A screen patch addresses nodes by `id`. Article editor: `content`, `blocks`, `settings`,
 `naming`, `title`, `slug`, `lead`, `presentation`, `cover`, `publication`, `published-at`,
@@ -103,32 +109,27 @@ theme; restyle them in the theme's `src/css`, not by tags. Renaming one is a bre
 
 ## Do not
 
-- Do not edit anything in `vendor/webx-ui/module-blog` or copy it into the site. The rows above
-  are the supported ways; if none fits, the package is missing a seam — say so.
+- Do not edit anything in `vendor/webx-ui/module-blog` or copy it into the site — nor copy
+  `article.blade.php` to move a piece: patch `blog.article`. If no row fits, a seam is missing — say so.
 - Do not set `published_at` while "just filling in the settings": a past date puts the article
   on the site at once. Leave it empty and call `articles_publish` (with `at` for a later day).
 - Do not write the body through `articles_update`: a `blocks` key is refused. Content goes
   through `blocks_edit_content`, which changes one node and leaves the rest alone.
 - Do not write without the `revision` articles_get gave you: `articles_update` refuses a write
   with none and refuses a stale one. Read again and redo the change; do not retry blindly.
-  `force: true` is for a script that means to overwrite, not for an agent working beside people.
-  `being_edited_by` (from `articles_get`) names who has the article open in the panel — tell your
-  user before writing under them; a draft written over is kept in the panel's History › Drafts.
+  `force: true` is for a script, not an agent beside people. `being_edited_by` (`articles_get`)
+  names who has the article open — tell your user; a draft written over is kept in History › Drafts.
   `articles_publish`, `_unpublish`, `_discard`, `_delete` take the `revision` too: a stale one is
   refused, and while somebody has the article open one is required.
-- Do not change the prefix by editing rows: run `webx:routes:rebuild` for the three types, which
-  recomputes the paths and keeps the old ones as redirecting aliases. A raw update leaves dead
-  addresses behind.
+- Do not change the prefix by editing rows: `webx:routes:rebuild` for the three types recomputes
+  the paths and keeps the old ones as redirecting aliases; a raw update leaves dead addresses.
 - Do not invent tags while writing: `tags_list` first and reuse a word that exists. Duplicates
   are untangled with `tags_merge`, which is irreversible — run it with `dry_run: true` first.
 - Do not delete a rubric that still holds articles — it is refused with the count. Move the
   articles to another rubric, or hide the rubric (`is_visible`) instead.
-- Do not put a list of articles on `/` through this package: with an empty prefix the feed route
-  is not registered, because `/` belongs to the site. Make that a page with a block.
-- Do not print `<title>` in a site's copy of a view: with an empty SEO card the article, the
-  rubric and the tag name the page themselves (`seoFallback()` — the title through the title
-  template, the lead, the cover), and the feed is called by the blog's name. An old copy's
-  `@if ($meta->title === null)` block and its `$seo` / `$meta` lines are dead — delete them.
+- Do not put a list of articles on `/` here: with no prefix the feed is not registered — make a page with a block.
+- Do not print `<title>` in a site's copy of a view: with an empty SEO card a page names itself
+  (`seoFallback()`). An old copy's `@if ($meta->title === null)` and `$seo`/`$meta` lines are dead.
 
 ## Check your work
 

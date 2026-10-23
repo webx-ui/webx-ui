@@ -1,0 +1,7 @@
+{
+  "$comment": "The base of a module's page, as module-blog gives blog.article.",
+  "root": {
+    "id": "root",
+    "children": [{ "id": "article", "tag": "article", "attrs": { "class": "fixture-article" } }]
+  }
+}

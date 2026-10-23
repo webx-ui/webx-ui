@@ -28,6 +28,7 @@ final class CompositionCheckTest extends TestCase
             ->expectsOutputToContain('meta.theme-color: no token "color-nope" with a value in the chain')
             ->expectsOutputToContain('views/components/layout.blade.php:5  place: no container "sidebar" in layout × default')
             ->expectsOutputToContain('views/components/layout.blade.php  note: overrides the composition layout')
+            ->expectsOutputToContain('views/vendor/webx-blog/article.blade.php  note: overrides the composition blog.article')
             ->expectsOutputToContain('7 findings')
             ->assertFailed();
     }
