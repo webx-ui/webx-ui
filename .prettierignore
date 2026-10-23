@@ -20,3 +20,4 @@ php/packages/module-admin/resources/css/components.css
 php/packages/module-inbox/tests/Fixtures/notifications
 # The shell of theme-default's layout, byte for byte: what the composition is compared with.
 php/packages/theme-default/tests/Fixtures/golden
+php/packages/module-blog/tests/Fixtures/golden
