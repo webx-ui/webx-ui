@@ -22,6 +22,7 @@
             "directive": "webxTheme",
             "protected": true
           },
+          { "id": "meta.theme-color", "directive": "webxThemeColor" },
           {
             "id": "head.slot",
             "$comment": "A module's view hands @webxSeo and @webxBlocks in the head slot, and neither prints twice: the pair here only for a page that handed nothing.",

@@ -104,6 +104,9 @@ class ThemeServiceProvider extends ServiceProvider
         // namespace separators.
         Blade::directive('webxTheme', static fn (): string => sprintf('<?php echo app(%s)->render(); ?>', var_export(ThemeHead::class, true)));
 
+        // The colour of the browser bar (COMPOSITIONS §7): `@webxThemeColor` or `@webxThemeColor('color-surface')`.
+        Blade::directive('webxThemeColor', static fn (string $token = ''): string => sprintf('<?php echo app(%s)->render(%s); ?>', var_export(ThemeColor::class, true), trim($token)));
+
         // Without a theme too: a template that names an icon still compiles, and prints an empty <svg>.
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-themes');
         Blade::component('theme::icon', Icon::class);

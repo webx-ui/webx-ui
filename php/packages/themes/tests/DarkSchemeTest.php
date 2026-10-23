@@ -6,6 +6,7 @@ namespace WebxUi\Themes\Tests;
 
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Themes\Checks\ContrastCheck;
 use WebxUi\Themes\Exceptions\ThemeException;
@@ -136,6 +137,22 @@ final class DarkSchemeTest extends TestCase
             CSS, app(Tokens::class)->css());
 
         $this->assertStringContainsString("<style data-webx-theme>\n:root {", app(ThemeHead::class)->render());
+    }
+
+    /** COMPOSITIONS §7: the browser bar takes the background, a tag a scheme when the dark one differs. */
+    #[Test]
+    public function the_theme_color_is_the_background_in_each_scheme(): void
+    {
+        $this->assertSame(
+            '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F7F7F4">'."\n"
+            .'<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0D0F0E">',
+            Blade::render('@webxThemeColor'),
+        );
+
+        // A reference resolves in its own scheme; a token without a dark value is one tag.
+        $this->assertStringContainsString('media="(prefers-color-scheme: light)" content="#F7F7F4"', Blade::render("@webxThemeColor('color-accent-contrast')"));
+        $this->assertSame('<meta name="theme-color" content="#FFE08A">', Blade::render("@webxThemeColor('color-highlight')"));
+        $this->assertSame('', Blade::render("@webxThemeColor('color-nothing')"));
     }
 
     #[Test]

@@ -85,10 +85,11 @@ final class LayoutGoldenTest extends TestCase
         $this->assertSame((string) file_get_contents($golden), $html);
     }
 
-    /** The theme, module-seo, module-blocks and module-snippets as one comment each. */
+    /** The theme, its colour, module-seo, module-blocks and module-snippets as one comment each. */
     private function stub(bool $modules): void
     {
         Blade::directive('webxTheme', static fn (): string => '<?php echo "<!-- theme -->"; ?>');
+        Blade::directive('webxThemeColor', static fn (): string => '<?php echo "<!-- theme-color -->"; ?>');
         Blade::directive('webxSeo', static fn (): string => '<?php echo "<!-- seo -->"; ?>');
         Blade::directive('webxBlocks', static fn (): string => '<?php echo "<!-- blocks -->"; ?>');
         Blade::anonymousComponentPath(self::fixtures().'/webx-blocks', 'webx-blocks');
