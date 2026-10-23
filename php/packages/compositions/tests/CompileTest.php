@@ -49,11 +49,11 @@ final class CompileTest extends TestCase
     #[Test]
     public function a_patch_naming_a_node_that_is_not_there_does_not_take_the_page_down(): void
     {
-        Log::spy();
+        $log = Log::spy();
         $this->theme('layout', 'default', ['remove' => ['seo.links'], 'attrs' => ['body' => ['class' => 'ok']]]);
 
         $this->assertStringContainsString('<body class="site ok">', $this->page());
-        Log::shouldHaveReceived('warning')->withArgs(static fn (string $message): bool => str_contains($message, 'remove seo.links — no node with this id'))->once();
+        $log->shouldHaveReceived('warning')->withArgs(static fn (string $message): bool => str_contains($message, 'remove seo.links — no node with this id'))->once();
     }
 
     /** §3.6: a tree that cannot be built keeps the last set serving, and says why. */
@@ -63,12 +63,12 @@ final class CompileTest extends TestCase
         $this->theme('layout', 'default', ['attrs' => ['body' => ['class' => 'good']]]);
         $this->assertStringContainsString('<body class="site good">', $this->page());
 
-        Log::spy();
+        $log = Log::spy();
         $this->theme('layout', 'default', '{"attrs": ');
         touch($this->local.'/compositions/layout/default.json', time() + 10);
 
         $this->assertStringContainsString('<body class="site good">', $this->page());
-        Log::shouldHaveReceived('error')->withArgs(static fn (string $message): bool => str_contains($message, 'invalid JSON'))->once();
+        $log->shouldHaveReceived('error')->withArgs(static fn (string $message): bool => str_contains($message, 'invalid JSON'))->once();
 
         $this->artisan('webx:composition:compile')->assertFailed();
     }

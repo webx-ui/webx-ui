@@ -67,6 +67,7 @@ final class Builder
      * The handles of a composition that some layer has a file for — its parent's too — and
      * `default`, which is always there.
      *
+     * @param  list<string>  $seen  the compositions on the way up `extends`, for a circle
      * @return list<string>
      */
     public function handles(string $composition, array $seen = []): array

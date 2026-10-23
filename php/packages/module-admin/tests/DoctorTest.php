@@ -8,6 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
@@ -29,6 +30,8 @@ use WebxUi\Admin\Doctor\VersionRange;
 use WebxUi\Admin\Http\Controllers\MethodProbeController;
 use WebxUi\Admin\Panel\PackageRegistry;
 use WebxUi\Admin\Tests\Fixtures\FixedCheck;
+use WebxUi\Compositions\Compositions;
+use WebxUi\Compositions\CompositionsServiceProvider;
 
 /**
  * What `webx:doctor` says, for the three sorts of breakage that cost the most to find by hand.
@@ -294,6 +297,47 @@ final class DoctorTest extends TestCase
         $this->app['config']->set('webx-pages.layout', 'layout');
 
         $this->assertSame([], $this->regions());
+    }
+
+    /**
+     * theme-default's layout is a dispatcher of the composition `layout` (COMPOSITIONS §6.1): the
+     * seams are in the compiled view, and that is what the two checks read.
+     */
+    #[Test]
+    public function a_layout_that_is_a_composition_is_read_as_its_compiled_view(): void
+    {
+        $root = sys_get_temp_dir().'/webx-doctor-composition-'.bin2hex(random_bytes(6));
+        $this->directories[] = $root;
+        $this->files->ensureDirectoryExists($root.'/resources/compositions/layout');
+        $this->files->ensureDirectoryExists($root.'/blocks');
+        $this->files->put($root.'/blocks/region.blade.php', "<div></div>\n");
+        $this->files->put($root.'/resources/compositions/layout/default.json', (string) json_encode(['root' => [
+            'id' => 'html', 'tag' => 'html', 'children' => [
+                ['id' => 'head', 'tag' => 'head', 'children' => [
+                    ['id' => 'head.slot', 'slot' => 'head'],
+                    ['id' => 'head.stack', 'stack' => 'head'],
+                ]],
+                ['id' => 'body', 'tag' => 'body', 'children' => [
+                    ['id' => 'header', 'region' => 'header'],
+                    ['id' => 'content', 'slot' => 'default'],
+                ]],
+            ],
+        ]]));
+
+        $this->app->register(CompositionsServiceProvider::class);
+        $this->app['config']->set('webx-compositions.compiled', $root.'/compiled');
+        Blade::anonymousComponentPath($root.'/blocks', 'webx-blocks');
+        Compositions::load($root.'/resources/compositions', 'fixture');
+
+        $this->layout("@include(composition_view('layout', \$attributes->get('handle')))\n");
+        $this->app['config']->set('webx-pages.layout', 'layout');
+        $this->app['config']->set('webx-blocks.regions', ['header' => ['title' => 'Header'], 'footer' => ['title' => 'Footer']]);
+
+        $this->assertSame(Diagnosis::OK, $this->layouts()[0]->state, $this->details($this->layouts()));
+
+        $regions = $this->regions();
+        $this->assertSame(Diagnosis::OK, $regions[0]->state, $this->details($regions));
+        $this->assertTrue($regions[1]->warned());
     }
 
     // -- both halves -------------------------------------------------------------------------

@@ -503,7 +503,7 @@ class ThemeDefaultTest extends TestCase
         Compositions::load(dirname(self::path()).'/module-snippets/resources/compositions');
 
         $tree = app(Compiler::class)->tree('layout');
-        $ids = static fn (string $id): array => array_map(static fn (Node $node): string => $node->id, $tree->find($id)?->children ?? []);
+        $ids = static fn (string $id): array => array_map(static fn (Node $node): string => $node->id, $tree->find($id)->children ?? []);
 
         $this->assertSame(['snippets.body-start', 'skip-link', 'notice-bar', 'header', 'main', 'footer', 'widgets.contact-button', 'scripts.stack', 'snippets.body-end'], $ids('body'));
         $this->assertSame(['content', 'seo.faq', 'seo.links'], $ids('main'));
@@ -566,7 +566,7 @@ class ThemeDefaultTest extends TestCase
         $this->assertStringContainsString('FAQ of the page', $article);
         $this->assertStringNotContainsString('Links of the page', $article);
 
-        $order = app(Compiler::class)->tree('layout', 'blog.article')->find('body')?->children ?? [];
+        $order = app(Compiler::class)->tree('layout', 'blog.article')->find('body')->children ?? [];
         $this->assertSame(['skip-link', 'header', 'reading-progress', 'notice-bar', 'main', 'footer', 'scripts.stack'], array_map(static fn (Node $node): string => $node->id, $order));
         // layout.minimal takes the quick contact off once more: said as a note, not as a finding.
         $this->assertSame([], array_values(array_filter(app(Compositions::class)->findings(), static fn ($finding): bool => ! $finding->note)));

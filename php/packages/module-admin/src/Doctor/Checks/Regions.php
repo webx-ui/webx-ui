@@ -10,6 +10,7 @@ use Illuminate\Filesystem\Filesystem;
 use InvalidArgumentException;
 use WebxUi\Admin\Doctor\Check;
 use WebxUi\Admin\Doctor\Diagnosis;
+use WebxUi\Admin\Doctor\LayoutSource;
 use WebxUi\Admin\Panel\PackageRegistry;
 
 /**
@@ -55,7 +56,7 @@ final class Regions implements Check
 
         foreach ($this->layouts() as $layout) {
             try {
-                $source .= "\n".$this->files->get($this->views->getFinder()->find('components.'.$layout));
+                $source .= "\n".LayoutSource::of($this->files->get($this->views->getFinder()->find('components.'.$layout)), $this->views, $this->files);
             } catch (InvalidArgumentException) {
                 // A missing layout is `Layouts`' to report, and it does, as a failure.
             }

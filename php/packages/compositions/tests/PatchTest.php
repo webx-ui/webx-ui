@@ -257,7 +257,10 @@ final class PatchTest extends TestCase
         $this->assertSame([], $this->findings($this->tree()));
     }
 
-    /** @param list<string> $findings @return list<string> */
+    /**
+     * @param  list<string>  $findings
+     * @return list<string>
+     */
     private function relative(array $findings): array
     {
         return array_map(fn (string $finding): string => str_replace($this->local, 'theme', $finding), $findings);

@@ -69,7 +69,11 @@ final class Reader
         $this->operations($data, $file);
     }
 
-    /** Whether the file is a base. @param array<string, mixed> $data */
+    /**
+     * Whether the file is a base.
+     *
+     * @param  array<string, mixed>  $data
+     */
     public function isBase(array $data): bool
     {
         return isset($data['root']) || isset($data['extends']);

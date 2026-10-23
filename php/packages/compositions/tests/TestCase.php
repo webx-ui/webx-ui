@@ -71,14 +71,22 @@ abstract class TestCase extends Orchestra
         });
     }
 
-    /** A file of the local theme, `theme/compositions/<composition>/<handle>.json`. */
+    /**
+     * A file of the local theme, `theme/compositions/<composition>/<handle>.json`.
+     *
+     * @param  array<string, mixed>|string  $patch
+     */
     protected function theme(string $composition, string $handle, array|string $patch): void
     {
         @mkdir($this->local.'/compositions/'.$composition, 0777, true);
         file_put_contents($this->local.'/compositions/'.$composition.'/'.$handle.'.json', is_string($patch) ? $patch : (string) json_encode($patch));
     }
 
-    /** A patch of the site's config, `webx-compositions.patches`. */
+    /**
+     * A patch of the site's config, `webx-compositions.patches`.
+     *
+     * @param  array<string, mixed>  $patch
+     */
     protected function config(string $composition, string $handle, array $patch): void
     {
         // Not by a dotted key: a handle has dots of its own.
