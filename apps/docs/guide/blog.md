@@ -295,10 +295,12 @@ root                       group
 ```
 
 `blog.lead` and `blog.byline` are views of the theme (`theme/views/blog/lead.blade.php`); they see
-what the article's view sees — `$article`, `$related`. `article.content` is protected: the head
-already carries the styles of exactly these blocks, so it is neither removed nor replaced, and moves
-only inside `article`. The handle is `blog.article` too, so `blog.article/blog.article.json` works
-as well — `default.json` is the file to write. The layout around the article is still patched in
+what every leaf sees — `$article`, `$related` and `$content`, the base's `vars` —, and
+`webx:theme:check` notes a view of the theme that reads anything else. `article.content` is
+protected: the head already carries the styles of exactly these blocks, so it is neither removed nor
+replaced, and moves only inside `article`. The article's view includes the composition with the
+handle `default`: `default.json` is the file to write, a `blog.article/blog.article.json` is never
+read (a note in `webx:theme:check`). The layout around the article is patched in
 `theme/compositions/layout/blog.article.json`.
 
 A published copy of `views/vendor/webx-blog/article.blade.php` still wins over the composition,

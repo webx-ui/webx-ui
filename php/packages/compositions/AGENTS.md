@@ -14,10 +14,14 @@ The tree of `layout` belongs to `webx-ui/theme-default` — read its guide for t
   `theme/compositions/`. A file is a **base** (`root`, or `extends` another composition) or a
   **patch** (`add`, `move`, `replace`, `attrs`, `props`, `remove`). Schema:
   `resources/schema/composition.json`.
+- **Contract of a base** — `vars` (the variables every leaf gets, without `$`; an `extends` variant
+  inherits them) and `dispatcher` (the view that includes the composition — where a copy is looked
+  for). Never in a patch. `Builder::contract()`, `Tree::$vars`, `Tree::$dispatcher`.
 - **Nodes** — exactly one kind key each: `tag`, a group (`children` only), `view`, `component`,
   `region`, `slot`, `stack`, `directive`, `html`. Values are literals and `trans::<key>`.
 - **Handles** — `default` and the page type a module's view names: `<x-layout handle="blog.article">`.
-  A handle without a file of its own gets `default`.
+  A handle without a file of its own gets `default`. A module's page composition (`blog.article`)
+  is included with `default`: its `blog.article/blog.article.json` is never read.
 - **Layers, in order** — the base (and its own handle file) → modules by id → themes above the
   base, bottom up → the local theme → `config/webx-compositions.php` `patches`. Each layer whole:
   `default`, then the handle.
@@ -82,7 +86,9 @@ The tree of `layout` belongs to `webx-ui/theme-default` — read its guide for t
 - `php artisan webx:theme:check` — every finding a line, exit code 1: an id that is not there, a
   duplicate, a protected node, a reserved attribute, `unknown handle`, a composition without a
   base, a theme's id with a module's prefix, a `place` on no container, a theme-color token
-  without a colour, a file that is not JSON. A copy of `components/layout` is a note.
+  without a colour, a file that is not JSON. Notes: a copy of the `dispatcher` (or of
+  `components/layout`), a file for the handle of the composition's own name, a theme's view that
+  reads a variable not in `vars`.
 - `php artisan webx:doctor` — the trees build, and the compiled set is as its sources give it.
 - `php artisan webx:composition:compile` — compiles everything and prints the findings; exit
   code 1 when a tree cannot be built.
@@ -90,6 +96,9 @@ The tree of `layout` belongs to `webx-ui/theme-default` — read its guide for t
   first line (`storage/framework/compositions/build-*/`).
 - In a test of a package that adds to a composition: `use IsolatedCompositions` and assert no
   findings — a package's own files must apply cleanly.
+- A view turned into a composition: `use ComparesHtml` and `assertSameHtml($before, $after)` — the
+  same HTML up to the whitespace between tags. A Blade comment at the top of a leaf keeps its
+  newline: write `{{-- Why. --}}@if`.
 
 ## Read more
 

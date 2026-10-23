@@ -73,6 +73,11 @@ public function boot(): void
 
 `theme/compositions/layout/blog.article.json` — the same for one page type, over `default`.
 
+A base may also say `vars` — the variables its leaves get, `["article", "related"]` — and
+`dispatcher` — the view that includes it, `"webx-blog::article"`. They change nothing compiled:
+`webx:composition:show` prints them, and `webx:theme:check` looks for a copy of the dispatcher
+and notes a theme's view that reads a variable the leaves do not get.
+
 Operations apply in a fixed order within a file — `add`, `move`, `replace`, `attrs`, `props`,
 `remove` — and layer by layer: the base, the modules by id, the themes bottom up, the site's
 config. A patch that names a node that is not there is skipped and logged as a finding; the page
@@ -111,6 +116,9 @@ config, `vendor/composer/installed.php`) are newer than it, while Blade checks i
 
 `WebxUi\Compositions\Testing\IsolatedCompositions` gives a test a compiled set of its own, so a
 test that loads other modules does not read the set of the one before it.
+
+`WebxUi\Compositions\Testing\ComparesHtml` — `assertSameHtml($before, $after)`: the same HTML up
+to the whitespace between tags, the measure a view turned into a composition is held to.
 
 ## License
 

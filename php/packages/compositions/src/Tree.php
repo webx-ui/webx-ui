@@ -20,6 +20,12 @@ final class Tree
     /** @var list<string> the layers that touched the tree, in order */
     public array $layers = [];
 
+    /** @var list<string> the variables the leaves get from the place the composition is included (§2.2) */
+    public array $vars = [];
+
+    /** The view that includes the composition, when the base names it (§2.2). */
+    public ?string $dispatcher = null;
+
     public function __construct(public Node $root) {}
 
     public function find(string $id): ?Node
@@ -62,6 +68,8 @@ final class Tree
         $tree->findings = $this->findings;
         $tree->changes = $this->changes;
         $tree->layers = $this->layers;
+        $tree->vars = $this->vars;
+        $tree->dispatcher = $this->dispatcher;
 
         return $tree;
     }

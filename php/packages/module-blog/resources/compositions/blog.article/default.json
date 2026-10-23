@@ -1,6 +1,8 @@
 {
   "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
   "$comment": "The page of an article inside the layout (COMPOSITIONS §10, stage 4). The leaves are views of this module and keep their conditions: no date, no cover, no tags — no markup. The body of the blocks is rendered by article.blade.php before the layout, for @webxBlocks; article.content only prints it.",
+  "vars": ["article", "related", "content"],
+  "dispatcher": "webx-blog::article",
   "root": {
     "id": "root",
     "children": [

@@ -289,6 +289,8 @@ condition — no cover, no `<img>`:
 ```
 $ php artisan webx:composition:show blog.article --origin
 blog.article × default — from module-blog
+vars: $article, $related, $content
+dispatcher: webx-blog::article
 
 root                       group                                       module-blog
   article                  <article class="webx-blog-article">         module-blog
@@ -316,9 +318,61 @@ The cover above the title, no "Read next", a byline of the theme's own and a lea
 
 The view of the page (`webx-blog::article`) stays the shell: it renders the blocks first — the head
 prints the styles of what was rendered —, calls the layout with `handle="blog.article"` and the
-`head` slot, and includes the composition in the default slot. Its leaves see the page's variables
-(`$article`, `$related`), and so does a view a theme adds. The node ids, with what each prints, are
-in the [blog guide](./blog.md#the-article-page-is-a-composition) and module-blog's `AGENTS.md`.
+`head` slot, and includes the composition in the default slot. The node ids, with what each prints,
+are in the [blog guide](./blog.md#the-article-page-is-a-composition) and module-blog's `AGENTS.md`.
+
+**The handle of a page is `default`.** `blog.article` is the page of an article already, so its view
+includes it as `composition_view('blog.article')`, and a theme writes
+`blog.article/default.json`. A `blog.article/blog.article.json` is never read — `webx:theme:check`
+says so as a note. The handle `blog.article` is the layout's: `layout/blog.article.json` changes the
+shell around the article.
+
+**What the base says besides its tree.** Two keys of a base, both optional, never in a patch:
+
+```jsonc
+// module-blog/resources/compositions/blog.article/default.json
+{
+  "vars": ["article", "related", "content"],
+  "dispatcher": "webx-blog::article",
+  "root": { "id": "root", "children": [] },
+}
+```
+
+- `vars` — the variables every leaf gets from the place the composition is included. A view a theme
+  adds or puts in a node's place sees these and its own `with`, nothing else: `webx:theme:check`
+  reads its source and says, as a note, which variable it reads that the leaves do not get
+  (`byline: the view blog.byline reads $author — the leaves of blog.article get $article, …`).
+  A variant that `extends` without `vars` of its own gets its parent's.
+- `dispatcher` — the view that includes the composition, the one a site used to copy.
+  `webx:theme:check` looks for the copy by it (`views/vendor/webx-blog/article.blade.php`), not by a
+  guess from the composition's name. Each variant names its own.
+
+`webx:composition:show` prints both under the tree and in the overview; `--json` has `vars` and
+`dispatcher`. Nodes of a module's composition may carry the prefix of its entity — `article.title`,
+not `title` — so a patch and `show` say whose node it is.
+
+**Turning a view into a composition.** Without patches the page must print the same HTML up to
+the whitespace between tags — the leaves keep their conditions, and an `@if` that was indented
+inside the old file leaves its newline elsewhere. The test helper says exactly that:
+
+```php
+use WebxUi\Compositions\Testing\ComparesHtml;
+
+final class CardCompositionTest extends TestCase
+{
+    use ComparesHtml;
+
+    public function test_the_card_prints_what_it_printed(): void
+    {
+        $this->assertSameHtml(file_get_contents(__DIR__.'/Fixtures/card.html'), $this->get('/catalog/a')->getContent());
+    }
+}
+```
+
+Only whitespace that is all there is between `>` and `<` is forgiven; a space lost inside text, or
+between a word and a tag, still fails. Only `layout` is held to the bytes, by its golden file. A
+Blade comment at the top of a leaf keeps its newline in the output — glue its closing `--}}` to
+the first line: `--}}@if (…)`.
 
 ## Not compositions
 

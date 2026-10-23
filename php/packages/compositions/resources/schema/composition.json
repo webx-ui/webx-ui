@@ -14,6 +14,12 @@
         "$comment": {
           "type": "string"
         },
+        "vars": {
+          "$ref": "#/$defs/vars"
+        },
+        "dispatcher": {
+          "$ref": "#/$defs/name"
+        },
         "root": {
           "$ref": "#/$defs/baseNode"
         }
@@ -29,6 +35,12 @@
         },
         "$comment": {
           "type": "string"
+        },
+        "vars": {
+          "$ref": "#/$defs/vars"
+        },
+        "dispatcher": {
+          "$ref": "#/$defs/name"
         },
         "extends": {
           "type": "string",
@@ -104,6 +116,14 @@
     "name": {
       "type": "string",
       "minLength": 1
+    },
+    "vars": {
+      "description": "The variables every leaf gets from the place the composition is included, without $.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+      }
     },
     "literal": {
       "anyOf": [

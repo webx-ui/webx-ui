@@ -183,7 +183,17 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
   на `id`, которого нет, и пропущена с находкой в логе; на проде `view.check_cache_timestamps`
   выключен и набор не пересобран. Проверка — `php artisan webx:composition:show layout
 --handle=<хендл> --origin` (кто тронул узел) и `webx:theme:check`; после деплоя —
-  `webx:composition:compile` (шаг `webx:boot`).
+  `webx:composition:compile` (шаг `webx:boot`). У страничной композиции модуля (`blog.article`)
+  хендл — `default`: файл `theme/compositions/blog.article/blog.article.json` страница не читает,
+  `theme:check` даёт на него note — патч в `blog.article/default.json`.
+- **Лист композиции печатает лишний перевод строки — HTML разошёлся с прежним видом «пробелами».**
+  Комментарий Blade в начале листа вырезается, а перевод строки после `--}}` остаётся в выводе:
+  `{{-- Why. --}}` + перевод строки + `@if (…)` даёт пустую строку перед разметкой. Перевод строки
+  после директивы (`@endif`, `@php(…)`) Blade съедает, после комментария — нет. Эмиттер тут не
+  поможет: лист — обычный вид, его выводит `@include`. Лечение — комментарий «прилипает» к первой
+  строке: `{{-- Why. --}}@if (…)` (так написаны листья `module-blog/resources/views/article/*`).
+  Проверка — хелпер `WebxUi\Compositions\Testing\ComparesHtml::assertSameHtml()` прощает только
+  пробелы между тегами; побайтный золотой файл (`ArticleGoldenTest`) ловит и перевод строки.
 - **Сразу после `webx:composition:compile` набор «старее источников»** (`stale()` → true, doctor
   пишет note/warn) — в тесте и в скрипте, который правит JSON и тут же компилирует. Правило Blade:
   источник с `mtime` той же секунды, что и сборка, считается новее. Не баг; в тесте сдвинуть

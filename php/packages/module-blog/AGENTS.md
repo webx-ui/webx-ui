@@ -78,8 +78,8 @@ beside `{{ $head }}`; `php artisan webx:panel --sync` sets `layout` when the sit
 
 An article inside the layout is the composition `blog.article` (guide: compositions). Its nodes:
 `article`, `article.header`, `article.breadcrumbs`, `article.title`, `article.meta`, `article.cover`,
-`article.content` (protected), `article.tags`, `article.related`; leaves `webx-blog::article.*` see
-`$article`, `$related`. `webx:composition:show blog.article --origin` prints the final tree.
+`article.content` (protected), `article.tags`, `article.related`; leaves see its `vars` — `$article`,
+`$related`, `$content`; handle `default`, dispatcher `webx-blog::article`. `show blog.article` prints it.
 
 A screen patch addresses nodes by `id`. Article editor: `content`, `blocks`, `settings`,
 `naming`, `title`, `slug`, `lead`, `presentation`, `cover`, `publication`, `published-at`,

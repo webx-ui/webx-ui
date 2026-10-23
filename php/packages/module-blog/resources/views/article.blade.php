@@ -14,7 +14,8 @@
     </x-slot:head>
 
     {{-- The page itself is the composition blog.article (COMPOSITIONS §10): a theme moves, removes,
-         replaces and adds its nodes by id in compositions/blog.article/*.json instead of copying
-         this file. --}}
-    @include(composition_view('blog.article', 'blog.article'))
+         replaces and adds its nodes by id in compositions/blog.article/default.json instead of
+         copying this file. The handle is default: the composition is the page of an article
+         already. The leaves get $article, $related and $content from here — its `vars`. --}}
+    @include(composition_view('blog.article'))
 </x-dynamic-component>

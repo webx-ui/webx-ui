@@ -134,6 +134,7 @@ final class Builder
             }
         }
 
+        ['vars' => $tree->vars, 'dispatcher' => $tree->dispatcher] = $this->contract($composition);
         $this->built[$composition.'@'.$handle] = $tree;
 
         return $tree->copy();
@@ -151,6 +152,27 @@ final class Builder
         }
 
         return null;
+    }
+
+    /**
+     * What the base says about the composition besides its tree (§2.2): the variables its leaves
+     * get — a variant that `extends` without its own gets its parent's, it is included the same
+     * way — and the view that includes it, which is never inherited: each variant has its own.
+     *
+     * @param  list<string>  $seen  the compositions on the way up `extends`, for a circle
+     * @return array{vars: list<string>, dispatcher: string|null}
+     */
+    public function contract(string $composition, array $seen = []): array
+    {
+        [, $base] = $this->base($composition);
+        $vars = isset($base['vars']) ? array_values(array_map('strval', (array) $base['vars'])) : null;
+        $parent = isset($base['extends']) ? (string) $base['extends'] : null;
+
+        if ($vars === null && $parent !== null && ! in_array($parent, [...$seen, $composition], true)) {
+            $vars = $this->contract($parent, [...$seen, $composition])['vars'];
+        }
+
+        return ['vars' => $vars ?? [], 'dispatcher' => isset($base['dispatcher']) ? (string) $base['dispatcher'] : null];
     }
 
     private function layer(Tree $tree, Source $source, string $composition, string $handle, bool $skipDefault = false): void

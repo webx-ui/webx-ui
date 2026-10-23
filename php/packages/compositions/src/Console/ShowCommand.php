@@ -64,6 +64,8 @@ final class ShowCommand extends Command
                 'composition' => $composition,
                 'handle' => $handle,
                 'layers' => $tree->layers,
+                'vars' => $tree->vars,
+                'dispatcher' => $tree->dispatcher,
                 'tree' => $this->node($tree->root, $tree),
                 'removed' => $removed,
                 'findings' => array_map(static fn (Finding $finding): array => $finding->toArray(), $tree->findings),
@@ -73,6 +75,7 @@ final class ShowCommand extends Command
         }
 
         $this->line("<options=bold>{$composition} × {$handle}</> — from ".implode(', ', $tree->layers));
+        $this->contract($tree->vars, $tree->dispatcher);
         $this->newLine();
 
         $rows = [];
@@ -110,9 +113,12 @@ final class ShowCommand extends Command
                 }
             }
 
+            $contract = $inspector->builder()->contract($composition);
             $compositions[] = [
                 'name' => $composition,
                 'extends' => $inspector->builder()->parent($composition),
+                'vars' => $contract['vars'],
+                'dispatcher' => $contract['dispatcher'],
                 'handles' => $inspector->handles($composition),
                 'files' => $files,
             ];
@@ -140,6 +146,7 @@ final class ShowCommand extends Command
 
         foreach ($compositions as $composition) {
             $this->line("<options=bold>{$composition['name']}</>".($composition['extends'] === null ? '' : " extends {$composition['extends']}").' — handles: '.implode(', ', $composition['handles']));
+            $this->contract($composition['vars'], $composition['dispatcher'], '  ');
 
             foreach ($composition['files'] as $file) {
                 $this->line("  {$file['file']}  <fg=gray>{$file['kind']} {$file['layer']}</>");
@@ -182,6 +189,22 @@ final class ShowCommand extends Command
 
         foreach ($node->children as $child) {
             $this->rows($child, $tree, $depth + 1, $rows);
+        }
+    }
+
+    /**
+     * What the leaves get and which view includes them, when the base says it.
+     *
+     * @param  list<string>  $vars
+     */
+    private function contract(array $vars, ?string $dispatcher, string $indent = ''): void
+    {
+        if ($vars !== []) {
+            $this->line($indent.'vars: '.implode(', ', array_map(static fn (string $var): string => '$'.$var, $vars)));
+        }
+
+        if ($dispatcher !== null) {
+            $this->line("{$indent}dispatcher: {$dispatcher}");
         }
     }
 

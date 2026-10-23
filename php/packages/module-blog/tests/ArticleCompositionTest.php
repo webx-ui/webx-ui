@@ -15,8 +15,8 @@ use WebxUi\Media\Models\MediaFile;
 
 /**
  * The page of an article as the composition blog.article (COMPOSITIONS §10, stage 4): a theme
- * moves, removes, replaces and adds its nodes by id on the handle of the article — the four things
- * a site used to copy article.blade.php for.
+ * moves, removes, replaces and adds its nodes by id in compositions/blog.article/default.json — the
+ * four things a site used to copy article.blade.php for.
  */
 final class ArticleCompositionTest extends TestCase
 {
@@ -25,7 +25,7 @@ final class ArticleCompositionTest extends TestCase
     #[Test]
     public function the_module_gives_the_tree_and_nothing_in_it_is_a_finding(): void
     {
-        $tree = $this->app->make(Inspector::class)->tree('blog.article', 'blog.article');
+        $tree = $this->app->make(Inspector::class)->tree('blog.article');
 
         $this->assertSame(
             ['root', 'article', 'article.header', 'article.breadcrumbs', 'article.title', 'article.meta', 'article.cover', 'article.content', 'article.tags', 'article.related'],
@@ -34,6 +34,25 @@ final class ArticleCompositionTest extends TestCase
 
         $this->get($this->fullArticle())->assertOk();
         $this->assertSame([], $this->app->make(Compositions::class)->findings());
+    }
+
+    /** §2.2: what the leaves get from article.blade.php, and that this is the view a site would copy. */
+    #[Test]
+    public function the_base_says_what_its_leaves_get_and_which_view_includes_it(): void
+    {
+        $tree = $this->app->make(Inspector::class)->tree('blog.article');
+
+        $this->assertSame(['article', 'related', 'content'], $tree->vars);
+        $this->assertSame('webx-blog::article', $tree->dispatcher);
+        $this->assertStringContainsString("composition_view('blog.article')", (string) file_get_contents(View::getFinder()->find((string) $tree->dispatcher)));
+
+        foreach (['breadcrumbs', 'title', 'meta', 'cover', 'content', 'tags', 'related'] as $leaf) {
+            $source = (string) file_get_contents(View::getFinder()->find("webx-blog::article.{$leaf}"));
+            preg_match_all('/\$([a-z]+)\b(?!\s*=[^=>])/', (string) preg_replace('/\{\{--.*?--\}\}/s', '', $source), $read);
+            preg_match_all('/(?:\$([a-z]+)\s*=[^=>]|\bas \$([a-z]+))/', $source, $set);
+
+            $this->assertSame([], array_values(array_diff($read[1], $tree->vars, $set[1], $set[2], ['loop'])), "article.{$leaf} reads only what the base says its leaves get");
+        }
     }
 
     #[Test]
@@ -85,11 +104,20 @@ final class ArticleCompositionTest extends TestCase
     }
 
     #[Test]
-    public function a_patch_of_the_default_file_reaches_the_article_too(): void
+    public function a_theme_sets_attributes_of_the_article(): void
     {
-        $this->theme(['attrs' => ['article' => ['class' => 'is-wide', 'data-reading' => true]]], 'default');
+        $this->theme(['attrs' => ['article' => ['class' => 'is-wide', 'data-reading' => true]]]);
 
         $this->assertStringContainsString('<article class="webx-blog-article is-wide" data-reading>', $this->html());
+    }
+
+    /** §4: the page is included with `default`; a file for the handle of its own name is not read. */
+    #[Test]
+    public function a_file_for_the_handle_of_its_own_name_is_not_read(): void
+    {
+        $this->theme(['attrs' => ['article' => ['class' => 'is-wide']]], 'blog.article');
+
+        $this->assertStringContainsString('<article class="webx-blog-article">', $this->html());
     }
 
     #[Test]
@@ -129,7 +157,7 @@ final class ArticleCompositionTest extends TestCase
      *
      * @param  array<string, mixed>  $patch
      */
-    private function theme(array $patch, string $handle = 'blog.article'): void
+    private function theme(array $patch, string $handle = 'default'): void
     {
         $this->theme = sys_get_temp_dir().'/webx-blog-theme-'.str_replace('.', '', uniqid('', true));
         $dir = $this->theme.'/compositions/blog.article';

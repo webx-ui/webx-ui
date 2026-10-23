@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Themes\Checks;
 
 use Illuminate\Contracts\Foundation\Application;
+use InvalidArgumentException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -31,8 +32,10 @@ use WebxUi\Themes\Tokens;
  * attribute), a file for a handle no module names, a composition nobody has a base for, a node of
  * a theme with a module's prefix, a `place` on a container that is not there, a theme-color token
  * the chain has no colour for. A note: a view of the chain or the site that stands in for a
- * composition's dispatcher — the copy the composition was made to replace (§6.4) — and a view or
- * a directive of the base or a module the site has not installed.
+ * composition's dispatcher — the copy the composition was made to replace (§6.4) —, a view or a
+ * directive of the base or a module the site has not installed, a page composition's file for
+ * the handle of its own name (§4), and a view a theme put in a composition that reads a variable
+ * the base does not give its leaves (`vars`, §2.2).
  */
 final class CompositionCheck implements ThemeCheckPart
 {
@@ -89,8 +92,9 @@ final class CompositionCheck implements ThemeCheckPart
             $lines,
             ...$this->files($inspector, $layers, $compositions),
             ...$this->themeColors($trees, $chain),
-            ...$this->overrides($compositions, $viewPaths),
+            ...$this->overrides($inspector, $compositions, $viewPaths),
             ...$this->places($trees, $viewPaths),
+            ...$this->variables($inspector, $trees, $viewPaths, $site),
         );
 
         return $lines;
@@ -138,6 +142,14 @@ final class CompositionCheck implements ThemeCheckPart
 
                 foreach ($source->handles($composition) as $handle) {
                     $file = $source->where($composition, $handle);
+
+                    if ($handle === $composition) {
+                        // A page composition is included with `default` (§4): the handle is the
+                        // composition itself, a second file for it says what default.json says.
+                        $lines[] = ['file' => $file, 'line' => null, 'note' => true, 'message' => "the composition {$composition} is the page of {$handle} already: its handle is default — put this patch in {$composition}/default.json, the page never reads {$handle}.json"];
+
+                        continue;
+                    }
 
                     if (! isset($handles[$handle])) {
                         $lines[] = ['file' => $file, 'line' => null, 'message' => "unknown handle \"{$handle}\": no module names this page type (".implode(', ', array_keys($handles)).'), the file never applies'];
@@ -238,19 +250,26 @@ final class CompositionCheck implements ThemeCheckPart
      * @param  list<string>  $viewPaths
      * @return list<array{file: string, line: int|null, message: string, note: true}>
      */
-    private function overrides(array $compositions, array $viewPaths): array
+    private function overrides(Inspector $inspector, array $compositions, array $viewPaths): array
     {
         $lines = [];
 
         foreach ($compositions as $composition) {
-            // A component of a theme (`layout` → components/layout), or the view of a module's page
-            // a site copied over its namespace (`blog.article` → vendor/webx-blog/article).
-            $relatives = ['components/'.str_replace('.', '/', $composition).'.blade.php'];
+            $dispatcher = $inspector->builder()->contract($composition)['dispatcher'];
             $place = '<x-webx-composition::place id=\"body\" only=\"added\" />';
 
-            if (str_contains($composition, '.')) {
-                [$module, $view] = explode('.', $composition, 2);
-                $relatives[] = "vendor/webx-{$module}/".str_replace('.', '/', $view).'.blade.php';
+            if ($dispatcher !== null) {
+                // The base says which view includes it (§2.2): its copy is the one to look for.
+                $relatives = [self::relative($dispatcher)];
+            } else {
+                // A component of a theme (`layout` → components/layout), or the view of a module's
+                // page a site copied over its namespace (`blog.article` → vendor/webx-blog/article).
+                $relatives = ['components/'.str_replace('.', '/', $composition).'.blade.php'];
+
+                if (str_contains($composition, '.')) {
+                    [$module, $view] = explode('.', $composition, 2);
+                    $relatives[] = "vendor/webx-{$module}/".str_replace('.', '/', $view).'.blade.php';
+                }
             }
 
             foreach ($relatives as $relative) {
@@ -322,6 +341,115 @@ final class CompositionCheck implements ThemeCheckPart
         }
 
         return $lines;
+    }
+
+    /**
+     * A view a theme or the site put in a composition — added or in place of a node — that reads a
+     * variable the base does not give its leaves (`vars`, §2.2) nor the node its `with`: on the page
+     * it is an undefined variable. Read from the source, not rendered: a guess, so a note — the
+     * variables a view sets itself, loops and closures, the shared ones and Blade's own are not
+     * counted. Only where the base says its `vars`.
+     *
+     * @param  array<string, array<string, Tree>>  $trees
+     * @param  list<string>  $viewPaths
+     * @return list<array{file: string, line: int|null, message: string, note: true}>
+     */
+    private function variables(Inspector $inspector, array $trees, array $viewPaths, bool $site): array
+    {
+        $modules = array_map(static fn (Source $source): string => $source->label, array_filter($inspector->builder()->sources(), static fn (Source $source): bool => $source->kind === Source::MODULE));
+        $shared = array_keys($this->app['view']->getShared());
+        $lines = [];
+
+        foreach ($trees as $composition => $handles) {
+            foreach ($handles as $tree) {
+                if ($tree->vars === []) {
+                    continue;
+                }
+
+                foreach ($tree->root->walk() as $node) {
+                    if ($node->kind !== 'view' || $node->base || in_array($node->origin, $modules, true)) {
+                        continue;
+                    }
+
+                    $file = $this->viewFile($node->value, $viewPaths, $site);
+
+                    if ($file === null) {
+                        continue;
+                    }
+
+                    $missing = array_values(array_diff(self::reads((string) file_get_contents($file)), $tree->vars, array_keys($node->with), $shared));
+
+                    if ($missing !== []) {
+                        $given = implode(', ', array_map(static fn (string $var): string => '$'.$var, $tree->vars));
+                        $lines["{$composition}:{$node->id}:{$node->value}"] = ['file' => $this->changedBy($tree, $node->id) ?? $node->origin, 'line' => null, 'note' => true, 'message' => "{$node->id}: the view {$node->value} reads ".implode(', ', array_map(static fn (string $var): string => '$'.$var, $missing))." — the leaves of {$composition} get {$given}: take it from them or give it with \"with\""];
+                    }
+                }
+            }
+        }
+
+        return array_values($lines);
+    }
+
+    /**
+     * Where a view is: the views read first, then — on the site's own chain — the site's finder.
+     *
+     * @param  list<string>  $viewPaths
+     */
+    private function viewFile(string $view, array $viewPaths, bool $site): ?string
+    {
+        if (! str_contains($view, '::')) {
+            foreach ($viewPaths as $directory) {
+                $file = rtrim($directory, '/').'/'.str_replace('.', '/', $view).'.blade.php';
+
+                if (is_file($file)) {
+                    return $file;
+                }
+            }
+        }
+
+        if (! $site) {
+            return null;
+        }
+
+        try {
+            return $this->app['view']->getFinder()->find($view);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
+    }
+
+    /**
+     * The variables a Blade source reads and does not set: `$x = …`, `as $k => $v`, the parameters
+     * of a closure, and Blade's own (`$loop`, `$slot`, `$__env`…) are left out.
+     *
+     * @return list<string>
+     */
+    private static function reads(string $source): array
+    {
+        $source = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $source);
+        preg_match_all('/\$([A-Za-z_][A-Za-z0-9_]*)/', $source, $used);
+
+        $set = ['this', 'loop', 'slot', 'attributes', 'component', 'errors', 'app'];
+        preg_match_all('/\$([A-Za-z_][A-Za-z0-9_]*)\s*=(?![=>])/', $source, $assigned);
+        preg_match_all('/\bas\s+\$([A-Za-z_][A-Za-z0-9_]*)(?:\s*=>\s*\$([A-Za-z_][A-Za-z0-9_]*))?/', $source, $loops);
+        preg_match_all('/\b(?:fn|function)\s*\(([^)]*)\)/', $source, $closures);
+        preg_match_all('/\$([A-Za-z_][A-Za-z0-9_]*)/', implode(' ', $closures[1]), $parameters);
+
+        $set = [...$set, ...$assigned[1], ...$loops[1], ...array_filter($loops[2]), ...$parameters[1]];
+
+        return array_values(array_unique(array_filter($used[1], static fn (string $var): bool => ! str_starts_with($var, '__') && ! in_array($var, $set, true))));
+    }
+
+    /** A view name as a path under a directory of views: `webx-blog::article` → vendor/webx-blog/article.blade.php. */
+    private static function relative(string $view): string
+    {
+        if (str_contains($view, '::')) {
+            [$namespace, $view] = explode('::', $view, 2);
+
+            return "vendor/{$namespace}/".str_replace('.', '/', $view).'.blade.php';
+        }
+
+        return str_replace('.', '/', $view).'.blade.php';
     }
 
     /** The last file that put a node where it is — a replace or an add — for a finding about it. */

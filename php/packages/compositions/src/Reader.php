@@ -16,9 +16,14 @@ final class Reader
 {
     public const string ID = '/^[a-z0-9-]+(\.[a-z0-9-]+)*$/';
 
+    public const string VARIABLE = '/^[A-Za-z_][A-Za-z0-9_]*$/';
+
     private const array OPERATIONS = ['add', 'move', 'replace', 'attrs', 'props', 'remove'];
 
     private const array POSITIONS = ['before', 'after', 'first', 'last'];
+
+    /** What a base says about the composition besides its tree (§2.2): the leaves' variables, the view it stands in for. */
+    private const array CONTRACT = ['vars', 'dispatcher'];
 
     /** The keys each kind of node takes besides `id`, `$comment` and `protected`. */
     private const array KEYS = [
@@ -38,7 +43,7 @@ final class Reader
      */
     public function check(array $data, string $file, bool $default): void
     {
-        $allowed = ['$schema', '$comment', 'root', 'extends', ...self::OPERATIONS];
+        $allowed = ['$schema', '$comment', 'root', 'extends', ...self::CONTRACT, ...self::OPERATIONS];
 
         foreach (array_keys($data) as $key) {
             if (! in_array($key, $allowed, true)) {
@@ -61,6 +66,8 @@ final class Reader
         if (isset($data['extends']) && (! is_string($data['extends']) || $data['extends'] === '')) {
             throw $this->refuse($file, 'extends names a composition');
         }
+
+        $this->contract($data, $file);
 
         if (isset($data['root'])) {
             $this->node($data['root'], $file, 'root', base: true);
@@ -125,6 +132,39 @@ final class Reader
         }
 
         return $node;
+    }
+
+    /**
+     * `vars` and `dispatcher` of a base (§2.2): the variables every leaf gets from the place the
+     * composition is included, and the view that includes it — the one a site copies.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function contract(array $data, string $file): void
+    {
+        foreach (self::CONTRACT as $key) {
+            if (array_key_exists($key, $data) && ! $this->isBase($data)) {
+                throw $this->refuse($file, "{$key} is said by the base of a composition, not a patch");
+            }
+        }
+
+        if (array_key_exists('vars', $data)) {
+            $vars = $data['vars'];
+
+            if (! is_array($vars) || ! array_is_list($vars)) {
+                throw $this->refuse($file, 'vars lists the names of variables');
+            }
+
+            foreach ($vars as $var) {
+                if (! is_string($var) || preg_match(self::VARIABLE, $var) !== 1) {
+                    throw $this->refuse($file, 'vars lists the names of variables without $: "article", not '.json_encode($var));
+                }
+            }
+        }
+
+        if (array_key_exists('dispatcher', $data) && (! is_string($data['dispatcher']) || $data['dispatcher'] === '')) {
+            throw $this->refuse($file, 'dispatcher names a view: "webx-blog::article"');
+        }
     }
 
     /** @param array<string, mixed> $data */

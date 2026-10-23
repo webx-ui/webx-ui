@@ -1,0 +1,6 @@
+{
+  "add": [
+    { "id": "byline", "to": "article", "view": "components.byline" },
+    { "id": "stamp", "to": "article", "view": "components.stamp", "with": { "year": "2026" } }
+  ]
+}
