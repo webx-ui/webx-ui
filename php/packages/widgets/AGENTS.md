@@ -16,19 +16,19 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Behaviours by attribute** — `data-webx-disclosure="<id>"`, `data-webx-dialog="<id>"` (a modal
   `<dialog>`; `[data-webx-dialog-close]`, a URL ending in `#<id>` opens it),
   `data-webx-tabs` around `[data-webx-tab]` panels, `data-webx-accordion="single"` on `<details>`.
-  Components: `<x-webx-dialog id title close>`, `<x-webx-tabs label>` + `<x-webx-tabs.panel title>`.
+  Components: `<x-webx-dialog id title description close sheet>` (`sheet` — from the bottom below 40rem), `<x-webx-tabs label>` + `<x-webx-tabs.panel title>`.
 - **Header** — `<x-webx-header>`: slots `topbar`, `brand`, default (navigation), `actions`,
   `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` measures, a width, `never`),
   `breakpoint` (960, without JavaScript), `sticky` (`none|sticky|hide-on-scroll`), `overlay`,
   `skip`, `mode`/`side` of the mobile menu it builds from its own parts. Inside:
   `<x-webx-header.nav :items="menu('header')" :mega>` — items are `menu()` trees or arrays.
 - **Mobile menu** — `<x-webx-mobile-menu side breakpoint history>` with slots `top`, default,
-  `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill">` inside.
+  `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill" parent="repeat|split">` inside (`split`: the section's name is the link, an arrow opens it; also `<x-webx-header parent>`).
 - **Dropdown** — `<x-webx-dropdown placement open-on="click|hover">` with slot `trigger`: a
   `<details>` without JavaScript, a popover turned over at the window's edge with it; one open.
 - **Form in a dialog** — a link to `#webx-form-<slug>` or `data-webx-form="<slug>"` opens that
   `module-inbox` form in a dialog printed once per slug; `data-webx-form-value-<field>` fills a
-  hidden field; `Widgets::form('<slug>')` for an opener the server does not print.
+  hidden field; `Widgets::form('<slug>')` for an opener the server does not print. `data-webx-sheet` on an opener, `Widgets::form($slug, sheet: true)` or `form_dialog.sheet` — a sheet on a phone.
 - **Cookie consent** — the package prints the banner on every themed page; the footer has
   `<x-webx-consent-link />`. Categories: necessary, preferences, statistics, marketing, media.
   Third-party code waits: `<script type="text/plain" data-webx-consent="statistics">`,

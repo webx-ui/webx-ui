@@ -737,7 +737,7 @@ What it prints, in short:
 - **The fields** are `<x-webx-field>` named `fields.<machine name>` — the eleven types of the panel
   are the widgets' own (`text`, `email`, `tel`, `textarea`, `select`, `radio`, `checkbox`,
   `consent`, `date`, `file`, `hidden`); «half width» in the panel is
-  `webx-inbox-form__field--half`, two to a row from 32rem of the form.
+  `webx-inbox-form__field--half`, two to a row from 24rem of the form.
 - **No token:** `:csrf="false"` — the intake guards itself (the origin, the honeypot, the
   timestamp, the limit per address), so a page cached whole for a day still sends.
 - **The checks** are the intake's own rules — `required`, `email`, `max` of a line, `in` of the

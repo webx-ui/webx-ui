@@ -128,6 +128,12 @@ page that says "form not found" to a customer is worse than a page with one sect
 `:values` fills the hidden fields by machine name: which page, which product, which campaign. That
 is what a machine name is for.
 
+**The description** — General → Description in the panel, `options.description` in the API and
+MCP — is a line over the fields (`webx-inbox-form__description`), in the page's language; plain
+text with the site's shortcodes, as in any other text. In a dialog it stands under the dialog's
+title instead and the form does not print it again (`:description="false"` does the same for a
+dialog of your own). Empty — nothing is printed.
+
 **It works without JavaScript.** The form posts, the intake answers with a redirect, and the page
 comes back with the errors under their fields or the thank-you under them — through the session,
 which is why the intake keeps one. With JavaScript the widgets' `form.js` does the same in place
@@ -183,7 +189,8 @@ theme restyles all of it in its `src/css` ([where the styles live](./styles.md#a
 | Class                                                    | What                                            |
 | -------------------------------------------------------- | ----------------------------------------------- |
 | `webx-inbox-form`, `webx-inbox-form--<placement>`        | on the `<form>`, beside `webx-form`             |
-| `webx-inbox-form__fields`                                | the fields, two to a row from 32rem of the form |
+| `webx-inbox-form__description`                           | the form's description, over the fields         |
+| `webx-inbox-form__fields`                                | the fields, two to a row from 24rem of the form |
 | `webx-inbox-form__field`, `webx-inbox-form__field--half` | on each `webx-field`; half width in the panel   |
 | `webx-inbox-form__captcha`                               | the captcha and its error                       |
 | `webx-inbox-form__actions`                               | the button's row                                |
@@ -549,7 +556,8 @@ editor does: a slug that is not an address and a recipient nobody can be written
 here too. A save changes only what it names — a field nobody mentioned is left alone, a field
 matched by id or machine name is updated, one sent with `remove: true` is put aside so the answers
 given through it stay readable. Everything that changes something takes `dry_run: true` and then
-reports what it would have done.
+reports what it would have done. The form's description is `options.description`, per language,
+like the thank-you.
 
 **Two things are deliberately missing.** Receiving a submission is not a tool: the intake is a
 public door with the antispam in front of it, and a second way in that skipped both would be the

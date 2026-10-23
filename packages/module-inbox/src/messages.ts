@@ -40,6 +40,9 @@ export const inboxMessages: Record<string, Messages> = {
     reorder: 'Reorder',
     'new-form-title': 'New form',
     title: 'Title',
+    description: 'Description',
+    'description-help':
+      'A line under the title of the form on the site and in a dialog. Empty — nothing is shown.',
     slug: 'Address',
     'slug-help': 'What the form is called on the site and where it posts.',
     'is-enabled': 'Active',

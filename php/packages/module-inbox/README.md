@@ -159,7 +159,7 @@ attributes. `none` is reserved: it is what the filter says for "the page did not
 The fields, the messages and the button are the widgets' `webx-field-*` and `webx-form-*`, the
 same classes as every form of the site. On a site with a theme (`webx-ui/themes`) the package
 brings only its layout, `resources/theme/inbox.css`: fields two to a row where the panel marked
-them half width (`webx-inbox-form__field--half`) and the form is at least 32rem wide. The theme
+them half width (`webx-inbox-form__field--half`) and the form is at least 24rem wide. The theme
 restyles all of it without publishing a view. A site without a theme gets no stylesheet of ours —
 only the scripts, through `@webxWidgets` (above) — and styles the same classes in its own CSS.
 

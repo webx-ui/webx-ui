@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Submission;
 
@@ -431,6 +432,23 @@ final class PublicFormTest extends TestCase
         $this->form('contact', [], ['design.submit-text' => ['en' => 'Ask for a quote']]);
 
         $this->assertStringContainsString('<button type="submit" class="webx-form__submit">Ask for a quote</button>', $this->render());
+    }
+
+    #[Test]
+    public function the_description_stands_over_the_fields_with_its_shortcodes_and_its_text_escaped(): void
+    {
+        app(Shortcodes::class)->register('phone', '<a href="tel:+80012345678">+800 1234 5678</a>', plain: '+800 1234 5678');
+        $this->form('contact', [], ['description' => ['en' => 'Call <b>us</b> on [phone]', 'de' => 'Rufen Sie an']]);
+
+        $this->assertMatchesRegularExpression('~<p class="webx-inbox-form__description">Call &lt;b&gt;us&lt;/b&gt; on <a href="tel:\+80012345678">\+800 1234 5678</a></p>\s*<div class="webx-inbox-form__fields">~', $this->render());
+    }
+
+    #[Test]
+    public function a_form_without_a_description_prints_no_empty_line(): void
+    {
+        $this->form('contact', [], ['description' => ['en' => '   ']]);
+
+        $this->assertStringNotContainsString('webx-inbox-form__description', $this->render());
     }
 
     #[Test]

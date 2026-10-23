@@ -66,6 +66,14 @@ No component needed — the attributes are enough, in a block template or in a t
 
 The components `<x-webx-dialog>` and `<x-webx-tabs>` print the same markup for you.
 
+`<x-webx-dialog id="call" title="Call me back" description="We call within 15 minutes." sheet>` —
+`description` is a line under the title, the dialog's accessible description; `sheet` makes it a
+sheet from the bottom on a window narrower than 40rem: the whole width, rounded on top, scrolling
+inside, sliding in unless the visitor asked for less motion. Wider, and without `sheet`, it is the
+card in the middle it always was. The window and not a container decides here — a modal dialog
+lies over the viewport, outside every container of the page — so the runtime measures it and marks
+the open dialog `is-sheet`, turning it with the phone; without JavaScript it stays a card.
+
 ## Header and mobile menu
 
 ```blade
@@ -82,6 +90,12 @@ top, the menu's tree in the body (`drill` or `accordion`), the actions at the bo
 on a link, on "Back" and on a swipe. `--webx-header-height` stays live, so an anchor under a
 sticky header keeps its heading in view.
 
+In an `accordion` a section that is a page itself is repeated as the first line of its branch.
+`parent="split"` — on `<x-webx-mobile-menu.nav>` or on `<x-webx-header>` — makes the section's
+name the link and opens the branch with an arrow beside it, «Submenu: …» to a screen reader, so
+the same page is not offered twice. A section without a page of its own opens by its name either
+way; `drill` keeps the section's name as a link on top of its level.
+
 ## Dropdown and form in a dialog
 
 `<x-webx-dropdown>` is a `<details>` — a click opens it without JavaScript; with it the panel is
@@ -89,6 +103,9 @@ placed from its button and turned over at the window's edge, and one is open on 
 
 Any link to `#webx-form-<slug>` — typed into a menu item or a block's button in the panel — opens
 that `module-inbox` form in a dialog, printed once per page however many buttons lead to it.
+The form's description stands under the dialog's title. `data-webx-sheet` on any of its buttons
+(or `Widgets::form('callback', sheet: true)`, or `webx-widgets.form_dialog.sheet` for every form)
+opens it as a sheet from the bottom on a phone.
 
 ## Cookie consent
 

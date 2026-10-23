@@ -25,7 +25,7 @@ use WebxUi\Inbox\Notifications\Channels;
 final class FormOptions
 {
     /** Words, in every language the site publishes in. */
-    public const TRANSLATED = ['thank-you.heading', 'thank-you.text', 'design.submit-text'];
+    public const TRANSLATED = ['description', 'thank-you.heading', 'thank-you.text', 'design.submit-text'];
 
     /** Plain strings. */
     public const TEXT = ['email_field'];
