@@ -1,5 +1,66 @@
 # @webx-ui/php
 
+## 0.86.0
+
+### Minor Changes
+
+- 0dd879d: The page of a blog article is the composition `blog.article`: `article`, `article.header`, `article.breadcrumbs`, `article.title`, `article.meta`, `article.cover`, `article.content` (protected), `article.tags`, `article.related`, each leaf a view of module-blog (`webx-blog::article.*`). A theme moves the cover above the title, drops "Read next", prints the byline with a view of its own or adds a node before the text in `theme/compositions/blog.article/default.json` — no copy of `article.blade.php`. The HTML of an article without a patch is the same but for the whitespace between tags. module-blog now requires `webx-ui/compositions`.
+
+  A site with its own `resources/views/vendor/webx-blog/article.blade.php` (or a theme's `views/vendor/webx-blog/article.blade.php`) keeps it: the copy wins over the composition, and `webx:theme:check` says so as a note. To go back to the package's page: `php artisan webx:composition:show blog.article --blade` prints what the composition gives, the difference with the copy becomes a patch, and the copy is deleted.
+
+  `webx:theme:check` notes a copy of a module's page that a composition replaced (`vendor/webx-<module>/<view>.blade.php` for `<module>.<view>`), not only `components/layout.blade.php`.
+
+  Fix: a module that loads its compositions as `__DIR__.'/../resources/compositions'` — module-seo, module-snippets, module-blog — is named after its package. They were all one layer named `..`, and the last one loaded replaced the others: on a site with module-seo and module-snippets one of them added nothing to the layout.
+
+- 0dd879d: Compositions after the pilot: a base says `vars` — the variables its leaves get — and `dispatcher` — the view that includes it; `webx:composition:show` prints both (`--json` too), and the JSON schema knows them. `webx:theme:check` looks for a copy of a composition by its `dispatcher`, notes a file for the handle of a page composition's own name (`blog.article/blog.article.json`) and a theme's view that reads a variable the leaves do not get. `WebxUi\Compositions\Testing\ComparesHtml::assertSameHtml()` compares HTML up to the whitespace between tags. module-blog: the article includes `blog.article` with the handle `default` — a theme patches `compositions/blog.article/default.json`; the base says `vars` (`article`, `related`, `content`) and `dispatcher` (`webx-blog::article`).
+- 0dd879d: theme-default: the header and the footer are the compositions `header` and `footer` — the fallbacks of their regions, as before, with every piece a node a theme patches by id in `theme/compositions/header/default.json` (or `footer/`): `header.contacts` (above the bar), `header.logo`, `header.nav`, `header.phones`, `header.cta`, `header.languages`; `footer.contacts`, `footer.menu`, `footer.consent`, `footer.copy` in the columns of `footer.inner`. The announcement bar goes into the header with `{"remove": ["notice-bar"]}` in `layout/default.json` and an `add` of `webx-notice-bar` to `header.topbar`. Without a patch the HTML is the same up to the whitespace between tags. A named slot of a component is a `tag` node `x-slot:<name>` among its children (elsewhere a finding). `ComparesHtml` counts the indent between a tag and its text as one space.
+
+  **A site or a theme with its own `components/header.blade.php` (or `footer`)** keeps printing it; `webx:theme:check` now notes the copy. To go over: `php artisan webx:composition:show header --blade` prints what the composition gives; write the differences as a patch — `replace` of `header.logo` for a logo of your own, `add` to `header.actions` or `header.topbar` for a node of your own, `remove` of what you do not show, `attrs`/`props` of `header` for its classes and stickiness —, delete the copy and compare the page before and after. A view of the theme in a node's place gets `$nav`, `$calls`, `$contacts`, `$hours`, `$email`, `$phones`, `$languages` (the footer: `$contacts`, `$address`, `$items`).
+
+- 0dd879d: New library `webx-ui/compositions`: a compound view as a tree of nodes with ids, which modules add their pieces to and a theme or the site patches by id — `attrs` (`true` bare, `false`/`null` off, `class` appended), `add`, `move`, `replace`, `props`, `remove` — for every page (`default`) or for one page type (`blog.article`), without a copy of the view. The trees are compiled into ordinary Blade views on `webx:boot` (`webx:composition:compile`, before `view:cache`) and again on a request whose JSON is newer, the way Blade checks its own views; a request merges nothing. A patch that names a node that is not there is skipped and logged, the page renders.
+
+  The layout of `webx-ui/theme-default` is the first composition: `compositions/layout/default.json`, and `<x-layout>` prints its compiled variant. The HTML is the one it printed before, plus `<meta name="theme-color">` from the token `color-bg` (two tags with `media` when the dark scheme gives another value; `@webxThemeColor` in `webx-ui/themes`, another token as its argument). The pieces the layout used to know come from their packages now: `module-snippets` (`snippets.head`, `snippets.body-start`, `snippets.body-end`), `module-seo` (`seo.faq`, `seo.links` in `main` after the page), `widgets` (`widgets.contact-button` after the footer). Two more shells: `<x-layout.minimal>` (the brand for a header, no footer, for a checkout) and `<x-layout.blank>` (an empty document for a promo). The public views of the modules name their page type: `<x-layout handle="blog.article">`, `pages.page`, `services.show`, `catalog.product` and the rest.
+
+  Turn on smooth scrolling without a copy of the layout — `theme/compositions/layout/default.json`:
+
+  ```json
+  { "attrs": { "html": { "data-webx-smooth-scroll": true } } }
+  ```
+
+  **A site with its own `components/layout.blade.php`** (in `theme/views/` or `resources/views/`): nothing changes on its pages — the file stands above the theme's and prints instead of the composition, as before. What it no longer gets is what the packages now add to the tree: the `theme-color` tag, and any piece a module adds in a later release. To move over: compare the copy with the theme's layout, write each difference as a patch in `theme/compositions/layout/default.json` (or `<handle>.json` for one page type), delete the copy and compare the HTML of a page before and after. To keep markup of your own and still get the modules' pieces, print them where they go: `<x-webx-composition::place id="main" only="added" />`, `<x-webx-composition::place id="body" only="added" />`. A copy that rendered the modules' pieces itself through `view()->exists('webx-seo::faq')` or `webx-snippets::place` keeps working.
+
+- 0dd879d: `php artisan webx:composition:show` — the compositions with their handles and the files of every layer; with a name, the final tree of a page type (`--handle=blog.article`), and with `--origin` the layer that put each node there and every file that moved, replaced, removed or changed it since. `--json` gives the same with the origin always in it, `--blade` the view the compiler writes.
+
+  `webx:theme:check` checks the compositions over the chain: a file that is not JSON or breaks the schema, a tree that does not build, an id that is not there, a duplicate, a protected node, a reserved attribute, a file for a page type no module names (`unknown handle`), a composition no layer has a base for, a theme's node with a module's prefix (`seo.*`), `<x-webx-composition::place>` on a container that is not there, a `@webxThemeColor` token without a colour — each a finding with its file. A `components/layout.blade.php` of the site or the theme that stands in for the composition is a note. The modules with public pages declare their page types (`Compositions::handles()`) for it.
+
+  `webx:doctor` (and `--json`) says whether the trees build, whether a patch names what is there, and whether the compiled set is the one the sources give — a warning when it is older and the mtime check is off, the way production runs after `view:cache` — and notes a module page that calls the layout without `handle`.
+
+  The guide [Compositions](https://webx-ui.github.io/webx-ui/guide/compositions) — the format, the operations, the handles, debugging; smooth scrolling, the dark scheme's early script and rule 21 of `RULES.md` are a patch now, not a copy of the layout.
+
+- 0dd879d: A form of the Inbox has a description: General → Description in the panel, `options.description` per language in the API and in MCP (`inbox_form_get`, `inbox_form_save`). On the site it is a line over the fields (`webx-inbox-form__description`), plain text with the site's shortcodes; in a dialog it stands under the dialog's title (`aria-describedby`) and the form inside does not print it again. A form without one prints nothing.
+
+  A dialog can be a sheet from the bottom on a phone: `<x-webx-dialog sheet>` (`webx-dialog--sheet`) below 40rem of the window — the whole width, rounded on top, scrolling inside, sliding in unless reduced motion is asked for. The runtime measures the window (`is-sheet` on the open dialog, following a turned phone); without JavaScript it stays a card. A form in a dialog becomes one with `data-webx-sheet` on any of its openers, `Widgets::form('<slug>', sheet: true)` or `webx-widgets.form_dialog.sheet`. `<x-webx-dialog description>` prints a line under the title. Off by default: a dialog is the card in the middle it was.
+
+  The fields marked half width in the Inbox stand two to a row from 24rem of the form instead of 32rem: a dialog of 480px gets its pairs, a phone of 360px one field to a row.
+
+  The mobile menu's accordion can stop repeating a section's own page inside its branch: `<x-webx-mobile-menu.nav parent="split">` (or `<x-webx-header parent="split">`) makes the section's name the link and opens the branch by an arrow beside it, labelled «Submenu: …» like the header's. The default, `repeat`, is what it was.
+
+### Patch Changes
+
+- 0dd879d: `WxRichText`'s toolbar wraps a group at a time: no divider is left at the start or the end of a
+  line, and every button stays on screen. The expand button follows the last group instead of
+  standing alone at the far end, and the language chip sits on the middle of the first line of
+  buttons. In a form the editor stops at the new `--wx-size-field-wide` token (768px) rather than at
+  the 640px of an input — the whole toolbar, language chip included, is one line there; a narrower
+  card still wraps it. Ordinary fields keep 640px, now also a token, `--wx-size-field`.
+- 0dd879d: `webx-ui/site`: whom the site believes `X-Forwarded-*` from (https and the visitor's IP) moves from `bootstrap/app.php` to `config/trustedproxy.php`. The default is unchanged in spirit and a little wider on loopback — `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1`, `fc00::/7`; a public address is never believed. A proxy elsewhere (a CDN) is named in `TRUSTED_PROXIES` in `.env`, comma-separated, and replaces the default. The skeleton's `TrustedProxiesTest` now checks the IP as well as the scheme, the env list, and asks with a full `http://` address — a relative path was resolved against `APP_URL`, so on a site whose `.env` said `https://` the request was secure before any proxy was asked and the public-address test failed for that reason alone.
+
+  `webx:doctor` warns when every address is trusted (`*`, `**`, `0.0.0.0/0`, `::/0`), from the config or from `trustProxies(at: ...)` in `bootstrap/app.php`.
+
+  `module-seo`: the address normalisation and the redirects table, both global middleware, let a request through when their tables are not there (before `migrate`, a site's test without `RefreshDatabase`) instead of answering 500 on every page.
+
+  **Existing sites** keep their own `bootstrap/app.php`, and a release does not change it. Their `trustProxies(at: [...private networks...])` is already safe; to take the env-driven list: copy `config/trustedproxy.php` from the skeleton, remove the `trustProxies(at: ...)` call from `bootstrap/app.php` (it wins over the config), and copy `tests/Feature/TrustedProxiesTest.php` (its `RefreshDatabase` can go). A site that trusts `'*'` there should replace it with its proxy's addresses. Then `php artisan config:clear` and `php artisan webx:doctor`.
+
 ## 0.85.0
 
 ### Minor Changes
