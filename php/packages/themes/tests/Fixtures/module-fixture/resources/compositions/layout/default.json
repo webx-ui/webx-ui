@@ -1,0 +1,33 @@
+{
+  "root": {
+    "id": "html",
+    "tag": "html",
+    "protected": true,
+    "children": [
+      {
+        "id": "head",
+        "tag": "head",
+        "protected": true,
+        "children": [
+          { "id": "meta.theme-color", "directive": "webxThemeColor" },
+          { "id": "head.stack", "stack": "head", "protected": true }
+        ]
+      },
+      {
+        "id": "body",
+        "tag": "body",
+        "protected": true,
+        "children": [
+          {
+            "id": "main",
+            "tag": "main",
+            "attrs": { "id": "content" },
+            "protected": true,
+            "children": [{ "id": "content", "slot": "default", "protected": true }]
+          },
+          { "id": "footer", "html": "<footer></footer>" }
+        ]
+      }
+    ]
+  }
+}

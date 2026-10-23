@@ -1,0 +1,6 @@
+{
+  "theme": {
+    "title": "Composed",
+    "uses": ["webx-ui/theme-fixture"]
+  }
+}

@@ -22,6 +22,7 @@ use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
+use WebxUi\Compositions\Compositions;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -71,6 +72,12 @@ class ServicesServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-services');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-services');
+
+        // The page types its views name to the layout, so a theme's file for a misspelt one is a
+        // finding of webx:theme:check (COMPOSITIONS §4).
+        if (class_exists(Compositions::class)) {
+            Compositions::handles('services', ['services.category', 'services.index', 'services.show']);
+        }
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->registerRouteTypes();

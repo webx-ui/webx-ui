@@ -19,12 +19,14 @@ use WebxUi\Cache\CacheGroups;
 use WebxUi\Cache\CacheServiceProvider;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Compositions\CompositionsServiceProvider;
+use WebxUi\Themes\Checks\CompositionCheck;
 use WebxUi\Themes\Console\CheckCommand;
 use WebxUi\Themes\Console\EjectCommand;
 use WebxUi\Themes\Console\ExtractCommand;
 use WebxUi\Themes\Console\MakeCommand;
 use WebxUi\Themes\Console\ShowCommand;
 use WebxUi\Themes\Console\SyncCommand;
+use WebxUi\Themes\Contracts\ThemeCheckPart;
 use WebxUi\Themes\Doctor\FontsCheck;
 use WebxUi\Themes\View\Components\Icon;
 
@@ -56,6 +58,9 @@ class ThemeServiceProvider extends ServiceProvider
 
         // The compositions too: the layers of the chain are the themes' layers of every composition.
         $this->app->register(CompositionsServiceProvider::class);
+
+        // The compositions of the chain in webx:theme:check (COMPOSITIONS §8).
+        $this->app->tag([CompositionCheck::class], ThemeCheckPart::TAG);
 
         $this->app->singleton(ThemeLocator::class, fn (Application $app) => new ThemeLocator($app->basePath()));
 

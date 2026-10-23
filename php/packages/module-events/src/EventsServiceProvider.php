@@ -21,6 +21,7 @@ use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
+use WebxUi\Compositions\Compositions;
 use WebxUi\Events\Audit\EventContentSource;
 use WebxUi\Events\Handlers\CategoryHandler;
 use WebxUi\Events\Handlers\EventHandler;
@@ -79,6 +80,12 @@ class EventsServiceProvider extends ServiceProvider
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-events');
+
+        // The page types its views name to the layout, so a theme's file for a misspelt one is a
+        // finding of webx:theme:check (COMPOSITIONS §4).
+        if (class_exists(Compositions::class)) {
+            Compositions::handles('events', ['events.category', 'events.index', 'events.show']);
+        }
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->registerRouteTypes($prefix);
