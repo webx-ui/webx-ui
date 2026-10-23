@@ -196,6 +196,23 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function the_description_is_written_per_language_and_an_empty_one_is_dropped(): void
+    {
+        $this->form();
+
+        $content = $this->content($this->agent('form_save', [
+            'form' => 'contact',
+            'options' => ['description' => ['en' => 'We answer within a day.', 'de' => '  ']],
+        ])->assertOk());
+
+        $this->assertSame(['en' => 'We answer within a day.'], $content['form']['options']['description']);
+
+        $content = $this->content($this->agent('form_save', ['form' => 'contact', 'options' => ['description' => ['en' => '']]])->assertOk());
+
+        $this->assertArrayNotHasKey('description', $content['form']['options']);
+    }
+
+    #[Test]
     public function a_new_question_sent_without_a_name_is_named_after_its_title(): void
     {
         $this->form();

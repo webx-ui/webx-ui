@@ -24,7 +24,7 @@
 @php($zoom = in_array(config('webx-catalog.images.zoom'), ['inner', 'side'], true) ? config('webx-catalog.images.zoom') : null)
 @php($shown = max(320, (int) config('webx-catalog.images.shown', 1200)))
 
-<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
+<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'" handle="catalog.product">
     <x-slot:head>
         {{-- The SEO card, then the product's own name, summary and main picture where the card is
              empty (`seoFallback()`), then the site defaults. --}}

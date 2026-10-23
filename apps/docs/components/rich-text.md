@@ -163,11 +163,24 @@ whichever way it was typed — see [below](#sanitise-on-the-server-anyway).
 A read-only field still opens its source, to be read. A field that should not show it leaves
 `source` out of `tools`.
 
+## The toolbar
+
+The dividers in `tools` mark out groups, and a toolbar narrower than its buttons wraps a group at
+a time: bold never ends a line with italic starting the next, and no divider is left at either end
+of a line. Every button stays on screen — nothing folds into a "more" menu. The placeholder button
+joins the last group, beside the source; the button that opens the editor over the window is a
+group of its own right after it. A localized field keeps its language chip at the right of the
+first line of buttons, and the toolbar leaves room for it on every line.
+
+In a form the editor stops at `--wx-size-field-wide` (768px), a little wider than an input: at
+that width the whole default toolbar, language chip included, is one line. A narrower card narrows
+it, and the toolbar wraps.
+
 ## Over the whole window
 
-A field in a form is as wide as the column the form's other fields are — a line long enough to read
-— and a long description outgrows that height-wise long before it does width-wise. The button at
-the far end of the toolbar opens the same editor over the whole window: the caret and the
+A field in a form is about as wide as the column the form's other fields are — a line long enough
+to read — and a long description outgrows that height-wise long before it does width-wise. The
+button after the last group of the toolbar opens the same editor over the whole window: the caret and the
 selection stay where they were, the language chip still swaps the document, and the button or Esc
 gives the form back. Esc closes the link bar or the placeholder list first, when one is open.
 

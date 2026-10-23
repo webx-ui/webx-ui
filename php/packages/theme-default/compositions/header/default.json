@@ -1,0 +1,34 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The site's header (COMPOSITIONS §10.3): the fallback of the header region, `<x-webx-header>` with its slots as nodes — `x-slot:topbar` above the bar, `x-slot:brand`, the navigation in the default slot, `x-slot:actions`. The widget's own Skip to content is off: the layout prints its own first in <body>, there when a region from the panel replaces this header.",
+  "vars": ["nav", "calls", "contacts", "hours", "email", "phones", "languages"],
+  "dispatcher": "components.header",
+  "root": {
+    "id": "header",
+    "component": "webx-header",
+    "attrs": { "class": "site-header" },
+    "props": { "sticky": "sticky", "mode": "drill", "skip": false },
+    "children": [
+      {
+        "id": "header.topbar",
+        "tag": "x-slot:topbar",
+        "children": [{ "id": "header.contacts", "view": "components.header.contacts" }]
+      },
+      {
+        "id": "header.brand",
+        "tag": "x-slot:brand",
+        "children": [{ "id": "header.logo", "view": "components.header.logo" }]
+      },
+      { "id": "header.nav", "view": "components.header.nav" },
+      {
+        "id": "header.actions",
+        "tag": "x-slot:actions",
+        "children": [
+          { "id": "header.phones", "view": "components.header.phones" },
+          { "id": "header.cta", "view": "components.header.cta" },
+          { "id": "header.languages", "view": "components.header.languages" }
+        ]
+      }
+    ]
+  }
+}

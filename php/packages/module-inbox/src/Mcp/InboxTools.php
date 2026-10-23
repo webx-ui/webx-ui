@@ -98,7 +98,8 @@ final class InboxTools
                 .'`notifies: false` mean nobody is. `form.notify_via` is how a submission is told about: `email` — a letter to the recipients, '
                 .'or `channels` — the channels of the notifications module, never both. With that module installed (`form.notifications: true`), '
                 .'`form.channels` names the channels in `options.notify_channels`, each with whether it `sends`. '
-                .'`options.redirect` is where the visitor goes after sending, as a link: absent — the thank-you in place of the form.',
+                .'`options.redirect` is where the visitor goes after sending, as a link: absent — the thank-you in place of the form. '
+                .'`options.description` is the line under the form\'s title on the site, per language.',
                 fn (array $arguments): array => $this->formGet($arguments),
                 ['properties' => ['form' => $form], 'required' => ['form']],
                 permission: 'inbox.manage',
@@ -121,6 +122,7 @@ final class InboxTools
                     'title' => ['type' => ['string', 'object'], 'description' => 'One language as a string, or every language as { "en": "…" }.'],
                     'is_enabled' => ['type' => 'boolean', 'description' => 'A form that is off is a 404 to the site and keeps everything it has received.'],
                     'options' => ['type' => 'object', 'description' => 'The settings, as inbox_form_get returns them: recipients, the thank-you, the antispam. Unknown keys are dropped. '
+                        .'`description` — a line under the title of the form on the site and in its dialog, in one language or as { "en": "…" }; plain text, shortcodes as in any text of the site; absent — nothing is shown. '
                         .'`thank-you.heading` and `thank-you.text` may say {{field.<name>}}: the visitor\'s answer to that field, escaped; empty, unknown or a file — nothing. '
                         .'`notify_channels` — ids of channels of the notifications module (notifications_channels_list with event inbox.submission) '
                         .'that a submission from the site is sent to; ids no channel has are dropped. Only with that module installed. '

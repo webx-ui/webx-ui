@@ -45,7 +45,7 @@
     </div>
 @php($body = ob_get_clean())
 
-<x-dynamic-component :component="config('webx-vacancies.layout') ?: 'webx-vacancies::standalone'">
+<x-dynamic-component :component="config('webx-vacancies.layout') ?: 'webx-vacancies::standalone'" handle="vacancies.index">
     <x-slot:head>
         {{-- No entity: the index is a route, not a record. A rule for its address or the site's
              defaults say what they have; the title under them is the section's name, and it goes

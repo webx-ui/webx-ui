@@ -25,6 +25,7 @@ use WebxUi\Admin\Doctor\Checks\SiteGate;
 use WebxUi\Admin\Doctor\Checks\Snapshots;
 use WebxUi\Admin\Doctor\Checks\Storage;
 use WebxUi\Admin\Doctor\Checks\StorageOwner;
+use WebxUi\Admin\Doctor\Checks\TrustedProxies;
 use WebxUi\Admin\Doctor\Checks\UploadSpace;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Doctor\DoctorChecks;
@@ -74,6 +75,7 @@ final class DoctorCommand extends Command
         Methods::class,
         PassportKeys::class,
         SiteGate::class,
+        TrustedProxies::class,
         CacheStore::class,
         Queue::class,
     ];

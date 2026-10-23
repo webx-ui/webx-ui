@@ -49,6 +49,7 @@ use WebxUi\Blog\Screens\AuthorType;
 use WebxUi\Blog\Screens\IdsType;
 use WebxUi\Blog\Seo\TagSource;
 use WebxUi\Blog\Support\PublishedAuthors;
+use WebxUi\Compositions\Compositions;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -86,6 +87,13 @@ class BlogServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-blog');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-blog');
+
+        // The page types its views name to the layout, so a theme's file for a misspelt one is a
+        // finding of webx:theme:check (COMPOSITIONS §4).
+        // The page of an article is the composition blog.article (COMPOSITIONS §10); the handles
+        // are what the five pages name the layout with.
+        Compositions::load(__DIR__.'/../resources/compositions');
+        Compositions::handles('blog', ['blog.article', 'blog.author', 'blog.feed', 'blog.rubric', 'blog.tag']);
 
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 

@@ -1,0 +1,11 @@
+{
+  "add": [
+    {
+      "id": "a.note",
+      "to": "main",
+      "after": "content",
+      "component": "note",
+      "attrs": { "from": "a" }
+    }
+  ]
+}

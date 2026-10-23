@@ -18,3 +18,7 @@ php/packages/module-admin/resources/css/tokens.css
 php/packages/module-admin/resources/css/components.css
 # What the server renders, byte for byte: a snapshot the tests compare with.
 php/packages/module-inbox/tests/Fixtures/notifications
+# The shell of theme-default's layout, byte for byte: what the composition is compared with.
+php/packages/theme-default/tests/Fixtures/golden
+# The body of an article page, byte for byte: what the composition blog.article is compared with.
+php/packages/module-blog/tests/Fixtures/golden

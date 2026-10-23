@@ -24,6 +24,7 @@ const options = defineModel<FormOptions>('options', { required: true })
 
 const t = useTranslate('webx-inbox')
 
+const description = option<LocalizedValue>(options, 'description', {})
 const heading = option<LocalizedValue>(options, 'thank-you.heading', {})
 const text = option<LocalizedValue>(options, 'thank-you.text', {})
 const submit = option<LocalizedValue>(options, 'design.submit-text', {})
@@ -54,6 +55,10 @@ const redirect = computed<LinkValue | null>({
     <wx-card>
       <wx-form-item :label="t('panel.title')" :error="errors.title?.[0]" required>
         <wx-input v-model="settings.title" localized />
+      </wx-form-item>
+
+      <wx-form-item :label="t('panel.description')" :help="t('panel.description-help')">
+        <wx-input v-model="description" localized />
       </wx-form-item>
 
       <wx-form-item

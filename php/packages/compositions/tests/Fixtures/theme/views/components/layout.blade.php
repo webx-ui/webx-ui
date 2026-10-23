@@ -1,0 +1,1 @@
+{{-- The dispatcher, as a theme ships it. --}}@include(composition_view('layout', $attributes->get('handle')))

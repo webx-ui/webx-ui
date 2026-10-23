@@ -6,7 +6,7 @@
 --}}
 @php($image = $product->mainImage())
 
-<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
+<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'" handle="catalog.product">
     <x-slot:head>
         {{-- `noindex` comes out of the product's SEO answer too (UnavailableSource), and the title is
              the card's or the product's name through the site's template (`seoFallback()`). --}}

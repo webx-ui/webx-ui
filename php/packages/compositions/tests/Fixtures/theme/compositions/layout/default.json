@@ -1,0 +1,36 @@
+{
+  "root": {
+    "id": "html",
+    "tag": "html",
+    "protected": true,
+    "children": [
+      {
+        "id": "head",
+        "tag": "head",
+        "protected": true,
+        "children": [
+          { "id": "meta.charset", "html": "<meta charset=\"utf-8\">" },
+          { "id": "head.slot", "slot": "head", "fallback": ["fixtureHead"], "protected": true },
+          { "id": "head.stack", "stack": "head", "protected": true }
+        ]
+      },
+      {
+        "id": "body",
+        "tag": "body",
+        "attrs": { "class": "site" },
+        "protected": true,
+        "children": [
+          { "id": "header", "view": "components.header" },
+          {
+            "id": "main",
+            "tag": "main",
+            "attrs": { "id": "content", "class": "site-main" },
+            "protected": true,
+            "children": [{ "id": "content", "slot": "default", "protected": true }]
+          },
+          { "id": "footer", "view": "components.footer" }
+        ]
+      }
+    ]
+  }
+}

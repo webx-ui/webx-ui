@@ -1,0 +1,9 @@
+{
+  "$comment": "The base of a module's page, as module-blog gives blog.article — with a dispatcher whose name the check could not guess.",
+  "vars": ["article"],
+  "dispatcher": "webx-blog::pages.article",
+  "root": {
+    "id": "root",
+    "children": [{ "id": "article", "tag": "article", "attrs": { "class": "fixture-article" } }]
+  }
+}

@@ -25,6 +25,8 @@ return [
     'reorder' => 'Reordenar',
     'new-form-title' => 'Formulário novo',
     'title' => 'Título',
+    'description' => 'Descrição',
+    'description-help' => 'Uma linha sob o título do formulário no site e na caixa de diálogo. Vazio — nada é mostrado.',
     'slug' => 'Endereço',
     'slug-help' => 'Como o formulário se chama no site e para onde envia.',
     'is-enabled' => 'Ativo',

@@ -18,7 +18,7 @@ are `webx-ui/module-auth`, the frame `webx-ui/module-admin`, languages `webx-ui/
   (`{ ok, heading, heading_html, message, redirect, html }`), 422 keyed `fields.<name>`. `{{field.<name>}}` in `thank-you.heading`/`thank-you.text` is the visitor's answer, escaped, in `<em class="webx-form__answer-value">` (`Submissions\ThankYou`); empty, unknown, a file — nothing. `options.redirect` is a menu-style link: a record in the submission's language, else the main one.
 - **Blade tag** `<x-webx-inbox::form slug="contact" />`, with `:values` for hidden fields by
   machine name and `placement="footer"` (adds `webx-inbox-form--footer`, remembered on the
-  submission), `again` — «Send another» after the thank-you (`<x-webx-form again>`). An unknown or switched-off slug prints nothing.
+  submission), `again` — «Send another» after the thank-you (`<x-webx-form again>`). An unknown or switched-off slug prints nothing. `options.description` — a line over the fields (in a dialog under its title; `:description="false"` drops it).
 - **The form is drawn by the widgets' form engine** (`webx-ui/widgets`, guide «Forms»):
   `<x-webx-form :csrf="false">` around an `<x-webx-field>` per field (the eleven types are the
   widgets' own), checked in the browser by the intake's own rules in the validator's words
@@ -97,7 +97,7 @@ submissions, `cms.can:inbox.update` to change them, `cms.can:inbox.manage` for f
 The theme's contract (THEMES §10). Fields, messages and the button are the widgets' (webx-field-\*,
 webx-form-\* — their AGENTS.md; the wx-form-\* of before W6.4 map to them in the guide «Inbox»). The
 inbox adds its layout, in `resources/theme/inbox.css`; restyle in the theme's `src/css`: `webx-inbox-form`
-(+ `webx-inbox-form--<placement>`), `webx-inbox-form__fields` (two to a row from 32rem of the form), `webx-inbox-form__field`,
+(+ `webx-inbox-form--<placement>`), `webx-inbox-form__description`, `webx-inbox-form__fields` (two to a row from 24rem of the form), `webx-inbox-form__field`,
 `webx-inbox-form__field--half`, `webx-inbox-form__captcha`, `webx-inbox-form__actions`, `webx-inbox-form__honeypot` (leave it).
 
 ### Send submissions to a CRM

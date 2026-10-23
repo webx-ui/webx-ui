@@ -59,13 +59,17 @@ to take out: the page already has those tags, and a service only means what goes
 
 ## Places
 
-Three places are always there, printed by the layout of `theme-default`:
+Three places are always there. The module adds them to the [composition](./compositions.md)
+`layout` itself (and to `layout.blank`), as nodes with ids of its own:
 
-| Key          | Where                                                                   |
-| ------------ | ----------------------------------------------------------------------- |
-| `head`       | As high in `<head>` as possible — right after `charset` and `viewport`. |
-| `body_start` | Right after `<body>` — where a tag manager's `<noscript>` goes.         |
-| `body_end`   | At the end of `<body>`, before the scripts of the site's widgets.       |
+| Key          | Node of the layout    | Where                                                                   |
+| ------------ | --------------------- | ----------------------------------------------------------------------- |
+| `head`       | `snippets.head`       | As high in `<head>` as possible — right after `charset` and `viewport`. |
+| `body_start` | `snippets.body-start` | Right after `<body>` — where a tag manager's `<noscript>` goes.         |
+| `body_end`   | `snippets.body-end`   | At the end of `<body>`, before the scripts of the site's widgets.       |
+
+A theme moves one by id — `{"move": [{"id": "snippets.body-end", "to": "body", "before": "footer"}]}`
+in `theme/compositions/layout/default.json` — rather than copying the layout.
 
 Inside a place, codes are printed in the order they are dragged into in the list.
 
@@ -93,7 +97,9 @@ The **Place** select in the form offers exactly the places of the config; there 
 manage places. The three built-in ones cannot be removed or renamed — naming one in the config only
 changes its words.
 
-A site with a layout of its own adds the three built-in places to it itself:
+A site with a layout of its own — a file `components/layout.blade.php` that stands in for the
+composition — gets them with `<x-webx-composition::place id="head" only="added" />` and the same
+for `body`, or adds the three built-in places to it itself:
 
 ```blade
 <head>

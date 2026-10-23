@@ -1,4 +1,4 @@
-<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'">
+<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'" handle="blog.tag">
     <x-slot:head>
         {{--
             The tag is named on purpose. Whether this page carries `noindex` is worked out from it

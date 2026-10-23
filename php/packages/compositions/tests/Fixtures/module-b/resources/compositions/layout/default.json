@@ -1,0 +1,5 @@
+{
+  "add": [
+    { "id": "b.note", "to": "main", "last": true, "component": "note", "attrs": { "from": "b" } }
+  ]
+}

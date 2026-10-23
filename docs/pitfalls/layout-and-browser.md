@@ -116,6 +116,14 @@ dispatchEvent(e); e.defaultPrevented`, а в тесте так же.
 
 ## Прокрутка, sticky и наложение
 
+- **Стиль модального окна «по ширине экрана» валит `DistTest` и `webx:theme:check`** («@media by
+  width — use @container»), а `@container` его не видит: модальный `<dialog>` в top layer меряется
+  вьюпортом, контейнера над ним нет, а `container-type` на `body` даёт layout-контейнмент и ломает
+  чужой `position: fixed`. Ширину меряет runtime — `matchMedia` ставит класс-состояние (`is-sheet`
+  в `dialog.js`) и слушает `change`; CSS рисует по классу. Без JS — вид по умолчанию. Там же:
+  `@keyframes` (`from {…}`) и комбинатор `a > b` правило «один класс» не пропускает — анимация
+  входа через `transition` + `@starting-style`, потомок — классом-модификатором.
+
 - **Синтетический `pointerdown` из Playwright (`locator.dispatchEvent`) «не двигает» виджет, а
   настоящий касанием — двигает.** У такого указателя нет живого контакта, и
   `setPointerCapture(id)` бросает `NotFoundError` — обработчик падает на первой строке захвата,

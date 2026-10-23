@@ -1,0 +1,6 @@
+{
+  "add": [{ "id": "fixture.banner", "to": "body", "first": true, "html": "<p>Banner</p>" }],
+  "replace": { "meta.theme-color": { "directive": "webxThemeColor", "args": "'color-nope'" } },
+  "attrs": { "html": { "lang": "en" } },
+  "remove": ["sidebar"]
+}

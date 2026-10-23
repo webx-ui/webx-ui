@@ -17,6 +17,12 @@
   min-width: 0;
 }
 
+.webx-inbox-form__description {
+  margin: 0 0 var(--site-space-4);
+  color: var(--site-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
 .webx-inbox-form__fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -39,7 +45,12 @@
   gap: var(--site-space-3);
 }
 
-@container (min-width: 32rem) {
+/*
+ * 24rem: a dialog of 480px leaves the form about 420px and gets the pairs it was designed with;
+ * a phone of 360px leaves under 320px and gets one field to a row. Each half is then at least
+ * ~180px — a number, a date or a short name fits.
+ */
+@container (min-width: 24rem) {
   .webx-inbox-form__fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

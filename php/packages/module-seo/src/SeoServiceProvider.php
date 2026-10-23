@@ -19,6 +19,8 @@ use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Cache\CacheGroups;
+use WebxUi\Compositions\Compositions;
+use WebxUi\Compositions\CompositionsServiceProvider;
 use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Contracts\Visible;
@@ -73,6 +75,9 @@ class SeoServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // The registry this module's compositions go into, whether discovered or listed by a test.
+        $this->app->register(CompositionsServiceProvider::class);
+
         // What moves between stands with webx:snapshot, and what stays where it is.
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
             $tables->content('seo_meta', 'seo_urls', 'seo_redirects', 'seo_link_blocks', 'seo_link_items', 'seo_faq_items');
@@ -111,6 +116,10 @@ class SeoServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-seo');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-seo');
+
+        // Its FAQ and interlinking close the column of the layout (COMPOSITIONS §5.3).
+        Compositions::load(__DIR__.'/../resources/compositions');
+
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
         $this->registerCacheGroups();

@@ -23,7 +23,7 @@
     </article>
 @php($body = ob_get_clean())
 
-<x-dynamic-component :component="config('webx-events.layout') ?: 'webx-events::standalone'">
+<x-dynamic-component :component="config('webx-events.layout') ?: 'webx-events::standalone'" handle="events.show">
     <x-slot:head>
         {{-- The SEO card, the event's own name, lead and cover under it (HasSeoFallback), the
              site defaults, and the Event markup (HasStructuredData). --}}

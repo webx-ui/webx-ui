@@ -18,7 +18,10 @@
       · `data-webx-form` on the form — the hook for a site's own script (`webx:form:success`),
       · `:again="$again"` — `<x-webx-inbox::form again>`, the way back to the fields after the thank-you.
 
-    Classes: webx-inbox-form (+ --<placement>), __fields, __field, __field--half, __captcha,
+    `$description` — the line under the form's title (§5), HTML with its shortcodes; null without
+    one, and in a dialog, which prints it under its own title.
+
+    Classes: webx-inbox-form (+ --<placement>), __description, __fields, __field, __field--half, __captcha,
     __actions, __honeypot; the rest are the widgets' webx-form-* and webx-field-*.
 --}}
 <x-webx-form
@@ -39,6 +42,10 @@
     <input type="hidden" name="{{ $timestampField }}" value="{{ $timestamp }}">
 
     @includeWhen($honeypot !== null, 'webx-inbox::form.honeypot', ['name' => $honeypot, 'id' => $formId.'-hp'])
+
+    @if ($description !== null)
+        <p class="webx-inbox-form__description">{{ $description }}</p>
+    @endif
 
     <div class="webx-inbox-form__fields">
         @foreach ($controls as $control)

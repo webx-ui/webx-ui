@@ -129,7 +129,7 @@ nginx, a queue worker and the scheduler under supervisor — beside a MariaDB. B
 `webx:setup`: both lock files are what the image installs. Nothing here terminates TLS; the
 container listens on `${APP_BIND}:${APP_PORT}` and a proxy in front of it holds the
 certificate. The site believes that proxy's `X-Forwarded-*` only from private networks and
-localhost — `trustProxies` in `bootstrap/app.php`, where a proxy elsewhere is added by address.
+localhost — `config/trustedproxy.php`; a proxy elsewhere (a CDN) is named in `TRUSTED_PROXIES`.
 The development stack mounts this checkout into the same image, adds the Vite dev
 server and a Mailpit, and caches nothing.
 

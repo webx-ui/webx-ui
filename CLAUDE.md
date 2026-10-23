@@ -12,7 +12,7 @@
   датапикер — `@vuepic/vue-datepicker`, rich-text — Tiptap), `@webx-ui/schema` (экраны как JSON) и
   `@webx-ui/module-*` — фронт разделов панели. `@webx-ui/adapter-laravel` не начинался.
 - **composer** (`php/packages/*`, вендор `webx-ui/*`, namespace `WebxUi`, одна общая версия):
-  разделы панели `module-*` и библиотеки `cache`, `localization`, `mcp`, `nested-set`, `routing`,
+  разделы панели `module-*` и библиотеки `cache`, `compositions`, `localization`, `mcp`, `nested-set`, `routing`,
   `themes`, `theme-default`, `widgets`. Список и назначение — `ls php/packages` и реестр
   `docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`.
 

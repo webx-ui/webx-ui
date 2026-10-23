@@ -103,6 +103,21 @@ class Form extends Model
     }
 
     /**
+     * The line under the form's title (§5): in the language of the page, else the main one, else
+     * whichever was written. Null when there is none — nothing is printed then, not an empty `<p>`.
+     */
+    public function description(): ?string
+    {
+        $text = $this->option('description');
+
+        if (is_array($text)) {
+            $text = $text[app()->getLocale()] ?? $text[(string) config('app.fallback_locale')] ?? reset($text);
+        }
+
+        return is_string($text) && trim($text) !== '' ? trim($text) : null;
+    }
+
+    /**
      * An antispam setting of this form, or the site's default for it.
      */
     public function antispam(string $key): mixed

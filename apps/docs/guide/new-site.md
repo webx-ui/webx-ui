@@ -467,8 +467,12 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up   # somewhere 
 The first builds one image — Composer dependencies, the front end built by the site's own Vite,
 then php-fpm, nginx, a queue worker and the scheduler under supervisor — and starts it beside a
 MariaDB. Nothing terminates TLS: the container listens on `${APP_BIND}:${APP_PORT}` and a proxy
-in front of it holds the certificate. The second mounts the checkout into the same image, adds
-the Vite dev server and a Mailpit, and caches nothing, so a machine with no PHP and no Node on
+in front of it holds the certificate. The site believes that proxy's `X-Forwarded-*` — https and
+the visitor's address — only from loopback and the private networks (`config/trustedproxy.php`),
+which is where the proxy of a hosting or of a home server stands. A proxy on a public address, a
+CDN, is named in `TRUSTED_PROXIES` in `.env`, comma-separated, and that list replaces the
+default; `*` believes any visitor, and `webx:doctor` warns about it. The second mounts the
+checkout into the same image, adds the Vite dev server and a Mailpit, and caches nothing, so a machine with no PHP and no Node on
 it is still a machine you can work on.
 
 Both read the `.env` you already have. The variables the containers add are at the bottom of

@@ -10,6 +10,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\Component;
@@ -79,6 +80,9 @@ final class Form extends Component
         // would be printed on `<form>` as an attribute nobody reads.
         private readonly ?string $placement = null,
         private readonly bool $again = false,
+        // False where the line under the title is printed by what is around the form: the dialog
+        // has it under its own title (WIDGETS §6.4).
+        private readonly bool $description = true,
     ) {}
 
     public function render(): View|string
@@ -116,6 +120,7 @@ final class Form extends Component
             'captchaErrors' => $this->sent($formId) ? ($this->errors()['captcha'] ?? []) : [],
             'assets' => $legacy ? new LegacyAssets($this->assets) : $this->assets,
             'submitText' => $this->submitText($form),
+            'description' => $this->description ? self::descriptionHtml($form) : null,
             'placement' => $placement,
             // What a view of before W6.4 reads (an alias period): the engine's view needs none of it.
             'multipart' => $fields->contains(static fn (Field $field): bool => $field->type === FieldType::File),
@@ -375,6 +380,17 @@ final class Form extends Component
         }
 
         return $flash;
+    }
+
+    /**
+     * The line under the form's title (§5) as HTML: the editor's text escaped, its shortcodes
+     * printed the way they are in any other text of the site. Null for a form without one.
+     */
+    public static function descriptionHtml(FormModel $form): ?HtmlString
+    {
+        $text = $form->description();
+
+        return $text === null ? null : new HtmlString(Container::getInstance()->make(Shortcodes::class)->html($text));
     }
 
     private function submitText(FormModel $form): string

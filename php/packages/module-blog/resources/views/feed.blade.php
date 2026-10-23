@@ -1,4 +1,4 @@
-<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'">
+<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'" handle="blog.feed">
     <x-slot:head>
         {{-- No entity: the feed is a route, not a record (§2.11). A rule for its address and the
              site's defaults speak for it; where neither names a title, the feed's own word does,

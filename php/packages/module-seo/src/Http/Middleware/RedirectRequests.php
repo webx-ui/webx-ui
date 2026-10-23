@@ -6,6 +6,7 @@ namespace WebxUi\Seo\Http\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -51,7 +52,12 @@ final class RedirectRequests
             return $next($request);
         }
 
-        $redirect = $this->redirects->find($url);
+        try {
+            $redirect = $this->redirects->find($url);
+        } catch (QueryException) {
+            // No table to look in yet (before `migrate`, a test without the tables): no redirect.
+            return $next($request);
+        }
 
         if ($redirect === null) {
             return $next($request);

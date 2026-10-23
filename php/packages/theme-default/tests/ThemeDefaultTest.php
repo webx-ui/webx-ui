@@ -10,13 +10,15 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\HtmlString;
-use Illuminate\View\DynamicComponent;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use ReflectionProperty;
 use SplFileInfo;
+use WebxUi\Compositions\Compiler;
+use WebxUi\Compositions\Compositions;
+use WebxUi\Compositions\Node;
+use WebxUi\Compositions\Testing\IsolatedCompositions;
 use WebxUi\Themes\Checks\CssCheck;
 use WebxUi\Themes\Checks\CssFinding;
 use WebxUi\Themes\Checks\FontCheck;
@@ -42,6 +44,9 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 class ThemeDefaultTest extends TestCase
 {
+    // A compiled set of compositions a test: they load other modules into the layout.
+    use IsolatedCompositions;
+
     // The contract every theme's test runs (THEMES §18) — on the theme every site stands on first.
     use ThemeContract;
 
@@ -70,6 +75,7 @@ class ThemeDefaultTest extends TestCase
 
         // The site's own views: a header and a footer of its own, the way a site overrides the theme's.
         $app['config']->set('view.paths', [str_replace('\\', '/', __DIR__).'/Fixtures/site']);
+        $this->isolateCompositions($app);
 
         // Registered rather than left to Composer: the test must not depend on the theme being
         // installed into whatever vendor/ runs it.
@@ -316,6 +322,23 @@ class ThemeDefaultTest extends TestCase
     }
 
     /**
+     * A header and a footer of the site's own (the fixtures in Fixtures/site) are copies of the
+     * dispatchers of the compositions `header` and `footer`: they print, and the check says what
+     * the patches of the themes do not reach (COMPOSITIONS §6.4).
+     */
+    #[Test]
+    public function the_check_notes_a_header_and_a_footer_the_site_copied(): void
+    {
+        Artisan::call('webx:theme:check');
+        $said = (string) preg_replace('/\s+/', ' ', Artisan::output());
+
+        foreach (['header', 'footer'] as $part) {
+            $this->assertStringContainsString("Fixtures/site/components/{$part}.blade.php note: overrides the composition {$part}", $said);
+            $this->assertStringContainsString("<x-webx-composition::place composition=\"{$part}\" id=\"…\" only=\"added\" />", $said);
+        }
+    }
+
+    /**
      * The frame of the letters (§7.5): every value a token's, taken on the server — no var(), no
      * colour of its own — and the line below in the language of the letter.
      */
@@ -419,6 +442,7 @@ class ThemeDefaultTest extends TestCase
         $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures/webx-seo';
         View::addNamespace('webx-seo', $fixtures);
         Blade::anonymousComponentPath($fixtures, 'webx-seo');
+        Compositions::load(dirname(self::path()).'/module-seo/resources/compositions');
 
         $html = Blade::render('<x-layout><p>Body of the page</p></x-layout>');
 
@@ -429,17 +453,20 @@ class ThemeDefaultTest extends TestCase
     }
 
     /**
-     * The theme's header and footer are rendered on the starter site, not here: they call
-     * `menu()` and the pages model, which are autoloaded wherever those modules are installed —
-     * the monorepo included — and need the modules booted with their tables. What a test can
-     * hold without them is that both compile to valid PHP.
+     * The header and the footer are rendered with their modules booted in
+     * HeaderFooterCompositionTest: they call `menu()` and the pages model, which need their tables.
+     * What this test holds is that the dispatchers and every leaf compile to valid PHP.
      */
     #[Test]
     public function the_shell_views_compile(): void
     {
         $this->stubModules();
 
-        foreach (['components/header', 'components/footer', 'components/layout', 'errors/404'] as $view) {
+        $leaves = array_map(static fn (string $file): string => substr($file, strlen(self::path().'/views/'), -strlen('.blade.php')), glob(self::path().'/views/components/{header,footer}/*.blade.php', GLOB_BRACE) ?: []);
+
+        $this->assertCount(9, $leaves);
+
+        foreach (['components/header', 'components/footer', 'components/layout', 'errors/404', ...$leaves] as $view) {
             $compiled = Blade::compileString((string) file_get_contents(self::path()."/views/{$view}.blade.php"));
 
             $this->assertNotEmpty(token_get_all($compiled, TOKEN_PARSE), "{$view} does not compile.");
@@ -455,11 +482,6 @@ class ThemeDefaultTest extends TestCase
     public function the_places_of_the_snippets_are_there_only_with_the_module(): void
     {
         $this->stubModules();
-        $forget = static function (): void {
-            (new ReflectionProperty(DynamicComponent::class, 'compiler'))->setValue(null, null);
-            (new ReflectionProperty(DynamicComponent::class, 'componentClasses'))->setValue(null, []);
-        };
-        $forget();
 
         $html = Blade::render('<x-layout><p>Body</p></x-layout>');
 
@@ -471,14 +493,131 @@ class ThemeDefaultTest extends TestCase
         $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures/webx-snippets';
         View::addNamespace('webx-snippets', $fixtures);
         Blade::anonymousComponentPath($fixtures.'/components');
+        Compositions::load(dirname(self::path()).'/module-snippets/resources/compositions');
 
-        // The layout asks view()->exists() as it renders: the same compiled file prints the places now.
+        // The module adds its places itself (COMPOSITIONS §5.3): another set of layers is another
+        // compiled layout, on the next request.
+        $this->app->forgetScopedInstances();
         $html = Blade::render('<x-layout><p>Body</p></x-layout>');
-        $forget();
 
         $this->assertMatchesRegularExpression('~<meta name="viewport" content="width=device-width, initial-scale=1">\s*<!-- place:head -->\s*<style data-webx-theme>~', $html);
         $this->assertMatchesRegularExpression('~<body class="site">\s*<!-- place:body_start -->\s*<a class="site-skip"~', $html);
         $this->assertMatchesRegularExpression('~<!-- place:body_end -->\s*</body>~', $html);
+    }
+
+    /**
+     * The pieces of the modules come from the modules (COMPOSITIONS §5.3): the quick contact of
+     * widgets after the footer, the FAQ and the links of module-seo after the page, the places of
+     * module-snippets — and the compiled layout asks nothing on a request.
+     */
+    #[Test]
+    public function the_modules_add_their_pieces_and_the_layout_names_none_of_them(): void
+    {
+        $this->stubModules();
+        $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures';
+        View::addNamespace('webx-seo', $fixtures.'/webx-seo');
+        Blade::anonymousComponentPath($fixtures.'/webx-seo', 'webx-seo');
+        View::addNamespace('webx-snippets', $fixtures.'/webx-snippets');
+        Blade::anonymousComponentPath($fixtures.'/webx-snippets/components');
+        Compositions::load(dirname(self::path()).'/module-seo/resources/compositions');
+        Compositions::load(dirname(self::path()).'/module-snippets/resources/compositions');
+
+        $tree = app(Compiler::class)->tree('layout');
+        $ids = static fn (string $id): array => array_map(static fn (Node $node): string => $node->id, $tree->find($id)->children ?? []);
+
+        $this->assertSame(['snippets.body-start', 'skip-link', 'notice-bar', 'header', 'main', 'footer', 'widgets.contact-button', 'scripts.stack', 'snippets.body-end'], $ids('body'));
+        $this->assertSame(['content', 'seo.faq', 'seo.links'], $ids('main'));
+        $this->assertSame([], $tree->findings);
+
+        $source = (string) file_get_contents(self::path().'/compositions/layout/default.json');
+
+        foreach (['seo', 'snippets', 'contact-button'] as $module) {
+            $this->assertStringNotContainsString($module, $source, 'the base of the layout knows no module');
+        }
+
+        Blade::render('<x-layout><p>Body</p></x-layout>');
+        $compiled = (string) file_get_contents(View::getFinder()->find(app(Compositions::class)->view('layout')));
+
+        $this->assertStringContainsString('<x-webx-contact-button />', $compiled);
+        $this->assertStringContainsString('<x-webx-seo::faq />', $compiled);
+        $this->assertStringContainsString('<x-webx-snippets place="body_end" />', $compiled);
+        $this->assertStringNotContainsString('view()->exists', $compiled);
+        $this->assertStringNotContainsString('dynamic-component', $compiled);
+    }
+
+    /**
+     * The example of the spec (COMPOSITIONS §10.1) on the real layout: the studio's smooth scroll,
+     * no quick contact, the announcement under the header on every page — and on an article a class,
+     * a progress bar after the header and no links. Patches of the site's config, the layer a theme's
+     * files sit just under.
+     */
+    #[Test]
+    public function a_site_patches_the_layout_by_id_on_default_and_on_a_page_type(): void
+    {
+        $this->stubModules();
+        $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures';
+        View::addNamespace('webx-seo', $fixtures.'/webx-seo');
+        Blade::anonymousComponentPath($fixtures.'/webx-seo', 'webx-seo');
+        Compositions::load(dirname(self::path()).'/module-seo/resources/compositions');
+        config()->set('webx-compositions.patches.layout', [
+            'default' => [
+                'attrs' => ['html' => ['data-webx-smooth-scroll' => true]],
+                'remove' => ['widgets.contact-button'],
+                'move' => [['id' => 'notice-bar', 'after' => 'header']],
+            ],
+            'blog.article' => [
+                'attrs' => ['body' => ['class' => 'is-article']],
+                'add' => [['id' => 'reading-progress', 'to' => 'body', 'after' => 'header', 'view' => 'components.reading-progress']],
+                'remove' => ['seo.links'],
+            ],
+        ]);
+
+        $page = Blade::render('<x-layout><p>Body</p></x-layout>');
+        $article = Blade::render('<x-layout handle="blog.article"><p>Article</p></x-layout>');
+
+        $this->assertStringStartsWith("<!doctype html>\n<html lang=\"en\" data-webx-smooth-scroll>", $page);
+        $this->assertStringContainsString('<body class="site">', $page);
+        $this->assertStringContainsString('Links of the page', $page);
+        $this->assertStringNotContainsString('site-progress', $page);
+
+        $this->assertStringStartsWith("<!doctype html>\n<html lang=\"en\" data-webx-smooth-scroll>", $article);
+        $this->assertStringContainsString('<body class="site is-article">', $article);
+        $this->assertMatchesRegularExpression('~site-header.*</header>\s*<div class="site-progress"></div>\s*<main~s', $article);
+        $this->assertStringContainsString('FAQ of the page', $article);
+        $this->assertStringNotContainsString('Links of the page', $article);
+
+        $order = app(Compiler::class)->tree('layout', 'blog.article')->find('body')->children ?? [];
+        $this->assertSame(['skip-link', 'header', 'reading-progress', 'notice-bar', 'main', 'footer', 'scripts.stack'], array_map(static fn (Node $node): string => $node->id, $order));
+        // layout.minimal takes the quick contact off once more: said as a note, not as a finding.
+        $this->assertSame([], array_values(array_filter(app(Compositions::class)->findings(), static fn ($finding): bool => ! $finding->note)));
+    }
+
+    /**
+     * The other shells (COMPOSITIONS §3.7): `layout.minimal` is the layout with the brand for a
+     * header and no footer, the pieces of the modules with it; `layout.blank` is a base of its own,
+     * which only a module that belongs on every document adds to.
+     */
+    #[Test]
+    public function the_minimal_and_the_blank_layout_stand_on_their_trees(): void
+    {
+        $this->stubModules();
+        Compositions::load(dirname(self::path()).'/module-snippets/resources/compositions');
+        View::addNamespace('webx-snippets', str_replace('\\', '/', __DIR__).'/Fixtures/webx-snippets');
+        Blade::anonymousComponentPath(str_replace('\\', '/', __DIR__).'/Fixtures/webx-snippets/components');
+
+        $minimal = Blade::render('<x-layout.minimal><p>Checkout</p></x-layout.minimal>');
+
+        $this->assertStringContainsString('<a class="site-skip" href="#content">', $minimal);
+        $this->assertStringContainsString('<a class="site-header__title" href="http://localhost">Harbor Logistics</a>', $minimal);
+        $this->assertStringNotContainsString("The site's own header", $minimal);
+        $this->assertStringNotContainsString('site-footer', $minimal);
+        $this->assertStringContainsString('<!-- place:body_end -->', $minimal);
+
+        $blank = Blade::render('<x-layout.blank><p>Promo</p></x-layout.blank>');
+
+        $this->assertMatchesRegularExpression('~<body class="site site--blank">\s*<!-- place:body_start -->\s*<main id="content" class="site-main">\s*<p>Promo</p>\s*</main>~', $blank);
+        $this->assertStringNotContainsString('site-skip', $blank);
+        $this->assertStringNotContainsString('site-header', $blank);
     }
 
     /** A module's view hands its own @webxSeo and @webxBlocks in the head slot; neither prints twice. */
@@ -581,7 +720,19 @@ class ThemeDefaultTest extends TestCase
             $templates['demo/blocks/'.basename($file)] = (string) (json_decode((string) file_get_contents($file), true)['template'] ?? '');
         }
 
-        $this->assertCount(33, $templates);
+        // The compositions too: what a node of raw HTML says is as much the template as a view.
+        foreach (glob(self::path().'/compositions/*/*.json') ?: [] as $file) {
+            $html = [];
+            $tree = (array) json_decode((string) file_get_contents($file), true);
+            array_walk_recursive($tree, static function (mixed $value, string|int $key) use (&$html): void {
+                if ($key === 'html') {
+                    $html[] = (string) $value;
+                }
+            });
+            $templates['compositions/'.basename(dirname($file)).'/'.basename($file)] = implode("\n", $html);
+        }
+
+        $this->assertCount(51, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);

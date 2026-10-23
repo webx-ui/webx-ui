@@ -1,4 +1,4 @@
-<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'">
+<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'" handle="blog.author">
     <x-slot:head>
         {{-- The SEO card, then the profile's own name, bio and photo where the card is empty; out of
              the index while nothing of theirs is published (§19.1, decision 7). --}}

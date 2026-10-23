@@ -5,7 +5,7 @@
     out; an empty category with 200 it would remember. A site words it in its dictionary or draws
     it its own way by overriding this view.
 --}}
-<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
+<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'" handle="catalog.search">
     <x-slot:head>
         <meta name="robots" content="noindex, follow">
         <title>{{ __('webx-catalog-manticore::storefront.unavailable-title') }}</title>

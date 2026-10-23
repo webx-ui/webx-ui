@@ -21,15 +21,16 @@ the modules                each module's own views and base look
 A layer is a directory with the same parts, each optional — a part that is missing is inherited
 from below:
 
-| Part                         | What it is                                                                          |
-| ---------------------------- | ----------------------------------------------------------------------------------- |
-| `theme.json` / composer.json | the manifest: `title`, `uses`, `requires`, `locales`, `fonts`, `preset`, `settings` |
-| `tokens.json`                | `defaults`, `presets`, `schemes.dark` and the layer's own `vocabulary`              |
-| `src/css`, `src/js`          | the stylesheet (and, rarely, a script) on `var(--site-…)` only                      |
-| `views/`                     | Blade views: the layout, the header, an override of a module's view                 |
-| `blocks/`                    | block types by slug, in the format `webx:blocks:export` writes                      |
-| `icons/`, `assets/`          | the sprite's icons, pictures and fonts for `theme_asset()`                          |
-| `lang/<locale>/theme.php`    | the words of the layout                                                             |
+| Part                         | What it is                                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `theme.json` / composer.json | the manifest: `title`, `uses`, `requires`, `locales`, `fonts`, `preset`, `settings`           |
+| `tokens.json`                | `defaults`, `presets`, `schemes.dark` and the layer's own `vocabulary`                        |
+| `src/css`, `src/js`          | the stylesheet (and, rarely, a script) on `var(--site-…)` only                                |
+| `views/`                     | Blade views: the header, the footer, an override of a module's view                           |
+| `compositions/`              | patches of the layout and the other compound views, by id ([Compositions](./compositions.md)) |
+| `blocks/`                    | block types by slug, in the format `webx:blocks:export` writes                                |
+| `icons/`, `assets/`          | the sprite's icons, pictures and fonts for `theme_asset()`                                    |
+| `lang/<locale>/theme.php`    | the words of the layout                                                                       |
 
 A **local** theme is `theme/` inside the site; its manifest is `theme/theme.json`, and the site's
 Vite builds its `src/`. A **packaged** theme is a Composer package of `"type": "webx-theme"`; its
@@ -137,20 +138,24 @@ for (const button of document.querySelectorAll('[data-scheme-toggle]')) {
 
 The remembered choice has to be on `<html>` before the first paint, or a dark visitor sees the
 light page flash first: a module script runs too late. So a few lines go inline at the top of
-`<head>` of the layout — `views/components/layout.blade.php` of the local theme, copied from the
-layer below (`webx:theme:show` says which) — above `@webxTheme`:
+`<head>` of the layout, above `@webxTheme` — a patch of the [composition](./compositions.md)
+`layout`, not a copy of the layout:
 
-```html
-<script>
-  try {
-    const scheme = localStorage.getItem('site-scheme')
-    if (scheme === 'dark' || scheme === 'light') document.documentElement.dataset.theme = scheme
-  } catch {}
-</script>
+```json
+{
+  "add": [
+    {
+      "id": "scheme.early",
+      "to": "head",
+      "first": true,
+      "html": "<script>try{const s=localStorage.getItem('site-scheme');if(s==='dark'||s==='light')document.documentElement.dataset.theme=s}catch{}</script>"
+    }
+  ]
+}
 ```
 
-The layout of `theme-default` keeps `@stack('head')` as well, but it stands after the stylesheets;
-for this script the top of `<head>` is the place.
+in `theme/compositions/layout/default.json`. The layout keeps `@stack('head')` as well, but it
+stands after the stylesheets; for this script the top of `<head>` is the place.
 
 The theme's test measures the contrast of rule 29 in the dark scheme too (`dark scheme`,
 `preset warm, dark scheme`), a dark token left unset counting with its light value;
@@ -168,9 +173,42 @@ A change goes through the cheapest door that solves it:
 2. **CSS on the classes** — `theme/src/css/theme.css`, on the classes the shell (`site-*`) and the
    modules (`webx-<module>-*`, listed in each module's `AGENTS.md`) print.
 3. **An extension point** — `theme/views/parts/<point>.blade.php` for a point a module's view
-   offers with `@webxPart` (`parts/blog/card.blade.php`).
+   offers with `@webxPart` (`parts/blog/card.blade.php`) — or **a patch of a composition**,
+   `theme/compositions/layout/default.json`, for the layout — `header/` and `footer/` for the
+   header and the footer: an attribute, a piece gone, moved or added, by id
+   ([Compositions](./compositions.md)).
 4. **An override of a view** — a copy of the current version in `theme/views/…`, changed the
    least. The expensive door: the copy stops getting the module's fixes.
+
+### The header and the footer without a copy
+
+The header and the footer of `theme-default` are the compositions `header` and `footer`, the
+fallbacks of their regions. A theme that wants the logo of its own, no phone in the bar, a search
+among the actions or the announcement bar inside the header patches them by id — the same JSON as
+the layout:
+
+```
+header                header.topbar → header.contacts · header.brand → header.logo · header.nav ·
+                      header.actions → header.phones, header.cta, header.languages
+footer                footer.inner → footer.contacts · footer.nav → footer.menu, footer.consent ·
+                      footer.copy
+```
+
+```jsonc
+// theme/compositions/header/default.json
+{
+  "replace": { "header.logo": { "view": "components.logo" } },
+  "add": [{ "id": "search", "to": "header.actions", "first": true, "view": "components.search" }],
+  "remove": ["header.phones"],
+}
+```
+
+A view of the theme in a node's place gets what the leaves get (`$nav`, `$calls`, `$contacts`,
+`$hours`, `$email`, `$phones`, `$languages`). Every id and the announcement bar's two files —
+[Compositions](./compositions.md#the-header-and-the-footer). A theme with its own
+`views/components/header.blade.php` keeps working — the copy prints, the patches do not —, and
+`webx:theme:check` notes it; going over is `webx:composition:show header --blade` against the
+copy, the differences as a patch, the copy gone.
 
 The 35 rules of a theme — where to work, tokens, where each style lives, blocks, views, languages
 and fonts, accessibility, what to check before saying it is done — are in the engine's
@@ -179,15 +217,16 @@ and the test name a rule by its number.
 
 ## The commands
 
-| Command                                  | What it does                                                                                                      |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `webx:theme:show [--json]`               | the layers, every token with the layer or preset that set it, every view with what it hides, blocks, icons, fonts |
-| `webx:theme:check [path]`                | the rules a machine can hold; a line per finding (file:line, what, why), non-zero exit                            |
-| `webx:theme:sync [--dry-run]`            | publishes `dist/`, `assets/`, the sprite and the modules' base look; never writes a block type                    |
-| `webx:theme:make theme --local --uses=…` | the local theme `webx:setup` gives every new site                                                                 |
-| `webx:theme:make vendor/name [--uses=…]` | a packaged theme in `packages/<name>`, over `webx-ui/theme-default` unless told otherwise                         |
-| `webx:theme:extract vendor/name`         | the site's local theme becomes a package the site then stands on                                                  |
-| `webx:theme:eject [vendor/name]`         | a packaged theme becomes part of the site's local theme; its updates stop                                         |
+| Command                                  | What it does                                                                                                                      |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `webx:theme:show [--json]`               | the layers, every token with the layer or preset that set it, every view with what it hides, blocks, icons, fonts                 |
+| `webx:theme:check [path]`                | the rules a machine can hold; a line per finding (file:line, what, why), non-zero exit                                            |
+| `webx:composition:show [name]`           | the compositions, or the final tree of one with who added, moved, replaced or removed each node (`--origin`, `--json`, `--blade`) |
+| `webx:theme:sync [--dry-run]`            | publishes `dist/`, `assets/`, the sprite and the modules' base look; never writes a block type                                    |
+| `webx:theme:make theme --local --uses=…` | the local theme `webx:setup` gives every new site                                                                                 |
+| `webx:theme:make vendor/name [--uses=…]` | a packaged theme in `packages/<name>`, over `webx-ui/theme-default` unless told otherwise                                         |
+| `webx:theme:extract vendor/name`         | the site's local theme becomes a package the site then stands on                                                                  |
+| `webx:theme:eject [vendor/name]`         | a packaged theme becomes part of the site's local theme; its updates stop                                                         |
 
 `show` is what to read before a change: it says which layer owns the value you are about to
 change. `check` is what to run before saying the change is done.
@@ -222,7 +261,8 @@ just wrote. It holds the theme to:
   both, `accent-contrast` on `accent`, `accent` on `bg` (hex colours; another notation is left to
   the eye);
 - the layout of the chain keeps `@webxTheme`, `@webxSeo`, `@webxBlocks` and the `header` and
-  `footer` regions;
+  `footer` regions — in the final tree of the composition `layout`, whose patches of the theme
+  apply with no finding;
 - the theme's views compile (a component of a module not installed where the test runs is not
   the theme's fault and is skipped);
 - a packaged theme's committed `dist/` is built from its current `src/`.

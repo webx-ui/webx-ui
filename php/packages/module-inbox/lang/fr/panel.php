@@ -25,6 +25,8 @@ return [
     'reorder' => 'Réordonner',
     'new-form-title' => 'Nouveau formulaire',
     'title' => 'Titre',
+    'description' => 'Description',
+    'description-help' => 'Une ligne sous le titre du formulaire sur le site et dans la boîte de dialogue. Vide — rien n’est affiché.',
     'slug' => 'Adresse',
     'slug-help' => 'Le nom du formulaire sur le site et l’endroit où il envoie.',
     'is-enabled' => 'Actif',

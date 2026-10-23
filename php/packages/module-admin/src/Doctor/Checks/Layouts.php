@@ -11,6 +11,7 @@ use Illuminate\Filesystem\Filesystem;
 use InvalidArgumentException;
 use WebxUi\Admin\Doctor\Check;
 use WebxUi\Admin\Doctor\Diagnosis;
+use WebxUi\Admin\Doctor\LayoutSource;
 use WebxUi\Admin\Doctor\Paths;
 use WebxUi\Admin\Panel\PackageRegistry;
 
@@ -89,7 +90,7 @@ final class Layouts implements Check
             )];
         }
 
-        $contents = (string) $this->files->get($path);
+        $contents = LayoutSource::of((string) $this->files->get($path), $this->views, $this->files);
         $relative = Paths::short($path, $this->app->basePath());
 
         if (preg_match('/@stack\(\s*[\'"]head[\'"]\s*\)/', $contents) !== 1) {

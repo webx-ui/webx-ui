@@ -17,6 +17,7 @@ use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Content\AuditContentSources;
+use WebxUi\Compositions\Compositions;
 use WebxUi\Pages\Audit\PageContentSource;
 use WebxUi\Pages\Links\PageLinkSource;
 use WebxUi\Pages\Models\Page;
@@ -52,6 +53,12 @@ class PagesServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-pages');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-pages');
+
+        // The page types its views name to the layout, so a theme's file for a misspelt one is a
+        // finding of webx:theme:check (COMPOSITIONS §4).
+        if (class_exists(Compositions::class)) {
+            Compositions::handles('pages', ['pages.page']);
+        }
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->registerRouteType();

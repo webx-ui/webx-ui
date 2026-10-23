@@ -176,6 +176,41 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
 
 ## Blade и рендер сайта
 
+- **Патч темы в `theme/compositions/layout/*.json` «не работает», страница прежняя, ошибок нет.**
+  Причины по частоте: у сайта или темы свой `components/layout.blade.php` — он раньше диспетчера
+  композиции в поиске видов (`webx:theme:check` даёт note «overrides the composition»); имя файла —
+  не хендл, который называет вид модуля (`blog.artcle.json` → `unknown handle`); операция ссылается
+  на `id`, которого нет, и пропущена с находкой в логе; на проде `view.check_cache_timestamps`
+  выключен и набор не пересобран. Проверка — `php artisan webx:composition:show layout
+--handle=<хендл> --origin` (кто тронул узел) и `webx:theme:check`; после деплоя —
+  `webx:composition:compile` (шаг `webx:boot`). У страничной композиции модуля (`blog.article`)
+  хендл — `default`: файл `theme/compositions/blog.article/blog.article.json` страница не читает,
+  `theme:check` даёт на него note — патч в `blog.article/default.json`.
+- **Лист композиции печатает лишний перевод строки — HTML разошёлся с прежним видом «пробелами».**
+  Комментарий Blade в начале листа вырезается, а перевод строки после `--}}` остаётся в выводе:
+  `{{-- Why. --}}` + перевод строки + `@if (…)` даёт пустую строку перед разметкой. Перевод строки
+  после директивы (`@endif`, `@php(…)`) Blade съедает, после комментария — нет. Эмиттер тут не
+  поможет: лист — обычный вид, его выводит `@include`. Лечение — комментарий «прилипает» к первой
+  строке: `{{-- Why. --}}@if (…)` (так написаны листья `module-blog/resources/views/article/*`).
+  Проверка — хелпер `WebxUi\Compositions\Testing\ComparesHtml::assertSameHtml()` прощает только
+  пробелы между тегами; побайтный золотой файл (`ArticleGoldenTest`) ловит и перевод строки.
+- **Шапка «до» и «после» в одном тесте расходится только в `aria-controls="webx-header-nav-3-0"` против
+  `-4-0`.** Это не композиция: `<x-webx-header.nav>` нумерует панели статическим счётчиком процесса
+  (`HeaderNav::$count`), и второй рендер получает следующий номер. Лечение — сбросить счётчик перед
+  каждым рендером: `(new ReflectionProperty(HeaderNav::class, 'count'))->setValue(null, 0)` (так
+  делает `HeaderFooterCompositionTest` theme-default). Проверка — сравнение зелёное без правки HTML.
+- **Узел `x-slot:<имя>` в патче — находка «is a slot of a component and stands only in one».** Слот
+  именованный, он живёт только среди детей `component`: `to` патча указал на `tag` или группу. Лечение
+  — `to` на сам компонент (`header`), а не на соседний слот. Проверка — `webx:composition:show header`.
+- **Сразу после `webx:composition:compile` набор «старее источников»** (`stale()` → true, doctor
+  пишет note/warn) — в тесте и в скрипте, который правит JSON и тут же компилирует. Правило Blade:
+  источник с `mtime` той же секунды, что и сборка, считается новее. Не баг; в тесте сдвинуть
+  `compiled_at` манифеста (`compositions/tests/DoctorTest::compiled()`).
+- **`webx:theme:check` на сайте без module-seo: «no directive @webxSeo: left out».** Запасной слот
+  `head.slot` базы называет директиву модуля, которого нет. Это замечание, не находка: «нет вида,
+  компонента, директивы» у узлов базы и модулей — то, что не установлено; находка — только у узла,
+  который поставили тема или конфиг сайта (`Inspector::said()`).
+
 - **Последняя строка лэйаута перед `</body>` — не последняя в ответе.** Тест «код места
   `body_end` стоит прямо перед `</body>`» падает: `Widgets::finish()` после рендера дописывает
   перед `</body>` баннер согласия и `<script type="module">` виджетов. Проверять порядок
@@ -326,6 +361,17 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
   GET. Проверять GET на 404, POST — на 404 или 405.
 - **`where` у группы маршрутов — массив:** `->where('key', '…')` падает внутри `RouteGroup`
   `array_merge(): Argument #1 must be of type array`.
+- **Тест прокси на сайте видит https с публичного адреса, хотя доверие — частным сетям.**
+  Относительный путь в `$this->get('/…')` тест достраивает от `APP_URL`; в `.env` сайта там
+  `https://…`, и запрос защищённый ещё до `TrustProxies`. Схему и IP за прокси проверять запросом
+  на полный `http://localhost/…` (`php/site/tests/Feature/TrustedProxiesTest.php`). Кому сайт
+  верит `X-Forwarded-*` — `config/trustedproxy.php` (`TRUSTED_PROXIES`); у сайтов, созданных
+  раньше, — `trustProxies(at:)` в `bootstrap/app.php`, который перебивает конфиг; `*` —
+  предупреждение `webx:doctor`.
+- **Глобальный middleware, читающий базу, отвечает 500 на каждый запрос сайта без таблиц** — до
+  `migrate`, в тесте сайта без `RefreshDatabase`. Нормализация и редиректы `module-seo`
+  ловят `QueryException` и пропускают запрос; новый глобальный middleware — так же (тест —
+  `a_site_without_the_tables_still_answers` в `module-seo/tests/NormaliseTest.php`).
 - **Путь `health:` из `bootstrap/app.php` в рантайме не узнать** — только рефлексией
   `PreventRequestsDuringMaintenance::$neverPrevent` (`Http\Probes` плюс `webx-seo.probes`).
   Глобальный редиректящий middleware обязан его пропускать, иначе healthcheck контейнера получает 301. В тесте — `PreventRequestsDuringMaintenance::except()` и `flushState()`.
@@ -417,6 +463,10 @@ $value` не отличает «типа нет» от «тип сказал н�
   берёт их из контейнера в момент использования. У нас: `ScreenRegistry`.
 
 ## Тесты: Testbench и PHPUnit
+
+- **Фикстура «битый JSON» в репозитории валит `npx prettier --check .`.** Prettier разбирает каждый
+  `.json`. Невалидный файл тест пишет сам во временный каталог (`CompositionCheckTest`,
+  `CompileTest`); золотой HTML, который сверяется побайтно, — в `.prettierignore`.
 
 - **`assertNoRepeatedQueries` считает повтором две загрузки с одинаковыми id и не считает — с
   разными.** `QueryTally::shape()` схлопывает только `in (?, ?)`, а eager load целых ключей

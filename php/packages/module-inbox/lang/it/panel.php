@@ -25,6 +25,8 @@ return [
     'reorder' => 'Riordina',
     'new-form-title' => 'Nuovo modulo',
     'title' => 'Titolo',
+    'description' => 'Descrizione',
+    'description-help' => 'Una riga sotto il titolo del modulo sul sito e nella finestra di dialogo. Vuoto — non si mostra nulla.',
     'slug' => 'Indirizzo',
     'slug-help' => 'Come si chiama il modulo sul sito e dove invia.',
     'is-enabled' => 'Attivo',

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The page's FAQ and its interlinking block (§18.4–18.5) close the page's own column: they answer and link on from what was just read. Both print nothing while their feature is off or the page has none.",
+  "add": [
+    { "id": "seo.faq", "to": "main", "after": "content", "component": "webx-seo::faq" },
+    { "id": "seo.links", "to": "main", "after": "seo.faq", "component": "webx-seo::links" }
+  ]
+}

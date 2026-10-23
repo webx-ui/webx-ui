@@ -25,6 +25,8 @@ return [
     'reorder' => 'Neu anordnen',
     'new-form-title' => 'Neues Formular',
     'title' => 'Titel',
+    'description' => 'Beschreibung',
+    'description-help' => 'Eine Zeile unter dem Titel des Formulars auf der Website und im Dialog. Leer — es wird nichts angezeigt.',
     'slug' => 'Adresse',
     'slug-help' => 'Wie das Formular auf der Website heißt und wohin es sendet.',
     'is-enabled' => 'Aktiv',

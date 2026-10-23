@@ -20,7 +20,7 @@
     </article>
 @php($body = ob_get_clean())
 
-<x-dynamic-component :component="config('webx-press.layout') ?: 'webx-press::standalone'">
+<x-dynamic-component :component="config('webx-press.layout') ?: 'webx-press::standalone'" handle="press.outlet">
     <x-slot:head>
         {{-- The SEO card, the outlet's own name, summary and logo under it (HasSeoFallback), the
              site defaults, and the ItemList of the articles (HasStructuredData). --}}

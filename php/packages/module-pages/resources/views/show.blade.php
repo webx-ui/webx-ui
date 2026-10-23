@@ -3,7 +3,7 @@
      line has to stay at the top of the file rather than move inside the tag. --}}
 @php($content = $page->renderBlocks())
 
-<x-dynamic-component :component="config('webx-pages.layout') ?: 'webx-pages::standalone'">
+<x-dynamic-component :component="config('webx-pages.layout') ?: 'webx-pages::standalone'" handle="pages.page">
     <x-slot:head>
         {{-- Everything the page says about itself, the title included: from its SEO card, or
              its own title through the site's template when the card is empty (`seoFallback()`). --}}

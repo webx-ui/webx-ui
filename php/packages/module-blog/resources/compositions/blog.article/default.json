@@ -1,0 +1,37 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The page of an article inside the layout (COMPOSITIONS §10, stage 4). The leaves are views of this module and keep their conditions: no date, no cover, no tags — no markup. The body of the blocks is rendered by article.blade.php before the layout, for @webxBlocks; article.content only prints it.",
+  "vars": ["article", "related", "content"],
+  "dispatcher": "webx-blog::article",
+  "root": {
+    "id": "root",
+    "children": [
+      {
+        "id": "article",
+        "tag": "article",
+        "attrs": { "class": "webx-blog-article" },
+        "children": [
+          {
+            "id": "article.header",
+            "tag": "header",
+            "attrs": { "class": "webx-blog-article__header" },
+            "children": [
+              { "id": "article.breadcrumbs", "view": "webx-blog::article.breadcrumbs" },
+              { "id": "article.title", "view": "webx-blog::article.title" },
+              { "id": "article.meta", "view": "webx-blog::article.meta" },
+              { "id": "article.cover", "view": "webx-blog::article.cover" }
+            ]
+          },
+          {
+            "id": "article.content",
+            "$comment": "Protected: the head already carries the styles of these blocks, and a page without its body is not an article. It moves, inside the article.",
+            "view": "webx-blog::article.content",
+            "protected": true
+          },
+          { "id": "article.tags", "view": "webx-blog::article.tags" }
+        ]
+      },
+      { "id": "article.related", "view": "webx-blog::article.related" }
+    ]
+  }
+}

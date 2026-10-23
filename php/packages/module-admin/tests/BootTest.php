@@ -194,6 +194,19 @@ final class BootTest extends TestCase
         $this->assertContains('php artisan webx:theme:sync', $this->lines($this->plan(['webx-ui/module-admin', 'webx-ui/themes', 'webx-ui/widgets'])));
     }
 
+    /** COMPOSITIONS §6.2: the layout compiled from its tree, before view:cache caches it like any view. */
+    #[Test]
+    public function it_compiles_the_compositions_before_the_views_are_cached(): void
+    {
+        $lines = $this->lines($this->plan(['webx-ui/module-admin', 'webx-ui/compositions', 'webx-ui/themes']));
+        $compile = array_search('php artisan webx:composition:compile', $lines, true);
+
+        $this->assertIsInt($compile);
+        $this->assertLessThan(array_search('php artisan view:cache', $lines, true), $compile);
+        $this->assertFalse($this->step($this->plan(['webx-ui/module-admin', 'webx-ui/compositions']), 'webx:composition:compile')?->fatal);
+        $this->assertNotContains('php artisan webx:composition:compile', $this->lines($this->plan(['webx-ui/module-admin'])));
+    }
+
     // -- The first administrator ---------------------------------------------------------------
 
     #[Test]

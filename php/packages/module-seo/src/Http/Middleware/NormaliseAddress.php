@@ -6,6 +6,7 @@ namespace WebxUi\Seo\Http\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -50,7 +51,13 @@ final class NormaliseAddress
             return $next($request);
         }
 
-        $target = $this->target($request);
+        try {
+            $target = $this->target($request);
+        } catch (QueryException) {
+            // The settings are not readable yet — a site before `migrate`, a test without the
+            // tables. A tab that cannot be read normalises nothing; the page answers for itself.
+            return $next($request);
+        }
 
         return $target === null ? $next($request) : new RedirectResponse($target, 301);
     }

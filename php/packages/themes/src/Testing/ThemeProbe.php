@@ -11,6 +11,11 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Throwable;
+use WebxUi\Compositions\Builder;
+use WebxUi\Compositions\Layers;
+use WebxUi\Compositions\Node;
+use WebxUi\Compositions\Patcher;
+use WebxUi\Compositions\Reader;
 use WebxUi\Themes\Checks\ChainCheck;
 use WebxUi\Themes\Checks\ContrastCheck;
 use WebxUi\Themes\ThemeChain;
@@ -136,6 +141,11 @@ final class ThemeProbe
         }
 
         $source = (string) preg_replace('/\{\{--.*?--\}\}/s', '', (string) file_get_contents($file));
+
+        if (str_contains($source, "composition_view('layout'")) {
+            return $this->compositionProblems($file);
+        }
+
         $problems = [];
 
         foreach (['@webxTheme' => 'the tokens and the stylesheets of the layers', '@webxSeo' => 'the head of the page', '@webxBlocks' => 'the styles of the blocks on the page'] as $directive => $what) {
@@ -147,6 +157,60 @@ final class ThemeProbe
         foreach (['header', 'footer'] as $region) {
             if (preg_match('/<x-webx-blocks::region\b[^>]*\bname="'.$region.'"/', $source) !== 1) {
                 $problems[] = "{$file}: no <x-webx-blocks::region name=\"{$region}\"> — the {$region} an editor arranges in the panel would never show";
+            }
+        }
+
+        return $problems;
+    }
+
+    /**
+     * The same seams in the composition `layout` (COMPOSITIONS §3.6), when the layout of the
+     * chain is its dispatcher: the final tree of `default` over this chain, the modules the test
+     * booted with it.
+     *
+     * @return list<string>
+     */
+    private function compositionProblems(string $file): array
+    {
+        $layers = $this->app->make(Layers::class)->withThemes(fn (): array => array_map(static fn (ThemeManifest $layer): array => [
+            'name' => $layer->name,
+            'dir' => $layer->path.'/compositions',
+            'local' => $layer->local,
+        ], array_reverse($this->chain()->layers)));
+
+        try {
+            $reader = new Reader;
+            $tree = (new Builder($layers, $reader, new Patcher($reader)))->build('layout');
+        } catch (Throwable $e) {
+            return ["{$file}: the composition layout does not build — {$e->getMessage()}"];
+        }
+
+        $directives = [];
+        $regions = [];
+        $walk = function (Node $node) use (&$walk, &$directives, &$regions): void {
+            if ($node->kind === 'directive') {
+                $directives[] = $node->value;
+            } elseif ($node->kind === 'region') {
+                $regions[] = $node->value;
+            }
+
+            foreach ([...$node->children, ...$node->fallback] as $child) {
+                $walk($child);
+            }
+        };
+        $walk($tree->root);
+
+        $problems = array_map(static fn ($finding): string => "{$file}: {$finding}", array_values(array_filter($tree->findings, static fn ($finding): bool => ! $finding->note)));
+
+        foreach (['webxTheme' => 'the tokens and the stylesheets of the layers', 'webxSeo' => 'the head of the page', 'webxBlocks' => 'the styles of the blocks on the page'] as $directive => $what) {
+            if (! in_array($directive, $directives, true)) {
+                $problems[] = "{$file}: the composition layout has no @{$directive} — {$what} would be missing";
+            }
+        }
+
+        foreach (['header', 'footer'] as $region) {
+            if (! in_array($region, $regions, true)) {
+                $problems[] = "{$file}: the composition layout has no region \"{$region}\" — the {$region} an editor arranges in the panel would never show";
             }
         }
 

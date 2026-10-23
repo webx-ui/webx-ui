@@ -1,0 +1,73 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The document every public page is printed in (COMPOSITIONS §10.1). Modules add their pieces from their own resources/compositions/layout/; the nodes marked protected are the seams they and the head stand on.",
+  "root": {
+    "id": "html",
+    "tag": "html",
+    "protected": true,
+    "children": [
+      {
+        "id": "head",
+        "tag": "head",
+        "protected": true,
+        "children": [
+          { "id": "meta.charset", "html": "<meta charset=\"utf-8\">" },
+          {
+            "id": "meta.viewport",
+            "html": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+          },
+          {
+            "id": "theme.assets",
+            "$comment": "The site tokens as one inline :root, then the stylesheet of every layer, bottom first.",
+            "directive": "webxTheme",
+            "protected": true
+          },
+          { "id": "meta.theme-color", "directive": "webxThemeColor" },
+          {
+            "id": "head.slot",
+            "$comment": "A module's view hands @webxSeo and @webxBlocks in the head slot, and neither prints twice: the pair here only for a page that handed nothing.",
+            "slot": "head",
+            "fallback": ["webxSeo", "webxBlocks"],
+            "protected": true
+          },
+          {
+            "id": "head.stack",
+            "$comment": "What a block type or a partial pushes cannot reach a slot.",
+            "stack": "head",
+            "protected": true
+          }
+        ]
+      },
+      {
+        "id": "body",
+        "tag": "body",
+        "attrs": { "class": "site" },
+        "protected": true,
+        "children": [
+          { "id": "skip-link", "view": "components.skip-link" },
+          {
+            "id": "notice-bar",
+            "$comment": "The announcement bar (WIDGETS §14), after Skip to content and in the flow above the header, so the sticky header measures what it always did.",
+            "component": "webx-notice-bar",
+            "children": [{ "id": "notice.stack", "stack": "notice" }]
+          },
+          {
+            "id": "header",
+            "$comment": "Regions are trees of blocks an editor arranges in the panel; the fallback view is looked up through the chain, so a local theme replaces it by having the file.",
+            "region": "header",
+            "fallback": "components.header"
+          },
+          {
+            "id": "main",
+            "tag": "main",
+            "attrs": { "id": "content", "class": "site-main" },
+            "protected": true,
+            "children": [{ "id": "content", "slot": "default", "protected": true }]
+          },
+          { "id": "footer", "region": "footer", "fallback": "components.footer" },
+          { "id": "scripts.stack", "stack": "scripts", "protected": true }
+        ]
+      }
+    ]
+  }
+}

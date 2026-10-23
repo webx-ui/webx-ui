@@ -98,6 +98,11 @@ trait ModuleThemeContract
             $views .= file_get_contents($file)."\n";
         }
 
+        // A composition of the module prints the classes of its containers from its tree.
+        foreach ($this->files($this->modulePath().'/resources/compositions', 'json') as $file) {
+            $views .= file_get_contents($file)."\n";
+        }
+
         foreach ($documented as $class) {
             $literal = strstr($class, '<', true);
             $literal = $literal === false ? $class : $literal;

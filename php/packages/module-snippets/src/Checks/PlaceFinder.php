@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace WebxUi\Snippets\Checks;
 
+use Illuminate\Container\Container;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use Throwable;
+use WebxUi\Compositions\Builder;
+use WebxUi\Compositions\Layers;
+use WebxUi\Compositions\Patcher;
+use WebxUi\Compositions\Reader;
 
 /**
  * Where the views print places (§10.1): a static search of the Blade files, without a database,
@@ -19,6 +25,10 @@ use SplFileInfo;
  * Both forms are found: `<x-webx-snippets place="head" />` and theme-default's
  * `<x-dynamic-component component="webx-snippets" place="head" />`. A place set by an expression
  * (`:place="$where"`) cannot be read without rendering — it is reported apart, not guessed.
+ *
+ * A layout that is the dispatcher of the composition `layout` (COMPOSITIONS §5.3) prints what
+ * the final tree holds: the module adds its places there itself, and a theme's patch may take one
+ * away. The tree is built over the themes behind the directories searched.
  */
 final class PlaceFinder
 {
@@ -53,7 +63,58 @@ final class PlaceFinder
             }
         }
 
-        return ['places' => $places, 'dynamic' => $dynamic, 'layout' => $files[self::LAYOUT] ?? null];
+        $layout = $files[self::LAYOUT] ?? null;
+
+        if ($layout !== null && str_contains((string) @file_get_contents($layout), "composition_view('layout'")) {
+            foreach ($this->composed($paths) as $place) {
+                $places[$place] ??= ['file' => $layout, 'line' => 1];
+            }
+        }
+
+        return ['places' => $places, 'dynamic' => $dynamic, 'layout' => $layout];
+    }
+
+    /**
+     * The places of the final tree of `layout`: the themes are the layers whose `views/` are
+     * searched, bottom first, the modules those the application loaded.
+     *
+     * @param  list<string>  $paths
+     * @return list<string>
+     */
+    private function composed(array $paths): array
+    {
+        $container = Container::getInstance();
+
+        if (! $container->bound(Layers::class)) {
+            return [];
+        }
+
+        $themes = [];
+
+        foreach (array_reverse($paths) as $root) {
+            $dir = dirname(rtrim(str_replace('\\', '/', $root), '/')).'/compositions';
+
+            if (is_dir($dir)) {
+                $themes[] = ['name' => basename(dirname($dir)), 'dir' => $dir, 'local' => false];
+            }
+        }
+
+        try {
+            $reader = new Reader;
+            $tree = (new Builder($container->make(Layers::class)->withThemes(static fn (): array => $themes), $reader, new Patcher($reader)))->build('layout');
+        } catch (Throwable) {
+            return [];
+        }
+
+        $places = [];
+
+        foreach ($tree->root->walk() as $node) {
+            if ($node->kind === 'component' && $node->value === 'webx-snippets' && is_string($node->attrs['place'] ?? null)) {
+                $places[] = $node->attrs['place'];
+            }
+        }
+
+        return $places;
     }
 
     /**

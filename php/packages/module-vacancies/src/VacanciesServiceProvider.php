@@ -18,6 +18,7 @@ use WebxUi\Admin\SiteBar\DraftPublishing;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Compositions\Compositions;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -72,6 +73,12 @@ class VacanciesServiceProvider extends ServiceProvider
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-vacancies');
+
+        // The page types its views name to the layout, so a theme's file for a misspelt one is a
+        // finding of webx:theme:check (COMPOSITIONS §4).
+        if (class_exists(Compositions::class)) {
+            Compositions::handles('vacancies', ['vacancies.index', 'vacancies.show']);
+        }
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->registerRouteType($prefix);

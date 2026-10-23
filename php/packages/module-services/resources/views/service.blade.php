@@ -2,7 +2,7 @@
      after the blocks themselves — and a slot is worked out before the layout around it. --}}
 @php($content = $service->renderBlocks())
 
-<x-dynamic-component :component="config('webx-services.layout') ?: 'webx-services::standalone'">
+<x-dynamic-component :component="config('webx-services.layout') ?: 'webx-services::standalone'" handle="services.show">
     <x-slot:head>
         {{-- Everything the service says about itself: its SEO card, its own name, lead and cover
              under it (HasSeoFallback), and the site defaults. --}}

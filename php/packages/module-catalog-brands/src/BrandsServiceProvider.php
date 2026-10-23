@@ -42,6 +42,7 @@ use WebxUi\CatalogBrands\Panel\BrandsModule;
 use WebxUi\CatalogBrands\Storefront\BrandHandler;
 use WebxUi\CatalogBrands\Storefront\BrandMisses;
 use WebxUi\CatalogBrands\Storefront\BrandsController;
+use WebxUi\Compositions\Compositions;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -81,6 +82,12 @@ class BrandsServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-brands');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-brands');
+
+        // The page types its views name to the layout, so a theme's file for a misspelt one is a
+        // finding of webx:theme:check (COMPOSITIONS §4).
+        if (class_exists(Compositions::class)) {
+            Compositions::handles('catalog-brands', ['catalog.brand', 'catalog.brands']);
+        }
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->registerAddresses();

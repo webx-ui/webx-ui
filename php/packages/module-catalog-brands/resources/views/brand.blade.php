@@ -10,7 +10,7 @@
 @php($seo = app(WebxUi\Seo\Rendering\Seo::class))
 @php($meta = $seo->for($seo->currentUrl(), $page))
 
-<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
+<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'" handle="catalog.brand">
     <x-slot:head>
         {{-- The title is in there too: the card's, or the brand's name through the site's template,
              with its description and logo under it (`seoFallback()`). --}}

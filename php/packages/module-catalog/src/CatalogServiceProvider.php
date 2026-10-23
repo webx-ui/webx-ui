@@ -93,6 +93,7 @@ use WebxUi\Catalog\Sorts\CoreSort;
 use WebxUi\Catalog\Sorts\Sorts;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
+use WebxUi\Compositions\Compositions;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\Formatters\SlugId;
@@ -160,6 +161,12 @@ class CatalogServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog');
+
+        // The page types its views name to the layout, so a theme's file for a misspelt one is a
+        // finding of webx:theme:check (COMPOSITIONS §4).
+        if (class_exists(Compositions::class)) {
+            Compositions::handles('catalog', ['catalog.category', 'catalog.product', 'catalog.root', 'catalog.search']);
+        }
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
         $this->registerCacheGroups();
 

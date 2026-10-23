@@ -17,12 +17,16 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cache\CacheServiceProvider;
+use WebxUi\Compositions\Compositions;
+use WebxUi\Compositions\CompositionsServiceProvider;
+use WebxUi\Themes\Checks\CompositionCheck;
 use WebxUi\Themes\Console\CheckCommand;
 use WebxUi\Themes\Console\EjectCommand;
 use WebxUi\Themes\Console\ExtractCommand;
 use WebxUi\Themes\Console\MakeCommand;
 use WebxUi\Themes\Console\ShowCommand;
 use WebxUi\Themes\Console\SyncCommand;
+use WebxUi\Themes\Contracts\ThemeCheckPart;
 use WebxUi\Themes\Doctor\FontsCheck;
 use WebxUi\Themes\View\Components\Icon;
 
@@ -51,6 +55,12 @@ class ThemeServiceProvider extends ServiceProvider
         // The registry of cache groups has to be one singleton before `boot()` declares into it,
         // whether the site found `webx-ui/cache` by discovery or a test listed the providers.
         $this->app->register(CacheServiceProvider::class);
+
+        // The compositions too: the layers of the chain are the themes' layers of every composition.
+        $this->app->register(CompositionsServiceProvider::class);
+
+        // The compositions of the chain in webx:theme:check (COMPOSITIONS §8).
+        $this->app->tag([CompositionCheck::class], ThemeCheckPart::TAG);
 
         $this->app->singleton(ThemeLocator::class, fn (Application $app) => new ThemeLocator($app->basePath()));
 
@@ -99,6 +109,9 @@ class ThemeServiceProvider extends ServiceProvider
         // namespace separators.
         Blade::directive('webxTheme', static fn (): string => sprintf('<?php echo app(%s)->render(); ?>', var_export(ThemeHead::class, true)));
 
+        // The colour of the browser bar (COMPOSITIONS §7): `@webxThemeColor` or `@webxThemeColor('color-surface')`.
+        Blade::directive('webxThemeColor', static fn (string $token = ''): string => sprintf('<?php echo app(%s)->render(%s); ?>', var_export(ThemeColor::class, true), trim($token)));
+
         // Without a theme too: a template that names an icon still compiles, and prints an empty <svg>.
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-themes');
         Blade::component('theme::icon', Icon::class);
@@ -106,6 +119,13 @@ class ThemeServiceProvider extends ServiceProvider
         if ($this->reference() === null) {
             return;
         }
+
+        // Each layer's compositions/ (COMPOSITIONS §5.1), bottom first, read only when compiling.
+        Compositions::themes(fn (): array => array_map(static fn (ThemeManifest $layer): array => [
+            'name' => $layer->name,
+            'dir' => $layer->path.'/compositions',
+            'local' => $layer->local,
+        ], array_reverse($this->app->make(ThemeChain::class)->layers)));
 
         // The fonts against the site's languages, in the frame's `webx:doctor` (§15.3) — where
         // the frame is installed; the engine does not need it.

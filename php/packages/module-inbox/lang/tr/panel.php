@@ -25,6 +25,8 @@ return [
     'reorder' => 'Yeniden sırala',
     'new-form-title' => 'Yeni form',
     'title' => 'Başlık',
+    'description' => 'Açıklama',
+    'description-help' => 'Sitede ve iletişim kutusunda formun başlığının altındaki satır. Boşsa hiçbir şey gösterilmez.',
     'slug' => 'Adres',
     'slug-help' => 'Formun sitedeki adı ve nereye gönderdiği.',
     'is-enabled' => 'Etkin',

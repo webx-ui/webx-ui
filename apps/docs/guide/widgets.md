@@ -66,6 +66,14 @@ No component needed — the attributes are enough, in a block template or in a t
 
 The components `<x-webx-dialog>` and `<x-webx-tabs>` print the same markup for you.
 
+`<x-webx-dialog id="call" title="Call me back" description="We call within 15 minutes." sheet>` —
+`description` is a line under the title, the dialog's accessible description; `sheet` makes it a
+sheet from the bottom on a window narrower than 40rem: the whole width, rounded on top, scrolling
+inside, sliding in unless the visitor asked for less motion. Wider, and without `sheet`, it is the
+card in the middle it always was. The window and not a container decides here — a modal dialog
+lies over the viewport, outside every container of the page — so the runtime measures it and marks
+the open dialog `is-sheet`, turning it with the phone; without JavaScript it stays a card.
+
 ## Header and mobile menu
 
 ```blade
@@ -82,6 +90,12 @@ top, the menu's tree in the body (`drill` or `accordion`), the actions at the bo
 on a link, on "Back" and on a swipe. `--webx-header-height` stays live, so an anchor under a
 sticky header keeps its heading in view.
 
+In an `accordion` a section that is a page itself is repeated as the first line of its branch.
+`parent="split"` — on `<x-webx-mobile-menu.nav>` or on `<x-webx-header>` — makes the section's
+name the link and opens the branch with an arrow beside it, «Submenu: …» to a screen reader, so
+the same page is not offered twice. A section without a page of its own opens by its name either
+way; `drill` keeps the section's name as a link on top of its level.
+
 ## Dropdown and form in a dialog
 
 `<x-webx-dropdown>` is a `<details>` — a click opens it without JavaScript; with it the panel is
@@ -89,6 +103,9 @@ placed from its button and turned over at the window's edge, and one is open on 
 
 Any link to `#webx-form-<slug>` — typed into a menu item or a block's button in the panel — opens
 that `module-inbox` form in a dialog, printed once per page however many buttons lead to it.
+The form's description stands under the dialog's title. `data-webx-sheet` on any of its buttons
+(or `Widgets::form('callback', sheet: true)`, or `webx-widgets.form_dialog.sheet` for every form)
+opens it as a sheet from the bottom on a phone.
 
 ## Cookie consent
 
@@ -142,10 +159,13 @@ is empty. Which sections the tab draws is what the theme, the packages and the p
 | `<x-webx-contact-bar>`    | "Call / Write / Request" along the bottom of a phone — one of the two, not both             |
 | `<x-webx-socials>`        | the networks as icons                                                                       |
 
-`theme-default` puts the contact button on every page that has contacts. A site that wants none
-sets `'contact_button' => false` in `config/webx-widgets.php`: the button is not printed wherever
-it is placed, and the contacts script is not loaded for it — other contact widgets on the page
-still load it for themselves. No need to override its view with an empty file.
+The package puts the contact button on every page that has contacts — the node
+`widgets.contact-button` of the [composition](./compositions.md) `layout`, after `footer`. A
+site that wants none sets `'contact_button' => false` in `config/webx-widgets.php`: the button is
+not printed wherever it is placed, and the contacts script is not loaded for it — other contact
+widgets on the page still load it for themselves. A theme that wants it elsewhere, or not in the
+layout at all, patches the node: `{"remove": ["widgets.contact-button"]}`. No need to override its
+view with an empty file, nor to copy the layout.
 
 ## Language switcher
 
@@ -274,11 +294,16 @@ What a long page needs, each loading only where it stands:
 
 A notch of the mouse wheel moves the page in one stretched glide that eases out, instead of a jump
 of a hundred pixels — what designs made with Lenis show. Off by default; the theme switches it on
-with one attribute on the layout's `<html>` (or `<body>`), and writes no script of its own:
+with one attribute on the layout's `<html>` (or `<body>`), and writes no script of its own. The
+attribute is a patch of the [composition](./compositions.md) `layout` — no copy of the layout:
 
-```blade
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-webx-smooth-scroll>
+```json
+{ "attrs": { "html": { "data-webx-smooth-scroll": true } } }
 ```
+
+in `theme/compositions/layout/default.json` (or `layout/blog.article.json` for the articles
+only). A setting goes beside it: `"data-webx-smooth-scroll-duration": "1.4s"`. A layout of the
+theme's own, written by hand, puts the attribute on its `<html>` as it is.
 
 The server sees the attribute and loads the widget's own file, Lenis built in; a page without it
 never loads Lenis. The settings, each an attribute beside the switch or a token in the theme's CSS
@@ -422,7 +447,8 @@ Inertial scrolling is this widget only: a theme does not bring Lenis or another 
   `pages="shown"` — both, the pages already on the screen marked. A module's own links go in the
   `links` slot. A failure says so and uncovers the links.
 - **Notice bar** — above the header (the default theme's layout prints it after "Skip to
-  content"), a region named "Announcement" with a close button. It says the first banner of the
+  content": the node `notice-bar` of the composition `layout`, its stack `notice.stack`; a theme
+  moves it with `{"move": [{"id": "notice-bar", "to": "body", "after": "header"}]}`), a region named "Announcement" with a close button. It says the first banner of the
   place `notice` of `webx-ui/module-banners` — a place of words, where a banner needs no
   picture — else its slot, else nothing. Closing it remembers the version of its words in
   `localStorage` (`version` names one of your own); new words come back for everybody. A closed bar
@@ -454,14 +480,15 @@ A block with nothing to show — no pictures, an unknown address, a deleted file
 
 ## Changing the look without forking
 
-| You want                       | Do this                                                                                                         |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| Other colours, radius, spacing | the site tokens in `theme/tokens.json` — every widget follows                                                   |
-| A widget's own measure         | its `--webx-<name>-*` token (`--webx-slider-gap`, `--webx-video-radius`…) on `:root` or on its class            |
-| Another look of a part         | the same class in `theme/src/css` — `.webx-slider__pause { … }`: it comes later in the cascade, no `!important` |
-| Other markup                   | `theme/views/vendor/webx-widgets/components/<name>.blade.php`                                                   |
-| An icon                        | `theme/views/vendor/webx-widgets/icons/<name>.blade.php`                                                        |
-| A word                         | the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`                                        |
+| You want                             | Do this                                                                                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Other colours, radius, spacing       | the site tokens in `theme/tokens.json` — every widget follows                                                         |
+| A widget's own measure               | its `--webx-<name>-*` token (`--webx-slider-gap`, `--webx-video-radius`…) on `:root` or on its class                  |
+| Another look of a part               | the same class in `theme/src/css` — `.webx-slider__pause { … }`: it comes later in the cascade, no `!important`       |
+| Other markup                         | `theme/views/vendor/webx-widgets/components/<name>.blade.php`                                                         |
+| A widget of the layout gone or moved | `theme/compositions/layout/default.json`: `{"remove": ["widgets.contact-button"]}` — by its id, no copy of the layout |
+| An icon                              | `theme/views/vendor/webx-widgets/icons/<name>.blade.php`                                                              |
+| A word                               | the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`                                              |
 
 The classes — `webx-<name>`, `webx-<name>__<part>`, states `is-*` — are the public contract.
 Style a part by its one class, not through a chain: one class beats the theme's prose and is

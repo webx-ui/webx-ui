@@ -114,12 +114,13 @@ Compact changes heights and the body scale; control text is left alone, because 
 
 ## Other scales
 
-| Group    | Variables                                                                                  |
-| -------- | ------------------------------------------------------------------------------------------ |
-| Shadows  | `--wx-shadow-none`, `--wx-shadow-sm`, `--wx-shadow-md`, `--wx-shadow-lg`                   |
-| Controls | `--wx-size-control-sm`, `--wx-size-control-md`, `--wx-size-control-lg`                     |
-| z-index  | `--wx-z-index-sticky` … `--wx-z-index-tooltip`                                             |
-| Motion   | `--wx-duration-fast`, `--wx-duration-normal`, `--wx-duration-slow`, `--wx-easing-standard` |
+| Group    | Variables                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------------ |
+| Shadows  | `--wx-shadow-none`, `--wx-shadow-sm`, `--wx-shadow-md`, `--wx-shadow-lg`                         |
+| Controls | `--wx-size-control-sm`, `--wx-size-control-md`, `--wx-size-control-lg`                           |
+| Fields   | `--wx-size-field` (640px, a form field's width), `--wx-size-field-wide` (768px, a text editor's) |
+| z-index  | `--wx-z-index-sticky` … `--wx-z-index-tooltip`                                                   |
+| Motion   | `--wx-duration-fast`, `--wx-duration-normal`, `--wx-duration-slow`, `--wx-easing-standard`       |
 
 Every floating panel — a dropdown, a select's list, a popover, a colour picker — is drawn on
 `--wx-z-index-popover`, one shared layer. They are added to the document as they open, so the one

@@ -25,6 +25,8 @@ return [
     'reorder' => 'Zmień kolejność',
     'new-form-title' => 'Nowy formularz',
     'title' => 'Tytuł',
+    'description' => 'Opis',
+    'description-help' => 'Wiersz pod tytułem formularza na stronie i w oknie dialogowym. Puste — nic nie jest wyświetlane.',
     'slug' => 'Adres',
     'slug-help' => 'Jak formularz nazywa się w witrynie i dokąd wysyła.',
     'is-enabled' => 'Aktywny',

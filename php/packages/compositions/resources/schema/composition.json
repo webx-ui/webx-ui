@@ -1,0 +1,542 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "title": "WebX UI composition",
+  "description": "A file of compositions/<composition>/<handle>.json: a base (root or extends) or a patch. See docs/architecture/WEBX_UI_COMPOSITIONS.md.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["root"],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "$comment": {
+          "type": "string"
+        },
+        "vars": {
+          "$ref": "#/$defs/vars"
+        },
+        "dispatcher": {
+          "$ref": "#/$defs/name"
+        },
+        "root": {
+          "$ref": "#/$defs/baseNode"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["extends"],
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "$comment": {
+          "type": "string"
+        },
+        "vars": {
+          "$ref": "#/$defs/vars"
+        },
+        "dispatcher": {
+          "$ref": "#/$defs/name"
+        },
+        "extends": {
+          "type": "string",
+          "minLength": 1
+        },
+        "add": {
+          "$ref": "#/$defs/add"
+        },
+        "move": {
+          "$ref": "#/$defs/move"
+        },
+        "replace": {
+          "$ref": "#/$defs/replace"
+        },
+        "attrs": {
+          "$ref": "#/$defs/attrsById"
+        },
+        "props": {
+          "$ref": "#/$defs/propsById"
+        },
+        "remove": {
+          "$ref": "#/$defs/remove"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "$comment": {
+          "type": "string"
+        },
+        "add": {
+          "$ref": "#/$defs/add"
+        },
+        "move": {
+          "$ref": "#/$defs/move"
+        },
+        "replace": {
+          "$ref": "#/$defs/replace"
+        },
+        "attrs": {
+          "$ref": "#/$defs/attrsById"
+        },
+        "props": {
+          "$ref": "#/$defs/propsById"
+        },
+        "remove": {
+          "$ref": "#/$defs/remove"
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": ["root"]
+          },
+          {
+            "required": ["extends"]
+          }
+        ]
+      },
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "vars": {
+      "description": "The variables every leaf gets from the place the composition is included, without $.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+      }
+    },
+    "literal": {
+      "anyOf": [
+        {
+          "type": ["string", "number", "boolean", "null"]
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/literal"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/literal"
+          }
+        }
+      ]
+    },
+    "attrs": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z_@][A-Za-z0-9_:.@-]*$"
+      },
+      "properties": {
+        "class": {
+          "anyOf": [
+            {
+              "type": ["string", "boolean", "null"]
+            },
+            {
+              "type": "object",
+              "required": ["remove"],
+              "properties": {
+                "remove": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": {
+        "type": ["string", "boolean", "null"]
+      }
+    },
+    "props": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/literal"
+      }
+    },
+    "node": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["id", "tag"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "$comment": {
+              "type": "string"
+            },
+            "tag": {
+              "$ref": "#/$defs/name"
+            },
+            "attrs": {
+              "$ref": "#/$defs/attrs"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/node"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["id", "children"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "$comment": {
+              "type": "string"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/node"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["id", "view"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "$comment": {
+              "type": "string"
+            },
+            "view": {
+              "$ref": "#/$defs/name"
+            },
+            "with": {
+              "$ref": "#/$defs/props"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["id", "component"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "$comment": {
+              "type": "string"
+            },
+            "component": {
+              "$ref": "#/$defs/name"
+            },
+            "props": {
+              "$ref": "#/$defs/props"
+            },
+            "attrs": {
+              "$ref": "#/$defs/attrs"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/node"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["id", "region"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "$comment": {
+              "type": "string"
+            },
+            "region": {
+              "$ref": "#/$defs/name"
+            },
+            "fallback": {
+              "$ref": "#/$defs/name"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["id", "slot"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "$comment": {
+              "type": "string"
+            },
+            "slot": {
+              "$ref": "#/$defs/name"
+            },
+            "fallback": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/name"
+                  },
+                  {
+                    "$ref": "#/$defs/node"
+                  }
+                ]
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["id", "stack"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "$comment": {
+              "type": "string"
+            },
+            "stack": {
+              "$ref": "#/$defs/name"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["id", "directive"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "$comment": {
+              "type": "string"
+            },
+            "directive": {
+              "$ref": "#/$defs/name"
+            },
+            "args": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["id", "html"],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "$comment": {
+              "type": "string"
+            },
+            "html": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "baseNode": {
+      "description": "A node of a base: the same kinds, and `protected` for the seams other layers stand on.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/nodeOrProtected"
+        }
+      ]
+    },
+    "nodeOrProtected": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "protected": {
+          "type": "boolean"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/baseNode"
+          }
+        }
+      }
+    },
+    "position": {
+      "oneOf": [
+        {
+          "required": ["before"],
+          "properties": {
+            "before": {
+              "$ref": "#/$defs/id"
+            }
+          }
+        },
+        {
+          "required": ["after"],
+          "properties": {
+            "after": {
+              "$ref": "#/$defs/id"
+            }
+          }
+        },
+        {
+          "required": ["first"],
+          "properties": {
+            "first": {
+              "const": true
+            }
+          }
+        },
+        {
+          "required": ["last"],
+          "properties": {
+            "last": {
+              "const": true
+            }
+          }
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": ["before"]
+              },
+              {
+                "required": ["after"]
+              },
+              {
+                "required": ["first"]
+              },
+              {
+                "required": ["last"]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "add": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "to"],
+        "properties": {
+          "to": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/$defs/position"
+          }
+        ]
+      }
+    },
+    "move": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "$comment": {
+            "type": "string"
+          },
+          "to": {
+            "$ref": "#/$defs/id"
+          },
+          "before": {
+            "$ref": "#/$defs/id"
+          },
+          "after": {
+            "$ref": "#/$defs/id"
+          },
+          "first": {
+            "const": true
+          },
+          "last": {
+            "const": true
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/$defs/position"
+          }
+        ],
+        "additionalProperties": false
+      }
+    },
+    "replace": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "attrsById": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/attrs"
+      }
+    },
+    "propsById": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/props"
+      }
+    },
+    "remove": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      }
+    }
+  }
+}

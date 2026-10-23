@@ -219,6 +219,8 @@ Spam (`is_spam`, `is_closed`).
 ## 5. Настройки формы (`options`)
 
 ```
+description*            строка под заголовком формы: над полями встроенной формы, под заголовком окна
+                        (WIDGETS §6.4); текст с шорткодами сайта, пусто — ничего
 thank-you.heading*      заголовок после отправки
 thank-you.text*         текст, wysiwyg
 design.submit-text*     надпись на кнопке

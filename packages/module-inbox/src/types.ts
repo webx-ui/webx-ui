@@ -103,6 +103,8 @@ export type NotifyVia = 'email' | 'channels'
 
 /** The settings of a form (§5). Every key is literal, dots included. */
 export interface FormOptions {
+  /** A line under the form's title on the site and in a dialog; shortcodes as in any text. */
+  description?: LocalizedValue
   'thank-you.heading'?: LocalizedValue
   'thank-you.text'?: LocalizedValue
   'design.submit-text'?: LocalizedValue

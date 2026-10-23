@@ -22,19 +22,19 @@ vocabulary, `@webxTheme` — is [`webx-ui/themes`](https://github.com/webx-ui/th
 
 ## What is in it
 
-| Path                      | What                                                                                   |
-| ------------------------- | -------------------------------------------------------------------------------------- |
-| `tokens.json`             | a value for every token of the engine's vocabulary, and the presets `warm` and `night` |
-| `views/components/layout` | the document: `@webxTheme`, the head, the `header` and `footer` regions, `<main>`      |
-| `views/components/header` | the header region's fallback: the site name and `menu('header')`                       |
-| `views/components/footer` | the footer region's fallback: `menu('footer')` and the copyright line                  |
-| `views/mail/layout`       | the frame of every letter: values from `theme_token()` in `style="…"`, no `var()`      |
-| `src/css/`                | `base.css`, `shell.css` (`site-*` classes), `prose.css` (headings, lists, tables…)     |
-| `dist/theme.css`          | the build of `src/`, committed: a site installs this theme with no Node                |
-| `icons/`                  | 27 icons, 24×24 strokes in `currentColor`: `<x-theme::icon name="phone" />`            |
-| `assets/img/`             | pictures of the theme: `theme_asset('img/wave.svg')`                                   |
-| `assets/fonts/`           | Inter, a variable file per script and style; `@webxTheme` prints its `@font-face`      |
-| `lang/<locale>/theme.php` | the words of the layout in the ten `locales`: `__('theme::theme.shell.skip')`          |
+| Path                      | What                                                                                               |
+| ------------------------- | -------------------------------------------------------------------------------------------------- |
+| `tokens.json`             | a value for every token of the engine's vocabulary, and the presets `warm` and `night`             |
+| `views/components/layout` | the document: `@webxTheme`, the head, the `header` and `footer` regions, `<main>`                  |
+| `views/components/header` | the header region's fallback: the composition `header` (the site name, `menu('header')`, contacts) |
+| `views/components/footer` | the footer region's fallback: the composition `footer` (contacts, `menu('footer')`, copyright)     |
+| `views/mail/layout`       | the frame of every letter: values from `theme_token()` in `style="…"`, no `var()`                  |
+| `src/css/`                | `base.css`, `shell.css` (`site-*` classes), `prose.css` (headings, lists, tables…)                 |
+| `dist/theme.css`          | the build of `src/`, committed: a site installs this theme with no Node                            |
+| `icons/`                  | 27 icons, 24×24 strokes in `currentColor`: `<x-theme::icon name="phone" />`                        |
+| `assets/img/`             | pictures of the theme: `theme_asset('img/wave.svg')`                                               |
+| `assets/fonts/`           | Inter, a variable file per script and style; `@webxTheme` prints its `@font-face`                  |
+| `lang/<locale>/theme.php` | the words of the layout in the ten `locales`: `__('theme::theme.shell.skip')`                      |
 
 Every rule is written on `var(--site-…)` tokens only and inside `:where()`, so it carries no
 specificity: a local theme, a module or a block overrides it by writing the rule at all.
