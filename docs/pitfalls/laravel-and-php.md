@@ -194,6 +194,14 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
   строке: `{{-- Why. --}}@if (…)` (так написаны листья `module-blog/resources/views/article/*`).
   Проверка — хелпер `WebxUi\Compositions\Testing\ComparesHtml::assertSameHtml()` прощает только
   пробелы между тегами; побайтный золотой файл (`ArticleGoldenTest`) ловит и перевод строки.
+- **Шапка «до» и «после» в одном тесте расходится только в `aria-controls="webx-header-nav-3-0"` против
+  `-4-0`.** Это не композиция: `<x-webx-header.nav>` нумерует панели статическим счётчиком процесса
+  (`HeaderNav::$count`), и второй рендер получает следующий номер. Лечение — сбросить счётчик перед
+  каждым рендером: `(new ReflectionProperty(HeaderNav::class, 'count'))->setValue(null, 0)` (так
+  делает `HeaderFooterCompositionTest` theme-default). Проверка — сравнение зелёное без правки HTML.
+- **Узел `x-slot:<имя>` в патче — находка «is a slot of a component and stands only in one».** Слот
+  именованный, он живёт только среди детей `component`: `to` патча указал на `tag` или группу. Лечение
+  — `to` на сам компонент (`header`), а не на соседний слот. Проверка — `webx:composition:show header`.
 - **Сразу после `webx:composition:compile` набор «старее источников»** (`stale()` → true, doctor
   пишет note/warn) — в тесте и в скрипте, который правит JSON и тут же компилирует. Правило Blade:
   источник с `mtime` той же секунды, что и сборка, считается новее. Не баг; в тесте сдвинуть

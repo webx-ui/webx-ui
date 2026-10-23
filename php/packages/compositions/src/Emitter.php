@@ -87,6 +87,13 @@ final class Emitter
         $root = $node->parent === null && $node->value === 'html';
         $attrs = $this->attributes($node->attrs, false);
 
+        // A named slot (`<x-slot:brand>`) is a component's: anywhere else Blade fails on the page.
+        if (str_starts_with($node->value, 'x-slot:') && $node->parent?->kind !== 'component') {
+            $tree->note($node->origin, "tag {$node->id}", "{$node->value} is a slot of a component and stands only in one: left out");
+
+            return [];
+        }
+
         if ($root) {
             // `lang` is the page's, never a patch's (§3.1).
             $attrs = ' lang="{{ str_replace(\'_\', \'-\', app()->getLocale()) }}"'.$attrs;

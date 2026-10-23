@@ -1,0 +1,38 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The site's footer (COMPOSITIONS §10.3): the fallback of the footer region. The columns are the children of footer.inner — the contacts, the navigation and the copyright line; a column of a theme is an add there.",
+  "vars": ["contacts", "address", "items"],
+  "dispatcher": "components.footer",
+  "root": {
+    "id": "footer",
+    "tag": "footer",
+    "attrs": { "class": "site-footer" },
+    "children": [
+      {
+        "id": "footer.inner",
+        "tag": "div",
+        "attrs": { "class": "site-container site-footer__inner" },
+        "children": [
+          { "id": "footer.contacts", "view": "components.footer.contacts" },
+          {
+            "id": "footer.nav",
+            "tag": "nav",
+            "attrs": {
+              "class": "site-footer__nav",
+              "aria-label": "trans::theme::theme.shell.footer"
+            },
+            "children": [
+              { "id": "footer.menu", "view": "components.footer.menu" },
+              {
+                "id": "footer.consent",
+                "component": "webx-consent-link",
+                "attrs": { "class": "site-footer__link" }
+              }
+            ]
+          },
+          { "id": "footer.copy", "view": "components.footer.copy" }
+        ]
+      }
+    ]
+  }
+}

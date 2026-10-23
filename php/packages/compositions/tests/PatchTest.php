@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Compositions\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Compositions\Compositions;
 
 /**
  * The operations of a patch (COMPOSITIONS §3), each on the fixture layout: what it does, and what
@@ -228,6 +229,32 @@ final class PatchTest extends TestCase
 
         $this->assertCount(1, $notes);
         $this->assertSame('drops "a.note.inside" added by theme', str_replace($this->local, 'theme', $notes[0]->message));
+    }
+
+    /** §2.3: a named slot of a component is a `tag` node `x-slot:<name>` among its children — and only there. */
+    #[Test]
+    public function a_named_slot_is_a_tag_inside_a_component_and_left_out_elsewhere(): void
+    {
+        $this->theme('layout', 'default', [
+            'add' => [
+                ['id' => 'boxed', 'to' => 'body', 'after' => 'main', 'component' => 'box', 'children' => [
+                    ['id' => 'boxed.title', 'tag' => 'x-slot:title', 'children' => [['id' => 'boxed.words', 'html' => 'Title']]],
+                    ['id' => 'boxed.body', 'html' => '<p>Inside</p>'],
+                ]],
+                ['id' => 'stray', 'to' => 'body', 'tag' => 'x-slot:title'],
+            ],
+        ]);
+
+        $html = $this->page();
+        $tree = $this->tree();
+
+        $this->assertStringContainsString('<section class="box"><h2>Title</h2><p>Inside</p></section>', $html);
+        $this->assertStringNotContainsString('x-slot', $html);
+        $this->assertContains('boxed>boxed.title', $this->ids($tree));
+        $this->assertContains(
+            'theme: tag stray — x-slot:title is a slot of a component and stands only in one: left out',
+            $this->relative(array_map(strval(...), $this->app->make(Compositions::class)->findings())),
+        );
     }
 
     /** §3.2: props merge by key; null gives the prop back to the component's default. */

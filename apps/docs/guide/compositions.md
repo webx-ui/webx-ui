@@ -29,8 +29,9 @@ Each layer is applied whole — its `default.json`, then the file of the page's 
 next one: a higher layer always wins, the way the theme chain does. A layer without a file adds
 nothing.
 
-**Compositions today:** `layout` (the full document), `layout.minimal` (a header of just the
-brand, no footer — for a checkout or a wizard; it `extends` `layout`, so it gets every module's
+**Compositions today:** `layout` (the full document), `header` and `footer`
+([the fallbacks of their regions](#the-header-and-the-footer)), `layout.minimal` (a header of just
+the brand, no footer — for a checkout or a wizard; it `extends` `layout`, so it gets every module's
 piece and every patch of the theme) and `layout.blank` (an empty shell for a promo or an embedded
 page; a base of its own). A page chooses one by `<x-layout>`, `<x-layout.minimal>`,
 `<x-layout.blank>`, by its module's `webx-<module>.layout` key, or by the site's config:
@@ -82,6 +83,108 @@ without saying so in its changelog.
 A **protected** node is a seam the head, the blocks or the modules stand on: it cannot be removed
 or replaced, `html`, `head` and `body` cannot move, and `content` moves only inside `main`.
 
+## The header and the footer
+
+The header and the footer of `theme-default` are compositions too: `header` and `footer`. The
+layout's nodes `header` and `footer` stay **regions** — an editor who arranges blocks there in the
+panel gets them on every page — and the compositions are their fallbacks, what shows until then.
+So a theme patches `theme/compositions/header/default.json` instead of copying
+`components/header.blade.php`.
+
+```
+header                     <x-webx-header class="site-header" sticky mode="drill">
+  header.topbar            x-slot:topbar — the line above the bar
+    header.contacts        the hours and the first e-mail of the Contacts tab
+  header.brand             x-slot:brand
+    header.logo            the site's name, a link home
+  header.nav               the header menu (the default slot)
+  header.actions           x-slot:actions — and the bottom of the mobile menu
+    header.phones          the numbers of the Contacts tab
+    header.cta             the entries of the `button` look in the header menu
+    header.languages       the language switcher, on a site with more than one
+
+footer                     <footer class="site-footer">
+  footer.inner             <div class="site-container site-footer__inner"> — the columns
+    footer.contacts        numbers, e-mails, the main address, the networks
+    footer.nav             <nav class="site-footer__nav">
+      footer.menu          the footer menu
+      footer.consent       Cookie settings
+    footer.copy            © year and the site's name
+```
+
+The leaves get what `components/header.blade.php` works out once for all of them — the base's
+`vars`: `$nav`, `$calls`, `$contacts`, `$hours`, `$email`, `$phones`, `$languages` (the footer:
+`$contacts`, `$address`, `$items`). A view of the theme in a node's place reads the same names;
+`webx:theme:check` notes one that reads another.
+
+A named slot of a component is a `tag` node `x-slot:<name>` among its children; its contents are
+the node's children. A slot left empty is no slot: without a logo there is no brand box.
+
+```jsonc
+// theme/compositions/header/default.json
+{
+  "add": [
+    // A search form of the theme, first among the actions.
+    { "id": "search", "to": "header.actions", "first": true, "view": "components.search" },
+    // Something at the bottom of the mobile menu only: a slot of the widget.
+    {
+      "id": "drawer",
+      "to": "header",
+      "tag": "x-slot:mobile-bottom",
+      "children": [{ "id": "drawer.hours", "component": "webx-hours" }],
+    },
+  ],
+  "move": [{ "id": "header.languages", "to": "header.topbar", "first": true }],
+  "replace": { "header.logo": { "view": "components.logo" } },
+  "props": { "header": { "sticky": "hide-on-scroll", "side": "left" } },
+  "remove": ["header.phones"],
+}
+```
+
+The burger and the drawer are the widget's: `props` on `header` reach them (`collapse: "never"`
+leaves them out, `side` is where the drawer opens), and its slots `trigger`, `mobile` and
+`mobile-bottom` are `x-slot:` nodes a patch adds. **The announcement bar in the header** is two
+files — it is the layout's node, and a node does not move from one composition into another:
+
+```jsonc
+// theme/compositions/layout/default.json
+{ "remove": ["notice-bar"] }
+
+// theme/compositions/header/default.json
+{
+  "add": [
+    {
+      "id": "notice-bar",
+      "to": "header.topbar",
+      "first": true,
+      "component": "webx-notice-bar",
+      "children": [{ "id": "notice.stack", "stack": "notice" }],
+    },
+  ],
+}
+```
+
+A column of the footer is an `add` to `footer.inner`; one gone is a `remove`:
+
+```json
+{
+  "add": [
+    {
+      "id": "hours",
+      "to": "footer.inner",
+      "after": "footer.nav",
+      "view": "components.footer-hours"
+    }
+  ],
+  "remove": ["footer.contacts"]
+}
+```
+
+`layout.minimal` replaces the layout's `header` with `components.header-minimal` — the brand
+alone; a patch of the composition `header` does not reach it. A site's own
+`components/header.blade.php` prints instead of the composition, as it always did, and
+`webx:theme:check` says so.
+
 ## Patch it
 
 A patch is a JSON object with up to six operations, applied in this order whatever the order of
@@ -119,7 +222,8 @@ replaced: `{"body": {"class": "is-dark"}}` gives `class="site is-dark"`; to take
 `to` is a container (`tag`, a group, a component); without it the node moves among its siblings.
 The place is `before`, `after`, `first` or `last`; a neighbour that is not there puts it last, with
 a finding. A region is not a container — the header's blocks are content of the panel — so a node
-goes before or after `header`, never inside it.
+goes before or after `header`, never inside it; inside the header is a patch of the composition
+`header` ([above](#the-header-and-the-footer)).
 
 ### Another view or component in a node's place
 
@@ -171,17 +275,17 @@ On a `component` node, the theme's own or a module's; `null` takes a prop off.
 
 Exactly one key says what a node is:
 
-| Key         | Prints                                                     |
-| ----------- | ---------------------------------------------------------- |
-| `tag`       | an element with `attrs` and `children`                     |
-| (none)      | a group: just its `children`                               |
-| `view`      | `@include` of a view, with literal `with`                  |
-| `component` | `<x-…>` with `attrs`, `props`; its `children` are the slot |
-| `region`    | a region of blocks, with a `fallback` view                 |
-| `slot`      | what the caller hands (`default`, `head`), with `fallback` |
-| `stack`     | `@stack`                                                   |
-| `directive` | a registered directive, with `args`                        |
-| `html`      | raw HTML; Blade in it is escaped, not run                  |
+| Key         | Prints                                                                                   |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| `tag`       | an element with `attrs` and `children`; `x-slot:<name>` in a component is its named slot |
+| (none)      | a group: just its `children`                                                             |
+| `view`      | `@include` of a view, with literal `with`                                                |
+| `component` | `<x-…>` with `attrs`, `props`; its `children` are the slot                               |
+| `region`    | a region of blocks, with a `fallback` view                                               |
+| `slot`      | what the caller hands (`default`, `head`), with `fallback`                               |
+| `stack`     | `@stack`                                                                                 |
+| `directive` | a registered directive, with `args`                                                      |
+| `html`      | raw HTML; Blade in it is escaped, not run                                                |
 
 The JSON schema is `vendor/webx-ui/compositions/resources/schema/composition.json`; name it in
 `"$schema"` and an editor completes the keys.

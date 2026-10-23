@@ -118,7 +118,8 @@ config, `vendor/composer/installed.php`) are newer than it, while Blade checks i
 test that loads other modules does not read the set of the one before it.
 
 `WebxUi\Compositions\Testing\ComparesHtml` — `assertSameHtml($before, $after)`: the same HTML up
-to the whitespace between tags, the measure a view turned into a composition is held to.
+to the whitespace between tags (the indent between a tag and its text counts as one space), the
+measure a view turned into a composition is held to.
 
 ## License
 

@@ -174,10 +174,41 @@ A change goes through the cheapest door that solves it:
    modules (`webx-<module>-*`, listed in each module's `AGENTS.md`) print.
 3. **An extension point** — `theme/views/parts/<point>.blade.php` for a point a module's view
    offers with `@webxPart` (`parts/blog/card.blade.php`) — or **a patch of a composition**,
-   `theme/compositions/layout/default.json`, for the layout: an attribute, a piece gone, moved or
-   added, by id ([Compositions](./compositions.md)).
+   `theme/compositions/layout/default.json`, for the layout — `header/` and `footer/` for the
+   header and the footer: an attribute, a piece gone, moved or added, by id
+   ([Compositions](./compositions.md)).
 4. **An override of a view** — a copy of the current version in `theme/views/…`, changed the
    least. The expensive door: the copy stops getting the module's fixes.
+
+### The header and the footer without a copy
+
+The header and the footer of `theme-default` are the compositions `header` and `footer`, the
+fallbacks of their regions. A theme that wants the logo of its own, no phone in the bar, a search
+among the actions or the announcement bar inside the header patches them by id — the same JSON as
+the layout:
+
+```
+header                header.topbar → header.contacts · header.brand → header.logo · header.nav ·
+                      header.actions → header.phones, header.cta, header.languages
+footer                footer.inner → footer.contacts · footer.nav → footer.menu, footer.consent ·
+                      footer.copy
+```
+
+```jsonc
+// theme/compositions/header/default.json
+{
+  "replace": { "header.logo": { "view": "components.logo" } },
+  "add": [{ "id": "search", "to": "header.actions", "first": true, "view": "components.search" }],
+  "remove": ["header.phones"],
+}
+```
+
+A view of the theme in a node's place gets what the leaves get (`$nav`, `$calls`, `$contacts`,
+`$hours`, `$email`, `$phones`, `$languages`). Every id and the announcement bar's two files —
+[Compositions](./compositions.md#the-header-and-the-footer). A theme with its own
+`views/components/header.blade.php` keeps working — the copy prints, the patches do not —, and
+`webx:theme:check` notes it; going over is `webx:composition:show header --blade` against the
+copy, the differences as a patch, the copy gone.
 
 The 35 rules of a theme — where to work, tokens, where each style lives, blocks, views, languages
 and fonts, accessibility, what to check before saying it is done — are in the engine's

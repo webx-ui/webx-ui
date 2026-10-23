@@ -104,7 +104,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - Colours, radius, spacing — the site tokens in `theme/tokens.json`; the widgets follow.
 - A widget's own measure — `--webx-<name>-*` on `:root` or `.webx-<name>` in `theme/src/css`.
 - Another look — the same `.webx-<name>*` class in `theme/src/css`: it comes later, no `!important`.
-- A header's layout (logo in the middle, two rows) — `grid-template-areas` on `.webx-header__bar`.
+- A header's layout (logo in the middle, two rows) — `grid-template-areas` on `.webx-header__bar`; its pieces and slots in theme-default — the composition `header` (an `x-slot:<name>` node is a slot).
 - Other markup — `theme/views/vendor/webx-widgets/components/<name>.blade.php`.
 - Another control of one field type — `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`;
   print `{{ $control($attributes) }}` on it.

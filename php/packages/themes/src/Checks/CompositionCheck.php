@@ -280,7 +280,8 @@ final class CompositionCheck implements ThemeCheckPart
                         continue;
                     }
 
-                    if (str_starts_with($relative, 'vendor/')) {
+                    // `body` is a container of the layouts only: another composition names its own.
+                    if (str_starts_with($relative, 'vendor/') || ! str_starts_with($composition, 'layout')) {
                         $place = "<x-webx-composition::place composition=\"{$composition}\" id=\"…\" only=\"added\" />";
                     }
 

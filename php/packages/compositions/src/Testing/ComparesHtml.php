@@ -14,6 +14,8 @@ use PHPUnit\Framework\Assert;
  *
  * Whitespace inside text is kept, so a space lost between two words — or between a word and a
  * tag — still fails; whitespace that is all there is between `>` and `<` is not, `<pre>` included.
+ * The indent between a tag and the text next to it is a space however long it is: an `@else` one
+ * level shallower gives `<address>` its text with four spaces fewer, not without its space.
  *
  *     $this->assertSameHtml($before, $this->get('/blog/a')->getContent());
  */
@@ -24,9 +26,11 @@ trait ComparesHtml
         Assert::assertSame(self::spacelessHtml($expected), self::spacelessHtml($actual), $message !== '' ? $message : 'The HTML differs beyond the whitespace between tags.');
     }
 
-    /** The HTML without the whitespace between tags and around the whole. */
+    /** The HTML without the whitespace between tags and around the whole, the indent at a tag as one space. */
     public static function spacelessHtml(string $html): string
     {
-        return trim((string) preg_replace('/>\s+</', '><', $html));
+        $html = (string) preg_replace('/>\s+</', '><', $html);
+
+        return trim((string) preg_replace(['/>\s+(?=[^\s<])/', '/(?<=[^\s>])\s+</'], ['> ', ' <'], $html));
     }
 }

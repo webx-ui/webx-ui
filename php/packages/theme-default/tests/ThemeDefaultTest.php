@@ -322,6 +322,23 @@ class ThemeDefaultTest extends TestCase
     }
 
     /**
+     * A header and a footer of the site's own (the fixtures in Fixtures/site) are copies of the
+     * dispatchers of the compositions `header` and `footer`: they print, and the check says what
+     * the patches of the themes do not reach (COMPOSITIONS §6.4).
+     */
+    #[Test]
+    public function the_check_notes_a_header_and_a_footer_the_site_copied(): void
+    {
+        Artisan::call('webx:theme:check');
+        $said = (string) preg_replace('/\s+/', ' ', Artisan::output());
+
+        foreach (['header', 'footer'] as $part) {
+            $this->assertStringContainsString("Fixtures/site/components/{$part}.blade.php note: overrides the composition {$part}", $said);
+            $this->assertStringContainsString("<x-webx-composition::place composition=\"{$part}\" id=\"…\" only=\"added\" />", $said);
+        }
+    }
+
+    /**
      * The frame of the letters (§7.5): every value a token's, taken on the server — no var(), no
      * colour of its own — and the line below in the language of the letter.
      */
@@ -436,17 +453,20 @@ class ThemeDefaultTest extends TestCase
     }
 
     /**
-     * The theme's header and footer are rendered on the starter site, not here: they call
-     * `menu()` and the pages model, which are autoloaded wherever those modules are installed —
-     * the monorepo included — and need the modules booted with their tables. What a test can
-     * hold without them is that both compile to valid PHP.
+     * The header and the footer are rendered with their modules booted in
+     * HeaderFooterCompositionTest: they call `menu()` and the pages model, which need their tables.
+     * What this test holds is that the dispatchers and every leaf compile to valid PHP.
      */
     #[Test]
     public function the_shell_views_compile(): void
     {
         $this->stubModules();
 
-        foreach (['components/header', 'components/footer', 'components/layout', 'errors/404'] as $view) {
+        $leaves = array_map(static fn (string $file): string => substr($file, strlen(self::path().'/views/'), -strlen('.blade.php')), glob(self::path().'/views/components/{header,footer}/*.blade.php', GLOB_BRACE) ?: []);
+
+        $this->assertCount(9, $leaves);
+
+        foreach (['components/header', 'components/footer', 'components/layout', 'errors/404', ...$leaves] as $view) {
             $compiled = Blade::compileString((string) file_get_contents(self::path()."/views/{$view}.blade.php"));
 
             $this->assertNotEmpty(token_get_all($compiled, TOKEN_PARSE), "{$view} does not compile.");
@@ -712,7 +732,7 @@ class ThemeDefaultTest extends TestCase
             $templates['compositions/'.basename(dirname($file)).'/'.basename($file)] = implode("\n", $html);
         }
 
-        $this->assertCount(40, $templates);
+        $this->assertCount(51, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);

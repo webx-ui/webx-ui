@@ -117,6 +117,7 @@ final class ContractTest extends TestCase
 
         self::assertSameHtml($before, '<article class="a"><h1>Title</h1>    <p>One two</p></article>');
         $this->assertSame('<p>a</p><p>b</p>', self::spacelessHtml("\n<p>a</p>\n    <p>b</p>\n"));
+        self::assertSameHtml("<address>\n                    Street\n            </address>", "<address>\n    Street\n</address>");
     }
 
     /** @return array<string, array{string}> */
@@ -125,6 +126,7 @@ final class ContractTest extends TestCase
         return [
             'a space inside text' => ['<p>One  two</p>'],
             'a space lost between a word and a tag' => ['<p>One<b>two</b></p>'],
+            'a space lost at a tag' => ['<p>One two </p>'],
             'an attribute' => ['<p class="x">One two</p>'],
         ];
     }

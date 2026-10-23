@@ -19,9 +19,13 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   dispatcher of the composition `layout` (`compositions/layout/default.json`; also `layout.minimal`,
   `layout.blank`): `@webxTheme`, `@webxThemeColor`, the page's `head` slot (or `@webxSeo` + `@webxBlocks`), `@stack('head')`,
   `<x-webx-notice-bar>` above the header, the `header`/`footer` regions, `<main id="content" class="site-main">`, `@stack('scripts')`; the modules add their pieces.
-- **`views/components/header`**, **`views/components/footer`** — the regions' fallbacks:
-  `config('app.name')` and `menu('header')` (the pages under the home page until the menu has
-  entries); `menu('footer')` and the copyright line.
+- **`views/components/header`**, **`views/components/footer`** — the regions' fallbacks and the
+  dispatchers of the compositions `header`/`footer` (`compositions/header|footer/default.json`, leaves
+  in `views/components/header|footer/`): they work out the `vars` (`menu('header')` split into `nav`
+  and `calls` — the pages under home until it has entries —, `contacts()`, the languages;
+  `menu('footer')`). Ids: `header.topbar` → `header.contacts`, `header.brand` → `header.logo`,
+  `header.nav`, `header.actions` → `header.phones|cta|languages`; `footer.inner` → `footer.contacts`,
+  `footer.nav` → `footer.menu|consent`, `footer.copy`.
 - **`views/errors/404`** — a missing address in the site's frame: `<x-layout>` with its own head
   (`<title>`, `noindex`, `@webxBlocks`, no `@webxSeo`), the code, a line and a link to the
   language's home page. **`lang/<10 languages>/theme.php`** — every word of the shell and the
@@ -101,7 +105,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 | Another accent, font, radius, spacing    | `theme/tokens.json` → `defaults`                                                                                                                                                            |
 | Draw the site in another palette         | `"preset": "night"` in `theme/theme.json`; a palette of your own in `theme/tokens.json` → `presets`                                                                                         |
 | Restyle the header, footer or prose      | `theme/src/css/theme.css`, on the `site-*` classes above                                                                                                                                    |
-| Other markup in the header or footer     | `theme/views/components/header.blade.php` (or `footer`)                                                                                                                                     |
+| A piece of the header or footer          | `theme/compositions/header/default.json` (or `footer`) by id; the notice bar inside: `remove` it in `layout`, `add` to `header.topbar`                                                      |
 | An attribute, a piece moved, gone, added | `theme/compositions/layout/default.json` (or `<handle>.json`) by id: `html`, `head`, `body`, `skip-link`, `notice-bar`, `header`, `main`, `content`, `footer`, `meta.theme-color` — no copy |
 | A different document (the last door)     | `theme/views/components/layout.blade.php` — the composition is not printed then; `place` brings the modules' pieces                                                                         |
 | Another look of one of the six blocks    | `theme/blocks/<slug>.json`, every field kept; `webx:blocks:import --theme --replace=<slug>`                                                                                                 |
