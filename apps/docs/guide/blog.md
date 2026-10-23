@@ -262,6 +262,50 @@ one has nothing to subscribe to.
 common, then the main rubric, published only, never the article itself. How many is
 `webx-blog.related`; zero turns the automatic half off.
 
+### The article page is a composition
+
+What stands inside the layout on an article is the composition `blog.article`
+([Compositions](./compositions.md)): a tree of nodes with ids whose leaves are the module's views.
+A theme moves, removes, replaces and adds nodes by id — the cover above the title, no "Read next",
+its own byline — in `theme/compositions/blog.article/default.json`, without a copy of
+`article.blade.php`.
+
+```
+root                       group
+  article                  <article class="webx-blog-article">
+    article.header         <header class="webx-blog-article__header">
+      article.breadcrumbs  webx-blog::article.breadcrumbs — when webx-blog.breadcrumbs is on
+      article.title        webx-blog::article.title — the <h1>
+      article.meta         webx-blog::article.meta — the date and the byline
+      article.cover        webx-blog::article.cover — when the article has a cover
+    article.content        webx-blog::article.content — the blocks          protected
+    article.tags           webx-blog::article.tags — the <footer> with tags, when there are any
+  article.related          webx-blog::article.related — "Read next", when there is anything
+```
+
+```jsonc
+// theme/compositions/blog.article/default.json
+{
+  "add": [{ "id": "lead", "to": "article", "before": "article.content", "view": "blog.lead" }],
+  "move": [{ "id": "article.cover", "before": "article.title" }],
+  "replace": { "article.meta": { "view": "blog.byline" } },
+  "attrs": { "article": { "class": "is-wide" } },
+  "remove": ["article.related", "article.breadcrumbs"],
+}
+```
+
+`blog.lead` and `blog.byline` are views of the theme (`theme/views/blog/lead.blade.php`); they see
+what the article's view sees — `$article`, `$related`. `article.content` is protected: the head
+already carries the styles of exactly these blocks, so it is neither removed nor replaced, and moves
+only inside `article`. The handle is `blog.article` too, so `blog.article/blog.article.json` works
+as well — `default.json` is the file to write. The layout around the article is still patched in
+`theme/compositions/layout/blog.article.json`.
+
+A published copy of `views/vendor/webx-blog/article.blade.php` still wins over the composition,
+and `webx:theme:check` says so as a note. To go back to the package's page:
+`php artisan webx:composition:show blog.article --blade` prints what the composition gives, the
+difference with your copy becomes a patch, and the copy is deleted.
+
 ## Author pages
 
 Off by default, the blog names the account that wrote an article — as it always has. A site that

@@ -45,6 +45,9 @@ return [
 There is no choice of a layout in the panel: it would be a question on every site where nobody
 needs it.
 
+Not only the shell: a module's page is a composition of its own, inside the layout. The first one
+is the article of the blog, `blog.article` — [below](#a-page-of-a-module-the-article).
+
 ## The tree of `layout`
 
 ```
@@ -276,6 +279,46 @@ removed: seo.links ← theme/compositions/layout/blog.article.json; widgets.cont
 A piece that does not show: `show --origin` names the file that removed or moved it. A patch that
 does nothing: `webx:theme:check` names the id it could not find. A file for a page type that never
 applies: its name is not a handle a module names — `unknown handle`.
+
+## A page of a module: the article
+
+`blog.article` is what stands inside the layout on an article. module-blog gives the base in its
+`resources/compositions/blog.article/default.json`; the leaves are its views, each keeping its own
+condition — no cover, no `<img>`:
+
+```
+$ php artisan webx:composition:show blog.article --origin
+blog.article × default — from module-blog
+
+root                       group                                       module-blog
+  article                  <article class="webx-blog-article">         module-blog
+    article.header         <header class="webx-blog-article__header">  module-blog
+      article.breadcrumbs  view webx-blog::article.breadcrumbs         module-blog
+      article.title        view webx-blog::article.title               module-blog
+      article.meta         view webx-blog::article.meta                module-blog
+      article.cover        view webx-blog::article.cover               module-blog
+    article.content        view webx-blog::article.content             module-blog
+    article.tags           view webx-blog::article.tags                module-blog
+  article.related          view webx-blog::article.related             module-blog
+```
+
+The cover above the title, no "Read next", a byline of the theme's own and a lead before the text:
+
+```jsonc
+// theme/compositions/blog.article/default.json
+{
+  "add": [{ "id": "lead", "to": "article", "before": "article.content", "view": "blog.lead" }],
+  "move": [{ "id": "article.cover", "before": "article.title" }],
+  "replace": { "article.meta": { "view": "blog.byline" } },
+  "remove": ["article.related"],
+}
+```
+
+The view of the page (`webx-blog::article`) stays the shell: it renders the blocks first — the head
+prints the styles of what was rendered —, calls the layout with `handle="blog.article"` and the
+`head` slot, and includes the composition in the default slot. Its leaves see the page's variables
+(`$article`, `$related`), and so does a view a theme adds. The node ids, with what each prints, are
+in the [blog guide](./blog.md#the-article-page-is-a-composition) and module-blog's `AGENTS.md`.
 
 ## Not compositions
 
