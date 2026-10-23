@@ -144,6 +144,20 @@ final class PatchTest extends TestCase
         ], $this->relative($this->findings($this->tree())));
     }
 
+    /** A lower layer took the node away already — an extending layout asks for the same: a note, not a finding. */
+    #[Test]
+    public function remove_of_a_node_removed_already_is_a_note(): void
+    {
+        $this->theme('layout', 'default', ['remove' => ['footer']]);
+        $this->config('layout', 'default', ['remove' => ['footer']]);
+
+        $findings = $this->tree()->findings;
+
+        $this->assertCount(1, $findings);
+        $this->assertTrue($findings[0]->note);
+        $this->assertStringEndsWith('removed already by theme/compositions/layout/default.json', $this->relative($this->findings($this->tree()))[0]);
+    }
+
     #[Test]
     public function move_puts_a_node_elsewhere_or_among_its_siblings(): void
     {

@@ -266,7 +266,10 @@ final class Patcher
         $node = $tree->find($id);
 
         if ($node === null) {
-            $tree->note($file, "remove {$id}", 'no node with this id');
+            // Gone already is what the file asked for: a theme took the quick contact off the
+            // layout, and layout.minimal, which extends it, takes it off once more.
+            $by = array_values(array_filter($tree->changes, static fn (array $change): bool => $change['id'] === $id && $change['operation'] === 'remove'));
+            $tree->note($file, "remove {$id}", $by === [] ? 'no node with this id' : "removed already by {$by[0]['file']}", note: $by !== []);
 
             return;
         }

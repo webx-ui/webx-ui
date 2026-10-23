@@ -15,7 +15,9 @@ use PHPUnit\Framework\Attributes\Test;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use WebxUi\Compositions\Compiler;
 use WebxUi\Compositions\Compositions;
+use WebxUi\Compositions\Node;
 use WebxUi\Compositions\Testing\IsolatedCompositions;
 use WebxUi\Themes\Checks\CssCheck;
 use WebxUi\Themes\Checks\CssFinding;
@@ -481,6 +483,93 @@ class ThemeDefaultTest extends TestCase
         $this->assertMatchesRegularExpression('~<meta name="viewport" content="width=device-width, initial-scale=1">\s*<!-- place:head -->\s*<style data-webx-theme>~', $html);
         $this->assertMatchesRegularExpression('~<body class="site">\s*<!-- place:body_start -->\s*<a class="site-skip"~', $html);
         $this->assertMatchesRegularExpression('~<!-- place:body_end -->\s*</body>~', $html);
+    }
+
+    /**
+     * The pieces of the modules come from the modules (COMPOSITIONS §5.3): the quick contact of
+     * widgets after the footer, the FAQ and the links of module-seo after the page, the places of
+     * module-snippets — and the compiled layout asks nothing on a request.
+     */
+    #[Test]
+    public function the_modules_add_their_pieces_and_the_layout_names_none_of_them(): void
+    {
+        $this->stubModules();
+        $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures';
+        View::addNamespace('webx-seo', $fixtures.'/webx-seo');
+        Blade::anonymousComponentPath($fixtures.'/webx-seo', 'webx-seo');
+        View::addNamespace('webx-snippets', $fixtures.'/webx-snippets');
+        Blade::anonymousComponentPath($fixtures.'/webx-snippets/components');
+        Compositions::load(dirname(self::path()).'/module-seo/resources/compositions');
+        Compositions::load(dirname(self::path()).'/module-snippets/resources/compositions');
+
+        $tree = app(Compiler::class)->tree('layout');
+        $ids = static fn (string $id): array => array_map(static fn (Node $node): string => $node->id, $tree->find($id)?->children ?? []);
+
+        $this->assertSame(['snippets.body-start', 'skip-link', 'notice-bar', 'header', 'main', 'footer', 'widgets.contact-button', 'scripts.stack', 'snippets.body-end'], $ids('body'));
+        $this->assertSame(['content', 'seo.faq', 'seo.links'], $ids('main'));
+        $this->assertSame([], $tree->findings);
+
+        $source = (string) file_get_contents(self::path().'/compositions/layout/default.json');
+
+        foreach (['seo', 'snippets', 'contact-button'] as $module) {
+            $this->assertStringNotContainsString($module, $source, 'the base of the layout knows no module');
+        }
+
+        Blade::render('<x-layout><p>Body</p></x-layout>');
+        $compiled = (string) file_get_contents(View::getFinder()->find(app(Compositions::class)->view('layout')));
+
+        $this->assertStringContainsString('<x-webx-contact-button />', $compiled);
+        $this->assertStringContainsString('<x-webx-seo::faq />', $compiled);
+        $this->assertStringContainsString('<x-webx-snippets place="body_end" />', $compiled);
+        $this->assertStringNotContainsString('view()->exists', $compiled);
+        $this->assertStringNotContainsString('dynamic-component', $compiled);
+    }
+
+    /**
+     * The example of the spec (COMPOSITIONS §10.1) on the real layout: the studio's smooth scroll,
+     * no quick contact, the announcement under the header on every page — and on an article a class,
+     * a progress bar after the header and no links. Patches of the site's config, the layer a theme's
+     * files sit just under.
+     */
+    #[Test]
+    public function a_site_patches_the_layout_by_id_on_default_and_on_a_page_type(): void
+    {
+        $this->stubModules();
+        $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures';
+        View::addNamespace('webx-seo', $fixtures.'/webx-seo');
+        Blade::anonymousComponentPath($fixtures.'/webx-seo', 'webx-seo');
+        Compositions::load(dirname(self::path()).'/module-seo/resources/compositions');
+        config()->set('webx-compositions.patches.layout', [
+            'default' => [
+                'attrs' => ['html' => ['data-webx-smooth-scroll' => true]],
+                'remove' => ['widgets.contact-button'],
+                'move' => [['id' => 'notice-bar', 'after' => 'header']],
+            ],
+            'blog.article' => [
+                'attrs' => ['body' => ['class' => 'is-article']],
+                'add' => [['id' => 'reading-progress', 'to' => 'body', 'after' => 'header', 'view' => 'components.reading-progress']],
+                'remove' => ['seo.links'],
+            ],
+        ]);
+
+        $page = Blade::render('<x-layout><p>Body</p></x-layout>');
+        $article = Blade::render('<x-layout handle="blog.article"><p>Article</p></x-layout>');
+
+        $this->assertStringStartsWith("<!doctype html>\n<html lang=\"en\" data-webx-smooth-scroll>", $page);
+        $this->assertStringContainsString('<body class="site">', $page);
+        $this->assertStringContainsString('Links of the page', $page);
+        $this->assertStringNotContainsString('site-progress', $page);
+
+        $this->assertStringStartsWith("<!doctype html>\n<html lang=\"en\" data-webx-smooth-scroll>", $article);
+        $this->assertStringContainsString('<body class="site is-article">', $article);
+        $this->assertMatchesRegularExpression('~site-header.*</header>\s*<div class="site-progress"></div>\s*<main~s', $article);
+        $this->assertStringContainsString('FAQ of the page', $article);
+        $this->assertStringNotContainsString('Links of the page', $article);
+
+        $order = app(Compiler::class)->tree('layout', 'blog.article')->find('body')?->children ?? [];
+        $this->assertSame(['skip-link', 'header', 'reading-progress', 'notice-bar', 'main', 'footer', 'scripts.stack'], array_map(static fn (Node $node): string => $node->id, $order));
+        // layout.minimal takes the quick contact off once more: said as a note, not as a finding.
+        $this->assertSame([], array_values(array_filter(app(Compositions::class)->findings(), static fn ($finding): bool => ! $finding->note)));
     }
 
     /**
