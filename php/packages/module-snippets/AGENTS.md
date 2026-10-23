@@ -15,8 +15,8 @@ and its journal `webx-ui/module-admin` — read their guides for those.
   versions: a save is on the site at once, and the journal keeps the whole code before and after.
 - **Places**: `head`, `body_start`, `body_end` are always there; the site's own come from
   `config('webx-snippets.places')` (key → label, plain words or a translation key).
-- **Blade component** `<x-webx-snippets place="…" />` (view `webx-snippets::place`); theme-default's
-  layout prints the three built-in places.
+- **Blade component** `<x-webx-snippets place="…" />` (view `webx-snippets::place`); the module adds
+  the three built-in places to the compositions `layout` and `layout.blank` itself.
 - **Panel screen** `snippets.form`, nodes `content`, `name`, `place`, `code`, `settings`,
   `enabled`, `consent`, `on_stage`, `coverage`, `only_paths`, `except_paths`, `locales`,
   `history`, `journal`. API under `/api/cms/snippets`.
@@ -42,15 +42,16 @@ node the site adds next to the module asks the same: `cms.can:snippets.manage`.
 
 ## Change it without forking
 
-| You want                                     | Do this                                                                           |
-| -------------------------------------------- | --------------------------------------------------------------------------------- |
-| A place of your own (say, before the footer) | add it to `places` in `config/webx-snippets.php`, then print it in a view (below) |
-| Other words for a built-in place             | name `head`, `body_start` or `body_end` in `places` with your label               |
-| Every snippet printed on a stage copy too    | add its `APP_ENV` to `webx-snippets.environments`                                 |
-| One snippet on dev and stage                 | tick «on dev and stage too» (`on_stage`) on it                                    |
-| A layout of your own                         | print the three built-in places in it, as in [README.md](README.md)               |
-| Other words in the panel                     | `php artisan vendor:publish --tag=webx-snippets-lang`                             |
-| The config file in the site                  | `php artisan vendor:publish --tag=webx-snippets-config`                           |
+| You want                                     | Do this                                                                                                  |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| A place of your own (say, before the footer) | add it to `places` in `config/webx-snippets.php`, then print it in a view (below)                        |
+| Other words for a built-in place             | name `head`, `body_start` or `body_end` in `places` with your label                                      |
+| Every snippet printed on a stage copy too    | add its `APP_ENV` to `webx-snippets.environments`                                                        |
+| One snippet on dev and stage                 | tick «on dev and stage too» (`on_stage`) on it                                                           |
+| A built-in place elsewhere in the layout     | move its node by id: `snippets.head`, `snippets.body-start`, `snippets.body-end`                         |
+| A layout of your own                         | `<x-webx-composition::place id="body" only="added" />`, or the three places as in [README.md](README.md) |
+| Other words in the panel                     | `php artisan vendor:publish --tag=webx-snippets-lang`                                                    |
+| The config file in the site                  | `php artisan vendor:publish --tag=webx-snippets-config`                                                  |
 
 A place of your own, step by step:
 

@@ -91,6 +91,7 @@ and a module's page names its handle: `<x-layout handle="blog.article">`.
 ```bash
 php artisan webx:composition:compile   # every composition × handle, with the findings
 php artisan webx:composition:clear     # remove the compiled set
+php artisan webx:composition:show layout --handle=blog.article --origin   # the final tree and who changed what
 ```
 
 The set is compiled again on a request whose sources (the JSON files, their directories, the

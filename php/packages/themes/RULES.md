@@ -66,7 +66,8 @@ Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WE
 18. **Do** make every text of a block a visitor reads a field of the schema with `localized`;
     fixed labels are `__('theme::…')`. **Do not** write a string into the template.
 19. **Do** make a slider, a lightbox, a video, a map, tabs, an accordion or a dialog with a
-    **widget**, and inertial scrolling with `data-webx-smooth-scroll` on `<html>` alone. **Do not**
+    **widget**, and inertial scrolling with `data-webx-smooth-scroll` on `<html>` alone — a patch of
+    the layout, `{"attrs": {"html": {"data-webx-smooth-scroll": true}}}`. **Do not**
     write your own script or bring your own library for them. Anything of a third party (YouTube,
     maps, counters) goes only through a widget or with `data-webx-consent`: before consent, a page
     makes no request to a third party. A script of your own only for what the widgets lack, and by
@@ -77,8 +78,15 @@ Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WE
 
 ## Views
 
-21. **Do** keep `@webxTheme`, `@webxSeo`, `@webxBlocks` and the `header`/`footer` regions in
-    `components/layout`. (contract: the layout of the chain)
+21. **Do** change the layout by a patch of its composition — `theme/compositions/layout/default.json`
+    or `<handle>.json` for one page type: an attribute, a piece removed, moved, replaced or added,
+    by id. **Do not** copy a compound view that has a composition (`components/layout`,
+    `layout/minimal`, `layout/blank`) to change a part of it: the copy stops getting the fixes and
+    the modules' new pieces of releases. A layout of your own is a door taken on purpose: it keeps
+    `@webxTheme`, `@webxSeo`, `@webxBlocks` and the `header`/`footer` regions, and brings the
+    modules' pieces with `<x-webx-composition::place id="body" only="added" />`. The protected
+    nodes of the composition are those seams. (check: compositions, a copy is a note; contract:
+    the layout of the chain)
 22. **Do** copy the **current** version from `vendor/` when you override a view of a module, and
     change the least. **Do not** remove its classes or `@webxPart`: the module's companions stand
     on them.

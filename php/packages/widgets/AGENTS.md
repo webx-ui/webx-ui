@@ -58,7 +58,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `<x-webx-counter :value>`; `<x-webx-countdown to ended>`; `<x-webx-compare :before :after>`;
   `<x-webx-toc for depth side>`; `<x-webx-pagination :paginator>`; `<x-webx-load-more :paginator pages="covered|shown">`;
   `<x-webx-notice-bar place="notice">` (a `module-banners` place, closed versions remembered).
-- **Smooth scrolling** — `data-webx-smooth-scroll` on the layout's `<html>`/`<body>` (Lenis; `-duration`,
+- **Smooth scrolling** — `data-webx-smooth-scroll` on `<html>`: `{"attrs": {"html": {"data-webx-smooth-scroll": true}}}` in `theme/compositions/layout/default.json`, no copy of the layout (Lenis; `-duration`,
   `-easing`, `-wheel` or `--webx-smooth-scroll-*`); native under reduced motion, touch, no JS, a modal, `[data-webx-scroll-native]`.
 - **Fields** — `<x-webx-field type name label hint required>` for every form of the site; `type`
   `text` `email` `tel` `url` `password` `number` `textarea` `select` `radio` `checkbox`
@@ -108,8 +108,8 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - Other markup — `theme/views/vendor/webx-widgets/components/<name>.blade.php`.
 - Another control of one field type — `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`;
   print `{{ $control($attributes) }}` on it.
-- An icon — `theme/views/vendor/webx-widgets/icons/<name>.blade.php` (inside a 24×24 `<svg>`).
-- A word — the component's prop, or `lang/vendor/webx-widgets/<locale>/widgets.php`.
+- An icon — `theme/views/vendor/webx-widgets/icons/<name>.blade.php` (24×24 `<svg>`); a word — the prop or `lang/vendor/webx-widgets/<locale>/widgets.php`.
+- Its pieces of the composition `layout` — `widgets.contact-button` (after `footer`): moved or gone by id, `{"remove": ["widgets.contact-button"]}` in `theme/compositions/layout/default.json`.
 - A behaviour of the site's own — `webx.widget('name', '[data-…]', (el) => cleanup)` in
   `theme/src/js/theme.js`.
 - HTML added later — `webx.mount(container)`; `webx.unmount(container)` before removing it.

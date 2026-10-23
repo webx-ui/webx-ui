@@ -30,8 +30,14 @@ The tree of `layout` belongs to `webx-ui/theme-default` — read its guide for t
 - **Compiled set** `storage/framework/compositions/` (`compiled`): a `build-*` directory of views
   and `manifest.php` with the sources and their mtimes. A request compiles again what is older
   than its sources while `view.check_cache_timestamps` is on (`check` overrides).
-- **Commands** `webx:composition:compile` (a step of `webx:boot`, before `view:cache`) and
-  `webx:composition:clear`.
+- **Commands** `webx:composition:compile` (a step of `webx:boot`, before `view:cache`),
+  `webx:composition:clear` and `webx:composition:show [<composition>] [--handle=] [--origin]
+[--json] [--blade]` — the final tree with who added, moved, replaced, removed or changed a node.
+- **`Inspector`** — every composition × handle built from the sources apart from the compiled set:
+  what `show`, `webx:theme:check` (`CompositionCheck` of `webx-ui/themes`) and `webx:doctor`
+  (`Doctor\CompositionsCheck`, where `module-admin` is installed) read.
+- **Handles** a module names — `Compositions::handles('blog', [...])`; a theme's file for another
+  one is `unknown handle` in `webx:theme:check`.
 - **Config** `webx-compositions.php`: `patches`, `layouts` (a handle to another composition —
   `['catalog.checkout' => 'layout.minimal']`), `compiled`, `check`.
 
@@ -71,6 +77,13 @@ The tree of `layout` belongs to `webx-ui/theme-default` — read its guide for t
 
 ## Check your work
 
+- `php artisan webx:composition:show layout --handle=blog.article --origin` — the tree a page gets,
+  and the file behind every change; `--json` for a script.
+- `php artisan webx:theme:check` — every finding a line, exit code 1: an id that is not there, a
+  duplicate, a protected node, a reserved attribute, `unknown handle`, a composition without a
+  base, a theme's id with a module's prefix, a `place` on no container, a theme-color token
+  without a colour, a file that is not JSON. A copy of `components/layout` is a note.
+- `php artisan webx:doctor` — the trees build, and the compiled set is as its sources give it.
 - `php artisan webx:composition:compile` — compiles everything and prints the findings; exit
   code 1 when a tree cannot be built.
 - Open the page and read the HTML: the generated view says which layers it is built from in its

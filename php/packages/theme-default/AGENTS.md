@@ -15,11 +15,10 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   `radius-lg`, `radius-full`; `shadow-sm`, `shadow-md`; `container-width`, `gutter`, `duration`,
   `easing`. The presets `warm` and `night`; a site draws in one by naming it in its manifest
   (`"preset": "night"` in `theme/theme.json`). Its test is `Testing\ThemeContract` first.
-- **`views/components/layout`** — the document every module page is printed in (`<x-layout>`):
-  `@webxTheme`, the page's `head` slot (or `@webxSeo` + `@webxBlocks` when there is none),
-  `@stack('head')`, `<x-webx-notice-bar>` above the header (a `notice` banner, else `@stack('notice')`), the `header` and `footer` regions, `<main id="content" class="site-main">`
-  closed by module-seo's `<x-webx-seo::faq />` and `<x-webx-seo::links />` (empty while off),
-  `@stack('scripts')`.
+- **`views/components/layout`** — the document every module page is printed in (`<x-layout>`), the
+  dispatcher of the composition `layout` (`compositions/layout/default.json`; also `layout.minimal`,
+  `layout.blank`): `@webxTheme`, `@webxThemeColor`, the page's `head` slot (or `@webxSeo` + `@webxBlocks`), `@stack('head')`,
+  `<x-webx-notice-bar>` above the header, the `header`/`footer` regions, `<main id="content" class="site-main">`, `@stack('scripts')`; the modules add their pieces.
 - **`views/components/header`**, **`views/components/footer`** — the regions' fallbacks:
   `config('app.name')` and `menu('header')` (the pages under the home page until the menu has
   entries); `menu('footer')` and the copyright line.
@@ -97,23 +96,24 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 
 ## Change it without forking
 
-| You want                                 | Do this                                                                                             |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Another accent, font, radius, spacing    | `theme/tokens.json` → `defaults`                                                                    |
-| Draw the site in another palette         | `"preset": "night"` in `theme/theme.json`; a palette of your own in `theme/tokens.json` → `presets` |
-| Restyle the header, footer or prose      | `theme/src/css/theme.css`, on the `site-*` classes above                                            |
-| Other markup in the header or footer     | `theme/views/components/header.blade.php` (or `footer`)                                             |
-| A different document                     | `theme/views/components/layout.blade.php`, copied from here                                         |
-| Another look of one of the six blocks    | `theme/blocks/<slug>.json`, every field kept; `webx:blocks:import --theme --replace=<slug>`         |
-| A section of a page full width           | class `site-bleed` on the direct child of `<main>`                                                  |
-| Another drawing of an icon, or a new one | `theme/icons/<name>.svg` in `currentColor`, then `webx:theme:sync`                                  |
-| Another picture of the theme             | `theme/assets/<same path>`, then `webx:theme:sync`                                                  |
-| Another font                             | files in `theme/assets/fonts/`, `fonts` in `theme/theme.json`, the family in `font-body`/`-heading` |
-| Inter with another script (Greek)        | `fonts` in `theme/theme.json` with family `Inter` and every script — it replaces this one whole     |
-| Prose typography outside `<main>`        | class `site-prose` on the wrapper                                                                   |
-| The header and footer as blocks          | arrange the `header`/`footer` regions in the panel; no code                                         |
-| Another frame for every letter           | `theme/views/mail/layout.blade.php`, copied from here; colours from `theme_token()` only            |
-| Another inbox letter                     | `theme/views/vendor/webx-inbox/mail/submission.blade.php`, copied from module-inbox                 |
+| You want                                 | Do this                                                                                                                                                                                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Another accent, font, radius, spacing    | `theme/tokens.json` → `defaults`                                                                                                                                                            |
+| Draw the site in another palette         | `"preset": "night"` in `theme/theme.json`; a palette of your own in `theme/tokens.json` → `presets`                                                                                         |
+| Restyle the header, footer or prose      | `theme/src/css/theme.css`, on the `site-*` classes above                                                                                                                                    |
+| Other markup in the header or footer     | `theme/views/components/header.blade.php` (or `footer`)                                                                                                                                     |
+| An attribute, a piece moved, gone, added | `theme/compositions/layout/default.json` (or `<handle>.json`) by id: `html`, `head`, `body`, `skip-link`, `notice-bar`, `header`, `main`, `content`, `footer`, `meta.theme-color` — no copy |
+| A different document (the last door)     | `theme/views/components/layout.blade.php` — the composition is not printed then; `place` brings the modules' pieces                                                                         |
+| Another look of one of the six blocks    | `theme/blocks/<slug>.json`, every field kept; `webx:blocks:import --theme --replace=<slug>`                                                                                                 |
+| A section of a page full width           | class `site-bleed` on the direct child of `<main>`                                                                                                                                          |
+| Another drawing of an icon, or a new one | `theme/icons/<name>.svg` in `currentColor`, then `webx:theme:sync`                                                                                                                          |
+| Another picture of the theme             | `theme/assets/<same path>`, then `webx:theme:sync`                                                                                                                                          |
+| Another font                             | files in `theme/assets/fonts/`, `fonts` in `theme/theme.json`, the family in `font-body`/`-heading`                                                                                         |
+| Inter with another script (Greek)        | `fonts` in `theme/theme.json` with family `Inter` and every script — it replaces this one whole                                                                                             |
+| Prose typography outside `<main>`        | class `site-prose` on the wrapper                                                                                                                                                           |
+| The header and footer as blocks          | arrange the `header`/`footer` regions in the panel; no code                                                                                                                                 |
+| Another frame for every letter           | `theme/views/mail/layout.blade.php`, copied from here; colours from `theme_token()` only                                                                                                    |
+| Another inbox letter                     | `theme/views/vendor/webx-inbox/mail/submission.blade.php`, copied from module-inbox                                                                                                         |
 
 ## Do not
 

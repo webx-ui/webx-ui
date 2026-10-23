@@ -464,6 +464,21 @@ each file, when it was built, and how many visible pages were **left out** and w
 another canonical. That last line is the first thing to read when a page is missing from a search
 engine. Types that are not pages are named on a line of their own, with their number of addresses.
 
+## In the layout
+
+The page FAQ and the interlinking block close the page's own column. The module adds them to the
+[composition](./compositions.md) `layout` itself, in `main` after `content`:
+
+| Node        | Prints                  |
+| ----------- | ----------------------- |
+| `seo.faq`   | `<x-webx-seo::faq />`   |
+| `seo.links` | `<x-webx-seo::links />` |
+
+Both print nothing while their feature is off or the page has none. A theme moves or removes them
+by id — `{"remove": ["seo.links"]}` in `theme/compositions/layout/blog.article.json` takes the
+links off the articles only — and never copies the layout for it. The head of the page
+(`@webxSeo`) is the protected slot `head.slot` of the layout.
+
 ## Contracts for module authors
 
 A content module gets all of the above by implementing interfaces on its model; nothing is

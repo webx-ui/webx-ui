@@ -9,6 +9,9 @@ WebX UI has two layers of variables:
 Components only ever read semantic variables. Overriding a semantic variable restyles every
 component that uses it.
 
+This page is about the variables of the components and the panel. The public site is drawn by a
+[theme](./themes.md), and its layout is changed by [compositions](./compositions.md).
+
 ## Dark mode
 
 The dark theme is applied with `data-theme="dark"` on any ancestor — usually `<html>`:

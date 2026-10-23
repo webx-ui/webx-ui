@@ -176,6 +176,23 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
 
 ## Blade и рендер сайта
 
+- **Патч темы в `theme/compositions/layout/*.json` «не работает», страница прежняя, ошибок нет.**
+  Причины по частоте: у сайта или темы свой `components/layout.blade.php` — он раньше диспетчера
+  композиции в поиске видов (`webx:theme:check` даёт note «overrides the composition»); имя файла —
+  не хендл, который называет вид модуля (`blog.artcle.json` → `unknown handle`); операция ссылается
+  на `id`, которого нет, и пропущена с находкой в логе; на проде `view.check_cache_timestamps`
+  выключен и набор не пересобран. Проверка — `php artisan webx:composition:show layout
+--handle=<хендл> --origin` (кто тронул узел) и `webx:theme:check`; после деплоя —
+  `webx:composition:compile` (шаг `webx:boot`).
+- **Сразу после `webx:composition:compile` набор «старее источников»** (`stale()` → true, doctor
+  пишет note/warn) — в тесте и в скрипте, который правит JSON и тут же компилирует. Правило Blade:
+  источник с `mtime` той же секунды, что и сборка, считается новее. Не баг; в тесте сдвинуть
+  `compiled_at` манифеста (`compositions/tests/DoctorTest::compiled()`).
+- **`webx:theme:check` на сайте без module-seo: «no directive @webxSeo: left out».** Запасной слот
+  `head.slot` базы называет директиву модуля, которого нет. Это замечание, не находка: «нет вида,
+  компонента, директивы» у узлов базы и модулей — то, что не установлено; находка — только у узла,
+  который поставили тема или конфиг сайта (`Inspector::said()`).
+
 - **Последняя строка лэйаута перед `</body>` — не последняя в ответе.** Тест «код места
   `body_end` стоит прямо перед `</body>`» падает: `Widgets::finish()` после рендера дописывает
   перед `</body>` баннер согласия и `<script type="module">` виджетов. Проверять порядок
@@ -417,6 +434,10 @@ $value` не отличает «типа нет» от «тип сказал н�
   берёт их из контейнера в момент использования. У нас: `ScreenRegistry`.
 
 ## Тесты: Testbench и PHPUnit
+
+- **Фикстура «битый JSON» в репозитории валит `npx prettier --check .`.** Prettier разбирает каждый
+  `.json`. Невалидный файл тест пишет сам во временный каталог (`CompositionCheckTest`,
+  `CompileTest`); золотой HTML, который сверяется побайтно, — в `.prettierignore`.
 
 - **`assertNoRepeatedQueries` считает повтором две загрузки с одинаковыми id и не считает — с
   разными.** `QueryTally::shape()` схлопывает только `in (?, ?)`, а eager load целых ключей

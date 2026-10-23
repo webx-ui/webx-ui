@@ -83,26 +83,27 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
 
 ## Change it without forking
 
-| You want                                            | Do this                                                                        |
-| --------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Change the site's look                              | edit `theme/` — never a theme in `vendor/`                                     |
-| Change a colour, a font, a radius                   | `theme/tokens.json` → `defaults`                                               |
-| A token the vocabulary does not have                | `theme/tokens.json` → `vocabulary` (a role name), then `defaults`              |
-| Draw the site in another palette                    | `theme/tokens.json` → `presets`; `"preset": "<name>"` in `theme/theme.json`    |
-| A dark scheme for the visitor                       | `theme/tokens.json` → `schemes.dark`; a switch sets `data-theme` on `<html>`   |
-| Restyle a module's page                             | `theme/src/css` on its classes (its `AGENTS.md`, «Classes»)                    |
-| Add to a module's page at a point                   | `theme/views/parts/<point>.blade.php`                                          |
-| Override a module's page (the expensive door)       | `theme/views/vendor/<ns>/<view>.blade.php`, copied from the current version    |
-| Override a view for this site only, above any theme | `resources/views/…` — it always wins                                           |
-| Change or add a word of the layout                  | `theme/lang/<locale>/theme.php` — a new key in `en` and every language         |
-| Another look of a block the theme brings            | `theme/blocks/<same slug>.json` — add fields, never drop one                   |
-| Keep a block made in the panel in git               | `php artisan webx:blocks:export <slug> --path=theme/blocks`                    |
-| An icon, a picture, a font of the site's own        | `theme/icons/`, `theme/assets/`, `theme/assets/fonts/` + `fonts`; then sync    |
-| Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json`                          |
-| Print the site's contacts from the theme            | `"settings": {"contacts": [<sections printed>]}` in `theme/theme.json`         |
-| A look several sites share                          | `php artisan webx:theme:make vendor/name`, or `webx:theme:extract vendor/name` |
-| Stop following a packaged theme's updates           | `php artisan webx:theme:eject vendor/name`                                     |
-| Publish the config                                  | `php artisan vendor:publish --tag=webx-themes-config`                          |
+| You want                                            | Do this                                                                          |
+| --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Change the site's look                              | edit `theme/` — never a theme in `vendor/`                                       |
+| Change a colour, a font, a radius                   | `theme/tokens.json` → `defaults`                                                 |
+| A token the vocabulary does not have                | `theme/tokens.json` → `vocabulary` (a role name), then `defaults`                |
+| Draw the site in another palette                    | `theme/tokens.json` → `presets`; `"preset": "<name>"` in `theme/theme.json`      |
+| A dark scheme for the visitor                       | `theme/tokens.json` → `schemes.dark`; a switch sets `data-theme` on `<html>`     |
+| Restyle a module's page                             | `theme/src/css` on its classes (its `AGENTS.md`, «Classes»)                      |
+| Add to a module's page at a point                   | `theme/views/parts/<point>.blade.php`                                            |
+| Change the layout: an attribute, a piece, a place   | a patch by id, `theme/compositions/layout/default.json` — never a copy (rule 21) |
+| Override a module's page (the expensive door)       | `theme/views/vendor/<ns>/<view>.blade.php`, copied from the current version      |
+| Override a view for this site only, above any theme | `resources/views/…` — it always wins                                             |
+| Change or add a word of the layout                  | `theme/lang/<locale>/theme.php` — a new key in `en` and every language           |
+| Another look of a block the theme brings            | `theme/blocks/<same slug>.json` — add fields, never drop one                     |
+| Keep a block made in the panel in git               | `php artisan webx:blocks:export <slug> --path=theme/blocks`                      |
+| An icon, a picture, a font of the site's own        | `theme/icons/`, `theme/assets/`, `theme/assets/fonts/` + `fonts`; then sync      |
+| Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json`                            |
+| Print the site's contacts from the theme            | `"settings": {"contacts": [<sections printed>]}` in `theme/theme.json`           |
+| A look several sites share                          | `php artisan webx:theme:make vendor/name`, or `webx:theme:extract vendor/name`   |
+| Stop following a packaged theme's updates           | `php artisan webx:theme:eject vendor/name`                                       |
+| Publish the config                                  | `php artisan vendor:publish --tag=webx-themes-config`                            |
 
 ## Do not
 
