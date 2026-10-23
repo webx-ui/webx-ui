@@ -6,9 +6,7 @@
   "oneOf": [
     {
       "type": "object",
-      "required": [
-        "root"
-      ],
+      "required": ["root"],
       "properties": {
         "$schema": {
           "type": "string"
@@ -24,9 +22,7 @@
     },
     {
       "type": "object",
-      "required": [
-        "extends"
-      ],
+      "required": ["extends"],
       "properties": {
         "$schema": {
           "type": "string"
@@ -90,14 +86,10 @@
       "not": {
         "anyOf": [
           {
-            "required": [
-              "root"
-            ]
+            "required": ["root"]
           },
           {
-            "required": [
-              "extends"
-            ]
+            "required": ["extends"]
           }
         ]
       },
@@ -116,12 +108,7 @@
     "literal": {
       "anyOf": [
         {
-          "type": [
-            "string",
-            "number",
-            "boolean",
-            "null"
-          ]
+          "type": ["string", "number", "boolean", "null"]
         },
         {
           "type": "array",
@@ -146,17 +133,11 @@
         "class": {
           "anyOf": [
             {
-              "type": [
-                "string",
-                "boolean",
-                "null"
-              ]
+              "type": ["string", "boolean", "null"]
             },
             {
               "type": "object",
-              "required": [
-                "remove"
-              ],
+              "required": ["remove"],
               "properties": {
                 "remove": {
                   "type": "string"
@@ -168,11 +149,7 @@
         }
       },
       "additionalProperties": {
-        "type": [
-          "string",
-          "boolean",
-          "null"
-        ]
+        "type": ["string", "boolean", "null"]
       }
     },
     "props": {
@@ -185,10 +162,7 @@
       "oneOf": [
         {
           "type": "object",
-          "required": [
-            "id",
-            "tag"
-          ],
+          "required": ["id", "tag"],
           "properties": {
             "id": {
               "$ref": "#/$defs/id"
@@ -213,10 +187,7 @@
         },
         {
           "type": "object",
-          "required": [
-            "id",
-            "children"
-          ],
+          "required": ["id", "children"],
           "properties": {
             "id": {
               "$ref": "#/$defs/id"
@@ -235,10 +206,7 @@
         },
         {
           "type": "object",
-          "required": [
-            "id",
-            "view"
-          ],
+          "required": ["id", "view"],
           "properties": {
             "id": {
               "$ref": "#/$defs/id"
@@ -257,10 +225,7 @@
         },
         {
           "type": "object",
-          "required": [
-            "id",
-            "component"
-          ],
+          "required": ["id", "component"],
           "properties": {
             "id": {
               "$ref": "#/$defs/id"
@@ -288,10 +253,7 @@
         },
         {
           "type": "object",
-          "required": [
-            "id",
-            "region"
-          ],
+          "required": ["id", "region"],
           "properties": {
             "id": {
               "$ref": "#/$defs/id"
@@ -310,10 +272,7 @@
         },
         {
           "type": "object",
-          "required": [
-            "id",
-            "slot"
-          ],
+          "required": ["id", "slot"],
           "properties": {
             "id": {
               "$ref": "#/$defs/id"
@@ -342,10 +301,7 @@
         },
         {
           "type": "object",
-          "required": [
-            "id",
-            "stack"
-          ],
+          "required": ["id", "stack"],
           "properties": {
             "id": {
               "$ref": "#/$defs/id"
@@ -361,10 +317,7 @@
         },
         {
           "type": "object",
-          "required": [
-            "id",
-            "directive"
-          ],
+          "required": ["id", "directive"],
           "properties": {
             "id": {
               "$ref": "#/$defs/id"
@@ -383,10 +336,7 @@
         },
         {
           "type": "object",
-          "required": [
-            "id",
-            "html"
-          ],
+          "required": ["id", "html"],
           "properties": {
             "id": {
               "$ref": "#/$defs/id"
@@ -412,9 +362,7 @@
     },
     "nodeOrProtected": {
       "type": "object",
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "properties": {
         "id": {
           "$ref": "#/$defs/id"
@@ -433,9 +381,7 @@
     "position": {
       "oneOf": [
         {
-          "required": [
-            "before"
-          ],
+          "required": ["before"],
           "properties": {
             "before": {
               "$ref": "#/$defs/id"
@@ -443,9 +389,7 @@
           }
         },
         {
-          "required": [
-            "after"
-          ],
+          "required": ["after"],
           "properties": {
             "after": {
               "$ref": "#/$defs/id"
@@ -453,9 +397,7 @@
           }
         },
         {
-          "required": [
-            "first"
-          ],
+          "required": ["first"],
           "properties": {
             "first": {
               "const": true
@@ -463,9 +405,7 @@
           }
         },
         {
-          "required": [
-            "last"
-          ],
+          "required": ["last"],
           "properties": {
             "last": {
               "const": true
@@ -476,24 +416,16 @@
           "not": {
             "anyOf": [
               {
-                "required": [
-                  "before"
-                ]
+                "required": ["before"]
               },
               {
-                "required": [
-                  "after"
-                ]
+                "required": ["after"]
               },
               {
-                "required": [
-                  "first"
-                ]
+                "required": ["first"]
               },
               {
-                "required": [
-                  "last"
-                ]
+                "required": ["last"]
               }
             ]
           }
@@ -504,10 +436,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "to"
-        ],
+        "required": ["id", "to"],
         "properties": {
           "to": {
             "$ref": "#/$defs/id"
@@ -524,9 +453,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id"
-        ],
+        "required": ["id"],
         "properties": {
           "id": {
             "$ref": "#/$defs/id"
