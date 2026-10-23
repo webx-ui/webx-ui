@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Compositions\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Compositions\Compositions;
 
 /**
  * Handles and layers (COMPOSITIONS §4, §5.2): `default` under every handle, a layer whole before
@@ -50,6 +51,20 @@ final class LayersTest extends TestCase
         $this->config('layout', 'default', ['attrs' => ['a.note' => ['from' => 'config']]]);
 
         $this->assertStringContainsString('>config</aside>', $this->page());
+    }
+
+    /**
+     * A provider passes `__DIR__.'/../resources/compositions'`: two modules that both do are two
+     * layers, each under its package's name, not one `..` the second overwrites.
+     */
+    #[Test]
+    public function a_module_loaded_from_its_src_directory_is_named_after_its_package(): void
+    {
+        Compositions::load(self::fixtures().'/module-c/src/../resources/compositions');
+        Compositions::load(self::fixtures().'/module-a/src/../resources/compositions');
+
+        $this->assertSame(['fixture/theme', 'module-a', 'module-b', 'module-c'], $this->tree()->layers);
+        $this->assertStringContainsString('<aside class="note">c</aside>', $this->page());
     }
 
     #[Test]

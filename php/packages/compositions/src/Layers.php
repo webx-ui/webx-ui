@@ -35,7 +35,7 @@ final class Layers
      */
     public function module(string $dir, ?string $module = null): void
     {
-        $dir = rtrim(str_replace('\\', '/', $dir), '/');
+        $dir = self::normalise($dir);
         $module ??= basename(dirname($dir, 2));
 
         $this->modules[$module] = $dir;
@@ -121,6 +121,27 @@ final class Layers
         $sources = array_map(static fn (Source $source): string => $source->label.'='.($source->dir ?? ''), $this->sources());
 
         return md5(serialize([Compiler::VERSION, $sources, $this->config->get('webx-compositions.patches'), $this->layouts()]));
+    }
+
+    /**
+     * A path without `.` and `..` — a provider passes `__DIR__.'/../resources/compositions'`, and
+     * the module is named after the directory two levels up, which is `..` until it is resolved.
+     * Lexically rather than with realpath(): a symlinked package keeps the path the site sees.
+     */
+    private static function normalise(string $path): string
+    {
+        $path = str_replace('\\', '/', $path);
+        $parts = [];
+
+        foreach (explode('/', $path) as $index => $part) {
+            if ($part === '..' && $parts !== [] && end($parts) !== '..' && end($parts) !== '') {
+                array_pop($parts);
+            } elseif ($part !== '.' && ($part !== '' || $index === 0)) {
+                $parts[] = $part;
+            }
+        }
+
+        return implode('/', $parts);
     }
 
     private function display(string $path): string
