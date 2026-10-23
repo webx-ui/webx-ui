@@ -9,7 +9,7 @@
 @php($seo = app(WebxUi\Seo\Rendering\Seo::class))
 @php($meta = $seo->for($seo->currentUrl()))
 
-<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
+<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'" handle="catalog.brands">
     <x-slot:head>
         {{-- No entity: the list is a route, not a record. Where no rule names a title, its own
              word does, through the title template like any other. --}}

@@ -7,7 +7,7 @@
 @php($seo = app(WebxUi\Seo\Rendering\Seo::class))
 @php($meta = $seo->for($seo->currentUrl(), $page))
 
-<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
+<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'" handle="catalog.root">
     <x-slot:head>
         {{-- The title is in there too: a rule's, or the page's heading through the site's template. --}}
         @webxSeo($page)

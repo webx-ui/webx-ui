@@ -3,7 +3,7 @@
     found. `$page` is null until something is asked.
 --}}
 
-<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
+<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'" handle="catalog.search">
     <x-slot:head>
         @if ($page !== null)
             {{-- The page says `noindex` and its title itself (ListingSource). --}}

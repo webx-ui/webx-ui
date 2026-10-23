@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\View;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Compositions\Compositions;
+use WebxUi\Compositions\Testing\IsolatedCompositions;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Widgets\WidgetsServiceProvider;
@@ -20,10 +22,15 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  * without the modules that add to it and with them. Whatever the theme and the modules print is
  * stubbed, so the files hold the shell and nothing a token or a module could move.
  *
+ * The layout is a composition now: these are what its tree prints without a patch.
+ *
  * `WEBX_GOLDEN=update` rewrites the files; a change of the shell is then read in the diff.
  */
 final class LayoutGoldenTest extends TestCase
 {
+    // A compiled set of its own: the next test registers other modules.
+    use IsolatedCompositions;
+
     private const string NAME = 'webx-ui/theme-default';
 
     /**
@@ -43,6 +50,7 @@ final class LayoutGoldenTest extends TestCase
         $app['config']->set('app.name', 'Harbor Logistics');
         $app['config']->set('webx-themes.theme', self::NAME);
         $app['config']->set('view.paths', [self::fixtures().'/site']);
+        $this->isolateCompositions($app);
 
         $app->resolving(ThemeLocator::class, function (ThemeLocator $locator): void {
             $locator->register(self::NAME, dirname(__DIR__));
@@ -90,6 +98,10 @@ final class LayoutGoldenTest extends TestCase
             Blade::anonymousComponentPath(self::fixtures().'/webx-seo', 'webx-seo');
             View::addNamespace('webx-snippets', self::fixtures().'/webx-snippets');
             Blade::anonymousComponentPath(self::fixtures().'/webx-snippets/components');
+
+            // Their real pieces of the layout, over stand-ins for what the pieces print.
+            Compositions::load(dirname(__DIR__, 2).'/module-seo/resources/compositions');
+            Compositions::load(dirname(__DIR__, 2).'/module-snippets/resources/compositions');
         }
 
         $this->artisan('view:clear');

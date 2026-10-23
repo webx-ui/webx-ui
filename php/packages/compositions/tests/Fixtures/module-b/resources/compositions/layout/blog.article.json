@@ -1,0 +1,1 @@
+{ "add": [{ "id": "b.article", "to": "main", "after": "content", "html": "<p class=\"b-article\">For articles</p>" }] }

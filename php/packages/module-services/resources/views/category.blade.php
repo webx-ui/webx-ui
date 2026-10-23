@@ -3,7 +3,7 @@
 @php($content = config('webx-services.categories.blocks') ? $category->renderBlocks() : '')
 @php($lead = $category->leadHtml())
 
-<x-dynamic-component :component="config('webx-services.layout') ?: 'webx-services::standalone'">
+<x-dynamic-component :component="config('webx-services.layout') ?: 'webx-services::standalone'" handle="services.category">
     <x-slot:head>
         {{-- The SEO card, the category's own name, lead and cover under it (HasSeoFallback). --}}
         @webxSeo($category)

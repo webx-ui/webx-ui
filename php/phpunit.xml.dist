@@ -10,6 +10,7 @@
         <testsuite name="WebX UI">
             <directory>packages/module-admin/tests</directory>
             <directory>packages/cache/tests</directory>
+            <directory>packages/compositions/tests</directory>
             <directory>packages/localization/tests</directory>
             <directory>packages/mcp/tests</directory>
             <directory>packages/module-audit/tests</directory>
@@ -54,6 +55,7 @@
         <include>
             <directory>packages/module-admin/src</directory>
             <directory>packages/cache/src</directory>
+            <directory>packages/compositions/src</directory>
             <directory>packages/localization/src</directory>
             <directory>packages/mcp/src</directory>
             <directory>packages/module-audit/src</directory>

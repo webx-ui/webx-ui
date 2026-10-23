@@ -12,6 +12,8 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Cache\CacheGroups;
+use WebxUi\Compositions\Compositions;
+use WebxUi\Compositions\CompositionsServiceProvider;
 use WebxUi\Localization\Locales;
 use WebxUi\Snippets\Checks\PlacesCheck;
 use WebxUi\Snippets\Doctor\SnippetPlaces;
@@ -32,6 +34,9 @@ class SnippetsServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // The registry this module's compositions go into, whether discovered or listed by a test.
+        $this->app->register(CompositionsServiceProvider::class);
+
         $this->mergeConfigFrom(__DIR__.'/../config/webx-snippets.php', 'webx-snippets');
 
         $this->app->singleton(Codes::class);
@@ -57,6 +62,10 @@ class SnippetsServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-snippets');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-snippets');
+
+        // Its three places in the layout and the blank one (COMPOSITIONS §5.3).
+        Compositions::load(__DIR__.'/../resources/compositions');
+
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
         $this->registerCacheGroups();
 

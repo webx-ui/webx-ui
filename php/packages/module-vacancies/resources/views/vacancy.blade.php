@@ -24,7 +24,7 @@
     </article>
 @php($body = ob_get_clean())
 
-<x-dynamic-component :component="config('webx-vacancies.layout') ?: 'webx-vacancies::standalone'">
+<x-dynamic-component :component="config('webx-vacancies.layout') ?: 'webx-vacancies::standalone'" handle="vacancies.show">
     <x-slot:head>
         {{-- The SEO card, the vacancy's own name and lead under it (HasSeoFallback), the site
              defaults, the JobPosting of an open vacancy (HasStructuredData) and the noindex of a

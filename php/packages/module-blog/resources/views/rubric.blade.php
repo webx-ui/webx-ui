@@ -1,6 +1,6 @@
 @php($lead = $rubric->leadHtml())
 
-<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'">
+<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'" handle="blog.rubric">
     <x-slot:head>
         {{-- The SEO card, then the rubric's own title, lead and cover where the card is empty. --}}
         @webxSeo($rubric)

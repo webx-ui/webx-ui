@@ -1,5 +1,5 @@
 
-<x-dynamic-component :component="config('webx-services.layout') ?: 'webx-services::standalone'">
+<x-dynamic-component :component="config('webx-services.layout') ?: 'webx-services::standalone'" handle="services.index">
     <x-slot:head>
         {{-- No entity: the index is a route, not a record. A rule for its address or the site's
              defaults say what they have; the title under them is the section's name, and it goes

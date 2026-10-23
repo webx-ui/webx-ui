@@ -1,0 +1,27 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The three places (SNIPPETS §11.1): the one in <head> above the stylesheets, since a tag manager does not wait for CSS; one right after <body>, one closing it.",
+  "add": [
+    {
+      "id": "snippets.head",
+      "to": "head",
+      "after": "meta.viewport",
+      "component": "webx-snippets",
+      "attrs": { "place": "head" }
+    },
+    {
+      "id": "snippets.body-start",
+      "to": "body",
+      "first": true,
+      "component": "webx-snippets",
+      "attrs": { "place": "body_start" }
+    },
+    {
+      "id": "snippets.body-end",
+      "to": "body",
+      "last": true,
+      "component": "webx-snippets",
+      "attrs": { "place": "body_end" }
+    }
+  ]
+}

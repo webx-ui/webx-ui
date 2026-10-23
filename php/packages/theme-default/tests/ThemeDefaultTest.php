@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\HtmlString;
-use Illuminate\View\DynamicComponent;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use ReflectionProperty;
 use SplFileInfo;
+use WebxUi\Compositions\Compositions;
+use WebxUi\Compositions\Testing\IsolatedCompositions;
 use WebxUi\Themes\Checks\CssCheck;
 use WebxUi\Themes\Checks\CssFinding;
 use WebxUi\Themes\Checks\FontCheck;
@@ -42,6 +42,9 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 class ThemeDefaultTest extends TestCase
 {
+    // A compiled set of compositions a test: they load other modules into the layout.
+    use IsolatedCompositions;
+
     // The contract every theme's test runs (THEMES §18) — on the theme every site stands on first.
     use ThemeContract;
 
@@ -70,6 +73,7 @@ class ThemeDefaultTest extends TestCase
 
         // The site's own views: a header and a footer of its own, the way a site overrides the theme's.
         $app['config']->set('view.paths', [str_replace('\\', '/', __DIR__).'/Fixtures/site']);
+        $this->isolateCompositions($app);
 
         // Registered rather than left to Composer: the test must not depend on the theme being
         // installed into whatever vendor/ runs it.
@@ -419,6 +423,7 @@ class ThemeDefaultTest extends TestCase
         $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures/webx-seo';
         View::addNamespace('webx-seo', $fixtures);
         Blade::anonymousComponentPath($fixtures, 'webx-seo');
+        Compositions::load(dirname(self::path()).'/module-seo/resources/compositions');
 
         $html = Blade::render('<x-layout><p>Body of the page</p></x-layout>');
 
@@ -455,11 +460,6 @@ class ThemeDefaultTest extends TestCase
     public function the_places_of_the_snippets_are_there_only_with_the_module(): void
     {
         $this->stubModules();
-        $forget = static function (): void {
-            (new ReflectionProperty(DynamicComponent::class, 'compiler'))->setValue(null, null);
-            (new ReflectionProperty(DynamicComponent::class, 'componentClasses'))->setValue(null, []);
-        };
-        $forget();
 
         $html = Blade::render('<x-layout><p>Body</p></x-layout>');
 
@@ -471,14 +471,44 @@ class ThemeDefaultTest extends TestCase
         $fixtures = str_replace('\\', '/', __DIR__).'/Fixtures/webx-snippets';
         View::addNamespace('webx-snippets', $fixtures);
         Blade::anonymousComponentPath($fixtures.'/components');
+        Compositions::load(dirname(self::path()).'/module-snippets/resources/compositions');
 
-        // The layout asks view()->exists() as it renders: the same compiled file prints the places now.
+        // The module adds its places itself (COMPOSITIONS §5.3): another set of layers is another
+        // compiled layout, on the next request.
+        $this->app->forgetScopedInstances();
         $html = Blade::render('<x-layout><p>Body</p></x-layout>');
-        $forget();
 
         $this->assertMatchesRegularExpression('~<meta name="viewport" content="width=device-width, initial-scale=1">\s*<!-- place:head -->\s*<style data-webx-theme>~', $html);
         $this->assertMatchesRegularExpression('~<body class="site">\s*<!-- place:body_start -->\s*<a class="site-skip"~', $html);
         $this->assertMatchesRegularExpression('~<!-- place:body_end -->\s*</body>~', $html);
+    }
+
+    /**
+     * The other shells (COMPOSITIONS §3.7): `layout.minimal` is the layout with the brand for a
+     * header and no footer, the pieces of the modules with it; `layout.blank` is a base of its own,
+     * which only a module that belongs on every document adds to.
+     */
+    #[Test]
+    public function the_minimal_and_the_blank_layout_stand_on_their_trees(): void
+    {
+        $this->stubModules();
+        Compositions::load(dirname(self::path()).'/module-snippets/resources/compositions');
+        View::addNamespace('webx-snippets', str_replace('\\', '/', __DIR__).'/Fixtures/webx-snippets');
+        Blade::anonymousComponentPath(str_replace('\\', '/', __DIR__).'/Fixtures/webx-snippets/components');
+
+        $minimal = Blade::render('<x-layout.minimal><p>Checkout</p></x-layout.minimal>');
+
+        $this->assertStringContainsString('<a class="site-skip" href="#content">', $minimal);
+        $this->assertStringContainsString('<a class="site-header__title" href="http://localhost">Harbor Logistics</a>', $minimal);
+        $this->assertStringNotContainsString("The site's own header", $minimal);
+        $this->assertStringNotContainsString('site-footer', $minimal);
+        $this->assertStringContainsString('<!-- place:body_end -->', $minimal);
+
+        $blank = Blade::render('<x-layout.blank><p>Promo</p></x-layout.blank>');
+
+        $this->assertMatchesRegularExpression('~<body class="site site--blank">\s*<!-- place:body_start -->\s*<main id="content" class="site-main">\s*<p>Promo</p>\s*</main>~', $blank);
+        $this->assertStringNotContainsString('site-skip', $blank);
+        $this->assertStringNotContainsString('site-header', $blank);
     }
 
     /** A module's view hands its own @webxSeo and @webxBlocks in the head slot; neither prints twice. */
@@ -581,7 +611,19 @@ class ThemeDefaultTest extends TestCase
             $templates['demo/blocks/'.basename($file)] = (string) (json_decode((string) file_get_contents($file), true)['template'] ?? '');
         }
 
-        $this->assertCount(33, $templates);
+        // The compositions too: what a node of raw HTML says is as much the template as a view.
+        foreach (glob(self::path().'/compositions/*/*.json') ?: [] as $file) {
+            $html = [];
+            $tree = (array) json_decode((string) file_get_contents($file), true);
+            array_walk_recursive($tree, static function (mixed $value, string|int $key) use (&$html): void {
+                if ($key === 'html') {
+                    $html[] = (string) $value;
+                }
+            });
+            $templates['compositions/'.basename(dirname($file)).'/'.basename($file)] = implode("\n", $html);
+        }
+
+        $this->assertCount(40, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);

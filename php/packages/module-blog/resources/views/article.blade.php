@@ -3,7 +3,7 @@
      line has to stay at the top of the file rather than move inside the tag. --}}
 @php($content = $article->renderBlocks())
 
-<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'">
+<x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'" handle="blog.article">
     <x-slot:head>
         {{-- Everything the article says about itself: its SEO card, then its own title, lead and
              cover where the card is empty (`seoFallback()`), then the site defaults. --}}

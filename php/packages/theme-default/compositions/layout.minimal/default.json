@@ -1,0 +1,7 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The layout of a checkout or a wizard (COMPOSITIONS §3.7): everything of the layout — the pieces of the modules and the patches of the themes included — with a header of just the brand and no footer.",
+  "extends": "layout",
+  "replace": { "header": { "view": "components.header-minimal" } },
+  "remove": ["footer", "widgets.contact-button"]
+}

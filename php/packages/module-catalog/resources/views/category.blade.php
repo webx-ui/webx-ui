@@ -17,7 +17,7 @@
 @php($above = $texts?->textAbove($page->context->locale))
 @php($below = $texts?->textBelow($page->context->locale))
 
-<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
+<x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'" handle="catalog.category">
     <x-slot:head>
         {{-- The title is in there too: the card's, or the page's heading through the site's
              template, with the category's description and cover under it (`seoFallback()`). --}}

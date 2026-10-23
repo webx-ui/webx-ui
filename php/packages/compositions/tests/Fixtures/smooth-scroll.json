@@ -1,0 +1,4 @@
+{
+  "attrs": { "html": { "data-webx-smooth-scroll": true } },
+  "remove": ["b.note"]
+}

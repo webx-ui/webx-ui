@@ -23,7 +23,7 @@
     @include('webx-recipes::partials.catalog', ['catalog' => $catalog])
 @php($body = ob_get_clean())
 
-<x-dynamic-component :component="config('webx-recipes.layout') ?: 'webx-recipes::standalone'">
+<x-dynamic-component :component="config('webx-recipes.layout') ?: 'webx-recipes::standalone'" handle="recipes.category">
     <x-slot:head>
         {{-- The SEO card, the category's own name, lead and picture under it (HasSeoFallback). --}}
         @webxSeo($category)

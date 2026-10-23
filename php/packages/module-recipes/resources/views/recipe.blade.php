@@ -26,7 +26,7 @@
     </article>
 @php($body = ob_get_clean())
 
-<x-dynamic-component :component="config('webx-recipes.layout') ?: 'webx-recipes::standalone'">
+<x-dynamic-component :component="config('webx-recipes.layout') ?: 'webx-recipes::standalone'" handle="recipes.show">
     <x-slot:head>
         {{-- The SEO card, the recipe's own name, lead and cover under it (HasSeoFallback), the
              site defaults, and the Recipe markup (HasStructuredData). --}}

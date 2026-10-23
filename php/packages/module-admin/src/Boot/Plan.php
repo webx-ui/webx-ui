@@ -56,6 +56,7 @@ final class Plan
             $this->passportKeys(),
             ...$this->locales(),
             $this->themeFiles(),
+            $this->compositions(),
             $this->administrator(),
             $this->defaultRoles(),
             ...($cache ? $this->caches() : []),
@@ -157,6 +158,25 @@ final class Plan
             'webx:theme:sync',
             ['webx:theme:sync'],
             'the theme stylesheets answer from public/themes',
+            fatal: false,
+        );
+    }
+
+    /**
+     * The layout and the other compositions as Blade views (COMPOSITIONS §6.2), before `view:cache`
+     * caches them like any view. Not fatal: a patch that cannot be applied leaves the last compiled
+     * set serving, and a request compiles again by the mtimes anyway.
+     */
+    private function compositions(): ?Step
+    {
+        if (! $this->catalogue->has('webx-ui/compositions')) {
+            return null;
+        }
+
+        return new Step(
+            'webx:composition:compile',
+            ['webx:composition:compile'],
+            'the layout is compiled from its tree and the patches of the theme',
             fatal: false,
         );
     }

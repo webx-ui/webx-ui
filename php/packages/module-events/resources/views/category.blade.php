@@ -23,7 +23,7 @@
     @include('webx-events::partials.list', ['listing' => $listing])
 @php($body = ob_get_clean())
 
-<x-dynamic-component :component="config('webx-events.layout') ?: 'webx-events::standalone'">
+<x-dynamic-component :component="config('webx-events.layout') ?: 'webx-events::standalone'" handle="events.category">
     <x-slot:head>
         {{-- The SEO card, the category's own name, lead and picture under it (HasSeoFallback). --}}
         @webxSeo($category)
