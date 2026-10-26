@@ -192,6 +192,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `module-banners`            | баннеры в именованных местах                                          | `@webx-ui/module-banners`            |
 | `module-vacancies`          | вакансии                                                              | `@webx-ui/module-vacancies`          |
 | `module-tariffs`            | тарифы                                                                | `@webx-ui/module-tariffs`            |
+| `module-configurator`       | конфигуратор товара под размер: шаги, площадь, цена с разбивкой       | `@webx-ui/module-configurator`       |
 | **Разделы: каталог**        |                                                                       |                                      |
 | `module-catalog`            | ядро каталога: товары, категории, реестры спутников, обмен            | `@webx-ui/module-catalog`            |
 | `module-catalog-labels`     | метки товаров                                                         | `@webx-ui/module-catalog-labels`     |
@@ -558,6 +559,16 @@ ES-модуль в самом пакете.
 Карточки цен без своей страницы, разметки и матрицы сравнения; цена числом в валюте из конфига
 или словами. Группы — плоские категории без адреса (id `tariff-groups`). Валюты и виды кнопки —
 из конфига; убранные из конфига хранятся и печатаются как были.
+
+### `webx-ui/module-configurator` — конфигуратор товара
+
+Спека — [`WEBX_UI_MODULE_CONFIGURATOR.md`](WEBX_UI_MODULE_CONFIGURATOR.md), гайд —
+`apps/docs/guide/configurators.md`. Id раздела `configurators`. «Товар под размер»: шаги опций и
+размеров, видимость по выбору, формула площади без `eval`, цена с разбивкой — движок в двух копиях
+(PHP — истина, JS — превью и виджет) с общими кейсами паритета. Черновики и версии, MCP от
+создания до расчёта, блок `configurator` и заявка с комплектацией в `module-inbox`. С каталогом —
+связь в обе стороны со стороны конфигуратора (таблица `configurator_product`); без каталога ничего
+не меняется. Ставится отдельно: `webx:module:add`.
 
 ---
 
