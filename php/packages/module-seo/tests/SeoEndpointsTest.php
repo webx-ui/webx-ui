@@ -275,6 +275,32 @@ final class SeoEndpointsTest extends TestCase
         $this->assertFalse(($this->tool('redirects_delete'))(['id' => $redirect->id])['ok']);
     }
 
+    /**
+     * The OAuth consent, the panel and the preview are not pages of the site: the panel on the
+     * site offered a rule for `/oauth/authorize`, and saving one was a rule for nothing.
+     */
+    #[Test]
+    public function a_service_address_has_no_rule_in_the_panel_or_through_the_agent(): void
+    {
+        foreach (['/oauth/authorize', '/cms/pages', '/_preview/page/1', 'https://localhost/oauth/authorize'] as $pattern) {
+            $this->actingAs($this->editor(), 'cms')
+                ->postJson($this->api('urls'), ['match_type' => 'exact', 'pattern' => $pattern])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('pattern');
+
+            $refused = ($this->tool('urls_set'))(['match_type' => 'exact', 'pattern' => $pattern]);
+            $this->assertFalse($refused['ok'], $pattern);
+            $this->assertStringContainsString('service address', $refused['reason']);
+        }
+
+        $this->assertSame(0, SeoUrl::query()->count());
+
+        // A page of the site whose path only starts the same way is still a page.
+        $this->actingAs($this->editor(), 'cms')
+            ->postJson($this->api('urls'), ['match_type' => 'exact', 'pattern' => '/oauth-guide'])
+            ->assertCreated();
+    }
+
     private function tool(string $name): callable
     {
         foreach (app(SeoModule::class)->mcpTools() as $tool) {

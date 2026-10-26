@@ -112,6 +112,8 @@ final class NobodyElseTest extends TestCase
         yield 'not found' => ['/missing'];
         yield 'no body' => ['/no-body'];
         yield 'preview' => ['/_preview/thing'];
+        yield 'the OAuth consent' => ['/oauth/authorize'];
+        yield 'a page a package marked as service' => ['/account/sign-in'];
         yield 'outside the web group' => ['/bare'];
     }
 
@@ -123,6 +125,8 @@ final class NobodyElseTest extends TestCase
         $response = $this->asAdmin($admin, $path);
 
         $this->assertStringNotContainsString('data-wx-debug', (string) $response->getContent());
+        // Nor the panel on the site: the two ask the same question of the same page.
+        $this->assertStringNotContainsString('data-wx-bar', (string) $response->getContent());
         $this->assertSame([], $this->app->make(Reports::class)->recent($admin->getKey()));
     }
 

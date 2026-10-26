@@ -59,7 +59,8 @@
 2. **Включено:** `webx-debug.enabled` (`WEBX_DEBUGBAR`, по умолчанию `true`; на проде значение не
    читается вовсе).
 3. Ответ — страница сайта: те же правила, что `SiteBar\Insertion::wanted()` и `isPage()` —
-   `GET`, группа `web`, путь не панель, не API и не `_preview/*`, `Sec-Fetch-Dest` не `iframe`,
+   `GET`, группа `web`, маршрут и путь не служебные (`SiteRoutes::isService()`: панель, API,
+   `_preview/*`, OAuth-согласие, помеченное `SiteRoutes::SERVICE`), `Sec-Fetch-Dest` не `iframe`,
    статус 200, не поток, не файл, не JSON, `Content-Type: text/html`, в теле есть `</body>`. Правила
    выносятся из `Insertion` в общий `WebxUi\Admin\SiteBar\PageResponse` (публичный API
    `Insertion` не меняется), чтобы два пакета не разошлись в том, что такое «страница».

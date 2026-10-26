@@ -111,6 +111,20 @@ final class ConsentScreenTest extends TestCase
     }
 
     /**
+     * A screen of the system, not a page of the site: the panel on the site would offer an SEO
+     * rule for `/oauth/authorize` on it, and nobody is debugging the site from here.
+     */
+    #[Test]
+    public function the_screen_has_neither_the_site_bar_nor_the_debug_bar(): void
+    {
+        $page = $this->actingAs($this->admin(super: true), 'cms')->get($this->authorizeUrl($this->client()))->assertOk();
+
+        $page->assertSee('</body>', false);
+        $page->assertDontSee('data-wx-bar', false);
+        $page->assertDontSee('data-wx-debug', false);
+    }
+
+    /**
      * The panel's own controls, not ones drawn again: the buttons were a size taller and a size
      * larger than the panel's, in the platform's font rather than the site's.
      */

@@ -15,6 +15,7 @@ use Illuminate\Testing\TestResponse;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Links\SiteRoutes;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -144,6 +145,11 @@ abstract class TestCase extends Orchestra
             $router->get('/missing', static fn () => abort(404));
             $router->get('/no-body', static fn () => response('<p>fragment</p>'));
             $router->get('/_preview/thing', static fn () => response('<html><body>preview</body></html>'));
+            // Service pages: the OAuth consent where Passport puts it, and a page a package marked.
+            $router->get('/oauth/authorize', static fn () => response('<html><body>Allow the agent?</body></html>'));
+            $router->group([SiteRoutes::SERVICE => true], static function () use ($router): void {
+                $router->get('/account/sign-in', static fn () => response('<html><body>Sign in</body></html>'));
+            });
         });
     }
 
