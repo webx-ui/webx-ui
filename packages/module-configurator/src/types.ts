@@ -80,4 +80,33 @@ export interface ConfiguratorQuery {
 /** A configurator as the relation target `configurator` describes it, with its key by name. */
 export interface ConfiguratorCandidate extends RelationCandidate {
   key?: string
+  /** What a block may start it from (`wx-configurator-preset`): the published steps and sizes. */
+  choices?: ConfiguratorChoice[]
 }
+
+/** A step of options a preset picks a value of, in the language of the panel. */
+export interface ConfiguratorStepChoice {
+  key: string
+  kind: 'choice'
+  label: string
+  /** The value the schema starts it with, or null for its first option. */
+  initial: string | null
+  options: { value: string; label: string }[]
+}
+
+/** A size a preset sets, inside the field's own limits. */
+export interface ConfiguratorSizeChoice {
+  key: string
+  kind: 'size'
+  label: string
+  unit: string
+  min: number
+  max: number
+  step: number
+  initial: number | null
+}
+
+export type ConfiguratorChoice = ConfiguratorStepChoice | ConfiguratorSizeChoice
+
+/** A block's start over the schema's `initial`: `{ step: value, field: number }`. */
+export type ConfiguratorPreset = Record<string, string | number>

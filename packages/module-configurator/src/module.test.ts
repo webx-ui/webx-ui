@@ -3,7 +3,7 @@ import { configurators } from './module'
 
 describe('configurators()', () => {
   /* The id is what the manifest names the section by; the composer half writes `...configurators()`. */
-  it('is one section with the list, the editor and the field type', () => {
+  it('is one section with the list, the editor, its field types and the request card', () => {
     const [section] = configurators()
 
     expect(section?.id).toBe('configurators')
@@ -11,7 +11,11 @@ describe('configurators()', () => {
       '/configurators',
       '/configurators/:id(\\d+)',
     ])
-    expect(Object.keys(section?.types ?? {})).toEqual(['wx-configurator'])
+    expect(Object.keys(section?.types ?? {})).toEqual([
+      'wx-configurator',
+      'wx-configurator-preset',
+      'inbox-enclosure:configurator',
+    ])
   })
 
   it('moves with the path it is given', () => {

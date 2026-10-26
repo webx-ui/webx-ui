@@ -7,9 +7,9 @@ The section «Configurators» of the panel (id `configurators`) and the MCP tool
 edit it. Drafts and versions are `webx-ui/module-admin`'s, pictures `webx-ui/module-media`'s, the
 request form `webx-ui/module-inbox`'s — read their guides for those.
 
-This half stores, checks and prices a configurator, answers the panel's editor
-(`@webx-ui/module-configurator`) and builds one over MCP. The block, the view and the script of
-the site, and the configuration in a request come in the next stage of the module.
+It stores, checks and prices a configurator, answers the panel's editor
+(`@webx-ui/module-configurator`), builds one over MCP, prints it on the site and puts the
+configuration, priced again on the server, into a request of the inbox.
 
 ## What it owns
 
@@ -36,6 +36,21 @@ the site, and the configuration in a request come in the next stage of the modul
   record as `configurators`.
 - **Field type** `wx-configurator` (`Screens\ConfiguratorFieldType`): a configurator by its key; a
   key nobody has is refused when written anew. Its picker is the relation target `configurator`.
+- **On the site** `<x-webx-configurator key="…" title="…" :preset="[…]" />` (`View\Components\Configurator`,
+  view `webx-configurator::configurator`): the server prints every step, the price of the start,
+  «from N», the picture, the discount and the messengers of `contacts`; the widget
+  (`dist/configurator.js`, served at `webx/configurator/configurator.js`, built from
+  `resources/js` and the npm engine — `npx vite build` here) only switches. Base look
+  `resources/theme/configurator.css`. Published configurators are cached in the group
+  `configurators`.
+- **Block** `configurator` (`resources/blocks`, `webx:blocks:offered --install`): fields
+  `configurator`, `title` (`-` — none), `preset` (`wx-configurator-preset`: values and sizes of the
+  configurator beside it, no JSON).
+- **Request** — the inbox's enclosure `configurator` (`Inbox\ConfiguratorEnclosure`): the radios and
+  sizes belong to the dialog's form by `form=`, so they go with and without JavaScript; the server
+  prices them and writes one answer row with no field (text + `payload`: selection, sizes, area,
+  discount, lines, total). Only for the form the configurator names; a size out of limits is 422
+  `configurator.values.<field>`.
 - **MCP** tools `configurators_list`, `_get`, `_create`, `_update`, `_publish`, `_unpublish`,
   `_discard`, `_versions`, `_version_restore`, `_delete`, `_quote`, `_validate`. Resources
   `configurators://catalog`, `configurators://schema`. Scopes `configurators:read`,
@@ -56,15 +71,38 @@ A route or a screen node the site adds next to the module asks the same:
 
 ## Change it without forking
 
-| You want                                  | Do this                                                                                 |
-| ----------------------------------------- | --------------------------------------------------------------------------------------- |
-| A configurator for your product           | build it in the panel, or over MCP: `configurators://schema` → `_validate` → `_create`  |
-| Show what a combination costs             | `configurators_quote` with `values` (and `actions` to replay a visitor)                 |
-| Another currency for new configurators    | `WEBX_CONFIGURATOR_CURRENCY=EUR` (publish the config: `--tag=webx-configurator-config`) |
-| A time-limited sale                       | `discount: { percent, until, label }` in the schema, then publish                       |
-| Requests with the configuration           | a form in the inbox, its slug in `form` of the configurator                             |
-| Other words of the panel or the breakdown | `php artisan vendor:publish --tag=webx-configurator-lang`                               |
-| The demo                                  | `php artisan webx:demo --module=configurators`                                          |
+| You want                                  | Do this                                                                                   |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------- |
+| A configurator for your product           | build it in the panel, or over MCP: `configurators://schema` → `_validate` → `_create`    |
+| Show what a combination costs             | `configurators_quote` with `values` (and `actions` to replay a visitor)                   |
+| Another currency for new configurators    | `WEBX_CONFIGURATOR_CURRENCY=EUR` (publish the config: `--tag=webx-configurator-config`)   |
+| A time-limited sale                       | `discount: { percent, until, label }` in the schema, then publish                         |
+| Requests with the configuration           | a form in the inbox, its slug in `form` of the configurator                               |
+| Other words of the panel or the breakdown | `php artisan vendor:publish --tag=webx-configurator-lang`                                 |
+| The demo                                  | `php artisan webx:demo --module=configurators`                                            |
+| Another layout of the configurator        | `vendor:publish --tag=webx-configurator-views`; keep the `data-webx-configurator-*` marks |
+
+### Classes
+
+The theme's contract (THEMES §10), in `resources/theme/configurator.css`; restyle with the same class:
+`webx-configurator`, `webx-configurator__title`, `webx-configurator__layout`, `webx-configurator__preview`,
+`webx-configurator__preview-image`, `webx-configurator__steps`, `webx-configurator__step`
+(+ `webx-configurator__step--<type>`), `webx-configurator__step-title`, `webx-configurator__hint`,
+`webx-configurator__options` (+ `webx-configurator__options--<type>`), `webx-configurator__option`
+(+ `webx-configurator__option--card`, `webx-configurator__option--swatch`, `webx-configurator__option--button`,
+`is-selected`), `webx-configurator__radio`, `webx-configurator__option-image`, `webx-configurator__swatch`,
+`webx-configurator__option-text`, `webx-configurator__option-label`, `webx-configurator__option-subtitle`,
+`webx-configurator__option-from`, `webx-configurator__fields`, `webx-configurator__field`,
+`webx-configurator__field-label`, `webx-configurator__stepper`, `webx-configurator__stepper-button`,
+`webx-configurator__input`, `webx-configurator__range`, `webx-configurator__summary`,
+`webx-configurator__price`, `webx-configurator__total`, `webx-configurator__old-price`,
+`webx-configurator__discount`, `webx-configurator__breakdown`, `webx-configurator__breakdown-title`,
+`webx-configurator__lines`, `webx-configurator__line` (`is-discount`), `webx-configurator__line-text`,
+`webx-configurator__line-amount`, `webx-configurator__note`, `webx-configurator__actions`,
+`webx-configurator__submit`, `webx-configurator__messenger` (+ `webx-configurator__messenger--<kind>`),
+`webx-configurator__messenger-icon`, `webx-configurator__sr`, `webx-configurator__recap`,
+`webx-configurator__recap-title`, `webx-configurator__recap-list`, `webx-configurator__recap-total`.
+Local tokens on `.webx-configurator`: `--webx-configurator-gap`, `-aside`, `-card`, `-swatch-size`, `-control`, `-selected`.
 
 ## Do not
 

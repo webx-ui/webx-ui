@@ -11,14 +11,16 @@ schema document.
 
 This package stores, checks and prices a configurator, keeps its drafts and versions, and answers
 the panel's editor — the npm package `@webx-ui/module-configurator`, with its constructor, live
-preview and JSON mode — and the MCP tools; it installs the demo too. The block on the site and the
-request with its configuration follow.
+preview and JSON mode — and the MCP tools; it installs the demo too. On the site it prints the
+configurator (a block or `<x-webx-configurator>`) and puts the configuration, priced again on the
+server, into a request of the inbox.
 
 ## Requirements
 
 - PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-media`, `webx-ui/localization`, `webx-ui/mcp`
-- `webx-ui/module-inbox` for the request form — suggested, not required
+- `webx-ui/module-inbox` for the request form, `webx-ui/module-blocks` for the block,
+  `webx-ui/themes` for the base look, `webx-ui/module-settings` for the messengers — suggested
 
 ## Install
 
@@ -125,6 +127,25 @@ cases in `resources/fixtures/pricing/` hold both to the same numbers.
 4. `configurators_create` with `dry_run: true`, then without;
 5. `configurators_quote` on a few combinations (`actions` replay a visitor);
 6. `configurators_publish`.
+
+## On the site
+
+```bash
+php artisan webx:blocks:offered --install --module=configurators
+```
+
+The block `configurator` takes a configurator, a heading (`-` is none) and where it starts —
+values and sizes picked from the configurator's published steps. In a template:
+`<x-webx-configurator key="shower" />`. The server prints every step, the price of the start and
+its breakdown, «from N» on the cards, the picture, a discount in force and the messengers of the
+site's contacts; the widget (`dist/configurator.js`, built from `resources/js` and the npm engine
+with `npx vite build` in this folder) recounts as the visitor chooses.
+
+«Get a quote» opens the configurator's inbox form in a dialog. The radios and the sizes belong to
+that form (`form=`), so they go with the contacts with and without JavaScript; the server prices
+them again — a price in the request is never read — and writes the configuration into the
+submission. The base look is `resources/theme/configurator.css`; its classes are listed in
+`AGENTS.md`.
 
 ## The demo
 

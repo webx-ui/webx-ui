@@ -16,4 +16,10 @@ return [
     'rounded' => 'arrondi à :step',
     'submit' => 'Obtenir un devis',
     'breakdown' => 'Comment le prix est calculé',
+    'decrease' => 'Moins : :field',
+    'increase' => 'Plus : :field',
+    'old-price' => 'Ancien prix',
+    'write' => 'Écrivez-nous sur :messenger',
+    'chosen' => 'Votre configuration',
+    'refused' => 'Cette configuration ne peut pas être envoyée pour le moment. Rechargez la page et réessayez.',
 ];

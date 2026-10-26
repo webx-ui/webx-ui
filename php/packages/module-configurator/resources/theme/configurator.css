@@ -1,0 +1,485 @@
+/*
+ * module-configurator: the base look of a configurator on the site (§12.3, THEMES §10.2).
+ *
+ * Only site tokens of the engine's vocabulary, one class per rule, so a theme restyles any of it by
+ * writing the same class later in the cascade. The width of the configurator decides, not the
+ * window's: in a narrow column of a wide page it is the phone layout.
+ *
+ * Narrow (under 45rem — a phone of 360px): one column, the picture over the steps, two cards to a
+ * row, and the price with the button stuck to the bottom of the screen while the configurator is on
+ * it — `sticky` inside the block rather than `fixed`, so it leaves with the block and never covers
+ * the footer, the consent banner or a form below. Wide: the steps on the left, the picture and the
+ * price on the right, the price staying in view while the steps scroll.
+ */
+
+/* The local tokens a theme turns most often, on the configurator itself: a module styles its own
+   classes, never the root. The swatch is the option's own, set in its style attribute. */
+.webx-configurator {
+  --webx-configurator-swatch: var(--site-color-surface-muted);
+  --webx-configurator-gap: var(--site-space-5);
+  --webx-configurator-aside: 22rem;
+  --webx-configurator-card: 9rem;
+  --webx-configurator-swatch-size: 2.75rem;
+  --webx-configurator-control: 2.75rem;
+  --webx-configurator-selected: var(--site-color-accent);
+
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.webx-configurator__title {
+  margin: 0 0 var(--site-space-5);
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--webx-configurator-gap);
+  align-items: start;
+}
+
+.webx-configurator__preview {
+  margin: 0;
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface-muted);
+  overflow: hidden;
+}
+
+.webx-configurator__preview[hidden] {
+  display: none;
+}
+
+.webx-configurator__preview-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 24rem;
+  object-fit: contain;
+}
+
+.webx-configurator__steps {
+  display: grid;
+  gap: var(--site-space-5);
+  min-width: 0;
+}
+
+.webx-configurator__step {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.webx-configurator__step[hidden] {
+  display: none;
+}
+
+.webx-configurator__step-title {
+  margin: 0 0 var(--site-space-3);
+  padding: 0;
+  font-size: var(--site-font-size-5);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__hint {
+  margin: calc(-1 * var(--site-space-2)) 0 var(--site-space-3);
+  color: var(--site-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  min-width: 0;
+}
+
+.webx-configurator__options--cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--webx-configurator-card)), 1fr));
+}
+
+.webx-configurator__option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--site-space-2);
+  min-width: 0;
+  min-height: var(--webx-configurator-control);
+  padding: var(--site-space-2) var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  cursor: pointer;
+  transition: border-color var(--site-duration) var(--site-easing);
+}
+
+.webx-configurator__option[hidden] {
+  display: none;
+}
+
+.webx-configurator__option.is-selected {
+  border-color: var(--webx-configurator-selected);
+  box-shadow: inset 0 0 0 1px var(--webx-configurator-selected);
+}
+
+/* The radio is the control and stays in the page for the keyboard and a screen reader; the box
+   around it is what is seen. Its focus is drawn on the box. */
+.webx-configurator__radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.webx-configurator__option:focus-within {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-configurator__option--card {
+  flex-direction: column;
+  align-items: stretch;
+  padding: var(--site-space-2);
+}
+
+.webx-configurator__option-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+}
+
+.webx-configurator__swatch {
+  flex: none;
+  width: var(--webx-configurator-swatch-size);
+  height: var(--webx-configurator-swatch-size);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-full);
+  background: var(--webx-configurator-swatch);
+}
+
+.webx-configurator__option-text {
+  display: grid;
+  gap: var(--site-space-1);
+  min-width: 0;
+}
+
+.webx-configurator__option-label {
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__option-subtitle,
+.webx-configurator__option-from,
+.webx-configurator__range,
+.webx-configurator__note {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__option-from {
+  font-weight: 600;
+  color: var(--site-color-text);
+}
+
+.webx-configurator__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: var(--site-space-4);
+}
+
+.webx-configurator__field {
+  display: grid;
+  gap: var(--site-space-1);
+  min-width: 0;
+}
+
+.webx-configurator__field[hidden] {
+  display: none;
+}
+
+.webx-configurator__field-label {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__stepper {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.webx-configurator__stepper-button {
+  min-width: var(--webx-configurator-control);
+  min-height: var(--webx-configurator-control);
+  margin: 0;
+  padding: 0 var(--site-space-2);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  font: inherit;
+  font-size: var(--site-font-size-5);
+  cursor: pointer;
+}
+
+.webx-configurator__stepper-button[hidden] {
+  display: none;
+}
+
+.webx-configurator__stepper-button:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-configurator__input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--webx-configurator-control);
+  margin: 0;
+  padding: var(--site-space-2);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-bg);
+  color: var(--site-color-text);
+  font: inherit;
+  text-align: center;
+}
+
+.webx-configurator__input:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+/* A size typed outside its limits, before it is pulled back in: the browser knows it from min and max. */
+.webx-configurator__input:invalid {
+  border-color: var(--site-color-danger);
+}
+
+.webx-configurator__range {
+  margin: 0;
+}
+
+/* The price and the button: at the end of the steps, stuck to the bottom of the screen while the
+   configurator is on it. The background is the page's, so the steps scroll under it unseen. */
+.webx-configurator__summary {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: grid;
+  gap: var(--site-space-3);
+  min-width: 0;
+  padding: var(--site-space-3) 0;
+  border-top: 1px solid var(--site-color-border);
+  background: var(--site-color-bg);
+}
+
+.webx-configurator__price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--site-space-1) var(--site-space-3);
+  margin: 0;
+}
+
+.webx-configurator__total {
+  font-size: var(--site-font-size-3);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.webx-configurator__old-price {
+  color: var(--site-color-text-muted);
+}
+
+.webx-configurator__old-price[hidden],
+.webx-configurator__discount[hidden] {
+  display: none;
+}
+
+.webx-configurator__discount {
+  padding: var(--site-space-1) var(--site-space-2);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-highlight);
+  color: var(--site-color-text);
+  font-size: var(--site-font-size-6);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__breakdown {
+  min-width: 0;
+}
+
+.webx-configurator__breakdown-title {
+  color: var(--site-color-accent);
+  cursor: pointer;
+}
+
+.webx-configurator__lines {
+  display: grid;
+  gap: var(--site-space-1);
+  margin: var(--site-space-2) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-configurator__line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--site-space-3);
+  margin: 0;
+}
+
+.webx-configurator__line.is-discount {
+  color: var(--site-color-success);
+}
+
+.webx-configurator__line-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__line-amount {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.webx-configurator__note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-1) var(--site-space-3);
+  margin: 0;
+}
+
+.webx-configurator__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-2);
+}
+
+.webx-configurator__submit {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-height: var(--webx-configurator-control);
+  padding: var(--site-space-2) var(--site-space-5);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__submit:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-configurator__messenger {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--webx-configurator-control);
+  height: var(--webx-configurator-control);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-full);
+  color: var(--site-color-text);
+}
+
+.webx-configurator__messenger:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-configurator__messenger-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Words for a screen reader only: «old price», the name of a messenger behind its icon. */
+.webx-configurator__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Over the fields of the request dialog: what was chosen and what it costs, only to read. */
+.webx-configurator__recap {
+  margin: 0 0 var(--site-space-4);
+  padding: var(--site-space-3) var(--site-space-4);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface-muted);
+}
+
+.webx-configurator__recap-title {
+  margin: 0 0 var(--site-space-2);
+  font-weight: 600;
+}
+
+.webx-configurator__recap-list {
+  display: grid;
+  gap: var(--site-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--site-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__recap-total {
+  margin: var(--site-space-2) 0 0;
+  font-weight: 700;
+}
+
+@container (min-width: 45rem) {
+  .webx-configurator__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--webx-configurator-aside));
+    grid-template-rows: auto 1fr;
+  }
+
+  .webx-configurator__steps {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .webx-configurator__preview {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .webx-configurator__summary {
+    grid-column: 2;
+    grid-row: 2;
+    top: var(--site-space-4);
+    bottom: auto;
+    padding: var(--site-space-4);
+    border: 1px solid var(--site-color-border);
+    border-radius: var(--site-radius-md);
+  }
+}

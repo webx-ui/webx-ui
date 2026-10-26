@@ -147,6 +147,53 @@ in the bin later stays and is marked.
 { "id": "configurator", "type": "wx-configurator", "name": "configurator", "label": "Configurator" }
 ```
 
+## On the site
+
+A configurator reaches a page as the offered block `configurator`:
+
+```bash
+php artisan webx:blocks:offered --install --module=configurators
+```
+
+The block has three fields: the **configurator** (`wx-configurator`), the **heading** (empty is the
+configurator's name, `-` is none) and **where it starts** (`wx-configurator-preset`) — a value for
+any step and a number for any size of the configurator chosen beside it, picked from its published
+steps, never typed as JSON. What the schema no longer has is dropped when the block is printed.
+
+Without a block, the same thing in a template of the site:
+
+```blade
+<x-webx-configurator key="shower" />
+<x-webx-configurator key="shower" title="-" :preset="['construction' => 'niche', 'h' => 2100]" />
+```
+
+**The server prints everything; the script only switches.** Every step, option and size is in the
+HTML — what the start hides with `hidden` — with the price of the start and its breakdown («How the
+price is made»), «from N» on the cards (the option at its defaults, every other step as it starts),
+the picture by the `previews` rules, the discount and the messengers of the site's contacts beside
+the button. The widget (`webx/configurator/configurator.js`, the npm engine built in, 5 KB gzip)
+recounts the price as the visitor chooses, hides what the choice hides, swaps the picture and keeps
+the struck-out price only while the discount is in force.
+
+**A discount** is `discount: { percent, until, label }` in the schema: the label (`−20% до 31.10`)
+and the old price struck out next to the total, until its last day; after it neither is shown and
+the server does not give it.
+
+**The request.** The button opens the configurator's inbox form in a dialog (a sheet on a phone).
+The radios and the sizes belong to that form by `form=`, so they are sent with the visitor's
+contacts with JavaScript and without it. The server prices them again from the published schema —
+a price in the request is never read — and writes the configuration into the submission as one
+answer with no field: the text the letter, Telegram and the export show, and a structure the
+inbox's card draws (selection, sizes, area, lines, discount, total). A size outside its limits is a
+422 under `configurator.values.<field>`; a configuration sent to a form its configurator does not
+name is refused.
+
+**The look** is `resources/theme/configurator.css` of the module, on site tokens: steps on the left
+and the price on the right when the configurator is at least 45rem wide; one column under it, the
+picture above the steps and the price with the button stuck to the bottom of the screen while the
+configurator is on it. A theme restyles it with the same classes (`### Classes` in the package's
+`AGENTS.md`), or publishes the view: `--tag=webx-configurator-views`.
+
 ## The panel's API
 
 Under the panel's API path, `configurators`: the list (`?trashed=1`), `POST` a new one,

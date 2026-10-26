@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
@@ -40,6 +40,7 @@ import type {
   InboxStatus,
   InboxSubmission,
   SubmissionEvent,
+  SubmissionValue,
 } from './types'
 
 /**
@@ -74,6 +75,19 @@ const admins = ref<InboxRecipient[]>([])
 const loading = ref(true)
 
 const canUpdate = computed(() => context.can('inbox.update'))
+
+/**
+ * What draws a module's enclosure (§2.20): the panel type `inbox-enclosure:<kind>` the module
+ * registered — a configuration as a table, a basket as its lines. Without one, the enclosure's
+ * text is shown as it came, in the letter's lines.
+ */
+function enclosureView(value: SubmissionValue): Component | null {
+  if (value.type !== 'enclosure' || value.field_id !== null) return null
+  const payload = value.payload as { kind?: unknown } | null
+  const kind = typeof payload?.kind === 'string' ? payload.kind : value.name
+
+  return context.types[`inbox-enclosure:${kind}`]?.component ?? null
+}
 
 const id = computed(() => Number(route.params.id))
 
@@ -466,7 +480,18 @@ const details = computed(() => {
               :key="value.id"
               :label="value.label ?? value.name"
             >
-              <p class="wx-submission__value">{{ value.value || '—' }}</p>
+              <component
+                :is="enclosureView(value)"
+                v-if="enclosureView(value)"
+                :payload="value.payload"
+                :value="value.value"
+              />
+              <p
+                v-else
+                :class="['wx-submission__value', { 'is-enclosure': value.type === 'enclosure' }]"
+              >
+                {{ value.value || '—' }}
+              </p>
             </wx-descriptions-item>
           </wx-descriptions>
         </wx-card>
@@ -760,6 +785,12 @@ const details = computed(() => {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* An enclosure nobody draws reads as the letter does: its lines, kept in columns. */
+.wx-submission__value.is-enclosure {
+  font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-sm);
 }
 
 .wx-submission__detail {

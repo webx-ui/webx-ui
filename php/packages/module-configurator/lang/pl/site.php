@@ -16,4 +16,10 @@ return [
     'rounded' => 'zaokrąglono do :step',
     'submit' => 'Poproś o wycenę',
     'breakdown' => 'Jak powstaje cena',
+    'decrease' => 'Mniej: :field',
+    'increase' => 'Więcej: :field',
+    'old-price' => 'Stara cena',
+    'write' => 'Napisz do nas w :messenger',
+    'chosen' => 'Twoja konfiguracja',
+    'refused' => 'Tej konfiguracji nie można teraz wysłać. Odśwież stronę i spróbuj ponownie.',
 ];

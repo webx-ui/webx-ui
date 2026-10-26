@@ -1,0 +1,9 @@
+{
+  "name": "@webx-ui/configurator-build",
+  "private": true,
+  "type": "module",
+  "description": "Not published: the build of the Composer package's dist/configurator.js from the engine of @webx-ui/module-configurator. Uses the Vite of the monorepo.",
+  "scripts": {
+    "build": "vite build"
+  }
+}

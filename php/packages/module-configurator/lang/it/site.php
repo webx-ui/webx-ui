@@ -16,4 +16,10 @@ return [
     'rounded' => 'arrotondato a :step',
     'submit' => 'Chiedi un preventivo',
     'breakdown' => 'Come si calcola il prezzo',
+    'decrease' => 'Meno: :field',
+    'increase' => 'Più: :field',
+    'old-price' => 'Prezzo precedente',
+    'write' => 'Scrivici su :messenger',
+    'chosen' => 'La tua configurazione',
+    'refused' => 'Questa configurazione non può essere inviata ora. Ricarica la pagina e riprova.',
 ];

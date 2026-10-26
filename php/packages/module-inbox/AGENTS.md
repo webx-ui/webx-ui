@@ -86,8 +86,8 @@ submissions, `cms.can:inbox.update` to change them, `cms.can:inbox.manage` for f
 | Somebody told about a form                  | `inbox_form_save` with `options.recipients`, or the editor's Notifications tab                                                                             |
 | A form read only in the panel               | leave it without recipients and ignore `inbox.no_recipients` in the audit                                                                                  |
 | Other words                                 | `php artisan vendor:publish --tag=webx-inbox-lang`                                                                                                         |
-| Send submissions to a CRM or mailing list   | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below                                                                                  |
-| Write back to the visitor (a gift, a PDF)   | the same: a handler on that form's slug that sends a mailable to its e-mail field                                                                          |
+| Send to a CRM, write back to the visitor    | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below; a gift or a PDF: a mailable to the form's e-mail field                          |
+| Your module's data in a submission          | a `Contracts\Enclosure` registered with `Submissions\Enclosures` in boot; the form sends `webx_enclosure[]=<name>`; one answer row, `field_id` null        |
 | Anything else once a submission is stored   | a listener of `WebxUi\Inbox\Events\SubmissionStored` (`Event::listen`), `ShouldQueue`                                                                      |
 | A submission in Telegram instead of letters | a channel of `inbox.submission`, then `inbox_form_save` `options.notify_via: channels`, `notify_channels`                                                  |
 | A letter sent again                         | the submission's menu in the panel; MCP `inbox_notify` (`dry_run` first)                                                                                   |

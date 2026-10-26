@@ -1,0 +1,40 @@
+{
+  "slug": "configurator",
+  "title": "Configurator",
+  "description": "A configurator of the section: the visitor chooses step by step, sees the picture and the price with its breakdown, and sends a request with the whole configuration — priced again on the server.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "configurator",
+      "type": "wx-configurator",
+      "label": "Configurator"
+    },
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true,
+      "help": "Empty — the name of the configurator; a dash (-) — no heading."
+    },
+    {
+      "id": "preset",
+      "type": "wx-configurator-preset",
+      "label": "Where it starts",
+      "help": "Over the configurator’s own start: the values and sizes this block opens with."
+    }
+  ],
+  "template": "{{-- Thin on purpose: the markup is the module’s view and updates with it (§12.1). --}}\n@if ($configurator)\n<div class=\"b-configurator\" data-wx-block=\"configurator\">\n    <x-webx-configurator :key=\"$configurator\" :title=\"$title\" :preset=\"$preset\" />\n</div>\n@endif\n",
+  "styles": "",
+  "script": "",
+  "sample": {
+    "configurator": null,
+    "title": "",
+    "preset": null
+  }
+}

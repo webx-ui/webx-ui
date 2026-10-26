@@ -11,6 +11,7 @@ import {
 } from '../../../../packages/module-configurator/src/engine/engine'
 import { validate } from '../../../../packages/module-configurator/src/engine/validator'
 import type { ConfiguratorSchema } from '../../../../packages/module-configurator/src/engine/types'
+import type { ConfiguratorChoice } from '../../../../packages/module-configurator/src/types'
 import { forms } from './inbox'
 
 /*
@@ -530,8 +531,51 @@ export function registerConfigurators(on: On, fail: Fail, line: Line): void {
 }
 
 /**
+ * What a block may start a configurator from (`ConfiguratorTarget::choices()`): the steps of the
+ * published schema with their values, the sizes with their limits.
+ */
+function choices(schema: ConfiguratorSchema | null, locale: string): ConfiguratorChoice[] {
+  if (schema === null) return []
+  const initial = (schema.initial ?? {}) as Record<string, unknown>
+  // A text of the document is a string (the default language) or a map of languages.
+  const say = (text: unknown): string =>
+    typeof text === 'string' ? text : pick(text as Localized | undefined, locale)
+
+  return (schema.steps ?? []).flatMap((step): ConfiguratorChoice[] => {
+    const title = say(step.label) || say(step.title) || step.key
+
+    if (step.type !== 'dimensions') {
+      return [
+        {
+          key: step.key,
+          kind: 'choice',
+          label: title,
+          initial: typeof initial[step.key] === 'string' ? (initial[step.key] as string) : null,
+          options: (step.options ?? []).map((option) => ({
+            value: option.value,
+            label: say(option.label) || option.value,
+          })),
+        },
+      ]
+    }
+
+    return (step.fields ?? []).map((field) => ({
+      key: field.key,
+      kind: 'size',
+      label: say(field.label) || field.key,
+      unit: say(field.unit),
+      min: field.min ?? 0,
+      max: field.max ?? 0,
+      step: field.step ?? 1,
+      initial: typeof initial[field.key] === 'number' ? (initial[field.key] as number) : null,
+    }))
+  })
+}
+
+/**
  * The relation target `configurator` (`ConfiguratorTarget`): the name, the key under it and as
- * `key` — what `wx-configurator` keeps; one off the site is marked, not dropped.
+ * `key` — what `wx-configurator` keeps; one off the site is marked, not dropped — and the choices
+ * of `wx-configurator-preset`.
  */
 export function configuratorCandidates(locale: string) {
   return configurators.map((record) => ({
@@ -542,6 +586,7 @@ export function configuratorCandidates(locale: string) {
       key: record.key,
       thumb: null,
       visible: record.live !== null,
+      choices: choices(record.live?.schema ?? null, locale),
     },
     deleted: record.deleted_at !== null,
   }))

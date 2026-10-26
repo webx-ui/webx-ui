@@ -42,10 +42,11 @@ final class Intake
 
     /**
      * @param  array<string, mixed>  $values  what arrived under `fields`, already validated
+     * @param  array<string, Enclosed>  $enclosures  what modules put beside the answers, by name (§2.20)
      */
-    public function receive(Form $form, array $values, Request $request, string $source = Submission::SOURCE_WEB): Submission
+    public function receive(Form $form, array $values, Request $request, string $source = Submission::SOURCE_WEB, array $enclosures = []): Submission
     {
-        $hash = $this->hash($form, $values);
+        $hash = $this->hash($form, $values, $enclosures);
         $submission = $this->find($form, $hash);
         $repeated = $submission !== null;
 
@@ -64,6 +65,7 @@ final class Intake
         }
 
         $this->write($submission, $form, $values, $request);
+        $this->enclose($submission, $form, $enclosures);
 
         $submission->refresh();
 
@@ -99,9 +101,13 @@ final class Intake
      * rely on; files are left out, since the same file picked twice is two temporary paths
      * and two hashes for what a person would call one submission.
      *
+     * Enclosures are in it (§2.20): two configurations sent by one person a minute apart are two
+     * enquiries, not the second one overwriting the first.
+     *
      * @param  array<string, mixed>  $values
+     * @param  array<string, Enclosed>  $enclosures
      */
-    public function hash(Form $form, array $values): string
+    public function hash(Form $form, array $values, array $enclosures = []): string
     {
         $subject = [];
 
@@ -115,6 +121,10 @@ final class Intake
         }
 
         ksort($subject);
+
+        foreach ($enclosures as $name => $enclosed) {
+            $subject['@'.$name] = $enclosed->payload;
+        }
 
         return md5($form->getKey().'|'.json_encode($subject, JSON_UNESCAPED_UNICODE));
     }
@@ -198,6 +208,27 @@ final class Intake
             [$value, $payload] = $this->readable($field, $values[$key]);
 
             $this->value($submission, $form, $field, $value, $payload);
+        }
+    }
+
+    /**
+     * Each enclosure as an answer with no field (§2.20): its name, the snapshot of its heading, the
+     * text people read and the structure the panel draws.
+     *
+     * @param  array<string, Enclosed>  $enclosures
+     */
+    private function enclose(Submission $submission, Form $form, array $enclosures): void
+    {
+        foreach ($enclosures as $name => $enclosed) {
+            $submission->values()->create([
+                'form_id' => $form->getKey(),
+                'field_id' => null,
+                'name' => $name,
+                'label' => mb_substr($enclosed->label, 0, 255),
+                'type' => Enclosures::TYPE,
+                'value' => $enclosed->value,
+                'payload' => $enclosed->payload,
+            ]);
         }
     }
 

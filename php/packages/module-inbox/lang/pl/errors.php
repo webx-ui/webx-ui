@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Nie udało się wysłać formularza. Spróbuj ponownie za chwilę.',
+    'enclosure' => 'Tego, co dołączono do formularza, nie można z nim wysłać. Odśwież stronę i spróbuj ponownie.',
     'captcha' => 'Potwierdź, że nie jesteś robotem, i wyślij formularz ponownie.',
     'captcha-script' => 'Ten formularz sprawdza za pomocą JavaScriptu, że nie jesteś robotem. Włącz go i wyślij formularz ponownie.',
     'captcha-unavailable' => 'Nie udało się sprawdzić, że nie jesteś robotem. Odśwież stronę albo spróbuj innej przeglądarki.',

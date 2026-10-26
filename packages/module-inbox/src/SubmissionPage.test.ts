@@ -70,7 +70,11 @@ function submission(over: Partial<InboxSubmission> = {}): InboxSubmission {
   }
 }
 
-function panel(record: InboxSubmission, can: (permission: string) => boolean = () => true) {
+function panel(
+  record: InboxSubmission,
+  can: (permission: string) => boolean = () => true,
+  types: Record<string, unknown> = {},
+) {
   const get = vi.fn().mockImplementation((path: string) => {
     if (path.endsWith('/statuses')) return Promise.resolve({ data: [status, done] })
     if (path.endsWith('/recipients')) return Promise.resolve({ data: [] })
@@ -91,6 +95,7 @@ function panel(record: InboxSubmission, can: (permission: string) => boolean = (
     i18n,
     state: { manifest: null, user: null, status: 'ready', error: null },
     can,
+    types,
   } as unknown as AdminContext
 
   const router = createRouter({
@@ -105,8 +110,12 @@ function panel(record: InboxSubmission, can: (permission: string) => boolean = (
   return { get, put, post, router, admin, i18n }
 }
 
-async function open(record: InboxSubmission, can?: (permission: string) => boolean) {
-  const context = panel(record, can)
+async function open(
+  record: InboxSubmission,
+  can?: (permission: string) => boolean,
+  types?: Record<string, unknown>,
+) {
+  const context = panel(record, can, types)
 
   await context.router.replace({ path: '/inbox/submissions/5', query: { view: 'unread' } })
   await context.router.isReady()
@@ -231,6 +240,35 @@ describe('WxInboxSubmissionPage', () => {
 
     expect(link.exists()).toBe(true)
     expect(link.attributes('href')).toContain('mailto:ada@example.test')
+  })
+
+  /* A module's enclosure (§2.20): drawn by the panel type its module registered, else its text. */
+  it('draws an enclosure by the type of its kind, and its text without one', async () => {
+    const basket = {
+      id: 3,
+      field_id: null,
+      name: 'basket',
+      label: 'Basket',
+      type: 'enclosure',
+      value: 'Apples × 3\nTotal: 750',
+      payload: { kind: 'basket', count: 3 },
+    }
+    const record = submission({ values: [...submission().values, basket] })
+
+    const plain = await open(record)
+    expect(plain.wrapper.find('.wx-submission__value.is-enclosure').text()).toBe(
+      'Apples × 3\nTotal: 750',
+    )
+
+    const view = {
+      props: { payload: { type: Object, default: null } },
+      template: '<p class="basket-view">{{ payload.count }} apples</p>',
+    }
+    const drawn = await open(record, undefined, {
+      'inbox-enclosure:basket': { component: view, kind: 'display' },
+    })
+    expect(drawn.wrapper.find('.basket-view').text()).toBe('3 apples')
+    expect(drawn.wrapper.find('.is-enclosure').exists()).toBe(false)
   })
 
   it('has no reply button when nothing that arrived was an address', async () => {

@@ -11,6 +11,8 @@ use WebxUi\Inbox\Http\Resources\AdminBrief;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Submission;
+use WebxUi\Inbox\Models\SubmissionValue;
+use WebxUi\Inbox\Submissions\Enclosures;
 use WebxUi\Inbox\Submissions\ListQuery;
 
 /**
@@ -20,6 +22,9 @@ use WebxUi\Inbox\Submissions\ListQuery;
  * to make a list readable on screen, and an export is what somebody opens precisely because the
  * screen did not have room. The answers come from the relation rather than from `ListQuery`'s
  * subqueries for the same reason — one per field would be forty subqueries on a long form.
+ *
+ * What a module enclosed (§2.20) is a column too, after the fields: its text, the same lines the
+ * letter has.
  *
  * Streamed, and in chunks: an export is the one request in the panel whose size is decided by
  * how successful the site has been.
@@ -39,9 +44,11 @@ final class SubmissionExportController
 
         $query = $list->build($request)->with('values');
 
+        $enclosures = $this->enclosures($form);
+
         $name = $form->slug.'-'.Carbon::now()->format('Y-m-d-His').'.csv';
 
-        return new StreamedResponse(function () use ($query, $fields): void {
+        return new StreamedResponse(function () use ($query, $fields, $enclosures): void {
             $out = fopen('php://output', 'w');
 
             if ($out === false) {
@@ -52,11 +59,11 @@ final class SubmissionExportController
             // of Cyrillic names opened as mojibake is an export nobody trusts again.
             fwrite($out, "\xEF\xBB\xBF");
 
-            fputcsv($out, $this->heading($fields));
+            fputcsv($out, $this->heading($fields, $enclosures));
 
-            $query->chunk(self::CHUNK, function ($submissions) use ($out, $fields): void {
+            $query->chunk(self::CHUNK, function ($submissions) use ($out, $fields, $enclosures): void {
                 foreach ($submissions as $submission) {
-                    fputcsv($out, $this->row($submission, $fields));
+                    fputcsv($out, $this->row($submission, $fields, $enclosures));
                 }
             });
 
@@ -69,10 +76,35 @@ final class SubmissionExportController
     }
 
     /**
+     * The enclosures this form's submissions carry, by name, with the heading of the latest one —
+     * one query, not one per row: the columns have to be known before the first row is written.
+     *
+     * @return array<string, string>
+     */
+    private function enclosures(Form $form): array
+    {
+        $columns = [];
+
+        $rows = SubmissionValue::query()
+            ->where('form_id', $form->getKey())
+            ->whereNull('field_id')
+            ->where('type', Enclosures::TYPE)
+            ->orderBy('id')
+            ->get(['name', 'label']);
+
+        foreach ($rows as $row) {
+            $columns[$row->name] = (string) ($row->label ?: $row->name);
+        }
+
+        return $columns;
+    }
+
+    /**
      * @param  list<Field>  $fields
+     * @param  array<string, string>  $enclosures
      * @return list<string>
      */
-    private function heading(array $fields): array
+    private function heading(array $fields, array $enclosures = []): array
     {
         $row = [
             (string) __('webx-inbox::panel.id'),
@@ -88,21 +120,33 @@ final class SubmissionExportController
             $row[] = self::cell($label === '' ? $field->key() : $label.' ('.$field->key().')');
         }
 
+        foreach ($enclosures as $name => $label) {
+            $row[] = self::cell($label.' ('.$name.')');
+        }
+
         return $row;
     }
 
     /**
      * @param  list<Field>  $fields
+     * @param  array<string, string>  $enclosures
      * @return list<string>
      */
-    private function row(Submission $submission, array $fields): array
+    private function row(Submission $submission, array $fields, array $enclosures = []): array
     {
         // By the field, not by the name the answer arrived under: a field renamed since keeps
         // its older answers in its column. The name is for an answer whose field is gone.
         $byField = [];
         $byName = [];
+        $enclosed = [];
 
         foreach ($submission->values as $value) {
+            if ($value->type === Enclosures::TYPE && $value->field_id === null) {
+                $enclosed[$value->name] = (string) $value->value;
+
+                continue;
+            }
+
             if ($value->field_id !== null) {
                 $byField[(int) $value->field_id] = (string) $value->readable();
             }
@@ -123,6 +167,10 @@ final class SubmissionExportController
 
         foreach ($fields as $field) {
             $row[] = self::cell($byField[(int) $field->getKey()] ?? $byName[$field->key()] ?? '');
+        }
+
+        foreach (array_keys($enclosures) as $name) {
+            $row[] = self::cell($enclosed[$name] ?? '');
         }
 
         return $row;

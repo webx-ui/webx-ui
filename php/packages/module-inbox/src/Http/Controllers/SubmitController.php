@@ -24,6 +24,8 @@ use WebxUi\Inbox\Mail\Notifier;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Notifications\Channels;
 use WebxUi\Inbox\Panel\FormOptions;
+use WebxUi\Inbox\Submissions\Enclosed;
+use WebxUi\Inbox\Submissions\Enclosures;
 use WebxUi\Inbox\Submissions\Intake;
 use WebxUi\Inbox\Submissions\Rules;
 use WebxUi\Inbox\Submissions\ThankYou;
@@ -54,6 +56,7 @@ final class SubmitController
         private readonly Channels $channels,
         private readonly LinkUrls $urls,
         private readonly Locales $locales,
+        private readonly Enclosures $enclosures,
     ) {}
 
     public function __invoke(Request $request, string $slug): JsonResponse|RedirectResponse
@@ -107,9 +110,9 @@ final class SubmitController
             throw ValidationException::withMessages($this->refusal($inspection));
         }
 
-        $values = $this->validate($form, $request);
+        [$values, $enclosed] = $this->validate($form, $request);
 
-        $submission = $this->intake->receive($form, $values, $request);
+        $submission = $this->intake->receive($form, $values, $request, enclosures: $enclosed);
 
         // Only now: a refused or invalid attempt is somebody correcting a mistake, and it
         // counts towards the route's higher limit instead.
@@ -157,20 +160,40 @@ final class SubmitController
     }
 
     /**
-     * @return array<string, mixed>
+     * The answers, and what modules enclosed beside them (§2.20).
+     *
+     * The enclosures are asked inside the same check as the fields, so a refused size and an
+     * empty phone come back in one answer — not the phone first and the size on the second try.
+     *
+     * @return array{0: array<string, mixed>, 1: array<string, Enclosed>}
      */
     private function validate(Form $form, Request $request): array
     {
-        $validated = $this->validator->make(
+        $enclosed = [];
+
+        $validator = $this->validator->make(
             $request->all(),
             $this->rules->for($form),
             [],
             $this->rules->attributes($form),
-        )->validate();
+        );
 
+        $validator->after(function ($validator) use ($form, $request, &$enclosed): void {
+            try {
+                $enclosed = $this->enclosures->receive($form, $request);
+            } catch (ValidationException $refused) {
+                foreach ($refused->errors() as $key => $messages) {
+                    foreach ($messages as $message) {
+                        $validator->errors()->add($key, $message);
+                    }
+                }
+            }
+        });
+
+        $validated = $validator->validate();
         $fields = $validated['fields'] ?? [];
 
-        return is_array($fields) ? $fields : [];
+        return [is_array($fields) ? $fields : [], $enclosed];
     }
 
     /**

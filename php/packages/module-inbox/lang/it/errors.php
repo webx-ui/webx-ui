@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Non è stato possibile inviare il modulo. Riprova tra un momento.',
+    'enclosure' => 'Ciò che è allegato a questo modulo non può essere inviato con esso. Ricarica la pagina e riprova.',
     'captcha' => 'Conferma di non essere un robot e invia di nuovo il modulo.',
     'captcha-script' => 'Questo modulo verifica con JavaScript che tu non sia un robot. Attivalo e invia di nuovo il modulo.',
     'captcha-unavailable' => 'Non siamo riusciti a verificare che tu non sia un robot. Ricarica la pagina o prova un altro browser.',

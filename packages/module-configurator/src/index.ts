@@ -9,8 +9,14 @@ export const WxConfiguratorEditorPage = defineAsyncComponent(
   () => import('./ConfiguratorEditorPage.vue'),
 )
 export { default as WxConfiguratorField } from './ConfiguratorField.vue'
+export { default as WxConfiguratorPresetField } from './PresetField.vue'
+export { default as WxConfiguratorRequest } from './RequestEnclosure.vue'
 export type {
   ConfiguratorCandidate,
+  ConfiguratorChoice,
+  ConfiguratorPreset,
+  ConfiguratorSizeChoice,
+  ConfiguratorStepChoice,
   ConfiguratorDetail,
   ConfiguratorQuery,
   ConfiguratorRow,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'refused' => 'No se ha podido enviar el formulario. Inténtelo de nuevo en un momento.',
+    'enclosure' => 'Lo que se adjuntó a este formulario no se puede enviar con él. Recargue la página e inténtelo de nuevo.',
     'captcha' => 'Confirme que no es un robot y envíe el formulario de nuevo.',
     'captcha-script' => 'Este formulario comprueba con JavaScript que no es un robot. Actívelo y envíe el formulario de nuevo.',
     'captcha-unavailable' => 'No pudimos comprobar que no es un robot. Recargue la página o pruebe con otro navegador.',

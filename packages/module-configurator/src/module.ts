@@ -1,5 +1,7 @@
 import type { AdminModule } from '@webx-ui/module-admin'
 import ConfiguratorField from './ConfiguratorField.vue'
+import PresetField from './PresetField.vue'
+import RequestEnclosure from './RequestEnclosure.vue'
 
 export interface ConfiguratorsOptions {
   /** Where the section lives inside the panel. */
@@ -40,6 +42,15 @@ export function configurators(options: ConfiguratorsOptions = {}): AdminModule[]
       // this section's.
       types: {
         'wx-configurator': { component: ConfiguratorField, kind: 'field' },
+        // Where the block starts: nested, so it reads the configurator chosen in the field beside it.
+        'wx-configurator-preset': {
+          component: PresetField,
+          kind: 'field',
+          nested: true,
+          wide: true,
+        },
+        // The configuration in a request, drawn in the inbox's card (inbox §2.20).
+        'inbox-enclosure:configurator': { component: RequestEnclosure, kind: 'display' },
       },
     },
   ]
