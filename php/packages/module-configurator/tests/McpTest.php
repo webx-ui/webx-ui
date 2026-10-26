@@ -35,6 +35,10 @@ final class McpTest extends TestCase
         $this->assertContains('configurators://catalog', $uris);
         $this->assertContains('configurators://schema', $uris);
 
+        // A property's own words win over the shared ones it is built from.
+        $this->assertStringContainsString('send schema instead', $registry->tool('configurators_quote')->tool->inputSchema['properties']['configurator']['description']);
+        $this->assertStringContainsString('blank one', $registry->tool('configurators_create')->tool->inputSchema['properties']['schema']['description']);
+
         $this->assertSame(0, Artisan::call('webx:mcp-tools', ['--module' => 'configurators']));
         $this->assertStringContainsString('configurators_quote', Artisan::output());
     }

@@ -363,7 +363,8 @@ final class Validator
         $this->label($option, $path, ['label']);
         $this->texts($option, $path, ['label', 'subtitle']);
 
-        if ($type === 'cards' && (! is_string($option['image'] ?? null) || trim($option['image']) === '')) {
+        // A card without a picture; one given but not a key is told once, by the loop below.
+        if ($type === 'cards' && ($option['image'] ?? null) === null) {
             $this->fail("{$path}.image", 'image.missing');
         }
 

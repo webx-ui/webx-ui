@@ -33,7 +33,9 @@ final class ConfiguratorResources
                 'Configurators',
                 'Every configurator with its key, title, status, request form and steps (key, type, how many '
                 .'options or fields). Read it before creating one, so that you reuse rather than duplicate. A '
-                .'configurator reaches a page of the site as the block «configurator» (blocks_*), by its key.',
+                .'configurator reaches a page of the site as the block «configurator» (blocks_*), by its key. The '
+                .'block\'s values: configurator (the key), title (empty — the configurator\'s title; "-" — no '
+                .'heading) and preset ({ step: value, field: number } the block starts with over initial; null — none).',
                 fn (): array => $this->catalog(),
             ),
             new McpResource(
@@ -41,7 +43,8 @@ final class ConfiguratorResources
                 'Configurator schema',
                 'The schema document of a configurator: its keys, the step types, the conditions, the area '
                 .'formula, how the price is counted, every problem code configurators_validate can answer, and '
-                .'an example to start from. Pictures are media library keys — media_upload_from_url gives them.',
+                .'an example to start from. A picture is a media library key — the path media_get_file answers with, '
+                .'"media/ab/cd/….webp" — not an id or an object; media_upload_from_url answers with the id.',
                 fn (): array => $this->schema(),
             ),
         ];
@@ -88,7 +91,7 @@ final class ConfiguratorResources
                 'version' => 'required, '.Validator::VERSION,
                 'currency' => 'required, an ISO 4217 code in capitals: "UAH", "EUR"',
                 'pricing.round' => 'the step the total is rounded to, above 0; 1 when omitted',
-                'initial' => '{ step key: option value, field key: number } — where a visitor starts',
+                'initial' => '{ step key: option value, field key: number } — where a visitor starts; a size outside its range is pulled into it, as on the site',
                 'discount' => '{ percent (0 < p < 100), until (YYYY-MM-DD, the last day; none — no end), label (text) }',
                 'steps' => 'required, at least one; the order is the order shown and the order priced',
                 'previews' => '[{ when, image }] — the first rule whose when holds gives the picture',
@@ -101,7 +104,7 @@ final class ConfiguratorResources
             'texts' => 'label, title, hint, subtitle, unit, discount.label: a string (the default language) or { "en": "…", "uk": "…" }. Every label needs the default language.',
             'step_types' => Validator::TYPES,
             'step' => 'key, type, label (short, used in the breakdown; title when missing), title, hint, when, unless',
-            'option' => 'value, label, subtitle, image (media key; required in cards), swatch (#rgb, #rrggbb or a linear-/radial-gradient of hex colours), swatchImage (media key; wins over swatch), price { fixed, perM2, percent } (numbers, negative allowed), area (formula), defaults { field: number }, limits { field: [min, max] }, when, unless',
+            'option' => 'value, label, subtitle, image (media key, "media/…"; required in cards), swatch (#rgb, #rrggbb or a linear-/radial-gradient of hex colours), swatchImage (media key; wins over swatch), price { fixed, perM2, percent } (numbers, negative allowed), area (formula), defaults { field: number }, limits { field: [min, max] }, when, unless',
             'field' => 'key, label, unit, min, max, step (> 0, the stepper\'s; not checked on the server), default, when, unless',
             'conditions' => 'when: { step key: [values] } — every named step visible and chosen one of the values; unless: hidden when the same when would hold. Only choice steps above the element may be named. A chosen option that becomes hidden moves to the first visible one; a hidden step is not priced and not in a request; a hidden field is 0 in the formula.',
             'formula' => 'area of an option: numbers (1e6 too), size field keys, + - * / ( ) and a unary minus. The options of exactly one choice step have it — the main step — and all of its options do. Dividing by 0 gives 0; an area below 0 is 0. No step with a formula — the area is 0 and perM2 is refused.',
@@ -111,7 +114,7 @@ final class ConfiguratorResources
                 '3. discount' => 'when in force on the day: percent of what steps 1 and 2 give, as a negative line',
                 '4. total' => 'rounded to pricing.round, half away from zero; never below 0. total_before_discount is the same without step 3',
             ],
-            'values' => 'quote takes { step: value, field: number }: an unknown key is dropped, a choice not offered moves to the first visible option, a size outside its limits is the error values.range — never clamped.',
+            'values' => 'quote takes { step: value, field: number }: an unknown key is dropped, a choice not offered moves to the first visible option, a size outside its limits is the error values.range — never clamped. values are resolved before actions: a value of a step hidden at that point drops out, so name the step it depends on in values too, or select it in actions after.',
             'errors' => Validator::CODES,
             'example' => [
                 'version' => 1,

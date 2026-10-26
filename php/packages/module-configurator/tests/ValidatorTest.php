@@ -70,6 +70,20 @@ final class ValidatorTest extends TestCase
     }
 
     #[Test]
+    public function a_picture_given_as_an_id_is_told_once(): void
+    {
+        // What an agent sends after reading media://fields: the library's id rather than its key.
+        $this->mediaFile();
+        $schema = $this->schema();
+        $schema['steps'][0]['options'][0]['image'] = ['id' => 35];
+
+        $this->assertSame(['steps.0.options.0.image image.missing'], array_map(
+            static fn (array $one): string => "{$one['path']} {$one['code']}",
+            $this->problems($schema),
+        ));
+    }
+
+    #[Test]
     public function a_swatch_takes_colours_and_gradients_and_nothing_that_could_carry_css(): void
     {
         foreach (['#fff', '#59616a', '#59616a80', 'linear-gradient(135deg, #b8862b, #f3d27a)', 'radial-gradient(circle at center, #fff 0%, #000 100%)', 'linear-gradient(to bottom right, #fff, #000)'] as $good) {

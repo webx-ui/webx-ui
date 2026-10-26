@@ -155,6 +155,12 @@ webx-ui/<пакет>` из `php/`. Проверка — `grep helpers.php vendor
 
 ## Стартовый сайт
 
+- **Сценарий агента на стартовом сайте: коннектора к нему у сессии нет,** а сайт пересоздаётся
+  скриптом. Тот же сервер MCP — по stdio: `site exec webx-starter-test php artisan mcp:start webx`,
+  JSON-RPC построчно трубой (`initialize`, `notifications/initialized`, `tools/call`); русский
+  текст аргументов — из файла, не из командной строки. `media_upload_from_url` отказывает адресам
+  частной сети, в том числе самому dev-сайту: картинки брать с `raw.githubusercontent.com`
+  (демо-медиа `theme-default` в `main`). Проверка — `media_get_file` отдаёт `path` загруженного.
 - **`scripts/starter-site.sh` одноразовый: удаляет каталог сайта целиком.** Поэтому каталог по
   умолчанию — `webx-starter-test.local` (база `webx_starter_test`), и скрипт падает «is a git
   checkout», если в `STARTER_PATH` есть `.git`: клон `~/work/webx-starter` под ним не живёт. Все

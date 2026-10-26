@@ -122,11 +122,14 @@ cases in `resources/fixtures/pricing/` hold both to the same numbers.
 `configurators_validate` (read-only). An agent builds a configurator end to end:
 
 1. read `configurators://schema` (and `configurators://catalog` for what exists);
-2. `media_upload_from_url` for the pictures;
+2. `media_upload_from_url` for the pictures, then `media_get_file` for their keys (`path`);
 3. `configurators_validate` the document;
 4. `configurators_create` with `dry_run: true`, then without;
-5. `configurators_quote` on a few combinations (`actions` replay a visitor);
-6. `configurators_publish`.
+5. `configurators_quote` on a few combinations (`actions` replay a visitor after `values` are
+   resolved);
+6. `configurators_publish`;
+7. the block `configurator` on a page (`blocks_edit_content`): `configurator` is the key, `title`
+   empty for the configurator's own, `preset` `{ step: value, field: number }` or null.
 
 ## On the site
 

@@ -93,13 +93,13 @@ final class ConfiguratorTools
                 'Start a configurator. It is a draft: nothing is on the site until configurators_publish. The key '
                 .'is what a block names it by and is fixed once it has been published. A schema with problems '
                 .'is saved anyway — the answer lists them; it cannot be published until they are gone. '
-                .'Check the document with configurators_validate first; pictures are media library keys '
-                .'(media_upload_from_url gives them).',
+                .'Check the document with configurators_validate first; a picture is a media library key — the '
+                .'path media_get_file answers with, not the id media_upload_from_url gives.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->create($arguments, $user)),
                 ['properties' => [
                     'key' => ['type' => 'string', 'description' => 'A slug: a-z, 0-9 and dashes — "shower".'],
                     'title' => $text,
-                    'schema' => $schema + ['description' => 'The schema document; a blank one with no steps when omitted.'],
+                    'schema' => ['description' => 'The whole schema document, as configurators://schema describes it; a blank one with no steps when omitted.'] + $schema,
                     'form' => ['type' => ['string', 'null'], 'description' => 'The slug of the inbox form a request goes to (inbox_forms_list). Omit for none.'],
                 ], 'required' => ['key', 'title']],
                 permission: 'configurators.manage',
@@ -187,14 +187,15 @@ final class ConfiguratorTools
                 .'and the breakdown line by line. Of a configurator (the live schema, or draft: true), or of a '
                 .'schema sent here and written nowhere. actions replay a visitor: {"select": [step, value]} puts '
                 .'the option\'s defaults into the sizes, {"set": [field, number]} pulls a size into its limits. '
-                .'A size sent outside its limits is an error, not clamped.',
+                .'A size sent outside its limits is an error, not clamped. values are resolved before actions: a value '
+                .'of a step hidden at that point drops out — name the step it depends on in values too.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->quote($arguments)),
                 ['properties' => [
-                    'configurator' => $configurator + ['description' => 'The configurator to price; or send schema instead.'],
+                    'configurator' => ['description' => 'The configurator to price: its id, or its key — "shower". Or send schema instead.'] + $configurator,
                     'schema' => ['type' => 'object', 'description' => 'A schema document to price without writing it anywhere.'],
                     'draft' => ['type' => 'boolean', 'description' => 'Price the draft rather than what the site shows.'],
                     'values' => $values,
-                    'actions' => ['type' => 'array', 'items' => ['type' => 'object'], 'description' => 'Visitor actions after the values, in order: {"select": ["glass", "graphite"]}, {"set": ["h", 1900]}.'],
+                    'actions' => ['type' => 'array', 'items' => ['type' => 'object'], 'description' => 'Visitor actions after the values are resolved, in order: {"select": ["glass", "graphite"]}, {"set": ["h", 1900]}.'],
                     'today' => ['type' => 'string', 'description' => 'The day to check the discount against, YYYY-MM-DD; today when omitted.'],
                 ]],
                 permission: ['configurators.view', 'configurators.manage'],

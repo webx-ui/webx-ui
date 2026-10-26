@@ -762,7 +762,7 @@ POST   editing/configurators/{id}               присутствие, как �
 ставит блок `configurator` через `blocks_*`, а картинки — `media_upload_from_url`.
 
 Сценарий агента «собрать целиком»: прочитать `configurators://schema` → `media_upload_from_url` для
-картинок → `configurators_validate` → `configurators_create` с `dry_run` → без него →
+картинок и `media_get_file` за их ключами (`path`; загрузка отвечает id) → `configurators_validate` → `configurators_create` с `dry_run` → без него →
 `configurators_quote` на нескольких комбинациях → `configurators_publish` → блок на страницу.
 
 ## 15. Демо

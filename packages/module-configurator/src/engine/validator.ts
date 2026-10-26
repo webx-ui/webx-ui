@@ -373,7 +373,8 @@ export function validate(schema: unknown, locale: string): Problem[] {
     label(item, path, ['label'])
     texts(item, path, ['label', 'subtitle'])
 
-    if (type === 'cards' && (typeof item.image !== 'string' || item.image.trim() === '')) {
+    // A card without a picture; one given but not a key is told once, by the loop below.
+    if (type === 'cards' && (item.image ?? null) === null) {
       fail(`${path}.image`, 'image.missing')
     }
 

@@ -68,6 +68,21 @@ describe('validate()', () => {
     ])
   })
 
+  it('tells a card picture that is not a library key once', () => {
+    const doc = {
+      ...base,
+      steps: [
+        {
+          ...base.steps[0],
+          type: 'cards',
+          options: [{ value: 'a', label: 'A', image: { id: 35 } }],
+        },
+      ],
+    }
+
+    expect(codes(doc)).toEqual(['steps.0.options.0.image image.missing'])
+  })
+
   it('refuses a discount out of range and a date that is not one', () => {
     expect(codes({ ...base, discount: { percent: 100, until: '2026-02-30' } })).toEqual([
       'discount.percent discount.percent',

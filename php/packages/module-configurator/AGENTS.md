@@ -116,7 +116,9 @@ Local tokens on `.webx-configurator`: `--webx-configurator-gap`, `-aside`, `-car
   revision are skipped. Use `ConfiguratorWriter` or the MCP tools.
 - Do not rename `key` of a published configurator: blocks of the site name it by it.
 - Do not reference pictures by media id: the document keeps library keys (`media/…`), which move
-  between stands; `media_upload_from_url` gives a key.
+  between stands. `media_upload_from_url` answers with the id; the key is `path` of `media_get_file`.
+- Do not put a value of a conditional step into `quote`'s `values` without the step it depends on:
+  `values` are resolved before `actions`, and a step hidden at that point drops its value.
 
 ## Check your work
 
@@ -125,6 +127,8 @@ Local tokens on `.webx-configurator`: `--webx-configurator-gap`, `-aside`, `-car
   and `total` are what you meant; a size outside its limits is `values.range`.
 - After `configurators_publish`, `configurators_get` shows `status: published` and
   `configurators_versions` a new number.
+- On a page: `blocks_edit_content` adds the block `configurator` with the values `configurator`
+  (the key), `title` and `preset`; the page shows the same total as `configurators_quote`.
 - Tests: `vendor/bin/phpunit packages/module-configurator/tests` from `php/`.
 
 ## Read more
