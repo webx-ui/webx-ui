@@ -84,8 +84,9 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
 16. **В базе — хеш токена,** в cookie — сам токен (§4.1). Утёкшая база не даёт войти в чужую
     корзину; MCP токен не показывает никогда.
 17. **Деньги — целым везде,** включая ответ API и MCP; рядом с каждой суммой — готовая строка
-    `*_formatted` от сервера (решение 32). Форматирует один `Money::format()` по языку, коду валюты и
-    её экспоненте ISO 4217; виджет и Blade показывают его строку, а не форматируют сами.
+    `*_formatted` от сервера (решение 32). Форматирует один `Money::format()` по правилам валюты из
+    `CurrencySource` (символ и его место, разделители, число знаков = экспонента ISO 4217), а не по
+    языку; виджет и Blade показывают его строку, а не форматируют сами.
 18. **Одна и та же позиция не двоится.** Строка того же `type`, `ref_id` и тех же `options` без
     родителя увеличивает `qty` существующей строки. Строки внутри комплекта не сливаются никогда.
 19. **Чтение не пишет.** `GET` и `cart()` не меняют строки: превышение `maxQty`, удалённая запись,
@@ -98,13 +99,17 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
 21. **Опции, от которых зависит цена, — сейчас.** Необязательные `ResolvesWithOptions` и
     `ChecksOptions` поверх `Purchasable` (§5.1) делаются в этапе 2; второй поставщик, который их
     реализует, — конфигуратор (webx-ui#44).
-22. **Снимок названия — колонка `name_at_add`** (json, на языке добавления). Строка удалённой записи
-    показывается с ним (§3, §6.2).
+22. **Снимок названия — колонка `name_at_add`** (json, все языки сайта:
+    `{"en": "Item D", "uk": "…", "pl": "…"}`). Названия по языкам поставщик отдаёт необязательным
+    полем `PurchasableLine::$names` (§5.1); не отдал — пишется `[$locale => $name]`. Строка удалённой
+    записи показывается с ним: язык запроса → основной язык сайта → любой имеющийся (§3, §6.2).
 23. **`qty` ребёнка — на единицу родителя:** родитель ×2 — дети ×2 сами; удаление родителя умножает
     `qty` детей.
 24. **Валюта — через маленький контракт «источник валюты сайта»** (`CurrencySource`, §4.2). В v1
     реализация по умолчанию: `webx-cart.currency` → валюта каталога → отказ в записи и строка в
-    `webx:doctor`. Вероятный модуль валют позже подменит реализацию (отложенный вопрос 1 §15).
+    `webx:doctor`. Тот же контракт отдаёт правила записи суммы в валюте (`format()`, §4.2): формат
+    зависит от валюты, а не от языка. Вероятный модуль валют позже подменит реализацию и сделает
+    правила настраиваемыми (отложенный вопрос 1 §15).
 25. **Глубина — один уровень:** родитель и дети, внуков нет.
 26. **Вернуть отказанный подарок — целиком `module-cart-rules`;** корзина только хранит
     `declined_rules` и вычитает их.
@@ -120,8 +125,9 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
     подарок генерируется с ценой ≥ 1: ровно ноль нельзя (юридическое требование), минимальное
     значение — настройка `module-cart-rules` (§5.4).
 32. **Рядом с каждой суммой — `*_formatted`:** `"price": 4999, "price_formatted": "49,99 €"`,
-    строка отформатирована сервером по языку и валюте. Деньги по-прежнему целые в минимальных
-    единицах.
+    строка отформатирована сервером по правилам валюты (§4.2) и от языка не зависит: с английским и
+    с украинским интерфейсом покупатель видит одну и ту же строку. Деньги по-прежнему целые в
+    минимальных единицах.
 
 ## 3. Таблицы
 
@@ -147,7 +153,7 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
 | `options`      | json, null                            | выбор покупателя для поставщиков, которые его понимают (§5.1); у товара — `null`  |
 | `qty`          | int unsigned                          | ≥ 1; у ребёнка — на одну единицу родителя (решение 23)                            |
 | `parent_id`    | FK `cart_items`, null, `nullOnDelete` | index; строка комплекта; только на строку без родителя (решение 25)               |
-| `name_at_add`  | json                                  | снимок названия: `{"uk": "Товар D"}` — язык добавления → `name` (решение 22)      |
+| `name_at_add`  | json                                  | снимок названия на всех языках сайта: `{"en": "Item D", "uk": "…"}` (решение 22)  |
 | `price_at_add` | bigint unsigned                       | цена поставщика в минимальных единицах в момент добавления; только для информации |
 | `added_at`     | timestamp                             | когда положили; при слиянии (решение 18) не меняется                              |
 
@@ -157,9 +163,11 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
 - **Валюта строки** не хранится: у корзины она одна (`carts.currency`), `price_at_add` — в ней.
 - **Название в строке — только снимок.** Показывается всегда живое имя от поставщика;
   `name_at_add` пишется тем же `resolve()`, что и `price_at_add`, и нужен одному случаю — записи
-  больше нет (`null`), строка показывается «недоступной» с этим названием. Снимок не обновляется и
-  не переводится: на другом языке показывается как есть. Слитая строка (решение 18) снимок не
-  меняет.
+  больше нет (`null`), строка показывается «недоступной» с этим названием. В снимке — все языки,
+  которые отдал поставщик (`PurchasableLine::$names`, §5.1); не отдал — один язык добавления
+  `[$locale => $name]`. Показывается название на языке запроса, иначе на основном языке сайта
+  (`Locales::defaultCode()`), иначе первое имеющееся. Снимок не обновляется; слитая строка
+  (решение 18) его не меняет.
 - **Миграции откатываются** (`down()` удаляет обе таблицы в обратном порядке).
 
 ## 4. Токен, cookie, жизнь корзины
@@ -192,6 +200,25 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
   {
       /** @return string|null  ISO 4217, upper case; null — not configured */
       public function currency(): ?string;
+
+      /** How an amount in this currency is written — the same in every language of the site. */
+      public function format(string $currency): CurrencyFormat;
+  }
+  ```
+
+  ```php
+  namespace WebxUi\Cart;
+
+  final class CurrencyFormat
+  {
+      public function __construct(
+          public readonly string $symbol,       // "€", "$", or the code itself: "XYZ"
+          public readonly bool $symbolFirst,    // "$49.99" — true; "49,99 €" — false
+          public readonly bool $spaced,         // a no-break space between the symbol and the number
+          public readonly string $thousands,    // "\u{00A0}", ",", ".", "'"
+          public readonly string $decimal,      // "," or "."
+          public readonly int $exponent,        // ISO 4217 minor digits: 2; 0 for JPY; 3 for KWD
+      ) {}
   }
   ```
 
@@ -201,8 +228,16 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
   `webx:doctor` называет настройку. Модуль валют позже привяжет свою реализацию — корзина не
   меняется (отложенный вопрос 1 §15).
 
-- `Money::format(int $minor, string $currency, string $locale): string` — один форматтер на
-  ответ API, Blade и MCP (`NumberFormatter::CURRENCY` из `intl`, экспонента — ISO 4217).
+- **Формат суммы зависит от валюты, а не от языка.** Сама сумма от локали не зависит, и строка
+  `*_formatted` тоже: покупатель с английским интерфейсом и с украинским видит одну и ту же
+  `"49,99 €"`. Правила — символ, его место, разделители тысяч и дробной части, число знаков — даёт
+  `CurrencySource::format()` для валюты. `ConfigCurrency` знает разумные правила распространённых
+  валют (`EUR` → `"1 234,56 €"`, `USD` → `"$1,234.56"`, `JPY` → `"¥1,235"` …); незнакомая валюта —
+  запасной вариант: код после числа (`"1 234,56 XYZ"`), экспонента — из таблицы ISO 4217, а если
+  кода нет и там — 2. Настраиваемыми правила сделает модуль валют своей реализацией контракта.
+- `Money::format(int $minor, string $currency): string` — один форматтер на ответ API, Blade и
+  MCP. Берёт правила из `CurrencySource::format()`, не из `intl` и не из языка запроса; языка в
+  сигнатуре нет. `Money::toMinor()` (§7) берёт экспоненту оттуда же.
 - Строка, у которой `PurchasableLine::currency` не совпала с валютой корзины, — недоступна с
   предупреждением `line.currency`: пересчёта курсов в базе нет (принцип 4 карты коммерции).
 
@@ -259,6 +294,7 @@ final class PurchasableLine
         public readonly bool $shippable = true,
         public readonly ?int $maxQty = null,     // null — no stock to check
         public readonly bool $available = true,
+        public readonly ?array $names = null,    // locale → name in every language of the site
     ) {}
 }
 ```
@@ -266,6 +302,9 @@ final class PurchasableLine
 - **Поставщик создаёт строку именованными аргументами** — так новое поле в конце не ломает ни
   одного поставщика. `AGENTS.md` пакета говорит это первым пунктом контракта.
 - `sku` — nullable: артикул у товара каталога необязателен.
+- **`names`** — название на всех языках сайта (`array<locale, string>`), только для снимка
+  `name_at_add` (решение 22, §3); показывается по-прежнему `name` на языке `resolve()`. `null` —
+  снимок получит один язык: `[$locale => $name]`. Читается только при записи строки (`POST`).
 - **`available = false`** — запись есть, но купить нельзя (снята, «цена по запросу», нет в
   наличии): строка видна с названием и предупреждением `line.unavailable`, в сумму не идёт.
   **`price = 0`** — то же самое: «цена по запросу», корзина считает строку недоступной, даже если
@@ -544,14 +583,15 @@ DELETE /api/cart                         вся корзина: строки, о
 
 Пример: комплект из товара и двух дополнений, одно из которых удалено у поставщика; отдельный товар
 с упавшей ценой; ни одного спутника — `adjustments`, `tenders`, `benefits`, `hints` пустые. Валюта
-`UAH`, экспонента 2: `250000` — это 2 500,00. Строки `*_formatted` — от `Money::format()` на языке
-запроса (решение 32); в настоящем ответе разделитель тысяч — неразрывный пробел, как отдаёт `intl`.
+`EUR`, экспонента 2: `250000` — это 2 500,00. Строки `*_formatted` — от `Money::format()` по правилам
+валюты (§4.2, решение 32) и от языка запроса не зависят; в настоящем ответе разделитель тысяч у `EUR`
+— неразрывный пробел. Язык запроса — `en`: на нём `name`, подписи и `warnings`.
 
 ```json
 {
-  "currency": "UAH",
+  "currency": "EUR",
   "exponent": 2,
-  "locale": "uk",
+  "locale": "en",
   "lines": [
     {
       "id": 101,
@@ -560,19 +600,19 @@ DELETE /api/cart                         вся корзина: строки, о
       "source": null,
       "qty": 1,
       "effective_qty": 1,
-      "name": "Набір A",
+      "name": "Bundle A",
       "sku": "A-100",
       "options": null,
       "options_label": null,
       "image": "/storage/catalog/42/a-100-320.webp",
-      "url": "/nabir-a-42",
+      "url": "/bundle-a-42",
       "price": 250000,
-      "price_formatted": "2 500,00 ₴",
+      "price_formatted": "2 500,00 €",
       "price_at_add": 250000,
-      "price_at_add_formatted": "2 500,00 ₴",
+      "price_at_add_formatted": "2 500,00 €",
       "price_change": null,
       "line_total": 250000,
-      "line_total_formatted": "2 500,00 ₴",
+      "line_total_formatted": "2 500,00 €",
       "shippable": true,
       "max_qty": null,
       "available": true,
@@ -588,19 +628,19 @@ DELETE /api/cart                         вся корзина: строки, о
           "source": null,
           "qty": 2,
           "effective_qty": 2,
-          "name": "Товар B",
+          "name": "Item B",
           "sku": "B-200",
           "options": null,
           "options_label": null,
           "image": "/storage/catalog/57/b-200-320.webp",
-          "url": "/tovar-b-57",
+          "url": "/item-b-57",
           "price": 15000,
-          "price_formatted": "150,00 ₴",
+          "price_formatted": "150,00 €",
           "price_at_add": 15000,
-          "price_at_add_formatted": "150,00 ₴",
+          "price_at_add_formatted": "150,00 €",
           "price_change": null,
           "line_total": 30000,
-          "line_total_formatted": "300,00 ₴",
+          "line_total_formatted": "300,00 €",
           "shippable": true,
           "max_qty": null,
           "available": true,
@@ -617,7 +657,7 @@ DELETE /api/cart                         вся корзина: строки, о
           "source": null,
           "qty": 1,
           "effective_qty": 1,
-          "name": "Товар D",
+          "name": "Item D",
           "sku": null,
           "options": null,
           "options_label": null,
@@ -626,10 +666,10 @@ DELETE /api/cart                         вся корзина: строки, о
           "price": null,
           "price_formatted": null,
           "price_at_add": 9000,
-          "price_at_add_formatted": "90,00 ₴",
+          "price_at_add_formatted": "90,00 €",
           "price_change": null,
           "line_total": 0,
-          "line_total_formatted": "0,00 ₴",
+          "line_total_formatted": "0,00 €",
           "shippable": true,
           "max_qty": null,
           "available": false,
@@ -648,19 +688,19 @@ DELETE /api/cart                         вся корзина: строки, о
       "source": null,
       "qty": 1,
       "effective_qty": 1,
-      "name": "Товар C",
+      "name": "Item C",
       "sku": null,
       "options": null,
       "options_label": null,
       "image": null,
-      "url": "/tovar-c-77",
+      "url": "/item-c-77",
       "price": 48000,
-      "price_formatted": "480,00 ₴",
+      "price_formatted": "480,00 €",
       "price_at_add": 52000,
-      "price_at_add_formatted": "520,00 ₴",
+      "price_at_add_formatted": "520,00 €",
       "price_change": "down",
       "line_total": 48000,
-      "line_total_formatted": "480,00 ₴",
+      "line_total_formatted": "480,00 €",
       "shippable": true,
       "max_qty": null,
       "available": true,
@@ -673,22 +713,22 @@ DELETE /api/cart                         вся корзина: строки, о
   ],
   "units": 5,
   "subtotal": 328000,
-  "subtotal_formatted": "3 280,00 ₴",
+  "subtotal_formatted": "3 280,00 €",
   "adjustments": [],
   "total": 328000,
-  "total_formatted": "3 280,00 ₴",
+  "total_formatted": "3 280,00 €",
   "tenders": [],
   "payable": 328000,
-  "payable_formatted": "3 280,00 ₴",
+  "payable_formatted": "3 280,00 €",
   "benefits": [],
   "hints": [],
   "warnings": [
     {
       "code": "line.gone",
       "line": 103,
-      "message": "Товару D більше немає. Його можна видалити."
+      "message": "Item D is no longer available. You can remove it."
     },
-    { "code": "price.down", "line": 104, "message": "Товар C подешевшав." }
+    { "code": "price.down", "line": 104, "message": "Item C is now cheaper." }
   ]
 }
 ```
@@ -696,9 +736,9 @@ DELETE /api/cart                         вся корзина: строки, о
 - **`lines`** — дерево: дети под родителем в `children`, в порядке `id`; внуков нет (решение 25).
   Генерируемая строка встаёт под `parentId` или в конец корня, её `id` — строка `"rule#12:0"`
   (источник и номер), `source` — `"rule#12"`, `declinable` — из `GeneratedLine`, `label` — его
-  подпись («Подарунок»).
+  подпись («Gift»).
 - **`gone`** — записи у поставщика нет (`null` или тип не зарегистрирован): `name` — из
-  `name_at_add` (решение 22), `sku`, `image`, `url`, `price` — `null`. У «цены по запросу» и
+  `name_at_add` (решение 22: язык запроса → основной язык сайта → любой), `sku`, `image`, `url`, `price` — `null`. У «цены по запросу» и
   `available = false` — `gone: false`, имя и картинка живые, `price` — как отдал поставщик.
 - **`line_total`** = `price × effective_qty` плюс скидки строки; у недоступной — 0. Сумма
   `line_total` доступных строк до скидок корзины — `subtotal`.
@@ -775,6 +815,8 @@ missing_formatted }`. `meta` в ответ API не идёт (только MCP).
   | `shippable`       | `true`                                                                                 |
   | `maxQty`          | `null`: количеств у наличия пока нет (решение 5 каталога)                              |
   | `available`       | `Purchasability` ответил «да», `price` не `null` и больше 0                            |
+
+| `names` | переводимое `name` товара на всех языках сайта (`Locales::codes()`), пустые — пропуск |
 
 - **Удалённый** (soft delete) — `null`: строка «недоступна». **Снятый, невидимый, «нет в наличии»,
   «цена по запросу»** — строка с `available = false`; цена `0` — тоже «цена по запросу» (решение 31).
@@ -976,6 +1018,12 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 - Слияние одинаковых строк, `options` с ключами в другом порядке — одна строка; дети не
   сливаются.
 - Удаление родителя: дети остаются, `parent_id = null`, `qty` умножено; FK держит и путь в обход.
+- `name_at_add`: поставщик с `names` — снимок на всех его языках; без `names` — `[$locale => $name]`;
+  удалённая строка — название на языке запроса, без него — на основном языке сайта, без него —
+  первое имеющееся.
+- `Money::format()`: одна и та же строка при любом `X-Webx-Locale`; правила `EUR`, `USD`, `JPY`
+  (экспонента 0) и запасной вариант с кодом после числа; своя привязка `CurrencySource` меняет
+  формат.
 - `null` и неизвестный тип — `line.gone`, не в сумме, `name` из `name_at_add`; `available = false`
   и цена 0 — `line.unavailable`, не в сумме, добавить — 422; чужая валюта; `maxQty`.
 - Поставщик с `ResolvesWithOptions` получает `options` строк и отдаёт разные цены одной записи;
