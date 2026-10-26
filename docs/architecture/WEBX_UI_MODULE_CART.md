@@ -14,15 +14,18 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
 ## 1. Границы
 
 **Внутри:** таблицы `carts` и `cart_items`; токен и cookie; контракт `Purchasable`, класс
-`PurchasableLine` и реестр `Purchasables`; дерево строк (`parent_id`) и атомарное добавление пачкой;
-вычислитель итогов и пять пустых реестров его звеньев — генерируемые строки, корректировки, оплаты,
-привилегии, подсказки (§5); колонка `declined_rules` и место подарочных строк в ответе; JSON API
-(§6); хелпер `cart()` (§8); виджет с режимами `drawer` / `dialog` / `dropdown`, кнопки «в корзину» и
-«купить комплект» (§9); чистка старых гостевых корзин (`webx:cart:prune`); MCP на чтение (§10);
-словарь `webx-cart`.
+`PurchasableLine`, необязательные `ResolvesWithOptions` / `ChecksOptions` и реестр `Purchasables`;
+источник валюты сайта `CurrencySource` с реализацией по умолчанию (§4.2); дерево строк (`parent_id`,
+один уровень) и атомарное добавление пачкой; вычислитель итогов и пять пустых реестров его звеньев —
+генерируемые строки, корректировки, оплаты, привилегии, подсказки (§5); колонка `declined_rules` и
+место подарочных строк в ответе; JSON API с готовыми строками сумм (§6); хелпер `cart()` (§8);
+наполнение виджета в режимах `drawer` / `dialog` / `dropdown` и кнопка «в корзину» (§9); чистка
+старых гостевых корзин (`webx:cart:prune`); MCP на чтение (§10); словарь `webx-cart`.
 
 **Рядом, но в чужом пакете:** адаптер `catalog.product` живёт в `module-catalog` (§7) — владелец
 сущности сам регистрирует поставщика. Кнопка «Купить» на карточке товара — тоже в вьюхах каталога.
+Каркас выдвижной панели — общий `<x-webx-dialog drawer>` в `widgets` (решение 29). Кнопка «купить
+комплект» и комплекты на витрине — спутник каталога, не эта задача (решение 28).
 
 **Снаружи:**
 
@@ -32,7 +35,7 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
 - **Оформление и страница корзины.** Шаги, доставка, сверка суммы — `module-checkout`. Сайт при
   желании сам объявит роут и вью поверх API (§6).
 - **Покупатель.** Аккаунтов пока нет; привязка корзины к покупателю и слияние гостевой при входе —
-  позже, в `module-users` (вопрос 9 §15).
+  позже, в `module-users` (отложенный вопрос 2 §15).
 - **Раздел в панели** — позже, отдельной задачей.
 - **Склад и резервы.** Остаток корзина проверяет, только если поставщик отдаёт `maxQty` или
   `available` (§2.4). Резерва при добавлении нет.
@@ -42,7 +45,7 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
 Решения человека от 23.10.2026 (спецификация задачи webx-ui#54).
 
 1. **Две таблицы — `carts` и `cart_items`** (§3). Имя `carts` расходится с правилом «таблицы
-   раздела — под его именем» (`cart_*`) — вопрос 1 §15; имена не меняются до ответа.
+   раздела — под его именем» (`cart_*`); человек оставил его (решение 20).
 2. **Корзина гостевая.** Токен — в httpOnly-cookie; покупательских аккаунтов нет, привязка — позже в
    `module-users`.
 3. **Цена живая.** В строке всегда текущая цена поставщика; `price_at_add` — только для информации
@@ -73,20 +76,52 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
     оформления, список строк); вид — тема.
 14. **MCP — чтение корзин** (`cart:read`). Раздел в панели — позже.
 
-Решения спеки (предложены здесь; спорное вынесено в §15):
+Решения спеки (предложены здесь, спорное человек закрыл решениями 20–32):
 
 15. **Корзина заводится первой записью.** `GET` без cookie отдаёт пустое состояние и ничего не
     пишет; строка `carts` и cookie появляются при первом `POST /api/cart/items`. Обходчики и
     случайные посетители корзин не плодят.
 16. **В базе — хеш токена,** в cookie — сам токен (§4.1). Утёкшая база не даёт войти в чужую
     корзину; MCP токен не показывает никогда.
-17. **Деньги — целым везде,** включая ответ API и MCP; форматирует показ (`Intl.NumberFormat` в
-    виджете, `Money::format()` в Blade) по коду валюты и её экспоненте ISO 4217.
+17. **Деньги — целым везде,** включая ответ API и MCP; рядом с каждой суммой — готовая строка
+    `*_formatted` от сервера (решение 32). Форматирует один `Money::format()` по языку, коду валюты и
+    её экспоненте ISO 4217; виджет и Blade показывают его строку, а не форматируют сами.
 18. **Одна и та же позиция не двоится.** Строка того же `type`, `ref_id` и тех же `options` без
     родителя увеличивает `qty` существующей строки. Строки внутри комплекта не сливаются никогда.
 19. **Чтение не пишет.** `GET` и `cart()` не меняют строки: превышение `maxQty`, удалённая запись,
     чужая валюта — предупреждения в ответе (§6.3), а не тихая правка. Исключение — отметка
     активности для чистки (§4.3), не чаще раза в сутки.
+
+Решения человека от 26.10.2026 (ответы на открытые вопросы этапа 1):
+
+20. **Имена таблиц — `carts` и `cart_items`,** без `cart_carts`.
+21. **Опции, от которых зависит цена, — сейчас.** Необязательные `ResolvesWithOptions` и
+    `ChecksOptions` поверх `Purchasable` (§5.1) делаются в этапе 2; второй поставщик, который их
+    реализует, — конфигуратор (webx-ui#44).
+22. **Снимок названия — колонка `name_at_add`** (json, на языке добавления). Строка удалённой записи
+    показывается с ним (§3, §6.2).
+23. **`qty` ребёнка — на единицу родителя:** родитель ×2 — дети ×2 сами; удаление родителя умножает
+    `qty` детей.
+24. **Валюта — через маленький контракт «источник валюты сайта»** (`CurrencySource`, §4.2). В v1
+    реализация по умолчанию: `webx-cart.currency` → валюта каталога → отказ в записи и строка в
+    `webx:doctor`. Вероятный модуль валют позже подменит реализацию (отложенный вопрос 1 §15).
+25. **Глубина — один уровень:** родитель и дети, внуков нет.
+26. **Вернуть отказанный подарок — целиком `module-cart-rules`;** корзина только хранит
+    `declined_rules` и вычитает их.
+27. **CSRF остаётся** (§6.5).
+28. **Комплекты на тестовом сайте откладываются** — это будет спутник каталога. Механизм `parent_id`
+    в корзине остаётся и покрыт тестами (API и `window.webx.cart.add()` принимают пачку с
+    `parent`), но кнопки «купить комплект» и data-атрибута для неё в этой задаче нет; кнопки «в
+    корзину» в листинге каталога тоже нет.
+29. **`drawer` — общий каркас в `widgets`** (`<x-webx-dialog drawer>`); наполнение корзины — за
+    `module-cart`.
+30. **Без JavaScript — как в §9.5:** содержимое панели печатается только после добавления формой.
+31. **Нулевая цена поставщика — «цена по запросу»:** строка недоступна и в сумму не идёт. Строка-
+    подарок генерируется с ценой ≥ 1: ровно ноль нельзя (юридическое требование), минимальное
+    значение — настройка `module-cart-rules` (§5.4).
+32. **Рядом с каждой суммой — `*_formatted`:** `"price": 4999, "price_formatted": "49,99 €"`,
+    строка отформатирована сервером по языку и валюте. Деньги по-прежнему целые в минимальных
+    единицах.
 
 ## 3. Таблицы
 
@@ -110,8 +145,9 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
 | `type`         | string(64)                            | ключ поставщика: `catalog.product`                                                |
 | `ref_id`       | bigint unsigned                       | id записи у поставщика                                                            |
 | `options`      | json, null                            | выбор покупателя для поставщиков, которые его понимают (§5.1); у товара — `null`  |
-| `qty`          | int unsigned                          | ≥ 1; у ребёнка — на одну единицу родителя (вопрос 4 §15)                          |
-| `parent_id`    | FK `cart_items`, null, `nullOnDelete` | index; строка комплекта                                                           |
+| `qty`          | int unsigned                          | ≥ 1; у ребёнка — на одну единицу родителя (решение 23)                            |
+| `parent_id`    | FK `cart_items`, null, `nullOnDelete` | index; строка комплекта; только на строку без родителя (решение 25)               |
+| `name_at_add`  | json                                  | снимок названия: `{"uk": "Товар D"}` — язык добавления → `name` (решение 22)      |
 | `price_at_add` | bigint unsigned                       | цена поставщика в минимальных единицах в момент добавления; только для информации |
 | `added_at`     | timestamp                             | когда положили; при слиянии (решение 18) не меняется                              |
 
@@ -119,8 +155,11 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
   корзинах товар A», `cart_summary`) и будущей чистки строк удалённого поставщика; `carts (token)`
   unique, `carts (updated_at)` для `prune`. Каждый проверяется `EXPLAIN` на MariaDB в этапе 2.
 - **Валюта строки** не хранится: у корзины она одна (`carts.currency`), `price_at_add` — в ней.
-- **Названия в строке не хранятся** — всё приходит от поставщика живым. Удалённая запись поэтому
-  показывается без названия (вопрос 3 §15).
+- **Название в строке — только снимок.** Показывается всегда живое имя от поставщика;
+  `name_at_add` пишется тем же `resolve()`, что и `price_at_add`, и нужен одному случаю — записи
+  больше нет (`null`), строка показывается «недоступной» с этим названием. Снимок не обновляется и
+  не переводится: на другом языке показывается как есть. Слитая строка (решение 18) снимок не
+  меняет.
 - **Миграции откатываются** (`down()` удаляет обе таблицы в обратном порядке).
 
 ## 4. Токен, cookie, жизнь корзины
@@ -142,9 +181,28 @@ JSON API, хелпер `cart()` для Blade и виджет в трёх реж�
 
 - **Язык** запроса — заголовок `X-Webx-Locale` (виджет шлёт `<html lang>` страницы), иначе язык
   приложения. Поставщик получает его в `resolve()`; `carts.locale` обновляется при записи.
-- **Валюта сайта** — `webx-cart.currency` (`WEBX_CART_CURRENCY`), по умолчанию —
-  `webx-catalog.price.currency`, если каталог стоит. Валюты нет — корзина не принимает записи (422
-  `cart.currency`), а `webx:doctor` называет настройку (вопрос 5 §15).
+- **Валюта сайта** — у контракта `CurrencySource` (решение 24); корзина не читает настройки
+  других модулей сама:
+
+  ```php
+  namespace WebxUi\Cart\Contracts;
+
+  /** The site's currency. A currencies module will bind its own; the cart only asks. */
+  interface CurrencySource
+  {
+      /** @return string|null  ISO 4217, upper case; null — not configured */
+      public function currency(): ?string;
+  }
+  ```
+
+  Реализация по умолчанию `WebxUi\Cart\ConfigCurrency` (привязка `singletonIf`, чтобы чужая
+  победила): `webx-cart.currency` (`WEBX_CART_CURRENCY`) → `webx-catalog.price.currency`, если
+  каталог стоит → `null`. На `null` корзина не принимает записи (422 `cart.currency`), а
+  `webx:doctor` называет настройку. Модуль валют позже привяжет свою реализацию — корзина не
+  меняется (отложенный вопрос 1 §15).
+
+- `Money::format(int $minor, string $currency, string $locale): string` — один форматтер на
+  ответ API, Blade и MCP (`NumberFormatter::CURRENCY` из `intl`, экспонента — ISO 4217).
 - Строка, у которой `PurchasableLine::currency` не совпала с валютой корзины, — недоступна с
   предупреждением `line.currency`: пересчёта курсов в базе нет (принцип 4 карты коммерции).
 
@@ -193,7 +251,7 @@ final class PurchasableLine
     public function __construct(
         public readonly string $name,
         public readonly ?string $sku,
-        public readonly int $price,          // minor units of $currency, ≥ 0
+        public readonly int $price,          // minor units of $currency; 0 — price on request
         public readonly string $currency,    // ISO 4217, upper case
         public readonly ?string $optionsLabel = null,
         public readonly ?string $image = null,   // absolute or root-relative URL
@@ -210,11 +268,63 @@ final class PurchasableLine
 - `sku` — nullable: артикул у товара каталога необязателен.
 - **`available = false`** — запись есть, но купить нельзя (снята, «цена по запросу», нет в
   наличии): строка видна с названием и предупреждением `line.unavailable`, в сумму не идёт.
-  **`null`** — записи нет: строка видна как «недоступна» без названия, в сумму не идёт, её можно
-  удалить. Купить нельзя ни ту, ни другую; добавить такую — 422.
-- **`options` строки поставщику не передаются:** по решению 6 `resolve()` получает только id. Поставщики, у которых выбор меняет цену (конфигуратор, вариант с опциями), добавят
-  необязательный интерфейс поверх (вопрос 2 §15). Поставщик без него принимает только пустые
-  `options`; непустые — 422 `items.N.options`.
+  **`price = 0`** — то же самое: «цена по запросу», корзина считает строку недоступной, даже если
+  поставщик отдал `available = true` (решение 31). **`null`** — записи нет: строка видна как
+  «недоступна» с названием из `name_at_add` (§3), в сумму не идёт, её можно удалить. Купить нельзя
+  ни одну из них; добавить такую — 422.
+- **`options` строки** простому поставщику не передаются: `resolve()` получает только id
+  (решение 6). Поставщик, у которого выбор меняет цену или состав (конфигуратор webx-ui#44, позже
+  вариант с опциями), реализует необязательные интерфейсы поверх `Purchasable` — сам контракт не
+  меняется (решение 21):
+
+  ```php
+  namespace WebxUi\Cart\Contracts;
+
+  /** A provider whose price and label depend on the options of a line, not only on its record. */
+  interface ResolvesWithOptions
+  {
+      /**
+       * @param  list<CartRef>  $lines  lines of one type, each with its own options
+       * @return array<string, PurchasableLine|null>  CartRef::$key → line; null — gone.
+       *                                              A key left out counts as null.
+       */
+      public function resolveLines(array $lines, string $locale): array;
+  }
+
+  /** A provider that accepts options; without it a line takes empty options only. */
+  interface ChecksOptions
+  {
+      /**
+       * Whether these options make a valid choice of this record. Called before a write.
+       *
+       * @param  array<string, mixed>  $options
+       * @return list<string>  messages in $locale; empty — accepted
+       */
+      public function checkOptions(int $ref, array $options, string $locale): array;
+  }
+  ```
+
+  ```php
+  namespace WebxUi\Cart;
+
+  final class CartRef
+  {
+      public function __construct(
+          public readonly string $key,       // the line's id, or a batch key before the write
+          public readonly int $ref,
+          public readonly array $options,    // as stored, never null — [] when empty
+      ) {}
+  }
+  ```
+
+  - Вычислитель зовёт `resolveLines()`, если поставщик его реализует, иначе `resolve()`; так же
+    пачкой — один вызов на тип за расчёт.
+  - `ChecksOptions` нужен для непустых `options` в `POST` и `PATCH`; поставщик без него принимает
+    только пустые — непустые дают 422 `items.N.options`. Сообщения `checkOptions()` встают в
+    `errors` под тем же ключом.
+  - Слияние одинаковых строк (решение 18) сравнивает `options` нормализованными (ключи по
+    алфавиту): одна и та же конфигурация не двоится.
+  - `optionsLabel` от `resolveLines()` — подпись выбора («Цвет: белый, 120 × 60») на языке запроса.
 
 ### 5.2. Реестр `Purchasables`
 
@@ -263,7 +373,7 @@ CartState` — единственное место, где считается ц
 превью это или списание. Порядок:
 
 ```
-1. строки        stored lines → resolve() по типам → ResolvedLine
+1. строки        stored lines → resolve() / resolveLines() по типам → ResolvedLine
 2. генерируемые  GeneratedLines → минус declined_rules → resolve() их типов → ResolvedLine (source)
 3. сумма строк   subtotal = Σ effectivePrice × effectiveQty доступных строк
 4. корректировки adjustments по источникам, по порядку; total = max(0, subtotal + Σ amount)
@@ -272,7 +382,7 @@ CartState` — единственное место, где считается ц
 7. рядом         benefits, hints — без влияния на суммы
 ```
 
-- **`effectiveQty`** строки = `qty` × `effectiveQty` родителя (вопрос 4 §15), не больше `maxQty`
+- **`effectiveQty`** строки = `qty` × `effectiveQty` родителя (решение 23), не больше `maxQty`
   (тогда — предупреждение `line.qty_limited`).
 - **`CartContext`** — неизменяемый снимок, который получает каждый источник: `cart` (id, locale,
   currency, `declinedRules`), `lines` (`list<ResolvedLine>`: id или ключ генерируемой, `type`,
@@ -305,7 +415,7 @@ final class GeneratedLine
         public readonly int $refId,
         public readonly int $qty = 1,
         public readonly ?int $parentId = null,  // attach under a stored line
-        public readonly ?int $price = null,     // null — the provider's price; 0 — free
+        public readonly ?int $price = null,     // null — the provider's price; else ≥ 1
         public readonly bool $declinable = true,
         public readonly ?string $label = null,  // "Gift", shown beside the name
     ) {}
@@ -375,6 +485,11 @@ final class Hint
 }
 ```
 
+- **Цена подарка — не ноль** (решение 31). `GeneratedLine::price` либо `null` (цена поставщика),
+  либо ≥ 1; конструктор отказывает на `0` и отрицательной. Минимальное значение («1 копейка» или
+  больше) — настройка `module-cart-rules`, корзина проверяет только нижнюю границу 1.
+- **Генерируемая строка встаёт только под хранимую строку без родителя** (`parentId`) или в корень:
+  глубина — один уровень (решение 25); иначе — в корень с записью в лог.
 - **Скидка на строку** — `Adjustment` с `line`; строка в ответе получает её в своём `adjustments`, а
   итог корзины — в общем списке. В снимок заказа она попадёт строкой заказа (`module-orders`).
 - **Привилегию читают по ключу:** `CartState::hasBenefit('free_shipping')`. Список ключей — у тех,
@@ -389,7 +504,8 @@ final class Hint
 
 Результат расчёта — то же, что уходит в API (§6.2): `lines` (дерево), `units`, `subtotal`,
 `adjustments`, `total`, `tenders`, `payable`, `benefits`, `hints`, `warnings`, плюс `currency`,
-`locale`, `isEmpty()`, `hasBenefit()`, `toArray()`. Его же получают `cart()->state()`, MCP
+`locale`, `isEmpty()`, `hasBenefit()`, `toArray()` (суммы — целым и `*_formatted` через
+`Money::format()`, решение 32). Его же получают `cart()->state()`, MCP
 `cart_get`, позже — оформление и заказ.
 
 ## 6. JSON API
@@ -410,14 +526,14 @@ DELETE /api/cart                         вся корзина: строки, о
 - **`POST` — пачка, атомарно.** До 20 строк (`webx-cart.batch_max`); `key` — локальная метка строки в
   пачке, `parent` — `key` родителя в той же пачке (решение 7). Проверка всей пачки — до транзакции:
   тип известен, `resolve()` вернул доступную строку, `qty` от 1 до `min(maxQty, webx-cart.qty_max)`,
-  `options` поставщик принимает, ссылка `parent` указывает на строку пачки без своего родителя
-  (глубина — один уровень, вопрос 6 §15), строк в корзине после записи не больше
+  `options` поставщик принимает (`ChecksOptions`, §5.1), ссылка `parent` указывает на строку пачки
+  без своего родителя (глубина — один уровень, решение 25), строк в корзине после записи не больше
   `webx-cart.lines_max` (100). Одна ошибка — 422 на всю пачку, ничего не записано. Затем одна
-  транзакция: корзина (если её нет), строки, `price_at_add` из того же `resolve()`.
+  транзакция: корзина (если её нет), строки, `price_at_add` и `name_at_add` из того же `resolve()`.
 - **`PATCH`** меняет `qty` (≥ 1; ноль — это `DELETE`) и `options` (только у поставщиков, которые
   их понимают). Строка чужой корзины или несуществующая — 404.
 - **`DELETE /api/cart/items/{id}`** у родителя: в одной транзакции дети получают
-  `qty × qty родителя` (вопрос 4 §15) и `parent_id = null`, затем родитель удаляется. FK
+  `qty × qty родителя` (решение 23) и `parent_id = null`, затем родитель удаляется. FK
   `nullOnDelete` — страховка базы на путь в обход приложения.
 - **`DELETE /api/cart`** удаляет строку `carts` (строки — каскадом) и гасит cookie.
 - **Заголовки:** ответ `Cache-Control: no-store`, `Vary: Cookie`. Язык — `X-Webx-Locale` (§4.2).
@@ -428,7 +544,8 @@ DELETE /api/cart                         вся корзина: строки, о
 
 Пример: комплект из товара и двух дополнений, одно из которых удалено у поставщика; отдельный товар
 с упавшей ценой; ни одного спутника — `adjustments`, `tenders`, `benefits`, `hints` пустые. Валюта
-`UAH`, экспонента 2: `250000` — это 2 500,00.
+`UAH`, экспонента 2: `250000` — это 2 500,00. Строки `*_formatted` — от `Money::format()` на языке
+запроса (решение 32); в настоящем ответе разделитель тысяч — неразрывный пробел, как отдаёт `intl`.
 
 ```json
 {
@@ -450,12 +567,16 @@ DELETE /api/cart                         вся корзина: строки, о
       "image": "/storage/catalog/42/a-100-320.webp",
       "url": "/nabir-a-42",
       "price": 250000,
+      "price_formatted": "2 500,00 ₴",
       "price_at_add": 250000,
+      "price_at_add_formatted": "2 500,00 ₴",
       "price_change": null,
       "line_total": 250000,
+      "line_total_formatted": "2 500,00 ₴",
       "shippable": true,
       "max_qty": null,
       "available": true,
+      "gone": false,
       "declinable": false,
       "label": null,
       "adjustments": [],
@@ -474,12 +595,16 @@ DELETE /api/cart                         вся корзина: строки, о
           "image": "/storage/catalog/57/b-200-320.webp",
           "url": "/tovar-b-57",
           "price": 15000,
+          "price_formatted": "150,00 ₴",
           "price_at_add": 15000,
+          "price_at_add_formatted": "150,00 ₴",
           "price_change": null,
           "line_total": 30000,
+          "line_total_formatted": "300,00 ₴",
           "shippable": true,
           "max_qty": null,
           "available": true,
+          "gone": false,
           "declinable": false,
           "label": null,
           "adjustments": [],
@@ -492,19 +617,23 @@ DELETE /api/cart                         вся корзина: строки, о
           "source": null,
           "qty": 1,
           "effective_qty": 1,
-          "name": null,
+          "name": "Товар D",
           "sku": null,
           "options": null,
           "options_label": null,
           "image": null,
           "url": null,
           "price": null,
+          "price_formatted": null,
           "price_at_add": 9000,
+          "price_at_add_formatted": "90,00 ₴",
           "price_change": null,
           "line_total": 0,
+          "line_total_formatted": "0,00 ₴",
           "shippable": true,
           "max_qty": null,
           "available": false,
+          "gone": true,
           "declinable": false,
           "label": null,
           "adjustments": [],
@@ -526,12 +655,16 @@ DELETE /api/cart                         вся корзина: строки, о
       "image": null,
       "url": "/tovar-c-77",
       "price": 48000,
+      "price_formatted": "480,00 ₴",
       "price_at_add": 52000,
+      "price_at_add_formatted": "520,00 ₴",
       "price_change": "down",
       "line_total": 48000,
+      "line_total_formatted": "480,00 ₴",
       "shippable": true,
       "max_qty": null,
       "available": true,
+      "gone": false,
       "declinable": false,
       "label": null,
       "adjustments": [],
@@ -540,32 +673,48 @@ DELETE /api/cart                         вся корзина: строки, о
   ],
   "units": 5,
   "subtotal": 328000,
+  "subtotal_formatted": "3 280,00 ₴",
   "adjustments": [],
   "total": 328000,
+  "total_formatted": "3 280,00 ₴",
   "tenders": [],
   "payable": 328000,
+  "payable_formatted": "3 280,00 ₴",
   "benefits": [],
   "hints": [],
   "warnings": [
     {
       "code": "line.gone",
       "line": 103,
-      "message": "Цього товару більше немає. Його можна видалити."
+      "message": "Товару D більше немає. Його можна видалити."
     },
     { "code": "price.down", "line": 104, "message": "Товар C подешевшав." }
   ]
 }
 ```
 
-- **`lines`** — дерево: дети под родителем в `children`, в порядке `id`. Генерируемая строка встаёт
-  под `parentId` или в конец корня, её `id` — строка `"rule#12:0"` (источник и номер), `source` —
-  `"rule#12"`, `declinable` — из `GeneratedLine`, `label` — его подпись («Подарунок»).
+- **`lines`** — дерево: дети под родителем в `children`, в порядке `id`; внуков нет (решение 25).
+  Генерируемая строка встаёт под `parentId` или в конец корня, её `id` — строка `"rule#12:0"`
+  (источник и номер), `source` — `"rule#12"`, `declinable` — из `GeneratedLine`, `label` — его
+  подпись («Подарунок»).
+- **`gone`** — записи у поставщика нет (`null` или тип не зарегистрирован): `name` — из
+  `name_at_add` (решение 22), `sku`, `image`, `url`, `price` — `null`. У «цены по запросу» и
+  `available = false` — `gone: false`, имя и картинка живые, `price` — как отдал поставщик.
 - **`line_total`** = `price × effective_qty` плюс скидки строки; у недоступной — 0. Сумма
   `line_total` доступных строк до скидок корзины — `subtotal`.
+- **`*_formatted`** — у каждой суммы ответа: `price`, `price_at_add`, `line_total`, `subtotal`,
+  `total`, `payable`, а в элементах списков — `amount_formatted` у корректировки и оплаты,
+  `missing_formatted` у подсказки. Сумма `null` — и строка `null`. Виджет и тема показывают строку
+  и не форматируют сами; целое остаётся для расчётов и аналитики.
+- **Элементы списков** — поля классов §5.4 в `snake_case` плюс строки сумм: корректировка —
+  `{ source, label, amount, amount_formatted, line }`, оплата — `{ source, label, amount,
+amount_formatted }`, привилегия — `{ key, label, source }`, подсказка — `{ source, text, missing,
+missing_formatted }`. `meta` в ответ API не идёт (только MCP).
 - **`price_change`** — `down` / `up` / `null` по сравнению с `price_at_add`.
 - **`units`** — Σ `effective_qty` хранимых строк, включая недоступные: столько посетитель видит в
   списке, столько показывает счётчик. Генерируемые не считаются.
-- **Пустая корзина** — `lines: []`, все суммы 0, остальные списки пустые; та же форма, без `null`.
+- **Пустая корзина** — `lines: []`, все суммы 0 с отформатированными нулями, остальные списки
+  пустые; та же форма, без `null`.
 - **Чего в ответе нет никогда:** токена, id корзины, `price_at_add` в чужой валюте, текста
   исключений.
 
@@ -574,7 +723,7 @@ DELETE /api/cart                         вся корзина: строки, о
 | Код                      | Когда                                                              |
 | ------------------------ | ------------------------------------------------------------------ |
 | `line.gone`              | `resolve()` вернул `null` или тип не зарегистрирован               |
-| `line.unavailable`       | `available = false`                                                |
+| `line.unavailable`       | `available = false` или цена 0 — «цена по запросу» (решение 31)    |
 | `line.currency`          | валюта строки ≠ валюта корзины                                     |
 | `line.qty_limited`       | `qty` больше `maxQty`: в сумму идёт `maxQty`, хранимое не меняется |
 | `price.down`, `price.up` | цена отличается от `price_at_add`                                  |
@@ -587,15 +736,16 @@ DELETE /api/cart                         вся корзина: строки, о
 
 `DELETE /api/cart/items/rule%2312:0` у строки с `declinable: true` дописывает её `source` в
 `declined_rules` и отвечает состоянием без неё; у `declinable: false` — 422. Вернуть отказанный
-подарок и показать кнопку «вернуть подарок» — забота `module-cart-rules` (вопрос 7 §15); корзина
-хранит список и вычитает его на шаге 2. `DELETE /api/cart` сбрасывает и отказы.
+подарок и показать кнопку «вернуть подарок» — целиком `module-cart-rules` (решение 26): своего
+эндпоинта «вернуть» у корзины нет. Корзина хранит список и вычитает его на шаге 2. `DELETE /api/cart` сбрасывает и отказы.
 
 ### 6.5. Защита
 
 - **Стек — группа `web`** (сессия, cookie, `VerifyCsrfToken`) плюс `throttle:webx-cart` на запись
   (60 в минуту на IP, `webx-cart.throttle`). Скрипт шлёт `X-XSRF-TOKEN` из cookie и на 419 берёт
   свежий токен у `GET {webx-widgets.path}/csrf`, повторяя запрос один раз — как оболочка форм (§17.3
-  спеки виджетов). Почему CSRF, а не дверь без него, как у inbox, — вопрос 8 §15.
+  спеки виджетов). CSRF остаётся (решение 27): подделка здесь — чужая позиция в корзине, а не
+  утечка, но защита дешёвая и уже обслужена скриптом форм; дверь без CSRF, как у inbox, не нужна.
 - **Без JavaScript** `POST /api/cart/items` принимает обычную форму (`items[0][type]=…`, `@csrf`) и
   отвечает по соглашению `FormResponse` (§17.4 спеки виджетов): redirect обратно с flash
   `webx-cart`, страница печатает виджет открытым (§9.5).
@@ -624,16 +774,15 @@ DELETE /api/cart                         вся корзина: строки, о
   | `url`             | адрес товара из реестра `routing`                                                      |
   | `shippable`       | `true`                                                                                 |
   | `maxQty`          | `null`: количеств у наличия пока нет (решение 5 каталога)                              |
-  | `available`       | `Purchasability` ответил «да» и `price` не `null`                                      |
+  | `available`       | `Purchasability` ответил «да», `price` не `null` и больше 0                            |
 
 - **Удалённый** (soft delete) — `null`: строка «недоступна». **Снятый, невидимый, «нет в наличии»,
-  «цена по запросу»** — строка с `available = false`.
+  «цена по запросу»** — строка с `available = false`; цена `0` — тоже «цена по запросу» (решение 31).
 - **Цена выключена** (`webx-catalog.price.enabled = false`) — поставщик не регистрируется: продавать
   без цены нечего.
 - **Кнопка «Купить»** вьюхи `webx-catalog::product` (сейчас `<button data-product>` без поведения)
-  становится кнопкой корзины (§9.3), если корзина стоит; иначе остаётся как есть. На карточке
-  листинга кнопки сейчас нет, и появится ли она (в точке `catalog.card.meta`) — решение витрины
-  (вопрос 10 §15).
+  становится кнопкой корзины (§9.3), если корзина стоит; иначе остаётся как есть. Кнопки «в
+  корзину» в карточке листинга в этой задаче нет (решение 28).
 
 ## 8. Хелпер `cart()`
 
@@ -677,9 +826,12 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 - **Иконка и счётчик** — кнопка-триггер компонента; иконка — вьюха `webx-cart::icons.cart`,
   перекрываемая темой. В шапку `theme-default` компонент встаёт в `actions` (там уже оставлено
   место «позже корзина», §6.2 спеки виджетов), если `module-cart` стоит.
-- **`drawer`** — модальный `<dialog>` того же поведения `dialog` (фокус, Esc, подложка, возврат
-  фокуса), прижатый к краю модификатором. Где живёт модификатор — у корзины или общим
-  `<x-webx-dialog drawer>` в `widgets` — вопрос 11 §15.
+- **`drawer`** — общий каркас `<x-webx-dialog drawer>` в `widgets` (решение 29): модальный
+  `<dialog>` того же поведения `dialog` (фокус, Esc, подложка, возврат фокуса), прижатый к краю
+  во всю высоту. Каркас — правка `widgets` (проп, класс, стили, changeset), пригодится фильтрам
+  каталога и меню; корзина кладёт в него только своё наполнение (§9.2).
+- **Суммы виджет не форматирует:** вьюхи печатают `*_formatted` из `CartState`, скрипт — те же
+  строки из ответа API (решение 32).
 - **Кнопка оформления** ведёт на `webx-cart.checkout_url` (или именованный маршрут `checkout`, если
   он есть); ни того ни другого — кнопки нет. `module-checkout` позже займёт маршрут сам.
 
@@ -697,18 +849,12 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
   «отказаться от подарка» у `cart-rules`), `cart.totals.before` и `cart.totals.after` (кошелёк —
   «оплатить бонусами», подсказки), `cart.footer` (над кнопкой оформления).
 
-### 9.3. Кнопки «в корзину» и «купить комплект»
+### 9.3. Кнопка «в корзину»
 
 ```blade
 <x-webx-cart::add type="catalog.product" :ref="$product->id" />
 
 <button type="button" data-webx-cart-add="catalog.product:42" data-webx-cart-qty="1">В кошик</button>
-
-<button type="button"
-        data-webx-cart-bundle='[{"key":"a","type":"catalog.product","ref":42},
-                                {"type":"catalog.product","ref":57,"qty":2,"parent":"a"}]'>
-    Купити комплект
-</button>
 ```
 
 | Атрибут                             | Что значит                                                                        |
@@ -717,7 +863,6 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 | `data-webx-cart-qty="N"`            | количество (по умолчанию 1)                                                       |
 | `data-webx-cart-qty-from="<css>"`   | взять количество из поля на странице (`#qty`)                                     |
 | `data-webx-cart-options='{…}'`      | `options` строки — для поставщиков, которые их понимают                           |
-| `data-webx-cart-bundle='[…]'`       | пачка строк в формате `items` `POST` (§6.1): `key`, `parent` — внутри пачки       |
 | `data-webx-cart-open="false"`       | не открывать виджет после добавления (по умолчанию открывает `drawer` и `dialog`) |
 
 - Во время запроса — `is-busy` и `aria-busy` на кнопке, повторный клик гасится; после — `is-added`
@@ -725,20 +870,21 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 - `<x-webx-cart::add>` печатает `<form method="post">` с `@csrf` и скрытыми полями вокруг кнопки:
   работает и без JavaScript (§6.5). Голый `data-webx-cart-*` на чужой кнопке — только со скриптом.
 - `cart()->has()` даёт кнопке начальное `is-in-cart` без запроса со страницы.
-- Кнопку комплекта ставит шаблон сайта, тема или блок: комплектов как сущности в каталоге ещё нет
-  (§3.3 карты коммерции). Откуда возьмётся комплект на тестовом сайте — вопрос 10 §15.
+- **Кнопки «купить комплект» и data-атрибута для неё нет** (решение 28): комплекты на витрине —
+  будущий спутник каталога. Он получит готовое — пачку с `parent` в `POST /api/cart/items` и
+  `window.webx.cart.add(items)` (§9.4) — и сам решит, какой кнопкой её отправлять.
 
 ### 9.4. Скрипт
 
 - Виджет `cart` на `webx.widget('cart', '[data-webx-cart]', setup)` (§4 спеки виджетов) и
-  делегированный обработчик кликов по `[data-webx-cart-add]`, `[data-webx-cart-bundle]` на
-  документе. Свой вход сборки модуля (`dist/cart.js`, закоммичен, маршрут модуля с хешем), как у
+  делегированный обработчик кликов по `[data-webx-cart-add]` на документе. Свой вход сборки модуля (`dist/cart.js`, закоммичен, маршрут модуля с хешем), как у
   конфигуратора (решение 2 его спеки); бюджет ≤ 6 КБ gzip, тест держит.
-- `window.webx.cart` наружу: `add(items)`, `remove(id)`, `setQty(id, qty)`, `open()`, `state()`.
+- `window.webx.cart` наружу: `add(items)` (пачка в формате `items` §6.1, с `key` и `parent`),
+  `remove(id)`, `setQty(id, qty)`, `open()`, `state()`.
 - Событие `webx:cart:change` на `document` с `detail.state` после каждой записи — по нему
   обновляются все `[data-webx-cart-count]` и `is-in-cart` кнопок, на него вешаются аналитика (с
-  согласием) и чужие модули. Деньги в `state` — целые, формат — `Intl.NumberFormat(locale,
-{ style: 'currency', currency })`.
+  согласием) и чужие модули. Деньги в `state` — целые с `*_formatted` рядом; своего
+  форматирования (`Intl.NumberFormat`) у скрипта нет — строка сервера одна на сайт.
 - Степпер количества шлёт `PATCH` с паузой 300 мс после последнего нажатия; ответ, пришедший после
   более нового запроса, отбрасывается.
 
@@ -748,7 +894,7 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 она печатает виджет открытым с содержимым (flash `webx-cart`). В остальное время триггер `dropdown`
 — `<details>`, `drawer` и `dialog` — ссылка на `#webx-cart`, и панель без скрипта пуста
 («Увімкніть JavaScript, щоб побачити кошик»): рисовать содержимое на каждой странице ради редкого
-случая — полный расчёт на каждый показ (вопрос 12 §15).
+случая — полный расчёт на каждый показ (решение 30).
 
 ### 9.6. Что отдано теме
 
@@ -795,7 +941,8 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
   подписи степпера и ARIA. Счётчик — «Товарів: :count» (число в конце), а не «:count товарів».
   Любое слово виджета перекрывается пропом компонента и темой, как у виджетов.
 - `errors.php` — коды §6.1 и §4.2: неизвестный тип, недоступно, количество, пачка, лимит строк,
-  `options` не принимаются, родитель вне пачки, нет строки, нет валюты.
+  `options` не принимаются, родитель вне пачки или с родителем, нет строки, нет валюты, цена
+  подарка меньше 1 (для лога спутника).
 - `warnings.php` — по фразе на код §6.3.
 
 Тексты строк (названия, подписи опций) — от поставщика на языке `resolve()`; слова скидок, оплат и
@@ -807,7 +954,8 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 не нужна, а тестовые корзины для MCP появляются от кликов по витрине. Что нужно приёмке:
 
 - кнопка «Купить» товара каталога — уже есть в демо каталога (§7);
-- кнопка «купить комплект» — на демо-странице каталога или в теме тестового сайта (вопрос 10 §15);
+- кнопки «купить комплект» нет (решение 28): комплект на приёмке кладётся через API — тестом и
+  `window.webx.cart.add()` из консоли;
 - виджет в шапке `theme-default` — сам, если модуль стоит (§9.1).
 
 ## 13. Регистрации и что держат тесты
@@ -818,15 +966,24 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 `extra.webx.panel`, строки в `apps/playground/src/panel/main.ts` и `SiteBar` (адресов у корзины
 нет). `scripts/packages.mjs` демо-сайта — человеку, когда модуль поедет на демо-сайты. Строка в
 реестре [`WEBX_UI_COMPOSER_PACKAGES.md`](WEBX_UI_COMPOSER_PACKAGES.md) и `AGENTS.md` пакета
-(`AgentDocsCoverageTest`). Changeset — на `@webx-ui/php`.
+(`AgentDocsCoverageTest`). Changeset — на `@webx-ui/php`; в этапе 4 — ещё на `widgets` за каркас
+`drawer` (решение 29).
 
 **Тесты:**
 
-- Пачка атомарна: одна плохая строка — ничего не записано; `parent` вне пачки — 422.
-- Слияние одинаковых строк; дети не сливаются.
+- Пачка атомарна: одна плохая строка — ничего не записано; `parent` вне пачки или на строку с
+  родителем (внук) — 422.
+- Слияние одинаковых строк, `options` с ключами в другом порядке — одна строка; дети не
+  сливаются.
 - Удаление родителя: дети остаются, `parent_id = null`, `qty` умножено; FK держит и путь в обход.
-- `null` и неизвестный тип — `line.gone`, не в сумме; `available = false` — не в сумме; чужая валюта;
-  `maxQty`.
+- `null` и неизвестный тип — `line.gone`, не в сумме, `name` из `name_at_add`; `available = false`
+  и цена 0 — `line.unavailable`, не в сумме, добавить — 422; чужая валюта; `maxQty`.
+- Поставщик с `ResolvesWithOptions` получает `options` строк и отдаёт разные цены одной записи;
+  `ChecksOptions` — 422 с его сообщениями; поставщик без него — 422 на непустые `options`.
+- `CurrencySource`: настройка корзины → валюта каталога → отказ в записи и строка `webx:doctor`;
+  своя привязка контракта побеждает реализацию по умолчанию.
+- `*_formatted` у каждой суммы ответа и элементов списков; `null` у суммы — `null` у строки.
+- `GeneratedLine` с ценой 0 — отказ конструктора; под строкой с родителем — в корень.
 - `GET` без cookie — ни одной записи и ни одной cookie; `GET` с корзиной не пишет чаще раза в сутки.
 - Чужая строка — 404; CSRF — 419 без токена; лимиты.
 - Цепочка с подставными источниками всех пяти звеньев: порядок `priority`, срез оплат, отказ
@@ -845,61 +1002,34 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 
 Задача webx-ui#54, этапы 2–5 (этап 1 — эта спека):
 
-- **2/5 Пакет и API.** `webx-ui/module-cart`: таблицы, модели, токен и cookie, `Purchasables`,
-  `PurchasableLine`, вычислитель и пять пустых реестров (§5), `Money`, JSON API с CSRF и формой без
-  JS (§6), `webx:cart:prune` в расписании, `cart()`, MCP и ресурс (§10), словарь, `AGENTS.md`,
-  регистрации. Проверяется подставным поставщиком в тестах — каталог ещё не подключён.
+- **2/5 Пакет и API.** `webx-ui/module-cart`: таблицы (с `name_at_add`), модели, токен и cookie,
+  `Purchasables`, `PurchasableLine`, `ResolvesWithOptions` и `ChecksOptions` (§5.1),
+  `CurrencySource` с реализацией по умолчанию и строкой `webx:doctor` (§4.2), вычислитель и пять
+  пустых реестров (§5), `Money` с `format()`, JSON API с `*_formatted`, CSRF и формой без JS (§6), `webx:cart:prune` в расписании, `cart()`, MCP и ресурс (§10), словарь, `AGENTS.md`,
+  регистрации. Проверяется подставными поставщиками в тестах (простым и с опциями) — каталог ещё
+  не подключён; реальный поставщик с опциями — конфигуратор (webx-ui#44), своей задачей.
 - **3/5 Каталог как поставщик.** `ProductPurchasable` в `module-catalog` (§7), регистрация по
   `class_exists`, `suggest`; кнопка «Купить» товара — `<x-webx-cart::add>`, если корзина стоит.
   Changeset на `@webx-ui/php`.
 - **4/5 Виджет.** Компонент и три режима (§9), вьюхи и точки, `cart.css`, скрипт и его вход сборки,
-  кнопки `data-webx-cart-*`, без JS; триггер в `actions` шапки `theme-default`; модификатор
-  `drawer` — где решит вопрос 11; гайд в `apps/docs/guide/`. Проверка в браузере: три режима, 360 px,
+  кнопка `data-webx-cart-add`, без JS; триггер в `actions` шапки `theme-default`; каркас
+  `<x-webx-dialog drawer>` в `widgets` с changeset на него; гайд в `apps/docs/guide/`. Проверка в браузере: три режима, 360 px,
   тёмная схема.
-- **5/5 Сквозная проверка.** Тестовый сайт с каталогом: товар и комплект из карточки, три режима с
-  текущей ценой, правка цены товара видна в корзине, удалённый товар — «недоступна», корзины через
+- **5/5 Сквозная проверка.** Тестовый сайт с каталогом: товар из карточки, три режима с текущей
+  ценой и суммами сервера; комплект — пачкой через `window.webx.cart.add()` (кнопки нет,
+  решение 28) и виден деревом; правка цены товара видна в корзине, удалённый товар — «недоступна», корзины через
   MCP; гейты PHP и JS зелёные.
 
-## 15. Открытые вопросы (решает человек)
+## 15. Отложенные вопросы
 
-1. **Имя таблицы `carts`.** Правило CLAUDE.md: таблицы раздела — под его именем (`blog_*`,
-   `catalog_*`), и карта коммерции пишет `cart_*`. `cart_items` правилу соответствует, `carts` — нет.
-   Оставить `carts` (решение человека; так же названа таблица `configurators`) или назвать `cart_carts`? Спека держит `carts`.
-2. **`options`, от которых зависит цена.** Решение 6 даёт `resolve()` только id, а
-   `PurchasableLine` — одну цену на запись. Конфигуратору и варианту с опциями этого мало.
-   Предложение: необязательный интерфейс `ResolvesWithOptions::resolveLines(list<CartRef>, string
-$locale): array<string, PurchasableLine|null>` (ключ — строка корзины) и
-   `ChecksOptions::checkOptions(int $ref, array $options, string $locale): list<string>` — без
-   правки `Purchasable`. Делать сейчас или когда придёт первый такой поставщик?
-3. **Название удалённой записи.** В `cart_items` нет названия, поэтому удалённый товар показывается
-   «Цього товару більше немає» без имени. Добавить колонку `name_at_add` (json, снимок на языке
-   добавления) или так и оставить?
-4. **`qty` ребёнка комплекта** — на единицу родителя (спека: родитель ×2 — дети ×2 сами, удаление
-   родителя умножает `qty` детей) или абсолютное (тогда смена `qty` родителя не трогает детей)?
-5. **Валюта сайта.** Сейчас она — `webx-catalog.price.currency` и может быть пустой. Спека заводит
-   `webx-cart.currency` с откатом на каталог и отказом в записи, если пусто. Или валюте сайта место
-   в настройках (`module-settings`), общее для всех модулей коммерции?
-6. **Глубина дерева** — один уровень (родитель → дети, внуков нет) в v1? Карта допускает «опция
-   конфигуратора» под строкой комплекта — это уже второй уровень.
-7. **Возврат отказанного подарка.** Корзина хранит `declined_rules` и умеет отказ через
-   `DELETE /api/cart/items/rule%2312:0` (§6.4). Нужен ли эндпоинт «вернуть» в самой корзине
-   (`POST /api/cart/declined/{source}` удаляет из списка) или это целиком `cart-rules`?
-8. **CSRF.** Спека ставит API в группу `web` с `VerifyCsrfToken` и повтором на 419, как оболочка
-   форм. Inbox для своего приёма выбрал дверь без CSRF (решение 8 его спеки). Для корзины подделка
-   запроса — чужая позиция в корзине, не утечка; CSRF дешёв и уже обслужен скриптом форм. Оставить
-   CSRF?
-9. **Привязка к покупателю.** Когда появится `module-users`: колонка `user_id` в `carts` (правило
-   «спутник не добавляет колонок» здесь про каталог, но дух тот же) или своя таблица связи у
-   `module-users`; и что при входе — слить гостевую корзину с сохранённой или заменить?
-10. **Комплект на тестовом сайте и кнопка в листинге.** В каталоге нет сущности «комплект» (связи и
-    наборы — волна B). Для приёмки кнопку «купить комплект» поставить в теме тестового сайта
-    атрибутом `data-webx-cart-bundle` на конкретные товары — или сделать точку в демо каталога? И
-    нужна ли кнопка «в корзину» в карточке листинга (сейчас её нет)?
-11. **Где живёт `drawer`.** Модификатор диалога у корзины (`webx-cart--drawer`) или общий
-    `<x-webx-dialog drawer>` в `widgets` (пригодится фильтрам каталога и меню)? Второе — правка
-    `widgets` и changeset на него в этапе 4.
-12. **Без JavaScript.** Спека не рисует содержимое панели на каждой странице (полный расчёт на
-    каждый показ ради редкого случая) — только после добавления формой. Достаточно?
-13. **Минимальная цена и бесплатные строки.** `GeneratedLine::price = 0` (подарок) допустим, цена
-    поставщика `0` — тоже? Спека: `price ≥ 0`, нулевая строка доступна. Или нулевая цена поставщика
-    — «цена по запросу» и недоступна?
+Вопросы этапа 1 закрыты ответами человека от 26.10.2026 (решения 20–32 §2). Остались два —
+отложены до спек соседних модулей; на реализацию этапов 2–5 они не влияют.
+
+1. **Модуль валют.** Вероятен отдельный модуль: валюта сайта, несколько валют, курсы, показ в
+   валюте посетителя. Корзина уже спрашивает валюту через `CurrencySource` (§4.2), модуль валют
+   привяжет свою реализацию. Открыто, что меняется в корзине при нескольких валютах (`carts.currency`
+   при смене валюты посетителем, пересчёт `price_at_add`), — решается его спекой; строка в §9
+   [`WEBX_UI_COMMERCE.md`](WEBX_UI_COMMERCE.md).
+2. **Привязка к покупателю.** Когда появится `module-users`: колонка `user_id` в `carts` или своя
+   таблица связи у `module-users`; и что при входе — слить гостевую корзину с сохранённой или
+   заменить. Решается спекой `module-users`.
