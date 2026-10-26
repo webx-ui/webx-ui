@@ -1,0 +1,67 @@
+{
+  "name": "halves round away from zero: a cent of a negative line, and the total on a step of 100",
+  "today": "2026-10-26",
+  "schema": {
+    "version": 1,
+    "currency": "UAH",
+    "pricing": {
+      "round": 100
+    },
+    "steps": [
+      {
+        "key": "base",
+        "type": "buttons",
+        "label": "Base",
+        "options": [
+          {
+            "value": "one",
+            "label": "One",
+            "price": {
+              "fixed": 1250.125
+            }
+          }
+        ]
+      },
+      {
+        "key": "bonus",
+        "type": "buttons",
+        "label": "Bonus",
+        "options": [
+          {
+            "value": "minus",
+            "label": "Minus",
+            "price": {
+              "fixed": -0.125
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "values": {},
+  "expect": {
+    "normalized": {
+      "base": "one",
+      "bonus": "minus"
+    },
+    "hidden": [],
+    "area": 0,
+    "subtotal": 1250,
+    "total_before_discount": 1300,
+    "total": 1300,
+    "lines": [
+      {
+        "step": "base",
+        "option": "one",
+        "kind": "fixed",
+        "amount": 1250.13
+      },
+      {
+        "step": "bonus",
+        "option": "minus",
+        "kind": "fixed",
+        "amount": -0.13
+      }
+    ]
+  }
+}

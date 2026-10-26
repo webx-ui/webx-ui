@@ -1,0 +1,78 @@
+{
+  "name": "a configurator without a formula: fixed prices add up, the area is 0",
+  "today": "2026-10-26",
+  "schema": {
+    "version": 1,
+    "currency": "EUR",
+    "steps": [
+      {
+        "key": "model",
+        "type": "buttons",
+        "label": "Model",
+        "options": [
+          {
+            "value": "small",
+            "label": "Small",
+            "price": {
+              "fixed": 120
+            }
+          },
+          {
+            "value": "large",
+            "label": "Large",
+            "price": {
+              "fixed": 180
+            }
+          }
+        ]
+      },
+      {
+        "key": "finish",
+        "type": "buttons",
+        "label": "Finish",
+        "options": [
+          {
+            "value": "raw",
+            "label": "Raw"
+          },
+          {
+            "value": "oiled",
+            "label": "Oiled",
+            "price": {
+              "fixed": 35.5
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "values": {
+    "model": "large",
+    "finish": "oiled"
+  },
+  "expect": {
+    "normalized": {
+      "model": "large",
+      "finish": "oiled"
+    },
+    "hidden": [],
+    "area": 0,
+    "subtotal": 215.5,
+    "total_before_discount": 216,
+    "total": 216,
+    "lines": [
+      {
+        "step": "model",
+        "option": "large",
+        "kind": "fixed",
+        "amount": 180
+      },
+      {
+        "step": "finish",
+        "option": "oiled",
+        "kind": "fixed",
+        "amount": 35.5
+      }
+    ]
+  }
+}

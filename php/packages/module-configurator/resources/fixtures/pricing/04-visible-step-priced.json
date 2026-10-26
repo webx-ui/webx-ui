@@ -1,0 +1,216 @@
+{
+  "name": "with clear glass the frost step is there, and its choice is priced",
+  "today": "2026-10-26",
+  "schema": {
+    "version": 1,
+    "currency": "UAH",
+    "pricing": {
+      "round": 1
+    },
+    "initial": {
+      "construction": "corner",
+      "glass": "clear"
+    },
+    "steps": [
+      {
+        "key": "construction",
+        "type": "cards",
+        "label": "Construction",
+        "options": [
+          {
+            "value": "corner",
+            "label": "Corner enclosure",
+            "image": "media/demo/corner.svg",
+            "area": "(w+d)*h/1e6",
+            "price": {
+              "fixed": 8000,
+              "perM2": 4420
+            },
+            "defaults": {
+              "h": 2000,
+              "w": 900,
+              "d": 900
+            }
+          },
+          {
+            "value": "bath",
+            "label": "Bath screen",
+            "image": "media/demo/bath.svg",
+            "area": "w*h/1e6",
+            "price": {
+              "fixed": 3000,
+              "perM2": 3500
+            },
+            "defaults": {
+              "h": 1500,
+              "w": 800
+            },
+            "limits": {
+              "h": [1300, 1600]
+            }
+          }
+        ]
+      },
+      {
+        "key": "size",
+        "type": "dimensions",
+        "title": "Sizes",
+        "fields": [
+          {
+            "key": "h",
+            "label": "Height",
+            "min": 1300,
+            "max": 2400,
+            "step": 50
+          },
+          {
+            "key": "w",
+            "label": "Width",
+            "min": 600,
+            "max": 1600,
+            "step": 50
+          },
+          {
+            "key": "d",
+            "label": "Depth",
+            "min": 600,
+            "max": 1600,
+            "step": 50,
+            "when": {
+              "construction": ["corner"]
+            }
+          }
+        ]
+      },
+      {
+        "key": "glass",
+        "type": "swatches",
+        "label": "Glass",
+        "options": [
+          {
+            "value": "clear",
+            "label": "Clear",
+            "swatch": "#e8eef2"
+          },
+          {
+            "value": "graphite",
+            "label": "Graphite",
+            "swatch": "#59616a",
+            "price": {
+              "perM2": 600
+            }
+          },
+          {
+            "value": "flutes",
+            "label": "Flutes",
+            "swatch": "linear-gradient(90deg, #dfe6ea 0%, #f6f8f9 50%, #dfe6ea 100%)",
+            "price": {
+              "perM2": 1400
+            },
+            "unless": {
+              "construction": ["bath"]
+            }
+          }
+        ]
+      },
+      {
+        "key": "frost",
+        "type": "buttons",
+        "label": "Frosting",
+        "when": {
+          "glass": ["clear"]
+        },
+        "options": [
+          {
+            "value": "none",
+            "label": "None"
+          },
+          {
+            "value": "intim",
+            "label": "Privacy band",
+            "price": {
+              "perM2": 350
+            }
+          }
+        ]
+      },
+      {
+        "key": "hardware",
+        "type": "swatches",
+        "label": "Hardware",
+        "options": [
+          {
+            "value": "chrome",
+            "label": "Chrome",
+            "swatch": "#c9ced3"
+          },
+          {
+            "value": "gold",
+            "label": "Gold",
+            "swatch": "#c9a14a",
+            "price": {
+              "percent": 12
+            }
+          },
+          {
+            "value": "black",
+            "label": "Black",
+            "swatch": "#1d1f22",
+            "price": {
+              "percent": 5
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "values": {
+    "construction": "corner",
+    "glass": "clear",
+    "frost": "intim",
+    "hardware": "chrome",
+    "h": 2000,
+    "w": 900,
+    "d": 900
+  },
+  "expect": {
+    "normalized": {
+      "construction": "corner",
+      "h": 2000,
+      "w": 900,
+      "d": 900,
+      "glass": "clear",
+      "frost": "intim",
+      "hardware": "chrome"
+    },
+    "hidden": [],
+    "area": 3.6,
+    "subtotal": 25172,
+    "total_before_discount": 25172,
+    "total": 25172,
+    "lines": [
+      {
+        "step": "construction",
+        "option": "corner",
+        "kind": "fixed",
+        "amount": 8000
+      },
+      {
+        "step": "construction",
+        "option": "corner",
+        "kind": "perM2",
+        "rate": 4420,
+        "area": 3.6,
+        "amount": 15912
+      },
+      {
+        "step": "frost",
+        "option": "intim",
+        "kind": "perM2",
+        "rate": 350,
+        "area": 3.6,
+        "amount": 1260
+      }
+    ]
+  }
+}

@@ -36,6 +36,8 @@ parameters:
         - packages/module-catalog-properties/tests
         - packages/module-catalog-stock/src
         - packages/module-catalog-stock/tests
+        - packages/module-configurator/src
+        - packages/module-configurator/tests
         - packages/module-events/src
         - packages/module-events/tests
         - packages/module-faq/src

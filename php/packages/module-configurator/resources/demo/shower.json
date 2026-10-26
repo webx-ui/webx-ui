@@ -1,0 +1,372 @@
+{
+  "key": "shower",
+  "title": { "en": "Shower enclosures", "ru": "Душевые кабины", "uk": "Душові кабіни" },
+  "form": {
+    "slug": "configurator-request",
+    "title": { "en": "Price request", "ru": "Запрос расчёта", "uk": "Запит розрахунку" },
+    "options": {
+      "thank-you.heading": { "en": "Thank you", "ru": "Спасибо", "uk": "Дякуємо" },
+      "thank-you.text": {
+        "en": "We have your configuration. We will call to agree on a measurement.",
+        "ru": "Комплектация у нас. Мы позвоним, чтобы договориться о замере.",
+        "uk": "Комплектація у нас. Ми зателефонуємо, щоб домовитися про замір."
+      },
+      "design.submit-text": {
+        "en": "Get a quote",
+        "ru": "Получить расчёт",
+        "uk": "Отримати розрахунок"
+      },
+      "antispam.honeypot": true,
+      "antispam.min_seconds": 3
+    },
+    "fields": [
+      {
+        "name": "name",
+        "type": "text",
+        "title": { "en": "Your name", "ru": "Ваше имя", "uk": "Ваше ім'я" },
+        "is_required": true,
+        "is_fullsize": false,
+        "in_table": true
+      },
+      {
+        "name": "phone",
+        "type": "tel",
+        "title": { "en": "Phone", "ru": "Телефон", "uk": "Телефон" },
+        "is_required": true,
+        "is_fullsize": false,
+        "in_table": true
+      },
+      {
+        "name": "comment",
+        "type": "textarea",
+        "title": { "en": "Comment", "ru": "Комментарий", "uk": "Коментар" }
+      }
+    ]
+  },
+  "schema": {
+    "version": 1,
+    "currency": "UAH",
+    "pricing": { "round": 100 },
+    "initial": { "construction": "corner_slide", "glass": "diamond" },
+    "steps": [
+      {
+        "key": "construction",
+        "type": "cards",
+        "label": { "en": "Construction", "ru": "Конструкция", "uk": "Конструкція" },
+        "title": {
+          "en": "Choose the construction",
+          "ru": "Выберите конструкцию",
+          "uk": "Оберіть конструкцію"
+        },
+        "options": [
+          {
+            "value": "corner_slide",
+            "label": {
+              "en": "Corner sliding enclosure",
+              "ru": "Угловая раздвижная кабина",
+              "uk": "Кутова розсувна кабіна"
+            },
+            "subtitle": {
+              "en": "Two sliding doors",
+              "ru": "Две раздвижные двери",
+              "uk": "Дві розсувні двері"
+            },
+            "image": "demo:corner-slide",
+            "area": "(w+d)*h/1e6",
+            "price": { "fixed": 8000, "perM2": 4420 },
+            "defaults": { "h": 2000, "w": 900, "d": 900 }
+          },
+          {
+            "value": "corner_swing",
+            "label": {
+              "en": "Corner enclosure with a hinged door",
+              "ru": "Угловая кабина с распашной дверью",
+              "uk": "Кутова кабіна з розпашними дверима"
+            },
+            "subtitle": {
+              "en": "Door and fixed panel",
+              "ru": "Дверь и неподвижная панель",
+              "uk": "Двері та нерухома панель"
+            },
+            "image": "demo:corner-swing",
+            "area": "(w+d)*h/1e6",
+            "price": { "fixed": 7500, "perM2": 4200 },
+            "defaults": { "h": 2000, "w": 900, "d": 900 }
+          },
+          {
+            "value": "pentagon",
+            "label": {
+              "en": "Pentagonal enclosure",
+              "ru": "Пятиугольная кабина",
+              "uk": "П'ятикутна кабіна"
+            },
+            "subtitle": {
+              "en": "Three panels in a corner",
+              "ru": "Три панели в углу",
+              "uk": "Три панелі в куті"
+            },
+            "image": "demo:pentagon",
+            "area": "(w+d)*h/1e6*1.15",
+            "price": { "fixed": 9500, "perM2": 4600 },
+            "defaults": { "h": 2000, "w": 900, "d": 900 }
+          },
+          {
+            "value": "niche_slide",
+            "label": {
+              "en": "Sliding door in a niche",
+              "ru": "Раздвижная дверь в нишу",
+              "uk": "Розсувні двері в нішу"
+            },
+            "subtitle": {
+              "en": "Wall to wall",
+              "ru": "От стены до стены",
+              "uk": "Від стіни до стіни"
+            },
+            "image": "demo:niche-slide",
+            "area": "w*h/1e6",
+            "price": { "fixed": 6000, "perM2": 4100 },
+            "defaults": { "h": 2000, "w": 1200 }
+          },
+          {
+            "value": "swing",
+            "label": {
+              "en": "Hinged door in a niche",
+              "ru": "Распашная дверь в нишу",
+              "uk": "Розпашні двері в нішу"
+            },
+            "subtitle": { "en": "One door", "ru": "Одна дверь", "uk": "Одні двері" },
+            "image": "demo:swing",
+            "area": "w*h/1e6",
+            "price": { "fixed": 5000, "perM2": 3900 },
+            "defaults": { "h": 2000, "w": 800 }
+          },
+          {
+            "value": "walk_in",
+            "label": {
+              "en": "Walk-in panel",
+              "ru": "Перегородка walk-in",
+              "uk": "Перегородка walk-in"
+            },
+            "subtitle": {
+              "en": "One fixed panel",
+              "ru": "Одна неподвижная панель",
+              "uk": "Одна нерухома панель"
+            },
+            "image": "demo:walk-in",
+            "area": "w*h/1e6",
+            "price": { "fixed": 3500, "perM2": 3600 },
+            "defaults": { "h": 2000, "w": 1000 }
+          },
+          {
+            "value": "bath_fixed",
+            "label": {
+              "en": "Fixed bath screen",
+              "ru": "Неподвижная шторка на ванну",
+              "uk": "Нерухома шторка на ванну"
+            },
+            "subtitle": { "en": "One panel", "ru": "Одна панель", "uk": "Одна панель" },
+            "image": "demo:bath-fixed",
+            "area": "w*h/1e6",
+            "price": { "fixed": 2500, "perM2": 3400 },
+            "defaults": { "h": 1400, "w": 800 },
+            "limits": { "h": [1300, 1600] }
+          },
+          {
+            "value": "bath_fold",
+            "label": {
+              "en": "Folding bath screen",
+              "ru": "Складная шторка на ванну",
+              "uk": "Складна шторка на ванну"
+            },
+            "subtitle": {
+              "en": "Two folding panels",
+              "ru": "Две складные панели",
+              "uk": "Дві складні панелі"
+            },
+            "image": "demo:bath-fold",
+            "area": "w*h/1e6",
+            "price": { "fixed": 4000, "perM2": 3800 },
+            "defaults": { "h": 1500, "w": 1000 },
+            "limits": { "h": [1300, 1600] }
+          }
+        ]
+      },
+      {
+        "key": "size",
+        "type": "dimensions",
+        "label": { "en": "Sizes", "ru": "Размеры", "uk": "Розміри" },
+        "title": { "en": "Enter the sizes", "ru": "Введите размеры", "uk": "Введіть розміри" },
+        "hint": {
+          "en": "In millimetres; exact ones after the measurement",
+          "ru": "В миллиметрах, точные — после замера",
+          "uk": "У міліметрах, точні — після заміру"
+        },
+        "fields": [
+          {
+            "key": "h",
+            "label": { "en": "Height", "ru": "Высота", "uk": "Висота" },
+            "unit": { "en": "mm", "ru": "мм", "uk": "мм" },
+            "min": 1300,
+            "max": 2400,
+            "step": 50
+          },
+          {
+            "key": "w",
+            "label": { "en": "Width", "ru": "Ширина", "uk": "Ширина" },
+            "unit": { "en": "mm", "ru": "мм", "uk": "мм" },
+            "min": 600,
+            "max": 1800,
+            "step": 50
+          },
+          {
+            "key": "d",
+            "label": { "en": "Depth", "ru": "Глубина", "uk": "Глибина" },
+            "unit": { "en": "mm", "ru": "мм", "uk": "мм" },
+            "min": 600,
+            "max": 1600,
+            "step": 50,
+            "when": { "construction": ["corner_slide", "corner_swing", "pentagon"] }
+          }
+        ]
+      },
+      {
+        "key": "glass",
+        "type": "swatches",
+        "label": { "en": "Glass", "ru": "Стекло", "uk": "Скло" },
+        "title": { "en": "Glass", "ru": "Стекло", "uk": "Скло" },
+        "options": [
+          {
+            "value": "clear",
+            "label": { "en": "Clear", "ru": "Прозрачное", "uk": "Прозоре" },
+            "swatch": "#e6eff2"
+          },
+          {
+            "value": "diamond",
+            "label": { "en": "Extra clear", "ru": "Осветлённое", "uk": "Освітлене" },
+            "swatch": "#f5fbfd",
+            "price": { "perM2": 300 }
+          },
+          {
+            "value": "graphite",
+            "label": { "en": "Graphite", "ru": "Графит", "uk": "Графіт" },
+            "swatch": "#59616a",
+            "price": { "perM2": 600 }
+          },
+          {
+            "value": "bronze",
+            "label": { "en": "Bronze", "ru": "Бронза", "uk": "Бронза" },
+            "swatch": "#8a6a4f",
+            "price": { "perM2": 600 }
+          },
+          {
+            "value": "blue",
+            "label": { "en": "Blue tint", "ru": "Голубой оттенок", "uk": "Блакитний відтінок" },
+            "swatch": "#9fb8c8",
+            "price": { "perM2": 700 }
+          },
+          {
+            "value": "satin",
+            "label": { "en": "Satin", "ru": "Матовое", "uk": "Матове" },
+            "swatch": "#dfe3e5",
+            "price": { "perM2": 500 }
+          },
+          {
+            "value": "rain",
+            "label": { "en": "Rain", "ru": "Дождь", "uk": "Дощ" },
+            "swatch": "linear-gradient(160deg, #eef3f5 0%, #c9d6dc 40%, #eef3f5 60%, #c9d6dc 100%)",
+            "price": { "perM2": 900 }
+          },
+          {
+            "value": "ombre",
+            "label": { "en": "Ombre", "ru": "Омбре", "uk": "Омбре" },
+            "swatch": "linear-gradient(to bottom, #e6eff2 0%, #59616a 100%)",
+            "price": { "perM2": 1200 }
+          },
+          {
+            "value": "flutes",
+            "label": { "en": "Fluted", "ru": "Рифлёное", "uk": "Рифлене" },
+            "swatchImage": "demo:flutes",
+            "price": { "perM2": 1400 },
+            "unless": { "construction": ["bath_fixed", "bath_fold"] }
+          }
+        ]
+      },
+      {
+        "key": "frost",
+        "type": "buttons",
+        "label": { "en": "Frosting", "ru": "Матирование", "uk": "Матування" },
+        "title": { "en": "Frosting", "ru": "Матирование", "uk": "Матування" },
+        "when": { "glass": ["clear", "diamond"] },
+        "options": [
+          {
+            "value": "none",
+            "label": { "en": "None", "ru": "Без матирования", "uk": "Без матування" }
+          },
+          {
+            "value": "band",
+            "label": { "en": "Privacy band", "ru": "Интим-полоса", "uk": "Інтим-смуга" },
+            "price": { "perM2": 350 }
+          },
+          {
+            "value": "full",
+            "label": { "en": "Fully frosted", "ru": "Полностью матовое", "uk": "Повністю матове" },
+            "price": { "perM2": 450 }
+          }
+        ]
+      },
+      {
+        "key": "hardware",
+        "type": "swatches",
+        "label": { "en": "Hardware", "ru": "Фурнитура", "uk": "Фурнітура" },
+        "title": { "en": "Hardware", "ru": "Фурнитура", "uk": "Фурнітура" },
+        "options": [
+          {
+            "value": "chrome",
+            "label": { "en": "Chrome", "ru": "Хром", "uk": "Хром" },
+            "swatch": "linear-gradient(135deg, #f2f4f5, #aab1b6)"
+          },
+          {
+            "value": "steel",
+            "label": { "en": "Brushed steel", "ru": "Шлифованная сталь", "uk": "Шліфована сталь" },
+            "swatch": "#b9bec2",
+            "price": { "percent": 5 }
+          },
+          {
+            "value": "black",
+            "label": { "en": "Matte black", "ru": "Чёрный матовый", "uk": "Чорний матовий" },
+            "swatch": "#1d1f22",
+            "price": { "percent": 7 }
+          },
+          {
+            "value": "white",
+            "label": { "en": "White", "ru": "Белый", "uk": "Білий" },
+            "swatch": "#f7f7f5",
+            "price": { "percent": 7 }
+          },
+          {
+            "value": "bronze",
+            "label": { "en": "Bronze", "ru": "Бронза", "uk": "Бронза" },
+            "swatch": "#7a5a3a",
+            "price": { "percent": 10 }
+          },
+          {
+            "value": "gold",
+            "label": { "en": "Gold", "ru": "Золото", "uk": "Золото" },
+            "swatch": "linear-gradient(135deg, #b8862b, #f3d27a)",
+            "price": { "percent": 15 }
+          }
+        ]
+      }
+    ],
+    "previews": [
+      {
+        "when": { "construction": ["corner_slide"], "glass": ["graphite", "bronze"] },
+        "image": "demo:corner-slide-tinted"
+      },
+      {
+        "when": { "construction": ["walk_in"], "glass": ["graphite", "bronze"] },
+        "image": "demo:walk-in-tinted"
+      }
+    ]
+  }
+}

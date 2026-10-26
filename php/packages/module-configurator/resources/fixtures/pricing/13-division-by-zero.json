@@ -1,0 +1,77 @@
+{
+  "name": "dividing by zero in a formula gives 0, not infinity",
+  "today": "2026-10-26",
+  "schema": {
+    "version": 1,
+    "currency": "UAH",
+    "steps": [
+      {
+        "key": "panel",
+        "type": "buttons",
+        "label": "Panel",
+        "options": [
+          {
+            "value": "odd",
+            "label": "Odd",
+            "area": "w/(h-h)",
+            "price": {
+              "fixed": 100,
+              "perM2": 1000
+            }
+          }
+        ]
+      },
+      {
+        "key": "size",
+        "type": "dimensions",
+        "title": "Size",
+        "fields": [
+          {
+            "key": "w",
+            "label": "Width",
+            "min": 100,
+            "max": 1000
+          },
+          {
+            "key": "h",
+            "label": "Height",
+            "min": 100,
+            "max": 1000
+          }
+        ]
+      }
+    ]
+  },
+  "values": {
+    "w": 500,
+    "h": 500
+  },
+  "expect": {
+    "normalized": {
+      "panel": "odd",
+      "w": 500,
+      "h": 500
+    },
+    "hidden": [],
+    "area": 0,
+    "subtotal": 100,
+    "total_before_discount": 100,
+    "total": 100,
+    "lines": [
+      {
+        "step": "panel",
+        "option": "odd",
+        "kind": "fixed",
+        "amount": 100
+      },
+      {
+        "step": "panel",
+        "option": "odd",
+        "kind": "perM2",
+        "rate": 1000,
+        "area": 0,
+        "amount": 0
+      }
+    ]
+  }
+}
