@@ -635,6 +635,43 @@ final class McpTest extends TestCase
         Queue::assertPushed(SendQueuedMailable::class, 1);
     }
 
+    /**
+     * What the agent has to say before anything else: a letter waiting longer than a working
+     * queue takes, and mail that goes to a trap. On a client's site all three looked like
+     * letters going nowhere, and nothing said which.
+     */
+    #[Test]
+    public function the_agent_is_told_of_a_stalled_queue_and_of_mail_that_goes_nowhere(): void
+    {
+        $this->app['config']->set('mail.default', 'log');
+        $this->app['config']->set('queue.default', 'database');
+        $this->app['config']->set('queue.connections.database', ['driver' => 'database', 'table' => 'jobs']);
+
+        $form = $this->form('contact', [], ['recipients' => [['email' => 'sales@example.test']]]);
+        $submission = $this->filled($form, ['name' => 'Ada'], [
+            'notify_queued_at' => now()->subMinutes(20),
+            'notify_recipients' => [['address' => 'sales@example.test', 'state' => 'queued', 'error' => null, 'at' => now()->subMinutes(20)->toAtomString()]],
+        ]);
+
+        $got = $this->content($this->agent('get', ['submission' => (int) $submission->getKey()])->assertOk());
+
+        $this->assertSame('queued', $got['notification']['state']);
+        $this->assertTrue($got['notification']['stalled']);
+        $this->assertStringContainsString('within a minute', (string) $got['notification']['hint']);
+        $this->assertContains('Waiting in the queue for more than 5 minutes. Is the queue running?', $got['warnings']);
+        $this->assertContains('Letters go to the “log” mailer: they are written down there and nobody receives them.', $got['warnings']);
+
+        // A real server and a letter that left: nothing to say.
+        $this->app['config']->set('mail.default', 'smtp');
+        $this->app['config']->set('mail.mailers.smtp', ['transport' => 'smtp', 'host' => 'mail.example.test', 'port' => 587]);
+        $submission->forceFill(['notify_queued_at' => null, 'notified_at' => now(), 'notify_recipients' => [['address' => 'sales@example.test', 'state' => 'delivered', 'error' => null, 'at' => now()->toAtomString(), 'trap' => null]]])->save();
+
+        $got = $this->content($this->agent('get', ['submission' => (int) $submission->getKey()])->assertOk());
+
+        $this->assertSame([], $got['warnings']);
+        $this->assertFalse($got['notification']['trapped']);
+    }
+
     #[Test]
     public function a_notification_for_a_form_that_names_nobody_is_refused(): void
     {

@@ -6,6 +6,7 @@ namespace WebxUi\Notifications\Sending;
 
 use Illuminate\Support\Carbon;
 use Throwable;
+use WebxUi\Notifications\Contracts\HasMailRoute;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\NotificationEvents;
@@ -118,7 +119,11 @@ final class Deliverer
             return $failed;
         }
 
-        $delivery->forceFill(['status' => Delivery::SENT, 'error' => null, 'sent_at' => Carbon::now()])->save();
+        // A trap took it: sent, as far as the mailer knows, and delivered to nobody. Said now,
+        // because the settings may be different by the time somebody reads the log.
+        $trap = $provider instanceof HasMailRoute ? $provider->route($channel->options())->trap : null;
+
+        $delivery->forceFill(['status' => Delivery::SENT, 'trap' => $trap, 'error' => null, 'sent_at' => Carbon::now()])->save();
 
         return null;
     }

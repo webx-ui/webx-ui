@@ -13,6 +13,7 @@ use WebxUi\Admin\Doctor\Checks\Halves;
 use WebxUi\Admin\Doctor\Checks\Helpers;
 use WebxUi\Admin\Doctor\Checks\Languages;
 use WebxUi\Admin\Doctor\Checks\Layouts;
+use WebxUi\Admin\Doctor\Checks\Mail;
 use WebxUi\Admin\Doctor\Checks\Methods;
 use WebxUi\Admin\Doctor\Checks\Migrations;
 use WebxUi\Admin\Doctor\Checks\NpmRanges;
@@ -78,6 +79,7 @@ final class DoctorCommand extends Command
         TrustedProxies::class,
         CacheStore::class,
         Queue::class,
+        Mail::class,
     ];
 
     public function handle(Container $container): int

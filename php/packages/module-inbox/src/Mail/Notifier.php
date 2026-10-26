@@ -10,6 +10,7 @@ use Illuminate\Queue\SyncQueue;
 use Illuminate\Support\Carbon;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionEvent;
@@ -40,6 +41,7 @@ final class Notifier
         private readonly Delivery $delivery,
         private readonly Locales $locales,
         private readonly LoggerInterface $log,
+        private readonly MailRoutes $routes,
     ) {}
 
     /**
@@ -139,7 +141,7 @@ final class Notifier
                     ->send(new SubmissionReceived($submission));
 
                 $sent++;
-                $outcomes[] = $this->outcome($address, Delivery::DELIVERED, null);
+                $outcomes[] = $this->outcome($address, Delivery::DELIVERED, null, $this->routes->site()->trap);
             } catch (Throwable $exception) {
                 $error = $exception->getMessage();
                 $outcomes[] = $this->outcome($address, Delivery::FAILED, $error);
@@ -204,11 +206,11 @@ final class Notifier
     }
 
     /**
-     * @return array{address: string, state: string, error: string|null, at: string}
+     * @return array{address: string, state: string, error: string|null, at: string, trap: string|null}
      */
-    private function outcome(string $address, string $state, ?string $error): array
+    private function outcome(string $address, string $state, ?string $error, ?string $trap = null): array
     {
-        return ['address' => $address, 'state' => $state, 'error' => $error, 'at' => Carbon::now()->toAtomString()];
+        return ['address' => $address, 'state' => $state, 'error' => $error, 'at' => Carbon::now()->toAtomString(), 'trap' => $trap];
     }
 
     /** The language the submission was sent in, which is the site's if it did not say. */

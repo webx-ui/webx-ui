@@ -136,6 +136,7 @@ final class Notifications
                 'recipient' => $row->recipient,
                 'label' => $row->recipient_label,
                 'status' => $row->status,
+                'trap' => $row->trap,
                 'reason' => $row->reason,
                 'error' => $row->error,
                 'truncated' => $row->truncated,

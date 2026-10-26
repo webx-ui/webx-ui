@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 use WebxUi\Admin\Links\SiteRoutes;
+use WebxUi\Admin\Mail\MailRoutes;
 
 return [
 
@@ -106,6 +107,26 @@ return [
         'enabled' => env('WEBX_SITE_GATE', false),
         'users' => env('WEBX_SITE_GATE_USERS', ''),
         'except' => [],
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Mail that goes nowhere
+    |---------------------------------------------------------------------------
+    |
+    | Transports and hosts that take a letter and deliver it to nobody: the
+    | `log` and `array` mailers, a test sandbox, Mailpit or MailHog. Sending
+    | through one is fine on a staging site; the panel, the doctor and the
+    | agent only stop calling such a letter delivered. Hosts are `Str::is`
+    | masks against `host` and `host:port`.
+    |
+    */
+
+    'mail' => [
+        'traps' => [
+            'transports' => MailRoutes::TRAP_TRANSPORTS,
+            'hosts' => MailRoutes::TRAP_HOSTS,
+        ],
     ],
 
     /*

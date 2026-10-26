@@ -36,6 +36,32 @@ final class PanelFormsTest extends TestCase
         $this->assertSame(0, $forms[1]['submissions_count']);
     }
 
+    /** The tab of notifications says where the form's letters go, and when that is nowhere. */
+    #[Test]
+    public function a_form_says_how_its_letters_leave(): void
+    {
+        $form = $this->form('contact');
+        $this->app['config']->set('mail.default', 'log');
+        $this->app['config']->set('queue.default', 'database');
+        $this->app['config']->set('queue.connections.database', ['driver' => 'database', 'table' => 'jobs']);
+
+        $mail = $this->actingAs($this->editor(), 'cms')->getJson($this->api('forms/'.$form->getKey()))->assertOk()->json('data.mail');
+
+        $this->assertSame('log', $mail['route']['label']);
+        $this->assertTrue($mail['route']['trap']);
+        $this->assertSame(['trap'], array_column($mail['warnings'], 'code'));
+        $this->assertFalse($mail['queue']['sync']);
+        $this->assertStringContainsString('within a minute', $mail['queue']['hint']);
+
+        $this->app['config']->set('mail.default', 'smtp');
+        $this->app['config']->set('mail.mailers.smtp', ['transport' => 'smtp', 'host' => 'mail.example.test', 'port' => 587]);
+
+        $mail = $this->actingAs($this->editor(), 'cms')->getJson($this->api('forms/'.$form->getKey()))->assertOk()->json('data.mail');
+
+        $this->assertSame('smtp — mail.example.test:587', $mail['route']['label']);
+        $this->assertSame([], $mail['warnings']);
+    }
+
     #[Test]
     public function it_says_which_forms_would_write_to_nobody(): void
     {

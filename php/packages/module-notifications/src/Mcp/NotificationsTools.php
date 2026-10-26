@@ -503,7 +503,14 @@ final class NotificationsTools
 
         RateLimiter::hit($key, 60);
 
-        return ['results' => $this->notifications()->test($channel, $only)];
+        $results = $this->notifications()->test($channel, $only);
+        $mail = $this->form()->mail($channel);
+
+        return [
+            'results' => $results,
+            // A test a trap took went nowhere, whatever its status says.
+            'warnings' => array_map(static fn (array $warning): string => $warning['message'], $mail['warnings'] ?? []),
+        ];
     }
 
     /**
@@ -649,6 +656,12 @@ final class NotificationsTools
         }
 
         $described['values'] = array_diff_key($described['values'], $secret);
+
+        // What the agent has to say to the person in the same list as what saving found: the
+        // channel's letters go to a trap, or the settings are not in effect yet.
+        foreach ($described['mail']['warnings'] ?? [] as $warning) {
+            $described['warnings'][] = $warning['message'];
+        }
 
         return $described;
     }

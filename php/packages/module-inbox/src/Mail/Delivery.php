@@ -63,9 +63,13 @@ final class Delivery
         ])->save();
     }
 
-    public function delivered(int $submissionId, string $address): void
+    /**
+     * @param  string|null  $trap  what took the letter and delivered it to nobody — the `log`
+     *                             mailer, a test sandbox — as the worker that sent it saw its mail
+     */
+    public function delivered(int $submissionId, string $address, ?string $trap = null): void
     {
-        $this->settle($submissionId, $address, self::DELIVERED, null);
+        $this->settle($submissionId, $address, self::DELIVERED, null, $trap);
     }
 
     public function failed(int $submissionId, string $address, string $error): void
@@ -79,9 +83,9 @@ final class Delivery
         $this->settle($submissionId, $address, self::FAILED, $error);
     }
 
-    private function settle(int $submissionId, string $address, string $state, ?string $error): void
+    private function settle(int $submissionId, string $address, string $state, ?string $error, ?string $trap = null): void
     {
-        $this->db->transaction(function () use ($submissionId, $address, $state, $error): void {
+        $this->db->transaction(function () use ($submissionId, $address, $state, $error, $trap): void {
             $submission = Submission::query()->lockForUpdate()->find($submissionId);
 
             // Deleted while its letters were in the queue: there is nobody left to tell.
@@ -97,7 +101,7 @@ final class Delivery
                 // Only a letter still waiting: a job run twice, or an attempt started over in
                 // the meantime, must not rewrite a letter that has already been settled.
                 if ($recipient['address'] === $address && $recipient['state'] === self::QUEUED) {
-                    $recipients[$index] = ['address' => $address, 'state' => $state, 'error' => $error, 'at' => $now->toAtomString()];
+                    $recipients[$index] = ['address' => $address, 'state' => $state, 'error' => $error, 'at' => $now->toAtomString(), 'trap' => $trap];
                     $found = true;
 
                     break;

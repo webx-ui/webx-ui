@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace WebxUi\Notifications\Doctor;
 
-use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Doctor\Check;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Doctor\QueueBacklog;
-use WebxUi\Notifications\Email\EmailProvider;
+use WebxUi\Notifications\Contracts\HasMailRoute;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\NotificationEvents;
@@ -30,7 +30,7 @@ final class NotificationsCheck implements Check
         private readonly Notifications $notifications,
         private readonly Providers $providers,
         private readonly NotificationEvents $events,
-        private readonly Config $config,
+        private readonly Application $app,
     ) {}
 
     public function run(): array
@@ -94,12 +94,19 @@ final class NotificationsCheck implements Check
             $found[] = Diagnosis::warn(self::SUBJECT, "{$name}: its secrets do not decrypt — the application key changed. Enter them again, or put the old key into APP_PREVIOUS_KEYS.");
         }
 
-        if ($channel->provider === EmailProvider::KEY && ($channel->options()['mode'] ?? 'site') !== 'smtp') {
-            $transport = (string) $this->config->get('mail.mailers.'.$this->config->get('mail.default').'.transport', '');
+        $provider = $this->providers->find($channel->provider);
+        $route = $provider instanceof HasMailRoute ? $provider->route($channel->options()) : null;
 
-            if (in_array($transport, ['log', 'array'], true)) {
-                $found[] = Diagnosis::warn(self::SUBJECT, "{$name} sends through the site's mail, and its mailer is \"{$transport}\": the letters go nowhere. Set MAIL_MAILER, or give the channel its own SMTP server.");
-            }
+        // A trap is what a staging site wants, and nobody's plan on production — the same line
+        // the site's own mail is held to (`Mail` of the frame's doctor).
+        if ($route !== null && $route->isTrap()) {
+            $detail = $route->mailer === 'channel'
+                ? "{$name} sends through its own server {$route->label()}, a test mailbox: the letters reach nobody outside it. Give it the real server."
+                : "{$name} sends through the site's mail, and its mailer is \"{$route->label()}\": the letters go nowhere. Set MAIL_MAILER, or give the channel its own SMTP server.";
+
+            $found[] = $this->app->environment('production')
+                ? Diagnosis::warn(self::SUBJECT, $detail)
+                : Diagnosis::note(self::SUBJECT, $detail);
         }
 
         return $found;
