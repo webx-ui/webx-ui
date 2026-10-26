@@ -20,7 +20,9 @@ use Symfony\Component\HttpFoundation\Response;
  * `booted`, so that the HTTP kernel copying its groups over the router's cannot undo it.
  *
  * Off unless `WEBX_SITE_GATE` says otherwise, and closed to everyone when it is on and no pair
- * is given: a gate that is switched on is never quietly open.
+ * is given: a gate that is switched on is never quietly open. Somebody signed in to the panel
+ * passes without the pair ({@see PanelSession}): the gate is against strangers, not against the
+ * panel's own preview of the site.
  *
  * What the web server answers by itself — `/storage`, `/build`, anything else in `public` —
  * never reaches PHP, so a direct link to an uploaded file still works on a closed site. Closing
@@ -31,6 +33,7 @@ final class CloseSite
     public function __construct(
         private readonly Credentials $credentials,
         private readonly Openings $openings,
+        private readonly PanelSession $panel,
         private readonly Config $config,
         private readonly ViewFactory $views,
     ) {}
@@ -41,11 +44,17 @@ final class CloseSite
             return $next($request);
         }
 
-        if (! $this->credentials->accepts($request->getUser(), $request->getPassword())) {
+        if ($this->credentials->accepts($request->getUser(), $request->getPassword())) {
+            $response = $next($request);
+        } elseif ($this->panel->signedIn($request)) {
+            // An administrator signed in to the panel, on the site the panel shows and opens.
+            // What they get is theirs alone: a shared cache must not hand it to a stranger.
+            $response = $next($request);
+            $response->headers->set('Vary', 'Cookie', false);
+            $response->setPrivate();
+        } else {
             return $this->refuse();
         }
-
-        $response = $next($request);
 
         // The page behind the password is not the page anyone else gets: a shared cache that
         // ignored the header would hand it to the next visitor without asking.

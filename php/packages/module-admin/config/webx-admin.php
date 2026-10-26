@@ -85,7 +85,9 @@ return [
     |
     | HTTP Basic in front of every address of the site except the panel, its
     | JSON, the MCP server with its OAuth dance, a block preview under its token
-    | and `/.well-known`. Switched on and given no pairs, it lets nobody in.
+    | and `/.well-known`. Somebody signed in to the panel is not asked: its
+    | preview, and the site it opens, work with the panel's session. Switched
+    | on and given no pairs, it lets nobody in.
     |
     |     WEBX_SITE_GATE=true
     |     WEBX_SITE_GATE_USERS="client:secret,tester:other-secret"
