@@ -252,7 +252,7 @@ final class SendingTest extends TestCase
 
         $results = $this->notifications()->test($channel, '2');
 
-        $this->assertSame([['recipient' => '2', 'label' => null, 'status' => 'sent', 'reason' => null, 'error' => null, 'truncated' => false, 'unknown_variables' => []]], $results);
+        $this->assertSame([['recipient' => '2', 'label' => null, 'status' => 'sent', 'trap' => null, 'reason' => null, 'error' => null, 'truncated' => false, 'unknown_variables' => []]], $results);
         Http::assertSent(static fn ($request): bool => $request['chat_id'] === '2' && $request['text'] === '<b>Order 1024</b>: Leave at the door');
         $this->assertTrue(Delivery::query()->sole()->is_test);
         Bus::assertNothingDispatched();

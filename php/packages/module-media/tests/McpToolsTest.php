@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Registry\BoundTool;
 use WebxUi\Media\MediaModule;
 use WebxUi\Media\Models\MediaDirectory;
@@ -38,6 +39,7 @@ final class McpToolsTest extends TestCase
             'create_directory',
             'delete_directory',
             'rename_file',
+            'set_alt',
             'move_files',
             'upload_from_url',
             'optimize_images',
@@ -61,6 +63,7 @@ final class McpToolsTest extends TestCase
         $this->assertSame(['media.view', 'media.manage'], $permissions['list_files']);
         $this->assertSame(['media.manage'], $permissions['delete_files']);
         $this->assertSame(['media.manage'], $permissions['rename_file']);
+        $this->assertSame(['media.manage'], $permissions['set_alt']);
     }
 
     #[Test]
@@ -106,6 +109,39 @@ final class McpToolsTest extends TestCase
         $this->assertTrue($answer['ok']);
         $this->assertStringContainsString('Sofa, grey', $answer['would']);
         $this->assertSame('Sofa Oslo', $file->refresh()->name);
+    }
+
+    #[Test]
+    public function the_alt_is_read_with_the_file_and_written_a_language_at_a_time(): void
+    {
+        $this->app['config']->set('webx-localization.locales', [
+            ['code' => 'en', 'default' => true],
+            ['code' => 'ru'],
+        ]);
+
+        $file = $this->file('Sofa Oslo.jpg');
+
+        $this->assertNull($this->invoke('get_file', ['id' => $file->id])['alt']);
+
+        $preview = $this->invoke('set_alt', ['id' => $file->id, 'alt' => ['en' => 'A grey sofa'], 'dry_run' => true]);
+        $this->assertSame(['en' => 'A grey sofa'], $preview['alt']);
+        $this->assertNull($file->refresh()->alt);
+
+        $this->invoke('set_alt', ['id' => $file->id, 'alt' => ['en' => 'A grey sofa']]);
+        // A map is laid over what is there: Russian is added, English stays.
+        $this->assertSame(['en' => 'A grey sofa', 'ru' => 'Серый диван'], $this->invoke('set_alt', ['id' => $file->id, 'alt' => ['ru' => 'Серый диван']])['alt']);
+
+        $this->assertSame(['en' => 'A grey sofa', 'ru' => 'Серый диван'], $this->invoke('get_file', ['id' => $file->id])['alt']);
+        $this->assertSame(['en' => 'A grey sofa', 'ru' => 'Серый диван'], $this->invoke('list_files', [])['files'][0]['alt']);
+        $this->assertSame(['en' => 'A grey sofa', 'ru' => 'Серый диван'], $this->invoke('search_files', ['query' => 'sofa'])['files'][0]['alt']);
+
+        // A string is the default language; an empty one clears a language; null clears all.
+        $this->assertSame(['en' => 'Sofa', 'ru' => 'Серый диван'], $this->invoke('set_alt', ['id' => $file->id, 'alt' => 'Sofa'])['alt']);
+        $this->assertSame(['en' => 'Sofa'], $this->invoke('set_alt', ['id' => $file->id, 'alt' => ['ru' => '']])['alt']);
+        $this->assertNull($this->invoke('set_alt', ['id' => $file->id, 'alt' => null])['alt']);
+
+        $this->expectException(ToolFailure::class);
+        $this->invoke('set_alt', ['id' => $file->id, 'alt' => ['xx' => 'Nope']]);
     }
 
     #[Test]

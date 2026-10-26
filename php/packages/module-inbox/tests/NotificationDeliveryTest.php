@@ -83,6 +83,57 @@ final class NotificationDeliveryTest extends TestCase
         $this->assertSame('2', $submission->events->firstWhere('type', SubmissionEvent::NOTIFY_QUEUED)?->to);
     }
 
+    /**
+     * Queued is honest about it: the letter leaves when the queue next runs, and one that has
+     * waited longer than a working queue takes is asked about — in the panel as in MCP.
+     */
+    #[Test]
+    public function a_queued_letter_says_when_it_leaves_and_a_stalled_one_asks_about_the_queue(): void
+    {
+        Queue::fake();
+        $this->app['config']->set('queue.default', 'database');
+        $this->app['config']->set('queue.connections.database', ['driver' => 'database', 'table' => 'jobs']);
+
+        $submission = $this->send(['sales@example.test']);
+        $notification = $submission->notification();
+
+        $this->assertStringContainsString('within a minute', (string) $notification['hint']);
+        $this->assertFalse($notification['stalled']);
+        $this->assertSame([], $notification['warnings']);
+
+        Carbon::setTestNow(now()->addMinutes(6));
+
+        $shown = $this->actingAs($this->editor(), 'cms')
+            ->getJson($this->api('submissions/'.$submission->getKey()))
+            ->assertOk()
+            ->json('data.notification');
+
+        $this->assertSame('queued', $shown['state']);
+        $this->assertTrue($shown['stalled']);
+        $this->assertSame(['Waiting in the queue for more than 5 minutes. Is the queue running?'], $shown['warnings']);
+
+        Carbon::setTestNow();
+    }
+
+    /** A letter the `log` mailer took is not a delivered one, whichever way it went out. */
+    #[Test]
+    public function a_letter_a_trap_took_is_marked_so(): void
+    {
+        $queue = Queue::fake();
+        $this->app['config']->set('mail.default', 'log');
+        $this->app['config']->set('mail.mailers.log', ['transport' => 'log']);
+
+        $submission = $this->send(['sales@example.test']);
+        $this->work($queue);
+
+        $notification = $submission->refresh()->notification();
+
+        $this->assertSame(Submission::NOTIFY_DELIVERED, $notification['state']);
+        $this->assertSame('log', $notification['recipients'][0]['trap']);
+        $this->assertTrue($notification['trapped']);
+        $this->assertSame(['Accepted by a test transport: log'], $notification['warnings']);
+    }
+
     #[Test]
     public function the_worker_sending_it_marks_it_delivered(): void
     {

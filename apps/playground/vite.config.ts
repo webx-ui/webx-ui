@@ -85,6 +85,7 @@ export default defineConfig({
       pkg('module-catalog-landings'),
       pkg('module-catalog-properties'),
       pkg('module-catalog-stock'),
+      pkg('module-configurator'),
       pkg('module-events'),
       pkg('module-faq'),
       pkg('module-inbox'),

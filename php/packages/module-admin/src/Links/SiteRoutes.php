@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Links;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Str;
+use WebxUi\Admin\SiteBar\PageResponse;
 
 /**
  * The addresses the site has that no entity owns: an account area, a checkout, a search page.
@@ -29,6 +31,10 @@ use Illuminate\Support\Str;
  * stylesheet stays out wherever the package moves it. What nobody of ours registers (Passport's
  * OAuth dance, discovery documents, files) is named by `webx-admin.links.exclude`, as path masks, so
  * a site can add its own without waiting for us.
+ *
+ * The same line is what makes a page "service" anywhere else: the panel on the site and the debug
+ * bar stay off it ({@see PageResponse}), and an SEO rule cannot be made
+ * for it — an OAuth consent screen is not a page of the site, whoever is looking at it.
  */
 final readonly class SiteRoutes
 {
@@ -90,20 +96,60 @@ final readonly class SiteRoutes
             return false;
         }
 
+        return ! $this->isService($route);
+    }
+
+    /**
+     * Whether a route is machinery rather than a page: marked so by its package, or at an address
+     * that is ({@see self::isServicePath()}).
+     */
+    public function isService(Route $route): bool
+    {
         // Nested groups merge the attribute into a list of trues, hence "not empty" rather than "true".
         if (! empty($route->getAction(self::SERVICE))) {
+            return true;
+        }
+
+        return $this->isServicePath((string) $route->uri());
+    }
+
+    /**
+     * Whether an address is machinery by where it is: the panel and its JSON, the previews, the
+     * OAuth dance and the masks of `webx-admin.links.exclude`.
+     */
+    public function isServicePath(string $path): bool
+    {
+        $path = trim($path, '/');
+
+        return $this->insidePanel($path) || $this->machinery($path);
+    }
+
+    /**
+     * Whether an address of the site is machinery, the route that answers it included — for a
+     * question asked about a path rather than a request, like an SEO rule for an address.
+     */
+    public function isServiceAddress(string $path): bool
+    {
+        $path = '/'.trim((string) parse_url($path, PHP_URL_PATH), '/');
+
+        if ($this->isServicePath($path)) {
+            return true;
+        }
+
+        try {
+            $route = $this->router->getRoutes()->match(Request::create($path));
+        } catch (\Throwable) {
             return false;
         }
 
-        $uri = trim((string) $route->uri(), '/');
-
-        return ! $this->insidePanel($uri) && ! $this->machinery($uri);
+        return ! empty($route->getAction(self::SERVICE));
     }
 
     private function insidePanel(string $uri): bool
     {
-        foreach (['webx-admin.path', 'webx-admin.api_path'] as $key) {
-            $prefix = trim((string) $this->config->get($key), '/');
+        // The preview's own default: a site without blocks has no config of theirs to read.
+        foreach (['webx-admin.path' => '', 'webx-admin.api_path' => '', 'webx-blocks.preview.path' => '_preview'] as $key => $default) {
+            $prefix = trim((string) $this->config->get($key, $default), '/');
 
             if ($prefix !== '' && ($uri === $prefix || str_starts_with($uri, $prefix.'/'))) {
                 return true;
@@ -122,6 +168,14 @@ final readonly class SiteRoutes
     {
         /** @var list<string> $masks */
         $masks = (array) ($this->config->get('webx-admin.links.exclude') ?? self::EXCLUDE);
+
+        // The OAuth dance where the MCP server put it, when that is not the default `oauth`.
+        $oauth = $this->config->get('webx-mcp.oauth.prefix');
+
+        if (is_string($oauth) && trim($oauth, '/') !== '') {
+            $masks[] = trim($oauth, '/');
+            $masks[] = trim($oauth, '/').'/*';
+        }
 
         return Str::is($masks, $uri);
     }

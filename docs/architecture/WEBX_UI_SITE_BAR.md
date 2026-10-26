@@ -66,7 +66,12 @@
 - запрос в группе `web`, метод `GET`, ответ `200`, `Content-Type: text/html`, в теле есть
   `</body>`;
 - путь — не панель (`webx-admin.path`), не API (`webx-admin.api_path`) и не служебный
-  (`_preview/*` — там своя подсветка; `/cms/_bar` — сама панель);
+  (`_preview/*` — там своя подсветка; `/cms/_bar` — сама панель). «Служебный» — один признак на
+  всех, `SiteRoutes::isService()`: маршрут с атрибутом `SiteRoutes::SERVICE`, панель и превью,
+  маски `webx-admin.links.exclude` (OAuth-согласие `oauth/*`, префикс `webx-mcp.oauth.prefix`,
+  `.well-known`, файлы). Тот же признак держит debug-панель (через `PageResponse`), список адресов
+  поля-ссылки и запрет SEO-правила для такого адреса (`OwnAddress`, `seo_urls_set` —
+  `errors.service-address`). Свою системную страницу пакет помечает `SERVICE` на группе;
 - запрос не из фрейма: `Sec-Fetch-Dest: iframe` — без панели, и не только из своего origin
   (предпросмотр, сама панель): страница, которую обрамил чужой сайт, тоже не место её править;
 - `auth('cms')->user()` есть и активен (`is_active`) — **гард по имени из `webx-auth.guard`**,

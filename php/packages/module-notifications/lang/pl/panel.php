@@ -63,6 +63,8 @@ return [
     'test-everybody' => 'Wszyscy z listy',
     'test-send' => 'Wyślij',
     'test-sent' => 'Wysłano do :recipient.',
+    'mail-route' => 'Listy wychodzą przez',
+    'test-trapped' => 'Przyjęte przez transport testowy dla :recipient — nikt go nie otrzymał.',
     'test-failed' => 'Nie wysłano do :recipient: :error',
     'test-none' => 'Kanał nie ma odbiorców, do których można wysłać test.',
     'preview' => 'Podgląd',

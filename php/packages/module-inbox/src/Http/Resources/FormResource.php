@@ -6,6 +6,7 @@ namespace WebxUi\Inbox\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Mail\Recipients;
 use WebxUi\Inbox\Models\Form;
@@ -68,6 +69,10 @@ final class FormResource extends JsonResource
             'notify_via' => $form->notifyVia(),
             'notifications' => $notifications->available(),
             'channels' => $channels,
+            // Where the form's own letters go — the site's mail as the application sees it now —
+            // with a trap or settings not in effect said in words, and how long the queue holds
+            // a letter. The tab of notifications shows it; a channel shows its own.
+            'mail' => self::mail(),
             'position' => $form->position,
             'submissions_count' => $this->count($form, 'submissions_count'),
             'unread_count' => $this->count($form, 'unread_count'),
@@ -97,5 +102,16 @@ final class FormResource extends JsonResource
         $value = $form->getAttribute($attribute);
 
         return $value === null ? null : (int) $value;
+    }
+
+    /**
+     * @return array{route: array<string, mixed>, warnings: list<array{code: string, message: string}>, queue: array{driver: string, sync: bool, hint: string|null}}
+     */
+    public static function mail(): array
+    {
+        $routes = app(MailRoutes::class);
+        $route = $routes->site();
+
+        return ['route' => $route->toArray(), 'warnings' => $routes->warnings($route), 'queue' => $routes->queue()];
     }
 }

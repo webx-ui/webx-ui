@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'refused' => 'This form could not be sent. Please try again in a moment.',
+    'enclosure' => 'What was attached to this form cannot be sent with it. Reload the page and try again.',
     'captcha' => 'Please confirm you are not a robot and send the form again.',
     'captcha-script' => 'This form checks that you are not a robot with JavaScript. Please turn it on and send the form again.',
     'captcha-unavailable' => 'We could not check that you are not a robot. Please reload the page or try another browser.',

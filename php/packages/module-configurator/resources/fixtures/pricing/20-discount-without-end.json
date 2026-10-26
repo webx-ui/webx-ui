@@ -1,0 +1,74 @@
+{
+  "name": "a discount with no until is in force on any day",
+  "today": "2031-01-01",
+  "schema": {
+    "version": 1,
+    "currency": "EUR",
+    "discount": {
+      "percent": 7.5
+    },
+    "steps": [
+      {
+        "key": "model",
+        "type": "buttons",
+        "label": "Model",
+        "options": [
+          {
+            "value": "large",
+            "label": "Large",
+            "price": {
+              "fixed": 180
+            }
+          }
+        ]
+      },
+      {
+        "key": "finish",
+        "type": "buttons",
+        "label": "Finish",
+        "options": [
+          {
+            "value": "oiled",
+            "label": "Oiled",
+            "price": {
+              "fixed": 35.5
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "values": {},
+  "expect": {
+    "normalized": {
+      "model": "large",
+      "finish": "oiled"
+    },
+    "hidden": [],
+    "area": 0,
+    "subtotal": 215.5,
+    "total_before_discount": 216,
+    "total": 199,
+    "lines": [
+      {
+        "step": "model",
+        "option": "large",
+        "kind": "fixed",
+        "amount": 180
+      },
+      {
+        "step": "finish",
+        "option": "oiled",
+        "kind": "fixed",
+        "amount": 35.5
+      },
+      {
+        "step": null,
+        "option": null,
+        "kind": "discount",
+        "rate": 7.5,
+        "amount": -16.16
+      }
+    ]
+  }
+}

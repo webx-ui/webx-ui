@@ -1,0 +1,71 @@
+{
+  "name": "a negative price is a line like any other; a total below zero is 0",
+  "today": "2026-10-26",
+  "schema": {
+    "version": 1,
+    "currency": "UAH",
+    "steps": [
+      {
+        "key": "kit",
+        "type": "buttons",
+        "label": "Kit",
+        "options": [
+          {
+            "value": "basic",
+            "label": "Basic",
+            "price": {
+              "fixed": 300
+            }
+          }
+        ]
+      },
+      {
+        "key": "trade_in",
+        "type": "buttons",
+        "label": "Trade-in",
+        "options": [
+          {
+            "value": "none",
+            "label": "No"
+          },
+          {
+            "value": "old",
+            "label": "My old one",
+            "price": {
+              "fixed": -500
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "values": {
+    "kit": "basic",
+    "trade_in": "old"
+  },
+  "expect": {
+    "normalized": {
+      "kit": "basic",
+      "trade_in": "old"
+    },
+    "hidden": [],
+    "area": 0,
+    "subtotal": -200,
+    "total_before_discount": 0,
+    "total": 0,
+    "lines": [
+      {
+        "step": "kit",
+        "option": "basic",
+        "kind": "fixed",
+        "amount": 300
+      },
+      {
+        "step": "trade_in",
+        "option": "old",
+        "kind": "fixed",
+        "amount": -500
+      }
+    ]
+  }
+}

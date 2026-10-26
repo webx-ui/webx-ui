@@ -104,6 +104,27 @@ export interface ChannelDetail {
   values: ScreenModel
   /** What to look at although the channel was saved: names no event has. */
   warnings: string[]
+  /**
+   * Where a mail channel's letters go, as the server sees it now — the mailer and its server,
+   * a trap or settings not in effect, the queue's delay. Null for a channel that sends no mail;
+   * absent from an older server.
+   */
+  mail?: ChannelMail | null
+}
+
+/** The way a channel's letters leave (`ChannelForm::mail()`). */
+export interface ChannelMail {
+  route: {
+    mailer: string
+    transport: string
+    host: string | null
+    port: number | null
+    label: string
+    /** Takes letters and delivers them to nobody: `log`, `array`, a test sandbox. */
+    trap: boolean
+  }
+  warnings: { code: string; message: string }[]
+  queue: { driver: string; sync: boolean; hint: string | null }
 }
 
 export interface ChannelsList {
@@ -156,6 +177,8 @@ export interface DeliveryRow {
   recipient: string
   recipient_label: string | null
   status: DeliveryStatus
+  /** Sent into a trap — the `log` mailer, a test sandbox — and delivered to nobody. */
+  trap?: string | null
   reason: string | null
   error: string | null
   attempts: number
@@ -195,6 +218,8 @@ export interface TestResult {
   recipient: string
   label?: string | null
   status: DeliveryStatus
+  /** A trap took it: sent, and delivered to nobody. */
+  trap?: string | null
   error?: string | null
   reason?: string | null
   truncated?: boolean

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 use WebxUi\Admin\Links\SiteRoutes;
+use WebxUi\Admin\Mail\MailRoutes;
 
 return [
 
@@ -85,7 +86,9 @@ return [
     |
     | HTTP Basic in front of every address of the site except the panel, its
     | JSON, the MCP server with its OAuth dance, a block preview under its token
-    | and `/.well-known`. Switched on and given no pairs, it lets nobody in.
+    | and `/.well-known`. Somebody signed in to the panel is not asked: its
+    | preview, and the site it opens, work with the panel's session. Switched
+    | on and given no pairs, it lets nobody in.
     |
     |     WEBX_SITE_GATE=true
     |     WEBX_SITE_GATE_USERS="client:secret,tester:other-secret"
@@ -104,6 +107,26 @@ return [
         'enabled' => env('WEBX_SITE_GATE', false),
         'users' => env('WEBX_SITE_GATE_USERS', ''),
         'except' => [],
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Mail that goes nowhere
+    |---------------------------------------------------------------------------
+    |
+    | Transports and hosts that take a letter and deliver it to nobody: the
+    | `log` and `array` mailers, a test sandbox, Mailpit or MailHog. Sending
+    | through one is fine on a staging site; the panel, the doctor and the
+    | agent only stop calling such a letter delivered. Hosts are `Str::is`
+    | masks against `host` and `host:port`.
+    |
+    */
+
+    'mail' => [
+        'traps' => [
+            'transports' => MailRoutes::TRAP_TRANSPORTS,
+            'hosts' => MailRoutes::TRAP_HOSTS,
+        ],
     ],
 
     /*

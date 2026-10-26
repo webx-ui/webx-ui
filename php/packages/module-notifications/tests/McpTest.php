@@ -397,6 +397,44 @@ final class McpTest extends TestCase
         $this->assertSame('queue', $channels['mode']);
     }
 
+    /**
+     * Where a channel's letters go, said where the agent reads the channel, tests it and reads
+     * the log: a trap — the site's `array` mailer here, a test sandbox — takes a letter and
+     * delivers it to nobody, and a sent row of it is no delivery.
+     */
+    #[Test]
+    public function a_channel_into_a_trap_is_said_so_in_its_card_its_test_and_its_log(): void
+    {
+        $channel = $this->email();
+
+        $got = $this->content($this->agent('notifications_channel_get', ['channel' => $channel->id]));
+        $this->assertTrue($got['mail']['route']['trap']);
+        $this->assertSame('array', $got['mail']['route']['transport']);
+        $this->assertContains('Letters go to the “array” mailer: they are written down there and nobody receives them.', $got['warnings']);
+
+        $tested = $this->content($this->agent('notifications_test', ['channel' => $channel->id]));
+        $this->assertSame('sent', $tested['results'][0]['status']);
+        $this->assertSame('array', $tested['results'][0]['trap']);
+        $this->assertNotSame([], $tested['warnings']);
+
+        $log = $this->content($this->agent('notifications_deliveries', ['channel' => $channel->id]));
+        $this->assertSame('array', $log['deliveries'][0]['trap']);
+        $this->assertSame(['Accepted by a test transport: array'], $log['deliveries'][0]['warnings']);
+
+        // Its own server, a sandbox's.
+        $sandbox = $this->email(['name' => 'Sandbox', 'options' => ['mode' => 'smtp', 'host' => 'sandbox.smtp.mailtrap.io', 'port' => 2525]]);
+        $got = $this->content($this->agent('notifications_channel_get', ['channel' => $sandbox->id]));
+        $this->assertSame('smtp — sandbox.smtp.mailtrap.io:2525', $got['mail']['route']['label']);
+        $this->assertStringContainsString('a test mailbox', implode(' ', $got['warnings']));
+
+        // A real server: nothing to say.
+        $this->app['config']->set('mail.default', 'smtp');
+        $this->app['config']->set('mail.mailers.smtp', ['transport' => 'smtp', 'host' => 'mail.example.test', 'port' => 587]);
+        $got = $this->content($this->agent('notifications_channel_get', ['channel' => $channel->id]));
+        $this->assertFalse($got['mail']['route']['trap']);
+        $this->assertSame([], $got['warnings']);
+    }
+
     private function failedDelivery(Channel $channel): Delivery
     {
         return Delivery::query()->create([

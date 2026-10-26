@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Notifications\Email;
 
-use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Mail\Mailer;
 use Illuminate\Mail\MailManager;
@@ -12,7 +11,10 @@ use Illuminate\Mail\Message as MailMessage;
 use Illuminate\Support\HtmlString;
 use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
 use Throwable;
+use WebxUi\Admin\Mail\MailRoute;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Notifications\Contracts\HasMailRoute;
 use WebxUi\Notifications\Contracts\Provider;
 use WebxUi\Notifications\Contracts\WritesHtml;
 use WebxUi\Notifications\Refusal;
@@ -36,14 +38,14 @@ use WebxUi\Notifications\Sending\Recipient;
  * Recipients are the ones Inbox has always had — an administrator by id (the address follows the
  * account) or an address — plus an addressee of the event (decision 12).
  */
-final class EmailProvider implements Provider, WritesHtml
+final class EmailProvider implements HasMailRoute, Provider, WritesHtml
 {
     public const KEY = 'email';
 
     public function __construct(
         private readonly MailManager $mail,
-        private readonly Config $config,
         private readonly Views $views,
+        private readonly MailRoutes $routes,
     ) {}
 
     public function key(): string
@@ -73,6 +75,16 @@ final class EmailProvider implements Provider, WritesHtml
             new Field('from_address', 'webx-notifications::providers.email.from-address', kind: Field::EMAIL),
             new Field('from_name', 'webx-notifications::providers.email.from-name'),
         ];
+    }
+
+    /** The site's mailer as the application sees it now, or the channel's own server. */
+    public function route(array $options): MailRoute
+    {
+        if (($options['mode'] ?? 'site') !== 'smtp') {
+            return $this->routes->site();
+        }
+
+        return $this->routes->smtp((string) ($options['host'] ?? ''), is_scalar($options['port'] ?? null) ? (string) $options['port'] : null);
     }
 
     public function hasSubject(): bool
@@ -245,10 +257,10 @@ final class EmailProvider implements Provider, WritesHtml
     public function check(Credentials $credentials, array $options): CheckResult
     {
         if (($options['mode'] ?? 'site') !== 'smtp') {
-            $transport = (string) $this->config->get('mail.mailers.'.$this->config->get('mail.default').'.transport', '');
+            $route = $this->routes->site();
 
-            return in_array($transport, ['log', 'array'], true)
-                ? new CheckResult(false, $this->say('email.site-nowhere', ['transport' => $transport]))
+            return $route->isTrap() && $route->host === null
+                ? new CheckResult(false, $this->say('email.site-nowhere', ['transport' => $route->transport]))
                 : new CheckResult(true, $this->say('email.site-ok'));
         }
 

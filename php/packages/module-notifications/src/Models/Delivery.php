@@ -27,6 +27,7 @@ use WebxUi\Notifications\Notifications;
  * @property string $recipient
  * @property string|null $recipient_label
  * @property string $status
+ * @property string|null $trap
  * @property string|null $reason
  * @property string|null $error
  * @property int $attempts

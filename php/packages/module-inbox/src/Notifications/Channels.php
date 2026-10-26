@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Notifications;
 
 use Illuminate\Contracts\Container\Container;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Notifications\Models\Channel;
@@ -196,8 +197,12 @@ final class Channels
                 'recipient' => $row->recipient,
                 'recipient_label' => $row->recipient_label,
                 'status' => $row->status,
+                // Sent into a trap — the `log` mailer, a test sandbox — and delivered to nobody.
+                'trap' => $row->trap,
                 // In the notifications module's own words: the card shows them as they are.
-                'status_label' => (string) __('webx-notifications::module.statuses.'.$row->status),
+                'status_label' => $row->status === Delivery::SENT && $row->trap !== null
+                    ? app(MailRoutes::class)->trappedLabel()
+                    : (string) __('webx-notifications::module.statuses.'.$row->status),
                 'reason' => $row->reason,
                 'reason_label' => $row->reason === null ? null : (string) __('webx-notifications::module.reasons.'.$row->reason),
                 'error' => $row->error,

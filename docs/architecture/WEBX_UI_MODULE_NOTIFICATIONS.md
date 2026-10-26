@@ -933,6 +933,17 @@ subject: $submission)`. Это расходится со старым письм
 механизма — отдельной задачей, когда на сайтах платформы не останется форм с `recipients`
 (проверяется `webx:doctor --json` по сайтам). Колонки `notify_*` у заявок остаются для истории.
 
+### 15.4. Почта, которая уходит в никуда
+
+`EmailProvider` — `Contracts\HasMailRoute`: маршрут — почта сайта или свой SMTP канала, описанный
+`WebxUi\Admin\Mail\MailRoutes` каркаса. Доставка, принятая ловушкой (`log`, `array`, песочница
+Mailtrap, Mailpit/MailHog; список — `webx-admin.mail.traps`), — `sent` с колонкой `trap`
+(`2026_01_01_000002_add_trap_to_notifications_deliveries_table`): в журнале «Тестовый транспорт», в
+карточке заявки — «принято тестовым транспортом». Канал отдаёт `mail` (маршрут, предупреждения,
+очередь); MCP: `warnings` в `notifications_channel_get` и `notifications_test`, `trap` и `warnings` у
+строк `notifications_deliveries`. `NotificationsCheck` doctor: ловушка канала — note, на production —
+warn.
+
 ## 16. Регистрации, демо, будущее
 
 ### 16.1 Регистрации

@@ -28,6 +28,11 @@ export interface MediaFile {
   size: number
   width: number | null
   height: number | null
+  /**
+   * What is on the picture, per language; null when nobody described it. Printed by the site
+   * wherever the place using the file wrote no alt of its own.
+   */
+  alt?: Record<string, string> | null
   /** What an entity stores. The address beside it is worked out on every read. */
   path: string
   url: string

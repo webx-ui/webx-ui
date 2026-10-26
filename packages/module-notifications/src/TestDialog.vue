@@ -70,6 +70,7 @@ async function send(): Promise<void> {
 function lineOf(result: TestResult): string {
   const recipient = result.label ? `${result.label} (${result.recipient})` : result.recipient
 
+  if (result.status === 'sent' && result.trap) return t('panel.test-trapped', { recipient })
   if (result.status === 'sent') return t('panel.test-sent', { recipient })
 
   return t('panel.test-failed', {
@@ -96,7 +97,7 @@ function lineOf(result: TestResult): string {
       <wx-alert
         v-for="(result, index) in results"
         :key="index"
-        :type="result.status === 'sent' ? 'success' : 'danger'"
+        :type="result.status === 'sent' ? (result.trap ? 'warning' : 'success') : 'danger'"
         variant="soft"
         :description="lineOf(result)"
       />

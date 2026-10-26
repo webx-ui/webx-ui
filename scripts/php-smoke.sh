@@ -119,11 +119,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' webx-ui/module-faq:'*' webx-ui/module-reviews:'*' webx-ui/module-recipes:'*' webx-ui/module-events:'*' webx-ui/module-press:'*' webx-ui/module-team:'*' webx-ui/module-banners:'*' webx-ui/module-vacancies:'*' webx-ui/module-tariffs:'*' webx-ui/module-catalog:'*' webx-ui/module-catalog-brands:'*' webx-ui/module-catalog-labels:'*' webx-ui/module-catalog-properties:'*' webx-ui/module-catalog-stock:'*' webx-ui/module-catalog-manticore:'*' webx-ui/module-snippets:'*' webx-ui/module-notifications:'*' webx-ui/module-debug:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' webx-ui/module-faq:'*' webx-ui/module-reviews:'*' webx-ui/module-recipes:'*' webx-ui/module-events:'*' webx-ui/module-press:'*' webx-ui/module-team:'*' webx-ui/module-banners:'*' webx-ui/module-vacancies:'*' webx-ui/module-tariffs:'*' webx-ui/module-configurator:'*' webx-ui/module-catalog:'*' webx-ui/module-catalog-brands:'*' webx-ui/module-catalog-labels:'*' webx-ui/module-catalog-properties:'*' webx-ui/module-catalog-stock:'*' webx-ui/module-catalog-manticore:'*' webx-ui/module-snippets:'*' webx-ui/module-notifications:'*' webx-ui/module-debug:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-recipes module-events module-press module-team module-banners module-vacancies module-tariffs module-catalog module-catalog-brands module-catalog-labels module-catalog-properties module-catalog-stock module-catalog-manticore module-snippets module-notifications module-debug module-media nested-set routing cache compositions; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-recipes module-events module-press module-team module-banners module-vacancies module-tariffs module-configurator module-catalog module-catalog-brands module-catalog-labels module-catalog-properties module-catalog-stock module-catalog-manticore module-snippets module-notifications module-debug module-media nested-set routing cache compositions; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -157,6 +157,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/module-banners" => "WebxUi\\Banners\\BannersServiceProvider",
         "webx-ui/module-vacancies" => "WebxUi\\Vacancies\\VacanciesServiceProvider",
         "webx-ui/module-tariffs" => "WebxUi\\Tariffs\\TariffsServiceProvider",
+        "webx-ui/module-configurator" => "WebxUi\\Configurator\\ConfiguratorServiceProvider",
         "webx-ui/module-catalog" => "WebxUi\\Catalog\\CatalogServiceProvider",
         "webx-ui/module-catalog-brands" => "WebxUi\\CatalogBrands\\BrandsServiceProvider",
         "webx-ui/module-catalog-labels" => "WebxUi\\CatalogLabels\\LabelsServiceProvider",
@@ -1068,7 +1069,10 @@ note "[closed] and reaches the OAuth endpoints -> $oauth_status"
 "$PHP_BIN" "$APP/artisan" smoke:page "draft-closed" --draft --no-interaction > /dev/null
 PREVIEW_URL="$("$PHP_BIN" "$APP/artisan" smoke:page "draft-closed" --preview --no-interaction | tail -n 1)"
 expect 200 "$(status "$PREVIEW_URL")" '[closed] the preview opens under its token'
-expect 401 "$(status "${PREVIEW_URL%%\?*}")" '[closed] and without one asks for the password'
+expect 401 "$(visit "${PREVIEW_URL%%\?*}")" '[closed] and without one a stranger is asked for the password'
+# The cookie jar holds the panel's session since the sign-in above: the gate lets the
+# administrator through, and the preview itself refuses the missing token.
+expect 403 "$(status "${PREVIEW_URL%%\?*}")" '[closed] an administrator without one passes the gate to a 403'
 expect 200 "$(status "$BASE/blocks/runtime.js")" '[closed] the block runtime the preview loads is open'
 
 set_env WEBX_SITE_GATE false

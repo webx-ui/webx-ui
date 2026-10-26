@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
-import { toast, WxEmpty, WxFileCard, WxSelectionArea } from '@webx-ui/core'
+import { toast, WxDropdownItem, WxEmpty, WxFileCard, WxSelectionArea } from '@webx-ui/core'
 import type { MediaApi } from './api'
 import { startDrag } from './dragging'
 import { details, usePanelLocale } from './format'
@@ -32,6 +32,7 @@ const selected = defineModel<number[]>('selected', { default: () => [] })
 const emit = defineEmits<{
   open: [file: MediaFile]
   rename: [file: MediaFile, name: string]
+  alt: [file: MediaFile]
   edit: [file: MediaFile]
   view: [file: MediaFile]
   remove: [file: MediaFile]
@@ -152,7 +153,14 @@ function copyFailed(file: MediaFile): void {
       @copy-error="copyFailed(file)"
       @dblclick="emit('open', file)"
       @dragstart="dragStart(file, $event)"
-    />
+    >
+      <!-- A picture's words, in the card's menu beside its name: what the site says for it. -->
+      <template v-if="file.type === 'image'" #actions>
+        <wx-dropdown-item icon="file-text" @click="emit('alt', file)">
+          {{ t('manager.alt') }}
+        </wx-dropdown-item>
+      </template>
+    </wx-file-card>
   </wx-selection-area>
 
   <wx-empty v-else :description="empty" />

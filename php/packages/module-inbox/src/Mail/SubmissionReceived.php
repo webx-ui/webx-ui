@@ -17,6 +17,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\SentMessage;
 use Illuminate\Queue\SerializesModels;
 use Throwable;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
@@ -134,7 +135,7 @@ class SubmissionReceived extends Mailable implements ShouldQueue
             // A `MessageSending` listener may stop a letter; that is not one that left.
             $sent === null
                 ? app(Delivery::class)->failed((int) $this->submission->getKey(), $this->reportFor, 'The letter was stopped before it was sent.')
-                : app(Delivery::class)->delivered((int) $this->submission->getKey(), $this->reportFor);
+                : app(Delivery::class)->delivered((int) $this->submission->getKey(), $this->reportFor, app(MailRoutes::class)->site()->trap);
         }
 
         return $sent;

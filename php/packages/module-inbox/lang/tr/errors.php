@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Form gönderilemedi. Lütfen birazdan tekrar deneyin.',
+    'enclosure' => 'Bu forma eklenen şey onunla gönderilemez. Sayfayı yenileyip tekrar deneyin.',
     'captcha' => 'Lütfen robot olmadığınızı doğrulayın ve formu yeniden gönderin.',
     'captcha-script' => 'Bu form robot olmadığınızı JavaScript ile denetler. Lütfen JavaScript’i açın ve formu yeniden gönderin.',
     'captcha-unavailable' => 'Robot olmadığınızı doğrulayamadık. Lütfen sayfayı yenileyin ya da başka bir tarayıcı deneyin.',

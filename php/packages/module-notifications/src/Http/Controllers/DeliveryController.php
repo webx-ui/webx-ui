@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Notifications\Notifications;
@@ -98,6 +99,9 @@ final class DeliveryController
             'recipient' => $delivery->recipient,
             'recipient_label' => $delivery->recipient_label,
             'status' => $delivery->status,
+            // Sent into a trap — the `log` mailer, a test sandbox — and delivered to nobody.
+            'trap' => $delivery->trap,
+            'warnings' => $delivery->trap === null ? [] : [app(MailRoutes::class)->trappedLabel().': '.$delivery->trap],
             'reason' => $delivery->reason,
             'error' => $delivery->error,
             'attempts' => $delivery->attempts,

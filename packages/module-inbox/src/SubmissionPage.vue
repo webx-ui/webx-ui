@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
@@ -40,6 +40,7 @@ import type {
   InboxStatus,
   InboxSubmission,
   SubmissionEvent,
+  SubmissionValue,
 } from './types'
 
 /**
@@ -74,6 +75,19 @@ const admins = ref<InboxRecipient[]>([])
 const loading = ref(true)
 
 const canUpdate = computed(() => context.can('inbox.update'))
+
+/**
+ * What draws a module's enclosure (§2.20): the panel type `inbox-enclosure:<kind>` the module
+ * registered — a configuration as a table, a basket as its lines. Without one, the enclosure's
+ * text is shown as it came, in the letter's lines.
+ */
+function enclosureView(value: SubmissionValue): Component | null {
+  if (value.type !== 'enclosure' || value.field_id !== null) return null
+  const payload = value.payload as { kind?: unknown } | null
+  const kind = typeof payload?.kind === 'string' ? payload.kind : value.name
+
+  return context.types[`inbox-enclosure:${kind}`]?.component ?? null
+}
 
 const id = computed(() => Number(route.params.id))
 
@@ -263,6 +277,8 @@ const channelsRetryable = computed(() => (channels.value ?? []).some((row) => ro
 
 function channelTone(row: ChannelDelivery): 'danger' | 'success' | 'warning' | 'default' {
   if (row.status === 'failed') return 'danger'
+  // Sent into a trap is not delivered: the label says so, and the colour must not contradict it.
+  if (row.status === 'sent' && row.trap) return 'warning'
   if (row.status === 'sent') return 'success'
   if (row.status === 'skipped') return 'warning'
 
@@ -464,7 +480,18 @@ const details = computed(() => {
               :key="value.id"
               :label="value.label ?? value.name"
             >
-              <p class="wx-submission__value">{{ value.value || '—' }}</p>
+              <component
+                :is="enclosureView(value)"
+                v-if="enclosureView(value)"
+                :payload="value.payload"
+                :value="value.value"
+              />
+              <p
+                v-else
+                :class="['wx-submission__value', { 'is-enclosure': value.type === 'enclosure' }]"
+              >
+                {{ value.value || '—' }}
+              </p>
             </wx-descriptions-item>
           </wx-descriptions>
         </wx-card>
@@ -574,6 +601,16 @@ const details = computed(() => {
                       </wx-alert>
                       <span v-else-if="notification?.state === 'queued'">
                         {{ t('panel.notify-queued') }}
+                        <!-- When it leaves: a queue the scheduler runs sends it a minute later. -->
+                        <wx-text
+                          v-if="notification.hint && !notification.stalled"
+                          size="sm"
+                          tone="muted"
+                          as="span"
+                          class="wx-submission__hint"
+                        >
+                          {{ notification.hint }}
+                        </wx-text>
                       </span>
                       <span v-else-if="notification?.state === 'delivered'">
                         {{ t('panel.notified') }}
@@ -581,6 +618,17 @@ const details = computed(() => {
                       <!-- Nobody named is not a letter waiting in the queue, and says so. -->
                       <span v-else-if="namesNobody">{{ t('panel.notified-nobody') }}</span>
                       <span v-else>{{ t('panel.not-notified') }}</span>
+
+                      <!-- Waiting longer than a working queue takes, or taken by a trap: the two
+                           ways a letter looks fine here and never arrives. -->
+                      <wx-alert
+                        v-for="warning in notification?.warnings ?? []"
+                        :key="warning"
+                        type="warning"
+                        variant="soft"
+                        :closable="false"
+                        :description="warning"
+                      />
 
                       <ul
                         v-if="notification && notification.recipients.length > 0"
@@ -592,12 +640,14 @@ const details = computed(() => {
                             :type="
                               one.state === 'failed'
                                 ? 'danger'
-                                : one.state === 'delivered'
-                                  ? 'success'
-                                  : 'default'
+                                : one.trap
+                                  ? 'warning'
+                                  : one.state === 'delivered'
+                                    ? 'success'
+                                    : 'default'
                             "
                           >
-                            {{ recipientState(one.state) }}
+                            {{ recipientState(one.trap ? 'trapped' : one.state) }}
                           </wx-badge>
                         </li>
                       </ul>
@@ -737,6 +787,12 @@ const details = computed(() => {
   overflow-wrap: anywhere;
 }
 
+/* An enclosure nobody draws reads as the letter does: its lines, kept in columns. */
+.wx-submission__value.is-enclosure {
+  font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-sm);
+}
+
 .wx-submission__detail {
   overflow-wrap: anywhere;
 }
@@ -745,6 +801,11 @@ const details = computed(() => {
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-8);
+}
+
+/* Under "waiting", on a line of its own: when the letter leaves is the answer to the next question. */
+.wx-submission__hint {
+  display: block;
 }
 
 .wx-submission__recipients {

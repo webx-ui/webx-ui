@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Admin\Notes\HasNotes;
 use WebxUi\Admin\Notes\Notable;
 use WebxUi\Admin\Notes\Note;
@@ -29,7 +30,7 @@ use WebxUi\Auth\Models\CmsUser;
  * @property Carbon|null $notified_at
  * @property string|null $notify_error
  * @property Carbon|null $notify_queued_at
- * @property list<array{address: string, state: string, error: string|null, at: string}>|null $notify_recipients
+ * @property list<array{address: string, state: string, error: string|null, at: string, trap?: string|null}>|null $notify_recipients
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -86,7 +87,12 @@ class Submission extends Model implements Notable
      * delivered, an error is failed. A failure wins over letters still waiting — the one thing
      * an administrator has to act on is said first.
      *
-     * @return array{state: string, error: string|null, queued_at: string|null, delivered_at: string|null, recipients: list<array{address: string, state: string, error: string|null, at: string}>}
+     * Beside the state, what a person is told about it (`MailRoutes` of the frame): a letter
+     * queued leaves when the queue next runs — `hint`; one queued for longer than a working
+     * queue takes is `stalled`; a letter a trap took — the `log` mailer, a test sandbox — is
+     * `trapped`, delivered to nobody. `warnings` says the last two in words.
+     *
+     * @return array{state: string, error: string|null, queued_at: string|null, delivered_at: string|null, recipients: list<array{address: string, state: string, error: string|null, at: string, trap?: string|null}>, hint: string|null, stalled: bool, trapped: bool, warnings: list<string>}
      */
     public function notification(): array
     {
@@ -97,12 +103,34 @@ class Submission extends Model implements Notable
             default => self::NOTIFY_NONE,
         };
 
+        $routes = app(MailRoutes::class);
+        $recipients = array_values($this->notify_recipients ?? []);
+        $queued = $state === self::NOTIFY_QUEUED;
+        $stalled = $queued && $routes->stalled($this->notify_queued_at);
+        $traps = array_values(array_unique(array_filter(array_map(
+            static fn (array $one): ?string => $one['state'] === self::NOTIFY_DELIVERED && is_string($one['trap'] ?? null) ? $one['trap'] : null,
+            $recipients,
+        ))));
+        $warnings = [];
+
+        if ($stalled) {
+            $warnings[] = $routes->stalledWarning();
+        }
+
+        foreach ($traps as $trap) {
+            $warnings[] = $routes->trappedLabel().': '.$trap;
+        }
+
         return [
             'state' => $state,
             'error' => $this->notify_error,
             'queued_at' => $this->notify_queued_at?->toAtomString(),
             'delivered_at' => $this->notified_at?->toAtomString(),
-            'recipients' => array_values($this->notify_recipients ?? []),
+            'recipients' => $recipients,
+            'hint' => $queued ? $routes->queue()['hint'] : null,
+            'stalled' => $stalled,
+            'trapped' => $traps !== [],
+            'warnings' => $warnings,
         ];
     }
 

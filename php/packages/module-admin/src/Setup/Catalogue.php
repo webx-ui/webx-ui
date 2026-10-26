@@ -180,6 +180,14 @@ final class Catalogue
             'requires' => ['blocks'],
             'demo' => ['en', 'ru'],
         ],
+        'configurators' => [
+            'package' => 'webx-ui/module-configurator',
+            'npm' => '@webx-ui/module-configurator',
+            'label' => 'Configurators — a product built by steps with sizes and a price counted on the server',
+            'default' => false,
+            'requires' => ['media'],
+            'demo' => ['en', 'ru', 'uk'],
+        ],
         'vacancies' => [
             'package' => 'webx-ui/module-vacancies',
             'npm' => '@webx-ui/module-vacancies',

@@ -77,7 +77,7 @@ final class TagTools
                 .'what it would do before you do it.',
                 fn (array $arguments): array => $this->merge($arguments),
                 ['properties' => [
-                    'keep' => $tag + ['description' => 'The tag that survives. Its word, its address and its place in the index are the ones that remain.'],
+                    'keep' => ['description' => $tag['description'].' The tag that survives. Its word, its address and its place in the index are the ones that remain.'] + $tag,
                     'merged' => [
                         'type' => 'array',
                         'items' => ['type' => ['integer', 'string']],

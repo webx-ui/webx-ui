@@ -1,6 +1,7 @@
 import type { RelationCandidate } from '../../../../packages/module-admin/src/relations/api'
 import { recipes, row as recipeRow, visible as recipeVisible, type RecipeRecord } from './recipes'
 import { row as serviceRow, services, type ServiceRecord } from './services'
+import { configuratorCandidates } from './configurators'
 import { forms } from './inbox'
 import { notifyCandidates } from './notifications'
 
@@ -40,8 +41,8 @@ function serviceCandidate(record: ServiceRecord, locale: string): RelationCandid
   }
 }
 
-/** `slug` is the forms' own, as `FormTarget::row()` adds it. */
-type Candidate = RelationCandidate & { slug?: string }
+/** `slug` is the forms' own, as `FormTarget::row()` adds it; `key` the configurators'. */
+type Candidate = RelationCandidate & { slug?: string; key?: string }
 
 interface Target {
   all: (locale: string) => { candidate: Candidate; deleted: boolean }[]
@@ -78,6 +79,8 @@ const TARGETS: Record<string, Target> = {
           deleted: false,
         })),
   },
+  /* `ConfiguratorTarget` of `module-configurator`: what `wx-configurator` picks, kept by `key`. */
+  configurator: { all: configuratorCandidates },
   recipe: {
     all: (locale) =>
       [...recipes]
@@ -122,10 +125,15 @@ export function relationCandidates(
         (one) =>
           term === '' ||
           one.title.toLowerCase().includes(term) ||
-          (one.slug?.includes(term) ?? false),
+          (one.slug?.includes(term) ?? false) ||
+          (one.key?.includes(term) ?? false),
       )
-      // The exact slug first, as `FormTarget` orders it: that is how a stored slug is named.
-      .sort((one, two) => Number(two.slug === term) - Number(one.slug === term))
+      // The exact slug or key first, as `FormTarget` orders it: that is how a stored one is named.
+      .sort(
+        (one, two) =>
+          Number(two.slug === term || two.key === term) -
+          Number(one.slug === term || one.key === term),
+      )
       .slice(0, 20)
   )
 }

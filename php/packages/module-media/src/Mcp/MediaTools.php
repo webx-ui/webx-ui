@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Symfony\Component\Mime\MimeTypes;
 use Throwable;
+use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 use WebxUi\Media\Directories\DirectoryService;
@@ -24,6 +25,7 @@ use WebxUi\Media\Rules\SafeFileType;
 use WebxUi\Media\Rules\WithinPixelBudget;
 use WebxUi\Media\Storage\FileStore;
 use WebxUi\Media\Storage\FileUrls;
+use WebxUi\Media\Support\MediaAlt;
 use WebxUi\Media\Support\MediaType;
 use WebxUi\Media\Usage\MediaUsage;
 
@@ -206,6 +208,69 @@ final class MediaTools
                         'name' => ['type' => 'string'],
                     ],
                     'required' => ['id', 'name'],
+                ],
+                scope: 'media:write',
+            ),
+
+            Tool::mutating(
+                'set_alt',
+                'Say what is on a picture, per language: the alt every block and page prints for it '
+                    .'where the place using it wrote none of its own (an image field\'s own alt wins). '
+                    .'Pass a map { "en": "…", "de": "…" } — a language left out keeps what it had, an '
+                    .'empty string clears that language; a plain string is the site\'s default language. '
+                    .'`null` clears all of it: a decorative picture has no alt.',
+                static function (array $arguments): array {
+                    $file = self::files([$arguments['id'] ?? null])->first();
+
+                    if (! $file instanceof MediaFile) {
+                        throw new ToolFailure('There is no such file.');
+                    }
+
+                    if (! array_key_exists('alt', $arguments)) {
+                        throw new ToolFailure('Nothing to set: pass `alt`, a map of languages, a string or null.');
+                    }
+
+                    $given = $arguments['alt'];
+
+                    if ($given !== null && ! is_string($given) && ! is_array($given)) {
+                        throw new ToolFailure('`alt` is a map of languages, a string or null.');
+                    }
+
+                    $locales = app(Locales::class);
+
+                    // A map is laid over what the file has, so writing one language keeps the rest.
+                    $alt = match (true) {
+                        $given === null => null,
+                        is_string($given) => MediaAlt::clean([...($file->alt ?? []), $locales->defaultCode() => $given]),
+                        default => MediaAlt::clean([...($file->alt ?? []), ...$given]),
+                    };
+
+                    $unknown = is_array($given)
+                        ? array_values(array_filter(array_keys($given), static fn (int|string $code): bool => ! $locales->has((string) $code)))
+                        : [];
+
+                    if ($unknown !== []) {
+                        throw new ToolFailure('The site has no language '.implode(', ', $unknown).'. Languages: '.implode(', ', $locales->codes()).'.');
+                    }
+
+                    if ($arguments['dry_run'] ?? false) {
+                        return ['ok' => true, 'would' => "set the alt of [{$file->name}]", 'alt' => $alt];
+                    }
+
+                    $file->update(['alt' => $alt]);
+
+                    return ['ok' => true, 'id' => $file->id, 'alt' => $file->alt];
+                },
+                [
+                    'properties' => [
+                        'id' => ['type' => 'integer'],
+                        'alt' => [
+                            'type' => ['object', 'string', 'null'],
+                            'additionalProperties' => ['type' => 'string'],
+                            'description' => 'Language code => what is on the picture',
+                        ],
+                    ],
+                    'required' => ['id', 'alt'],
                 ],
                 scope: 'media:write',
             ),
@@ -570,6 +635,8 @@ final class MediaTools
             'size' => $file->size,
             'width' => $file->width,
             'height' => $file->height,
+            // Per language, null when nobody described the picture; set with `media_set_alt`.
+            'alt' => $file->alt,
             'url' => app(FileUrls::class)->url($file),
         ];
     }

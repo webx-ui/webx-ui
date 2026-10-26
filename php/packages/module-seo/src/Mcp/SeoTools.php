@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Mcp;
 
+use WebxUi\Admin\Links\SiteRoutes;
 use WebxUi\Mcp\Tool;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Features;
@@ -292,6 +293,10 @@ final class SeoTools
 
         if ($matchType === UrlMatcher::REGEX && ! UrlMatcher::isValidRegex($pattern)) {
             return ['ok' => false, 'reason' => 'That regular expression will not compile.'];
+        }
+
+        if ($matchType !== UrlMatcher::REGEX && app(SiteRoutes::class)->isServiceAddress($pattern)) {
+            return ['ok' => false, 'reason' => (string) __('webx-seo::errors.service-address')];
         }
 
         if ($matchType !== UrlMatcher::EXACT && $rule->hasFaq()) {

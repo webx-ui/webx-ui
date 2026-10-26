@@ -1,0 +1,87 @@
+{
+    "name": "webx-ui/module-configurator",
+    "description": "A product configurator for the WebX UI admin panel: steps of options and sizes built without code, visibility rules, an area formula and a price with its breakdown counted on the server, drafts and versions, and MCP tools to build one end to end.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "configurator",
+        "pricing"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-configurator"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/cache": "^0.86.0",
+        "webx-ui/localization": "^0.86.0",
+        "webx-ui/mcp": "^0.86.0",
+        "webx-ui/module-admin": "^0.86.0",
+        "webx-ui/module-media": "^0.86.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-auth": "^0.86.0",
+        "webx-ui/module-blocks": "^0.86.0",
+        "webx-ui/module-inbox": "^0.86.0",
+        "webx-ui/module-settings": "^0.86.0",
+        "webx-ui/themes": "^0.86.0",
+        "webx-ui/widgets": "^0.86.0"
+    },
+    "suggest": {
+        "webx-ui/module-blocks": "The offered block `configurator`: a configurator put on any page from the panel, with its heading and where it starts.",
+        "webx-ui/module-inbox": "The request form a configurator sends its configuration to, priced again on the server; the demo makes one.",
+        "webx-ui/module-settings": "The messengers of the site's contacts, beside the request button.",
+        "webx-ui/themes": "With a theme, the configurator gets its base look on site tokens (resources/theme/configurator.css)."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Configurator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Configurator\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Configurator\\ConfiguratorServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "configurators",
+            "npm": {
+                "@webx-ui/module-configurator": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { configurators } from '@webx-ui/module-configurator'",
+                "style": "@webx-ui/module-configurator/style.css",
+                "register": "...configurators()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

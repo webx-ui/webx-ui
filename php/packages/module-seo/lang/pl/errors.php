@@ -6,5 +6,6 @@ return [
     'bad-regex' => 'Tego wyrażenia regularnego PHP nie skompiluje.',
     'bad-json-ld' => 'Tu musi być obiekt JSON-LD albo ich lista.',
     'foreign-host' => 'To adres innej witryny. Tu działają tylko adresy tej witryny.',
+    'service-address' => 'To adres techniczny (panel, podgląd, logowanie lub OAuth), a nie strona witryny. Nie ma własnego SEO.',
     'self-loop' => 'To przekierowanie kieruje adres na samego siebie – nieskończona pętla.',
 ];

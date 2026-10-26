@@ -121,7 +121,7 @@ final class ArticleTools
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->create($arguments, $user)),
                 ['properties' => [
                     'title' => $text,
-                    'slug' => $text + ['description' => 'The last segment of the address, per language; made from the title when omitted.'],
+                    'slug' => ['description' => $text['description'].' The last segment of the address, per language; made from the title when omitted.'] + $text,
                     'values' => ['type' => 'object', 'description' => 'The rest of the editor\'s fields — the lead, the rubrics, the tags, the SEO card — as articles_get returns them.'],
                 ], 'required' => ['title']],
                 permission: 'blog.articles.manage',

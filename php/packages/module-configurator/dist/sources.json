@@ -1,0 +1,11 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "../../../packages/module-configurator/src/engine/engine.ts": "772b5ebf0bdec06135be972c33061eca196db3241d176d879305051fe8977a99",
+    "../../../packages/module-configurator/src/engine/formula.ts": "bdbb348381df40aa3987154c3de9a9b8138260a83004518d6ed93098173b3a62",
+    "../../../packages/module-configurator/src/engine/index.ts": "e1aeff0ef5c3c03002bae3a43657b2f354dd458a18bba9bfacde984aa1f1a86f",
+    "../../../packages/module-configurator/src/engine/types.ts": "f664af85e563c31385fd5627300bd73aacc9eda738eca9e401b9ae7db57a06fc",
+    "../../../packages/module-configurator/src/engine/validator.ts": "437be6ecbcb3947048b78cde91b266eaf5e52281da05d7708e155ede5b42323a",
+    "resources/js/configurator.js": "5c4bb56cbca3322be8f8b60851d5c86845483ebf58ca3e9daf054a1ff36656bb"
+  }
+}

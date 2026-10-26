@@ -25,6 +25,7 @@ use WebxUi\Media\Models\MediaAlias;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileStore;
+use WebxUi\Media\Support\MediaAlt;
 use WebxUi\Media\Support\MediaType;
 use WebxUi\Media\Usage\MediaUsage;
 
@@ -159,7 +160,15 @@ final class FileController
 
     public function update(FileRenameRequest $request, MediaFile $file): JsonResponse
     {
-        $file->update(['name' => (string) $request->string('name')]);
+        if ($request->has('name')) {
+            $file->name = (string) $request->string('name');
+        }
+
+        if ($request->exists('alt')) {
+            $file->alt = MediaAlt::clean($request->input('alt'));
+        }
+
+        $file->save();
 
         return ApiResponse::data(new FileResource($file));
     }

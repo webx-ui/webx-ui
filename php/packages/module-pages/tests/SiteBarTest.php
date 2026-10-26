@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
+use WebxUi\Admin\Links\SiteRoutes;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\Facades\Preview;
@@ -162,6 +163,26 @@ final class SiteBarTest extends TestCase
 
         // A preview is `no-store` of its own accord; the script is what must be missing.
         $this->assertStringNotContainsString('data-wx-bar', (string) $this->get(Preview::url($page))->assertOk()->getContent());
+    }
+
+    /**
+     * A screen of the system — the OAuth consent, a page a package marked as machinery — is not a
+     * page of the site, though an address without a record still has the SEO tab to offer.
+     */
+    #[Test]
+    public function no_bar_on_a_service_page(): void
+    {
+        $this->signIn($this->editor(['pages.view', 'pages.manage', 'seo.view', 'seo.manage']));
+
+        Route::middleware('web')->get('/contacts', static fn (): string => '<html><body>Contacts</body></html>');
+        Route::middleware('web')->get('/oauth/authorize', static fn (): string => '<html><body>Allow?</body></html>');
+        Route::group([SiteRoutes::SERVICE => true], static function (): void {
+            Route::middleware('web')->get('/account/sign-in', static fn (): string => '<html><body>Sign in</body></html>');
+        });
+
+        $this->assertStringContainsString('data-wx-bar', (string) $this->get('/contacts')->assertOk()->getContent());
+        $this->assertNoBar($this->get('/oauth/authorize')->assertOk());
+        $this->assertNoBar($this->get('/account/sign-in')->assertOk());
     }
 
     #[Test]

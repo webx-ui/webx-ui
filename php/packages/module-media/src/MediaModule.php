@@ -124,6 +124,9 @@ final class MediaModule extends AbstractModule implements HasNavSection, Provide
                         .'takes images (or documents) only. media_search_files finds a file by name; '
                         .'media_upload_from_url puts one in the library first.',
                     'lists' => 'A gallery or a list of files takes a list of these, in the order the site shows them.',
+                    'alt' => 'A field without an alt of its own prints the file\'s alt from the library (media_get_file '
+                        .'shows it, media_set_alt writes it). Describe a picture there once rather than in every field; '
+                        .'give a field its own alt only where this place should say something else.',
                 ],
             ),
         ];

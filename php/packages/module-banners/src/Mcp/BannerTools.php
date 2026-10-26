@@ -75,15 +75,15 @@ final class BannerTools
             'image' => $media('The picture — required, the one field a banner cannot do without: the layouts stand on it, and it is the poster of the video. A picture'),
             'image_mobile' => $media('A narrower crop for phones, shown below the breakpoint instead of the picture. A picture'),
             'video' => $media('A silent video played over the picture on wide screens. A video'),
-            'title' => $text + ['description' => 'The title. A banner with words is shown only in the languages its title or text is written in; one without words everywhere. There is no fallback language.'],
-            'text' => $text + ['description' => 'A line or two under the title: plain text, line breaks kept, no HTML.'],
+            'title' => ['description' => $text['description'].' The title. A banner with words is shown only in the languages its title or text is written in; one without words everywhere. There is no fallback language.'] + $text,
+            'text' => ['description' => $text['description'].' A line or two under the title: plain text, line breaks kept, no HTML.'] + $text,
             'buttons' => [
                 'type' => 'array',
                 'maxItems' => BannerForm::MAX_BUTTONS,
                 'items' => [
                     'type' => 'object',
                     'properties' => [
-                        'label' => $text + ['description' => 'What the button says. A language without it leaves the button out there.'],
+                        'label' => ['description' => $text['description'].' What the button says. A language without it leaves the button out there.'] + $text,
                         'link' => [
                             'type' => ['string', 'object'],
                             'description' => 'Where it goes: an address ("/booking", or a full one elsewhere — a path without its language prefix), '
@@ -125,7 +125,7 @@ final class BannerTools
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->placeCreate($arguments)),
                 ['properties' => [
                     'key' => ['type' => 'string', 'description' => 'Lowercase Latin letters, digits and hyphens, starting with a letter; up to 64. Cannot be changed later.'],
-                    'title' => $text + ['description' => 'Its name in the panel. Needed in the default language.'],
+                    'title' => ['description' => $text['description'].' Its name in the panel. Needed in the default language.'] + $text,
                 ], 'required' => ['key', 'title']],
                 permission: 'banners.manage',
             ),
@@ -145,7 +145,7 @@ final class BannerTools
                 .'video. Read this (or banners://catalog) first: the same banner typed in twice is a duplicate.',
                 fn (array $arguments): array => $this->list($arguments),
                 ['properties' => [
-                    'place' => $place + ['description' => 'Only this place. Every place when omitted.'],
+                    'place' => ['description' => $place['description'].' Only this place. Every place when omitted.'] + $place,
                     'trashed' => ['type' => 'boolean', 'description' => 'What is in the bin instead, newest first.'],
                 ]],
                 permission: ['banners.view', 'banners.manage'],
@@ -185,7 +185,7 @@ final class BannerTools
                 ['properties' => [
                     'banner' => $banner,
                     'values' => ['type' => 'object', 'description' => 'Field name → value, as banners_get returns them. Media take a library file — its id, { "id" } or { "path" } (media://fields); buttons a list of { label, link, variant }; layers the whole list (banners://layers).'],
-                    'place' => $place + ['description' => 'Move it to this place, at the end. Where it is when omitted.'],
+                    'place' => ['description' => $place['description'].' Move it to this place, at the end. Where it is when omitted.'] + $place,
                 ], 'required' => ['banner']],
                 permission: 'banners.manage',
             ),

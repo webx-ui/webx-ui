@@ -9,6 +9,7 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Admin\Notes\Note;
 use WebxUi\Admin\Support\Authors;
 use WebxUi\Auth\Models\CmsUser;
@@ -819,6 +820,22 @@ final class InboxTools
             ],
             'created_at' => $note->created_at?->toAtomString(),
         ], $notes);
+
+        // What to tell the person before anything else: a letter stuck in the queue, one a trap
+        // took, a channel's letter that went to a trap, and the site's mail as it is now.
+        $warnings = $submission->notification()['warnings'];
+
+        foreach ((array) ($shown['channels'] ?? []) as $row) {
+            if (is_array($row) && is_string($row['trap'] ?? null) && ($row['status'] ?? null) === 'sent') {
+                $warnings[] = $this->container->make(MailRoutes::class)->trappedLabel().': '.$row['channel'].' — '.$row['trap'];
+            }
+        }
+
+        foreach (FormResource::mail()['warnings'] as $warning) {
+            $warnings[] = $warning['message'];
+        }
+
+        $shown['warnings'] = array_values(array_unique($warnings));
 
         return $shown;
     }

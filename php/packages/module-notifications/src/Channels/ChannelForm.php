@@ -7,7 +7,9 @@ namespace WebxUi\Notifications\Channels;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Validation\ValidationException;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Localization\Locales;
+use WebxUi\Notifications\Contracts\HasMailRoute;
 use WebxUi\Notifications\Events\EventDefinition;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Models\Delivery;
@@ -29,6 +31,7 @@ final class ChannelForm
         private readonly Locales $locales,
         private readonly ConnectionInterface $db,
         private readonly Cache $cache,
+        private readonly MailRoutes $routes,
     ) {}
 
     /**
@@ -43,6 +46,31 @@ final class ChannelForm
             'channel' => $this->row($channel),
             'values' => $this->valuesOf($channel),
             'warnings' => $warnings,
+            'mail' => $this->mail($channel),
+        ];
+    }
+
+    /**
+     * Where a channel's letters go, as the application sees it now: the mailer and its server,
+     * a trap or a config not in effect yet, and how long the queue keeps a letter. Null for a
+     * channel that sends no mail.
+     *
+     * @return array{route: array<string, mixed>, warnings: list<array{code: string, message: string}>, queue: array{driver: string, sync: bool, hint: string|null}}|null
+     */
+    public function mail(Channel $channel): ?array
+    {
+        $provider = $this->providers->find($channel->provider);
+
+        if (! $provider instanceof HasMailRoute) {
+            return null;
+        }
+
+        $route = $provider->route($channel->options());
+
+        return [
+            'route' => $route->toArray(),
+            'warnings' => $this->routes->warnings($route),
+            'queue' => $this->routes->queue(),
         ];
     }
 

@@ -35,10 +35,14 @@ guides when the question is about one of those. An entity's own attachments are 
   one to the library through the same rules and pipeline as `POST files`.
 - **MCP** tools `media_list_directories`, `media_list_files`, `media_search_files`,
   `media_get_file`, `media_create_directory`, `media_delete_directory` (empty folders only),
-  `media_rename_file`, `media_move_files`, `media_upload_from_url` (public addresses only),
+  `media_rename_file`, `media_set_alt`, `media_move_files`, `media_upload_from_url` (public addresses only),
   `media_optimize_images`, `media_delete_files`. Scopes `media:read`, `media:write`. A refusal is
   an MCP error, not an `ok: false` answer. Resource `media://fields`: how any module's file field
   takes its value; the server's instructions point at it.
+- **Alt of a file**: `media_files.alt`, a map of languages (`Support\MediaAlt`). Written in the
+  panel (card menu → Alt text, `PATCH files/{id}` with `alt`) and by `media_set_alt` (a map is laid
+  over what is there, `null` clears); read by `media_get_file`/`list`/`search`. `MediaValues::resolve()`
+  hands it to templates where the field stored no alt of its own; none at all — decorative, `alt=""`.
 - Also registered: the panel section `media` (group `system`), demo files (`resources/demo`), and
   audit checks `media.missing_file`, `media.heavy`, `media.orphan_thumbs` when `webx-ui/module-audit` is installed.
 

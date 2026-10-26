@@ -278,7 +278,22 @@ final class MediaValues
         // of `+` that stale address would win over the one worked out now.
         $kept = array_intersect_key($stored, array_flip(['path', 'alt', 'title']));
 
-        return $this->captions($kept, $locale) + $this->details($this->files->find($stored['path']));
+        $file = $this->files->find($stored['path']);
+        $resolved = $this->captions($kept, $locale) + $this->details($file);
+
+        // The file's own alt where this place wrote none: described once in the library, it is
+        // said everywhere the picture is used. Neither — the picture is decorative, and stays so.
+        $alt = $resolved['alt'] ?? null;
+
+        if (($alt === null || $alt === '') && $file instanceof MediaFile && is_array($file->alt)) {
+            $own = $this->pick($file->alt, $locale);
+
+            if (is_string($own) && $own !== '') {
+                $resolved['alt'] = $own;
+            }
+        }
+
+        return $resolved;
     }
 
     /**

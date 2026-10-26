@@ -34,6 +34,7 @@ use WebxUi\Inbox\Panel\InboxModule;
 use WebxUi\Inbox\Relations\FormTarget;
 use WebxUi\Inbox\Rendering\Assets;
 use WebxUi\Inbox\Screens\FormFieldType;
+use WebxUi\Inbox\Submissions\Enclosures;
 use WebxUi\Inbox\Submissions\Handlers;
 use WebxUi\Inbox\Support\Forms;
 use WebxUi\Notifications\NotificationEvents;
@@ -52,6 +53,10 @@ class InboxServiceProvider extends ServiceProvider
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-inbox.php', 'webx-inbox');
+
+        // What modules put into a submission beside the answers (§2.20): one list for the whole
+        // application, filled in the modules' own boot().
+        $this->app->singleton(Enclosures::class);
 
         // `inbox.submission` for the channels of `webx-ui/module-notifications`, when it is there
         // (NOTIFICATIONS §15): a suggestion, not a requirement, so the class may not exist at all.

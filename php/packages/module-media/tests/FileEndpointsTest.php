@@ -157,6 +157,27 @@ final class FileEndpointsTest extends TestCase
     }
 
     #[Test]
+    public function the_alt_is_written_per_language_and_cleared_with_null(): void
+    {
+        $file = $this->upload($this->root(), 'Sofa Oslo.jpg');
+
+        $this->getJson("/api/cms/media/files/{$file->id}")->assertOk()->assertJsonPath('data.alt', null);
+
+        // Without a name: the alt is saved on its own, and an empty language is not kept.
+        $this->patchJson("/api/cms/media/files/{$file->id}", ['alt' => ['en' => ' A grey sofa ', 'de' => '']])
+            ->assertOk()
+            ->assertJsonPath('data.alt', ['en' => 'A grey sofa'])
+            ->assertJsonPath('data.name', 'Sofa Oslo');
+
+        $this->patchJson("/api/cms/media/files/{$file->id}", ['name' => 'Sofa'])->assertOk()->assertJsonPath('data.alt', ['en' => 'A grey sofa']);
+        $this->patchJson("/api/cms/media/files/{$file->id}", ['alt' => ['en' => str_repeat('a', 1001)]])->assertUnprocessable();
+        $this->patchJson("/api/cms/media/files/{$file->id}", [])->assertUnprocessable();
+
+        $this->patchJson("/api/cms/media/files/{$file->id}", ['alt' => null])->assertOk()->assertJsonPath('data.alt', null);
+        $this->assertNull($file->refresh()->alt);
+    }
+
+    #[Test]
     public function files_move_in_a_batch_without_touching_the_bytes(): void
     {
         $folder = new MediaDirectory(['title' => 'Pictures']);

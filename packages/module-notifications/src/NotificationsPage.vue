@@ -539,7 +539,13 @@ const actions = computed<ScreenAction[]>(() =>
 
       <template #cell-status="{ row }">
         <span class="wx-notifications-list__last">
-          <wx-badge :type="tone[row.status]" dot>{{ t(`module.statuses.${row.status}`) }}</wx-badge>
+          <!-- Sent into a trap is not delivered: its own word and colour, the trap beside it. -->
+          <wx-badge v-if="row.status === 'sent' && row.trap" type="warning" dot :title="row.trap">
+            {{ t('module.statuses.trapped') }}
+          </wx-badge>
+          <wx-badge v-else :type="tone[row.status]" dot>{{
+            t(`module.statuses.${row.status}`)
+          }}</wx-badge>
           <wx-badge v-if="row.is_test">{{ t('panel.test-mark') }}</wx-badge>
         </span>
       </template>

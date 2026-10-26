@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Das Formular konnte nicht gesendet werden. Bitte versuchen Sie es gleich noch einmal.',
+    'enclosure' => 'Was an dieses Formular angehängt ist, kann nicht mit ihm gesendet werden. Laden Sie die Seite neu und versuchen Sie es erneut.',
     'captcha' => 'Bitte bestätigen Sie, dass Sie kein Roboter sind, und senden Sie das Formular erneut.',
     'captcha-script' => 'Dieses Formular prüft mit JavaScript, dass Sie kein Roboter sind. Bitte schalten Sie es ein und senden Sie das Formular erneut.',
     'captcha-unavailable' => 'Wir konnten nicht prüfen, dass Sie kein Roboter sind. Bitte laden Sie die Seite neu oder versuchen Sie einen anderen Browser.',

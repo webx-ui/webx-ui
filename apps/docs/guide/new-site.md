@@ -587,6 +587,12 @@ the people working in it need:
   preview frame works for an editor who never typed the site's pair;
 - `/.well-known/*`, so the certificate keeps renewing.
 
+An administrator signed in to the panel passes without the pair, on every address: the page
+preview and whatever it loads, a link followed inside it and “Open on the site” all reach the site
+with the panel's session. The gate keeps strangers out; somebody who can edit the site is not one.
+A switched-off account does not pass, and what a signed-in administrator gets is sent `private`
+with `Vary: Cookie`, so a shared cache cannot hand it on.
+
 To open anything else, list masks in `config/webx-admin.php`. They are matched with `Str::is`
 against the path without its leading slash:
 

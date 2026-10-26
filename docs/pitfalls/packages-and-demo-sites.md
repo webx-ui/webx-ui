@@ -155,6 +155,12 @@ webx-ui/<пакет>` из `php/`. Проверка — `grep helpers.php vendor
 
 ## Стартовый сайт
 
+- **Сценарий агента на стартовом сайте: коннектора к нему у сессии нет,** а сайт пересоздаётся
+  скриптом. Тот же сервер MCP — по stdio: `site exec webx-starter-test php artisan mcp:start webx`,
+  JSON-RPC построчно трубой (`initialize`, `notifications/initialized`, `tools/call`); русский
+  текст аргументов — из файла, не из командной строки. `media_upload_from_url` отказывает адресам
+  частной сети, в том числе самому dev-сайту: картинки брать с `raw.githubusercontent.com`
+  (демо-медиа `theme-default` в `main`). Проверка — `media_get_file` отдаёт `path` загруженного.
 - **`scripts/starter-site.sh` одноразовый: удаляет каталог сайта целиком.** Поэтому каталог по
   умолчанию — `webx-starter-test.local` (база `webx_starter_test`), и скрипт падает «is a git
   checkout», если в `STARTER_PATH` есть `.git`: клон `~/work/webx-starter` под ним не живёт. Все
@@ -195,7 +201,12 @@ of memory: Zone` каждый раз в разном месте. Перед ге
   Похоже на зависший тест, а это таймаут скриптов composer: полный PHPUnit идёт дольше. Звать
   напрямую: `php -d memory_limit=-1 vendor/bin/phpunit --colors=never` и `php -d memory_limit=-1
 vendor/bin/phpstan analyse --no-progress --error-format=raw` (или `COMPOSER_PROCESS_TIMEOUT=0`).
-  `--colors=never` — иначе `grep` по итогу ничего не находит.
+  `--colors=never` — иначе `grep` по итогу ничего не находит. Оборванный прогон оставляет след:
+  если таймаут убил PHPUnit посреди тестов `themes`, в скелете Testbench остаётся
+  `vendor/orchestra/testbench-core/laravel/.env` с `WEBX_THEME=theme`, и следующий полный прогон
+  даёт сотни «Theme [theme] was not found» в `module-inbox`, `module-vacancies`,
+  `module-configurator` (поодиночке они зелёные), а в конце тот же тест `.env` убирает. Перед
+  повтором — `ls vendor/orchestra/testbench-core/laravel/.env`, есть — удалить.
 - **Полный PHPUnit вдруг даёт тысячу ошибок «no such table: cache», а тот же тест отдельно
   зелёный.** Во время прогона из `php/` запускали `vendor/bin/testbench …` (например, `testbench
 list`): он переписывает общий `vendor/orchestra/testbench-core/laravel/bootstrap/cache/services.php`,

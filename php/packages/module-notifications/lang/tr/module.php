@@ -14,6 +14,7 @@ return [
     'statuses' => [
         'queued' => 'Kuyrukta',
         'sent' => 'Gönderildi',
+        'trapped' => 'Test aktarımı',
         'failed' => 'Başarısız',
         'skipped' => 'Atlandı',
     ],

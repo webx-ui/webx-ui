@@ -415,6 +415,24 @@ it nothing about channels shows.
   way it is set to reaches somebody: a letter to an address, or a chosen channel that is switched on.
   :::
 
+### When a letter seems to go nowhere
+
+The panel says the three things that make a working letter look lost:
+
+- **The queue.** A letter on a site with a queue is «waiting in the queue» until a worker sends it.
+  The card says when it leaves — usually within a minute, when the scheduler next runs the queue —
+  and after five minutes asks whether the queue is running at all. The Notifications tab of the
+  form says the same before anything is sent.
+- **Where it goes.** The Notifications tab shows the site's mail as the application sees it now
+  («Letters leave through `smtp — mail.example.com:587`»). A trap — the `log` or `array` mailer, a
+  test sandbox, Mailpit or MailHog — is a warning there, and a letter it took is «test transport»,
+  not «sent». The list is `webx-admin.mail.traps` in `config/webx-admin.php`; add your own hosts.
+- **Settings not in effect.** `.env` edited after the config was cached keeps the old mail working
+  as if nothing changed. The tab, the card of a channel and `webx:doctor` say so; `php artisan
+webx:boot` rebuilds the cache.
+
+An agent gets the same in `inbox_get` → `warnings` and `notification` (`hint`, `stalled`, `trapped`).
+
 ## After a submission is stored
 
 Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor

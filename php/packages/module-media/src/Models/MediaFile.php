@@ -32,6 +32,7 @@ use WebxUi\Media\Images\Thumbnails;
  * @property int $size
  * @property int|null $width
  * @property int|null $height
+ * @property array<string, string>|null $alt
  * @property string|null $optimized
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -51,6 +52,7 @@ class MediaFile extends Model
         'size',
         'width',
         'height',
+        'alt',
         'optimized',
     ];
 
@@ -63,6 +65,7 @@ class MediaFile extends Model
             'size' => 'integer',
             'width' => 'integer',
             'height' => 'integer',
+            'alt' => 'array',
         ];
     }
 
