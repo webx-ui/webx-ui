@@ -1,3 +1,5 @@
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import type { MediaDirectory, MediaFile } from '../../../../packages/module-media/src/types'
 
 /**
@@ -84,6 +86,7 @@ folder(6, 1, 'Рецепты')
 folder(7, 1, 'События')
 folder(8, 1, 'Пресса')
 folder(9, 1, 'Баннеры')
+folder(10, 1, 'Конфигураторы')
 
 /**
  * @param name What the library calls it — and what the generated picture says on its face.
@@ -194,6 +197,28 @@ image(2, 'blog/2026/07/team.svg', 'Команда студии', 1600, 900, '202
 image(3, 'pages/hero-home.svg', 'Обложка главной', 2000, 1000, '2026-06-02T09:00:00+00:00')
 image(3, 'pages/office.svg', 'Офис на Подоле', 1600, 1067, '2026-06-02T09:05:00+00:00')
 image(3, 'pages/services.svg', 'Услуги', 1600, 900, '2026-06-04T12:00:00+00:00')
+/*
+ * The drawings of the configurator demo are the package's own (`resources/demo/images`), served as
+ * they are rather than as placeholders: a card that says «corner-slide» in white on a gradient does
+ * not show what the configurator is for.
+ */
+const CONFIGURATOR_PICTURES = fileURLToPath(
+  new URL('../../../../php/packages/module-configurator/resources/demo/images/', import.meta.url),
+)
+
+for (const name of existsSync(CONFIGURATOR_PICTURES) ? readdirSync(CONFIGURATOR_PICTURES) : []) {
+  if (name.endsWith('.svg')) {
+    image(
+      10,
+      `configurators/${name}`,
+      name.replace(/\.svg$/, ''),
+      800,
+      600,
+      '2026-10-20T09:00:00+00:00',
+    )
+  }
+}
+
 /* Portraits for two of the reviews; the rest have none, and the site draws their initials. */
 image(5, 'reviews/anna-petrova.svg', 'Анна Петрова', 400, 400, '2026-09-12T10:00:00+00:00')
 image(5, 'reviews/ihor-melnyk.svg', 'Игорь Мельник', 400, 400, '2026-08-30T10:00:00+00:00')
@@ -434,6 +459,16 @@ export function bytesOf(path: string): { bytes: Buffer; mime: string } | null {
 
   if (file === null || file.extension !== 'svg') {
     return null
+  }
+
+  if (
+    path.startsWith('configurators/') &&
+    existsSync(CONFIGURATOR_PICTURES + path.slice('configurators/'.length))
+  ) {
+    return {
+      bytes: readFileSync(CONFIGURATOR_PICTURES + path.slice('configurators/'.length)),
+      mime: 'image/svg+xml',
+    }
   }
 
   return {

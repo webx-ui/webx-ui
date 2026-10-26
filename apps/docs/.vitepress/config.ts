@@ -95,6 +95,7 @@ export default defineConfig({
             { text: 'Team', link: '/guide/team' },
             { text: 'Banners', link: '/guide/banners' },
             { text: 'Tariffs', link: '/guide/tariffs' },
+            { text: 'Configurators', link: '/guide/configurators' },
             { text: 'Recipes', link: '/guide/recipes' },
             { text: 'Events', link: '/guide/events' },
             { text: 'Press', link: '/guide/press' },

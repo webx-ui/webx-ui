@@ -17,6 +17,7 @@ import { catalogLandings } from '@webx-ui/module-catalog-landings'
 import { catalogManticore } from '@webx-ui/module-catalog-manticore'
 import { catalogProperties } from '@webx-ui/module-catalog-properties'
 import { catalogStock } from '@webx-ui/module-catalog-stock'
+import { configurators } from '@webx-ui/module-configurator'
 import { events } from '@webx-ui/module-events'
 import { faq } from '@webx-ui/module-faq'
 import { inbox } from '@webx-ui/module-inbox'
@@ -95,6 +96,7 @@ const admin = createAdmin({
     press(),
     banners(),
     ...tariffs(),
+    ...configurators(),
     ...events(),
     ...vacancies(),
     menu(),

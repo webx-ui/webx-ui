@@ -7,9 +7,9 @@ The section «Configurators» of the panel (id `configurators`) and the MCP tool
 edit it. Drafts and versions are `webx-ui/module-admin`'s, pictures `webx-ui/module-media`'s, the
 request form `webx-ui/module-inbox`'s — read their guides for those.
 
-This half stores, checks and prices a configurator and builds one over MCP. The panel editor
-(`@webx-ui/module-configurator`), the block, the view and the script of the site, and the
-configuration in a request come in the next stages of the module.
+This half stores, checks and prices a configurator, answers the panel's editor
+(`@webx-ui/module-configurator`) and builds one over MCP. The block, the view and the script of
+the site, and the configuration in a request come in the next stage of the module.
 
 ## What it owns
 
@@ -30,6 +30,12 @@ configuration in a request come in the next stages of the module.
   them, a publication is refused (`Panel\ConfiguratorWriter`).
 - **Pricing for everyone** `Pricing\Quoter`: values → price, with the library behind
   `image.unknown`; the words of a breakdown line — `Pricing\Breakdown`.
+- **Panel API** under `api/cms/configurators` (`routes/api.php`): the list, the record with its
+  `revision` (a stale one is a 409), the draft, `publish` (422 with `problems`), `unpublish`,
+  `discard`, versions, the bin, `validate` and `{id}/quote`. The editor's heartbeat knows the
+  record as `configurators`.
+- **Field type** `wx-configurator` (`Screens\ConfiguratorFieldType`): a configurator by its key; a
+  key nobody has is refused when written anew. Its picker is the relation target `configurator`.
 - **MCP** tools `configurators_list`, `_get`, `_create`, `_update`, `_publish`, `_unpublish`,
   `_discard`, `_versions`, `_version_restore`, `_delete`, `_quote`, `_validate`. Resources
   `configurators://catalog`, `configurators://schema`. Scopes `configurators:read`,

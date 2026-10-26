@@ -70,7 +70,7 @@ final class ConfiguratorWriter
     {
         if (array_key_exists('key', $changes) && $changes['key'] !== $configurator->key) {
             if ($configurator->isPublished() || $configurator->versions()->published()->exists()) {
-                throw new Refused("The key [{$configurator->key}] has been on the site and does not change: blocks of the site name the configurator by it.");
+                throw new Refused("The key [{$configurator->key}] has been on the site and does not change: blocks of the site name the configurator by it.", reason: 'key.locked');
             }
 
             $this->checkKey($changes['key']);
@@ -159,11 +159,11 @@ final class ConfiguratorWriter
     private function checkKey(mixed $key): void
     {
         if (! is_string($key) || preg_match(self::KEY, $key) !== 1) {
-            throw new Refused('A key is a slug: a-z, 0-9 and dashes, up to 64 characters — "shower".');
+            throw new Refused('A key is a slug: a-z, 0-9 and dashes, up to 64 characters — "shower".', reason: 'key.invalid');
         }
 
         if (Configurator::withTrashed()->where('key', $key)->exists()) {
-            throw new Refused("The key [{$key}] is taken (perhaps by a configurator in the bin). configurators_list has them all.");
+            throw new Refused("The key [{$key}] is taken (perhaps by a configurator in the bin). configurators_list has them all.", reason: 'key.taken');
         }
     }
 
@@ -175,12 +175,12 @@ final class ConfiguratorWriter
         $default = $this->locales->defaultCode();
 
         if (trim((string) ($title[$default] ?? '')) === '') {
-            throw new Refused("A title needs words in the default language [{$default}].");
+            throw new Refused("A title needs words in the default language [{$default}].", reason: 'title.missing');
         }
 
         foreach (array_keys($title) as $locale) {
             if (! $this->locales->has((string) $locale)) {
-                throw new Refused("The title has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales->codes()).'.');
+                throw new Refused("The title has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales->codes()).'.', reason: 'title.locale');
             }
         }
     }
@@ -192,13 +192,13 @@ final class ConfiguratorWriter
         }
 
         if (! $this->hasInbox()) {
-            throw new Refused('There is no inbox on this site (webx-ui/module-inbox): a configurator here sends no requests, leave form empty.');
+            throw new Refused('There is no inbox on this site (webx-ui/module-inbox): a configurator here sends no requests, leave form empty.', reason: 'form.no_inbox');
         }
 
         if (! Form::query()->where('slug', $form)->exists()) {
             $known = Form::query()->orderBy('position')->pluck('slug')->map(strval(...))->all();
 
-            throw new Refused("There is no inbox form [{$form}]. It has: ".($known === [] ? 'none' : implode(', ', $known)).'.');
+            throw new Refused("There is no inbox form [{$form}]. It has: ".($known === [] ? 'none' : implode(', ', $known)).'.', reason: 'form.unknown');
         }
     }
 }

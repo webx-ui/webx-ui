@@ -9,9 +9,10 @@ price, and sends a request with the whole configuration. The module knows nothin
 product: shower enclosures, doors, partitions, furniture, windows, fences and print are all one
 schema document.
 
-This release is the server half: storing, checking and pricing a configurator, drafts and
-versions, the MCP tools and the demo. The panel editor, the block on the site and the request with
-its configuration follow.
+This package stores, checks and prices a configurator, keeps its drafts and versions, and answers
+the panel's editor — the npm package `@webx-ui/module-configurator`, with its constructor, live
+preview and JSON mode — and the MCP tools; it installs the demo too. The block on the site and the
+request with its configuration follow.
 
 ## Requirements
 

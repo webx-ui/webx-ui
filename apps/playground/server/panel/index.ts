@@ -273,6 +273,7 @@ import {
 import { registerAudit } from './audit'
 import { registerCache } from './cache'
 import { registerTasks, tasksBadge } from './tasks'
+import { registerConfigurators } from './configurators'
 import {
   channelsOfForm,
   deliveriesOfSubmission,
@@ -739,6 +740,16 @@ function manifestOf(locale: string) {
         order: 660,
         group: null,
         permissions: ['banners.view', 'banners.manage'],
+        meta: {},
+      },
+      /* One entry and no group (§13.1 of the configurator spec), as `ConfiguratorsModule` says. */
+      {
+        id: 'configurators',
+        title: line(locale, 'webx-configurator', 'module.title'),
+        icon: 'sliders',
+        order: 560,
+        group: null,
+        permissions: ['configurators.view', 'configurators.manage'],
         meta: {},
       },
       {
@@ -2522,6 +2533,12 @@ registerManticore(on, (status, message) => new HttpFailure(status, message), pro
 registerAudit(on, (status, message) => new HttpFailure(status, message), line)
 /* The queue of work between people and agents (WEBX_UI_MODULE_TASKS.md): «Tasks». */
 registerTasks(on, (status, message) => new HttpFailure(status, message), line)
+/* A product built to size, priced by the engine (WEBX_UI_MODULE_CONFIGURATOR.md): «Configurators». */
+registerConfigurators(
+  on,
+  (status, message, data, errors, extra) => new HttpFailure(status, message, data, errors, extra),
+  line,
+)
 /* Channels of notifications (WEBX_UI_MODULE_NOTIFICATIONS.md): «System → Notifications». */
 registerNotifications(
   on,
