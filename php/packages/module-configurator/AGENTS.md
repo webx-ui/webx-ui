@@ -102,7 +102,7 @@ The theme's contract (THEMES §10), in `resources/theme/configurator.css`; resty
 `webx-configurator__submit`, `webx-configurator__messenger` (+ `webx-configurator__messenger--<kind>`),
 `webx-configurator__messenger-icon`, `webx-configurator__sr`, `webx-configurator__recap`,
 `webx-configurator__recap-title`, `webx-configurator__recap-list`, `webx-configurator__recap-total`.
-Local tokens on `.webx-configurator`: `--webx-configurator-gap`, `-aside`, `-card`, `-swatch-size`, `-control`, `-selected`.
+Local tokens on `.webx-configurator`: `--webx-configurator-gap`, `-aside`, `-card`, `-swatch-size`, `-control`, `-selected`, `-corner` (set by the widget).
 
 ## Do not
 

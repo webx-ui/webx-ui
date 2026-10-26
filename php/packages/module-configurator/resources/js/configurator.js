@@ -341,6 +341,20 @@ function setup(root) {
     draw()
   })
 
+  // A button fixed in the corner of the screen — the quick contact of the widgets — would sit on
+  // the end of the price stuck to the bottom: the room it takes is kept free there.
+  const corner = document.querySelector('[data-webx-contact-button]')
+  const reserve = () => {
+    const box = corner ? corner.getBoundingClientRect() : null
+    const room =
+      box && box.width > 0 ? Math.max(0, document.documentElement.clientWidth - box.left) : 0
+    root.style.setProperty('--webx-configurator-corner', `${Math.round(room)}px`)
+  }
+  if (corner) {
+    reserve()
+    on(window, 'resize', reserve)
+  }
+
   // What was chosen and what it costs, over the fields of the dialog when this configurator opens
   // it — only to read; what is sent are the radios and the sizes themselves.
   const recap = root.querySelector('[data-webx-configurator-recap]')
@@ -381,6 +395,7 @@ function setup(root) {
 
   return () => {
     controller.abort()
+    root.style.removeProperty('--webx-configurator-corner')
     form?.querySelector('.webx-configurator__recap')?.remove()
   }
 }

@@ -22,6 +22,9 @@
   --webx-configurator-swatch-size: 2.75rem;
   --webx-configurator-control: 2.75rem;
   --webx-configurator-selected: var(--site-color-accent);
+  /* Room at the end of the stuck price for a button fixed in the corner (the quick contact): the
+     widget measures it; 0 without one. */
+  --webx-configurator-corner: 0px;
 
   container-type: inline-size;
   min-width: 0;
@@ -281,7 +284,7 @@
   display: grid;
   gap: var(--site-space-3);
   min-width: 0;
-  padding: var(--site-space-3) 0;
+  padding: var(--site-space-3) var(--webx-configurator-corner) var(--site-space-3) 0;
   border-top: 1px solid var(--site-color-border);
   background: var(--site-color-bg);
 }
