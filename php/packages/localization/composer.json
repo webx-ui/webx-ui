@@ -27,7 +27,7 @@
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
         "illuminate/translation": "^13.0",
-        "webx-ui/cache": "^0.86.0"
+        "webx-ui/cache": "^0.87.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
