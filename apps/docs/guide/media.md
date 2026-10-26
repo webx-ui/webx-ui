@@ -77,8 +77,11 @@ picture with two things you can do to it:
 
 `MediaValue` is `{ path, url?, alt?, title? }`, and **`path` is the only part worth storing**.
 
-The captions belong to the entity, not to the file: one picture used by two articles needs two
-`alt`s, so the library does not carry them. The address is worked out from `path` when the page is
+The captions belong to the entity first: one picture used by two articles can say two different
+things. The library carries an `alt` of its own as well — per language, set from a picture's card
+menu (**Alt text**) or by an agent with `media_set_alt` — and the site prints it wherever the field
+stored no `alt`. The field's own `alt` wins; neither, and the picture is decorative (`alt=""`). So a
+photo described once in the library is described on every hero and card that uses it. The address is worked out from `path` when the page is
 drawn, which is why moving the library to another disk — or putting a CDN in front of it — changes
 nothing that was written before. A field given nothing but a key looks the file up to draw it.
 

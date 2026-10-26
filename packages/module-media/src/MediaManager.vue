@@ -17,6 +17,7 @@ import FileGrid from './FileGrid.vue'
 import MediaToolbar from './MediaToolbar.vue'
 import MoveDialog from './MoveDialog.vue'
 import NameDialog from './NameDialog.vue'
+import AltDialog from './AltDialog.vue'
 import OptimizeDialog from './OptimizeDialog.vue'
 import UploadQueue from './UploadQueue.vue'
 import { createMediaApi } from './api'
@@ -585,6 +586,29 @@ async function rename(file: MediaFile, name: string): Promise<void> {
   await loadFiles()
 }
 
+const askAlt = createModal<
+  Record<string, string>,
+  { name: string; value?: Record<string, string> | null }
+>(AltDialog)
+
+async function describe(file: MediaFile): Promise<void> {
+  const alt = await askAlt({ name: file.name, value: file.alt ?? null })
+
+  if (alt === undefined) {
+    return
+  }
+
+  try {
+    await api.setAlt(file.id, alt)
+  } catch (error) {
+    toast.danger(message(error))
+
+    return
+  }
+
+  await loadFiles()
+}
+
 async function remove(file: MediaFile): Promise<void> {
   await removeFiles([file.id], t('dialogs.delete-file', { name: file.name }))
 }
@@ -819,6 +843,7 @@ function debounce(run: () => void, wait: number): () => void {
         :single="picksOne"
         :draggable="canManage && !picking && !compact"
         @rename="rename"
+        @alt="describe"
         @edit="edit"
         @view="view"
         @remove="remove"

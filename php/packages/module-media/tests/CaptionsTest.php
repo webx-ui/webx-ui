@@ -141,6 +141,60 @@ final class CaptionsTest extends TestCase
     }
 
     /**
+     * The library's alt is what a picture says wherever the place using it wrote none: on the
+     * client's site every hero printed `alt=""`, because the only alt there was was the field's.
+     * Rendered with the theme's own `hero`, whose template had the empty alt written in.
+     */
+    #[Test]
+    public function the_files_alt_is_printed_where_the_block_wrote_none(): void
+    {
+        $file = $this->file(['alt' => ['en' => 'A sofa by the window', 'ru' => 'Диван у окна']]);
+        $this->publishThemeBlock('hero');
+
+        $node = $this->node('hero', [
+            'title' => ['en' => 'Sofas'],
+            'tone' => 'image',
+            'image' => ['path' => $file->path],
+        ]);
+
+        $this->assertStringContainsString('alt="A sofa by the window"', $this->render([$node]));
+
+        $this->app->setLocale('ru');
+        $this->assertStringContainsString('alt="Диван у окна"', $this->render([$node]));
+
+        // The block's own words win: one picture, two places, two captions.
+        $own = $this->node('hero', [
+            'title' => ['en' => 'Sofas'],
+            'tone' => 'image',
+            'image' => ['path' => $file->path, 'alt' => ['en' => 'Our grey sofa', 'ru' => 'Наш серый диван']],
+        ]);
+
+        $this->assertStringContainsString('alt="Наш серый диван"', $this->render([$own]));
+    }
+
+    #[Test]
+    public function a_picture_nobody_described_stays_decorative(): void
+    {
+        $file = $this->file();
+        $this->publishThemeBlock('hero');
+
+        $html = $this->render([$this->node('hero', ['title' => ['en' => 'Sofas'], 'tone' => 'image', 'image' => ['path' => $file->path]])]);
+
+        $this->assertStringContainsString('alt=""', $html);
+    }
+
+    /** A block type of the default theme, published as the theme ships it. */
+    private function publishThemeBlock(string $slug): void
+    {
+        /** @var array{template: string, schema: list<array<string, mixed>>, sample: array<string, mixed>, title: string} $type */
+        $type = json_decode((string) file_get_contents(dirname(__DIR__, 2).'/theme-default/blocks/'.$slug.'.json'), true, flags: JSON_THROW_ON_ERROR);
+
+        $block = Block::query()->create(['slug' => $slug, 'title' => $type['title']]);
+        $block->saveVersion(['template' => $type['template'], 'schema' => $type['schema'], 'sample' => $type['sample']]);
+        $block->publish();
+    }
+
+    /**
      * A published block type with one field of the given kind.
      *
      * The sample is not decoration: publishing renders the template against it, so a type whose

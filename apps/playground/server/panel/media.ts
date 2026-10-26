@@ -111,6 +111,7 @@ function image(
     size: width * height * 3,
     width,
     height,
+    alt: null,
     path,
     url: address,
     thumb: address,

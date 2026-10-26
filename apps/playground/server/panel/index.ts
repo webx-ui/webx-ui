@@ -5768,6 +5768,22 @@ on('PATCH', '/media/files/(\\d+)', ({ params, body }) => {
 
   file.name = String(body.name ?? file.name)
 
+  // The server keeps a map of non-empty languages, or null when none is left.
+  if ('alt' in body) {
+    const given =
+      body.alt && typeof body.alt === 'object' ? (body.alt as Record<string, unknown>) : {}
+    const alt = Object.fromEntries(
+      Object.entries(given)
+        .filter(
+          (entry): entry is [string, string] =>
+            typeof entry[1] === 'string' && entry[1].trim() !== '',
+        )
+        .map(([code, words]) => [code, words.trim()]),
+    )
+
+    file.alt = Object.keys(alt).length > 0 ? alt : null
+  }
+
   return { data: file }
 })
 

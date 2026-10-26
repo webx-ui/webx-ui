@@ -45,6 +45,8 @@ final class FileResource extends JsonResource
             'size' => $file->size,
             'width' => $file->width,
             'height' => $file->height,
+            // Per language; what a template prints where the place using the file wrote none.
+            'alt' => $file->alt,
             // What an entity stores. The address beside it is worked out on every read, so the
             // library can change disks without touching anything that points at a file.
             'path' => $file->path,

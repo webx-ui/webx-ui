@@ -17,6 +17,10 @@ export const mediaMessages: Record<string, Messages> = {
     'new-folder': 'New folder',
     'folder-name': 'Folder name',
     rename: 'Rename',
+    alt: 'Alt text',
+    'alt-title': 'Alt text: :name',
+    'alt-hint':
+      'Printed on the site wherever the picture is used without an alt of its own. Leave it empty for a decorative picture.',
     move: 'Move',
     'move-to': 'Move to…',
     delete: 'Delete',

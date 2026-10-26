@@ -46,6 +46,8 @@ export interface MediaApi {
   /** A file that arrived a piece at a time, by its session's id, into a folder. */
   finishUpload(directoryId: number, uploadId: string): Promise<MediaFile>
   rename(id: number, name: string): Promise<MediaFile>
+  /** The file's own alt, per language; an empty map clears it. */
+  setAlt(id: number, alt: Record<string, string> | null): Promise<MediaFile>
   move(ids: number[], directoryId: number): Promise<number>
   /** Which of these files the site still uses, and where — asked before a delete. */
   usage(ids: number[]): Promise<FileInUse[]>
@@ -199,6 +201,9 @@ export function createMediaApi(admin: AdminContext): MediaApi {
 
     rename: (id, name) =>
       admin.http.patch<{ data: MediaFile }>(`${base}/files/${id}`, { name }).then(data),
+
+    setAlt: (id, alt) =>
+      admin.http.patch<{ data: MediaFile }>(`${base}/files/${id}`, { alt }).then(data),
 
     move: (ids, directoryId) =>
       admin.http
