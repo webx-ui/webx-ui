@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Configurator\Models\Configurator;
 use WebxUi\Configurator\Panel\ConfiguratorWriter;
+use WebxUi\Configurator\Site\Money;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\InboxServiceProvider;
 use WebxUi\Inbox\Mail\SubmissionReceived;
@@ -101,7 +102,8 @@ final class RequestTest extends TestCase
         $this->assertStringContainsString("Конструкція: Кутова\n", (string) $row->value);
         $this->assertStringContainsString('Висота: 2 000 мм · Ширина: 900 мм · Глибина: 900 мм', str_replace("\u{00A0}", ' ', (string) $row->value));
         $this->assertStringContainsString('Площа: 3,6 m²', (string) $row->value);
-        $this->assertMatchesRegularExpression('/Разом: 29.200.₴$/u', (string) $row->value);
+        // The symbol is ICU's: `₴` with one version, `UAH` with another.
+        $this->assertStringEndsWith('Разом: '.Money::format(29200, 'UAH', 'uk'), (string) $row->value);
     }
 
     #[Test]

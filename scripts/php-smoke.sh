@@ -1069,7 +1069,10 @@ note "[closed] and reaches the OAuth endpoints -> $oauth_status"
 "$PHP_BIN" "$APP/artisan" smoke:page "draft-closed" --draft --no-interaction > /dev/null
 PREVIEW_URL="$("$PHP_BIN" "$APP/artisan" smoke:page "draft-closed" --preview --no-interaction | tail -n 1)"
 expect 200 "$(status "$PREVIEW_URL")" '[closed] the preview opens under its token'
-expect 401 "$(status "${PREVIEW_URL%%\?*}")" '[closed] and without one asks for the password'
+expect 401 "$(visit "${PREVIEW_URL%%\?*}")" '[closed] and without one a stranger is asked for the password'
+# The cookie jar holds the panel's session since the sign-in above: the gate lets the
+# administrator through, and the preview itself refuses the missing token.
+expect 403 "$(status "${PREVIEW_URL%%\?*}")" '[closed] an administrator without one passes the gate to a 403'
 expect 200 "$(status "$BASE/blocks/runtime.js")" '[closed] the block runtime the preview loads is open'
 
 set_env WEBX_SITE_GATE false
