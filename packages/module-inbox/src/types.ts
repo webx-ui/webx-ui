@@ -148,6 +148,11 @@ export interface InboxForm {
   notify_via?: NotifyVia
   /** The channels `options.notify_channels` holds, as saved, each with whether it sends. */
   channels?: FormChannel[]
+  /**
+   * Where the form's own letters go — the site's mail as the application sees it now — and how
+   * long the queue holds one. Optional because an older server does not send it.
+   */
+  mail?: FormMail
   position: number
   /** Only where the query counted them — null on a form loaded on its own. */
   submissions_count: number | null
@@ -163,6 +168,28 @@ export interface InboxForm {
   captcha?: Record<CaptchaProvider, CaptchaSite>
   created_at: string | null
   updated_at: string | null
+}
+
+/** A trap, or settings not in effect yet — said in the panel's language by the server. */
+export interface MailWarning {
+  code: 'trap' | 'stale_config' | string
+  message: string
+}
+
+/** The site's mail as the server sees it now, for the tab of notifications. */
+export interface FormMail {
+  route: {
+    mailer: string
+    transport: string
+    host: string | null
+    port: number | null
+    /** `smtp — mail.example.com:587`, or the transport alone. */
+    label: string
+    /** A transport that takes letters and delivers them to nobody: `log`, a test sandbox. */
+    trap: boolean
+  }
+  warnings: MailWarning[]
+  queue: { driver: string; sync: boolean; hint: string | null }
 }
 
 /** A channel a form notifies through, as the server read it. */
@@ -348,7 +375,17 @@ export interface SubmissionNotification {
     state: 'queued' | 'delivered' | 'failed'
     error: string | null
     at: string
+    /** What took a delivered letter and delivered it to nobody — `log`, a sandbox's host. */
+    trap?: string | null
   }[]
+  /** While queued: when the letter will leave. */
+  hint?: string | null
+  /** Queued for longer than a working queue takes. */
+  stalled?: boolean
+  /** A trap took at least one of the letters. */
+  trapped?: boolean
+  /** The two above, in words. */
+  warnings?: string[]
 }
 
 /** One row of the notifications module's log about a submission (NOTIFICATIONS §15.3). */
@@ -360,6 +397,8 @@ export interface ChannelDelivery {
   recipient: string
   recipient_label: string | null
   status: 'queued' | 'sent' | 'failed' | 'skipped'
+  /** Sent into a trap — `log`, a test sandbox — and delivered to nobody. */
+  trap?: string | null
   /** The status and the reason in the notifications module's own words. */
   status_label: string
   reason: string | null

@@ -63,6 +63,8 @@ return [
     'test-everybody' => 'Всем из списка',
     'test-send' => 'Отправить',
     'test-sent' => 'Отправлено: :recipient.',
+    'mail-route' => 'Письма уходят через',
+    'test-trapped' => 'Принято тестовым транспортом для :recipient — никто его не получил.',
     'test-failed' => 'Не отправлено :recipient: :error',
     'test-none' => 'У канала нет получателей, которым можно отправить тест.',
     'preview' => 'Предпросмотр',

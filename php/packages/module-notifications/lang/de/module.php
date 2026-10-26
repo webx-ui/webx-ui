@@ -14,6 +14,7 @@ return [
     'statuses' => [
         'queued' => 'In der Warteschlange',
         'sent' => 'Gesendet',
+        'trapped' => 'Testtransport',
         'failed' => 'Fehlgeschlagen',
         'skipped' => 'Übersprungen',
     ],

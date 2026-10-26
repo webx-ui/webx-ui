@@ -34,7 +34,7 @@ are `webx-ui/module-auth`, the frame `webx-ui/module-admin`, languages `webx-ui/
   `mail.layout` with `theme_token()` colours (`Mail\Look`), `::sample($form, $answers)` to preview.
   Saved first, a failed letter is `notify_error`; through a real queue it stays `queued` until the
   worker's letter reports to `Mail\Delivery` (per recipient in `notify_recipients`). `notification()`
-  is one state: `none`, `queued`, `delivered`, `failed`; a form that reaches nobody logs `no_recipients`.
+  is one state: `none`, `queued`, `delivered`, `failed`, plus `hint`, `stalled` (queued over 5 min), `trapped` (a recipient's `trap`: `log`, a sandbox) and `warnings` — from the frame's `Mail\MailRoutes`, as the form's `mail` (route, warnings, queue) and `inbox_get` → `warnings`; nobody named logs `no_recipients`.
 - **Who a form writes to** — `WebxUi\Inbox\Mail\Recipients` from `options.recipients` (`{ admin_id }`
   / `{ email }`); the API and MCP return `recipients` (each with `receives` and a `problem`:
   `admin_deleted`, `admin_inactive`, `invalid_email`) and `notifies` — `false`: nobody is told.

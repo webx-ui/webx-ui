@@ -217,6 +217,13 @@ it did not reach.
 `php artisan webx:doctor` says when the queue has no worker, when deliveries are stuck or failing,
 and when a channel's provider or event is gone.
 
+A mail channel says where its letters go — «Letters leave through» the site's mailer or its own
+server — and warns when that is a trap (`log`, `array`, a test sandbox; `webx-admin.mail.traps`) or
+when `.env` is newer than the cached config. A letter a trap took is «Test transport» in the log,
+not «Sent», and a test sent into one says nobody received it. An agent reads the same as `mail` and
+`warnings` of `notifications_channel_get`, `warnings` of `notifications_test`, and `trap` of each
+row of `notifications_deliveries`.
+
 ### The log
 
 **Log** is every line: when, which channel, to whom, the status — sent, queued, failed, skipped with

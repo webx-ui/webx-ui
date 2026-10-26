@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Str;
+use WebxUi\Admin\SiteBar\PageResponse;
 
 /**
  * The addresses the site has that no entity owns: an account area, a checkout, a search page.
@@ -32,7 +33,7 @@ use Illuminate\Support\Str;
  * a site can add its own without waiting for us.
  *
  * The same line is what makes a page "service" anywhere else: the panel on the site and the debug
- * bar stay off it ({@see \WebxUi\Admin\SiteBar\PageResponse}), and an SEO rule cannot be made
+ * bar stay off it ({@see PageResponse}), and an SEO rule cannot be made
  * for it — an OAuth consent screen is not a page of the site, whoever is looking at it.
  */
 final readonly class SiteRoutes

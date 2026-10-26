@@ -263,6 +263,8 @@ const channelsRetryable = computed(() => (channels.value ?? []).some((row) => ro
 
 function channelTone(row: ChannelDelivery): 'danger' | 'success' | 'warning' | 'default' {
   if (row.status === 'failed') return 'danger'
+  // Sent into a trap is not delivered: the label says so, and the colour must not contradict it.
+  if (row.status === 'sent' && row.trap) return 'warning'
   if (row.status === 'sent') return 'success'
   if (row.status === 'skipped') return 'warning'
 
@@ -574,6 +576,16 @@ const details = computed(() => {
                       </wx-alert>
                       <span v-else-if="notification?.state === 'queued'">
                         {{ t('panel.notify-queued') }}
+                        <!-- When it leaves: a queue the scheduler runs sends it a minute later. -->
+                        <wx-text
+                          v-if="notification.hint && !notification.stalled"
+                          size="sm"
+                          tone="muted"
+                          as="span"
+                          class="wx-submission__hint"
+                        >
+                          {{ notification.hint }}
+                        </wx-text>
                       </span>
                       <span v-else-if="notification?.state === 'delivered'">
                         {{ t('panel.notified') }}
@@ -581,6 +593,17 @@ const details = computed(() => {
                       <!-- Nobody named is not a letter waiting in the queue, and says so. -->
                       <span v-else-if="namesNobody">{{ t('panel.notified-nobody') }}</span>
                       <span v-else>{{ t('panel.not-notified') }}</span>
+
+                      <!-- Waiting longer than a working queue takes, or taken by a trap: the two
+                           ways a letter looks fine here and never arrives. -->
+                      <wx-alert
+                        v-for="warning in notification?.warnings ?? []"
+                        :key="warning"
+                        type="warning"
+                        variant="soft"
+                        :closable="false"
+                        :description="warning"
+                      />
 
                       <ul
                         v-if="notification && notification.recipients.length > 0"
@@ -592,12 +615,14 @@ const details = computed(() => {
                             :type="
                               one.state === 'failed'
                                 ? 'danger'
-                                : one.state === 'delivered'
-                                  ? 'success'
-                                  : 'default'
+                                : one.trap
+                                  ? 'warning'
+                                  : one.state === 'delivered'
+                                    ? 'success'
+                                    : 'default'
                             "
                           >
-                            {{ recipientState(one.state) }}
+                            {{ recipientState(one.trap ? 'trapped' : one.state) }}
                           </wx-badge>
                         </li>
                       </ul>
@@ -745,6 +770,11 @@ const details = computed(() => {
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-8);
+}
+
+/* Under "waiting", on a line of its own: when the letter leaves is the answer to the next question. */
+.wx-submission__hint {
+  display: block;
 }
 
 .wx-submission__recipients {

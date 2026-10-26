@@ -15,6 +15,7 @@ export const notificationsMessages: Record<string, Messages> = {
     statuses: {
       queued: 'Queued',
       sent: 'Sent',
+      trapped: 'Test transport',
       failed: 'Failed',
       skipped: 'Skipped',
     },
@@ -104,6 +105,8 @@ export const notificationsMessages: Record<string, Messages> = {
     'test-everybody': 'Everybody on the list',
     'test-send': 'Send',
     'test-sent': 'Sent to :recipient.',
+    'mail-route': 'Letters leave through',
+    'test-trapped': 'Accepted by a test transport for :recipient — nobody received it.',
     'test-failed': 'Not sent to :recipient: :error',
     'test-none': 'The channel has no recipients to send a test to.',
     preview: 'Preview',

@@ -214,6 +214,7 @@ async function save(): Promise<void> {
             :reported="form.recipients"
             :notifications="form.notifications"
             :via="form.notify_via"
+            :mail="form.mail"
           />
         </wx-tab>
 

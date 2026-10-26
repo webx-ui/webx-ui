@@ -63,6 +63,8 @@ return [
     'test-everybody' => 'Listedeki herkes',
     'test-send' => 'Gönder',
     'test-sent' => ':recipient alıcısına gönderildi.',
+    'mail-route' => 'E-postalar şuradan gider',
+    'test-trapped' => ':recipient için bir test aktarımı tarafından kabul edildi — kimse almadı.',
     'test-failed' => ':recipient alıcısına gönderilmedi: :error',
     'test-none' => 'Kanalın test gönderilecek alıcısı yok.',
     'preview' => 'Önizleme',

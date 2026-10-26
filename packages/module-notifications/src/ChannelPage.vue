@@ -11,6 +11,7 @@ import {
   WxBadge,
   WxButton,
   WxSkeleton,
+  WxText,
 } from '@webx-ui/core'
 import {
   provideHistorySubject,
@@ -33,6 +34,7 @@ import TestDialog from './TestDialog.vue'
 import type {
   Administrator,
   ChannelDetail,
+  ChannelMail,
   ChannelRow,
   ChatRecipient,
   EmailRecipient,
@@ -73,6 +75,7 @@ const channel = ref<ChannelRow | null>(null)
 const values = ref<ScreenModel>({})
 const snapshot = ref('')
 const warnings = ref<string[]>([])
+const mail = ref<ChannelMail | null>(null)
 const errors = ref<Record<string, string[]>>({})
 const loading = ref(true)
 const saving = ref(false)
@@ -138,6 +141,7 @@ function take(detail: ChannelDetail): void {
   values.value = detail.values
   snapshot.value = JSON.stringify(detail.values)
   warnings.value = detail.warnings
+  mail.value = detail.mail ?? null
 }
 
 /** What the server would answer for a channel with nothing in it yet, and the event's default template. */
@@ -474,6 +478,23 @@ const environment = computed(() => meta.value?.environment ?? 'production')
       />
       <wx-alert v-for="warning in warnings" :key="warning" type="warning" :description="warning" />
 
+      <!-- Where the letters go as the site sends them now — of the saved channel, so it follows a
+           save rather than the form being typed in. A trap or a config not in effect yet is the
+           letter that looks sent and never arrives. -->
+      <div v-if="mail" class="wx-notifications-channel__route">
+        <wx-text size="sm" tone="muted">
+          {{ t('panel.mail-route') }} <code>{{ mail.route.label }}</code>
+        </wx-text>
+        <wx-text v-if="mail.queue.hint" size="sm" tone="muted">{{ mail.queue.hint }}</wx-text>
+        <wx-alert
+          v-for="warning in mail.warnings"
+          :key="warning.code"
+          type="warning"
+          variant="soft"
+          :description="warning.message"
+        />
+      </div>
+
       <div class="wx-notifications-channel__body">
         <wx-screen
           v-model="values"
@@ -511,6 +532,12 @@ const environment = computed(() => meta.value?.environment ?? 'production')
 
 .wx-notifications-channel__ghost {
   max-width: 480px;
+}
+
+.wx-notifications-channel__route {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
 }
 
 .wx-notifications-channel__body {

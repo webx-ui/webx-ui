@@ -14,6 +14,8 @@ of the panel and the MCP tools `notifications_*` edit channels; the panel and it
   `subject` and `template` — one text per language, `enabled`, `copied_from`; soft deletes) and
   `notifications_deliveries` (`Models\Delivery`: one row per recipient — `queued`, `sent`,
   `failed`, `skipped` with a `reason` — with the values the event brought).
+- **Mail that goes nowhere**: `EmailProvider` is `Contracts\HasMailRoute`, described by the frame's `Mail\MailRoutes`; a letter a
+  trap took (`log`, `array`, a sandbox) is `sent` with `trap`; `mail` and `warnings` in the panel, `notifications_channel_get`, `_test`, `_deliveries`.
 - **Registries** `Providers` (`telegram`, `email`) and `NotificationEvents`.
 - **API for consumers** `Notifications::send()`; the job `Jobs\Deliver` — three attempts, after
   the response when the queue is `sync`; `Notifications::test()`, `retry()`, `deliveriesFor()`.

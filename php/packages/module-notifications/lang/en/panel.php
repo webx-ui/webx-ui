@@ -63,6 +63,8 @@ return [
     'test-everybody' => 'Everybody on the list',
     'test-send' => 'Send',
     'test-sent' => 'Sent to :recipient.',
+    'mail-route' => 'Letters leave through',
+    'test-trapped' => 'Accepted by a test transport for :recipient — nobody received it.',
     'test-failed' => 'Not sent to :recipient: :error',
     'test-none' => 'The channel has no recipients to send a test to.',
     'preview' => 'Preview',

@@ -21,6 +21,7 @@ import { createInboxApi } from './api'
 import { option } from './options'
 import { isAdmin, problemOf } from './recipients'
 import type {
+  FormMail,
   FormOptions,
   InboxField,
   InboxRecipient,
@@ -57,6 +58,8 @@ const props = defineProps<{
   notifications?: boolean
   /** How the form tells, as the server worked it out for a form saved before the choice. */
   via?: NotifyVia
+  /** Where the letters go now, and how long the queue holds one. */
+  mail?: FormMail
 }>()
 
 const options = defineModel<FormOptions>({ required: true })
@@ -214,6 +217,23 @@ function setEmail(index: number, email: string): void {
       <wx-text v-if="props.notifications" weight="medium">{{ t('panel.recipients') }}</wx-text>
       <wx-text size="sm" tone="muted">{{ t('panel.recipients-help') }}</wx-text>
 
+      <!-- Where the letters go, as the site sends them now: on a client's site they went to a
+           test sandbox, by a config cached before .env changed, a minute after the form — and
+           nothing here said any of it. -->
+      <div v-if="mail" class="wx-inbox-notifications__route">
+        <wx-text size="sm" tone="muted">
+          {{ t('panel.mail-route') }} <code>{{ mail.route.label }}</code>
+        </wx-text>
+        <wx-text v-if="mail.queue.hint" size="sm" tone="muted">{{ mail.queue.hint }}</wx-text>
+        <wx-alert
+          v-for="warning in mail.warnings"
+          :key="warning.code"
+          type="warning"
+          variant="soft"
+          :description="warning.message"
+        />
+      </div>
+
       <wx-alert
         v-if="errors['options.recipients']"
         type="danger"
@@ -307,6 +327,13 @@ function setEmail(index: number, email: string): void {
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-4);
+}
+
+.wx-inbox-notifications__route {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
+  max-width: var(--wx-field-max-width, 640px);
 }
 
 /*

@@ -276,6 +276,7 @@ import { registerTasks, tasksBadge } from './tasks'
 import {
   channelsOfForm,
   deliveriesOfSubmission,
+  SITE_MAIL,
   notificationsHistory,
   registerNotifications,
   retrySubmission,
@@ -2004,6 +2005,7 @@ function withRecipients(item: InboxForm): InboxForm {
     notifications: true,
     notify_via: via,
     channels: chosen,
+    mail: SITE_MAIL,
   }
 }
 

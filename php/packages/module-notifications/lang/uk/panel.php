@@ -63,6 +63,8 @@ return [
     'test-everybody' => 'Усім зі списку',
     'test-send' => 'Надіслати',
     'test-sent' => 'Надіслано: :recipient.',
+    'mail-route' => 'Листи йдуть через',
+    'test-trapped' => 'Прийнято тестовим транспортом для :recipient — ніхто його не отримав.',
     'test-failed' => 'Не надіслано :recipient: :error',
     'test-none' => 'У каналу немає отримувачів, яким можна надіслати тест.',
     'preview' => 'Попередній перегляд',

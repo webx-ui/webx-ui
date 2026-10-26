@@ -14,6 +14,7 @@ return [
     'statuses' => [
         'queued' => 'W kolejce',
         'sent' => 'Wysłano',
+        'trapped' => 'Transport testowy',
         'failed' => 'Błąd',
         'skipped' => 'Pominięto',
     ],

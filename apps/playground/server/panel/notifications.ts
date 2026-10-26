@@ -63,6 +63,8 @@ interface Delivery {
   recipient: string
   recipient_label: string | null
   status: 'queued' | 'sent' | 'failed' | 'skipped'
+  /** Sent into a trap and delivered to nobody. */
+  trap?: string | null
   reason: string | null
   error: string | null
   attempts: number
@@ -453,6 +455,8 @@ const deliveries: Delivery[] = [
     recipient: 'anna@site.test',
     recipient_label: 'Anna K.',
     status: 'sent',
+    // The site's mail is a sandbox here: the test was taken and delivered to nobody.
+    trap: 'sandbox.smtp.mailtrap.io:2525',
     reason: null,
     error: null,
     attempts: 1,
@@ -545,7 +549,7 @@ function values(channel: Channel) {
 }
 
 const detail = (channel: Channel, warnings: string[] = []) => ({
-  data: { channel: row(channel), values: values(channel), warnings },
+  data: { channel: row(channel), values: values(channel), warnings, mail: mailOf(channel) },
 })
 
 /** The checks of `ChannelValues` this playground needs to show: a name, Mustache, a full channel. */
@@ -806,6 +810,66 @@ const REASON_LABELS: Record<string, string> = {
 }
 
 /** What the Inbox names on a form: the chosen channels, each with whether it sends (§15.2). */
+/**
+ * The site's mail as `MailRoutes` would describe it — pointed at a test sandbox, the way a
+ * staging site is, so the warnings the panel shows for it can be seen here.
+ */
+export const SITE_MAIL = {
+  route: {
+    mailer: 'smtp',
+    transport: 'smtp',
+    host: 'sandbox.smtp.mailtrap.io',
+    port: 2525,
+    label: 'smtp — sandbox.smtp.mailtrap.io:2525',
+    trap: true,
+  },
+  warnings: [
+    {
+      code: 'trap',
+      message:
+        'Letters go to sandbox.smtp.mailtrap.io:2525, a test mailbox: nobody outside it receives them.',
+    },
+  ],
+  queue: {
+    driver: 'database',
+    sync: false,
+    hint: 'Letters leave through the queue: usually within a minute, when the queue next runs.',
+  },
+}
+
+/** A mail channel's way out: the site's mail, or its own server. */
+function mailOf(channel: Channel) {
+  if (channel.provider !== 'email') return null
+
+  const options = channel.options
+
+  if (options.mode !== 'smtp') return SITE_MAIL
+
+  const host = String(options.host ?? '')
+  const port = Number(options.port ?? 587)
+  const trap = /mailtrap|mailpit|mailhog/.test(host) || port === 1025
+
+  return {
+    route: {
+      mailer: 'channel',
+      transport: 'smtp',
+      host,
+      port,
+      label: `smtp — ${host}:${port}`,
+      trap,
+    },
+    warnings: trap
+      ? [
+          {
+            code: 'trap',
+            message: `Letters go to ${host}:${port}, a test mailbox: nobody outside it receives them.`,
+          },
+        ]
+      : [],
+    queue: SITE_MAIL.queue,
+  }
+}
+
 export function channelsOfForm(ids: number[] | undefined) {
   return (ids ?? []).map((id) => {
     const channel = channels.find((one) => one.id === id)
@@ -836,7 +900,11 @@ export function deliveriesOfSubmission(id: number) {
       recipient: one.recipient,
       recipient_label: one.recipient_label,
       status: one.status,
-      status_label: STATUS_LABELS[one.status],
+      trap: one.trap ?? null,
+      status_label:
+        one.status === 'sent' && one.trap
+          ? 'Accepted by a test transport'
+          : STATUS_LABELS[one.status],
       reason: one.reason,
       reason_label: one.reason === null ? null : (REASON_LABELS[one.reason] ?? one.reason),
       error: one.error,

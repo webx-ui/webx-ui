@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Support;
 
+use WebxUi\Media\Screens\MediaValues;
+
 /**
  * The alt of a file in the library: what is on the picture, a string per language.
  *
  * The file's own words, which a template prints wherever the place that uses the picture wrote
  * none of its own — a block's image field with an alt of its own still wins
- * ({@see \WebxUi\Media\Screens\MediaValues::resolve()}). A file without one stays without: an
+ * ({@see MediaValues::resolve()}). A file without one stays without: an
  * empty alt is what a decorative picture should have.
  *
  * Written in the panel (the file's «Alt text») and by an agent (`media_set_alt`); both go
