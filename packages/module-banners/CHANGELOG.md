@@ -1,5 +1,12 @@
 # @webx-ui/module-banners
 
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [b4296aa]
+  - @webx-ui/module-media@0.12.0
+
 ## 0.3.3
 
 ### Patch Changes

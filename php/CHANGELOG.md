@@ -1,5 +1,109 @@
 # @webx-ui/php
 
+## 0.87.0
+
+### Minor Changes
+
+- b4296aa: Fixes from checking a client's site before launch.
+
+  - **Site password and the panel.** An administrator signed in to the panel passes the site's password
+    (`WEBX_SITE_GATE`) on every address: the page preview and what it loads, a preview reloaded after
+    its token ran out, «Open on the site». A stranger still gets the dialog; a switched-off account does
+    not pass.
+  - **Service pages.** The OAuth consent and every route marked `SiteRoutes::SERVICE` get neither the
+    panel on the site nor the debug bar, and an SEO rule cannot be made for a service address (panel
+    and `seo_urls_set`).
+  - **Alt of a file.** A library file has a translated alt (card menu → Alt text, `media_set_alt`, read
+    by `media_get_file`/`list`/`search`). Templates print it wherever an image field has no alt of its
+    own; `hero`, `cards`, `reviews`, `services` and `press-outlets` print alt instead of an empty one.
+  - **Where the mail goes.** `Mail\MailRoutes` describes the site's mail and a channel's server, knows
+    traps (`log`, `array`, a test sandbox, Mailpit/MailHog — `webx-admin.mail.traps`) and a config
+    cached before `.env` changed. `webx:doctor` (check `Mail`), the form's Notifications tab, a mail
+    channel, the submission card and MCP (`inbox_get`, `notifications_channel_get`, `notifications_test`,
+    `notifications_deliveries`) say it; a queued letter says when it leaves and asks about the queue
+    after five minutes; a letter a trap took is «test transport», not «sent».
+
+- b4296aa: A configurator and the catalogue, linked both ways from the configurator's side — the catalogue
+  knows nothing of it, and without the catalogue nothing changes.
+
+  - **A product opens a configurator.** The product's form gets a card «Configurator» with the key and
+    where it starts (`configurator.key`, `configurator.preset`, also for `catalog_products_update`),
+    kept in the configurator's own table `configurator_product`. Its page shows «Calculate in the
+    configurator», leading to the configurator's new **page** setting with the preset in the address,
+    which the server reads as `initial`.
+  - **An option shows a product «in real life».** `"product": "<SKU>"` on an option, picked by name
+    or article number in the editor (`product.invalid`, `product.unknown`): while it is chosen, up to
+    four pictures of the product's gallery and a link to it, under the configurator — nothing for a
+    product the site does not show.
+  - **MCP:** `page` in `configurators_create`/`_update`; `configurators_get` answers the page, the
+    options' products and the products that open it. The demo links its constructions to the
+    catalogue's demo products when they are there.
+
+- b4296aa: `webx-ui/module-configurator`: the panel's API of the section — the list, the record with its
+  revision (409 when stale), the draft, publish (422 with every problem of the schema), unpublish,
+  discard, versions and their restore, the bin, `validate` and `quote` — over the same writer and
+  quoter as the MCP tools. The field type `wx-configurator` (a configurator by key, refused when
+  written anew with a key nobody has) and the relation target `configurator` for its picker. The
+  editor's heartbeat knows the record. The section's words in ten languages.
+- b4296aa: New package `webx-ui/module-configurator` — the server half of a product configurator (section
+  «Configurators», id `configurators`).
+
+  - **Storage.** Table `configurators`: a key, a translated title, the schema as one JSON document, the
+    inbox form; drafts and versions of the frame.
+  - **The check.** `Schema\Validator` gives every problem with its path and code; a draft is saved
+    with problems, a publication is refused with them.
+  - **The engine.** Visibility (`when`/`unless`), a choice that becomes hidden moves to the first
+    visible one, `defaults` and `limits`, an area formula without `eval`, `fixed`/`perM2`/simple
+    `percent`, a discount with a last day, rounding half away from zero, a breakdown line by line.
+    Parity cases in `resources/fixtures/pricing/` for the PHP and the coming JS copy.
+  - **MCP.** `configurators_list`, `_get`, `_create`, `_update`, `_publish`, `_unpublish`,
+    `_discard`, `_versions`, `_version_restore`, `_delete` (with `dry_run`), `configurators_quote` and
+    `configurators_validate`; resources `configurators://catalog` and `configurators://schema`.
+  - **Demo.** `webx:demo --module=configurators`: a shower enclosure configurator with neutral
+    drawings and, with the inbox, its request form.
+
+  The panel editor, the block on the site and the configuration in a request follow.
+
+- b4296aa: `webx-ui/module-configurator` on the site, and the configuration in a request of the inbox.
+
+  - **`<x-webx-configurator key="…" />`** — the server prints every step, option and size, the price
+    of the start with «How the price is made», «from N» on the cards, the picture by the `previews`
+    rules, a discount in force (its label and the old price struck out, gone after its last day) and
+    the messengers of the site's contacts beside «Get a quote». The widget
+    (`webx/configurator/configurator.js`, the npm engine built in, about 5 KB gzip) recounts as the
+    visitor chooses. The published configurator is cached in the group `configurators`.
+  - **The base look** `resources/theme/configurator.css`: steps and a sticky price side by side from
+    45rem of the configurator, one column with the price and the button stuck to the bottom under it;
+    site tokens and classes only.
+  - **The offered block `configurator`** (`webx:blocks:offered --install`): the configurator, a
+    heading (`-` — none) and `wx-configurator-preset` — where the block starts, picked from the
+    configurator's published steps and sizes.
+  - **The request.** The radios and the sizes belong to the dialog's form by `form=`, so the
+    configuration goes with the contacts with JavaScript and without it. The server prices it again —
+    a price in the request is never read — and writes the selection, the sizes, the area, the lines,
+    the discount and the total into the submission; a size outside its limits is a 422 under
+    `configurator.values.<field>`, a configuration fastened to another form is refused.
+
+  `webx-ui/module-inbox`: enclosures — `Contracts\Enclosure` and `Submissions\Enclosures`, for a
+  module whose data goes with a form. The form names one with `webx_enclosure[]`; its errors come with
+  the errors of the fields; it is written as an answer with no field (its text in the letter,
+  Telegram, the export and `inbox_get`, its structure for the card), and it is part of the
+  submission's hash, so two configurations from one person are two submissions.
+
+### Patch Changes
+
+- b4296aa: What an agent building a configurator over MCP stumbled on, fixed after a run end to end.
+
+  - **A card picture that is not a library key is one problem, not two.** `image.missing` was told
+    twice for `{ "id": 35 }` — by the PHP check and by the JS one alike.
+  - **The tools and `configurators://schema` say where a picture key comes from:** the `path` of
+    `media_get_file`, since `media_upload_from_url` answers with the id. `configurators_quote` says
+    that `values` are resolved before `actions`, the schema reference that a size in `initial` is
+    pulled into its range, and `configurators://catalog` what the block `configurator` takes.
+  - **A tool argument's own description reaches the agent.** It was built as `$base + [...]`, which
+    keeps the shared one: `configurators_quote` and `_create`, `tags_merge`, `articles_*` `slug` and
+    the banner tools showed the generic text. Now the specific words win, after the shared format.
+
 ## 0.86.0
 
 ### Minor Changes
