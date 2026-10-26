@@ -22,4 +22,6 @@ return [
     'write' => 'Schreiben Sie uns über :messenger',
     'chosen' => 'Ihre Konfiguration',
     'refused' => 'Diese Konfiguration kann gerade nicht gesendet werden. Laden Sie die Seite neu und versuchen Sie es erneut.',
+    'live' => ':name in echt',
+    'open' => 'Im Konfigurator berechnen',
 ];

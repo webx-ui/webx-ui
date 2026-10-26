@@ -460,7 +460,95 @@
   font-weight: 700;
 }
 
+/* «… in real life» (§22.5): the pictures of a catalogue product an option names, under the
+   configurator — shown while that option is chosen. */
+.webx-configurator__live-list {
+  display: grid;
+  gap: var(--site-space-5);
+  margin-top: var(--webx-configurator-gap);
+}
+
+.webx-configurator__live {
+  display: grid;
+  gap: var(--site-space-3);
+  min-width: 0;
+}
+
+.webx-configurator__live[hidden] {
+  display: none;
+}
+
+.webx-configurator__live-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator__live-images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-configurator__live-item {
+  min-width: 0;
+  /* Not the space a theme puts between the items of a list of text. */
+  margin: 0;
+}
+
+.webx-configurator__live-link {
+  display: block;
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface-muted);
+  overflow: hidden;
+}
+
+.webx-configurator__live-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.webx-configurator__live-product {
+  justify-self: start;
+  color: var(--site-color-accent);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* «Calculate in the configurator» on the page of a product of the catalogue (§22.3). */
+.webx-configurator-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-height: 2.75rem;
+  margin-top: var(--site-space-3);
+  padding: var(--site-space-2) var(--site-space-5);
+  border: 1px solid var(--site-color-accent);
+  border-radius: var(--site-radius-md);
+  color: var(--site-color-accent);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.webx-configurator-open:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
 @container (min-width: 45rem) {
+  .webx-configurator__live-images {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .webx-configurator__layout {
     grid-template-columns: minmax(0, 1fr) minmax(0, var(--webx-configurator-aside));
     grid-template-rows: auto 1fr;

@@ -22,4 +22,6 @@ return [
     'write' => ':messenger üzerinden bize yazın',
     'chosen' => 'Yapılandırmanız',
     'refused' => 'Bu yapılandırma şu anda gönderilemiyor. Sayfayı yenileyip tekrar deneyin.',
+    'live' => ':name gerçekte',
+    'open' => 'Yapılandırıcıda hesapla',
 ];

@@ -47,6 +47,10 @@ return [
         'missing' => 'Wybierz obraz z biblioteki mediów.',
         'unknown' => 'W bibliotece mediów nie ma pliku „:key”.',
     ],
+    'product' => [
+        'invalid' => 'Produkt wskazuje się kodem (SKU), do 64 znaków.',
+        'unknown' => 'W katalogu nie ma produktu o kodzie «:sku».',
+    ],
     'swatch' => [
         'invalid' => 'Próbka to #rgb, #rrggbb lub gradient z kolorów hex.',
     ],

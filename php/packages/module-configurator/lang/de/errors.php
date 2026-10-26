@@ -47,6 +47,10 @@ return [
         'missing' => 'Wählen Sie ein Bild aus der Mediathek.',
         'unknown' => 'Die Mediathek hat keine Datei „:key“.',
     ],
+    'product' => [
+        'invalid' => 'Ein Produkt wird über seine Artikelnummer (SKU) angegeben, bis zu 64 Zeichen.',
+        'unknown' => 'Der Katalog hat kein Produkt mit der Artikelnummer «:sku».',
+    ],
     'swatch' => [
         'invalid' => 'Ein Muster ist #rgb, #rrggbb oder ein Verlauf aus Hex-Farben.',
     ],

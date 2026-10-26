@@ -150,13 +150,28 @@ them again — a price in the request is never read — and writes the configura
 submission. The base look is `resources/theme/configurator.css`; its classes are listed in
 `AGENTS.md`.
 
+## With the catalogue
+
+With `webx-ui/module-catalog` installed, both ways and from this package's side only:
+
+- a product names a configurator and where it starts (`configurator.key`, `configurator.preset` in
+  its form and in `catalog_products_update`); its page shows «Calculate in the configurator», which
+  leads to the configurator's **page** (a setting of the configurator) with
+  `?configurator=<key>&preset[<step>]=<value>` — read as `initial`, never trusted;
+- an option names a product by its article number (`"product": "SKU-1"`); while it is chosen, the
+  configurator shows up to four pictures of the product's gallery and a link — nothing for a
+  product the site does not show.
+
+Without the catalogue an option keeps its `product` and shows nothing.
+
 ## The demo
 
 `php artisan webx:demo --module=configurators` makes a shower enclosure configurator with no
 company in it and example prices: eight constructions, nine glasses, frosting, six kinds of
 hardware, two picture rules. Its words are in English, Russian and Ukrainian; its pictures are
 neutral drawings put into the media library. With the inbox it gets the request form
-`configurator-request`.
+`configurator-request`; with the catalogue's demo products, its first constructions show them «in
+real life» and one of them opens the configurator.
 
 ## License
 

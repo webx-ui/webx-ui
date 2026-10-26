@@ -4,8 +4,9 @@ import { FormulaError, formulaKeys, parseFormula } from './formula'
 /**
  * Whether a schema document is one the engine can price and a site can show (§9) — the JS copy
  * of `Schema\Validator`, giving the same paths and codes for the editor to underline before a
- * save. The server checks anyway and is the truth; one thing only it can know — whether the media
- * library has a picture (`image.unknown`) — is not checked here.
+ * save. The server checks anyway and is the truth; what only it can know — whether the media
+ * library has a picture (`image.unknown`), whether the catalogue has a product
+ * (`product.unknown`) — is not checked here.
  *
  *     validate(schema, 'uk')
  *     // [{ path: 'steps.0.options.1.area', code: 'area.syntax', params: { position: 3, … } }, …]
@@ -385,6 +386,14 @@ export function validate(schema: unknown, locale: string): Problem[] {
 
       if (typeof given !== 'string' || given.trim() === '')
         fail(`${path}.${picture}`, 'image.missing')
+    }
+
+    // A product of the catalogue (§22.4): an article number; whether it exists is the server's.
+    if (has(item, 'product') && item.product !== null) {
+      const sku = item.product
+
+      if (typeof sku !== 'string' || sku.trim() === '' || [...sku.trim()].length > 64)
+        fail(`${path}.product`, 'product.invalid')
     }
 
     if (has(item, 'swatch') && item.swatch !== null && !isSwatch(item.swatch)) {

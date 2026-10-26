@@ -22,4 +22,6 @@ return [
     'write' => 'Escríbanos por :messenger',
     'chosen' => 'Su configuración',
     'refused' => 'Esta configuración no se puede enviar ahora. Recargue la página e inténtelo de nuevo.',
+    'live' => ':name en la vida real',
+    'open' => 'Calcular en el configurador',
 ];

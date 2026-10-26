@@ -100,6 +100,7 @@ const page = `
     <span data-webx-configurator-total>₴23,900</span>
     <ul data-webx-configurator-lines><li class="webx-configurator__line"><span class="webx-configurator__line-text"></span> <span class="webx-configurator__line-amount"></span></li></ul>
     <span data-webx-configurator-area><span data-webx-configurator-area-value></span></span>
+    <section data-webx-configurator-live="construction:niche" hidden><a href="/niche-1">Niche product</a></section>
     <a class="webx-configurator__submit" href="#webx-form-request" data-webx-form="request">Get a quote</a>
     <input type="hidden" name="webx_enclosure[]" value="configurator" form="webx-inbox-request">
     <template data-webx-configurator-recap><div class="webx-configurator__recap"><p></p><ul class="webx-configurator__recap-list"></ul><p class="webx-configurator__recap-total"></p></div></template>
@@ -179,6 +180,17 @@ describe('the configurator widget', () => {
 
     // 5000 + 4000 × 1.8 = 12 200; −10% = 10 980 → 11 000.
     expect(text(root, '[data-webx-configurator-total]')).toBe('₴11,000')
+  })
+
+  it('shows a catalogue product in real life while its option is chosen', async () => {
+    const root = await start()
+    const live = root.querySelector('[data-webx-configurator-live="construction:niche"]')
+
+    expect(live.hidden).toBe(true)
+    choose(root, 'niche')
+    expect(live.hidden).toBe(false)
+    choose(root, 'corner')
+    expect(live.hidden).toBe(true)
   })
 
   it('pulls a size into its limits when it is left, and steps it by its step', async () => {

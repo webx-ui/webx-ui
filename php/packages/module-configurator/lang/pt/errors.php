@@ -47,6 +47,10 @@ return [
         'missing' => 'Escolha uma imagem da mediateca.',
         'unknown' => 'A mediateca não tem o ficheiro «:key».',
     ],
+    'product' => [
+        'invalid' => 'Um produto é indicado pela sua referência (SKU), até 64 caracteres.',
+        'unknown' => 'O catálogo não tem nenhum produto com a referência «:sku».',
+    ],
     'swatch' => [
         'invalid' => 'Uma amostra é #rgb, #rrggbb ou um degradê de cores hex.',
     ],

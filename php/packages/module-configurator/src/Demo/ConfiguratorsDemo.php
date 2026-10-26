@@ -10,12 +10,15 @@ use RuntimeException;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Demo\DemoWords;
 use WebxUi\Admin\Versions\EntityVersion;
+use WebxUi\Configurator\Catalog\CatalogProducts;
 use WebxUi\Configurator\Models\Configurator;
+use WebxUi\Configurator\Models\ProductLink;
 use WebxUi\Configurator\Panel\ConfiguratorWriter;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Panel\FormOptions;
+use WebxUi\Localization\Locales;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Storage\FileStore;
 
@@ -36,11 +39,22 @@ use WebxUi\Media\Storage\FileStore;
  */
 final class ConfiguratorsDemo
 {
+    /** The article numbers of the catalogue's demo products (`CatalogDemo`). */
+    private const string DEMO_SKU = 'DEMO-%04d';
+
+    /** How many constructions show a demo product «in real life». */
+    private const int LINKED = 4;
+
+    /** Which of them — by its place among the linked — the product opening the configurator is. */
+    private const int OPENS = 2;
+
     public function __construct(
         private readonly Filesystem $files,
         private readonly ConfiguratorWriter $writer,
         private readonly DemoWords $words,
         private readonly FileStore $store,
+        private readonly CatalogProducts $catalog,
+        private readonly Locales $locales,
     ) {}
 
     /**
@@ -63,6 +77,7 @@ final class ConfiguratorsDemo
         $document = $this->read();
         $images = $this->images($ledger);
         $schema = $this->pictures($this->words->in($document['schema'] ?? []), $images);
+        [$schema, $step, $linked] = is_array($schema) ? $this->products($schema) : [$schema, null, []];
         $title = $this->words->of($document['title'] ?? null) ?? ['en' => 'Configurator'];
         $form = $this->withInbox() && is_array($document['form'] ?? null) ? $this->form($document['form'], $ledger) : null;
 
@@ -82,6 +97,73 @@ final class ConfiguratorsDemo
         if ($form === null) {
             $ledger->note('the demo configurator sends no requests: the site has no inbox (webx-ui/module-inbox).');
         }
+
+        $this->openFrom($configurator, $step, $linked, $ledger);
+    }
+
+    /**
+     * With the catalogue's demo on the site (§22.6): the first constructions show a demo product
+     * each «in real life». Without it — no catalogue, or a catalogue of the site's own — nothing is
+     * linked: a demo must not point at somebody's real products.
+     *
+     * @param  array<string, mixed>  $schema
+     * @return array{0: array<string, mixed>, 1: string|null, 2: array<string, string>} the schema, the step of the cards, and option value → article number
+     */
+    private function products(array $schema): array
+    {
+        $catalog = $this->catalog;
+
+        if (! $catalog->available()) {
+            return [$schema, null, []];
+        }
+
+        $wanted = array_map(static fn (int $n): string => sprintf(self::DEMO_SKU, $n), range(1, self::LINKED));
+        $live = $catalog->live($wanted, $this->locales->defaultCode());
+        $linked = [];
+
+        foreach ($schema['steps'] ?? [] as $s => $step) {
+            if (! is_array($step) || ($step['type'] ?? null) !== 'cards') {
+                continue;
+            }
+
+            foreach ($step['options'] ?? [] as $o => $option) {
+                $sku = $wanted[$o] ?? null;
+
+                if ($sku !== null && isset($live[$sku]) && is_array($option)) {
+                    $schema['steps'][$s]['options'][$o]['product'] = $sku;
+                    $linked[(string) $option['value']] = $sku;
+                }
+            }
+
+            return [$schema, (string) $step['key'], $linked];
+        }
+
+        return [$schema, null, []];
+    }
+
+    /**
+     * And one of those products opens the configurator, started on its own construction — the
+     * button on the product's page leads there once the configurator has its page.
+     *
+     * @param  array<string, string>  $linked
+     */
+    private function openFrom(Configurator $configurator, ?string $step, array $linked, DemoLedger $ledger): void
+    {
+        $value = $step === null ? null : (array_keys($linked)[self::OPENS] ?? null);
+        $sku = $value === null ? null : $linked[$value];
+        $product = $sku === null ? null : $this->catalog->live([$sku], $this->locales->defaultCode())[$sku] ?? null;
+
+        if ($product === null || ProductLink::query()->whereKey($product['id'])->exists()) {
+            return;
+        }
+
+        $link = ProductLink::query()->create([
+            'product_id' => $product['id'],
+            'configurator' => $configurator->key,
+            'preset' => [(string) $step => $value],
+        ]);
+
+        $ledger->created($link, $product['name'].' → '.$configurator->key);
     }
 
     /**

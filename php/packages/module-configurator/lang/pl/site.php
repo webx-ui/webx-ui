@@ -22,4 +22,6 @@ return [
     'write' => 'Napisz do nas w :messenger',
     'chosen' => 'Twoja konfiguracja',
     'refused' => 'Tej konfiguracji nie można teraz wysłać. Odśwież stronę i spróbuj ponownie.',
+    'live' => ':name na żywo',
+    'open' => 'Oblicz w konfiguratorze',
 ];

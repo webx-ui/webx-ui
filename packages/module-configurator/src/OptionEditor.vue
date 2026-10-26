@@ -12,15 +12,18 @@ import {
 } from '@webx-ui/core'
 import { WxMediaField } from '@webx-ui/module-media'
 import ConditionsEditor from './ConditionsEditor.vue'
+import ConfiguratorField from './ConfiguratorField.vue'
 import { conditionErrors, errorsAt, useBuilder } from './builder'
 import { fieldKeys, localized, renameValue, setText, stepsAbove } from './document'
+import { maybeConfiguratorEditor } from './editor'
 import { isSwatch } from './engine/validator'
 import type { Condition, Price } from './engine/types'
 
 /**
  * One option of a step of choices, unfolded (§13.2): its value and words, the picture of a card
  * or the swatch, the price in three numbers, the area formula on the main step, the sizes it puts
- * in and the limits it holds, and when it is offered at all.
+ * in and the limits it holds, and when it is offered at all — and, with the catalogue, the product it
+ * shows «in real life» (§22.4), found by name and kept by its article number.
  *
  * Edits go straight into the document; a value renamed takes the conditions that chose it along.
  */
@@ -38,6 +41,16 @@ const locale = builder.locale
 const disabled = builder.disabled
 
 const errors = (suffix: string) => errorsAt(builder, `${path.value}.${suffix}`)
+
+/* ------------------------------------------------------------------- a product of the catalogue */
+
+const editor = maybeConfiguratorEditor()
+const hasCatalog = computed(() => editor?.detail.value?.has_catalog ?? false)
+
+function setProduct(next: string | null): void {
+  if (typeof next === 'string' && next.trim() !== '') option.value.product = next.trim()
+  else delete option.value.product
+}
 
 /* The value is renamed on leaving the field, not on every key: halfway through typing it may be
    another option's value, and the conditions would follow the wrong one. */
@@ -264,6 +277,26 @@ const opened = ref(
         :captions="false"
         :disabled="disabled"
         @update:model-value="(next) => setPicture('image', next)"
+      />
+    </wx-form-item>
+
+    <wx-form-item
+      v-if="hasCatalog || option.product"
+      :label="t('configurator.option-product')"
+      :help="t('configurator.option-product-help')"
+      :error="errors('product')"
+    >
+      <configurator-field
+        :model-value="option.product ?? null"
+        target="configurator-product"
+        by="sku"
+        :placeholder="t('configurator.option-product-search')"
+        :empty-text="t('configurator.option-product-none')"
+        :missing-text="t('configurator.option-product-missing')"
+        :remove-text="t('configurator.option-product-remove')"
+        :nothing-text="t('configurator.option-product-nothing')"
+        :disabled="disabled || !hasCatalog"
+        @update:model-value="setProduct"
       />
     </wx-form-item>
 

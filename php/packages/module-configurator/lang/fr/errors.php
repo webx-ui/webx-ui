@@ -47,6 +47,10 @@ return [
         'missing' => 'Choisissez une image de la médiathèque.',
         'unknown' => 'La médiathèque n’a pas de fichier « :key ».',
     ],
+    'product' => [
+        'invalid' => 'Un produit est désigné par sa référence (SKU), 64 caractères au plus.',
+        'unknown' => 'Le catalogue n’a aucun produit de référence «:sku».',
+    ],
     'swatch' => [
         'invalid' => 'Un échantillon est #rgb, #rrggbb ou un dégradé de couleurs hex.',
     ],

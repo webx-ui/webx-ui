@@ -25,7 +25,7 @@ final class LiveConfigurators
      * The published configurator with this key, or null — one in the bin, never published or
      * taken off the site is nothing to the site.
      *
-     * @return array{id: int, key: string, title: array<string, string>, schema: array<string, mixed>, form: string|null, version: int|null}|null
+     * @return array{id: int, key: string, title: array<string, string>, schema: array<string, mixed>, form: string|null, version: int|null, page: array<string, mixed>|null}|null
      */
     public function find(string $key): ?array
     {
@@ -52,6 +52,8 @@ final class LiveConfigurators
                 'schema' => $schema,
                 'form' => is_string($configurator->form) && $configurator->form !== '' ? $configurator->form : null,
                 'version' => $configurator->liveVersion(),
+                // Where it stands (§22.1): what a product of the catalogue sends a visitor to.
+                'page' => is_array($configurator->page) ? $configurator->page : null,
             ];
         }, localized: false);
 

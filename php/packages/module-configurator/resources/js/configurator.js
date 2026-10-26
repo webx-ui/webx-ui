@@ -253,6 +253,13 @@ function setup(root) {
 
     lines(quote)
 
+    // «… in real life» of a catalogue product (§22.5): the block of every chosen option that has one.
+    for (const live of root.querySelectorAll('[data-webx-configurator-live]')) {
+      const [step, value] = (live.getAttribute('data-webx-configurator-live') ?? '').split(':')
+      const offered = state.options[step]
+      live.hidden = !(offered && offered.includes(value) && state.values[step] === value)
+    }
+
     const figure = root.querySelector('[data-webx-configurator-preview]')
     const image = figure ? figure.querySelector('img') : null
     const picture = images[previewKey(schema, state)] ?? null

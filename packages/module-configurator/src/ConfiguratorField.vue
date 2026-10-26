@@ -16,6 +16,9 @@ import type { ConfiguratorCandidate } from './types'
  *
  * A key nobody has stays in the field, marked: dropping it silently would change the block without
  * anybody touching it, and the server refuses such a key only when it is written anew.
+ *
+ * The same picker chooses a product of the catalogue for an option (§22.4): `target` names another
+ * relation target and `by` the field of its row that is kept — `configurator-product` by `sku`.
  */
 defineOptions({ name: 'WxConfiguratorField' })
 
@@ -24,8 +27,24 @@ const props = withDefaults(
     disabled?: boolean
     placeholder?: string
     emptyText?: string
+    /** The relation target the rows come from. */
+    target?: string
+    /** The field of a row that is the value. */
+    by?: 'key' | 'sku'
+    missingText?: string
+    removeText?: string
+    nothingText?: string
   }>(),
-  { disabled: false, placeholder: undefined, emptyText: undefined },
+  {
+    disabled: false,
+    placeholder: undefined,
+    emptyText: undefined,
+    target: 'configurator',
+    by: 'key',
+    missingText: undefined,
+    removeText: undefined,
+    nothingText: undefined,
+  },
 )
 
 const value = defineModel<string | null>({ default: null })
@@ -34,7 +53,10 @@ useConfiguratorsMessages()
 
 const admin = useAdmin()
 const t = useTranslate('webx-configurator')
-const api = createRelationsApi(admin, 'configurator')
+const api = createRelationsApi(admin, props.target)
+
+/** What a row is kept by: its key, or a product's article number. */
+const keyOf = (row: ConfiguratorCandidate): string | undefined => row[props.by]
 
 const key = computed(() => (typeof value.value === 'string' ? value.value.trim() : ''))
 
@@ -50,7 +72,10 @@ const term = ref('')
 function remember(rows: ConfiguratorCandidate[]): void {
   const next = new Map(known.value)
 
-  for (const row of rows) if (row.key) next.set(row.key, row)
+  for (const row of rows) {
+    const at = keyOf(row)
+    if (at) next.set(at, row)
+  }
 
   known.value = next
 }
@@ -62,7 +87,8 @@ async function name(wanted: string): Promise<void> {
     const rows = (await api.search(wanted)) as ConfiguratorCandidate[]
     remember(rows)
 
-    if (!rows.some((row) => row.key === wanted)) missing.value = new Set([...missing.value, wanted])
+    if (!rows.some((row) => keyOf(row) === wanted))
+      missing.value = new Set([...missing.value, wanted])
   } catch {
     // A request that did not come back is not an answer: the key shows as it is until the next try.
   }
@@ -76,20 +102,22 @@ const chosen = computed(() => (key.value === '' ? null : (known.value.get(key.va
 const mark = computed(() => {
   if (key.value === '') return null
   if (chosen.value === null)
-    return missing.value.has(key.value) ? t('configurator.picker-missing') : null
+    return missing.value.has(key.value)
+      ? (props.missingText ?? t('configurator.picker-missing'))
+      : null
 
   return chosen.value.visible ? null : t('configurator.picker-off')
 })
 
 const options = computed<AutocompleteOption[]>(() =>
   candidates.value
-    .filter((one) => one.key && one.key !== key.value)
+    .filter((one) => keyOf(one) && keyOf(one) !== key.value)
     .map((one) => ({
       value: one.title,
-      description: [one.key, one.visible ? null : t('configurator.picker-off')]
+      description: [keyOf(one), one.visible ? null : t('configurator.picker-off')]
         .filter((part): part is string => typeof part === 'string' && part !== '')
         .join(' · '),
-      id: one.key,
+      id: keyOf(one),
     })),
 )
 
@@ -143,7 +171,7 @@ const placeholder = computed(() => props.placeholder ?? t('configurator.picker-s
         v-if="!props.disabled"
         type="remove"
         size="sm"
-        :title="t('configurator.picker-remove')"
+        :title="props.removeText ?? t('configurator.picker-remove')"
         @click="clear"
       />
     </div>
@@ -161,7 +189,7 @@ const placeholder = computed(() => props.placeholder ?? t('configurator.picker-s
         teleport
         :loading="searching"
         :loading-text="t('configurator.picker-searching')"
-        :empty-text="t('configurator.picker-nothing')"
+        :empty-text="props.nothingText ?? t('configurator.picker-nothing')"
         :placeholder="placeholder"
         :aria-label="placeholder"
         :disabled="props.disabled"

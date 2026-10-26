@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Configurator\Models\Configurator;
 use WebxUi\Configurator\Panel\ConfiguratorWriter;
+use WebxUi\Configurator\Pricing\Quoter;
 use WebxUi\Configurator\Site\Money;
 use WebxUi\Inbox\InboxServiceProvider;
 use WebxUi\Inbox\Models\Form;
@@ -228,6 +229,24 @@ final class SiteTest extends TestCase
         $writer->publish($configurator->refresh());
 
         $this->assertStringContainsString('Кутова нова', $this->render());
+    }
+
+    #[Test]
+    public function an_option_naming_a_product_is_nothing_more_without_the_catalogue(): void
+    {
+        // No catalogue on this site: the option keeps its product for the day there is one.
+        $this->mediaFile();
+        $schema = $this->schema();
+        $schema['steps'][2]['options'][1]['product'] = 'GLASS-1';
+
+        $this->assertSame([], app(Quoter::class)->problems($schema));
+
+        $writer = app(ConfiguratorWriter::class);
+        $writer->publish($writer->create('shower', ['uk' => 'Душові'], $schema, null));
+
+        $html = $this->render();
+        $this->assertStringContainsString('data-webx-configurator="shower"', $html);
+        $this->assertStringNotContainsString('webx-configurator__live', $html);
     }
 
     /**

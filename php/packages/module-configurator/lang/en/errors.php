@@ -47,6 +47,10 @@ return [
         'missing' => 'Choose a picture from the media library.',
         'unknown' => 'The media library has no file «:key».',
     ],
+    'product' => [
+        'invalid' => 'A product is named by its article number (SKU), up to 64 characters.',
+        'unknown' => 'The catalogue has no product with the article number «:sku».',
+    ],
     'swatch' => [
         'invalid' => 'A swatch is #rgb, #rrggbb or a gradient of hex colours.',
     ],

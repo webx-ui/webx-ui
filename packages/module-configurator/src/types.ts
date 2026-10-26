@@ -1,5 +1,5 @@
 import type { LocalizedValue } from '@webx-ui/core'
-import type { EditingChange, RelationCandidate } from '@webx-ui/module-admin'
+import type { EditingChange, LinkValue, RelationCandidate } from '@webx-ui/module-admin'
 import type { ConfiguratorSchema, Quote, QuoteLine } from './engine/types'
 
 /** Never on the site · on it · on it with edits waiting · taken off it. */
@@ -30,6 +30,8 @@ export interface ConfiguratorValues {
   title: LocalizedValue
   schema: ConfiguratorSchema
   form: string | null
+  /** Where its block stands (`wx-link`): a product of the catalogue sends a visitor there (§22). */
+  page?: LinkValue | null
   [field: string]: unknown
 }
 
@@ -49,6 +51,8 @@ export interface ConfiguratorDetail {
   errors: SchemaProblem[]
   /** Without the inbox a configurator sends no requests, and the form field is not drawn. */
   has_inbox: boolean
+  /** With the catalogue an option may name a product of it, and the settings have the page. */
+  has_catalog?: boolean
 }
 
 /** A save refused because somebody wrote in between: the record as it is now, and who. */
@@ -80,6 +84,8 @@ export interface ConfiguratorQuery {
 /** A configurator as the relation target `configurator` describes it, with its key by name. */
 export interface ConfiguratorCandidate extends RelationCandidate {
   key?: string
+  /** A product of the catalogue (the target `configurator-product`): what an option keeps. */
+  sku?: string
   /** What a block may start it from (`wx-configurator-preset`): the published steps and sizes. */
   choices?: ConfiguratorChoice[]
 }

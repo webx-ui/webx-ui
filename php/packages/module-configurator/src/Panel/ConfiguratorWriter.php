@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Configurator\Panel;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator as Checks;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\Types\LinkType;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Configurator\Models\Configurator;
 use WebxUi\Configurator\Pricing\Quoter;
@@ -62,9 +65,11 @@ final class ConfiguratorWriter
 
     /**
      * Change the draft: what is given replaces what was there, the rest is kept. The key changes
-     * at once — it is not content — and only while the configurator has never been published.
+     * at once — it is not content — and only while the configurator has never been published; the
+     * products that open it follow it. The page changes at once too: it is where the configurator
+     * stands, not what it is (§22.1).
      *
-     * @param  array{title?: array<string, string>, schema?: array<string, mixed>, form?: string|null, key?: string}  $changes
+     * @param  array{title?: array<string, string>, schema?: array<string, mixed>, form?: string|null, key?: string, page?: array<string, mixed>|null}  $changes
      */
     public function update(Configurator $configurator, array $changes, ?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL): Configurator
     {
@@ -84,14 +89,30 @@ final class ConfiguratorWriter
             $this->checkForm($changes['form']);
         }
 
+        if (array_key_exists('page', $changes)) {
+            $changes['page'] = $this->page($changes['page']);
+        }
+
         $configurator->getConnection()->transaction(function () use ($configurator, $changes, $authorId, $source): void {
-            if (array_key_exists('key', $changes)) {
+            if (array_key_exists('key', $changes) && $changes['key'] !== $configurator->key) {
+                // The products that open it name it by the key: they go where it goes.
+                DB::table(Configurator::LINKS)->where('configurator', $configurator->key)->update(['configurator' => $changes['key']]);
                 $configurator->key = $changes['key'];
+            }
+
+            if (array_key_exists('page', $changes)) {
+                $configurator->page = $changes['page'];
+            }
+
+            if ($configurator->isDirty()) {
                 $configurator->save();
             }
 
-            $draft = array_intersect_key([...$configurator->editing(), ...$changes], array_flip(Configurator::DRAFTED));
-            $configurator->saveDraft($draft, $authorId, $source);
+            // Only the key or the page: the draft is left as it is, and so is the status.
+            if (array_intersect_key($changes, array_flip(Configurator::DRAFTED)) !== []) {
+                $draft = array_intersect_key([...$configurator->editing(), ...$changes], array_flip(Configurator::DRAFTED));
+                $configurator->saveDraft($draft, $authorId, $source);
+            }
         });
 
         return $configurator;
@@ -117,8 +138,8 @@ final class ConfiguratorWriter
     }
 
     /**
-     * The problems of what is being edited. A picture the published schema already had is not
-     * looked up again: a file removed from the library later must not lock the editor.
+     * The problems of what is being edited. A picture or a product the published schema already
+     * had is not looked up again: a file removed from the library later must not lock the editor.
      *
      * @return list<Problem>
      */
@@ -126,7 +147,7 @@ final class ConfiguratorWriter
     {
         return $this->quoter->problems(
             $configurator->editing()['schema'] ?? [],
-            Validator::images($configurator->schema ?? []),
+            Validator::references($configurator->schema ?? []),
         );
     }
 
@@ -154,6 +175,31 @@ final class ConfiguratorWriter
     public function hasInbox(): bool
     {
         return $this->modules->has('inbox') && class_exists(Form::class);
+    }
+
+    /**
+     * The page of the configurator as `wx-link` keeps it, or null for none; refused with the
+     * link field's own words when it is not a link — an address nobody can open, a section the
+     * site does not have.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function page(mixed $page): ?array
+    {
+        if ($page === null || $page === []) {
+            return null;
+        }
+
+        $type = app(LinkType::class);
+        $checks = Checks::make(['page' => $page], ['page' => $type->rules([])]);
+
+        if ($checks->fails()) {
+            throw new Refused((string) $checks->errors()->first('page'), reason: 'page.invalid');
+        }
+
+        $stored = $type->store($page, []);
+
+        return is_array($stored) ? $stored : null;
     }
 
     private function checkKey(mixed $key): void

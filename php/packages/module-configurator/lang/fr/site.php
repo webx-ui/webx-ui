@@ -22,4 +22,6 @@ return [
     'write' => 'Écrivez-nous sur :messenger',
     'chosen' => 'Votre configuration',
     'refused' => 'Cette configuration ne peut pas être envoyée pour le moment. Rechargez la page et réessayez.',
+    'live' => ':name en vrai',
+    'open' => 'Calculer dans le configurateur',
 ];

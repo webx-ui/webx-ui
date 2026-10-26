@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { createRelationsApi, useAdmin, useTranslate } from '@webx-ui/module-admin'
+import {
+  WxLinkPicker,
+  createRelationsApi,
+  useAdmin,
+  useTranslate,
+  type LinkValue,
+} from '@webx-ui/module-admin'
 import {
   WxAlert,
   WxCard,
@@ -24,6 +30,9 @@ import { useConfiguratorEditor } from './editor'
  *
  * The form is chosen from the forms the Inbox has, through its relation target, so this package
  * does not need the Inbox's: without the Inbox on the site there is no field, and a note says why.
+ *
+ * With the catalogue, the page the configurator's block stands on (§22.1): a product sends a
+ * visitor there. It is not drafted — it changes on the site with the next save.
  */
 defineOptions({ name: 'WxConfiguratorSettings' })
 
@@ -39,6 +48,11 @@ const locale = builder.locale
 
 const keyLocked = computed(() => editor.detail.value?.configurator.key_locked ?? false)
 const hasInbox = computed(() => editor.detail.value?.has_inbox ?? false)
+const hasCatalog = computed(() => editor.detail.value?.has_catalog ?? false)
+
+function setPage(next: LinkValue | null): void {
+  values.value.page = next
+}
 
 function serverErrors(field: string): string[] {
   return editor.errors.value[field] ?? []
@@ -166,6 +180,20 @@ function setLabel(next: LocalizedValue | string | number | undefined): void {
           />
         </wx-form-item>
         <wx-alert v-else type="info">{{ t('configurator.no-inbox') }}</wx-alert>
+
+        <wx-form-item
+          v-if="hasCatalog || values.page"
+          :label="t('configurator.field-page')"
+          :help="t('configurator.field-page-help')"
+          :error="serverErrors('page')"
+        >
+          <wx-link-picker
+            :model-value="values.page ?? null"
+            :attributes="false"
+            :disabled="disabled"
+            @update:model-value="setPage"
+          />
+        </wx-form-item>
 
         <div class="wx-configurator-settings__pair">
           <wx-form-item

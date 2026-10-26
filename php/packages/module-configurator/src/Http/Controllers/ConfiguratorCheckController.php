@@ -36,7 +36,7 @@ final class ConfiguratorCheckController
         $id = $request->input('configurator');
 
         if (is_int($id) || (is_string($id) && ctype_digit($id))) {
-            $known = Validator::images(Configurator::withTrashed()->find((int) $id)->schema ?? []);
+            $known = Validator::references(Configurator::withTrashed()->find((int) $id)->schema ?? []);
         }
 
         $problems = $this->quoter->problems($request->input('schema'), $known);

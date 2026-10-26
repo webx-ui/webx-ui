@@ -83,6 +83,18 @@ describe('validate()', () => {
     expect(codes(doc)).toEqual(['steps.0.options.0.image image.missing'])
   })
 
+  it('takes a product by its article number, and leaves whether it exists to the server', () => {
+    const option = (product: unknown) => ({
+      ...base,
+      steps: [{ ...base.steps[0], options: [{ value: 'a', label: 'A', product }] }],
+    })
+
+    expect(codes(option('GLASS-1'))).toEqual([])
+    expect(codes(option(null))).toEqual([])
+    expect(codes(option({ sku: 'GLASS-1' }))).toEqual(['steps.0.options.0.product product.invalid'])
+    expect(codes(option(' '))).toEqual(['steps.0.options.0.product product.invalid'])
+  })
+
   it('refuses a discount out of range and a date that is not one', () => {
     expect(codes({ ...base, discount: { percent: 100, until: '2026-02-30' } })).toEqual([
       'discount.percent discount.percent',

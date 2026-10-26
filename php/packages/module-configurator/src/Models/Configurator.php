@@ -25,6 +25,7 @@ use WebxUi\Localization\HasTranslations;
  * @property array<string, string>|string|null $title
  * @property array<string, mixed>|null $schema
  * @property string|null $form
+ * @property array<string, mixed>|null $page
  * @property array<string, mixed>|null $draft
  * @property Carbon|null $published_at
  * @property Carbon|null $created_at
@@ -55,15 +56,18 @@ class Configurator extends Model
     /** What a draft holds: everything a publication changes. */
     public const DRAFTED = ['title', 'schema', 'form'];
 
+    /** The products of the catalogue that open a configurator, and where they start it (§22.2). */
+    public const LINKS = 'configurator_product';
+
     /** @var list<string> */
-    protected $fillable = ['key', 'title', 'schema', 'form'];
+    protected $fillable = ['key', 'title', 'schema', 'form', 'page'];
 
     /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return ['schema' => 'array'];
+        return ['schema' => 'array', 'page' => 'array'];
     }
 
     /**
@@ -79,8 +83,9 @@ class Configurator extends Model
      */
     public function unversionedAttributes(): array
     {
-        // The key is what blocks of the site name it by; rolling back must never change it.
-        return [...$this->contentlessAttributes(), 'key'];
+        // The key is what blocks of the site name it by; rolling back must never change it. The
+        // page is where it stands, not what it is: a rollback does not move it either.
+        return [...$this->contentlessAttributes(), 'key', 'page'];
     }
 
     public function status(): string

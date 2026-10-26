@@ -95,7 +95,7 @@ final class ConfiguratorController
         $values = is_array($values) ? $values : [];
         $changes = [];
 
-        foreach (['key', 'title', 'schema', 'form'] as $field) {
+        foreach (['key', 'title', 'schema', 'form', 'page'] as $field) {
             if (array_key_exists($field, $values)) {
                 $changes[$field] = $values[$field];
             }
@@ -122,7 +122,7 @@ final class ConfiguratorController
         }
 
         try {
-            /** @var array{title?: array<string, string>, schema?: array<string, mixed>, form?: string|null, key?: string} $changes */
+            /** @var array{title?: array<string, string>, schema?: array<string, mixed>, form?: string|null, key?: string, page?: array<string, mixed>|null} $changes */
             $this->writer->update($configurator, $changes, $this->author($request));
         } catch (Refused $refused) {
             return self::refused($refused);

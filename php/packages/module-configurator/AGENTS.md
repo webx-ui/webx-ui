@@ -7,15 +7,15 @@ The section «Configurators» of the panel (id `configurators`) and the MCP tool
 edit it. Drafts and versions are `webx-ui/module-admin`'s, pictures `webx-ui/module-media`'s, the
 request form `webx-ui/module-inbox`'s — read their guides for those.
 
-It stores, checks and prices a configurator, answers the panel's editor
-(`@webx-ui/module-configurator`), builds one over MCP, prints it on the site and puts the
-configuration, priced again on the server, into a request of the inbox.
+It stores, checks and prices a configurator for the panel's editor and MCP, prints it on the site,
+links it with the catalogue and puts the configuration, priced again, into a request of the inbox.
 
 ## What it owns
 
 - **Table** `configurators` (`WebxUi\Configurator\Models\Configurator`): `key` (slug, fixed after
   the first publication — blocks name the configurator by it), `title` (translatable), `schema`
-  (the published document), `form` (inbox form slug), `draft`, `published_at`, soft deletes.
+  (the published document), `form` (inbox form slug), `page` (`wx-link`: where its block stands —
+  not drafted, not versioned), `draft`, `published_at`, soft deletes.
   `HasDraft` + `HasVersions`: the site prices by the columns, the panel edits the draft.
 - **The schema document** — one JSON: `version`, `currency`, `pricing.round`, `initial`,
   `discount`, `steps` (`cards`, `swatches`, `buttons`, `dimensions`), `previews`. The reference is
@@ -51,13 +51,20 @@ configuration, priced again on the server, into a request of the inbox.
   prices them and writes one answer row with no field (text + `payload`: selection, sizes, area,
   discount, lines, total). Only for the form the configurator names; a size out of limits is 422
   `configurator.values.<field>`.
+- **Catalogue link** (`Catalog\\*`, only when `webx-ui/module-catalog` is installed; the catalogue
+  knows nothing of it). Product → configurator: table `configurator_product` (`Models\ProductLink`,
+  product id, key, `preset`), the part `configurator` of the product form (`configurator.key`,
+  `configurator.preset` — also for `catalog_products_update`), the button in `catalog.product.aside`
+  (view `webx-configurator::open`) to `page` with `?configurator=<key>&preset[<step>]=<value>`
+  — the component reads it as `initial`. Configurator → product: `"product": "<SKU>"` on an option
+  (`product.invalid`, `product.unknown`; picker — relation target `configurator-product`); while
+  chosen, the site shows up to 4 gallery pictures and a link — nothing if the product is off the site.
 - **MCP** tools `configurators_list`, `_get`, `_create`, `_update`, `_publish`, `_unpublish`,
   `_discard`, `_versions`, `_version_restore`, `_delete`, `_quote`, `_validate`. Resources
-  `configurators://catalog`, `configurators://schema`. Scopes `configurators:read`,
-  `configurators:write`.
-- Also registered: demo content (`resources/demo/shower.json` and the drawings in
-  `resources/demo/images`) with its inbox form `configurator-request`; the table moves with
-  `webx:snapshot`.
+  `configurators://catalog`, `configurators://schema`. `_create`/`_update` take `page`; `_get` answers
+  `page`, `option_products` and `opened_from_products`. Scopes `configurators:read`, `:write`.
+- Also registered: demo (`resources/demo`, its inbox form `configurator-request`, the first
+  constructions linked to the catalogue's demo products when they are there); `webx:snapshot`.
 
 ### Permissions
 
@@ -76,6 +83,7 @@ A route or a screen node the site adds next to the module asks the same:
 | A configurator for your product           | build it in the panel, or over MCP: `configurators://schema` → `_validate` → `_create`    |
 | Show what a combination costs             | `configurators_quote` with `values` (and `actions` to replay a visitor)                   |
 | Another currency for new configurators    | `WEBX_CONFIGURATOR_CURRENCY=EUR` (publish the config: `--tag=webx-configurator-config`)   |
+| A product opening the configurator        | `page` of the configurator, then `configurator.key` / `.preset` of the product            |
 | A time-limited sale                       | `discount: { percent, until, label }` in the schema, then publish                         |
 | Requests with the configuration           | a form in the inbox, its slug in `form` of the configurator                               |
 | Other words of the panel or the breakdown | `php artisan vendor:publish --tag=webx-configurator-lang`                                 |
@@ -101,7 +109,10 @@ The theme's contract (THEMES §10), in `resources/theme/configurator.css`; resty
 `webx-configurator__line-amount`, `webx-configurator__note`, `webx-configurator__actions`,
 `webx-configurator__submit`, `webx-configurator__messenger` (+ `webx-configurator__messenger--<kind>`),
 `webx-configurator__messenger-icon`, `webx-configurator__sr`, `webx-configurator__recap`,
-`webx-configurator__recap-title`, `webx-configurator__recap-list`, `webx-configurator__recap-total`.
+`webx-configurator__recap-title`, `webx-configurator__recap-list`, `webx-configurator__recap-total`,
+`webx-configurator__live-list`, `webx-configurator__live`, `webx-configurator__live-title`, `webx-configurator__live-images`,
+`webx-configurator__live-item`, `webx-configurator__live-link`, `webx-configurator__live-image`, `webx-configurator__live-product`;
+on a product's page `webx-configurator-open`.
 Local tokens on `.webx-configurator`: `--webx-configurator-gap`, `-aside`, `-card`, `-swatch-size`, `-control`, `-selected`, `-corner` (set by the widget).
 
 ## Do not

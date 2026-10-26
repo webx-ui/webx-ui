@@ -194,6 +194,42 @@ picture above the steps and the price with the button stuck to the bottom of the
 configurator is on it. A theme restyles it with the same classes (`### Classes` in the package's
 `AGENTS.md`), or publishes the view: `--tag=webx-configurator-views`.
 
+## With the catalogue
+
+When `webx-ui/module-catalog` is installed, the configurator links itself with it both ways — from
+its own side: the catalogue knows nothing of configurators, and without it nothing below exists.
+
+**From a product to the configurator.** The product's form gets a card «Configurator» in its main
+tab: the configurator (`configurator.key`) and where it starts from this product
+(`configurator.preset`, chosen from its steps and sizes). The configurator says where its block
+stands — **Configurator page** in its settings, a link to a page or an address. Once it is
+published and its page is on the site, the product's page shows «Calculate in the configurator»
+(the point `catalog.product.aside`), leading to
+
+```text
+/shower-configurator?configurator=shower&preset[construction]=walk_in#webx-configurator-shower
+```
+
+The address only asks: the configurator reads `preset` as it reads its `initial` — an unknown
+step or value is dropped, a size is pulled into its limits — and a request is priced by the server
+from what is sent, as always. The link is kept in the configurator's own table
+(`configurator_product`), never in a column of the product.
+
+**From an option to a product.** An option may name a product by its article number —
+`"product": "GLASS-GRAPHITE"`, picked in the option's editor by name or article. While the option
+is chosen, the configurator shows «Graphite in real life» under itself: up to four pictures of the
+product's gallery and a link to it. A product that is unpublished, binned or in no visible category
+shows nothing. An article number the catalogue does not have is refused when it is new
+(`product.unknown`); one that went later does not lock the editor.
+
+**For an agent.** `configurators_update` writes `page` and the options' `product` with the
+schema; `configurators_get` answers the page, `option_products` (each found or not, on the site or
+not) and `opened_from_products`. The product side is `catalog_products_update` with
+`configurator.key` and `configurator.preset` — `catalog://product-parts` describes them.
+
+The demo links the first constructions of the shower configurator to the catalogue's demo
+products when those are on the site.
+
 ## The panel's API
 
 Under the panel's API path, `configurators`: the list (`?trashed=1`), `POST` a new one,

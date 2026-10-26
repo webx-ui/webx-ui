@@ -22,4 +22,6 @@ return [
     'write' => 'Write to us in :messenger',
     'chosen' => 'Your configuration',
     'refused' => 'This configuration cannot be sent right now. Reload the page and try again.',
+    'live' => ':name in real life',
+    'open' => 'Calculate in the configurator',
 ];

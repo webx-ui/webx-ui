@@ -129,6 +129,27 @@
         </div>
     </div>
 
+    @if ($live)
+        {{-- «… in real life» (§22.5): a product of the catalogue an option names, printed for every such option and shown for the chosen ones. --}}
+        <div class="webx-configurator__live-list">
+            @foreach ($live as $one)
+                <section class="webx-configurator__live" data-webx-configurator-live="{{ $one['step'] }}:{{ $one['value'] }}" @if ($one['hidden']) hidden @endif>
+                    <h3 class="webx-configurator__live-title">{{ __('webx-configurator::site.live', ['name' => $one['label']]) }}</h3>
+                    <ul class="webx-configurator__live-images">
+                        @foreach ($one['product']['images'] as $image)
+                            <li class="webx-configurator__live-item">
+                                <a class="webx-configurator__live-link" href="{{ $one['product']['url'] }}" tabindex="-1">
+                                    <img class="webx-configurator__live-image" src="{{ $image['thumb'] ?? $image['src'] }}" alt="{{ $image['alt'] }}" loading="lazy">
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                    <a class="webx-configurator__live-product" href="{{ $one['product']['url'] }}">{{ $one['product']['name'] }}</a>
+                </section>
+            @endforeach
+        </div>
+    @endif
+
     @if ($form)
         <input type="hidden" name="webx_enclosure[]" value="configurator"{!! $owner !!}>
         <input type="hidden" name="configurator[key]" value="{{ $key }}"{!! $owner !!}>

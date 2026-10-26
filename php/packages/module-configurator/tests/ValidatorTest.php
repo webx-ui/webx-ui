@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Configurator\Pricing\Quoter;
 use WebxUi\Configurator\Schema\Problem;
 use WebxUi\Configurator\Schema\Validator;
+use WebxUi\Media\Models\MediaFile;
 
 /**
  * The check a publication is held to (§9): every code is reachable, and each lands on the path
@@ -112,6 +113,12 @@ final class ValidatorTest extends TestCase
             [static function (array &$s): void {
                 $s['currency'] = 'uah';
             }, 'currency', 'currency.invalid'],
+            [static function (array &$s): void {
+                $s['steps'][2]['options'][1]['product'] = ['sku' => 'GLASS-1'];
+            }, 'steps.2.options.1.product', 'product.invalid'],
+            [static function (array &$s): void {
+                $s['steps'][2]['options'][1]['product'] = 'NOBODY-1';
+            }, 'steps.2.options.1.product', 'product.unknown'],
             [static function (array &$s): void {
                 $s['pricing']['round'] = 0;
             }, 'pricing.round', 'pricing.round'],
@@ -218,9 +225,13 @@ final class ValidatorTest extends TestCase
      */
     private function problems(array $schema, array $known = []): array
     {
+        // The library as the module asks it, and a catalogue that has none of the products asked
+        // about — the one with products is CatalogLinkTest's.
+        $media = static fn (array $keys): array => MediaFile::query()->whereIn('path', $keys)->pluck('path')->map(strval(...))->all();
+
         return array_map(
             static fn (Problem $problem): array => $problem->toArray(),
-            $this->app->make(Quoter::class)->problems($schema, $known),
+            (new Validator('uk', $media, $known, static fn (array $skus): array => []))->validate($schema),
         );
     }
 }

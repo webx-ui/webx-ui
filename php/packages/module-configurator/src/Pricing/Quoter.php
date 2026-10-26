@@ -6,6 +6,7 @@ namespace WebxUi\Configurator\Pricing;
 
 use Illuminate\Support\Carbon;
 use InvalidArgumentException;
+use WebxUi\Configurator\Catalog\CatalogProducts;
 use WebxUi\Configurator\Engine\Engine;
 use WebxUi\Configurator\Schema\Problem;
 use WebxUi\Configurator\Schema\Validator;
@@ -45,7 +46,14 @@ final class Quoter
             ? static fn (array $keys): array => MediaFile::query()->whereIn('path', $keys)->pluck('path')->map(strval(...))->all()
             : null;
 
-        return new Validator($this->locales->defaultCode(), $media, $known);
+        $catalog = app(CatalogProducts::class);
+
+        return new Validator(
+            $this->locales->defaultCode(),
+            $media,
+            $known,
+            $catalog->available() ? static fn (array $skus): array => $catalog->known($skus) : null,
+        );
     }
 
     /**
@@ -62,7 +70,7 @@ final class Quoter
      */
     public function quote(array $schema, array $values, array $actions = [], ?array $initial = null, ?string $today = null, ?string $locale = null): array
     {
-        $problems = $this->problems($schema, Validator::images($schema));
+        $problems = $this->problems($schema, Validator::references($schema));
 
         if ($problems !== []) {
             return ['errors' => array_map(static fn (Problem $problem): array => $problem->toArray(), $problems)];

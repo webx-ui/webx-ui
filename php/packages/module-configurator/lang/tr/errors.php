@@ -47,6 +47,10 @@ return [
         'missing' => 'Medya kitaplığından bir görsel seçin.',
         'unknown' => 'Medya kitaplığında «:key» dosyası yok.',
     ],
+    'product' => [
+        'invalid' => 'Ürün, en fazla 64 karakterlik stok koduyla (SKU) belirtilir.',
+        'unknown' => 'Katalogda «:sku» stok kodlu ürün yok.',
+    ],
     'swatch' => [
         'invalid' => 'Bir örnek #rgb, #rrggbb ya da hex renklerden bir geçiştir.',
     ],

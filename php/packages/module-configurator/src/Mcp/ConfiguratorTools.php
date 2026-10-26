@@ -7,11 +7,15 @@ namespace WebxUi\Configurator\Mcp;
 use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use WebxUi\Admin\Editing\AgentRevision;
 use WebxUi\Admin\Editing\Presence;
 use WebxUi\Admin\Support\Authors;
 use WebxUi\Admin\Versions\EntityVersion;
+use WebxUi\Configurator\Catalog\CatalogProducts;
+use WebxUi\Configurator\Catalog\ConfiguratorPart;
+use WebxUi\Configurator\Engine\Engine;
 use WebxUi\Configurator\Models\Configurator;
 use WebxUi\Configurator\Panel\ConfiguratorWriter;
 use WebxUi\Configurator\Panel\Refused;
@@ -19,6 +23,7 @@ use WebxUi\Configurator\Panel\Revision;
 use WebxUi\Configurator\Pricing\Quoter;
 use WebxUi\Configurator\Pricing\Texts;
 use WebxUi\Configurator\Schema\Problem;
+use WebxUi\Configurator\Schema\Validator;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
@@ -57,6 +62,11 @@ final class ConfiguratorTools
             'type' => 'object',
             'description' => 'The whole schema document, as configurators://schema describes it. Not merged: what is sent replaces what was there.',
         ];
+        $page = [
+            'type' => ['string', 'object', 'null'],
+            'description' => 'The page the configurator stands on as a block — where a product of the catalogue sends a visitor: '
+                .'{ "target": "entity", "entity_type": "page", "entity_id": 7 } (pages_tree has the ids), or an address "/shower-configurator"; null for none.',
+        ];
         $values = [
             'type' => 'object',
             'description' => 'Step key → option value, size field key → number. What is left out starts as the schema says (initial, then the defaults of the chosen options).',
@@ -79,7 +89,8 @@ final class ConfiguratorTools
                 'get',
                 'One configurator in full: its schema document, title and form — the draft when there is one '
                 .'(which: "draft"), or what the site prices by (which: "live") — the problems the draft '
-                .'has, the revision to send back with a write, and who has it open in the panel.',
+                .'has, the revision to send back with a write, and who has it open in the panel; its page, and '
+                .'with the catalogue the products its options show and the products that open it.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->get($arguments)),
                 ['properties' => [
                     'configurator' => $configurator,
@@ -101,6 +112,7 @@ final class ConfiguratorTools
                     'title' => $text,
                     'schema' => ['description' => 'The whole schema document, as configurators://schema describes it; a blank one with no steps when omitted.'] + $schema,
                     'form' => ['type' => ['string', 'null'], 'description' => 'The slug of the inbox form a request goes to (inbox_forms_list). Omit for none.'],
+                    'page' => $page,
                 ], 'required' => ['key', 'title']],
                 permission: 'configurators.manage',
             ),
@@ -108,7 +120,9 @@ final class ConfiguratorTools
             Tool::mutating(
                 'update',
                 'Change the draft of a configurator: the schema (the whole document), the title, the form, and '
-                .'the key while it has never been published. What is left out is kept. Send the revision '
+                .'the key while it has never been published; the page changes at once, not with the draft. '
+                .'An option names a product of the catalogue by its article number ("product": "SKU-1") '
+                .'to show it «in real life» under the configurator. What is left out is kept. Send the revision '
                 .'configurators_get gave you. Saved with problems, as the panel saves; the answer lists them.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
@@ -117,6 +131,7 @@ final class ConfiguratorTools
                     'title' => $text,
                     'form' => ['type' => ['string', 'null'], 'description' => 'The slug of the inbox form; null to send no requests.'],
                     'key' => ['type' => 'string', 'description' => 'A new key — only while it has never been on the site.'],
+                    'page' => $page,
                     ...AgentRevision::properties('configurators_get'),
                 ], 'required' => ['configurator']],
                 permission: 'configurators.manage',
@@ -258,6 +273,8 @@ final class ConfiguratorTools
             // Send it back with configurators_update, and a write over somebody else's is refused.
             'revision' => Revision::of($configurator),
             'being_edited_by' => $this->container->make(Presence::class)->of($configurator),
+            'page' => $configurator->page,
+            ...$this->catalog($configurator, is_array($shown['schema'] ?? null) ? $shown['schema'] : []),
         ];
     }
 
@@ -270,6 +287,7 @@ final class ConfiguratorTools
         $key = $arguments['key'] ?? null;
         $schema = $this->schema($arguments, required: false);
         $form = $this->form($arguments['form'] ?? null);
+        $page = array_key_exists('page', $arguments) ? $this->page($arguments['page']) : null;
 
         if (! is_string($key)) {
             throw new ToolFailure('`key` is a slug like "shower".');
@@ -277,8 +295,12 @@ final class ConfiguratorTools
 
         $title = $this->text($arguments['title'] ?? null, 'title');
 
-        $work = function () use ($key, $title, $schema, $form, $user): array {
+        $work = function () use ($key, $title, $schema, $form, $page, $user): array {
             $configurator = $this->writer()->create($key, $title, $schema, $form, $this->authorId($user), EntityVersion::SOURCE_MCP);
+
+            if ($page !== null) {
+                $this->writer()->update($configurator, ['page' => $page], $this->authorId($user), EntityVersion::SOURCE_MCP);
+            }
 
             return $this->written($configurator);
         };
@@ -325,8 +347,12 @@ final class ConfiguratorTools
             $changes['key'] = is_string($arguments['key']) ? $arguments['key'] : throw new ToolFailure('`key` is a slug like "shower".');
         }
 
+        if (array_key_exists('page', $arguments)) {
+            $changes['page'] = $this->page($arguments['page']);
+        }
+
         if ($changes === []) {
-            throw new ToolFailure('Nothing to change: send schema, title, form or key.');
+            throw new ToolFailure('Nothing to change: send schema, title, form, key or page.');
         }
 
         AgentRevision::check($arguments, Revision::of($configurator), 'configurator', 'configurators_get');
@@ -668,6 +694,68 @@ final class ConfiguratorTools
         }
 
         return $schema;
+    }
+
+    /**
+     * A page as `wx-link` keeps it: an address typed as a string, or the link itself.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function page(mixed $page): ?array
+    {
+        if ($page === null || $page === '') {
+            return null;
+        }
+
+        if (is_string($page)) {
+            return ['target' => 'url', 'url' => $page];
+        }
+
+        return is_array($page) && ! array_is_list($page)
+            ? $page
+            : throw new ToolFailure('`page` is { "target": "entity", "entity_type": "page", "entity_id": 7 }, an address "/…", or null.');
+    }
+
+    /**
+     * What the configurator has to do with the catalogue (§22), when there is one: the products its
+     * options show «in real life», by article number — each found or not, on the site or not — and
+     * the products whose page opens it, with where they start it.
+     *
+     * @param  array<string, mixed>  $schema
+     * @return array<string, mixed>
+     */
+    private function catalog(Configurator $configurator, array $schema): array
+    {
+        $products = $this->container->make(CatalogProducts::class);
+
+        if (! $products->available()) {
+            return [];
+        }
+
+        $locale = $this->locales()->content();
+        $found = $products->describe(Validator::products($schema), $locale);
+        $options = [];
+
+        foreach (Engine::steps($schema) as $step) {
+            foreach (Engine::options($step) as $option) {
+                $sku = is_string($option['product'] ?? null) ? trim($option['product']) : '';
+
+                if ($sku !== '') {
+                    $options[] = ['step' => (string) $step['key'], 'option' => (string) $option['value'], 'sku' => $sku, 'product' => $found[$sku] ?? null];
+                }
+            }
+        }
+
+        $rows = DB::table(Configurator::LINKS)->where('configurator', $configurator->key)->orderBy('product_id')->limit(100)->get();
+        $names = $products->byIds($rows->pluck('product_id')->map(intval(...))->all(), $locale);
+        $opened = [];
+
+        foreach ($rows as $row) {
+            $decoded = is_string($row->preset) ? json_decode($row->preset, true) : null;
+            $opened[] = ['product_id' => (int) $row->product_id, 'product' => $names[(int) $row->product_id] ?? null, 'preset' => ConfiguratorPart::preset($decoded)];
+        }
+
+        return ['option_products' => $options, 'opened_from_products' => $opened];
     }
 
     private function form(mixed $form): ?string

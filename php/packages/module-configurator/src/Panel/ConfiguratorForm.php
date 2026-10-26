@@ -6,6 +6,7 @@ namespace WebxUi\Configurator\Panel;
 
 use Illuminate\Database\Eloquent\Builder;
 use WebxUi\Admin\Versions\EntityVersion;
+use WebxUi\Configurator\Catalog\CatalogProducts;
 use WebxUi\Configurator\Models\Configurator;
 use WebxUi\Configurator\Pricing\Texts;
 use WebxUi\Configurator\Schema\Problem;
@@ -87,11 +88,15 @@ final class ConfiguratorForm
                 'title' => $editing['title'],
                 'schema' => $editing['schema'] ?? $this->writer->skeleton(),
                 'form' => $editing['form'],
+                // Where it stands (§22.1): changes at once, not with the draft.
+                'page' => is_array($configurator->page) ? $configurator->page : null,
             ],
             'revision' => Revision::of($configurator),
             'errors' => array_map(static fn (Problem $problem): array => $problem->toArray(), $this->writer->problems($configurator)),
             // Without the inbox a configurator sends no requests, and the editor has no form field.
             'has_inbox' => $this->writer->hasInbox(),
+            // With the catalogue, an option may name a product of it (§22.4).
+            'has_catalog' => app(CatalogProducts::class)->available(),
         ];
     }
 

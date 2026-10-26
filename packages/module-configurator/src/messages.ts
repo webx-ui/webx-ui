@@ -115,6 +115,14 @@ export const configuratorsMessages: Record<string, Messages> = {
     'option-label': 'Name',
     'option-subtitle': 'Subtitle',
     'option-image': 'Picture',
+    'option-product': 'Catalogue product',
+    'option-product-help':
+      "While this option is chosen, the configurator shows the product's photos and a link to it: «… in real life».",
+    'option-product-search': 'Name or article number',
+    'option-product-none': 'No product',
+    'option-product-missing': 'No such product',
+    'option-product-remove': 'Remove the product',
+    'option-product-nothing': 'No product matches',
     'option-swatch': 'Swatch',
     'swatch-colour': 'Colour',
     'swatch-gradient': 'Gradient',
@@ -190,6 +198,9 @@ export const configuratorsMessages: Record<string, Messages> = {
     'field-currency-help': 'ISO 4217, three capitals: UAH, EUR, USD.',
     'field-round': 'Round the total to',
     'field-round-help': '1 — to the unit, 100 — to hundreds.',
+    'field-page': 'Configurator page',
+    'field-page-help':
+      "The page with this configurator's block. The button «Calculate in the configurator» of a catalogue product leads there.",
     'field-form': 'Request form',
     'field-form-help':
       'The Inbox form the button «Get a quote» opens. The server prices the request again and puts the configuration into it.',
@@ -298,6 +309,10 @@ export const configuratorsMessages: Record<string, Messages> = {
       missing: 'Choose a picture from the media library.',
       unknown: 'The media library has no file «:key».',
     },
+    product: {
+      invalid: 'A product is named by its article number (SKU), up to 64 characters.',
+      unknown: 'The catalogue has no product with the article number «:sku».',
+    },
     swatch: {
       invalid: 'A swatch is #rgb, #rrggbb or a gradient of hex colours.',
     },
@@ -358,5 +373,7 @@ export const configuratorsMessages: Record<string, Messages> = {
     write: 'Write to us in :messenger',
     chosen: 'Your configuration',
     refused: 'This configuration cannot be sent right now. Reload the page and try again.',
+    live: ':name in real life',
+    open: 'Calculate in the configurator',
   },
 }

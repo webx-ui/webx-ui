@@ -27,3 +27,8 @@ export function useConfiguratorEditor(): ConfiguratorEditor {
 
   return editor
 }
+
+/** The editor around a part that may also stand without one — a constructor in a test or a demo. */
+export function maybeConfiguratorEditor(): ConfiguratorEditor | null {
+  return inject(key, null)
+}

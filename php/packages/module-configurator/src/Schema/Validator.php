@@ -55,6 +55,8 @@ final class Validator
         'text.invalid' => 'A text is neither a string nor an object of language → string.',
         'image.missing' => 'A picture is not a media library key — required for every option of a cards step.',
         'image.unknown' => 'No such file in the media library.',
+        'product.invalid' => 'An option\'s product is not an article number (SKU) of the catalogue: a string up to 64.',
+        'product.unknown' => 'No product of the catalogue has this article number (SKU).',
         'swatch.invalid' => 'A swatch is not #rgb, #rrggbb or a linear-/radial-gradient of hex colours, numbers with % or deg, to and sides.',
         'price.invalid' => 'A price is not { fixed, perM2, percent } of numbers.',
         'price.per_m2' => 'perM2 needs an area, and no step has an area formula.',
@@ -88,15 +90,20 @@ final class Validator
     /** @var array<string, string> media key → the path of the first place it is used */
     private array $images = [];
 
+    /** @var array<string, string> article number → the path of the first option that names it */
+    private array $products = [];
+
     /**
      * @param  string  $locale  the site's default language: every text needs words in it
      * @param  (Closure(list<string>): list<string>)|null  $media  the keys of these that the library has; null to skip the check
-     * @param  list<string>  $known  keys that were in the document before: an image is checked only when new (`ChecksNewValues`)
+     * @param  list<string>  $known  keys that were in the document before: an image or a product is checked only when new (`ChecksNewValues`)
+     * @param  (Closure(list<string>): list<string>)|null  $catalog  the article numbers of these that the catalogue has; null to skip the check
      */
     public function __construct(
         private readonly string $locale,
         private readonly ?Closure $media = null,
         private readonly array $known = [],
+        private readonly ?Closure $catalog = null,
     ) {}
 
     /**
@@ -106,6 +113,7 @@ final class Validator
     {
         $this->problems = [];
         $this->images = [];
+        $this->products = [];
 
         if (! is_array($schema) || ($schema !== [] && array_is_list($schema))) {
             return [new Problem('', 'schema.invalid')];
@@ -141,6 +149,7 @@ final class Validator
         $this->initial($schema['initial'] ?? null, $steps);
         $this->previews($schema['previews'] ?? null, $steps);
         $this->checkImages();
+        $this->checkProducts();
 
         return $this->problems;
     }
@@ -171,6 +180,38 @@ final class Validator
         }
 
         return array_values(array_unique($found));
+    }
+
+    /**
+     * Every article number the options name (§22.4) — the products of the catalogue a schema shows
+     * «in real life», and what a copy of it to another stand needs there too.
+     *
+     * @return list<string>
+     */
+    public static function products(mixed $schema): array
+    {
+        $found = [];
+
+        foreach (Engine::steps(Engine::map($schema)) as $step) {
+            foreach (Engine::options($step) as $option) {
+                if (is_string($option['product'] ?? null) && trim($option['product']) !== '') {
+                    $found[] = trim($option['product']);
+                }
+            }
+        }
+
+        return array_values(array_unique($found));
+    }
+
+    /**
+     * What a document names outside itself — its pictures and its products: the ones a check
+     * looks up only when they are new to it.
+     *
+     * @return list<string>
+     */
+    public static function references(mixed $schema): array
+    {
+        return array_values(array_unique([...self::images($schema), ...self::products($schema)]));
     }
 
     /**
@@ -377,6 +418,17 @@ final class Validator
                 $this->fail("{$path}.{$key}", 'image.missing');
             } else {
                 $this->images[$option[$key]] ??= "{$path}.{$key}";
+            }
+        }
+
+        // A product of the catalogue (§22.4): its article number, looked up below when it is new.
+        if (array_key_exists('product', $option) && $option['product'] !== null) {
+            $sku = $option['product'];
+
+            if (! is_string($sku) || trim($sku) === '' || mb_strlen(trim($sku)) > 64) {
+                $this->fail("{$path}.product", 'product.invalid');
+            } else {
+                $this->products[trim($sku)] ??= "{$path}.product";
             }
         }
 
@@ -804,6 +856,33 @@ final class Validator
         foreach ($new as $key) {
             if (! in_array($key, $found, true)) {
                 $this->fail($this->images[$key], 'image.unknown', ['key' => $key]);
+            }
+        }
+    }
+
+    /**
+     * The products the catalogue does not have — asked once, only about article numbers new to the
+     * document, and only where there is a catalogue: without one an option keeps its product for
+     * the day the catalogue is installed, and shows nothing meanwhile.
+     */
+    private function checkProducts(): void
+    {
+        if ($this->catalog === null) {
+            return;
+        }
+
+        // Keys of digits come back as integers from array_keys().
+        $new = array_values(array_diff(array_map(strval(...), array_keys($this->products)), $this->known));
+
+        if ($new === []) {
+            return;
+        }
+
+        $found = ($this->catalog)($new);
+
+        foreach ($new as $sku) {
+            if (! in_array($sku, $found, true)) {
+                $this->fail($this->products[$sku] ?? '', 'product.unknown', ['sku' => $sku]);
             }
         }
     }

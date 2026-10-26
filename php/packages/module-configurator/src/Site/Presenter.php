@@ -6,6 +6,7 @@ namespace WebxUi\Configurator\Site;
 
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Carbon;
+use WebxUi\Configurator\Catalog\CatalogProducts;
 use WebxUi\Configurator\Engine\Engine;
 use WebxUi\Configurator\Engine\State;
 use WebxUi\Configurator\Pricing\Breakdown;
@@ -21,7 +22,8 @@ use WebxUi\Widgets\Contacts\ContactsSource;
 /**
  * Everything the view of a configurator prints (§12.2), worked out on the server: every step,
  * option and field with what is hidden at the start, the price and its breakdown, «from N» on the
- * cards, the picture, the request button and the messengers — and the widget's data.
+ * cards, the picture, the request button and the messengers, the products of the catalogue the
+ * options show «in real life» — and the widget's data.
  *
  * The server prints all of it and the script only switches (decision 9): the page without
  * JavaScript is the same page, with the price of where it started.
@@ -35,7 +37,7 @@ final class Presenter
 
     /**
      * @param  array{id: int, key: string, title: array<string, string>, schema: array<string, mixed>, form: string|null, version: int|null}  $live
-     * @param  array<string, mixed>  $preset  a block's choice over the schema's `initial`
+     * @param  array<string, mixed>  $preset  a block's choice over the schema's `initial` — or the address's (§22.3), over the block's
      * @return array<string, mixed>
      */
     public function present(array $live, array $preset, ?string $title, string $id): array
@@ -69,6 +71,7 @@ final class Presenter
             'preview' => $this->preview($schema, $state, $images),
             'price' => $this->price($quote, $schema, $currency, $locale, $text),
             'messengers' => $this->messengers($locale),
+            'live' => $this->live($schema, $state, $text, $locale),
             'data' => [
                 'key' => $live['key'],
                 'locale' => $locale,
@@ -280,6 +283,54 @@ final class Presenter
             'area' => (float) $quote['area'] > 0 ? Breakdown::number((float) $quote['area'], $locale, money: false) : null,
             'rounded' => $round > 1 ? Money::format($round, $currency, $locale) : null,
         ];
+    }
+
+    /**
+     * «… in real life» (§22.5): for every option that names a product of the catalogue the site
+     * shows, its name, address and first pictures — printed for every such option and shown for
+     * the chosen ones, as everything else here is. A product unpublished or binned is not here at
+     * all: no block is better than a block with a dead link. One lookup for the configurator.
+     *
+     * @param  array<string, mixed>  $schema
+     * @param  callable(mixed): string  $text
+     * @return list<array<string, mixed>>
+     */
+    private function live(array $schema, State $state, callable $text, string $locale): array
+    {
+        $skus = Validator::products($schema);
+
+        if ($skus === []) {
+            return [];
+        }
+
+        $products = $this->app->make(CatalogProducts::class)->live($skus, $locale);
+        $live = [];
+
+        foreach (Engine::steps($schema) as $step) {
+            $key = (string) $step['key'];
+
+            foreach (Engine::options($step) as $option) {
+                $sku = is_string($option['product'] ?? null) ? trim($option['product']) : '';
+                $product = $products[$sku] ?? null;
+
+                if ($product === null || $product['images'] === []) {
+                    continue;
+                }
+
+                $value = (string) $option['value'];
+                $chosen = $state->choice($key) === $value && in_array($value, $state->options[$key] ?? [], true);
+
+                $live[] = [
+                    'step' => $key,
+                    'value' => $value,
+                    'label' => $text($option['label'] ?? null) ?: $value,
+                    'product' => $product,
+                    'hidden' => ! $chosen,
+                ];
+            }
+        }
+
+        return $live;
     }
 
     /**

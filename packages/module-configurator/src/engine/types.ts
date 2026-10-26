@@ -29,6 +29,8 @@ export interface OptionDoc {
   /** A key of the media library; wins over `swatch`. */
   swatchImage?: string | null
   price?: Price
+  /** A product of the catalogue by its article number (§22.4): shown «in real life» while chosen. */
+  product?: string | null
   /** The area formula (§7.1): only the options of the main step have one. */
   area?: string
   /** Sizes put in when the option is chosen (§6.2). */

@@ -155,12 +155,13 @@ const schema = computed({
 
 /**
  * The problems as they are typed — the JS copy of the check — and the server's that only it can
- * know beside them: whether the media library has a picture (`image.unknown`).
+ * know beside them: whether the media library has a picture (`image.unknown`), whether the
+ * catalogue has a product (`product.unknown`).
  */
 const problems = computed<Problem[]>(() => {
   const own = validate(values.value.schema, defaultLocale.value)
   const pictures = serverProblems.value
-    .filter((problem) => problem.code === 'image.unknown')
+    .filter((problem) => problem.code === 'image.unknown' || problem.code === 'product.unknown')
     .map((problem) => ({
       path: problem.path,
       code: problem.code,
