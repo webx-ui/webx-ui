@@ -7,6 +7,7 @@ namespace WebxUi\Media\Tests;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\TemporaryFiles;
 use WebxUi\Media\Images\Optimizing\ImageOptimizer;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
@@ -14,6 +15,8 @@ use WebxUi\Media\Storage\FileStore;
 
 final class OptimizeTest extends TestCase
 {
+    use TemporaryFiles;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -172,7 +175,7 @@ final class OptimizeTest extends TestCase
             imagefilledrectangle($image, $x, $y, $x + random_int(1, 300), $y + random_int(1, 300), (int) $colour);
         }
 
-        $path = tempnam(sys_get_temp_dir(), 'wx').'.'.$extension;
+        $path = $this->temporaryFile('wx', '.'.$extension);
         imagejpeg($image, $path, 100);
 
         return new UploadedFile($path, 'photo.'.$extension, 'image/jpeg', null, true);

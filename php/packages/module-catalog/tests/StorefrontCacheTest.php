@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Throwable;
+use WebxUi\Admin\Testing\TemporaryFiles;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cache\Events\GroupRead;
 use WebxUi\Catalog\Catalog;
@@ -54,6 +55,8 @@ use WebxUi\Mcp\Server\WebxServer;
  */
 final class StorefrontCacheTest extends TestCase
 {
+    use TemporaryFiles;
+
     private Shop $shop;
 
     /**
@@ -465,7 +468,7 @@ final class StorefrontCacheTest extends TestCase
 
     public function import(string $csv): void
     {
-        $path = tempnam(sys_get_temp_dir(), 'webx-test-').'.csv';
+        $path = $this->temporaryFile('webx-test-', '.csv');
         file_put_contents($path, $csv);
         $importer = $this->app->make(Importer::class);
         $importer->start(['path' => $path, 'name' => 'file.csv'], $importer->inspect($path, 'file.csv')['mapping'], ['key' => 'sku']);

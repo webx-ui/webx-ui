@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Testing\CountsQueries;
+use WebxUi\Admin\Testing\TemporaryFiles;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Exchange\Importer;
@@ -40,6 +41,7 @@ use WebxUi\Mcp\Server\WebxServer;
 final class PerformanceTest extends TestCase
 {
     use CountsQueries;
+    use TemporaryFiles;
 
     /**
      * The panel's list, its form and the agent's list (WEBX_UI_PERFORMANCE_AUDIT.md §9.5): each
@@ -412,7 +414,7 @@ final class PerformanceTest extends TestCase
 
         $this->page('/shirts')->assertDontSee($first->displayName())->assertSee($second->displayName());
 
-        $path = tempnam(sys_get_temp_dir(), 'webx-test-').'.csv';
+        $path = $this->temporaryFile('webx-test-', '.csv');
         file_put_contents($path, "sku,name\n{$second->sku},Imported shirt\n");
         $importer = $this->app->make(Importer::class);
         $importer->start(['path' => $path, 'name' => 'file.csv'], $importer->inspect($path, 'file.csv')['mapping'], ['key' => 'sku']);

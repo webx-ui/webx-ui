@@ -13,6 +13,7 @@ use WebxUi\Admin\Remote\HostResolver;
 use WebxUi\Admin\Remote\RemoteFetcher;
 use WebxUi\Admin\Remote\Target;
 use WebxUi\Admin\Testing\FakeHostResolver;
+use WebxUi\Admin\Testing\TemporaryFiles;
 
 /**
  * The one way a module fetches an address somebody typed: http(s) only, public addresses only —
@@ -20,6 +21,8 @@ use WebxUi\Admin\Testing\FakeHostResolver;
  */
 final class RemoteFetcherTest extends TestCase
 {
+    use TemporaryFiles;
+
     private FakeHostResolver $dns;
 
     protected function setUp(): void
@@ -173,7 +176,7 @@ final class RemoteFetcherTest extends TestCase
 
         $this->assertRefused('https://files.example.com/big.csv', FetchRefused::TOO_LARGE, maxBytes: 1024);
 
-        $path = (string) tempnam(sys_get_temp_dir(), 'webx-remote-test-');
+        $path = $this->temporaryFile('webx-remote-test-');
 
         try {
             $this->fetcher()->download('https://files.example.com/big.csv', $path, 1024);
@@ -280,7 +283,7 @@ final class RemoteFetcherTest extends TestCase
     public function a_real_transfer_stops_at_the_limit(): void
     {
         $this->serve('<?php if ($_SERVER["REQUEST_URI"] === "/sized") { header("Content-Length: 5000000"); } echo str_repeat("x", 5000000);', function (RemoteFetcher $fetcher, int $port): void {
-            $path = (string) tempnam(sys_get_temp_dir(), 'webx-remote-test-');
+            $path = $this->temporaryFile('webx-remote-test-');
 
             foreach (['/sized', '/streamed'] as $uri) {
                 $this->assertRefusedBy($fetcher, "http://127.0.0.1:{$port}{$uri}", FetchRefused::TOO_LARGE, maxBytes: 100_000);
@@ -313,7 +316,7 @@ final class RemoteFetcherTest extends TestCase
             self::gzipFile($directory.'/bomb.gz', 64 * 1024 * 1024);
             self::gzipFile($directory.'/small.gz', 300_000);
             $this->assertLessThan(1024 * 1024, filesize($directory.'/bomb.gz'));
-            $path = (string) tempnam(sys_get_temp_dir(), 'webx-remote-test-');
+            $path = $this->temporaryFile('webx-remote-test-');
 
             memory_reset_peak_usage();
             $before = memory_get_usage();

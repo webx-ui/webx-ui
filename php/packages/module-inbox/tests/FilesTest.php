@@ -7,6 +7,7 @@ namespace WebxUi\Inbox\Tests;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\TemporaryFiles;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Submission;
 
@@ -15,6 +16,8 @@ use WebxUi\Inbox\Models\Submission;
  */
 final class FilesTest extends TestCase
 {
+    use TemporaryFiles;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -79,7 +82,7 @@ final class FilesTest extends TestCase
             ['name' => 'cv', 'type' => FieldType::File, 'options' => ['extensions' => ['pdf']]],
         ]);
 
-        $path = (string) tempnam(sys_get_temp_dir(), 'webx-inbox-test');
+        $path = $this->temporaryFile('webx-inbox-test');
         file_put_contents($path, "%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n");
 
         $this->postJson($this->intake('apply'), [

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Events\StoredContentRewritten;
+use WebxUi\Admin\Testing\TemporaryFiles;
 use WebxUi\Media\Images\ImageEditing;
 use WebxUi\Media\Images\Optimizing\LibraryOptimizing;
 use WebxUi\Media\Models\MediaAlias;
@@ -29,6 +30,8 @@ use WebxUi\Media\Storage\FileUrls;
  */
 final class ConvertToWebpTest extends TestCase
 {
+    use TemporaryFiles;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -264,7 +267,7 @@ final class ConvertToWebpTest extends TestCase
             imagefilledrectangle($image, $x, $y, $x + random_int(1, 300), $y + random_int(1, 300), (int) $colour);
         }
 
-        $path = tempnam(sys_get_temp_dir(), 'wx').'.jpg';
+        $path = $this->temporaryFile('wx', '.jpg');
         imagejpeg($image, $path, 100);
 
         return new UploadedFile($path, 'photo.jpg', 'image/jpeg', null, true);
@@ -285,7 +288,7 @@ final class ConvertToWebpTest extends TestCase
             }
         }
 
-        $path = tempnam(sys_get_temp_dir(), 'wx').'.png';
+        $path = $this->temporaryFile('wx', '.png');
         imagepng($image, $path);
 
         return new UploadedFile($path, 'logo.png', 'image/png', null, true);
