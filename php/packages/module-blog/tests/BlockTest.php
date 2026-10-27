@@ -118,8 +118,8 @@ final class BlockTest extends TestCase
         $routes = array_filter($queries, static fn (string $sql): bool => str_contains($sql, 'from "routes"'));
         $articles = array_filter($queries, static fn (string $sql): bool => str_contains($sql, 'from "blog_articles"'));
 
-        // The articles and their tags: one query a type, the shared tags read once.
-        $this->assertCount(2, $routes, implode("\n", $routes));
+        // The articles and their tags: one query for both types, the shared tags read once.
+        $this->assertCount(1, $routes, implode("\n", $routes));
         $this->assertCount(1, $articles, implode("\n", $articles));
         $this->assertStringContainsString(url('/blog/second'), $html);
     }
