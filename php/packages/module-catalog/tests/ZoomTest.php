@@ -46,13 +46,19 @@ final class ZoomTest extends TestCase
     }
 
     #[Test]
-    public function the_config_puts_the_magnified_view_beside_or_switches_it_off(): void
+    public function the_config_puts_the_magnified_view_beside_in_the_whole_frame_or_switches_it_off(): void
     {
         $product = $this->product('Chair', $this->category('chairs'));
         $this->picture($product, 800, 600);
 
         config(['webx-catalog.images.zoom' => 'side']);
         $this->get("/chair-{$product->id}")->assertOk()->assertSee('data-zoom-mode="side"', false);
+
+        config(['webx-catalog.images.zoom' => 'inner', 'webx-catalog.images.zoom_frame' => 'container']);
+        $this->get("/chair-{$product->id}")->assertOk()->assertSee('data-zoom-mode="inner" data-zoom-scale="2.5" data-zoom-frame="container"', false);
+
+        config(['webx-catalog.images.zoom_frame' => 'nonsense']);
+        $this->get("/chair-{$product->id}")->assertOk()->assertDontSee('data-zoom-frame', false);
 
         config(['webx-catalog.images.zoom' => 'off']);
         $this->get("/chair-{$product->id}")->assertOk()

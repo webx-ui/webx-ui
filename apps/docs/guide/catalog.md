@@ -381,7 +381,9 @@ next time the product is opened — the same file continues from where the serve
 `images.shown` pixels wide (1200) is shown, and the original comes only when someone looks closer —
 magnified inside the picture's frame under the mouse (`images.zoom` = `inner`, the default), in a
 panel beside it where the page has room (`side`), or not at all (`off`); two fingers pinch it on a
-phone. A click, a tap or Enter opens the product's pictures over the page.
+phone. A theme that stands every picture in a frame of one shape — a portrait photo in a 4:3 on a
+muted ground — sets `images.zoom_frame` to `container` (`WEBX_CATALOG_IMAGES_ZOOM_FRAME`): the
+mouse's window is then the whole link around the picture, not the picture's strip. A click, a tap or Enter opens the product's pictures over the page.
 
 Each video is printed with `<x-webx-video>` of
 [`webx-ui/widgets`](https://github.com/webx-ui/webx-ui/tree/main/php/packages/widgets), the picture as its poster and in its shape. A

@@ -45,8 +45,8 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   with `<x-webx-slide thumb>`; per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280);
   `options` for the rest of Swiper. Without JavaScript a strip that scrolls and snaps.
 - **Lightbox** — any `<a data-webx-lightbox="<group>" data-width data-height>` on the page, or
-  `<x-webx-lightbox :image="$picture" group>`. **Zoom** — `<x-webx-zoom :image mode="inner|side">`,
-  or `data-webx-zoom` on an element holding a picture and a link; the link is the keyboard's way.
+  `<x-webx-lightbox :image="$picture" group>`. **Zoom** — `<x-webx-zoom :image mode frame>` (`inner|side`,
+  `picture|container`) or `data-webx-zoom` on an element with a picture and a link (its way in).
 - **Video** — `<x-webx-video src="<YouTube|Vimeo>" :poster title ratio>`: a poster, the player only
   on a click and after consent to `media`; no poster — its preview fetched once into the library.
   `:file="$media"` — `<video preload="none">`; `variant="background"` — a muted first-screen loop.
