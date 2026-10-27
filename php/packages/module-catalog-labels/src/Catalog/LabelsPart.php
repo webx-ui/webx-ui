@@ -80,6 +80,7 @@ final class LabelsPart implements ProductPart
             static fn (int $id): array => ['label_id' => $id, 'product_id' => $product->id],
             array_values(array_diff($after, $before)),
         ));
+        Labels::forgetLoaded();
 
         return [[
             'field' => self::KEY.'.ids',

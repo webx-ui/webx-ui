@@ -26,6 +26,7 @@ use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogLabels\Catalog\BadgesPart;
 use WebxUi\CatalogLabels\Catalog\LabelAction;
 use WebxUi\CatalogLabels\Catalog\LabelFacet;
+use WebxUi\CatalogLabels\Catalog\Labels;
 use WebxUi\CatalogLabels\Catalog\LabelsColumn;
 use WebxUi\CatalogLabels\Catalog\LabelsDocument;
 use WebxUi\CatalogLabels\Catalog\LabelsExchangeColumn;
@@ -43,6 +44,12 @@ class LabelsServiceProvider extends ServiceProvider
 {
     /** Where the labels answer under the panel's API, and what `wx-categories` names them by. */
     public const SOURCE = 'catalog/labels';
+
+    public function register(): void
+    {
+        // Holds nothing of its own — what a page loaded lives on the request — so one is enough.
+        $this->app->singleton(Labels::class);
+    }
 
     public function boot(): void
     {

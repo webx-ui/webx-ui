@@ -472,6 +472,23 @@ Instead of a tone a label can have a colour of its own, `#rrggbb` («Own colour�
 text on it is black or white by WCAG contrast unless `text_color` says otherwise, and the badge is
 `wx-catalog-badge--custom` with `--webx-label-bg` / `--webx-label-fg` set on the element. Bulk actions: `add-label`, `remove-label`. A label still on products cannot be deleted.
 
+A template reads the labels of a product — the badges and the service ones, «mounting included» or
+«ships in two days» — through `Labels::of()`, without a query of its own. The badges of the page
+loaded every label of every product on it in one query, and the answer is kept in the
+[storefront's cache](#the-storefront-s-caches) until the catalogue changes:
+
+```blade
+@foreach (app(\WebxUi\CatalogLabels\Catalog\Labels::class)->of($product) as $label)
+    @unless ($label->is_badge)
+        <p class="product-note" data-label="{{ $label->code }}">{{ $label->displayName() }}</p>
+    @endunless
+@endforeach
+```
+
+A strip of other products on the same page (recommended, seen before) is told about with
+`StorefrontParts::extend($products)`, which loads their labels in one more query; a product nobody
+told about is loaded by itself.
+
 **Stock** — in stock, out of stock, on order; the migration makes these three. One per product. A
 status with «can be bought» off refuses the product with the code `stock` and its own name. A
 product without a row is in the **default** status, so the module goes onto a live catalogue
@@ -634,7 +651,7 @@ The counts of a filter are the same for every visitor until the catalogue change
 `SqlEngine` they are the dearest part of a listing: a `group by` per facet. They are kept in the
 cache until the catalogue's **generation** moves — the version of the `catalog` cache group, which
 every storefront cache carries in its key. On the demo shop a warm category page goes from 34
-queries to 27, with no facet query at all.
+queries to 26, with no facet query at all; the labels of a page (`labels`) are kept the same way.
 
 The generation moves by itself; nobody resets it by hand:
 

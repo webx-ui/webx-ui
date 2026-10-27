@@ -157,6 +157,11 @@ final class PerformanceTest extends TestCase
 
         $this->budget(28, fn () => $this->page($path), 'product warm');
         $this->assertNoRepeatedQueries(fn () => $this->page($path), 'product warm');
+
+        // Warm, the labels of the page come from the storefront's cache (§8.4) — the badges and
+        // whatever a theme reads through `Labels::of()`.
+        $labels = array_filter($this->recordQueries(fn () => $this->page($path))->queries, static fn (array $query): bool => str_contains($query['query'], 'catalog_label'));
+        $this->assertSame([], $labels, 'product warm: the labels were asked again');
     }
 
     #[Test]
