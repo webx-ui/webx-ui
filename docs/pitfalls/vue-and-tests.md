@@ -222,6 +222,11 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
 
 ## Тесты в jsdom
 
+- **«Cannot find module '…/dist/generated/tokens'» в vitest, хотя `pnpm build` прошёл.** `dist`
+  рабочих пакетов vitest не перегоняет, а отдаёт Node (`server.deps.external` в
+  `vitest.config.ts`), и Node не угадывает расширение. Пакет, который собирает `tsc` без
+  бандлера (`@webx-ui/tokens`), пишет относительный импорт с `.js`: `'./generated/tokens.js'`.
+
 - **Тест скрипта согласия (`consent.js`) ждёт `window.ran`, а он `undefined`, хотя скрипт
   «распакован».** jsdom в vitest вставленные скрипты не исполняет, а внешние не грузит: ни кода,
   ни `load`. Смотреть, какой элемент в странице: `revive()` заменяет скрипт новым, инертная копия
