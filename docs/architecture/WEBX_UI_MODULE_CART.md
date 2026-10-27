@@ -815,8 +815,7 @@ missing_formatted }`. `meta` в ответ API не идёт (только MCP).
   | `shippable`       | `true`                                                                                 |
   | `maxQty`          | `null`: количеств у наличия пока нет (решение 5 каталога)                              |
   | `available`       | `Purchasability` ответил «да», `price` не `null` и больше 0                            |
-
-| `names` | переводимое `name` товара на всех языках сайта (`Locales::codes()`), пустые — пропуск |
+  | `names`           | переводимое `name` товара на всех языках сайта (`Locales::codes()`), пустые — пропуск  |
 
 - **Удалённый** (soft delete) — `null`: строка «недоступна». **Снятый, невидимый, «нет в наличии»,
   «цена по запросу»** — строка с `available = false`; цена `0` — тоже «цена по запросу» (решение 31).
@@ -896,7 +895,7 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 ```blade
 <x-webx-cart::add type="catalog.product" :ref="$product->id" />
 
-<button type="button" data-webx-cart-add="catalog.product:42" data-webx-cart-qty="1">В кошик</button>
+<button type="button" data-webx-cart-add="catalog.product:42" data-webx-cart-qty="1">Add to cart</button>
 ```
 
 | Атрибут                             | Что значит                                                                        |
@@ -908,7 +907,7 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 | `data-webx-cart-open="false"`       | не открывать виджет после добавления (по умолчанию открывает `drawer` и `dialog`) |
 
 - Во время запроса — `is-busy` и `aria-busy` на кнопке, повторный клик гасится; после — `is-added`
-  на 2 с и живая область «Додано в кошик»; 422 — сообщение ошибки у кнопки (`role="alert"`).
+  на 2 с и живая область «Added to cart»; 422 — сообщение ошибки у кнопки (`role="alert"`).
 - `<x-webx-cart::add>` печатает `<form method="post">` с `@csrf` и скрытыми полями вокруг кнопки:
   работает и без JavaScript (§6.5). Голый `data-webx-cart-*` на чужой кнопке — только со скриптом.
 - `cart()->has()` даёт кнопке начальное `is-in-cart` без запроса со страницы.
@@ -935,7 +934,7 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 Счётчик напечатан сервером; `<x-webx-cart::add>` отправляет форму и возвращает на ту же страницу, а
 она печатает виджет открытым с содержимым (flash `webx-cart`). В остальное время триггер `dropdown`
 — `<details>`, `drawer` и `dialog` — ссылка на `#webx-cart`, и панель без скрипта пуста
-(«Увімкніть JavaScript, щоб побачити кошик»): рисовать содержимое на каждой странице ради редкого
+(«Turn on JavaScript to see your cart»): рисовать содержимое на каждой странице ради редкого
 случая — полный расчёт на каждый показ (решение 30).
 
 ### 9.6. Что отдано теме
@@ -978,10 +977,10 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 перевод), паритет `en`/`ru`/`uk` держит тест.
 
 - `module.php` — название модуля, право `cart.view` (слово действия — `webx-auth::permissions`).
-- `widget.php` — «Кошик», «Оформити замовлення», «Кошик порожній», «Видалити», «Кількість»,
-  «Разом», «До оплати», «Знижка», «Додано в кошик», «Закрити», «Подарунок», «Відмовитися»,
-  подписи степпера и ARIA. Счётчик — «Товарів: :count» (число в конце), а не «:count товарів».
-  Любое слово виджета перекрывается пропом компонента и темой, как у виджетов.
+- `widget.php` — «Cart», «Checkout», «Your cart is empty», «Remove», «Quantity», «Total»,
+  «To pay», «Discount», «Added to cart», «Close», «Gift», «Decline», подписи степпера и ARIA.
+  Счётчик — «Items: :count» (число в конце), а не «:count items». Любое слово виджета
+  перекрывается пропом компонента и темой, как у виджетов.
 - `errors.php` — коды §6.1 и §4.2: неизвестный тип, недоступно, количество, пачка, лимит строк,
   `options` не принимаются, родитель вне пачки или с родителем, нет строки, нет валюты, цена
   подарка меньше 1 (для лога спутника).
@@ -1008,8 +1007,8 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 `extra.webx.panel`, строки в `apps/playground/src/panel/main.ts` и `SiteBar` (адресов у корзины
 нет). `scripts/packages.mjs` демо-сайта — человеку, когда модуль поедет на демо-сайты. Строка в
 реестре [`WEBX_UI_COMPOSER_PACKAGES.md`](WEBX_UI_COMPOSER_PACKAGES.md) и `AGENTS.md` пакета
-(`AgentDocsCoverageTest`). Changeset — на `@webx-ui/php`; в этапе 4 — ещё на `widgets` за каркас
-`drawer` (решение 29).
+(`AgentDocsCoverageTest`). Changeset — на `@webx-ui/php`; каркас `drawer` в `widgets` (этап 5,
+решение 29) — composer-пакет, поэтому входит в тот же changeset, отдельного нет.
 
 **Тесты:**
 
@@ -1050,23 +1049,28 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 
 Задача webx-ui#54, этапы 2–5 (этап 1 — эта спека):
 
-- **2/5 Пакет и API.** `webx-ui/module-cart`: таблицы (с `name_at_add`), модели, токен и cookie,
-  `Purchasables`, `PurchasableLine`, `ResolvesWithOptions` и `ChecksOptions` (§5.1),
-  `CurrencySource` с реализацией по умолчанию и строкой `webx:doctor` (§4.2), вычислитель и пять
-  пустых реестров (§5), `Money` с `format()`, JSON API с `*_formatted`, CSRF и формой без JS (§6), `webx:cart:prune` в расписании, `cart()`, MCP и ресурс (§10), словарь, `AGENTS.md`,
-  регистрации. Проверяется подставными поставщиками в тестах (простым и с опциями) — каталог ещё
-  не подключён; реальный поставщик с опциями — конфигуратор (webx-ui#44), своей задачей.
-- **3/5 Каталог как поставщик.** `ProductPurchasable` в `module-catalog` (§7), регистрация по
-  `class_exists`, `suggest`; кнопка «Купить» товара — `<x-webx-cart::add>`, если корзина стоит.
-  Changeset на `@webx-ui/php`.
-- **4/5 Виджет.** Компонент и три режима (§9), вьюхи и точки, `cart.css`, скрипт и его вход сборки,
-  кнопка `data-webx-cart-add`, без JS; триггер в `actions` шапки `theme-default`; каркас
-  `<x-webx-dialog drawer>` в `widgets` с changeset на него; гайд в `apps/docs/guide/`. Проверка в браузере: три режима, 360 px,
-  тёмная схема.
-- **5/5 Сквозная проверка.** Тестовый сайт с каталогом: товар из карточки, три режима с текущей
-  ценой и суммами сервера; комплект — пачкой через `window.webx.cart.add()` (кнопки нет,
-  решение 28) и виден деревом; правка цены товара видна в корзине, удалённый товар — «недоступна», корзины через
-  MCP; гейты PHP и JS зелёные.
+- **2/5 Пакет.** `webx-ui/module-cart`: таблицы (с `name_at_add`) и модели, токен и cookie (§3–4),
+  `Purchasables`, `PurchasableLine`, `ResolvesWithOptions`, `ChecksOptions` и `CartRef` (§5.1–5.2),
+  `CurrencySource` + `ConfigCurrency` + `Money` и строка `webx:doctor` (§4.2), сервис корзины,
+  вычислитель и пять пустых реестров (§5.3–5.4), `CartState` (§5.5), `webx:cart:prune` в
+  расписании, `cart()` (§8), регистрации (§13), `AGENTS.md`. Без HTTP, MCP, виджета, адаптера и
+  словаря на 10 языков. Проверяется подставными поставщиками в тестах (простым и с опциями) —
+  каталог ещё не подключён; реальный поставщик с опциями — конфигуратор (webx-ui#44), своей задачей.
+- **3/5 API и каталог.** JSON API с `*_formatted`, CSRF и формой без JS (§6), `AccessCoverageTest`
+  и `PerformanceTest` для `api/cart*`; адаптер `catalog.product` в `module-catalog` (§7),
+  регистрация по `class_exists`, `suggest`; кнопка «Купить» товара — `<x-webx-cart::add>` формой,
+  если корзина стоит (скрипт — в этапе 5); гайд `apps/docs/guide/cart.md`.
+- **4/5 MCP и слова.** `cart_list`, `cart_get`, `cart_summary`, `cart_quote`, ресурс `cart://catalog`,
+  право `cart.view` (§10); словарь `webx-cart` на 10 языков (§11).
+- **5/5 Виджет и сквозная проверка.** Каркас `<x-webx-dialog drawer>` в `widgets`, `<x-webx-cart>`
+  и три режима (§9), вьюхи и точки, скрипт и его вход сборки, кнопка `data-webx-cart-add`, без JS,
+  тема (`cart.css`), триггер в `actions` шапки `theme-default`. Сквозная проверка — на локальном
+  одноразовом сайте `scripts/starter-site.sh --with=catalog,cart` (`--with` берёт id модулей
+  `Setup\Catalogue` и передаёт их в `webx:setup --modules=+…`; `catalog` и `cart` — те самые id):
+  товар из карточки кнопкой (со скриптом и без), три режима с текущей ценой и суммами сервера;
+  комплект — пачкой через `window.webx.cart.add()` (кнопки нет, решение 28) и виден деревом; правка
+  цены товара видна в корзине, удалённый товар — «недоступна», корзины через MCP. Браузер: три
+  режима, 360 и 1440 px, тёмная схема.
 
 ## 15. Отложенные вопросы
 
@@ -1078,7 +1082,4 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
    привяжет свою реализацию. Открыто, что меняется в корзине при нескольких валютах (`carts.currency`
    при смене валюты посетителем, пересчёт `price_at_add`), — решается его спекой; строка в §9
    [`WEBX_UI_COMMERCE.md`](WEBX_UI_COMMERCE.md).
-2. **Привязка к покупателю.** Когда появится `module-users`: колонка `user_id` в `carts` или своя
-   таблица связи у `module-users`; и что при входе — слить гостевую корзину с сохранённой или
-   заменить. Решено в §13.3 [`WEBX_UI_MODULE_USERS.md`](WEBX_UI_MODULE_USERS.md): колонка
-   `carts.user_id`, при входе гостевая корзина сливается с корзиной аккаунта.
+2. **Привязка к покупателю** — решено в §13.3 [`WEBX_UI_MODULE_USERS.md`](WEBX_UI_MODULE_USERS.md).
