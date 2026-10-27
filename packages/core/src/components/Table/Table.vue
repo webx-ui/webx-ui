@@ -362,7 +362,7 @@ defineSlots<{
   footer?: () => unknown
   loading?: () => unknown
   expanded?: (props: { row: T; index: number }) => unknown
-  /** Buttons along the top of a card, where a row has no room for a column of them. */
+  /** Buttons on the right of a card, beside the title, where a row has no column for them. */
   'card-actions'?: (props: { row: T; index: number }) => unknown
   [key: `header-${string}`]: ((props: { column: TableColumn<T> }) => unknown) | undefined
   [key: `cell-${string}`]:
@@ -1010,33 +1010,39 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
         :class="[rowClass?.(row, index), { 'is-selected': selectable && isSelected(row, index) }]"
         @click="onRowClick(row, index, $event)"
       >
-        <!-- The checkbox where a list puts one, the actions where a thumb reaches them. -->
-        <div v-if="selectable || $slots['card-actions']" class="wx-table__card-top" @click.stop>
+        <!--
+          One row, three columns: the checkbox where a list puts one, the fields, and the actions
+          on the right beside the title. A strip of its own along the top cost every card a line
+          of height for a single `···`.
+        -->
+        <div v-if="selectable" class="wx-table__card-check" @click.stop>
           <wx-checkbox
-            v-if="selectable"
             :model-value="isSelected(row, index)"
             :disabled="!canSelect(row)"
             :aria-label="selectRowLabel"
             @update:model-value="(checked: boolean) => toggleRow(row, index, checked)"
           />
-          <div class="wx-table__card-tools">
-            <slot name="card-actions" :row="row" :index="index" />
+        </div>
+
+        <div class="wx-table__card-body">
+          <div v-for="column in cardColumns" :key="column.key" class="wx-table__field">
+            <span v-if="column.label" class="wx-table__field-label">{{ column.label }}</span>
+            <div class="wx-table__field-value" :class="column.cellClass">
+              <slot
+                :name="`cell-${column.key}`"
+                :row="row"
+                :value="read(row, column.key)"
+                :index="index"
+                :column="column"
+              >
+                {{ cellText(column, row, index) }}
+              </slot>
+            </div>
           </div>
         </div>
 
-        <div v-for="column in cardColumns" :key="column.key" class="wx-table__field">
-          <span v-if="column.label" class="wx-table__field-label">{{ column.label }}</span>
-          <div class="wx-table__field-value" :class="column.cellClass">
-            <slot
-              :name="`cell-${column.key}`"
-              :row="row"
-              :value="read(row, column.key)"
-              :index="index"
-              :column="column"
-            >
-              {{ cellText(column, row, index) }}
-            </slot>
-          </div>
+        <div v-if="$slots['card-actions']" class="wx-table__card-tools" @click.stop>
+          <slot name="card-actions" :row="row" :index="index" />
         </div>
       </div>
 
@@ -2085,8 +2091,8 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 
 .wx-table__card {
   display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-6);
+  align-items: flex-start;
+  gap: var(--wx-space-8);
   padding: var(--wx-space-10) var(--wx-space-12);
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
@@ -2101,15 +2107,36 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   border-color: var(--wx-color-primary);
 }
 
-.wx-table__card-top {
+.wx-table__card-check {
   display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
+  flex: none;
 }
 
-/* Pushed to the end, so the checkbox keeps the left and the buttons keep the right. */
+/* Takes what the checkbox and the actions leave, and no more: a long address wraps or ellipsises. */
+.wx-table__card-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--wx-space-6);
+  min-width: 0;
+}
+
+/*
+ * Top-aligned with the first field, so one action sits on the line of the title; several stack
+ * down the right edge, where a thumb reaches them, instead of squeezing the fields sideways.
+ * Lifted by 4: a 30px button on a 20px first line otherwise sat 4 lower than the title's middle.
+ */
 .wx-table__card-tools {
-  margin-left: auto;
+  display: flex;
+  margin-block-start: calc(var(--wx-space-4) * -1);
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--wx-space-4);
+}
+
+.wx-table__card-tools:empty {
+  display: none;
 }
 
 .wx-table__field {

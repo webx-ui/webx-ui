@@ -354,6 +354,7 @@ const actions = computed<ScreenAction[]>(() => {
                   type="button"
                   class="wx-inbox-form"
                   :class="{ 'is-current': item.id === current, 'is-off': !item.is_enabled }"
+                  :title="name(item)"
                   @click="choose(item, close)"
                 >
                   <!--
@@ -510,6 +511,12 @@ const actions = computed<ScreenAction[]>(() => {
   /* The row is the target, so it takes the row: a name of four letters should not leave
      three quarters of the line dead. */
   flex: 1 1 auto;
+  /*
+   * And no wider than it. A `<button>` sizes to its content, not to the block it stands in, so
+   * a long name made it 617px in a column of 245: the name never reached its ellipsis and ran
+   * under the warning, the count and the `···`.
+   */
+  width: 100%;
   min-width: 0;
   padding: 0;
   border: 0;

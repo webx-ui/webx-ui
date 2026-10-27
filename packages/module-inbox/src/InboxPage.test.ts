@@ -101,6 +101,9 @@ describe('WxInboxPage', () => {
     expect(rows[0].classes()).not.toContain('is-off')
     expect(rows[1].classes()).toContain('is-off')
     expect(wrapper.text()).not.toContain('Off')
+
+    // A long name is cut to one line with an ellipsis, so the whole of it rides on the row.
+    expect(rows[1].attributes('title')).toBe('Call back')
   })
 
   it('marks a switched-on form that would tell nobody, and leaves a switched-off one alone', async () => {
