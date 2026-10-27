@@ -97,12 +97,14 @@ export function plan(affected, { base, changed, typecheckFilters = [] }) {
   if (php === 'none') {
     skip('php: validate, lint, analyse, test', 'not affected')
   } else {
-    // php-ci.yml on 8.4, without its timeouts: phpunit straight, not through composer.
+    // php-ci.yml on 8.4, without its timeouts: phpunit straight, not through composer. The lock
+    // is ignored by git and CI resolves a fresh one every run, so a local lock left behind by a
+    // release is a note before the run (see main), not a red step CI could never show.
     const inPhp = { cwd: 'php' }
     step(
       'php: validate root manifest',
       'composer',
-      ['validate', '--no-check-all', '--no-check-publish'],
+      ['validate', '--no-check-all', '--no-check-publish', '--no-check-lock'],
       inPhp,
     )
     step('php: validate package manifests', 'sh', ['-c', VALIDATE_PACKAGES], inPhp)
@@ -230,6 +232,19 @@ function main(argv) {
     console.log(
       'note: uncommitted changes — affected.mjs compares commits, the steps run on the tree.\n',
     )
+  }
+
+  if (affected.php !== 'none') {
+    const lock = spawnSync('composer', ['validate', '--no-check-all', '--no-check-publish'], {
+      cwd: join(repoRoot, 'php'),
+      encoding: 'utf8',
+    })
+    if (/lock file is not up to date/i.test(`${lock.stdout}${lock.stderr}`)) {
+      console.log(
+        'note: php/composer.lock is behind composer.json — CI installs fresh, so the tests here may\n' +
+          '      run other versions. `composer update` in php/ brings vendor to what CI gets.\n',
+      )
+    }
   }
 
   const changed = base
