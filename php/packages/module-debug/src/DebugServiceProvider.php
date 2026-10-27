@@ -14,9 +14,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Env;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Debug\Collecting\Subscriber;
+use WebxUi\Debug\Doctor\ProductionCheck;
 use WebxUi\Debug\Http\CollectLate;
 use WebxUi\Debug\Http\Insertion;
 use WebxUi\Debug\Http\StartCollecting;
@@ -29,10 +32,14 @@ use WebxUi\Debug\Panel\DebugModule;
  *
  * In production this provider merges its config and stops: no listener, no middleware, no
  * route, no module and so no permission and no MCP tool — a site that ships with the package
- * installed is the site without it (§3.1). Everywhere else it puts one middleware first in the
- * global stack and one last in `web`, both of which look at a request and let it pass unless it
- * says it is an administrator's, and one listener on `RequestHandled` that does nothing unless
- * collecting started. The listeners that do the collecting are subscribed only then
+ * installed is the site without it (§3.1). The one exception is the agent's path, when the site
+ * asks for it by `WEBX_DEBUG_MCP_IN_PRODUCTION` (§3.3, {@see Mode}): the module with `debug_page`,
+ * the first middleware that answers only the tool's token, and the listener that keeps its
+ * report — never the cookie, the late start, the bar's script or the API of reports.
+ *
+ * Everywhere else it puts one middleware first in the global stack and one last in `web`, both of
+ * which look at a request and let it pass unless it says it is an administrator's, and one
+ * listener on `RequestHandled` that does nothing unless collecting started. The listeners that do the collecting are subscribed only then
  * ({@see Subscriber}).
  */
 class DebugServiceProvider extends ServiceProvider
@@ -41,10 +48,11 @@ class DebugServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/webx-debug.php', 'webx-debug');
 
-        if ($this->production()) {
+        if ($this->off()) {
             return;
         }
 
+        $this->app->instance(Mode::class, new Mode(agentOnly: $this->production()));
         $this->app->singleton(Collector::class);
         $this->app->singleton(Subscriber::class);
         $this->app->singleton(Support\CallSite::class);
@@ -52,6 +60,10 @@ class DebugServiceProvider extends ServiceProvider
         $this->app->singleton(Bar::class);
         $this->app->singleton(Insertion::class);
         $this->app->bind(PageFetcher::class, HttpPageFetcher::class);
+
+        if ($this->production()) {
+            return;
+        }
 
         // The script's address is under the panel's prefix, and the panel's shell answers every
         // address below it: the route has to be in the list before the shell's, which is
@@ -67,12 +79,21 @@ class DebugServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        if ($this->production()) {
+        // Said by the doctor wherever the frame is, whatever the switch: the check is silent but
+        // where the agent's path is open in production.
+        $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
+            $checks->register(ProductionCheck::class);
+        });
+
+        if ($this->off()) {
             return;
         }
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-debug');
-        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+
+        if (! $this->production()) {
+            $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        }
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(DebugModule::class));
 
@@ -98,6 +119,27 @@ class DebugServiceProvider extends ServiceProvider
         return $this->app->environment('production');
     }
 
+    /**
+     * Nothing of the package at all: production, unless the site opened the agent's path there
+     * (§3.3) — and even then, never the bar.
+     */
+    private function off(): bool
+    {
+        return $this->production() && ! self::openInProduction($this->app->make('config')->get('webx-debug.mcp.production'));
+    }
+
+    /**
+     * The switch, read from the environment when the config has no word for it: a site that
+     * published `webx-debug.php` before the key existed has a whole `mcp` block of its own, and
+     * the variable would otherwise do nothing there.
+     */
+    public static function openInProduction(mixed $configured): bool
+    {
+        return is_bool($configured)
+            ? $configured
+            : filter_var(Env::get('WEBX_DEBUG_MCP_IN_PRODUCTION') ?? false, FILTER_VALIDATE_BOOLEAN);
+    }
+
     private function registerMiddleware(): void
     {
         $kernel = $this->app->make(HttpKernel::class);
@@ -107,7 +149,10 @@ class DebugServiceProvider extends ServiceProvider
             $kernel->prependMiddleware(StartCollecting::class);
         }
 
-        $this->app->make(Router::class)->pushMiddlewareToGroup('web', CollectLate::class);
+        // The late start is the browser's, and the browser has nothing here in production.
+        if (! $this->production()) {
+            $this->app->make(Router::class)->pushMiddlewareToGroup('web', CollectLate::class);
+        }
     }
 
     private function registerListeners(): void
@@ -118,6 +163,10 @@ class DebugServiceProvider extends ServiceProvider
         $events->listen(RequestHandled::class, function (RequestHandled $event): void {
             $this->app->make(Insertion::class)->apply($event->request, $event->response);
         });
+
+        if ($this->production()) {
+            return;
+        }
 
         // The cookie that lets the next page be collected from its first middleware, set at the
         // door of the panel and taken back at its way out.

@@ -7,6 +7,7 @@ namespace WebxUi\Debug\Support;
 use DateTimeInterface;
 use Illuminate\Contracts\Config\Repository as Config;
 use Stringable;
+use WebxUi\Debug\Mode;
 
 /**
  * What never goes into a report as it is (§10 of the debug bar spec).
@@ -15,6 +16,11 @@ use Stringable;
  * is kept for minutes in a store, copied into an agent's context and pasted into chats. So a
  * password, a token or a session payload is replaced while it is written down, not when it is
  * shown: there is no unmasked report anywhere to leak. The mask says nothing of the length.
+ *
+ * In production (§3.3, {@see Mode::masksEverything()}) the lists give way to everything: every
+ * bound value, every value of a log line's context, of a session, of an outgoing query, and the
+ * free text that may quote them — a log message, an exception's, a mail's subject. What stays is
+ * what the agent came for: the statements' shapes, counts, times and places.
  */
 final class Masker
 {
@@ -29,7 +35,29 @@ final class Masker
     /** @var list<string>|null */
     private ?array $tables = null;
 
-    public function __construct(private readonly Config $config) {}
+    public function __construct(
+        private readonly Config $config,
+        private readonly Mode $mode,
+    ) {}
+
+    /** Whether every value is masked, not only the ones the lists name. */
+    public function everything(): bool
+    {
+        return $this->mode->masksEverything();
+    }
+
+    /**
+     * Free text that may quote a value — a log message, an exception's, a mail's subject — cut to
+     * length, or masked whole where every value is.
+     */
+    public function text(string $text, int $limit): string
+    {
+        if ($this->everything()) {
+            return self::MASK;
+        }
+
+        return mb_strlen($text) > $limit ? mb_substr($text, 0, $limit) : $text;
+    }
 
     /**
      * The bindings of a statement with the secret ones masked, and every value cut to length.
@@ -50,7 +78,7 @@ final class Masker
             return [];
         }
 
-        if ($this->touchesMaskedTable($sql)) {
+        if ($this->everything() || $this->touchesMaskedTable($sql)) {
             return array_fill(0, count($values), self::MASK);
         }
 
@@ -134,7 +162,9 @@ final class Masker
         $out = [];
 
         foreach ($values as $key => $value) {
-            if (is_string($key) && $this->isSecretColumn($key)) {
+            if ($this->everything() && ! is_array($value)) {
+                $out[$key] = self::MASK;
+            } elseif (is_string($key) && $this->isSecretColumn($key)) {
                 $out[$key] = self::MASK;
             } elseif (is_array($value) && $depth < 3) {
                 $out[$key] = $this->keyed($value, $depth + 1);

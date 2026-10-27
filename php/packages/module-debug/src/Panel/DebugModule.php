@@ -15,7 +15,8 @@ use WebxUi\Mcp\Tool;
  *
  * `debug.view` is given to no role on install (decision 5 of the spec): a report shows the values
  * of the page's queries, and those are the visitors' personal data — so only a super
- * administrator has it until somebody grants it on purpose. Never registered in production.
+ * administrator has it until somebody grants it on purpose. Not registered in production, unless
+ * the site opens `debug_page` there (`WEBX_DEBUG_MCP_IN_PRODUCTION`, §3.3 of the spec).
  */
 final class DebugModule extends AbstractModule implements ProvidesMcpTools
 {

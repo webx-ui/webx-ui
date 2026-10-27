@@ -11,7 +11,10 @@ what the resolver found (`webx-ui/routing`). The same report goes to an agent as
 ## What it owns
 
 - **Nothing in production.** With `APP_ENV=production` the provider merges its config and
-  stops: no middleware, listener, route, module, permission or tool. No setting changes that.
+  stops: no middleware, listener, route, module, permission or tool. The one exception:
+  `WEBX_DEBUG_MCP_IN_PRODUCTION=true` opens `debug_page` alone — the module, `StartCollecting`
+  for its signed token only, the listener for its report; every value of the report masked
+  (`Mode`). Never the bar, its script, the cookie, `CollectLate` or the API of reports.
 - **Middleware**: `Http\StartCollecting` first in the global stack (starts collecting when the
   request carries the cookie `wx_debug` or the header `X-Webx-Debug`), `Http\CollectLate` last
   in `web` (keeps the cookie true, starts late for an administrator without it).
@@ -26,12 +29,14 @@ what the resolver found (`webx-ui/routing`). The same report goes to an agent as
   the panel with tabs (fetches the report on first open), height, state in `localStorage['wx-debug']`;
   keeps left of the site panel's drawer by its `wx-bar:layout` event. Check it in a browser.
 - **MCP** tool `debug_page` (scope `debug:read`), read only.
+- **Doctor** check `Doctor\ProductionCheck`: a note while the tool is open in production.
 - **Points of measure in other packages**, sent only while somebody listens:
   `WebxUi\Routing\Events\{Resolving,Resolved}`, `WebxUi\Blocks\Events\{RegionRendering,
 RegionRendered,BlockRendering,BlockRendered}`, `WebxUi\Cache\Events\GroupRead`.
 - **Config** `config/webx-debug.php`: `enabled` (`WEBX_DEBUGBAR`), `store`, `ttl`, `keep`,
   `slow_ms` (50), `repeat` (3), `limits`, `mask.{columns,tables,headers}`, `events`,
-  `mcp.resolve_to` (`WEBX_DEBUGBAR_RESOLVE_TO`), `mcp.timeout`.
+  `mcp.resolve_to` (`WEBX_DEBUGBAR_RESOLVE_TO`), `mcp.timeout`, `mcp.production`
+  (`WEBX_DEBUG_MCP_IN_PRODUCTION`, off).
 
 ### Permissions
 
@@ -45,24 +50,26 @@ next to the module asks the same: `cms.can:debug.view`.
 
 ## Change it without forking
 
-| You want                                        | Do this                                                            |
-| ----------------------------------------------- | ------------------------------------------------------------------ |
-| The bar off on this copy                        | `WEBX_DEBUGBAR=false` in `.env`                                    |
-| A developer who is not a super administrator    | give their role `debug.view` in «Administrators → Roles»           |
-| Another column or table never shown in values   | add it to `mask.columns` / `mask.tables` (`*` is any run)          |
-| A header never shown                            | add its name to `mask.headers`                                     |
-| A statement marked slow sooner or later         | `slow_ms` in the config                                            |
-| An event of your own counted in «Other»         | add its class to `events`                                          |
-| Reports kept elsewhere than the default cache   | `WEBX_DEBUGBAR_STORE=<store>`                                      |
-| `debug_page` on a site that cannot reach itself | `WEBX_DEBUGBAR_RESOLVE_TO=<ip>` — the Host stays the site's        |
-| The config or the words in the site             | `vendor:publish --tag=webx-debug-config` / `--tag=webx-debug-lang` |
+| You want                                        | Do this                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------- |
+| The bar off on this copy                        | `WEBX_DEBUGBAR=false` in `.env`                                     |
+| A developer who is not a super administrator    | give their role `debug.view` in «Administrators → Roles»            |
+| Another column or table never shown in values   | add it to `mask.columns` / `mask.tables` (`*` is any run)           |
+| A header never shown                            | add its name to `mask.headers`                                      |
+| A statement marked slow sooner or later         | `slow_ms` in the config                                             |
+| An event of your own counted in «Other»         | add its class to `events`                                           |
+| Reports kept elsewhere than the default cache   | `WEBX_DEBUGBAR_STORE=<store>`                                       |
+| `debug_page` on a site that cannot reach itself | `WEBX_DEBUGBAR_RESOLVE_TO=<ip>` — the Host stays the site's         |
+| `debug_page` on a stand running as production   | `WEBX_DEBUG_MCP_IN_PRODUCTION=true`; off when the measuring is done |
+| The config or the words in the site             | `vendor:publish --tag=webx-debug-config` / `--tag=webx-debug-lang`  |
 
 ## Do not
 
 - Do not edit anything in `vendor/webx-ui/module-debug` or copy it into the site. The rows
   above are the supported ways; if none fits, the package is missing a seam — say so.
 - Do not try to turn the bar on in production — there is no switch for that, on purpose:
-  values of queries are visitors' personal data.
+  values of queries are visitors' personal data. `WEBX_DEBUG_MCP_IN_PRODUCTION` opens only
+  `debug_page`, values masked; do not leave it on past the measuring, and do not unmask there.
 - Do not grant `debug.view` to a content role. It shows what visitors typed into forms and what
   the site stores about them.
 - Do not paste a report into a public issue: secrets are masked, personal data is not.

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Debug\Collector;
+use WebxUi\Debug\Doctor\ProductionCheck;
 use WebxUi\Debug\Http\CollectLate;
 use WebxUi\Debug\Http\StartCollecting;
 use WebxUi\Mcp\Registry\ToolRegistry;
@@ -18,7 +19,8 @@ use WebxUi\Mcp\Registry\ToolRegistry;
 /**
  * Production, whatever anybody says (§3.1 of the debug bar spec): the package is installed and
  * there is nothing of it — no middleware, no listener, no route, no module, no tool. Not even a
- * super administrator with the cookie and the switch on gets a byte of it.
+ * super administrator with the cookie and the switch on gets a byte of it. The agent's path opens
+ * only by `WEBX_DEBUG_MCP_IN_PRODUCTION` ({@see ProductionAgentTest}).
  */
 final class ProductionTest extends TestCase
 {
@@ -64,5 +66,11 @@ final class ProductionTest extends TestCase
         // No route at all: the address falls to the site's own resolver, which only knows how
         // to spell it (the capitals of an id) — a redirect or a 404, never a report.
         $this->assertNotSame(200, $this->actingAs($this->admin(), 'cms')->getJson('https://example.test/api/cms/debug/reports/01J0000000000000000000000A')->getStatusCode());
+    }
+
+    #[Test]
+    public function the_doctor_has_nothing_to_say(): void
+    {
+        $this->assertSame([], $this->app->make(ProductionCheck::class)->run());
     }
 }

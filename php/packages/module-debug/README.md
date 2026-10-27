@@ -3,7 +3,8 @@
 A debug bar at the bottom of a WebX UI site's pages: what the server did for the page you are
 looking at — SQL with values, repeats, a timeline with regions and blocks, the versioned cache,
 what the resolver found — for an administrator with `debug.view`, and never in production. The
-same report is the MCP tool `debug_page`.
+same report is the MCP tool `debug_page` — which a production stand may open on purpose, with
+every value masked (`WEBX_DEBUG_MCP_IN_PRODUCTION`).
 
 ```bash
 composer require webx-ui/module-debug
@@ -14,7 +15,10 @@ administrator sees the bar at once; anybody else needs a role with `debug.view`.
 
 ## How a request is decided
 
-1. **Production** — nothing of the package is registered. Not a middleware, not a route.
+1. **Production** — nothing of the package is registered. Not a middleware, not a route. With
+   `WEBX_DEBUG_MCP_IN_PRODUCTION=true`, only the agent's path: the module with `debug_page`, the
+   first middleware for its token alone (checked before collecting) and the listener that keeps
+   its report, every value masked. Never the cookie, the late start, the bar or the API.
 2. **The first global middleware** starts collecting when the request carries the cookie
    `wx_debug` (set at sign-in to the panel for an administrator with the permission) or the
    header of `debug_page`'s one-time token. It reads neither: a visitor costs a look at two
