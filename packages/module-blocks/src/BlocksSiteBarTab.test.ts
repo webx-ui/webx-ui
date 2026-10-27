@@ -837,7 +837,10 @@ describe('the structure of the blocks from the site', () => {
 describe('shared blocks in the blocks tab', () => {
   const both: SiteBarContext = { ...page, sections: ['page', 'blocks', 'regions'] }
 
-  afterEach(() => {
+  afterEach(async () => {
+    // The confirm takes its host away on a timer: gone before the document is, or the late
+    // unmount finds no parent — an uncaught error that only a loaded machine is slow enough for.
+    await vi.waitFor(() => expect(document.querySelector('.wx-modal-host')).toBeNull())
     mounted.splice(0).forEach((wrapper) => wrapper.unmount())
     document.body.innerHTML = ''
     vi.restoreAllMocks()

@@ -6,8 +6,10 @@ namespace WebxUi\Tasks\Tests;
 
 use Closure;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -25,8 +27,18 @@ use WebxUi\Tasks\Workflow\Tasks;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /** One person per test, made on first use: the database is new for every test. */
     private ?Actor $person = null;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
+    }
 
     /**
      * @param  Application  $app
@@ -55,11 +67,6 @@ abstract class TestCase extends Orchestra
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true]]);
         // sqlite ignores foreign keys unless asked, and a cascade that does not exist would pass.
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function tasks(): Tasks

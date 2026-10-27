@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 
 final class ModuleTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_panel_is_told_about_the_module(): void
     {

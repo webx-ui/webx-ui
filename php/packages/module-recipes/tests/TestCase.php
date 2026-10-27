@@ -7,8 +7,10 @@ namespace WebxUi\Recipes\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -35,6 +37,8 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * The module and what it is used with on a real site: the library its photos come from, the
      * services it is related to, pages to stand a recipes block on — none of the last three is
@@ -77,14 +81,12 @@ abstract class TestCase extends Orchestra
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
     }
 
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
-    }
-
     protected function setUp(): void
     {
         parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
 
         // Under a prefix: `DynamicComponent` remembers what it resolved in static properties
         // shared by every test in the process (CLAUDE.md §4).

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Auth\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Auth\Access\Refusal;
@@ -20,8 +19,6 @@ use WebxUi\Auth\Models\Role;
  */
 final class RolesEndpointTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_list_says_how_many_hold_each_role_and_which_the_reader_holds(): void
     {

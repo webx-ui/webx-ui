@@ -88,6 +88,7 @@ final class Compiler
 
         $build = 'build-'.str_replace('.', '', uniqid('', true));
         $this->files->ensureDirectoryExists($this->path.'/'.$build);
+        $this->ignore();
 
         foreach ($contents as $name => $content) {
             $this->files->put($this->path.'/'.$build.'/'.$name.'.blade.php', $content);
@@ -218,6 +219,17 @@ final class Compiler
 
         if (function_exists('opcache_invalidate')) {
             @opcache_invalidate($this->path.'/'.$name, true);
+        }
+    }
+
+    /**
+     * The set is a build artefact like `storage/framework/views`, yet no site's `.gitignore` names
+     * it: the directory says so itself, and a site made before has no file to change.
+     */
+    private function ignore(): void
+    {
+        if (! is_file($this->path.'/.gitignore')) {
+            $this->files->put($this->path.'/.gitignore', '*'.PHP_EOL);
         }
     }
 

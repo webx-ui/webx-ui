@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\TemporaryFiles;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileStore;
@@ -21,7 +21,7 @@ use WebxUi\Media\Support\SvgSanitizer;
  */
 final class SvgSafetyTest extends TestCase
 {
-    use RefreshDatabase;
+    use TemporaryFiles;
 
     private const EVIL = <<<'SVG'
         <?xml version="1.0"?>
@@ -241,7 +241,7 @@ final class SvgSafetyTest extends TestCase
 
     private function real(string $name, string $contents, string $clientType): UploadedFile
     {
-        $path = (string) tempnam(sys_get_temp_dir(), 'webx-media-test');
+        $path = $this->temporaryFile('webx-media-test');
         file_put_contents($path, $contents);
 
         return new UploadedFile($path, $name, $clientType, null, true);

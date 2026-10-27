@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Auth\Testing\AssertsPermissions;
 use WebxUi\Mcp\McpServiceProvider;
@@ -17,7 +16,6 @@ use WebxUi\Mcp\McpServiceProvider;
 final class AccessCoverageTest extends TestCase
 {
     use AssertsPermissions;
-    use RefreshDatabase;
 
     /**
      * The MCP server too: the library's tools are what an agent reaches it through.

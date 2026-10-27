@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Admin\Doctor\Checks\UploadSpace;
 use WebxUi\Admin\Doctor\Diagnosis;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\Editor;
 use WebxUi\Admin\Uploads\FreeSpace;
 use WebxUi\Admin\Uploads\Upload;
@@ -28,14 +29,11 @@ use WebxUi\Admin\Uploads\Uploads;
  */
 final class UploadsTest extends TestCase
 {
+    use MigratesOnce;
+
     private string $directory;
 
     private ?int $free = null;
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
-    }
 
     protected function setUp(): void
     {

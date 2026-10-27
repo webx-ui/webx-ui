@@ -14,6 +14,7 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Cache\CacheGroups;
+use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Settings\Console\MoveContactsCommand;
 use WebxUi\Settings\Contacts\Contacts;
 use WebxUi\Settings\Events\SettingsSaved;
@@ -59,6 +60,13 @@ class SettingsServiceProvider extends ServiceProvider
         $this->app->make(Dispatcher::class)->listen(StoredContentRewritten::class, function (): void {
             $this->app->make(Settings::class)->forget();
         });
+
+        // The logo is printed by the header on every page, after the content's blocks looked their
+        // pictures up: the first look-up of a response takes the settings' pictures along, so the
+        // page asks the library once rather than once more for the logo.
+        if (class_exists(MediaFiles::class) && $this->app->bound(MediaFiles::class)) {
+            $this->app->make(MediaFiles::class)->prefetch(fn () => $this->app->make(Settings::class)->preload());
+        }
 
         $this->app->make(Dispatcher::class)->listen(SettingsSaved::class, function (): void {
             if ($this->app->resolved(Contacts::class)) {

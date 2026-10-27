@@ -12,6 +12,7 @@ use WebxUi\Admin\Doctor\Checks\StorageOwner;
 use WebxUi\Admin\Snapshots\MediaDisk;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Support\Ownership;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\FakeOwnership;
 
 /**
@@ -21,6 +22,8 @@ use WebxUi\Admin\Tests\Fixtures\FakeOwnership;
  */
 final class OwnershipTest extends TestCase
 {
+    use MigratesOnce;
+
     private string $dir;
 
     protected function defineEnvironment($app): void
@@ -35,7 +38,7 @@ final class OwnershipTest extends TestCase
 
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
 
         Schema::create('demo_pages', function (Blueprint $table): void {
             $table->id();

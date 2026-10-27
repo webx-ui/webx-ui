@@ -13,6 +13,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     globals: true,
+    // The workspace's own packages are built JavaScript, but outside node_modules: vitest would
+    // transform `@webx-ui/core` again for every file (1.4 s each). Node loads them once a worker.
+    server: {
+      deps: {
+        external: [/\/packages\/[^/]+\/dist\//],
+      },
+    },
     // The JavaScript the Composer packages ship next to their Blade, and the CI scripts, too.
     include: [
       'packages/*/src/**/*.{test,spec}.ts',

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { viewable } from './resources'
 import type { AuditResourceRow } from './types'

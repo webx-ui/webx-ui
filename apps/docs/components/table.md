@@ -405,8 +405,9 @@ Two things are worth saying explicitly:
   a wide screen and is the first thing to go on a narrow one.
 - `hideBelow` does **not** apply: it is about columns that will not fit beside each other, and a
   card stacks them.
-- Row actions have no column to live in, so they go along the top of the card through the
-  `card-actions` slot.
+- Row actions have no column to live in, so they go to the right of the fields through the
+  `card-actions` slot: one sits on the line of the title, several stack down the right edge.
+  There is no strip of its own along the top of the card.
 
 ```vue
 <wx-table :data="page" :columns="columns">

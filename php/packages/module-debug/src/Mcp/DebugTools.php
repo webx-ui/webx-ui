@@ -53,7 +53,8 @@ final class DebugTools
                 .'middleware, resolve, handler, render, each region and block); the regions and blocks drawn with their time, '
                 .'statements and theme layer; the versioned cache groups read (memo / store / miss) and their versions; what the '
                 .'resolver found; outgoing HTTP, queued jobs, mail, log. Use it before and after an optimisation or a change of '
-                .'layout, and compare summary.queries, summary.repeated and summary.sql_ms. Not in production.',
+                .'layout, and compare summary.queries, summary.repeated and summary.sql_ms. On a production site only where it opened the '
+                .'tool (WEBX_DEBUG_MCP_IN_PRODUCTION), and there every value is masked: shapes, counts, times and places only.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->page($arguments, $user),
                 ['properties' => [
                     'url' => ['type' => 'string', 'description' => 'A path of this site, with its language prefix and query: "/", "/blog/news?page=2". No scheme, no host.'],

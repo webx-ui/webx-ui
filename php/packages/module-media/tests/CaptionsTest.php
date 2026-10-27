@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Blocks\BlocksServiceProvider;
@@ -34,8 +33,6 @@ use WebxUi\Routing\RoutingServiceProvider;
  */
 final class CaptionsTest extends TestCase
 {
-    use RefreshDatabase;
-
     /**
      * @param  Application  $app
      * @return list<class-string>

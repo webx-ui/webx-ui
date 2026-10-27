@@ -54,8 +54,8 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
     whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
   - `cta` — `heading`, `text`, two buttons, `tone` `accent|surface|plain`;
   - `contact` — `heading`, `text`, `show_contacts`/`show_hours` (Settings › Contacts through
-    `contacts()` and the phones, hours and socials widgets), `form` (an Inbox form's slug) and
-    `form_heading`; labels `theme::theme.blocks.contact.*`, each after its icon (`b-contact__icon`).
+    `contacts()` and the phones, hours and socials widgets), `form` (an Inbox form's slug),
+    `form_heading` and `show_form_description` (off: the headings say what the form is for); labels `theme::theme.blocks.contact.*`, each after its icon (`b-contact__icon`).
     Classes are BEM under `b-<slug>` (`b-hero__title`, `b-cards__card`, `b-cta__actions` …).
 - **`demo/pages/`** — the showcase ("Kitchen sink" and the pages under it), seeded by
   `webx:demo` beside the pages demo and removed with it. Its blocks use the six above, the

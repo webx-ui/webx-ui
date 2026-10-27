@@ -7,12 +7,15 @@ namespace WebxUi\Catalog\Rendering;
 use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
 use WebxUi\Admin\Collections\RecordQuery;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Sorts\Sorts;
+use WebxUi\Catalog\Storefront\CategoryIndex;
+use WebxUi\Routing\RouteCache;
 
 /**
  * `products()` — the products a template may show, as cards rather than models (§14).
@@ -82,8 +85,12 @@ final class ProductQuery extends RecordQuery
 
     protected function newQuery(string $locale): Builder
     {
-        // Only the product's own columns: a sort by popularity joins a table of its own.
-        $query = Product::query()->select('catalog_products.*')->visible()->with(['category', 'categories', 'images', 'routes']);
+        // Only the product's own columns: a sort by popularity joins a table of its own. The main
+        // category is not eager-loaded: {@see models()} takes it from the request's pool. Nor are
+        // the registry rows: noted as the rows arrive, they are read with the page's other
+        // addresses by the first one asked — `shownIn()` — and none on a warm page.
+        $query = Product::query()->select('catalog_products.*')->visible()->with(['categories', 'images'])
+            ->afterQuery(static fn (iterable $products) => Container::getInstance()->make(RouteCache::class)->preload($products));
         $key = $this->step('sort');
 
         Container::getInstance()->make(Sorts::class)->resolve(is_string($key) ? $key : null)->applySql($query, $locale);
@@ -129,11 +136,25 @@ final class ProductQuery extends RecordQuery
                 ->pluck('id')->map(intval(...))->all()];
         }
 
-        $subtree = $ids === [] ? [] : Category::query()->whereKey($ids)->get()
-            ->flatMap(static fn (Category $category): array => $category->subtree()->pluck('id')->map(intval(...))->all())
-            ->unique()->values()->all();
+        // Out of the shape of the tree the storefront keeps (§8.4): a shelf of the product's
+        // category on its page asks nothing of the tree.
+        $subtree = $ids === [] ? [] : Container::getInstance()->make(CategoryIndex::class)->subtreeIds($ids);
 
         $query->scopes(['inCategories' => [$subtree === [] ? [0] : $subtree]]);
+    }
+
+    /**
+     * The records, with the main category of each from the request's pool — the one the page's
+     * own product and the other shelves filled — rather than a query a shelf.
+     *
+     * @return EloquentCollection<int, Product>
+     */
+    public function models(): EloquentCollection
+    {
+        $records = parent::models();
+        Container::getInstance()->make(CategoryIndex::class)->attach($records);
+
+        return $records;
     }
 
     /** The order is the sort's, put on in {@see newQuery()}; a category has no order of its own. */

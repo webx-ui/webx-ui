@@ -18,8 +18,9 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
 - **Cache group** `routes` (`webx-ui/cache`, `CacheGroups::ROUTES`): every `Route` save moves it; `RouteSync` says so after its bulk writes, `webx:routes:rebuild` after every run. The panel names it; this package owns it.
 - **`RouteCache`** (scoped): the canonical rows `url()` reads when `routes` is not loaded — the
   request's memory, then one `many()` of the site's cache (`webx:route:v1:<type>:<id>` on the
-  group's version; on Redis one `MGET`), then one query a type, «no address» cached too.
-  `preload($entities)` before a list; `RecordQuery` does it for its records and their relations.
+  group's version; on Redis one `MGET`), then one query for every type, «no address» cached too.
+  `preload($entities)` only notes them; the first `canonical()` reads everything noted by then, so
+  parts of a page preloading their own are still one read. `RecordQuery` does it for its records.
   Saving, moving, deleting and restoring the model keep the registry in step.
 - **Address types** registered with `app(RouteTypes::class)->register(new RouteType(...))`:
   `type` (the morph alias), `model`, `formatter`, `handler` (a `RouteHandler`), `acceptsTail`,

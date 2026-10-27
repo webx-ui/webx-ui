@@ -16,6 +16,7 @@ use WebxUi\Admin\SiteBar\PageResponse;
 use WebxUi\Debug\Access;
 use WebxUi\Debug\Bar;
 use WebxUi\Debug\Collector;
+use WebxUi\Debug\Mode;
 use WebxUi\Debug\ReportBuilder;
 use WebxUi\Debug\Reports;
 use WebxUi\Localization\Contracts\HasPanelLocale;
@@ -59,6 +60,7 @@ final class Insertion
         private readonly Locales $locales,
         private readonly Translator $translator,
         private readonly Application $app,
+        private readonly Mode $mode,
     ) {}
 
     public function apply(Request $request, Response $response): void
@@ -85,7 +87,9 @@ final class Insertion
 
     private function forBrowser(Request $request, Response $response): void
     {
-        if (! $this->pages->page($request, $response)) {
+        // Nothing starts a browser's collecting where only the agent's path is open; and were it
+        // to, the page of production still gets no bar.
+        if ($this->mode->agentOnly || ! $this->pages->page($request, $response)) {
             return;
         }
 

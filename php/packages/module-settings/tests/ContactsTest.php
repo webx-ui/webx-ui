@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Settings\Tests;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Mcp\Registry\ToolRegistry;
@@ -21,8 +20,6 @@ use WebxUi\Settings\Settings;
  */
 final class ContactsTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_tab_is_on_the_settings_screen(): void
     {

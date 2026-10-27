@@ -15,11 +15,11 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\SiteBar\EntityLink;
 use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
-use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
 use WebxUi\Catalog\Events\ProductsIndexed;
 use WebxUi\Catalog\Filter\FilterUrls;
 use WebxUi\Catalog\Mcp\SatelliteTools;
+use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\CatalogLandings\Catalog\IndexedBases;
 use WebxUi\CatalogLandings\Catalog\LandingRepairs;
@@ -169,7 +169,7 @@ class CatalogLandingsServiceProvider extends ServiceProvider
      */
     private function registerCacheGroups(): void
     {
-        $this->app->make(CacheGroups::class)->bumpOn('catalog', Landing::class);
+        $this->app->make(StorefrontCache::class)->watch(Landing::class);
     }
 
     private function registerHistory(): void

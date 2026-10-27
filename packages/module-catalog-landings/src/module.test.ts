@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { cleanSet, formValues, landingSearch } from './api'
 import { catalogLandings } from './module'

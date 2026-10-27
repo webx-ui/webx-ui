@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Media\Models\MediaDirectory;
@@ -12,8 +11,6 @@ use WebxUi\Media\Models\MediaFile;
 
 final class SchemaTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_library_has_a_root_from_the_first_migration(): void
     {

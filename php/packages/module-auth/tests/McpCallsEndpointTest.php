@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Auth\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Mcp\Calls\Call;
@@ -16,8 +15,6 @@ use WebxUi\Mcp\Grants\Grant;
  */
 final class McpCallsEndpointTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_log_is_behind_the_audit_permission(): void
     {

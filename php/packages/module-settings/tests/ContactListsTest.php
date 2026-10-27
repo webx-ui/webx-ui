@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Settings\Tests;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -19,8 +18,6 @@ use WebxUi\Settings\Models\Setting;
 #[DefineEnvironment('everyPart')]
 final class ContactListsTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected function everyPart(Application $app): void
     {
         $app['config']->set('webx-settings.uses', ['contacts' => ['phones', 'emails', 'addresses', 'hours', 'messengers', 'socials']]);

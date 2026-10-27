@@ -42,6 +42,25 @@ final class ShowTest extends TestCase
         $this->assertMatchesRegularExpression('/^removed: a\.note ← .*layout\/blog\.article\.json$/m', $output);
     }
 
+    /** §3.2: `null` takes a prop off — the tree no longer has it, and the origin says who did. */
+    #[Test]
+    public function a_prop_taken_off_by_null_is_gone_from_the_tree_and_named_in_the_origin(): void
+    {
+        $this->theme('layout', 'default', ['props' => ['a.note' => ['limit' => 5, 'tone' => 'muted']]]);
+        $this->config('layout', 'default', ['props' => ['a.note' => ['limit' => null]]]);
+
+        Artisan::call('webx:composition:show', ['composition' => 'layout', '--origin' => true]);
+
+        $this->assertMatchesRegularExpression('/^\s+a\.note\s+<x-note from="a">\s+module-a; props\.limit ← \S+layout\/default\.json; props\.tone ← \S+layout\/default\.json; props\.limit ← config\/webx-compositions\.php\S*$/m', Artisan::output());
+
+        Artisan::call('webx:composition:show', ['composition' => 'layout', '--json' => true]);
+        $note = $this->child($this->child($this->child(json_decode(Artisan::output(), true)['tree'], 'body'), 'main'), 'a.note');
+        $this->assertSame(['tone' => 'muted'], $note['props']);
+
+        Artisan::call('webx:composition:show', ['composition' => 'layout', '--blade' => true]);
+        $this->assertStringContainsString('<x-note from="a" tone="muted" />', Artisan::output());
+    }
+
     #[Test]
     public function json_carries_the_tree_with_the_origin_of_every_node(): void
     {

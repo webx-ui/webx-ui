@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,8 +16,6 @@ use WebxUi\Media\Storage\FileStore;
 
 final class McpToolsTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -42,6 +39,7 @@ final class McpToolsTest extends TestCase
             'set_alt',
             'move_files',
             'upload_from_url',
+            'upload_file',
             'optimize_images',
             'delete_files',
         ], $names);
@@ -58,8 +56,9 @@ final class McpToolsTest extends TestCase
         }
 
         // The panel lets `media.upload` put files in without letting it rename or delete
-        // anything; the one tool that only adds is behind the same permission.
+        // anything; the tools that only add are behind the same permission.
         $this->assertSame(['media.upload', 'media.manage'], $permissions['upload_from_url']);
+        $this->assertSame(['media.upload', 'media.manage'], $permissions['upload_file']);
         $this->assertSame(['media.view', 'media.manage'], $permissions['list_files']);
         $this->assertSame(['media.manage'], $permissions['delete_files']);
         $this->assertSame(['media.manage'], $permissions['rename_file']);

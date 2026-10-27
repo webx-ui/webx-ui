@@ -75,9 +75,12 @@ saved; a rollback moves nothing.
 A write with no Eloquent event behind it says so itself:
 
 ```php
-Product::query()->where('brand_id', $old)->update(['brand_id' => $new]);
-$groups->bump('catalog');
+Item::query()->where('section_id', $old)->update(['section_id' => $new]);
+$groups->bump('faq');
 ```
+
+The catalogue has one word for both its search index and its storefront's caches:
+`Catalog::touch($ids)` / `touchQuery($products)` ([The storefront's caches](./catalog#the-storefront-s-caches)).
 
 The groups every site has are declared by their owners: `locales` by `webx-ui/localization`,
 `routes` by `webx-ui/routing`, `theme` by `webx-ui/themes`, `screens` by the frame, which also

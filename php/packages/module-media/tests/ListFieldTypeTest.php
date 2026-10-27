@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Screens\FieldType;
@@ -22,8 +21,6 @@ use WebxUi\Media\Models\MediaFile;
  */
 final class ListFieldTypeTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function what_is_kept_is_the_keys_and_the_captions_in_order(): void
     {

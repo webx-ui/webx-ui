@@ -17,6 +17,7 @@ use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Testing\TemporaryFiles;
 use WebxUi\Admin\Uploads\FreeSpace;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Admin\Uploads\Uploads;
@@ -49,6 +50,8 @@ use WebxUi\Catalog\Tests\Fixtures\NotePart;
  */
 final class ExchangeTest extends TestCase
 {
+    use TemporaryFiles;
+
     private string $uploads;
 
     protected function setUp(): void
@@ -453,7 +456,7 @@ final class ExchangeTest extends TestCase
     {
         $xlsx = $this->app->make(ExchangeFormats::class)->find('xlsx');
         $this->assertNotNull($xlsx);
-        $path = tempnam(sys_get_temp_dir(), 'webx-test-').'.xlsx';
+        $path = $this->temporaryFile('webx-test-', '.xlsx');
 
         $this->assertSame(3, $xlsx->write($path, [['sku', 'description'], ['0012', '=1+1'], ['', '']]));
         $this->assertSame([1 => ['sku', 'description'], 2 => ['0012', '=1+1']], iterator_to_array($xlsx->read($path, [])));
@@ -724,7 +727,7 @@ final class ExchangeTest extends TestCase
 
     private function file(string $content): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'webx-test-').'.csv';
+        $path = $this->temporaryFile('webx-test-', '.csv');
         file_put_contents($path, $content);
 
         return $path;

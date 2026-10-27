@@ -143,8 +143,10 @@ const hasActions = computed(
     :data-level="level"
     :class="{
       'is-narrow': narrow,
+      'has-actions': hasActions,
       'has-button': buttons.length > 0,
       'has-trail': Boolean($slots.trail),
+      'has-subtitle': Boolean(subtitle || $slots.subtitle),
       'has-divider': divider,
     }"
   >
@@ -242,12 +244,19 @@ const hasActions = computed(
    * head that had no rule about this did.
    */
   --wx-head-line: calc(var(--wx-font-size-2xl) * var(--wx-font-line-height-tight));
+  /*
+   * The height of the controls at the end of that line, and the line itself: whichever is
+   * taller. Everything on it is centred in that one box. The actions used to be centred on the
+   * heading's line by a negative margin instead, which kept the centres together but let a 42px
+   * button stand 6px out of the head — above its top edge on a list, over the trail on an
+   * editor — and pushed the subtitle 6px further down on a screen with buttons than without.
+   */
+  --wx-head-control: var(--wx-size-control-md);
+  --wx-head-row: var(--wx-head-line);
 
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas:
-    'back name actions'
-    '. subtitle .';
+  grid-template-areas: 'back name actions';
   align-items: start;
   row-gap: var(--wx-space-4);
   /* A head inside a column that gives its height to the rows keeps only what it needs. */
@@ -260,7 +269,32 @@ const hasActions = computed(
   --wx-head-line: calc(var(--wx-font-size-xl) * var(--wx-font-line-height-tight));
 }
 
+.wx-screen-head.has-actions {
+  --wx-head-row: max(var(--wx-head-line), var(--wx-head-control));
+}
+
+/* What the shell hands the actions on a phone (below), known here so the line can be sized. */
+.wx-admin--drawer .wx-screen-head {
+  --wx-head-control: 36px;
+}
+
+/*
+ * A line for each thing there is and none for what is not: an empty subtitle track still took
+ * the row gap, which left 4px under every head without a subtitle that a head with one did not
+ * have under its subtitle.
+ */
+.wx-screen-head.has-subtitle {
+  grid-template-areas:
+    'back name actions'
+    '. subtitle .';
+}
 .wx-screen-head.has-trail {
+  grid-template-areas:
+    'trail trail trail'
+    'back name actions';
+}
+
+.wx-screen-head.has-trail.has-subtitle {
   grid-template-areas:
     'trail trail trail'
     'back name actions'
@@ -339,9 +373,13 @@ const hasActions = computed(
   grid-area: back;
   margin-inline-end: var(--wx-space-8);
   /* Half the difference between the line and the control puts the two centres together. */
-  margin-block-start: calc((var(--wx-head-line) - 30px) / 2);
+  margin-block-start: calc((var(--wx-head-row) - 30px) / 2);
 }
 
+/*
+ * The name's first line sits in the middle of the row, whatever wraps under it: a badge that
+ * drops to a second line grows the block downwards and leaves the first line where it was.
+ */
 .wx-screen-head__name {
   grid-area: name;
   display: flex;
@@ -349,6 +387,7 @@ const hasActions = computed(
   gap: var(--wx-space-8);
   flex-wrap: wrap;
   min-width: 0;
+  padding-block: calc((var(--wx-head-row) - var(--wx-head-line)) / 2);
 }
 
 .wx-screen-head__title {
@@ -369,8 +408,8 @@ const hasActions = computed(
   flex-wrap: wrap;
   min-width: 0;
   margin-inline-start: var(--wx-space-12);
-  /* Centred on the name's line, the way the arrow at the other end of it is. */
-  margin-block-start: calc((var(--wx-head-line) - var(--wx-size-control-md)) / 2);
+  /* As tall as the row at least, so a single line of buttons is centred in it. */
+  min-height: var(--wx-head-row);
 }
 
 /*
@@ -396,6 +435,14 @@ const hasActions = computed(
  * line: a menu alone on a line of its own reads as something left over.
  */
 .wx-screen-head.is-narrow.has-button {
+  /* Nothing but the arrow and the name stand on the name's line now. */
+  --wx-head-row: var(--wx-head-line);
+  grid-template-areas:
+    'back name name'
+    'actions actions actions';
+}
+
+.wx-screen-head.is-narrow.has-button.has-subtitle {
   grid-template-areas:
     'back name name'
     '. subtitle subtitle'
@@ -406,13 +453,26 @@ const hasActions = computed(
   grid-template-areas:
     'trail trail trail'
     'back name name'
+    'actions actions actions';
+}
+
+.wx-screen-head.is-narrow.has-button.has-trail.has-subtitle {
+  grid-template-areas:
+    'trail trail trail'
+    'back name name'
     '. subtitle subtitle'
     'actions actions actions';
 }
 
+/*
+ * The row's own 4 and 4 more: 8 over the buttons, the step the screen puts under the head, so
+ * the row stands in the middle of the space between the name and the content rather than 12
+ * from one and 8 from the other.
+ */
 .wx-screen-head.is-narrow.has-button .wx-screen-head__actions {
+  min-height: 0;
   margin-inline-start: 0;
-  margin-block-start: var(--wx-space-8);
+  margin-block-start: var(--wx-space-4);
 }
 
 /* `:deep()` because the class is ours and the element it rides belongs to `WxButton`. */

@@ -124,7 +124,7 @@ final class ConnectionsEndpointTest extends TestCase
      */
     protected function defineDatabaseMigrations(): void
     {
-        $this->loadMigrationsFrom(dirname((string) (new ReflectionClass(Passport::class))->getFileName(), 2).'/database/migrations');
+        $this->app->make('migrator')->path(dirname((string) (new ReflectionClass(Passport::class))->getFileName(), 2).'/database/migrations');
 
         parent::defineDatabaseMigrations();
     }

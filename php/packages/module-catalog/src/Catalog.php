@@ -13,9 +13,15 @@ use WebxUi\Catalog\Engine\CatalogEngine;
 use WebxUi\Catalog\Engine\CatalogEngines;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Storefront\StorefrontCache;
 
 /**
  * The engine the site chose, and the marks that tell it what to reindex (§8.3).
+ *
+ * A mark is also the word that the catalogue changed: every `touch` moves the generation of the
+ * storefront's caches ({@see StorefrontCache}), whatever the engine — the paths that write without
+ * a model's event call these for the index already, so the caches follow the index and nothing
+ * else has to remember them.
  *
  * A mark is a row in `catalog_index_queue` and nothing else: no call to the engine, so a save
  * never waits for it and never fails because of it (§5.2 of the architecture). Whether marks are
@@ -32,6 +38,7 @@ final class Catalog
     public function __construct(
         private readonly Config $config,
         private readonly CatalogEngines $engines,
+        private readonly StorefrontCache $storefront,
     ) {}
 
     public function engine(): CatalogEngine
@@ -69,6 +76,8 @@ final class Catalog
      */
     public function touch(iterable $ids): void
     {
+        $this->storefront->bump();
+
         if (! $this->needsIndex()) {
             return;
         }
@@ -110,18 +119,21 @@ final class Catalog
             return $work();
         }
 
-        $this->deferred = [];
+        // The storefront's generation moves once for all of it, the closing mark included.
+        return $this->storefront->defer(function () use ($work): mixed {
+            $this->deferred = [];
 
-        try {
-            $result = $work();
-            $ids = array_keys($this->deferred);
-        } finally {
-            $this->deferred = null;
-        }
+            try {
+                $result = $work();
+                $ids = array_keys($this->deferred);
+            } finally {
+                $this->deferred = null;
+            }
 
-        $this->touch($ids);
+            $this->touch($ids);
 
-        return $result;
+            return $result;
+        });
     }
 
     /**
@@ -132,6 +144,8 @@ final class Catalog
      */
     public function touchQuery(Builder $products): void
     {
+        $this->storefront->bump();
+
         if (! $this->needsIndex()) {
             return;
         }
@@ -151,6 +165,8 @@ final class Catalog
      */
     public function touchCategory(Category $category): void
     {
+        $this->storefront->bump();
+
         if (! $this->needsIndex()) {
             return;
         }

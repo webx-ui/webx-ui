@@ -21,6 +21,7 @@ use WebxUi\Catalog\Panel\ProductColumns;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Purchase\Purchasability;
 use WebxUi\Catalog\Rendering\ProductQuery;
+use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogStock\Catalog\Stock;
@@ -125,7 +126,7 @@ class StockServiceProvider extends ServiceProvider
      */
     private function registerCacheGroups(): void
     {
-        $this->app->make(CacheGroups::class)->bumpOn('catalog', StockStatus::class);
+        $this->app->make(StorefrontCache::class)->watch(StockStatus::class);
         $events = $this->app->make(Dispatcher::class);
 
         foreach (CacheGroups::EVENTS as $event) {

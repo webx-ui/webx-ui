@@ -6,8 +6,10 @@ namespace WebxUi\CatalogLandings\Tests;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -28,6 +30,8 @@ use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
 use WebxUi\Settings\SettingsServiceProvider;
+use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
  * The landings with brands and properties as the facets of their sets: the satellites a real
@@ -35,6 +39,16 @@ use WebxUi\Settings\SettingsServiceProvider;
  */
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
+    }
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -51,6 +65,10 @@ abstract class TestCase extends Orchestra
             MediaServiceProvider::class,
             SettingsServiceProvider::class,
             SeoServiceProvider::class,
+            // The product page prints `<x-webx-video>` (widgets, on top of the themes): without them
+            // the view compiles only where another package's run left it compiled.
+            ThemeServiceProvider::class,
+            WidgetsServiceProvider::class,
             CatalogServiceProvider::class,
             BrandsServiceProvider::class,
             CatalogPropertiesServiceProvider::class,
@@ -77,11 +95,6 @@ abstract class TestCase extends Orchestra
         $app->afterResolving(CatalogEngines::class, static function (CatalogEngines $engines): void {
             $engines->register('queueing', QueueingEngine::class);
         });
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function category(string $slug, ?Category $parent = null): Category

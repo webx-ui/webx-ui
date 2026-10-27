@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { ruleInput, ruleTitle, seoOf } from './rule'
 import type { SeoUrlRule } from './types'

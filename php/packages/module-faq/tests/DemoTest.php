@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Faq\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
@@ -21,6 +22,18 @@ use WebxUi\Services\ServicesServiceProvider;
  */
 final class DemoTest extends TestCase
 {
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
     /**
      * With the services and the library they need: the payment questions go into a service.
      *

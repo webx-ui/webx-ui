@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Engine;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use WebxUi\Catalog\Facets\BatchCountedFacet;
@@ -13,6 +14,7 @@ use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Search\SearchContributors;
 use WebxUi\Catalog\Sorts\Sorts;
+use WebxUi\Catalog\Storefront\StorefrontCache;
 
 /**
  * The database as the engine (§8.2) — honest up to a couple of thousand live products, which is
@@ -32,6 +34,12 @@ use WebxUi\Catalog\Sorts\Sorts;
  *
  * It keeps no index, because the tables are one: {@see needsIndex()} is false, and nothing is
  * ever queued for it.
+ *
+ * The counts of a storefront's filter are the same for every visitor until the catalogue
+ * changes, and the dearest part of a page: they are kept on the generation of the catalogue
+ * ({@see StorefrontCache}) by everything that decides them ({@see facetsKey()}) — not the page,
+ * not the sort, which change the list and not its counts. The panel's questions (unpublished,
+ * the trash, a state) are counted every time: few people ask them, and right after a save.
  */
 final class SqlEngine implements CatalogEngine
 {
@@ -40,6 +48,7 @@ final class SqlEngine implements CatalogEngine
         private readonly Sorts $sorts,
         private readonly SearchContributors $search,
         private readonly FacetPlacement $placement,
+        private readonly StorefrontCache $cache,
     ) {}
 
     public function search(CatalogQuery $query): CatalogResult
@@ -79,7 +88,47 @@ final class SqlEngine implements CatalogEngine
                 ->all();
         }
 
-        return new CatalogResult($ids, $total, $query->count === [] ? [] : $this->countAll($query, $base), $exact);
+        return new CatalogResult($ids, $total, $query->count === [] ? [] : $this->facets($query, $base), $exact);
+    }
+
+    /**
+     * Everything the counts depend on besides the catalogue itself, which the generation in the
+     * key stands for: where the page stands, what is chosen, what is searched, in which language,
+     * and which facets are asked for in which order — the order of the answer. The page and the
+     * sort are left out, and so is `countOnly`: the sitemap of the filter warms what a visitor
+     * reads next.
+     *
+     * @return array<string, mixed>
+     */
+    public static function facetsKey(CatalogQuery $query): array
+    {
+        $filter = $query->filter;
+
+        return [
+            'locale' => $query->locale,
+            'context' => $query->context,
+            'id' => $query->contextId,
+            'path' => $filter?->path,
+            'category' => $filter?->category?->getKey(),
+            'subject' => $filter?->subject === null ? null : [$filter->subject::class, $filter->subject instanceof Model ? $filter->subject->getKey() : null],
+            'scope' => array_filter($query->scope, static fn ($value): bool => ! $value->isEmpty()),
+            'facets' => array_filter($query->facets, static fn ($value): bool => ! $value->isEmpty()),
+            'count' => array_values($query->count),
+            'search' => trim((string) $query->search),
+        ];
+    }
+
+    /**
+     * @param  Builder<Product>  $base
+     * @return array<string, FacetResult>
+     */
+    private function facets(CatalogQuery $query, Builder $base): array
+    {
+        if ($query->withUnpublished || $query->onlyTrashed || $query->state !== null) {
+            return $this->countAll($query, $base);
+        }
+
+        return $this->cache->remember('facets', self::facetsKey($query), fn (): array => $this->countAll($query, $base));
     }
 
     public function needsIndex(): bool

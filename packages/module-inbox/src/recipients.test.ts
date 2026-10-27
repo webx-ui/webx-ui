@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { problemOf, reachesAnybody } from './recipients'
 import type { RecipientState } from './types'

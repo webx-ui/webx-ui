@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -28,8 +27,6 @@ use WebxUi\Media\Storage\FileStore;
  */
 final class DeleteGuardTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();

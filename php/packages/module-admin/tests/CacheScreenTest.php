@@ -18,6 +18,7 @@ use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\History\HistoryContext;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\Editor;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Mcp\Exceptions\ToolFailure;
@@ -30,10 +31,7 @@ use WebxUi\Mcp\Tool;
  */
 final class CacheScreenTest extends TestCase
 {
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
-    }
+    use MigratesOnce;
 
     protected function setUp(): void
     {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Screens;
 
+use Closure;
+use Throwable;
 use WebxUi\Media\Models\MediaAlias;
 use WebxUi\Media\Models\MediaFile;
 
@@ -14,6 +16,11 @@ use WebxUi\Media\Models\MediaFile;
  * same picture in three blocks asks about it once. What is kept is the row, never the address: a
  * private bucket's address is signed and expires, so it has to be worked out again every time it
  * is asked for.
+ *
+ * Some keys are on every page whoever renders it — the site's logo in the settings, printed by
+ * the header after the content's blocks were looked up. A package names them with
+ * {@see prefetch()}, and the first look-up of a response takes them along: one query for the
+ * blocks and the logo, not one each.
  */
 final class MediaFiles
 {
@@ -42,6 +49,17 @@ final class MediaFiles
     private array $byId = [];
 
     /**
+     * Who knows keys every page is likely to ask about: called once a response, at its first
+     * look-up, to {@see load()} them.
+     *
+     * @var list<Closure(self): void>
+     */
+    private array $prefetchers = [];
+
+    /** Whether this response's first look-up has asked the prefetchers already. */
+    private bool $prefetched = false;
+
+    /**
      * Makes sure every one of these keys will be known, in one query with everything else
      * loaded ahead of the next `find()`.
      *
@@ -54,6 +72,18 @@ final class MediaFiles
                 $this->wanted[$path] = $path;
             }
         }
+    }
+
+    /**
+     * Name keys the first look-up of every response takes along — the settings' pictures. The
+     * callback loads them (`$files->load([...])`); one that fails costs the prefetch, never a
+     * picture.
+     *
+     * @param  Closure(self): void  $prefetcher
+     */
+    public function prefetch(Closure $prefetcher): void
+    {
+        $this->prefetchers[] = $prefetcher;
     }
 
     public function find(string $path): ?MediaFile
@@ -100,6 +130,18 @@ final class MediaFiles
     /** Everything noted since the last look-up, in one query (and one more for the aliases). */
     private function lookUp(): void
     {
+        if (! $this->prefetched) {
+            $this->prefetched = true;
+
+            foreach ($this->prefetchers as $prefetcher) {
+                try {
+                    $prefetcher($this);
+                } catch (Throwable) {
+                    // A guess about what the page will ask: the page asks for itself anyway.
+                }
+            }
+        }
+
         $missing = $this->wanted;
         $this->wanted = [];
 
@@ -133,5 +175,6 @@ final class MediaFiles
         $this->found = [];
         $this->wanted = [];
         $this->byId = [];
+        $this->prefetched = false;
     }
 }

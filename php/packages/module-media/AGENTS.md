@@ -19,6 +19,9 @@ guides when the question is about one of those. An entity's own attachments are 
   (`MediaValues::normalize()`; extra keys dropped); an unknown id is refused by name.
 - **Asset addresses**: binds `WebxUi\Admin\Contracts\AssetUrls` to `LibraryUrls`, which is how
   pictures inside a `wx-rich-text` value find their address.
+- **Lookup** `Screens\MediaFiles` (singleton, flushed per response): rows by key in one `whereIn`;
+  `prefetch(fn ($files) => …)` names keys every page asks — `module-settings` adds the logo — and the
+  response's first look-up takes them along.
 - **API** under `{webx-admin.api_path}/media` (`directories`, `files`, `files/chunked`,
   `files/by-path`, `files/{file}/thumb`, `files/{file}/source`, `files/{file}/edit`, `…/copy`,
   `…/restore-original`, `files/move`, `files/delete`); route names `webx.media.*`.
@@ -36,7 +39,8 @@ guides when the question is about one of those. An entity's own attachments are 
 - **MCP** tools `media_list_directories`, `media_list_files`, `media_search_files`,
   `media_get_file`, `media_create_directory`, `media_delete_directory` (empty folders only),
   `media_rename_file`, `media_set_alt`, `media_move_files`, `media_upload_from_url` (public addresses only),
-  `media_optimize_images`, `media_delete_files`. Scopes `media:read`, `media:write`. A refusal is
+  `media_upload_file` (base64 bytes; larger than `piece` — `step` start/append/finish over the
+  `media.library` uploads), `media_optimize_images`, `media_delete_files`. Scopes `media:read`, `media:write`. A refusal is
   an MCP error, not an `ok: false` answer. Resource `media://fields`: how any module's file field
   takes its value; the server's instructions point at it.
 - **Alt of a file**: `media_files.alt`, a map of languages (`Support\MediaAlt`). Written in the
@@ -53,7 +57,7 @@ Uploading is separate from managing on purpose.
 | Permission     | Opens                                                                                                                                                    |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `media.view`   | folders and files read-only: lists, search, `by-path`, usage, `thumb`, `source`; the read tools (`media_list_*`, `media_search_files`, `media_get_file`) |
-| `media.upload` | sending files: `POST files`, `files/chunked`, the upload purpose `media.library`, `media_upload_from_url` — nothing else is written                      |
+| `media.upload` | sending files: `POST files`, `files/chunked`, the upload purpose `media.library`, `media_upload_from_url`, `media_upload_file` — nothing else is written |
 | `media.manage` | everything: upload, rename, move, delete, edit and copy pictures, restore the original, optimise, folders; every `media:write` tool                      |
 
 A route or screen node the site adds next to the module asks the same:
@@ -98,7 +102,7 @@ a migration of your own, bytes and rows together.
   gives you and let it resolve `url` and `thumb` on read.
 - Do not write files into the disk by hand or insert `media_files` rows with SQL: the row carries
   `hash`, `mime`, `size`, dimensions and `name_lower` that search and duplicates rely on. Upload
-  through the panel, the API or `media_upload_from_url`.
+  through the panel, the API, `media_upload_from_url` or `media_upload_file`.
 - Do not delete rows with SQL: `media_delete_files` (or the panel) removes the bytes, the
   edited original and every preview with the row. It refuses a file the site still uses and says
   where (a foreign key into `media_files`, or the key inside a text or JSON column) — the API

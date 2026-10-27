@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\History\HistoryEntry;
+use WebxUi\Admin\Testing\TemporaryFiles;
 use WebxUi\Catalog\Doctor\ExchangeCheck;
 use WebxUi\Catalog\Exchange\ExchangeColumns;
 use WebxUi\Catalog\Exchange\ExchangeFormats;
@@ -37,6 +38,8 @@ use WebxUi\Localization\Locales;
  */
 final class ExchangeTest extends TestCase
 {
+    use TemporaryFiles;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -339,7 +342,7 @@ final class ExchangeTest extends TestCase
      */
     private function import(string $content, array $options = [], bool $dryRun = false): ExchangeRun
     {
-        $path = tempnam(sys_get_temp_dir(), 'webx-test-').'.csv';
+        $path = $this->temporaryFile('webx-test-', '.csv');
         file_put_contents($path, $content);
         $importer = $this->app->make(Importer::class);
         $mapping = $importer->inspect($path, 'file.csv')['mapping'];

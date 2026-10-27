@@ -14,6 +14,9 @@ through the core's registries. For products, the filter, the card and the engine
   `warning`, `danger`, `info`), or a colour of its own as `#rrggbb` with `text_color` on it
   (`#rrggbb`, or null for black or white by WCAG contrast). And the flags `is_badge` (drawn on
   the card) and `is_visible` (offered in the filter).
+- **Seam** `WebxUi\CatalogLabels\Catalog\Labels`: `of($product)` is every label of a product of the
+  page (badges and service ones, in the reference book's order). The badges loaded them all in one
+  query, kept in the storefront's cache (`labels`) until the `catalog` group moves.
 - **View** `webx-catalog-labels::badges`, printed at the point `catalog.card.badges`. The tone
   becomes a class, `wx-catalog-badge--{tone}`, and the site's CSS decides the colour. A colour of
   its own becomes `wx-catalog-badge--custom` with `--webx-label-bg` / `--webx-label-fg` on the
@@ -50,6 +53,7 @@ to read, `cms.can:catalog.manage` to write.
 | One label in a brand colour         | `color` = `#rrggbb` (form: «Own colour»); `text_color` only if contrast picks wrong           |
 | Different badge markup              | `php artisan vendor:publish --tag=webx-catalog-labels-views`, keep only `badges.blade.php`    |
 | A service label only for templates  | switch off both `is_badge` and `is_visible`; select it with `products()->label('code')`       |
+| A product's labels in a template    | `app(Labels::class)->of($product)`: badges and service ones, no query of its own              |
 | Products with a label in a template | `products()->label('sale', 'new')->take(8)` (by code)                                         |
 | A field on the label form           | a patch: `Screens::extend('catalog.label-form', [...])`; `project-fields` is the place for it |
 | Other words in the panel            | `php artisan vendor:publish --tag=webx-catalog-labels-lang`                                   |
@@ -75,6 +79,9 @@ Label form node ids: `naming`, `title`, `code`, `color`, `text-color`, `is-badge
 - Do not rename a label's `code` on a live site without a reason. Templates that call
   `products()->label()` select by that code and would silently stop matching. Change the title
   instead.
+- Do not query `Label` or `catalog_label_product` from a theme's template. `Labels::of()` already
+  holds every label of the page, cached until the catalogue changes. A strip of extra products is
+  told about with `StorefrontParts::extend()`, which loads their labels in one query.
 - Do not set a product's labels through the labels API. Use `catalog_products_update` with
   `labels.ids`, or `catalog_bulk` with `add-label` / `remove-label`.
 

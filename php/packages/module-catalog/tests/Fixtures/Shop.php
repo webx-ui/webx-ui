@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Tests\Fixtures;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\DB;
+use WebxUi\Admin\Testing\SchemaSnapshots;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
@@ -143,6 +144,38 @@ final class Shop
         }
 
         return $shop;
+    }
+
+    /**
+     * The rows of the first seed of this process and the keys of what it made, per key — for
+     * `seedOnce()`.
+     *
+     * @var array<string, array{rows: array<string, list<array<string, mixed>>>, keys: array<string, mixed>}>
+     */
+    private static array $seeded = [];
+
+    /**
+     * The same shop as `seed()`, seeded for real once per `$key` (a test class, whose providers and
+     * schema are its own) and copied back into every next test's fresh database: each test gets its
+     * own rows and its own models, in 5 ms rather than half a second.
+     */
+    public static function seedOnce(Application $app, string $key): self
+    {
+        $pdo = DB::connection()->getPdo();
+
+        if (! isset(self::$seeded[$key])) {
+            $shop = self::seed($app);
+            self::$seeded[$key] = ['rows' => SchemaSnapshots::take($pdo)['rows'], 'keys' => $shop->keys()];
+
+            return $shop;
+        }
+
+        SchemaSnapshots::refill($pdo, self::$seeded[$key]['rows']);
+
+        // As after a seed: the registry of facets began before the satellites' rows were there.
+        $app->make(Facets::class)->flush();
+
+        return (new self($app))->reload(self::$seeded[$key]['keys']);
     }
 
     public function category(string $name): Category
@@ -454,5 +487,61 @@ final class Shop
 
             $this->landings[$slug] = $landing->refresh();
         }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function keys(): array
+    {
+        $ids = static fn (array $models): array => array_map(static fn ($model): int => (int) $model->getKey(), $models);
+
+        return [
+            'categories' => $ids($this->categories),
+            'products' => $ids($this->products),
+            'brands' => $ids($this->brands),
+            'properties' => $ids($this->properties),
+            'values' => array_map($ids, $this->values),
+            'landings' => $ids($this->landings),
+        ];
+    }
+
+    /**
+     * Fresh models for the keys of `keys()`, under the same names and in the same order.
+     *
+     * @param  array<string, mixed>  $keys
+     */
+    private function reload(array $keys): self
+    {
+        /**
+         * @template TModel of \Illuminate\Database\Eloquent\Model
+         *
+         * @param  class-string<TModel>  $class
+         * @param  array<array-key, int>  $ids
+         * @return array<array-key, TModel>
+         */
+        $find = static function (string $class, array $ids): array {
+            $found = $class::query()->findMany(array_values($ids))->keyBy(static fn ($model): int => (int) $model->getKey());
+
+            return array_map(static fn (int $id) => $found[$id], $ids);
+        };
+
+        $this->categories = $find(Category::class, $keys['categories']);
+        $this->products = array_values($find(Product::class, $keys['products']));
+
+        if ($keys['brands'] !== []) {
+            $this->brands = $find(Brand::class, $keys['brands']);
+        }
+
+        if ($keys['properties'] !== []) {
+            $this->properties = $find(Property::class, $keys['properties']);
+            $this->values = array_map(static fn (array $ids): array => $find(PropertyValue::class, $ids), $keys['values']);
+        }
+
+        if ($keys['landings'] !== []) {
+            $this->landings = $find(Landing::class, $keys['landings']);
+        }
+
+        return $this;
     }
 }

@@ -427,7 +427,7 @@ add → move → replace → attrs → props → remove
 
 - **`default`** — всегда; файл `default.json` слоя применяется к каждому варианту.
 - **Тип страницы** — `<модуль>.<страница>`: `pages.page`, `blog.article`, `blog.feed`, `blog.rubric`,
-  `blog.tag`, `blog.author`, `services.show`, `catalog.product`, `catalog.category`, `catalog.checkout`.
+  `blog.tag`, `blog.author`, `services.show`, `catalog.product`, `catalog.category`, `checkout.page`.
   Не путать с `type` у `RouteType` (`article` — алиас морфа без модуля): у страницы без адреса
   (лента, поиск, чекаут) `RouteType` нет, а хендл нужен.
 - **Хендлов под конкретную страницу (`page.42`) нет**: это вид одной записи, и он решается контентом
@@ -458,12 +458,12 @@ layout; `RouteType` и резолвер не меняются; вызов без
 где он не нужен), а:
 
 1. конфиг модуля — как сейчас, `webx-<модуль>.layout` (`'layout'`, `'layout.minimal'`);
-2. конфиг сайта — `webx-compositions.layouts`: `['catalog.checkout' => 'layout.minimal']`, хендл →
+2. конфиг сайта — `webx-compositions.layouts`: `['checkout.page' => 'layout.minimal']`, хендл →
    композиция; для модуля, у которого своего ключа нет, и для сайта, которому так проще;
 3. по умолчанию — `layout`.
 
-Пункт 2 решается при компиляции (§6.3): диспетчер `layout` для хендла `catalog.checkout` сразу
-печатает скомпилированный `layout.minimal × catalog.checkout`, лишнего на запросе нет.
+Пункт 2 решается при компиляции (§6.3): диспетчер `layout` для хендла `checkout.page` сразу
+печатает скомпилированный `layout.minimal × checkout.page`, лишнего на запросе нет.
 
 ## 5. Слои
 
@@ -541,11 +541,15 @@ storage/framework/compositions/
 ├── build-<id>/layout__blog_article.blade.php
 ├── build-<id>/layout_minimal__default.blade.php
 ├── build-<id>/place/…                         ← части для `place` (§6.4), по первому запросу
+├── .gitignore                                 ← `*`: набор — не исходник, в git его нет
 └── manifest.php                               ← виды по композиции и хендлу, источники и их mtime, находки
 ```
 
 Виды — в пространстве `webx-composition::` (точки имён — в `_`: Blade читает точку как слэш).
 Хранятся текущая сборка и одна прошлая: запрос, прочитавший старый манифест, дорисует по нему.
+`.gitignore` пишет сам компилятор, если его нет: так набор не попадает в `git status` и у сайта,
+созданного до этого, без правки его файлов (строка в `.gitignore` скелета помогла бы только
+новым сайтам); свой `.gitignore` сайта в каталоге набора компилятор не трогает.
 
 **Диспетчер** — обычный вид пакета, который ввёл композицию: у `layout` —
 `theme-default/views/components/layout.blade.php` (и `layout/minimal`, `layout/blank`), одна строка:
@@ -602,7 +606,7 @@ return [
         'layout' => ['default' => ['attrs' => ['html' => ['data-webx-smooth-scroll' => true]]]],
     ],
     // Which layout a page type stands in, when its module has no key of its own (§4).
-    'layouts' => ['catalog.checkout' => 'layout.minimal'],
+    'layouts' => ['checkout.page' => 'layout.minimal'],
 ];
 ```
 
@@ -970,6 +974,10 @@ footer                <footer class="site-footer">
   условную обёртку выразить не может, а пустой `<div>` в слоте сделал бы слот непустым.
 - **Бургер и шторка** — виджета, своих узлов у них нет: `props` узла `header` (`collapse`, `side`,
   `sticky`) и слоты виджета `trigger`, `mobile`, `mobile-bottom` — узлом `x-slot:` патчем.
+- **`mode: drill` у `header` — прежнее поведение темы**: шапка theme-default до композиций
+  печатала `<x-webx-header … mode="drill">`, и база его сохраняет (HTML без патчей не меняется).
+  Аккордеон виджета (его умолчание) — `{"props": {"header": {"mode": null}}}`: `null` снимает
+  проп (§3.2), `show --origin` называет файл, который это сделал.
 - **Полоса объявления в шапку** — два файла: `remove: ["notice-bar"]` в `layout/default.json` и
   `add` узла `component: webx-notice-bar` со стеком `notice` в `header.topbar` (`first`). `move`
   между композициями нет: это два дерева и два скомпилированных вида.

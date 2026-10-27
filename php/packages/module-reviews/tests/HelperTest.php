@@ -201,6 +201,10 @@ final class HelperTest extends TestCase
             $this->review($name, categories: [$category], attributes: ['photo' => ['path' => 'media/ab/cd/a.jpg']]);
         }
 
+        // Once a process, not a list: the library's first look-up reads the settings for their pictures,
+        // and the active locales — which a migration in the same test used to read first.
+        settings()->raw();
+        $this->app->make(Locales::class)->all();
         $few = $this->queries(static fn () => reviews()->get());
 
         foreach (['C', 'D', 'E', 'F'] as $name) {

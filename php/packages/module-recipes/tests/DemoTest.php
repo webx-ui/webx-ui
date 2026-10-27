@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Recipes\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,6 +24,18 @@ use WebxUi\Services\Models\Service;
  */
 final class DemoTest extends TestCase
 {
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

@@ -6,9 +6,11 @@ namespace WebxUi\Admin\Tests;
 
 use Closure;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\DemoModule;
 use WebxUi\Admin\Tests\Fixtures\PagesModule;
 use WebxUi\Admin\Tests\Fixtures\Ticket;
@@ -28,9 +30,23 @@ use WebxUi\Admin\Tests\Fixtures\Ticket;
  */
 final class DemoCommandTest extends TestCase
 {
+    use MigratesOnce;
+
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
 
         Schema::create('tickets', function (Blueprint $table): void {
             $table->id();

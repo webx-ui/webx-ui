@@ -126,13 +126,19 @@ scripts/                                # link-panel, starter-site, sync-php-ver
   конце дня, а не после каждой задачи.
 - **Пушить только в remote `claude`, никогда в `origin` и никогда в `main`.** После мержа:
   `git fetch claude && git merge --ff-only claude/main`.
-- **Гейт перед пушем** — то же, что CI (перед ним погасить dev-серверы, он упирается в память):
+- **Гейт этапа — `pnpm gate:affected <BASE>`**: `BASE` — `git rev-parse HEAD` до первой правки.
+  Скрипт берёт ответ `scripts/affected.mjs <BASE>` и гоняет ровно шаги `ci.yml` и `php-ci.yml` для
+  него (незатронутая половина — «skipped: not affected»), JS и PHP по очереди, до первой ошибки,
+  в конце — сводка по шагам со временем. Manticore — общий сервер devbox с `--fail-on-skipped`.
+- **Гейт релиза дня — `pnpm gate:affected --full`**, один раз перед PR (перед ним погасить
+  dev-серверы, он упирается в память); ~9 минут, PHPUnit в нём — параллельно
+  (`scripts/phpunit-parallel.mjs`, замеры — `WEBX_UI_RELEASE_SPEED.md`). Это то же, что руками:
   ```
   pnpm build && pnpm typecheck && pnpm lint && npx prettier --check . && pnpm test && pnpm docs:build
   ```
-  `pnpm build` — до typecheck (доки резолвят `@webx-ui/core` из `dist`); typecheck только
-  рекурсивный. Один тест — из корня: `npx vitest run <файл> --pool=forks --poolOptions.forks.singleFork`.
-  PHP-половина — из `php/`: `composer lint && composer analyse && composer test`.
+  и из `php/`: `composer lint && composer analyse && composer test`. `pnpm build` — до typecheck
+  (доки резолвят `@webx-ui/core` из `dist`); typecheck только рекурсивный. Один тест — из корня:
+  `npx vitest run <файл> --pool=forks --poolOptions.forks.singleFork`.
 - **Чек-лист производительности перед сдачей** — если тронуты публичная страница, список или форма
   панели, MCP-список или кеш (правила — `WEBX_UI_PERFORMANCE.md`, гайд `guide/performance.md`):
   - **N+1** — связи, которые трогает шаблон строки (`routes`, обложка, категории), грузятся

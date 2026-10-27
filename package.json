@@ -21,6 +21,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "gate:affected": "node scripts/gate-affected.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version && node scripts/sync-php-version.mjs && node scripts/sync-npm-pairs.mjs",
     "release": "pnpm build && changeset publish"

@@ -39,7 +39,7 @@ final class RouteCacheTest extends TestCase
     }
 
     #[Test]
-    public function a_cold_list_is_one_query_a_type_and_an_entity_asked_twice_is_not_asked_again(): void
+    public function a_cold_list_is_one_query_whatever_the_types_and_an_entity_asked_twice_is_not_asked_again(): void
     {
         [$articles, $categories] = $this->listing();
         $expected = $this->urls($articles, $categories);
@@ -54,8 +54,29 @@ final class RouteCacheTest extends TestCase
             $this->urls($articles, $categories);
         });
 
-        $this->assertSame(2, $queries, 'one query for the articles, one for the categories');
+        $this->assertSame(1, $queries, 'the articles and the categories in one query');
         $this->assertSame($expected, $this->urls($articles, $categories));
+    }
+
+    #[Test]
+    public function preloads_of_two_parts_of_a_page_are_read_together_by_the_first_address(): void
+    {
+        [$articles, $categories] = $this->listing();
+        $expected = $this->urls($articles, $categories);
+
+        $this->nextRequest(cold: true);
+        [$articles, $categories] = $this->reloaded($articles, $categories);
+
+        $queries = $this->routeQueries(function () use ($articles, $categories): void {
+            // The page's own list, then a part prepared after it: nothing is read until asked.
+            $this->app->make(RouteCache::class)->preload($articles);
+            $this->app->make(RouteCache::class)->preload($categories);
+            $this->urls($articles, $categories);
+        });
+
+        $this->assertSame(1, $queries);
+        $this->assertSame($expected, $this->urls($articles, $categories));
+        $this->assertSame(0, $this->routeQueries(fn () => $this->app->make(RouteCache::class)->preload($articles)), 'a preload alone reads nothing');
     }
 
     #[Test]

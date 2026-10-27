@@ -29,18 +29,18 @@ question is about one of them.
   its poster and shape: YouTube waits for consent to `media`, a file is `<video preload="none">`.
   `VideoProviders` here decides what a row stores; a provider registered only here is handed to
   the widgets' registry (`PlayedByWidgets`), so its videos play there too. Every other picture is
-  `<x-webx-zoom>`: a copy `images.shown` (1200) wide, the original magnified under the mouse and
-  two fingers (`images.zoom`: `inner`, `side` or `off`), a click opening the product's pictures.
+  `<x-webx-zoom>`: a copy `images.shown` (1200) wide, the original magnified (`images.zoom`: `inner`,
+  `side`, `off`; window `images.zoom_frame`: `picture`, `container`), a click opening the pictures.
 - **Storefront points** that satellites print into: `catalog.card.badges`, `catalog.card.meta`,
   `catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`,
   `catalog.listing.top`, `catalog.listing.bottom`.
 - **Panel screens** `catalog.product-form` (tabs `main`, `description-tab`, `images-tab`,
   `seo-tab`, `settings-tab`, `history-tab`) and `catalog.category-form` (`main`, `filters-tab`,
   `seo-tab`, `history-tab`). Also the exchange forms `catalog.exchange-import` and `catalog.exchange-profile`. The API is under `/api/cms/catalog`.
-- **Cache group** `catalog` (WEBX_UI_CACHE.md): the facets' settings and what the satellites keep live on it;
-  `Category` and `Product` move it (an import or a bulk action commits a chunk, so one move a chunk), a write
-  without a model's event says so (`FacetSettings::write`, the importer's mass unpublish). What one page reads
-  twice — brands, stock, a facet's values, the subtree — is kept on the request (`Support\RequestMemo`).
+- **Generation** `Storefront\StorefrontCache` — the version of cache group `catalog`: facet settings, satellites' lists
+  and the `SqlEngine` filter counts (`remember('facets', …)`, `webx-catalog.cache`) live on it; `watch()`ed models
+  (core and satellites) and every `Catalog::touch*()` move it, once per transaction (chunk) or `defer()`. What one page reads
+  twice is kept on the request (`Support\RequestMemo`); categories by id, bounds and visibility — `Storefront\CategoryIndex`.
   Query budgets of every public page: `tests/PerformanceTest.php` (`WEBX_PERF_PRINT=1` prints the tallies).
 - **Registries** (singletons a satellite fills from its provider): `ProductParts`, `Facets`, `Sorts`, `Documents`,
   `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`, `StorefrontParts`, `Purchasability`,
@@ -107,8 +107,8 @@ form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `barcod
 - Do not add a column to `catalog_products` for your own data. Keep it in your own table with a
   `product_id` and write it through a `ProductPart`. Removing your module then leaves the
   product whole.
-- Do not write products or their links with raw SQL and stop there. The engine never learns about
-  the change. After a mass change, call `app(Catalog::class)->touchQuery($products)`, or better,
+- Do not write products or their links with raw SQL and stop there. The engine and the storefront's caches never
+  learn of it. After a mass change, call `app(Catalog::class)->touchQuery($products)`, or better,
   save through the form, `catalog_products_update` or `catalog_bulk`.
 - Do not put filters in query parameters, and do not use `_` in a category slug (it is refused).
   The `_` marks a filter segment, and each filter has exactly one spelling; anything else gets a 301.
@@ -137,8 +137,8 @@ form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `barcod
   product shows up in search.
 - With MCP: read `catalog://fields` and `catalog://product-parts` first. Every write tool takes
   `dry_run: true`. `catalog_products_get` shows what was saved.
-- `tests/PerformanceTest.php` holds the query budget of every public page and the panel's list,
-  and that the site follows an edit, a move, a bulk action and an import at once — no cache reset.
+- `tests/PerformanceTest.php`: query budgets of public pages and the panel's list, the site follows an edit, a move,
+  a bulk action, an import at once; `StorefrontCacheTest`: every write path moves the generation.
 
 ## Read more
 

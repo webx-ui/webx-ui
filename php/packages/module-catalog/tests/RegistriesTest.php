@@ -6,9 +6,12 @@ namespace WebxUi\Catalog\Tests;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use LogicException;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Http\Controllers\MethodProbeController;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\Facets;
@@ -177,6 +180,7 @@ final class RegistriesTest extends TestCase
         $this->product('One', $laptops);
         $this->product('Two', $laptops);
 
+        $this->answerTheMethodProbe();
         $this->artisan('webx:doctor')->expectsOutputToContain('past its limit of 1');
     }
 
@@ -188,6 +192,7 @@ final class RegistriesTest extends TestCase
 
         $this->app['config']->set('webx-catalog.root.enabled', true);
 
+        $this->answerTheMethodProbe();
         $this->artisan('webx:doctor')->expectsOutputToContain('these addresses never open: /catalog');
     }
 
@@ -220,5 +225,14 @@ final class RegistriesTest extends TestCase
     {
         $app['config']->set('webx-catalog.price.enabled', false);
         $app['config']->set('webx-catalog.fields.barcode', false);
+    }
+
+    /**
+     * `webx:doctor` asks the site itself whether PUT and DELETE get through: answered here the way
+     * Laravel answers, rather than over the network to an address that is nobody's.
+     */
+    private function answerTheMethodProbe(): void
+    {
+        Http::fake(['*/method-probe' => static fn (Request $request) => Http::response('', 200, [MethodProbeController::HEADER => $request->method()])]);
     }
 }

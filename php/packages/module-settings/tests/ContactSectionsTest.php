@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -20,8 +19,6 @@ use WebxUi\Settings\Settings;
  */
 final class ContactSectionsTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function by_default_only_phones_emails_and_addresses_are_drawn(): void
     {

@@ -91,6 +91,7 @@ use WebxUi\Catalog\Seo\ListingSource;
 use WebxUi\Catalog\Seo\UnavailableSource;
 use WebxUi\Catalog\Sorts\CoreSort;
 use WebxUi\Catalog\Sorts\Sorts;
+use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Compositions\Compositions;
@@ -148,6 +149,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->app->singleton(ExchangeFormats::class);
 
         $this->app->singleton(Catalog::class);
+        $this->app->singleton(StorefrontCache::class);
         $this->app->singleton(CategoryFacets::class);
         $this->app->singleton(CategoryFacet::class);
         $this->app->bindIf(FilterSerializer::class, SegmentSerializer::class, shared: true);
@@ -622,18 +624,20 @@ class CatalogServiceProvider extends ServiceProvider
     }
 
     /**
-     * The `catalog` cache group (WEBX_UI_CACHE.md §2): the facets' settings by category live on
-     * it, and the satellites put what they keep — the properties, the sets — beside them. A
-     * category's save or move (whom a branch inherits from) and a product's save move it; a
-     * product is saved by the thousand in an import, but the import and the bulk actions write a
-     * chunk in one transaction, and the library moves the version once per commit. What is
-     * written without a model's event — a setting, a set, a mass unpublish — says so itself.
+     * The `catalog` cache group (WEBX_UI_CACHE.md §2) is the generation of the catalogue
+     * ({@see StorefrontCache}): the facets' settings by category live on it, the satellites put
+     * what they keep — the properties, the sets — beside them, and the storefront's caches carry
+     * it in their keys. A category's save or move (whom a branch inherits from) and a product's
+     * save move it; a product is saved by the thousand in an import, but the import and the bulk
+     * actions write a chunk in one transaction, and the library moves the version once per
+     * commit. What is written without a model's event — a setting, a set, a mass unpublish —
+     * says so itself, through `Catalog::touch()` or the cache it changed.
      */
     private function registerCacheGroups(): void
     {
         $groups = $this->app->make(CacheGroups::class);
 
-        $groups->declare('catalog', 'webx-catalog::module.title');
-        $groups->bumpOn('catalog', Category::class, Product::class);
+        $groups->declare(StorefrontCache::GROUP, 'webx-catalog::module.title');
+        $this->app->make(StorefrontCache::class)->watch(Category::class, Product::class);
     }
 }

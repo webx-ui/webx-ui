@@ -185,7 +185,25 @@ describe('WxScreenHead', () => {
     const wrapper = draw()
 
     expect(wrapper.find('.wx-screen-head__actions').exists()).toBe(false)
+    expect(wrapper.classes()).not.toContain('has-actions')
 
     wrapper.unmount()
+  })
+
+  // The grid sizes the name's line by these two: a line for the subtitle only when there is
+  // one, and a line as tall as the buttons only when there are any. The heights themselves are
+  // measured in a browser (CLAUDE.md §4).
+  it('says whether there are actions and a subtitle, which the grid sizes its lines by', () => {
+    const bare = draw()
+    expect(bare.classes()).not.toContain('has-subtitle')
+    bare.unmount()
+
+    const full = draw({ actions, subtitle: 'about-us' })
+    expect(full.classes()).toEqual(expect.arrayContaining(['has-actions', 'has-subtitle']))
+    full.unmount()
+
+    const slotted = draw({}, { subtitle: '<span>about-us</span>' })
+    expect(slotted.classes()).toContain('has-subtitle')
+    slotted.unmount()
   })
 })

@@ -110,7 +110,7 @@ final class Subscriber
         });
         $this->listen(BlockRendered::class, function (BlockRendered $event): void {
             $failure = $event->failure;
-            $this->collector->leave($failure === null ? [] : ['error' => $failure::class.': '.mb_substr($failure->getMessage(), 0, 300)]);
+            $this->collector->leave($failure === null ? [] : ['error' => $failure::class.': '.$this->masker->text($failure->getMessage(), 300)]);
             $this->collector->close('block');
         });
 
@@ -301,7 +301,7 @@ final class Subscriber
     {
         $id = spl_object_id($event->request);
         $entry = $this->collector->http[$id] ?? ['method' => $event->request->method(), 'url' => $this->masker->url($event->request->url()), 'started' => null, 'at' => $this->collector->at(), 'status' => null];
-        $entry['error'] = mb_substr($event->exception->getMessage(), 0, 300);
+        $entry['error'] = $this->masker->text($event->exception->getMessage(), 300);
         $entry['ms'] = is_float($entry['started']) ? round((microtime(true) - $entry['started']) * 1000, 2) : null;
         $this->collector->http[$id] = $entry;
     }
@@ -326,7 +326,7 @@ final class Subscriber
 
         $this->collector->mail[] = [
             'to' => $to,
-            'subject' => $message->getSubject(),
+            'subject' => $message->getSubject() === null ? null : $this->masker->text($message->getSubject(), 300),
             'mailer' => is_string($event->data['mailer'] ?? null) ? $event->data['mailer'] : null,
             'at' => $this->collector->at(),
         ];
@@ -346,11 +346,11 @@ final class Subscriber
 
         $this->collector->log[] = [
             'level' => $event->level,
-            'message' => mb_substr($event->message, 0, 2000),
+            'message' => $this->masker->text($event->message, 2000),
             'context' => $this->masker->keyed($context),
             'exception' => $exception instanceof Throwable ? [
                 'class' => $exception::class,
-                'message' => mb_substr($exception->getMessage(), 0, 1000),
+                'message' => $this->masker->text($exception->getMessage(), 1000),
                 'at' => $this->sites->describe($exception->getFile(), $exception->getLine())['label'],
             ] : null,
             'at' => $this->collector->at(),

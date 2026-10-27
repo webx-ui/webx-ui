@@ -412,7 +412,7 @@ final class ReportBuilder
         if ($request->hasSession()) {
             foreach ($request->session()->all() as $key => $value) {
                 $key = (string) $key;
-                $shown = in_array($key, self::SESSION_VALUES, true) || str_contains($key, 'consent');
+                $shown = ! $this->masker->everything() && (in_array($key, self::SESSION_VALUES, true) || str_contains($key, 'consent'));
                 $session[$key] = $shown && ! is_array($value) ? $this->masker->value($value) : Masker::MASK;
             }
 

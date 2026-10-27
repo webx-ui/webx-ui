@@ -12,6 +12,7 @@ use WebxUi\Catalog\Filter\FilterState;
 use WebxUi\Catalog\Filter\FilterUrls;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\CatalogProperties\Catalog\ProductValues;
 use WebxUi\CatalogProperties\Catalog\Properties;
 use WebxUi\CatalogProperties\Catalog\PropertySets;
@@ -50,6 +51,7 @@ final class ProductProperties
         private readonly CategoryFacets $categoryFacets,
         private readonly FilterUrls $urls,
         private readonly Locales $locales,
+        private readonly StorefrontCache $cache,
     ) {}
 
     /**
@@ -319,12 +321,25 @@ final class ProductProperties
 
     /**
      * The visible groups, once per page: a hidden group hides nothing, it only loses its heading.
+     * Kept as rows under the generation (§8.4) — the same few for every product page; a group
+     * saved moves the generation.
      *
      * @return array<int, PropertyGroup>
      */
     private function groups(): array
     {
-        return $this->groups ??= PropertyGroup::query()->where('is_visible', true)->get()->keyBy('id')->all();
+        if ($this->groups !== null) {
+            return $this->groups;
+        }
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $this->cache->remember('property-groups', [], static fn (): array => PropertyGroup::query()
+            ->where('is_visible', true)
+            ->get()
+            ->map(static fn (PropertyGroup $group): array => $group->getAttributes())
+            ->all());
+
+        return $this->groups = PropertyGroup::hydrate($rows)->keyBy('id')->all();
     }
 
     private function title(PropertyGroup $group, string $locale): string

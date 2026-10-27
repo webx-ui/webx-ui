@@ -1,4 +1,4 @@
-export { tokens, lightVars, darkVars } from './generated/tokens'
+export { tokens, lightVars, darkVars } from './generated/tokens.js'
 
 /** `cssVar('color-primary')` -> `var(--wx-color-primary)`. */
 export function cssVar(name: string, fallback?: string): string {

@@ -22,8 +22,9 @@ panel, open any page of the site, and the line is at the bottom.
 **Who sees it.** All three must hold, or the page is exactly what it was without the package:
 
 - **not production** — with `APP_ENV=production` the package registers nothing at all: no
-  middleware, listener, route, permission or MCP tool. No setting turns it on there, on purpose:
-  the values of the queries are the visitors' personal data;
+  middleware, listener, route, permission or MCP tool. No setting turns the bar on there, on
+  purpose: the values of the queries are the visitors' personal data. Only `debug_page` can be
+  opened there, and without the values — see [In production](#in-production);
 - **signed in to the panel** as an active administrator;
 - **with the permission `debug.view`** — a super administrator has it; no role gets it on install.
   Give it to a developer's role in «Administrators → Roles», never to a content role: the bar shows
@@ -139,7 +140,8 @@ the whole request, global middleware and session included.
 
 ## For agents: `debug_page`
 
-The MCP tool `debug_page` (scope `debug:read`, permission `debug.view`, not in production) opens a
+The MCP tool `debug_page` (scope `debug:read`, permission `debug.view`; in production only when
+opened, below) opens a
 path of the site over HTTP as a visitor's browser would, and returns the report that page left:
 
 ```json
@@ -166,6 +168,30 @@ The habit for an agent: call it **before and after** a change to a page, compare
 `summary.queries`, `summary.repeated` and `summary.sql_ms`, and read `repeated[].sites` for where an
 N+1 comes from.
 
+### In production
+
+A closed stand that runs as `production` has to be measured where it runs, and switching it to
+`staging` changes what other packages do. `WEBX_DEBUG_MCP_IN_PRODUCTION=true` opens the agent's
+path there, and only it:
+
+- **on:** the permission `debug.view`, the tool `debug_page`, the first middleware — which starts
+  collecting only for the tool's one-time token, after checking its signature and age — and the
+  listener that keeps the tool's report;
+- **still off, whatever any setting says:** the bar on the pages, its script, the cookie
+  `wx_debug` and the late start, the API of reports (`/api/cms/debug/reports` is a 404). A visitor,
+  and a request with a forged `X-Webx-Debug`, get the page exactly as without the package — no
+  tag, no header, no `Cache-Control` of ours;
+- **every value masked:** the statements keep their SQL, time, place and repeats, but every bound
+  value is `••••`, and so are the values of the session, of a log line's context, of an outgoing
+  request's query, and the free text that may quote them — a log message, an exception's message,
+  a mail's subject. The lists of `mask` are not enough on a live site: an e-mail in a `where` is no
+  secret column, and it is a visitor's;
+- **said at every deploy:** `php artisan webx:doctor` names the switch while it is on (a note,
+  so `--strict` does not stop the stand's deploys). Switch it off when the measuring is done.
+
+`WEBX_DEBUGBAR=false` keeps the tool from collecting there too. A site that published
+`config/webx-debug.php` before the key existed is read from the variable all the same.
+
 ## Settings
 
 `php artisan vendor:publish --tag=webx-debug-config` writes `config/webx-debug.php`, every key
@@ -180,6 +206,7 @@ described in the file:
 | `mask.columns/tables/headers`   | passwords, tokens  | what never reaches a report (`*` is any run)               |
 | `events`                        | a few of ours      | the event classes counted in «Other»                       |
 | `mcp.resolve_to`, `mcp.timeout` | —, 30              | how `debug_page` reaches the site                          |
+| `mcp.production`                | off                | `WEBX_DEBUG_MCP_IN_PRODUCTION`: `debug_page` in production |
 
 The words of the bar are in the package's `lang/*/bar.php`, in the ten languages of the panel
 (`vendor:publish --tag=webx-debug-lang` to change them).

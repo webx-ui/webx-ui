@@ -130,6 +130,49 @@ final class StorefrontTest extends TestCase
         $this->assertNull($shown[0]->group);
     }
 
+    /** More cards of the same page — a shelf after the list — read only the products not read yet. */
+    #[Test]
+    public function a_second_load_reads_only_the_products_not_read_yet(): void
+    {
+        $old = $this->product('Old', $this->laptops, [$this->diagonal->id => 13.3]);
+        $big = $this->product('Big', $this->laptops, [$this->diagonal->id => 17.0]);
+        $properties = $this->app->make(ProductProperties::class);
+        $properties->reset();
+        $reads = static fn (): array => array_values(array_filter(DB::getQueryLog(), static fn (array $query): bool => str_contains($query['query'], 'catalog_product_property_values" as "stored"')));
+
+        DB::enableQueryLog();
+        $properties->load([$this->thinkpad, $old]);
+        $properties->load([$old, $this->thinkpad]);
+        $this->assertCount(1, $reads());
+
+        $properties->load([$this->thinkpad, $old, $big]);
+        $properties->card($big);
+        $this->assertCount(2, $reads());
+        $this->assertSame([(int) $big->id], $reads()[1]['bindings']);
+    }
+
+    /**
+     * The headings of the groups come from the storefront's cache (§8.4) — no query on the next
+     * page — and follow a group renamed or hidden at once.
+     */
+    #[Test]
+    public function the_headings_of_the_groups_are_cached_and_follow_a_group_saved(): void
+    {
+        $url = (string) $this->thinkpad->url();
+        $this->get($url)->assertOk()->assertSee('Screen');
+
+        DB::enableQueryLog();
+        $this->get($url)->assertOk()->assertSee('Screen');
+        $this->assertSame([], array_filter(DB::getQueryLog(), static fn (array $query): bool => str_contains($query['query'], 'catalog_property_groups')));
+
+        $screen = PropertyGroup::query()->where('title->en', 'Screen')->firstOrFail();
+        $screen->update(['title' => 'Display']);
+        $this->get($url)->assertOk()->assertSee('Display')->assertDontSee('Screen');
+
+        $screen->update(['is_visible' => false]);
+        $this->get($url)->assertOk()->assertDontSee('Display')->assertSee('15.6″');
+    }
+
     #[Test]
     public function a_value_outside_the_set_comes_back_with_the_category(): void
     {

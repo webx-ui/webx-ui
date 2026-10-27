@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -18,6 +20,16 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
+    }
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -51,11 +63,6 @@ abstract class TestCase extends Orchestra
         // The compiled list would otherwise outlive a test that writes a rule and then reads a
         // page — every test here is about what happens after something changed.
         $app['config']->set('webx-seo.cache.enabled', false);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     /**

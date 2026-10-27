@@ -144,6 +144,12 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 панели, — без префикса: `nested-set`, `cache`, `compositions`, `localization`, `mcp`, `routing`, `themes`, `widgets`,
 `theme-default`. По имени видно, панель это или библиотека.
 
+Исключение — спутники-интеграции коммерции: `payment-<шлюз>` и `delivery-<служба>` называются без
+`module-`, хотя дополняют разделы панели. Это не разделы, а реализации контракта своего раздела
+(`module-payments`, `module-delivery`), и имя говорит, с каким шлюзом или службой пакет работает
+(вопросы 4 и 5 §9 [`WEBX_UI_COMMERCE.md`](WEBX_UI_COMMERCE.md), решение 22
+[`WEBX_UI_MODULE_PAYMENTS.md`](WEBX_UI_MODULE_PAYMENTS.md)).
+
 Идентификатор модуля (`Module::id()`, он же префикс прав `<id>.<action>`, областей MCP
 `<id>:<scope>` и имён инструментов `<id>_<tool>`) называет то, что модуль показывает, а не
 таблицу под ним: администраторы — `admins`. `users` зарезервировано за пользователями сайта —

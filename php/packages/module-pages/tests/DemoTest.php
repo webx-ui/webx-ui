@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Pages\Tests;
 
+use Illuminate\Foundation\Application;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Blocks\Models\Block;
@@ -23,6 +24,18 @@ use WebxUi\Themes\ThemeManifest;
  */
 final class DemoTest extends TestCase
 {
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
     protected function tearDown(): void
     {
         @unlink($this->app->make(DemoLedger::class)->path());

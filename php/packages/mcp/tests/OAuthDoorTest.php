@@ -226,8 +226,8 @@ final class OAuthDoorTest extends TestCase
     {
         // Passport only publishes its migrations; an application runs them once. The tests
         // are the application here, and a registering client needs somewhere to be written.
-        $this->loadMigrationsFrom(dirname((string) (new ReflectionClass(Passport::class))->getFileName(), 2).'/database/migrations');
+        $this->app->make('migrator')->path(dirname((string) (new ReflectionClass(Passport::class))->getFileName(), 2).'/database/migrations');
 
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
     }
 }

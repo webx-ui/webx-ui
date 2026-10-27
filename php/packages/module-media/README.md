@@ -134,7 +134,7 @@ the same transaction.
 ## MCP
 
 `list_directories`, `list_files`, `search_files`, `get_file`, `create_directory`, `delete_directory`,
-`rename_file`, `move_files`, `upload_from_url`, `optimize_images`, `delete_files`. Every mutating tool takes
+`rename_file`, `move_files`, `upload_from_url`, `upload_file`, `optimize_images`, `delete_files`. Every mutating tool takes
 `dry_run`; a refusal is an MCP error (`ToolFailure`), not an `ok: false` answer.
 
 - `delete_directory` deletes an **empty** folder only: recursive deletion is the one operation
@@ -154,6 +154,12 @@ the same transaction.
   the same way. The type is sniffed from the bytes, the name gets an extension from the upload
   white list, and the panel's upload rules apply. `webx-media.remote.allow_hosts` names hosts on
   the site's own network that may be fetched anyway, as does `webx-admin.remote.trusted_hosts`.
+- `upload_file` takes bytes the agent holds, as base64 in `content`, and puts them through the
+  same path as `upload_from_url`: the type sniffed, the panel's rules, `FileStore::store`. A call
+  carries at most `piece` bytes (three quarters of `Uploads::chunkSize()`); a larger file goes
+  in pieces through `module-admin`'s uploads, purpose `media.library` — `step: start` (`name`,
+  `size`), `append` (`upload`, `offset`, `content`), `finish` (`upload`, `directory_id`). The
+  answer is `get_file`'s plus `duplicate`. Nothing is read from a path on the server.
 
 ## Configuration
 

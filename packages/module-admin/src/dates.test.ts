@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDates } from './dates'
 import { createI18n, type I18n } from './i18n'

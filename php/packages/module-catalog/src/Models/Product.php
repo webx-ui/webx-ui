@@ -280,6 +280,15 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     }
 
     /**
+     * Put down the answer to {@see isVisible()} worked out some other way — the product page has
+     * the categories loaded and the shape of the tree at hand — so nothing asks the database.
+     */
+    public static function rememberVisible(int $id, bool $visible): void
+    {
+        RequestMemo::put(self::VISIBLE.$id, $visible);
+    }
+
+    /**
      * What a line of the sitemap asks of a product, for a chunk at once: the main picture behind
      * `og:image`, the registry rows behind its addresses — and the answer to {@see isVisible()},
      * which the map asks of every row through its SEO sources after it chose the rows with

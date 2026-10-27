@@ -25,6 +25,7 @@ use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Panel\ProductColumns;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Search\SearchContributors;
+use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogProperties\Catalog\ProductValues;
@@ -247,6 +248,6 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
      */
     private function registerCacheGroups(): void
     {
-        $this->app->make(CacheGroups::class)->bumpOn(Properties::GROUP, Property::class, PropertyValue::class, PropertyGroup::class, PropertyInterval::class);
+        $this->app->make(StorefrontCache::class)->watch(Property::class, PropertyValue::class, PropertyGroup::class, PropertyInterval::class);
     }
 }

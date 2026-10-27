@@ -6,6 +6,7 @@ namespace WebxUi\Admin\Tests;
 
 use Illuminate\Foundation\Application;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Testing\AssertsPermissions;
 use WebxUi\Mcp\McpServiceProvider;
@@ -20,6 +21,7 @@ use WebxUi\Mcp\McpServiceProvider;
 final class AccessCoverageTest extends TestCase
 {
     use AssertsPermissions;
+    use MigratesOnce;
 
     /**
      * @param  Application  $app
@@ -28,11 +30,6 @@ final class AccessCoverageTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return [...parent::getPackageProviders($app), McpServiceProvider::class, AuthServiceProvider::class];
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     #[Test]

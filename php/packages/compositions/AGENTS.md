@@ -32,7 +32,8 @@ The tree of `layout` belongs to `webx-ui/theme-default` — read its guide for t
 - **Component** `<x-webx-composition::place id="body" only="added" />` — the children of one
   container in a hand-written view: `all` (but the slots) or `added` above the base.
 - **Compiled set** `storage/framework/compositions/` (`compiled`): a `build-*` directory of views
-  and `manifest.php` with the sources and their mtimes. A request compiles again what is older
+  and `manifest.php` with the sources and their mtimes; the compiler writes `.gitignore` (`*`) there
+  if there is none, so the set stays out of git on any site. A request compiles again what is older
   than its sources while `view.check_cache_timestamps` is on (`check` overrides).
 - **Commands** `webx:composition:compile` (a step of `webx:boot`, before `view:cache`),
   `webx:composition:clear` and `webx:composition:show [<composition>] [--handle=] [--origin]

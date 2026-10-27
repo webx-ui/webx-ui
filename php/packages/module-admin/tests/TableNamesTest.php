@@ -7,6 +7,7 @@ namespace WebxUi\Admin\Tests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\MigratesOnce;
 
 /**
  * The frame's tables moving to `cms_*` on a site that already has rows in them.
@@ -17,6 +18,8 @@ use PHPUnit\Framework\Attributes\Test;
  */
 final class TableNamesTest extends TestCase
 {
+    use MigratesOnce;
+
     private const MIGRATION = '2026_10_05_000000_rename_the_frame_tables_to_cms';
 
     private const MOVED = [
@@ -26,11 +29,6 @@ final class TableNamesTest extends TestCase
         'admin_history' => 'cms_history',
         'admin_uploads' => 'cms_uploads',
     ];
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
-    }
 
     #[Test]
     public function a_fresh_install_has_only_the_new_names(): void

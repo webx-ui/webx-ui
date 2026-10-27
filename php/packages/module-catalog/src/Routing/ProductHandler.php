@@ -9,11 +9,14 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Popularity\ViewCounter;
 use WebxUi\Catalog\Purchase\Purchasability;
 use WebxUi\Catalog\Seo\UnavailableSource;
+use WebxUi\Catalog\Storefront\CategoryIndex;
 use WebxUi\Catalog\Storefront\StorefrontParts;
+use WebxUi\Routing\RouteCache;
 use WebxUi\Routing\RouteHandler;
 
 /**
@@ -37,6 +40,8 @@ final class ProductHandler implements RouteHandler
         private readonly StorefrontParts $parts,
         private readonly Purchasability $purchasability,
         private readonly ViewCounter $counter,
+        private readonly CategoryIndex $categories,
+        private readonly RouteCache $routes,
     ) {}
 
     public function handle(Request $request, object $entity, string $tail): Response
@@ -45,9 +50,23 @@ final class ProductHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        // With the registry rows of the product and its main category: the trail, the markup and
-        // the `hreflang` lines all ask their addresses, and each would be a query otherwise.
-        $entity->loadMissing(['category.routes', 'categories', 'images', 'routes']);
+        // The main category and the ancestors of its trail out of one pool (§8.4) — one query on
+        // a cold page, and a shelf of the same category asks nothing again. Visibility comes from
+        // the shape of the tree, so the handler, the purchase rule and the SEO source do not ask.
+        $entity->loadMissing(['categories', 'images']);
+        $this->categories->adopt($entity->categories);
+        $this->categories->attach([$entity], withAncestors: true);
+        Product::rememberVisible((int) $entity->getKey(), $this->categories->productVisible($entity));
+
+        // The addresses of the product, its categories and the trail are noted, not read: the
+        // parts prepared next note theirs (the brand), and the first `url()` reads them all in
+        // one query — none on a warm page, where the cache of the registry has them.
+        $category = $entity->category;
+        $this->routes->preload([
+            $entity,
+            ...$entity->categories,
+            ...($category instanceof Category ? [$category, ...array_values($this->categories->find($this->categories->ancestorIds((int) $category->getKey())))] : []),
+        ]);
         $this->parts->prepare(new Collection([$entity]));
 
         if (! $entity->isVisible()) {

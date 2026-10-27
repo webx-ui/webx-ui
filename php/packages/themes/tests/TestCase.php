@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Themes\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Http;
 use Illuminate\View\FileViewFinder;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Themes\ModuleStyles;
@@ -15,6 +16,14 @@ use WebxUi\Themes\ThemeServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
+    }
+
     /**
      * The fake module comes after the themes on purpose: a theme that only saw the namespaces
      * registered before it booted would pass with the opposite order and fail on a real site.

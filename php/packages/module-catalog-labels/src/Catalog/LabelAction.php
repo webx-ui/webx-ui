@@ -64,6 +64,7 @@ final class LabelAction implements BulkAction
         $this->add
             ? DB::table(Label::LINKS)->insert(['label_id' => $id, 'product_id' => $product->id])
             : $links->clone()->where('label_id', $id)->delete();
+        Labels::forgetLoaded();
 
         $after = $this->add ? [...$before, $id] : array_values(array_diff($before, [$id]));
 

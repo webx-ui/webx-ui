@@ -23,6 +23,7 @@ use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Snapshots\Snapshotter;
 use WebxUi\Admin\Snapshots\Tar;
 use WebxUi\Admin\Snapshots\UrlRewriter;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\FixedCheck;
 
 /**
@@ -31,6 +32,8 @@ use WebxUi\Admin\Tests\Fixtures\FixedCheck;
  */
 final class SnapshotsTest extends TestCase
 {
+    use MigratesOnce;
+
     private string $dir;
 
     protected function defineEnvironment($app): void
@@ -52,7 +55,7 @@ final class SnapshotsTest extends TestCase
 
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
 
         Schema::create('demo_pages', function (Blueprint $table): void {
             $table->id();

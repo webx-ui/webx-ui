@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Configurator\Tests;
 
+use Illuminate\Foundation\Application;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Versions\EntityVersion;
@@ -22,6 +23,18 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class DemoTest extends TestCase
 {
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
     /**
      * With the inbox, so that the demo makes its request form.
      *

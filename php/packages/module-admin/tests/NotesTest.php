@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Notes\Note;
 use WebxUi\Admin\Notes\NoteTypes;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\Editor;
 use WebxUi\Admin\Tests\Fixtures\Ticket;
 
@@ -22,9 +23,11 @@ use WebxUi\Admin\Tests\Fixtures\Ticket;
  */
 final class NotesTest extends TestCase
 {
+    use MigratesOnce;
+
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
 
         Schema::create('tickets', function (Blueprint $table): void {
             $table->id();

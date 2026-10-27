@@ -13,7 +13,8 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   Read whole and cached under `webx-settings.cache.key`; dropped on every save, and by a reset of the `settings` cache group («System → Cache», `webx:cache:reset --group=settings`).
 - **Service** `WebxUi\Settings\Settings` — `get()`, `all()`, `raw()`, `keys()`, `save()`,
   `forget()`; helper `settings('key', $default)`, `settings()` for the service. Event
-  `SettingsSaved` carries the keys that changed.
+  `SettingsSaved` carries the keys that changed. `preload()` notes the settings' pictures for the
+  page's first library look-up (registered with `MediaFiles::prefetch()` when module-media is on).
 - **Panel screen** `settings.index`, nodes `tabs`, `general`, `general-card`, `project-name`
   (`general.project-name`), `branding`, `branding-card`, `logo` (`branding.logo`), `mark`
   (`branding.mark`). API `GET` / `PUT` under `/api/cms/settings`.

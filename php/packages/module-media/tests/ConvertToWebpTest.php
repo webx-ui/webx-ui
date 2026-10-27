@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -13,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Events\StoredContentRewritten;
+use WebxUi\Admin\Testing\TemporaryFiles;
 use WebxUi\Media\Images\ImageEditing;
 use WebxUi\Media\Images\Optimizing\LibraryOptimizing;
 use WebxUi\Media\Models\MediaAlias;
@@ -30,7 +30,7 @@ use WebxUi\Media\Storage\FileUrls;
  */
 final class ConvertToWebpTest extends TestCase
 {
-    use RefreshDatabase;
+    use TemporaryFiles;
 
     protected function setUp(): void
     {
@@ -259,12 +259,15 @@ final class ConvertToWebpTest extends TestCase
     {
         $image = imagecreatetruecolor($width, $height);
 
+        // Noise a photograph's size: small patches are as dear to encode as large ones and cheap to
+        // draw — rectangles across the whole frame took seconds to paint.
         for ($i = 0; $i < 4000; $i++) {
             $colour = imagecolorallocate($image, random_int(0, 255), random_int(0, 255), random_int(0, 255));
-            imagefilledrectangle($image, random_int(0, $width), random_int(0, $height), random_int(0, $width), random_int(0, $height), (int) $colour);
+            [$x, $y] = [random_int(0, $width), random_int(0, $height)];
+            imagefilledrectangle($image, $x, $y, $x + random_int(1, 300), $y + random_int(1, 300), (int) $colour);
         }
 
-        $path = tempnam(sys_get_temp_dir(), 'wx').'.jpg';
+        $path = $this->temporaryFile('wx', '.jpg');
         imagejpeg($image, $path, 100);
 
         return new UploadedFile($path, 'photo.jpg', 'image/jpeg', null, true);
@@ -285,7 +288,7 @@ final class ConvertToWebpTest extends TestCase
             }
         }
 
-        $path = tempnam(sys_get_temp_dir(), 'wx').'.png';
+        $path = $this->temporaryFile('wx', '.png');
         imagepng($image, $path);
 
         return new UploadedFile($path, 'logo.png', 'image/png', null, true);

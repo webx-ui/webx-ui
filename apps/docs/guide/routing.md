@@ -89,8 +89,12 @@ not, so a card that prints an article and its tags does not cost a query per lin
    so Octane and queue workers never carry it over.
 2. **The site's cache.** The addresses of a whole list in one `Cache::many()` — on Redis one
    `MGET`. Arrays of scalars, never models; an entity without an address is cached too.
-3. **The registry.** One query a type for what the cache did not have, written back with
-   `putMany()`.
+3. **The registry.** One query, whatever the types, for what the cache did not have, written back
+   with `putMany()`.
+
+`preload()` only notes the entities: the first address asked for reads everything noted by then.
+The parts of one page — the product, its categories, its brand — each preload their own and are
+still one read.
 
 A site helper built on `RecordQuery` (`services()`, the blog block, …) preloads its records and
 everything they were loaded with. A list of your own does the same before the cards:

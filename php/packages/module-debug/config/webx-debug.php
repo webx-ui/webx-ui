@@ -11,8 +11,9 @@ return [
     |
     | The debug bar at the bottom of the site's pages, for an administrator with
     | the permission `debug.view`. In production the package does nothing at
-    | all, whatever this says: no listener, no route, no MCP tool — the value is
-    | not even read there.
+    | all, whatever this says: no listener, no route, no MCP tool — unless
+    | `mcp.production` below opens `debug_page` there, and then this switches
+    | the tool off as it does the bar elsewhere.
     |
     */
 
@@ -117,11 +118,18 @@ return [
     | that cannot reach itself by its own name (inside Docker, behind NAT) names
     | the address to connect to instead; the Host stays the site's.
     |
+    | `production` opens the tool, and only the tool, on a site running as
+    | production — a closed stand that has to be measured where it runs. The
+    | bar, its cookie and the API of reports stay off there whatever this says,
+    | and a report made there keeps no value of any statement. Off by default;
+    | `php artisan webx:doctor` says so while it is on.
+    |
     */
 
     'mcp' => [
         'resolve_to' => env('WEBX_DEBUGBAR_RESOLVE_TO'),
         'timeout' => 30,
+        'production' => filter_var(env('WEBX_DEBUG_MCP_IN_PRODUCTION', false), FILTER_VALIDATE_BOOLEAN),
     ],
 
 ];

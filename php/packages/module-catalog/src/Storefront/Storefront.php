@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog\Storefront;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,7 @@ use WebxUi\Catalog\Filter\FilterUrls;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Localization\Locales;
+use WebxUi\Routing\RouteCache;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Rendering\Seo;
 
@@ -54,6 +56,16 @@ final class Storefront
     public function category(Request $request, Category $category, string $tail): Response
     {
         $locale = $this->locales->current();
+
+        // The category and the ancestors of its trail into the request's pool, and their
+        // addresses noted before anything asks one: the filter, the trail and the markup read
+        // them, and a cold page reads the registry for all of them at once (§8.4).
+        $index = Container::getInstance()->make(CategoryIndex::class);
+        $index->adopt([$category]);
+        Container::getInstance()->make(RouteCache::class)->preload([
+            $category,
+            ...array_values($index->find($index->ancestorIds((int) $category->id))),
+        ]);
         $context = new FilterContext(
             FilterContext::CATEGORY,
             $category->routeCanonical($locale)->path ?? $category->routePath($locale),

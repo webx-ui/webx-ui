@@ -8,8 +8,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -35,6 +37,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * The module and what it is used with on a real site: the forms it points at, pages to stand
      * at the prefix, previews — none of which the package requires, which is what
@@ -85,14 +89,12 @@ abstract class TestCase extends Orchestra
         $app['config']->set('webx-inbox.disk', 'inbox');
     }
 
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
-    }
-
     protected function setUp(): void
     {
         parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
 
         // Under a prefix: `DynamicComponent` remembers what it resolved in static properties
         // shared by every test in the process (CLAUDE.md §4).

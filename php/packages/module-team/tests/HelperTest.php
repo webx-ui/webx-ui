@@ -201,6 +201,8 @@ final class HelperTest extends TestCase
             $this->member($name, attributes: ['photo' => ['path' => 'media/ab/cd/a.jpg']])->syncRelated(Member::SERVICES, 'service', [$service->id]);
         }
 
+        // Once a process, not a list: the library's first look-up reads the settings for their pictures.
+        settings()->raw();
         $few = $this->queries(static fn () => team()->get());
 
         foreach (['C', 'D', 'E', 'F'] as $name) {

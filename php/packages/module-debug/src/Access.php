@@ -130,6 +130,17 @@ final class Access
     }
 
     /**
+     * Whether a token is one this site signed and still good — without using it up: the first
+     * middleware asks before collecting, the response redeems it ({@see self::redeem()}).
+     */
+    public function plausible(string $token): bool
+    {
+        $payload = $this->open($token);
+
+        return $payload !== null && is_int($payload['expires'] ?? null) && $payload['expires'] >= time();
+    }
+
+    /**
      * Who a token speaks for and the report id it carries — once. A forged, expired or second
      * use is null.
      *
@@ -137,13 +148,9 @@ final class Access
      */
     public function redeem(string $token): ?array
     {
-        try {
-            $payload = json_decode($this->encrypter()->decryptString($token), true, 4, JSON_THROW_ON_ERROR);
-        } catch (Throwable) {
-            return null;
-        }
+        $payload = $this->open($token);
 
-        if (! is_array($payload) || ! is_int($payload['expires'] ?? null) || $payload['expires'] < time()) {
+        if ($payload === null || ! is_int($payload['expires'] ?? null) || $payload['expires'] < time()) {
             return null;
         }
 
@@ -164,6 +171,18 @@ final class Access
         $user = $this->user($payload['user'] ?? null);
 
         return $user !== null && $this->allows($user) ? ['user' => $user, 'id' => $id] : null;
+    }
+
+    /** @return array<mixed>|null */
+    private function open(string $token): ?array
+    {
+        try {
+            $payload = json_decode($this->encrypter()->decryptString($token), true, 4, JSON_THROW_ON_ERROR);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return is_array($payload) ? $payload : null;
     }
 
     /** @return (Model&HasPermissions)|null */

@@ -103,6 +103,16 @@ them, and never over.
 to it, and with its photos it is a report — with the line «This event is over» and no button to
 book. It stays in the sitemap. There is nothing to do when an event is over: it moves by itself.
 
+**No events in the sitemap?** The module puts every visible event with an address in
+`sitemap-event.xml`, the past ones too; a draft, the bin and `noindex` stay out. If the file is
+missing altogether, the site has bound a handler of its own over `EventHandler` that implements
+`NotAPage` — an event address that sends the visitor straight to booking instead of showing a page.
+A redirect does not belong in a sitemap, so the whole type is left out
+([A type that is not a page](./seo#a-type-that-is-not-a-page)). `seo_sitemap_status` says so under
+`excluded_types`: the type `event`, the reason `not-a-page`, the handler's class and how many
+addresses it covers. To have the events in the map, the event address has to show a page: drop the
+binding, or let the handler render the page and send only the booking button away.
+
 There is no order to drag. Events stand in the order of their dates, and a list in the panel is a
 page at a time, because the past ones pile up for years.
 

@@ -143,7 +143,9 @@ the node's children. A slot left empty is no slot: without a logo there is no br
 
 The burger and the drawer are the widget's: `props` on `header` reach them (`collapse: "never"`
 leaves them out, `side` is where the drawer opens), and its slots `trigger`, `mobile` and
-`mobile-bottom` are `x-slot:` nodes a patch adds. **The announcement bar in the header** is two
+`mobile-bottom` are `x-slot:` nodes a patch adds. theme-default's `header` is `mode: "drill"`, as
+its header was before compositions; `{"props": {"header": {"mode": null}}}` takes the prop off
+and gives the widget's own `accordion` back. **The announcement bar in the header** is two
 files — it is the layout's node, and a node does not move from one composition into another:
 
 ```jsonc
@@ -349,7 +351,8 @@ Every composition × handle becomes a view in `storage/framework/compositions/` 
 source is newer than the set — while `view.check_cache_timestamps` is on, the way Blade looks at
 its own views; `webx-compositions.check` says otherwise. A patch that names a node that is not
 there skips that operation and says so in the log: the page renders. A file that is not JSON or
-breaks the schema stops the compile, and the last set keeps serving.
+breaks the schema stops the compile, and the last set keeps serving. The set is no source: it
+writes its own `.gitignore` and stays out of `git status`, on a site made before as well.
 
 ## Debugging
 

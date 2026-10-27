@@ -724,4 +724,65 @@ describe('WxTable header on the page', () => {
       wrapper.unmount()
     }
   })
+
+  // A stub that reports 360px is enough to put the table into cards: `useElementWidth` takes
+  // its first reading from the box, before any observer fires. How the three columns stand
+  // beside each other is measured in a browser (CLAUDE.md §4) — here, that there are three.
+  it('puts the actions of a card beside its fields rather than in a strip over them', async () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 360,
+      height: 0,
+      top: 0,
+      left: 0,
+      right: 360,
+      bottom: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect)
+
+    const wrapper = mountTable(
+      { selectable: true },
+      {
+        slots: {
+          'card-actions': '<button class="edit">Edit</button><button class="drop">Delete</button>',
+        },
+        attachTo: document.body,
+      },
+    )
+    await nextTick()
+
+    const card = wrapper.get('.wx-table__card')
+    expect(card.find('.wx-table__card-top').exists()).toBe(false)
+    expect([...card.element.children].map((child) => child.className)).toEqual([
+      'wx-table__card-check',
+      'wx-table__card-body',
+      'wx-table__card-tools',
+    ])
+    expect(card.findAll('.wx-table__card-tools button').map((b) => b.text())).toEqual([
+      'Edit',
+      'Delete',
+    ])
+    expect(card.findAll('.wx-table__card-body .wx-table__field')).toHaveLength(2)
+
+    wrapper.unmount()
+    vi.restoreAllMocks()
+  })
+
+  it('draws no column of actions on a card when nothing was handed for one', async () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 360,
+      right: 360,
+    } as DOMRect)
+
+    const wrapper = mountTable({}, { attachTo: document.body })
+    await nextTick()
+
+    expect(wrapper.find('.wx-table__card').exists()).toBe(true)
+    expect(wrapper.find('.wx-table__card-tools').exists()).toBe(false)
+    expect(wrapper.find('.wx-table__card-check').exists()).toBe(false)
+
+    wrapper.unmount()
+    vi.restoreAllMocks()
+  })
 })

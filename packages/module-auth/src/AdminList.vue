@@ -176,7 +176,7 @@ const columns = computed<TableColumn<Admin>[]>(() => {
       width: rowMenuWidth,
       align: 'right',
       hidden: !props.removable,
-      // A card puts them along its top instead, through the `card-actions` slot.
+      // A card puts them on its right instead, through the `card-actions` slot.
       hideOnCards: true,
     },
   ]

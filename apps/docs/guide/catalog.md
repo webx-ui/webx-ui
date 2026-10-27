@@ -381,7 +381,9 @@ next time the product is opened — the same file continues from where the serve
 `images.shown` pixels wide (1200) is shown, and the original comes only when someone looks closer —
 magnified inside the picture's frame under the mouse (`images.zoom` = `inner`, the default), in a
 panel beside it where the page has room (`side`), or not at all (`off`); two fingers pinch it on a
-phone. A click, a tap or Enter opens the product's pictures over the page.
+phone. A theme that stands every picture in a frame of one shape — a portrait photo in a 4:3 on a
+muted ground — sets `images.zoom_frame` to `container` (`WEBX_CATALOG_IMAGES_ZOOM_FRAME`): the
+mouse's window is then the whole link around the picture, not the picture's strip. A click, a tap or Enter opens the product's pictures over the page.
 
 Each video is printed with `<x-webx-video>` of
 [`webx-ui/widgets`](https://github.com/webx-ui/webx-ui/tree/main/php/packages/widgets), the picture as its poster and in its shape. A
@@ -469,6 +471,23 @@ the card and `is_visible` to offer it in the filter — both off, it is a servic
 Instead of a tone a label can have a colour of its own, `#rrggbb` («Own colour» in the editor): the
 text on it is black or white by WCAG contrast unless `text_color` says otherwise, and the badge is
 `wx-catalog-badge--custom` with `--webx-label-bg` / `--webx-label-fg` set on the element. Bulk actions: `add-label`, `remove-label`. A label still on products cannot be deleted.
+
+A template reads the labels of a product — the badges and the service ones, «mounting included» or
+«ships in two days» — through `Labels::of()`, without a query of its own. The badges of the page
+loaded every label of every product on it in one query, and the answer is kept in the
+[storefront's cache](#the-storefront-s-caches) until the catalogue changes:
+
+```blade
+@foreach (app(\WebxUi\CatalogLabels\Catalog\Labels::class)->of($product) as $label)
+    @unless ($label->is_badge)
+        <p class="product-note" data-label="{{ $label->code }}">{{ $label->displayName() }}</p>
+    @endunless
+@endforeach
+```
+
+A strip of other products on the same page (recommended, seen before) is told about with
+`StorefrontParts::extend($products)`, which loads their labels in one more query; a product nobody
+told about is loaded by itself.
 
 **Stock** — in stock, out of stock, on order; the migration makes these three. One per product. A
 status with «can be bought» off refuses the product with the code `stock` and its own name. A
@@ -625,6 +644,64 @@ first is still writing.
 **When the server does not answer**, the panel's list says so and answers from the database. The
 storefront does the same up to `sql_engine_limit` products and answers `503` past it. The design is
 `docs/architecture/WEBX_UI_CATALOG_MANTICORE.md`.
+
+### The storefront's caches
+
+The counts of a filter are the same for every visitor until the catalogue changes, and on
+`SqlEngine` they are the dearest part of a listing: a `group by` per facet. They are kept in the
+cache until the catalogue's **generation** moves — the version of the `catalog` cache group, which
+every storefront cache carries in its key. On the demo shop a warm category page goes from 34
+queries to 21, with no facet query at all; the labels of a page (`labels`) are kept the same way.
+
+The generation moves by itself; nobody resets it by hand:
+
+- a product, a category or a satellite's record (a brand, a label, a stock status, a landing, a
+  property or its value) is saved, deleted, restored or moved;
+- a write without a model's event says which products it changed — `Catalog::touch($ids)`,
+  `touchQuery($query)`, `touchCategory($category)` — the calls the search index needs anyway.
+
+Inside a transaction it moves once, after the commit, so a chunk of a bulk action or of an import is
+one move, and a rollback moves nothing. Another sort or page of the same filter reads the same
+counts; another filter, search or language is another entry. The panel's lists and Manticore are
+counted every time.
+
+```dotenv
+WEBX_CATALOG_CACHE_ENABLED=true   # off: counted on every request
+WEBX_CATALOG_CACHE_TTL=86400      # a safety net, not the way an entry goes
+```
+
+It works on any cache store — `file`, `database`, `redis` — without tags. To reset it by hand, use
+«System → Cache» or the MCP tool `cache_reset` with `group: catalog`. `debug_page` lists each
+storefront cache under `cache.entries` as `catalog.<cache>.<hash>` with `memo` / `store` / `miss`.
+
+A cache of your own joins in one line and gets the reset and the line in the debug bar with it:
+
+```php
+use WebxUi\Catalog\Storefront\StorefrontCache;
+
+$badges = app(StorefrontCache::class)->remember('badges', ['ids' => $ids, 'locale' => $locale], fn () => $this->lookup($ids));
+```
+
+A satellite whose records change the storefront watches its models through the core:
+`app(StorefrontCache::class)->watch(MyModel::class)`. A write without an event calls
+`Catalog::touch()` for the products it changed.
+
+The product page asks each thing once, however many parts ask it. The shape of the category tree —
+bounds and visibility, no words — is cached under the generation (`tree`), so the trail, the
+product's visibility and a shelf narrowed by a category ask nothing of the tree. The categories
+themselves come from one pool a request: the main category and its trail are one query, and a
+shelf of the same category in your template is none.
+
+```blade
+{{-- No query for the category, its subtree or the cards' main categories: --}}
+@foreach (products()->except($product)->category($product->category_id)->take(4) as $card)
+    <a href="{{ $card['url'] }}">{{ $card['name'] }}</a>
+@endforeach
+```
+
+Addresses go through the registry's own cache, not `with('routes')`: every part notes what it will
+link to, and the first `url()` reads it all in one query — none on a warm page. To link a list of
+your own, call `app(\WebxUi\Routing\RouteCache::class)->preload($models)` before the cards.
 
 ## Extending the catalogue
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use ErrorException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Exceptions\RuntimeException as ImageException;
@@ -18,8 +17,6 @@ use WebxUi\Media\Images\Thumbnails;
  */
 final class ThumbnailsTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function a_picture_named_by_its_disk_and_path_gets_previews_beside_it(): void
     {

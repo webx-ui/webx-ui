@@ -114,6 +114,9 @@ Without a theme the list prints a smaller look of its own inline.
   who has the event open in the panel — tell your user before writing under them; a draft written
   over is kept in the panel's History › Drafts. `events_publish`, `events_unpublish`, `events_discard`, `events_delete` take the `revision` too: a
   stale one is refused, and while somebody has the event open one is required.
+- Do not look for a filter when `sitemap-event.xml` is missing: a site handler over `EventHandler`
+  with `NotAPage` (a redirect to booking) leaves the type out — `seo_sitemap_status` →
+  `excluded_types`, reason `not-a-page`. For events in the map the address must show a page.
 - Do not delete rows with SQL: deleting puts the event in the bin and releases its address
   through the registry. A raw delete leaves the address and the links behind.
 - Do not print `<title>` in a site's copy of a view: with an empty SEO card the event and the

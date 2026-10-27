@@ -93,7 +93,8 @@ sticky header keeps its heading in view.
 In an `accordion` a section that is a page itself is repeated as the first line of its branch.
 `parent="split"` — on `<x-webx-mobile-menu.nav>` or on `<x-webx-header>` — makes the section's
 name the link and opens the branch with an arrow beside it, «Submenu: …» to a screen reader, so
-the same page is not offered twice. A section without a page of its own opens by its name either
+the same page is not offered twice — nor is a child that leads to the section's own address («All
+showers» under «Showers»; a branch left empty loses its arrow). A section without a page of its own opens by its name either
 way; `drill` keeps the section's name as a link on top of its level.
 
 ## Dropdown and form in a dialog
@@ -408,6 +409,14 @@ Inertial scrolling is this widget only: a theme does not bring Lenis or another 
   widget's own, else the page — for at least 60% of the frame's width; where there is none (a
   narrow column, a phone, a gallery as wide as its column) `side` is `inner`. A press hides it:
   a click is the lightbox's, a drag the slider's.
+- **A picture in a frame of another shape** — a portrait photo standing in the middle of a gallery's
+  4:3 — is magnified in a strip of the frame only, since `inner` lays its window over the picture's
+  own box. `frame="container"` (`data-zoom-frame="container"`) makes the window the whole
+  `.webx-zoom`, with its rounding — theme that element as the frame. The copy is the picture's box × `scale` and the point under the cursor stays under it as far as the
+  window's edges let: along an axis where the copy is longer than the window it rests against the
+  edges and always covers the window, where it is shorter it stands in the middle on
+  `--webx-zoom-bg`. `side` and fingers are as they were: two fingers magnify inside the picture's
+  box. The default, `picture`, prints nothing.
 - **Fingers** — two pinch it (up to 4×) and move it about inside the frame; one finger pans a
   magnified picture and holds the slider under it still; a double tap is 2× around the point and
   back; pinched back to its size it is as it was. One finger on a picture at its own size is the

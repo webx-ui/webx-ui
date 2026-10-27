@@ -53,8 +53,9 @@ Redis. Теги Laravel (`Cache::tags()`) работают только на Red
   `SeoLinkBlock`, `SeoLinkItem`), `sitemap` (без моделей — сам слушает всё видимое), `snippets`
   (`Snippet`), `banners` (`Banner`, `Place`), `press` (`Outlet`, `Article`; издания страницы — один
   загрузчик на запрос под версиями `press` + `routes`), `catalog` (`Category`, `Product`, `Brand`, `Label`, `StockStatus`, `Landing`, `Property`,
-  `PropertyValue`, `PropertyGroup`, `PropertyInterval`; наборы свойств, список свойств и настройки
-  фасетов — по одной записи `remember`).
+  `PropertyValue`, `PropertyGroup`, `PropertyInterval` — через `StorefrontCache::watch()`; наборы свойств, список
+  свойств и настройки фасетов — по одной записи `remember`; версия группы — поколение каталога, на нём
+  кеши витрины, первым — счётчики фильтра `SqlEngine`, `WEBX_UI_MODULE_CATALOG.md` §8.4).
 - **Панель** (этап 4, аудит §9.6): `block-usage` (`module-blocks`) — счётчики типов блоков на
   страницах; двигается любой моделью `webx-blocks.entities` и `Region` (привязка повторяется при
   чтении — сущности, названные после загрузки, тоже двигают), тихие писатели пакета (`Renamer`,
@@ -218,10 +219,9 @@ $html = $groups->remember('theme.header', ['menu', 'settings', 'theme'], fn () =
    Альтернатива: дебаунс с досбросом в конце запроса/задачи — риск застрять с устаревшим при
    убитом процессе.
 2. **`Product` в `bumpOn('catalog')`** — по замеру: импорт пишет чанками в транзакции, сброс — один
-   `increment` на зафиксированный чанк (140 строк: 277 мс против 264 без). Сегодня от товаров не
-   зависит ни одна запись группы; это задел под счётчики фасетов и дерево панели. Альтернатива —
-   убрать `Product` из `bumpOn` (одна строка в `CatalogServiceProvider`), если цена на большом
-   импорте окажется заметной.
+   `increment` на зафиксированный чанк (140 строк: 277 мс против 264 без). От товаров зависят
+   счётчики фильтра витрины (`WEBX_UI_MODULE_CATALOG.md` §8.4), так что `Product` из группы не
+   убрать.
 3. **Переезд существующих кешей сделан** (Settings, Locales, MenuCache, BlockTypes, Regions, Bundles,
    SeoRules, UrlRuleSource, LinkBlocks, Sitemap, Codes — на `remember`/`get`/`put`; резолвер
    адресов хранит попадания в `routes`); мосты `onReset` остались у миниатюр блоков и у кешей

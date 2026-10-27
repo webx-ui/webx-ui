@@ -12,8 +12,9 @@
     file of the site is a <video preload="none">. Without JS a video of YouTube is a link to it.
 
     Any other picture is shown as a smaller copy and magnified under the mouse and two fingers
-    (<x-webx-zoom>, `images.zoom` in the config): the original comes only when someone looks closer,
-    and a click — or Enter — opens it over the page, paging through the product's pictures.
+    (<x-webx-zoom>, `images.zoom` and `images.zoom_frame` in the config): the original comes only
+    when someone looks closer, and a click — or Enter — opens it over the page, paging through the
+    product's pictures.
 
     Two points for the satellites: `catalog.product.aside` beside the price (the stock, the brand)
     and `catalog.product.tabs` under the description (properties, related products).
@@ -22,6 +23,7 @@
 @php($images = $product->images)
 @php($videos = (bool) config('webx-catalog.fields.video', true))
 @php($zoom = in_array(config('webx-catalog.images.zoom'), ['inner', 'side'], true) ? config('webx-catalog.images.zoom') : null)
+@php($zoomFrame = config('webx-catalog.images.zoom_frame') === 'container' ? 'container' : 'picture')
 @php($shown = max(320, (int) config('webx-catalog.images.shown', 1200)))
 
 <x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'" handle="catalog.product">
@@ -60,6 +62,7 @@
                                      :src="$image->thumbUrl($shown) ?? $image->url()"
                                      :alt="$image->getTranslation('alt') ?: $product->displayName()"
                                      :mode="$zoom"
+                                     :frame="$zoomFrame"
                                      :group="'product-'.$product->id"
                                      :eager="$loop->first"
                                      :title="$image->getTranslation('title') ?: null" />

@@ -222,6 +222,14 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
 
 ## Тесты в jsdom
 
+- **«ReferenceError: document is not defined» в тесте, который только что тронули.** Файл начинается с
+  `// @vitest-environment node`: тестам без DOM jsdom не поднимается (≈0.3–1.3 с на файл). Тест,
+  которому понадобился DOM, убирает эту строку, а не подставляет глобалы.
+- **«Cannot find module '…/dist/generated/tokens'» в vitest, хотя `pnpm build` прошёл.** `dist`
+  рабочих пакетов vitest не перегоняет, а отдаёт Node (`server.deps.external` в
+  `vitest.config.ts`), и Node не угадывает расширение. Пакет, который собирает `tsc` без
+  бандлера (`@webx-ui/tokens`), пишет относительный импорт с `.js`: `'./generated/tokens.js'`.
+
 - **Тест скрипта согласия (`consent.js`) ждёт `window.ran`, а он `undefined`, хотя скрипт
   «распакован».** jsdom в vitest вставленные скрипты не исполняет, а внешние не грузит: ни кода,
   ни `load`. Смотреть, какой элемент в странице: `revive()` заменяет скрипт новым, инертная копия
@@ -259,7 +267,8 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
   `afterEach` в `vitest.setup.ts` — ждёт, пока хостов не останется; своих циклов ожидания не
   заводить. **Но файл, который сам чистит `document.body` в своём `afterEach`, делает это раньше
   общего** (хуки идут в обратном порядке): такой файл ждёт `.wx-modal-host` сам перед чисткой
-  (`vi.waitFor`), а открытый и не отвеченный выбор закрывает в тесте (`BlocksSiteBarTab.test.ts`).
+  (`vi.waitFor`) — в **каждом** `describe` со своим `afterEach`, где тест отвечает на диалог;
+  пропущенный ловится только на нагруженной машине (полный прогон 11 форками), а открытый и не отвеченный выбор закрывает в тесте (`BlocksSiteBarTab.test.ts`).
   Проверка: `document.querySelectorAll('.wx-modal-host').length` в `afterAll` файла — ноль.
 - **Вкладку в тесте кликом не открыть.** Reka слушает у `TabsTrigger` `mousedown` и `focus`, но
   не `click`: `trigger('click')` по `.wx-tabs__tab` проходит молча, ничего не переключается и

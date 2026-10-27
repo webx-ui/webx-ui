@@ -7,10 +7,12 @@ namespace WebxUi\Snippets\Tests;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\View\DynamicComponent;
 use Orchestra\Testbench\TestCase as Orchestra;
 use ReflectionProperty;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -29,6 +31,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     protected string $public;
 
     /**
@@ -77,14 +81,12 @@ abstract class TestCase extends Orchestra
         });
     }
 
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
-    }
-
     protected function setUp(): void
     {
         parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
 
         self::forgetDynamicComponents();
     }

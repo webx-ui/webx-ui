@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogBrands\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -19,6 +20,18 @@ use WebxUi\CatalogBrands\Models\Brand;
  */
 final class DemoTest extends TestCase
 {
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
     #[Test]
     public function the_brands_go_on_the_core_demo_and_are_removed_without_a_trace(): void
     {

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { catalogBrandsMessages } from './messages'
 import { catalogBrands, catalogBrandsOptions } from './module'
