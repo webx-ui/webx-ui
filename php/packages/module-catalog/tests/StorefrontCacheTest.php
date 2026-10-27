@@ -94,7 +94,7 @@ final class StorefrontCacheTest extends TestCase
     {
         parent::setUp();
 
-        $this->shop = Shop::seed($this->app);
+        $this->shop = Shop::seedOnce($this->app, self::class);
         $this->request();
     }
 

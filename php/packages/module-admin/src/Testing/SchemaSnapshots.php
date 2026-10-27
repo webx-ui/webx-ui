@@ -82,11 +82,68 @@ final class SchemaSnapshots
         $pdo->exec('pragma foreign_keys = off');
         $pdo->beginTransaction();
 
-        foreach ($schema['statements'] as $statement) {
+        // Triggers after the rows: the rows are already what the triggers made of them.
+        $triggers = array_filter($schema['statements'], static fn (string $sql): bool => preg_match('/^create\s+trigger/i', $sql) === 1);
+
+        foreach (array_diff_key($schema['statements'], $triggers) as $statement) {
             $pdo->exec($statement);
         }
 
-        foreach ($schema['rows'] as $table => $rows) {
+        self::insert($pdo, $schema['rows']);
+
+        foreach ($triggers as $statement) {
+            $pdo->exec($statement);
+        }
+
+        $pdo->commit();
+
+        if ($enforced) {
+            $pdo->exec('pragma foreign_keys = on');
+        }
+    }
+
+    /**
+     * The rows of `take()` back into the same schema, instead of whatever its tables hold now:
+     * for a test that seeds a lot once and wants it fresh in every test after. Triggers fire on the
+     * way; no migration here has one.
+     *
+     * @param  array<string, list<array<string, mixed>>>  $rows
+     */
+    public static function refill(PDO $pdo, array $rows): void
+    {
+        $foreignKeys = $pdo->query('pragma foreign_keys');
+        $enforced = $foreignKeys !== false && (int) $foreignKeys->fetchColumn() === 1;
+
+        $pdo->exec('pragma foreign_keys = off');
+        $pdo->beginTransaction();
+
+        $tables = $pdo->query("select name from sqlite_master where type = 'table' and name not like 'sqlite_%'");
+
+        foreach ($tables === false ? [] : $tables->fetchAll(PDO::FETCH_COLUMN) as $table) {
+            $pdo->exec(sprintf('delete from "%s"', $table));
+        }
+
+        $sequence = $pdo->query("select 1 from sqlite_master where name = 'sqlite_sequence'");
+
+        if ($sequence !== false && $sequence->fetchColumn() !== false) {
+            $pdo->exec('delete from sqlite_sequence');
+        }
+
+        self::insert($pdo, $rows);
+
+        $pdo->commit();
+
+        if ($enforced) {
+            $pdo->exec('pragma foreign_keys = on');
+        }
+    }
+
+    /**
+     * @param  array<string, list<array<string, mixed>>>  $tables
+     */
+    private static function insert(PDO $pdo, array $tables): void
+    {
+        foreach ($tables as $table => $rows) {
             $columns = array_keys($rows[0]);
             $insert = $pdo->prepare(sprintf(
                 'insert into "%s" (%s) values (%s)',
@@ -108,12 +165,6 @@ final class SchemaSnapshots
 
                 $insert->execute();
             }
-        }
-
-        $pdo->commit();
-
-        if ($enforced) {
-            $pdo->exec('pragma foreign_keys = on');
         }
     }
 
