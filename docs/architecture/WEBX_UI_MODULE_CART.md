@@ -1080,4 +1080,5 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
    [`WEBX_UI_COMMERCE.md`](WEBX_UI_COMMERCE.md).
 2. **Привязка к покупателю.** Когда появится `module-users`: колонка `user_id` в `carts` или своя
    таблица связи у `module-users`; и что при входе — слить гостевую корзину с сохранённой или
-   заменить. Решается спекой `module-users`.
+   заменить. Решено в §13.3 [`WEBX_UI_MODULE_USERS.md`](WEBX_UI_MODULE_USERS.md): колонка
+   `carts.user_id`, при входе гостевая корзина сливается с корзиной аккаунта.
