@@ -427,7 +427,7 @@ add → move → replace → attrs → props → remove
 
 - **`default`** — всегда; файл `default.json` слоя применяется к каждому варианту.
 - **Тип страницы** — `<модуль>.<страница>`: `pages.page`, `blog.article`, `blog.feed`, `blog.rubric`,
-  `blog.tag`, `blog.author`, `services.show`, `catalog.product`, `catalog.category`, `catalog.checkout`.
+  `blog.tag`, `blog.author`, `services.show`, `catalog.product`, `catalog.category`, `checkout.page`.
   Не путать с `type` у `RouteType` (`article` — алиас морфа без модуля): у страницы без адреса
   (лента, поиск, чекаут) `RouteType` нет, а хендл нужен.
 - **Хендлов под конкретную страницу (`page.42`) нет**: это вид одной записи, и он решается контентом
@@ -458,12 +458,12 @@ layout; `RouteType` и резолвер не меняются; вызов без
 где он не нужен), а:
 
 1. конфиг модуля — как сейчас, `webx-<модуль>.layout` (`'layout'`, `'layout.minimal'`);
-2. конфиг сайта — `webx-compositions.layouts`: `['catalog.checkout' => 'layout.minimal']`, хендл →
+2. конфиг сайта — `webx-compositions.layouts`: `['checkout.page' => 'layout.minimal']`, хендл →
    композиция; для модуля, у которого своего ключа нет, и для сайта, которому так проще;
 3. по умолчанию — `layout`.
 
-Пункт 2 решается при компиляции (§6.3): диспетчер `layout` для хендла `catalog.checkout` сразу
-печатает скомпилированный `layout.minimal × catalog.checkout`, лишнего на запросе нет.
+Пункт 2 решается при компиляции (§6.3): диспетчер `layout` для хендла `checkout.page` сразу
+печатает скомпилированный `layout.minimal × checkout.page`, лишнего на запросе нет.
 
 ## 5. Слои
 
@@ -606,7 +606,7 @@ return [
         'layout' => ['default' => ['attrs' => ['html' => ['data-webx-smooth-scroll' => true]]]],
     ],
     // Which layout a page type stands in, when its module has no key of its own (§4).
-    'layouts' => ['catalog.checkout' => 'layout.minimal'],
+    'layouts' => ['checkout.page' => 'layout.minimal'],
 ];
 ```
 
