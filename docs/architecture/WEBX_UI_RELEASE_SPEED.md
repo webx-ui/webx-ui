@@ -132,6 +132,30 @@ version PR #503 — `light` (`reason=the version PR, versions only`), 0:20; ег
 повторный JS CI в очереди убирает webx-ui#33 (раздел ниже). Дальше по величине — полный PHP CI PR
 ветки дня и его очереди (~18 минут на 21.10): это защита, её не режем.
 
+## Гейт этапа и гейт релиза (webx-ui#79)
+
+Этап делается минуты, а полный гейт идёт ~20 минут (PHP ~5400 тестов, JS ~3200), и приёмщик
+гонял его повторно. С 27.10.2026 гейтов два, и оба — одной командой `pnpm gate:affected`
+(`scripts/gate-affected.mjs`):
+
+- **Этап — `pnpm gate:affected <BASE>`**, `BASE` — `git rev-parse HEAD` до первой правки, он же
+  в отчёте. Выбор делает `scripts/affected.mjs <BASE>` — тот же, по которому решает CI; скрипт
+  гейта правил графа не дублирует, а повторяет шаги воркфлоу для его ответа:
+  - всегда: `check-names` (дерево и сообщения `BASE..HEAD`), eslint и prettier по изменённым
+    файлам (CI гоняет всё дерево с кешем по содержимому — вердикт тот же); при `node=all` —
+    eslint по всему дереву и проверка сгенерированных токенов;
+  - JS при `node≠none`: `pnpm build`, typecheck проектов `@webx-ui/*` из `node_filters`,
+    `pnpm test <node_tests>` (весь `pnpm test` при `all`); `pnpm docs:build` при `docs=true`;
+  - PHP при `php≠none` (из `php/`): `composer validate` манифестов, pint, phpstan
+    (`-d memory_limit=-1`), `phpunit <php_tests>` напрямую, без таймаута composer;
+  - `manticore=true` — как джоба CI «PHP on Manticore»: настоящий сервер (общий Manticore devbox,
+    таблицы под своим префиксом) и `--fail-on-skipped`.
+    Незатронутая половина печатается строкой «skipped: not affected». Шаги идут по очереди
+    (параллельно упираются в память), первый красный останавливает прогон, в конце — сводка: шаг,
+    время, итог. Отличия от CI: один PHP (CI ещё 8.5) и без шардов.
+- **Релиз дня — `pnpm gate:affected --full`**: всё, как CLAUDE.md §5, один раз перед PR. Приёмщик
+  этапа полный гейт не перезапускает — сверяет хеш, вывод `affected.mjs <BASE>` и итог отчёта.
+
 ## Прогоны без повторов (webx-ui#33)
 
 Сделано так:
