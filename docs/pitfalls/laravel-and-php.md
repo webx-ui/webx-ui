@@ -483,7 +483,8 @@ $value` не отличает «типа нет» от «тип сказал н�
   `TestCase` пакетов зовут `Http::preventStrayRequests()`: запрос мимо `Http::fake()` раньше шёл в
   сеть и ждал её (`webx:doctor` → проверка `Methods` — PUT и DELETE на `APP_URL`, секунды).
   Тест, которому нужен настоящий обмен, разрешает свой адрес: `Http::allowStrayRequests(['http://127.0.0.1:…/*'])`
-  (`RemoteFetcherTest`); доктору — ответ пробы фейком (`RegistriesTest::answerTheMethodProbe()`).
+  (`RemoteFetcherTest`, сервер Manticore — `UsesManticore`; без этого его тесты пропускаются и
+  гейт с `--fail-on-skipped` красный); доктору — ответ пробы фейком (`RegistriesTest::answerTheMethodProbe()`).
 - **Тест с `webx:audit:run` то 0.3 с, то 16 с.** Пробы аудита идут мимо `Http::fake()`:
   `gethostbyname()` имени сайта и `stream_socket_client()` за сертификатом (таймаут 10 с). Тесту —
   `FakeCertificateReader`, `FakeHostResolver` и `audit.resolve-to` = IP (`Seo\AuditTest`).

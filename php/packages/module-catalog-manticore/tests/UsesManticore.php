@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Manticore\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Http;
 use Throwable;
 use WebxUi\Catalog\Manticore\Manticore;
 use WebxUi\Catalog\Manticore\ManticoreServiceProvider;
@@ -47,6 +48,9 @@ trait UsesManticore
         /** @var array<string, string|null> $asked address → why not, asked once per run */
         static $asked = [];
         $server = $this->app->make(Manticore::class);
+
+        // The one server a test may reach past `Http::preventStrayRequests()` of the base case.
+        Http::allowStrayRequests(['http://'.$server->address().'/*']);
 
         if (! array_key_exists($server->address(), $asked)) {
             try {
