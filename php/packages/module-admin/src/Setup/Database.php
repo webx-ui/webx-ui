@@ -73,7 +73,8 @@ final class Database
         try {
             $connection = $this->server("{$this->driver}:host={$this->host};port={$this->port};dbname={$database}");
 
-            $count = $connection->query('select count(*) from '.$this->quoted($table))?->fetchColumn();
+            $statement = $connection->query('select count(*) from '.$this->quoted($table));
+            $count = $statement === false ? null : $statement->fetchColumn();
 
             return is_numeric($count) ? (int) $count : null;
         } catch (PDOException) {

@@ -805,8 +805,9 @@ final class SetupCommand extends Command
     {
         if ($this->server->isSqlite()) {
             try {
-                $found = (new PDO('sqlite:'.$this->laravel->databasePath('database.sqlite')))
-                    ->query('select count(*) from cms_users')?->fetchColumn();
+                $statement = (new PDO('sqlite:'.$this->laravel->databasePath('database.sqlite')))
+                    ->query('select count(*) from cms_users');
+                $found = $statement === false ? null : $statement->fetchColumn();
             } catch (\PDOException) {
                 return 0;
             }
