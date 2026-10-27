@@ -26,6 +26,18 @@ use WebxUi\Routing\Models\Route;
  */
 final class DemoAndSourcesTest extends TestCase
 {
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
     #[Test]
     public function the_catalog_group_has_a_dictionaries_caption_and_categories_lead(): void
     {

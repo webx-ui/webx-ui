@@ -33,6 +33,18 @@ use WebxUi\Themes\ThemeManifest;
 final class DemoTest extends RegionTestCase
 {
     /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
+    /**
      * The development root autoloads every package's helpers, so `menu()` and `settings()` exist
      * here whatever the providers — and the templates, which ask `function_exists()`, call them.
      * With their providers they answer the way they do on a site that has both modules.

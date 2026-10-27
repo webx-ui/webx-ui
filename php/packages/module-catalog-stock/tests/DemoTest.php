@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogStock\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,6 +18,18 @@ use WebxUi\CatalogStock\Models\StockStatus;
  */
 final class DemoTest extends TestCase
 {
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
     #[Test]
     public function the_core_demo_is_put_in_stock_and_the_rows_go_with_its_products(): void
     {

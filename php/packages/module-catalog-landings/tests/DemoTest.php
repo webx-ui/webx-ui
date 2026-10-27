@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogLandings\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
@@ -22,6 +23,18 @@ use WebxUi\Routing\Models\Route;
  */
 final class DemoTest extends TestCase
 {
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // The demo's pictures go in as they are: what the pipeline makes of an upload is the media
+        // module's test, and turning every demo photo into webp was a third of this one.
+        $app['config']->set('webx-media.optimize.enabled', false);
+    }
+
     #[Test]
     public function the_satellites_its_sets_are_made_of_are_asked_for_only_when_installed(): void
     {
