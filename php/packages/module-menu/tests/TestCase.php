@@ -7,6 +7,7 @@ namespace WebxUi\Menu\Tests;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
@@ -28,6 +29,14 @@ use WebxUi\Routing\RoutingServiceProvider;
 abstract class TestCase extends Orchestra
 {
     use MigratesOnce;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
+    }
 
     /**
      * @param  Application  $app

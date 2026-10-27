@@ -7,6 +7,7 @@ namespace WebxUi\Compositions\Tests;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Compositions\Compiler;
 use WebxUi\Compositions\Compositions;
@@ -28,6 +29,9 @@ abstract class TestCase extends Orchestra
     protected function setUp(): void
     {
         parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
 
         Blade::directive('fixtureHead', static fn (): string => '<?php echo "<title>Fixture</title>"; ?>');
         Blade::anonymousComponentPath(self::fixtures().'/views/components');

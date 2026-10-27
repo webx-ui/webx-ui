@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Settings\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Testing\MigratesOnce;
@@ -21,6 +22,14 @@ abstract class TestCase extends Orchestra
 
     /** A site that prints its contacts: most tests are about the tab, not about whether it is offered. */
     protected bool $printsContacts = true;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
+    }
 
     /**
      * @param  Application  $app

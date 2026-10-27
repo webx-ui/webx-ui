@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Banners\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Testing\MigratesOnce;
@@ -30,6 +31,14 @@ use WebxUi\Settings\SettingsServiceProvider;
 abstract class TestCase extends Orchestra
 {
     use MigratesOnce;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A test that reaches the network waits on it; whatever it calls is faked.
+        Http::preventStrayRequests();
+    }
 
     /**
      * The module and what it is used with: the library its pictures come from, and pages for a

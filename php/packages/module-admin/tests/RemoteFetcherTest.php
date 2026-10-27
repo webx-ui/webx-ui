@@ -383,6 +383,9 @@ final class RemoteFetcherTest extends TestCase
                 $this->markTestSkipped('No local server to fetch from.');
             }
 
+            // The one network a test may reach: its own server, for a transfer that is real.
+            Http::allowStrayRequests(["http://127.0.0.1:{$port}/*"]);
+
             $test($this->fetcher()->trusting(['127.0.0.1']), $port, $directory);
         } finally {
             $server->stop();

@@ -7,10 +7,14 @@ namespace WebxUi\Seo\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Remote\HostResolver;
+use WebxUi\Admin\Testing\FakeHostResolver;
 use WebxUi\Audit\AuditServiceProvider;
 use WebxUi\Audit\Fixes\FixRunner;
+use WebxUi\Audit\Probes\CertificateReader;
 use WebxUi\Audit\Runs\AuditIssue;
 use WebxUi\Audit\Runs\AuditRun;
+use WebxUi\Audit\Tests\FakeCertificateReader;
 use WebxUi\Seo\Audit\CollapseChainFix;
 use WebxUi\Seo\Audit\SeoChecks;
 use WebxUi\Seo\Models\SeoRedirect;
@@ -37,6 +41,12 @@ final class AuditTest extends TestCase
         parent::setUp();
 
         Http::fake(['*' => Http::response('<html></html>', 200, ['Content-Type' => 'text/html'])]);
+
+        // The run's probes look the site up and read its certificate, past `Http::fake()`: the
+        // address is given and the certificate faked, or a resolver that is slow today stalls the test.
+        $this->app->instance(CertificateReader::class, new FakeCertificateReader);
+        $this->app->instance(HostResolver::class, new FakeHostResolver);
+        $this->app->make(Settings::class)->save(['audit.resolve-to' => FakeHostResolver::PUBLIC]);
     }
 
     #[Test]

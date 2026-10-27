@@ -479,6 +479,14 @@ $value` не отличает «типа нет» от «тип сказал н�
   миграции гоняет только первый тест схемы, а `artisan migrate` попутно читал то, что
   мемоизируется на процесс (активные языки). Тест, который считает «первый» запрос, прогревает
   это сам (`Locales::all()` в `Reviews\HelperTest`), а не полагается на миграции.
+- **«Attempted request to […] without a matching fake» в тесте, который сеть не трогал.** Базовые
+  `TestCase` пакетов зовут `Http::preventStrayRequests()`: запрос мимо `Http::fake()` раньше шёл в
+  сеть и ждал её (`webx:doctor` → проверка `Methods` — PUT и DELETE на `APP_URL`, секунды).
+  Тест, которому нужен настоящий обмен, разрешает свой адрес: `Http::allowStrayRequests(['http://127.0.0.1:…/*'])`
+  (`RemoteFetcherTest`); доктору — ответ пробы фейком (`RegistriesTest::answerTheMethodProbe()`).
+- **Тест с `webx:audit:run` то 0.3 с, то 16 с.** Пробы аудита идут мимо `Http::fake()`:
+  `gethostbyname()` имени сайта и `stream_socket_client()` за сертификатом (таймаут 10 с). Тесту —
+  `FakeCertificateReader`, `FakeHostResolver` и `audit.resolve-to` = IP (`Seo\AuditTest`).
 - **`RefreshDatabase` на sqlite `:memory:` мигрирует перед каждым тестом.** Testbench сбрасывает
   `RefreshDatabaseState` после теста, если база в памяти, — «один раз» не выходит. Один раз на
   схему — `WebxUi\Admin\Testing\MigratesOnce` в базовом `TestCase`, без `RefreshDatabase`.
