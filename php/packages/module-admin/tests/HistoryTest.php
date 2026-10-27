@@ -17,6 +17,7 @@ use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\HistoryPruner;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\History\Mcp\HistoryModule;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\Editor;
 use WebxUi\Admin\Tests\Fixtures\Product;
 use WebxUi\Admin\Tests\Fixtures\Script;
@@ -30,9 +31,11 @@ use WebxUi\Mcp\Tool;
  */
 final class HistoryTest extends TestCase
 {
+    use MigratesOnce;
+
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
 
         Schema::create('products', function (Blueprint $table): void {
             $table->id();

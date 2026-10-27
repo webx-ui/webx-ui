@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Facades\Screens;
@@ -13,8 +12,6 @@ use WebxUi\Settings\Models\Setting;
 
 final class SettingsEndpointsTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_screen_is_registered_and_the_module_sits_in_the_system_group(): void
     {

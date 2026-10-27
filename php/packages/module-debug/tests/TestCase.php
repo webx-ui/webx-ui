@@ -16,6 +16,7 @@ use Orchestra\Testbench\TestCase as Orchestra;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Links\SiteRoutes;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -35,6 +36,8 @@ use WebxUi\Routing\RoutingServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * The bar the way a site has it: the panel and its administrators, MCP, and the blocks for
      * regions and their blocks to be drawn.
@@ -71,7 +74,7 @@ abstract class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate', ['--force' => true])->run();
+        $this->migrateOnce();
 
         Schema::create('demo_articles', function (Blueprint $table): void {
             $table->id();

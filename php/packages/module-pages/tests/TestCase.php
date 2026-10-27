@@ -11,6 +11,7 @@ use Illuminate\View\DynamicComponent;
 use Orchestra\Testbench\TestCase as Orchestra;
 use ReflectionProperty;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -29,6 +30,8 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -64,11 +67,6 @@ abstract class TestCase extends Orchestra
         // The compiled rule list would otherwise outlive a test that writes a rule and then
         // asks for the page it is about.
         $app['config']->set('webx-seo.cache.enabled', false);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
@@ -29,8 +28,6 @@ use WebxUi\Media\Storage\FileStore;
  */
 final class ChunkedUploadTest extends TestCase
 {
-    use RefreshDatabase;
-
     private string $directory;
 
     protected function setUp(): void

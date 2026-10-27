@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
@@ -21,8 +20,6 @@ use WebxUi\Media\Support\SvgSanitizer;
  */
 final class SvgSafetyTest extends TestCase
 {
-    use RefreshDatabase;
-
     private const EVIL = <<<'SVG'
         <?xml version="1.0"?>
         <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10" onload="alert(1)">

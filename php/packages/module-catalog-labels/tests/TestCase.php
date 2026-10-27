@@ -7,6 +7,7 @@ namespace WebxUi\CatalogLabels\Tests;
 use Illuminate\Foundation\Application;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -27,6 +28,8 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -67,11 +70,6 @@ abstract class TestCase extends Orchestra
         $app->afterResolving(CatalogEngines::class, static function (CatalogEngines $engines): void {
             $engines->register('queueing', QueueingEngine::class);
         });
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function category(string $slug): Category

@@ -10,6 +10,7 @@ use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Remote\HostResolver;
 use WebxUi\Admin\Testing\FakeHostResolver;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Audit\AuditServiceProvider;
 use WebxUi\Audit\Probes\CertificateReader;
 use WebxUi\Auth\AuthServiceProvider;
@@ -21,6 +22,8 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -64,11 +67,6 @@ abstract class TestCase extends Orchestra
         $app['config']->set('filesystems.links', []);
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true]]);
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     /**

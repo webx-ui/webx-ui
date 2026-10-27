@@ -116,8 +116,8 @@ final class RevokeGrantTest extends TestCase
     protected function defineDatabaseMigrations(): void
     {
         // Passport only publishes its migrations; the tests are the application here.
-        $this->loadMigrationsFrom(dirname((string) (new ReflectionClass(Passport::class))->getFileName(), 2).'/database/migrations');
+        $this->app->make('migrator')->path(dirname((string) (new ReflectionClass(Passport::class))->getFileName(), 2).'/database/migrations');
 
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
     }
 }

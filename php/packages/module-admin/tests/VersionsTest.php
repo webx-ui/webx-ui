@@ -9,14 +9,17 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\Article;
 use WebxUi\Admin\Versions\EntityVersion;
 
 final class VersionsTest extends TestCase
 {
+    use MigratesOnce;
+
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
 
         Schema::create('articles', function (Blueprint $table): void {
             $table->id();

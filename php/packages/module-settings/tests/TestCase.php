@@ -7,6 +7,7 @@ namespace WebxUi\Settings\Tests;
 use Illuminate\Foundation\Application;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -16,6 +17,8 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /** A site that prints its contacts: most tests are about the tab, not about whether it is offered. */
     protected bool $printsContacts = true;
 
@@ -47,11 +50,6 @@ abstract class TestCase extends Orchestra
         if ($this->printsContacts && in_array($app['config']->get('webx-settings.uses'), [null, []], true)) {
             $app['config']->set('webx-settings.uses', ['contacts']);
         }
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     /**

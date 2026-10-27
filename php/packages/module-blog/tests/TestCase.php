@@ -12,6 +12,7 @@ use Illuminate\View\DynamicComponent;
 use Orchestra\Testbench\TestCase as Orchestra;
 use ReflectionProperty;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -36,6 +37,7 @@ abstract class TestCase extends Orchestra
 {
     // The article is a composition, and a test that patches it compiles a set of its own.
     use IsolatedCompositions;
+    use MigratesOnce;
 
     /**
      * @param  Application  $app
@@ -74,11 +76,6 @@ abstract class TestCase extends Orchestra
         // migrations live in them: without this a cascade that does not exist still passes.
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
         $this->isolateCompositions($app);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void

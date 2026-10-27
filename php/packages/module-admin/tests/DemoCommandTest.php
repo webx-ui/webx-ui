@@ -9,6 +9,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\DemoModule;
 use WebxUi\Admin\Tests\Fixtures\PagesModule;
 use WebxUi\Admin\Tests\Fixtures\Ticket;
@@ -28,9 +29,11 @@ use WebxUi\Admin\Tests\Fixtures\Ticket;
  */
 final class DemoCommandTest extends TestCase
 {
+    use MigratesOnce;
+
     protected function defineDatabaseMigrations(): void
     {
-        $this->artisan('migrate')->run();
+        $this->migrateOnce();
 
         Schema::create('tickets', function (Blueprint $table): void {
             $table->id();

@@ -7,6 +7,7 @@ namespace WebxUi\Notifications\Tests;
 use Illuminate\Foundation\Application;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -22,6 +23,8 @@ use WebxUi\Routing\RoutingServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /** A token of the shape Telegram gives — made up, never a real bot's. */
     protected const TOKEN = '000000001:TEST-token-not-real-0000000000';
 
@@ -59,11 +62,6 @@ abstract class TestCase extends Orchestra
         $app['config']->set('webx-localization.cache.enabled', false);
         $app['config']->set('webx-notifications.telegram.api', 'https://telegram.test');
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void

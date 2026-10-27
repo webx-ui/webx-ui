@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Auth\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasVisibility;
@@ -18,8 +17,6 @@ use WebxUi\Auth\Models\CmsUser;
  */
 final class ManifestAccessTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function a_section_is_allowed_by_any_of_its_permissions(): void
     {

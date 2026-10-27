@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Settings\Tests;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,8 +17,6 @@ use WebxUi\Settings\Settings;
 
 final class McpToolsTest extends TestCase
 {
-    use RefreshDatabase;
-
     /**
      * @param  array<string, mixed>  $arguments
      */

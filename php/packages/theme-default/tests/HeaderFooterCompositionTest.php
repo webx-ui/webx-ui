@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\ThemeDefault\Tests;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
@@ -14,6 +13,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionProperty;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Blocks\BlocksServiceProvider;
 use WebxUi\Blocks\Models\Block;
@@ -56,7 +56,7 @@ final class HeaderFooterCompositionTest extends TestCase
 {
     use ComparesHtml;
     use IsolatedCompositions;
-    use RefreshDatabase;
+    use MigratesOnce;
 
     private const string NAME = 'webx-ui/theme-default';
 
@@ -106,11 +106,6 @@ final class HeaderFooterCompositionTest extends TestCase
         $app->resolving(ThemeLocator::class, static function (ThemeLocator $locator): void {
             $locator->register(self::NAME, dirname(__DIR__));
         });
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     /**

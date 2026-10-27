@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Auth\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Auth\Models\CmsUser;
 
 final class AdminEndpointsTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_list_is_paginated_searchable_and_filtered(): void
     {

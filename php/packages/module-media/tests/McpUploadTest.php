@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -28,8 +27,6 @@ use WebxUi\Media\Models\MediaFile;
  */
 final class McpUploadTest extends TestCase
 {
-    use RefreshDatabase;
-
     private string $directory;
 
     private CmsUser $admin;

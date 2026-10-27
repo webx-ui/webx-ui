@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -34,6 +35,8 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * The module and what it is used with on a real site: the library its photos come from, the
      * services it is related to, pages to stand at the prefix, previews — none of the last three
@@ -74,11 +77,6 @@ abstract class TestCase extends Orchestra
         $app['config']->set('webx-seo.cache.enabled', false);
         // sqlite ignores foreign keys unless asked, and a cascade that does not exist would pass.
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void

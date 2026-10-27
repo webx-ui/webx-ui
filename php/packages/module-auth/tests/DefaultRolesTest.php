@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Auth\Tests;
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Doctor\Diagnosis;
@@ -21,8 +20,6 @@ use WebxUi\Auth\Models\Role;
  */
 final class DefaultRolesTest extends TestCase
 {
-    use RefreshDatabase;
-
     private const MIGRATION = __DIR__.'/../database/migrations/2026_10_18_000001_seed_default_roles.php';
 
     private const TOP_UP = __DIR__.'/../database/migrations/2026_10_19_000000_top_up_default_roles.php';

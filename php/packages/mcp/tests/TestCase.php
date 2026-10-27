@@ -9,11 +9,14 @@ use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Contracts\Module;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Mcp\McpServiceProvider;
 use WebxUi\Mcp\Registry\ToolRegistry;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -35,11 +38,6 @@ abstract class TestCase extends Orchestra
      * The package's own tables, for every test: a call is written down whichever way it went,
      * so even a test about a refusal needs somewhere to write it.
      */
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
-    }
-
     protected function register(Module ...$modules): void
     {
         $registry = $this->app->make(ModuleRegistry::class);

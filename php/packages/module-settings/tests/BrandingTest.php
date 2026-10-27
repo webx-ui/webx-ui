@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Settings\Models\Setting;
 
@@ -19,8 +18,6 @@ use WebxUi\Settings\Models\Setting;
  */
 final class BrandingTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_branding_tab_is_part_of_the_screen(): void
     {

@@ -11,6 +11,7 @@ use Illuminate\View\DynamicComponent;
 use Orchestra\Testbench\TestCase as Orchestra;
 use ReflectionProperty;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -29,6 +30,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     protected string $public;
 
     /**
@@ -75,11 +78,6 @@ abstract class TestCase extends Orchestra
         $app->resolving(ThemeLocator::class, static function (ThemeLocator $locator): void {
             $locator->register('webx-ui/theme-default', dirname(__DIR__, 2).'/theme-default');
         });
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void

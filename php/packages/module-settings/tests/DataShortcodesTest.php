@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Settings\ContentRules;
@@ -13,8 +12,6 @@ use WebxUi\Settings\Settings;
 
 final class DataShortcodesTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_panel_defines_shortcodes_that_read_a_setting_or_hold_their_value(): void
     {

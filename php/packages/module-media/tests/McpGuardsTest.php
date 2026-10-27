@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -28,8 +27,6 @@ use WebxUi\Media\Storage\FileStore;
  */
 final class McpGuardsTest extends TestCase
 {
-    use RefreshDatabase;
-
     /** @var array<string, list<string>> host → addresses the fake resolver answers */
     private array $dns = [];
 

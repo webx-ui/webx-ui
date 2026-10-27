@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Contracts\AssetUrls;
@@ -21,8 +20,6 @@ use WebxUi\Media\Models\MediaFile;
  */
 final class RichTextPicturesTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function installing_the_library_is_what_teaches_the_panel_where_a_key_lives(): void
     {

@@ -9,6 +9,7 @@ use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Remote\HostResolver;
 use WebxUi\Admin\Testing\FakeHostResolver;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -28,6 +29,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -68,11 +71,6 @@ abstract class TestCase extends Orchestra
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
         // No DNS in a test: every supplier's name is a public address unless the test says otherwise.
         $app->instance(HostResolver::class, new FakeHostResolver);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     /**

@@ -6,7 +6,6 @@ namespace WebxUi\Settings\Tests;
 
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
@@ -31,8 +30,6 @@ use WebxUi\Themes\ThemeManifest;
  */
 final class SettingsSectionsTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected bool $printsContacts = false;
 
     protected function tearDown(): void

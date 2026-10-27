@@ -33,7 +33,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
   for the panel's text fields. `wx_text($value)` makes a string or a `ShortcodeText` a `ShortcodeText`, whose `trim*`, `strip*`
   and `map()` change the typed text and stay HTML.
 - **Testing** — `Testing\CountsQueries` in a Testbench case: `assertQueriesWithin(N, fn () => $this->get(…))`
-  fails over the budget listing every statement, repeated ones (an N+1) called out; `assertNoRepeatedQueries()`, `recordQueries()`; `Testing\FakeHostResolver` — DNS for `RemoteFetcher` without a network.
+  fails over the budget listing every statement, repeated ones (an N+1) called out; `assertNoRepeatedQueries()`, `recordQueries()`; `Testing\FakeHostResolver` — DNS for `RemoteFetcher` without a network; `Testing\MigratesOnce` — `artisan migrate` once per schema on sqlite `:memory:`, replayed into every next test.
 - **Front end entry** — `resources/js/admin.ts` in the site, written from `stubs/panel.stub` (`panel-auth.stub` with
   module-auth). Three regions are the installer's: `// webx:imports`, `// webx:styles`, `// webx:modules`; the rest is the site's.
 

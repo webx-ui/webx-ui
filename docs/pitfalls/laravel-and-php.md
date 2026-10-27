@@ -471,6 +471,18 @@ $value` не отличает «типа нет» от «тип сказал н�
 
 ## Тесты: Testbench и PHPUnit
 
+- **«table "migrations" already exists» в тесте на `MigratesOnce`.** Testbench-овский
+  `loadMigrationsFrom()` не регистрирует путь, а мигрирует сразу, и снимок схемы лёг бы поверх.
+  Трейт в непустой базе мигрирует обычным путём (медленно, но верно). Лишний путь миграций в тесте —
+  `$this->app->make('migrator')->path(…)` перед `migrateOnce()`: тогда он входит в ключ снимка.
+- **Счётчик запросов на один больше, когда тест идёт не первым в классе.** Под `MigratesOnce`
+  миграции гоняет только первый тест схемы, а `artisan migrate` попутно читал то, что
+  мемоизируется на процесс (активные языки). Тест, который считает «первый» запрос, прогревает
+  это сам (`Locales::all()` в `Reviews\HelperTest`), а не полагается на миграции.
+- **`RefreshDatabase` на sqlite `:memory:` мигрирует перед каждым тестом.** Testbench сбрасывает
+  `RefreshDatabaseState` после теста, если база в памяти, — «один раз» не выходит. Один раз на
+  схему — `WebxUi\Admin\Testing\MigratesOnce` в базовом `TestCase`, без `RefreshDatabase`.
+
 - **Фикстура «битый JSON» в репозитории валит `npx prettier --check .`.** Prettier разбирает каждый
   `.json`. Невалидный файл тест пишет сам во временный каталог (`CompositionCheckTest`,
   `CompileTest`); золотой HTML, который сверяется побайтно, — в `.prettierignore`.

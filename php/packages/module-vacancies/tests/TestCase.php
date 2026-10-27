@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -35,6 +36,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * The module and what it is used with on a real site: the forms it points at, pages to stand
      * at the prefix, previews — none of which the package requires, which is what
@@ -83,11 +86,6 @@ abstract class TestCase extends Orchestra
             'root' => storage_path('framework/testing/inbox'),
         ]);
         $app['config']->set('webx-inbox.disk', 'inbox');
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void

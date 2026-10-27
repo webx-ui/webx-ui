@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Server\Transport\FakeTransporter;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Facades\Screens;
@@ -15,8 +14,6 @@ use WebxUi\Settings\ContentRules;
 
 final class ContentRulesTest extends TestCase
 {
-    use RefreshDatabase;
-
     /**
      * @return array<string, mixed>
      */

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Settings\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Facades\Screens;
 use WebxUi\Settings\Models\Setting;
@@ -15,8 +14,6 @@ use WebxUi\Settings\Models\Setting;
  */
 final class FieldDefaultsTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Media\Tests;
 
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Screens\FieldType;
@@ -21,8 +20,6 @@ use WebxUi\Media\Screens\MediaFiles;
  */
 final class FieldTypeTest extends TestCase
 {
-    use RefreshDatabase;
-
     #[Test]
     public function the_site_reads_the_address_the_field_never_stored(): void
     {

@@ -10,6 +10,7 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -27,6 +28,8 @@ use WebxUi\Routing\RoutingServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    use MigratesOnce;
+
     /**
      * The module and the library its pictures live in. Without the inbox: a site may have none,
      * and the tests that need it add it.
@@ -59,11 +62,6 @@ abstract class TestCase extends Orchestra
         $app['config']->set('webx-localization.locales', [['code' => 'uk', 'default' => true], ['code' => 'en']]);
         $app['config']->set('webx-localization.cache.enabled', false);
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
     }
 
     protected function setUp(): void
