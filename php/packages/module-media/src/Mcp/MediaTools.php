@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Symfony\Component\Mime\MimeTypes;
 use Throwable;
+use WebxUi\Admin\Uploads\UploadPurposes;
+use WebxUi\Admin\Uploads\UploadRefused;
+use WebxUi\Admin\Uploads\Uploads;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
@@ -230,28 +233,7 @@ final class MediaTools
                         throw new ToolFailure('Nothing to set: pass `alt`, a map of languages, a string or null.');
                     }
 
-                    $given = $arguments['alt'];
-
-                    if ($given !== null && ! is_string($given) && ! is_array($given)) {
-                        throw new ToolFailure('`alt` is a map of languages, a string or null.');
-                    }
-
-                    $locales = app(Locales::class);
-
-                    // A map is laid over what the file has, so writing one language keeps the rest.
-                    $alt = match (true) {
-                        $given === null => null,
-                        is_string($given) => MediaAlt::clean([...($file->alt ?? []), $locales->defaultCode() => $given]),
-                        default => MediaAlt::clean([...($file->alt ?? []), ...$given]),
-                    };
-
-                    $unknown = is_array($given)
-                        ? array_values(array_filter(array_keys($given), static fn (int|string $code): bool => ! $locales->has((string) $code)))
-                        : [];
-
-                    if ($unknown !== []) {
-                        throw new ToolFailure('The site has no language '.implode(', ', $unknown).'. Languages: '.implode(', ', $locales->codes()).'.');
-                    }
+                    $alt = self::alt($file->alt, $arguments['alt']);
 
                     if ($arguments['dry_run'] ?? false) {
                         return ['ok' => true, 'would' => "set the alt of [{$file->name}]", 'alt' => $alt];
@@ -313,6 +295,39 @@ final class MediaTools
                         'name' => ['type' => 'string', 'description' => 'What to call it; the file name by default'],
                     ],
                     'required' => ['url', 'directory_id'],
+                ],
+                scope: 'media:write',
+                permission: ['media.upload', 'media.manage'],
+            ),
+
+            Tool::mutating(
+                'upload_file',
+                'Put a file the agent holds into a folder of the library: its bytes as base64 in `content` (a `data:` address is taken too). '
+                    .'The same file types, size limit, SVG sanitizing and picture optimizing as an upload in the panel apply; the type is what the bytes are, and the name gets the matching extension. '
+                    .'One call carries at most `piece` bytes — about three quarters of what the server lets one request carry; `step: "start"` answers the number, and a call over it is refused with it. '
+                    .'A larger one goes in pieces, the way the panel sends every file: `step: "start"` with `name` and `size` answers an `upload` id and the `offset` to send from; '
+                    .'`step: "append"` with `upload`, `offset` and the next piece in `content`, as many times as it takes; `step: "finish"` with `upload` and `directory_id` puts it in the library. '
+                    .'A start for the same name and size carries on an upload begun earlier; an unfinished one is forgotten after a day. Answers like media_get_file, with `duplicate` when the same bytes were already in that folder.',
+                static fn (array $arguments, mixed $user = null): array => self::upload($arguments, $user),
+                [
+                    'properties' => [
+                        'step' => [
+                            'type' => 'string',
+                            'enum' => ['start', 'append', 'finish'],
+                            'description' => 'Only for a file sent in pieces; without it `content` is the whole file',
+                        ],
+                        'content' => ['type' => 'string', 'description' => 'The file, or this piece of it, as base64'],
+                        'name' => ['type' => 'string', 'description' => 'The file name, with its extension'],
+                        'directory_id' => ['type' => 'integer'],
+                        'alt' => [
+                            'type' => ['object', 'string'],
+                            'additionalProperties' => ['type' => 'string'],
+                            'description' => 'What is on the picture, as for media_set_alt',
+                        ],
+                        'size' => ['type' => 'integer', 'minimum' => 1, 'description' => 'step start: the whole file, in bytes'],
+                        'upload' => ['type' => 'string', 'description' => 'steps append and finish: the id step start answered'],
+                        'offset' => ['type' => 'integer', 'minimum' => 0, 'description' => 'step append: where this piece starts, the `offset` of the last answer'],
+                    ],
                 ],
                 scope: 'media:write',
                 permission: ['media.upload', 'media.manage'],
@@ -475,21 +490,324 @@ final class MediaTools
         try {
             file_put_contents($temporary, $fetched->body);
 
+            $requested = trim((string) ($arguments['name'] ?? ''));
+
             // What the bytes are, not what the server said: a header carries parameters
             // (`image/png; qs=0.7`) and is sometimes simply wrong.
-            $mime = self::sniff($temporary) ?? $fetched->contentType ?? 'application/octet-stream';
-            $requested = trim((string) ($arguments['name'] ?? ''));
-            $name = self::named($requested !== '' ? $requested : rawurldecode(basename((string) parse_url($fetched->url, PHP_URL_PATH))), $mime);
-            $upload = new UploadedFile($temporary, Str::limit($name, 250, ''), $mime, test: true);
-
-            self::validate($upload);
-
-            $file = app(FileStore::class)->store($upload, $directory);
+            $file = self::keep(
+                $temporary,
+                $requested !== '' ? $requested : rawurldecode(basename((string) parse_url($fetched->url, PHP_URL_PATH))),
+                $fetched->contentType,
+                $directory,
+            );
         } finally {
             @unlink($temporary);
         }
 
         return ['ok' => true, 'id' => $file->id, 'duplicate' => ! $file->wasRecentlyCreated];
+    }
+
+    /**
+     * Bytes the agent sends itself: the whole file in one call, or a piece at a time through the
+     * panel's own uploads (module-admin's {@see Uploads}, purpose `media.library`) — the same
+     * sessions, offsets and limits the panel's uploader gets, rather than a second protocol.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function upload(array $arguments, mixed $user): array
+    {
+        $uploads = app(Uploads::class);
+        $dryRun = (bool) ($arguments['dry_run'] ?? false);
+
+        try {
+            return match ($arguments['step'] ?? null) {
+                null => self::whole($arguments, $dryRun),
+                'start' => self::start($uploads, $arguments, $user, $dryRun),
+                'append' => self::append($uploads, $arguments, $user, $dryRun),
+                'finish' => self::finish($uploads, $arguments, $user, $dryRun),
+                default => throw new ToolFailure('`step` is start, append or finish; leave it out to send the whole file in `content`.'),
+            };
+        } catch (UploadRefused $refused) {
+            throw new ToolFailure($refused->offset !== null
+                ? $refused->getMessage()." The server has {$refused->offset} byte(s) of it: send the piece that starts at offset {$refused->offset}."
+                : $refused->getMessage());
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function whole(array $arguments, bool $dryRun): array
+    {
+        $directory = self::directory($arguments['directory_id'] ?? null);
+        $name = trim((string) ($arguments['name'] ?? ''));
+
+        if ($name === '') {
+            throw new ToolFailure('`name` is required: the file name, with its extension.');
+        }
+
+        $bytes = self::decoded($arguments['content'] ?? null);
+        self::checkAlt($arguments);
+        $temporary = self::temporary($bytes);
+
+        try {
+            if ($dryRun) {
+                // Checked all the same, so a dry run says whether the real call would be refused.
+                $mime = self::sniff($temporary) ?? 'application/octet-stream';
+                $named = self::named($name, $mime);
+                self::validate(new UploadedFile($temporary, $named, $mime, test: true));
+
+                return ['ok' => true, 'would' => "upload [{$named}], ".strlen($bytes)." byte(s), into [{$directory->title}]"];
+            }
+
+            $file = self::keep($temporary, $name, null, $directory);
+        } finally {
+            @unlink($temporary);
+        }
+
+        return self::kept($file, $arguments);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function start(Uploads $uploads, array $arguments, mixed $user, bool $dryRun): array
+    {
+        $name = trim((string) ($arguments['name'] ?? ''));
+        $size = (int) ($arguments['size'] ?? 0);
+
+        if ($name === '' || $size < 1) {
+            throw new ToolFailure('step start needs `name` (with its extension) and `size`, the whole file in bytes.');
+        }
+
+        if ($dryRun) {
+            $rules = app(UploadPurposes::class)->find(FileStore::UPLOAD_PURPOSE);
+
+            if ($rules !== null && ! $rules->accepts('', $name)) {
+                throw UploadRefused::wrongType($rules->extensions);
+            }
+
+            if ($rules?->maxBytes !== null && $size > $rules->maxBytes) {
+                throw UploadRefused::tooLarge($rules->maxBytes);
+            }
+
+            return ['ok' => true, 'would' => "start an upload of [{$name}], {$size} byte(s)", 'piece' => self::piece($uploads)];
+        }
+
+        // The name and the size are what tells a second start of the same file from a new one,
+        // so an agent that lost the id carries on from where the server is rather than again.
+        [$upload, $created] = $uploads->start($user, FileStore::UPLOAD_PURPOSE, $name, $size, '', "mcp:{$name}:{$size}");
+
+        return [
+            'ok' => true,
+            'upload' => $upload->id,
+            'offset' => $upload->offset,
+            'size' => $upload->size,
+            'piece' => self::piece($uploads),
+            'resumed' => ! $created,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function append(Uploads $uploads, array $arguments, mixed $user, bool $dryRun): array
+    {
+        if (! isset($arguments['offset']) || ! is_numeric($arguments['offset'])) {
+            throw new ToolFailure('step append needs `offset`: where this piece starts, the `offset` of the last answer.');
+        }
+
+        $upload = $uploads->find($user, (string) ($arguments['upload'] ?? ''));
+        $bytes = self::decoded($arguments['content'] ?? null, self::piece($uploads));
+        $offset = (int) $arguments['offset'];
+
+        if ($dryRun) {
+            return ['ok' => true, 'would' => 'append '.strlen($bytes)." byte(s) at offset {$offset} of {$upload->size}"];
+        }
+
+        $body = fopen('php://memory', 'w+b');
+
+        if ($body === false) {
+            throw new ToolFailure('There is no memory to hold the piece in.');
+        }
+
+        try {
+            fwrite($body, $bytes);
+            rewind($body);
+
+            $upload = $uploads->append($upload, $offset, $body, strlen($bytes));
+        } finally {
+            fclose($body);
+        }
+
+        return [
+            'ok' => true,
+            'upload' => $upload->id,
+            'offset' => $upload->offset,
+            'size' => $upload->size,
+            'remaining' => $upload->size - $upload->offset,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function finish(Uploads $uploads, array $arguments, mixed $user, bool $dryRun): array
+    {
+        // The folder and the alt before the claim: a claim ends the session, and a refusal
+        // after it would cost the agent every piece it sent.
+        $directory = self::directory($arguments['directory_id'] ?? null);
+        self::checkAlt($arguments);
+        $id = (string) ($arguments['upload'] ?? '');
+
+        if ($dryRun) {
+            $upload = $uploads->find($user, $id);
+
+            if (! $upload->finished()) {
+                throw UploadRefused::unfinished();
+            }
+
+            return ['ok' => true, 'would' => "put [{$upload->name}] into [{$directory->title}]"];
+        }
+
+        // By whoever is asking, as in the panel: an id another administrator started attaches nothing.
+        $claimed = $uploads->claim($id, FileStore::UPLOAD_PURPOSE, $user);
+
+        try {
+            $file = self::keep($claimed->path, $claimed->name, null, $directory);
+        } finally {
+            // Stored or refused, the piece file is done with: the library made its own copy.
+            $claimed->discard();
+        }
+
+        return self::kept($file, $arguments);
+    }
+
+    /**
+     * Into the library the way an upload in the panel goes: the type from the bytes, a name that
+     * ends in it, the panel's rules, then {@see FileStore::store()} — SVG sanitizing, picture
+     * optimizing, the unique key, the duplicate in the same folder.
+     */
+    private static function keep(string $path, string $name, ?string $declared, MediaDirectory $directory): MediaFile
+    {
+        $mime = self::sniff($path) ?? $declared ?? 'application/octet-stream';
+        $upload = new UploadedFile($path, Str::limit(self::named($name, $mime), 250, ''), $mime, test: true);
+
+        self::validate($upload);
+
+        return app(FileStore::class)->store($upload, $directory);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function kept(MediaFile $file, array $arguments): array
+    {
+        $duplicate = ! $file->wasRecentlyCreated;
+
+        if (array_key_exists('alt', $arguments)) {
+            // Over what a duplicate already had, the way media_set_alt writes it.
+            $file->update(['alt' => self::alt($file->alt, $arguments['alt'])]);
+        }
+
+        return ['ok' => true, ...self::describe($file), 'duplicate' => $duplicate];
+    }
+
+    /**
+     * A wrong `alt` refused before anything is stored, rather than after.
+     *
+     * @param  array<string, mixed>  $arguments
+     */
+    private static function checkAlt(array $arguments): void
+    {
+        if (array_key_exists('alt', $arguments)) {
+            self::alt(null, $arguments['alt']);
+        }
+    }
+
+    /**
+     * A file's alt with `$given` laid over it — a map keeps the languages it leaves out, a string
+     * is the default language, `null` clears all of it.
+     *
+     * @param  array<string, string>|null  $current
+     * @return array<string, string>|null
+     */
+    private static function alt(?array $current, mixed $given): ?array
+    {
+        if ($given !== null && ! is_string($given) && ! is_array($given)) {
+            throw new ToolFailure('`alt` is a map of languages, a string or null.');
+        }
+
+        $locales = app(Locales::class);
+
+        $unknown = is_array($given)
+            ? array_values(array_filter(array_keys($given), static fn (int|string $code): bool => ! $locales->has((string) $code)))
+            : [];
+
+        if ($unknown !== []) {
+            throw new ToolFailure('The site has no language '.implode(', ', $unknown).'. Languages: '.implode(', ', $locales->codes()).'.');
+        }
+
+        return match (true) {
+            $given === null => null,
+            is_string($given) => MediaAlt::clean([...($current ?? []), $locales->defaultCode() => $given]),
+            default => MediaAlt::clean([...($current ?? []), ...$given]),
+        };
+    }
+
+    /**
+     * The bytes of base64 `content`, no more than one piece of them: a JSON body several times
+     * what PHP lets a request carry never arrives at all, and the agent should hear why first.
+     */
+    private static function decoded(mixed $content, ?int $limit = null): string
+    {
+        $content = is_string($content) ? $content : '';
+
+        // A `data:` address is what a model most often holds a picture as.
+        if (preg_match('#^data:[^,]*;base64,#i', $content, $prefix) === 1) {
+            $content = substr($content, strlen($prefix[0]));
+        }
+
+        $bytes = base64_decode((string) preg_replace('#\s+#', '', $content), true);
+
+        if ($bytes === false || $bytes === '') {
+            throw new ToolFailure('`content` must be the file as base64, and not empty.');
+        }
+
+        $limit ??= self::piece(app(Uploads::class));
+
+        if (strlen($bytes) > $limit) {
+            throw new ToolFailure('One call takes at most '.$limit.' byte(s); this is '.strlen($bytes)
+                .'. Send it in pieces: `step: "start"` with `name` and `size`, then `step: "append"` a piece at a time, then `step: "finish"`.');
+        }
+
+        return $bytes;
+    }
+
+    /**
+     * The most one call carries: the piece the panel's uploader is advised, less the third that
+     * base64 adds — so a call is no larger a request than the panel's own pieces.
+     */
+    private static function piece(Uploads $uploads): int
+    {
+        return intdiv($uploads->chunkSize(), 4) * 3;
+    }
+
+    private static function temporary(string $bytes): string
+    {
+        $temporary = tempnam(sys_get_temp_dir(), 'webx-media');
+
+        if ($temporary === false || file_put_contents($temporary, $bytes) === false) {
+            throw new ToolFailure('There is no temporary file to write the upload into.');
+        }
+
+        return $temporary;
     }
 
     /** The same rules as an upload in the panel: the type white list, the size, the pixel budget. */

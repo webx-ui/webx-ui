@@ -164,13 +164,40 @@ const page = await api.files({ directory_id: 1, q: 'oslo', per_page: 40 })
 Listing, upload, rename, move, delete, the image edit and the folder tree — the same calls the
 manager itself is built on.
 
+## An agent uploading a file
+
+An agent puts a file in with `media_upload_from_url` when the file is on the public internet, and
+with `media_upload_file` when it holds the bytes itself — base64 in `content`, or a `data:`
+address:
+
+```json
+{ "content": "iVBORw0KGgo…", "name": "dot.png", "directory_id": 1, "alt": "A dot" }
+```
+
+The answer is the file as `media_get_file` describes it — `id`, `path` for a media field, `url`,
+`width`, `height`, `alt` — and `duplicate` when the same bytes were already in that folder. The
+rules are the panel's: the type from the bytes, the extensions and size limit of
+`upload.extensions` and `upload.max_size`, SVGs sanitized, pictures optimized.
+
+One call carries at most `piece` bytes, about three quarters of what the server lets one request
+carry. A larger file goes in pieces, through the same uploads the panel uses:
+
+1. `step: "start"` with `name` and `size` — refused at once if the type or the size is not
+   allowed; answers `upload`, `offset` and `piece`. Starting the same name and size again carries
+   on where the server is.
+2. `step: "append"` with `upload`, `offset` and the next piece in `content`, until `remaining` is 0.
+   A piece at the wrong offset is refused with the offset the server has.
+3. `step: "finish"` with `upload`, `directory_id` and, if you like, `alt`.
+
+`dry_run` checks everything the real call would and stores nothing. Behind `media.upload`.
+
 ## Pictures are optimized on the way in
 
 A JPEG, PNG or still WebP is not stored as it arrived. It is turned the right way up, stripped of
 its metadata, scaled down to no more than 2560px on its long side, and saved as a WebP at quality
 82 — unless that comes out no smaller, and then the original bytes are kept. A GIF, an animated
 WebP and everything that is not a picture go in untouched; an SVG is sanitized (below). Every way into the library goes
-through it: the panel's upload, the agent's `media_upload_from_url`, the demo content.
+through it: the panel's upload, the agent's `media_upload_from_url` and `media_upload_file`, the demo content.
 
 The steps live in `config/webx-media.php` under `optimize`, and a project adds its own by
 naming a class that implements `WebxUi\Media\Images\Optimizing\OptimizeStep`:
