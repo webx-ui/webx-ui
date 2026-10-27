@@ -222,6 +222,9 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
 
 ## Тесты в jsdom
 
+- **«ReferenceError: document is not defined» в тесте, который только что тронули.** Файл начинается с
+  `// @vitest-environment node`: тестам без DOM jsdom не поднимается (≈0.3–1.3 с на файл). Тест,
+  которому понадобился DOM, убирает эту строку, а не подставляет глобалы.
 - **«Cannot find module '…/dist/generated/tokens'» в vitest, хотя `pnpm build` прошёл.** `dist`
   рабочих пакетов vitest не перегоняет, а отдаёт Node (`server.deps.external` в
   `vitest.config.ts`), и Node не угадывает расширение. Пакет, который собирает `tsc` без

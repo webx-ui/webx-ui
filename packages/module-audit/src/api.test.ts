@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest'
 import type { AdminContext } from '@webx-ui/module-admin'
 import { createAuditApi, pageParams } from './api'

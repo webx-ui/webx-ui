@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { allows, destinations } from './move'
 import type { BlockNode, BlockType } from './types'

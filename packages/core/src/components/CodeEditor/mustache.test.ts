@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { mustacheCompletions, mustacheProblems, openSections, scanMustache } from './mustache'
 import type { CodeEditorCompletionResult, MustacheVariable } from './types'

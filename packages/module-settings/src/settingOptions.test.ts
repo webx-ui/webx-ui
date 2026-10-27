@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import type { ScreenNode } from '@webx-ui/schema'
 import { settingOptions } from './settingOptions'
