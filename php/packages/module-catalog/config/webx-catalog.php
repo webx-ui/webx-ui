@@ -97,6 +97,25 @@ return [
 
     'sql_engine_limit' => 2000,
 
+    /*
+    |---------------------------------------------------------------------------
+    | The storefront's caches
+    |---------------------------------------------------------------------------
+    |
+    | What every visitor of a page would compute alike — the counts of the
+    | filter — is kept until the catalogue changes: a save, an import, a bulk
+    | action moves its generation and every entry goes at once, on any store.
+    | `ttl` is a safety net for a change that never said so, not the way an
+    | entry goes. Off, everything is computed on every request; the site's own
+    | switch (`WEBX_CACHE_ENABLED`) turns it off as well.
+    |
+    */
+
+    'cache' => [
+        'enabled' => (bool) env('WEBX_CATALOG_CACHE_ENABLED', true),
+        'ttl' => (int) env('WEBX_CATALOG_CACHE_TTL', 86400),
+    ],
+
     'per_page' => 24,
 
     // The suggestions under the search box (`/catalog/suggest`): how many products, 1 to 20.

@@ -20,6 +20,7 @@ use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Panel\ProductColumns;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Rendering\ProductQuery;
+use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogLabels\Catalog\BadgesPart;
@@ -122,7 +123,7 @@ class LabelsServiceProvider extends ServiceProvider
      */
     private function registerCacheGroups(): void
     {
-        $this->app->make(CacheGroups::class)->bumpOn('catalog', Label::class);
+        $this->app->make(StorefrontCache::class)->watch(Label::class);
         $events = $this->app->make(Dispatcher::class);
 
         foreach (CacheGroups::EVENTS as $event) {

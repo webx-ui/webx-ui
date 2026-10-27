@@ -28,6 +28,8 @@ use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
 use WebxUi\Settings\SettingsServiceProvider;
+use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
  * The landings with brands and properties as the facets of their sets: the satellites a real
@@ -51,6 +53,10 @@ abstract class TestCase extends Orchestra
             MediaServiceProvider::class,
             SettingsServiceProvider::class,
             SeoServiceProvider::class,
+            // The product page prints `<x-webx-video>` (widgets, on top of the themes): without them
+            // the view compiles only where another package's run left it compiled.
+            ThemeServiceProvider::class,
+            WidgetsServiceProvider::class,
             CatalogServiceProvider::class,
             BrandsServiceProvider::class,
             CatalogPropertiesServiceProvider::class,

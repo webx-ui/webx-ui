@@ -493,6 +493,16 @@ $value` не отличает «типа нет» от «тип сказал н�
   `CACHE_STORE=database`), и с тех пор его читает каждый тест. Лечится удалением этого `.env`;
   команду пакета смотреть тестом или на сайте. Свой тест страхуется
   `config->set('cache.default', 'array')` в `defineEnvironment()`.
+- **Тест пакета зелёный в общем прогоне и красный один (или наоборот): «Unable to locate a class or
+  view for component [webx-…]».** Кеш скомпилированных вьюх Testbench
+  (`vendor/orchestra/testbench-core/laravel/storage/framework/views`) общий для всех пакетов:
+  вьюху с `<x-webx-video>` скомпилировал прогон пакета, где виджеты подключены, и пакет без них
+  читает готовую. Пакету, который рендерит чужую вьюху, — провайдеры её компонентов в
+  `getPackageProviders()` (виджетам — ещё темы). Проверка: снести этот каталог и прогнать пакет один.
+- **Тест на общем Redis — никогда `Cache::store('redis')->flush()`.** Это `FLUSHDB`, префикс он не
+  читает: стёр бы ключи всех dev-сайтов. Свой префикс у стора и `SCAN` + `DEL` своих ключей
+  (`StorefrontCacheTest::forgetRedisKeys()`); Redis — только когда прогон назвал его
+  (`WEBX_TEST_REDIS_HOST`).
 - **`<x-webx-snippets>` в тесте печатает пусто после `$app->detectEnvironment(fn () => 'production')`.**
   Компонент места молчит вне запроса: «консоль и не тесты» (`runningInConsole() &&
 ! runningUnitTests()`), а `runningUnitTests()` — это окружение `testing`; сменив его, тест сам

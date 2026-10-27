@@ -628,6 +628,47 @@ first is still writing.
 storefront does the same up to `sql_engine_limit` products and answers `503` past it. The design is
 `docs/architecture/WEBX_UI_CATALOG_MANTICORE.md`.
 
+### The storefront's caches
+
+The counts of a filter are the same for every visitor until the catalogue changes, and on
+`SqlEngine` they are the dearest part of a listing: a `group by` per facet. They are kept in the
+cache until the catalogue's **generation** moves — the version of the `catalog` cache group, which
+every storefront cache carries in its key. On the demo shop a warm category page goes from 34
+queries to 27, with no facet query at all.
+
+The generation moves by itself; nobody resets it by hand:
+
+- a product, a category or a satellite's record (a brand, a label, a stock status, a landing, a
+  property or its value) is saved, deleted, restored or moved;
+- a write without a model's event says which products it changed — `Catalog::touch($ids)`,
+  `touchQuery($query)`, `touchCategory($category)` — the calls the search index needs anyway.
+
+Inside a transaction it moves once, after the commit, so a chunk of a bulk action or of an import is
+one move, and a rollback moves nothing. Another sort or page of the same filter reads the same
+counts; another filter, search or language is another entry. The panel's lists and Manticore are
+counted every time.
+
+```dotenv
+WEBX_CATALOG_CACHE_ENABLED=true   # off: counted on every request
+WEBX_CATALOG_CACHE_TTL=86400      # a safety net, not the way an entry goes
+```
+
+It works on any cache store — `file`, `database`, `redis` — without tags. To reset it by hand, use
+«System → Cache» or the MCP tool `cache_reset` with `group: catalog`. `debug_page` lists each
+storefront cache under `cache.entries` as `catalog.<cache>.<hash>` with `memo` / `store` / `miss`.
+
+A cache of your own joins in one line and gets the reset and the line in the debug bar with it:
+
+```php
+use WebxUi\Catalog\Storefront\StorefrontCache;
+
+$badges = app(StorefrontCache::class)->remember('badges', ['ids' => $ids, 'locale' => $locale], fn () => $this->lookup($ids));
+```
+
+A satellite whose records change the storefront watches its models through the core:
+`app(StorefrontCache::class)->watch(MyModel::class)`. A write without an event calls
+`Catalog::touch()` for the products it changed.
+
 ## Extending the catalogue
 
 ### The anatomy of a satellite

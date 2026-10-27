@@ -126,7 +126,8 @@ final class PerformanceTest extends TestCase
         $this->cold();
         $this->budget(48, fn () => $this->page('/catalog'), 'root cold');
 
-        $this->budget(40, fn () => $this->page('/catalog'), 'root warm');
+        // Warm, the counts of the filter come from the storefront's cache (§8.4): no `group by` at all.
+        $this->budget(32, fn () => $this->page('/catalog'), 'root warm');
         $this->assertNoRepeatedQueries(fn () => $this->page('/catalog'), 'root warm');
     }
 
@@ -139,7 +140,7 @@ final class PerformanceTest extends TestCase
             $this->cold();
             $this->budget(48, fn () => $this->page($path), "{$path} cold");
 
-            $this->budget(40, fn () => $this->page($path), "{$path} warm");
+            $this->budget(32, fn () => $this->page($path), "{$path} warm");
             $this->assertNoRepeatedQueries(fn () => $this->page($path), "{$path} warm");
         }
     }
@@ -164,7 +165,7 @@ final class PerformanceTest extends TestCase
         $this->cold();
         $this->budget(42, fn () => $this->page('/catalog/search?q=shirt'), 'search cold');
 
-        $this->budget(36, fn () => $this->page('/catalog/search?q=shirt'), 'search warm');
+        $this->budget(30, fn () => $this->page('/catalog/search?q=shirt'), 'search warm');
         $this->assertNoRepeatedQueries(fn () => $this->page('/catalog/search?q=shirt'), 'search warm');
 
         $this->budget(10, fn () => $this->page('/catalog/suggest?q=shirt'), 'suggest');
