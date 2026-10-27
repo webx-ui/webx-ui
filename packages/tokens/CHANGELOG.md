@@ -1,5 +1,12 @@
 # @webx-ui/tokens
 
+## 0.6.2
+
+### Patch Changes
+
+- f4d8de7: `dist/index.js` imports `./generated/tokens.js` with its extension: Node and any loader without a
+  bundler's guessing could not load the package.
+
 ## 0.6.1
 
 ### Patch Changes

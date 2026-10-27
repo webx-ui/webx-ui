@@ -1,5 +1,100 @@
 # @webx-ui/php
 
+## 0.88.0
+
+### Minor Changes
+
+- f4d8de7: module-catalog-labels: every label of a page's products in one query, for the badges and for the template. The badges
+  of `catalog.card.badges` load all labels — service ones too — and filter `is_badge` in PHP; `StorefrontParts::extend()`
+  adds the labels of more products in one more query at most. The answer is kept in the storefront's cache (`labels`,
+  keyed by the products and the generation of the catalogue) and in the request: a warm page asks no label query. A
+  template reads a product's labels through `app(Labels::class)->of($product)` instead of querying them itself.
+- f4d8de7: module-catalog: the product page asks each thing once. The shape of the category tree (bounds and visibility) is
+  kept in the storefront's cache (`tree`, `Storefront\CategoryIndex`): the trail, `Category::isVisible()`, the product's
+  visibility on its page and `products()->category(…)` read it instead of the tree. The main category, its trail and the
+  main categories of a shelf come from one pool a request — one query. The product page, the category page and the
+  brands note their addresses with `RouteCache` instead of loading `routes`. The visible property groups are cached too.
+  Warm on the demo shop: product page 22 → 13 queries, category 26 → 21.
+
+  routing: `RouteCache::preload()` only notes the entities; the first `canonical()` reads everything noted by then in one
+  `many()` and one query for every type.
+
+  module-media: `MediaFiles::prefetch()` names keys the first look-up of every response takes along. module-settings
+  uses it for its pictures, so the logo printed by the header comes in the same query as the pictures of the blocks.
+  `ScreenValues::preload()` (module-admin) hands a screen's stored values to the types that load ahead.
+
+- f4d8de7: module-catalog: the generation of the catalogue and the cache of the filter's counts. `StorefrontCache` keeps the
+  storefront's caches on the version of the `catalog` cache group; it moves on a save of any watched model (the core's
+  and the satellites', which now watch theirs through `StorefrontCache::watch()`) and on every `Catalog::touch()`,
+  `touchQuery()`, `touchCategory()` — whatever the engine — once per transaction or `defer()`. `SqlEngine` keeps the
+  counts of a storefront's filter on it, keyed by the selection, the normalised filters, the search and the language
+  (not the page or the sort): a warm category page asks no facet query. `webx-catalog.cache.enabled` /
+  `WEBX_CATALOG_CACHE_ENABLED` and `ttl` / `WEBX_CATALOG_CACHE_TTL`; reset with `cache_reset` (`group: catalog`);
+  `debug_page` shows each storefront cache as `catalog.<cache>.<hash>` (memo / store / miss).
+- f4d8de7: Four findings of the first site on compositions.
+
+  - compositions: the compiled set writes `.gitignore` (`*`) into its directory
+    (`storage/framework/compositions/`) when there is none: `build-*` and `manifest.php` stay out of
+    `git status` on every site, made before or after, with no file of the site to change. A site
+    that already added `compositions/` to `storage/framework/.gitignore` may keep the line or drop
+    it; a `.gitignore` of its own in the directory is left as it is.
+  - compositions: `null` in a patch's `props` takes the prop off (the component's default applies),
+    and `webx:composition:show --origin` names the file that did. theme-default's `header` keeps
+    `mode: "drill"` — its header was drill before compositions; `{"props": {"header": {"mode": null}}}`
+    gives the widget's `accordion` back.
+  - widgets: `<x-webx-mobile-menu.nav parent="split">` (and `<x-webx-header parent="split">`) leaves
+    out a child that leads where its parent does («All showers» → /showers under «Showers» →
+    /showers; the path without its trailing `/`, the site's own host aside, the query counted). A
+    branch left with no children loses its arrow and is a plain link. `repeat` and the header's
+    dropdown are unchanged. A site that filtered such children in its own leaf can drop the filter.
+  - theme-default: the `contact` block has the switch `show_form_description` («Description of the
+    form»), **off by default** — the line under the form's title is for its dialog; in the block its
+    headings say what the form is for, and before this the description was printed twice under a
+    heading. A block saved before reads the default too: a contact block that should print the
+    description turns the switch on. The Inbox guide and `AGENTS.md` name `:description="false"`
+    for a form in a block with headings of its own.
+
+  **For existing sites.** Nothing to do for the `.gitignore`. The new field of `contact` reaches a
+  site's block type only by an import a person runs (`php artisan webx:blocks:import --theme
+--replace=contact --publish`, or the panel's import); until then the block prints as before. A
+  site that copied `contact.json` into its theme keeps its copy: add the field there if it wants
+  the switch.
+
+- f4d8de7: `module-debug`: `debug_page` can be opened on a site running as production, on purpose and alone.
+
+  - `WEBX_DEBUG_MCP_IN_PRODUCTION=true` (`webx-debug.mcp.production`, off by default) registers in
+    production only the agent's path: the permission `debug.view`, the tool `debug_page` (scope
+    `debug:read`), the first middleware — started by the tool's one-time token alone — and the
+    listener that keeps its report. The bar, its script, the cookie `wx_debug`, the late start and
+    the API of reports stay off there whatever any setting says; a visitor, a forged `X-Webx-Debug`
+    and an administrator with the cookie get the page exactly as without the package.
+  - A report made in production keeps no value: every bound value, the session, a log line's
+    context and message, an exception's message, an outgoing query and a mail's subject are masked.
+    Shapes, counts, times, places and repeats stay.
+  - `webx:doctor` says so in a note while it is on.
+  - Everywhere: a token header that is not signed by the site or has expired no longer starts the
+    collectors at all.
+
+- f4d8de7: module-media: the MCP tool `media_upload_file` puts a file the agent holds into the library — base64 in `content`, whole or in pieces (`step: start/append/finish`) over the panel's `media.library` uploads, with the panel's rules, SVG sanitizing and optimizing; answers like `media_get_file`.
+- f4d8de7: The zoom of a picture can magnify in the whole frame it stands in.
+
+  - `<x-webx-zoom frame="container">` (or `data-zoom-frame="container"`) lays the mouse's window over the whole `.webx-zoom`, with its rounding, instead of the
+    picture's own box: a portrait photo in a gallery's 4:3 is no longer magnified in a strip. The
+    copy is the picture's box times the scale; where it is longer than the window it rests against
+    the edges and always covers it, where it is shorter it stands in the middle on `--webx-zoom-bg`.
+    Fingers and `side` are as they were; the default, `picture`, prints the same markup as before.
+  - `module-catalog`: `images.zoom_frame` (`WEBX_CATALOG_IMAGES_ZOOM_FRAME`), `picture` by default,
+    turns it on for the product's gallery.
+
+### Patch Changes
+
+- f4d8de7: `module-admin`: `Testing\MigratesOnce` — a Testbench case on sqlite `:memory:` runs `artisan migrate`
+  once per schema (its migration files and the config) and gets it replayed into every next test: the
+  same fresh database per test, a few milliseconds instead of 20–50.
+
+  `Testing\TemporaryFiles` — `temporaryFile($prefix, $extension)` in a Testbench case: a file in the
+  system's temporary directory that goes when the test does.
+
 ## 0.87.0
 
 ### Minor Changes
