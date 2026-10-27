@@ -131,7 +131,8 @@ scripts/                                # link-panel, starter-site, sync-php-ver
   него (незатронутая половина — «skipped: not affected»), JS и PHP по очереди, до первой ошибки,
   в конце — сводка по шагам со временем. Manticore — общий сервер devbox с `--fail-on-skipped`.
 - **Гейт релиза дня — `pnpm gate:affected --full`**, один раз перед PR (перед ним погасить
-  dev-серверы, он упирается в память). Это то же, что руками:
+  dev-серверы, он упирается в память); ~9 минут, PHPUnit в нём — параллельно
+  (`scripts/phpunit-parallel.mjs`, замеры — `WEBX_UI_RELEASE_SPEED.md`). Это то же, что руками:
   ```
   pnpm build && pnpm typecheck && pnpm lint && npx prettier --check . && pnpm test && pnpm docs:build
   ```
