@@ -23,9 +23,9 @@
     },
     "require": {
         "php": "^8.4",
-        "webx-ui/compositions": "^0.87.0",
-        "webx-ui/themes": "^0.87.0",
-        "webx-ui/widgets": "^0.87.0"
+        "webx-ui/compositions": "^0.88.0",
+        "webx-ui/themes": "^0.88.0",
+        "webx-ui/widgets": "^0.88.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
