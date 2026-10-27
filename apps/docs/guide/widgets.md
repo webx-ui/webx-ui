@@ -93,7 +93,8 @@ sticky header keeps its heading in view.
 In an `accordion` a section that is a page itself is repeated as the first line of its branch.
 `parent="split"` — on `<x-webx-mobile-menu.nav>` or on `<x-webx-header>` — makes the section's
 name the link and opens the branch with an arrow beside it, «Submenu: …» to a screen reader, so
-the same page is not offered twice. A section without a page of its own opens by its name either
+the same page is not offered twice — nor is a child that leads to the section's own address («All
+showers» under «Showers»; a branch left empty loses its arrow). A section without a page of its own opens by its name either
 way; `drill` keeps the section's name as a link on top of its level.
 
 ## Dropdown and form in a dialog

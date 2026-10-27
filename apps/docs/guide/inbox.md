@@ -131,8 +131,11 @@ is what a machine name is for.
 **The description** — General → Description in the panel, `options.description` in the API and
 MCP — is a line over the fields (`webx-inbox-form__description`), in the page's language; plain
 text with the site's shortcodes, as in any other text. In a dialog it stands under the dialog's
-title instead and the form does not print it again (`:description="false"` does the same for a
-dialog of your own). Empty — nothing is printed.
+title instead and the form does not print it again. `:description="false"` does the same for a
+dialog of your own and for a form in a block with headings of its own, which say what the form is
+for: `<x-webx-inbox::form slug="callback" :description="false" />`. The `contact` block of
+theme-default has the switch «Description of the form» for it, off by default. Empty — nothing is
+printed.
 
 **It works without JavaScript.** The form posts, the intake answers with a redirect, and the page
 comes back with the errors under their fields or the thank-you under them — through the session,

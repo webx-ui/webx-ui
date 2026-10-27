@@ -155,4 +155,19 @@ final class CompileTest extends TestCase
         $this->artisan('webx:composition:clear')->assertSuccessful();
         $this->assertDirectoryDoesNotExist($path);
     }
+
+    /** A site from an older skeleton has no line for the set in `.gitignore`: the set keeps itself out of git. */
+    #[Test]
+    public function the_compiled_set_is_ignored_by_git(): void
+    {
+        $this->artisan('webx:composition:compile')->assertSuccessful();
+
+        $path = $this->app->make(Compiler::class)->path();
+        $this->assertSame('*'.PHP_EOL, file_get_contents($path.'/.gitignore'));
+
+        // The site's own rule stays as it is.
+        file_put_contents($path.'/.gitignore', "build-*\n");
+        $this->artisan('webx:composition:compile')->assertSuccessful();
+        $this->assertSame("build-*\n", file_get_contents($path.'/.gitignore'));
+    }
 }

@@ -23,7 +23,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `skip`, `mode`/`side` of the mobile menu it builds from its own parts. Inside:
   `<x-webx-header.nav :items="menu('header')" :mega>` — items are `menu()` trees or arrays.
 - **Mobile menu** — `<x-webx-mobile-menu side breakpoint history>` with slots `top`, default,
-  `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill" parent="repeat|split">` inside (`split`: the section's name is the link, an arrow opens it; also `<x-webx-header parent>`).
+  `bottom`, `trigger`; `<x-webx-mobile-menu.nav :items mode="accordion|drill" parent="repeat|split">` inside (`split`: the section's name is the link, an arrow opens it, a child at the section's own address is dropped; also `<x-webx-header parent>`).
 - **Dropdown** — `<x-webx-dropdown placement open-on="click|hover">` with slot `trigger`: a
   `<details>` without JavaScript, a popover turned over at the window's edge with it; one open.
 - **Form in a dialog** — a link to `#webx-form-<slug>` or `data-webx-form="<slug>"` opens that

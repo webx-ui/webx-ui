@@ -160,6 +160,23 @@ final class ThemeDefaultBlocksTest extends TestCase
         $this->assertStringNotContainsString('<form', $alone);
     }
 
+    /** The form's description is the line under its title in a dialog: a block with headings of its own does not repeat it. */
+    #[Test]
+    public function the_contact_block_prints_the_forms_description_by_its_switch(): void
+    {
+        $this->sync();
+        $form = Form::query()->create(['slug' => 'contact', 'title' => ['en' => 'Contact'], 'is_enabled' => true, 'options' => ['description' => ['en' => 'We answer within a day.']]]);
+        $form->fields()->create(['name' => 'email', 'type' => FieldType::Email, 'title' => ['en' => 'E-mail'], 'is_enabled' => true, 'is_required' => true, 'position' => 0]);
+        $line = '<p class="webx-inbox-form__description">We answer within a day.</p>';
+
+        // Off by default — a block saved before the switch reads its default too.
+        $this->assertStringNotContainsString($line, $this->render([$this->node('contact', ['heading' => 'Write to us', 'show_contacts' => false, 'form' => 'contact'])]));
+        $this->assertStringNotContainsString($line, $this->render([$this->node('contact', ['show_contacts' => false, 'form' => 'contact', 'show_form_description' => false])]));
+
+        // On: the line under the form, as in its dialog.
+        $this->assertStringContainsString($line, $this->render([$this->node('contact', ['heading' => 'Write to us', 'show_contacts' => false, 'form' => 'contact', 'show_form_description' => true])]));
+    }
+
     /** The demo's hero, seeded before the theme carried one, is what an adopted type reads. */
     #[Test]
     public function the_theme_hero_holds_every_field_of_the_demo_hero(): void
