@@ -61,11 +61,9 @@ describe('gate-affected', () => {
     expect(skipped(steps)).toEqual(['eslint', 'js: test', 'php: Manticore'])
     expect(find(steps, 'js: typecheck').args).toEqual(['--filter', '@webx-ui/docs', 'typecheck'])
     expect(find(steps, 'php: test')).toMatchObject({
-      cwd: 'php',
+      cwd: '.',
       args: [
-        '-d',
-        'memory_limit=-1',
-        'vendor/bin/phpunit',
+        'scripts/phpunit-parallel.mjs',
         'packages/module-admin/tests',
         'packages/module-catalog/tests',
       ],
@@ -104,7 +102,7 @@ describe('gate-affected', () => {
     expect(find(steps, 'eslint').args[0]).toBe('lint')
     expect(find(steps, 'prettier').args[0]).toBe('format:check')
     expect(find(steps, 'js: test').args).toEqual(['test'])
-    expect(find(steps, 'php: test').args).toEqual(['-d', 'memory_limit=-1', 'vendor/bin/phpunit'])
+    expect(find(steps, 'php: test').args).toEqual(['scripts/phpunit-parallel.mjs'])
     expect(find(steps, 'php: Manticore').args).toContain('--fail-on-skipped')
     expect(find(steps, 'php: Manticore').env.MANTICORE_TEST_HOST).toBeTruthy()
   })

@@ -120,12 +120,9 @@ export function plan(affected, { base, changed, typecheckFilters = [] }) {
       ['-d', 'memory_limit=-1', 'vendor/bin/phpstan', 'analyse', '--no-progress'],
       inPhp,
     )
-    step(
-      'php: test',
-      'php',
-      ['-d', 'memory_limit=-1', 'vendor/bin/phpunit', ...words(affected.php_tests ?? '')],
-      inPhp,
-    )
+    // The same tests as `vendor/bin/phpunit <php_tests>`, a package or a slice of one per
+    // process and several at a time: 8 minutes of the full suite become about 2.
+    step('php: test', 'node', ['scripts/phpunit-parallel.mjs', ...words(affected.php_tests ?? '')])
   }
 
   // ci.yml `manticore`: a real server, and a skipped test is a failure, not a pass. Locally
