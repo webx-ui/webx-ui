@@ -278,6 +278,42 @@ final class ScreenValues
     }
 
     /**
+     * Load ahead what resolving these values would load one at a time — the library rows behind
+     * pictures — by handing each type that can ({@see PreloadsValues}) all of its values at once,
+     * in the language `resolve` would pick. Nothing is resolved here.
+     *
+     * @param  list<Node>  $nodes
+     * @param  array<string, mixed>  $stored  by field name
+     */
+    public function preload(array $nodes, array $stored, ?string $locale = null): void
+    {
+        $byType = [];
+
+        foreach ($nodes as $node) {
+            $name = $node['name'] ?? null;
+            $value = is_string($name) ? ($stored[$name] ?? null) : null;
+
+            if ($value === null) {
+                continue;
+            }
+
+            if ($this->isMap($node, $value)) {
+                $value = $this->pick($value, $locale);
+            }
+
+            $byType[(string) ($node['type'] ?? '')][] = $value;
+        }
+
+        foreach ($byType as $id => $values) {
+            $type = $this->types->get($id);
+
+            if ($type instanceof PreloadsValues) {
+                $type->preload($values);
+            }
+        }
+    }
+
+    /**
      * The whole screen for the site, keyed by field name, as `resolve` sees it.
      *
      * @param  array<string, mixed>  $stored

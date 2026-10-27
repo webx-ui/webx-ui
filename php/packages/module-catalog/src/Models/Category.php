@@ -18,6 +18,7 @@ use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Catalog\Exceptions\CatalogException;
+use WebxUi\Catalog\Storefront\CategoryIndex;
 use WebxUi\Catalog\Storefront\HasListingTexts;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Localization\HasTranslations;
@@ -26,6 +27,7 @@ use WebxUi\Media\Storage\FileUrls;
 use WebxUi\NestedSet\HasNestedSet;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Routing\RouteCache;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
 use WebxUi\Seo\Contracts\HasSeoFallback;
@@ -218,9 +220,9 @@ class Category extends Model implements HasBreadcrumbs, HasListingTexts, HasSeoF
             return false;
         }
 
-        // Asked of the same category by the handler, the trail and the SEO sources of one page;
-        // forgotten by any write to the tree in the request (`booted()`).
-        return RequestMemo::remember('category.visible.'.$this->getKey(), fn (): bool => static::query()->whereKey($this->getKey())->visible()->exists());
+        // Asked of the same category by the handler, the trail and the SEO sources of one page:
+        // out of the shape of the tree the storefront keeps under the generation, no query.
+        return Container::getInstance()->make(CategoryIndex::class)->isVisible((int) $this->getKey());
     }
 
     /**
@@ -342,16 +344,18 @@ class Category extends Model implements HasBreadcrumbs, HasListingTexts, HasSeoF
      */
     private function buildBreadcrumbs(string $locale): array
     {
-        // The ancestors with their registry rows, and which of them are visible, in three
-        // queries whatever the depth — not a visibility check and an address per step.
-        $above = $this->ancestors()->with('routes')->get();
-        $visible = $above->isEmpty()
-            ? []
-            : static::query()->whereKey($above->modelKeys())->visible()->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
+        // The ancestors from the shape of the tree and the request's pool — the product page put
+        // them there with its main category — and their addresses noted for one read with
+        // everything else the page shows: no query of its own on a warm page, whatever the depth.
+        $index = Container::getInstance()->make(CategoryIndex::class);
+        $ids = $index->ancestorIds((int) $this->getKey());
+        $found = $index->find($ids);
+        $above = array_values(array_filter(array_map(static fn (int $id): ?self => $found[$id] ?? null, $ids)));
+        Container::getInstance()->make(RouteCache::class)->preload($above);
         $crumbs = [];
 
         foreach ($above as $node) {
-            if (in_array((int) $node->getKey(), $visible, true) && $node->hasUrlIn($locale)) {
+            if ($index->isVisible((int) $node->getKey()) && $node->hasUrlIn($locale)) {
                 $crumbs[] = new Crumb($node->displayName($locale), $node->url($locale));
             }
         }

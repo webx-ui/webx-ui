@@ -6,6 +6,7 @@ namespace WebxUi\Routing;
 
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\ConnectionResolverInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Routing\Models\Route;
@@ -19,8 +20,13 @@ use WebxUi\Routing\Models\Route;
  * 1. this request's memory — an entity asked twice (a tag on every card, the trail and the
  *    `hreflang` lines) is asked of nothing else the second time;
  * 2. the site's cache — every key a list needs in one `many()`, which on Redis is one `MGET`;
- * 3. the registry — one query a type for what the cache did not have, written back, «no address»
- *    included, so that an entity without one is not asked about on every page either.
+ * 3. the registry — one query, whatever the types, for what the cache did not have, written
+ *    back, «no address» included, so that an entity without one is not asked about on every
+ *    page either.
+ *
+ * `preload()` only notes what is coming; the first address asked for reads everything noted by
+ * then. A page whose parts each preload their own — the product, its categories, its brand —
+ * is still one `many()` and one query, in whatever order the parts were prepared.
  *
  * The keys carry the version of the `routes` cache group (`webx:route:v1:<type>:<id>:-:routes.N`):
  * every write to the registry moves it — a save through the model, `RouteSync`'s own bulk writes,
@@ -42,6 +48,14 @@ final class RouteCache
      */
     private array $memo = [];
 
+    /**
+     * Entities noted by `preload()` and not read yet, by `type:id` — read all at once by the
+     * first `canonical()` that needs anything.
+     *
+     * @var array<string, array{string, mixed}>
+     */
+    private array $wanted = [];
+
     /** The version of the `routes` group the memory was read under. */
     private ?int $generation = null;
 
@@ -62,23 +76,24 @@ final class RouteCache
         $id = self::id($entity);
 
         if (! array_key_exists($id, $this->memo)) {
-            $this->load([$id => [$entity->getMorphClass(), $entity->getKey()]]);
+            $wanted = [...$this->wanted, $id => [$entity->getMorphClass(), $entity->getKey()]];
+            $this->wanted = [];
+            $this->load(array_diff_key($wanted, $this->memo));
         }
 
         return $this->memo[$id] ?? [];
     }
 
     /**
-     * Read the addresses of all these entities at once — what a list calls before it asks each
-     * card for its `url()`. An entity with its `routes` loaded already answers from them and is
-     * skipped, so is one not saved yet.
+     * Note the addresses of all these entities, to be read at once with whatever else is noted
+     * — what a list calls before it asks each card for its `url()`. An entity with its `routes`
+     * loaded already answers from them and is skipped, so is one not saved yet.
      *
      * @param  iterable<Model>  $entities
      */
     public function preload(iterable $entities): void
     {
         $this->settle();
-        $wanted = [];
 
         foreach ($entities as $entity) {
             if (! $entity->exists || $entity->relationLoaded('routes') || ! method_exists($entity, 'routeCanonical')) {
@@ -88,12 +103,8 @@ final class RouteCache
             $id = self::id($entity);
 
             if (! array_key_exists($id, $this->memo)) {
-                $wanted[$id] = [$entity->getMorphClass(), $entity->getKey()];
+                $this->wanted[$id] = [$entity->getMorphClass(), $entity->getKey()];
             }
-        }
-
-        if ($wanted !== []) {
-            $this->load($wanted);
         }
     }
 
@@ -125,35 +136,42 @@ final class RouteCache
             }
         }
 
+        if ($wanted === []) {
+            return;
+        }
+
         $byType = [];
 
-        foreach ($wanted as $id => [$type, $key]) {
-            $byType[$type][$id] = $key;
+        foreach ($wanted as [$type, $key]) {
+            $byType[$type][] = $key;
+        }
+
+        // One statement for every type: `(entity_type, entity_id)` is an index, and each branch
+        // of the `or` is a range of it.
+        $routes = Route::query()
+            ->where(static function (Builder $query) use ($byType): void {
+                foreach ($byType as $type => $ids) {
+                    $query->orWhere(static fn (Builder $one) => $one->where('entity_type', $type)->whereIn('entity_id', $ids));
+                }
+            })
+            ->canonical()
+            ->orderBy('id')
+            ->get();
+
+        $rows = array_fill_keys(array_keys($wanted), []);
+
+        foreach ($routes as $route) {
+            $rows[$route->entity_type.':'.$route->entity_id][] = $route;
         }
 
         $store = [];
 
-        foreach ($byType as $type => $ids) {
-            $rows = array_fill_keys(array_keys($ids), []);
+        foreach ($rows as $id => $found) {
+            $this->memo[$id] = $found;
 
-            $routes = Route::query()
-                ->where('entity_type', $type)
-                ->whereIn('entity_id', array_values($ids))
-                ->canonical()
-                ->orderBy('id')
-                ->get();
-
-            foreach ($routes as $route) {
-                $rows[$type.':'.$route->entity_id][] = $route;
-            }
-
-            foreach ($rows as $id => $found) {
-                $this->memo[$id] = $found;
-
-                if ($shared) {
-                    // Scalars, not models: what another version of the model would still read.
-                    $store[$keys[$id]] = array_map(static fn (Route $route): array => $route->getAttributes(), $found);
-                }
+            if ($shared) {
+                // Scalars, not models: what another version of the model would still read.
+                $store[$keys[$id]] = array_map(static fn (Route $route): array => $route->getAttributes(), $found);
             }
         }
 

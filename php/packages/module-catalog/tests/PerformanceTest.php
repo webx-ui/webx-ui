@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog\Tests;
 
+use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\View;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Exchange\Importer;
+use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Storefront\CategoryIndex;
 use WebxUi\Catalog\Tests\Fixtures\Shop;
 use WebxUi\CatalogBrands\BrandsServiceProvider;
 use WebxUi\CatalogLabels\LabelsServiceProvider;
@@ -127,7 +131,7 @@ final class PerformanceTest extends TestCase
         $this->budget(48, fn () => $this->page('/catalog'), 'root cold');
 
         // Warm, the counts of the filter come from the storefront's cache (§8.4): no `group by` at all.
-        $this->budget(32, fn () => $this->page('/catalog'), 'root warm');
+        $this->budget(26, fn () => $this->page('/catalog'), 'root warm');
         $this->assertNoRepeatedQueries(fn () => $this->page('/catalog'), 'root warm');
     }
 
@@ -140,7 +144,7 @@ final class PerformanceTest extends TestCase
             $this->cold();
             $this->budget(48, fn () => $this->page($path), "{$path} cold");
 
-            $this->budget(32, fn () => $this->page($path), "{$path} warm");
+            $this->budget(26, fn () => $this->page($path), "{$path} warm");
             $this->assertNoRepeatedQueries(fn () => $this->page($path), "{$path} warm");
         }
     }
@@ -153,15 +157,117 @@ final class PerformanceTest extends TestCase
         $path = $this->pathOf($this->shop->productOf('Shirts', 2)->url());
 
         $this->cold();
-        $this->budget(36, fn () => $this->page($path), 'product cold');
+        $this->budget(30, fn () => $this->page($path), 'product cold');
 
-        $this->budget(28, fn () => $this->page($path), 'product warm');
+        // Warm, the visibility and the trail come from the shape of the tree and the addresses from
+        // the registry's cache (§8.4): nothing of `routes` and one read of the pool of categories.
+        $this->budget(18, fn () => $this->page($path), 'product warm');
         $this->assertNoRepeatedQueries(fn () => $this->page($path), 'product warm');
 
         // Warm, the labels of the page come from the storefront's cache (§8.4) — the badges and
         // whatever a theme reads through `Labels::of()`.
         $labels = array_filter($this->recordQueries(fn () => $this->page($path))->queries, static fn (array $query): bool => str_contains($query['query'], 'catalog_label'));
         $this->assertSame([], $labels, 'product warm: the labels were asked again');
+    }
+
+    /**
+     * A theme's product page with a shelf of the same category (§8.4): the main category, its
+     * trail and the shelf's categories are one query of `catalog_categories` by id, and every
+     * address of the page — the product, its categories, the trail, the brand, the shelf — one
+     * query of the registry; warm, none of the registry and nothing asked twice.
+     */
+    #[Test]
+    public function a_product_page_with_a_shelf_asks_for_categories_and_addresses_once(): void
+    {
+        $product = $this->shop->productOf('Shirts', 2);
+        $path = $this->pathOf($product->url());
+        View::composer('webx-catalog::product', static function (ViewContract $view): void {
+            $shown = $view->getData()['product'];
+            $view->with('shelf', products()->except($shown)->category($shown->category_id)->take(4)->get());
+        });
+        $byId = static fn (array $query): bool => str_contains($query['query'], 'from "catalog_categories" where "catalog_categories"."id" in');
+        $registry = static fn (array $query): bool => str_contains($query['query'], 'from "routes" where (');
+
+        $this->cold();
+        $cold = $this->recordQueries(fn () => $this->page($path));
+        $this->assertCount(1, array_filter($cold->queries, $byId), $cold->describe());
+        // The page's own addresses, then the shelf's: the template draws the shelf after the
+        // page has asked for its first `url()`, and nobody knows the shelf's cards before that.
+        $this->assertCount(2, array_filter($cold->queries, $registry), $cold->describe());
+        $this->assertCount(0, array_filter($cold->queries, static fn (array $query): bool => str_contains($query['query'], 'from "routes" where "routes"."entity_id"')), $cold->describe());
+
+        $warm = $this->recordQueries(fn () => $this->page($path));
+        $this->assertCount(1, array_filter($warm->queries, $byId), $warm->describe());
+        $this->assertCount(0, array_filter($warm->queries, static fn (array $query): bool => str_contains($query['query'], '"routes"') && ! str_contains($query['query'], '"path" in')), $warm->describe());
+        $this->assertNoRepeatedQueries(fn () => $this->page($path), 'product with a shelf, warm');
+
+        // And the shelf is the one SQL would give: the category's live products but this one.
+        $shelf = products()->except($product)->category($product->category_id)->take(4)->models();
+        $this->assertCount(4, $shelf);
+        $this->assertNotContains($product->getKey(), $shelf->modelKeys());
+        $this->assertSame($product->category_id, $shelf->first()?->category?->getKey());
+    }
+
+    /**
+     * The shape of the tree the storefront keeps (§8.4) answers what the queries it replaced
+     * answered — visibility, the ancestors, the subtree — with a branch hidden, a category in
+     * the bin and one under a hidden parent.
+     */
+    #[Test]
+    public function the_shape_of_the_tree_answers_as_the_queries_did(): void
+    {
+        $women = $this->shop->category('Women');
+        $women->update(['is_published' => false]);
+        $hidden = new Category(['name' => 'Hidden below', 'slug' => 'hidden-below', 'is_published' => true]);
+        $hidden->appendTo($this->shop->category('Dresses'));
+        $spare = new Category(['name' => 'Spare', 'slug' => 'spare', 'is_published' => true]);
+        $spare->appendTo($this->shop->category('Kitchen'));
+        $spare->refresh()->delete();
+        $this->cold();
+
+        $index = $this->app->make(CategoryIndex::class);
+
+        foreach (Category::query()->get() as $category) {
+            $id = (int) $category->getKey();
+            $subtree = $category->subtree()->pluck('id')->map(intval(...))->sort()->values()->all();
+            $mine = $index->subtreeIds([$id]);
+            sort($mine);
+
+            $this->assertSame(Category::query()->whereKey($id)->visible()->exists(), $index->isVisible($id), "visible: {$category->displayName()}");
+            $this->assertSame($category->ancestors()->pluck('id')->map(intval(...))->all(), $index->ancestorIds($id), "ancestors: {$category->displayName()}");
+            $this->assertSame($subtree, $mine, "subtree: {$category->displayName()}");
+        }
+
+        $this->assertFalse($index->isVisible((int) $spare->getKey()), 'in the bin');
+        $this->assertSame([], $index->subtreeIds([(int) $spare->getKey()]));
+    }
+
+    /**
+     * The product page follows the tree at once: a branch hidden through the panel trims the
+     * page of a product filed only there, and shown again brings it back.
+     */
+    #[Test]
+    public function a_product_page_follows_its_branch_hidden_and_shown(): void
+    {
+        $product = $this->shop->productOf('Dresses', 1);
+        $product->categories()->detach();
+        $path = $this->pathOf($product->url());
+        $women = $this->shop->category('Women');
+        $editor = $this->editor();
+
+        $this->page($path)->assertHeaderMissing('X-Robots-Tag')->assertSee('>Women<', false);
+
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api("categories/{$women->getKey()}"), ['values' => ['is_published' => false]])
+            ->assertOk();
+
+        $this->page($path)->assertHeader('X-Robots-Tag', 'noindex, follow');
+
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api("categories/{$women->getKey()}"), ['values' => ['is_published' => true]])
+            ->assertOk();
+
+        $this->page($path)->assertHeaderMissing('X-Robots-Tag')->assertSee('>Women<', false);
     }
 
     #[Test]

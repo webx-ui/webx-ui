@@ -19,6 +19,9 @@ guides when the question is about one of those. An entity's own attachments are 
   (`MediaValues::normalize()`; extra keys dropped); an unknown id is refused by name.
 - **Asset addresses**: binds `WebxUi\Admin\Contracts\AssetUrls` to `LibraryUrls`, which is how
   pictures inside a `wx-rich-text` value find their address.
+- **Lookup** `Screens\MediaFiles` (singleton, flushed per response): rows by key in one `whereIn`;
+  `prefetch(fn ($files) => …)` names keys every page asks — `module-settings` adds the logo — and the
+  response's first look-up takes them along.
 - **API** under `{webx-admin.api_path}/media` (`directories`, `files`, `files/chunked`,
   `files/by-path`, `files/{file}/thumb`, `files/{file}/source`, `files/{file}/edit`, `…/copy`,
   `…/restore-original`, `files/move`, `files/delete`); route names `webx.media.*`.

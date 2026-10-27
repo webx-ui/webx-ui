@@ -651,7 +651,7 @@ The counts of a filter are the same for every visitor until the catalogue change
 `SqlEngine` they are the dearest part of a listing: a `group by` per facet. They are kept in the
 cache until the catalogue's **generation** moves — the version of the `catalog` cache group, which
 every storefront cache carries in its key. On the demo shop a warm category page goes from 34
-queries to 26, with no facet query at all; the labels of a page (`labels`) are kept the same way.
+queries to 21, with no facet query at all; the labels of a page (`labels`) are kept the same way.
 
 The generation moves by itself; nobody resets it by hand:
 
@@ -685,6 +685,23 @@ $badges = app(StorefrontCache::class)->remember('badges', ['ids' => $ids, 'local
 A satellite whose records change the storefront watches its models through the core:
 `app(StorefrontCache::class)->watch(MyModel::class)`. A write without an event calls
 `Catalog::touch()` for the products it changed.
+
+The product page asks each thing once, however many parts ask it. The shape of the category tree —
+bounds and visibility, no words — is cached under the generation (`tree`), so the trail, the
+product's visibility and a shelf narrowed by a category ask nothing of the tree. The categories
+themselves come from one pool a request: the main category and its trail are one query, and a
+shelf of the same category in your template is none.
+
+```blade
+{{-- No query for the category, its subtree or the cards' main categories: --}}
+@foreach (products()->except($product)->category($product->category_id)->take(4) as $card)
+    <a href="{{ $card['url'] }}">{{ $card['name'] }}</a>
+@endforeach
+```
+
+Addresses go through the registry's own cache, not `with('routes')`: every part notes what it will
+link to, and the first `url()` reads it all in one query — none on a warm page. To link a list of
+your own, call `app(\WebxUi\Routing\RouteCache::class)->preload($models)` before the cards.
 
 ## Extending the catalogue
 

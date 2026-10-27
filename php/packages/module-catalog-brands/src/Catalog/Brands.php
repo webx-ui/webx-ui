@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogBrands\Catalog;
 
+use Illuminate\Container\Container;
 use Illuminate\Support\Facades\DB;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogBrands\Models\Brand;
+use WebxUi\Routing\RouteCache;
 
 /**
  * The brand of each product of a page, in two queries whatever the size of the page, so the form,
@@ -54,7 +56,11 @@ final class Brands
         }
 
         $query = $visible ? Brand::query()->visible() : Brand::withTrashed();
-        $brands = $query->with(['logo', 'routes'])->whereKey(array_values(array_unique($rows)))->get()->keyBy('id');
+        $brands = $query->with('logo')->whereKey(array_values(array_unique($rows)))->get()->keyBy('id');
+
+        // Noted rather than loaded: the product page reads its own addresses, its categories' and
+        // these in one query, and none on a warm page.
+        Container::getInstance()->make(RouteCache::class)->preload($brands->all());
         $of = [];
 
         foreach ($rows as $product => $id) {

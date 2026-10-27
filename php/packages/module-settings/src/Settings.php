@@ -175,6 +175,16 @@ final class Settings
     }
 
     /**
+     * Load ahead what reading the settings would load one at a time: the library rows behind the
+     * logo and the other pictures, noted for the page's first look-up of the library — the one
+     * its blocks make — rather than a query of their own when the header prints them.
+     */
+    public function preload(?string $locale = null): void
+    {
+        $this->values->preload($this->nodes(), $this->raw(), $locale);
+    }
+
+    /**
      * Writes what it is given — already validated by `ScreenValues` — and tells the site.
      *
      * A null is stored as null, not dropped: a module may read "saved empty" differently from

@@ -40,7 +40,7 @@ question is about one of them.
 - **Generation** `Storefront\StorefrontCache` — the version of cache group `catalog`: facet settings, satellites' lists
   and the `SqlEngine` filter counts (`remember('facets', …)`, `webx-catalog.cache`) live on it; `watch()`ed models
   (core and satellites) and every `Catalog::touch*()` move it, once per transaction (chunk) or `defer()`. What one page reads
-  twice — brands, stock, a facet's values, the subtree — is kept on the request (`Support\RequestMemo`).
+  twice is kept on the request (`Support\RequestMemo`); categories by id, bounds and visibility — `Storefront\CategoryIndex`.
   Query budgets of every public page: `tests/PerformanceTest.php` (`WEBX_PERF_PRINT=1` prints the tallies).
 - **Registries** (singletons a satellite fills from its provider): `ProductParts`, `Facets`, `Sorts`, `Documents`,
   `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`, `StorefrontParts`, `Purchasability`,
