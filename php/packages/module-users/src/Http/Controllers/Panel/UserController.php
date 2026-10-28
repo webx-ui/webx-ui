@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Users\Http\Controllers\Panel;
 
-use Illuminate\Contracts\Mail\Factory as Mail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
@@ -14,17 +13,13 @@ use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Users\Account\DeleteAccount;
 use WebxUi\Users\Account\DeletionWarnings;
 use WebxUi\Users\Emails\Verification;
-use WebxUi\Users\Mail\ResetPassword;
 use WebxUi\Users\Models\Group;
 use WebxUi\Users\Models\User;
 use WebxUi\Users\Panel\UserForm;
 use WebxUi\Users\Panel\UserList;
-use WebxUi\Users\Passwords\ResetLinks;
 use WebxUi\Users\Social\Provider;
 use WebxUi\Users\Social\ProviderKeys;
-use WebxUi\Users\Social\SocialAccounts;
 use WebxUi\Users\Social\SocialProviders;
-use WebxUi\Users\Urls;
 
 /**
  * `/api/cms/users` (spec §16.2): the list with its filters, the card, its save, and the actions of
@@ -149,21 +144,10 @@ final readonly class UserController
         return ApiResponse::data($this->form->describe($found));
     }
 
-    /**
-     * A link of «Forgot your password?» to the visitor's address — or, to an account without a
-     * password, the invitation, which says «set» rather than «restore».
-     */
-    public function sendReset(int $user, ResetLinks $links, Urls $urls, Mail $mail): JsonResponse
+    /** A link of «Forgot your password?», or the invitation to an account without a password. */
+    public function sendReset(int $user): JsonResponse
     {
-        $found = self::find($user);
-        self::refuseBlocked($found);
-
-        if ($found->password === null) {
-            $this->form->invite($found);
-        } else {
-            $link = $urls->to('reset', parameters: ['token' => $links->issue($found)]);
-            $mail->mailer()->to($found->email)->send(new ResetPassword($found, $link, ResetLinks::minutes()));
-        }
+        $this->form->sendReset(self::find($user));
 
         return ApiResponse::data(['sent' => true]);
     }
@@ -182,23 +166,9 @@ final readonly class UserController
     }
 
     /** A network unlinked by the administrator — the last way to sign in stays (§9.6). */
-    public function unlink(int $user, string $provider, SocialAccounts $accounts, ProviderKeys $keys, SocialProviders $providers): JsonResponse
+    public function unlink(int $user, string $provider): JsonResponse
     {
-        $found = self::find($user);
-        $registered = $providers->find($provider);
-
-        // A link of a provider that is not shown is no way in: taking it away leaves every way there was.
-        if ($registered !== null && $keys->shown($registered)) {
-            $accounts->unlink($found, $provider);
-        } else {
-            $deleted = $found->identities()->where('provider', $provider)->delete();
-
-            if ($deleted === 0) {
-                throw ValidationException::withMessages(['provider' => (string) trans('webx-users::account.social.not_linked')]);
-            }
-        }
-
-        return ApiResponse::data($this->form->describe($found->unsetRelation('identities')));
+        return ApiResponse::data($this->form->describe($this->form->unlink(self::find($user), $provider)));
     }
 
     private static function find(int $id): User
@@ -210,18 +180,6 @@ final readonly class UserController
         }
 
         return $user;
-    }
-
-    /**
-     * A blocked account is not let in by a link either (§6.3).
-     *
-     * @throws ValidationException
-     */
-    private static function refuseBlocked(User $user): void
-    {
-        if ($user->isBlocked()) {
-            throw ValidationException::withMessages(['email' => (string) trans('webx-users::errors.blocked')]);
-        }
     }
 
     /**

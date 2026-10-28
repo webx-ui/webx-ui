@@ -34,6 +34,7 @@
         "laravel/socialite": "^5.31",
         "webx-ui/compositions": "^0.88.0",
         "webx-ui/localization": "^0.88.0",
+        "webx-ui/mcp": "^0.88.0",
         "webx-ui/module-admin": "^0.88.0",
         "webx-ui/widgets": "^0.88.0"
     },

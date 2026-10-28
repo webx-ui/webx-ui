@@ -18,6 +18,7 @@ use WebxUi\Users\Fields\Placement;
 use WebxUi\Users\Fields\UserFields;
 use WebxUi\Users\Mail\EmailChanged;
 use WebxUi\Users\Mail\Invitation;
+use WebxUi\Users\Mail\ResetPassword;
 use WebxUi\Users\Models\Group;
 use WebxUi\Users\Models\Identity;
 use WebxUi\Users\Models\User;
@@ -51,6 +52,7 @@ final readonly class UserForm
         private UserFields $fields,
         private SocialProviders $providers,
         private ProviderKeys $keys,
+        private SocialAccounts $accounts,
         private ResetLinks $links,
         private Verification $verification,
         private Validation $validation,
@@ -146,12 +148,15 @@ final readonly class UserForm
      * Only the keys sent are checked and written (§10.5): an old visitor without a field that
      * became required is not locked out of an edit of the name.
      *
+     * `letters: false` writes without a letter — the agent's dry run, rolled back, must not leave
+     * one in somebody's mailbox.
+     *
      * @param  array<string, mixed>  $input
      * @param  (callable(string): bool)|null  $can
      *
      * @throws ValidationException
      */
-    public function save(User $user, array $input, ?callable $can = null, bool $invite = false): User
+    public function save(User $user, array $input, ?callable $can = null, bool $invite = false, bool $letters = true): User
     {
         $declared = array_map(static fn ($field): string => $field->name, $this->fields->for(Placement::Panel));
         $split = $this->record->split(User::SCREEN, $input, [...self::COLUMNS, 'groups', ...$declared], [], $can);
@@ -197,6 +202,10 @@ final readonly class UserForm
             return $user;
         });
 
+        if (! $letters) {
+            return $user->refresh()->load(['groups', 'identities']);
+        }
+
         if ($creating) {
             if ($invite) {
                 $this->invite($user);
@@ -216,6 +225,48 @@ final readonly class UserForm
         $link = $this->urls->to('reset', parameters: ['token' => $token]);
 
         $this->mail->mailer()->to($user->email)->send(new Invitation($user, $link, (int) (self::INVITE_MINUTES / 1440)));
+    }
+
+    /**
+     * A link of «Forgot your password?» to the visitor's address — or, to an account without a
+     * password, the invitation, which says «set» rather than «restore». Never to a blocked one: a
+     * link does not let them in either (§6.3).
+     *
+     * @throws ValidationException
+     */
+    public function sendReset(User $user): void
+    {
+        if ($user->isBlocked()) {
+            throw ValidationException::withMessages(['email' => (string) trans('webx-users::errors.blocked')]);
+        }
+
+        if ($user->password === null) {
+            $this->invite($user);
+
+            return;
+        }
+
+        $link = $this->urls->to('reset', parameters: ['token' => $this->links->issue($user)]);
+        $this->mail->mailer()->to($user->email)->send(new ResetPassword($user, $link, ResetLinks::minutes()));
+    }
+
+    /**
+     * A network unlinked by the administrator — the last way to sign in stays (§9.6). A link of a
+     * provider that is not shown is no way in: taking it away leaves every way there was.
+     *
+     * @throws ValidationException
+     */
+    public function unlink(User $user, string $provider): User
+    {
+        $registered = $this->providers->find($provider);
+
+        if ($registered !== null && $this->keys->shown($registered)) {
+            $this->accounts->unlink($user, $provider);
+        } elseif ($user->identities()->where('provider', $provider)->delete() === 0) {
+            throw ValidationException::withMessages(['provider' => (string) trans('webx-users::account.social.not_linked')]);
+        }
+
+        return $user->unsetRelation('identities');
     }
 
     /**

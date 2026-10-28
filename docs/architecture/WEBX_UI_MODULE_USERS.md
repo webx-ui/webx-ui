@@ -1182,6 +1182,17 @@ JSON ([`WEBX_UI_SCREENS.md`](WEBX_UI_SCREENS.md)); npm-пара `@webx-ui/module
   sign in»; неизвестная группа — со списком известных).
 - `users_list`, `users_groups_list` — в `PerformanceTest` тёплыми.
 
+**Выпуск (этап 9).** `Mcp\UsersTools` и `Mcp\UsersResources` на `UsersModule` идут через классы панели:
+`UserList`, `UserForm` (сохранение, письмо сброса, отвязка), `Panel\Groups`, `Panel\SettingsState` —
+контроллеры панели переведены на них же, паритет держится одним кодом. `users_get` отвечает `user`
+(сводка карточки), `profile` (имя, фамилия, телефон, e-mail), `fields` (свои поля по именам) и
+`groups` (коды); `users_create` / `users_update` принимают поля профиля аргументами, свои поля —
+`fields`, группы — `groups`, неизвестное имя поля — отказ со списком. `users_groups_save` меняет код
+группы аргументом `new_code`. `users_settings_set` принимает `values` под именами экрана
+(`users.registration`, `users.fields.<name>`) и `providers: {key: {enabled}}` — любой другой ключ
+провайдера (секрет, `client_id`) отказ. `dry_run` — запись в откатываемой транзакции без писем
+(`UserForm::save(…, letters: false)`); письма и удаление в `dry_run` только проверяются.
+
 ## 18. Слова, производительность, регистрации, демо
 
 **Словарь `webx-users`** на десять языков (`en`, `ru`, `uk` вычитаны носителем, остальные — машинный

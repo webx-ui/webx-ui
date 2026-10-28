@@ -43,6 +43,17 @@ final class AccountMenu
      */
     public function for(Visitor $visitor): array
     {
+        return $this->all();
+    }
+
+    /**
+     * Every section a visitor may meet, in order — what `users://catalog` lists. The menu of one
+     * visitor is the same today; `for()` is where a section for some visitors only would go.
+     *
+     * @return list<AccountSection>
+     */
+    public function all(): array
+    {
         $hidden = array_map('strval', (array) config('webx-users.account.hidden', []));
         $sections = array_values(array_filter(
             $this->sections,

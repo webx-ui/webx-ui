@@ -6,8 +6,6 @@ their own guard `site`, sign-in by e-mail and social networks, and the panel's s
 permissions, no way into `/cms` (administrators are `webx-ui/module-auth`). Nothing of a shop is
 in here — shop modules plug into the seam, the module knows none of them.
 
-Built in steps: the agent tools (`users_*`) come later; what is listed here exists now.
-
 ## What it owns
 
 - **Table** `users` (`Models\User`): `email` (unique, trimmed, lower case), `email_verified_at`,
@@ -27,9 +25,8 @@ Built in steps: the agent tools (`users_*`) come later; what is listed here exis
     that account's password (`linkWaiting`); `unlink()` never the last way — 422. `SocialController`:
     `/account/auth/{provider}` (`?link=1`), `…/callback` (no language, outside CSRF, `state`),
     `auth/complete` («Almost done»), `POST /account/social/{provider}/unlink`; `<x-webx-users::social-buttons>`.
-- **Over Laravel's table** (`Schema\UsersTable`): empty — dropped with an empty
-  `password_reset_tokens`; with rows — «Table `users` already holds N rows; move them out or drop the
-  table, then migrate again», the same in `webx:doctor`. The rollback drops only the module's table.
+- **Over Laravel's table** (`Schema\UsersTable`): empty — dropped with an empty `password_reset_tokens`;
+  with rows — refused («already holds N rows»), the same in `webx:doctor`. Rollback drops only its own.
 - **Guard** `site` (`webx-users.guard`), provider `webx-users` (`Auth\UserProvider`: null for a blocked
   visitor — the session ends). Added to `auth` only if the site has not declared them; `web` untouched.
 - **The seam** `UserVisitors` bound to `Visitors` (scoped): `current()`, `find($id)`, `findByEmail()`
@@ -69,8 +66,7 @@ Built in steps: the agent tools (`users_*`) come later; what is listed here exis
   e-mail» and the letter once more (403, `AnswersUnverified`).
 - **Console** `webx:users:prune [--dry-run]`, daily: links out of date, never an account.
   `webx:doctor` — `MailCheck` (`log` mail off a local machine warns), `FieldsCheck` (the refusals).
-- **Limits** (`WebxUi\Users\Throttle`, a 429 that names the field and the seconds): every number and
-  its key in `webx-users.throttle.*` (the config says each); reset requests over theirs answer alike.
+- **Limits** (`Throttle`, a 429 naming the field and the seconds): `webx-users.throttle.*`; reset requests alike.
 - **Events**: `VisitorRegistered`, `VisitorSignedIn` (`password`/`registration`/`reset`/a provider), `VisitorSignedOut`; own `VisitorSignInFailed`.
 - **Views** `sign-in`, `register`, `forgot`, `reset`, `notice`, `account.profile`, `account.security`, the
   frames `<x-webx-users::page>` / `account`, the bare `standalone`; forms of `widgets` (`FormRules`).
@@ -88,12 +84,16 @@ Built in steps: the agent tools (`users_*`) come later; what is listed here exis
   with `wx-users-state`/`wx-users-ways`, `history`); no password ever, a new visitor is invited (`invite`
   link, 7 days, `Mail\Invitation`). Groups — `users_groups`/`users_group_user` (`Models\Group`). Settings — screen `users.settings` (`users.registration`, `users.fields.*`) and a card per provider, a secret
   only «set». Journal types `users.user`, `users.group`, `users.provider` (password and secret masked).
+- **MCP** (§17, `Mcp\UsersTools` on `UsersModule`): `users_list|get|create|update|delete`, `users_send_password_reset`,
+  `users_resend_verification`, `users_unlink_provider`, `users_groups_list|save|delete`, `users_settings_get|set`
+  (`users.settings`); `users://catalog` (`Mcp\UsersResources`). The panel's classes (`UserList`, `UserForm`, `Groups`,
+  `SettingsState`); a dry run rolled back and without letters; no secret in or out — keys are the panel's.
 - **Dictionary** `webx-users` in ten languages: `module`, `auth`, `account`, `mail`, `screen`, `panel`, `errors`.
 
 ### Permissions
 
-`users.view` — the list, the card, the groups (personal data); `users.manage` — every write and letter, the
-groups too; `users.settings` — the settings alone. Only «Administrator» by default. `Panel\PanelAccessTest`;
+`users.view` — the list, the card, the groups (personal data), MCP `users:read`; `users.manage` — every write and letter, the
+groups too, MCP `users:write`; `users.settings` — the settings alone. Only «Administrator» by default. `Panel\PanelAccessTest`;
 the site's doors are open with their limits in `tests/AccessCoverageTest.php`.
 
 ## Change it without forking
@@ -141,7 +141,7 @@ the site's doors are open with their limits in `tests/AccessCoverageTest.php`.
 - `vendor/bin/phpunit` in the package: `SignInTest`, `RegisterTest`, `PasswordResetTest`,
   `VerificationTest`, `EmailChangeTest`, `BannerTest`, `PruneTest`, `BoundariesTest`,
   `MigrationTest`, `SkeletonTest`, `AccessCoverageTest`, `FieldsTest`, `FieldDeclarationsTest`, `AccountTest`,
-  `SecurityTest`, `AccountThemeTest`, `SocialTest`, `Panel\*`; `resources/js/users.test.js` (vitest).
+  `SecurityTest`, `AccountThemeTest`, `SocialTest`, `Panel\*`, `Mcp\*` (parity, dry run, no secret, budgets); `resources/js/users.test.js` (vitest).
 
 ## Read more
 

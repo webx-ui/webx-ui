@@ -6,6 +6,12 @@ namespace WebxUi\Users\Panel;
 
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasVisibility;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\McpResource;
+use WebxUi\Mcp\ProvidesMcpDefaults;
+use WebxUi\Mcp\Tool;
+use WebxUi\Users\Mcp\UsersResources;
+use WebxUi\Users\Mcp\UsersTools;
 
 /**
  * «Customers» in the panel (spec §16, decision 20): the list and the card of a visitor. The id,
@@ -15,9 +21,15 @@ use WebxUi\Admin\Contracts\HasVisibility;
  * The module declares the three permissions of the section — the groups and the settings beside
  * it are opened by them and declare none (§16.1). A visitor is personal data: by default only the
  * «Administrator» holds them (decision 22).
+ *
+ * To an agent it is the same section by other doors (§17): the `users_*` tools behind
+ * `users:read` and `users:write` — the settings behind `users.settings` as in the panel — and
+ * `users://catalog` to read first.
  */
-final class UsersModule extends AbstractModule implements HasVisibility
+final class UsersModule extends AbstractModule implements HasVisibility, ProvidesMcpTools
 {
+    use ProvidesMcpDefaults;
+
     public const string ID = 'users';
 
     /** The menu group the three entries stand in. */
@@ -31,6 +43,11 @@ final class UsersModule extends AbstractModule implements HasVisibility
 
     /** The screen `users.settings`: the registration, the fields, the keys of the providers. */
     public const string SETTINGS = 'users.settings';
+
+    public function __construct(
+        private readonly UsersTools $tools,
+        private readonly UsersResources $resources,
+    ) {}
 
     public function id(): string
     {
@@ -73,5 +90,21 @@ final class UsersModule extends AbstractModule implements HasVisibility
     public function visibleWith(): array
     {
         return [self::VIEW, self::MANAGE];
+    }
+
+    /**
+     * @return list<Tool>
+     */
+    public function mcpTools(): array
+    {
+        return $this->tools->all();
+    }
+
+    /**
+     * @return list<McpResource>
+     */
+    public function mcpResources(): array
+    {
+        return $this->resources->all();
     }
 }

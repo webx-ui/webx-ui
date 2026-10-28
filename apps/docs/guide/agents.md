@@ -164,6 +164,14 @@ Editors keep that in **Settings → Content**, and the agent reads it as the res
 `settings://content-rules`; the server's instructions tell it to, before it writes anything a
 visitor will read. See [Settings](./settings#content-rules) for what the resource holds.
 
+### Customers are personal data
+
+With `webx-ui/module-users` installed, `users.view` lets an agent read the customers of the site —
+their addresses and phones — through `users_list` and `users_get`. Give it to the role an agent
+acts as only when the agent has a reason to look people up. Nothing a customer must keep to
+themselves is ever answered: no password, no link of a letter, no key of a social network — and
+those keys are not set through an agent at all, only in the panel.
+
 ### Do not connect a super administrator
 
 `is_super` answers yes to every permission there is, including ones added by a module

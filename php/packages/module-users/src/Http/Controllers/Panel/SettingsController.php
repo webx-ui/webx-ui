@@ -4,22 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\Users\Http\Controllers\Panel;
 
-use Illuminate\Contracts\Config\Repository as Config;
-use Illuminate\Contracts\Container\Container;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
-use WebxUi\Admin\Screens\ScreenRegistry;
-use WebxUi\Admin\Screens\ScreenValues;
-use WebxUi\Admin\Support\Field;
-use WebxUi\Settings\Settings;
 use WebxUi\Users\Models\ProviderSettings;
-use WebxUi\Users\Models\User;
-use WebxUi\Users\Panel\SettingsScreen;
-use WebxUi\Users\Social\Provider;
+use WebxUi\Users\Panel\SettingsState;
 use WebxUi\Users\Social\ProviderKeys;
 use WebxUi\Users\Social\SocialProviders;
 
@@ -36,44 +27,38 @@ use WebxUi\Users\Social\SocialProviders;
 final readonly class SettingsController
 {
     public function __construct(
-        private Container $container,
-        private ScreenRegistry $screens,
+        private SettingsState $state,
         private SocialProviders $providers,
         private ProviderKeys $keys,
     ) {}
 
-    public function show(Config $config, Application $app): JsonResponse
+    public function show(): JsonResponse
     {
-        return ApiResponse::data($this->answer($config, $app));
+        return ApiResponse::data($this->state->answer());
     }
 
-    public function update(Request $request, ScreenValues $values, Config $config, Application $app): JsonResponse
+    public function update(Request $request): JsonResponse
     {
-        $settings = $this->settings();
-
-        if ($settings === null) {
+        if ($this->state->settings() === null) {
             abort(404);
         }
 
         $input = $request->input('values');
         $user = $request->user();
 
-        $stored = $values->validate(
-            SettingsScreen::NAME,
+        $this->state->save($this->state->validate(
             is_array($input) ? $input : [],
             static fn (string $permission): bool => $user instanceof HasPermissions && $user->hasPermission($permission),
-        );
+        ));
 
-        $settings->save($stored);
-
-        return ApiResponse::data($this->answer($config, $app));
+        return ApiResponse::data($this->state->answer());
     }
 
     /**
      * One provider's card saved: on or off, the open fields, a secret only when a new one was
      * typed, a secret forgotten when asked. A field left empty falls back on `.env` (§9.3).
      */
-    public function provider(Request $request, string $key, Config $config, Application $app): JsonResponse
+    public function provider(Request $request, string $key): JsonResponse
     {
         $provider = $this->providers->find($key) ?? abort(404);
 
@@ -135,86 +120,6 @@ final readonly class SettingsController
 
         $this->keys->forget();
 
-        return ApiResponse::data($this->answer($config, $app));
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function answer(Config $config, Application $app): array
-    {
-        $settings = $this->settings();
-        $keys = array_map(static fn (array $node): string => (string) $node['name'], $this->screens->fields(SettingsScreen::NAME));
-
-        return [
-            // Without the settings module there is nowhere to keep them: the site's config rules.
-            'stored' => $settings !== null,
-            'values' => $settings === null ? [] : array_intersect_key($settings->raw(), array_flip($keys)),
-            'providers' => array_values(array_map(fn (Provider $provider): array => $this->card($provider), $this->providers->all())),
-            'mail' => self::mail($config, $app),
-        ];
-    }
-
-    /**
-     * A provider's card: never a secret, only whether it is set and where from.
-     *
-     * @return array<string, mixed>
-     */
-    private function card(Provider $provider): array
-    {
-        $row = ProviderSettings::query()->find($provider->key());
-        $config = $this->keys->config($provider);
-
-        return [
-            'key' => $provider->key(),
-            'label' => (string) __($provider->label()),
-            'enabled' => $this->keys->enabled($provider),
-            'saved' => $row !== null,
-            'shown' => $this->keys->shown($provider),
-            'missing' => $this->keys->missing($provider),
-            'callback' => $provider->callbackUrl(),
-            'fields' => array_values(array_map(static function (Field $field) use ($row, $config): array {
-                $own = $field->secret ? ($row?->credentials[$field->name] ?? null) : ($row?->options[$field->name] ?? null);
-                $own = is_string($own) && $own !== '' ? $own : null;
-
-                return [
-                    ...$field->toArray(),
-                    'value' => $field->secret ? null : $own,
-                    'set' => $own !== null,
-                    // Filled by `.env` where the panel left it empty (§9.3).
-                    'env' => $own === null && $config->has($field->name),
-                ];
-            }, $provider->fields())),
-            'only' => self::onlyBy($provider->key()),
-        ];
-    }
-
-    /** How many visitors sign in by this provider alone — switched off, they are locked out (§9.6). */
-    private static function onlyBy(string $key): int
-    {
-        return User::query()
-            ->whereNull('password')
-            ->whereHas('identities', static fn ($links) => $links->where('provider', $key))
-            ->whereDoesntHave('identities', static fn ($links) => $links->where('provider', '!=', $key))
-            ->count();
-    }
-
-    /**
-     * Where the letters go (§8.6): only the line «the transport writes into the log», the address
-     * of the sender is the site's mail settings.
-     *
-     * @return array{transport: string, reaches: bool}
-     */
-    private static function mail(Config $config, Application $app): array
-    {
-        $mailer = (string) $config->get('mail.default', 'log');
-        $transport = (string) $config->get("mail.mailers.{$mailer}.transport", $mailer);
-
-        return ['transport' => $transport, 'reaches' => ! in_array($transport, ['log', 'array'], true) || $app->isLocal()];
-    }
-
-    private function settings(): ?Settings
-    {
-        return $this->container->bound(Settings::class) ? $this->container->make(Settings::class) : null;
+        return ApiResponse::data($this->state->answer());
     }
 }

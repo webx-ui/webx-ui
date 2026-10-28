@@ -220,6 +220,26 @@ half `@webx-ui/module-users` (`...users()` in the panel's `admin.ts`, written th
 - Every change of a customer, a group and a network is in the journal; a password and a secret as
   «changed».
 
+## For an agent (MCP)
+
+Through `webx-ui/mcp` the same section answers an agent, through the panel's own classes — the
+same filters, the same checks of the card, the same groups and settings:
+
+| Tool                                                            | What it does                                                  |
+| --------------------------------------------------------------- | ------------------------------------------------------------- |
+| `users_list`, `users_get`                                       | a page of customers; one by id or exact e-mail, with `fields` |
+| `users_create`, `users_update`, `users_delete`                  | no password ever; `invite: true`; `groups` replace the list   |
+| `users_send_password_reset`, `users_resend_verification`        | answered «sent», never with the link                          |
+| `users_unlink_provider`                                         | the last way to sign in stays                                 |
+| `users_groups_list`, `users_groups_save`, `users_groups_delete` | by code                                                       |
+| `users_settings_get`, `users_settings_set`                      | `users.settings`; a secret only «set», never set through MCP  |
+
+Reading needs `users:read` and `users.view` — and gives the addresses and phones, which is personal
+data; writing `users:write` and `users.manage`. Every change takes `dry_run`: the write rolled back,
+and no letter leaves. `users://catalog` lists the fields with their types and requirements, the
+networks, the groups, the sections of the account, the rules of a password and the limits — read
+it first.
+
 ## License
 
 MIT
