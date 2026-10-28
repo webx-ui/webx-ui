@@ -30,20 +30,20 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
-        "webx-ui/compositions": "^0.88.0",
-        "webx-ui/localization": "^0.88.0",
-        "webx-ui/mcp": "^0.88.0",
-        "webx-ui/module-admin": "^0.88.0",
-        "webx-ui/module-auth": "^0.88.0",
-        "webx-ui/module-blocks": "^0.88.0",
-        "webx-ui/module-media": "^0.88.0",
-        "webx-ui/module-seo": "^0.88.0",
-        "webx-ui/routing": "^0.88.0"
+        "webx-ui/compositions": "^0.89.0",
+        "webx-ui/localization": "^0.89.0",
+        "webx-ui/mcp": "^0.89.0",
+        "webx-ui/module-admin": "^0.89.0",
+        "webx-ui/module-auth": "^0.89.0",
+        "webx-ui/module-blocks": "^0.89.0",
+        "webx-ui/module-media": "^0.89.0",
+        "webx-ui/module-seo": "^0.89.0",
+        "webx-ui/routing": "^0.89.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/themes": "^0.88.0"
+        "webx-ui/themes": "^0.89.0"
     },
     "suggest": {
         "webx-ui/themes": "With a theme, the feed, rubrics, tags and articles get their base look on site tokens (resources/theme/blog.css)."

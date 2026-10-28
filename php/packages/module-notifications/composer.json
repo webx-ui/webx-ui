@@ -35,10 +35,10 @@
         "illuminate/support": "^13.0",
         "illuminate/view": "^13.0",
         "mustache/mustache": "^3.2",
-        "webx-ui/localization": "^0.88.0",
-        "webx-ui/mcp": "^0.88.0",
-        "webx-ui/module-admin": "^0.88.0",
-        "webx-ui/module-auth": "^0.88.0"
+        "webx-ui/localization": "^0.89.0",
+        "webx-ui/mcp": "^0.89.0",
+        "webx-ui/module-admin": "^0.89.0",
+        "webx-ui/module-auth": "^0.89.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
