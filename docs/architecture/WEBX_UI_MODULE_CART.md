@@ -976,6 +976,31 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 - `cart_list` и `cart_summary` — в `PerformanceTest` тёплыми; `cart_get` — бюджет как у
   `GET /api/cart`.
 
+**Сделано (этап 4/5).** `WebxUi\Cart\Mcp\CartModule` (id `cart`) — модуль без раздела меню, как
+`history`: провайдер корзины регистрирует его в `ModuleRegistry`, только если стоят `module-admin`
+и `webx-ui/mcp` (`class_exists`/`interface_exists`; оба — в `require-dev` и `suggest`). Право у
+каждого инструмента названо явно — `cart.view`: умолчание чтения «`view` или `manage`» спросило бы
+необъявленное `cart.manage`.
+
+- `cart_list` — двадцать на страницу, `order` (`desc`/`asc`), `page`; строки, `units` (ребёнок —
+  `qty` × `qty` родителя) и `total_at_add` (+ `_formatted`) страницы — одним агрегатом; `min_units`
+  — подзапросом; `contains` с неизвестным типом — отказ со списком известных.
+- `cart_get` — состояние вычислителя + `created_at`, `updated_at`, `declined_rules`, а у
+  корректировок и оплат — `meta` (в API его нет). Неизвестный язык — отказ со списком языков сайта.
+- `cart_summary` — `days` (7 по умолчанию) и `top` (10, до 50), `locale` названий; «брошенная» —
+  со строками и не тронутая `days` дней (пустая не считается); удалённая запись — `name: null`,
+  `gone: true`.
+- `cart_quote` — `CartService::add()` в новую корзину внутри `Rehearsal` (транзакция с откатом):
+  `{ accepted, errors, state }`, ошибки — те же ключи `items.N.*`, что у `POST`. Читающий
+  инструмент: ничего не остаётся.
+- `cart://catalog` — `types` (`takes_options` = `ChecksOptions`, `price_by_options` =
+  `ResolvesWithOptions`), `chain` (класс источника и приоритет каждого звена), `settings`,
+  `state_fields` (ключи пустого состояния), `line_fields` (`CartState::LINE_FIELDS`, совпадение с
+  настоящей строкой держит тест), `warnings` (коды `Warning::CODES` с фразой основного языка).
+  Ключей `BenefitKeys` нет: реестр добавит доставка (§5.4) — тогда и строка в ресурсе.
+- Бюджеты (тёплые, со строкой журнала `mcp_calls`): `cart_list` 4, `cart_summary` 4 (+ по запросу
+  на тип у настоящих поставщиков), `cart_get` 3 — одинаковые на 5 и 20 корзинах.
+
 ## 11. Слова
 
 Словарь `webx-cart` на десять языков (`en`, `ru`, `uk` вычитаны носителем, остальные — машинный
@@ -990,6 +1015,12 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
   `options` не принимаются, родитель вне пачки или с родителем, нет строки, нет валюты, цена
   подарка меньше 1 (для лога спутника).
 - `warnings.php` — по фразе на код §6.3.
+
+**Сделано (этап 4/5).** `module.php` — `title` (строка модуля в матрице ролей); `widget.php` —
+`add`, `in_cart`, `added`, `title`, `open`, `close`, `empty`, `count` («Items: :count»), `checkout`,
+`remove`, `quantity`, `decrease`, `increase`, `subtotal`, `discount`, `total`, `payable`, `gift`,
+`decline`, `unavailable`, `gone`, `error`; паритет всех десяти языков держит `TranslationsTest`
+пакета. Вычитка `uk` носителем — открыта.
 
 Тексты строк (названия, подписи опций) — от поставщика на языке `resolve()`; слова скидок, оплат и
 подсказок — у их источников.

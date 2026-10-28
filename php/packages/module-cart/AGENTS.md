@@ -3,8 +3,8 @@
 A guest cart. Lines live in the database; the visitor is known by a token in an httpOnly cookie.
 What a line holds and what it costs **now** the cart asks the owner of the record through the
 `Purchasable` contract; it knows no table of any other module. Totals are a chain other modules
-plug into. No page, no panel section: a JSON API, `cart()` and a buy button for Blade, and (later
-stages) MCP and a widget.
+plug into. No page, no panel section: a JSON API, `cart()` and a buy button for Blade, reading
+tools for agents, and (a later stage) a widget.
 
 ## What it owns
 
@@ -42,12 +42,20 @@ stages) MCP and a widget.
   `button.webx-cart-add` (`is-in-cart` from `cart()->has()`, `data-webx-cart-add`, `-qty`).
 - **Command** `webx:cart:prune [--days=] [--dry-run]`, on the schedule daily.
 - **Doctor**: a line when the site has no currency (the cart then refuses every write).
+- **MCP** (`src/Mcp`, module `cart`, registered only where `module-admin` and `webx-ui/mcp` are):
+  `cart_list` (a page of carts, sums at `price_at_add`, filters `updated_since`, `updated_before`,
+  `contains`, `min_units`), `cart_get` (the calculator's state plus dates and `meta`),
+  `cart_summary` (active, abandoned, records in most carts), `cart_quote` (a `POST` batch rehearsed
+  in a rolled-back transaction: the state or the refusals); resource `cart://catalog` (types, the
+  chain's sources, settings, `CartState::LINE_FIELDS`, warning codes). Reading only.
 
 ### Permissions
 
-None yet. Every route is the visitor's own cart — the cookie's token opens only its own, a line of
-another cart is 404 — and is named as open with that reason in `tests/AccessCoverageTest.php`. A
-new route asks for a permission or joins that list with its reason.
+`cart.view` — every `cart_*` tool and `cart://catalog`; there is no `cart.manage` (nothing writes).
+No route asks for a permission: every route is the visitor's own cart — the cookie's token opens
+only its own, a line of another cart is 404 — and is named as open with that reason in
+`tests/AccessCoverageTest.php`. A new route asks for a permission or joins that list with its
+reason.
 
 ## Change it without forking
 
@@ -63,7 +71,7 @@ new route asks for a permission or joins that list with its reason.
 | Another prefix of the API             | `WEBX_CART_PATH`; `webx-cart.throttle` — writes a minute per IP                            |
 | A buy button in a view                | `<x-webx-cart::add type="catalog.product" :ref="$product->id">Buy</x-webx-cart::add>`      |
 | The counter in the header             | `<span data-webx-cart-count>{{ cart()->count() }}</span>`                                  |
-| Other words of errors and warnings    | `php artisan vendor:publish --tag=webx-cart-lang`                                          |
+| Other words of the widget or errors   | `php artisan vendor:publish --tag=webx-cart-lang`                                          |
 | The config file                       | `php artisan vendor:publish --tag=webx-cart-config`                                        |
 
 Registering a provider, so the module works with or without the cart:
@@ -88,7 +96,8 @@ if (class_exists(\WebxUi\Cart\Purchasables::class)) {
 - Do not give a generated line a price of 0: the constructor refuses it. A gift costs at least 1.
 - Do not write `<x-webx-cart::add>` in a view that must compile without the cart: Blade looks a
   component tag up at compile time. Use `<x-dynamic-component component="webx-cart::add">`.
-- Do not show or log the cart's token. The database keeps only its hash.
+- Do not show or log the cart's token. The database keeps only its hash; no MCP answer has it.
+- Do not add a tool that writes a cart. The visitor changes it; `cart_quote` rehearses instead.
 
 ## Check your work
 
@@ -97,6 +106,7 @@ if (class_exists(\WebxUi\Cart\Purchasables::class)) {
 - In a template, `cart()->state()->toArray()` shows your lines with `available: true` and their
   live price; a deleted record shows `gone: true` with its snapshot name.
 - `curl -s https://<site>/api/cart` answers an empty state and sets no cookie.
+- `php artisan webx:mcp-tools` lists `cart_list`, `cart_get`, `cart_summary`, `cart_quote`.
 - `vendor/bin/phpunit vendor/webx-ui/module-cart/tests` in the monorepo — the batch, the bundle,
   the chain and the formats.
 

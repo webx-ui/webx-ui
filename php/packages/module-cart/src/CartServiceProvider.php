@@ -12,14 +12,17 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Cart\Console\PruneCommand;
 use WebxUi\Cart\Contracts\CurrencySource;
 use WebxUi\Cart\Doctor\CurrencyCheck;
+use WebxUi\Cart\Mcp\CartModule;
 use WebxUi\Cart\Totals\AdjustmentSources;
 use WebxUi\Cart\Totals\BenefitSources;
 use WebxUi\Cart\Totals\HintSources;
 use WebxUi\Cart\Totals\LineSources;
 use WebxUi\Cart\Totals\TenderSources;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 
 /**
  * The cart: its registries, the currency source, `cart()` and the prune.
@@ -70,6 +73,15 @@ class CartServiceProvider extends ServiceProvider
         if (class_exists(DoctorChecks::class)) {
             $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
                 $checks->register(CurrencyCheck::class);
+            });
+        }
+
+        // The agent's tools, where the panel and the MCP server are: the cart requires neither.
+        if (class_exists(ModuleRegistry::class) && interface_exists(ProvidesMcpTools::class)) {
+            $this->callAfterResolving(ModuleRegistry::class, function (ModuleRegistry $modules): void {
+                if (! $modules->has(CartModule::ID)) {
+                    $modules->register($this->app->make(CartModule::class));
+                }
             });
         }
 

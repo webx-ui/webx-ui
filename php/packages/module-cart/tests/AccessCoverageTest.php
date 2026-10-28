@@ -6,15 +6,19 @@ namespace WebxUi\Cart\Tests;
 
 use Illuminate\Routing\Route;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Auth\Testing\AssertsPermissions;
 
 /**
- * The cart has no screen of the panel yet, and its MCP tools come with stage 4; what it serves
- * now is the visitor's own cart. Every route of the module is named here as open with the
- * reason — a new one that is not fails until somebody says why it may be — and none of them
- * stands behind the panel's guard or can reach anybody else's cart (`ApiTest`).
+ * The cart has no screen of the panel; what it serves on the site is the visitor's own cart.
+ * Every route of the module is named here as open with the reason — a new one that is not fails
+ * until somebody says why it may be — and none of them stands behind the panel's guard or can
+ * reach anybody else's cart (`ApiTest`). Its agent tools are behind `cart.view`
+ * (WEBX_UI_PERMISSIONS.md §15).
  */
-final class AccessCoverageTest extends TestCase
+final class AccessCoverageTest extends McpTestCase
 {
+    use AssertsPermissions;
+
     private const OPEN = [
         'GET api/cart' => 'the visitor\'s cart: the cookie\'s token opens only its own',
         'DELETE api/cart' => 'the visitor\'s cart: the cookie\'s token opens only its own',
@@ -59,5 +63,11 @@ final class AccessCoverageTest extends TestCase
         }
 
         $this->assertSame([], $problems, implode("\n", $problems));
+    }
+
+    #[Test]
+    public function every_tool_asks_for_the_declared_permission(): void
+    {
+        $this->assertToolsNeedPermission('cart');
     }
 }

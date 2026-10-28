@@ -13,6 +13,13 @@ use WebxUi\Cart\Money;
  */
 final class CartState
 {
+    /** The fields of a line in toArray(), for a catalogue that describes the answer; a test holds them to it. */
+    public const array LINE_FIELDS = [
+        'id', 'type', 'ref', 'source', 'qty', 'effective_qty', 'name', 'sku', 'options', 'options_label', 'image', 'url',
+        'price', 'price_formatted', 'price_at_add', 'price_at_add_formatted', 'price_change', 'line_total',
+        'line_total_formatted', 'shippable', 'max_qty', 'available', 'gone', 'declinable', 'label', 'adjustments', 'children',
+    ];
+
     /**
      * @param  list<ResolvedLine>  $lines  stored lines in id order, then the generated ones
      * @param  array<string, list<Adjustment>>  $lineAdjustments  by the line's key

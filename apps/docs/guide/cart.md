@@ -6,8 +6,8 @@ the cart asks the module that owns the record, through the `Purchasable` contrac
 no table of any other module, and the catalogue is just its first provider.
 
 There is no cart page and no panel section. The cart gives a site a JSON API, `cart()` for
-Blade and a buy button; a site that wants a page of its own declares a route and a view on top of
-the API.
+Blade, a buy button and reading tools for agents; a site that wants a page of its own declares a
+route and a view on top of the API.
 
 ## Install
 
@@ -224,6 +224,27 @@ if (class_exists(Purchasables::class)) {
 The type is `<module>.<entity>`. The registry is made only by the cart's provider, so without the
 cart the callback never runs; put `webx-ui/module-cart` in your package's `suggest`. Keep a class
 that implements the contract out of code that runs without the cart — loading it there fails.
+
+## Agents
+
+With the panel and `webx-ui/mcp` installed, an agent can read the carts — and only read them: a
+cart is the visitor's, and nothing but the visitor changes it. The tools are behind the scope
+`cart:read` and the permission `cart.view`, which a role gives (there is no menu section).
+
+| Tool           | What it answers                                                                                                                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cart_list`    | carts, latest changed first, twenty a page: id, language, currency, lines, units, the sum at the prices of adding (not recounted), dates; `updated_since`, `updated_before`, `contains`, `min_units` |
+| `cart_get`     | one cart counted the way the visitor sees it now — the API's answer, plus the dates, the declined rules and each adjustment's and tender's `meta`; `locale` for another language                     |
+| `cart_summary` | carts in all, changed in the last 1, 7 and 30 days, abandoned (lines in them, untouched for `days`), and the records in most carts with their names                                                  |
+| `cart_quote`   | the lines of a `POST` put through every check and counted, then nothing kept: the state, or the refusals field by field; `declined` counts without those rules' gifts                                |
+
+The resource `cart://catalog` lists the purchasable types, the sources of every link of the
+chain with their priorities, the currency and the limits, the fields of a state and of a line,
+and the warning codes with their phrases — read from the registries, so a satellite shows up
+there once it is installed.
+
+No answer carries the token, an IP or a cookie: a cart is named by its id. When a discount did
+not apply, start from `cart_quote` with the same lines.
 
 ## Read more
 

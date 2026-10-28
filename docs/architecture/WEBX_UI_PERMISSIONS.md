@@ -222,6 +222,7 @@
 |                                                                                         | `catalog.manage` | правка товаров, категорий, галерей; импорт; массовые действия; справочники и спутники       |
 |                                                                                         | `catalog.delete` | «Удалённые», удаление и восстановление товаров и категорий, экспорт удалённых               |
 | `catalog-brands`, `-labels`, `-stock`, `-properties`, `-landings`, `catalog-categories` | —                | своих прав не объявляют: читают `catalog.view` или `catalog.manage`, пишут `catalog.manage` |
+| `cart` (module-cart)                                                                    | `cart.view`      | MCP: чтение корзин `cart_*` и `cart://catalog`; `api/cart*` открыт — корзина посетителя     |
 
 Поля и колонки каталога за своими правами (`catalog.notes` и подобные) объявляет тот, кто
 регистрирует колонку; сейчас они проверяются только при экспорте и импорте (`ExchangeColumns`).
