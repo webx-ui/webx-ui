@@ -40,6 +40,29 @@ BUILT="$SITE/.lab-built"
 
 artisan() { ( cd "$SITE" && "$PHP_BIN" artisan "$@" ); }
 
+# The demo of the modules just installed. On a lab without a demo journal yet, all of it. With one,
+# a bare `webx:demo` refuses ("already installed"), so each new module by name — and a module
+# with no demo content (the cart, the visitors) is refused by `--module` for that, which is no
+# failure: there is nothing of it to seed.
+seed_demo_of() {
+    if [ ! -f "$SITE/storage/app/webx-demo.json" ]; then
+        artisan webx:demo --no-interaction
+        return
+    fi
+    local id output
+    while read -r id _; do
+        [ -n "$id" ] || continue
+        if output="$(artisan webx:demo --module="$id" --no-interaction 2>&1)"; then
+            note "demo of $id seeded"
+        elif grep -q 'No installed module with demo content is called' <<< "$output"; then
+            note "$id has no demo content"
+        else
+            printf '%s\n' "$output" >&2
+            fail "webx:demo --module=$id failed"
+        fi
+    done <<< "$1"
+}
+
 env_get() { [ -f "$SITE/.env" ] && sed -n "s/^$1=//p" "$SITE/.env" | tail -n1 | sed -e 's/^"\(.*\)"$/\1/' || true; }
 
 env_set() {
@@ -227,9 +250,7 @@ refresh() {
     if [ -n "$missing" ]; then
         step 'Block types and demo of the new modules'
         artisan webx:blocks:offered --install --no-interaction
-        # Every module rather than the new ones by name: a module without demo content (the
-        # cart) is refused by `--module`, and what the journal holds is skipped anyway.
-        artisan webx:demo --no-interaction
+        seed_demo_of "$missing"
     fi
 
     step 'Panel and the site build'
