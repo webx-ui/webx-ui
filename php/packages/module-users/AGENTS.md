@@ -17,7 +17,7 @@ in here — shop modules plug into the seam, the module knows none of them.
   `reset` / `invite`; `expires_at` (`webx-users.reset_minutes`, 60). Gone once used, with a new
   password, with a new address.
 - **Social networks** (`Social\*`, §9): registry `SocialProviders` (`Google`/`FacebookProvider` on
-  `SocialiteProvider`); `ProviderKeys` (scoped) — table `users_providers` (`Models\ProviderSettings`,
+  `SocialiteProvider`; `DevProvider` `dev` — `APP_ENV=local` only, a page of `auth/dev/pretend` plays the network); `ProviderKeys` (scoped) — table `users_providers` (`Models\ProviderSettings`,
   `credentials` `encrypted:array`, hidden), else `webx-users.social.keys` / `.env`; shown only when on
   and every `required` `WebxUi\Admin\Support\Field` is set — else no button, 404. `users_identities`
   (`Models\Identity`). `SocialAccounts` (§9.7): linked by itself only if verified + `trustsVerifiedEmail()`
@@ -67,7 +67,7 @@ in here — shop modules plug into the seam, the module knows none of them.
 - **Banner** `<x-webx-users::verify-banner>`, node `users.verify-banner` first in `main` of `layout`:
   hidden and alike on a cached page, shown by `users.js`; on a page of the module by the server.
 - **`webx.visitor:verified`** — an unconfirmed visitor gets «Confirm your e-mail» and the letter again (403, `AnswersUnverified`).
-- **Console** `webx:users:prune [--dry-run]`, daily: links out of date. `webx:doctor` — `MailCheck`, `FieldsCheck`.
+- **Console** `webx:users:prune [--dry-run]`, daily: links out of date. `webx:doctor` — `MailCheck`, `FieldsCheck`. **Demo** (`Demo\UsersDemo`): groups `wholesale`/`club`, five `*.demo@example.com`, no passwords; none if visitors exist.
 - **Limits** (`Throttle`, a 429 naming the field and the seconds): `webx-users.throttle.*`; reset requests alike.
 - **Events**: `VisitorRegistered`, `VisitorSignedIn` (`password`/`registration`/`reset`/a provider), `VisitorSignedOut`; own `VisitorSignInFailed`.
 - **Views** `sign-in`, `register`, `forgot` (their `forms/*`), `reset`, `notice`, `sign-in-dialog`, `account.profile`, `account.security`, the
@@ -141,10 +141,10 @@ the site's doors are open with their limits in `tests/AccessCoverageTest.php`.
 - `vendor/bin/phpunit` in the package: `SignInTest`, `RegisterTest`, `PasswordResetTest`,
   `VerificationTest`, `EmailChangeTest`, `BannerTest`, `PruneTest`, `BoundariesTest`,
   `MigrationTest`, `SkeletonTest`, `AccessCoverageTest`, `FieldsTest`, `FieldDeclarationsTest`, `AccountTest`,
-  `SecurityTest`, `AccountThemeTest`, `SocialTest`, `SignInDialogTest`, `Panel\*`, `Mcp\*`; `resources/js/*.test.js` (vitest).
+  `SecurityTest`, `AccountThemeTest`, `SocialTest`, `DevProvider*Test`, `SignInDialogTest`, `DemoTest`, `Panel\*`, `Mcp\*`; `resources/js/*.test.js` (vitest).
 
 ## Read more
 
-- README.md beside this file.
+- README.md beside this file; the guide: https://github.com/webx-ui/webx-ui/blob/main/apps/docs/guide/site-visitors.md
 - Spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_USERS.md
 - The seam of visitors: https://github.com/webx-ui/webx-ui/blob/main/apps/docs/guide/extending.md

@@ -186,6 +186,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `module-snippets`           | коды внешних сервисов в `<head>`/`<body>`                             | `@webx-ui/module-snippets`           |
 | `module-notifications`      | каналы уведомлений: Telegram, e-mail, шаблоны, журнал отправок        | `@webx-ui/module-notifications`      |
 | `module-debug`              | отладочная панель снизу страницы и MCP `debug_page`, не на проде      | —                                    |
+| `module-users`              | посетители сайта: вход, кабинет, соцсети, раздел «Клиенты»            | `@webx-ui/module-users`              |
 | **Разделы: контент**        |                                                                       |                                      |
 | `module-blog`               | статьи, рубрики, теги, лента                                          | `@webx-ui/module-blog`               |
 | `module-services`           | каталог услуг                                                         | `@webx-ui/module-services`           |
@@ -446,6 +447,17 @@ catch-all SPA, `ApiResponse` (пагинация Laravel как есть, 422). 
 сирот. Модули приносят проверки и исправления контрактами `AuditCheck` / `AuditFix`. Ставится по
 умолчанию. Внешние поставщики (платные API) — спутниками, когда понадобятся; открытое — §12 спеки.
 
+### `webx-ui/module-users` — посетители сайта
+
+Спека — [`WEBX_UI_MODULE_USERS.md`](WEBX_UI_MODULE_USERS.md), гайд — `apps/docs/guide/site-visitors.md`.
+Свои таблица `users` и гард `site`, отдельно от администраторов; шов `Visitors` в `module-admin`
+отвечает `null` без пакета, поэтому магазин работает гостем, а сам пакет не знает ни одного
+магазинного модуля. Регистрация и вход по e-mail, сброс пароля, подтверждение адреса, кабинет с
+разделами модулей (`AccountMenu`, `AccountRoutes`), свои поля сайта, Google и Facebook (свой
+провайдер — классом; подставной `dev` — только при `APP_ENV=local`), диалог входа для оформления.
+Раздел «Клиенты» (группы, настройки, приглашение) и MCP `users_*`. По умолчанию выключен в
+`webx:setup`. Отложенное — §20 спеки.
+
 ---
 
 ## Разделы: контент
@@ -664,6 +676,5 @@ httpOnly-cookie (в базе — хеш). Что лежит в строке и �
 - **Таксономия** — не общий сервис: код категорий общий (`module-admin`), данные у каждого модуля
   свои (`WEBX_UI_MODULE_SERVICES.md` §2.3).
 - **`module-solutions`** — отказались.
-- **Пользователи сайта** (`users`), многосайтовость
-  ([`WEBX_UI_MULTISITE.md`](WEBX_UI_MULTISITE.md)), `@webx-ui/adapter-laravel` — впереди, см.
-  CLAUDE.md §6.
+- **Многосайтовость** ([`WEBX_UI_MULTISITE.md`](WEBX_UI_MULTISITE.md)), `@webx-ui/adapter-laravel` —
+  впереди, см. CLAUDE.md §8.

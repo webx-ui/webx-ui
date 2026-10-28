@@ -228,7 +228,12 @@ $this->callAfterResolving(SocialProviders::class, fn (SocialProviders $providers
 `SocialiteProvider` does the work for a Socialite driver: `key()`, `label()`, `fields()` (the shared
 `WebxUi\Admin\Support\Field`, `secret: true` for a secret, `required: true` for what it cannot work
 without), `trustsVerifiedEmail()`, `driver()` and `toProfile()`. A network Socialite does not know
-implements `WebxUi\Users\Social\Provider` itself.
+implements `WebxUi\Users\Social\Provider` itself. The guide walks through Apple as an example:
+https://github.com/webx-ui/webx-ui/blob/main/apps/docs/guide/site-visitors.md
+
+On a machine of development a made-up network walks the whole flow without a real console: it is
+registered only while `APP_ENV=local` and shown with `WEBX_USERS_DEV_ENABLED=true`. Its button
+«Test sign-in» leads to a page that asks who to come back as and posts it to the ordinary callback.
 
 ## The panel: «Customers»
 
@@ -272,6 +277,13 @@ data; writing `users:write` and `users.manage`. Every change takes `dry_run`: th
 and no letter leaves. `users://catalog` lists the fields with their types and requirements, the
 networks, the groups, the sections of the account, the rules of a password and the limits — read
 it first.
+
+## Demo
+
+`php artisan webx:demo --module=users` adds the groups «Wholesale» and «Club» and five visitors at
+`@example.com` — one address unconfirmed, one linked to Google with a made-up id. Nobody has a
+password: register, or ask for a reset link and take it from the mail log. A site that already has
+visitors or groups gets none; `webx:demo --remove` takes all of it back.
 
 ## License
 

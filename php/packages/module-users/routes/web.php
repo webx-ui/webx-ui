@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Users\Account\AccountRoutes;
+use WebxUi\Users\Http\Controllers\DevProviderController;
 use WebxUi\Users\Http\Controllers\EmailController;
 use WebxUi\Users\Http\Controllers\ForgotController;
 use WebxUi\Users\Http\Controllers\ProfileController;
@@ -68,6 +69,11 @@ Route::group(['webx_service' => true], static function () use ($prefix, $middlew
         Route::match(['GET', 'POST'], 'auth/{provider}/callback', [SocialController::class, 'callback'])
             ->where('provider', '[a-z0-9-]+')
             ->name('webx-users.social.callback');
+
+        // The «provider» of the test provider (Social\DevProvider): registered on a local machine only.
+        if (app()->environment('local')) {
+            Route::get('auth/dev/pretend', DevProviderController::class)->name('webx-users.social.dev');
+        }
     });
 });
 

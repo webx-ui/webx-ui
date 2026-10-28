@@ -118,6 +118,7 @@ parameters:
                 - packages/module-users/src/Http/Controllers/ResetController.php
                 - packages/module-users/src/Http/Controllers/SignInController.php
                 - packages/module-users/src/Http/Controllers/VerifyController.php
+                - packages/module-users/src/Http/Controllers/DevProviderController.php
                 - packages/module-users/src/Http/Controllers/ProfileController.php
                 - packages/module-users/src/Http/Controllers/SecurityController.php
                 - packages/module-users/src/Http/Controllers/SocialController.php

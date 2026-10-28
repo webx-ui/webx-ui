@@ -47,6 +47,7 @@ use WebxUi\Users\Panel\GroupsModule;
 use WebxUi\Users\Panel\SettingsModule;
 use WebxUi\Users\Panel\SettingsScreen;
 use WebxUi\Users\Panel\UsersModule;
+use WebxUi\Users\Social\DevProvider;
 use WebxUi\Users\Social\FacebookProvider;
 use WebxUi\Users\Social\GoogleProvider;
 use WebxUi\Users\Social\ProviderKeys;
@@ -116,9 +117,15 @@ class UsersServiceProvider extends ServiceProvider
             ));
         });
 
-        $this->callAfterResolving(SocialProviders::class, static function (SocialProviders $providers): void {
+        $this->callAfterResolving(SocialProviders::class, function (SocialProviders $providers): void {
             $providers->register(new GoogleProvider);
             $providers->register(new FacebookProvider);
+
+            // A made-up network for a machine of development: anybody may say any address on its
+            // page, so never anywhere else (and shown only with WEBX_USERS_DEV_ENABLED=true).
+            if ($this->app->environment('local')) {
+                $providers->register(new DevProvider);
+            }
         });
 
         // A provider may come back by POST from its own site (Apple does): `state` guards the

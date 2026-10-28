@@ -6,10 +6,13 @@ namespace WebxUi\Users\Panel;
 
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasVisibility;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
+use WebxUi\Users\Demo\UsersDemo;
 use WebxUi\Users\Mcp\UsersResources;
 use WebxUi\Users\Mcp\UsersTools;
 
@@ -24,9 +27,9 @@ use WebxUi\Users\Mcp\UsersTools;
  *
  * To an agent it is the same section by other doors (§17): the `users_*` tools behind
  * `users:read` and `users:write` — the settings behind `users.settings` as in the panel — and
- * `users://catalog` to read first.
+ * `users://catalog` to read first. The demo seeds two groups and five visitors without passwords.
  */
-final class UsersModule extends AbstractModule implements HasVisibility, ProvidesMcpTools
+final class UsersModule extends AbstractModule implements HasVisibility, ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
@@ -47,6 +50,7 @@ final class UsersModule extends AbstractModule implements HasVisibility, Provide
     public function __construct(
         private readonly UsersTools $tools,
         private readonly UsersResources $resources,
+        private readonly UsersDemo $demo,
     ) {}
 
     public function id(): string
@@ -106,5 +110,18 @@ final class UsersModule extends AbstractModule implements HasVisibility, Provide
     public function mcpResources(): array
     {
         return $this->resources->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return $this->demo->requires();
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 }

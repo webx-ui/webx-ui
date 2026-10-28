@@ -86,6 +86,12 @@ class User extends Authenticatable implements MustVerifyEmail
                 $user->setRememberToken(Str::random(60));
             }
         });
+
+        // The groups go with the visitor by whatever door the row leaves — the account, the panel,
+        // `webx:demo --remove` —, not only where the foreign key cascades.
+        static::deleting(static function (self $user): void {
+            $user->groups()->detach();
+        });
     }
 
     public function extraScreen(): string
