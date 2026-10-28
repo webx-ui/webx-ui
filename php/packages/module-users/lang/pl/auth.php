@@ -27,6 +27,7 @@ return [
     'failed' => 'Nieprawidłowy e-mail lub hasło.',
     'blocked' => 'To konto jest zablokowane. Skontaktuj się ze sklepem.',
     'taken' => 'Ten adres jest już zarejestrowany — zaloguj się lub odzyskaj hasło.',
+    'value_taken' => 'Ta wartość jest już zajęta.',
     'throttled' => 'Zbyt wiele prób. Odczekaj :seconds s.',
     'forgot' => [
         'link' => 'Nie pamiętasz hasła?',

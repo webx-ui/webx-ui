@@ -6,9 +6,8 @@ their own guard `site`, sign-in and registration by e-mail, and the panel's seam
 permissions, no way into `/cms` (administrators are `webx-ui/module-auth`). Nothing of a shop is
 in here — shop modules plug into the seam, the module knows none of them.
 
-Built in steps: own fields, the account, social sign-in, the panel section «Customers» and the
-agent tools come later. What is listed here
-is what exists now.
+Built in steps: the account, social sign-in, the panel section «Customers» and the agent tools
+come later; what is listed here exists now.
 
 ## What it owns
 
@@ -39,47 +38,40 @@ is what exists now.
   - `GET|POST /account/sign-in` (`Http\Controllers\SignInController`) — e-mail, password, «Remember
     me»; every wrong pair is «Wrong e-mail or password.», an address that is not there is hashed
     all the same; a blocked account is told so only on the right password.
-  - `GET|POST /account/register` (`RegisterController`) — first and last name, phone (optional),
-    e-mail and password (required); signed in at once; a taken address is said plainly; 404 when
-    `webx-users.registration` is `closed`.
+  - `GET|POST /account/register` (`RegisterController`) — first and last name, phone (as the settings
+    ask), e-mail and password, then the site's fields under `fields[…]`; signed in at once; a taken
+    address is said plainly; 404 when `webx-users.registration` is `closed`.
   - `POST /account/sign-out` (`SignOutController`) — the guard's logout and a new CSRF token, never
     `session()->invalidate()`: an administrator signed in on the same browser stays in the panel.
   - `GET|POST /account/forgot` (`ForgotController`) — one answer for every address; the letter
     through the queue, none to a blocked account or over the limit.
-  - `GET|POST /account/reset/{token}` (`ResetController`) — new password and its repetition; a dead
-    link shows «The link is out of date» over the request. After: new `remember_token`, other
-    sessions end, signed in, «Your password was changed». An unconfirmed address gets confirmed
-    and **every `users_identities` row of the account is deleted** (spec §7 item 5).
-  - `GET /account/verify/{id}/{hash}` (`VerifyController`) — signed, `webx-users.verify_hours` (72),
-    `hash` = sha1 of the address; confirms without signing in. `POST /account/verify/resend` —
-    the signed-in visitor's own (`webx.visitor`).
-  - `POST /account/email` and `GET /account/email/{id}` (`EmailController`, `Emails\EmailChange`) —
-    new address with the current password; a signed link (`email_minutes`, 60) to the new address
-    with a fingerprint of the old one; nothing changes before it. Then confirmed, the reset link
-    gone, «Your sign-in address was changed» to the old address.
+  - `GET|POST /account/reset/{token}` (`ResetController`) — new password twice; after it a new
+    `remember_token`, other sessions end, signed in; an unconfirmed address gets confirmed and
+    **every `users_identities` row of the account is deleted** (spec §7 item 5).
+  - `GET /account/verify/{id}/{hash}` (`VerifyController`) — signed, `verify_hours` (72), sha1 of
+    the address; confirms without signing in. `POST /account/verify/resend` — `webx.visitor`.
+  - `POST /account/email`, `GET /account/email/{id}` (`EmailController`, `Emails\EmailChange`) — with
+    the current password; a signed link (`email_minutes`) with a fingerprint of the old address.
   - `GET /account/state` (`StateController`) — JSON `signedIn`, `name`, `verified`, `email` masked.
   - `GET /webx/users/users.js` (`Http\ScriptController`) — `resources/js/users.js` as written, immutable.
 - **Letters** `WebxUi\Users\Mail\*` (`Letter`: queued, in the visitor's `locale`, view
   `webx-users::mail.<name>` in the frame `<x-webx-users::letter>`): `VerifyEmail`, `ResetPassword`,
   `PasswordChanged`, `EmailChangeLink`, `EmailChanged`. Words — `webx-users::mail`.
-- **`Http\TrackVisitor`** in the `web` group (through the HTTP kernel): the session's stamp of the
-  password — a session opened with an old password signs out on its next request; and the cookie
-  `webx_visitor` (`1` signed in, `u` unconfirmed, none for a guest; not encrypted, not httpOnly).
-  A guest costs no query.
+- **`Http\TrackVisitor`** in `web`: a session of an old password signs out; the cookie `webx_visitor`
+  (`1` signed in, `u` unconfirmed, none for a guest; not encrypted, not httpOnly). A guest — no query.
 - **Banner** `<x-webx-users::verify-banner>`, the node `users.verify-banner` first in `main` of
   `layout` (`resources/compositions/layout/default.json`): on a cached page printed hidden and the
   same for everybody, shown by `users.js`; on a page of the module (`KeepPrivate`) by the server.
 - **`webx.visitor:verified`** — `UserVisitors` answers an unconfirmed visitor with «Confirm your
   e-mail» and the letter once more (403, `AnswersUnverified`).
 - **Console** `webx:users:prune [--dry-run]`, daily: links out of date, never an account.
-  `webx:doctor` — `Doctor\MailCheck`: `log` / `array` mail off a local machine is a warning.
+  `webx:doctor` — `MailCheck` (`log` mail off a local machine warns), `FieldsCheck` (the refusals).
 - **Limits** (`WebxUi\Users\Throttle`, a 429 that names the field and the seconds):
   failed sign-ins 5 a minute per address and IP, 30 per IP; registrations 5 an hour per IP; reset
   requests 3 an hour per address and IP, 20 per IP (silently); new passwords 10 a minute per IP;
   the letter of confirmation once a minute, 5 an hour; letters to a new address 3 an hour.
-- **Events**: `VisitorRegistered($id, 'password')`, `VisitorSignedIn($id, 'password' |
-'registration' | 'reset')`, `VisitorSignedOut($id)` of `module-admin`; `WebxUi\Users\Events\VisitorSignInFailed`
-  (sha256 of the address and the IP — no address, no password).
+- **Events**: `VisitorRegistered`, `VisitorSignedIn` (`password` / `registration` / `reset`),
+  `VisitorSignedOut` of `module-admin`; own `Events\VisitorSignInFailed` (sha256 of address and IP).
 - **Views** `webx-users::sign-in`, `register`, `forgot`, `reset`, `notice`, the frame `<x-webx-users::page>` and the
   bare document `webx-users::standalone`; the forms are `<x-webx-form>` and `<x-webx-field>` of
   `widgets`, checked in the browser by the server's rules (`FormRules`). Classes `webx-account-auth`,
@@ -89,13 +81,20 @@ is what exists now.
   `webx-users.layout` (`'layout'` once `webx:panel --sync` has seen the site's one) with the handle
   `users.auth`; the account — `layout.account` of the theme where the site has it. Handles
   `users.account` and `users.auth` are declared to the compositions.
+- **Fields of the site** (`Fields\*`, spec §10): `UserField` in `UserFields` — `register()` in a
+  module's `boot()`, or `webx-users.fields`; an exception for a column's or taken name, a type
+  `FieldTypes` lacks, options missing, a type with no site field outside the panel (`siteType()`).
+  In `users.extra` (`$user->extra('club-card')`); `FieldValues` checks them alike for a form, the panel
+  and MCP; `FieldCatalog` — nodes of the card `project-fields` and the list for `users://catalog`.
+  `Requirements` — setting `users.fields.<name>` `hidden`/`optional`/`required`, also for
+  `first_name`, `last_name`, `phone`. `webx:users:index-field <name>` — a site migration with
+  generated `extra_<name>` and its index, used by `unique`.
 - **Dictionary** `webx-users` in ten languages: `module` (the section is «Customers»), `auth`, `mail`.
 
 ### Permissions
 
-None yet: every route is the visitor's own door, listed open with its limit in
-`tests/AccessCoverageTest.php`, none behind `cms.auth`. `users.view` and `users.manage` come with the
-panel section.
+None yet: every route is the visitor's own door, open with its limit in `tests/AccessCoverageTest.php`;
+`users.view` and `users.manage` come with the panel section.
 
 ## Change it without forking
 
@@ -115,6 +114,7 @@ panel section.
 | Another look                               | the theme: the classes above; or `views/vendor/webx-users/*.blade.php` |
 | Know who is signed in, from another module | `app(Visitors::class)->current()` (`module-admin`), not `User`         |
 | A page only for a signed-in visitor        | the middleware `webx.visitor` of `module-admin`                        |
+| A field of your own on the visitors        | `webx-users.fields` or `UserFields::register()`; asked — the setting   |
 
 ## Do not
 
@@ -141,7 +141,7 @@ panel section.
   `X-Robots-Tag: noindex`; the forms are sent in place (the theme's widgets script).
 - `vendor/bin/phpunit` in the package: `SignInTest`, `RegisterTest`, `PasswordResetTest`,
   `VerificationTest`, `EmailChangeTest`, `BannerTest`, `PruneTest`, `BoundariesTest`,
-  `MigrationTest`, `SkeletonTest`, `AccessCoverageTest`; `resources/js/users.test.js` (vitest).
+  `MigrationTest`, `SkeletonTest`, `AccessCoverageTest`, `FieldsTest`, `FieldDeclarationsTest`; `resources/js/users.test.js` (vitest).
 
 ## Read more
 

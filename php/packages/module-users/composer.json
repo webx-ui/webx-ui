@@ -40,6 +40,7 @@
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
         "webx-ui/module-auth": "^0.88.0",
+        "webx-ui/module-settings": "^0.88.0",
         "webx-ui/theme-default": "^0.88.0",
         "webx-ui/themes": "^0.88.0"
     },
@@ -52,6 +53,9 @@
         "psr-4": {
             "WebxUi\\Users\\Tests\\": "tests/"
         }
+    },
+    "suggest": {
+        "webx-ui/module-settings": "Whether the visitor must fill in a field is a setting of the site (users.fields.<name>); without it every field is what its declaration says."
     },
     "extra": {
         "laravel": {

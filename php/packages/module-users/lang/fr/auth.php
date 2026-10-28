@@ -27,6 +27,7 @@ return [
     'failed' => 'E-mail ou mot de passe incorrect.',
     'blocked' => 'Ce compte est bloqué. Veuillez contacter la boutique.',
     'taken' => 'Cette adresse est déjà enregistrée — connectez-vous ou réinitialisez votre mot de passe.',
+    'value_taken' => 'Cette valeur est déjà utilisée.',
     'throttled' => 'Trop de tentatives. Veuillez patienter :seconds s.',
     'forgot' => [
         'link' => 'Mot de passe oublié ?',

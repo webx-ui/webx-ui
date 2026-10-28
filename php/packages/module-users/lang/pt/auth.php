@@ -27,6 +27,7 @@ return [
     'failed' => 'E-mail ou palavra-passe incorretos.',
     'blocked' => 'Esta conta está bloqueada. Contacte a loja.',
     'taken' => 'Este endereço já está registado — inicie sessão ou recupere a palavra-passe.',
+    'value_taken' => 'Este valor já está em uso.',
     'throttled' => 'Demasiadas tentativas. Aguarde :seconds s.',
     'forgot' => [
         'link' => 'Esqueceu a senha?',

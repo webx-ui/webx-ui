@@ -27,6 +27,7 @@ return [
     'failed' => 'E-posta veya şifre yanlış.',
     'blocked' => 'Bu hesap engellendi. Lütfen mağazayla iletişime geçin.',
     'taken' => 'Bu adres zaten kayıtlı — giriş yapın veya şifrenizi sıfırlayın.',
+    'value_taken' => 'Bu değer zaten kullanılıyor.',
     'throttled' => 'Çok fazla deneme. Lütfen :seconds sn bekleyin.',
     'forgot' => [
         'link' => 'Şifrenizi mi unuttunuz?',

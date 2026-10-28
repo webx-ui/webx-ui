@@ -27,6 +27,7 @@ return [
     'failed' => 'E-mail o password errati.',
     'blocked' => 'Questo account è bloccato. Contatta il negozio.',
     'taken' => 'Questo indirizzo è già registrato: accedi o recupera la password.',
+    'value_taken' => 'Questo valore è già in uso.',
     'throttled' => 'Troppi tentativi. Attendi :seconds s.',
     'forgot' => [
         'link' => 'Password dimenticata?',

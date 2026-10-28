@@ -150,4 +150,25 @@ return [
 
     'email_minutes' => 60,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Fields of the site
+    |--------------------------------------------------------------------------
+    |
+    | The site's own fields on its visitors (spec §10), kept in `users.extra`: the keys of
+    | `WebxUi\Users\Fields\UserField`, places by their values, rules only as strings (the config is
+    | cached). A module declares its fields with `UserFields::register()` in `boot()` instead.
+    | Whether the visitor must fill one in is a setting of the panel (`users.fields.<name>`), and
+    | `required` here is only what it is before anybody set it.
+    |
+    |     'fields' => [
+    |         'birthday' => ['type' => 'wx-date-picker', 'label' => 'Date of birth', 'rules' => ['before:today']],
+    |         'club-card' => ['type' => 'wx-input', 'label' => 'Club card', 'unique' => true,
+    |             'visitorEditable' => false, 'placements' => ['profile', 'panel']],
+    |     ],
+    |
+    */
+
+    'fields' => [],
+
 ];

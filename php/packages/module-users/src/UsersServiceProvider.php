@@ -16,9 +16,12 @@ use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Users\Auth\UserProvider;
+use WebxUi\Users\Console\IndexFieldCommand;
 use WebxUi\Users\Console\PruneCommand;
+use WebxUi\Users\Doctor\FieldsCheck;
 use WebxUi\Users\Doctor\MailCheck;
 use WebxUi\Users\Doctor\UsersTableCheck;
+use WebxUi\Users\Fields\UserFields;
 use WebxUi\Users\Http\TrackVisitor;
 use WebxUi\Users\Models\User;
 
@@ -43,6 +46,10 @@ class UsersServiceProvider extends ServiceProvider
 
         // Scoped: the visitor of one request is not the next one's in a long-running worker.
         $this->app->scoped(Visitors::class, UserVisitors::class);
+
+        // The fields of the site (§10): modules register theirs in `boot()`, the config is read on
+        // the first question.
+        $this->app->singleton(UserFields::class);
     }
 
     public function boot(): void
@@ -70,6 +77,7 @@ class UsersServiceProvider extends ServiceProvider
         $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
             $checks->register(UsersTableCheck::class);
             $checks->register(MailCheck::class);
+            $checks->register(FieldsCheck::class);
         });
 
         $this->callAfterResolving(Schedule::class, static function (Schedule $schedule): void {
@@ -80,7 +88,7 @@ class UsersServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([PruneCommand::class]);
+        $this->commands([PruneCommand::class, IndexFieldCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-users.php' => config_path('webx-users.php'),

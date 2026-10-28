@@ -92,6 +92,32 @@ php artisan vendor:publish --tag=webx-users-config
 | `email_minutes`         | `60`      | how long a link to a new address works                    |
 | `layout`                | —         | the Blade component the pages stand in (`layout`)         |
 | `account_layout`        | —         | the account's; `layout.account` of the theme by default   |
+| `fields`                | `[]`      | the site's own fields on its visitors (below)             |
+
+## Fields of the site
+
+A club card, a date of birth, a company — declared once, they reach the registration, the
+profile, the visitor's card in the panel and MCP, and are kept in `users.extra`:
+
+```php
+// config/webx-users.php — rules as strings: the config is cached.
+'fields' => [
+    'birthday' => ['type' => 'wx-date-picker', 'label' => 'Date of birth', 'rules' => ['before:today']],
+    'club-card' => ['type' => 'wx-input', 'label' => 'Club card', 'unique' => true,
+        'visitorEditable' => false, 'placements' => ['profile', 'panel']],
+],
+```
+
+A module does the same with `app(UserFields::class)->register(new UserField(…))` in its `boot()`.
+The type is a field type of the panel (`wx-input`, `wx-select`, `wx-date-picker`, …) and checks the
+value the same way everywhere; one the site's forms have no field for (a colour, a picture) lives
+in the panel only — or gets one with `UserFields::siteType('map', 'text')`. A field that cannot
+work is an exception, and `webx:doctor` says which.
+
+Whether the visitor must fill one in is a setting of the site, `users.fields.<name>`: `hidden`,
+`optional` or `required` — for these fields and for the first name, last name and phone. Read one
+in Blade with `$user->extra('club-card')`. For a fast search by a field,
+`php artisan webx:users:index-field club-card` writes a migration with an indexed column.
 
 ## License
 

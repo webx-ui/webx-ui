@@ -27,6 +27,7 @@ return [
     'failed' => 'Wrong e-mail or password.',
     'blocked' => 'This account is blocked. Please contact the shop.',
     'taken' => 'This address is already registered — sign in or restore your password.',
+    'value_taken' => 'This value is already taken.',
     'throttled' => 'Too many attempts. Please wait :seconds s.',
     'forgot' => [
         'link' => 'Forgot your password?',

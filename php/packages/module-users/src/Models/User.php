@@ -11,15 +11,19 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Visitors\Visitor;
 use WebxUi\Users\Emails\Verification;
+use WebxUi\Users\Fields\UserFields;
 
 /**
  * A visitor of the site (spec §5): a customer, a reader of a closed section, a member of a club.
  *
  * Never an administrator: no permissions (`HasPermissions` is not implemented, and a test keeps
  * it so), no way into the panel — `cms.auth` lets in only `CmsUser`. The address is the login and
- * is kept normalised, so `Anna@Example.com ` and `anna@example.com` are one account.
+ * is kept normalised, so `Anna@Example.com ` and `anna@example.com` are one account. The fields of
+ * the site (spec §10) are in `extra`: `$user->extra('club-card')`.
  *
  * @property int $id
  * @property string $email
@@ -36,7 +40,13 @@ use WebxUi\Users\Emails\Verification;
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
+    use HasExtra {
+        extra as screenExtra;
+    }
     use VerifiesEmail;
+
+    /** The panel's card of a visitor: a field a site patched onto it directly is kept in `extra` too. */
+    public const string SCREEN = 'users.form';
 
     protected $table = 'users';
 
@@ -54,6 +64,25 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'extra' => 'array',
         ];
+    }
+
+    public function extraScreen(): string
+    {
+        return self::SCREEN;
+    }
+
+    /**
+     * What the site prints for one of its fields: read through the field's type, as a field of the
+     * project is (§10.3). A field declared to `UserFields` is read by its own node — the panel's
+     * screen need not be there for it; anything else as `HasExtra` reads it.
+     */
+    public function extra(string $name, ?string $locale = null): mixed
+    {
+        $field = app(UserFields::class)->get($name);
+
+        return $field === null
+            ? $this->screenExtra($name, $locale)
+            : app(ScreenValues::class)->resolve($field->node(), $this->extraRaw($name), $locale);
     }
 
     public static function normaliseEmail(string $email): string

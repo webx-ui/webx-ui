@@ -27,6 +27,7 @@ return [
     'failed' => 'E-Mail oder Passwort ist falsch.',
     'blocked' => 'Dieses Konto ist gesperrt. Bitte wenden Sie sich an den Shop.',
     'taken' => 'Diese Adresse ist bereits registriert — melden Sie sich an oder setzen Sie Ihr Passwort zurück.',
+    'value_taken' => 'Dieser Wert ist bereits vergeben.',
     'throttled' => 'Zu viele Versuche. Bitte warten Sie :seconds s.',
     'forgot' => [
         'link' => 'Passwort vergessen?',
