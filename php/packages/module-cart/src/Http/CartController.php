@@ -13,11 +13,13 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Cookie;
 use WebxUi\Cart\CartCookie;
 use WebxUi\Cart\CartHandle;
+use WebxUi\Cart\CartRefusal;
 use WebxUi\Cart\CartService;
 use WebxUi\Cart\Models\Cart;
 use WebxUi\Cart\Models\CartItem;
 use WebxUi\Cart\Rendering\Panel;
 use WebxUi\Cart\Totals\Calculator;
+use WebxUi\Cart\Totals\CartState;
 
 /**
  * The five doors of the API (§6.1). Every answer is the whole state of the cart — the widget
@@ -28,8 +30,14 @@ use WebxUi\Cart\Totals\Calculator;
  * does (FormResponse, §17.4 of the widgets spec); a refusal goes back with the errors, as
  * Laravel answers any form.
  *
- * The widget asks with `X-Webx-Cart-View: drawer|dialog|dropdown` and gets the panel of that mode
- * as `html` beside the state (§9.2); without the header there is none.
+ * The widget asks with `X-Webx-Cart-View: drawer|dialog` and gets the main view's panel as `html`
+ * beside the state, with `X-Webx-Cart-Preview: dropdown` the mini cart's as `preview_html`
+ * (§9.2); without the headers there is none.
+ *
+ * A refused batch into a cart that is there is answered with the cart too (422, the errors and the
+ * state with its panels): a buy button opens the cart and says it there — on the line already at
+ * its maximum as a notice, nothing else changed (decision of 28.10.2026). A form without
+ * JavaScript at the maximum goes back with the cart open and the same notice.
  */
 final class CartController
 {
@@ -54,7 +62,13 @@ final class CartController
     {
         $items = $request->input('items');
         $locale = $this->handle->locale();
-        $result = $this->service->add($this->handle->cart(), is_array($items) ? array_values($items) : [], $locale);
+        $cart = $this->handle->cart();
+
+        try {
+            $result = $this->service->add($cart, is_array($items) ? array_values($items) : [], $locale);
+        } catch (ValidationException $refusal) {
+            return $cart !== null ? $this->refused($request, $refusal, $cart, $locale) : throw $refusal;
+        }
 
         $cookie = $result->token !== null ? $this->cookie->make($result->token, $request) : null;
 
@@ -109,6 +123,53 @@ final class CartController
         return $this->answer($request, null, $this->handle->locale(), [], $this->cookie->forget());
     }
 
+    /** A refused batch, answered with the cart it was refused into and the notes for its panel. */
+    private function refused(Request $request, ValidationException $refusal, Cart $cart, string $locale): JsonResponse|RedirectResponse
+    {
+        $atLimit = $refusal instanceof CartRefusal ? $refusal->atLimit : [];
+        $others = $refusal instanceof CartRefusal ? $refusal->others() : $refusal->errors();
+        $notes = Panel::notes($others, $atLimit, $locale);
+
+        if (! $request->expectsJson()) {
+            if ($atLimit === [] || $others !== []) {
+                throw $refusal;
+            }
+
+            return Redirect::back()->with(self::FLASH, ['notes' => $notes]);
+        }
+
+        $state = $this->calculator->calculate($cart, $locale);
+
+        return new JsonResponse([
+            'message' => $refusal->getMessage(),
+            'errors' => $refusal->errors(),
+            ...$state->toArray(),
+            ...$this->html($request, $state, $notes),
+        ], $refusal->status);
+    }
+
+    /**
+     * The panels the widget asked for by its headers.
+     *
+     * @param  array<string, list<array{message: string, notice: bool}>>  $notes
+     * @return array<string, string>
+     */
+    private function html(Request $request, CartState $state, array $notes = []): array
+    {
+        $view = $request->header(Panel::VIEW_HEADER);
+        $html = [];
+
+        if (is_string($view) && in_array($view, Panel::MODES, true)) {
+            $html['html'] = $this->panel->render($state, $view, notes: $notes);
+        }
+
+        if ($request->header(Panel::PREVIEW_HEADER) === 'dropdown') {
+            $html['preview_html'] = $this->panel->render($state, 'dropdown', notes: $notes);
+        }
+
+        return $html;
+    }
+
     /** The visitor's cart, or 404: no cart has no line to change. */
     private function cart(): Cart
     {
@@ -123,9 +184,7 @@ final class CartController
         } else {
             // The lines are read afresh: the service wrote through the same model.
             $state = $cart !== null ? $this->calculator->calculate($cart, $locale) : $this->calculator->empty($locale);
-            $view = $request->header(Panel::VIEW_HEADER);
-            $html = is_string($view) && in_array($view, Panel::MODES, true) ? ['html' => $this->panel->render($state, $view)] : [];
-            $response = new JsonResponse([...$state->toArray(), ...$extra, ...$html]);
+            $response = new JsonResponse([...$state->toArray(), ...$extra, ...$this->html($request, $state)]);
         }
 
         return $cookie !== null ? $response->withCookie($cookie) : $response;

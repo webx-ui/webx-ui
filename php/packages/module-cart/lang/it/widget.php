@@ -13,6 +13,7 @@ return [
     'empty' => 'Il tuo carrello è vuoto',
     'count' => 'Articoli: :count',
     'checkout' => 'Vai alla cassa',
+    'edit' => 'Modifica carrello',
     'remove' => 'Rimuovi',
     'quantity' => 'Quantità',
     'decrease' => 'Uno in meno',
@@ -25,6 +26,7 @@ return [
     'decline' => 'Rifiuta',
     'unavailable' => 'Al momento non disponibile',
     'gone' => 'Non più disponibile',
+    'max_reached' => 'Hai già la quantità massima di questo articolo.',
     'error' => 'Impossibile aggiornare il carrello. Riprova.',
     'no_script' => 'Attiva JavaScript per vedere il carrello.',
 ];

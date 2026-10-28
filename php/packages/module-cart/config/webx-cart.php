@@ -38,15 +38,18 @@ return [
     | Widget
     |--------------------------------------------------------------------------
     |
-    | <x-webx-cart /> without a mode: drawer, dialog or dropdown. The checkout
-    | button leads to checkout_url, else to the route named `checkout` when
-    | the site has one; with neither there is no button. The widget's script
-    | is served at {script_path}/cart.js.
+    | <x-webx-cart /> without props. The mode is the main view, where the
+    | lines change: drawer or dialog. The preview is the mini cart under the
+    | icon: dropdown, or none — the icon opens the main view at once (on a
+    | phone it always does). The checkout button leads to checkout_url, else
+    | to the route named `checkout` when the site has one; with neither there
+    | is no button. The widget's script is served at {script_path}/cart.js.
     |
     */
 
     'widget' => [
         'mode' => env('WEBX_CART_WIDGET', 'drawer'),
+        'preview' => env('WEBX_CART_PREVIEW', 'dropdown'),
     ],
 
     'checkout_url' => env('WEBX_CART_CHECKOUT_URL'),

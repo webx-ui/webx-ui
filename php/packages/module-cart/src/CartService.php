@@ -26,7 +26,8 @@ use WebxUi\Cart\Totals\Calculator;
  * type, record and options, and outside any bundle — adds to that line instead of doubling it.
  *
  * A refusal is a {@see ValidationException} keyed by field (`items.0.ref`, `qty`), so the API
- * answers it as Laravel answers a form.
+ * answers it as Laravel answers a form; a batch's is a {@see CartRefusal}, which also names the
+ * lines already at their limit.
  */
 final class CartService
 {
@@ -70,9 +71,10 @@ final class CartService
 
         $existing = $cart !== null ? $cart->items()->get()->all() : [];
         $merges = [];
+        $atLimit = [];
 
         if ($errors === []) {
-            [$merges, $errors] = $this->merges($rows, $existing, $locale);
+            [$merges, $errors, $atLimit] = $this->merges($rows, $existing, $locale);
         }
 
         if ($errors === []) {
@@ -85,7 +87,7 @@ final class CartService
         }
 
         if ($errors !== []) {
-            throw ValidationException::withMessages($errors);
+            throw CartRefusal::of($errors, $atLimit);
         }
 
         $token = null;
@@ -411,7 +413,7 @@ final class CartService
      *
      * @param  array<int, BatchRow>  $rows  folded rows are taken out
      * @param  list<CartItem>  $existing
-     * @return array{0: array<int, CartItem>, 1: array<string, list<string>>}
+     * @return array{0: array<int, CartItem>, 1: array<string, list<string>>, 2: array<int, int>}
      */
     private function merges(array &$rows, array $existing, string $locale): array
     {
@@ -446,6 +448,7 @@ final class CartService
 
         $merges = [];
         $errors = [];
+        $atLimit = [];
 
         foreach ($seen as $signature => $index) {
             $row = $rows[$index];
@@ -454,6 +457,11 @@ final class CartService
 
             if ($row->qty + ($already->qty ?? 0) > $limit) {
                 $errors["items.{$index}.qty"][] = $this->word('qty', $locale, ['max' => $limit]);
+
+                // Already all there may be: the widget opens the cart rather than says an error.
+                if ($already !== null && $already->qty >= $limit) {
+                    $atLimit[$index] = $already->id;
+                }
             }
 
             if ($already !== null) {
@@ -461,7 +469,7 @@ final class CartService
             }
         }
 
-        return [$merges, $errors];
+        return [$merges, $errors, $atLimit];
     }
 
     /**

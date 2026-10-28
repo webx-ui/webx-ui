@@ -13,6 +13,7 @@ return [
     'empty' => 'Votre panier est vide',
     'count' => 'Articles : :count',
     'checkout' => 'Commander',
+    'edit' => 'Modifier le panier',
     'remove' => 'Retirer',
     'quantity' => 'Quantité',
     'decrease' => 'Un de moins',
@@ -25,6 +26,7 @@ return [
     'decline' => 'Refuser',
     'unavailable' => 'Indisponible pour le moment',
     'gone' => 'Plus disponible',
+    'max_reached' => 'Vous avez déjà la quantité maximale de cet article.',
     'error' => 'Le panier n\'a pas pu être mis à jour. Veuillez réessayer.',
     'no_script' => 'Activez JavaScript pour voir votre panier.',
 ];

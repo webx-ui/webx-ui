@@ -13,6 +13,7 @@ return [
     'empty' => 'Your cart is empty',
     'count' => 'Items: :count',
     'checkout' => 'Checkout',
+    'edit' => 'Edit cart',
     'remove' => 'Remove',
     'quantity' => 'Quantity',
     'decrease' => 'One less',
@@ -25,6 +26,7 @@ return [
     'decline' => 'Decline',
     'unavailable' => 'Cannot be bought now',
     'gone' => 'No longer available',
+    'max_reached' => 'You already have the maximum quantity of this item.',
     'error' => 'The cart could not be updated. Please try again.',
     'no_script' => 'Turn on JavaScript to see your cart.',
 ];

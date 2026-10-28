@@ -164,33 +164,43 @@ Blade looks a component tag up when it compiles the view.
 ## The widget
 
 ```blade
-<x-webx-cart />                    {{-- the mode from webx-cart.widget.mode, drawer by default --}}
+<x-webx-cart />                    {{-- drawer and the mini cart: webx-cart.widget.mode, .preview --}}
 <x-webx-cart mode="dialog" />
-<x-webx-cart mode="dropdown" />
+<x-webx-cart preview="none" />     {{-- the icon opens the main view at once --}}
 ```
 
-| Mode       | What it is                                                                                  |
-| ---------- | ------------------------------------------------------------------------------------------- |
-| `drawer`   | a panel at the edge of the window, its whole height: lines with steppers, totals, checkout  |
-| `dialog`   | the same in a dialog in the middle                                                          |
-| `dropdown` | the mini cart under the icon: the lines without steppers, the total and the checkout button |
+The widget has a **main view**, where the lines change, and an optional **mini cart** under the
+icon for a glance.
+
+| Prop      | Value                | What it is                                                                      |
+| --------- | -------------------- | ------------------------------------------------------------------------------- |
+| `mode`    | `drawer` (default)   | the main view at the edge of the window: lines with steppers, totals, checkout  |
+| `mode`    | `dialog`             | the same in a dialog in the middle                                              |
+| `preview` | `dropdown` (default) | the mini cart: the lines, the total, «Edit cart» to the main view, the checkout |
+| `preview` | `none`               | no mini cart: the icon opens the main view                                      |
+
+Settings: `WEBX_CART_WIDGET=drawer|dialog`, `WEBX_CART_PREVIEW=dropdown|none`; any other value of
+the prop or the setting throws. **A buy button and `webx.cart.open()` always open the main view**,
+never the mini cart. The icon opens the mini cart on a wide header and the main view on a header
+under 640 px or in the mobile menu: on a phone the dropdown is not shown.
 
 On a phone the drawer and the dialog are a sheet from the bottom. The drawer is the widgets'
 `<x-webx-dialog drawer>` — the same modal dialog (focus kept inside, Esc, the backdrop, focus given
 back to the trigger) pressed to the edge; any module can use it.
 
 `theme-default` puts `<x-webx-cart />` among the header's actions when the cart is installed. In a
-header of your own, put it where the icon belongs; the mode is a prop or `WEBX_CART_WIDGET`.
+header of your own, put it where the icon belongs; the mode and the mini cart are props or settings.
 
-**What the page prints** is the trigger, the counter from `cart()` and an empty panel. The panel's
-lines and totals are drawn by the server when it opens: the script asks `GET /api/cart` with
-`X-Webx-Cart-View: <mode>`, and the answer carries the panel's HTML as `html` beside the state.
+**What the page prints** is the trigger, the counter from `cart()` and empty panels. Their lines
+and totals are drawn by the server when one opens: the script asks `GET /api/cart` with
+`X-Webx-Cart-View: <mode>` and `X-Webx-Cart-Preview: dropdown`, and the answer carries the main
+view's HTML as `html` and the mini cart's as `preview_html` beside the state.
 Every sum in it is the server's `*_formatted` string; the script formats nothing. The checkout
 button leads to `WEBX_CART_CHECKOUT_URL`, or to the site's route named `checkout`; with neither
 there is none.
 
 **Without JavaScript** the buy button is a form: it puts the line in and comes back to the page,
-which then prints the panel open with its lines. Otherwise the panel says «Turn on JavaScript to
+which then prints the main view open with its lines. Otherwise the panel says «Turn on JavaScript to
 see your cart».
 
 **The script** comes with the first widget or buy button on the page (`dist/cart.js`, under 6 KB
@@ -202,10 +212,19 @@ gzip). Any element with `data-webx-cart-add` is a buy button:
 | `data-webx-cart-qty="N"`         | how many (1)                                       |
 | `data-webx-cart-qty-from="#qty"` | the quantity from a field on the page              |
 | `data-webx-cart-options='{…}'`   | the line's options, for a provider that takes them |
-| `data-webx-cart-open="false"`    | do not open the drawer or the dialog after adding  |
+| `data-webx-cart-open="false"`    | do not open the main view after adding             |
 
 While it sends, the button has `is-busy`; then `is-added` for two seconds and «Added to cart» is
-said to a screen reader; a refusal is said in the alert under it. And for the rest of the page:
+said to a screen reader.
+
+**A refusal.** When the item is already in the cart at its maximum (`webx-cart.qty_max`, or the
+provider's `maxQty`), the button still opens the main view: nothing changes, and the line says
+«You already have the maximum quantity of this item.» as a quiet notice, with the stepper right
+there to take it down. Any other refusal (cannot be bought, no price, another currency) into a
+cart that exists opens the main view too, the reason above the totals. The API answers both with
+422, the errors **and** the state with its panels. Only with no cart yet — nothing to open — is the
+refusal said in the alert under the button. Without JavaScript the form at the maximum comes back
+with the cart open and the same notice; other refusals come back as form errors. And for the rest of the page:
 
 ```js
 // A bundle: one batch, the child pointing at its parent's key; all or nothing.

@@ -13,6 +13,7 @@ return [
     'empty' => 'Tu carrito está vacío',
     'count' => 'Artículos: :count',
     'checkout' => 'Finalizar compra',
+    'edit' => 'Editar carrito',
     'remove' => 'Quitar',
     'quantity' => 'Cantidad',
     'decrease' => 'Uno menos',
@@ -25,6 +26,7 @@ return [
     'decline' => 'Rechazar',
     'unavailable' => 'No disponible por ahora',
     'gone' => 'Ya no está disponible',
+    'max_reached' => 'Ya tienes la cantidad máxima de este artículo.',
     'error' => 'No se pudo actualizar el carrito. Inténtalo de nuevo.',
     'no_script' => 'Activa JavaScript para ver tu carrito.',
 ];

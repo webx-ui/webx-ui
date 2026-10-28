@@ -91,11 +91,17 @@ A buy button — a form with `@csrf`, so it works without JavaScript:
 <x-webx-cart::add type="shop.product" :ref="$product->id">Buy</x-webx-cart::add>
 ```
 
-The widget — the icon with the counter and the panel it opens, drawn by the server:
+The widget — the icon with the counter, the main view where lines change (a drawer or a dialog)
+and the mini cart under the icon, all drawn by the server:
 
 ```blade
-<x-webx-cart />                    {{-- drawer, or WEBX_CART_WIDGET=dialog|dropdown --}}
+<x-webx-cart />                    {{-- drawer, or WEBX_CART_WIDGET=dialog --}}
+<x-webx-cart preview="none" />     {{-- no mini cart, or WEBX_CART_PREVIEW=none --}}
 ```
+
+A buy button and `webx.cart.open()` always open the main view; «Edit cart» in the mini cart does
+too. An item already at its maximum is not an error under the button: the cart opens with a
+notice on that line.
 
 Its script (`dist/cart.js`, committed) comes with the first widget or button on the page and
 gives the page `window.webx.cart` — `add(items)` takes a bundle as one batch — and the

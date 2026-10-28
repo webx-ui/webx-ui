@@ -1,7 +1,7 @@
 {{--
     One line (§6.2): the picture, the name — a link while the record exists, the snapshot of its
     name when it is gone —, the options, the price with the old one struck out when it fell, the
-    stepper and the remove button. The dropdown is the mini cart: the quantity as a number, no
+    stepper and the remove button, the notices and warnings about it. The dropdown is the mini cart: the quantity as a number, no
     stepper. A generated line (a gift of a rule) has no stepper; it is declined, not removed, and
     only when it says it may be. The children of a bundle go under it.
 --}}
@@ -34,7 +34,7 @@
         @endif
 
         @foreach ($warnings[(string) $line['id']] ?? [] as $warning)
-            <p @class(['webx-cart__line-options' => $warning['notice'], 'webx-cart__warning' => ! $warning['notice']])>{{ $warning['message'] }}</p>
+            <p @class(['webx-cart__notice' => $warning['notice'], 'webx-cart__warning' => ! $warning['notice']])>{{ $warning['message'] }}</p>
         @endforeach
 
         @if ($stepper)

@@ -3,10 +3,17 @@
  * `[data-webx-cart-add]` by one listener on the document, and `window.webx.cart` for the rest of
  * the page — a bundle goes in as one batch through `webx.cart.add(items)` (decision 28).
  *
- * The server draws everything: the panel's HTML comes with the state when the widget asks with
- * `X-Webx-Cart-View`, every sum is its `*_formatted` string, and this only puts them in place —
- * no template and no `Intl` here (decision 32). After every write `webx:cart:change` goes out on
- * the document with the state, and the counters and the buttons' `is-in-cart` follow it.
+ * The server draws everything: the panels' HTML comes with the state when the widget asks with
+ * `X-Webx-Cart-View` (the main view) and `X-Webx-Cart-Preview` (the mini cart), every sum is its
+ * `*_formatted` string, and this only puts them in place — no template and no `Intl` here
+ * (decision 32). After every write `webx:cart:change` goes out on the document with the state, and
+ * the counters and the buttons' `is-in-cart` follow it.
+ *
+ * The main view — the drawer or the dialog — is where the lines change; a buy button and
+ * `webx.cart.open()` always open it, never the mini cart (decision of 28.10.2026). The icon opens
+ * the mini cart when there is one, and the main view on a narrow header or in the mobile menu. A
+ * refused buy into a cart that is there (an item already at its maximum) answers with the cart:
+ * it opens with the server's note in it, and nothing is said under the button.
  *
  * The panel of a drawer or a dialog is moved to the end of <body> once: the header prints its
  * actions twice — in the bar and at the bottom of the mobile menu — and the copy of the bar is
@@ -49,9 +56,11 @@ async function send(method, path = '', body, again = true) {
   const headers = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
   const lang = document.documentElement.lang
   const mode = root()?.getAttribute('data-webx-cart')
+  const preview = root()?.getAttribute('data-webx-cart-preview')
   const token = cookie('XSRF-TOKEN')
   if (lang) headers['X-Webx-Locale'] = lang
   if (mode) headers['X-Webx-Cart-View'] = mode
+  if (preview) headers['X-Webx-Cart-Preview'] = preview
   if (token) headers['X-XSRF-TOKEN'] = token
   if (body !== undefined) headers['Content-Type'] = 'application/json'
 
@@ -73,6 +82,7 @@ async function send(method, path = '', body, again = true) {
     const error = new Error(errors[0] ?? answer?.message ?? response.statusText)
     error.status = response.status
     error.errors = answer?.errors ?? {}
+    error.answer = answer
     throw error
   }
   return answer
@@ -87,12 +97,17 @@ function held(lines, into = new Set()) {
   return into
 }
 
-function bodies() {
-  return document.querySelectorAll('[data-webx-cart-body]')
+/** The main view's panels (`main`), or the mini cart's (`preview`). */
+function bodies(which) {
+  return document.querySelectorAll(
+    which === 'preview'
+      ? '[data-webx-cart-body="preview"]'
+      : '[data-webx-cart-body]:not([data-webx-cart-body="preview"])',
+  )
 }
 
 /** Puts the server's HTML in place, keeping the focus on the same control of the same line. */
-function draw(html) {
+function draw(html, which) {
   const active = document.activeElement
   const inside = active?.closest?.('[data-webx-cart-body]')
   const line = active?.closest?.('[data-webx-cart-line]')?.getAttribute('data-webx-cart-line')
@@ -102,7 +117,7 @@ function draw(html) {
     )
     .find(Boolean)
 
-  for (const body of bodies()) {
+  for (const body of bodies(which)) {
     webx.unmount?.(body)
     body.innerHTML = html
     body.removeAttribute('aria-busy')
@@ -121,7 +136,10 @@ function draw(html) {
 
 function apply(answer, write) {
   if (!answer) return answer
-  const { html, added, ...state } = answer
+  const { html, preview_html: preview, added, ...state } = answer
+  // A refusal's answer carries the cart too: its words are not the state.
+  delete state.message
+  delete state.errors
   last = state
 
   for (const count of document.querySelectorAll('[data-webx-cart-count]')) {
@@ -133,6 +151,7 @@ function apply(answer, write) {
     button.classList.toggle('is-in-cart', keys.has(button.getAttribute('data-webx-cart-add')))
   }
   if (typeof html === 'string') draw(html)
+  if (typeof preview === 'string') draw(preview, 'preview')
 
   if (write)
     document.dispatchEvent(new CustomEvent('webx:cart:change', { detail: { state, added } }))
@@ -147,7 +166,8 @@ async function write(method, path, body) {
 }
 
 async function load() {
-  for (const body of bodies()) body.setAttribute('aria-busy', 'true')
+  for (const body of document.querySelectorAll('[data-webx-cart-body]'))
+    body.setAttribute('aria-busy', 'true')
   return apply(await send('GET'), false)
 }
 
@@ -164,14 +184,12 @@ function announce(text) {
   setTimeout(() => (status.textContent = text), 50)
 }
 
+/** The main view, whatever the icon opens: the mini cart closes first. */
 function open() {
   const el = root()
   if (!el) return
   const details = el.querySelector('details')
-  if (details) {
-    details.open = true
-    return
-  }
+  if (details) details.open = false
   const dialog = document.getElementById(el.getAttribute('data-webx-cart-panel') ?? '')
   if (dialog instanceof HTMLDialogElement && typeof webx.openDialog === 'function') {
     webx.openDialog(dialog, el.querySelector('.webx-cart__trigger'))
@@ -208,12 +226,14 @@ async function buy(button) {
     button.classList.add('is-added')
     setTimeout(() => button.classList.remove('is-added'), 2000)
     announce(button.getAttribute('data-webx-cart-added') ?? data('added') ?? 'Added to cart')
-    const mode = root()?.getAttribute('data-webx-cart')
-    if (button.getAttribute('data-webx-cart-open') !== 'false' && mode && mode !== 'dropdown')
-      open()
+    if (button.getAttribute('data-webx-cart-open') !== 'false') open()
   } catch (error) {
     const text = error.status === 422 ? error.message : (data('error') ?? error.message)
-    if (alert) {
+    if (error.status === 422 && Array.isArray(error.answer?.lines) && root()) {
+      // The cart is there and says why in its panel — the line at its maximum, where it can change.
+      apply(error.answer, false)
+      open()
+    } else if (alert) {
       alert.textContent = text
       alert.hidden = false
     } else {
@@ -243,8 +263,34 @@ function clamp(input, value) {
   return Math.min(Math.max(1, Math.round(value) || 1), max)
 }
 
+/** A header too narrow for the mini cart, or the mobile menu: the icon opens the main view. */
+const narrow = (el) =>
+  !!el.closest('.webx-mobile-menu') ||
+  (el.closest('.webx-header') ?? document.documentElement).clientWidth < 640
+
+// Before the dropdown's own listener on its trigger, which would open the mini cart.
+document.addEventListener(
+  'click',
+  (event) => {
+    const target = event.target instanceof Element ? event.target : null
+    const trigger = target?.closest('[data-webx-cart-preview] summary')
+    if (trigger && narrow(trigger)) {
+      event.preventDefault()
+      event.stopPropagation()
+      open()
+    }
+  },
+  true,
+)
+
 document.addEventListener('click', (event) => {
   const target = event.target instanceof Element ? event.target : null
+  if (target?.closest('[data-webx-cart-edit]')) {
+    event.preventDefault()
+    open()
+    return
+  }
+
   const button = target?.closest('[data-webx-cart-add]')
   if (button) {
     event.preventDefault()
@@ -289,22 +335,20 @@ const watched = new WeakSet()
 
 function setup(el) {
   const details = el.querySelector('details')
-  if (details) {
-    const toggle = () => details.open && load().catch(() => {})
-    details.addEventListener('toggle', toggle)
-    return () => details.removeEventListener('toggle', toggle)
-  }
+  const toggle = () => details.open && load().catch(() => {})
+  details?.addEventListener('toggle', toggle)
+  const off = () => details?.removeEventListener('toggle', toggle)
 
   const id = el.getAttribute('data-webx-cart-panel')
   const dialog = [...el.querySelectorAll('dialog')].find((child) => child.id === id)
-  if (!dialog) return undefined
+  if (!dialog) return off
   const placed = [...document.body.children].find((child) => child.id === id && child !== dialog)
   if (placed) {
     dialog.remove()
-    return undefined
+    return off
   }
   document.body.append(dialog)
-  if (watched.has(dialog)) return undefined
+  if (watched.has(dialog)) return off
   watched.add(dialog)
 
   // However it opens — the trigger, a link to #webx-cart, webx.cart.open() — the panel is fetched.
@@ -320,7 +364,7 @@ function setup(el) {
   } else if (dialog.open) {
     load().catch(() => {})
   }
-  return undefined
+  return off
 }
 
 webx.cart = cart

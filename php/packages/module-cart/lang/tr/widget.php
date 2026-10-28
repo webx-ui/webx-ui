@@ -13,6 +13,7 @@ return [
     'empty' => 'Sepetiniz boş',
     'count' => 'Ürünler: :count',
     'checkout' => 'Siparişi tamamla',
+    'edit' => 'Sepeti düzenle',
     'remove' => 'Kaldır',
     'quantity' => 'Adet',
     'decrease' => 'Bir eksik',
@@ -25,6 +26,7 @@ return [
     'decline' => 'Reddet',
     'unavailable' => 'Şu anda satın alınamaz',
     'gone' => 'Artık mevcut değil',
+    'max_reached' => 'Bu üründen zaten en fazla adede sahipsiniz.',
     'error' => 'Sepet güncellenemedi. Lütfen tekrar deneyin.',
     'no_script' => 'Sepetinizi görmek için JavaScript\'i açın.',
 ];

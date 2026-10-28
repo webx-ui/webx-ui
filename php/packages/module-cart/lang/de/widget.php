@@ -13,6 +13,7 @@ return [
     'empty' => 'Ihr Warenkorb ist leer',
     'count' => 'Artikel: :count',
     'checkout' => 'Zur Kasse',
+    'edit' => 'Warenkorb bearbeiten',
     'remove' => 'Entfernen',
     'quantity' => 'Menge',
     'decrease' => 'Eins weniger',
@@ -25,6 +26,7 @@ return [
     'decline' => 'Ablehnen',
     'unavailable' => 'Derzeit nicht erhältlich',
     'gone' => 'Nicht mehr verfügbar',
+    'max_reached' => 'Sie haben bereits die maximale Menge dieses Artikels.',
     'error' => 'Der Warenkorb konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.',
     'no_script' => 'Aktivieren Sie JavaScript, um Ihren Warenkorb zu sehen.',
 ];

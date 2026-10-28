@@ -22,10 +22,17 @@ use WebxUi\Cart\Totals\CartState;
  */
 final class Panel
 {
-    public const array MODES = ['drawer', 'dialog', 'dropdown'];
+    /** The cart's main view: where the lines are changed (decision of 28.10.2026). */
+    public const array MODES = ['drawer', 'dialog'];
 
-    /** The header the widget asks for the panel's HTML with: the mode it is in. */
+    /** The mini cart under the icon, or none: the icon opens the main view at once. */
+    public const array PREVIEWS = ['dropdown', 'none'];
+
+    /** The header the widget asks for the main view's HTML with: its mode. */
     public const string VIEW_HEADER = 'X-Webx-Cart-View';
+
+    /** The header it asks for the mini cart's HTML with (`dropdown`), answered as `preview_html`. */
+    public const string PREVIEW_HEADER = 'X-Webx-Cart-Preview';
 
     public function __construct(
         private readonly Views $views,
@@ -44,21 +51,66 @@ final class Panel
         return $mode;
     }
 
+    /** The mini cart the widget knows, the same way. */
+    public static function preview(?string $preview): string
+    {
+        if ($preview === null || ! in_array($preview, self::PREVIEWS, true)) {
+            throw new InvalidArgumentException('<x-webx-cart preview="'.$preview.'">: one of '.implode(', ', self::PREVIEWS).'.');
+        }
+
+        return $preview;
+    }
+
     /**
-     * `$controls` false — the page that came back from a form without JavaScript: no stepper and
-     * no remove button, which only the script can send.
+     * `$view` — a mode of the main view, or `dropdown` for the mini cart, which has no stepper
+     * and no remove button but the button to the main view. `$controls` false — the page that
+     * came back from a form without JavaScript: no stepper and no remove button, which only the
+     * script can send. `$notes` — what a refused buy button says in the panel, by line id
+     * (the cart's own under `''`), as the warnings are.
+     *
+     * @param  array<string, list<array{message: string, notice: bool}>>  $notes
      */
-    public function render(CartState $state, string $mode, bool $controls = true): string
+    public function render(CartState $state, string $view, bool $controls = true, array $notes = []): string
     {
         $cart = $state->toArray();
+        $mini = $view === 'dropdown';
+        $warnings = self::warnings($cart);
+
+        foreach ($notes as $line => $said) {
+            $warnings[$line] = [...$warnings[$line] ?? [], ...$said];
+        }
 
         return $this->views->make('webx-cart::widget', [
             'cart' => $cart,
-            'mode' => self::mode($mode),
-            'controls' => $controls && $mode !== 'dropdown',
+            'mode' => $mini ? $view : self::mode($view),
+            'controls' => $controls && ! $mini,
+            'edit' => $mini,
             'checkout' => $this->checkout(),
-            'warnings' => self::warnings($cart),
+            'warnings' => $warnings,
         ])->render();
+    }
+
+    /**
+     * What a refused batch says in the panel: «already the maximum» on each line at its limit,
+     * a notice; the rest of the refusal under the cart, a warning.
+     *
+     * @param  array<string, array<int, string>>  $others
+     * @param  array<int, int>  $atLimit
+     * @return array<string, list<array{message: string, notice: bool}>>
+     */
+    public static function notes(array $others, array $atLimit, string $locale): array
+    {
+        $notes = [];
+
+        foreach (array_unique($atLimit) as $id) {
+            $notes[(string) $id][] = ['message' => (string) __('webx-cart::widget.max_reached', [], $locale), 'notice' => true];
+        }
+
+        foreach (array_unique(array_merge(...array_values($others))) as $message) {
+            $notes[''][] = ['message' => $message, 'notice' => false];
+        }
+
+        return $notes;
     }
 
     /**

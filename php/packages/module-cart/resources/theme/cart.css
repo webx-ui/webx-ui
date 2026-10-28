@@ -1,7 +1,7 @@
 /*
  * The cart's base look (§9.6): the trigger with its counter, the lines, the stepper, the chain of
  * totals and the buy button — decent under any theme, on site tokens only. The panel decides by
- * its own width (`@container`): a drawer on a phone, a dialog and a mini cart are narrow, a wide
+ * its own width (`@container`): a drawer on a phone, a dialog and the mini cart are narrow, a wide
  * dialog is not. The box of the drawer and the dialog is the widgets' (`webx-dialog--drawer`).
  */
 .webx-cart {
@@ -84,7 +84,7 @@
 
 /* The mini cart under the icon: the dropdown's panel gives the padding and the scroll, and keeps
    it inside the window; this is only how wide it would like to be. */
-.webx-cart--dropdown .webx-cart__panel {
+.webx-cart__panel--preview {
   width: 22rem;
   max-width: 100%;
 }
@@ -153,6 +153,16 @@
 
 .webx-cart__warning {
   color: var(--site-color-danger);
+}
+
+/* News, not a problem: a price that moved, a line already at its maximum. */
+.webx-cart__notice {
+  margin: 0;
+  padding: var(--site-space-2) var(--site-space-3);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  font-size: calc(var(--site-font-size-base) * 0.875);
 }
 
 .webx-cart__line-price {
@@ -268,6 +278,24 @@
   color: var(--site-color-accent-contrast);
   font-weight: 600;
   text-decoration: none;
+}
+
+/* The mini cart's way to the main view: beside the checkout, quieter than it. */
+.webx-cart__edit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--site-space-2) var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.webx-cart__edit:hover {
+  background: var(--site-color-surface);
 }
 
 .webx-cart__empty {
