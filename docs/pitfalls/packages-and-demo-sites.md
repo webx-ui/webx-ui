@@ -16,6 +16,8 @@
 - **Сайт панели** переключается между монорепой и реестром `scripts/link-panel.sh` (обратно —
   `--registry`), путь к сайту — `APP_PATH` (здесь — `APP_PATH=~/work/webx-cms`, рабочая копия
   сайта хомлаба; у неё свой `scripts/packages.mjs`, которому скрипт и передаёт ход). **Стартовый сайт** пересобирается с нуля `scripts/starter-site.sh` (см. ниже).
+- **Lab-сайт** `webx-lab` — постоянный сайт devbox на текущей ветке этой монорепы: все модули
+  каталога, `theme-default`, демо. Обновляется `scripts/lab-site.sh refresh` (см. «Lab-сайт» ниже). `refresh` — 10–20 с.
 - **Хомлаб** — https://webx-cms.alexx.group на опубликованных пакетах, деплой при каждом пуше и
   ночью. Ветку без релиза туда везёт канал `next` (`docs/architecture/WEBX_UI_PHP_RELEASE.md`).
 
@@ -189,6 +191,34 @@ webx-ui/<пакет>` из `php/`. Проверка — `grep helpers.php vendor
   по версиям блоков — в свежей базе номера начинаются заново, адрес совпадает с прошлой сборкой.
   `curl` отдаёт новое. В браузере — `fetch(href, { cache: 'reload' })` для каждого
   `link[rel=stylesheet]`, потом `location.reload()`; Playwright не задет.
+
+## Lab-сайт
+
+`scripts/lab-site.sh` держит `~/work/webx-lab` (https://webx-lab.$DEV_DOMAIN, панель `/cms`):
+все модули из `Setup\Catalogue`, `theme-default`, демо всех модулей, три языка. Composer — path-репозиторий
+на `php/packages/*` (`vendor/webx-ui/*` — ссылки), npm — `file:` на `packages/*`
+(`node_modules/@webx-ui/*` — ссылки). Git у сайта нет, база одноразовая. Общий код со
+`starter-site.sh` — `scripts/lib/linked-site.sh`.
+
+- `create` — достроить недостающее (скелет, `site create webx-lab webx`, `webx:setup --modules=all`,
+  типы блоков, демо) и `refresh`; повторный запуск ничего не пересоздаёт.
+- `refresh` — после правок здесь: `pnpm --filter … build` пакетов, чьи исходники новее `dist`;
+  модуль, появившийся в каталоге, ставится с демо; `composer update "webx-ui/*"` (реестр для
+  `webx-ui/*` исключён — ничего не скачивается); миграции; `webx:panel --sync --force`; сборка
+  сайта; `webx:theme:sync`; сброс кешей и `queue:restart`; `site restart`; `webx:doctor`; `/` и
+  `/cms` отвечают 200. В конце — сводка и `.lab-state` (ветка, коммит, версия).
+- `status` — на каком коммите lab обновлён, на сколько отстал от HEAD, живы ли контейнеры.
+- `reset` — снести базу и папку lab и собрать заново. Пароль админа сохраняется.
+- **Вход** — `admin@example.com`, пароль во второй строке `~/work/webx-lab/.lab-admin` (chmod 600).
+  В отчёты и коммиты его не переписывать.
+- **Lab показывает то, что лежит в чекауте, вместе с незакоммиченным** — это рабочая копия, а не
+  ветка. Строка сводки «N uncommitted files» об этом. Чужая ветка в основном чекауте — и lab на ней.
+- **Не `rm -rf` внутри `~/work/webx-lab/vendor/webx-ui` и `node_modules/@webx-ui`** — это исходники
+  монорепы. Сносит сайт только `reset` (сначала снимает все ссылки, потом проверяет, что файлы
+  монорепы на месте). Из папки lab — `npm`, не `pnpm`.
+- **Из worktree скрипт отказывает**: lab живёт на основном чекауте.
+- **Сломалось непонятно (полупрошедший `create`, чужие руки в базе, правка lab руками)** — `reset`:
+  около минуты, ничего, кроме базы и папки lab, не трогает.
 
 ## Гейт и проверки локально
 
