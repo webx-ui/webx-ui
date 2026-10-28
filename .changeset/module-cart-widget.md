@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+module-cart: the widget — `<x-webx-cart mode="drawer|dialog" preview="dropdown|none">`: the main view where lines change (a drawer or a dialog) and the mini cart under the icon (the lines, the total, «Edit cart» to the main view, the checkout), `WEBX_CART_WIDGET` and `WEBX_CART_PREVIEW`; a buy button and `webx.cart.open()` always open the main view, the icon opens it at once on a narrow header. The server's counter, the panels drawn by the server (`html` and `preview_html` in the API's answer for `X-Webx-Cart-View` and `X-Webx-Cart-Preview`), buy buttons sent in place by `data-webx-cart-add`, `window.webx.cart` and the `webx:cart:change` event, the base look `cart.css`. A buy into a cart where the item is already at its maximum opens the cart with a notice on the line instead of an error under the button: a refused `POST` into an existing cart answers 422 with the errors and the state. The widgets' dialog gains `drawer` (a panel at the edge of the window, its whole height); `theme-default` shows the cart among the header's actions when the module is installed.

@@ -122,6 +122,14 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     base: 'php/packages/module-team/resources/screens/form.json',
     patches: [],
   },
+  'users.form': {
+    base: 'php/packages/module-users/resources/screens/form.json',
+    patches: [],
+  },
+  'users.settings': {
+    base: 'php/packages/module-users/resources/screens/settings.json',
+    patches: [],
+  },
   'banners.form': {
     base: 'php/packages/module-banners/resources/screens/form.json',
     patches: [],

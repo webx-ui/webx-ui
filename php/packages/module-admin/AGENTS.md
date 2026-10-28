@@ -14,6 +14,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
   `screens/{name}`, `links/*`, `collections`, `relations/{target}`, `entities/{type}/{id}/notes`, `history/{type}/{id}`,
   `history/runs/{id}`, `uploads`, `locales`, `translations/{locale}`, `cache`. The panel's icons are served under its prefix too.
 - **Auth** — none of its own (see Do not). Modules put their API behind the middleware group `webx.panel` (`web`, `webx.panel-locale`, `cms.auth`, `webx.history`).
+- **Site visitors** — the seam, not the accounts: `Visitors\Visitors` (`current()`, `find()`, `findByEmail()`, `signInUrl()`) bound to `NullVisitors` until `webx-ui/module-users` binds its own; events in `Visitors\Events`; `webx.visitor[:verified]` (404 without a visitors module), `@visitor`, `@visitorVerified`.
 - **Modules** — `ModuleRegistry`: a module (`AbstractModule`, `id()` required) is registered from a
   provider and lands in the manifest with its title, icon, order, group and permissions. Two modules with one id are refused.
 - **Screens** — `ScreenRegistry` behind the `Screens` facade; field types in `FieldTypes`
@@ -56,8 +57,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 
 ### Moving content between stands
 
-`webx:snapshot` on one stand, `scp` the archive, `webx:snapshot:restore` on the other. Every package declares its tables in `SnapshotTables` as `content` (travels), `admins`
-(`--with-admins`), `stand` (enquiries, journals, tokens, audit; only `--all`), `derived` (emptied
+`webx:snapshot` on one stand, `scp` the archive, `webx:snapshot:restore` on the other. Every package declares its tables in `SnapshotTables` as `content` (travels), `admins` (`--with-admins`), `stand` (enquiries, journals, tokens, audit; only `--all`), `derived` (emptied
 on restore) or `transient` (sessions, cache, queues, `migrations`; never). A restore refuses an
 archive with migrations this code lacks, refuses production without `--force`, and asks unless
 `--no-interaction --force`. Its first line of work is a `webx:db:backup` dump — the rollback.

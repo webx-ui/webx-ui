@@ -588,6 +588,7 @@ const actions = computed<ScreenAction[]>(() =>
         <wx-sortable-list
           v-model="rows"
           class="wx-vacancies__list"
+          hoverable
           :class="{ 'is-loading': loading }"
           plain
           item-key="id"
@@ -711,11 +712,6 @@ const actions = computed<ScreenAction[]>(() =>
 
 .wx-vacancies__list :deep(.wx-sortable-list__row) {
   padding-inline: var(--wx-space-8);
-}
-
-.wx-vacancies__list :deep(.wx-sortable-list__row:hover) {
-  background: var(--wx-bg-subtle);
-  border-radius: var(--wx-radius-sm);
 }
 
 .wx-vacancies__note {

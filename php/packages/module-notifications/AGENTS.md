@@ -107,7 +107,7 @@ what to fix. A channel of an event refuses names the event does not have; one fo
 A letter's template that starts with a tag is HTML (`Email\EmailMarkup`: table tags and inline
 styles; values escaped, line breaks kept, the plain part read out of it); otherwise it is text.
 
-A provider: `key()`, `fields()` (`Sending\Field`, `secret: true` goes to `credentials`),
+A provider: `key()`, `fields()` (`WebxUi\Admin\Support\Field`, `secret: true` goes to `credentials`),
 `recipients()` to check and shape them, `resolve()` to turn them into `Recipient`s at sending time,
 `escape()`, `checkTemplate()`, `send()` throwing `DeliveryFailed` (`permanent` or `retryAfter`),
 `check()`, and `screen()` — the form's nodes, so it shows in the panel without Vue. Register it:

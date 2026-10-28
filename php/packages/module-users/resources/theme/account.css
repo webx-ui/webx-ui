@@ -1,0 +1,272 @@
+/*
+ * The account (spec §11.5): the menu beside the content on a wide container, a row of its items
+ * over the content on a narrow one, the sections as cards. Site tokens only; the container
+ * decides, not the window — the account may stand in a column of a theme's layout.
+ *
+ * The grid is `.webx-account`: printed by <x-webx-users::account> itself, or given to the
+ * theme's `account` node by the module's patch of `layout.account`. Whatever holds it is the
+ * container the grid asks about.
+ */
+:has(> .webx-account) {
+  container: webx-account / inline-size;
+}
+
+.webx-account {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--site-space-5);
+  padding: var(--site-space-5) var(--site-gutter);
+  color: var(--site-color-text);
+}
+
+@container webx-account (min-width: 48rem) {
+  .webx-account {
+    grid-template-columns: 14rem minmax(0, 1fr);
+    align-items: start;
+    gap: var(--site-space-6);
+  }
+
+  .webx-account__menu {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+
+  .webx-account__item {
+    width: 100%;
+  }
+}
+
+.webx-account__main {
+  display: grid;
+  gap: var(--site-space-5);
+  min-width: 0;
+}
+
+.webx-account__title {
+  margin: 0;
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-2);
+  line-height: 1.2;
+}
+
+/* The menu: a wrapping row of items on a narrow container, a column on a wide one. */
+.webx-account__menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-account__entry {
+  display: flex;
+}
+
+.webx-account__sign-out {
+  display: flex;
+  width: 100%;
+  margin: 0;
+}
+
+.webx-account__item {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--site-space-2);
+  padding: var(--site-space-2) var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  font: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.webx-account__item:hover {
+  border-color: var(--site-color-accent);
+}
+
+.webx-account__item.is-active {
+  border-color: var(--site-color-accent);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+}
+
+.webx-account__item--sign-out {
+  color: var(--site-color-text-muted);
+}
+
+.webx-account__badge {
+  min-width: 1.5em;
+  padding: 0 var(--site-space-2);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text);
+  font-size: var(--site-font-size-base);
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* A section of a page: a card with its heading, its words and its form. */
+.webx-account__section {
+  display: grid;
+  gap: var(--site-space-4);
+  padding: var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+}
+
+.webx-account__section--danger {
+  border-color: var(--site-color-danger);
+}
+
+.webx-account__heading {
+  margin: 0;
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-4);
+  line-height: 1.2;
+}
+
+.webx-account__text,
+.webx-account__note {
+  margin: 0;
+}
+
+.webx-account__note {
+  color: var(--site-color-text-muted);
+}
+
+.webx-account__value {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-account__status {
+  margin-inline-start: var(--site-space-2);
+  padding: 0 var(--site-space-2);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-surface-muted);
+}
+
+.webx-account__status--ok {
+  color: var(--site-color-success);
+}
+
+.webx-account__status--warn {
+  color: var(--site-color-danger);
+}
+
+.webx-account__warnings {
+  display: grid;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding-inline-start: var(--site-space-5);
+  color: var(--site-color-danger);
+}
+
+/* One column of fields, the button its own width: the forms of the account are short. */
+.webx-account__form .webx-form__body {
+  display: grid;
+  gap: var(--site-space-4);
+  max-width: 32rem;
+}
+
+.webx-account__form .webx-form__submit {
+  justify-self: start;
+}
+
+.webx-account__form .webx-form__submit.webx-account__danger {
+  border-color: var(--site-color-danger);
+  background: var(--site-color-danger);
+  color: var(--site-color-accent-contrast);
+}
+
+/* A section for a confirmed e-mail, the visitor's is not: it opens on «Confirm your e-mail». */
+.webx-account__item.is-locked:not(.is-active) {
+  color: var(--site-color-text-muted);
+}
+
+/* What a social network left for the page: linked, or why not (spec §9.6). */
+.webx-account__notice {
+  margin: 0;
+  padding: var(--site-space-3) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+}
+
+/*
+ * The social networks of «Sign-in and security» (spec §9.6): a row per network — the mark, the
+ * name with the address and the date under it, the button at the end. The text gives way on a
+ * narrow column and the button wraps under it rather than squeezing the address.
+ */
+.webx-users-identities__list {
+  display: grid;
+  gap: var(--site-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-users-identities__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-2) var(--site-space-3);
+}
+
+/* The mark stays by the first line of the name however many lines the address takes. */
+.webx-users-identities__icon {
+  display: inline-flex;
+  flex: none;
+  align-self: flex-start;
+  align-items: center;
+  height: 1lh;
+}
+
+.webx-users-identities__text {
+  display: grid;
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.webx-users-identities__name {
+  font-weight: 600;
+}
+
+.webx-users-identities__meta {
+  color: var(--site-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.webx-users-identities__form .webx-form__body {
+  display: contents;
+}
+
+/* «Unlink» is not the page's main action: an outlined button, quieter than «Save». */
+.webx-users-identities__form .webx-form__submit {
+  border: 1px solid var(--site-color-border);
+  background: transparent;
+  color: var(--site-color-text);
+}
+
+.webx-users-identities__form .webx-form__submit:disabled {
+  color: var(--site-color-text-muted);
+  cursor: not-allowed;
+}
+
+.webx-users-identities__link {
+  color: var(--site-color-accent);
+}
+
+.webx-users-identities__hint {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-2);
+}

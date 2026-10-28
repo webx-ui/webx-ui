@@ -1,0 +1,17 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The menu of the account (users §11.4) in the nav the theme keeps for it, and the module's classes beside the theme's, so account.css lays out the grid the same in any theme. «Confirm your e-mail» moves to the top of the content: first in main it would stand under the grid.",
+  "add": [
+    {
+      "id": "users.account-menu",
+      "to": "account.menu",
+      "component": "webx-users::account-menu"
+    }
+  ],
+  "move": [{ "id": "users.verify-banner", "to": "account.body", "first": true }],
+  "attrs": {
+    "account": { "class": "site-account webx-account" },
+    "account.menu": { "class": "site-account__menu webx-account__nav" },
+    "account.body": { "class": "site-account__body webx-account__main" }
+  }
+}

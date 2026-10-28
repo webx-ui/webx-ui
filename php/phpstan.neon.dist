@@ -22,6 +22,8 @@ parameters:
         - packages/module-blocks/tests
         - packages/module-blog/src
         - packages/module-blog/tests
+        - packages/module-cart/src
+        - packages/module-cart/tests
         - packages/module-catalog/src
         - packages/module-catalog/tests
         - packages/module-catalog-brands/src
@@ -70,6 +72,8 @@ parameters:
         - packages/module-debug/tests
         - packages/module-team/src
         - packages/module-team/tests
+        - packages/module-users/src
+        - packages/module-users/tests
         - packages/module-vacancies/src
         - packages/module-vacancies/tests
         - packages/module-banners/src
@@ -99,10 +103,23 @@ parameters:
     ignoreErrors:
         # A view a package registers under its own namespace at runtime is a view Larastan
         # cannot find on disk, so the name never becomes a view-string no matter how literal it
-        # is written. Both of these are `<package>::<view>` names of views that exist.
+        # is written. All of these are `<package>::<view>` names of views that exist.
         -
             identifier: argument.type
             message: '#expects view-string, string given#'
             paths:
                 - packages/module-admin/src/Http/Controllers/ShellController.php
                 - packages/module-seo/src/Rendering/Seo.php
+                - packages/module-cart/src/Rendering/Panel.php
+                - packages/module-cart/src/View/Components/Widget.php
+                - packages/module-users/src/Http/Controllers/RegisterController.php
+                - packages/module-users/src/Http/Controllers/EmailController.php
+                - packages/module-users/src/Http/Controllers/ForgotController.php
+                - packages/module-users/src/Http/Controllers/ResetController.php
+                - packages/module-users/src/Http/Controllers/SignInController.php
+                - packages/module-users/src/Http/Controllers/VerifyController.php
+                - packages/module-users/src/Http/Controllers/DevProviderController.php
+                - packages/module-users/src/Http/Controllers/ProfileController.php
+                - packages/module-users/src/Http/Controllers/SecurityController.php
+                - packages/module-users/src/Http/Controllers/SocialController.php
+                - packages/module-users/src/SignInDialog.php

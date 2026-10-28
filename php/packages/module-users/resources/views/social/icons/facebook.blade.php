@@ -1,0 +1,2 @@
+{{-- The mark of Facebook on its sign-in button. Override: views/vendor/webx-users/social/icons/facebook.blade.php. --}}
+<svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path fill="#1877F2" d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v2.9h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z"/></svg>

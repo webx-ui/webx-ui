@@ -1,0 +1,12 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "«Confirm your e-mail» (users §8.3) opens the page's own column: printed hidden and the same for everybody, shown by users.js for a visitor whose address is not confirmed. A theme moves it or removes it by this id.",
+  "add": [
+    {
+      "id": "users.verify-banner",
+      "to": "main",
+      "first": true,
+      "component": "webx-users::verify-banner"
+    }
+  ]
+}

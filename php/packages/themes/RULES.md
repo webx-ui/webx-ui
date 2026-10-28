@@ -60,7 +60,10 @@ Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WE
     with its fields. **Do** give an existing block another look by overriding **the same slug**.
     **Do not** make a new block with a similar name.
 16. **Do** keep an overridden schema **compatible**: the same fields with the same types; new
-    fields may be added. **Do not** remove a field or change its type. (check §9.2)
+    fields may be added. **Do not** change a field's type. A field of the type below the file
+    leaves out is inherited with its default (a note of the check) — print it in the template if
+    the block should show it; describe it in the file to give it your own label or default.
+    (check §9.2)
 17. **Do** give a block's root `data-wx-block="<slug>"` and put every selector under
     `.b-<slug>`. (lint of the blocks)
 18. **Do** make every text of a block a visitor reads a field of the schema with `localized`;

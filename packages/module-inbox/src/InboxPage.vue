@@ -329,6 +329,7 @@ const actions = computed<ScreenAction[]>(() => {
             <wx-sortable-list
               v-model="forms"
               class="wx-inbox__forms"
+              hoverable
               :class="{ 'is-panel': !inline }"
               plain
               size="sm"
@@ -466,8 +467,12 @@ const actions = computed<ScreenAction[]>(() => {
   padding: var(--wx-space-16);
 }
 
+/*
+ * The column starts at the pane's step and not at one of its own, so the two heads start on one
+ * line at every width — the pane's step is 16 on a desktop and 12 on a narrow panel.
+ */
 .wx-inbox__forms {
-  padding: var(--wx-space-8) var(--wx-space-12);
+  padding: var(--wx-gap, var(--wx-space-16)) var(--wx-space-12) var(--wx-space-8);
 }
 
 /* In the panel the sheet is the column, and it insets what it holds already: a second step
@@ -501,6 +506,19 @@ const actions = computed<ScreenAction[]>(() => {
 .wx-inbox__forms.is-plain .wx-sortable-list__head {
   margin-block-end: var(--wx-space-6);
   padding-inline: var(--wx-space-8);
+}
+
+/*
+ * The column's name on the line the pane's name stands on: as tall as the pane head's row (its
+ * Export button) and set in the leading of its heading, so both names are centred in boxes of the
+ * same height and their tops meet. Centred in a row of its own, the smaller name stood 3px off.
+ */
+.wx-inbox__forms.is-plain .wx-sortable-list__head {
+  min-height: var(--wx-size-control-md);
+}
+
+.wx-inbox__forms.is-plain .wx-sortable-list__title {
+  line-height: calc(var(--wx-font-size-xl) * var(--wx-font-line-height-tight));
 }
 
 .wx-inbox-form {
@@ -544,17 +562,6 @@ const actions = computed<ScreenAction[]>(() => {
  */
 .wx-inbox-form.is-off .wx-inbox-form__name > .wx-text {
   text-decoration: line-through;
-}
-
-/*
- * The chosen form, marked on the whole row rather than on the name inside it: the row is what
- * was clicked, and a colour on the words alone leaves the grip and the menu looking like they
- * belong to something else. `:has()` because the row is the list's element and the class is
- * ours — the slot cannot reach the element it is drawn into.
- */
-.wx-inbox__forms .wx-sortable-list__row:has(.wx-inbox-form.is-current) {
-  background: var(--wx-bg-subtle);
-  border-radius: var(--wx-radius-sm);
 }
 
 .wx-inbox-form.is-current {

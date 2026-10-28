@@ -153,7 +153,7 @@ final class ChainCheck
     }
 
     /**
-     * What the last run advises without refusing: the chain works, but costs a visitor more.
+     * What the last run advises without refusing: the chain works, but costs a visitor more or leaves the author something to look at.
      *
      * @return list<array{file: string, line: int|null, message: string}>
      */
@@ -345,6 +345,10 @@ final class ChainCheck
 
         foreach ($blocks->incompatible() as $finding) {
             $this->findings[] = $finding;
+        }
+
+        foreach ($blocks->inherited() as $note) {
+            $this->notes[] = $note;
         }
     }
 

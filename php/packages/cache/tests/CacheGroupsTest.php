@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Cache\CacheGroups;
@@ -361,6 +362,32 @@ final class CacheGroupsTest extends TestCase
 
         $this->assertSame('one', $groups->remember('tree', ['menu'], static fn (): string => 'one'));
         $this->assertSame('two', $groups->remember('tree', ['menu'], static fn (): string => 'two'));
+    }
+
+    #[Test]
+    public function strict_it_refuses_an_object_in_a_value_and_keeps_arrays_and_scalars(): void
+    {
+        $this->assertTrue(config('webx-cache.strict'), 'the tests of the monorepo run strict (phpunit.xml.dist)');
+        $groups = $this->fresh();
+
+        $plain = ['counts' => ['black' => 3], 'min' => 1.5, 'open' => true, 'rank' => null];
+        $this->assertSame($plain, $groups->remember('plain', ['menu'], static fn (): array => $plain));
+
+        foreach ([
+            'remember' => static fn () => $groups->remember('facets', ['menu'], static fn (): array => ['color' => ['result' => new Widget]]),
+            'put' => static fn () => $groups->put('facets', ['menu'], ['color' => ['result' => new Widget]]),
+        ] as $how => $store) {
+            try {
+                $store();
+                $this->fail("{$how}() stored an object.");
+            } catch (LogicException $refused) {
+                $this->assertStringContainsString('"facets" holds '.Widget::class.' at "color.result"', $refused->getMessage(), $how);
+            }
+        }
+
+        // Off — a site's default — it is the store's business.
+        config(['webx-cache.strict' => false]);
+        $this->assertInstanceOf(Widget::class, $groups->remember('object', ['menu'], static fn (): Widget => new Widget));
     }
 
     #[Test]

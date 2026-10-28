@@ -1,0 +1,79 @@
+{
+    "name": "webx-ui/module-cart",
+    "description": "A guest cart for WebX UI sites: lines of anything a module sells through the Purchasable contract, priced live by their owner, totals as a chain other modules plug into, and cart() for Blade.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "cms",
+        "cart",
+        "commerce"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-cart"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/console": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/cookie": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/validation": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/localization": "^0.88.0",
+        "webx-ui/widgets": "^0.88.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/mcp": "^0.88.0",
+        "webx-ui/module-admin": "^0.88.0",
+        "webx-ui/module-auth": "^0.88.0",
+        "webx-ui/routing": "^0.88.0"
+    },
+    "suggest": {
+        "webx-ui/mcp": "Agents read the carts: cart_list, cart_get, cart_summary, cart_quote and cart://catalog, behind the cart.view permission.",
+        "webx-ui/module-admin": "webx:doctor names the setting when the site's currency is not configured.",
+        "webx-ui/module-catalog": "Its products go into the cart, and its currency is the cart's when the cart has none of its own."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Cart\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Cart\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Cart\\CartServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "cart"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

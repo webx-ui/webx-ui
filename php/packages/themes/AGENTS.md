@@ -96,7 +96,7 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
 | Override a module's page (the expensive door)       | `theme/views/vendor/<ns>/<view>.blade.php`, copied from the current version      |
 | Override a view for this site only, above any theme | `resources/views/…` — it always wins                                             |
 | Change or add a word of the layout                  | `theme/lang/<locale>/theme.php` — a new key in `en` and every language           |
-| Another look of a block the theme brings            | `theme/blocks/<same slug>.json` — add fields, never drop one                     |
+| Another look of a block the theme brings            | `theme/blocks/<same slug>.json` — add fields, never retype; left out = inherited |
 | Keep a block made in the panel in git               | `php artisan webx:blocks:export <slug> --path=theme/blocks`                      |
 | An icon, a picture, a font of the site's own        | `theme/icons/`, `theme/assets/`, `theme/assets/fonts/` + `fonts`; then sync      |
 | Stand the local theme on another theme              | `"uses": ["vendor/theme-name"]` in `theme/theme.json`                            |

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "users.settings",
+  "model": "settings",
+  "root": [
+    {
+      "id": "registration-card",
+      "type": "wx-card",
+      "label": "trans::webx-users::screen.registration",
+      "children": [
+        {
+          "id": "registration",
+          "type": "wx-segmented",
+          "name": "users.registration",
+          "label": "trans::webx-users::screen.registration-field",
+          "help": "trans::webx-users::screen.registration-help",
+          "default": "open",
+          "props": {
+            "options": [
+              { "value": "open", "label": "trans::webx-users::screen.registration-open" },
+              { "value": "closed", "label": "trans::webx-users::screen.registration-closed" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "fields-card",
+      "type": "wx-card",
+      "label": "trans::webx-users::screen.fields",
+      "children": [
+        {
+          "id": "fields-help",
+          "type": "wx-alert",
+          "props": { "type": "info", "description": "trans::webx-users::screen.fields-help" }
+        }
+      ]
+    }
+  ]
+}

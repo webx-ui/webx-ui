@@ -6,6 +6,10 @@
          failOnWarning="true"
          failOnRisky="true"
          cacheDirectory=".phpunit.cache">
+    <php>
+        <!-- A value with an object in it is refused by CacheGroups: a site's store may unserialize no classes. -->
+        <env name="WEBX_CACHE_STRICT" value="true"/>
+    </php>
     <testsuites>
         <testsuite name="WebX UI">
             <directory>packages/module-admin/tests</directory>
@@ -17,6 +21,7 @@
             <directory>packages/module-auth/tests</directory>
             <directory>packages/module-blocks/tests</directory>
             <directory>packages/module-blog/tests</directory>
+            <directory>packages/module-cart/tests</directory>
             <directory>packages/module-catalog/tests</directory>
             <directory>packages/module-catalog-brands/tests</directory>
             <directory>packages/module-catalog-labels/tests</directory>
@@ -41,6 +46,7 @@
             <directory>packages/module-snippets/tests</directory>
             <directory>packages/module-debug/tests</directory>
             <directory>packages/module-team/tests</directory>
+            <directory>packages/module-users/tests</directory>
             <directory>packages/module-vacancies/tests</directory>
             <directory>packages/module-banners/tests</directory>
             <directory>packages/module-tariffs/tests</directory>
@@ -63,6 +69,7 @@
             <directory>packages/module-auth/src</directory>
             <directory>packages/module-blocks/src</directory>
             <directory>packages/module-blog/src</directory>
+            <directory>packages/module-cart/src</directory>
             <directory>packages/module-catalog/src</directory>
             <directory>packages/module-catalog-brands/src</directory>
             <directory>packages/module-catalog-labels/src</directory>
@@ -87,6 +94,7 @@
             <directory>packages/module-snippets/src</directory>
             <directory>packages/module-debug/src</directory>
             <directory>packages/module-team/src</directory>
+            <directory>packages/module-users/src</directory>
             <directory>packages/module-vacancies/src</directory>
             <directory>packages/module-banners/src</directory>
             <directory>packages/module-tariffs/src</directory>

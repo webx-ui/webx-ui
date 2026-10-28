@@ -102,6 +102,7 @@ export default defineConfig({
       pkg('module-tariffs'),
       pkg('module-tasks'),
       pkg('module-team'),
+      pkg('module-users'),
       pkg('module-vacancies'),
     ],
   },

@@ -13,6 +13,7 @@ use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
 use Throwable;
 use WebxUi\Admin\Mail\MailRoute;
 use WebxUi\Admin\Mail\MailRoutes;
+use WebxUi\Admin\Support\Field;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Notifications\Contracts\HasMailRoute;
 use WebxUi\Notifications\Contracts\Provider;
@@ -21,7 +22,6 @@ use WebxUi\Notifications\Refusal;
 use WebxUi\Notifications\Sending\CheckResult;
 use WebxUi\Notifications\Sending\Credentials;
 use WebxUi\Notifications\Sending\DeliveryFailed;
-use WebxUi\Notifications\Sending\Field;
 use WebxUi\Notifications\Sending\Message;
 use WebxUi\Notifications\Sending\Recipient;
 

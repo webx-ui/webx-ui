@@ -94,7 +94,11 @@
                 </p>
             @endif
 
-            @if ($verdict->purchasable)
+            {{-- The cart's button when the cart is installed — a form that works without JavaScript;
+                 a dynamic component, so a site without the cart compiles this view too. --}}
+            @if ($verdict->purchasable && WebxUi\Catalog\Cart\CartButton::shown())
+                <x-dynamic-component component="webx-cart::add" type="catalog.product" :ref="$product->id" class="webx-catalog-product__action">{{ __('webx-catalog::storefront.buy') }}</x-dynamic-component>
+            @elseif ($verdict->purchasable)
                 <button type="button" class="webx-catalog-product__action" data-product="{{ $product->id }}">{{ __('webx-catalog::storefront.buy') }}</button>
             @elseif ($verdict->code === WebxUi\Catalog\Purchase\CoreRules::PRICE_ON_REQUEST)
                 <button type="button" class="webx-catalog-product__action" data-product="{{ $product->id }}">{{ __('webx-catalog::storefront.ask-price') }}</button>

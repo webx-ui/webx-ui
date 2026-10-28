@@ -357,6 +357,7 @@ function stars(rating: number): string {
             <wx-sortable-list
               v-model="rows"
               class="wx-reviews__list"
+              hoverable
               :class="{ 'is-loading': loading }"
               plain
               item-key="id"
@@ -534,12 +535,6 @@ function stars(rating: number): string {
 .wx-reviews__list :deep(.wx-sortable-list__row) {
   gap: var(--wx-space-4);
   padding-inline: var(--wx-space-4);
-  border-radius: var(--wx-radius-sm);
-}
-
-.wx-reviews__list :deep(.wx-sortable-list__row:hover),
-.wx-reviews__list :deep(.wx-sortable-list__row:has(.is-current)) {
-  background: var(--wx-bg-subtle);
 }
 
 .wx-reviews__note {

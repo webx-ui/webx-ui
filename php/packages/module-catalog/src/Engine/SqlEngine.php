@@ -128,7 +128,13 @@ final class SqlEngine implements CatalogEngine
             return $this->countAll($query, $base);
         }
 
-        return $this->cache->remember('facets', self::facetsKey($query), fn (): array => $this->countAll($query, $base));
+        // Arrays in the store, results out of it: a store may unserialize no classes.
+        $cached = $this->cache->remember('facets', self::facetsKey($query), fn (): array => array_map(
+            static fn (FacetResult $result): array => $result->toCache(),
+            $this->countAll($query, $base),
+        ));
+
+        return array_map(FacetResult::fromCache(...), $cached);
     }
 
     public function needsIndex(): bool

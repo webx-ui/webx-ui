@@ -283,6 +283,7 @@ async function reorder(): Promise<void> {
         v-model="rows"
         :drag-label="panel('filters.reorder')"
         class="wx-catalog-properties__list"
+        hoverable
         plain
         item-key="id"
         :item-label="(item: PropertyRow) => propertyName(item, locale)"
@@ -365,11 +366,6 @@ async function reorder(): Promise<void> {
 
 .wx-catalog-properties__list.is-plain .wx-sortable-list__row {
   padding-inline: var(--wx-space-8);
-}
-
-.wx-catalog-properties__list .wx-sortable-list__row:hover {
-  background: var(--wx-bg-subtle);
-  border-radius: var(--wx-radius-sm);
 }
 
 .wx-catalog-properties__note {

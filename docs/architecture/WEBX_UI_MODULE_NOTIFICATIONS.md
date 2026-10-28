@@ -1081,7 +1081,7 @@ en и ru — те языки, что есть у сайта) показывае�
 (`send`, `test`, `retry`, `deliveriesFor`), API панели §10.5, экран `notifications.channel`,
 `webx:notifications:prune`, `Doctor\NotificationsCheck`, словари на 10 языков; в `module-admin` —
 `historyMasked()`. Уточнения против текста выше: настройки провайдера описывает
-`Provider::fields()` (`Sending\Field`: `secret` — в `credentials`, иначе — в `options`), а узлы
+`Provider::fields()` (`WebxUi\Admin\Support\Field`: `secret` — в `credentials`, иначе — в `options`), а узлы
 формы — `Provider::screen()`, плоские, добавляются в карточку `connection`; форма шлёт настройки
 плоско по имени (`token`, `host`), агент — и объектами `credentials`/`options`; `sample` события —
 по ключу провайдера (`*` — любой). Строка `Catalogue`, `extra.webx.npm`/`panel`, `RelationTarget`

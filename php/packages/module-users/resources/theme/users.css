@@ -1,0 +1,195 @@
+/*
+ * The sign-in and the registration (spec §11.5): a narrow card in the middle of the page, on
+ * site tokens only — decent under any theme, which restyles it by the same classes. The fields
+ * and the button are the widgets' forms; this only gives them a frame. The width is the card's
+ * own (`min()`), so a phone gets the whole width less the gutter and a wide screen a column.
+ */
+.webx-account-auth {
+  display: flex;
+  justify-content: center;
+  padding: var(--site-space-6) var(--site-gutter);
+}
+
+.webx-account-auth__card {
+  box-sizing: border-box;
+  width: min(100%, 28rem);
+  padding: var(--site-space-6) var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+}
+
+.webx-account-auth__title {
+  margin: 0 0 var(--site-space-5);
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-4);
+  line-height: 1.2;
+}
+
+/* One column of fields, the button the width of the card: a thumb finds it on a phone. */
+.webx-account-auth__form .webx-form__body {
+  display: grid;
+  gap: var(--site-space-4);
+}
+
+.webx-account-auth__form .webx-form__submit {
+  width: 100%;
+}
+
+.webx-account-auth__note {
+  margin: 0 0 var(--site-space-4);
+  color: var(--site-color-text-muted);
+}
+
+.webx-account-auth__forgot {
+  margin: var(--site-space-3) 0 0;
+  text-align: right;
+}
+
+.webx-account-auth__forgot a {
+  color: var(--site-color-accent);
+}
+
+.webx-account-auth__links {
+  margin-top: var(--site-space-5);
+  color: var(--site-color-text-muted);
+  text-align: center;
+}
+
+.webx-account-auth__links p {
+  margin: 0;
+}
+
+.webx-account-auth__links a {
+  color: var(--site-color-accent);
+}
+
+/*
+ * «Confirm your e-mail» (spec §8.3): a strip over the content of the page — the text, the button
+ * of the letter once more and the cross. It wraps on a narrow column rather than squeezing the
+ * text; the button keeps its own width.
+ */
+.webx-users-verify {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-2) var(--site-space-4);
+  padding: var(--site-space-3) var(--site-gutter);
+  border-bottom: 1px solid var(--site-color-border);
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text);
+}
+
+.webx-users-verify[hidden] {
+  display: none;
+}
+
+.webx-users-verify__text {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
+.webx-users-verify__email {
+  font-weight: 600;
+}
+
+.webx-users-verify__form .webx-form__body {
+  display: contents;
+}
+
+.webx-users-verify__close {
+  padding: 0 var(--site-space-2);
+  border: 0;
+  background: none;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-4);
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* A sentence a social network left for the page (spec §9.4): it failed, or what to do next. */
+.webx-account-auth__alert {
+  margin: 0 0 var(--site-space-4);
+  padding: var(--site-space-3) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+}
+
+/*
+ * The buttons of the social networks (spec §9.2): «or» between two rules, then one button per
+ * network the width of the card — the provider's mark and the words, on the site's surface.
+ */
+.webx-users-social {
+  margin-top: var(--site-space-5);
+}
+
+.webx-users-social__or {
+  display: flex;
+  align-items: center;
+  gap: var(--site-space-3);
+  margin: 0 0 var(--site-space-4);
+  color: var(--site-color-text-muted);
+}
+
+.webx-users-social__or::before,
+.webx-users-social__or::after {
+  flex: 1;
+  border-top: 1px solid var(--site-color-border);
+  content: '';
+}
+
+.webx-users-social__list {
+  display: grid;
+  gap: var(--site-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-users-social__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--site-space-3);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--site-space-2) var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  text-align: center;
+  text-decoration: none;
+}
+
+.webx-users-social__button:hover,
+.webx-users-social__button:focus-visible {
+  background: var(--site-color-surface-muted);
+}
+
+.webx-users-social__icon {
+  display: inline-flex;
+  flex: none;
+}
+
+/*
+ * The dialog of the sign-in for a checkout (spec §12.1): the card of the sign-in inside a dialog
+ * of the widgets — as narrow as the card, its forms and links the card's own. Only one view is
+ * shown; a theme that styles `section` keeps the others out of sight all the same.
+ */
+.webx-users-sign-in {
+  --webx-dialog-width: min(100% - 2 * var(--site-gutter), 28rem);
+}
+
+.webx-users-sign-in__view[hidden] {
+  display: none;
+}
+
+.webx-users-sign-in .webx-account-auth__links {
+  margin-top: var(--site-space-5);
+  color: var(--site-color-text-muted);
+  text-align: center;
+}

@@ -183,6 +183,15 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
 
 ## Blade и рендер сайта
 
+- **Перекрытие блока в теме сайта даёт на `webx:theme:check` note «inherits field … from
+  webx-ui/theme-default», в панели у блока появилось поле, а на странице его нет.** Пакет добавил
+  поле в свой тип блока (минорный релиз), перекрытие `theme/blocks/<slug>.json` его не описывает —
+  движок наследует поле с `default` (THEMES §9.2, правило 16), но шаблон темы — свой и поля не
+  печатает. Лечение — вывести поле в шаблоне перекрытия (или описать его в файле, если нужна своя
+  подпись/`default`); не нужно — оставить, заметка не роняет проверку. В базе сайта тип меняется
+  только явным `webx:blocks:import --theme --replace=<slug>`: до него импорт печатает `differs`.
+  Проверка — `php artisan webx:theme:check` (note на месте, находок нет) и `webx:theme:show`.
+
 - **Патч темы в `theme/compositions/layout/*.json` «не работает», страница прежняя, ошибок нет.**
   Причины по частоте: у сайта или темы свой `components/layout.blade.php` — он раньше диспетчера
   композиции в поиске видов (`webx:theme:check` даёт note «overrides the composition»); имя файла —
@@ -892,6 +901,19 @@ wxtest-manticore`.
   (HTML вместо CSV) — отказ без его содержимого (`ExchangeFiles::looksLikeExchange()`).
 
 ## Прочее
+
+- **`__PHP_Incomplete_Class` из кеша на втором запросе — `TypeError` и 500.** Первый запрос
+  (промах) отдаёт 200, со второго страница падает: «Return value must be of type ?FacetResult,
+  __PHP_Incomplete_Class returned». В `config/cache.php` скелета Laravel 12+ стоит
+  `'serializable_classes' => false`, и хранилище (Redis, `file`, `database`) разворачивает значение
+  с `allowed_classes=false` — любой объект в значении, enum тоже, приходит обломком. В кеш класть
+  только массивы и скаляры, объект собирать после чтения (`FacetResult::toCache()` / `fromCache()`),
+  конфиг сайта не трогать. Тест на `array` без `serialize` этого не видит: значение лежит в памяти
+  объектом. Ловит `webx-cache.strict` — тесты монорепы идут с ним (`WEBX_CACHE_STRICT` в
+  `php/phpunit.xml.dist`), и `CacheGroups` отказывается хранить объект, называя запись и путь до
+  него; хранилище как у сайта — `cache.stores.array.serialize = true` и
+  `cache.serializable_classes = false` (`StorefrontCacheTest`). Прямой `Cache::put()` мимо
+  `CacheGroups` strict не проверяет.
 
 - **Закешированный ответ отдаёт адрес другого хоста.** `url('/')`, `route()` и `asset()`
   строятся от хоста запроса; запись кеша, собранная запросом к одному имени сайта, отдаёт его

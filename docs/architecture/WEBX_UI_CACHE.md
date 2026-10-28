@@ -199,13 +199,18 @@ $html = $groups->remember('theme.header', ['menu', 'settings', 'theme'], fn () =
    достанет.
 7. Тест модуля: «сохранил через панель — сайт не показывает старое» (`version` до и после, или
    `remember` пересчитался).
+8. В значении — только массивы и скаляры, без объектов (модель, value-объект, enum, `Carbon`):
+   хранилище сайта может разворачивать без классов (`cache.serializable_classes => false`, скелет
+   Laravel 12+), объект вернётся `__PHP_Incomplete_Class`. Объект собирать после чтения.
+   `webx-cache.strict` (`WEBX_CACHE_STRICT`) отказывается хранить такое значение — тесты монорепы
+   идут с ним (`php/phpunit.xml.dist`).
 
 ## 7. Тесты
 
 - `cache/tests/CacheGroupsTest.php` — версия, объявление, составные зависимости на
   `array`/`file`/`database`, события моделей, массовый `update` без события, коллизия после потери
   версии, языки, транзакция (отложенный сброс, откат, без записи), хуки, одно чтение версий,
-  выключенный кеш, длинный ключ.
+  выключенный кеш, длинный ключ, strict — отказ хранить объект.
 - `module-admin/tests/CacheScreenTest.php` — модуль в манифесте, `GET`/`POST` с правами, журнал,
   команда, инструмент с `dry_run`, doctor, расписание и `webx:cache:prune`.
 - `@webx-ui/module-admin`: `cache/CachePage.test.ts`, `cache/module.test.ts`, паритет слов в

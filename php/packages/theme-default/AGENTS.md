@@ -17,14 +17,14 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   (`"preset": "night"` in `theme/theme.json`). Its test is `Testing\ThemeContract` first.
 - **`views/components/layout`** — the document every module page is printed in (`<x-layout>`), the
   dispatcher of the composition `layout` (`compositions/layout/default.json`; also `layout.minimal`,
-  `layout.blank`): `@webxTheme`, `@webxThemeColor`, the page's `head` slot (or `@webxSeo` + `@webxBlocks`), `@stack('head')`,
+  `layout.blank`, and `layout.account` — the grid of a visitor's account, `account.menu` beside `account.body`, for `webx-ui/module-users`): `@webxTheme`, `@webxThemeColor`, the page's `head` slot (or `@webxSeo` + `@webxBlocks`), `@stack('head')`,
   `<x-webx-notice-bar>` above the header, the `header`/`footer` regions, `<main id="content" class="site-main">`, `@stack('scripts')`; the modules add their pieces.
 - **`views/components/header`**, **`views/components/footer`** — the regions' fallbacks and the
   dispatchers of the compositions `header`/`footer` (`compositions/header|footer/default.json`, leaves
   in `views/components/header|footer/`): they work out the `vars` (`menu('header')` split into `nav`
   and `calls` — the pages under home until it has entries —, `contacts()`, the languages;
   `menu('footer')`). Ids: `header.topbar` → `header.contacts`, `header.brand` → `header.logo`,
-  `header.nav`, `header.actions` → `header.phones|cta|languages`; `footer.inner` → `footer.contacts`,
+  `header.nav`, `header.actions` → `header.phones|cta|languages|cart`; `footer.inner` → `footer.contacts`,
   `footer.nav` → `footer.menu|consent`, `footer.copy`.
 - **`views/errors/404`** — a missing address in the site's frame: `<x-layout>` with its own head
   (`<title>`, `noindex`, `@webxBlocks`, no `@webxSeo`), the code, a line and a link to the

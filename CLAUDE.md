@@ -39,7 +39,7 @@ apps/docs/                              # VitePress: components/*.md + demos/*.v
 apps/playground/                        # песочница; /panel/ — настоящая панель на фикстурах
 docs/architecture/                      # спеки и справочники, оглавление — README.md
 docs/pitfalls/                          # ловушки по темам
-scripts/                                # link-panel, starter-site, sync-php-version, …
+scripts/                                # lab-site, link-panel, starter-site, sync-php-version, …
 ```
 
 - **Версии здесь не пишем** — сверяй по `package.json` пакетов, `php/package.json`,
@@ -175,6 +175,10 @@ scripts/                                # link-panel, starter-site, sync-php-ver
   видна сразу; `webx status`, `webx sync <сайт>` (после правки `composer.json`, миграций, ассетов),
   `webx logs <сайт>`. Подробности и стартовый сайт (`scripts/starter-site.sh`) —
   `docs/pitfalls/packages-and-demo-sites.md`.
+- **Lab-сайт** `https://webx-lab.$DEV_DOMAIN` — постоянный сайт devbox на этом чекауте: все модули,
+  демо, панель `/cms` (пароль — `~/work/webx-lab/.lab-admin`). `scripts/lab-site.sh refresh` после
+  правок, `status`, `reset` — если сломан; `rm` в его `vendor/webx-ui` сносит исходники монорепы.
+  Подробности — «Lab-сайт» в `docs/pitfalls/packages-and-demo-sites.md`.
 - **Хомлаб** `https://webx-cms.alexx.group` — на опубликованных пакетах; вёрстку и жесты проверяем
   там на настоящих устройствах. После релиза — обновить его (`composer update "webx-ui/*"` в его
   репозитории): ночной прогон свежий релиз не привозит.

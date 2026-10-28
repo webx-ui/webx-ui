@@ -41,6 +41,7 @@
     "@webx-ui/module-tariffs": "workspace:*",
     "@webx-ui/module-tasks": "workspace:*",
     "@webx-ui/module-team": "workspace:*",
+    "@webx-ui/module-users": "workspace:*",
     "@webx-ui/module-vacancies": "workspace:*",
     "@webx-ui/schema": "workspace:*",
     "@webx-ui/tokens": "workspace:*",

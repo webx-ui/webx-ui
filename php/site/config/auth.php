@@ -1,6 +1,12 @@
 <?php
 
-use App\Models\User;
+/*
+ * The site has three kinds of people, and none of them is the default user model of Laravel:
+ * administrators sign in on the guard `cms` (webx-ui/module-auth), agents on `api`, visitors of
+ * the site on `site` (webx-ui/module-users) — each package adds its guard. `web` stays the default
+ * guard with no model behind it, so `auth()->user()` in the site's own code is nobody rather than
+ * a visitor or an administrator it did not ask for.
+ */
 
 return [
 
@@ -64,7 +70,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            'model' => env('AUTH_MODEL'),
         ],
 
         // 'users' => [

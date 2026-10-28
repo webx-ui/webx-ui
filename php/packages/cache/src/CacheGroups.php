@@ -15,6 +15,7 @@ use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\TransactionRolledBack;
 use InvalidArgumentException;
+use LogicException;
 use WebxUi\Cache\Events\GroupRead;
 
 /**
@@ -34,6 +35,11 @@ use WebxUi\Cache\Events\GroupRead;
  *
  * Versions are read once a request, all groups in one `many()`, and start at a random number
  * rather than 1: a version lost to eviction and reseeded at 1 would meet entries of the old 1.
+ *
+ * A value is arrays and scalars, never an object: a site's store may unserialize no classes
+ * (`cache.serializable_classes => false`, Laravel's skeleton), and an object comes back from
+ * it as `__PHP_Incomplete_Class` — on the second request, never the first. `webx-cache.strict`
+ * refuses one when it is stored; the tests of the monorepo run with it.
  */
 final class CacheGroups
 {
@@ -295,7 +301,7 @@ final class CacheGroups
 
         // A null is never kept: the store does not keep one either (`remember` computes it
         // again), and a `get()` that found nothing must not stand in for the value.
-        return $this->values[$key] ??= $this->cache->remember($key, $ttl ?? $this->ttl(), $compute);
+        return $this->values[$key] ??= $this->cache->remember($key, $ttl ?? $this->ttl(), fn (): mixed => $this->storable($name, $compute()));
     }
 
     /**
@@ -344,10 +350,10 @@ final class CacheGroups
         }
 
         $computed = false;
-        $value = $this->values[$key] = $this->cache->remember($key, $ttl ?? $this->ttl(), static function () use ($compute, &$computed): mixed {
+        $value = $this->values[$key] = $this->cache->remember($key, $ttl ?? $this->ttl(), function () use ($name, $compute, &$computed): mixed {
             $computed = true;
 
-            return $compute();
+            return $this->storable($name, $compute());
         });
 
         if ($value === null) {
@@ -372,7 +378,7 @@ final class CacheGroups
         }
 
         $key = $this->key($name, $depends, $localized);
-        $this->cache->put($key, $value, $ttl ?? $this->ttl());
+        $this->cache->put($key, $this->storable($name, $value), $ttl ?? $this->ttl());
         $this->values[$key] = $value;
     }
 
@@ -400,6 +406,37 @@ final class CacheGroups
     public function enabled(): bool
     {
         return (bool) $this->config->get('webx-cache.enabled', true);
+    }
+
+    /**
+     * The value as it is, or — under `webx-cache.strict` — a refusal of one with an object in it,
+     * named by the entry and the path to the object.
+     */
+    private function storable(string $name, mixed $value): mixed
+    {
+        if ($this->config->get('webx-cache.strict', false)) {
+            self::refuseObjects($name, $value, '');
+        }
+
+        return $value;
+    }
+
+    private static function refuseObjects(string $name, mixed $value, string $path): void
+    {
+        if (is_object($value)) {
+            throw new LogicException(sprintf(
+                'The cache entry "%s" holds %s at %s: keep arrays and scalars, a store may unserialize no classes (cache.serializable_classes => false).',
+                $name,
+                $value::class,
+                $path === '' ? 'its top' : '"'.$path.'"',
+            ));
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $key => $item) {
+                self::refuseObjects($name, $item, $path === '' ? (string) $key : $path.'.'.$key);
+            }
+        }
     }
 
     /** How long an entry lives unless told otherwise: a day, so that nothing missed stays forever. */

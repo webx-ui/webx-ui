@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Notifications\Mcp;
 
 use Illuminate\Contracts\Container\Container;
+use WebxUi\Admin\Support\Field;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Notifications\Channels\ChannelForm;
 use WebxUi\Notifications\Contracts\FindsRecipients;
@@ -16,7 +17,6 @@ use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Notifications\Notifications;
 use WebxUi\Notifications\Providers;
-use WebxUi\Notifications\Sending\Field;
 use WebxUi\Notifications\Telegram\TelegramMarkup;
 
 /**

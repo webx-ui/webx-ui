@@ -145,14 +145,19 @@ final class ModulesCommandTest extends TestCase
             $path = $root.'/'.substr($module['package'], strlen('webx-ui/')).'/composer.json';
             $this->assertFileExists($path, "{$module['id']}: no package at {$path}");
 
-            /** @var array{require: array<string, string>, extra: array{webx: array{npm: array<string, string>}}} $composer */
+            /** @var array{require: array<string, string>, extra: array{webx: array{npm?: array<string, string>}}} $composer */
             $composer = json_decode((string) $this->files->get($path), true);
 
-            $this->assertArrayHasKey(
-                $module['npm'],
-                $composer['extra']['webx']['npm'],
-                "{$module['id']}: the npm half is not the one extra.webx names",
-            );
+            if ($module['npm'] === null) {
+                // No section in the panel, so nothing for webx:panel to build.
+                $this->assertArrayNotHasKey('npm', $composer['extra']['webx'], "{$module['id']}: extra.webx names an npm half the catalogue does not");
+            } else {
+                $this->assertArrayHasKey(
+                    $module['npm'],
+                    $composer['extra']['webx']['npm'] ?? [],
+                    "{$module['id']}: the npm half is not the one extra.webx names",
+                );
+            }
 
             $required = array_values(array_filter(array_map(
                 $catalogue->idFor(...),

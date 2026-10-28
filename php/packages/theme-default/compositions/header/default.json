@@ -26,7 +26,8 @@
         "children": [
           { "id": "header.phones", "view": "components.header.phones" },
           { "id": "header.cta", "view": "components.header.cta" },
-          { "id": "header.languages", "view": "components.header.languages" }
+          { "id": "header.languages", "view": "components.header.languages" },
+          { "id": "header.cart", "view": "components.header.cart" }
         ]
       }
     ]

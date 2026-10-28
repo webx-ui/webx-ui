@@ -164,6 +164,8 @@ apps/docs/.vitepress/dist
 !php/packages/widgets/dist/
 # And the configurator its widget, the engine built in.
 !php/packages/module-configurator/dist/
+# And the cart its widget.
+!php/packages/module-cart/dist/
 
 # The local browser run of the starter site: its report and what it left behind.
 tests/starter/report/

@@ -1,0 +1,342 @@
+/*
+ * The cart's base look (§9.6): the trigger with its counter, the lines, the stepper, the chain of
+ * totals and the buy button — decent under any theme, on site tokens only. The panel decides by
+ * its own width (`@container`): a drawer on a phone, a dialog and the mini cart are narrow, a wide
+ * dialog is not. The box of the drawer and the dialog is the widgets' (`webx-dialog--drawer`).
+ */
+.webx-cart {
+  display: inline-flex;
+  position: relative;
+}
+
+/* The icon alone, the counter a badge on its corner: the header's actions are short of room. */
+.webx-cart__trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: var(--site-radius-full);
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.webx-cart__trigger:hover {
+  background: var(--site-color-surface);
+}
+
+.webx-cart__icon {
+  flex: none;
+}
+
+/* Said, not shown: the icon is what is seen. */
+.webx-cart__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.webx-cart__count {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  box-sizing: border-box;
+  min-width: 1.25rem;
+  padding: 0 var(--site-space-1);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font-size: calc(var(--site-font-size-base) * 0.75);
+  font-weight: 600;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.webx-cart__count.is-empty {
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text-muted);
+}
+
+/* The drawer's width; the dialog is moved to the end of <body>, so it is set on the dialog itself. */
+.webx-cart__dialog {
+  --webx-cart-drawer-width: min(100%, 28rem);
+  /* Printed among the header's actions, which do not wrap: the panel does. */
+  white-space: normal;
+  --webx-dialog-drawer-width: var(--webx-cart-drawer-width);
+}
+
+.webx-cart__panel {
+  --webx-cart-image-size: 4rem;
+  --webx-cart-gap: var(--site-space-3);
+  container: webx-cart / inline-size;
+  white-space: normal;
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-4);
+  min-width: 0;
+}
+
+/* The mini cart under the icon: the dropdown's panel gives the padding and the scroll, and keeps
+   it inside the window; this is only how wide it would like to be. */
+.webx-cart__panel--preview {
+  width: 22rem;
+  max-width: 100%;
+}
+
+.webx-cart__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--webx-cart-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-cart__lines--children {
+  grid-column: 2 / -1;
+  padding-inline-start: var(--site-space-3);
+  border-inline-start: 2px solid var(--site-color-border);
+}
+
+.webx-cart__line {
+  display: grid;
+  grid-template-columns: var(--webx-cart-image-size) minmax(0, 1fr) auto auto;
+  align-items: start;
+  gap: var(--site-space-2) var(--webx-cart-gap);
+}
+
+.webx-cart__lines--children .webx-cart__line {
+  --webx-cart-image-size: 2.5rem;
+}
+
+.webx-cart__line.is-unavailable .webx-cart__line-name,
+.webx-cart__line.is-unavailable .webx-cart__line-image {
+  opacity: 0.6;
+}
+
+.webx-cart__line-image {
+  grid-column: 1;
+  width: var(--webx-cart-image-size);
+  height: var(--webx-cart-image-size);
+  object-fit: cover;
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface);
+}
+
+.webx-cart__line-body {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--site-space-1);
+  min-width: 0;
+}
+
+.webx-cart__line-name {
+  color: inherit;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-cart__line-options,
+.webx-cart__warning {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+}
+
+.webx-cart__warning {
+  color: var(--site-color-danger);
+}
+
+/* News, not a problem: a price that moved, a line already at its maximum. */
+.webx-cart__notice {
+  margin: 0;
+  padding: var(--site-space-2) var(--site-space-3);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+}
+
+.webx-cart__line-price {
+  grid-column: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin: 0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.webx-cart__line-old {
+  color: var(--site-color-text-muted);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+  font-weight: 400;
+}
+
+.webx-cart__remove {
+  grid-column: 4;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-block-start: calc(-1 * var(--site-space-2));
+  padding: 0;
+  border: 0;
+  border-radius: var(--site-radius-full);
+  background: none;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-4);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.webx-cart__remove:hover {
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+}
+
+.webx-cart__stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+}
+
+.webx-cart__stepper-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: var(--site-font-size-4);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.webx-cart__stepper-button:hover {
+  background: var(--site-color-surface);
+}
+
+.webx-cart__stepper-input {
+  width: 3rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  appearance: textfield;
+}
+
+.webx-cart__totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding-block-start: var(--site-space-4);
+  border-block-start: 1px solid var(--site-color-border);
+}
+
+.webx-cart__total-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--site-space-4);
+}
+
+.webx-cart__total-row dt,
+.webx-cart__total-row dd {
+  margin: 0;
+}
+
+.webx-cart__payable {
+  font-size: var(--site-font-size-5);
+  font-weight: 700;
+}
+
+.webx-cart__hints {
+  margin: 0;
+  padding-inline-start: var(--site-space-5);
+  color: var(--site-color-text-muted);
+}
+
+.webx-cart__checkout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--site-space-2) var(--site-space-5);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* The mini cart's way to the main view: beside the checkout, quieter than it. */
+.webx-cart__edit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--site-space-2) var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.webx-cart__edit:hover {
+  background: var(--site-color-surface);
+}
+
+.webx-cart__empty {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  text-align: center;
+}
+
+/* A narrow panel: the picture smaller, the price under the name, the stepper under the price. */
+@container webx-cart (width < 22rem) {
+  .webx-cart__line {
+    --webx-cart-image-size: 3rem;
+    grid-template-columns: var(--webx-cart-image-size) minmax(0, 1fr) auto;
+  }
+
+  .webx-cart__line-price {
+    grid-column: 2;
+    flex-direction: row;
+    gap: var(--site-space-2);
+    align-items: baseline;
+  }
+
+  .webx-cart__remove {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+/* The buy button: the theme's button; here only its states and the line of a refusal. */
+.webx-cart-add.is-busy {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.webx-cart-add.is-added {
+  outline: 2px solid var(--site-color-success);
+  outline-offset: 2px;
+}
+
+.webx-cart-add__error {
+  margin: var(--site-space-2) 0 0;
+  color: var(--site-color-danger);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+}

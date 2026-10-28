@@ -311,6 +311,7 @@ function unseen(row: OutletRow): boolean {
             <wx-sortable-list
               v-model="rows"
               class="wx-press__list"
+              hoverable
               :class="{ 'is-loading': loading }"
               plain
               item-key="id"
@@ -485,12 +486,6 @@ function unseen(row: OutletRow): boolean {
 .wx-press__list :deep(.wx-sortable-list__row) {
   gap: var(--wx-space-4);
   padding-inline: var(--wx-space-4);
-  border-radius: var(--wx-radius-sm);
-}
-
-.wx-press__list :deep(.wx-sortable-list__row:hover),
-.wx-press__list :deep(.wx-sortable-list__row:has(.is-current)) {
-  background: var(--wx-bg-subtle);
 }
 
 .wx-press__note {

@@ -88,9 +88,18 @@ final class CheckCommandTest extends TestCase
             ->expectsOutputToContain('blocks/list.json  not a block document')
             ->expectsOutputToContain('blocks/loud.json:6  styles, line 3: literal colour #ff0000')
             ->expectsOutputToContain('blocks/hero.json  hero overrides the type of webx-ui/theme-fixture: field "title" was wx-input, is wx-textarea')
-            ->expectsOutputToContain('field "buttons.url" (wx-input) is gone')
-            ->expectsOutputToContain('4 findings')
+            ->expectsOutputToContain('blocks/hero.json  note: hero inherits field "buttons.url" (wx-input) from webx-ui/theme-fixture')
+            ->expectsOutputToContain('3 findings')
             ->assertFailed();
+    }
+
+    /** A field the package type has and the override does not describe is a note, not a finding (rule 16). */
+    #[Test]
+    public function an_override_that_leaves_out_a_field_of_the_type_below_passes_with_a_note(): void
+    {
+        $this->artisan('webx:theme:check', ['path' => self::fixture('inherit-theme')])
+            ->expectsOutputToContain('blocks/hero.json  note: hero inherits field "buttons" (wx-repeater) from webx-ui/theme-fixture with its default, and this template does not use it')
+            ->assertSuccessful();
     }
 
     /**

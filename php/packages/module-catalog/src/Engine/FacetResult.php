@@ -43,6 +43,46 @@ final class FacetResult
     }
 
     /**
+     * Everything it holds, as arrays and scalars — the form the storefront's cache keeps it in.
+     * A site's store may unserialize no classes (`cache.serializable_classes => false`, the
+     * default of Laravel's skeleton), and an object would come back as `__PHP_Incomplete_Class`.
+     *
+     * @return array{key: string, kind: string, counts: array<string, int>, min: ?float, max: ?float, count: int, expanded: bool, rank: ?int}
+     */
+    public function toCache(): array
+    {
+        return [
+            'key' => $this->key,
+            'kind' => $this->kind->value,
+            'counts' => $this->counts,
+            'min' => $this->min,
+            'max' => $this->max,
+            'count' => $this->count,
+            'expanded' => $this->expanded,
+            'rank' => $this->rank,
+        ];
+    }
+
+    /**
+     * The result {@see toCache()} took apart.
+     *
+     * @param  array{key: string, kind: string, counts: array<string, int>, min: ?float, max: ?float, count: int, expanded: bool, rank: ?int}  $cached
+     */
+    public static function fromCache(array $cached): self
+    {
+        return new self(
+            $cached['key'],
+            FacetKind::from($cached['kind']),
+            $cached['counts'],
+            $cached['min'],
+            $cached['max'],
+            $cached['count'],
+            $cached['expanded'],
+            $cached['rank'],
+        );
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array

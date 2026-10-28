@@ -140,3 +140,27 @@ Not in advance: every contract has to be kept stable afterwards. The sign that i
 simple and visible the moment it happens — somebody needed to replace a `final` class. The first
 obvious candidate is already in sight: `Captcha` knows exactly two providers as constants, and
 which provider a site uses is the site's business rather than the library's.
+
+## Who the visitor is
+
+A module that needs to know who is signed in on the site — a cart, favourites, a gift to another
+customer — asks `WebxUi\Admin\Visitors\Visitors`, never a visitors module by name. The contract
+lives in `module-admin`, so the module keeps working on a site without visitors: the default
+binding is `NullVisitors`, under which everybody is a guest. A visitors module binds its own.
+
+```php
+use WebxUi\Admin\Visitors\Visitors;
+
+$visitor = app(Visitors::class)->current(); // null for a guest
+$visitor?->verified;                        // the e-mail is confirmed
+```
+
+A route for signed-in visitors takes `->middleware('webx.visitor')`; one for visitors with a
+confirmed e-mail — `webx.visitor:verified`. A guest is sent to sign in and brought back (JSON:
+401 `visitor.guest`), an unconfirmed visitor sees «Confirm your e-mail» (JSON: 403
+`visitor.unverified`), and on a site without a visitors module the route answers 404. In a view,
+`@visitor … @else … @endvisitor` and `@visitorVerified … @endvisitorVerified` — only on a page that
+is not cached whole: a cached page must print nothing personal. What happens to a visitor is told
+by the events in `WebxUi\Admin\Visitors\Events`: `VisitorSignedIn` (fired in the request of the
+sign-in, while the guest's cookies are still there), `VisitorSignedOut`, `VisitorRegistered` and
+`VisitorDeleting` — the last one inside the deletion, so a listener lets go of what it keeps.

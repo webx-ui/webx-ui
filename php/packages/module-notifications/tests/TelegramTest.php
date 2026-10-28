@@ -8,6 +8,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Support\Field;
 use WebxUi\Notifications\Sending\Credentials;
 use WebxUi\Notifications\Sending\DeliveryFailed;
 use WebxUi\Notifications\Sending\Message;
@@ -20,6 +21,15 @@ use WebxUi\Notifications\Telegram\TelegramProvider;
  */
 final class TelegramTest extends TestCase
 {
+    #[Test]
+    public function the_settings_of_a_provider_are_the_shared_field_of_the_panel(): void
+    {
+        // Decision 21 of the visitors' spec: one Field in module-admin, no copy left here.
+        self::assertFalse(class_exists('WebxUi\Notifications\Sending\Field'));
+        self::assertContainsOnlyInstancesOf(Field::class, $this->provider()->fields());
+        self::assertTrue(array_any($this->provider()->fields(), static fn (Field $field): bool => $field->secret));
+    }
+
     #[Test]
     public function a_message_goes_as_html_without_a_link_preview(): void
     {

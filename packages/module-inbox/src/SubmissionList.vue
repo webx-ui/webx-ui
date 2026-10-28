@@ -644,6 +644,16 @@ defineExpose({ create: byHand })
   padding-top: var(--wx-space-8);
 }
 
+/*
+ * And the same step under the search box as over it. The table keeps the panel step under its
+ * head, so the box stood 8 under the strip and 16 over the rows — off centre between the two
+ * lines it sits between. Every other table with a search has the panel step on both sides; this
+ * one has the closer step on both.
+ */
+.wx-submissions__views :deep(.wx-table--flush .wx-table__header) {
+  padding-bottom: var(--wx-space-8);
+}
+
 .wx-submissions__mass {
   display: flex;
   align-items: center;

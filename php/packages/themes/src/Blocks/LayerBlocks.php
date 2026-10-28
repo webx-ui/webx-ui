@@ -10,7 +10,8 @@ use WebxUi\Themes\ThemeManifest;
 /**
  * The block types the chain carries, as one set (spec §9.2, §7.1): every layer's `blocks/*.json`,
  * read bottom up, and a type of an upper layer replaces the lower one with the same slug whole —
- * not field by field, the way a view is replaced.
+ * not field by field, the way a view is replaced. The one exception is a field of the lower type
+ * the upper file does not describe: it is inherited, with its default, as {@see inherited()} says.
  *
  * A file that is not a block document is a problem, not a type: it is said by {@see problems()}
  * and left out of the set, so one broken file does not stop the others from syncing.
@@ -75,8 +76,41 @@ final class LayerBlocks
     }
 
     /**
-     * Every override of the set whose schema drops or retypes a field of the type below (rule 16):
-     * content filled in for the lower type would be lost in the upper one.
+     * Every field an override of the set inherits from the type below (rule 16) — a note, not a
+     * finding: the panel has the field, the override's template may not print it.
+     *
+     * @return list<array{file: string, line: int|null, message: string}>
+     */
+    public function inherited(): array
+    {
+        $found = [];
+
+        foreach ($this->set as $block) {
+            for ($upper = $block; $upper->below !== null; $upper = $upper->below) {
+                $fields = SchemaCompatibility::fields($upper->schema());
+
+                foreach ($upper->inherited as $key) {
+                    $name = substr((string) strrchr('.'.$key, '.'), 1);
+                    $unused = preg_match('/\b'.preg_quote($name, '/').'\b/', $upper->template()) === 1
+                        ? ''
+                        : ', and this template does not use it — print it in the template if the block should show it';
+
+                    $found[] = [
+                        'file' => $upper->file,
+                        'line' => null,
+                        'message' => "{$upper->slug} inherits field \"{$key}\" ({$fields[$key]}) from {$upper->below->layer} with its default{$unused}",
+                    ];
+                }
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * Every override of the set whose schema retypes a field of the type below (rule 16): content
+     * filled in for the lower type would not fit the upper one. A field the override leaves out is
+     * inherited, not dropped, so it is never found here.
      *
      * @return list<array{file: string, line: int|null, message: string}>
      */
@@ -90,7 +124,7 @@ final class LayerBlocks
                     $found[] = [
                         'file' => $upper->file,
                         'line' => null,
-                        'message' => "{$upper->slug} overrides the type of {$upper->below->layer}: {$problem} — an override may add fields, never drop or retype one",
+                        'message' => "{$upper->slug} overrides the type of {$upper->below->layer}: {$problem} — an override may add fields, never retype one",
                     ];
                 }
             }
@@ -122,9 +156,45 @@ final class LayerBlocks
             $slug = is_string($document['slug'] ?? null) && $document['slug'] !== '' ? $document['slug'] : basename($file, '.json');
             $document['slug'] = $slug;
 
-            $blocks[] = new LayerBlock($slug, $layer->name, $file, $document, $this->set[$slug] ?? null);
+            $below = $this->set[$slug] ?? null;
+            $inherited = [];
+
+            if ($below !== null) {
+                $schema = is_array($document['schema'] ?? null) ? array_values($document['schema']) : [];
+                ['schema' => $document['schema'], 'inherited' => $inherited] = SchemaCompatibility::inherit($below->schema(), $schema);
+                $document = self::sample($document, $below->document, $inherited);
+            }
+
+            $blocks[] = new LayerBlock($slug, $layer->name, $file, $document, $below, $inherited);
         }
 
         return $blocks;
+    }
+
+    /**
+     * The sample of an override with the value the lower type's sample gives each top-level field
+     * it inherits, so a preview of the type shows them as the package does.
+     *
+     * @param  array<string, mixed>  $document
+     * @param  array<string, mixed>  $below
+     * @param  list<string>  $inherited
+     * @return array<string, mixed>
+     */
+    private static function sample(array $document, array $below, array $inherited): array
+    {
+        $sample = is_array($document['sample'] ?? null) ? $document['sample'] : null;
+        $lower = is_array($below['sample'] ?? null) ? $below['sample'] : [];
+
+        foreach ($inherited as $key) {
+            if ($sample !== null && ! str_contains($key, '.') && array_key_exists($key, $lower) && ! array_key_exists($key, $sample)) {
+                $sample[$key] = $lower[$key];
+            }
+        }
+
+        if ($sample !== null) {
+            $document['sample'] = $sample;
+        }
+
+        return $document;
     }
 }
