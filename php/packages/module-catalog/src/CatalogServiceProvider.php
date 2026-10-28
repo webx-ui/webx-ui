@@ -24,12 +24,14 @@ use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Cache\CacheGroups;
+use WebxUi\Cart\Purchasables;
 use WebxUi\Catalog\Audit\CatalogChecks;
 use WebxUi\Catalog\Bulk\Actions\ExtraCategoryAction;
 use WebxUi\Catalog\Bulk\Actions\PublicationAction;
 use WebxUi\Catalog\Bulk\Actions\SetCategoryAction;
 use WebxUi\Catalog\Bulk\Actions\TrashAction;
 use WebxUi\Catalog\Bulk\BulkActions;
+use WebxUi\Catalog\Cart\ProductPurchasable;
 use WebxUi\Catalog\Collections\ProductsSource;
 use WebxUi\Catalog\Console\ExchangePruneCommand;
 use WebxUi\Catalog\Console\FlushViewsCommand;
@@ -178,6 +180,17 @@ class CatalogServiceProvider extends ServiceProvider
             foreach (array_keys(CatalogChecks::CHECKS) as $id) {
                 $this->app->make(AuditChecks::class)->register(new CatalogChecks($id));
             }
+        }
+
+        // A product goes into the cart when the cart is installed (§7 of its spec): the cart's
+        // registry is made only by the cart's provider, so without it nothing is registered. With
+        // prices off there is nothing to sell.
+        if (class_exists(Purchasables::class)) {
+            $this->callAfterResolving(Purchasables::class, function (Purchasables $purchasables): void {
+                if ((bool) $this->app->make('config')->get('webx-catalog.price.enabled', true)) {
+                    $purchasables->register('catalog.product', ProductPurchasable::class);
+                }
+            });
         }
 
         $this->registerAddresses();

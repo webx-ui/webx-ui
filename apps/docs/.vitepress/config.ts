@@ -101,6 +101,7 @@ export default defineConfig({
             { text: 'Press', link: '/guide/press' },
             { text: 'Vacancies', link: '/guide/vacancies' },
             { text: 'Catalogue', link: '/guide/catalog' },
+            { text: 'Cart', link: '/guide/cart' },
           ],
         },
         {
