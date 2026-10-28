@@ -220,14 +220,18 @@
   gap: var(--site-space-2) var(--site-space-3);
 }
 
+/* The mark stays by the first line of the name however many lines the address takes. */
 .webx-users-identities__icon {
   display: inline-flex;
   flex: none;
+  align-self: flex-start;
+  align-items: center;
+  height: 1lh;
 }
 
 .webx-users-identities__text {
   display: grid;
-  flex: 1 1 12rem;
+  flex: 1 1 8rem;
   min-width: 0;
 }
 
@@ -242,6 +246,18 @@
 
 .webx-users-identities__form .webx-form__body {
   display: contents;
+}
+
+/* «Unlink» is not the page's main action: an outlined button, quieter than «Save». */
+.webx-users-identities__form .webx-form__submit {
+  border: 1px solid var(--site-color-border);
+  background: transparent;
+  color: var(--site-color-text);
+}
+
+.webx-users-identities__form .webx-form__submit:disabled {
+  color: var(--site-color-text-muted);
+  cursor: not-allowed;
 }
 
 .webx-users-identities__link {
