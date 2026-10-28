@@ -126,6 +126,9 @@ html:not(.webx-js) .webx-dialog[open] {
  * without the runtime, it is the card it always is.
  */
 .webx-dialog--sheet.is-sheet {
+  /* Pressed to the bottom by itself: a modal sits between top: 0 and bottom: 0, and with both
+     an auto height stretches it to the max-height whatever is inside. */
+  inset-block-start: auto;
   width: 100%;
   height: auto;
   max-height: calc(100dvh - var(--site-space-7));
