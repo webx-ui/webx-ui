@@ -31,6 +31,14 @@ final class AccessCoverageTest extends TestCase
         'POST account/email' => 'the letter to a new address: the signed-in visitor\'s own (webx.visitor) with the current password, 3 an hour (Throttle::emailChange)',
         'GET account/email/{id}' => 'the link that moves the sign-in to a new address: signed, alive 60 minutes',
         'GET account/state' => 'what a cached page may say of the visitor looking at it: their own, the address masked',
+        'GET account' => 'the account: the signed-in visitor\'s own (webx.visitor), a redirect to the first section',
+        'GET account/profile' => 'the profile: the signed-in visitor\'s own (webx.visitor)',
+        'POST account/profile' => 'the profile saved: the signed-in visitor\'s own (webx.visitor), behind CSRF',
+        'GET account/security' => 'sign-in and security: the signed-in visitor\'s own (webx.visitor)',
+        'POST account/password' => 'a new password: the signed-in visitor\'s own (webx.visitor) with the current one, 5 wrong a minute (Throttle::password)',
+        'POST account/password/link' => '«Set a password»: a reset link to the signed-in visitor\'s own address (webx.visitor), 3 an hour (Throttle::passwordLink)',
+        'POST account/sign-out-everywhere' => 'the other sessions ended: the signed-in visitor\'s own (webx.visitor), behind CSRF',
+        'POST account/delete' => 'the account deleted: the signed-in visitor\'s own (webx.visitor) with the current password or the address, 5 wrong a minute (Throttle::password)',
         'GET webx/users/users.js' => 'the script of the cached pages: the same file for everyone',
     ];
 

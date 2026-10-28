@@ -42,7 +42,7 @@ final readonly class Urls
      */
     public function to(string $page, ?string $back = null, array $parameters = []): string
     {
-        [$name, $parameters] = $this->route($page, $parameters);
+        [$name, $parameters] = $this->route('webx-users.'.$page, $parameters);
         $back = $back === null ? null : $this->local($back);
 
         if ($back !== null) {
@@ -59,12 +59,25 @@ final readonly class Urls
      */
     public function signed(string $page, array $parameters, DateTimeInterface $expires): string
     {
-        [$name, $parameters] = $this->route($page, $parameters);
+        [$name, $parameters] = $this->route('webx-users.'.$page, $parameters);
 
         /** @var UrlGenerator&\Illuminate\Routing\UrlGenerator $url */
         $url = $this->url;
 
         return $url->temporarySignedRoute($name, $expires, $parameters);
+    }
+
+    /**
+     * A route of any module by its full name — a section of the account (§11.2) — in the
+     * language of the page: its copy behind the prefix where the page has one.
+     *
+     * @param  array<string, mixed>  $parameters
+     */
+    public function named(string $name, array $parameters = []): string
+    {
+        [$name, $parameters] = $this->route($name, $parameters);
+
+        return $this->url->route($name, $parameters);
     }
 
     /** Where a visitor who signed in goes when the page they came from is not known. */
@@ -102,9 +115,8 @@ final readonly class Urls
      * @param  array<string, mixed>  $parameters
      * @return array{string, array<string, mixed>}
      */
-    private function route(string $page, array $parameters): array
+    private function route(string $name, array $parameters): array
     {
-        $name = 'webx-users.'.$page;
         $locale = $this->prefix();
 
         if ($locale !== null && $this->router->has($name.'.localised')) {

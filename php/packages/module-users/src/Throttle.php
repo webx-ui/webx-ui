@@ -105,6 +105,29 @@ final readonly class Throttle
         $this->limiter->hit($key, 3600);
     }
 
+    /**
+     * The current password asked in the account — a new password, deleting the account (§11.1,
+     * §14.1): wrong ones per visitor a minute, so a session left open is not a way to guess it.
+     */
+    public function password(int $visitor, string $field = 'current_password'): void
+    {
+        $this->refuseOver([['webx-users:password:'.$visitor, $this->limit('password', 5)]], $field);
+    }
+
+    public function passwordFailed(int $visitor): void
+    {
+        $this->limiter->hit('webx-users:password:'.$visitor, 60);
+    }
+
+    /** «Set a password» of an account without one sends a reset link (§9.6): per visitor an hour. */
+    public function passwordLink(int $visitor): void
+    {
+        $key = 'webx-users:password-link:'.$visitor;
+
+        $this->refuseOver([[$key, $this->limit('password_link', 3)]], 'password', 'webx-users::auth.verify.throttled');
+        $this->limiter->hit($key, 3600);
+    }
+
     /** @param  list<array{string, int}>  $limits */
     private function refuseOver(array $limits, string $field, string $words = 'webx-users::auth.throttled'): void
     {

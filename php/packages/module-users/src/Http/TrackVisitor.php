@@ -16,9 +16,9 @@ use WebxUi\Users\Urls;
 /**
  * Two things every page of the site keeps in step with the visitor, in the `web` group.
  *
- * **The other sessions end with a new password** (spec §7 item 4). The session keeps a stamp of
- * the password it was opened with; a session whose stamp is not the password's any more is
- * signed out on its next request — the sessions table of a site may be no table at all, so
+ * **The other sessions end with a new password** (spec §7 item 4) and with «Sign out everywhere»
+ * (§11.1). The session keeps a stamp of the password and the remember token it was opened with;
+ * a session whose stamp is not theirs any more is signed out on its next request — the sessions table of a site may be no table at all, so
  * nothing is searched. The remember cookie dies with `remember_token`, which a new password
  * changes.
  *
@@ -78,10 +78,14 @@ final readonly class TrackVisitor
         return $response;
     }
 
-    /** What the session was opened with: the hash of the password, hashed again. */
+    /**
+     * What the session was opened with: the hash of the password and the remember token, hashed
+     * again. The token changes only with a new password and «Sign out everywhere» — signing out of
+     * one device leaves it (SignIn::out), or that would end the sessions of every other one.
+     */
     public static function stamp(User $user): string
     {
-        return hash('sha256', 'webx-users|'.$user->getKey().'|'.($user->password ?? ''));
+        return hash('sha256', 'webx-users|'.$user->getKey().'|'.($user->password ?? '').'|'.($user->getRememberToken() ?? ''));
     }
 
     /** `1`, `u` or null — what the cookie should say about this visitor. */

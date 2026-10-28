@@ -119,6 +119,45 @@ Whether the visitor must fill one in is a setting of the site, `users.fields.<na
 in Blade with `$user->extra('club-card')`. For a fast search by a field,
 `php artisan webx:users:index-field club-card` writes a migration with an indexed column.
 
+## The account
+
+`/account` opens the first section of the menu: **Profile** (names, phone, the fields of the site
+with the place `profile`, the e-mail and its change) and **Sign-in and security** (a new password
+with the current one, or «Set a password» by a letter for an account without one; «Sign out
+everywhere»; deleting the account). Every page is `no-store` and behind `webx.visitor`.
+
+A module adds its own section without touching this package:
+
+```php
+use WebxUi\Users\Account\AccountMenu;
+use WebxUi\Users\Account\AccountRoutes;
+use WebxUi\Users\Account\AccountSection;
+
+if (class_exists(AccountMenu::class)) {
+    app(AccountMenu::class)->register(new AccountSection(
+        id: 'orders', label: 'webx-orders::account.menu', route: 'webx.orders.account.index',
+        position: 30, active: 'webx.orders.account.*',
+    ));
+
+    AccountRoutes::group(function () {
+        Route::get('orders', [AccountOrdersController::class, 'index'])->name('webx.orders.account.index');
+    });
+}
+```
+
+`AccountRoutes::group()` puts the routes under the prefix of the account with the middleware of its
+pages (`web`, the language, `webx.visitor`, a service route, `no-store`) and declares their copy behind
+the language prefix (names with `.localised`; `Urls::named()` picks the page's). A section's page
+prints itself in the frame of the account: `<x-webx-users::account :title="…">…</x-webx-users::account>`.
+The site hides a section with `webx-users.account.hidden`.
+
+Before an account goes, the modules say what will be lost — `DeletionWarnings::register(fn (Visitor
+$visitor): ?string => …)` — and unlink what is theirs on `VisitorDeleting` of `module-admin`, inside the
+transaction that deletes the row; a listener that throws keeps the account.
+
+The menu stands in `layout.account` of the theme (node `users.account-menu`), the grid and the cards
+are `resources/theme/account.css` — container queries, site tokens.
+
 ## License
 
 MIT

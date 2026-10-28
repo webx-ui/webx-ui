@@ -35,4 +35,9 @@ return [
         'not-you' => 'Se non sei stato tu, recupera la password e contattaci.',
         'button' => 'Recupera la password',
     ],
+    'account-deleted' => [
+        'subject' => 'Il tuo account su :site è stato eliminato',
+        'text' => 'Il tuo account su :site è stato eliminato insieme ai suoi dati.',
+        'not-you' => 'Se non sei stato tu, contattaci subito.',
+    ],
 ];

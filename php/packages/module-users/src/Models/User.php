@@ -66,6 +66,19 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    /**
+     * A remember token from the start: it is the stamp of every session (TrackVisitor), and one
+     * set later by the first «Remember me» would end the sessions already open.
+     */
+    protected static function booted(): void
+    {
+        static::creating(static function (self $user): void {
+            if ($user->getRememberToken() === null || $user->getRememberToken() === '') {
+                $user->setRememberToken(Str::random(60));
+            }
+        });
+    }
+
     public function extraScreen(): string
     {
         return self::SCREEN;

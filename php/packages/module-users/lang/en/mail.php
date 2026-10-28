@@ -35,4 +35,9 @@ return [
         'not-you' => 'If it was not you, restore the password and contact us.',
         'button' => 'Restore the password',
     ],
+    'account-deleted' => [
+        'subject' => 'Your account on :site was deleted',
+        'text' => 'Your account on :site has been deleted together with its data.',
+        'not-you' => 'If it was not you, contact us at once.',
+    ],
 ];

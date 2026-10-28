@@ -67,6 +67,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Account
+    |--------------------------------------------------------------------------
+    |
+    | `hidden` — the ids of the sections the site takes out of the menu of the account: a
+    | module registers its own (`['wallet']`), the site need not want it. Its pages stay; a
+    | section is taken out wholly by removing the module.
+    |
+    */
+
+    'account' => [
+        'hidden' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Registration
     |--------------------------------------------------------------------------
     |
@@ -117,7 +132,9 @@ return [
     | `forgot` / `forgot_ip` — requests of a reset link per address and IP / per IP an hour (over
     | them no letter leaves and the answer stays the same); `reset` — new passwords per IP a
     | minute; `verify_minute` / `verify_hour` — letters of confirmation per visitor a minute / an
-    | hour; `email_change` — letters to a new address per visitor an hour.
+    | hour; `email_change` — letters to a new address per visitor an hour; `password` — wrong
+    | current passwords in the account per visitor a minute; `password_link` — letters «Set a
+    | password» per visitor an hour.
     |
     */
 
@@ -131,6 +148,8 @@ return [
         'verify_minute' => 1,
         'verify_hour' => 5,
         'email_change' => 3,
+        'password' => 5,
+        'password_link' => 3,
     ],
 
     /*

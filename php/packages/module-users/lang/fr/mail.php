@@ -35,4 +35,9 @@ return [
         'not-you' => 'Si ce n’était pas vous, restaurez le mot de passe et contactez-nous.',
         'button' => 'Restaurer le mot de passe',
     ],
+    'account-deleted' => [
+        'subject' => 'Votre compte sur :site a été supprimé',
+        'text' => 'Votre compte sur :site a été supprimé avec ses données.',
+        'not-you' => 'Si ce n’était pas vous, contactez-nous immédiatement.',
+    ],
 ];

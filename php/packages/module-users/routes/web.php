@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
+use WebxUi\Users\Account\AccountRoutes;
 use WebxUi\Users\Http\Controllers\EmailController;
 use WebxUi\Users\Http\Controllers\ForgotController;
+use WebxUi\Users\Http\Controllers\ProfileController;
 use WebxUi\Users\Http\Controllers\RegisterController;
 use WebxUi\Users\Http\Controllers\ResetController;
+use WebxUi\Users\Http\Controllers\SecurityController;
 use WebxUi\Users\Http\Controllers\SignInController;
 use WebxUi\Users\Http\Controllers\SignOutController;
 use WebxUi\Users\Http\Controllers\StateController;
 use WebxUi\Users\Http\Controllers\VerifyController;
-use WebxUi\Users\Http\KeepPrivate;
 use WebxUi\Users\Http\ScriptController;
 
 /*
@@ -24,8 +26,8 @@ use WebxUi\Users\Http\ScriptController;
  * edits (`WebxUi\Admin\Links\SiteRoutes::SERVICE`); `KeepPrivate` — none is cached anywhere.
  * The writes are limited inside the controllers, which answer a form in words (§15).
  */
-$prefix = trim((string) config('webx-users.prefix', 'account'), '/');
-$middleware = [...array_values((array) config('webx-users.middleware', ['web', 'webx.locale'])), KeepPrivate::class];
+$prefix = AccountRoutes::prefix();
+$middleware = AccountRoutes::middleware();
 $localised = (string) config('webx-localization.strategy', 'prefix') === 'prefix';
 
 $pages = static function (string $suffix): void {
@@ -54,6 +56,21 @@ Route::group(['webx_service' => true], static function () use ($prefix, $middlew
             ->name('webx-users.')
             ->group(static fn () => $pages('.localised'));
     }
+});
+
+/*
+ * The account (spec §11.1): the profile and «Sign-in and security», declared the way a module
+ * declares its section — behind `webx.visitor`, with the copy behind the language prefix.
+ */
+AccountRoutes::group(static function (): void {
+    Route::get('', [ProfileController::class, 'index'])->name('webx-users.account');
+    Route::get('profile', [ProfileController::class, 'show'])->name('webx-users.profile');
+    Route::post('profile', [ProfileController::class, 'store'])->name('webx-users.profile.store');
+    Route::get('security', [SecurityController::class, 'show'])->name('webx-users.security');
+    Route::post('password', [SecurityController::class, 'password'])->name('webx-users.password.store');
+    Route::post('password/link', [SecurityController::class, 'link'])->name('webx-users.password.link');
+    Route::post('sign-out-everywhere', [SecurityController::class, 'signOutEverywhere'])->name('webx-users.sessions.destroy');
+    Route::post('delete', [SecurityController::class, 'destroy'])->name('webx-users.account.destroy');
 });
 
 // The script of the pages cached for everybody (§11.6): no session, no language, cached for good.

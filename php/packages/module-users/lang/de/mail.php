@@ -35,4 +35,9 @@ return [
         'not-you' => 'Wenn Sie das nicht waren, stellen Sie das Passwort wieder her und kontaktieren Sie uns.',
         'button' => 'Passwort wiederherstellen',
     ],
+    'account-deleted' => [
+        'subject' => 'Ihr Konto bei :site wurde gelöscht',
+        'text' => 'Ihr Konto bei :site wurde samt seinen Daten gelöscht.',
+        'not-you' => 'Wenn Sie das nicht waren, kontaktieren Sie uns sofort.',
+    ],
 ];

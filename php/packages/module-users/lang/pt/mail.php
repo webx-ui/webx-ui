@@ -35,4 +35,9 @@ return [
         'not-you' => 'Se não foi você, recupere a senha e contacte-nos.',
         'button' => 'Recuperar a senha',
     ],
+    'account-deleted' => [
+        'subject' => 'Sua conta em :site foi excluída',
+        'text' => 'Sua conta em :site foi excluída junto com seus dados.',
+        'not-you' => 'Se não foi você, entre em contato conosco imediatamente.',
+    ],
 ];

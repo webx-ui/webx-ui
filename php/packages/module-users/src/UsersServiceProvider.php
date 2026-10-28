@@ -15,6 +15,9 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Compositions\Compositions;
+use WebxUi\Users\Account\AccountMenu;
+use WebxUi\Users\Account\AccountSection;
+use WebxUi\Users\Account\DeletionWarnings;
 use WebxUi\Users\Auth\UserProvider;
 use WebxUi\Users\Console\IndexFieldCommand;
 use WebxUi\Users\Console\PruneCommand;
@@ -50,6 +53,10 @@ class UsersServiceProvider extends ServiceProvider
         // The fields of the site (§10): modules register theirs in `boot()`, the config is read on
         // the first question.
         $this->app->singleton(UserFields::class);
+
+        // The sections of the account and what a module says before one is deleted (§11.2, §14.1).
+        $this->app->singleton(AccountMenu::class);
+        $this->app->singleton(DeletionWarnings::class);
     }
 
     public function boot(): void
@@ -63,6 +70,17 @@ class UsersServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-users');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-users');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+
+        $this->callAfterResolving(AccountMenu::class, static function (AccountMenu $menu): void {
+            $menu->register(new AccountSection(
+                id: AccountMenu::PROFILE, label: 'webx-users::account.menu.profile', route: 'webx-users.profile',
+                icon: 'user', position: 10, active: 'webx-users.profile*',
+            ));
+            $menu->register(new AccountSection(
+                id: AccountMenu::SECURITY, label: 'webx-users::account.menu.security', route: 'webx-users.security',
+                icon: 'lock', position: 90, active: 'webx-users.security*',
+            ));
+        });
 
         // `users.auth` — the sign-in and the registration; `users.account` — the account (§11.4).
         Compositions::handles('users', ['users.account', 'users.auth']);

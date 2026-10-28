@@ -35,4 +35,9 @@ return [
         'not-you' => 'Bu siz değilseniz, şifreyi kurtarın ve bizimle iletişime geçin.',
         'button' => 'Şifreyi kurtar',
     ],
+    'account-deleted' => [
+        'subject' => ':site hesabınız silindi',
+        'text' => ':site hesabınız verileriyle birlikte silindi.',
+        'not-you' => 'Bunu siz yapmadıysanız hemen bizimle iletişime geçin.',
+    ],
 ];

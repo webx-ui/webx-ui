@@ -35,4 +35,9 @@ return [
         'not-you' => 'Jeśli to nie Ty, odzyskaj hasło i skontaktuj się z nami.',
         'button' => 'Odzyskaj hasło',
     ],
+    'account-deleted' => [
+        'subject' => 'Twoje konto w :site zostało usunięte',
+        'text' => 'Twoje konto w :site zostało usunięte wraz z danymi.',
+        'not-you' => 'Jeśli to nie ty, natychmiast się z nami skontaktuj.',
+    ],
 ];
