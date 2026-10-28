@@ -902,6 +902,19 @@ wxtest-manticore`.
 
 ## Прочее
 
+- **`__PHP_Incomplete_Class` из кеша на втором запросе — `TypeError` и 500.** Первый запрос
+  (промах) отдаёт 200, со второго страница падает: «Return value must be of type ?FacetResult,
+  __PHP_Incomplete_Class returned». В `config/cache.php` скелета Laravel 12+ стоит
+  `'serializable_classes' => false`, и хранилище (Redis, `file`, `database`) разворачивает значение
+  с `allowed_classes=false` — любой объект в значении, enum тоже, приходит обломком. В кеш класть
+  только массивы и скаляры, объект собирать после чтения (`FacetResult::toCache()` / `fromCache()`),
+  конфиг сайта не трогать. Тест на `array` без `serialize` этого не видит: значение лежит в памяти
+  объектом. Ловит `webx-cache.strict` — тесты монорепы идут с ним (`WEBX_CACHE_STRICT` в
+  `php/phpunit.xml.dist`), и `CacheGroups` отказывается хранить объект, называя запись и путь до
+  него; хранилище как у сайта — `cache.stores.array.serialize = true` и
+  `cache.serializable_classes = false` (`StorefrontCacheTest`). Прямой `Cache::put()` мимо
+  `CacheGroups` strict не проверяет.
+
 - **Закешированный ответ отдаёт адрес другого хоста.** `url('/')`, `route()` и `asset()`
   строятся от хоста запроса; запись кеша, собранная запросом к одному имени сайта, отдаёт его
   адрес запросу к другому (у нас: `siteUrl` в словах манифеста). Корень запроса — в имя записи;

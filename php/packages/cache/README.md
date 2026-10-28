@@ -80,6 +80,12 @@ Nothing is stored while a transaction is open: the rows read inside it may still
 value is computed and returned, not kept. With `webx-cache.enabled` off, everything is computed
 on every call — for a test, not for a site.
 
+The value is arrays and scalars, never an object (a model, a value object, an enum): a site's
+store may unserialize no classes (`cache.serializable_classes => false`, Laravel's skeleton), and
+an object comes back as `__PHP_Incomplete_Class` on the next request. Store arrays and build the
+object after the read. `webx-cache.strict` (`WEBX_CACHE_STRICT`) refuses an object when it is
+stored, naming the entry and the path to it — turn it on in your tests.
+
 ## Resetting by code
 
 ```php

@@ -6,6 +6,10 @@
          failOnWarning="true"
          failOnRisky="true"
          cacheDirectory=".phpunit.cache">
+    <php>
+        <!-- A value with an object in it is refused by CacheGroups: a site's store may unserialize no classes. -->
+        <env name="WEBX_CACHE_STRICT" value="true"/>
+    </php>
     <testsuites>
         <testsuite name="WebX UI">
             <directory>packages/module-admin/tests</directory>

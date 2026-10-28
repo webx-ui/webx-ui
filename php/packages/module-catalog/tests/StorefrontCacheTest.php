@@ -89,6 +89,8 @@ final class StorefrontCacheTest extends TestCase
         match ($this->name()) {
             'it_works_on_the_file_store' => $this->onFile($app),
             'it_works_on_redis' => $this->onRedis($app),
+            'it_works_on_a_store_that_unserializes_no_classes',
+            'a_category_page_answers_again_from_a_store_that_unserializes_no_classes' => $this->onNoClasses($app),
             default => null,
         };
     }
@@ -152,6 +154,45 @@ final class StorefrontCacheTest extends TestCase
         } finally {
             $this->forgetRedisKeys((string) config('cache.stores.redis.prefix'));
         }
+    }
+
+    /**
+     * Laravel's skeleton: `cache.serializable_classes => false`, and the store gives back an
+     * object as `__PHP_Incomplete_Class`. The `array` store serializing does what Redis does.
+     */
+    #[Test]
+    public function it_works_on_a_store_that_unserializes_no_classes(): void
+    {
+        $this->roundTrip('array');
+
+        $query = $this->ask(['color' => FacetValue::of(['black'])]);
+        $this->request();
+        $results = $this->engine()->search($query)->facets;
+
+        $this->assertNotSame([], $results);
+        $this->assertContainsOnlyInstancesOf(FacetResult::class, $results);
+        $this->assertEquals($this->engine()->search($query)->facets, $results);
+    }
+
+    #[Test]
+    public function a_category_page_answers_again_from_a_store_that_unserializes_no_classes(): void
+    {
+        $first = $this->get('/shirts')->assertOk()->getContent();
+        $this->request();
+
+        $this->assertSame($first, $this->get('/shirts')->assertOk()->getContent());
+    }
+
+    /**
+     * @param  Application  $app
+     */
+    protected function onNoClasses($app): void
+    {
+        $app['config']->set('cache.serializable_classes', false);
+        $app['config']->set('cache.stores.array.serialize', true);
+        $app['config']->set('cache.default', 'array');
+        // The store's own answer is what is tested here, not the guard that refuses it earlier.
+        $app['config']->set('webx-cache.strict', false);
     }
 
     /**

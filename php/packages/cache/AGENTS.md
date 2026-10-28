@@ -18,7 +18,8 @@ localized?)`, `get(…)` / `put(…)` (its two halves), `prefetch(name, depends,
 - **Keys** `webx:ver:<group>` for the versions, `webx:<name>:<locale|->:<group>.<v>…` for the
   entries; a tail over 180 characters is hashed (the `database` store's key column is 255).
 - **Config** `webx-cache` (`config/webx-cache.php`, tag `webx-cache-config`): `enabled`
-  (`WEBX_CACHE_ENABLED`), `ttl` (`WEBX_CACHE_TTL`, a day).
+  (`WEBX_CACHE_ENABLED`), `ttl` (`WEBX_CACHE_TTL`, a day), `strict` (`WEBX_CACHE_STRICT`, off:
+  refuse a value with an object in it — the monorepo's tests run with it).
 - **Rules the registry keeps**: a version starts at a random number, never 1; inside a
   transaction a move waits for the commit, once a group, and `remember()` stores nothing; the
   versions are read once a request in one `many()`, the values `remember()` read with them, and
@@ -50,6 +51,9 @@ localized?)`, `get(…)` / `put(…)` (its two halves), `prefetch(name, depends,
   `file` or `database` would keep yesterday's menu. The groups are the tags that work everywhere.
 - Do not `Cache::remember()` site data on a key of your own: nothing resets it when the data
   changes. Go through `remember()` with the groups it depends on.
+- Do not put an object in a value — a model, a value object, an enum, a `Carbon`: a store may
+  unserialize no classes (`cache.serializable_classes => false`, Laravel's skeleton), and it comes
+  back as `__PHP_Incomplete_Class` on the next request. Store arrays, rebuild the object after.
 - Do not leave a mass write without its `bump()`: a reset somebody had to press is a `bump`
   somebody forgot. Find the path and give it one, with a test.
 - Do not write to the cache by hand inside a transaction: the rows may still roll back and the
