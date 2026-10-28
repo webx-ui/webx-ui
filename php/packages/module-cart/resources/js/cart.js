@@ -30,6 +30,9 @@ let last = null
 let writes = 0
 const timers = new Map()
 let status = null
+// The panel was just drawn from a write's answer: the dialog opening does not fetch it again — the
+// note of a refusal is only in that answer.
+let drawn = false
 
 const root = () => document.querySelector(SELECTOR)
 const data = (name) =>
@@ -184,13 +187,14 @@ function announce(text) {
   setTimeout(() => (status.textContent = text), 50)
 }
 
-/** The main view, whatever the icon opens: the mini cart closes first. */
-function open() {
+/** The main view, whatever the icon opens: the mini cart closes first. `fresh` — just drawn. */
+function open(fresh = false) {
   const el = root()
   if (!el) return
   const details = el.querySelector('details')
   if (details) details.open = false
   const dialog = document.getElementById(el.getAttribute('data-webx-cart-panel') ?? '')
+  drawn = fresh && !!dialog && !dialog.open
   if (dialog instanceof HTMLDialogElement && typeof webx.openDialog === 'function') {
     webx.openDialog(dialog, el.querySelector('.webx-cart__trigger'))
   } else if (dialog) {
@@ -202,7 +206,7 @@ const cart = {
   add: (items) => write('POST', '/items', { items }),
   remove: (id) => write('DELETE', `/items/${encodeURIComponent(id)}`),
   setQty: (id, qty) => write('PATCH', `/items/${encodeURIComponent(id)}`, { qty }),
-  open,
+  open: () => open(),
   state: () => (last ? Promise.resolve(last) : load()),
 }
 
@@ -226,13 +230,13 @@ async function buy(button) {
     button.classList.add('is-added')
     setTimeout(() => button.classList.remove('is-added'), 2000)
     announce(button.getAttribute('data-webx-cart-added') ?? data('added') ?? 'Added to cart')
-    if (button.getAttribute('data-webx-cart-open') !== 'false') open()
+    if (button.getAttribute('data-webx-cart-open') !== 'false') open(true)
   } catch (error) {
     const text = error.status === 422 ? error.message : (data('error') ?? error.message)
     if (error.status === 422 && Array.isArray(error.answer?.lines) && root()) {
       // The cart is there and says why in its panel — the line at its maximum, where it can change.
       apply(error.answer, false)
-      open()
+      open(true)
     } else if (alert) {
       alert.textContent = text
       alert.hidden = false
@@ -352,7 +356,11 @@ function setup(el) {
   watched.add(dialog)
 
   // However it opens — the trigger, a link to #webx-cart, webx.cart.open() — the panel is fetched.
-  new MutationObserver(() => dialog.open && load().catch(() => {})).observe(dialog, {
+  new MutationObserver(() => {
+    if (!dialog.open) return
+    if (drawn) drawn = false
+    else load().catch(() => {})
+  }).observe(dialog, {
     attributes: true,
     attributeFilter: ['open'],
   })
