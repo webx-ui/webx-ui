@@ -225,9 +225,9 @@ refresh() {
     if [ -n "$missing" ]; then
         step 'Block types and demo of the new modules'
         artisan webx:blocks:offered --install --no-interaction
-        local demo=()
-        while read -r id _; do demo+=("--module=$id"); done <<< "$missing"
-        artisan webx:demo "${demo[@]}" --no-interaction
+        # Every module rather than the new ones by name: a module without demo content (the
+        # cart) is refused by `--module`, and what the journal holds is skipped anyway.
+        artisan webx:demo --no-interaction
     fi
 
     step 'Panel and the site build'
