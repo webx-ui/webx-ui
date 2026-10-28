@@ -86,6 +86,8 @@ lab_environment() {
     env_set MANTICORE_TABLE_PREFIX "$ID"
     env_set MAIL_MAILER log
     env_set APP_URL "$URL"
+    # The demo catalogue sells through the cart: without a currency the cart refuses every write.
+    [ -n "$(env_get WEBX_CATALOG_CURRENCY)" ] || env_set WEBX_CATALOG_CURRENCY EUR
     [ -n "$(env_get APP_KEY)" ] || artisan key:generate --force --no-interaction
 }
 
