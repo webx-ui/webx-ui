@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Users;
 
+use DateTimeInterface;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Routing\Router;
@@ -34,18 +35,14 @@ final readonly class Urls
         return is_string($guard) && $guard !== '' ? $guard : 'site';
     }
 
-    /** `sign-in`, `register`, `sign-out` — with the language prefix where the page has one. */
-    public function to(string $page, ?string $back = null): string
+    /**
+     * `sign-in`, `register`, `forgot`, … — with the language prefix where the page has one.
+     *
+     * @param  array<string, mixed>  $parameters
+     */
+    public function to(string $page, ?string $back = null, array $parameters = []): string
     {
-        $name = 'webx-users.'.$page;
-        $locale = $this->prefix();
-        $parameters = [];
-
-        if ($locale !== null && $this->router->has($name.'.localised')) {
-            $name .= '.localised';
-            $parameters[OneSpellingPerAddress::PARAMETER] = $locale;
-        }
-
+        [$name, $parameters] = $this->route($page, $parameters);
         $back = $back === null ? null : $this->local($back);
 
         if ($back !== null) {
@@ -53,6 +50,21 @@ final readonly class Urls
         }
 
         return $this->url->route($name, $parameters);
+    }
+
+    /**
+     * A link for a letter: signed, so nobody makes one up, and alive until `$expires` (spec §8).
+     *
+     * @param  array<string, mixed>  $parameters
+     */
+    public function signed(string $page, array $parameters, DateTimeInterface $expires): string
+    {
+        [$name, $parameters] = $this->route($page, $parameters);
+
+        /** @var UrlGenerator&\Illuminate\Routing\UrlGenerator $url */
+        $url = $this->url;
+
+        return $url->temporarySignedRoute($name, $expires, $parameters);
     }
 
     /** Where a visitor who signed in goes when the page they came from is not known. */
@@ -84,6 +96,23 @@ final readonly class Urls
         }
 
         return $back;
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameters
+     * @return array{string, array<string, mixed>}
+     */
+    private function route(string $page, array $parameters): array
+    {
+        $name = 'webx-users.'.$page;
+        $locale = $this->prefix();
+
+        if ($locale !== null && $this->router->has($name.'.localised')) {
+            $name .= '.localised';
+            $parameters = [OneSpellingPerAddress::PARAMETER => $locale, ...$parameters];
+        }
+
+        return [$name, $parameters];
     }
 
     /** The language prefix of the current page, or null where the address carries none. */

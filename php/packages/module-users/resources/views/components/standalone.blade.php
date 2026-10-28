@@ -1,7 +1,8 @@
 {{--
     The document a page of the module is printed in when the site has no layout of its own
     (`webx-users.layout` empty): a whole page rather than a fragment nobody wrapped. The deal is
-    every layout's — a `head` slot, the default slot for the content. `@webxWidgets` puts the
+    every layout's — a `head` slot, the default slot for the content; the banner of §8.3 stands where
+    the layout's patch puts it, first in `main`. `@webxWidgets` puts the
     script of the forms on it: without a theme nothing else does.
 --}}
 <!doctype html>
@@ -18,6 +19,7 @@
 </head>
 <body>
 <main id="content">
+<x-webx-users::verify-banner />
 {{ $slot }}
 </main>
 @stack('scripts')

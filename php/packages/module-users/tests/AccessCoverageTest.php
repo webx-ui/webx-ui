@@ -22,7 +22,20 @@ final class AccessCoverageTest extends TestCase
         'GET account/register' => 'the visitor\'s registration: a form, nothing behind it',
         'POST account/register' => 'the visitor\'s registration: 5 an hour per IP (Throttle::register)',
         'POST account/sign-out' => 'the visitor\'s sign-out: only their own session, behind CSRF',
+        'GET account/forgot' => 'the request of a reset link: a form, nothing behind it',
+        'POST account/forgot' => 'the request of a reset link: one answer for every address; letters 3 an hour per address and IP, 20 per IP (Throttle::forgot)',
+        'GET account/reset/{token}' => 'the page of a reset link: the token is the key, 32 random bytes',
+        'POST account/reset/{token}' => 'the new password of a reset link: 10 a minute per IP (Throttle::reset)',
+        'GET account/verify/{id}/{hash}' => 'the link that confirms an address: signed, alive 72 hours',
+        'POST account/verify/resend' => 'the letter once more: the signed-in visitor\'s own (webx.visitor), once a minute and 5 an hour (Throttle::verify)',
+        'POST account/email' => 'the letter to a new address: the signed-in visitor\'s own (webx.visitor) with the current password, 3 an hour (Throttle::emailChange)',
+        'GET account/email/{id}' => 'the link that moves the sign-in to a new address: signed, alive 60 minutes',
+        'GET account/state' => 'what a cached page may say of the visitor looking at it: their own, the address masked',
+        'GET webx/users/users.js' => 'the script of the cached pages: the same file for everyone',
     ];
+
+    /** The same file for everyone: no session, no language, cached for good. */
+    private const array STATIC = ['GET webx/users/users.js'];
 
     #[Test]
     public function every_route_is_a_door_of_the_visitor_and_says_so(): void
@@ -43,6 +56,10 @@ final class AccessCoverageTest extends TestCase
 
             if (! array_key_exists($key, self::OPEN)) {
                 $problems[] = "{$key}: not named as open.";
+            }
+
+            if (in_array($key, self::STATIC, true)) {
+                continue;
             }
 
             if (! in_array('web', $middleware, true)) {

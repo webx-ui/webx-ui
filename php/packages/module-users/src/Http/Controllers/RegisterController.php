@@ -77,6 +77,9 @@ final readonly class RegisterController
             'locale' => $locales->current(),
         ]);
 
+        // The letter of confirmation; the visitor is in all the same (decision 9).
+        $user->sendEmailVerificationNotification();
+
         $id = (int) $user->getKey();
         $events->dispatch(new VisitorRegistered($id, 'password'));
         $signIn->in($request, $user);

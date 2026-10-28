@@ -114,6 +114,10 @@ return [
     |
     | How many attempts before a 429 (spec §15). `sign_in` — per address and IP a minute;
     | `sign_in_ip` — per IP a minute, whatever the address; `register` — per IP an hour.
+    | `forgot` / `forgot_ip` — requests of a reset link per address and IP / per IP an hour (over
+    | them no letter leaves and the answer stays the same); `reset` — new passwords per IP a
+    | minute; `verify_minute` / `verify_hour` — letters of confirmation per visitor a minute / an
+    | hour; `email_change` — letters to a new address per visitor an hour.
     |
     */
 
@@ -121,6 +125,29 @@ return [
         'sign_in' => 5,
         'sign_in_ip' => 30,
         'register' => 5,
+        'forgot' => 3,
+        'forgot_ip' => 20,
+        'reset' => 10,
+        'verify_minute' => 1,
+        'verify_hour' => 5,
+        'email_change' => 3,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Links in letters
+    |--------------------------------------------------------------------------
+    |
+    | How long they work. `reset_minutes` — the link of «Forgot your password?», one per visitor,
+    | gone once used (spec §7); `verify_hours` — the link that confirms the address (§8.1);
+    | `email_minutes` — the link that moves the sign-in to a new address (§8.5).
+    |
+    */
+
+    'reset_minutes' => 60,
+
+    'verify_hours' => 72,
+
+    'email_minutes' => 60,
 
 ];

@@ -52,15 +52,68 @@ final readonly class Throttle
         $this->limiter->hit($key, 3600);
     }
 
+    /**
+     * Requests of a reset link: per address and IP, and per IP — an hour each. Answers whether a
+     * letter may leave; over the limit none does, and the page says what it always says (§7).
+     */
+    public function forgot(string $email, string $ip): bool
+    {
+        $limits = [
+            ['webx-users:forgot:'.hash('sha256', $email.'|'.$ip), $this->limit('forgot', 3)],
+            ['webx-users:forgot-ip:'.$ip, $this->limit('forgot_ip', 20)],
+        ];
+
+        foreach ($limits as [$key, $max]) {
+            if ($this->limiter->tooManyAttempts($key, $max)) {
+                return false;
+            }
+        }
+
+        foreach ($limits as [$key]) {
+            $this->limiter->hit($key, 3600);
+        }
+
+        return true;
+    }
+
+    /** New passwords sent from the page of a link, per IP a minute: the token is not guessed. */
+    public function reset(string $ip): void
+    {
+        $key = 'webx-users:reset:'.$ip;
+
+        $this->refuseOver([[$key, $this->limit('reset', 10)]], 'password');
+        $this->limiter->hit($key, 60);
+    }
+
+    /** The letter of confirmation once more: once a minute and five times an hour per visitor (§8.2). */
+    public function verify(int $visitor): void
+    {
+        $minute = 'webx-users:verify-minute:'.$visitor;
+        $hour = 'webx-users:verify-hour:'.$visitor;
+
+        $this->refuseOver([[$minute, $this->limit('verify_minute', 1)], [$hour, $this->limit('verify_hour', 5)]], 'resend', 'webx-users::auth.verify.throttled');
+        $this->limiter->hit($minute, 60);
+        $this->limiter->hit($hour, 3600);
+    }
+
+    /** Letters to a new address, per visitor an hour (§8.5). */
+    public function emailChange(int $visitor): void
+    {
+        $key = 'webx-users:email-change:'.$visitor;
+
+        $this->refuseOver([[$key, $this->limit('email_change', 3)]], 'email', 'webx-users::auth.verify.throttled');
+        $this->limiter->hit($key, 3600);
+    }
+
     /** @param  list<array{string, int}>  $limits */
-    private function refuseOver(array $limits, string $field): void
+    private function refuseOver(array $limits, string $field, string $words = 'webx-users::auth.throttled'): void
     {
         foreach ($limits as [$key, $max]) {
             if ($this->limiter->tooManyAttempts($key, $max)) {
                 $seconds = max(1, $this->limiter->availableIn($key));
 
                 throw ValidationException::withMessages([
-                    $field => trans('webx-users::auth.throttled', ['seconds' => $seconds]),
+                    $field => trans($words, ['seconds' => $seconds, 'minutes' => (int) ceil($seconds / 60)]),
                 ])->status(429);
             }
         }

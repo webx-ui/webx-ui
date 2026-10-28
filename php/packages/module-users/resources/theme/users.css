@@ -37,6 +37,20 @@
   width: 100%;
 }
 
+.webx-account-auth__note {
+  margin: 0 0 var(--site-space-4);
+  color: var(--site-color-text-muted);
+}
+
+.webx-account-auth__forgot {
+  margin: var(--site-space-3) 0 0;
+  text-align: right;
+}
+
+.webx-account-auth__forgot a {
+  color: var(--site-color-accent);
+}
+
 .webx-account-auth__links {
   margin-top: var(--site-space-5);
   color: var(--site-color-text-muted);
@@ -49,4 +63,47 @@
 
 .webx-account-auth__links a {
   color: var(--site-color-accent);
+}
+
+/*
+ * «Confirm your e-mail» (spec §8.3): a strip over the content of the page — the text, the button
+ * of the letter once more and the cross. It wraps on a narrow column rather than squeezing the
+ * text; the button keeps its own width.
+ */
+.webx-users-verify {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-2) var(--site-space-4);
+  padding: var(--site-space-3) var(--site-gutter);
+  border-bottom: 1px solid var(--site-color-border);
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text);
+}
+
+.webx-users-verify[hidden] {
+  display: none;
+}
+
+.webx-users-verify__text {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
+.webx-users-verify__email {
+  font-weight: 600;
+}
+
+.webx-users-verify__form .webx-form__body {
+  display: contents;
+}
+
+.webx-users-verify__close {
+  padding: 0 var(--site-space-2);
+  border: 0;
+  background: none;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-4);
+  line-height: 1;
+  cursor: pointer;
 }

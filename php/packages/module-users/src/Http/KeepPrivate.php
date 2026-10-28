@@ -14,9 +14,17 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class KeepPrivate
 {
+    /**
+     * Set on the request of such a page: what is printed there is the visitor's own, so the
+     * banner of §8.3 is the server's to show rather than the script's.
+     */
+    public const string ATTRIBUTE = 'webx-users.private';
+
     /** @param  Closure(Request): Response  $next */
     public function handle(Request $request, Closure $next): Response
     {
+        $request->attributes->set(self::ATTRIBUTE, true);
+
         $response = $next($request);
 
         $response->headers->set('Cache-Control', 'no-store, private');

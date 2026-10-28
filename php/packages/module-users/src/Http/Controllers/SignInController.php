@@ -57,6 +57,7 @@ final readonly class SignInController
             'rules' => FormRules::for(self::RULES, self::attributes()),
             'back' => $back,
             'remember' => (bool) $this->config->get('webx-users.remember', true),
+            'forgot' => $this->urls->to('forgot'),
             'register' => SignIn::registrationOpen() ? $this->urls->to('register', $back) : null,
         ]);
     }

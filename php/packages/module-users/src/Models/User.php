@@ -12,6 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use WebxUi\Admin\Visitors\Visitor;
+use WebxUi\Users\Emails\Verification;
 
 /**
  * A visitor of the site (spec §5): a customer, a reader of a closed section, a member of a club.
@@ -107,9 +108,9 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
-    /**
-     * The letter of confirmation is the module's own and comes with the reset (§8); until then
-     * Laravel's default letter — about a page this module does not have yet — is not sent.
-     */
-    public function sendEmailVerificationNotification(): void {}
+    /** The module's own letter (§8.1), not Laravel's: its link is a page of this module. */
+    public function sendEmailVerificationNotification(): void
+    {
+        app(Verification::class)->send($this);
+    }
 }
