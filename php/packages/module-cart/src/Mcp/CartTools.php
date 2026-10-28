@@ -70,7 +70,7 @@ final class CartTools
         return Arguments::strictAll([
             Tool::read(
                 'list',
-                'Carts, the latest changed first, twenty a page: id, language, currency, lines, units, the sum at the '
+                'Carts, the latest changed first, twenty a page: id, the visitor\'s account (`user_id`, null — a guest\'s), language, currency, lines, units, the sum at the '
                 .'prices the lines were added at (not recounted — cart_get has the live total), when each was made and '
                 .'last changed. Filters: changed since or before a moment, holding a record (`contains`), at least '
                 .'`min_units` units.',
@@ -95,7 +95,7 @@ final class CartTools
                 'One cart in full, counted the way the visitor sees it now: lines with live prices (a bundle\'s children '
                 .'under their parent), subtotal, adjustments, total, tenders, payable, benefits, hints and warnings — every '
                 .'amount in minor units with its `*_formatted` string — plus when it was made and last changed and the '
-                .'rules the visitor declined. In the cart\'s language unless `locale` says otherwise.',
+                .'rules the visitor declined, and the visitor\'s account (`user_id`, null — a guest\'s cart). In the cart\'s language unless `locale` says otherwise.',
                 fn (array $arguments): array => $this->get($arguments),
                 ['properties' => ['cart' => $cart, 'locale' => $locale], 'required' => ['cart']],
                 permission: self::PERMISSION,
@@ -138,7 +138,7 @@ final class CartTools
      */
     private function list(array $arguments): array
     {
-        $query = Cart::query()->select(['id', 'locale', 'currency', 'created_at', 'updated_at']);
+        $query = Cart::query()->select(['id', 'user_id', 'locale', 'currency', 'created_at', 'updated_at']);
 
         $since = $this->moment($arguments['updated_since'] ?? null, 'updated_since');
         $before = $this->moment($arguments['updated_before'] ?? null, 'updated_before');
@@ -185,6 +185,7 @@ final class CartTools
 
                 return [
                     'id' => $cart->id,
+                    'user_id' => $cart->user_id,
                     'locale' => $cart->locale,
                     'currency' => $cart->currency,
                     'lines' => $sums['lines'],
@@ -215,6 +216,7 @@ final class CartTools
 
         return [
             'id' => $cart->id,
+            'user_id' => $cart->user_id,
             'created_at' => $cart->created_at?->toIso8601String(),
             'updated_at' => $cart->updated_at?->toIso8601String(),
             'declined_rules' => $cart->declinedRules(),

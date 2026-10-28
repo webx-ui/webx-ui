@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * A visitor's cart. Found by the sha256 of the cookie's token; the token itself is never stored.
+ * A visitor's cart. A guest's is found by the sha256 of the cookie's token, the token itself never
+ * stored; a signed-in visitor's by `user_id`.
  *
  * @property int $id
  * @property string $token
+ * @property int|null $user_id the signed-in visitor whose cart this is; null — a guest's
  * @property string $locale
  * @property string $currency
  * @property list<string>|null $declined_rules
@@ -23,7 +25,7 @@ class Cart extends Model
 {
     protected $table = 'carts';
 
-    protected $fillable = ['token', 'locale', 'currency', 'declined_rules'];
+    protected $fillable = ['token', 'user_id', 'locale', 'currency', 'declined_rules'];
 
     /** @var list<string> */
     protected $hidden = ['token'];
@@ -31,6 +33,7 @@ class Cart extends Model
     protected function casts(): array
     {
         return [
+            'user_id' => 'integer',
             'declined_rules' => 'array',
         ];
     }

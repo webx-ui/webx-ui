@@ -67,7 +67,8 @@ final class McpTest extends McpTestCase
         $this->assertSame(4999 * 2 + 15000 * 6, $row['total_at_add']);
         $this->assertSame("999,98\u{00A0}€", $row['total_at_add_formatted']);
         $this->assertSame('EUR', $row['currency']);
-        $this->assertSame(['id', 'locale', 'currency', 'lines', 'units', 'total_at_add', 'total_at_add_formatted', 'created_at', 'updated_at'], array_keys($row));
+        $this->assertNull($row['user_id']);
+        $this->assertSame(['id', 'user_id', 'locale', 'currency', 'lines', 'units', 'total_at_add', 'total_at_add_formatted', 'created_at', 'updated_at'], array_keys($row));
 
         $this->assertSame([$bundle->id], array_column($this->content($this->agent('cart_list', ['contains' => ['type' => 'test.product', 'ref' => 2]]))['carts'], 'id'));
         $this->assertSame([$bundle->id], array_column($this->content($this->agent('cart_list', ['min_units' => 2]))['carts'], 'id'));
@@ -108,11 +109,29 @@ final class McpTest extends McpTestCase
         // What the API leaves out, an agent explaining a discount gets.
         $this->assertSame(['rule' => 7], $state['adjustments'][0]['meta']);
         $this->assertSame([], $state['declined_rules']);
+        $this->assertNull($state['user_id']);
         $this->assertNotNull($state['created_at']);
 
         $this->assertSame('pl', $this->content($this->agent('cart_get', ['cart' => $cart->id, 'locale' => 'pl']))['locale']);
         $this->agent('cart_get', ['cart' => $cart->id, 'locale' => 'xx'])->assertHasErrors(['The site has no language "xx". It has: en, pl.']);
         $this->agent('cart_get', ['cart' => 999])->assertHasErrors(['Cart 999 does not exist.']);
+    }
+
+    #[Test]
+    public function an_account_cart_names_its_visitor_and_still_no_token(): void
+    {
+        $result = $this->app->make(CartService::class)->add(null, [['type' => 'test.product', 'ref' => 1]], 'en', 7);
+        $hash = (string) Cart::query()->value('token');
+
+        $list = $this->content($this->agent('cart_list'));
+        $this->assertSame(7, $list['carts'][0]['user_id']);
+        $state = $this->content($this->agent('cart_get', ['cart' => $result->cart->id]));
+        $this->assertSame(7, $state['user_id']);
+
+        foreach ([$list, $state] as $answer) {
+            $this->assertStringNotContainsString($hash, json_encode($answer, JSON_THROW_ON_ERROR));
+            $this->assertStringNotContainsString((string) $result->token, json_encode($answer, JSON_THROW_ON_ERROR));
+        }
     }
 
     #[Test]

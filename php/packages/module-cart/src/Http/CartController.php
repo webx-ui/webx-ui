@@ -65,7 +65,7 @@ final class CartController
         $cart = $this->handle->cart();
 
         try {
-            $result = $this->service->add($cart, is_array($items) ? array_values($items) : [], $locale);
+            $result = $this->service->add($cart, is_array($items) ? array_values($items) : [], $locale, $this->handle->owner());
         } catch (ValidationException $refusal) {
             return $cart !== null ? $this->refused($request, $refusal, $cart, $locale) : throw $refusal;
         }

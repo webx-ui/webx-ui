@@ -43,13 +43,14 @@ final class CartService
     ) {}
 
     /**
-     * Put a batch of lines into the cart, making the cart when there is none.
+     * Put a batch of lines into the cart, making the cart when there is none — the account's when
+     * a signed-in visitor's id is given.
      *
      * @param  list<mixed>  $items  each { type, ref, qty?, options?, key?, parent? }
      *
      * @throws ValidationException
      */
-    public function add(?Cart $cart, array $items, string $locale): AddResult
+    public function add(?Cart $cart, array $items, string $locale, ?int $owner = null): AddResult
     {
         $currency = $cart !== null ? $cart->currency : $this->currencies->currency();
 
@@ -92,11 +93,12 @@ final class CartService
 
         $token = null;
 
-        $added = $this->db->transaction(function () use (&$cart, &$token, $rows, $merges, $locale, $currency): array {
+        $added = $this->db->transaction(function () use (&$cart, &$token, $rows, $merges, $locale, $currency, $owner): array {
             if ($cart === null) {
                 $token = CartCookie::generate();
                 $cart = Cart::query()->create([
                     'token' => CartCookie::hash($token),
+                    'user_id' => $owner,
                     'locale' => $locale,
                     'currency' => $currency,
                 ]);

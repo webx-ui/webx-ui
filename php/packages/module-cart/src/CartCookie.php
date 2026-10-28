@@ -15,7 +15,8 @@ use WebxUi\Cart\Models\Cart;
  *
  * The token is 32 random bytes in base64url; the cookie holds it and `carts.token` its sha256, so
  * a leaked database opens nobody's cart. A cookie whose cart is gone opens nothing, and the next
- * write starts a new cart with a new token.
+ * write starts a new cart with a new token. The cookie opens a guest's cart only: a cart that
+ * belongs to an account opens for its signed-in owner, never for whoever still holds its cookie.
  */
 final class CartCookie
 {
@@ -52,14 +53,14 @@ final class CartCookie
         return is_string($token) && preg_match(self::FORMAT, $token) === 1 ? $token : null;
     }
 
-    /** The cart this token opens; one query by the unique index. */
+    /** The guest's cart this token opens; one query by the unique index. */
     public function find(?string $token): ?Cart
     {
         if ($token === null) {
             return null;
         }
 
-        return Cart::query()->where('token', self::hash($token))->first();
+        return Cart::query()->where('token', self::hash($token))->whereNull('user_id')->first();
     }
 
     /** The cookie for a token, extended on every write. */

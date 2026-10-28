@@ -1,7 +1,7 @@
 # Cart
 
-`webx-ui/module-cart` is a guest cart for a site on WebX UI. Its lines live in the database, and
-the visitor is known by a token in an httpOnly cookie. What a line holds and what it costs **now**
+`webx-ui/module-cart` is the cart of a site on WebX UI. Its lines live in the database; a guest
+is known by a token in an httpOnly cookie, a signed-in visitor by the account. What a line holds and what it costs **now**
 the cart asks the module that owns the record, through the `Purchasable` contract: the cart knows
 no table of any other module, and the catalogue is just its first provider.
 
@@ -161,6 +161,27 @@ In a view that has to compile on a site without the cart, name the component dyn
 `<x-dynamic-component component="webx-cart::add" … />` — as the catalogue's product page does:
 Blade looks a component tag up when it compiles the view.
 
+## Signed-in visitors
+
+With a visitors module (`webx-ui/module-users`, [Site visitors](./site-visitors.md)) the cart
+belongs to the account as well. The cart does not require that module: it listens to the events
+of the panel's seam (`WebxUi\Admin\Visitors\Events\*`), and on a site without one every visitor
+is a guest and nothing changes.
+
+- **A signed-in visitor's cart is found by the account** (`carts.user_id`), on every device — the
+  cookie is not needed. A guest's is found by the cookie, and the cookie opens only a guest's cart:
+  whoever still holds the cookie of an account's cart opens nothing.
+- **At sign-in the guest's cart joins the account's.** Its lines are added to the account's cart:
+  a line like one already there (the same record and options, outside a bundle) adds its qty, up
+  to `webx-cart.qty_max` and the provider's `maxQty`; a bundle comes over whole and never merges.
+  The declined gifts of both carts stay declined. The guest's cart is deleted and the cookie gets
+  a new token for the account's. Without an account cart yet, the guest's becomes it.
+- **At sign-out** the cookie goes: the guest starts with an empty cart, the account's waits for
+  the next sign-in.
+- **Deleting the account** deletes its cart.
+
+Agents see whose a cart is: `cart_list` and `cart_get` give `user_id` (null — a guest's).
+
 ## The widget
 
 ```blade
@@ -319,12 +340,12 @@ With the panel and `webx-ui/mcp` installed, an agent can read the carts — and 
 cart is the visitor's, and nothing but the visitor changes it. The tools are behind the scope
 `cart:read` and the permission `cart.view`, which a role gives (there is no menu section).
 
-| Tool           | What it answers                                                                                                                                                                                      |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cart_list`    | carts, latest changed first, twenty a page: id, language, currency, lines, units, the sum at the prices of adding (not recounted), dates; `updated_since`, `updated_before`, `contains`, `min_units` |
-| `cart_get`     | one cart counted the way the visitor sees it now — the API's answer, plus the dates, the declined rules and each adjustment's and tender's `meta`; `locale` for another language                     |
-| `cart_summary` | carts in all, changed in the last 1, 7 and 30 days, abandoned (lines in them, untouched for `days`), and the records in most carts with their names                                                  |
-| `cart_quote`   | the lines of a `POST` put through every check and counted, then nothing kept: the state, or the refusals field by field; `declined` counts without those rules' gifts                                |
+| Tool           | What it answers                                                                                                                                                                                                 |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cart_list`    | carts, latest changed first, twenty a page: id, `user_id`, language, currency, lines, units, the sum at the prices of adding (not recounted), dates; `updated_since`, `updated_before`, `contains`, `min_units` |
+| `cart_get`     | one cart counted the way the visitor sees it now — the API's answer, plus the dates, the declined rules and each adjustment's and tender's `meta`; `locale` for another language                                |
+| `cart_summary` | carts in all, changed in the last 1, 7 and 30 days, abandoned (lines in them, untouched for `days`), and the records in most carts with their names                                                             |
+| `cart_quote`   | the lines of a `POST` put through every check and counted, then nothing kept: the state, or the refusals field by field; `declined` counts without those rules' gifts                                           |
 
 The resource `cart://catalog` lists the purchasable types, the sources of every link of the
 chain with their priorities, the currency and the limits, the fields of a state and of a line,

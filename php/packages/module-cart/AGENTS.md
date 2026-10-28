@@ -1,6 +1,7 @@
 # webx-ui/module-cart
 
-A guest cart. Lines live in the database; the visitor is known by a token in an httpOnly cookie.
+A cart. Lines live in the database; a guest is known by a token in an httpOnly cookie, a signed-in
+visitor by `carts.user_id`, and the guest's cart joins the account's at sign-in.
 What a line holds and what it costs **now** the cart asks the owner of the record through the
 `Purchasable` contract; it knows no table of any other module. Totals are a chain other modules
 plug into. No page, no panel section: a JSON API, `cart()` and a buy button for Blade, a widget
@@ -8,10 +9,9 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
 
 ## What it owns
 
-- **Tables** `carts` (`WebxUi\Cart\Models\Cart`: sha256 of the token, `locale`, `currency`,
-  `declined_rules`) and `cart_items` (`CartItem`: `type`, `ref_id`, `options`, `qty`, `parent_id`,
-  `name_at_add`, `price_at_add`, `added_at`). A child of a bundle counts its `qty` per unit of the
-  parent; one level deep.
+- **Tables** `carts` (`WebxUi\Cart\Models\Cart`: sha256 of the token, `user_id` — unique, no FK,
+  null for a guest — `locale`, `currency`, `declined_rules`) and `cart_items` (`CartItem`: `type`, `ref_id`, `options`, `qty`, `parent_id`,
+  `name_at_add`, `price_at_add`, `added_at`). A child of a bundle counts its `qty` per unit of the parent; one level deep.
 - **The contract** `WebxUi\Cart\Contracts\Purchasable::resolve(array $refs, string $locale)`: a
   batch of ids of one type → `PurchasableLine|null` each; null or left out — the record is gone.
   - **Build `PurchasableLine` with named arguments.** New fields only ever come last and
@@ -33,6 +33,9 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
   a batch's is a `CartRefusal`, whose `atLimit` names the lines already at their maximum.
 - **`cart()`** (`WebxUi\Cart\CartHandle`, facade `WebxUi\Cart\Facades\Cart`): `count()`,
   `isEmpty()`, `has($type, $ref)` — no query without a cookie, one with it — and `state()`.
+- **Accounts** (`Accounts\AccountCarts` on the panel's `Visitor*` events, not `module-users`): a signed-in
+  cart by `user_id` (`CartOwner`), the cookie opens only a guest's. Sign-in merges the guest's lines in
+  (capped at `qty_max`/`maxQty`, bundles whole), re-keys the cookie; sign-out drops it; deleting deletes.
 - **JSON API** (`routes/web.php`, `Http\CartController`, prefix `webx-cart.path`): `GET /api/cart`,
   `POST /api/cart/items` (a batch), `PATCH|DELETE /api/cart/items/{id}`, `DELETE /api/cart`. Every
   answer is `CartState::toArray()`; the `web` group (CSRF), `throttle:webx-cart` on writes,
@@ -70,8 +73,7 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
 `cart.view` — every `cart_*` tool and `cart://catalog`; there is no `cart.manage` (nothing writes).
 No route asks for a permission: every route is the visitor's own cart — the cookie's token opens
 only its own, a line of another cart is 404 — and is named as open with that reason in
-`tests/AccessCoverageTest.php`. A new route asks for a permission or joins that list with its
-reason.
+`tests/AccessCoverageTest.php`. A new route asks for a permission or joins that list with its reason.
 
 ## Change it without forking
 
@@ -97,14 +99,12 @@ reason.
 The theme's contract (THEMES §10), in `resources/theme/cart.css`; restyle with the same class:
 `webx-cart` (+ `webx-cart--drawer`, `webx-cart--dialog`, `webx-cart--preview`), `webx-cart__trigger`,
 `webx-cart__icon`, `webx-cart__label`, `webx-cart__count` (`is-empty`), `webx-cart__dialog`, `webx-cart__panel`
-(+ `webx-cart__panel--preview`),
-`webx-cart__lines` (+ `webx-cart__lines--children`), `webx-cart__line` (`is-unavailable`),
+(+ `webx-cart__panel--preview`), `webx-cart__lines` (+ `webx-cart__lines--children`), `webx-cart__line` (`is-unavailable`),
 `webx-cart__line-image`, `webx-cart__line-body`, `webx-cart__line-name`, `webx-cart__line-options`,
 `webx-cart__line-price`, `webx-cart__line-old`, `webx-cart__stepper`, `webx-cart__stepper-button`,
 `webx-cart__stepper-input`, `webx-cart__remove`, `webx-cart__warning`, `webx-cart__notice`, `webx-cart__totals`,
 `webx-cart__total-row`, `webx-cart__payable`, `webx-cart__hints`, `webx-cart__edit`, `webx-cart__checkout`,
-`webx-cart__empty`;
-the button `webx-cart-add` (`is-busy`, `is-added`, `is-in-cart`), `webx-cart-add-form`, `webx-cart-add__error`.
+`webx-cart__empty`; the button `webx-cart-add` (`is-busy`, `is-added`, `is-in-cart`), `webx-cart-add-form`, `webx-cart-add__error`.
 Tokens: `--webx-cart-drawer-width` on `.webx-cart__dialog`, `--webx-cart-image-size` and `--webx-cart-gap` on `.webx-cart__panel`.
 
 Registering a provider, so the module works with or without the cart:

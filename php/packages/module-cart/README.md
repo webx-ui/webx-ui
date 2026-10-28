@@ -2,7 +2,8 @@
 
 A guest cart for WebX UI sites. Lines of anything a module sells go in through the `Purchasable`
 contract and are priced live by their owner; totals are a chain other modules plug into; `cart()`
-gives a template the counter and the full state.
+gives a template the counter and the full state. With a visitors module, a signed-in visitor's
+cart belongs to the account, and the guest's cart joins it at sign-in.
 
 ```bash
 composer require webx-ui/module-cart

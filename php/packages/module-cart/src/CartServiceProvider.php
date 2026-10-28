@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Visitors\Events\VisitorDeleting;
+use WebxUi\Admin\Visitors\Events\VisitorSignedIn;
+use WebxUi\Admin\Visitors\Events\VisitorSignedOut;
+use WebxUi\Cart\Accounts\AccountCarts;
 use WebxUi\Cart\Console\PruneCommand;
 use WebxUi\Cart\Contracts\CurrencySource;
 use WebxUi\Cart\Doctor\CurrencyCheck;
@@ -75,9 +79,17 @@ class CartServiceProvider extends ServiceProvider
         // What one request remembered of the visitor's cart is not the next one's.
         Event::listen(RequestHandled::class, function (): void {
             if ($this->app->resolved(CartHandle::class)) {
-                $this->app->make(CartHandle::class)->forget();
+                $this->app->make(CartHandle::class)->reset();
             }
         });
+
+        // The guest's cart joins the account's at sign-in (§13.3 of the visitors spec): the events
+        // are the panel's, so the cart works the same with or without a visitors module.
+        if (class_exists(VisitorSignedIn::class)) {
+            Event::listen(VisitorSignedIn::class, [AccountCarts::class, 'signedIn']);
+            Event::listen(VisitorSignedOut::class, [AccountCarts::class, 'signedOut']);
+            Event::listen(VisitorDeleting::class, [AccountCarts::class, 'deleting']);
+        }
 
         if (class_exists(DoctorChecks::class)) {
             $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
