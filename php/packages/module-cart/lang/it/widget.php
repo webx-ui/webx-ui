@@ -26,4 +26,5 @@ return [
     'unavailable' => 'Al momento non disponibile',
     'gone' => 'Non più disponibile',
     'error' => 'Impossibile aggiornare il carrello. Riprova.',
+    'no_script' => 'Attiva JavaScript per vedere il carrello.',
 ];

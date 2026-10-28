@@ -3,8 +3,8 @@
 A guest cart. Lines live in the database; the visitor is known by a token in an httpOnly cookie.
 What a line holds and what it costs **now** the cart asks the owner of the record through the
 `Purchasable` contract; it knows no table of any other module. Totals are a chain other modules
-plug into. No page, no panel section: a JSON API, `cart()` and a buy button for Blade, reading
-tools for agents, and (a later stage) a widget.
+plug into. No page, no panel section: a JSON API, `cart()` and a buy button for Blade, a widget
+in three modes, and reading tools for agents.
 
 ## What it owns
 
@@ -40,6 +40,16 @@ tools for agents, and (a later stage) a widget.
   a generated line's key (`rule#12:0`) declines it (`CartService::decline()`).
 - **The buy button** `<x-webx-cart::add type="…" :ref="…" />`: a form with `@csrf` around a
   `button.webx-cart-add` (`is-in-cart` from `cart()->has()`, `data-webx-cart-add`, `-qty`).
+- **The widget** `<x-webx-cart mode="drawer|dialog|dropdown" />` (`View\Components\Widget`, default
+  `webx-cart.widget.mode`): a trigger with the server's counter and an empty panel — the widgets'
+  `<x-webx-dialog drawer>`, `<x-webx-dialog>` or `<x-webx-dropdown>`. The script (`dist/cart.js`, ≤ 6 KB
+  gzip, served at `{webx-cart.script_path}/cart.js`) fills it from `GET /api/cart` with
+  `X-Webx-Cart-View: <mode>`, whose answer then carries `html` (`Rendering\Panel`, views `widget`,
+  `widget.lines|line|totals|empty`). `window.webx.cart`: `add(items)`, `remove(id)`, `setQty(id, qty)`,
+  `open()`, `state()`; event `webx:cart:change` (`detail.state`); any `[data-webx-cart-add="type:ref"]`
+  (`-qty`, `-qty-from`, `-options`, `-open="false"`) is a buy button. After a form without JavaScript
+  the page prints the panel open. Points: `parts/cart/line/after.blade.php`,
+  `parts/cart/totals/before.blade.php`, `parts/cart/totals/after.blade.php`, `parts/cart/footer.blade.php`.
 - **Command** `webx:cart:prune [--days=] [--dry-run]`, on the schedule daily.
 - **Doctor**: a line when the site has no currency (the cart then refuses every write).
 - **MCP** (`src/Mcp`, module `cart`, registered only where `module-admin` and `webx-ui/mcp` are):
@@ -59,20 +69,35 @@ reason.
 
 ## Change it without forking
 
-| You want                              | Do this                                                                                    |
-| ------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Sell something of your module         | implement `Purchasable`; in your provider's `boot()`, guarded by `class_exists`, see below |
-| The site's currency                   | `WEBX_CART_CURRENCY=EUR`; empty — the catalogue's `WEBX_CATALOG_CURRENCY`                  |
-| Another way of writing amounts        | bind your own `WebxUi\Cart\Contracts\CurrencySource` in `register()`                       |
-| A discount, a gift, a payment, a hint | implement the link's `*Source` and register it in its registry with a `priority`           |
-| The cookie's name or lifetime         | `WEBX_CART_COOKIE`, `webx-cart.cookie.days`                                                |
-| Keep carts longer, or never prune     | `webx-cart.prune_after_days` — a number of days, or `null`                                 |
-| Limits                                | `webx-cart.batch_max`, `webx-cart.qty_max`, `webx-cart.lines_max`                          |
-| Another prefix of the API             | `WEBX_CART_PATH`; `webx-cart.throttle` — writes a minute per IP                            |
-| A buy button in a view                | `<x-webx-cart::add type="catalog.product" :ref="$product->id">Buy</x-webx-cart::add>`      |
-| The counter in the header             | `<span data-webx-cart-count>{{ cart()->count() }}</span>`                                  |
-| Other words of the widget or errors   | `php artisan vendor:publish --tag=webx-cart-lang`                                          |
-| The config file                       | `php artisan vendor:publish --tag=webx-cart-config`                                        |
+| You want                              | Do this                                                                                             |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Sell something of your module         | implement `Purchasable`; in your provider's `boot()`, guarded by `class_exists`, see below          |
+| The site's currency                   | `WEBX_CART_CURRENCY=EUR`; empty — the catalogue's `WEBX_CATALOG_CURRENCY`                           |
+| Another way of writing amounts        | bind your own `WebxUi\Cart\Contracts\CurrencySource` in `register()`                                |
+| A discount, a gift, a payment, a hint | implement the link's `*Source` and register it in its registry with a `priority`                    |
+| The cookie's name or lifetime         | `WEBX_CART_COOKIE`, `webx-cart.cookie.days`                                                         |
+| Keep carts longer, or never prune     | `webx-cart.prune_after_days` — a number of days, or `null`                                          |
+| Limits                                | `webx-cart.batch_max`, `webx-cart.qty_max`, `webx-cart.lines_max`                                   |
+| Another prefix of the API             | `WEBX_CART_PATH`; `webx-cart.throttle` — writes a minute per IP                                     |
+| The widget's mode, the checkout       | `WEBX_CART_WIDGET=dropdown` or `<x-webx-cart mode>`; `WEBX_CART_CHECKOUT_URL` or a route `checkout` |
+| The widget's markup or icon           | `views/vendor/webx-cart/widget/*.blade.php`, `icons/cart.blade.php` in the theme or the site        |
+| A buy button in a view                | `<x-webx-cart::add type="catalog.product" :ref="$product->id">Buy</x-webx-cart::add>`               |
+| The counter in the header             | `<span data-webx-cart-count>{{ cart()->count() }}</span>`                                           |
+| Other words of the widget or errors   | `php artisan vendor:publish --tag=webx-cart-lang`                                                   |
+| The config file                       | `php artisan vendor:publish --tag=webx-cart-config`                                                 |
+
+### Classes
+
+The theme's contract (THEMES §10), in `resources/theme/cart.css`; restyle with the same class:
+`webx-cart` (+ `webx-cart--drawer`, `webx-cart--dialog`, `webx-cart--dropdown`), `webx-cart__trigger`,
+`webx-cart__icon`, `webx-cart__label`, `webx-cart__count` (`is-empty`), `webx-cart__dialog`, `webx-cart__panel`,
+`webx-cart__lines` (+ `webx-cart__lines--children`), `webx-cart__line` (`is-unavailable`),
+`webx-cart__line-image`, `webx-cart__line-body`, `webx-cart__line-name`, `webx-cart__line-options`,
+`webx-cart__line-price`, `webx-cart__line-old`, `webx-cart__stepper`, `webx-cart__stepper-button`,
+`webx-cart__stepper-input`, `webx-cart__remove`, `webx-cart__warning`, `webx-cart__totals`,
+`webx-cart__total-row`, `webx-cart__payable`, `webx-cart__hints`, `webx-cart__checkout`, `webx-cart__empty`;
+the button `webx-cart-add` (`is-busy`, `is-added`, `is-in-cart`), `webx-cart-add-form`, `webx-cart-add__error`.
+Tokens: `--webx-cart-drawer-width` on `.webx-cart__dialog`, `--webx-cart-image-size` and `--webx-cart-gap` on `.webx-cart__panel`.
 
 Registering a provider, so the module works with or without the cart:
 

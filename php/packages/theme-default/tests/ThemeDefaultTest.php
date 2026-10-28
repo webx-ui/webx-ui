@@ -464,7 +464,7 @@ class ThemeDefaultTest extends TestCase
 
         $leaves = array_map(static fn (string $file): string => substr($file, strlen(self::path().'/views/'), -strlen('.blade.php')), glob(self::path().'/views/components/{header,footer}/*.blade.php', GLOB_BRACE) ?: []);
 
-        $this->assertCount(9, $leaves);
+        $this->assertCount(10, $leaves);
 
         foreach (['components/header', 'components/footer', 'components/layout', 'errors/404', ...$leaves] as $view) {
             $compiled = Blade::compileString((string) file_get_contents(self::path()."/views/{$view}.blade.php"));
@@ -732,7 +732,7 @@ class ThemeDefaultTest extends TestCase
             $templates['compositions/'.basename(dirname($file)).'/'.basename($file)] = implode("\n", $html);
         }
 
-        $this->assertCount(51, $templates);
+        $this->assertCount(52, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);

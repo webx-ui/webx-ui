@@ -202,7 +202,7 @@ final class HeaderFooterCompositionTest extends TestCase
         $builder = $this->app->make(Compiler::class);
 
         $this->assertSame(
-            ['header', 'header>header.topbar', 'header.topbar>header.contacts', 'header>header.brand', 'header.brand>header.logo', 'header>header.nav', 'header>header.actions', 'header.actions>header.phones', 'header.actions>header.cta', 'header.actions>header.languages'],
+            ['header', 'header>header.topbar', 'header.topbar>header.contacts', 'header>header.brand', 'header.brand>header.logo', 'header>header.nav', 'header>header.actions', 'header.actions>header.phones', 'header.actions>header.cta', 'header.actions>header.languages', 'header.actions>header.cart'],
             $this->ids('header'),
         );
         $this->assertSame(

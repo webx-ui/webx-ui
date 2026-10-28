@@ -25,7 +25,11 @@ final class AccessCoverageTest extends McpTestCase
         'POST api/cart/items' => 'the visitor\'s cart: the cookie\'s token opens only its own',
         'PATCH api/cart/items/{id}' => 'the visitor\'s cart: a line of another cart is 404',
         'DELETE api/cart/items/{id}' => 'the visitor\'s cart: a line of another cart is 404',
+        'GET webx/cart/cart.js' => 'the widget\'s script: the same file for everyone',
     ];
+
+    /** Served to everyone alike: no session, so nothing in it differs between visitors. */
+    private const STATIC = ['GET webx/cart/cart.js'];
 
     #[Test]
     public function every_route_is_the_visitors_own_cart_and_says_so(): void
@@ -47,7 +51,11 @@ final class AccessCoverageTest extends McpTestCase
                 $problems[] = "{$key}: not named as open, and it asks for no permission.";
             }
 
-            if (! in_array('web', $middleware, true)) {
+            if (in_array($key, self::STATIC, true)) {
+                if (in_array('web', $middleware, true)) {
+                    $problems[] = "{$key}: a static file inside the web group — a session cookie on it.";
+                }
+            } elseif (! in_array('web', $middleware, true)) {
                 $problems[] = "{$key}: outside the web group — no session, no CSRF.";
             }
 

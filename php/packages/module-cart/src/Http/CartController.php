@@ -16,6 +16,7 @@ use WebxUi\Cart\CartHandle;
 use WebxUi\Cart\CartService;
 use WebxUi\Cart\Models\Cart;
 use WebxUi\Cart\Models\CartItem;
+use WebxUi\Cart\Rendering\Panel;
 use WebxUi\Cart\Totals\Calculator;
 
 /**
@@ -26,6 +27,9 @@ use WebxUi\Cart\Totals\Calculator;
  * goes back to its page with the outcome in the `webx-cart` flash, as every form of the site
  * does (FormResponse, §17.4 of the widgets spec); a refusal goes back with the errors, as
  * Laravel answers any form.
+ *
+ * The widget asks with `X-Webx-Cart-View: drawer|dialog|dropdown` and gets the panel of that mode
+ * as `html` beside the state (§9.2); without the header there is none.
  */
 final class CartController
 {
@@ -37,6 +41,7 @@ final class CartController
         private readonly CartHandle $handle,
         private readonly CartCookie $cookie,
         private readonly Calculator $calculator,
+        private readonly Panel $panel,
     ) {}
 
     /** The state; without a cart an empty one, and nothing is written. */
@@ -118,7 +123,9 @@ final class CartController
         } else {
             // The lines are read afresh: the service wrote through the same model.
             $state = $cart !== null ? $this->calculator->calculate($cart, $locale) : $this->calculator->empty($locale);
-            $response = new JsonResponse([...$state->toArray(), ...$extra]);
+            $view = $request->header(Panel::VIEW_HEADER);
+            $html = is_string($view) && in_array($view, Panel::MODES, true) ? ['html' => $this->panel->render($state, $view)] : [];
+            $response = new JsonResponse([...$state->toArray(), ...$extra, ...$html]);
         }
 
         return $cookie !== null ? $response->withCookie($cookie) : $response;

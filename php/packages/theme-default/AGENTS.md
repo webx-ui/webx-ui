@@ -24,7 +24,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   in `views/components/header|footer/`): they work out the `vars` (`menu('header')` split into `nav`
   and `calls` — the pages under home until it has entries —, `contacts()`, the languages;
   `menu('footer')`). Ids: `header.topbar` → `header.contacts`, `header.brand` → `header.logo`,
-  `header.nav`, `header.actions` → `header.phones|cta|languages`; `footer.inner` → `footer.contacts`,
+  `header.nav`, `header.actions` → `header.phones|cta|languages|cart`; `footer.inner` → `footer.contacts`,
   `footer.nav` → `footer.menu|consent`, `footer.copy`.
 - **`views/errors/404`** — a missing address in the site's frame: `<x-layout>` with its own head
   (`<title>`, `noindex`, `@webxBlocks`, no `@webxSeo`), the code, a line and a link to the

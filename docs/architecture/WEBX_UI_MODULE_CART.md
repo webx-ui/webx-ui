@@ -956,6 +956,33 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
 - Вьюхи §9.2 и иконка перекрываются в `views/vendor/webx-cart/`; точки расширения — §9.2. Режим —
   §9.1. Проверка — в тёмной схеме и на 360 px, `scrollWidth ≤ clientWidth` у панели.
 
+**Сделано (этап 5/5).** Каркас — `<x-webx-dialog drawer>` в `widgets` (класс `webx-dialog--drawer`,
+ширина `--webx-dialog-drawer-width`, въезд с края; с `sheet` на телефоне — шторка снизу). Компонент
+`<x-webx-cart>` — `View\Components\Widget`, наполнение — `Rendering\Panel` (вьюхи `widget`,
+`widget.lines`, `widget.line`, `widget.totals`, `widget.empty`, `trigger`, `icons.cart`), точки — через
+`View\Points` (поиск `@webxPart` панели, но без зависимости от `module-admin`: корзина её не
+требует). Скрипт — `resources/js/cart.js` → `dist/cart.js` (~2,6 КБ gzip, бюджет 6 КБ держит
+`DistTest`), маршрут `webx-cart.script` вне группы `web`, адрес с хешем, `immutable`.
+Отклонения и уточнения:
+
+- **Панель переезжает в конец `<body>`.** Шапка печатает `actions` дважды — в полосе и внизу
+  мобильного меню, — и на телефоне копия полосы скрыта: диалог в скрытом предке не показать. Скрипт
+  переносит `<dialog id="webx-cart">` в `<body>` один раз, вторую копию убирает. Без JavaScript на
+  телефоне `:target` попадает в скрытую копию — панель без скрипта на телефоне не открывается
+  (редкий случай; счётчик и кнопка «Купить» формой работают).
+- **Классы** — список §9.6 плюс `__icon`, `__label` (слова триггера для читалки), `__dialog`,
+  `__line-body`, `__lines--children`, `__stepper-button`, `__stepper-input`, `webx-cart-add-form`,
+  `webx-cart-add__error`, состояние `is-empty` счётчика. Локальные токены — не на `:where(:root)`
+  (контракт модуля запрещает селектор без класса), а на `.webx-cart__dialog`
+  (`--webx-cart-drawer-width`) и `.webx-cart__panel` (`--webx-cart-image-size`, `--webx-cart-gap`).
+- **Живая область «Added to cart»** — элемент, который создаёт скрипт в конце `<body>` (визуально
+  скрыт стилем в атрибуте): копии виджета в шапке могут быть скрыты, а скрытая область не читается.
+- **Слова** — `widget.no_script` («Turn on JavaScript to see your cart.») добавлено на 10 языков.
+- **Настройки** — `webx-cart.widget.mode` (`WEBX_CART_WIDGET`), `webx-cart.checkout_url`
+  (`WEBX_CART_CHECKOUT_URL`), `webx-cart.script_path` (`webx/cart`).
+- **Мини-корзина** (`dropdown`) — строки без степперов и без кнопки удаления, количество числом.
+  Дети комплекта — без степпера (их `qty` — на единицу родителя), с удалением.
+
 ## 10. MCP
 
 Область `cart:read`, право `cart.view` (объявлено в `Module::permissions()`; раздела в меню нет,
@@ -1100,9 +1127,10 @@ cart()->state(?string $locale = null): CartState   // the full calculation, §5.
   право `cart.view` (§10); словарь `webx-cart` на 10 языков (§11).
 - **5/5 Виджет и сквозная проверка.** Каркас `<x-webx-dialog drawer>` в `widgets`, `<x-webx-cart>`
   и три режима (§9), вьюхи и точки, скрипт и его вход сборки, кнопка `data-webx-cart-add`, без JS,
-  тема (`cart.css`), триггер в `actions` шапки `theme-default`. Сквозная проверка — на локальном
-  одноразовом сайте `scripts/starter-site.sh --with=catalog,cart` (`--with` берёт id модулей
-  `Setup\Catalogue` и передаёт их в `webx:setup --modules=+…`; `catalog` и `cart` — те самые id):
+  тема (`cart.css`), триггер в `actions` шапки `theme-default`. Сквозная проверка — на lab-сайте
+  (решение человека 28.10.2026; было — на локальном одноразовом сайте
+  `scripts/starter-site.sh --with=catalog,cart` (`--with` берёт id модулей
+  `Setup\Catalogue` и передаёт их в `webx:setup --modules=+…`; `catalog` и `cart` — те самые id)):
   товар из карточки кнопкой (со скриптом и без), три режима с текущей ценой и суммами сервера;
   комплект — пачкой через `window.webx.cart.add()` (кнопки нет, решение 28) и виден деревом; правка
   цены товара видна в корзине, удалённый товар — «недоступна», корзины через MCP. Браузер: три

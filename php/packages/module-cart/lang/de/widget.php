@@ -26,4 +26,5 @@ return [
     'unavailable' => 'Derzeit nicht erhältlich',
     'gone' => 'Nicht mehr verfügbar',
     'error' => 'Der Warenkorb konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.',
+    'no_script' => 'Aktivieren Sie JavaScript, um Ihren Warenkorb zu sehen.',
 ];

@@ -26,4 +26,5 @@ return [
     'unavailable' => 'Şu anda satın alınamaz',
     'gone' => 'Artık mevcut değil',
     'error' => 'Sepet güncellenemedi. Lütfen tekrar deneyin.',
+    'no_script' => 'Sepetinizi görmek için JavaScript\'i açın.',
 ];

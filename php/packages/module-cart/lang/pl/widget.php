@@ -26,4 +26,5 @@ return [
     'unavailable' => 'Obecnie niedostępne',
     'gone' => 'Już niedostępne',
     'error' => 'Nie udało się zaktualizować koszyka. Spróbuj ponownie.',
+    'no_script' => 'Włącz JavaScript, aby zobaczyć koszyk.',
 ];

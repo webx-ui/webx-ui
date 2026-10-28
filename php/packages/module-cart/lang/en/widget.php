@@ -26,4 +26,5 @@ return [
     'unavailable' => 'Cannot be bought now',
     'gone' => 'No longer available',
     'error' => 'The cart could not be updated. Please try again.',
+    'no_script' => 'Turn on JavaScript to see your cart.',
 ];

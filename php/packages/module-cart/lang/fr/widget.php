@@ -26,4 +26,5 @@ return [
     'unavailable' => 'Indisponible pour le moment',
     'gone' => 'Plus disponible',
     'error' => 'Le panier n\'a pas pu être mis à jour. Veuillez réessayer.',
+    'no_script' => 'Activez JavaScript pour voir votre panier.',
 ];

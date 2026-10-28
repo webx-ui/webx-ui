@@ -35,6 +35,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Widget
+    |--------------------------------------------------------------------------
+    |
+    | <x-webx-cart /> without a mode: drawer, dialog or dropdown. The checkout
+    | button leads to checkout_url, else to the route named `checkout` when
+    | the site has one; with neither there is no button. The widget's script
+    | is served at {script_path}/cart.js.
+    |
+    */
+
+    'widget' => [
+        'mode' => env('WEBX_CART_WIDGET', 'drawer'),
+    ],
+
+    'checkout_url' => env('WEBX_CART_CHECKOUT_URL'),
+
+    'script_path' => 'webx/cart',
+
+    /*
+    |--------------------------------------------------------------------------
     | Cookie
     |--------------------------------------------------------------------------
     |

@@ -6,8 +6,8 @@ the cart asks the module that owns the record, through the `Purchasable` contrac
 no table of any other module, and the catalogue is just its first provider.
 
 There is no cart page and no panel section. The cart gives a site a JSON API, `cart()` for
-Blade, a buy button and reading tools for agents; a site that wants a page of its own declares a
-route and a view on top of the API.
+Blade, a buy button, a widget in three modes and reading tools for agents; a site that wants a
+page of its own declares a route and a view on top of the API.
 
 ## Install
 
@@ -160,6 +160,75 @@ to send it in place. `cart()->state()` is the whole state above, counted once a 
 In a view that has to compile on a site without the cart, name the component dynamically —
 `<x-dynamic-component component="webx-cart::add" … />` — as the catalogue's product page does:
 Blade looks a component tag up when it compiles the view.
+
+## The widget
+
+```blade
+<x-webx-cart />                    {{-- the mode from webx-cart.widget.mode, drawer by default --}}
+<x-webx-cart mode="dialog" />
+<x-webx-cart mode="dropdown" />
+```
+
+| Mode       | What it is                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------- |
+| `drawer`   | a panel at the edge of the window, its whole height: lines with steppers, totals, checkout  |
+| `dialog`   | the same in a dialog in the middle                                                          |
+| `dropdown` | the mini cart under the icon: the lines without steppers, the total and the checkout button |
+
+On a phone the drawer and the dialog are a sheet from the bottom. The drawer is the widgets'
+`<x-webx-dialog drawer>` — the same modal dialog (focus kept inside, Esc, the backdrop, focus given
+back to the trigger) pressed to the edge; any module can use it.
+
+`theme-default` puts `<x-webx-cart />` among the header's actions when the cart is installed. In a
+header of your own, put it where the icon belongs; the mode is a prop or `WEBX_CART_WIDGET`.
+
+**What the page prints** is the trigger, the counter from `cart()` and an empty panel. The panel's
+lines and totals are drawn by the server when it opens: the script asks `GET /api/cart` with
+`X-Webx-Cart-View: <mode>`, and the answer carries the panel's HTML as `html` beside the state.
+Every sum in it is the server's `*_formatted` string; the script formats nothing. The checkout
+button leads to `WEBX_CART_CHECKOUT_URL`, or to the site's route named `checkout`; with neither
+there is none.
+
+**Without JavaScript** the buy button is a form: it puts the line in and comes back to the page,
+which then prints the panel open with its lines. Otherwise the panel says «Turn on JavaScript to
+see your cart».
+
+**The script** comes with the first widget or buy button on the page (`dist/cart.js`, under 6 KB
+gzip). Any element with `data-webx-cart-add` is a buy button:
+
+| Attribute                        | What it does                                       |
+| -------------------------------- | -------------------------------------------------- |
+| `data-webx-cart-add="type:ref"`  | one line                                           |
+| `data-webx-cart-qty="N"`         | how many (1)                                       |
+| `data-webx-cart-qty-from="#qty"` | the quantity from a field on the page              |
+| `data-webx-cart-options='{…}'`   | the line's options, for a provider that takes them |
+| `data-webx-cart-open="false"`    | do not open the drawer or the dialog after adding  |
+
+While it sends, the button has `is-busy`; then `is-added` for two seconds and «Added to cart» is
+said to a screen reader; a refusal is said in the alert under it. And for the rest of the page:
+
+```js
+// A bundle: one batch, the child pointing at its parent's key; all or nothing.
+await webx.cart.add([
+  { type: 'catalog.product', ref: 42, key: 'set' },
+  { type: 'catalog.product', ref: 57, parent: 'set', qty: 2 },
+])
+
+webx.cart.setQty(101, 3)
+webx.cart.remove(101)
+webx.cart.open()
+const state = await webx.cart.state()
+
+document.addEventListener('webx:cart:change', (event) => {
+  console.log(event.detail.state.units)
+})
+```
+
+**The look** is `resources/theme/cart.css` of the module on site tokens — the classes are listed
+under `### Classes` in its `AGENTS.md`. A theme restyles them with the same class, overrides the
+views in `views/vendor/webx-cart/` (`widget`, `widget/line`, `widget/totals`, `widget/empty`,
+`icons/cart`) and adds to the panel at the points `parts/cart/line/after`,
+`parts/cart/totals/before`, `parts/cart/totals/after` and `parts/cart/footer`.
 
 ## Your own provider
 

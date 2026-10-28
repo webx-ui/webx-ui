@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Cart\Http\CartController;
 use WebxUi\Cart\Http\KeepPrivate;
+use WebxUi\Cart\Http\ScriptController;
 
 /*
  * The cart's JSON API (spec §6). The `web` group: the token lives in an encrypted cookie, a form
@@ -30,4 +31,10 @@ Route::group(['webx_service' => true], static function (): void {
                 Route::delete('items/{id}', [CartController::class, 'destroy'])->where('id', '[^/]+')->name('items.destroy');
             });
         });
+});
+
+// The widget's script (§9.4): outside the web group — a script needs no session, and a cookie on it
+// would only stop a proxy from sharing what is meant to be shared.
+Route::group(['webx_service' => true], static function (): void {
+    Route::get(trim((string) config('webx-cart.script_path', 'webx/cart'), '/').'/cart.js', ScriptController::class)->name('webx-cart.script');
 });
