@@ -51,4 +51,16 @@ return [
         'wrong_email' => 'Bu, hesabın adresi değil.',
         'submit' => 'Kalıcı olarak sil',
     ],
+    'social' => [
+        'title' => 'Sosyal ağlar',
+        'link' => 'Bağla',
+        'unlink' => 'Bağlantıyı kaldır',
+        'linked_short' => 'Bağlı',
+        'since' => ':date tarihinden beri',
+        'linked' => ':provider ile giriş bağlandı.',
+        'elsewhere' => 'Bu :provider hesabı zaten başka bir profile bağlı.',
+        'other' => 'Başka bir :provider hesabı zaten bağlı. Önce onun bağlantısını kaldırın.',
+        'last' => 'Son giriş yönteminin bağlantısını kaldırmak için bir şifre belirleyin.',
+        'not_linked' => 'Bu ağ bağlı değil.',
+    ],
 ];

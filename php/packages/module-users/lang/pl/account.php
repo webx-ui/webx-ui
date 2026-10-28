@@ -51,4 +51,16 @@ return [
         'wrong_email' => 'To nie jest adres tego konta.',
         'submit' => 'Usuń na zawsze',
     ],
+    'social' => [
+        'title' => 'Serwisy społecznościowe',
+        'link' => 'Powiąż',
+        'unlink' => 'Odłącz',
+        'linked_short' => 'Powiązano',
+        'since' => 'od :date',
+        'linked' => 'Logowanie przez :provider jest powiązane.',
+        'elsewhere' => 'To konto :provider jest już powiązane z innym profilem.',
+        'other' => 'Powiązano już inne konto :provider. Najpierw je odłącz.',
+        'last' => 'Ustaw hasło, aby odłączyć ostatni sposób logowania.',
+        'not_linked' => 'Ten serwis nie jest powiązany.',
+    ],
 ];

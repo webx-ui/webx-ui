@@ -1,6 +1,6 @@
 {{--
     The registration (spec §6.2): first and last name, phone, e-mail, password — in that order —
-    then the fields of the site (§10.4). The settings hide or require the first three (§10.5).
+    then the fields of the site (§10.4), and the social networks under the form (§9.2). The settings hide or require the first three (§10.5).
     No second password: the field has «Show». The visitor is signed in the moment it is sent.
 
     Override: <layer>/views/vendor/webx-users/register.blade.php — keep the names of the fields.
@@ -20,6 +20,7 @@
         @endforeach
         <x-webx-form.submit>{{ __('webx-users::auth.register.submit') }}</x-webx-form.submit>
     </x-webx-form>
+    <x-webx-users::social-buttons :back="$back" />
     <x-slot:footer>
         <p>{{ __('webx-users::auth.register.have_account') }} <a href="{{ $signIn }}">{{ __('webx-users::auth.register.sign_in') }}</a></p>
     </x-slot:footer>

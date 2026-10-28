@@ -79,4 +79,28 @@ return [
             'text' => 'Artık :email ile giriş yapıyorsunuz.',
         ],
     ],
+    'social' => [
+        'or' => 'veya',
+        'continue' => ':provider ile devam et',
+        'failed' => 'Giriş yapılamadı. Lütfen tekrar deneyin.',
+        'expired' => 'Tamamlama süresi doldu. Lütfen sosyal ağ ile yeniden giriş yapın.',
+        'closed' => 'Bu :provider profilini kullanan bir hesap yok ve kayıt kapalı.',
+        'sign_in_to_link' => 'Bu adresle bir hesap zaten var. Şifrenizle giriş yapın — :provider ile giriş bağlanacak.',
+        'providers' => [
+            'google' => 'Google',
+            'facebook' => 'Facebook',
+        ],
+        'fields' => [
+            'client_id' => 'İstemci kimliği',
+            'client_secret' => 'İstemci gizli anahtarı',
+            'app_id' => 'Uygulama kimliği',
+            'app_secret' => 'Uygulama gizli anahtarı',
+        ],
+        'complete' => [
+            'title' => 'Neredeyse bitti',
+            'text' => ':provider hesabın ihtiyaç duyduğu her şeyi vermedi. Lütfen gerisini doldurun.',
+            'email_hint' => 'Onaylamak için bir e-posta göndereceğiz.',
+            'submit' => 'Hesabı oluştur',
+        ],
+    ],
 ];

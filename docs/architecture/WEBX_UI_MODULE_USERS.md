@@ -562,11 +562,10 @@ final readonly class ProviderConfig
 }
 ```
 
-- `Field` — общий класс `module-admin` (решение 21; место, например
-  `WebxUi\Admin\Support\Field`, выбирает этап 7): форма та же, что сейчас у
-  `WebxUi\Notifications\Sending\Field` (`name`, `label`, `secret`, `kind`, `choices`, `default`),
-  и `module-notifications` переходит на него — копии нет. Поле секрета в панели — «задано /
-  заменить», никогда не значение. Перенос — этап 7 (§19).
+- `Field` — общий класс `module-admin` `WebxUi\Admin\Support\Field` (решение 21, этап 7): форма
+  прежнего `WebxUi\Notifications\Sending\Field` (`name`, `label`, `secret`, `kind`, `choices`,
+  `default`) и `required` — без него провайдер не показывается (§9.3); `module-notifications` на
+  нём, копии нет. Поле секрета в панели — «задано / заменить», никогда не значение.
 - **Регистрация:** `SocialProviders::register(Provider $provider)` в `boot()` пакета или сайта.
   Ключ повторно — исключение. Модуль не правится, чтобы подключить провайдера (решение 2).
 - **Реализация** — поверх `laravel/socialite` (зависимость `module-users`): базовый класс

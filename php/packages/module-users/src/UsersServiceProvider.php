@@ -9,6 +9,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Kernel;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
@@ -16,6 +17,7 @@ use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Users\Account\AccountMenu;
+use WebxUi\Users\Account\AccountRoutes;
 use WebxUi\Users\Account\AccountSection;
 use WebxUi\Users\Account\DeletionWarnings;
 use WebxUi\Users\Auth\UserProvider;
@@ -27,6 +29,10 @@ use WebxUi\Users\Doctor\UsersTableCheck;
 use WebxUi\Users\Fields\UserFields;
 use WebxUi\Users\Http\TrackVisitor;
 use WebxUi\Users\Models\User;
+use WebxUi\Users\Social\FacebookProvider;
+use WebxUi\Users\Social\GoogleProvider;
+use WebxUi\Users\Social\ProviderKeys;
+use WebxUi\Users\Social\SocialProviders;
 
 /**
  * Visitors of the site (spec §1): the table `users`, the guard `site`, the sign-in and the
@@ -57,6 +63,10 @@ class UsersServiceProvider extends ServiceProvider
         // The sections of the account and what a module says before one is deleted (§11.2, §14.1).
         $this->app->singleton(AccountMenu::class);
         $this->app->singleton(DeletionWarnings::class);
+
+        // Social networks (§9): the registry for the whole process, the keys read once a request.
+        $this->app->singleton(SocialProviders::class);
+        $this->app->scoped(ProviderKeys::class);
     }
 
     public function boot(): void
@@ -81,6 +91,15 @@ class UsersServiceProvider extends ServiceProvider
                 icon: 'lock', position: 90, active: 'webx-users.security*',
             ));
         });
+
+        $this->callAfterResolving(SocialProviders::class, static function (SocialProviders $providers): void {
+            $providers->register(new GoogleProvider);
+            $providers->register(new FacebookProvider);
+        });
+
+        // A provider may come back by POST from its own site (Apple does): `state` guards the
+        // return, not the CSRF token the visitor's browser never sent there (§15).
+        PreventRequestForgery::except(AccountRoutes::prefix().'/auth/*/callback');
 
         // `users.auth` — the sign-in and the registration; `users.account` — the account (§11.4).
         Compositions::handles('users', ['users.account', 'users.auth']);

@@ -134,7 +134,7 @@ return [
     | minute; `verify_minute` / `verify_hour` — letters of confirmation per visitor a minute / an
     | hour; `email_change` — letters to a new address per visitor an hour; `password` — wrong
     | current passwords in the account per visitor a minute; `password_link` — letters «Set a
-    | password» per visitor an hour.
+    | password» per visitor an hour; `social` — trips to a social network per IP a minute.
     |
     */
 
@@ -150,6 +150,36 @@ return [
         'email_change' => 3,
         'password' => 5,
         'password_link' => 3,
+        'social' => 20,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Social networks
+    |--------------------------------------------------------------------------
+    |
+    | The keys of a provider are the panel's (Customers → Settings → Sign-in with social
+    | networks). `keys` is the fallback where a field there is empty — and the switch, while the
+    | panel has no row of the provider: `WEBX_USERS_<KEY>_<FIELD>`. A provider is shown only when
+    | it is on and every required field has a value. `order` — the keys of the buttons first, in
+    | this order; the rest follow in the order they were registered.
+    |
+    */
+
+    'social' => [
+        'order' => [],
+        'keys' => [
+            'google' => [
+                'enabled' => env('WEBX_USERS_GOOGLE_ENABLED'),
+                'client_id' => env('WEBX_USERS_GOOGLE_CLIENT_ID'),
+                'client_secret' => env('WEBX_USERS_GOOGLE_CLIENT_SECRET'),
+            ],
+            'facebook' => [
+                'enabled' => env('WEBX_USERS_FACEBOOK_ENABLED'),
+                'app_id' => env('WEBX_USERS_FACEBOOK_APP_ID'),
+                'app_secret' => env('WEBX_USERS_FACEBOOK_APP_SECRET'),
+            ],
+        ],
     ],
 
     /*

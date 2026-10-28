@@ -79,4 +79,28 @@ return [
             'text' => 'Ora accedi con :email.',
         ],
     ],
+    'social' => [
+        'or' => 'oppure',
+        'continue' => 'Continua con :provider',
+        'failed' => 'Accesso non riuscito. Riprova.',
+        'expired' => 'Il tempo per completare è scaduto. Accedi di nuovo con il social network.',
+        'closed' => 'Nessun account usa questo profilo :provider e la registrazione è chiusa.',
+        'sign_in_to_link' => 'Esiste già un account con questo indirizzo. Accedi con la password e l’accesso con :provider verrà collegato.',
+        'providers' => [
+            'google' => 'Google',
+            'facebook' => 'Facebook',
+        ],
+        'fields' => [
+            'client_id' => 'ID client',
+            'client_secret' => 'Secret client',
+            'app_id' => 'ID app',
+            'app_secret' => 'Secret app',
+        ],
+        'complete' => [
+            'title' => 'Quasi fatto',
+            'text' => ':provider non ci ha dato tutto ciò che serve all’account. Completa il resto.',
+            'email_hint' => 'Ti invieremo un’e-mail per confermarlo.',
+            'submit' => 'Crea l’account',
+        ],
+    ],
 ];

@@ -51,4 +51,16 @@ return [
         'wrong_email' => 'Este não é o endereço da conta.',
         'submit' => 'Excluir para sempre',
     ],
+    'social' => [
+        'title' => 'Redes sociais',
+        'link' => 'Associar',
+        'unlink' => 'Desassociar',
+        'linked_short' => 'Associada',
+        'since' => 'desde :date',
+        'linked' => 'O acesso com :provider está associado.',
+        'elsewhere' => 'Esta conta do :provider já está associada a outro perfil.',
+        'other' => 'Já está associada outra conta do :provider. Desassocie-a primeiro.',
+        'last' => 'Defina uma palavra-passe para desassociar a última forma de entrar.',
+        'not_linked' => 'Esta rede não está associada.',
+    ],
 ];

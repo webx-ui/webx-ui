@@ -190,3 +190,67 @@
 .webx-account__item.is-locked:not(.is-active) {
   color: var(--site-color-text-muted);
 }
+
+/* What a social network left for the page: linked, or why not (spec §9.6). */
+.webx-account__notice {
+  margin: 0;
+  padding: var(--site-space-3) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+}
+
+/*
+ * The social networks of «Sign-in and security» (spec §9.6): a row per network — the mark, the
+ * name with the address and the date under it, the button at the end. The text gives way on a
+ * narrow column and the button wraps under it rather than squeezing the address.
+ */
+.webx-users-identities__list {
+  display: grid;
+  gap: var(--site-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-users-identities__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-2) var(--site-space-3);
+}
+
+.webx-users-identities__icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.webx-users-identities__text {
+  display: grid;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.webx-users-identities__name {
+  font-weight: 600;
+}
+
+.webx-users-identities__meta {
+  color: var(--site-color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.webx-users-identities__form .webx-form__body {
+  display: contents;
+}
+
+.webx-users-identities__link {
+  color: var(--site-color-accent);
+}
+
+.webx-users-identities__hint {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-2);
+}

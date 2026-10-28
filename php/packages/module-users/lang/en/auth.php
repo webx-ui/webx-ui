@@ -79,4 +79,28 @@ return [
             'text' => 'You now sign in with :email.',
         ],
     ],
+    'social' => [
+        'or' => 'or',
+        'continue' => 'Continue with :provider',
+        'failed' => 'Could not sign you in. Please try again.',
+        'expired' => 'The time to finish has run out. Please sign in with the network once more.',
+        'closed' => 'No account uses this :provider profile, and registration is closed.',
+        'sign_in_to_link' => 'An account with this address exists already. Sign in with your password — and sign-in with :provider will be linked.',
+        'providers' => [
+            'google' => 'Google',
+            'facebook' => 'Facebook',
+        ],
+        'fields' => [
+            'client_id' => 'Client ID',
+            'client_secret' => 'Client secret',
+            'app_id' => 'App ID',
+            'app_secret' => 'App secret',
+        ],
+        'complete' => [
+            'title' => 'Almost done',
+            'text' => ':provider did not give us everything the account needs. Please fill in the rest.',
+            'email_hint' => 'We will send a letter to confirm it.',
+            'submit' => 'Create the account',
+        ],
+    ],
 ];

@@ -87,12 +87,15 @@ php artisan vendor:publish --tag=webx-users-config
 | `throttle.reset`        | `10`      | new passwords a minute, per IP                            |
 | `throttle.verify_*`     | `1` / `5` | letters of confirmation a minute / an hour, per visitor   |
 | `throttle.email_change` | `3`       | letters to a new address an hour, per visitor             |
+| `throttle.social`       | `20`      | trips to a social network a minute, per IP                |
 | `reset_minutes`         | `60`      | how long a reset link works                               |
 | `verify_hours`          | `72`      | how long a link of confirmation works                     |
 | `email_minutes`         | `60`      | how long a link to a new address works                    |
 | `layout`                | —         | the Blade component the pages stand in (`layout`)         |
 | `account_layout`        | —         | the account's; `layout.account` of the theme by default   |
 | `fields`                | `[]`      | the site's own fields on its visitors (below)             |
+| `social.order`          | `[]`      | the keys of the social buttons first, in this order       |
+| `social.keys`           | `.env`    | the fallback of a provider's keys (below)                 |
 
 ## Fields of the site
 
@@ -157,6 +160,42 @@ transaction that deletes the row; a listener that throws keeps the account.
 
 The menu stands in `layout.account` of the theme (node `users.account-menu`), the grid and the cards
 are `resources/theme/account.css` — container queries, site tokens.
+
+## Social networks
+
+Google and Facebook come with the module (on top of `laravel/socialite`). A provider is shown — a
+button under the sign-in and the registration, its routes — only when it is switched on and every
+required key has a value. The keys are the panel's (`users_providers`, the secret encrypted and
+never given back); where a field there is empty, `.env` fills it, and switches the provider on while
+the panel has no row of it:
+
+```dotenv
+WEBX_USERS_GOOGLE_ENABLED=true
+WEBX_USERS_GOOGLE_CLIENT_ID=…
+WEBX_USERS_GOOGLE_CLIENT_SECRET=…
+WEBX_USERS_FACEBOOK_APP_ID=…
+WEBX_USERS_FACEBOOK_APP_SECRET=…
+```
+
+The return address for the provider's console is `https://<site>/account/auth/<key>/callback` —
+one for every language. Google's verified address on an account with a confirmed address links by
+itself and the owner gets a letter; anything less (Facebook, an unconfirmed account) links when the
+visitor signs in with the password. With no address from the provider, or a field the site
+requires, the visitor finishes on «Almost done» (`/account/auth/complete`). The last way to sign in
+is never unlinked.
+
+Another network is a class of your own, registered in `boot()` — the module is not edited:
+
+```php
+use WebxUi\Users\Social\SocialProviders;
+
+$this->callAfterResolving(SocialProviders::class, fn (SocialProviders $providers) => $providers->register(new AppleProvider));
+```
+
+`SocialiteProvider` does the work for a Socialite driver: `key()`, `label()`, `fields()` (the shared
+`WebxUi\Admin\Support\Field`, `secret: true` for a secret, `required: true` for what it cannot work
+without), `trustsVerifiedEmail()`, `driver()` and `toProfile()`. A network Socialite does not know
+implements `WebxUi\Users\Social\Provider` itself.
 
 ## License
 

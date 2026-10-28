@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Notifications\Channels;
 
 use Illuminate\Validation\ValidationException;
+use WebxUi\Admin\Support\Field;
 use WebxUi\Localization\Locales;
 use WebxUi\Notifications\Contracts\Provider;
 use WebxUi\Notifications\Events\EventDefinition;
@@ -12,7 +13,6 @@ use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Notifications\Providers;
 use WebxUi\Notifications\Refusal;
-use WebxUi\Admin\Support\Field;
 use WebxUi\Notifications\Templates\Template;
 use WebxUi\Notifications\Templates\TemplateError;
 

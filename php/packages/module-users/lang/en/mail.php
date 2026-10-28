@@ -40,4 +40,10 @@ return [
         'text' => 'Your account on :site has been deleted together with its data.',
         'not-you' => 'If it was not you, contact us at once.',
     ],
+    'provider-linked' => [
+        'subject' => 'Sign-in with :provider was linked on :site',
+        'text' => 'Your account on :site can now be signed in to with :provider.',
+        'not-you' => 'If it was not you, unlink it in your account and restore the password.',
+        'button' => 'Sign-in and security',
+    ],
 ];

@@ -40,4 +40,10 @@ return [
         'text' => 'Il tuo account su :site è stato eliminato insieme ai suoi dati.',
         'not-you' => 'Se non sei stato tu, contattaci subito.',
     ],
+    'provider-linked' => [
+        'subject' => 'Accesso con :provider collegato su :site',
+        'text' => 'Ora puoi accedere al tuo account su :site con :provider.',
+        'not-you' => 'Se non sei stato tu, scollegalo nell’account e reimposta la password.',
+        'button' => 'Accesso e sicurezza',
+    ],
 ];

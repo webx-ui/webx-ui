@@ -79,4 +79,28 @@ return [
             'text' => 'Vous vous connectez désormais avec :email.',
         ],
     ],
+    'social' => [
+        'or' => 'ou',
+        'continue' => 'Continuer avec :provider',
+        'failed' => 'La connexion a échoué. Veuillez réessayer.',
+        'expired' => 'Le délai pour terminer est écoulé. Reconnectez-vous avec le réseau.',
+        'closed' => 'Aucun compte n’utilise ce profil :provider, et l’inscription est fermée.',
+        'sign_in_to_link' => 'Un compte avec cette adresse existe déjà. Connectez-vous avec votre mot de passe — la connexion avec :provider sera associée.',
+        'providers' => [
+            'google' => 'Google',
+            'facebook' => 'Facebook',
+        ],
+        'fields' => [
+            'client_id' => 'ID client',
+            'client_secret' => 'Secret client',
+            'app_id' => 'ID de l’application',
+            'app_secret' => 'Secret de l’application',
+        ],
+        'complete' => [
+            'title' => 'Presque terminé',
+            'text' => ':provider ne nous a pas tout transmis pour le compte. Complétez le reste.',
+            'email_hint' => 'Nous enverrons un e-mail pour la confirmer.',
+            'submit' => 'Créer le compte',
+        ],
+    ],
 ];

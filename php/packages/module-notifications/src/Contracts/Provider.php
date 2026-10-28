@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Notifications\Contracts;
 
+use WebxUi\Admin\Support\Field;
 use WebxUi\Notifications\Refusal;
 use WebxUi\Notifications\Sending\CheckResult;
 use WebxUi\Notifications\Sending\Credentials;
 use WebxUi\Notifications\Sending\DeliveryFailed;
-use WebxUi\Admin\Support\Field;
 use WebxUi\Notifications\Sending\Message;
 use WebxUi\Notifications\Sending\Recipient;
 

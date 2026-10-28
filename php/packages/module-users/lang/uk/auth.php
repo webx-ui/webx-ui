@@ -79,4 +79,28 @@ return [
             'text' => 'Тепер ви входите з адресою :email.',
         ],
     ],
+    'social' => [
+        'or' => 'або',
+        'continue' => 'Увійти через :provider',
+        'failed' => 'Не вдалося увійти, спробуйте ще раз.',
+        'expired' => 'Час на завершення минув. Увійдіть через соцмережу ще раз.',
+        'closed' => 'Акаунта з цим профілем :provider немає, а реєстрацію закрито.',
+        'sign_in_to_link' => 'Акаунт із цією адресою вже є. Увійдіть паролем — і вхід через :provider прив’яжеться.',
+        'providers' => [
+            'google' => 'Google',
+            'facebook' => 'Facebook',
+        ],
+        'fields' => [
+            'client_id' => 'Client ID',
+            'client_secret' => 'Client secret',
+            'app_id' => 'App ID',
+            'app_secret' => 'App secret',
+        ],
+        'complete' => [
+            'title' => 'Майже готово',
+            'text' => ':provider передав не все, що потрібно акаунту. Заповніть решту.',
+            'email_hint' => 'Надішлемо лист, щоб її підтвердити.',
+            'submit' => 'Створити акаунт',
+        ],
+    ],
 ];

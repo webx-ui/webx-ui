@@ -17,6 +17,7 @@ use WebxUi\Admin\Visitors\Events\VisitorSignedIn;
 use WebxUi\Users\Events\VisitorSignInFailed;
 use WebxUi\Users\Models\User;
 use WebxUi\Users\SignIn;
+use WebxUi\Users\Social\SocialAccounts;
 use WebxUi\Users\Throttle;
 use WebxUi\Users\Urls;
 use WebxUi\Widgets\Forms\FormResponse;
@@ -62,7 +63,7 @@ final readonly class SignInController
         ]);
     }
 
-    public function store(Request $request, Throttle $throttle, Hasher $hasher, Dispatcher $events, SignIn $signIn): FormResponse
+    public function store(Request $request, Throttle $throttle, Hasher $hasher, Dispatcher $events, SignIn $signIn, SocialAccounts $social): FormResponse
     {
         $data = $request->validate(self::RULES, [], self::attributes());
         $email = User::normaliseEmail((string) $data['email']);
@@ -89,6 +90,8 @@ final readonly class SignInController
         $remember = (bool) ($data['remember'] ?? false) && (bool) $this->config->get('webx-users.remember', true);
         $signIn->in($request, $user, $remember);
         $events->dispatch(new VisitorSignedIn((int) $user->getKey(), 'password'));
+        // A social network waiting for this account's password is linked now (§9.7).
+        $social->linkWaiting($request, $user);
 
         return FormResponse::redirect($this->urls->local($request->input(Urls::BACK)) ?? $this->urls->home());
     }

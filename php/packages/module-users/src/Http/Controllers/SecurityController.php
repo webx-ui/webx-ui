@@ -10,6 +10,7 @@ use Illuminate\Contracts\Mail\Factory as Mail;
 use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Users\Account\DeleteAccount;
@@ -20,6 +21,8 @@ use WebxUi\Users\Mail\ResetPassword;
 use WebxUi\Users\Models\User;
 use WebxUi\Users\Passwords\ResetLinks;
 use WebxUi\Users\SignIn;
+use WebxUi\Users\Social\ProviderKeys;
+use WebxUi\Users\Social\SocialAccounts;
 use WebxUi\Users\Throttle;
 use WebxUi\Users\Urls;
 use WebxUi\Widgets\Forms\FormResponse;
@@ -38,7 +41,9 @@ use WebxUi\Widgets\Forms\FormRules;
  * - **Delete the account**: the current password — or the account's own address where there is
  *   no password —, the warnings of the modules, then `DeleteAccount`.
  *
- * The linked social networks join this page with them (§9.6).
+ * - **Social networks** (§9.6): every provider shown — linked (the address it gave, the date)
+ *   with «Unlink», or «Link». The last way to sign in cannot be unlinked: the button is off with
+ *   the reason, and the server refuses it all the same (`SocialAccounts::unlink`).
  */
 final readonly class SecurityController
 {
@@ -47,7 +52,7 @@ final readonly class SecurityController
         private Urls $urls,
     ) {}
 
-    public function show(Views $views, DeletionWarnings $warnings): View
+    public function show(Views $views, DeletionWarnings $warnings, ProviderKeys $keys, SocialAccounts $accounts): View
     {
         $user = ProfileController::user($this->auth);
         $min = RegisterController::minimum();
@@ -68,7 +73,45 @@ final readonly class SecurityController
             'sessions' => $this->urls->to('sessions.destroy'),
             'delete' => $this->urls->to('account.destroy'),
             'warnings' => $warnings->for($user->toVisitor()),
+            'social' => $this->social($user, $keys, $accounts),
         ]);
+    }
+
+    /**
+     * The rows of «Social networks»: one per provider shown.
+     *
+     * @return list<array{key: string, label: string, icon: string, linked: bool, email: ?string, since: ?Carbon, link: string, unlink: string, last: bool}>
+     */
+    private function social(User $user, ProviderKeys $keys, SocialAccounts $accounts): array
+    {
+        $providers = $keys->all();
+
+        if ($providers === []) {
+            return [];
+        }
+
+        $identities = $user->identities()->get()->keyBy('provider');
+        $ways = $accounts->ways($user);
+        $rows = [];
+
+        foreach ($providers as $provider) {
+            $identity = $identities->get($provider->key());
+
+            $rows[] = [
+                'key' => $provider->key(),
+                'label' => (string) __($provider->label()),
+                'icon' => $provider->icon(),
+                'linked' => $identity !== null,
+                'email' => $identity?->email,
+                'since' => $identity?->created_at,
+                'link' => $this->urls->to('social', parameters: ['provider' => $provider->key(), 'link' => 1]),
+                'unlink' => $this->urls->named('webx-users.social.unlink', ['provider' => $provider->key()]),
+                // The same rule as `SocialAccounts::canUnlink`, from the ways read once for the page.
+                'last' => $identity !== null && array_diff($ways, [$provider->key()]) === [],
+            ];
+        }
+
+        return $rows;
     }
 
     public function password(Request $request, Hasher $hasher, Throttle $throttle, SignIn $signIn, Mail $mail): FormResponse

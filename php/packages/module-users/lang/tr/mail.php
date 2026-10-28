@@ -40,4 +40,10 @@ return [
         'text' => ':site hesabınız verileriyle birlikte silindi.',
         'not-you' => 'Bunu siz yapmadıysanız hemen bizimle iletişime geçin.',
     ],
+    'provider-linked' => [
+        'subject' => ':site üzerinde :provider ile giriş bağlandı',
+        'text' => ':site hesabınıza artık :provider ile giriş yapabilirsiniz.',
+        'not-you' => 'Bu siz değilseniz, hesabınızda bağlantıyı kaldırın ve şifreyi sıfırlayın.',
+        'button' => 'Giriş ve güvenlik',
+    ],
 ];

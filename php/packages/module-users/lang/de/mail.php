@@ -40,4 +40,10 @@ return [
         'text' => 'Ihr Konto bei :site wurde samt seinen Daten gelöscht.',
         'not-you' => 'Wenn Sie das nicht waren, kontaktieren Sie uns sofort.',
     ],
+    'provider-linked' => [
+        'subject' => 'Anmeldung mit :provider auf :site verknüpft',
+        'text' => 'Bei Ihrem Konto auf :site können Sie sich jetzt mit :provider anmelden.',
+        'not-you' => 'Wenn Sie das nicht waren, trennen Sie die Verknüpfung im Konto und setzen Sie das Passwort zurück.',
+        'button' => 'Anmeldung und Sicherheit',
+    ],
 ];

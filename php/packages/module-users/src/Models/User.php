@@ -8,6 +8,7 @@ use Illuminate\Auth\MustVerifyEmail as VerifiesEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -123,6 +124,16 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function name(): Attribute
     {
         return Attribute::make(get: fn (): string => $this->toVisitor()->name());
+    }
+
+    /**
+     * The social networks linked to the visitor (§9.6).
+     *
+     * @return HasMany<Identity, $this>
+     */
+    public function identities(): HasMany
+    {
+        return $this->hasMany(Identity::class);
     }
 
     public function isBlocked(): bool

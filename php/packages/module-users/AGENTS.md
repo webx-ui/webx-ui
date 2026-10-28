@@ -1,13 +1,13 @@
 # webx-ui/module-users
 
 Visitors of the site: customers, readers of a closed section, members of a club. Their own table,
-their own guard `site`, sign-in and registration by e-mail, and the panel's seam
+their own guard `site`, sign-in by e-mail and social networks, and the panel's seam
 `WebxUi\Admin\Visitors\Visitors` answered by them. A visitor is never an administrator: no
 permissions, no way into `/cms` (administrators are `webx-ui/module-auth`). Nothing of a shop is
 in here — shop modules plug into the seam, the module knows none of them.
 
-Built in steps: social sign-in, the panel section «Customers» and the agent tools come later;
-what is listed here exists now.
+Built in steps: the panel section «Customers» and the agent tools come later; what is listed
+here exists now.
 
 ## What it owns
 
@@ -18,7 +18,16 @@ what is listed here exists now.
 - **Table** `users_password_resets` (`Passwords\ResetLinks`): one live link per visitor (`user_id`
   primary), `token_hash` — sha256 of a 32-byte base64url token, never the token; `purpose`
   `reset` / `invite`; `expires_at` (`webx-users.reset_minutes`, 60). Gone once used, with a new
-  password, with a new address. **Table** `users_identities` — linked networks (the flow comes later).
+  password, with a new address.
+- **Social networks** (`Social\*`, §9): registry `SocialProviders` (`Google`/`FacebookProvider` on
+  `SocialiteProvider`); `ProviderKeys` (scoped) — table `users_providers` (`Models\ProviderSettings`,
+  `credentials` `encrypted:array`, hidden), else `webx-users.social.keys` / `.env`; shown only when on
+  and every `required` `WebxUi\Admin\Support\Field` is set — else no button, 404. `users_identities`
+  (`Models\Identity`). `SocialAccounts` (§9.7): linked by itself only if verified + `trustsVerifiedEmail()`
+  - the account confirmed (letter `ProviderLinked`); else the profile waits 15 min (`SocialSession`) for
+    that account's password (`linkWaiting`); `unlink()` never the last way — 422. `SocialController`:
+    `/account/auth/{provider}` (`?link=1`), `…/callback` (no language, outside CSRF, `state`),
+    `auth/complete` («Almost done»), `POST /account/social/{provider}/unlink`; `<x-webx-users::social-buttons>`.
 - **Over Laravel's table** (`Schema\UsersTable`): empty — dropped with an empty
   `password_reset_tokens`; with rows — «Table `users` already holds N rows; move them out or drop the
   table, then migrate again», the same in `webx:doctor`. The rollback drops only the module's table.
@@ -34,8 +43,7 @@ what is listed here exists now.
     `fields[…]`; signed in at once; a taken address said plainly; 404 when registration is `closed`.
   - `POST /account/sign-out` (`SignOutController`) — this device only and a new CSRF token, never
     `session()->invalidate()`: an administrator signed in on the same browser stays in the panel.
-  - `GET|POST /account/forgot` (`ForgotController`) — one answer for every address; the letter
-    through the queue, none to a blocked account or over the limit.
+  - `GET|POST /account/forgot` (`ForgotController`) — one answer for every address, letters queued.
   - `GET|POST /account/reset/{token}` (`ResetController`) — a new `remember_token`, signed in; an
     unconfirmed address gets confirmed and **its `users_identities` rows are deleted** (§7 item 5).
   - `GET /account/verify/{id}/{hash}` (`VerifyController`) — signed, `verify_hours` (72), sha1 of
@@ -44,20 +52,16 @@ what is listed here exists now.
     the current password; a signed link (`email_minutes`) with a fingerprint of the old address.
   - `GET /account/state` (`StateController`) — JSON `signedIn`, `name`, `verified`, `email` masked.
   - `GET /webx/users/users.js` (`Http\ScriptController`) — `resources/js/users.js` as written, immutable.
-- **Account** (spec §11, `Account\*`): `/account` → the first section; `/account/profile`
-  (`ProfileController`: names, phone, the fields of `profile`, the e-mail and its change);
-  `/account/security` (`SecurityController`: the password with the current one or «Set a password»
-  by a reset link, `sign-out-everywhere` — a new `remember_token`, `delete`). `AccountMenu` — sections
-  `AccountSection` (profile 10, security 90, `badge` asked only by the menu), hidden by
-  `webx-users.account.hidden`; `AccountRoutes::group(fn, verified:)` — a section's routes with every
-  middleware, `.localised` copies; `<x-webx-users::account :title>` — the frame; the menu
-  `users.account-menu` by the patch `resources/compositions/layout.account/default.json` (the frame
-  prints it itself in another layout). Grid and menu — `resources/theme/account.css` (`@container`).
+- **Account** (§11, `Account\*`): `/account/profile` (`ProfileController`: names, phone, fields,
+  e-mail); `/account/security` (`SecurityController`: password or «Set a password» by a reset link,
+  networks, `sign-out-everywhere` — a new `remember_token`, `delete`). `AccountMenu` of `AccountSection`
+  (profile 10, security 90), hidden by `webx-users.account.hidden`; `AccountRoutes::group(fn, verified:)`;
+  frame `<x-webx-users::account :title>`; menu `users.account-menu` by the patch of `layout.account`.
 - **Deletion** (`Account\DeleteAccount`, §14.1): one transaction — `VisitorDeleting` (a listener that
   throws keeps the account), the row for good, identities and links; `Mail\AccountDeleted` by text.
   `DeletionWarnings::register(fn (Visitor): ?string)` — sentences shown before it.
 - **Letters** `Mail\*` (`Letter`: queued, the visitor's `locale`, `webx-users::mail.<name>` in
-  `<x-webx-users::letter>`): `VerifyEmail`, `ResetPassword`, `PasswordChanged`, `EmailChangeLink`, `EmailChanged`.
+  `<x-webx-users::letter>`): `VerifyEmail`, `ResetPassword`, `PasswordChanged`, `EmailChange*`, `ProviderLinked`.
 - **`Http\TrackVisitor`** in `web`: a session of an old password or `remember_token` signs out; the cookie `webx_visitor`
   (`1` signed in, `u` unconfirmed, none for a guest; not encrypted, not httpOnly). A guest — no query.
 - **Banner** `<x-webx-users::verify-banner>`, node `users.verify-banner` first in `main` of `layout`:
@@ -66,26 +70,19 @@ what is listed here exists now.
   e-mail» and the letter once more (403, `AnswersUnverified`).
 - **Console** `webx:users:prune [--dry-run]`, daily: links out of date, never an account.
   `webx:doctor` — `MailCheck` (`log` mail off a local machine warns), `FieldsCheck` (the refusals).
-- **Limits** (`WebxUi\Users\Throttle`, a 429 that names the field and the seconds):
-  failed sign-ins 5 a minute per address and IP, 30 per IP; registrations 5 an hour per IP; reset
-  requests 3 an hour per address and IP, 20 per IP (silently); new passwords 10 a minute per IP;
-  the letter of confirmation once a minute, 5 an hour; letters to a new address 3 an hour; wrong
-  current passwords in the account 5 a minute; «Set a password» 3 an hour.
-- **Events**: `VisitorRegistered`, `VisitorSignedIn` (`password` / `registration` / `reset`),
-  `VisitorSignedOut` of `module-admin`; own `Events\VisitorSignInFailed` (sha256 of address and IP).
+- **Limits** (`WebxUi\Users\Throttle`, a 429 that names the field and the seconds): every number and
+  its key in `webx-users.throttle.*` (the config says each); reset requests over theirs answer alike.
+- **Events**: `VisitorRegistered`, `VisitorSignedIn` (`password`/`registration`/`reset`/a provider), `VisitorSignedOut`; own `VisitorSignInFailed`.
 - **Views** `sign-in`, `register`, `forgot`, `reset`, `notice`, `account.profile`, `account.security`, the
   frames `<x-webx-users::page>` / `account`, the bare `standalone`; forms of `widgets` (`FormRules`).
   Classes `webx-account-auth*`, `webx-account*`, `webx-users-verify*`; base look `resources/theme/*.css`.
 - **Layouts** (`Rendering\Layouts`): sign-in pages — `webx-users.layout` (`'layout'` after
   `webx:panel --sync`), handle `users.auth`; the account — `layout.account` where the site has it.
-- **Fields of the site** (`Fields\*`, spec §10): `UserField` in `UserFields` — `register()` in a
-  module's `boot()`, or `webx-users.fields`; an exception for a column's or taken name, a type
-  `FieldTypes` lacks, options missing, a type with no site field outside the panel (`siteType()`).
-  In `users.extra` (`$user->extra('club-card')`); `FieldValues` checks them alike for a form, the panel
-  and MCP; `FieldCatalog` — nodes of the card `project-fields` and the list for `users://catalog`.
-  `Requirements` — setting `users.fields.<name>` `hidden`/`optional`/`required`, also for
-  `first_name`, `last_name`, `phone`. `webx:users:index-field <name>` — a site migration with
-  generated `extra_<name>` and its index, used by `unique`.
+- **Fields of the site** (`Fields\*`, §10): `UserField` in `UserFields` (`register()` in `boot()`, or
+  `webx-users.fields`; a taken name, an unknown type, missing options throw); in `users.extra`;
+  `FieldValues` checks them alike everywhere; `FieldCatalog` — panel nodes and `users://catalog`;
+  `Requirements` — `users.fields.<name>` `hidden`/`optional`/`required` (also the names and phone);
+  `webx:users:index-field <name>` — generated `extra_<name>` with an index, used by `unique`.
 - **Dictionary** `webx-users` in ten languages: `module` («Customers»), `auth`, `account`, `mail`.
 
 ### Permissions
@@ -113,6 +110,8 @@ None yet: every route is the visitor's own door, open with its limit in `tests/A
 | A page only for a signed-in visitor        | the middleware `webx.visitor` of `module-admin`                        |
 | A field of your own on the visitors        | `webx-users.fields` or `UserFields::register()`; asked — the setting   |
 | A section of the account from your module  | `AccountMenu::register()` + `AccountRoutes::group()` in `boot()`       |
+| Google / Facebook keys without the panel   | `.env`: `WEBX_USERS_GOOGLE_ENABLED`, `_CLIENT_ID`, `_CLIENT_SECRET`    |
+| Another social network                     | a `SocialiteProvider` (or `Social\Provider`) to `SocialProviders`      |
 | No section of a module in the menu         | `webx-users.account.hidden`: `['wallet']`                              |
 | Say something before an account goes       | `DeletionWarnings::register()`; unlink rows on `VisitorDeleting`       |
 
@@ -131,6 +130,7 @@ None yet: every route is the visitor's own door, open with its limit in `tests/A
 - Do not print the visitor's name or address into a cached page: hidden, filled by `users.js`.
 - Do not change a password without a new `remember_token` (and `ResetLinks::forget()` on a reset).
 - Do not drop a `users` table with rows to get past the refusal: move them out first.
+- Do not return `ProviderSettings::credentials` or `Identity::provider_user_id` anywhere: `SocialTest` greps every page.
 
 ## Check your work
 
@@ -141,7 +141,7 @@ None yet: every route is the visitor's own door, open with its limit in `tests/A
 - `vendor/bin/phpunit` in the package: `SignInTest`, `RegisterTest`, `PasswordResetTest`,
   `VerificationTest`, `EmailChangeTest`, `BannerTest`, `PruneTest`, `BoundariesTest`,
   `MigrationTest`, `SkeletonTest`, `AccessCoverageTest`, `FieldsTest`, `FieldDeclarationsTest`, `AccountTest`,
-  `SecurityTest`, `AccountThemeTest`; `resources/js/users.test.js` (vitest).
+  `SecurityTest`, `AccountThemeTest`, `SocialTest`; `resources/js/users.test.js` (vitest).
 
 ## Read more
 

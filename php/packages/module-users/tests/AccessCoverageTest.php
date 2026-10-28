@@ -39,6 +39,11 @@ final class AccessCoverageTest extends TestCase
         'POST account/password/link' => '«Set a password»: a reset link to the signed-in visitor\'s own address (webx.visitor), 3 an hour (Throttle::passwordLink)',
         'POST account/sign-out-everywhere' => 'the other sessions ended: the signed-in visitor\'s own (webx.visitor), behind CSRF',
         'POST account/delete' => 'the account deleted: the signed-in visitor\'s own (webx.visitor) with the current password or the address, 5 wrong a minute (Throttle::password)',
+        'GET account/auth/{provider}' => 'off to a social network that is shown: 20 a minute per IP (Throttle::social); `?link=1` only for the signed-in visitor',
+        'GET account/auth/{provider}/callback' => 'the return of a social network, GET or POST: the session\'s one-time `state`, outside CSRF (spec §9.4)',
+        'GET account/auth/complete' => '«Almost done»: only with the network\'s profile waiting in this session',
+        'POST account/auth/complete' => '«Almost done» sent: the profile waiting in this session, 5 an hour per IP (Throttle::register)',
+        'POST account/social/{provider}/unlink' => 'a network unlinked: the signed-in visitor\'s own (webx.visitor), never the last way to sign in, behind CSRF',
         'GET webx/users/users.js' => 'the script of the cached pages: the same file for everyone',
     ];
 

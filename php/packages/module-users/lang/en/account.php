@@ -51,4 +51,16 @@ return [
         'wrong_email' => 'This is not the address of the account.',
         'submit' => 'Delete forever',
     ],
+    'social' => [
+        'title' => 'Social networks',
+        'link' => 'Link',
+        'unlink' => 'Unlink',
+        'linked_short' => 'Linked',
+        'since' => 'since :date',
+        'linked' => 'Sign-in with :provider is linked.',
+        'elsewhere' => 'This :provider account is already linked to another profile.',
+        'other' => 'Another :provider account is linked already. Unlink it first.',
+        'last' => 'Set a password to unlink the last way to sign in.',
+        'not_linked' => 'This network is not linked.',
+    ],
 ];

@@ -51,4 +51,16 @@ return [
         'wrong_email' => 'Questo non è l’indirizzo dell’account.',
         'submit' => 'Elimina per sempre',
     ],
+    'social' => [
+        'title' => 'Social network',
+        'link' => 'Collega',
+        'unlink' => 'Scollega',
+        'linked_short' => 'Collegato',
+        'since' => 'dal :date',
+        'linked' => 'L’accesso con :provider è collegato.',
+        'elsewhere' => 'Questo account :provider è già collegato a un altro profilo.',
+        'other' => 'Un altro account :provider è già collegato. Scollegalo prima.',
+        'last' => 'Imposta una password per scollegare l’ultimo modo di accesso.',
+        'not_linked' => 'Questo social network non è collegato.',
+    ],
 ];

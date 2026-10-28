@@ -80,6 +80,15 @@ final readonly class Urls
         return $this->url->route($name, $parameters);
     }
 
+    /**
+     * The return address of a social network (§9.4): one for every language — it is written into
+     * the provider's console — and absolute.
+     */
+    public function callback(string $provider): string
+    {
+        return $this->url->route('webx-users.social.callback', ['provider' => $provider]);
+    }
+
     /** Where a visitor who signed in goes when the page they came from is not known. */
     public function home(): string
     {

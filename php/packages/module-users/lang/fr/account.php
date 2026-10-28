@@ -51,4 +51,16 @@ return [
         'wrong_email' => 'Ce n’est pas l’adresse de ce compte.',
         'submit' => 'Supprimer définitivement',
     ],
+    'social' => [
+        'title' => 'Réseaux sociaux',
+        'link' => 'Associer',
+        'unlink' => 'Dissocier',
+        'linked_short' => 'Associé',
+        'since' => 'depuis le :date',
+        'linked' => 'La connexion avec :provider est associée.',
+        'elsewhere' => 'Ce compte :provider est déjà associé à un autre profil.',
+        'other' => 'Un autre compte :provider est déjà associé. Dissociez-le d’abord.',
+        'last' => 'Définissez un mot de passe pour dissocier le dernier moyen de connexion.',
+        'not_linked' => 'Ce réseau n’est pas associé.',
+    ],
 ];

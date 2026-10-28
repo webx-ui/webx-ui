@@ -79,4 +79,28 @@ return [
             'text' => 'Sie melden sich jetzt mit :email an.',
         ],
     ],
+    'social' => [
+        'or' => 'oder',
+        'continue' => 'Weiter mit :provider',
+        'failed' => 'Die Anmeldung ist fehlgeschlagen. Bitte versuchen Sie es erneut.',
+        'expired' => 'Die Zeit zum Abschließen ist abgelaufen. Bitte melden Sie sich erneut über das Netzwerk an.',
+        'closed' => 'Kein Konto nutzt dieses :provider-Profil, und die Registrierung ist geschlossen.',
+        'sign_in_to_link' => 'Ein Konto mit dieser Adresse gibt es bereits. Melden Sie sich mit Ihrem Passwort an — dann wird die Anmeldung mit :provider verknüpft.',
+        'providers' => [
+            'google' => 'Google',
+            'facebook' => 'Facebook',
+        ],
+        'fields' => [
+            'client_id' => 'Client-ID',
+            'client_secret' => 'Client-Secret',
+            'app_id' => 'App-ID',
+            'app_secret' => 'App-Secret',
+        ],
+        'complete' => [
+            'title' => 'Fast fertig',
+            'text' => ':provider hat nicht alles übermittelt, was das Konto braucht. Bitte ergänzen Sie den Rest.',
+            'email_hint' => 'Wir senden eine E-Mail zur Bestätigung.',
+            'submit' => 'Konto erstellen',
+        ],
+    ],
 ];

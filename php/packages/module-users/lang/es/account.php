@@ -51,4 +51,16 @@ return [
         'wrong_email' => 'Esta no es la dirección de la cuenta.',
         'submit' => 'Eliminar para siempre',
     ],
+    'social' => [
+        'title' => 'Redes sociales',
+        'link' => 'Vincular',
+        'unlink' => 'Desvincular',
+        'linked_short' => 'Vinculada',
+        'since' => 'desde el :date',
+        'linked' => 'El acceso con :provider está vinculado.',
+        'elsewhere' => 'Esta cuenta de :provider ya está vinculada a otro perfil.',
+        'other' => 'Ya hay otra cuenta de :provider vinculada. Desvincúlela primero.',
+        'last' => 'Establezca una contraseña para desvincular la última forma de acceso.',
+        'not_linked' => 'Esta red no está vinculada.',
+    ],
 ];

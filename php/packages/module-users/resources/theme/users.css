@@ -107,3 +107,69 @@
   line-height: 1;
   cursor: pointer;
 }
+
+/* A sentence a social network left for the page (spec §9.4): it failed, or what to do next. */
+.webx-account-auth__alert {
+  margin: 0 0 var(--site-space-4);
+  padding: var(--site-space-3) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+}
+
+/*
+ * The buttons of the social networks (spec §9.2): «or» between two rules, then one button per
+ * network the width of the card — the provider's mark and the words, on the site's surface.
+ */
+.webx-users-social {
+  margin-top: var(--site-space-5);
+}
+
+.webx-users-social__or {
+  display: flex;
+  align-items: center;
+  gap: var(--site-space-3);
+  margin: 0 0 var(--site-space-4);
+  color: var(--site-color-text-muted);
+}
+
+.webx-users-social__or::before,
+.webx-users-social__or::after {
+  flex: 1;
+  border-top: 1px solid var(--site-color-border);
+  content: '';
+}
+
+.webx-users-social__list {
+  display: grid;
+  gap: var(--site-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-users-social__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--site-space-3);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--site-space-2) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  text-decoration: none;
+}
+
+.webx-users-social__button:hover,
+.webx-users-social__button:focus-visible {
+  background: var(--site-color-surface-muted);
+}
+
+.webx-users-social__icon {
+  display: inline-flex;
+  flex: none;
+}

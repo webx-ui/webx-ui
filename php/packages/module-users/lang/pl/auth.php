@@ -79,4 +79,28 @@ return [
             'text' => 'Teraz logujesz się adresem :email.',
         ],
     ],
+    'social' => [
+        'or' => 'lub',
+        'continue' => 'Kontynuuj z :provider',
+        'failed' => 'Nie udało się zalogować. Spróbuj ponownie.',
+        'expired' => 'Czas na dokończenie minął. Zaloguj się przez serwis jeszcze raz.',
+        'closed' => 'Żadne konto nie używa tego profilu :provider, a rejestracja jest zamknięta.',
+        'sign_in_to_link' => 'Konto z tym adresem już istnieje. Zaloguj się hasłem — a logowanie przez :provider zostanie powiązane.',
+        'providers' => [
+            'google' => 'Google',
+            'facebook' => 'Facebook',
+        ],
+        'fields' => [
+            'client_id' => 'Client ID',
+            'client_secret' => 'Client secret',
+            'app_id' => 'App ID',
+            'app_secret' => 'App secret',
+        ],
+        'complete' => [
+            'title' => 'Prawie gotowe',
+            'text' => ':provider nie przekazał wszystkiego, czego potrzebuje konto. Uzupełnij resztę.',
+            'email_hint' => 'Wyślemy wiadomość, aby go potwierdzić.',
+            'submit' => 'Utwórz konto',
+        ],
+    ],
 ];

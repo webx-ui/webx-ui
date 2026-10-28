@@ -24,6 +24,7 @@ final readonly class Field
 
     /**
      * @param  list<string>  $choices  the values a `choice` may take
+     * @param  bool  $required  the provider does not work without it: a sign-in provider missing one is not shown
      */
     public function __construct(
         public string $name,
@@ -33,6 +34,7 @@ final readonly class Field
         public array $choices = [],
         public mixed $default = null,
         public int $max = 255,
+        public bool $required = false,
     ) {}
 
     /**
@@ -49,6 +51,7 @@ final readonly class Field
             'kind' => $this->kind,
             'choices' => $this->choices,
             'default' => $this->default,
+            'required' => $this->required,
         ];
     }
 }

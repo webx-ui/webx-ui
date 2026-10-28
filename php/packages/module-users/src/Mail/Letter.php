@@ -39,9 +39,19 @@ abstract class Letter extends Mailable implements ShouldQueue
         return [];
     }
 
+    /**
+     * What the subject names besides the site.
+     *
+     * @return array<string, string>
+     */
+    protected function subjectWords(): array
+    {
+        return [];
+    }
+
     public function envelope(): Envelope
     {
-        return new Envelope(subject: (string) trans('webx-users::mail.'.$this->letter().'.subject', ['site' => self::site()]));
+        return new Envelope(subject: (string) trans('webx-users::mail.'.$this->letter().'.subject', ['site' => self::site(), ...$this->subjectWords()]));
     }
 
     public function content(): Content

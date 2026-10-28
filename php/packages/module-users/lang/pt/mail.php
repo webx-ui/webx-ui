@@ -40,4 +40,10 @@ return [
         'text' => 'Sua conta em :site foi excluída junto com seus dados.',
         'not-you' => 'Se não foi você, entre em contato conosco imediatamente.',
     ],
+    'provider-linked' => [
+        'subject' => 'Acesso com :provider associado em :site',
+        'text' => 'Agora pode entrar na sua conta em :site com :provider.',
+        'not-you' => 'Se não foi você, desassocie-o na conta e redefina a palavra-passe.',
+        'button' => 'Acesso e segurança',
+    ],
 ];

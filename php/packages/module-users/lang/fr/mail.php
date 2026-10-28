@@ -40,4 +40,10 @@ return [
         'text' => 'Votre compte sur :site a été supprimé avec ses données.',
         'not-you' => 'Si ce n’était pas vous, contactez-nous immédiatement.',
     ],
+    'provider-linked' => [
+        'subject' => 'Connexion avec :provider associée sur :site',
+        'text' => 'Vous pouvez désormais vous connecter à votre compte sur :site avec :provider.',
+        'not-you' => 'Si ce n’était pas vous, dissociez-la dans votre compte et réinitialisez le mot de passe.',
+        'button' => 'Connexion et sécurité',
+    ],
 ];

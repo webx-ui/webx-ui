@@ -40,4 +40,10 @@ return [
         'text' => 'Twoje konto w :site zostało usunięte wraz z danymi.',
         'not-you' => 'Jeśli to nie ty, natychmiast się z nami skontaktuj.',
     ],
+    'provider-linked' => [
+        'subject' => 'Powiązano logowanie przez :provider w :site',
+        'text' => 'Do Twojego konta w :site możesz teraz logować się przez :provider.',
+        'not-you' => 'Jeśli to nie Ty, odłącz je na koncie i zresetuj hasło.',
+        'button' => 'Logowanie i bezpieczeństwo',
+    ],
 ];

@@ -51,4 +51,16 @@ return [
         'wrong_email' => 'Das ist nicht die Adresse dieses Kontos.',
         'submit' => 'Endgültig löschen',
     ],
+    'social' => [
+        'title' => 'Soziale Netzwerke',
+        'link' => 'Verknüpfen',
+        'unlink' => 'Trennen',
+        'linked_short' => 'Verknüpft',
+        'since' => 'seit :date',
+        'linked' => 'Die Anmeldung mit :provider ist verknüpft.',
+        'elsewhere' => 'Dieses :provider-Konto ist bereits mit einem anderen Profil verknüpft.',
+        'other' => 'Ein anderes :provider-Konto ist bereits verknüpft. Trennen Sie es zuerst.',
+        'last' => 'Legen Sie ein Passwort fest, um die letzte Anmeldemöglichkeit zu trennen.',
+        'not_linked' => 'Dieses Netzwerk ist nicht verknüpft.',
+    ],
 ];

@@ -13,6 +13,7 @@ use WebxUi\Users\Http\Controllers\ResetController;
 use WebxUi\Users\Http\Controllers\SecurityController;
 use WebxUi\Users\Http\Controllers\SignInController;
 use WebxUi\Users\Http\Controllers\SignOutController;
+use WebxUi\Users\Http\Controllers\SocialController;
 use WebxUi\Users\Http\Controllers\StateController;
 use WebxUi\Users\Http\Controllers\VerifyController;
 use WebxUi\Users\Http\ScriptController;
@@ -45,6 +46,10 @@ $pages = static function (string $suffix): void {
     Route::post('email', [EmailController::class, 'store'])->middleware('webx.visitor')->name('email.store'.$suffix);
     Route::get('email/{id}', [EmailController::class, 'confirm'])->name('email.confirm'.$suffix);
     Route::get('state', StateController::class)->name('state'.$suffix);
+    // «Almost done» before the trip to a provider: `complete` is no provider's key.
+    Route::get('auth/complete', [SocialController::class, 'complete'])->name('complete'.$suffix);
+    Route::post('auth/complete', [SocialController::class, 'completeStore'])->name('complete.store'.$suffix);
+    Route::get('auth/{provider}', [SocialController::class, 'redirect'])->where('provider', '[a-z0-9-]+')->name('social'.$suffix);
 };
 
 Route::group(['webx_service' => true], static function () use ($prefix, $middleware, $localised, $pages): void {
@@ -56,6 +61,14 @@ Route::group(['webx_service' => true], static function () use ($prefix, $middlew
             ->name('webx-users.')
             ->group(static fn () => $pages('.localised'));
     }
+
+    // The return of a provider (§9.4): one address for every language — it is written into the
+    // provider's console —, GET or POST, outside CSRF (UsersServiceProvider): `state` guards it.
+    Route::middleware($middleware)->prefix($prefix)->group(static function (): void {
+        Route::match(['GET', 'POST'], 'auth/{provider}/callback', [SocialController::class, 'callback'])
+            ->where('provider', '[a-z0-9-]+')
+            ->name('webx-users.social.callback');
+    });
 });
 
 /*
@@ -71,6 +84,7 @@ AccountRoutes::group(static function (): void {
     Route::post('password/link', [SecurityController::class, 'link'])->name('webx-users.password.link');
     Route::post('sign-out-everywhere', [SecurityController::class, 'signOutEverywhere'])->name('webx-users.sessions.destroy');
     Route::post('delete', [SecurityController::class, 'destroy'])->name('webx-users.account.destroy');
+    Route::post('social/{provider}/unlink', [SocialController::class, 'unlink'])->where('provider', '[a-z0-9-]+')->name('webx-users.social.unlink');
 });
 
 // The script of the pages cached for everybody (§11.6): no session, no language, cached for good.

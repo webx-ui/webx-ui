@@ -128,6 +128,20 @@ final readonly class Throttle
         $this->limiter->hit($key, 3600);
     }
 
+    /**
+     * Trips to a social network per IP a minute (§15): a page, not a form — a bare 429.
+     */
+    public function social(string $ip): void
+    {
+        $key = 'webx-users:social:'.$ip;
+
+        if ($this->limiter->tooManyAttempts($key, $this->limit('social', 20))) {
+            abort(429, '', ['Retry-After' => (string) max(1, $this->limiter->availableIn($key))]);
+        }
+
+        $this->limiter->hit($key, 60);
+    }
+
     /** @param  list<array{string, int}>  $limits */
     private function refuseOver(array $limits, string $field, string $words = 'webx-users::auth.throttled'): void
     {
