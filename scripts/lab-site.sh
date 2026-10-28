@@ -111,6 +111,9 @@ lab_environment() {
     env_set APP_URL "$URL"
     # The demo catalogue sells through the cart: without a currency the cart refuses every write.
     [ -n "$(env_get WEBX_CATALOG_CURRENCY)" ] || env_set WEBX_CATALOG_CURRENCY EUR
+    # The test social network of module-users (APP_ENV=local only): the sign-in through a network is
+    # walked on the lab without the keys of a real console.
+    [ -n "$(env_get WEBX_USERS_DEV_ENABLED)" ] || env_set WEBX_USERS_DEV_ENABLED true
     [ -n "$(env_get APP_KEY)" ] || artisan key:generate --force --no-interaction
 }
 
