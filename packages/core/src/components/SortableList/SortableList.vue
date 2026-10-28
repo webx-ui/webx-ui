@@ -347,7 +347,13 @@ function onKeydown(event: KeyboardEvent, index: number) {
   border-bottom: 1px solid var(--wx-border-muted);
 }
 
+/*
+ * A plain list stands in somebody else's frame, and the frame insets it: the head starts where
+ * the list does, as its rows start at the list's edges. Its own step on top of the frame's put
+ * the name of a column lower than the name of the pane beside it.
+ */
 .is-plain .wx-sortable-list__head {
+  padding-block-start: 0;
   padding-inline: 0;
 }
 
