@@ -67,7 +67,7 @@
         "webx": {
             "module": "users",
             "npm": {
-                "@webx-ui/module-users": "^0.1.0"
+                "@webx-ui/module-users": "^0.0.0"
             },
             "panel": {
                 "import": "import { users } from '@webx-ui/module-users'",
