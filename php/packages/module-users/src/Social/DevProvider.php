@@ -35,9 +35,10 @@ final class DevProvider implements Provider
         return 'Test sign-in';
     }
 
+    // A view of the button, the way SocialiteProvider names one — not an icon of the panel.
     public function icon(): string
     {
-        return 'webx-users::social.icons.dev';
+        return 'webx-users::social.icons.'.self::KEY;
     }
 
     public function fields(): array
